@@ -93,6 +93,9 @@ class NotifyTelegram(NotifyBase):
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_telegram'
 
+    # Default Notify Format
+    notify_format = NotifyFormat.HTML
+
     # Telegram uses the http protocol with JSON requests
     notify_url = 'https://api.telegram.org/bot'
 
@@ -101,6 +104,9 @@ class NotifyTelegram(NotifyBase):
 
     # The maximum allowable characters allowed in the body per message
     body_maxlen = 4096
+
+    # Title is to be part of body
+    title_maxlen = 0
 
     # Telegram is limited to sending a maximum of 100 requests per second.
     request_rate_per_sec = 0.001
@@ -166,6 +172,49 @@ class NotifyTelegram(NotifyBase):
             'key': 'document',
         },
     )
+
+    # Telegram's HTML support doesn't like having HTML escaped
+    # characters passed into it.  to handle this situation, we need to
+    # search the body for these sequences and convert them to the
+    # output the user expected
+    __telegram_escape_html_dict = {
+        # New Lines
+        re.compile(r'<\s*/?br\s*/?>\r*\n?', re.I): '\r\n',
+        re.compile(r'<\s*/(br|p|div|li)[^>]*>\r*\n?', re.I): '\r\n',
+
+        # The following characters can be altered to become supported
+        re.compile(r'<\s*pre[^>]*>', re.I): '<code>',
+        re.compile(r'<\s*/pre[^>]*>', re.I): '</code>',
+
+        # the following tags are not supported
+        re.compile(
+            r'<\s*(br|p|div|span|body|script|meta|html|font'
+            r'|label|iframe|li|ol|ul|source|script)[^>]*>', re.I): '',
+
+        re.compile(
+            r'<\s*/(span|body|script|meta|html|font'
+            r'|label|iframe|ol|ul|source|script)[^>]*>', re.I): '',
+
+        # Italic
+        re.compile(r'<\s*(caption|em)[^>]*>', re.I): '<i>',
+        re.compile(r'<\s*/(caption|em)[^>]*>', re.I): '</i>',
+
+        # Bold
+        re.compile(r'<\s*(h[1-6]|title|strong)[^>]*>', re.I): '<b>',
+        re.compile(r'<\s*/(h[1-6]|title|strong)[^>]*>', re.I): '</b>',
+
+        # HTML Spaces (&nbsp;) and tabs (&emsp;) aren't supported
+        # See https://core.telegram.org/bots/api#html-style
+        re.compile(r'\&nbsp;?', re.I): ' ',
+
+        # Tabs become 3 spaces
+        re.compile(r'\&emsp;?', re.I): '   ',
+
+        # Some characters get re-escaped by the Telegram upstream
+        # service so we need to convert these back,
+        re.compile(r'\&apos;?', re.I): '\'',
+        re.compile(r'\&quot;?', re.I): '"',
+    }
 
     # Define our template tokens
     template_tokens = dict(NotifyBase.template_tokens, **{
@@ -483,15 +532,15 @@ class NotifyTelegram(NotifyBase):
         #      "text":"/start",
         #      "entities":[{"offset":0,"length":6,"type":"bot_command"}]}}]
 
-        if 'ok' in response and response['ok'] is True \
-                and 'result' in response and len(response['result']):
-            entry = response['result'][0]
-            _id = entry['message']['from'].get('id', 0)
-            _user = entry['message']['from'].get('first_name')
-            self.logger.info('Detected Telegram user %s (userid=%d)' % (
-                _user, _id))
-            # Return our detected userid
-            return _id
+        if response.get('ok', False):
+            for entry in response.get('result', []):
+                if 'message' in entry and 'from' in entry['message']:
+                    _id = entry['message']['from'].get('id', 0)
+                    _user = entry['message']['from'].get('first_name')
+                    self.logger.info(
+                        'Detected Telegram user %s (userid=%d)' % (_user, _id))
+                    # Return our detected userid
+                    return _id
 
         self.logger.warning(
             'Failed to detect a Telegram user; '
@@ -499,7 +548,7 @@ class NotifyTelegram(NotifyBase):
         return 0
 
     def send(self, body, title='', notify_type=NotifyType.INFO, attach=None,
-             **kwargs):
+             body_format=None, **kwargs):
         """
         Perform Telegram Notification
         """
@@ -538,87 +587,47 @@ class NotifyTelegram(NotifyBase):
             'disable_web_page_preview': not self.preview,
         }
 
-        # Prepare Email Message
+        # Prepare Message Body
         if self.notify_format == NotifyFormat.MARKDOWN:
             payload['parse_mode'] = 'MARKDOWN'
 
-            payload['text'] = '{}{}'.format(
-                '{}\r\n'.format(title) if title else '',
-                body,
-            )
+            payload['text'] = body
 
-        else:  # HTML or TEXT
+        else:  # HTML
 
             # Use Telegram's HTML mode
             payload['parse_mode'] = 'HTML'
+            for r, v in self.__telegram_escape_html_dict.items():
+                body = r.sub(v, body, re.I)
 
-            # Telegram's HTML support doesn't like having HTML escaped
-            # characters passed into it.  to handle this situation, we need to
-            # search the body for these sequences and convert them to the
-            # output the user expected
-            telegram_escape_html_dict = {
-                # HTML Spaces (&nbsp;) and tabs (&emsp;) aren't supported
-                # See https://core.telegram.org/bots/api#html-style
-                r'nbsp': ' ',
+            # Prepare our payload based on HTML or TEXT
+            payload['text'] = body
 
-                # Tabs become 3 spaces
-                r'emsp': '   ',
+        # else:  # self.notify_format == NotifyFormat.TEXT:
+        #     # Use Telegram's HTML mode
+        #     payload['parse_mode'] = 'HTML'
 
-                # Some characters get re-escaped by the Telegram upstream
-                # service so we need to convert these back,
-                r'apos': '\'',
-                r'quot': '"',
-            }
+        #     # Further html escaping required...
+        #     telegram_escape_text_dict = {
+        #         # We need to escape characters that conflict with html
+        #         # entity blocks (< and >) when displaying text
+        #         r'>': '&gt;',
+        #         r'<': '&lt;',
+        #         r'\&': '&amp;',
+        #     }
 
-            # Create a regular expression from the dictionary keys
-            html_regex = re.compile("&(%s);?" % "|".join(
-                map(re.escape, telegram_escape_html_dict.keys())).lower(),
-                re.I)
+        #     # Create a regular expression from the dictionary keys
+        #     text_regex = re.compile("(%s)" % "|".join(
+        #         map(re.escape, telegram_escape_text_dict.keys())).lower(),
+        #         re.I)
 
-            # For each match, look-up corresponding value in dictionary
-            # we look +1 to ignore the & that does not appear in the index
-            # we only look at the first 4 characters because we don't want to
-            # fail on &apos; as it's accepted (along with &apos - no
-            # semi-colon)
-            body = html_regex.sub(  # pragma: no branch
-                lambda mo: telegram_escape_html_dict[
-                    mo.string[mo.start():mo.end()][1:5]], body)
+        #     # For each match, look-up corresponding value in dictionary
+        #     body = text_regex.sub(  # pragma: no branch
+        #         lambda mo: telegram_escape_text_dict[
+        #             mo.string[mo.start():mo.end()]], body)
 
-            if title:
-                # For each match, look-up corresponding value in dictionary
-                # Indexing is explained above (for how the body is parsed)
-                title = html_regex.sub(  # pragma: no branch
-                    lambda mo: telegram_escape_html_dict[
-                        mo.string[mo.start():mo.end()][1:5]], title)
-
-            if self.notify_format == NotifyFormat.TEXT:
-                telegram_escape_text_dict = {
-                    # We need to escape characters that conflict with html
-                    # entity blocks (< and >) when displaying text
-                    r'>': '&gt;',
-                    r'<': '&lt;',
-                }
-
-                # Create a regular expression from the dictionary keys
-                text_regex = re.compile("(%s)" % "|".join(
-                    map(re.escape, telegram_escape_text_dict.keys())).lower(),
-                    re.I)
-
-                # For each match, look-up corresponding value in dictionary
-                body = text_regex.sub(  # pragma: no branch
-                    lambda mo: telegram_escape_text_dict[
-                        mo.string[mo.start():mo.end()]], body)
-
-                if title:
-                    # For each match, look-up corresponding value in dictionary
-                    title = text_regex.sub(  # pragma: no branch
-                        lambda mo: telegram_escape_text_dict[
-                            mo.string[mo.start():mo.end()]], title)
-
-            payload['text'] = '{}{}'.format(
-                '<b>{}</b>\r\n'.format(title) if title else '',
-                body,
-            )
+        #     # prepare our payload based on HTML or TEXT
+        #     payload['text'] = body
 
         # Create a copy of the chat_ids list
         targets = list(self.targets)

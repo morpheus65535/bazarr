@@ -1,6 +1,6 @@
 # Bazarr dependencies
 argparse==1.4.0
-apprise==0.9.6
+apprise==0.9.8.3
 apscheduler==3.8.1
 charamel==1.0.0
 deep-translator==1.8.3

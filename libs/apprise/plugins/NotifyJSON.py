@@ -35,6 +35,16 @@ from ..common import NotifyType
 from ..AppriseLocale import gettext_lazy as _
 
 
+# Defines the method to send the notification
+METHODS = (
+    'POST',
+    'GET',
+    'DELETE',
+    'PUT',
+    'HEAD'
+)
+
+
 class NotifyJSON(NotifyBase):
     """
     A wrapper for JSON Notifications
@@ -93,6 +103,17 @@ class NotifyJSON(NotifyBase):
             'type': 'string',
             'private': True,
         },
+
+    })
+
+    # Define our template arguments
+    template_args = dict(NotifyBase.template_args, **{
+        'method': {
+            'name': _('Fetch Method'),
+            'type': 'choice:string',
+            'values': METHODS,
+            'default': METHODS[0],
+        },
     })
 
     # Define any kwargs we're using
@@ -101,9 +122,13 @@ class NotifyJSON(NotifyBase):
             'name': _('HTTP Header'),
             'prefix': '+',
         },
+        'payload': {
+            'name': _('Payload Extras'),
+            'prefix': ':',
+        },
     }
 
-    def __init__(self, headers=None, **kwargs):
+    def __init__(self, headers=None, method=None, payload=None, **kwargs):
         """
         Initialize JSON Object
 
@@ -115,12 +140,25 @@ class NotifyJSON(NotifyBase):
 
         self.fullpath = kwargs.get('fullpath')
         if not isinstance(self.fullpath, six.string_types):
-            self.fullpath = '/'
+            self.fullpath = ''
+
+        self.method = self.template_args['method']['default'] \
+            if not isinstance(method, six.string_types) else method.upper()
+
+        if self.method not in METHODS:
+            msg = 'The method specified ({}) is invalid.'.format(method)
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         self.headers = {}
         if headers:
             # Store our extra headers
             self.headers.update(headers)
+
+        self.payload_extras = {}
+        if payload:
+            # Store our extra payload entries
+            self.payload_extras.update(payload)
 
         return
 
@@ -129,11 +167,20 @@ class NotifyJSON(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Our URL parameters
-        params = self.url_parameters(privacy=privacy, *args, **kwargs)
+        # Define any URL parameters
+        params = {
+            'method': self.method,
+        }
+
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
         # Append our headers into our parameters
         params.update({'+{}'.format(k): v for k, v in self.headers.items()})
+
+        # Append our payload extra's into our parameters
+        params.update(
+            {':{}'.format(k): v for k, v in self.payload_extras.items()})
 
         # Determine Authentication
         auth = ''
@@ -150,14 +197,15 @@ class NotifyJSON(NotifyBase):
 
         default_port = 443 if self.secure else 80
 
-        return '{schema}://{auth}{hostname}{port}{fullpath}/?{params}'.format(
+        return '{schema}://{auth}{hostname}{port}{fullpath}?{params}'.format(
             schema=self.secure_protocol if self.secure else self.protocol,
             auth=auth,
             # never encode hostname since we're expecting it to be a valid one
             hostname=self.host,
             port='' if self.port is None or self.port == default_port
                  else ':{}'.format(self.port),
-            fullpath=NotifyJSON.quote(self.fullpath, safe='/'),
+            fullpath=NotifyJSON.quote(self.fullpath, safe='/')
+            if self.fullpath else '/',
             params=NotifyJSON.urlencode(params),
         )
 
@@ -217,6 +265,9 @@ class NotifyJSON(NotifyBase):
             'type': notify_type,
         }
 
+        # Apply any/all payload over-rides defined
+        payload.update(self.payload_extras)
+
         auth = None
         if self.user:
             auth = (self.user, self.password)
@@ -238,8 +289,23 @@ class NotifyJSON(NotifyBase):
         # Always call throttle before any remote server i/o is made
         self.throttle()
 
+        if self.method == 'GET':
+            method = requests.get
+
+        elif self.method == 'PUT':
+            method = requests.put
+
+        elif self.method == 'DELETE':
+            method = requests.delete
+
+        elif self.method == 'HEAD':
+            method = requests.head
+
+        else:  # POST
+            method = requests.post
+
         try:
-            r = requests.post(
+            r = method(
                 url,
                 data=dumps(payload),
                 headers=headers,
@@ -247,17 +313,17 @@ class NotifyJSON(NotifyBase):
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
             )
-            if r.status_code != requests.codes.ok:
+            if r.status_code < 200 or r.status_code >= 300:
                 # We had a problem
                 status_str = \
                     NotifyJSON.http_response_code_lookup(r.status_code)
 
                 self.logger.warning(
-                    'Failed to send JSON notification: '
-                    '{}{}error={}.'.format(
-                        status_str,
-                        ', ' if status_str else '',
-                        r.status_code))
+                    'Failed to send JSON %s notification: %s%serror=%s.',
+                    self.method,
+                    status_str,
+                    ', ' if status_str else '',
+                    str(r.status_code))
 
                 self.logger.debug('Response Details:\r\n{}'.format(r.content))
 
@@ -265,7 +331,7 @@ class NotifyJSON(NotifyBase):
                 return False
 
             else:
-                self.logger.info('Sent JSON notification.')
+                self.logger.info('Sent JSON %s notification.', self.method)
 
         except requests.RequestException as e:
             self.logger.warning(
@@ -290,6 +356,10 @@ class NotifyJSON(NotifyBase):
             # We're done early as we couldn't load the results
             return results
 
+        # store any additional payload extra's defined
+        results['payload'] = {NotifyJSON.unquote(x): NotifyJSON.unquote(y)
+                              for x, y in results['qsd:'].items()}
+
         # Add our headers that the user can potentially over-ride if they wish
         # to to our returned result set
         results['headers'] = results['qsd+']
@@ -302,5 +372,9 @@ class NotifyJSON(NotifyBase):
         # Tidy our header entries by unquoting them
         results['headers'] = {NotifyJSON.unquote(x): NotifyJSON.unquote(y)
                               for x, y in results['headers'].items()}
+
+        # Set method if not otherwise set
+        if 'method' in results['qsd'] and len(results['qsd']['method']):
+            results['method'] = NotifyJSON.unquote(results['qsd']['method'])
 
         return results

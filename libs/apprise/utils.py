@@ -28,8 +28,11 @@ import six
 import json
 import contextlib
 import os
+from itertools import chain
 from os.path import expanduser
 from functools import reduce
+from .common import MATCH_ALL_TAG
+from .common import MATCH_ALWAYS_TAG
 
 try:
     # Python 2.7
@@ -132,6 +135,17 @@ IS_PHONE_NO = re.compile(r'^\+?(?P<phone>[0-9\s)(+-]+)\s*$')
 # Regular expression used to destinguish between multiple phone numbers
 PHONE_NO_DETECTION_RE = re.compile(
     r'\s*([+(\s]*[0-9][0-9()\s-]+[0-9])(?=$|[\s,+(]+[0-9])', re.I)
+
+# A simple verification check to make sure the content specified
+# rougly conforms to a ham radio call sign before we parse it further
+IS_CALL_SIGN = re.compile(
+    r'^(?P<callsign>[a-z0-9]{2,3}[0-9][a-z0-9]{3})'
+    r'(?P<ssid>-[a-z0-9]{1,2})?\s*$', re.I)
+
+# Regular expression used to destinguish between multiple ham radio call signs
+CALL_SIGN_DETECTION_RE = re.compile(
+    r'\s*([a-z0-9]{2,3}[0-9][a-z0-9]{3}(?:-[a-z0-9]{1,2})?)'
+    r'(?=$|[\s,]+[a-z0-9]{4,6})', re.I)
 
 # Regular expression used to destinguish between multiple URLs
 URL_DETECTION_RE = re.compile(
@@ -372,6 +386,37 @@ def is_phone_no(phone, min_len=11):
     }
 
 
+def is_call_sign(callsign):
+    """Determine if the specified entry is a ham radio call sign
+
+    Args:
+        callsign (str): The string you want to check.
+
+    Returns:
+        bool: Returns False if the address specified is not a phone number
+    """
+
+    try:
+        result = IS_CALL_SIGN.match(callsign)
+        if not result:
+            # not parseable content as it does not even conform closely to a
+            # callsign
+            return False
+
+    except TypeError:
+        # not parseable content
+        return False
+
+    ssid = result.group('ssid')
+    return {
+        # always treat call signs as uppercase content
+        'callsign': result.group('callsign').upper(),
+        # Prevent the storing of the None keyword in the event the SSID was
+        # not detected
+        'ssid': ssid if ssid else '',
+    }
+
+
 def is_email(address):
     """Determine if the specified entry is an email address
 
@@ -523,7 +568,7 @@ def parse_qsd(qs):
     return result
 
 
-def parse_url(url, default_schema='http', verify_host=True):
+def parse_url(url, default_schema='http', verify_host=True, strict_port=False):
     """A function that greatly simplifies the parsing of a url
     specified by the end user.
 
@@ -655,13 +700,29 @@ def parse_url(url, default_schema='http', verify_host=True):
             # and it's already assigned
             pass
 
-    # Max port is 65535 so (1,5 digits)
-    match = re.search(
-        r'^(?P<host>.+):(?P<port>[1-9][0-9]{0,4})$', result['host'])
-    if match:
+    # Port Parsing
+    pmatch = re.search(
+        r'^(?P<host>(\[[0-9a-f:]+\]|[^:]+)):(?P<port>[^:]*)$',
+        result['host'])
+
+    if pmatch:
         # Separate our port from our hostname (if port is detected)
-        result['host'] = match.group('host')
-        result['port'] = int(match.group('port'))
+        result['host'] = pmatch.group('host')
+        try:
+            # If we're dealing with an integer, go ahead and convert it
+            # otherwise return an 'x' which will raise a ValueError
+            #
+            # This small extra check allows us to treat floats/doubles
+            # as strings. Hence a value like '4.2' won't be converted to a 4
+            # (and the .2 lost)
+            result['port'] = int(
+                pmatch.group('port')
+                if re.search(r'[0-9]', pmatch.group('port')) else 'x')
+
+        except ValueError:
+            if verify_host:
+                # Invalid Host Specified
+                return None
 
     if verify_host:
         # Verify and Validate our hostname
@@ -670,6 +731,26 @@ def parse_url(url, default_schema='http', verify_host=True):
             # Nothing more we can do without a hostname; give the user
             # some indication as to what went wrong
             return None
+
+        # Max port is 65535 and min is 1
+        if isinstance(result['port'], int) and not ((
+            not strict_port or (
+                strict_port and
+                result['port'] > 0 and result['port'] <= 65535))):
+
+            # An invalid port was specified
+            return None
+
+    elif pmatch and not isinstance(result['port'], int):
+        if strict_port:
+            # Store port
+            result['port'] = pmatch.group('port').strip()
+
+        else:
+            # Fall back
+            result['port'] = None
+            result['host'] = '{}:{}'.format(
+                pmatch.group('host'), pmatch.group('port'))
 
     # Re-assemble cleaned up version of the url
     result['url'] = '%s://' % result['schema']
@@ -683,8 +764,12 @@ def parse_url(url, default_schema='http', verify_host=True):
             result['url'] += '@'
     result['url'] += result['host']
 
-    if result['port']:
-        result['url'] += ':%d' % result['port']
+    if result['port'] is not None:
+        try:
+            result['url'] += ':%d' % result['port']
+
+        except TypeError:
+            result['url'] += ':%s' % result['port']
 
     if result['fullpath']:
         result['url'] += result['fullpath']
@@ -761,6 +846,43 @@ def parse_phone_no(*args, **kwargs):
         elif isinstance(arg, (set, list, tuple)):
             # Use recursion to handle the list of phone numbers
             result += parse_phone_no(
+                *arg, store_unparseable=store_unparseable)
+
+    return result
+
+
+def parse_call_sign(*args, **kwargs):
+    """
+    Takes a string containing ham radio call signs separated by
+    comma and/or spacesand returns a list.
+    """
+
+    # for Python 2.7 support, store_unparsable is not in the url above
+    # as just parse_emails(*args, store_unparseable=True) since it is
+    # an invalid syntax.  This is the workaround to be backards compatible:
+    store_unparseable = kwargs.get('store_unparseable', True)
+
+    result = []
+    for arg in args:
+        if isinstance(arg, six.string_types) and arg:
+            _result = CALL_SIGN_DETECTION_RE.findall(arg)
+            if _result:
+                result += _result
+
+            elif not _result and store_unparseable:
+                # we had content passed into us that was lost because it was
+                # so poorly formatted that it didn't even come close to
+                # meeting the regular expression we defined. We intentially
+                # keep it as part of our result set so that parsing done
+                # at a higher level can at least report this to the end user
+                # and hopefully give them some indication as to what they
+                # may have done wrong.
+                result += \
+                    [x for x in filter(bool, re.split(STRING_DELIMITERS, arg))]
+
+        elif isinstance(arg, (set, list, tuple)):
+            # Use recursion to handle the list of call signs
+            result += parse_call_sign(
                 *arg, store_unparseable=store_unparseable)
 
     return result
@@ -876,7 +998,8 @@ def parse_list(*args):
     return sorted([x for x in filter(bool, list(set(result)))])
 
 
-def is_exclusive_match(logic, data, match_all='all'):
+def is_exclusive_match(logic, data, match_all=MATCH_ALL_TAG,
+                       match_always=MATCH_ALWAYS_TAG):
     """
 
     The data variable should always be a set of strings that the logic can be
@@ -892,6 +1015,9 @@ def is_exclusive_match(logic, data, match_all='all'):
         logic=['tagA', 'tagB']            = tagA or tagB
         logic=[('tagA', 'tagC'), 'tagB']  = (tagA and tagC) or tagB
         logic=[('tagB', 'tagC')]          = tagB and tagC
+
+    If `match_always` is not set to None, then its value is added as an 'or'
+    to all specified logic searches.
     """
 
     if isinstance(logic, six.string_types):
@@ -906,6 +1032,10 @@ def is_exclusive_match(logic, data, match_all='all'):
     if not isinstance(logic, (list, tuple, set)):
         # garbage input
         return False
+
+    if match_always:
+        # Add our match_always to our logic searching if secified
+        logic = chain(logic, [match_always])
 
     # Track what we match against; but by default we do not match
     # against anything
