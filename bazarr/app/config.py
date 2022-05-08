@@ -200,9 +200,7 @@ defaults = {
     'titulky': {
         'username': '',
         'password': '',
-        'skip_wrong_fps': 'False',
-        'approved_only': 'False',
-        'multithreading': 'True'
+        'approved_only': 'False'
     },
     'embeddedsubtitles': {
         'include_ass': 'True',
