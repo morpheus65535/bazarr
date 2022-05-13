@@ -134,11 +134,11 @@ class _Banlist:
 
 class _Blacklist(list):
     def is_valid(self, provider, subtitle):
-        blacklisted = not (str(provider), str(subtitle.id)) in self
+        blacklisted = (str(provider), str(subtitle.id)) in self
         if blacklisted:
-            logger.debug("Skipping blacklisted subtitle: %s", subtitle)
+            logger.debug("Blacklisted subtitle: %s", subtitle)
 
-        return blacklisted
+        return not blacklisted
 
 
 class SZProviderPool(ProviderPool):
