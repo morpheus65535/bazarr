@@ -269,5 +269,4 @@ def _get_language_obj(profile_id):
 
 def _set_forced_providers(also_forced, pool):
     if also_forced:
-        pool.provider_configs['podnapisi']['also_foreign'] = True
-        pool.provider_configs['opensubtitles']['also_foreign'] = True
+        pool.provider_configs.update({'podnapisi': {'also_foreign': True}, 'opensubtitles': {'also_foreign': True}})
