@@ -245,21 +245,26 @@ def _check_allowed_extensions(subtitle: FFprobeSubtitleStream):
 
 def _check_hi_fallback(streams, languages):
     for language in languages:
-        compatible_streams = [
-            stream for stream in streams if stream.language == language
-        ]
-        if len(compatible_streams) == 1:
-            stream = compatible_streams[0]
-            logger.debug("HI fallback: updating %s HI to False", stream)
-            stream.disposition.hearing_impaired = False
+        logger.debug("Checking HI fallback for '%s' language", language)
 
-        elif all(stream.disposition.hearing_impaired for stream in streams):
-            for stream in streams:
-                logger.debug("HI fallback: updating %s HI to False", stream)
+        streams_ = [stream for stream in streams if stream.language == language]
+        if len(streams_) == 1 and streams_[0].disposition.hearing_impaired:
+            logger.debug(
+                "HI fallback: updating %s HI to False (only subtitle found is HI)",
+                streams_[0],
+            )
+            streams_[0].disposition.hearing_impaired = False
+
+        elif all(stream.disposition.hearing_impaired for stream in streams_):
+            for stream in streams_:
+                logger.debug(
+                    "HI fallback: updating %s HI to False (all subtitles are HI)",
+                    stream,
+                )
                 stream.disposition.hearing_impaired = False
 
         else:
-            logger.debug("HI fallback not needed: %s", compatible_streams)
+            logger.debug("HI fallback not needed: %s", streams_)
 
 
 def _discard_possible_incomplete_subtitles(streams):
