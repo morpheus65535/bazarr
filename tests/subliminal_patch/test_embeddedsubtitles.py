@@ -94,6 +94,21 @@ def fake_streams():
                 "tags": {"language": "eng", "title": "English"},
             }
         ),
+        "es_hi": FFprobeSubtitleStream(
+            {
+                "index": 3,
+                "codec_name": "subrip",
+                "disposition": {"default": 1, "hearing_impaired": 1},
+                "tags": {"language": "spa", "title": "Spanish"},
+            }
+        ),
+        "es": FFprobeSubtitleStream(
+            {
+                "index": 3,
+                "codec_name": "subrip",
+                "tags": {"language": "spa", "title": "Spanish"},
+            }
+        ),
     }
 
 
@@ -129,6 +144,23 @@ def test_list_subtitles_hi_fallback_multiple_streams(
         assert len(subs) == 2
         assert subs[0].hearing_impaired == True
         assert subs[1].hearing_impaired == False
+
+
+def test_list_subtitles_hi_fallback_multiple_language_streams(
+    video_single_language, fake_streams, mocker
+):
+    with EmbeddedSubtitlesProvider(hi_fallback=True) as provider:
+        languages = {Language.fromalpha2("en"), Language.fromalpha2("es")}
+        mocker.patch(
+            # "fese.FFprobeVideoContainer.get_subtitles",
+            "subliminal_patch.providers.embeddedsubtitles._MemoizedFFprobeVideoContainer.get_subtitles",
+            return_value=[fake_streams["en_hi"], fake_streams["es"], fake_streams["es_hi"]],
+        )
+        subs = provider.list_subtitles(video_single_language, languages)
+        assert len(subs) == 3
+        assert subs[0].hearing_impaired == False  # English subittle
+        assert subs[1].hearing_impaired == False  # Spanish subtitle
+        assert subs[2].hearing_impaired == True # Spanish HI subtitle
 
 
 def test_list_subtitles_hi_fallback_multiple_hi_streams(
