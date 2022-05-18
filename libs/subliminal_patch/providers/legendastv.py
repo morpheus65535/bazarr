@@ -78,8 +78,8 @@ class LegendasTVProvider(_LegendasTVProvider):
         # Provider needs UNRAR installed. If not available raise ConfigurationError
         try:
             rarfile.tool_setup()
-        except rarfile.RarExecError:
-            raise ConfigurationError('UNRAR tool not available')
+        except rarfile.RarCannotExec:
+            raise ConfigurationError('RAR extraction tool not available')
 
         if any((username, password)) and not all((username, password)):
             raise ConfigurationError('Username and password must be specified')
