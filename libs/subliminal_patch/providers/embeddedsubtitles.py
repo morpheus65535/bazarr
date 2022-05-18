@@ -254,6 +254,7 @@ def _check_hi_fallback(streams, languages):
                 streams_[0],
             )
             streams_[0].disposition.hearing_impaired = False
+            streams_[0].disposition.generic = True
 
         elif all(stream.disposition.hearing_impaired for stream in streams_):
             for stream in streams_:
@@ -262,6 +263,7 @@ def _check_hi_fallback(streams, languages):
                     stream,
                 )
                 stream.disposition.hearing_impaired = False
+                stream.disposition.generic = True
 
         else:
             logger.debug("HI fallback not needed: %s", streams_)
