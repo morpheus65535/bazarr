@@ -67,6 +67,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 - RegieLive
 - Sous-Titres.eu
 - Subdivx
+- subf2m.co
 - Subs.sab.bz
 - Subs4Free
 - Subs4Series
