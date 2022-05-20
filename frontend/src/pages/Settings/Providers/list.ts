@@ -82,6 +82,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     },
   },
   {
+    key: "gestdown",
+    name: "Addic7ed Proxy (Gestdown)",
+    description:
+      "Proxy for Addic7ed website. No need for login or cookie.",
+  },
+  {
     key: "greeksubs",
     name: "GreekSubs",
     description: "Greek Subtitles Provider",
