@@ -2,7 +2,6 @@
 
 import logging
 
-from guessit import guessit
 from requests import Session
 from bs4 import BeautifulSoup as bso
 
@@ -11,9 +10,9 @@ from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
-from subliminal_patch.subtitle import guess_matches
 from subliminal_patch.providers.utils import get_archive_from_bytes
 from subliminal_patch.providers.utils import get_subtitle_from_archive
+from subliminal_patch.providers.utils import update_matches
 
 from subzero.language import Language
 
@@ -24,19 +23,14 @@ class Subf2mSubtitle(Subtitle):
     provider_name = "subf2m"
     hash_verifiable = False
 
-    def __init__(self, language, page_link, release_info):
+    def __init__(self, language, page_link, release_info, pre_matches):
         super().__init__(language, page_link=page_link)
 
         self.release_info = release_info
-        self._matches = set()
+        self._matches = set(pre_matches)
 
     def get_matches(self, video):
-        type_ = "episode" if isinstance(video, Episode) else "movie"
-
-        for release in self.release_info.split("\n"):
-            self._matches |= guess_matches(
-                video, guessit(release.strip(), {"type": type_})
-            )
+        update_matches(self._matches, video, self.release_info)
 
         return self._matches
 
@@ -102,7 +96,6 @@ class Subf2mProvider(Provider):
 
     video_types = (Episode, Movie)
     subtitle_class = Subf2mSubtitle
-    _session = None
 
     def initialize(self):
         self._session = Session()
@@ -161,7 +154,7 @@ class Subf2mProvider(Provider):
         subtitles = []
 
         for item in soup.select("li.item"):
-            subtitle = _get_subtitle_from_item(item, language)
+            subtitle = _get_subtitle_from_item(item, language, Movie)
             if subtitle is None:
                 continue
 
@@ -179,7 +172,7 @@ class Subf2mProvider(Provider):
 
         for item in soup.select("li.item"):
             if expected_substring in item.text.lower():
-                subtitle = _get_subtitle_from_item(item, language)
+                subtitle = _get_subtitle_from_item(item, language, Episode)
                 if subtitle is None:
                     continue
 
@@ -245,10 +238,24 @@ class Subf2mProvider(Provider):
         subtitle.content = get_subtitle_from_archive(archive, get_first_subtitle=True)
 
 
-def _get_subtitle_from_item(item, language):
-    release_info = "\n".join(
-        release.text for release in item.find("ul", {"class": "scrolllist"})
-    ).strip()
+_types_map = {
+    Movie: ("title", "year"),
+    Episode: ("title", "series", "season", "episode"),
+}
+
+
+def _get_subtitle_from_item(item, language, type):
+    release_info = [
+        rel.text.strip() for rel in item.find("ul", {"class": "scrolllist"})
+    ]
+
+    try:
+        text = item.find("div", {"class": "comment-col"}).find("p").text
+        release_info.append(text.replace("\n", " ").strip())
+    except AttributeError:
+        pass
+
+    release_info = "\n".join([item for item in release_info if item])
 
     try:
         path = item.find("a", {"class": "download icon-download"})["href"]  # type: ignore
@@ -256,4 +263,4 @@ def _get_subtitle_from_item(item, language):
         logger.debug("Couldn't get path: %s", item)
         return None
 
-    return Subf2mSubtitle(language, _BASE_URL + path, release_info)
+    return Subf2mSubtitle(language, _BASE_URL + path, release_info, _types_map[type])
