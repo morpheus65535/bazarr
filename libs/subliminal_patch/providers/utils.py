@@ -82,6 +82,10 @@ def get_subtitle_from_archive(
     return None
 
 
+def is_episode(content):
+    return "episode" in guessit(content, {"type": "episode"})
+
+
 def get_archive_from_bytes(content: bytes):
     """Get RarFile/ZipFile object from bytes. Return None is something else
     is found."""
