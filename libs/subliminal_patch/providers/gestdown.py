@@ -104,6 +104,9 @@ class GestdownProvider(Provider):
             return None
 
         for subtitle_dict in matching_subtitles:
+            if not subtitle_dict["completed"]:
+                continue
+
             sub = GestdownSubtitle(language, subtitle_dict)
             logger.debug("Found subtitle: %s", sub)
             yield sub
