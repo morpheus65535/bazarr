@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import time
 
 from requests import HTTPError
 from requests import Session
@@ -37,6 +38,28 @@ class GestdownSubtitle(Subtitle):
         return self._id
 
 
+def _retry_on_423(method):
+    def retry(self, *args, **kwargs):
+        retries = 0
+        while 5 > retries:
+            try:
+                yield from method(self, *args, **kwargs)
+            except HTTPError as error:
+                if error.response.status_code != 423:
+                    raise
+
+                retries += 1
+
+                logger.debug("423 returned. Retrying in 30 seconds")
+                time.sleep(30)
+            else:
+                break
+
+        logger.debug("Retries limit exceeded. Ignoring query")
+
+    return retry
+
+
 class GestdownProvider(Provider):
     provider_name = "gestdown"
 
@@ -61,6 +84,7 @@ class GestdownProvider(Provider):
     def terminate(self):
         self._session.close()
 
+    @_retry_on_423
     def _subtitles_search(self, video, language: Language):
         json_data = {
             "search": f"{video.series} S{video.season:02}E{video.episode:02}",

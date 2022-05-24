@@ -1,10 +1,9 @@
 import pytest
-
+from subliminal_patch.language import PatchedAddic7edConverter
+from subliminal_patch.providers.gestdown import _BASE_URL
 from subliminal_patch.providers.gestdown import GestdownProvider
 from subliminal_patch.providers.gestdown import GestdownSubtitle
 from subzero.language import Language
-
-from subliminal_patch.language import PatchedAddic7edConverter
 
 
 def test_language_list_is_convertible():
@@ -75,3 +74,14 @@ def test_subtitle_download(subtitle):
         provider.download_subtitle(subtitle)
         assert subtitle.content is not None
         assert subtitle.is_valid()
+
+
+def test_subtitles_search_423(episodes, requests_mock, mocker):
+    mocker.patch("time.sleep")
+    requests_mock.post(f"{_BASE_URL}/subtitles/search", status_code=423)
+
+    with GestdownProvider() as provider:
+        gen = provider._subtitles_search(
+            episodes["breaking_bad_s01e01"], Language.fromietf("en")
+        )
+        assert not list(gen)
