@@ -46,7 +46,7 @@
     "eslint": "^8",
     "eslint-config-react-app": "^7",
     "eslint-plugin-react-hooks": "^4",
-    "husky": "^7",
+    "husky": "^8",
     "jsdom": "latest",
     "lodash": "^4",
     "moment": "^2.29.1",
