@@ -54,7 +54,6 @@ def subtitle():
         Language.fromalpha3b("per"),
         "https://subf2m.co/subtitles/dune-2021/farsi_persian/2604701",
         release_info,
-        {"title", "year"},
     )
 
 
@@ -64,7 +63,7 @@ def subtitle_episode():
         Language.fromalpha2("en"),
         "https://subf2m.co/subtitles/breaking-bad-first-season/english/161227",
         "Breaking.Bad.S01E01-7.DSR-HDTV.eng",
-        {"title", "series", "season", "episode"},
+        7,
     )
 
 
