@@ -82,6 +82,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     },
   },
   {
+    key: "gestdown",
+    name: "Gestdown (Addic7ed proxy)",
+    description: "Proxy for Addic7ed website. No need for login or cookie.",
+  },
+  {
     key: "greeksubs",
     name: "GreekSubs",
     description: "Greek Subtitles Provider",
@@ -270,14 +275,10 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     defaultKey: {
       username: "",
       password: "",
-      skip_wrong_fps: false,
       approved_only: false,
-      multithreading: true,
     },
     keyNameOverride: {
-      skip_wrong_fps: "Skip mismatching FPS",
       approved_only: "Skip unapproved subtitles",
-      multithreading: "Enable multithreading",
     },
   },
   { key: "tvsubtitles", name: "TVSubtitles" },

@@ -23,14 +23,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import re
 import os
 import six
-from markdown import markdown
 from itertools import chain
 from .common import NotifyType
-from .common import NotifyFormat
 from .common import MATCH_ALL_TAG
+from .common import MATCH_ALWAYS_TAG
+from .conversion import convert_between
 from .utils import is_exclusive_match
 from .utils import parse_list
 from .utils import parse_urls
@@ -43,6 +42,7 @@ from .AppriseAttachment import AppriseAttachment
 from .AppriseLocale import AppriseLocale
 from .config.ConfigBase import ConfigBase
 from .plugins.NotifyBase import NotifyBase
+
 
 from . import plugins
 from . import __version__
@@ -305,7 +305,7 @@ class Apprise(object):
         """
         self.servers[:] = []
 
-    def find(self, tag=MATCH_ALL_TAG):
+    def find(self, tag=MATCH_ALL_TAG, match_always=True):
         """
         Returns an list of all servers matching against the tag specified.
 
@@ -321,6 +321,10 @@ class Apprise(object):
         #     tag=[('tagA', 'tagC'), 'tagB']  = (tagA and tagC) or tagB
         #     tag=[('tagB', 'tagC')]          = tagB and tagC
 
+        # A match_always flag allows us to pick up on our 'any' keyword
+        # and notify these services under all circumstances
+        match_always = MATCH_ALWAYS_TAG if match_always else None
+
         # Iterate over our loaded plugins
         for entry in self.servers:
 
@@ -334,13 +338,14 @@ class Apprise(object):
             for server in servers:
                 # Apply our tag matching based on our defined logic
                 if is_exclusive_match(
-                        logic=tag, data=server.tags, match_all=MATCH_ALL_TAG):
+                        logic=tag, data=server.tags, match_all=MATCH_ALL_TAG,
+                        match_always=match_always):
                     yield server
         return
 
     def notify(self, body, title='', notify_type=NotifyType.INFO,
-               body_format=None, tag=MATCH_ALL_TAG, attach=None,
-               interpret_escapes=None):
+               body_format=None, tag=MATCH_ALL_TAG, match_always=True,
+               attach=None, interpret_escapes=None):
         """
         Send a notification to all of the plugins previously loaded.
 
@@ -370,7 +375,7 @@ class Apprise(object):
                 self.async_notify(
                     body, title,
                     notify_type=notify_type, body_format=body_format,
-                    tag=tag, attach=attach,
+                    tag=tag, match_always=match_always, attach=attach,
                     interpret_escapes=interpret_escapes,
                 ),
                 debug=self.debug
@@ -468,8 +473,8 @@ class Apprise(object):
             return py3compat.asyncio.toasyncwrap(status)
 
     def _notifyall(self, handler, body, title='', notify_type=NotifyType.INFO,
-                   body_format=None, tag=MATCH_ALL_TAG, attach=None,
-                   interpret_escapes=None):
+                   body_format=None, tag=MATCH_ALL_TAG, match_always=True,
+                   attach=None, interpret_escapes=None):
         """
         Creates notifications for all of the plugins loaded.
 
@@ -480,22 +485,43 @@ class Apprise(object):
 
         if len(self) == 0:
             # Nothing to notify
-            raise TypeError("No service(s) to notify")
+            msg = "There are service(s) to notify"
+            logger.error(msg)
+            raise TypeError(msg)
 
         if not (title or body):
-            raise TypeError("No message content specified to deliver")
+            msg = "No message content specified to deliver"
+            logger.error(msg)
+            raise TypeError(msg)
 
-        if six.PY2:
-            # Python 2.7.x Unicode Character Handling
-            # Ensure we're working with utf-8
-            if isinstance(title, unicode):  # noqa: F821
-                title = title.encode('utf-8')
+        try:
+            if six.PY2:
+                # Python 2.7 encoding support isn't the greatest, so we try
+                # to ensure that we're ALWAYS dealing with unicode characters
+                # prior to entrying the next part.  This is especially required
+                # for Markdown support
+                if title and isinstance(title, str):  # noqa: F821
+                    title = title.decode(self.asset.encoding)
 
-            if isinstance(body, unicode):  # noqa: F821
-                body = body.encode('utf-8')
+                if body and isinstance(body, str):  # noqa: F821
+                    body = body.decode(self.asset.encoding)
+
+            else:  # Python 3+
+                if title and isinstance(title, bytes):  # noqa: F821
+                    title = title.decode(self.asset.encoding)
+
+                if body and isinstance(body, bytes):  # noqa: F821
+                    body = body.decode(self.asset.encoding)
+
+        except UnicodeDecodeError:
+            msg = 'The content passed into Apprise was not of encoding ' \
+                  'type: {}'.format(self.asset.encoding)
+            logger.error(msg)
+            raise TypeError(msg)
 
         # Tracks conversions
-        conversion_map = dict()
+        conversion_body_map = dict()
+        conversion_title_map = dict()
 
         # Prepare attachments if required
         if attach is not None and not isinstance(attach, AppriseAttachment):
@@ -511,86 +537,45 @@ class Apprise(object):
             if interpret_escapes is None else interpret_escapes
 
         # Iterate over our loaded plugins
-        for server in self.find(tag):
+        for server in self.find(tag, match_always=match_always):
             # If our code reaches here, we either did not define a tag (it
             # was set to None), or we did define a tag and the logic above
             # determined we need to notify the service it's associated with
-            if server.notify_format not in conversion_map:
-                if body_format == NotifyFormat.MARKDOWN and \
-                        server.notify_format == NotifyFormat.HTML:
+            if server.notify_format not in conversion_body_map:
+                # Perform Conversion
+                conversion_body_map[server.notify_format] = \
+                    convert_between(
+                        body_format, server.notify_format, content=body)
 
-                    # Apply Markdown
-                    conversion_map[server.notify_format] = markdown(body)
+                # Prepare our title
+                conversion_title_map[server.notify_format] = \
+                    '' if not title else title
 
-                elif body_format == NotifyFormat.TEXT and \
-                        server.notify_format == NotifyFormat.HTML:
+                # Tidy Title IF required (hence it will become part of the
+                # body)
+                if server.title_maxlen <= 0 and \
+                        conversion_title_map[server.notify_format]:
 
-                    # Basic TEXT to HTML format map; supports keys only
-                    re_map = {
-                        # Support Ampersand
-                        r'&': '&amp;',
+                    conversion_title_map[server.notify_format] = \
+                        convert_between(
+                            body_format, server.notify_format,
+                            content=conversion_title_map[server.notify_format])
 
-                        # Spaces to &nbsp; for formatting purposes since
-                        # multiple spaces are treated as one an this may
-                        # not be the callers intention
-                        r' ': '&nbsp;',
+                if interpret_escapes:
+                    #
+                    # Escape our content
+                    #
 
-                        # Tab support
-                        r'\t': '&nbsp;&nbsp;&nbsp;',
-
-                        # Greater than and Less than Characters
-                        r'>': '&gt;',
-                        r'<': '&lt;',
-                    }
-
-                    # Compile our map
-                    re_table = re.compile(
-                        r'(' + '|'.join(
-                            map(re.escape, re_map.keys())) + r')',
-                        re.IGNORECASE,
-                    )
-
-                    # Execute our map against our body in addition to
-                    # swapping out new lines and replacing them with <br/>
-                    conversion_map[server.notify_format] = \
-                        re.sub(r'\r*\n', '<br/>\r\n',
-                               re_table.sub(
-                                   lambda x: re_map[x.group()], body))
-
-                else:
-                    # Store entry directly
-                    conversion_map[server.notify_format] = body
-
-            if interpret_escapes:
-                #
-                # Escape our content
-                #
-
-                try:
-                    # Added overhead required due to Python 3 Encoding Bug
-                    # identified here: https://bugs.python.org/issue21331
-                    conversion_map[server.notify_format] = \
-                        conversion_map[server.notify_format]\
-                        .encode('ascii', 'backslashreplace')\
-                        .decode('unicode-escape')
-
-                except UnicodeDecodeError:  # pragma: no cover
-                    # This occurs using a very old verion of Python 2.7 such
-                    # as the one that ships with CentOS/RedHat 7.x (v2.7.5).
-                    conversion_map[server.notify_format] = \
-                        conversion_map[server.notify_format] \
-                        .decode('string_escape')
-
-                except AttributeError:
-                    # Must be of string type
-                    logger.error('Failed to escape message body')
-                    raise TypeError
-
-                if title:
                     try:
                         # Added overhead required due to Python 3 Encoding Bug
                         # identified here: https://bugs.python.org/issue21331
-                        title = title\
+                        conversion_body_map[server.notify_format] = \
+                            conversion_body_map[server.notify_format]\
+                            .encode('ascii', 'backslashreplace')\
+                            .decode('unicode-escape')
+
+                        conversion_title_map[server.notify_format] = \
+                            conversion_title_map[server.notify_format]\
                             .encode('ascii', 'backslashreplace')\
                             .decode('unicode-escape')
 
@@ -598,19 +583,46 @@ class Apprise(object):
                         # This occurs using a very old verion of Python 2.7
                         # such as the one that ships with CentOS/RedHat 7.x
                         # (v2.7.5).
-                        title = title.decode('string_escape')
+                        conversion_body_map[server.notify_format] = \
+                            conversion_body_map[server.notify_format] \
+                            .decode('string_escape')
+
+                        conversion_title_map[server.notify_format] = \
+                            conversion_title_map[server.notify_format] \
+                            .decode('string_escape')
 
                     except AttributeError:
                         # Must be of string type
-                        logger.error('Failed to escape message title')
-                        raise TypeError
+                        msg = 'Failed to escape message body'
+                        logger.error(msg)
+                        raise TypeError(msg)
+
+                if six.PY2:
+                    # Python 2.7 strings must be encoded as utf-8 for
+                    # consistency across all platforms
+                    if conversion_body_map[server.notify_format] and \
+                            isinstance(
+                                conversion_body_map[server.notify_format],
+                                unicode):  # noqa: F821
+                        conversion_body_map[server.notify_format] = \
+                            conversion_body_map[server.notify_format]\
+                            .encode('utf-8')
+
+                    if conversion_title_map[server.notify_format] and \
+                            isinstance(
+                                conversion_title_map[server.notify_format],
+                                unicode):  # noqa: F821
+                        conversion_title_map[server.notify_format] = \
+                            conversion_title_map[server.notify_format]\
+                            .encode('utf-8')
 
             yield handler(
                 server,
-                body=conversion_map[server.notify_format],
-                title=title,
+                body=conversion_body_map[server.notify_format],
+                title=conversion_title_map[server.notify_format],
                 notify_type=notify_type,
-                attach=attach
+                attach=attach,
+                body_format=body_format,
             )
 
     def details(self, lang=None, show_requirements=False, show_disabled=False):

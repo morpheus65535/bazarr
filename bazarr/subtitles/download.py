@@ -143,11 +143,13 @@ def _get_language_obj(languages):
 
 
 def _set_forced_providers(forced_required, pool):
+    # TODO: maybe a separate pool for forced configs? only_foreign is hardcoded
+    # in get_providers and this causes updating the pool on every call
     if forced_required:
-        pool.provider_configs['podnapisi']['only_foreign'] = True
-        pool.provider_configs['subscene']['only_foreign'] = True
-        pool.provider_configs['opensubtitles']['only_foreign'] = True
-    else:
-        pool.provider_configs['podnapisi']['only_foreign'] = False
-        pool.provider_configs['subscene']['only_foreign'] = False
-        pool.provider_configs['opensubtitles']['only_foreign'] = False
+        pool.provider_configs.update(
+            {
+                "podnapisi": {"only_foreign": True},
+                "subscene": {"only_foreign": True},
+                "opensubtitles": {"only_foreign": True}
+             }
+        )

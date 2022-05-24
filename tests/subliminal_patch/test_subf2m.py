@@ -63,15 +63,21 @@ def subtitle_episode():
         Language.fromalpha2("en"),
         "https://subf2m.co/subtitles/breaking-bad-first-season/english/161227",
         "Breaking.Bad.S01E01-7.DSR-HDTV.eng",
+        7,
     )
 
 
 def test_subtitle_get_matches(subtitle, movies):
-    assert subtitle.get_matches(movies["dune"])
+    matches = subtitle.get_matches(movies["dune"])  # type: set
+    assert matches.issuperset(
+        ("title", "year", "source", "video_codec", "resolution", "release_group")
+    )
 
 
 def test_subtitle_get_matches_episode(subtitle_episode, episodes):
-    assert subtitle_episode.get_matches(episodes["breaking_bad_s01e01"])
+    matches = subtitle_episode.get_matches(episodes["breaking_bad_s01e01"])  # type: set
+    assert matches.issuperset(("title", "series", "season", "episode"))
+    assert "source" not in matches
 
 
 def test_list_subtitles_movie(movies):

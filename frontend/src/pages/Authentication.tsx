@@ -1,4 +1,5 @@
 import { useSystem } from "@/apis/hooks";
+import { Environment } from "@/utilities";
 import {
   Avatar,
   Button,
@@ -26,7 +27,11 @@ const Authentication: FunctionComponent = () => {
     <Container my="xl" size={400}>
       <Card shadow="xl">
         <Stack>
-          <Avatar mx="auto" size={64} src="/static/logo128.png"></Avatar>
+          <Avatar
+            mx="auto"
+            size={64}
+            src={`${Environment.baseUrl}/static/logo128.png`}
+          ></Avatar>
           <Divider></Divider>
           <form onSubmit={form.onSubmit(login)}>
             <Stack>

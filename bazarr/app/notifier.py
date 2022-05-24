@@ -84,6 +84,8 @@ def get_movie(radarr_id):
 
 def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     providers = get_notifier_providers()
+    if not len(providers):
+        return
     series = get_series(sonarr_series_id)
     if not series:
         return
@@ -114,6 +116,8 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
 
 def send_notifications_movie(radarr_id, message):
     providers = get_notifier_providers()
+    if not len(providers):
+        return
     movie = get_movie(radarr_id)
     if not movie:
         return

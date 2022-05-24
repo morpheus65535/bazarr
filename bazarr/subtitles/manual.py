@@ -56,10 +56,9 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
                         if language.forced:
                             subscene_language_set.add(language)
                     if len(subscene_language_set):
-                        s_pool.provider_configs['subscene'] = {}
-                        s_pool.provider_configs['subscene']['only_foreign'] = True
+                        s_pool.provider_configs.update({"subscene": {"only_foreign": True}})
                         subtitles_subscene = list_all_subtitles([video], subscene_language_set, s_pool)
-                        s_pool.provider_configs['subscene']['only_foreign'] = False
+                        s_pool.provider_configs.update({"subscene": {"only_foreign": False}})
                         subtitles[video] += subtitles_subscene[video]
             else:
                 subtitles = []
@@ -269,5 +268,4 @@ def _get_language_obj(profile_id):
 
 def _set_forced_providers(also_forced, pool):
     if also_forced:
-        pool.provider_configs['podnapisi']['also_foreign'] = True
-        pool.provider_configs['opensubtitles']['also_foreign'] = True
+        pool.provider_configs.update({'podnapisi': {'also_foreign': True}, 'opensubtitles': {'also_foreign': True}})

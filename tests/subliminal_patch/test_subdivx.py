@@ -17,6 +17,15 @@ def test_list_subtitles_movie(movies):
         assert len(subtitles) >= 9
 
 
+def test_list_subtitles_movie_with_year_fallback(movies):
+    item = list(movies.values())[0]
+    item.title = "Everything Everywhere All at Once"
+    item.year = 2022
+
+    with SubdivxSubtitlesProvider() as provider:
+        assert provider.list_subtitles(item, {Language("spa", "MX")})
+
+
 @pytest.mark.parametrize(
     "episode_key,expected", [("breaking_bad_s01e01", 15), ("inexistent", 0)]
 )

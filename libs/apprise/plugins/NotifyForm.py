@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2022 Chris Caron <lead2gold@gmail.com>
 # All rights reserved.
 #
 # This code is licensed under the MIT License.
@@ -23,10 +23,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import re
 import six
 import requests
-import base64
 
 from .NotifyBase import NotifyBase
 from ..URLBase import PrivacyMode
@@ -45,34 +43,29 @@ METHODS = (
 )
 
 
-class NotifyXML(NotifyBase):
+class NotifyForm(NotifyBase):
     """
-    A wrapper for XML Notifications
+    A wrapper for Form Notifications
     """
 
     # The default descriptive name associated with the Notification
-    service_name = 'XML'
+    service_name = 'Form'
 
     # The default protocol
-    protocol = 'xml'
+    protocol = 'form'
 
     # The default secure protocol
-    secure_protocol = 'xmls'
+    secure_protocol = 'forms'
 
     # A URL that takes you to the setup/help of the specific protocol
-    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_Custom_XML'
+    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_Custom_Form'
 
     # Allows the user to specify the NotifyImageSize object
     image_size = NotifyImageSize.XY_128
 
-    # Disable throttle rate for JSON requests since they are normally
+    # Disable throttle rate for Form requests since they are normally
     # local anyway
     request_rate_per_sec = 0
-
-    # XSD Information
-    xsd_ver = '1.1'
-    xsd_url = 'https://raw.githubusercontent.com/caronc/apprise/master' \
-        '/apprise/assets/NotifyXML-{version}.xsd'
 
     # Define object templates
     templates = (
@@ -135,26 +128,13 @@ class NotifyXML(NotifyBase):
 
     def __init__(self, headers=None, method=None, payload=None, **kwargs):
         """
-        Initialize XML Object
+        Initialize Form Object
 
         headers can be a dictionary of key/value pairs that you want to
         additionally include as part of the server headers to post with
 
         """
-        super(NotifyXML, self).__init__(**kwargs)
-
-        self.payload = """<?xml version='1.0' encoding='utf-8'?>
-<soapenv:Envelope
-    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <soapenv:Body>
-        <Notification xmlns:xsi="{{XSD_URL}}">
-            {{CORE}}
-            {{ATTACHMENTS}}
-       </Notification>
-    </soapenv:Body>
-</soapenv:Envelope>"""
+        super(NotifyForm, self).__init__(**kwargs)
 
         self.fullpath = kwargs.get('fullpath')
         if not isinstance(self.fullpath, six.string_types):
@@ -175,16 +155,8 @@ class NotifyXML(NotifyBase):
 
         self.payload_extras = {}
         if payload:
-            # Store our extra payload entries (but tidy them up since they will
-            # become XML Keys (they can't contain certain characters
-            for k, v in payload.items():
-                key = re.sub(r'[^A-Za-z0-9_-]*', '', k)
-                if not key:
-                    self.logger.warning(
-                        'Ignoring invalid XML Stanza element name({})'
-                        .format(k))
-                    continue
-                self.payload_extras[key] = v
+            # Store our extra payload entries
+            self.payload_extras.update(payload)
 
         return
 
@@ -212,13 +184,13 @@ class NotifyXML(NotifyBase):
         auth = ''
         if self.user and self.password:
             auth = '{user}:{password}@'.format(
-                user=NotifyXML.quote(self.user, safe=''),
+                user=NotifyForm.quote(self.user, safe=''),
                 password=self.pprint(
                     self.password, privacy, mode=PrivacyMode.Secret, safe=''),
             )
         elif self.user:
             auth = '{user}@'.format(
-                user=NotifyXML.quote(self.user, safe=''),
+                user=NotifyForm.quote(self.user, safe=''),
             )
 
         default_port = 443 if self.secure else 80
@@ -230,50 +202,28 @@ class NotifyXML(NotifyBase):
             hostname=self.host,
             port='' if self.port is None or self.port == default_port
                  else ':{}'.format(self.port),
-            fullpath=NotifyXML.quote(self.fullpath, safe='/')
+            fullpath=NotifyForm.quote(self.fullpath, safe='/')
             if self.fullpath else '/',
-            params=NotifyXML.urlencode(params),
+            params=NotifyForm.urlencode(params),
         )
 
     def send(self, body, title='', notify_type=NotifyType.INFO, attach=None,
              **kwargs):
         """
-        Perform XML Notification
+        Perform Form Notification
         """
 
-        # prepare XML Object
         headers = {
             'User-Agent': self.app_id,
-            'Content-Type': 'application/xml'
         }
 
         # Apply any/all header over-rides defined
         headers.update(self.headers)
 
-        # Our XML Attachmement subsitution
-        xml_attachments = ''
-
-        # Our Payload Base
-        payload_base = {
-            'Version': self.xsd_ver,
-            'Subject': NotifyXML.escape_html(title, whitespace=False),
-            'MessageType': NotifyXML.escape_html(
-                notify_type, whitespace=False),
-            'Message': NotifyXML.escape_html(body, whitespace=False),
-        }
-
-        # Apply our payload extras
-        payload_base.update(
-            {k: NotifyXML.escape_html(v, whitespace=False)
-                for k, v in self.payload_extras.items()})
-
-        # Base Entres
-        xml_base = ''.join(
-            ['<{}>{}</{}>'.format(k, v, k) for k, v in payload_base.items()])
-
-        attachments = []
+        # Track our potential attachments
+        files = []
         if attach:
-            for attachment in attach:
+            for no, attachment in enumerate(attach, start=1):
                 # Perform some simple error checking
                 if not attachment:
                     # We could not access the attachment
@@ -283,42 +233,39 @@ class NotifyXML(NotifyBase):
                     return False
 
                 try:
-                    with open(attachment.path, 'rb') as f:
-                        # Output must be in a DataURL format (that's what
-                        # PushSafer calls it):
-                        entry = \
-                            '<Attachment filename="{}" mimetype="{}">'.format(
-                                NotifyXML.escape_html(
-                                    attachment.name, whitespace=False),
-                                NotifyXML.escape_html(
-                                    attachment.mimetype, whitespace=False))
-                        entry += base64.b64encode(f.read()).decode('utf-8')
-                        entry += '</Attachment>'
-                        attachments.append(entry)
+                    files.append((
+                        'file{:02d}'.format(no), (
+                            attachment.name,
+                            open(attachment.path, 'rb'),
+                            attachment.mimetype)
+                    ))
 
                 except (OSError, IOError) as e:
                     self.logger.warning(
-                        'An I/O error occurred while reading {}.'.format(
+                        'An I/O error occurred while opening {}.'.format(
                             attachment.name if attachment else 'attachment'))
                     self.logger.debug('I/O Exception: %s' % str(e))
                     return False
 
-            # Update our xml_attachments record:
-            xml_attachments = \
-                '<Attachments format="base64">' + \
-                ''.join(attachments) + '</Attachments>'
+                finally:
+                    for file in files:
+                        # Ensure all files are closed
+                        if file[1][1]:
+                            file[1][1].close()
 
-        re_map = {
-            '{{XSD_URL}}': self.xsd_url.format(version=self.xsd_ver),
-            '{{ATTACHMENTS}}': xml_attachments,
-            '{{CORE}}': xml_base,
+        # prepare Form Object
+        payload = {
+            # Version: Major.Minor,  Major is only updated if the entire
+            # schema is changed. If just adding new items (or removing
+            # old ones, only increment the Minor!
+            'version': '1.0',
+            'title': title,
+            'message': body,
+            'type': notify_type,
         }
 
-        # Iterate over above list and store content accordingly
-        re_table = re.compile(
-            r'(' + '|'.join(re_map.keys()) + r')',
-            re.IGNORECASE,
-        )
+        # Apply any/all payload over-rides defined
+        payload.update(self.payload_extras)
 
         auth = None
         if self.user:
@@ -332,13 +279,11 @@ class NotifyXML(NotifyBase):
             url += ':%d' % self.port
 
         url += self.fullpath
-        payload = re_table.sub(lambda x: re_map[x.group()], self.payload)
 
-        self.logger.debug('XML POST URL: %s (cert_verify=%r)' % (
-            url, self.verify_certificate,
+        self.logger.debug('Form %s URL: %s (cert_verify=%r)' % (
+            self.method, url, self.verify_certificate,
         ))
-
-        self.logger.debug('XML Payload: %s' % str(payload))
+        self.logger.debug('Form Payload: %s' % str(payload))
 
         # Always call throttle before any remote server i/o is made
         self.throttle()
@@ -361,7 +306,9 @@ class NotifyXML(NotifyBase):
         try:
             r = method(
                 url,
-                data=payload,
+                files=None if not files else files,
+                data=payload if self.method != 'GET' else None,
+                params=payload if self.method == 'GET' else None,
                 headers=headers,
                 auth=auth,
                 verify=self.verify_certificate,
@@ -370,10 +317,10 @@ class NotifyXML(NotifyBase):
             if r.status_code < 200 or r.status_code >= 300:
                 # We had a problem
                 status_str = \
-                    NotifyXML.http_response_code_lookup(r.status_code)
+                    NotifyForm.http_response_code_lookup(r.status_code)
 
                 self.logger.warning(
-                    'Failed to send JSON %s notification: %s%serror=%s.',
+                    'Failed to send Form %s notification: %s%serror=%s.',
                     self.method,
                     status_str,
                     ', ' if status_str else '',
@@ -385,16 +332,28 @@ class NotifyXML(NotifyBase):
                 return False
 
             else:
-                self.logger.info('Sent XML %s notification.', self.method)
+                self.logger.info('Sent Form %s notification.', self.method)
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occurred sending XML '
+                'A Connection error occurred sending Form '
                 'notification to %s.' % self.host)
             self.logger.debug('Socket Exception: %s' % str(e))
 
             # Return; we're done
             return False
+
+        except (OSError, IOError) as e:
+            self.logger.warning(
+                'An I/O error occurred while reading one of the '
+                'attached files.')
+            self.logger.debug('I/O Exception: %s' % str(e))
+            return False
+
+        finally:
+            for file in files:
+                # Ensure all files are closed
+                file[1][1].close()
 
         return True
 
@@ -411,7 +370,7 @@ class NotifyXML(NotifyBase):
             return results
 
         # store any additional payload extra's defined
-        results['payload'] = {NotifyXML.unquote(x): NotifyXML.unquote(y)
+        results['payload'] = {NotifyForm.unquote(x): NotifyForm.unquote(y)
                               for x, y in results['qsd:'].items()}
 
         # Add our headers that the user can potentially over-ride if they wish
@@ -420,15 +379,15 @@ class NotifyXML(NotifyBase):
         if results['qsd-']:
             results['headers'].update(results['qsd-'])
             NotifyBase.logger.deprecate(
-                "minus (-) based XML header tokens are being "
-                "removed; use the plus (+) symbol instead.")
+                "minus (-) based Form header tokens are being "
+                " removed; use the plus (+) symbol instead.")
 
         # Tidy our header entries by unquoting them
-        results['headers'] = {NotifyXML.unquote(x): NotifyXML.unquote(y)
+        results['headers'] = {NotifyForm.unquote(x): NotifyForm.unquote(y)
                               for x, y in results['headers'].items()}
 
         # Set method if not otherwise set
         if 'method' in results['qsd'] and len(results['qsd']['method']):
-            results['method'] = NotifyXML.unquote(results['qsd']['method'])
+            results['method'] = NotifyForm.unquote(results['qsd']['method'])
 
         return results

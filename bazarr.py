@@ -30,6 +30,21 @@ def check_python_version():
         sys.exit(1)
 
 
+def get_python_path():
+    if sys.platform == "darwin":
+        # Do not run Python from within macOS framework bundle.
+        python_bundle_path = os.path.join(sys.exec_prefix, "Resources", "Python.app", "Contents", "MacOS", "Python")
+        if os.path.exists(python_bundle_path):
+            import tempfile
+
+            python_path = os.path.join(tempfile.mkdtemp(), "python")
+            os.symlink(python_bundle_path, python_path)
+
+            return python_path
+
+    return sys.executable
+
+
 check_python_version()
 
 dir_name = os.path.dirname(__file__)
@@ -49,7 +64,7 @@ def terminate_child_process(ep):
 
 
 def start_bazarr():
-    script = [sys.executable, "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
+    script = [get_python_path(), "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
     ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
     atexit.register(end_child_process, ep=ep)
     signal.signal(signal.SIGTERM, lambda signal_no, frame: terminate_child_process(ep))

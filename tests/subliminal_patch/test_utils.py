@@ -53,3 +53,10 @@ def test_update_matches(movies):
         matches, movies["dune"], "Subs for dune 2021 bluray x264\nDune webrip x264"
     )
     assert "source" in matches
+
+
+@pytest.mark.parametrize(
+    "content,expected", [("the.wire.s01e01", True), ("taxi driver 1976", False)]
+)
+def test_is_episode(content, expected):
+    assert utils.is_episode(content) is expected

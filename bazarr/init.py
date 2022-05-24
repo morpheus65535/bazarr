@@ -2,18 +2,20 @@
 
 import os
 import io
-import rarfile
 import sys
 import subprocess
 import subliminal
 import datetime
 import time
+import rarfile
 
 from dogpile.cache.region import register_backend as register_cache_backend
 
 from app.config import settings, configure_captcha_func
+from app.database import init_db, migrate_db
 from app.get_args import args
 from app.logger import configure_logging
+from utilities.binaries import get_binary, BinaryNotFound
 from utilities.path_mappings import path_mappings
 from utilities.backup import restore_from_backup
 
@@ -193,23 +195,28 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
 
 
 def init_binaries():
-    from utilities.binaries import get_binary
-    exe = get_binary("unrar")
-
-    rarfile.UNRAR_TOOL = exe
-    rarfile.ORIG_UNRAR_TOOL = exe
     try:
-        rarfile.custom_check([rarfile.UNRAR_TOOL], True)
-    except Exception:
-        logging.debug("custom check failed for: %s", exe)
+        exe = get_binary("unar")
+        rarfile.UNAR_TOOL = exe
+        rarfile.UNRAR_TOOL = None
+        rarfile.tool_setup(unrar=False, unar=True, bsdtar=False, force=True)
+    except (BinaryNotFound, rarfile.RarCannotExec):
+        try:
+            exe = get_binary("unrar")
+            rarfile.UNRAR_TOOL = exe
+            rarfile.UNAR_TOOL = None
+            rarfile.tool_setup(unrar=True, unar=False, bsdtar=False, force=True)
+        except (BinaryNotFound, rarfile.RarCannotExec):
+            logging.exception("BAZARR requires a rar archive extraction utilities (unrar, unar) and it can't be found.")
+            raise BinaryNotFound
+        else:
+            logging.debug("Using UnRAR from: %s", exe)
+            return exe
+    else:
+        logging.debug("Using unar from: %s", exe)
+        return exe
 
-    logging.debug("Using UnRAR from: %s", exe)
-    unrar = exe
 
-    return unrar
-
-
-from app.database import init_db, migrate_db  # noqa E402
 init_db()
 migrate_db()
 init_binaries()
