@@ -164,10 +164,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     defaultKey: {
       username: "",
       password: "",
+      api_key: "",
       use_hash: false,
     },
     keyNameOverride: {
       use_hash: "Use Hash",
+      api_key: "API Key",
     },
   },
   {

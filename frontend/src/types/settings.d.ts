@@ -185,6 +185,7 @@ declare namespace Settings {
   }
 
   interface OpenSubtitlesCom extends BaseProvider {
+    api_key?: boolean;
     use_hash: boolean;
   }
 
