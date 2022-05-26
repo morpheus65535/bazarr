@@ -12,7 +12,6 @@ import rarfile
 from dogpile.cache.region import register_backend as register_cache_backend
 
 from app.config import settings, configure_captcha_func
-from app.database import init_db, migrate_db
 from app.get_args import args
 from app.logger import configure_logging
 from utilities.binaries import get_binary, BinaryNotFound
@@ -217,6 +216,8 @@ def init_binaries():
         return exe
 
 
+# keep this import at the end to prevent peewee.OperationalError: unable to open database file
+from app.database import init_db, migrate_db  # noqa E402
 init_db()
 migrate_db()
 init_binaries()
