@@ -76,12 +76,11 @@ def test_subtitle_download(subtitle):
         assert subtitle.is_valid()
 
 
-def test_subtitles_search_423(episodes, requests_mock, mocker):
+def test_list_subtitles_423(episodes, requests_mock, mocker):
     mocker.patch("time.sleep")
     requests_mock.post(f"{_BASE_URL}/subtitles/search", status_code=423)
 
     with GestdownProvider() as provider:
-        gen = provider._subtitles_search(
-            episodes["breaking_bad_s01e01"], Language.fromietf("en")
+        assert not provider.list_subtitles(
+            episodes["breaking_bad_s01e01"], {Language.fromietf("en")}
         )
-        assert not list(gen)
