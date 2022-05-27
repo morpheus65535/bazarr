@@ -154,13 +154,17 @@ def test_list_subtitles_hi_fallback_multiple_language_streams(
         mocker.patch(
             # "fese.FFprobeVideoContainer.get_subtitles",
             "subliminal_patch.providers.embeddedsubtitles._MemoizedFFprobeVideoContainer.get_subtitles",
-            return_value=[fake_streams["en_hi"], fake_streams["es"], fake_streams["es_hi"]],
+            return_value=[
+                fake_streams["en_hi"],
+                fake_streams["es"],
+                fake_streams["es_hi"],
+            ],
         )
         subs = provider.list_subtitles(video_single_language, languages)
         assert len(subs) == 3
         assert subs[0].hearing_impaired == False  # English subittle
         assert subs[1].hearing_impaired == False  # Spanish subtitle
-        assert subs[2].hearing_impaired == True # Spanish HI subtitle
+        assert subs[2].hearing_impaired == True  # Spanish HI subtitle
 
 
 def test_list_subtitles_hi_fallback_multiple_hi_streams(

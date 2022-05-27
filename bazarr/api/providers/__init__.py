@@ -8,9 +8,9 @@ from .providers_episodes import ProviderEpisodes
 from .providers_movies import ProviderMovies
 
 
-api_bp_providers = Blueprint('api_providers', __name__)
+api_bp_providers = Blueprint("api_providers", __name__)
 api = Api(api_bp_providers)
 
-api.add_resource(Providers, '/providers')
-api.add_resource(ProviderMovies, '/providers/movies')
-api.add_resource(ProviderEpisodes, '/providers/episodes')
+api.add_resource(Providers, "/providers")
+api.add_resource(ProviderMovies, "/providers/movies")
+api.add_resource(ProviderEpisodes, "/providers/episodes")

@@ -1,0 +1,18 @@
+exclude: "venv/|frontend/node_modules$|libs/"
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.2.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: requirements-txt-fixer
+      - id: check-case-conflict
+      - id: check-builtin-literals
+  - repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+      - id: black
+#  - repo: https://github.com/MarcoGorelli/absolufy-imports
+#    rev: v0.3.1
+#    hooks:
+#      - id: absolufy-imports

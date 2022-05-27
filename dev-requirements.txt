@@ -1,9 +1,9 @@
+pytest
+pytest-cov
+pytest-flakes
+pytest-mock
+pytest-pep8
+pytest-vcr
+requests-mock
 sympy
 vcrpy>=1.6.1
-pytest
-pytest-pep8
-pytest-flakes
-pytest-cov
-pytest-vcr
-pytest-mock
-requests-mock

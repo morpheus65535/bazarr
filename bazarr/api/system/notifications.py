@@ -19,9 +19,6 @@ class Notifications(Resource):
 
         apobj.add(url)
 
-        apobj.notify(
-            title='Bazarr test notification',
-            body='Test notification'
-        )
+        apobj.notify(title="Bazarr test notification", body="Test notification")
 
-        return '', 204
+        return "", 204

@@ -10,9 +10,10 @@ class System(Resource):
     @authenticate
     def post(self):
         from app.server import webserver
-        action = request.args.get('action')
+
+        action = request.args.get("action")
         if action == "shutdown":
             webserver.shutdown()
         elif action == "restart":
             webserver.restart()
-        return '', 204
+        return "", 204

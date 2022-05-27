@@ -21,26 +21,32 @@ class ProviderMovies(Resource):
     @authenticate
     def get(self):
         # Manual Search
-        radarrId = request.args.get('radarrid')
-        movieInfo = TableMovies.select(TableMovies.title,
-                                       TableMovies.path,
-                                       TableMovies.sceneName,
-                                       TableMovies.profileId) \
-            .where(TableMovies.radarrId == radarrId) \
-            .dicts() \
+        radarrId = request.args.get("radarrid")
+        movieInfo = (
+            TableMovies.select(
+                TableMovies.title,
+                TableMovies.path,
+                TableMovies.sceneName,
+                TableMovies.profileId,
+            )
+            .where(TableMovies.radarrId == radarrId)
+            .dicts()
             .get_or_none()
+        )
 
         if not movieInfo:
-            return 'Movie not found', 500
+            return "Movie not found", 500
 
-        title = movieInfo['title']
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName'] or "None"
-        profileId = movieInfo['profileId']
+        title = movieInfo["title"]
+        moviePath = path_mappings.path_replace_movie(movieInfo["path"])
+        sceneName = movieInfo["sceneName"] or "None"
+        profileId = movieInfo["profileId"]
 
         providers_list = get_providers()
 
-        data = manual_search(moviePath, profileId, providers_list, sceneName, title, 'movie')
+        data = manual_search(
+            moviePath, profileId, providers_list, sceneName, title, "movie"
+        )
         if not data:
             data = []
         return jsonify(data=data)
@@ -48,57 +54,82 @@ class ProviderMovies(Resource):
     @authenticate
     def post(self):
         # Manual Download
-        radarrId = request.args.get('radarrid')
-        movieInfo = TableMovies.select(TableMovies.title,
-                                       TableMovies.path,
-                                       TableMovies.sceneName,
-                                       TableMovies.audio_language) \
-            .where(TableMovies.radarrId == radarrId) \
-            .dicts() \
+        radarrId = request.args.get("radarrid")
+        movieInfo = (
+            TableMovies.select(
+                TableMovies.title,
+                TableMovies.path,
+                TableMovies.sceneName,
+                TableMovies.audio_language,
+            )
+            .where(TableMovies.radarrId == radarrId)
+            .dicts()
             .get_or_none()
+        )
 
         if not movieInfo:
-            return 'Movie not found', 500
+            return "Movie not found", 500
 
-        title = movieInfo['title']
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName'] or "None"
+        title = movieInfo["title"]
+        moviePath = path_mappings.path_replace_movie(movieInfo["path"])
+        sceneName = movieInfo["sceneName"] or "None"
 
-        hi = request.form.get('hi').capitalize()
-        forced = request.form.get('forced').capitalize()
-        use_original_format = request.form.get('original_format').capitalize()
+        hi = request.form.get("hi").capitalize()
+        forced = request.form.get("forced").capitalize()
+        use_original_format = request.form.get("original_format").capitalize()
         logging.debug(f"use_original_format {use_original_format}")
-        selected_provider = request.form.get('provider')
-        subtitle = request.form.get('subtitle')
+        selected_provider = request.form.get("provider")
+        subtitle = request.form.get("subtitle")
 
         audio_language_list = get_audio_profile_languages(movie_id=radarrId)
         if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0]['name']
+            audio_language = audio_language_list[0]["name"]
         else:
-            audio_language = 'None'
+            audio_language = "None"
 
         try:
-            result = manual_download_subtitle(moviePath, audio_language, hi, forced, subtitle, selected_provider,
-                                              sceneName, title, 'movie', use_original_format, profile_id=get_profile_id(movie_id=radarrId))
+            result = manual_download_subtitle(
+                moviePath,
+                audio_language,
+                hi,
+                forced,
+                subtitle,
+                selected_provider,
+                sceneName,
+                title,
+                "movie",
+                use_original_format,
+                profile_id=get_profile_id(movie_id=radarrId),
+            )
             if result is not None:
                 message = result[0]
                 path = result[1]
                 forced = result[5]
                 if result[8]:
-                    language_code = result[2] + ":hi"
+                    language_code = f"{result[2]}:hi"
                 elif forced:
-                    language_code = result[2] + ":forced"
+                    language_code = f"{result[2]}:forced"
                 else:
                     language_code = result[2]
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]
                 subs_path = result[7]
-                history_log_movie(2, radarrId, message, path, language_code, provider, score, subs_id, subs_path)
-                if not settings.general.getboolean('dont_notify_manual_actions'):
+                history_log_movie(
+                    2,
+                    radarrId,
+                    message,
+                    path,
+                    language_code,
+                    provider,
+                    score,
+                    subs_id,
+                    subs_path,
+                )
+                if not settings.general.getboolean("dont_notify_manual_actions"):
                     send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
         except OSError:
             pass
 
-        return '', 204
+        return "", 204

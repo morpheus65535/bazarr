@@ -17,23 +17,35 @@ def check_python_version():
     minimum_py3_str = ".".join(str(i) for i in minimum_py3_tuple)
 
     if int(python_version[0]) < minimum_py3_tuple[0]:
-        print("Python " + minimum_py3_str + " or greater required. "
-              "Current version is " + platform.python_version() + ". Please upgrade Python.")
+        print(
+            f"Python {minimum_py3_str} or greater required. Current version is {platform.python_version()}. Please upgrade Python."
+        )
         sys.exit(1)
     elif int(python_version[0]) == 3 and int(python_version[1]) > 10:
-        print("Python version greater than 3.10.x is unsupported. Current version is " + platform.python_version() +
-              ". Keep in mind that even if it works, you're on your own.")
-    elif (int(python_version[0]) == minimum_py3_tuple[0] and int(python_version[1]) < minimum_py3_tuple[1]) or \
-            (int(python_version[0]) != minimum_py3_tuple[0]):
-        print("Python " + minimum_py3_str + " or greater required. "
-              "Current version is " + platform.python_version() + ". Please upgrade Python.")
+        print(
+            (
+                f"Python version greater than 3.10.x is unsupported. Current version is {platform.python_version()}"
+                + ". Keep in mind that even if it works, you're on your own."
+            )
+        )
+
+    elif (
+        int(python_version[0]) == minimum_py3_tuple[0]
+        and int(python_version[1]) < minimum_py3_tuple[1]
+    ) or (int(python_version[0]) != minimum_py3_tuple[0]):
+        print(
+            f"Python {minimum_py3_str} or greater required. Current version is {platform.python_version()}. Please upgrade Python."
+        )
+
         sys.exit(1)
 
 
 def get_python_path():
     if sys.platform == "darwin":
         # Do not run Python from within macOS framework bundle.
-        python_bundle_path = os.path.join(sys.exec_prefix, "Resources", "Python.app", "Contents", "MacOS", "Python")
+        python_bundle_path = os.path.join(
+            sys.exec_prefix, "Resources", "Python.app", "Contents", "MacOS", "Python"
+        )
         if os.path.exists(python_bundle_path):
             import tempfile
 
@@ -53,18 +65,23 @@ dir_name = os.path.dirname(__file__)
 def end_child_process(ep):
     try:
         ep.kill()
-    except:
+    except Exception:
         pass
+
 
 def terminate_child_process(ep):
     try:
         ep.terminate()
-    except:
+    except Exception:
         pass
 
 
 def start_bazarr():
-    script = [get_python_path(), "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
+    script = [
+        get_python_path(),
+        "-u",
+        os.path.normcase(os.path.join(dir_name, "bazarr", "main.py")),
+    ] + sys.argv[1:]
     ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
     atexit.register(end_child_process, ep=ep)
     signal.signal(signal.SIGTERM, lambda signal_no, frame: terminate_child_process(ep))
@@ -75,24 +92,24 @@ def check_status():
         try:
             os.remove(stopfile)
         except Exception:
-            print('Unable to delete stop file.')
+            print("Unable to delete stop file.")
         finally:
-            print('Bazarr exited.')
+            print("Bazarr exited.")
             sys.exit(0)
 
     if os.path.exists(restartfile):
         try:
             os.remove(restartfile)
         except Exception:
-            print('Unable to delete restart file.')
+            print("Unable to delete restart file.")
         else:
             print("Bazarr is restarting...")
             start_bazarr()
 
 
-if __name__ == '__main__':
-    restartfile = os.path.join(args.config_dir, 'bazarr.restart')
-    stopfile = os.path.join(args.config_dir, 'bazarr.stop')
+if __name__ == "__main__":
+    restartfile = os.path.join(args.config_dir, "bazarr.restart")
+    stopfile = os.path.join(args.config_dir, "bazarr.stop")
 
     # Cleanup leftover files
     try:
@@ -113,11 +130,11 @@ if __name__ == '__main__':
     while True:
         check_status()
         try:
-            if sys.platform.startswith('win'):
+            if sys.platform.startswith("win"):
                 time.sleep(5)
             else:
                 os.wait()
                 time.sleep(1)
         except (KeyboardInterrupt, SystemExit, ChildProcessError):
-            print('Bazarr exited.')
+            print("Bazarr exited.")
             sys.exit(0)

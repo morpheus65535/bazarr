@@ -9,13 +9,14 @@ from radarr.rootfolder import check_radarr_rootfolder
 
 
 def check_health():
-    if settings.general.getboolean('use_sonarr'):
+    if settings.general.getboolean("use_sonarr"):
         check_sonarr_rootfolder()
-    if settings.general.getboolean('use_radarr'):
+    if settings.general.getboolean("use_radarr"):
         check_radarr_rootfolder()
-    event_stream(type='badges')
+    event_stream(type="badges")
 
     from .backup import backup_rotation
+
     backup_rotation()
 
 
@@ -24,25 +25,38 @@ def get_health_issues():
     health_issues = []
 
     # get Sonarr rootfolder issues
-    if settings.general.getboolean('use_sonarr'):
-        rootfolder = TableShowsRootfolder.select(TableShowsRootfolder.path,
-                                                 TableShowsRootfolder.accessible,
-                                                 TableShowsRootfolder.error)\
-            .where(TableShowsRootfolder.accessible == 0)\
+    if settings.general.getboolean("use_sonarr"):
+        rootfolder = (
+            TableShowsRootfolder.select(
+                TableShowsRootfolder.path,
+                TableShowsRootfolder.accessible,
+                TableShowsRootfolder.error,
+            )
+            .where(TableShowsRootfolder.accessible == 0)
             .dicts()
-        for item in rootfolder:
-            health_issues.append({'object': path_mappings.path_replace(item['path']),
-                                  'issue': item['error']})
+        )
+        health_issues.extend(
+            {"object": path_mappings.path_replace(item["path"]), "issue": item["error"]}
+            for item in rootfolder
+        )
 
     # get Radarr rootfolder issues
-    if settings.general.getboolean('use_radarr'):
-        rootfolder = TableMoviesRootfolder.select(TableMoviesRootfolder.path,
-                                                  TableMoviesRootfolder.accessible,
-                                                  TableMoviesRootfolder.error)\
-            .where(TableMoviesRootfolder.accessible == 0)\
+    if settings.general.getboolean("use_radarr"):
+        rootfolder = (
+            TableMoviesRootfolder.select(
+                TableMoviesRootfolder.path,
+                TableMoviesRootfolder.accessible,
+                TableMoviesRootfolder.error,
+            )
+            .where(TableMoviesRootfolder.accessible == 0)
             .dicts()
-        for item in rootfolder:
-            health_issues.append({'object': path_mappings.path_replace_movie(item['path']),
-                                  'issue': item['error']})
+        )
+        health_issues.extend(
+            {
+                "object": path_mappings.path_replace_movie(item["path"]),
+                "issue": item["error"],
+            }
+            for item in rootfolder
+        )
 
     return health_issues

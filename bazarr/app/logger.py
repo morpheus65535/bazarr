@@ -19,9 +19,12 @@ logger = logging.getLogger()
 
 class FileHandlerFormatter(logging.Formatter):
     """Formatter that removes apikey from logs."""
-    APIKEY_RE = re.compile(r'apikey(?:=|%3D)([a-zA-Z0-9]+)')
-    IPv4_RE = re.compile(r'\b(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]'
-                         r'[0-9]|[1-9]?[0-9])\b')
+
+    APIKEY_RE = re.compile(r"apikey(?:=|%3D)([a-zA-Z0-9]+)")
+    IPv4_RE = re.compile(
+        r"\b(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]"
+        r"[0-9]|[1-9]?[0-9])\b"
+    )
 
     def formatException(self, exc_info):
         """
@@ -31,15 +34,15 @@ class FileHandlerFormatter(logging.Formatter):
         return repr(result)  # or format into one line however you want to
 
     def formatApikey(self, s):
-        return re.sub(self.APIKEY_RE, 'apikey=(removed)', s)
+        return re.sub(self.APIKEY_RE, "apikey=(removed)", s)
 
     def formatIPv4(self, s):
-        return re.sub(self.IPv4_RE, '***.***.***.***', s)
+        return re.sub(self.IPv4_RE, "***.***.***.***", s)
 
     def format(self, record):
         s = super(FileHandlerFormatter, self).format(record)
         if record.exc_text:
-            s = s.replace('\n', '') + '|'
+            s = s.replace("\n", "") + "|"
 
         s = self.formatApikey(s)
         s = self.formatIPv4(s)
@@ -49,22 +52,18 @@ class FileHandlerFormatter(logging.Formatter):
 
 class NoExceptionFormatter(logging.Formatter):
     def format(self, record):
-        record.exc_text = ''  # ensure formatException gets called
+        record.exc_text = ""  # ensure formatException gets called
         return super(NoExceptionFormatter, self).format(record)
 
     def formatException(self, record):
-        return ''
+        return ""
 
 
 def configure_logging(debug=False):
-    warnings.simplefilter('ignore', category=ResourceWarning)
-    warnings.simplefilter('ignore', category=PytzUsageWarning)
+    warnings.simplefilter("ignore", category=ResourceWarning)
+    warnings.simplefilter("ignore", category=PytzUsageWarning)
 
-    if not debug:
-        log_level = "INFO"
-    else:
-        log_level = "DEBUG"
-
+    log_level = "DEBUG" if debug else "INFO"
     logger.handlers = []
 
     logger.setLevel(log_level)
@@ -72,7 +71,8 @@ def configure_logging(debug=False):
     # Console logging
     ch = logging.StreamHandler()
     cf = (debug and logging.Formatter or NoExceptionFormatter)(
-        '%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(module)s:%(lineno)d) - %(message)s')
+        "%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(module)s:%(lineno)d) - %(message)s"
+    )
     ch.setFormatter(cf)
 
     ch.setLevel(log_level)
@@ -81,13 +81,26 @@ def configure_logging(debug=False):
     # File Logging
     global fh
     if sys.version_info >= (3, 9):
-        fh = PatchedTimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight",
-                                             interval=1, backupCount=7, delay=True, encoding='utf-8')
+        fh = PatchedTimedRotatingFileHandler(
+            os.path.join(args.config_dir, "log/bazarr.log"),
+            when="midnight",
+            interval=1,
+            backupCount=7,
+            delay=True,
+            encoding="utf-8",
+        )
     else:
-        fh = TimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight", interval=1,
-                                      backupCount=7, delay=True, encoding='utf-8')
-    f = FileHandlerFormatter('%(asctime)s|%(levelname)-8s|%(name)-32s|%(message)s|',
-                             '%d/%m/%Y %H:%M:%S')
+        fh = TimedRotatingFileHandler(
+            os.path.join(args.config_dir, "log/bazarr.log"),
+            when="midnight",
+            interval=1,
+            backupCount=7,
+            delay=True,
+            encoding="utf-8",
+        )
+    f = FileHandlerFormatter(
+        "%(asctime)s|%(levelname)-8s|%(name)-32s|%(message)s|", "%d/%m/%Y %H:%M:%S"
+    )
     fh.setFormatter(f)
     fh.setLevel(log_level)
     logger.addHandler(fh)
@@ -106,10 +119,10 @@ def configure_logging(debug=False):
         logging.getLogger("ffsubsync.speech_transformers").setLevel(logging.DEBUG)
         logging.getLogger("ffsubsync.ffsubsync").setLevel(logging.DEBUG)
         logging.getLogger("srt").setLevel(logging.DEBUG)
-        logging.debug('Bazarr version: %s', os.environ["BAZARR_VERSION"])
-        logging.debug('Bazarr branch: %s', settings.general.branch)
-        logging.debug('Operating system: %s', platform.platform())
-        logging.debug('Python version: %s', platform.python_version())
+        logging.debug("Bazarr version: %s", os.environ["BAZARR_VERSION"])
+        logging.debug("Bazarr branch: %s", settings.general.branch)
+        logging.debug("Operating system: %s", platform.platform())
+        logging.debug("Python version: %s", platform.python_version())
     else:
         logging.getLogger("peewee").setLevel(logging.CRITICAL)
         logging.getLogger("apscheduler").setLevel(logging.WARNING)
@@ -136,17 +149,28 @@ def configure_logging(debug=False):
 
 def empty_log():
     fh.doRollover()
-    logging.info('BAZARR Log file emptied')
+    logging.info("BAZARR Log file emptied")
 
 
 class PatchedTimedRotatingFileHandler(TimedRotatingFileHandler):
     # This super classed version of logging.TimedRotatingFileHandler is required to fix a bug in earlier version of
     # Python 3.9, 3.10 and 3.11 where log rotation isn't working as expected and do not delete backup log files.
 
-    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False,
-                 atTime=None, errors=None):
-        super(PatchedTimedRotatingFileHandler, self).__init__(filename, when, interval, backupCount, encoding, delay, utc,
-                                                              atTime, errors)
+    def __init__(
+        self,
+        filename,
+        when="h",
+        interval=1,
+        backupCount=0,
+        encoding=None,
+        delay=False,
+        utc=False,
+        atTime=None,
+        errors=None,
+    ):
+        super(PatchedTimedRotatingFileHandler, self).__init__(
+            filename, when, interval, backupCount, encoding, delay, utc, atTime, errors
+        )
 
     def getFilesToDelete(self):
         """
@@ -158,33 +182,31 @@ class PatchedTimedRotatingFileHandler(TimedRotatingFileHandler):
         result = []
         # See bpo-44753: Don't use the extension when computing the prefix.
         n, e = os.path.splitext(baseName)
-        prefix = n + '.'
+        prefix = f"{n}."
         plen = len(prefix)
         for fileName in fileNames:
             if self.namer is None:
                 # Our files will always start with baseName
                 if not fileName.startswith(baseName):
                     continue
-            else:
-                # Our files could be just about anything after custom naming, but
-                # likely candidates are of the form
-                # foo.log.DATETIME_SUFFIX or foo.DATETIME_SUFFIX.log
-                if (not fileName.startswith(baseName) and fileName.endswith(e) and
-                        len(fileName) > (plen + 1) and not fileName[plen+1].isdigit()):
-                    continue
+            elif (
+                not fileName.startswith(baseName)
+                and fileName.endswith(e)
+                and len(fileName) > (plen + 1)
+                and not fileName[plen + 1].isdigit()
+            ):
+                continue
 
             if fileName[:plen] == prefix:
                 suffix = fileName[plen:]
                 # See bpo-45628: The date/time suffix could be anywhere in the
                 # filename
-                parts = suffix.split('.')
+                parts = suffix.split(".")
                 for part in parts:
                     if self.extMatch.match(part):
                         result.append(os.path.join(dirName, fileName))
                         break
         if len(result) < self.backupCount:
-            result = []
-        else:
-            result.sort()
-            result = result[:len(result) - self.backupCount]
-        return result
+            return []
+        result.sort()
+        return result[: len(result) - self.backupCount]

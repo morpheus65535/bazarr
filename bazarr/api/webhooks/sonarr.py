@@ -14,17 +14,26 @@ from ..utils import authenticate
 class WebHooksSonarr(Resource):
     @authenticate
     def post(self):
-        episode_file_id = request.form.get('sonarr_episodefile_id')
+        episode_file_id = request.form.get("sonarr_episodefile_id")
 
-        sonarrEpisodeId = TableEpisodes.select(TableEpisodes.sonarrEpisodeId,
-                                               TableEpisodes.path) \
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-            .where(TableEpisodes.episode_file_id == episode_file_id) \
-            .dicts() \
+        if (
+            sonarrEpisodeId := TableEpisodes.select(
+                TableEpisodes.sonarrEpisodeId, TableEpisodes.path
+            )
+            .join(
+                TableShows,
+                on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId),
+            )
+            .where(TableEpisodes.episode_file_id == episode_file_id)
+            .dicts()
             .get_or_none()
+        ):
+            store_subtitles(
+                sonarrEpisodeId["path"],
+                path_mappings.path_replace(sonarrEpisodeId["path"]),
+            )
+            episode_download_subtitles(
+                no=sonarrEpisodeId["sonarrEpisodeId"], send_progress=True
+            )
 
-        if sonarrEpisodeId:
-            store_subtitles(sonarrEpisodeId['path'], path_mappings.path_replace(sonarrEpisodeId['path']))
-            episode_download_subtitles(no=sonarrEpisodeId['sonarrEpisodeId'], send_progress=True)
-
-        return '', 200
+        return "", 200

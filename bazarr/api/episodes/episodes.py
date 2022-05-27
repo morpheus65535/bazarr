@@ -11,16 +11,22 @@ from ..utils import authenticate, postprocessEpisode
 class Episodes(Resource):
     @authenticate
     def get(self):
-        seriesId = request.args.getlist('seriesid[]')
-        episodeId = request.args.getlist('episodeid[]')
+        seriesId = request.args.getlist("seriesid[]")
+        episodeId = request.args.getlist("episodeid[]")
 
         if len(episodeId) > 0:
-            result = TableEpisodes.select().where(TableEpisodes.sonarrEpisodeId.in_(episodeId)).dicts()
-        elif len(seriesId) > 0:
-            result = TableEpisodes.select()\
-                .where(TableEpisodes.sonarrSeriesId.in_(seriesId))\
-                .order_by(TableEpisodes.season.desc(), TableEpisodes.episode.desc())\
+            result = (
+                TableEpisodes.select()
+                .where(TableEpisodes.sonarrEpisodeId.in_(episodeId))
                 .dicts()
+            )
+        elif len(seriesId) > 0:
+            result = (
+                TableEpisodes.select()
+                .where(TableEpisodes.sonarrSeriesId.in_(seriesId))
+                .order_by(TableEpisodes.season.desc(), TableEpisodes.episode.desc())
+                .dicts()
+            )
         else:
             return "Series or Episode ID not provided", 400
 

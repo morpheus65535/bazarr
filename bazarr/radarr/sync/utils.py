@@ -13,26 +13,39 @@ def get_profile_list():
     profiles_list = []
     # Get profiles data from radarr
     if get_radarr_info.is_legacy():
-        url_radarr_api_movies = url_radarr() + "/api/profile?apikey=" + apikey_radarr
+        url_radarr_api_movies = f"{url_radarr()}/api/profile?apikey={apikey_radarr}"
     else:
-        url_radarr_api_movies = url_radarr() + "/api/v3/qualityprofile?apikey=" + apikey_radarr
+        url_radarr_api_movies = (
+            f"{url_radarr()}/api/v3/qualityprofile?apikey={apikey_radarr}"
+        )
 
     try:
-        profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
+        profiles_json = requests.get(
+            url_radarr_api_movies, timeout=60, verify=False, headers=headers
+        )
     except requests.exceptions.ConnectionError:
-        logging.exception("BAZARR Error trying to get profiles from Radarr. Connection Error.")
+        logging.exception(
+            "BAZARR Error trying to get profiles from Radarr. Connection Error."
+        )
     except requests.exceptions.Timeout:
-        logging.exception("BAZARR Error trying to get profiles from Radarr. Timeout Error.")
+        logging.exception(
+            "BAZARR Error trying to get profiles from Radarr. Timeout Error."
+        )
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get profiles from Radarr.")
     else:
         # Parsing data returned from radarr
         if get_radarr_info.is_legacy():
-            for profile in profiles_json.json():
-                profiles_list.append([profile['id'], profile['language'].capitalize()])
+            profiles_list.extend(
+                [profile["id"], profile["language"].capitalize()]
+                for profile in profiles_json.json()
+            )
+
         else:
-            for profile in profiles_json.json():
-                profiles_list.append([profile['id'], profile['language']['name'].capitalize()])
+            profiles_list.extend(
+                [profile["id"], profile["language"]["name"].capitalize()]
+                for profile in profiles_json.json()
+            )
 
         return profiles_list
 
@@ -45,14 +58,18 @@ def get_tags():
 
     # Get tags data from Radarr
     if get_radarr_info.is_legacy():
-        url_radarr_api_series = url_radarr() + "/api/tag?apikey=" + apikey_radarr
+        url_radarr_api_series = f"{url_radarr()}/api/tag?apikey={apikey_radarr}"
     else:
-        url_radarr_api_series = url_radarr() + "/api/v3/tag?apikey=" + apikey_radarr
+        url_radarr_api_series = f"{url_radarr()}/api/v3/tag?apikey={apikey_radarr}"
 
     try:
-        tagsDict = requests.get(url_radarr_api_series, timeout=60, verify=False, headers=headers)
+        tagsDict = requests.get(
+            url_radarr_api_series, timeout=60, verify=False, headers=headers
+        )
     except requests.exceptions.ConnectionError:
-        logging.exception("BAZARR Error trying to get tags from Radarr. Connection Error.")
+        logging.exception(
+            "BAZARR Error trying to get tags from Radarr. Connection Error."
+        )
         return []
     except requests.exceptions.Timeout:
         logging.exception("BAZARR Error trying to get tags from Radarr. Timeout Error.")
@@ -72,14 +89,25 @@ def get_tags():
 
 def get_movies_from_radarr_api(url, apikey_radarr, radarr_id=None):
     if get_radarr_info.is_legacy():
-        url_radarr_api_movies = url + "/api/movie" + ("/{}".format(radarr_id) if radarr_id else "") + "?apikey=" + \
-                                apikey_radarr
+        url_radarr_api_movies = (
+            f"{url}/api/movie"
+            + (f"/{radarr_id}" if radarr_id else "")
+            + "?apikey="
+            + apikey_radarr
+        )
+
     else:
-        url_radarr_api_movies = url + "/api/v3/movie" + ("/{}".format(radarr_id) if radarr_id else "") + "?apikey=" + \
-                                apikey_radarr
+        url_radarr_api_movies = (
+            f"{url}/api/v3/movie"
+            + (f"/{radarr_id}" if radarr_id else "")
+            + "?apikey="
+            + apikey_radarr
+        )
 
     try:
-        r = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
+        r = requests.get(
+            url_radarr_api_movies, timeout=60, verify=False, headers=headers
+        )
         if r.status_code == 404:
             return
         r.raise_for_status()
@@ -87,10 +115,14 @@ def get_movies_from_radarr_api(url, apikey_radarr, radarr_id=None):
         logging.exception("BAZARR Error trying to get movies from Radarr. Http error.")
         return
     except requests.exceptions.ConnectionError:
-        logging.exception("BAZARR Error trying to get movies from Radarr. Connection Error.")
+        logging.exception(
+            "BAZARR Error trying to get movies from Radarr. Connection Error."
+        )
         return
     except requests.exceptions.Timeout:
-        logging.exception("BAZARR Error trying to get movies from Radarr. Timeout Error.")
+        logging.exception(
+            "BAZARR Error trying to get movies from Radarr. Timeout Error."
+        )
         return
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get movies from Radarr.")

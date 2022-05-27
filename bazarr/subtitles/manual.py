@@ -26,14 +26,14 @@ from .processing import process_subtitle
 
 @update_pools
 def manual_search(path, profile_id, providers, sceneName, title, media_type):
-    logging.debug('BAZARR Manually searching subtitles for this file: ' + path)
+    logging.debug(f'BAZARR Manually searching subtitles for this file: {path}')
 
     final_subtitles = []
 
     pool = _get_pool(media_type, profile_id)
 
     language_set, initial_language_set, original_format = _get_language_obj(profile_id=profile_id)
-    also_forced = any([x.forced for x in initial_language_set])
+    also_forced = any(x.forced for x in initial_language_set)
     _set_forced_providers(also_forced=also_forced, pool=pool)
 
     if providers:
@@ -51,10 +51,8 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
                 if 'subscene' in providers:
                     s_pool = _init_pool("movie", profile_id, {"subscene"})
 
-                    subscene_language_set = set()
-                    for language in language_set:
-                        if language.forced:
-                            subscene_language_set.add(language)
+                    subscene_language_set = {language for language in language_set if language.forced}
+
                     if len(subscene_language_set):
                         s_pool.provider_configs.update({"subscene": {"only_foreign": True}})
                         subtitles_subscene = list_all_subtitles([video], subscene_language_set, s_pool)
@@ -65,7 +63,8 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
                 logging.info("BAZARR All providers are throttled")
                 return None
         except Exception:
-            logging.exception("BAZARR Error trying to get Subtitle list from provider for this file: " + path)
+            logging.exception(f"BAZARR Error trying to get Subtitle list from provider for this file: {path}")
+
         else:
             subtitles_list = []
             minimum_score = settings.general.minimum_score
@@ -115,17 +114,10 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
                     not_matched.add('hearing_impaired')
 
                 releases = []
-                if hasattr(s, 'release_info'):
-                    if s.release_info is not None:
-                        for s_item in s.release_info.split(','):
-                            if s_item.strip():
-                                releases.append(s_item)
+                if hasattr(s, 'release_info') and s.release_info is not None:
+                    releases.extend(s_item for s_item in s.release_info.split(',') if s_item.strip())
 
-                if s.uploader and s.uploader.strip():
-                    s_uploader = s.uploader.strip()
-                else:
-                    s_uploader = None
-
+                s_uploader = s.uploader.strip() if s.uploader and s.uploader.strip() else None
                 subtitles_list.append(
                     dict(score=round((score / max_score * 100), 2),
                          orig_score=score,
@@ -144,8 +136,9 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
 
             final_subtitles = sorted(subtitles_list, key=lambda x: (x['orig_score'], x['score_without_hash']),
                                      reverse=True)
-            logging.debug('BAZARR ' + str(len(final_subtitles)) + " Subtitles have been found for this file: " + path)
-            logging.debug('BAZARR Ended searching Subtitles for this file: ' + path)
+            logging.debug(f'BAZARR {len(final_subtitles)} Subtitles have been found for this file: {path}')
+
+            logging.debug(f'BAZARR Ended searching Subtitles for this file: {path}')
 
     subliminal.region.backend.sync()
 

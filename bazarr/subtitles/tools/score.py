@@ -6,8 +6,10 @@ import logging
 import re
 
 from app.config import get_settings
-from app.database import TableCustomScoreProfileConditions as conditions_table, TableCustomScoreProfiles as \
-    profiles_table
+from app.database import (
+    TableCustomScoreProfileConditions as conditions_table,
+    TableCustomScoreProfiles as profiles_table,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +23,7 @@ class Condition:
 
     # {type: provider, value: subdivx, required: False, negate: False}
     def __init__(self, value: str, required=False, negate=False, **kwargs):
-        self._value = str(value)
+        self._value = value
         self._negate = negate
         self.required = required
 
@@ -31,8 +33,8 @@ class Condition:
         dictionary."""
         try:
             new = _registered_conditions[item["type"]]
-        except IndexError:
-            raise NotImplementedError(f"{item} condition doesn't have a class.")
+        except IndexError as e:
+            raise NotImplementedError(f"{item} condition doesn't have a class.") from e
 
         return new(**item)
 
@@ -40,7 +42,7 @@ class Condition:
         """Check if the condition is met against a Subtitle object. **May be implemented
         in a subclass**."""
         to_match = [str(getattr(subtitle, name, None)) for name in self.against]
-        met = any(item == self._value for item in to_match)
+        met = self._value in to_match
         if met and not self._negate:
             return True
 

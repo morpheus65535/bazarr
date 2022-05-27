@@ -28,158 +28,198 @@ class MoviesSubtitles(Resource):
     @authenticate
     def patch(self):
         # Download
-        radarrId = request.args.get('radarrid')
+        radarrId = request.args.get("radarrid")
 
-        movieInfo = TableMovies.select(TableMovies.title,
-                                       TableMovies.path,
-                                       TableMovies.sceneName,
-                                       TableMovies.audio_language)\
-            .where(TableMovies.radarrId == radarrId)\
-            .dicts()\
+        movieInfo = (
+            TableMovies.select(
+                TableMovies.title,
+                TableMovies.path,
+                TableMovies.sceneName,
+                TableMovies.audio_language,
+            )
+            .where(TableMovies.radarrId == radarrId)
+            .dicts()
             .get_or_none()
+        )
 
         if not movieInfo:
-            return 'Movie not found', 500
+            return "Movie not found", 500
 
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName'] or 'None'
+        moviePath = path_mappings.path_replace_movie(movieInfo["path"])
+        sceneName = movieInfo["sceneName"] or "None"
 
-        title = movieInfo['title']
-        audio_language = movieInfo['audio_language']
+        title = movieInfo["title"]
+        audio_language = movieInfo["audio_language"]
 
-        language = request.form.get('language')
-        hi = request.form.get('hi').capitalize()
-        forced = request.form.get('forced').capitalize()
+        language = request.form.get("language")
+        hi = request.form.get("hi").capitalize()
+        forced = request.form.get("forced").capitalize()
 
         audio_language_list = get_audio_profile_languages(movie_id=radarrId)
         if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0]['name']
+            audio_language = audio_language_list[0]["name"]
         else:
             audio_language = None
 
         try:
-            result = list(generate_subtitles(moviePath, [(language, hi, forced)], audio_language,
-                                             sceneName, title, 'movie', profile_id=get_profile_id(movie_id=radarrId)))
-            if result:
+            if result := list(
+                generate_subtitles(
+                    moviePath,
+                    [(language, hi, forced)],
+                    audio_language,
+                    sceneName,
+                    title,
+                    "movie",
+                    profile_id=get_profile_id(movie_id=radarrId),
+                )
+            ):
                 result = result[0]
                 message = result[0]
                 path = result[1]
                 forced = result[5]
                 if result[8]:
-                    language_code = result[2] + ":hi"
+                    language_code = f"{result[2]}:hi"
                 elif forced:
-                    language_code = result[2] + ":forced"
+                    language_code = f"{result[2]}:forced"
                 else:
                     language_code = result[2]
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]
                 subs_path = result[7]
-                history_log_movie(1, radarrId, message, path, language_code, provider, score, subs_id, subs_path)
+                history_log_movie(
+                    1,
+                    radarrId,
+                    message,
+                    path,
+                    language_code,
+                    provider,
+                    score,
+                    subs_id,
+                    subs_path,
+                )
                 send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
             else:
-                event_stream(type='movie', payload=radarrId)
+                event_stream(type="movie", payload=radarrId)
         except OSError:
             pass
 
-        return '', 204
+        return "", 204
 
     @authenticate
     def post(self):
         # Upload
         # TODO: Support Multiply Upload
-        radarrId = request.args.get('radarrid')
-        movieInfo = TableMovies.select(TableMovies.title,
-                                       TableMovies.path,
-                                       TableMovies.sceneName,
-                                       TableMovies.audio_language) \
-            .where(TableMovies.radarrId == radarrId) \
-            .dicts() \
+        radarrId = request.args.get("radarrid")
+        movieInfo = (
+            TableMovies.select(
+                TableMovies.title,
+                TableMovies.path,
+                TableMovies.sceneName,
+                TableMovies.audio_language,
+            )
+            .where(TableMovies.radarrId == radarrId)
+            .dicts()
             .get_or_none()
+        )
 
         if not movieInfo:
-            return 'Movie not found', 500
+            return "Movie not found", 500
 
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName'] or 'None'
+        moviePath = path_mappings.path_replace_movie(movieInfo["path"])
+        sceneName = movieInfo["sceneName"] or "None"
 
-        title = movieInfo['title']
-        audioLanguage = movieInfo['audio_language']
+        title = movieInfo["title"]
+        audioLanguage = movieInfo["audio_language"]
 
-        language = request.form.get('language')
-        forced = True if request.form.get('forced') == 'true' else False
-        hi = True if request.form.get('hi') == 'true' else False
-        subFile = request.files.get('file')
+        language = request.form.get("language")
+        forced = request.form.get("forced") == "true"
+        hi = request.form.get("hi") == "true"
+        subFile = request.files.get("file")
 
         _, ext = os.path.splitext(subFile.filename)
 
         if ext not in SUBTITLE_EXTENSIONS:
-            raise ValueError('A subtitle of an invalid format was uploaded.')
+            raise ValueError("A subtitle of an invalid format was uploaded.")
 
         try:
-            result = manual_upload_subtitle(path=moviePath,
-                                            language=language,
-                                            forced=forced,
-                                            hi=hi,
-                                            title=title,
-                                            scene_name=sceneName,
-                                            media_type='movie',
-                                            subtitle=subFile,
-                                            audio_language=audioLanguage)
-
-            if not result:
-                logging.debug(f"BAZARR unable to process subtitles for this movie: {moviePath}")
-            else:
+            if result := manual_upload_subtitle(
+                path=moviePath,
+                language=language,
+                forced=forced,
+                hi=hi,
+                title=title,
+                scene_name=sceneName,
+                media_type="movie",
+                subtitle=subFile,
+                audio_language=audioLanguage,
+            ):
                 message = result[0]
                 path = result[1]
                 subs_path = result[2]
                 if hi:
-                    language_code = language + ":hi"
+                    language_code = f"{language}:hi"
                 elif forced:
-                    language_code = language + ":forced"
+                    language_code = f"{language}:forced"
                 else:
                     language_code = language
                 provider = "manual"
                 score = 120
-                history_log_movie(4, radarrId, message, path, language_code, provider, score, subtitles_path=subs_path)
-                if not settings.general.getboolean('dont_notify_manual_actions'):
+                history_log_movie(
+                    4,
+                    radarrId,
+                    message,
+                    path,
+                    language_code,
+                    provider,
+                    score,
+                    subtitles_path=subs_path,
+                )
+                if not settings.general.getboolean("dont_notify_manual_actions"):
                     send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
+            else:
+                logging.debug(
+                    f"BAZARR unable to process subtitles for this movie: {moviePath}"
+                )
         except OSError:
             pass
 
-        return '', 204
+        return "", 204
 
     @authenticate
     def delete(self):
         # Delete
-        radarrId = request.args.get('radarrid')
-        movieInfo = TableMovies.select(TableMovies.path) \
-            .where(TableMovies.radarrId == radarrId) \
-            .dicts() \
+        radarrId = request.args.get("radarrid")
+        movieInfo = (
+            TableMovies.select(TableMovies.path)
+            .where(TableMovies.radarrId == radarrId)
+            .dicts()
             .get_or_none()
+        )
 
         if not movieInfo:
-            return 'Movie not found', 500
+            return "Movie not found", 500
 
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
+        moviePath = path_mappings.path_replace_movie(movieInfo["path"])
 
-        language = request.form.get('language')
-        forced = request.form.get('forced')
-        hi = request.form.get('hi')
-        subtitlesPath = request.form.get('path')
+        language = request.form.get("language")
+        forced = request.form.get("forced")
+        hi = request.form.get("hi")
+        subtitlesPath = request.form.get("path")
 
         subtitlesPath = path_mappings.path_replace_reverse_movie(subtitlesPath)
 
-        result = delete_subtitles(media_type='movie',
-                                  language=language,
-                                  forced=forced,
-                                  hi=hi,
-                                  media_path=moviePath,
-                                  subtitles_path=subtitlesPath,
-                                  radarr_id=radarrId)
-        if result:
-            return '', 202
+        if result := delete_subtitles(
+            media_type="movie",
+            language=language,
+            forced=forced,
+            hi=hi,
+            media_path=moviePath,
+            subtitles_path=subtitlesPath,
+            radarr_id=radarrId,
+        ):
+            return "", 202
         else:
-            return '', 204
+            return "", 204

@@ -34,11 +34,10 @@ class CustomLanguage:
         :param value:
         :param attr:
         """
-        for sub in cls.__subclasses__():
-            if getattr(sub, attr) == str(value):
-                return sub()
-
-        return None
+        return next(
+            (sub() for sub in cls.__subclasses__() if getattr(sub, attr) == str(value)),
+            None,
+        )
 
     @classmethod
     def register(cls, table):
@@ -52,8 +51,7 @@ class CustomLanguage:
     @classmethod
     def found_external(cls, subtitle, subtitle_path):
         for sub in cls.__subclasses__():
-            code = sub.get_alpha_type(subtitle, subtitle_path)
-            if code:
+            if code := sub.get_alpha_type(subtitle, subtitle_path):
                 return code
 
         return None

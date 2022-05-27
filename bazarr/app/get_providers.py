@@ -11,8 +11,14 @@ import socket
 import requests
 import tzlocal
 
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
-    MustGetBlacklisted, SearchLimitReached
+from subliminal_patch.exceptions import (
+    TooManyRequests,
+    APIThrottled,
+    ParseResponseError,
+    IPAddressBlocked,
+    MustGetBlacklisted,
+    SearchLimitReached,
+)
 from subliminal.providers.opensubtitles import DownloadLimitReached
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 from subliminal import region as subliminal_cache_region
@@ -32,25 +38,42 @@ def time_until_midnight(timezone):
     Get timedelta until midnight.
     """
     now_in_tz = datetime.datetime.now(tz=timezone)
-    midnight = now_in_tz.replace(hour=0, minute=0, second=0, microsecond=0) + \
-        datetime.timedelta(days=1)
+    midnight = now_in_tz.replace(
+        hour=0, minute=0, second=0, microsecond=0
+    ) + datetime.timedelta(days=1)
     return midnight - now_in_tz
 
 
 # Titulky resets its download limits at the start of a new day from its perspective - the Europe/Prague timezone
 # Needs to convert to offset-naive dt
-titulky_limit_reset_timedelta = time_until_midnight(timezone=pytz.timezone('Europe/Prague'))
+titulky_limit_reset_timedelta = time_until_midnight(
+    timezone=pytz.timezone("Europe/Prague")
+)
 
 # LegendasDivx reset its searches limit at approximately midnight, Lisbon time, everyday.
-legendasdivx_limit_reset_timedelta = time_until_midnight(timezone=pytz.timezone('Europe/Lisbon')) + \
-                                    datetime.timedelta(minutes=15)
+legendasdivx_limit_reset_timedelta = time_until_midnight(
+    timezone=pytz.timezone("Europe/Lisbon")
+) + datetime.timedelta(minutes=15)
 
 hours_until_end_of_day = time_until_midnight(timezone=tzlocal.get_localzone()).days + 1
 
-VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
-                             ParseResponseError, IPAddressBlocked)
-VALID_COUNT_EXCEPTIONS = ('TooManyRequests', 'ServiceUnavailable', 'APIThrottled', requests.exceptions.Timeout,
-                          requests.exceptions.ConnectTimeout, requests.exceptions.ReadTimeout, socket.timeout)
+VALID_THROTTLE_EXCEPTIONS = (
+    TooManyRequests,
+    DownloadLimitExceeded,
+    ServiceUnavailable,
+    APIThrottled,
+    ParseResponseError,
+    IPAddressBlocked,
+)
+VALID_COUNT_EXCEPTIONS = (
+    "TooManyRequests",
+    "ServiceUnavailable",
+    "APIThrottled",
+    requests.exceptions.Timeout,
+    requests.exceptions.ConnectTimeout,
+    requests.exceptions.ReadTimeout,
+    socket.timeout,
+)
 
 PROVIDER_THROTTLE_MAP = {
     "default": {
@@ -80,30 +103,48 @@ PROVIDER_THROTTLE_MAP = {
         IPAddressBlocked: (datetime.timedelta(hours=1), "1 hours"),
     },
     "titulky": {
-        DownloadLimitExceeded: (titulky_limit_reset_timedelta, f"{titulky_limit_reset_timedelta.seconds // 3600 + 1} hours")
+        DownloadLimitExceeded: (
+            titulky_limit_reset_timedelta,
+            f"{titulky_limit_reset_timedelta.seconds // 3600 + 1} hours",
+        )
     },
     "legendasdivx": {
         TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
         DownloadLimitExceeded: (
             legendasdivx_limit_reset_timedelta,
-            f"{legendasdivx_limit_reset_timedelta.seconds // 3600 + 1} hours"),
+            f"{legendasdivx_limit_reset_timedelta.seconds // 3600 + 1} hours",
+        ),
         IPAddressBlocked: (
             legendasdivx_limit_reset_timedelta,
-            f"{legendasdivx_limit_reset_timedelta.seconds // 3600 + 1} hours"),
+            f"{legendasdivx_limit_reset_timedelta.seconds // 3600 + 1} hours",
+        ),
         SearchLimitReached: (
             legendasdivx_limit_reset_timedelta,
-            f"{legendasdivx_limit_reset_timedelta.seconds // 3600 + 1} hours"),
-    }
+            f"{legendasdivx_limit_reset_timedelta.seconds // 3600 + 1} hours",
+        ),
+    },
 }
 
-PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendasdivx", "legendastv", "napiprojekt", "shooter",
-                        "hosszupuska", "supersubtitles", "titlovi", "argenteam", "assrt", "subscene"]
+PROVIDERS_FORCED_OFF = [
+    "addic7ed",
+    "tvsubtitles",
+    "legendasdivx",
+    "legendastv",
+    "napiprojekt",
+    "shooter",
+    "hosszupuska",
+    "supersubtitles",
+    "titlovi",
+    "argenteam",
+    "assrt",
+    "subscene",
+]
 
 throttle_count = {}
 
 
 def provider_pool():
-    if settings.general.getboolean('multithreading'):
+    if settings.general.getboolean("multithreading"):
         return subliminal_patch.core.SZAsyncProviderPool
     return subliminal_patch.core.SZProviderPool
 
@@ -111,7 +152,11 @@ def provider_pool():
 def get_providers():
     providers_list = []
     existing_providers = provider_registry.names()
-    providers = [x for x in get_array_from(settings.general.enabled_providers) if x in existing_providers]
+    providers = [
+        x
+        for x in get_array_from(settings.general.enabled_providers)
+        if x in existing_providers
+    ]
     for provider in providers:
         reason, until, throttle_desc = tp.get(provider, (None, None, None))
         providers_list.append(provider)
@@ -119,11 +164,20 @@ def get_providers():
         if reason:
             now = datetime.datetime.now()
             if now < until:
-                logging.debug("Not using %s until %s, because of: %s", provider,
-                              until.strftime("%y/%m/%d %H:%M"), reason)
+                logging.debug(
+                    "Not using %s until %s, because of: %s",
+                    provider,
+                    until.strftime("%y/%m/%d %H:%M"),
+                    reason,
+                )
                 providers_list.remove(provider)
             else:
-                logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
+                logging.info(
+                    "Using %s again after %s, (disabled because: %s)",
+                    provider,
+                    throttle_desc,
+                    reason,
+                )
                 del tp[provider]
                 set_throttled_providers(str(tp))
         # if forced only is enabled: # fixme: Prepared for forced only implementation to remove providers with don't support forced only subtitles
@@ -143,92 +197,85 @@ _FFMPEG_BINARY = get_binary("ffmpeg")
 
 def get_providers_auth():
     return {
-        'addic7ed': {
-            'username': settings.addic7ed.username,
-            'password': settings.addic7ed.password,
-            'cookies': settings.addic7ed.cookies,
-            'user_agent': settings.addic7ed.user_agent,
-            'is_vip': settings.addic7ed.getboolean('vip'),
+        "addic7ed": {
+            "username": settings.addic7ed.username,
+            "password": settings.addic7ed.password,
+            "cookies": settings.addic7ed.cookies,
+            "user_agent": settings.addic7ed.user_agent,
+            "is_vip": settings.addic7ed.getboolean("vip"),
         },
-        'opensubtitles': {
-            'username': settings.opensubtitles.username,
-            'password': settings.opensubtitles.password,
-            'use_tag_search': settings.opensubtitles.getboolean(
-                    'use_tag_search'
-            ),
-            'only_foreign': False,  # fixme
-            'also_foreign': False,  # fixme
-            'is_vip': settings.opensubtitles.getboolean('vip'),
-            'use_ssl': settings.opensubtitles.getboolean('ssl'),
-            'timeout': int(settings.opensubtitles.timeout) or 15,
-            'skip_wrong_fps': settings.opensubtitles.getboolean(
-                    'skip_wrong_fps'
-            ),
+        "opensubtitles": {
+            "username": settings.opensubtitles.username,
+            "password": settings.opensubtitles.password,
+            "use_tag_search": settings.opensubtitles.getboolean("use_tag_search"),
+            "only_foreign": False,  # fixme
+            "also_foreign": False,  # fixme
+            "is_vip": settings.opensubtitles.getboolean("vip"),
+            "use_ssl": settings.opensubtitles.getboolean("ssl"),
+            "timeout": int(settings.opensubtitles.timeout) or 15,
+            "skip_wrong_fps": settings.opensubtitles.getboolean("skip_wrong_fps"),
         },
-        'opensubtitlescom': {'username': settings.opensubtitlescom.username,
-                             'password': settings.opensubtitlescom.password,
-                             'use_hash': settings.opensubtitlescom.getboolean('use_hash'),
-                             'api_key': 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
-                             },
-        'podnapisi': {
-            'only_foreign': False,  # fixme
-            'also_foreign': False,  # fixme
-            'verify_ssl': settings.podnapisi.getboolean('verify_ssl')
+        "opensubtitlescom": {
+            "username": settings.opensubtitlescom.username,
+            "password": settings.opensubtitlescom.password,
+            "use_hash": settings.opensubtitlescom.getboolean("use_hash"),
+            "api_key": "s38zmzVlW7IlYruWi7mHwDYl2SfMQoC1",
         },
-        'subscene': {
-            'username': settings.subscene.username,
-            'password': settings.subscene.password,
-            'only_foreign': False,  # fixme
+        "podnapisi": {
+            "only_foreign": False,  # fixme
+            "also_foreign": False,  # fixme
+            "verify_ssl": settings.podnapisi.getboolean("verify_ssl"),
         },
-        'legendasdivx': {
-            'username': settings.legendasdivx.username,
-            'password': settings.legendasdivx.password,
-            'skip_wrong_fps': settings.legendasdivx.getboolean(
-                    'skip_wrong_fps'
-            ),
+        "subscene": {
+            "username": settings.subscene.username,
+            "password": settings.subscene.password,
+            "only_foreign": False,  # fixme
         },
-        'legendastv': {
-            'username': settings.legendastv.username,
-            'password': settings.legendastv.password,
-            'featured_only': settings.legendastv.getboolean(
-                    'featured_only'
-            ),
+        "legendasdivx": {
+            "username": settings.legendasdivx.username,
+            "password": settings.legendasdivx.password,
+            "skip_wrong_fps": settings.legendasdivx.getboolean("skip_wrong_fps"),
         },
-        'xsubs': {
-            'username': settings.xsubs.username,
-            'password': settings.xsubs.password,
+        "legendastv": {
+            "username": settings.legendastv.username,
+            "password": settings.legendastv.password,
+            "featured_only": settings.legendastv.getboolean("featured_only"),
         },
-        'assrt': {
-            'token': settings.assrt.token,
+        "xsubs": {
+            "username": settings.xsubs.username,
+            "password": settings.xsubs.password,
         },
-        'napisy24': {
-            'username': settings.napisy24.username,
-            'password': settings.napisy24.password,
+        "assrt": {
+            "token": settings.assrt.token,
         },
-        'betaseries': {'token': settings.betaseries.token},
-        'titulky': {
-            'username': settings.titulky.username,
-            'password': settings.titulky.password,
-            'approved_only': settings.titulky.getboolean('approved_only'),
+        "napisy24": {
+            "username": settings.napisy24.username,
+            "password": settings.napisy24.password,
         },
-        'titlovi': {
-            'username': settings.titlovi.username,
-            'password': settings.titlovi.password,
+        "betaseries": {"token": settings.betaseries.token},
+        "titulky": {
+            "username": settings.titulky.username,
+            "password": settings.titulky.password,
+            "approved_only": settings.titulky.getboolean("approved_only"),
         },
-        'ktuvit': {
-            'email': settings.ktuvit.email,
-            'hashed_password': settings.ktuvit.hashed_password,
+        "titlovi": {
+            "username": settings.titlovi.username,
+            "password": settings.titlovi.password,
         },
-        'embeddedsubtitles': {
-            'include_ass': settings.embeddedsubtitles.getboolean('include_ass'),
-            'include_srt': settings.embeddedsubtitles.getboolean('include_srt'),
-            'hi_fallback': settings.embeddedsubtitles.getboolean('hi_fallback'),
-            'mergerfs_mode': settings.embeddedsubtitles.getboolean('mergerfs_mode'),
-            'cache_dir': os.path.join(args.config_dir, "cache"),
-            'ffprobe_path': _FFPROBE_BINARY,
-            'ffmpeg_path': _FFMPEG_BINARY,
-            'timeout': settings.embeddedsubtitles.timeout,
-        }
+        "ktuvit": {
+            "email": settings.ktuvit.email,
+            "hashed_password": settings.ktuvit.hashed_password,
+        },
+        "embeddedsubtitles": {
+            "include_ass": settings.embeddedsubtitles.getboolean("include_ass"),
+            "include_srt": settings.embeddedsubtitles.getboolean("include_srt"),
+            "hi_fallback": settings.embeddedsubtitles.getboolean("hi_fallback"),
+            "mergerfs_mode": settings.embeddedsubtitles.getboolean("mergerfs_mode"),
+            "cache_dir": os.path.join(args.config_dir, "cache"),
+            "ffprobe_path": _FFPROBE_BINARY,
+            "ffmpeg_path": _FFMPEG_BINARY,
+            "timeout": settings.embeddedsubtitles.timeout,
+        },
     }
 
 
@@ -252,60 +299,87 @@ def provider_throttle(name, exception):
             if isinstance(cls, valid_cls):
                 cls = valid_cls
 
-    throttle_data = PROVIDER_THROTTLE_MAP.get(name, PROVIDER_THROTTLE_MAP["default"]).get(cls, None) or \
-        PROVIDER_THROTTLE_MAP["default"].get(cls, None)
-
-    if throttle_data:
+    if throttle_data := PROVIDER_THROTTLE_MAP.get(
+        name, PROVIDER_THROTTLE_MAP["default"]
+    ).get(cls, None) or PROVIDER_THROTTLE_MAP["default"].get(cls, None):
         throttle_delta, throttle_description = throttle_data
     else:
-        throttle_delta, throttle_description = datetime.timedelta(minutes=10), "10 minutes"
+        throttle_delta, throttle_description = (
+            datetime.timedelta(minutes=10),
+            "10 minutes",
+        )
 
     throttle_until = datetime.datetime.now() + throttle_delta
 
     if cls_name not in VALID_COUNT_EXCEPTIONS or throttled_count(name):
-        if cls_name == 'ValueError' and exception.args[0].startswith('unsupported pickle protocol'):
+        if cls_name == "ValueError" and exception.args[0].startswith(
+            "unsupported pickle protocol"
+        ):
             for fn in subliminal_cache_region.backend.all_filenames:
                 try:
                     os.remove(fn)
                 except (IOError, OSError):
-                    logging.debug("Couldn't remove cache file: %s", os.path.basename(fn))
+                    logging.debug(
+                        "Couldn't remove cache file: %s", os.path.basename(fn)
+                    )
         else:
             tp[name] = (cls_name, throttle_until, throttle_description)
             set_throttled_providers(str(tp))
 
-            logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name,
-                         throttle_description, throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.args[0]
-                         if exception.args else None)
+            logging.info(
+                "Throttling %s for %s, until %s, because of: %s. Exception info: %r",
+                name,
+                throttle_description,
+                throttle_until.strftime("%y/%m/%d %H:%M"),
+                cls_name,
+                exception.args[0] if exception.args else None,
+            )
             update_throttled_provider()
 
 
 def throttled_count(name):
     global throttle_count
     if name in list(throttle_count.keys()):
-        if 'count' in list(throttle_count[name].keys()):
+        if "count" in list(throttle_count[name].keys()):
             for key, value in throttle_count[name].items():
-                if key == 'count':
+                if key == "count":
                     value += 1
-                    throttle_count[name]['count'] = value
+                    throttle_count[name]["count"] = value
         else:
-            throttle_count[name] = {"count": 1, "time": (datetime.datetime.now() + datetime.timedelta(seconds=120))}
+            throttle_count[name] = {
+                "count": 1,
+                "time": (datetime.datetime.now() + datetime.timedelta(seconds=120)),
+            }
 
     else:
-        throttle_count[name] = {"count": 1, "time": (datetime.datetime.now() + datetime.timedelta(seconds=120))}
+        throttle_count[name] = {
+            "count": 1,
+            "time": (datetime.datetime.now() + datetime.timedelta(seconds=120)),
+        }
 
-    if throttle_count[name]['count'] >= 5:
+    if throttle_count[name]["count"] >= 5:
         return True
-    if throttle_count[name]['time'] <= datetime.datetime.now():
-        throttle_count[name] = {"count": 1, "time": (datetime.datetime.now() + datetime.timedelta(seconds=120))}
-    logging.info("Provider %s throttle count %s of 5, waiting 5sec and trying again", name,
-                 throttle_count[name]['count'])
+    if throttle_count[name]["time"] <= datetime.datetime.now():
+        throttle_count[name] = {
+            "count": 1,
+            "time": (datetime.datetime.now() + datetime.timedelta(seconds=120)),
+        }
+    logging.info(
+        "Provider %s throttle count %s of 5, waiting 5sec and trying again",
+        name,
+        throttle_count[name]["count"],
+    )
     time.sleep(5)
     return False
 
 
 def update_throttled_provider():
     existing_providers = provider_registry.names()
-    providers_list = [x for x in get_array_from(settings.general.enabled_providers) if x in existing_providers]
+    providers_list = [
+        x
+        for x in get_array_from(settings.general.enabled_providers)
+        if x in existing_providers
+    ]
 
     for provider in list(tp):
         if provider not in providers_list:
@@ -316,30 +390,28 @@ def update_throttled_provider():
 
         if reason:
             now = datetime.datetime.now()
-            if now < until:
-                pass
-            else:
-                logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
+            if now >= until:
+                logging.info(
+                    "Using %s again after %s, (disabled because: %s)",
+                    provider,
+                    throttle_desc,
+                    reason,
+                )
                 del tp[provider]
                 set_throttled_providers(str(tp))
 
-            reason, until, throttle_desc = tp.get(provider, (None, None, None))
-
-            if reason:
-                now = datetime.datetime.now()
-                if now >= until:
-                    logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
-                    del tp[provider]
-                    set_throttled_providers(str(tp))
-
-    event_stream(type='badges')
+    event_stream(type="badges")
 
 
 def list_throttled_providers():
     update_throttled_provider()
     throttled_providers = []
     existing_providers = provider_registry.names()
-    providers = [x for x in get_array_from(settings.general.enabled_providers) if x in existing_providers]
+    providers = [
+        x
+        for x in get_array_from(settings.general.enabled_providers)
+        if x in existing_providers
+    ]
     for provider in providers:
         reason, until, throttle_desc = tp.get(provider, (None, None, None))
         throttled_providers.append([provider, reason, pretty.date(until)])
@@ -351,15 +423,21 @@ def reset_throttled_providers():
         del tp[provider]
     set_throttled_providers(str(tp))
     update_throttled_provider()
-    logging.info('BAZARR throttled providers have been reset.')
+    logging.info("BAZARR throttled providers have been reset.")
 
 
 def get_throttled_providers():
     providers = {}
     try:
-        if os.path.exists(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')):
-            with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')), 'r') as \
-                    handle:
+        if os.path.exists(
+            os.path.join(args.config_dir, "config", "throttled_providers.dat")
+        ):
+            with open(
+                os.path.normpath(
+                    os.path.join(args.config_dir, "config", "throttled_providers.dat")
+                ),
+                "r",
+            ) as handle:
                 providers = eval(handle.read())
     except Exception:
         # set empty content in throttled_providers.dat
@@ -370,10 +448,15 @@ def get_throttled_providers():
 
 
 def set_throttled_providers(data):
-    with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')), 'w+') as handle:
+    with open(
+        os.path.normpath(
+            os.path.join(args.config_dir, "config", "throttled_providers.dat")
+        ),
+        "w+",
+    ) as handle:
         handle.write(data)
 
 
 tp = get_throttled_providers()
 if not isinstance(tp, dict):
-    raise ValueError('tp should be a dict')
+    raise ValueError("tp should be a dict")

@@ -1,17 +1,17 @@
 version: 2
 updates:
-  - package-ecosystem: 'npm'
-    directory: '/frontend'
+  - package-ecosystem: "npm"
+    directory: "/frontend"
     schedule:
-      interval: 'weekly'
+      interval: "weekly"
     commit-message:
       prefix: "[bot]"
     open-pull-requests-limit: 1
     target-branch: "development"
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: 'weekly'
+      interval: "weekly"
     commit-message:
       prefix: "[workflow]"
     open-pull-requests-limit: 1

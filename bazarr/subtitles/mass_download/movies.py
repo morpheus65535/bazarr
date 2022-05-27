@@ -51,9 +51,7 @@ def movies_download_subtitles(no):
     languages = []
 
     for language in ast.literal_eval(movie['missing_subtitles']):
-        providers_list = get_providers()
-
-        if providers_list:
+        if providers_list := get_providers():
             if language is not None:
                 hi_ = "True" if language.endswith(':hi') else "False"
                 forced_ = "True" if language.endswith(':forced') else "False"
@@ -73,11 +71,8 @@ def movies_download_subtitles(no):
             logging.info("BAZARR All providers are throttled")
             break
 
-    show_progress(id='movie_search_progress_{}'.format(no),
-                  header='Searching missing subtitles...',
-                  name=movie['title'],
-                  value=0,
-                  count=count_movie)
+    show_progress(id=f'movie_search_progress_{no}', header='Searching missing subtitles...', name=movie['title'], value=0, count=count_movie)
+
 
     for result in generate_subtitles(path_mappings.path_replace_movie(movie['path']),
                                      languages,
@@ -91,9 +86,9 @@ def movies_download_subtitles(no):
             path = result[1]
             forced = result[5]
             if result[8]:
-                language_code = result[2] + ":hi"
+                language_code = f"{result[2]}:hi"
             elif forced:
-                language_code = result[2] + ":forced"
+                language_code = f"{result[2]}:forced"
             else:
                 language_code = result[2]
             provider = result[3]
@@ -104,4 +99,4 @@ def movies_download_subtitles(no):
             history_log_movie(1, no, message, path, language_code, provider, score, subs_id, subs_path)
             send_notifications_movie(no, message)
 
-    hide_progress(id='movie_search_progress_{}'.format(no))
+    hide_progress(id=f'movie_search_progress_{no}')

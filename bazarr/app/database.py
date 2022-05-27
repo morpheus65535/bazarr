@@ -6,7 +6,15 @@ import json
 import ast
 import time
 
-from peewee import Model, AutoField, TextField, IntegerField, ForeignKeyField, BlobField, BooleanField
+from peewee import (
+    Model,
+    AutoField,
+    TextField,
+    IntegerField,
+    ForeignKeyField,
+    BlobField,
+    BooleanField,
+)
 from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.migrate import SqliteMigrator, migrate
 from playhouse.sqlite_ext import RowIDField
@@ -16,10 +24,12 @@ from utilities.path_mappings import path_mappings
 from .config import settings, get_array_from
 from .get_args import args
 
-database = SqliteQueueDatabase(os.path.join(args.config_dir, 'db', 'bazarr.db'),
-                               use_gevent=False,
-                               autostart=True,
-                               queue_max_size=256)
+database = SqliteQueueDatabase(
+    os.path.join(args.config_dir, "db", "bazarr.db"),
+    use_gevent=False,
+    autostart=True,
+    queue_max_size=256,
+)
 migrator = SqliteMigrator(database)
 
 
@@ -29,7 +39,8 @@ def _stop_worker_threads():
 
 
 class UnknownField(object):
-    def __init__(self, *_, **__): pass
+    def __init__(self, *_, **__):
+        pass
 
 
 class BaseModel(Model):
@@ -42,7 +53,7 @@ class System(BaseModel):
     updated = TextField(null=True)
 
     class Meta:
-        table_name = 'system'
+        table_name = "system"
         primary_key = False
 
 
@@ -55,7 +66,7 @@ class TableBlacklist(BaseModel):
     timestamp = IntegerField(null=True)
 
     class Meta:
-        table_name = 'table_blacklist'
+        table_name = "table_blacklist"
         primary_key = False
 
 
@@ -67,7 +78,7 @@ class TableBlacklistMovie(BaseModel):
     timestamp = IntegerField(null=True)
 
     class Meta:
-        table_name = 'table_blacklist_movie'
+        table_name = "table_blacklist_movie"
         primary_key = False
 
 
@@ -94,7 +105,7 @@ class TableEpisodes(BaseModel):
     video_codec = TextField(null=True)
 
     class Meta:
-        table_name = 'table_episodes'
+        table_name = "table_episodes"
         primary_key = False
 
 
@@ -113,7 +124,7 @@ class TableHistory(BaseModel):
     video_path = TextField(null=True)
 
     class Meta:
-        table_name = 'table_history'
+        table_name = "table_history"
 
 
 class TableHistoryMovie(BaseModel):
@@ -130,7 +141,7 @@ class TableHistoryMovie(BaseModel):
     video_path = TextField(null=True)
 
     class Meta:
-        table_name = 'table_history_movie'
+        table_name = "table_history_movie"
 
 
 class TableLanguagesProfiles(BaseModel):
@@ -143,7 +154,7 @@ class TableLanguagesProfiles(BaseModel):
     mustNotContain = TextField(null=True)
 
     class Meta:
-        table_name = 'table_languages_profiles'
+        table_name = "table_languages_profiles"
 
 
 class TableMovies(BaseModel):
@@ -176,7 +187,7 @@ class TableMovies(BaseModel):
     year = TextField(null=True)
 
     class Meta:
-        table_name = 'table_movies'
+        table_name = "table_movies"
 
 
 class TableMoviesRootfolder(BaseModel):
@@ -186,7 +197,7 @@ class TableMoviesRootfolder(BaseModel):
     path = TextField(null=True)
 
     class Meta:
-        table_name = 'table_movies_rootfolder'
+        table_name = "table_movies_rootfolder"
         primary_key = False
 
 
@@ -198,7 +209,7 @@ class TableSettingsLanguages(BaseModel):
     name = TextField()
 
     class Meta:
-        table_name = 'table_settings_languages'
+        table_name = "table_settings_languages"
 
 
 class TableSettingsNotifier(BaseModel):
@@ -207,7 +218,7 @@ class TableSettingsNotifier(BaseModel):
     url = TextField(null=True)
 
     class Meta:
-        table_name = 'table_settings_notifier'
+        table_name = "table_settings_notifier"
 
 
 class TableShows(BaseModel):
@@ -228,7 +239,7 @@ class TableShows(BaseModel):
     year = TextField(null=True)
 
     class Meta:
-        table_name = 'table_shows'
+        table_name = "table_shows"
 
 
 class TableShowsRootfolder(BaseModel):
@@ -238,7 +249,7 @@ class TableShowsRootfolder(BaseModel):
     path = TextField(null=True)
 
     class Meta:
-        table_name = 'table_shows_rootfolder'
+        table_name = "table_shows_rootfolder"
         primary_key = False
 
 
@@ -249,7 +260,7 @@ class TableCustomScoreProfiles(BaseModel):
     score = IntegerField(null=True)
 
     class Meta:
-        table_name = 'table_custom_score_profiles'
+        table_name = "table_custom_score_profiles"
 
 
 class TableCustomScoreProfileConditions(BaseModel):
@@ -260,26 +271,30 @@ class TableCustomScoreProfileConditions(BaseModel):
     negate = BooleanField(default=False)
 
     class Meta:
-        table_name = 'table_custom_score_profile_conditions'
+        table_name = "table_custom_score_profile_conditions"
 
 
 def init_db():
     # Create tables if they don't exists.
-    database.create_tables([System,
-                            TableBlacklist,
-                            TableBlacklistMovie,
-                            TableEpisodes,
-                            TableHistory,
-                            TableHistoryMovie,
-                            TableLanguagesProfiles,
-                            TableMovies,
-                            TableMoviesRootfolder,
-                            TableSettingsLanguages,
-                            TableSettingsNotifier,
-                            TableShows,
-                            TableShowsRootfolder,
-                            TableCustomScoreProfiles,
-                            TableCustomScoreProfileConditions])
+    database.create_tables(
+        [
+            System,
+            TableBlacklist,
+            TableBlacklistMovie,
+            TableEpisodes,
+            TableHistory,
+            TableHistoryMovie,
+            TableLanguagesProfiles,
+            TableMovies,
+            TableMoviesRootfolder,
+            TableSettingsLanguages,
+            TableSettingsNotifier,
+            TableShows,
+            TableShowsRootfolder,
+            TableCustomScoreProfiles,
+            TableCustomScoreProfileConditions,
+        ]
+    )
 
     # add the system table single row if it's not existing
     # we must retry until the tables are created
@@ -287,7 +302,7 @@ def init_db():
     while not tables_created:
         try:
             if not System.select().count():
-                System.insert({System.configured: '0', System.updated: '0'}).execute()
+                System.insert({System.configured: "0", System.updated: "0"}).execute()
         except Exception:
             time.sleep(0.1)
         else:
@@ -296,48 +311,66 @@ def init_db():
 
 def migrate_db():
     migrate(
-        migrator.add_column('table_shows', 'year', TextField(null=True)),
-        migrator.add_column('table_shows', 'alternateTitles', TextField(null=True)),
-        migrator.add_column('table_shows', 'tags', TextField(default='[]', null=True)),
-        migrator.add_column('table_shows', 'seriesType', TextField(default='""', null=True)),
-        migrator.add_column('table_shows', 'imdbId', TextField(default='""', null=True)),
-        migrator.add_column('table_shows', 'profileId', IntegerField(null=True)),
-        migrator.add_column('table_episodes', 'format', TextField(null=True)),
-        migrator.add_column('table_episodes', 'resolution', TextField(null=True)),
-        migrator.add_column('table_episodes', 'video_codec', TextField(null=True)),
-        migrator.add_column('table_episodes', 'audio_codec', TextField(null=True)),
-        migrator.add_column('table_episodes', 'episode_file_id', IntegerField(null=True)),
-        migrator.add_column('table_episodes', 'audio_language', TextField(null=True)),
-        migrator.add_column('table_episodes', 'file_size', IntegerField(default=0, null=True)),
-        migrator.add_column('table_episodes', 'ffprobe_cache', BlobField(null=True)),
-        migrator.add_column('table_movies', 'sortTitle', TextField(null=True)),
-        migrator.add_column('table_movies', 'year', TextField(null=True)),
-        migrator.add_column('table_movies', 'alternativeTitles', TextField(null=True)),
-        migrator.add_column('table_movies', 'format', TextField(null=True)),
-        migrator.add_column('table_movies', 'resolution', TextField(null=True)),
-        migrator.add_column('table_movies', 'video_codec', TextField(null=True)),
-        migrator.add_column('table_movies', 'audio_codec', TextField(null=True)),
-        migrator.add_column('table_movies', 'imdbId', TextField(null=True)),
-        migrator.add_column('table_movies', 'movie_file_id', IntegerField(null=True)),
-        migrator.add_column('table_movies', 'tags', TextField(default='[]', null=True)),
-        migrator.add_column('table_movies', 'profileId', IntegerField(null=True)),
-        migrator.add_column('table_movies', 'file_size', IntegerField(default=0, null=True)),
-        migrator.add_column('table_movies', 'ffprobe_cache', BlobField(null=True)),
-        migrator.add_column('table_history', 'video_path', TextField(null=True)),
-        migrator.add_column('table_history', 'language', TextField(null=True)),
-        migrator.add_column('table_history', 'provider', TextField(null=True)),
-        migrator.add_column('table_history', 'score', TextField(null=True)),
-        migrator.add_column('table_history', 'subs_id', TextField(null=True)),
-        migrator.add_column('table_history', 'subtitles_path', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'video_path', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'language', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'provider', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'score', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'subs_id', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'subtitles_path', TextField(null=True)),
-        migrator.add_column('table_languages_profiles', 'mustContain', TextField(null=True)),
-        migrator.add_column('table_languages_profiles', 'mustNotContain', TextField(null=True)),
-        migrator.add_column('table_languages_profiles', 'originalFormat', BooleanField(null=True)),
+        migrator.add_column("table_shows", "year", TextField(null=True)),
+        migrator.add_column("table_shows", "alternateTitles", TextField(null=True)),
+        migrator.add_column("table_shows", "tags", TextField(default="[]", null=True)),
+        migrator.add_column(
+            "table_shows", "seriesType", TextField(default='""', null=True)
+        ),
+        migrator.add_column(
+            "table_shows", "imdbId", TextField(default='""', null=True)
+        ),
+        migrator.add_column("table_shows", "profileId", IntegerField(null=True)),
+        migrator.add_column("table_episodes", "format", TextField(null=True)),
+        migrator.add_column("table_episodes", "resolution", TextField(null=True)),
+        migrator.add_column("table_episodes", "video_codec", TextField(null=True)),
+        migrator.add_column("table_episodes", "audio_codec", TextField(null=True)),
+        migrator.add_column(
+            "table_episodes", "episode_file_id", IntegerField(null=True)
+        ),
+        migrator.add_column("table_episodes", "audio_language", TextField(null=True)),
+        migrator.add_column(
+            "table_episodes", "file_size", IntegerField(default=0, null=True)
+        ),
+        migrator.add_column("table_episodes", "ffprobe_cache", BlobField(null=True)),
+        migrator.add_column("table_movies", "sortTitle", TextField(null=True)),
+        migrator.add_column("table_movies", "year", TextField(null=True)),
+        migrator.add_column("table_movies", "alternativeTitles", TextField(null=True)),
+        migrator.add_column("table_movies", "format", TextField(null=True)),
+        migrator.add_column("table_movies", "resolution", TextField(null=True)),
+        migrator.add_column("table_movies", "video_codec", TextField(null=True)),
+        migrator.add_column("table_movies", "audio_codec", TextField(null=True)),
+        migrator.add_column("table_movies", "imdbId", TextField(null=True)),
+        migrator.add_column("table_movies", "movie_file_id", IntegerField(null=True)),
+        migrator.add_column("table_movies", "tags", TextField(default="[]", null=True)),
+        migrator.add_column("table_movies", "profileId", IntegerField(null=True)),
+        migrator.add_column(
+            "table_movies", "file_size", IntegerField(default=0, null=True)
+        ),
+        migrator.add_column("table_movies", "ffprobe_cache", BlobField(null=True)),
+        migrator.add_column("table_history", "video_path", TextField(null=True)),
+        migrator.add_column("table_history", "language", TextField(null=True)),
+        migrator.add_column("table_history", "provider", TextField(null=True)),
+        migrator.add_column("table_history", "score", TextField(null=True)),
+        migrator.add_column("table_history", "subs_id", TextField(null=True)),
+        migrator.add_column("table_history", "subtitles_path", TextField(null=True)),
+        migrator.add_column("table_history_movie", "video_path", TextField(null=True)),
+        migrator.add_column("table_history_movie", "language", TextField(null=True)),
+        migrator.add_column("table_history_movie", "provider", TextField(null=True)),
+        migrator.add_column("table_history_movie", "score", TextField(null=True)),
+        migrator.add_column("table_history_movie", "subs_id", TextField(null=True)),
+        migrator.add_column(
+            "table_history_movie", "subtitles_path", TextField(null=True)
+        ),
+        migrator.add_column(
+            "table_languages_profiles", "mustContain", TextField(null=True)
+        ),
+        migrator.add_column(
+            "table_languages_profiles", "mustNotContain", TextField(null=True)
+        ),
+        migrator.add_column(
+            "table_languages_profiles", "originalFormat", BooleanField(null=True)
+        ),
     )
 
 
@@ -349,9 +382,9 @@ class SqliteDictPathMapper:
     def path_replace(values_dict):
         if type(values_dict) is list:
             for item in values_dict:
-                item['path'] = path_mappings.path_replace(item['path'])
+                item["path"] = path_mappings.path_replace(item["path"])
         elif type(values_dict) is dict:
-            values_dict['path'] = path_mappings.path_replace(values_dict['path'])
+            values_dict["path"] = path_mappings.path_replace(values_dict["path"])
         else:
             return path_mappings.path_replace(values_dict)
 
@@ -359,9 +392,9 @@ class SqliteDictPathMapper:
     def path_replace_movie(values_dict):
         if type(values_dict) is list:
             for item in values_dict:
-                item['path'] = path_mappings.path_replace_movie(item['path'])
+                item["path"] = path_mappings.path_replace_movie(item["path"])
         elif type(values_dict) is dict:
-            values_dict['path'] = path_mappings.path_replace_movie(values_dict['path'])
+            values_dict["path"] = path_mappings.path_replace_movie(values_dict["path"])
         else:
             return path_mappings.path_replace_movie(values_dict)
 
@@ -371,49 +404,55 @@ dict_mapper = SqliteDictPathMapper()
 
 def get_exclusion_clause(exclusion_type):
     where_clause = []
-    if exclusion_type == 'series':
+    if exclusion_type == "series":
         tagsList = ast.literal_eval(settings.sonarr.excluded_tags)
-        for tag in tagsList:
-            where_clause.append(~(TableShows.tags.contains("\'"+tag+"\'")))
+        where_clause.extend(
+            ~(TableShows.tags.contains("'" + tag + "'")) for tag in tagsList
+        )
+
     else:
         tagsList = ast.literal_eval(settings.radarr.excluded_tags)
-        for tag in tagsList:
-            where_clause.append(~(TableMovies.tags.contains("\'"+tag+"\'")))
+        where_clause.extend(
+            ~(TableMovies.tags.contains("'" + tag + "'")) for tag in tagsList
+        )
 
-    if exclusion_type == 'series':
-        monitoredOnly = settings.sonarr.getboolean('only_monitored')
+    if exclusion_type == "series":
+        monitoredOnly = settings.sonarr.getboolean("only_monitored")
         if monitoredOnly:
-            where_clause.append((TableEpisodes.monitored == 'True'))
-    else:
-        monitoredOnly = settings.radarr.getboolean('only_monitored')
-        if monitoredOnly:
-            where_clause.append((TableMovies.monitored == 'True'))
+            where_clause.append((TableEpisodes.monitored == "True"))
+    elif monitoredOnly := settings.radarr.getboolean("only_monitored"):
+        where_clause.append((TableMovies.monitored == "True"))
 
-    if exclusion_type == 'series':
+    if exclusion_type == "series":
         typesList = get_array_from(settings.sonarr.excluded_series_types)
-        for item in typesList:
-            where_clause.append((TableShows.seriesType != item))
-
-        exclude_season_zero = settings.sonarr.getboolean('exclude_season_zero')
-        if exclude_season_zero:
+        where_clause.extend(TableShows.seriesType != item for item in typesList)
+        if exclude_season_zero := settings.sonarr.getboolean("exclude_season_zero"):
             where_clause.append((TableEpisodes.season != 0))
 
     return where_clause
 
 
 def update_profile_id_list():
-    profile_id_list = TableLanguagesProfiles.select(TableLanguagesProfiles.profileId,
-                                                    TableLanguagesProfiles.name,
-                                                    TableLanguagesProfiles.cutoff,
-                                                    TableLanguagesProfiles.items,
-                                                    TableLanguagesProfiles.mustContain,
-                                                    TableLanguagesProfiles.mustNotContain,
-                                                    TableLanguagesProfiles.originalFormat).dicts()
+    profile_id_list = TableLanguagesProfiles.select(
+        TableLanguagesProfiles.profileId,
+        TableLanguagesProfiles.name,
+        TableLanguagesProfiles.cutoff,
+        TableLanguagesProfiles.items,
+        TableLanguagesProfiles.mustContain,
+        TableLanguagesProfiles.mustNotContain,
+        TableLanguagesProfiles.originalFormat,
+    ).dicts()
     profile_id_list = list(profile_id_list)
     for profile in profile_id_list:
-        profile['items'] = json.loads(profile['items'])
-        profile['mustContain'] = ast.literal_eval(profile['mustContain']) if profile['mustContain'] else []
-        profile['mustNotContain'] = ast.literal_eval(profile['mustNotContain']) if profile['mustNotContain'] else []
+        profile["items"] = json.loads(profile["items"])
+        profile["mustContain"] = (
+            ast.literal_eval(profile["mustContain"]) if profile["mustContain"] else []
+        )
+        profile["mustNotContain"] = (
+            ast.literal_eval(profile["mustNotContain"])
+            if profile["mustNotContain"]
+            else []
+        )
 
     return profile_id_list
 
@@ -421,23 +460,30 @@ def update_profile_id_list():
 def get_profiles_list(profile_id=None):
     profile_id_list = update_profile_id_list()
 
-    if profile_id and profile_id != 'null':
-        for profile in profile_id_list:
-            if profile['profileId'] == profile_id:
-                return profile
-    else:
+    if not profile_id or profile_id == "null":
         return profile_id_list
+    for profile in profile_id_list:
+        if profile["profileId"] == profile_id:
+            return profile
 
 
 def get_desired_languages(profile_id):
     languages = []
     profile_id_list = update_profile_id_list()
 
-    if profile_id and profile_id != 'null':
+    if profile_id and profile_id != "null":
         for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat = profile.values()
+            (
+                profileId,
+                name,
+                cutoff,
+                items,
+                mustContain,
+                mustNotContain,
+                originalFormat,
+            ) = profile.values()
             if profileId == int(profile_id):
-                languages = [x['language'] for x in items]
+                languages = [x["language"] for x in items]
                 break
 
     return languages
@@ -447,9 +493,17 @@ def get_profile_id_name(profile_id):
     name_from_id = None
     profile_id_list = update_profile_id_list()
 
-    if profile_id and profile_id != 'null':
+    if profile_id and profile_id != "null":
         for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat = profile.values()
+            (
+                profileId,
+                name,
+                cutoff,
+                items,
+                mustContain,
+                mustNotContain,
+                originalFormat,
+            ) = profile.values()
             if profileId == int(profile_id):
                 name_from_id = name
                 break
@@ -461,17 +515,24 @@ def get_profile_cutoff(profile_id):
     cutoff_language = None
     profile_id_list = update_profile_id_list()
 
-    if profile_id and profile_id != 'null':
+    if profile_id and profile_id != "null":
         cutoff_language = []
         for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat = profile.values()
-            if cutoff:
-                if profileId == int(profile_id):
-                    for item in items:
-                        if item['id'] == cutoff:
-                            return [item]
-                        elif cutoff == 65535:
-                            cutoff_language.append(item)
+            (
+                profileId,
+                name,
+                cutoff,
+                items,
+                mustContain,
+                mustNotContain,
+                originalFormat,
+            ) = profile.values()
+            if cutoff and profileId == int(profile_id):
+                for item in items:
+                    if item["id"] == cutoff:
+                        return [item]
+                    elif cutoff == 65535:
+                        cutoff_language.append(item)
 
         if not len(cutoff_language):
             cutoff_language = None
@@ -481,14 +542,21 @@ def get_profile_cutoff(profile_id):
 
 def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
     from languages.get_languages import alpha2_from_language, alpha3_from_language
+
     audio_languages = []
 
     if series_id:
-        audio_languages_list_str = TableShows.get(TableShows.sonarrSeriesId == series_id).audio_language
+        audio_languages_list_str = TableShows.get(
+            TableShows.sonarrSeriesId == series_id
+        ).audio_language
     elif episode_id:
-        audio_languages_list_str = TableEpisodes.get(TableEpisodes.sonarrEpisodeId == episode_id).audio_language
+        audio_languages_list_str = TableEpisodes.get(
+            TableEpisodes.sonarrEpisodeId == episode_id
+        ).audio_language
     elif movie_id:
-        audio_languages_list_str = TableMovies.get(TableMovies.radarrId == movie_id).audio_language
+        audio_languages_list_str = TableMovies.get(
+            TableMovies.radarrId == movie_id
+        ).audio_language
     else:
         return audio_languages
 
@@ -497,43 +565,48 @@ def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
     except ValueError:
         pass
     else:
-        for language in audio_languages_list:
-            audio_languages.append(
-                {"name": language,
-                 "code2": alpha2_from_language(language) or None,
-                 "code3": alpha3_from_language(language) or None}
-            )
+        audio_languages.extend(
+            {
+                "name": language,
+                "code2": alpha2_from_language(language) or None,
+                "code3": alpha3_from_language(language) or None,
+            }
+            for language in audio_languages_list
+        )
 
     return audio_languages
 
 
 def get_profile_id(series_id=None, episode_id=None, movie_id=None):
     if series_id:
-        data = TableShows.select(TableShows.profileId)\
-            .where(TableShows.sonarrSeriesId == series_id)\
+        if (
+            data := TableShows.select(TableShows.profileId)
+            .where(TableShows.sonarrSeriesId == series_id)
             .get_or_none()
-        if data:
+        ):
             return data.profileId
     elif episode_id:
-        data = TableShows.select(TableShows.profileId)\
-            .join(TableEpisodes, on=(TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId))\
-            .where(TableEpisodes.sonarrEpisodeId == episode_id)\
+        if (
+            data := TableShows.select(TableShows.profileId)
+            .join(
+                TableEpisodes,
+                on=(TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId),
+            )
+            .where(TableEpisodes.sonarrEpisodeId == episode_id)
             .get_or_none()
-        if data:
+        ):
             return data.profileId
 
     elif movie_id:
-        data = TableMovies.select(TableMovies.profileId)\
-            .where(TableMovies.radarrId == movie_id)\
+        if (
+            data := TableMovies.select(TableMovies.profileId)
+            .where(TableMovies.radarrId == movie_id)
             .get_or_none()
-        if data:
+        ):
             return data.profileId
 
     return None
 
 
 def convert_list_to_clause(arr: list):
-    if isinstance(arr, list):
-        return f"({','.join(str(x) for x in arr)})"
-    else:
-        return ""
+    return f"({','.join(str(x) for x in arr)})" if isinstance(arr, list) else ""

@@ -21,5 +21,5 @@ api_bp_list = [
     api_bp_webhooks,
     api_bp_history,
     api_bp_files,
-    api_bp_movies
+    api_bp_movies,
 ]

@@ -24,8 +24,12 @@ def _handle_alpha3(detected_language: dict):
     return alpha3
 
 
-def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
-    data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, use_cache=use_cache)
+def embedded_subs_reader(
+    file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True
+):
+    data = parse_video_metadata(
+        file, file_size, episode_file_id, movie_file_id, use_cache=use_cache
+    )
 
     subtitles_list = []
     if data["ffprobe"] and "subtitle" in data["ffprobe"]:
@@ -64,7 +68,9 @@ def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=No
     return subtitles_list
 
 
-def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
+def parse_video_metadata(
+    file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True
+):
     # Define default data keys value
     data = {
         "ffprobe": {},
@@ -76,58 +82,68 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     if use_cache:
         # Get the actual cache value form database
         if episode_file_id:
-            cache_key = TableEpisodes.select(TableEpisodes.ffprobe_cache)\
-                .where(TableEpisodes.path == path_mappings.path_replace_reverse(file))\
-                .dicts()\
+            cache_key = (
+                TableEpisodes.select(TableEpisodes.ffprobe_cache)
+                .where(TableEpisodes.path == path_mappings.path_replace_reverse(file))
+                .dicts()
                 .get_or_none()
+            )
         elif movie_file_id:
-            cache_key = TableMovies.select(TableMovies.ffprobe_cache)\
-                .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file))\
-                .dicts()\
+            cache_key = (
+                TableMovies.select(TableMovies.ffprobe_cache)
+                .where(
+                    TableMovies.path == path_mappings.path_replace_reverse_movie(file)
+                )
+                .dicts()
                 .get_or_none()
+            )
         else:
             cache_key = None
 
         # check if we have a value for that cache key
         try:
             # Unpickle ffprobe cache
-            cached_value = pickle.loads(cache_key['ffprobe_cache'])
+            cached_value = pickle.loads(cache_key["ffprobe_cache"])
         except Exception:
             pass
         else:
             # Check if file size and file id matches and if so, we return the cached value
-            if cached_value['file_size'] == file_size and cached_value['file_id'] in [episode_file_id, movie_file_id]:
+            if cached_value["file_size"] == file_size and cached_value["file_id"] in [
+                episode_file_id,
+                movie_file_id,
+            ]:
                 return cached_value
 
     # if not, we retrieve the metadata from the file
     from utilities.binaries import get_binary
 
-    ffprobe_path = get_binary("ffprobe")
-
-    # if we have ffprobe available
-    if ffprobe_path:
-        data["ffprobe"] = api.know(video_path=file, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path})
-    # if not, we use enzyme for mkv files
-    else:
-        if os.path.splitext(file)[1] == ".mkv":
-            with open(file, "rb") as f:
-                try:
-                    mkv = enzyme.MKV(f)
-                except MalformedMKVError:
-                    logging.error(
-                        "BAZARR cannot analyze this MKV with our built-in MKV parser, you should install "
-                        "ffmpeg/ffprobe: " + file
-                    )
-                else:
-                    data["enzyme"] = mkv
+    if ffprobe_path := get_binary("ffprobe"):
+        data["ffprobe"] = api.know(
+            video_path=file, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path}
+        )
+    elif os.path.splitext(file)[1] == ".mkv":
+        with open(file, "rb") as f:
+            try:
+                mkv = enzyme.MKV(f)
+            except MalformedMKVError:
+                logging.error(
+                    "BAZARR cannot analyze this MKV with our built-in MKV parser, you should install "
+                    "ffmpeg/ffprobe: " + file
+                )
+            else:
+                data["enzyme"] = mkv
 
     # we write to db the result and return the newly cached ffprobe dict
     if episode_file_id:
-        TableEpisodes.update({TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)})\
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(file))\
-            .execute()
+        TableEpisodes.update(
+            {TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)}
+        ).where(
+            TableEpisodes.path == path_mappings.path_replace_reverse(file)
+        ).execute()
     elif movie_file_id:
-        TableMovies.update({TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)})\
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file))\
-            .execute()
+        TableMovies.update(
+            {TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)}
+        ).where(
+            TableMovies.path == path_mappings.path_replace_reverse_movie(file)
+        ).execute()
     return data

@@ -66,9 +66,9 @@ def _wanted_movie(movie):
             path = result[1]
             forced = result[5]
             if result[8]:
-                language_code = result[2] + ":hi"
+                language_code = f"{result[2]}:hi"
             elif forced:
-                language_code = result[2] + ":forced"
+                language_code = f"{result[2]}:forced"
             else:
                 language_code = result[2]
             provider = result[3]
@@ -95,9 +95,7 @@ def wanted_download_subtitles_movie(radarr_id):
     movies_details = list(movies_details)
 
     for movie in movies_details:
-        providers_list = get_providers()
-
-        if providers_list:
+        if providers_list := get_providers():
             _wanted_movie(movie)
         else:
             logging.info("BAZARR All providers are throttled")
@@ -123,8 +121,7 @@ def wanted_search_missing_subtitles_movies():
                       value=i,
                       count=count_movies)
 
-        providers = get_providers()
-        if providers:
+        if providers := get_providers():
             wanted_download_subtitles_movie(movie['radarrId'])
         else:
             logging.info("BAZARR All providers are throttled")

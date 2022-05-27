@@ -11,14 +11,16 @@ from ..utils import authenticate
 class BrowseSonarrFS(Resource):
     @authenticate
     def get(self):
-        path = request.args.get('path') or ''
-        data = []
+        path = request.args.get("path") or ""
         try:
             result = browse_sonarr_filesystem(path)
             if result is None:
                 raise ValueError
         except Exception:
             return jsonify([])
-        for item in result['directories']:
-            data.append({'name': item['name'], 'children': True, 'path': item['path']})
+        data = [
+            {"name": item["name"], "children": True, "path": item["path"]}
+            for item in result["directories"]
+        ]
+
         return jsonify(data)

@@ -11,13 +11,13 @@ from ..utils import authenticate
 class SystemTasks(Resource):
     @authenticate
     def get(self):
-        taskid = request.args.get('taskid')
+        taskid = request.args.get("taskid")
 
         task_list = scheduler.get_task_list()
 
         if taskid:
             for item in task_list:
-                if item['job_id'] == taskid:
+                if item["job_id"] == taskid:
                     task_list = [item]
                     continue
 
@@ -25,8 +25,8 @@ class SystemTasks(Resource):
 
     @authenticate
     def post(self):
-        taskid = request.form.get('taskid')
+        taskid = request.form.get("taskid")
 
         scheduler.execute_job_now(taskid)
 
-        return '', 204
+        return "", 204

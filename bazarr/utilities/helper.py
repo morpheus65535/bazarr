@@ -13,19 +13,27 @@ from app.config import settings
 def check_credentials(user, pw):
     username = settings.auth.username
     password = settings.auth.password
-    return hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username
+    return hashlib.md5(pw.encode("utf-8")).hexdigest() == password and user == username
 
 
 def get_subtitle_destination_folder():
-    fld_custom = str(settings.general.subfolder_custom).strip() if (settings.general.subfolder_custom and
-                                                                    settings.general.subfolder != 'current') else None
-    return fld_custom
+    return (
+        str(settings.general.subfolder_custom).strip()
+        if (
+            settings.general.subfolder_custom
+            and settings.general.subfolder != "current"
+        )
+        else None
+    )
 
 
 def get_target_folder(file_path):
     subfolder = settings.general.subfolder
-    fld_custom = str(settings.general.subfolder_custom).strip() \
-        if settings.general.subfolder_custom else None
+    fld_custom = (
+        str(settings.general.subfolder_custom).strip()
+        if settings.general.subfolder_custom
+        else None
+    )
 
     if subfolder != "current" and fld_custom:
         # specific subFolder requested, create it if it doesn't exist
@@ -45,7 +53,9 @@ def get_target_folder(file_path):
             try:
                 os.makedirs(fld)
             except Exception:
-                logging.error('BAZARR is unable to create directory to save subtitles: ' + fld)
+                logging.error(
+                    f"BAZARR is unable to create directory to save subtitles: {fld}"
+                )
                 fld = None
     else:
         fld = None
