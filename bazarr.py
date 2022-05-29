@@ -33,7 +33,7 @@ def check_python_version():
 def get_python_path():
     if sys.platform == "darwin":
         # Do not run Python from within macOS framework bundle.
-        python_bundle_path = os.path.join(sys.exec_prefix, "Resources", "Python.app", "Contents", "MacOS", "Python")
+        python_bundle_path = os.path.join(sys.base_exec_prefix, "Resources", "Python.app", "Contents", "MacOS", "Python")
         if os.path.exists(python_bundle_path):
             import tempfile
 
