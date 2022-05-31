@@ -4,7 +4,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Autocomplete, AutocompleteProps } from "@mantine/core";
 import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
 
-const backKey = "[back]";
+// TODO: use fortawesome icons
+const backKey = "⏎ Back";
 
 function getLastSeparator(path: string): number {
   let idx = path.lastIndexOf("/");
