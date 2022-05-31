@@ -3,7 +3,7 @@ import { useArrayAction } from "@/utilities";
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@mantine/core";
-import { capitalize, isBoolean } from "lodash";
+import { capitalize } from "lodash";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import {
@@ -48,7 +48,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
   const items = useSettingValue<[string, string][]>(key);
 
   const enabledKey = getEnabledKey(type);
-  const enabled = useExtract<boolean>(enabledKey, isBoolean);
+  const enabled = useExtract<boolean>(enabledKey);
   const { setValue } = useFormActions();
 
   const updateRow = useCallback(

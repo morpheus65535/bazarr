@@ -2,10 +2,12 @@ import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
 import { Toolbox } from "@/components";
 import { LoadingProvider } from "@/contexts";
 import { useOnValueChange } from "@/utilities";
+import { LOG } from "@/utilities/console";
+import { useUpdateLocalStorage } from "@/utilities/storage";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 import { Container, Group, LoadingOverlay } from "@mantine/core";
 import { useDocumentTitle, useForm } from "@mantine/hooks";
-import { FunctionComponent, ReactNode, useCallback } from "react";
+import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
 import {
   enabledLanguageKey,
   languageProfileKey,
@@ -45,9 +47,7 @@ const Layout: FunctionComponent<Props> = (props) => {
   const form = useForm<FormValues>({
     initialValues: {
       settings: {},
-    },
-    validationRules: {
-      settings: (value) => Object.keys(value).length > 0,
+      storages: {},
     },
   });
 
@@ -57,82 +57,31 @@ const Layout: FunctionComponent<Props> = (props) => {
     }
   });
 
-  const submit = useCallback((values: FormValues) => {
-    //
-  }, []);
+  const updateStorage = useUpdateLocalStorage();
 
-  // const updateStorage = useUpdateLocalStorage();
+  const submit = useCallback(
+    (values: FormValues) => {
+      const { settings, storages } = values;
 
-  // const [dispatcher, setDispatcher] = useState<SettingDispatcher>({});
+      if (Object.keys(settings).length > 0) {
+        submitHooks(settings);
+        LOG("info", "submitting settings", settings);
+        mutate(settings);
+      }
 
-  // useEffect(() => {
-  //   if (isRefetching === false) {
-  //     // form.reset();
-  //   }
-  // }, [isRefetching]);
+      if (Object.keys(storages).length > 0) {
+        LOG("info", "submitting storages", storages);
+        updateStorage(storages);
+      }
+    },
+    [mutate, updateStorage]
+  );
 
-  // const saveSettings = useCallback(
-  //   (settings: LooseObject) => {
-  //     submitHooks(settings);
-  //     LOG("info", "submitting settings", settings);
-  //     mutate(settings);
-  //   },
-  //   [mutate]
-  // );
+  const totalStagedCount = useMemo(() => {
+    const object = { ...form.values.settings, ...form.values.storages };
 
-  // const saveLocalStorage = useCallback(
-  //   (settings: LooseObject) => {
-  //     updateStorage(settings);
-  //     form.reset();
-  //   },
-  //   [form, updateStorage]
-  // );
-
-  // useEffect(() => {
-  //   // Update dispatch
-  //   const newDispatch: SettingDispatcher = {};
-  //   newDispatch["__default__"] = saveSettings;
-  //   newDispatch["storage"] = saveLocalStorage;
-  //   setDispatcher(newDispatch);
-  // }, [saveSettings, saveLocalStorage]);
-
-  // const defaultDispatcher = useMemo(
-  //   () => dispatcher["__default__"],
-  //   [dispatcher]
-  // );
-
-  // const submit = useCallback(() => {
-  //   const dispatchMaps = new Map<string, LooseObject>();
-  //   const stagedChange = form.values.settings;
-
-  //   // Separate settings by key
-  //   for (const key in stagedChange) {
-  //     const keys = key.split("-");
-  //     const firstKey = keys[0];
-  //     if (firstKey.length === 0) {
-  //       continue;
-  //     }
-
-  //     const object = dispatchMaps.get(firstKey);
-  //     if (object) {
-  //       object[key] = stagedChange[key];
-  //     } else {
-  //       dispatchMaps.set(firstKey, { [key]: stagedChange[key] });
-  //     }
-  //   }
-
-  //   let lostValues = {};
-
-  //   dispatchMaps.forEach((v, k) => {
-  //     if (k in dispatcher) {
-  //       dispatcher[k](v);
-  //     } else {
-  //       lostValues = merge(lostValues, v);
-  //     }
-  //   });
-  //   // send to default dispatcher
-  //   defaultDispatcher(lostValues);
-  // }, [form.values.settings, defaultDispatcher, dispatcher]);
+    return Object.keys(object).length;
+  }, [form.values.settings, form.values.storages]);
 
   useDocumentTitle(`${name} - Bazarr (Settings)`);
 
@@ -150,7 +99,7 @@ const Layout: FunctionComponent<Props> = (props) => {
                 type="submit"
                 icon={faSave}
                 loading={isMutating}
-                disabled={Object.keys(form.values.settings).length === 0}
+                disabled={totalStagedCount === 0}
               >
                 Save
               </Toolbox.Button>

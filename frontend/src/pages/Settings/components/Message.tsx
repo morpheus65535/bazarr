@@ -5,7 +5,7 @@ export const Message: FunctionComponent<{
   type?: "warning" | "info";
 }> = ({ type = "info", children }) => {
   return (
-    <Text size="sm" color={type === "info" ? "dimmed" : "yellow"} mb="xs">
+    <Text size="sm" color={type === "info" ? "dimmed" : "yellow"} my="0">
       {children}
     </Text>
   );

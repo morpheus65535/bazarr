@@ -95,7 +95,7 @@ const SettingsGeneralView: FunctionComponent = () => {
                 settingKey={settingApiKey}
                 color={copied ? "green" : undefined}
                 icon={copied ? faCheck : faClipboard}
-                onClick={(update, key, value) => {
+                onClick={(update, value) => {
                   if (value) {
                     clipboard.copy(value);
                     toggleState(setCopy, 1500);
@@ -107,8 +107,8 @@ const SettingsGeneralView: FunctionComponent = () => {
                 settingKey={settingApiKey}
                 color="red"
                 icon={faSync}
-                onClick={(update, key) => {
-                  update(generateApiKey(), key);
+                onClick={(update) => {
+                  update(generateApiKey());
                 }}
               ></Action>
             </MantineGroup>

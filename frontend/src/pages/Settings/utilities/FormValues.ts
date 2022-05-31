@@ -15,7 +15,7 @@ export function useFormValues() {
 
 export function useStagedValues() {
   const form = useFormValues();
-  return form.values.settings;
+  return { ...form.values.settings, ...form.values.storages };
 }
 
 export function useFormActions() {
@@ -24,23 +24,33 @@ export function useFormActions() {
   const formRef = useRef(form);
   formRef.current = form;
 
-  const update = useCallback((object: LooseObject) => {
-    formRef.current.setValues((values) => {
-      const changes = { ...values.settings, ...object };
-      return { ...values, settings: changes };
-    });
-  }, []);
+  const update = useCallback(
+    (object: LooseObject, location: FormKey = "settings") => {
+      formRef.current.setValues((values) => {
+        const changes = { ...values[location], ...object };
+        return { ...values, [location]: changes };
+      });
+    },
+    []
+  );
 
-  const setValue = useCallback((v: unknown, key: string) => {
-    formRef.current.setValues((values) => {
-      const changes = { ...values.settings, [key]: v };
-      return { ...values, settings: changes };
-    });
-  }, []);
+  const setValue = useCallback(
+    (v: unknown, key: string, location: FormKey = "settings") => {
+      formRef.current.setValues((values) => {
+        const changes = { ...values[location], [key]: v };
+        return { ...values, [location]: changes };
+      });
+    },
+    []
+  );
 
   return { update, setValue };
 }
 
+export type FormKey = keyof FormValues;
 export type FormValues = {
+  // Settings that saved to the backend
   settings: LooseObject;
+  // Settings that saved to the frontend
+  storages: LooseObject;
 };
