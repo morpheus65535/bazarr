@@ -1,37 +1,39 @@
 import { useSystemReleases } from "@/apis/hooks";
-import { QueryOverlay } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import { BuildKey } from "@/utilities";
+import {
+  Badge,
+  Card,
+  Container,
+  Divider,
+  Group,
+  List,
+  Stack,
+  Text,
+} from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
-import { Badge, Card, Col, Container, Row } from "react-bootstrap";
-import { Helmet } from "react-helmet";
 
 const SystemReleasesView: FunctionComponent = () => {
   const releases = useSystemReleases();
   const { data } = releases;
 
+  useDocumentTitle("Releases - Bazarr (System)");
+
   return (
-    <Container fluid className="px-3 py-4 bg-light">
-      <Helmet>
-        <title>Releases - Bazarr (System)</title>
-      </Helmet>
-      <Row>
-        <QueryOverlay result={releases}>
-          <>
-            {data?.map((v, idx) => (
-              <Col xs={12} key={BuildKey(idx, v.date)}>
-                <InfoElement {...v}></InfoElement>
-              </Col>
-            ))}
-          </>
-        </QueryOverlay>
-      </Row>
+    <Container size={600} py={12}>
+      <QueryOverlay result={releases}>
+        <Stack spacing="lg">
+          {data?.map((v, idx) => (
+            <ReleaseCard key={BuildKey(idx, v.date)} {...v}></ReleaseCard>
+          ))}
+        </Stack>
+      </QueryOverlay>
     </Container>
   );
 };
 
-const headerBadgeCls = "mr-2";
-
-const InfoElement: FunctionComponent<ReleaseInfo> = ({
+const ReleaseCard: FunctionComponent<ReleaseInfo> = ({
   name,
   body,
   date,
@@ -43,32 +45,24 @@ const InfoElement: FunctionComponent<ReleaseInfo> = ({
     [body]
   );
   return (
-    <Card className="mb-4 mx-3 d-flex flex-grow-1">
-      <Card.Header>
-        <span className={headerBadgeCls}>{name}</span>
-        <Badge className={headerBadgeCls} variant="info">
-          {date}
-        </Badge>
-        <Badge
-          className={headerBadgeCls}
-          variant={prerelease ? "danger" : "success"}
-        >
+    <Card shadow="md" p="lg">
+      <Group>
+        <Text weight="bold">{name}</Text>
+        <Badge color="blue">{date}</Badge>
+        <Badge color={prerelease ? "yellow" : "green"}>
           {prerelease ? "Development" : "Master"}
         </Badge>
-        <Badge className={headerBadgeCls} hidden={!current} variant="primary">
+        <Badge hidden={!current} color="indigo">
           Installed
         </Badge>
-      </Card.Header>
-      <Card.Body>
-        <Card.Text>
-          From newest to oldest:
-          <div className="mx-4">
-            {infos.map((v, idx) => (
-              <li key={idx}>{v}</li>
-            ))}
-          </div>
-        </Card.Text>
-      </Card.Body>
+      </Group>
+      <Divider my="sm"></Divider>
+      <Text>From newest to oldest:</Text>
+      <List>
+        {infos.map((v, idx) => (
+          <List.Item key={idx}>{v}</List.Item>
+        ))}
+      </List>
     </Card>
   );
 };

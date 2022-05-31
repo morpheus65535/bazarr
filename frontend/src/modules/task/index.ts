@@ -1,15 +1,27 @@
-// A background task manager, use for dispatching task one by one
-class TaskManager {
-  private tasks: Task.Callable[] = [];
+import { LOG } from "@/utilities/console";
+import {
+  hideNotification,
+  showNotification,
+  updateNotification,
+} from "@mantine/notifications";
+import { uniqueId } from "lodash";
+import { notification } from "./notification";
+
+class TaskDispatcher {
+  private running: boolean;
+  private tasks: Record<string, Task.Callable[]> = {};
+
   constructor() {
-    this.tasks = [];
+    this.running = false;
+    this.tasks = {};
+
     window.addEventListener("beforeunload", this.onBeforeUnload.bind(this));
   }
 
   private onBeforeUnload(e: BeforeUnloadEvent) {
     const message = "Background tasks are still running";
 
-    if (this.tasks.some((t) => t.status === "running")) {
+    if (Object.keys(this.tasks).length > 0) {
       e.preventDefault();
       e.returnValue = message;
       return;
@@ -17,45 +29,111 @@ class TaskManager {
     delete e["returnValue"];
   }
 
-  private findTask(ref: Task.TaskRef): Task.Callable | undefined {
-    return this.tasks.find((t) => t.id === ref.callableId);
-  }
-
-  create<T extends Task.AnyCallable>(fn: T, parameters: Parameters<T>): symbol {
-    // Clone this function
-    const newTask = fn.bind({}) as Task.Callable<T>;
-    newTask.status = "idle";
-    newTask.parameters = parameters;
-    newTask.id = Symbol(this.tasks.length);
-
-    this.tasks.push(newTask);
-
-    return newTask.id;
-  }
-
-  async run(taskRef: Task.TaskRef) {
-    const task = this.findTask(taskRef);
-
-    if (task === undefined) {
-      throw new Error(`Task ${taskRef.name} not found`);
-    }
-
-    if (task.status !== "idle") {
+  private update() {
+    if (this.running) {
       return;
     }
 
-    task.status = "running";
+    LOG("info", "Starting background task queue");
 
-    try {
-      await task(...task.parameters);
-      task.status = "success";
-    } catch (err) {
-      task.status = "failure";
-      throw err;
+    this.running = true;
+
+    const queue = window.queueMicrotask?.bind(window) ?? setTimeout;
+
+    queue(async () => {
+      while (Object.keys(this.tasks).length > 0) {
+        const groups = Object.keys(this.tasks);
+
+        for await (const group of groups) {
+          const tasks = this.tasks[group];
+
+          const taskId = group;
+
+          for (let index = 0; index < tasks.length; index++) {
+            const task = tasks[index];
+
+            const notifyInProgress = notification.progress.update(
+              taskId,
+              group,
+              task.description,
+              index,
+              tasks.length
+            );
+            updateNotification(notifyInProgress);
+
+            try {
+              await task(...task.parameters);
+            } catch (error) {
+              // TODO
+            }
+          }
+
+          const notifyEnd = notification.progress.end(taskId, group);
+          updateNotification(notifyEnd);
+
+          delete this.tasks[group];
+        }
+      }
+      this.running = false;
+    });
+  }
+
+  public create<T extends Task.AnyCallable>(
+    name: string,
+    group: string,
+    callable: T,
+    ...parameters: Parameters<T>
+  ): Task.Ref {
+    // Clone this function
+    const task = callable.bind({}) as Task.Callable<T>;
+    task.parameters = parameters;
+    task.description = name;
+    task.id = uniqueId("task");
+
+    if (this.tasks[group] === undefined) {
+      this.tasks[group] = [];
+      const notifyStart = notification.progress.pending(group, group);
+      showNotification(notifyStart);
     }
+
+    this.tasks[group].push(task);
+
+    this.update();
+
+    return task.id;
+  }
+
+  public updateProgress(items: Site.Progress[]) {
+    items.forEach((item) => {
+      // TODO: FIX ME!
+      item.value += 1;
+
+      if (item.value >= item.count) {
+        updateNotification(notification.progress.end(item.id, item.header));
+      } else if (item.value > 1) {
+        updateNotification(
+          notification.progress.update(
+            item.id,
+            item.header,
+            item.name,
+            item.value,
+            item.count
+          )
+        );
+      } else {
+        showNotification(notification.progress.pending(item.id, item.header));
+      }
+    });
+  }
+
+  public removeProgress(ids: string[]) {
+    setTimeout(
+      () => ids.forEach(hideNotification),
+      notification.PROGRESS_TIMEOUT
+    );
   }
 }
 
-const taskManager = new TaskManager();
-
-export default taskManager;
+export const task = new TaskDispatcher();
+export * from "./group";
+export * from "./notification";

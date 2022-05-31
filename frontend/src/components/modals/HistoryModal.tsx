@@ -4,19 +4,26 @@ import {
   useMovieAddBlacklist,
   useMovieHistory,
 } from "@/apis/hooks";
-import { useModal, usePayload, withModal } from "@/modules/modals";
+import { withModal } from "@/modules/modals";
+import { faFileExcel } from "@fortawesome/free-solid-svg-icons";
+import { Badge, Center, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
-import { HistoryIcon, PageTable, QueryOverlay, TextPopover } from "..";
+import { PageTable } from "..";
+import MutateAction from "../async/MutateAction";
+import QueryOverlay from "../async/QueryOverlay";
+import { HistoryIcon } from "../bazarr";
 import Language from "../bazarr/Language";
-import { BlacklistButton } from "../inputs/blacklist";
+import TextPopover from "../TextPopover";
 
-const MovieHistoryView: FunctionComponent = () => {
-  const movie = usePayload<Item.Movie>();
+interface MovieHistoryViewProps {
+  movie: Item.Movie;
+}
 
-  const Modal = useModal({ size: "lg" });
-
-  const history = useMovieHistory(movie?.radarrId);
+const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
+  movie,
+}) => {
+  const history = useMovieHistory(movie.radarrId);
 
   const { data } = history;
 
@@ -24,17 +31,22 @@ const MovieHistoryView: FunctionComponent = () => {
     () => [
       {
         accessor: "action",
-        className: "text-center",
-        Cell: (row) => {
-          return <HistoryIcon action={row.value}></HistoryIcon>;
-        },
+        Cell: (row) => (
+          <Center>
+            <HistoryIcon action={row.value}></HistoryIcon>
+          </Center>
+        ),
       },
       {
         Header: "Language",
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <Language.Text value={value} long></Language.Text>;
+            return (
+              <Badge>
+                <Language.Text value={value} long></Language.Text>
+              </Badge>
+            );
           } else {
             return null;
           }
@@ -51,124 +63,42 @@ const MovieHistoryView: FunctionComponent = () => {
       {
         Header: "Date",
         accessor: "timestamp",
-        Cell: (row) => {
-          if (row.value) {
-            return (
-              <TextPopover text={row.row.original.parsed_timestamp} delay={1}>
-                <span>{row.value}</span>
-              </TextPopover>
-            );
-          } else {
-            return null;
-          }
+        Cell: ({ value, row }) => {
+          return (
+            <TextPopover text={row.original.parsed_timestamp}>
+              <Text>{value}</Text>
+            </TextPopover>
+          );
         },
       },
       {
         // Actions
         accessor: "blacklisted",
-        Cell: ({ row }) => {
-          const { radarrId } = row.original;
-          const { mutateAsync } = useMovieAddBlacklist();
-          return (
-            <BlacklistButton
-              update={history.refetch}
-              promise={(form) => mutateAsync({ id: radarrId, form })}
-              history={row.original}
-            ></BlacklistButton>
-          );
-        },
-      },
-    ],
-    [history.refetch]
-  );
+        Cell: ({ row, value }) => {
+          const add = useMovieAddBlacklist();
+          const { radarrId, provider, subs_id, language, subtitles_path } =
+            row.original;
 
-  return (
-    <Modal title={`History - ${movie?.title ?? ""}`}>
-      <QueryOverlay result={history}>
-        <PageTable
-          emptyText="No History Found"
-          columns={columns}
-          data={data ?? []}
-        ></PageTable>
-      </QueryOverlay>
-    </Modal>
-  );
-};
-
-export const MovieHistoryModal = withModal(MovieHistoryView, "movie-history");
-
-const EpisodeHistoryView: FunctionComponent = () => {
-  const episode = usePayload<Item.Episode>();
-
-  const Modal = useModal({ size: "lg" });
-
-  const history = useEpisodeHistory(episode?.sonarrEpisodeId);
-
-  const { data } = history;
-
-  const columns = useMemo<Column<History.Episode>[]>(
-    () => [
-      {
-        accessor: "action",
-        className: "text-center",
-        Cell: (row) => {
-          return <HistoryIcon action={row.value}></HistoryIcon>;
-        },
-      },
-      {
-        Header: "Language",
-        accessor: "language",
-        Cell: ({ value }) => {
-          if (value) {
-            return <Language.Text value={value} long></Language.Text>;
-          } else {
-            return null;
-          }
-        },
-      },
-      {
-        Header: "Provider",
-        accessor: "provider",
-      },
-      {
-        Header: "Score",
-        accessor: "score",
-      },
-      {
-        Header: "Date",
-        accessor: "timestamp",
-        Cell: (row) => {
-          if (row.value) {
+          if (subs_id && provider && language) {
             return (
-              <TextPopover text={row.row.original.parsed_timestamp} delay={1}>
-                <span>{row.value}</span>
-              </TextPopover>
+              <MutateAction
+                disabled={value}
+                icon={faFileExcel}
+                mutation={add}
+                args={() => ({
+                  id: radarrId,
+                  form: {
+                    provider,
+                    subs_id,
+                    subtitles_path,
+                    language: language.code2,
+                  },
+                })}
+              ></MutateAction>
             );
           } else {
             return null;
           }
-        },
-      },
-      {
-        // Actions
-        accessor: "blacklisted",
-        Cell: ({ row }) => {
-          const original = row.original;
-
-          const { sonarrEpisodeId, sonarrSeriesId } = original;
-          const { mutateAsync } = useEpisodeAddBlacklist();
-          return (
-            <BlacklistButton
-              history={original}
-              promise={(form) =>
-                mutateAsync({
-                  seriesId: sonarrSeriesId,
-                  episodeId: sonarrEpisodeId,
-                  form,
-                })
-              }
-            ></BlacklistButton>
-          );
         },
       },
     ],
@@ -176,19 +106,130 @@ const EpisodeHistoryView: FunctionComponent = () => {
   );
 
   return (
-    <Modal title={`History - ${episode?.title ?? ""}`}>
-      <QueryOverlay result={history}>
-        <PageTable
-          emptyText="No History Found"
-          columns={columns}
-          data={data ?? []}
-        ></PageTable>
-      </QueryOverlay>
-    </Modal>
+    <QueryOverlay result={history}>
+      <PageTable
+        columns={columns}
+        data={data ?? []}
+        tableStyles={{ emptyText: "No history found" }}
+      ></PageTable>
+    </QueryOverlay>
+  );
+};
+
+export const MovieHistoryModal = withModal(MovieHistoryView, "movie-history", {
+  size: "xl",
+  title: "Movie History",
+});
+
+interface EpisodeHistoryViewProps {
+  episode: Item.Episode;
+}
+
+const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
+  episode,
+}) => {
+  const history = useEpisodeHistory(episode.sonarrEpisodeId);
+
+  const { data } = history;
+
+  const columns = useMemo<Column<History.Episode>[]>(
+    () => [
+      {
+        accessor: "action",
+        Cell: (row) => (
+          <Center>
+            <HistoryIcon action={row.value}></HistoryIcon>
+          </Center>
+        ),
+      },
+      {
+        Header: "Language",
+        accessor: "language",
+        Cell: ({ value }) => {
+          if (value) {
+            return (
+              <Badge>
+                <Language.Text value={value} long></Language.Text>
+              </Badge>
+            );
+          } else {
+            return null;
+          }
+        },
+      },
+      {
+        Header: "Provider",
+        accessor: "provider",
+      },
+      {
+        Header: "Score",
+        accessor: "score",
+      },
+      {
+        Header: "Date",
+        accessor: "timestamp",
+        Cell: ({ row, value }) => {
+          return (
+            <TextPopover text={row.original.parsed_timestamp}>
+              <Text>{value}</Text>
+            </TextPopover>
+          );
+        },
+      },
+      {
+        // Actions
+        accessor: "blacklisted",
+        Cell: ({ row, value }) => {
+          const {
+            sonarrEpisodeId,
+            sonarrSeriesId,
+            provider,
+            subs_id,
+            language,
+            subtitles_path,
+          } = row.original;
+          const add = useEpisodeAddBlacklist();
+
+          if (subs_id && provider && language) {
+            return (
+              <MutateAction
+                disabled={value}
+                icon={faFileExcel}
+                mutation={add}
+                args={() => ({
+                  seriesId: sonarrSeriesId,
+                  episodeId: sonarrEpisodeId,
+                  form: {
+                    provider,
+                    subs_id,
+                    subtitles_path,
+                    language: language.code2,
+                  },
+                })}
+              ></MutateAction>
+            );
+          } else {
+            return null;
+          }
+        },
+      },
+    ],
+    []
+  );
+
+  return (
+    <QueryOverlay result={history}>
+      <PageTable
+        tableStyles={{ emptyText: "No history found", placeholder: 5 }}
+        columns={columns}
+        data={data ?? []}
+      ></PageTable>
+    </QueryOverlay>
   );
 };
 
 export const EpisodeHistoryModal = withModal(
   EpisodeHistoryView,
-  "episode-history"
+  "episode-history",
+  { size: "xl" }
 );

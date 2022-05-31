@@ -1,72 +1,37 @@
+import queryClient from "@/apis/queries";
 import { QueryKeys } from "@/apis/queries/keys";
-import queryClient from "../../apis/queries";
-import {
-  addNotifications,
-  setOfflineStatus,
-  setSiteStatus,
-  siteAddProgress,
-  siteRemoveProgress,
-} from "../redux/actions";
-import { AnyActionCreator } from "../redux/actions/types";
-import reduxStore from "../redux/store";
-
-function bindReduxAction<T extends AnyActionCreator>(action: T) {
-  return (...args: Parameters<T>) => {
-    reduxStore.dispatch(action(...args));
-  };
-}
-
-function bindReduxActionWithParam<T extends AnyActionCreator>(
-  action: T,
-  ...param: Parameters<T>
-) {
-  return () => {
-    reduxStore.dispatch(action(...param));
-  };
-}
+import { setCriticalError, setOnlineStatus } from "@/utilities/event";
+import { showNotification } from "@mantine/notifications";
+import { notification, task } from "../task";
 
 export function createDefaultReducer(): SocketIO.Reducer[] {
   return [
     {
       key: "connect",
-      any: bindReduxActionWithParam(setOfflineStatus, false),
-    },
-    {
-      key: "connect",
-      any: () => {
-        // init
-        reduxStore.dispatch(setSiteStatus("initialized"));
-      },
+      any: () => setOnlineStatus(true),
     },
     {
       key: "connect_error",
       any: () => {
-        reduxStore.dispatch(setSiteStatus("error"));
+        setCriticalError("Cannot connect to backend");
       },
     },
     {
       key: "disconnect",
-      any: bindReduxActionWithParam(setOfflineStatus, true),
+      any: () => setOnlineStatus(false),
     },
     {
       key: "message",
       update: (msg) => {
-        if (msg) {
-          const notifications = msg.map<Server.Notification>((message) => ({
-            message,
-            type: "info",
-            id: "backend-message",
-            timeout: 5 * 1000,
-          }));
-
-          reduxStore.dispatch(addNotifications(notifications));
-        }
+        msg
+          .map((message) => notification.info("Notification", message))
+          .forEach(showNotification);
       },
     },
     {
       key: "progress",
-      update: bindReduxAction(siteAddProgress),
-      delete: bindReduxAction(siteRemoveProgress),
+      update: task.updateProgress.bind(task),
+      delete: task.removeProgress.bind(task),
     },
     {
       key: "series",

@@ -1,22 +1,21 @@
-import { useLanguages } from "@/apis/hooks";
-import { Selector, SelectorOption, SelectorProps } from "@/components";
+import { BuildKey } from "@/utilities";
+import { Badge, Group, Text, TextProps } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 
-interface TextProps {
+type LanguageTextProps = TextProps<"div"> & {
   value: Language.Info;
-  className?: string;
   long?: boolean;
-}
+};
 
 declare type LanguageComponent = {
   Text: typeof LanguageText;
-  Selector: typeof LanguageSelector;
+  List: typeof LanguageList;
 };
 
-const LanguageText: FunctionComponent<TextProps> = ({
+const LanguageText: FunctionComponent<LanguageTextProps> = ({
   value,
-  className,
   long,
+  ...props
 }) => {
   const result = useMemo(() => {
     let lang = value.code2;
@@ -38,51 +37,29 @@ const LanguageText: FunctionComponent<TextProps> = ({
   }, [value, long]);
 
   return (
-    <span title={value.name} className={className}>
+    <Text inherit {...props}>
       {result}
-    </span>
+    </Text>
   );
 };
 
-type LanguageSelectorProps<M extends boolean> = Omit<
-  SelectorProps<Language.Info, M>,
-  "label" | "options"
-> & {
-  history?: boolean;
+type LanguageListProps = {
+  value: Language.Info[];
 };
 
-function getLabel(lang: Language.Info) {
-  return lang.name;
-}
-
-export function LanguageSelector<M extends boolean = false>(
-  props: LanguageSelectorProps<M>
-) {
-  const { history, ...rest } = props;
-  const { data: options } = useLanguages(history);
-
-  const items = useMemo<SelectorOption<Language.Info>[]>(
-    () =>
-      options?.map((v) => ({
-        label: v.name,
-        value: v,
-      })) ?? [],
-    [options]
-  );
-
+const LanguageList: FunctionComponent<LanguageListProps> = ({ value }) => {
   return (
-    <Selector
-      placeholder="Language..."
-      options={items}
-      label={getLabel}
-      {...rest}
-    ></Selector>
+    <Group spacing="xs">
+      {value.map((v) => (
+        <Badge key={BuildKey(v.code2, v.code2, v.hi)}>{v.name}</Badge>
+      ))}
+    </Group>
   );
-}
+};
 
 const Components: LanguageComponent = {
   Text: LanguageText,
-  Selector: LanguageSelector,
+  List: LanguageList,
 };
 
 export default Components;

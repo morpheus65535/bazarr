@@ -1,9 +1,10 @@
 import { useCreateBackups, useSystemBackups } from "@/apis/hooks";
-import { ContentHeader, QueryOverlay } from "@/components";
+import { Toolbox } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import { faFileArchive } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent } from "react";
-import { Container, Row } from "react-bootstrap";
-import { Helmet } from "react-helmet";
+import { Container } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
+import { FunctionComponent } from "react";
 import Table from "./table";
 
 const SystemBackupsView: FunctionComponent = () => {
@@ -11,24 +12,21 @@ const SystemBackupsView: FunctionComponent = () => {
 
   const { mutate: backup, isLoading: isResetting } = useCreateBackups();
 
+  useDocumentTitle("Backups - Bazarr (System)");
+
   return (
     <QueryOverlay result={backups}>
-      <Container fluid>
-        <Helmet>
-          <title>Backups - Bazarr (System)</title>
-        </Helmet>
-        <ContentHeader>
-          <ContentHeader.Button
+      <Container fluid px={0}>
+        <Toolbox>
+          <Toolbox.Button
             icon={faFileArchive}
-            updating={isResetting}
+            loading={isResetting}
             onClick={() => backup()}
           >
             Backup Now
-          </ContentHeader.Button>
-        </ContentHeader>
-        <Row>
-          <Table backups={backups.data ?? []}></Table>
-        </Row>
+          </Toolbox.Button>
+        </Toolbox>
+        <Table backups={backups.data ?? []}></Table>
       </Container>
     </QueryOverlay>
   );

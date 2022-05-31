@@ -1,7 +1,7 @@
+import { Environment } from "@/utilities";
+import { setLoginRequired } from "@/utilities/event";
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { setUnauthenticated } from "../../modules/redux/actions";
-import store from "../../modules/redux/store";
 import { QueryKeys } from "../queries/keys";
 import api from "../raw";
 
@@ -173,7 +173,7 @@ export function useSystem() {
     () => api.system.logout(),
     {
       onSuccess: () => {
-        store.dispatch(setUnauthenticated());
+        setLoginRequired();
         client.clear();
       },
     }
@@ -185,7 +185,8 @@ export function useSystem() {
       api.system.login(param.username, param.password),
     {
       onSuccess: () => {
-        window.location.reload();
+        // TODO: Hard-coded value
+        window.location.replace(`/${Environment.baseUrl}`);
       },
     }
   );
@@ -216,7 +217,7 @@ export function useSystem() {
       shutdown,
       restart,
       login,
-      isWorking: isLoggingOut || isShuttingDown || isRestarting || isLoggingIn,
+      isMutating: isLoggingOut || isShuttingDown || isRestarting || isLoggingIn,
     }),
     [
       isLoggingIn,

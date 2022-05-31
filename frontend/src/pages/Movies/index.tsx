@@ -1,23 +1,23 @@
 import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
-import { ActionBadge, TextPopover } from "@/components";
+import { Action } from "@/components";
+import { AudioList } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
-import LanguageProfile from "@/components/bazarr/LanguageProfile";
-import { ItemEditorModal } from "@/components/modals";
-import ItemView from "@/components/views/ItemView";
-import { useModalControl } from "@/modules/modals";
+import LanguageProfileName from "@/components/bazarr/LanguageProfile";
+import { ItemEditModal } from "@/components/forms/ItemEditForm";
+import { useModals } from "@/modules/modals";
+import ItemView from "@/pages/views/ItemView";
+import { useTableStyles } from "@/styles";
 import { BuildKey } from "@/utilities";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Anchor, Badge, Container } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
-import { Badge, Container } from "react-bootstrap";
-import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
 const MovieView: FunctionComponent = () => {
-  const mutation = useMovieModification();
-
   const query = useMoviesPagination();
 
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
@@ -34,38 +34,30 @@ const MovieView: FunctionComponent = () => {
       {
         Header: "Name",
         accessor: "title",
-        className: "text-nowrap",
         Cell: ({ row, value }) => {
+          const { classes } = useTableStyles();
           const target = `/movies/${row.original.radarrId}`;
           return (
-            <TextPopover text={row.original.sceneName} delay={1}>
-              <Link to={target}>
-                <span>{value}</span>
-              </Link>
-            </TextPopover>
+            <Anchor className={classes.primary} component={Link} to={target}>
+              {value}
+            </Anchor>
           );
         },
       },
       {
         Header: "Audio",
         accessor: "audio_language",
-        Cell: (row) => {
-          return row.value.map((v) => (
-            <Badge
-              variant="secondary"
-              className="mr-2"
-              key={BuildKey(v.code2, v.code2, v.hi)}
-            >
-              {v.name}
-            </Badge>
-          ));
+        Cell: ({ value }) => {
+          return <AudioList audios={value}></AudioList>;
         },
       },
       {
         Header: "Languages Profile",
         accessor: "profileId",
         Cell: ({ value }) => {
-          return <LanguageProfile index={value} empty=""></LanguageProfile>;
+          return (
+            <LanguageProfileName index={value} empty=""></LanguageProfileName>
+          );
         },
       },
       {
@@ -75,8 +67,8 @@ const MovieView: FunctionComponent = () => {
           const missing = row.value;
           return missing.map((v) => (
             <Badge
-              className="mx-2"
-              variant="warning"
+              mr="xs"
+              color="yellow"
               key={BuildKey(v.code2, v.hi, v.forced)}
             >
               <Language.Text value={v}></Language.Text>
@@ -87,12 +79,25 @@ const MovieView: FunctionComponent = () => {
       {
         accessor: "radarrId",
         Cell: ({ row }) => {
-          const { show } = useModalControl();
+          const modals = useModals();
+          const mutation = useMovieModification();
           return (
-            <ActionBadge
+            <Action
+              variant="light"
+              onClick={() =>
+                modals.openContextModal(
+                  ItemEditModal,
+                  {
+                    mutation,
+                    item: row.original,
+                  },
+                  {
+                    title: row.original.title,
+                  }
+                )
+              }
               icon={faWrench}
-              onClick={() => show(ItemEditorModal, row.original)}
-            ></ActionBadge>
+            ></Action>
           );
         },
       },
@@ -100,13 +105,11 @@ const MovieView: FunctionComponent = () => {
     []
   );
 
+  useDocumentTitle("Movies - Bazarr");
+
   return (
-    <Container fluid>
-      <Helmet>
-        <title>Movies - Bazarr</title>
-      </Helmet>
+    <Container fluid px={0}>
       <ItemView query={query} columns={columns}></ItemView>
-      <ItemEditorModal mutation={mutation}></ItemEditorModal>
     </Container>
   );
 };

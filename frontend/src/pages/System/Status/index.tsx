@@ -1,6 +1,6 @@
 import { useSystemHealth, useSystemStatus } from "@/apis/hooks";
-import { QueryOverlay } from "@/components";
-import { GithubRepoRoot } from "@/utilities/constants";
+import { QueryOverlay } from "@/components/async";
+import { GithubRepoRoot } from "@/constants";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
   faDiscord,
@@ -9,11 +9,10 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Anchor, Container, Divider, Grid, Stack, Text } from "@mantine/core";
+import { useDocumentTitle, useInterval } from "@mantine/hooks";
 import moment from "moment";
-import { FunctionComponent, ReactNode, useState } from "react";
-import { Col, Container, Row } from "react-bootstrap";
-import { Helmet } from "react-helmet";
-import { useIntervalWhen } from "rooks";
+import { FunctionComponent, ReactNode, useEffect, useState } from "react";
 import Table from "./table";
 
 interface InfoProps {
@@ -21,15 +20,17 @@ interface InfoProps {
   children: ReactNode;
 }
 
-function CRow(props: InfoProps): JSX.Element {
+function Row(props: InfoProps): JSX.Element {
   const { title, children } = props;
   return (
-    <Row>
-      <Col sm={4}>
-        <b>{title}</b>
-      </Col>
-      <Col>{children}</Col>
-    </Row>
+    <Grid>
+      <Grid.Col span={5}>
+        <Text weight="bold">{title}</Text>
+      </Grid.Col>
+      <Grid.Col span={12 - 5}>
+        <Text>{children}</Text>
+      </Grid.Col>
+    </Grid>
   );
 }
 
@@ -44,9 +45,9 @@ function Label(props: IconProps): JSX.Element {
   return (
     <>
       <FontAwesomeIcon icon={icon} style={{ width: "2rem" }}></FontAwesomeIcon>
-      <a href={link} target="_blank" rel="noopener noreferrer">
+      <Anchor href={link} target="_blank" rel="noopener noreferrer">
         {children}
-      </a>
+      </Anchor>
     </>
   );
 }
@@ -56,11 +57,11 @@ const InfoContainer: FunctionComponent<{ title: string }> = ({
   children,
 }) => {
   return (
-    <Container className="py-3">
+    <Stack>
       <h4>{title}</h4>
-      <hr></hr>
+      <Divider></Divider>
       {children}
-    </Container>
+    </Stack>
   );
 };
 
@@ -68,97 +69,76 @@ const SystemStatusView: FunctionComponent = () => {
   const health = useSystemHealth();
   const { data: status } = useSystemStatus();
 
-  const [uptime, setState] = useState<string>();
-  const [intervalWhenState] = useState(true);
+  const [uptime, setUptime] = useState<string>();
 
-  useIntervalWhen(
-    () => {
-      if (status) {
-        const duration = moment.duration(
-            moment().utc().unix() - status.start_time,
-            "seconds"
-          ),
-          days = duration.days(),
-          hours = duration.hours().toString().padStart(2, "0"),
-          minutes = duration.minutes().toString().padStart(2, "0"),
-          seconds = duration.seconds().toString().padStart(2, "0");
-        setState(days + "d " + hours + ":" + minutes + ":" + seconds);
-      }
-    },
-    1000,
-    intervalWhenState,
-    true
-  );
+  const interval = useInterval(() => {
+    if (status) {
+      const duration = moment.duration(
+          moment().utc().unix() - status.start_time,
+          "seconds"
+        ),
+        days = duration.days(),
+        hours = duration.hours().toString().padStart(2, "0"),
+        minutes = duration.minutes().toString().padStart(2, "0"),
+        seconds = duration.seconds().toString().padStart(2, "0");
+      setUptime(days + "d " + hours + ":" + minutes + ":" + seconds);
+    }
+  }, 1000);
+
+  useEffect(() => {
+    interval.start();
+    return interval.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useDocumentTitle("Status - Bazarr (System)");
 
   return (
-    <Container className="p-5">
-      <Helmet>
-        <title>Status - Bazarr (System)</title>
-      </Helmet>
-      <Row>
+    <Container fluid>
+      <Stack>
         <InfoContainer title="Health">
           <QueryOverlay result={health}>
             <Table health={health.data ?? []}></Table>
           </QueryOverlay>
         </InfoContainer>
-      </Row>
-      <Row>
         <InfoContainer title="About">
-          <CRow title="Bazarr Version">
-            <span>{status?.bazarr_version}</span>
-          </CRow>
+          <Row title="Bazarr Version">{status?.bazarr_version}</Row>
           {status?.package_version !== "" && (
-            <CRow title="Package Version">
-              <span>{status?.package_version}</span>
-            </CRow>
+            <Row title="Package Version">{status?.package_version}</Row>
           )}
-          <CRow title="Sonarr Version">
-            <span>{status?.sonarr_version}</span>
-          </CRow>
-          <CRow title="Radarr Version">
-            <span>{status?.radarr_version}</span>
-          </CRow>
-          <CRow title="Operating System">
-            <span>{status?.operating_system}</span>
-          </CRow>
-          <CRow title="Python Version">
-            <span>{status?.python_version}</span>
-          </CRow>
-          <CRow title="Bazarr Directory">
-            <span>{status?.bazarr_directory}</span>
-          </CRow>
-          <CRow title="Bazarr Config Directory">
-            <span>{status?.bazarr_config_directory}</span>
-          </CRow>
-          <CRow title="Uptime">
-            <span>{uptime}</span>
-          </CRow>
+          <Row title="Sonarr Version">{status?.sonarr_version}</Row>
+          <Row title="Radarr Version">{status?.radarr_version}</Row>
+          <Row title="Operating System">{status?.operating_system}</Row>
+          <Row title="Python Version">{status?.python_version}</Row>
+          <Row title="Bazarr Directory">{status?.bazarr_directory}</Row>
+          <Row title="Bazarr Config Directory">
+            {status?.bazarr_config_directory}
+          </Row>
+          <Row title="Uptime">{uptime}</Row>
         </InfoContainer>
-      </Row>
-      <Row>
         <InfoContainer title="More Info">
-          <CRow title="Home Page">
+          <Row title="Home Page">
             <Label icon={faPaperPlane} link="https://www.bazarr.media/">
               Bazarr Website
             </Label>
-          </CRow>
-          <CRow title="Source">
+          </Row>
+          <Row title="Source">
             <Label icon={faGithub} link={GithubRepoRoot}>
               Bazarr on Github
             </Label>
-          </CRow>
-          <CRow title="Wiki">
+          </Row>
+          <Row title="Wiki">
             <Label icon={faWikipediaW} link="https://wiki.bazarr.media">
               Bazarr Wiki
             </Label>
-          </CRow>
-          <CRow title="Discord">
+          </Row>
+          <Row title="Discord">
             <Label icon={faDiscord} link="https://discord.gg/MH2e2eb">
               Bazarr on Discord
             </Label>
-          </CRow>
+          </Row>
         </InfoContainer>
-      </Row>
+      </Stack>
     </Container>
   );
 };

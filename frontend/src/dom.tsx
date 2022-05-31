@@ -1,4 +1,10 @@
+import { StrictMode } from "react";
 import ReactDOM from "react-dom";
-import { Entrance } from ".";
+import { Main } from "./main";
 
-ReactDOM.render(<Entrance />, document.getElementById("root"));
+ReactDOM.render(
+  <StrictMode>
+    <Main />
+  </StrictMode>,
+  document.getElementById("root")
+);

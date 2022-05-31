@@ -2,7 +2,6 @@ import { dependencies } from "../package.json";
 
 const vendors = [
   "react",
-  "react-redux",
   "react-router-dom",
   "react-dom",
   "react-query",

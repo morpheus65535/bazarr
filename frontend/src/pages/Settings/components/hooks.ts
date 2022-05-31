@@ -1,102 +1,39 @@
-import { useSystemSettings } from "@/apis/hooks";
-import { LOG } from "@/utilities/console";
-import { isArray, uniqBy } from "lodash";
-import { useCallback, useContext, useMemo } from "react";
-import { StagedChangesContext } from "./Layout";
-
-export function useStagedValues(): LooseObject {
-  const [values] = useContext(StagedChangesContext);
-  return values;
-}
-
-export function useSingleUpdate() {
-  const [, update] = useContext(StagedChangesContext);
-  return useCallback(
-    (v: unknown, key: string) => {
-      update((staged) => {
-        const changes = { ...staged };
-        changes[key] = v;
-
-        LOG("info", "stage settings", changes);
-
-        return changes;
-      });
-    },
-    [update]
-  );
-}
-
-export function useMultiUpdate() {
-  const [, update] = useContext(StagedChangesContext);
-  return useCallback(
-    (obj: LooseObject) => {
-      update((staged) => {
-        const changes = { ...staged, ...obj };
-
-        LOG("info", "stage settings", changes);
-
-        return changes;
-      });
-    },
-    [update]
-  );
-}
-
-type ValidateFuncType<T> = (v: unknown) => v is T;
+import { get, uniqBy } from "lodash";
+import { useCallback, useMemo, useRef } from "react";
+import { useFormActions, useStagedValues } from "../utilities/FormValues";
+import { useSettings } from "../utilities/SettingsProvider";
 
 export type OverrideFuncType<T> = (settings: Settings) => T;
 
 export function useExtract<T>(
   key: string,
-  validate: ValidateFuncType<T>,
   override?: OverrideFuncType<T>
 ): Readonly<Nullable<T>> {
-  const { data: settings } = useSystemSettings();
+  const settings = useSettings();
+
+  const overrideRef = useRef(override);
+  overrideRef.current = override;
 
   const extractValue = useMemo(() => {
-    let value: Nullable<T> = null;
-
-    if (settings === undefined) {
-      return value;
+    if (overrideRef.current) {
+      return overrideRef.current(settings);
     }
 
-    let path = key.split("-");
+    const path = key.replaceAll("-", ".");
 
-    if (path[0] !== "settings") {
-      return null;
-    } else {
-      path = path.slice(0);
-    }
-
-    let item: LooseObject = settings;
-    for (const key of path) {
-      if (key in item) {
-        item = item[key];
-      }
-
-      if (validate(item)) {
-        value = item;
-        break;
-      }
-    }
+    const value = get({ settings }, path, null) as Nullable<T>;
 
     return value;
-  }, [key, settings, validate]);
+  }, [key, settings]);
 
-  if (override && settings !== undefined) {
-    // TODO: Temporarily override
-    return override(settings);
-  } else {
-    return extractValue;
-  }
+  return extractValue;
 }
 
-export function useLatest<T>(
+export function useSettingValue<T>(
   key: string,
-  validate: ValidateFuncType<T>,
   override?: OverrideFuncType<T>
 ): Readonly<Nullable<T>> {
-  const extractValue = useExtract<T>(key, validate, override);
+  const extractValue = useExtract<T>(key, override);
   const stagedValue = useStagedValues();
   if (key in stagedValue) {
     return stagedValue[key] as T;
@@ -110,7 +47,7 @@ export function useLatestArray<T>(
   compare: keyof T,
   override?: OverrideFuncType<T[]>
 ): Readonly<Nullable<T[]>> {
-  const extractValue = useExtract<T[]>(key, isArray, override);
+  const extractValue = useExtract<T[]>(key, override);
   const stagedValue = useStagedValues();
 
   let staged: T[] | undefined = undefined;
@@ -128,7 +65,7 @@ export function useLatestArray<T>(
 }
 
 export function useUpdateArray<T>(key: string, compare: keyof T) {
-  const update = useSingleUpdate();
+  const { setValue } = useFormActions();
   const stagedValue = useStagedValues();
 
   const staged: T[] = useMemo(() => {
@@ -142,8 +79,8 @@ export function useUpdateArray<T>(key: string, compare: keyof T) {
   return useCallback(
     (v: T) => {
       const newArray = uniqBy([v, ...staged], compare);
-      update(newArray, key);
+      setValue(newArray, key);
     },
-    [compare, staged, key, update]
+    [staged, compare, setValue, key]
   );
 }

@@ -1,22 +1,23 @@
-import { copyToClipboard, Environment, toggleState } from "@/utilities";
+import { Environment, toggleState } from "@/utilities";
 import {
   faCheck,
   faClipboard,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Group as MantineGroup, Text as MantineText } from "@mantine/core";
+import { useClipboard } from "@mantine/hooks";
 import { FunctionComponent, useState } from "react";
-import { InputGroup } from "react-bootstrap";
 import {
-  Button,
+  Action,
   Check,
   Chips,
   CollapseBox,
   File,
-  Group,
-  Input,
   Layout,
   Message,
+  Number,
+  Password,
+  Section,
   Selector,
   Text,
 } from "../components";
@@ -38,181 +39,164 @@ const baseUrlOverride = (settings: Settings) =>
 const SettingsGeneralView: FunctionComponent = () => {
   const [copied, setCopy] = useState(false);
 
+  const clipboard = useClipboard();
+
   return (
     <Layout name="General">
-      <Group header="Host">
-        <Input name="Address">
-          <Text placeholder="0.0.0.0" settingKey="settings-general-ip"></Text>
-          <Message>Valid IPv4 address or '0.0.0.0' for all interfaces</Message>
-        </Input>
-        <Input name="Port">
-          <Text
-            placeholder={6767}
-            settingKey="settings-general-port"
-            numberWithArrows={true}
-          ></Text>
-        </Input>
-        <Input name="Base URL">
-          <InputGroup>
-            <InputGroup.Prepend>
-              <InputGroup.Text>/</InputGroup.Text>
-            </InputGroup.Prepend>
-            <Text
-              settingKey="settings-general-base_url"
-              override={baseUrlOverride}
-              beforeStaged={(v) => "/" + v}
-            ></Text>
-          </InputGroup>
-          <Message>Reverse proxy support</Message>
-        </Input>
-      </Group>
-      <Group header="Security">
+      <Section header="Host">
+        <Text
+          label="Address"
+          placeholder="0.0.0.0"
+          settingKey="settings-general-ip"
+        ></Text>
+        <Message>Valid IPv4 address or '0.0.0.0' for all interfaces</Message>
+        <Number
+          label="Port"
+          placeholder="6767"
+          settingKey="settings-general-port"
+        ></Number>
+        <Text
+          label="Base URL"
+          icon="/"
+          settingKey="settings-general-base_url"
+          override={baseUrlOverride}
+          beforeStaged={(v) => "/" + v}
+        ></Text>
+        <Message>Reverse proxy support</Message>
+      </Section>
+      <Section header="Security">
         <CollapseBox>
           <CollapseBox.Control>
-            <Input name="Authentication">
-              <Selector
-                clearable
-                options={securityOptions}
-                settingKey="settings-auth-type"
-                beforeStaged={(v) => (v === null ? "None" : v)}
-              ></Selector>
-            </Input>
+            <Selector
+              label="Authentication"
+              clearable
+              options={securityOptions}
+              settingKey="settings-auth-type"
+              beforeStaged={(v) => (v === null ? "None" : v)}
+            ></Selector>
           </CollapseBox.Control>
           <CollapseBox.Content on={(k) => k !== "" && k !== "None"}>
-            <Input name="Username">
-              <Text settingKey="settings-auth-username"></Text>
-            </Input>
-            <Input name="Password">
-              <Text password settingKey="settings-auth-password"></Text>
-            </Input>
+            <Text label="Username" settingKey="settings-auth-username"></Text>
+            <Password
+              label="Password"
+              settingKey="settings-auth-password"
+            ></Password>
           </CollapseBox.Content>
         </CollapseBox>
-        <Input name="API Key">
-          <InputGroup>
-            <Text disabled controlled settingKey={settingApiKey}></Text>
-            <InputGroup.Append>
-              <Button
-                variant={copied ? "success" : "light"}
+        <Text
+          label="API Key"
+          disabled
+          rightSectionWidth={95}
+          rightSectionProps={{ style: { justifyContent: "flex-end" } }}
+          rightSection={
+            <MantineGroup spacing="xs" mx="xs" position="right">
+              <Action
+                variant="light"
                 settingKey={settingApiKey}
-                onClick={(update, key, value) => {
+                color={copied ? "green" : undefined}
+                icon={copied ? faCheck : faClipboard}
+                onClick={(update, value) => {
                   if (value) {
-                    copyToClipboard(value);
+                    clipboard.copy(value);
                     toggleState(setCopy, 1500);
                   }
                 }}
-              >
-                <FontAwesomeIcon
-                  icon={copied ? faCheck : faClipboard}
-                ></FontAwesomeIcon>
-              </Button>
-              <Button
-                variant="danger"
+              ></Action>
+              <Action
+                variant="light"
                 settingKey={settingApiKey}
-                onClick={(update, key) => {
-                  update(generateApiKey(), key);
+                color="red"
+                icon={faSync}
+                onClick={(update) => {
+                  update(generateApiKey());
                 }}
-              >
-                <FontAwesomeIcon icon={faSync}></FontAwesomeIcon>
-              </Button>
-            </InputGroup.Append>
-          </InputGroup>
-        </Input>
-      </Group>
-      <Group header="Proxy">
+              ></Action>
+            </MantineGroup>
+          }
+          settingKey={settingApiKey}
+        ></Text>
+      </Section>
+      <Section header="Proxy">
         <CollapseBox>
           <CollapseBox.Control>
-            <Input>
-              <Selector
-                clearable
-                settingKey="settings-proxy-type"
-                options={proxyOptions}
-                beforeStaged={(v) => (v === null ? "None" : v)}
-              ></Selector>
-            </Input>
+            <Selector
+              clearable
+              settingKey="settings-proxy-type"
+              options={proxyOptions}
+              beforeStaged={(v) => (v === null ? "None" : v)}
+            ></Selector>
           </CollapseBox.Control>
           <CollapseBox.Content on={(k) => k !== "" && k !== "None"}>
-            <Input name="Host">
-              <Text settingKey="settings-proxy-url"></Text>
-            </Input>
-            <Input name="Port">
-              <Text
-                settingKey="settings-proxy-port"
-                numberWithArrows={true}
-              ></Text>
-            </Input>
-            <Input name="Username">
-              <Text settingKey="settings-proxy-username"></Text>
-            </Input>
-            <Input name="Password">
-              <Text password settingKey="settings-proxy-password"></Text>
-              <Message>
-                You only need to enter a username and password if one is
-                required. Leave them blank otherwise
-              </Message>
-            </Input>
-            <Input name="Ignored Addresses">
-              <Chips settingKey="settings-proxy-exclude"></Chips>
-              <Message>
-                List of excluded domains or IP addresses. Asterisk(wildcard),
-                regex and CIDR are unsupported. You can use '.domain.com' to
-                include all subdomains.
-              </Message>
-            </Input>
+            <Text label="Host" settingKey="settings-proxy-url"></Text>
+            <Number label="Port" settingKey="settings-proxy-port"></Number>
+            <Text label="Username" settingKey="settings-proxy-username"></Text>
+            <Password
+              label="Password"
+              settingKey="settings-proxy-password"
+            ></Password>
+            <Message>
+              You only need to enter a username and password if one is required.
+              Leave them blank otherwise
+            </Message>
+            <Chips
+              label="Ignored Addresses"
+              settingKey="settings-proxy-exclude"
+            ></Chips>
+            <Message>
+              List of excluded domains or IP addresses. Asterisk(wildcard),
+              regex and CIDR are unsupported. You can use '.domain.com' to
+              include all subdomains.
+            </Message>
           </CollapseBox.Content>
         </CollapseBox>
-      </Group>
-      <Group header="Updates" hidden={!Environment.canUpdate}>
-        <Input>
-          <Check
-            label="Automatic"
-            settingKey="settings-general-auto_update"
-          ></Check>
-          <Message>Automatically download and install updates</Message>
-        </Input>
-        <Input>
-          <Selector
-            options={branchOptions}
-            settingKey="settings-general-branch"
-          ></Selector>
-          <Message>Branch used by update mechanism</Message>
-        </Input>
-      </Group>
-      <Group header="Logging">
-        <Input>
-          <Check label="Debug" settingKey="settings-general-debug"></Check>
-          <Message>Debug logging should only be enabled temporarily</Message>
-        </Input>
-      </Group>
-      <Group header="Backups">
-        <Input name="Folder">
-          <File settingKey="settings-backup-folder" type="bazarr"></File>
-          <Message>Absolute path to the backup directory</Message>
-        </Input>
-        <Input name="Retention">
-          <InputGroup>
-            <Text
-              settingKey="settings-backup-retention"
-              numberWithArrows={true}
-            ></Text>
-            <InputGroup.Prepend>
-              <InputGroup.Text>Days</InputGroup.Text>
-            </InputGroup.Prepend>
-          </InputGroup>
-        </Input>
-      </Group>
-      <Group header="Analytics">
-        <Input>
-          <Check label="Enable" settingKey="settings-analytics-enabled"></Check>
-          <Message>
-            Send anonymous usage information, nothing that can identify you.
-            This includes information on which providers you use, what languages
-            you search for, Bazarr, Python, Sonarr, Radarr and what OS version
-            you are using. We will use this information to prioritize features
-            and bug fixes. Please, keep this enabled as this is the only way we
-            have to better understand how you use Bazarr.
-          </Message>
-        </Input>
-      </Group>
+      </Section>
+      <Section header="Updates" hidden={!Environment.canUpdate}>
+        <Check
+          label="Automatic"
+          settingKey="settings-general-auto_update"
+        ></Check>
+        <Message>Automatically download and install updates</Message>
+        <Selector
+          options={branchOptions}
+          settingKey="settings-general-branch"
+        ></Selector>
+        <Message>Branch used by update mechanism</Message>
+      </Section>
+      <Section header="Logging">
+        <Check label="Debug" settingKey="settings-general-debug"></Check>
+        <Message>Debug logging should only be enabled temporarily</Message>
+      </Section>
+      <Section header="Backups">
+        <File
+          label="Folder"
+          settingKey="settings-backup-folder"
+          type="bazarr"
+        ></File>
+        <Message>Absolute path to the backup directory</Message>
+        <Number
+          label="Retention"
+          settingKey="settings-backup-retention"
+          styles={{
+            rightSection: { width: "4rem", justifyContent: "flex-end" },
+          }}
+          rightSection={
+            <MantineText size="xs" px="sm" color="dimmed">
+              Days
+            </MantineText>
+          }
+        ></Number>
+      </Section>
+      <Section header="Analytics">
+        <Check label="Enable" settingKey="settings-analytics-enabled"></Check>
+        <Message>
+          Send anonymous usage information, nothing that can identify you. This
+          includes information on which providers you use, what languages you
+          search for, Bazarr, Python, Sonarr, Radarr and what OS version you are
+          using. We will use this information to prioritize features and bug
+          fixes. Please, keep this enabled as this is the only way we have to
+          better understand how you use Bazarr.
+        </Message>
+      </Section>
     </Layout>
   );
 };

@@ -1,52 +1,36 @@
-import { FunctionComponent, useMemo, useState } from "react";
-import {
-  ModalData,
-  ModalDataContext,
-  ModalSetter,
-  ModalSetterContext,
-} from "./ModalContext";
-import ModalWrapper from "./ModalWrapper";
+/* eslint-disable @typescript-eslint/ban-types */
 
-export interface ModalProps {}
+import { ContextModalProps } from "@mantine/modals";
+import { ModalSettings } from "@mantine/modals/lib/context";
+import { createContext, FunctionComponent } from "react";
 
-export type ModalComponent<P> = FunctionComponent<P> & {
-  modalKey: string;
-};
+export type ModalComponent<P extends Record<string, unknown> = {}> =
+  FunctionComponent<ContextModalProps<P>> & {
+    modalKey: string;
+    settings?: ModalSettings;
+  };
 
-export default function withModal<T>(
+export const StaticModals: ModalComponent[] = [];
+
+export const ModalIdContext = createContext<string | null>(null);
+
+export default function withModal<T extends {}>(
   Content: FunctionComponent<T>,
-  key: string
+  key: string,
+  defaultSettings?: ModalSettings
 ) {
-  const Comp: ModalComponent<T> = (props: ModalProps & T) => {
-    const [closeable, setCloseable] = useState(true);
-    const [size, setSize] = useState<ModalData["size"]>(undefined);
-    const data: ModalData = useMemo(
-      () => ({
-        key,
-        size,
-        closeable,
-      }),
-      [closeable, size]
-    );
-
-    const setter: ModalSetter = useMemo(
-      () => ({
-        closeable: setCloseable,
-        size: setSize,
-      }),
-      []
-    );
+  const Comp: ModalComponent<T> = (props) => {
+    const { id, innerProps } = props;
 
     return (
-      <ModalDataContext.Provider value={data}>
-        <ModalSetterContext.Provider value={setter}>
-          <ModalWrapper>
-            <Content {...props}></Content>
-          </ModalWrapper>
-        </ModalSetterContext.Provider>
-      </ModalDataContext.Provider>
+      <ModalIdContext.Provider value={id}>
+        <Content {...innerProps}></Content>
+      </ModalIdContext.Provider>
     );
   };
   Comp.modalKey = key;
+  Comp.settings = defaultSettings;
+
+  StaticModals.push(Comp as ModalComponent);
   return Comp;
 }

@@ -3,14 +3,15 @@ import {
   useEpisodeWantedPagination,
   useSeriesAction,
 } from "@/apis/hooks";
-import { AsyncButton } from "@/components";
 import Language from "@/components/bazarr/Language";
-import WantedView from "@/components/views/WantedView";
+import { task, TaskGroup } from "@/modules/task";
+import WantedView from "@/pages/views/WantedView";
+import { useTableStyles } from "@/styles";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Anchor, Badge, Group, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
@@ -22,10 +23,11 @@ const WantedSeriesView: FunctionComponent = () => {
         accessor: "seriesTitle",
         Cell: (row) => {
           const target = `/series/${row.row.original.sonarrSeriesId}`;
+          const { classes } = useTableStyles();
           return (
-            <Link to={target}>
-              <span>{row.value}</span>
-            </Link>
+            <Anchor className={classes.primary} component={Link} to={target}>
+              {row.value}
+            </Anchor>
           );
         },
       },
@@ -35,6 +37,11 @@ const WantedSeriesView: FunctionComponent = () => {
       },
       {
         accessor: "episodeTitle",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+
+          return <Text className={classes.noWrap}>{value}</Text>;
+        },
       },
       {
         Header: "Missing",
@@ -47,28 +54,36 @@ const WantedSeriesView: FunctionComponent = () => {
 
           const { download } = useEpisodeSubtitleModification();
 
-          return value.map((item, idx) => (
-            <AsyncButton
-              as={Badge}
-              key={BuildKey(idx, item.code2)}
-              className="mx-1 mr-2"
-              variant="secondary"
-              promise={() =>
-                download.mutateAsync({
-                  seriesId,
-                  episodeId,
-                  form: {
-                    language: item.code2,
-                    hi,
-                    forced: false,
-                  },
-                })
-              }
-            >
-              <Language.Text className="pr-1" value={item}></Language.Text>
-              <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
-            </AsyncButton>
-          ));
+          return (
+            <Group spacing="sm">
+              {value.map((item, idx) => (
+                <Badge
+                  color={download.isLoading ? "gray" : undefined}
+                  leftSection={<FontAwesomeIcon icon={faSearch} />}
+                  key={BuildKey(idx, item.code2)}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => {
+                    task.create(
+                      item.name,
+                      TaskGroup.SearchSubtitle,
+                      download.mutateAsync,
+                      {
+                        seriesId,
+                        episodeId,
+                        form: {
+                          language: item.code2,
+                          hi,
+                          forced: false,
+                        },
+                      }
+                    );
+                  }}
+                >
+                  <Language.Text value={item}></Language.Text>
+                </Badge>
+              ))}
+            </Group>
+          );
         },
       },
     ],

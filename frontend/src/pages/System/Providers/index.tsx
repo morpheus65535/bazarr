@@ -1,9 +1,10 @@
 import { useResetProvider, useSystemProviders } from "@/apis/hooks";
-import { ContentHeader, QueryOverlay } from "@/components";
+import { Toolbox } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { Container, Group } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent } from "react";
-import { Container, Row } from "react-bootstrap";
-import { Helmet } from "react-helmet";
 import Table from "./table";
 
 const SystemProvidersView: FunctionComponent = () => {
@@ -13,31 +14,30 @@ const SystemProvidersView: FunctionComponent = () => {
 
   const { mutate: reset, isLoading: isResetting } = useResetProvider();
 
+  useDocumentTitle("Providers - Bazarr (System)");
+
   return (
     <QueryOverlay result={providers}>
-      <Container fluid>
-        <Helmet>
-          <title>Providers - Bazarr (System)</title>
-        </Helmet>
-        <ContentHeader>
-          <ContentHeader.Button
-            updating={isFetching}
-            icon={faSync}
-            onClick={() => refetch()}
-          >
-            Refresh
-          </ContentHeader.Button>
-          <ContentHeader.Button
-            icon={faTrash}
-            updating={isResetting}
-            onClick={() => reset()}
-          >
-            Reset
-          </ContentHeader.Button>
-        </ContentHeader>
-        <Row>
-          <Table providers={data ?? []}></Table>
-        </Row>
+      <Container fluid px={0}>
+        <Toolbox>
+          <Group>
+            <Toolbox.Button
+              loading={isFetching}
+              icon={faSync}
+              onClick={() => refetch()}
+            >
+              Refresh
+            </Toolbox.Button>
+            <Toolbox.Button
+              icon={faTrash}
+              loading={isResetting}
+              onClick={() => reset()}
+            >
+              Reset
+            </Toolbox.Button>
+          </Group>
+        </Toolbox>
+        <Table providers={data ?? []}></Table>
       </Container>
     </QueryOverlay>
   );

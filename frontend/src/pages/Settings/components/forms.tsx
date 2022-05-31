@@ -1,87 +1,114 @@
 import {
-  Chips as CChips,
-  ChipsProps as CChipsProps,
+  Action as GlobalAction,
   FileBrowser,
   FileBrowserProps,
-  Selector as CSelector,
-  SelectorProps as CSelectorProps,
-  SelectorValueType,
-  Slider as CSlider,
-  SliderProps as CSliderProps,
+  MultiSelector as GlobalMultiSelector,
+  MultiSelectorProps as GlobalMultiSelectorProps,
+  Selector as GlobalSelector,
+  SelectorProps as GlobalSelectorProps,
 } from "@/components";
-import { isReactText } from "@/utilities";
-import { isArray, isBoolean, isNull, isNumber, isString } from "lodash";
-import { FunctionComponent, ReactText, useEffect } from "react";
+import { ActionProps as GlobalActionProps } from "@/components/inputs/Action";
+import ChipInput, { ChipInputProps } from "@/components/inputs/ChipInput";
+import { useSliderMarks } from "@/utilities";
 import {
-  Button as BSButton,
-  ButtonProps as BSButtonProps,
-  Form,
-} from "react-bootstrap";
-import { useCollapse, useLatest } from ".";
-import { OverrideFuncType, useSingleUpdate } from "./hooks";
-
-export const Message: FunctionComponent<{
-  type?: "warning" | "info";
-}> = ({ type, children }) => {
-  const cls = ["pr-4"];
-  cls.push(type === "warning" ? "text-warning" : "text-muted");
-
-  return <Form.Text className={cls.join(" ")}>{children}</Form.Text>;
-};
+  InputWrapper,
+  NumberInput,
+  NumberInputProps,
+  PasswordInput,
+  PasswordInputProps,
+  Slider as MantineSlider,
+  SliderProps as MantineSliderProps,
+  Switch,
+  TextInput,
+  TextInputProps,
+} from "@mantine/core";
+import { FunctionComponent, ReactText, useCallback, useEffect } from "react";
+import { useCollapse, useSettingValue } from ".";
+import { FormKey, useFormActions } from "../utilities/FormValues";
+import { OverrideFuncType } from "./hooks";
 
 export interface BaseInput<T> {
   disabled?: boolean;
   settingKey: string;
+  location?: FormKey;
   override?: OverrideFuncType<T>;
   beforeStaged?: (v: T) => unknown;
 }
 
-export interface TextProps extends BaseInput<ReactText> {
-  placeholder?: ReactText;
-  password?: boolean;
-  controlled?: boolean;
-  numberWithArrows?: boolean;
-}
+export type NumberProps = BaseInput<number> & NumberInputProps;
 
-export const Text: FunctionComponent<TextProps> = ({
-  placeholder,
-  disabled,
+export const Number: FunctionComponent<NumberProps> = ({
   beforeStaged,
-  controlled,
   override,
-  password,
   settingKey,
-  numberWithArrows,
+  location,
+  ...props
 }) => {
-  const value = useLatest<ReactText>(settingKey, isReactText, override);
-
-  const update = useSingleUpdate();
-  const collapse = useCollapse();
-
-  const fieldType = () => {
-    if (password) {
-      return "password";
-    } else if (numberWithArrows) {
-      return "number";
-    } else {
-      return "text";
-    }
-  };
+  const value = useSettingValue<number>(settingKey, override);
+  const { setValue } = useFormActions();
 
   return (
-    <Form.Control
-      type={fieldType()}
-      placeholder={placeholder?.toString()}
-      disabled={disabled}
-      defaultValue={controlled ? undefined : value ?? undefined}
-      value={controlled ? value ?? undefined : undefined}
+    <NumberInput
+      {...props}
+      value={value ?? undefined}
+      onChange={(val = 0) => {
+        const value = beforeStaged ? beforeStaged(val) : val;
+        setValue(value, settingKey, location);
+      }}
+    ></NumberInput>
+  );
+};
+
+export type TextProps = BaseInput<ReactText> & TextInputProps;
+
+export const Text: FunctionComponent<TextProps> = ({
+  beforeStaged,
+  override,
+  settingKey,
+  location,
+  ...props
+}) => {
+  const value = useSettingValue<ReactText>(settingKey, override);
+  const { setValue } = useFormActions();
+
+  const collapse = useCollapse();
+
+  return (
+    <TextInput
+      {...props}
+      value={value ?? undefined}
       onChange={(e) => {
         const val = e.currentTarget.value;
         collapse && collapse(val.toString());
         const value = beforeStaged ? beforeStaged(val) : val;
-        update(value, settingKey);
+        setValue(value, settingKey, location);
       }}
-    ></Form.Control>
+    ></TextInput>
+  );
+};
+
+export type PasswordProps = BaseInput<string> & PasswordInputProps;
+
+export const Password: FunctionComponent<PasswordProps> = ({
+  settingKey,
+  location,
+  override,
+  beforeStaged,
+  ...props
+}) => {
+  const value = useSettingValue<ReactText>(settingKey, override);
+  const { setValue } = useFormActions();
+
+  return (
+    <PasswordInput
+      {...props}
+      value={value ?? undefined}
+      onChange={(e) => {
+        const val = e.currentTarget.value;
+        const value = beforeStaged ? beforeStaged(val) : val;
+        setValue(value, settingKey, location);
+      }}
+    ></PasswordInput>
   );
 };
 
@@ -92,140 +119,146 @@ export interface CheckProps extends BaseInput<boolean> {
 
 export const Check: FunctionComponent<CheckProps> = ({
   label,
-  inline,
   override,
   disabled,
   settingKey,
+  location,
 }) => {
-  const update = useSingleUpdate();
   const collapse = useCollapse();
-
-  const value = useLatest<boolean>(settingKey, isBoolean, override);
+  const value = useSettingValue<boolean>(settingKey, override);
+  const { setValue } = useFormActions();
 
   useEffect(() => collapse && collapse(value ?? false), [collapse, value]);
 
   return (
-    <Form.Check
-      custom
-      type="checkbox"
+    <Switch
       id={settingKey}
-      inline={inline}
       label={label}
       onChange={(e) => {
         const { checked } = e.currentTarget;
-        update(checked, settingKey);
+        setValue(checked, settingKey, location);
       }}
       disabled={disabled}
-      checked={value ?? undefined}
-    ></Form.Check>
+      checked={value ?? false}
+    ></Switch>
   );
 };
 
-function selectorValidator<T>(v: unknown): v is T {
-  return isString(v) || isNumber(v) || isArray(v);
-}
+export type SelectorProps<T extends string | number> = BaseInput<T> &
+  GlobalSelectorProps<T>;
 
-type SelectorProps<T, M extends boolean> = BaseInput<SelectorValueType<T, M>> &
-  CSelectorProps<T, M>;
+export function Selector<T extends string | number>(props: SelectorProps<T>) {
+  const { settingKey, location, override, beforeStaged, ...selector } = props;
 
-export function Selector<
-  T extends string | string[] | number | number[],
-  M extends boolean = false
->(props: SelectorProps<T, M>) {
-  const update = useSingleUpdate();
-  const collapse = useCollapse();
-
-  const { settingKey, override, beforeStaged, ...selector } = props;
-
-  const value = useLatest<SelectorValueType<T, M>>(
-    settingKey,
-    selectorValidator,
-    override
-  );
-
-  useEffect(() => {
-    if (isString(value) || isNull(value)) {
-      collapse && collapse(value ?? "");
-    }
-  });
+  const value = useSettingValue<T>(settingKey, override);
+  const { setValue } = useFormActions();
 
   return (
-    <CSelector
+    <GlobalSelector
       {...selector}
-      value={value as SelectorValueType<T, M>}
+      value={value}
       onChange={(v) => {
-        const result = beforeStaged ? beforeStaged(v) : v;
-        update(result, settingKey);
+        const result = beforeStaged && v ? beforeStaged(v) : v;
+        setValue(result, settingKey, location);
       }}
-    ></CSelector>
+    ></GlobalSelector>
+  );
+}
+
+export type MultiSelectorProps<T extends string | number> = BaseInput<T[]> &
+  GlobalMultiSelectorProps<T>;
+
+export function MultiSelector<T extends string | number>(
+  props: MultiSelectorProps<T>
+) {
+  const { settingKey, location, override, beforeStaged, ...selector } = props;
+
+  const value = useSettingValue<T[]>(settingKey, override);
+  const { setValue } = useFormActions();
+
+  return (
+    <GlobalMultiSelector
+      {...selector}
+      value={value ?? []}
+      onChange={(v) => {
+        const result = beforeStaged && v ? beforeStaged(v) : v;
+        setValue(result, settingKey, location);
+      }}
+    ></GlobalMultiSelector>
   );
 }
 
 type SliderProps = BaseInput<number> &
-  Omit<CSliderProps, "onChange" | "onAfterChange">;
+  Omit<MantineSliderProps, "onChange" | "onChangeEnd" | "marks">;
 
 export const Slider: FunctionComponent<SliderProps> = (props) => {
-  const { settingKey, override, ...slider } = props;
+  const { settingKey, location, override, label, ...slider } = props;
 
-  const update = useSingleUpdate();
+  const value = useSettingValue<number>(settingKey, override);
+  const { setValue } = useFormActions();
 
-  const defaultValue = useLatest<number>(settingKey, isNumber, override);
+  const marks = useSliderMarks([(slider.min = 0), (slider.max = 100)]);
 
   return (
-    <CSlider
-      onAfterChange={(v) => {
-        update(v, settingKey);
-      }}
-      defaultValue={defaultValue ?? undefined}
-      {...slider}
-    ></CSlider>
+    <InputWrapper label={label}>
+      <MantineSlider
+        marks={marks}
+        onChange={(v) => {
+          setValue(v, settingKey, location);
+        }}
+        value={value ?? 0}
+        {...slider}
+      ></MantineSlider>
+    </InputWrapper>
   );
 };
 
 type ChipsProp = BaseInput<string[]> &
-  Omit<CChipsProps, "onChange" | "defaultValue">;
+  Omit<ChipInputProps, "onChange" | "data">;
 
 export const Chips: FunctionComponent<ChipsProp> = (props) => {
-  const { settingKey, override, ...chips } = props;
+  const { settingKey, location, override, ...chips } = props;
 
-  const update = useSingleUpdate();
-
-  const value = useLatest<string[]>(settingKey, isArray, override);
+  const value = useSettingValue<string[]>(settingKey, override);
+  const { setValue } = useFormActions();
 
   return (
-    <CChips
-      value={value ?? undefined}
+    <ChipInput
+      value={value ?? []}
       onChange={(v) => {
-        update(v, settingKey);
+        setValue(v, settingKey, location);
       }}
       {...chips}
-    ></CChips>
+    ></ChipInput>
   );
 };
 
-type ButtonProps = {
-  onClick?: (
-    update: (v: unknown, key: string) => void,
-    key: string,
-    value?: string
-  ) => void;
+type ActionProps = {
+  onClick?: (update: (v: unknown) => void, value?: string) => void;
 } & Omit<BaseInput<string>, "override" | "beforeStaged">;
 
-export const Button: FunctionComponent<Override<ButtonProps, BSButtonProps>> = (
-  props
-) => {
-  const { onClick, settingKey, ...button } = props;
+export const Action: FunctionComponent<
+  Override<ActionProps, GlobalActionProps>
+> = (props) => {
+  const { onClick, settingKey, location, ...button } = props;
 
-  const value = useLatest<string>(settingKey, isString);
-  const update = useSingleUpdate();
+  const value = useSettingValue<string>(settingKey);
+  const { setValue } = useFormActions();
+
+  const wrappedSetValue = useCallback(
+    (v: unknown) => {
+      setValue(v, settingKey, location);
+    },
+    [location, setValue, settingKey]
+  );
 
   return (
-    <BSButton
+    <GlobalAction
       onClick={() => {
-        onClick && onClick(update, settingKey, value ?? undefined);
+        onClick?.(wrappedSetValue, value ?? undefined);
       }}
       {...button}
-    ></BSButton>
+    ></GlobalAction>
   );
 };
 
@@ -234,15 +267,15 @@ interface FileProps extends BaseInput<string> {}
 export const File: FunctionComponent<Override<FileProps, FileBrowserProps>> = (
   props
 ) => {
-  const { settingKey, override, ...file } = props;
-  const value = useLatest<string>(settingKey, isString);
-  const update = useSingleUpdate();
+  const { settingKey, location, override, ...file } = props;
+  const value = useSettingValue<string>(settingKey);
+  const { setValue } = useFormActions();
 
   return (
     <FileBrowser
       defaultValue={value ?? undefined}
       onChange={(p) => {
-        update(p, settingKey);
+        setValue(p, settingKey, location);
       }}
       {...file}
     ></FileBrowser>

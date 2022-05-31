@@ -8,6 +8,12 @@ declare global {
     Bazarr: BazarrServer;
     _socketio: SocketIODebugger;
   }
+
+  interface WindowEventMap {
+    "app-critical-error": CustomEvent<{ message: string }>;
+    "app-login-required": CustomEvent;
+    "app-online-status": CustomEvent<{ online: boolean }>;
+  }
 }
 
 export interface BazarrServer {

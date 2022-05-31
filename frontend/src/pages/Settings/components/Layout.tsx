@@ -1,35 +1,20 @@
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
-import { ContentHeader, LoadingIndicator } from "@/components";
+import { Toolbox } from "@/components";
+import { LoadingProvider } from "@/contexts";
+import { useOnValueChange } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { useUpdateLocalStorage } from "@/utilities/storage";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
-import { merge } from "lodash";
-import {
-  createContext,
-  FunctionComponent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { Container, Row } from "react-bootstrap";
-import { Helmet } from "react-helmet";
+import { Container, Group, LoadingOverlay } from "@mantine/core";
+import { useDocumentTitle, useForm } from "@mantine/hooks";
+import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
 import {
   enabledLanguageKey,
   languageProfileKey,
   notificationsKey,
 } from "../keys";
-
-type SettingDispatcher = Record<string, (settings: LooseObject) => void>;
-
-export const StagedChangesContext = createContext<SimpleStateType<LooseObject>>(
-  [
-    {},
-    () => {
-      throw new Error("StagedChangesContext not initialized");
-    },
-  ]
-);
+import { FormContext, FormValues } from "../utilities/FormValues";
+import { SettingsProvider } from "../utilities/SettingsProvider";
 
 function submitHooks(settings: LooseObject) {
   if (languageProfileKey in settings) {
@@ -50,118 +35,84 @@ function submitHooks(settings: LooseObject) {
 
 interface Props {
   name: string;
-  children: JSX.Element | JSX.Element[];
+  children: ReactNode;
 }
 
 const Layout: FunctionComponent<Props> = (props) => {
   const { children, name } = props;
 
-  const updateStorage = useUpdateLocalStorage();
-
-  const [stagedChange, setChange] = useState<LooseObject>({});
-  const [dispatcher, setDispatcher] = useState<SettingDispatcher>({});
-
-  const { isLoading, isRefetching } = useSystemSettings();
+  const { data: settings, isLoading, isRefetching } = useSystemSettings();
   const { mutate, isLoading: isMutating } = useSettingsMutation();
 
-  useEffect(() => {
-    if (isRefetching === false) {
-      setChange({});
-    }
-  }, [isRefetching]);
-
-  const saveSettings = useCallback(
-    (settings: LooseObject) => {
-      submitHooks(settings);
-      LOG("info", "submitting settings", settings);
-      mutate(settings);
+  const form = useForm<FormValues>({
+    initialValues: {
+      settings: {},
+      storages: {},
     },
-    [mutate]
-  );
+  });
 
-  const saveLocalStorage = useCallback(
-    (settings: LooseObject) => {
-      updateStorage(settings);
-      setChange({});
-    },
-    [updateStorage]
-  );
-
-  useEffect(() => {
-    // Update dispatch
-    const newDispatch: SettingDispatcher = {};
-    newDispatch["__default__"] = saveSettings;
-    newDispatch["storage"] = saveLocalStorage;
-    setDispatcher(newDispatch);
-  }, [saveSettings, saveLocalStorage]);
-
-  const defaultDispatcher = useMemo(
-    () => dispatcher["__default__"],
-    [dispatcher]
-  );
-
-  const submit = useCallback(() => {
-    const dispatchMaps = new Map<string, LooseObject>();
-
-    // Separate settings by key
-    for (const key in stagedChange) {
-      const keys = key.split("-");
-      const firstKey = keys[0];
-      if (firstKey.length === 0) {
-        continue;
-      }
-
-      const object = dispatchMaps.get(firstKey);
-      if (object) {
-        object[key] = stagedChange[key];
-      } else {
-        dispatchMaps.set(firstKey, { [key]: stagedChange[key] });
-      }
+  useOnValueChange(isRefetching, (value) => {
+    if (!value) {
+      form.reset();
     }
+  });
 
-    let lostValues = {};
+  const updateStorage = useUpdateLocalStorage();
 
-    dispatchMaps.forEach((v, k) => {
-      if (k in dispatcher) {
-        dispatcher[k](v);
-      } else {
-        lostValues = merge(lostValues, v);
+  const submit = useCallback(
+    (values: FormValues) => {
+      const { settings, storages } = values;
+
+      if (Object.keys(settings).length > 0) {
+        submitHooks(settings);
+        LOG("info", "submitting settings", settings);
+        mutate(settings);
       }
-    });
-    // send to default dispatcher
-    defaultDispatcher(lostValues);
-  }, [stagedChange, dispatcher, defaultDispatcher]);
 
-  if (isLoading) {
-    return <LoadingIndicator></LoadingIndicator>;
+      if (Object.keys(storages).length > 0) {
+        LOG("info", "submitting storages", storages);
+        updateStorage(storages);
+      }
+    },
+    [mutate, updateStorage]
+  );
+
+  const totalStagedCount = useMemo(() => {
+    const object = { ...form.values.settings, ...form.values.storages };
+
+    return Object.keys(object).length;
+  }, [form.values.settings, form.values.storages]);
+
+  useDocumentTitle(`${name} - Bazarr (Settings)`);
+
+  if (settings === undefined) {
+    return <LoadingOverlay visible></LoadingOverlay>;
   }
 
   return (
-    <Container fluid>
-      <Helmet>
-        <title>{name} - Bazarr (Settings)</title>
-      </Helmet>
-      {/* TODO */}
-      {/* <Prompt
-        when={Object.keys(stagedChange).length > 0}
-        message="You have unsaved changes, are you sure you want to leave?"
-      ></Prompt> */}
-      <ContentHeader>
-        <ContentHeader.Button
-          icon={faSave}
-          updating={isMutating}
-          disabled={Object.keys(stagedChange).length === 0}
-          onClick={submit}
-        >
-          Save
-        </ContentHeader.Button>
-      </ContentHeader>
-      <StagedChangesContext.Provider value={[stagedChange, setChange]}>
-        <Row className="p-4">
-          <Container>{children}</Container>
-        </Row>
-      </StagedChangesContext.Provider>
-    </Container>
+    <SettingsProvider value={settings}>
+      <LoadingProvider value={isLoading || isMutating}>
+        <form onSubmit={form.onSubmit(submit)}>
+          <Toolbox>
+            <Group>
+              <Toolbox.Button
+                type="submit"
+                icon={faSave}
+                loading={isMutating}
+                disabled={totalStagedCount === 0}
+              >
+                Save
+              </Toolbox.Button>
+            </Group>
+          </Toolbox>
+          <FormContext.Provider value={form}>
+            <Container size="xl" mx={0}>
+              {children}
+            </Container>
+          </FormContext.Provider>
+        </form>
+      </LoadingProvider>
+    </SettingsProvider>
   );
 };
 

@@ -13,19 +13,6 @@ type StrictObject<T> = {
   [key: string]: T;
 };
 
-type Pair<T = string> = {
-  key: string;
-  value: T;
-};
-
-type EntityStruct<T> = {
-  keyName: keyof T;
-  ids: (string | null)[];
-  entities: {
-    [id: string]: T;
-  };
-};
-
 interface DataWrapper<T> {
   data: T;
 }
@@ -37,10 +24,5 @@ interface DataWrapperWithTotal<T> {
 
 type Override<T, U> = T & Omit<U, keyof T>;
 
-type Comparer<T> = (lhs: T, rhs: T) => boolean;
-
-type OptionalRecord<T extends string | number, D> = { [P in T]?: D };
-
-interface IdState<T> {
-  [key: number]: Readonly<T>;
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type GenericFunction<T = void> = (...args: any[]) => T;

@@ -1,40 +1,39 @@
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
-import { ActionButton, GroupTable, TextPopover } from "@/components";
+import { useShowOnlyDesired } from "@/apis/hooks/site";
+import { Action, GroupTable } from "@/components";
+import { AudioList } from "@/components/bazarr";
 import { EpisodeHistoryModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
-import SubtitleTools, {
-  SubtitleToolModal,
-} from "@/components/modals/subtitle-tools";
-import { useModalControl } from "@/modules/modals";
-import { useShowOnlyDesired } from "@/modules/redux/hooks";
+import TextPopover from "@/components/TextPopover";
+import { useModals } from "@/modules/modals";
+import { useTableStyles } from "@/styles";
 import { BuildKey, filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import {
   faBookmark,
-  faBriefcase,
   faHistory,
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { FunctionComponent, useCallback, useMemo } from "react";
-import { Badge, ButtonGroup } from "react-bootstrap";
-import { Column } from "react-table";
-import { SubtitleAction } from "./components";
+import { Group, Text } from "@mantine/core";
+import {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
+import { Column, TableInstance } from "react-table";
+import { Subtitle } from "./components";
 
 interface Props {
-  series?: Item.Series;
-  episodes: Item.Episode[];
+  episodes: Item.Episode[] | null;
   disabled?: boolean;
   profile?: Language.Profile;
 }
 
-const Table: FunctionComponent<Props> = ({
-  series,
-  episodes,
-  profile,
-  disabled,
-}) => {
+const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
   const onlyDesired = useShowOnlyDesired();
 
   const profileItems = useProfileItemsToLanguages(profile);
@@ -61,7 +60,7 @@ const Table: FunctionComponent<Props> = ({
           forced,
           provider,
           subtitle,
-          original_format: original_format,
+          original_format,
         },
       });
     },
@@ -94,23 +93,20 @@ const Table: FunctionComponent<Props> = ({
       {
         Header: "Title",
         accessor: "title",
-        className: "text-nowrap",
-        Cell: ({ value, row }) => (
-          <TextPopover text={row.original.sceneName} delay={1}>
-            <span>{value}</span>
-          </TextPopover>
-        ),
+        Cell: ({ value, row }) => {
+          const { classes } = useTableStyles();
+
+          return (
+            <TextPopover text={row.original.sceneName}>
+              <Text className={classes.primary}>{value}</Text>
+            </TextPopover>
+          );
+        },
       },
       {
         Header: "Audio",
         accessor: "audio_language",
-        Cell: (row) => {
-          return row.value.map((v) => (
-            <Badge variant="secondary" key={v.code2}>
-              {v.name}
-            </Badge>
-          ));
-        },
+        Cell: ({ value }) => <AudioList audios={value}></AudioList>,
       },
       {
         Header: "Subtitles",
@@ -118,19 +114,19 @@ const Table: FunctionComponent<Props> = ({
         Cell: ({ row }) => {
           const episode = row.original;
 
-          const seriesid = episode.sonarrSeriesId;
+          const seriesId = episode.sonarrSeriesId;
 
           const elements = useMemo(() => {
-            const episodeid = episode.sonarrEpisodeId;
+            const episodeId = episode.sonarrEpisodeId;
 
             const missing = episode.missing_subtitles.map((val, idx) => (
-              <SubtitleAction
+              <Subtitle
                 missing
                 key={BuildKey(idx, val.code2, "missing")}
-                seriesId={seriesid}
-                episodeId={episodeid}
+                seriesId={seriesId}
+                episodeId={episodeId}
                 subtitle={val}
-              ></SubtitleAction>
+              ></Subtitle>
             ));
 
             let raw_subtitles = episode.subtitles;
@@ -139,86 +135,96 @@ const Table: FunctionComponent<Props> = ({
             }
 
             const subtitles = raw_subtitles.map((val, idx) => (
-              <SubtitleAction
+              <Subtitle
                 key={BuildKey(idx, val.code2, "valid")}
-                seriesId={seriesid}
-                episodeId={episodeid}
+                seriesId={seriesId}
+                episodeId={episodeId}
                 subtitle={val}
-              ></SubtitleAction>
+              ></Subtitle>
             ));
 
             return [...missing, ...subtitles];
-          }, [episode, seriesid]);
+          }, [episode, seriesId]);
 
-          return elements;
+          return (
+            <Group spacing="xs" noWrap>
+              {elements}
+            </Group>
+          );
         },
       },
       {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
         Cell: ({ row }) => {
-          const { show } = useModalControl();
+          const modals = useModals();
           return (
-            <ButtonGroup>
-              <ActionButton
+            <Group spacing="xs" noWrap>
+              <Action
+                disabled={disabled}
+                onClick={() => {
+                  modals.openContextModal(EpisodeSearchModal, {
+                    item: row.original,
+                    download,
+                    query: useEpisodesProvider,
+                  });
+                }}
                 icon={faUser}
-                disabled={series?.profileId === null || disabled}
+              ></Action>
+              <Action
+                disabled={disabled}
                 onClick={() => {
-                  show(EpisodeSearchModal, row.original);
+                  modals.openContextModal(
+                    EpisodeHistoryModal,
+                    {
+                      episode: row.original,
+                    },
+                    {
+                      title: `History - ${row.original.title}`,
+                    }
+                  );
                 }}
-              ></ActionButton>
-              <ActionButton
                 icon={faHistory}
-                disabled={disabled}
-                onClick={() => {
-                  show(EpisodeHistoryModal, row.original);
-                }}
-              ></ActionButton>
-              <ActionButton
-                icon={faBriefcase}
-                disabled={disabled}
-                onClick={() => {
-                  show(SubtitleToolModal, [row.original]);
-                }}
-              ></ActionButton>
-            </ButtonGroup>
+              ></Action>
+            </Group>
           );
         },
       },
     ],
-    [onlyDesired, profileItems, series, disabled]
+    [onlyDesired, profileItems, disabled, download]
   );
 
   const maxSeason = useMemo(
     () =>
-      episodes.reduce<number>((prev, curr) => Math.max(prev, curr.season), 0),
+      episodes?.reduce<number>(
+        (prev, curr) => Math.max(prev, curr.season),
+        0
+      ) ?? 0,
     [episodes]
   );
 
+  const instance = useRef<TableInstance<Item.Episode> | null>(null);
+
+  useEffect(() => {
+    if (instance.current) {
+      instance.current.toggleRowExpanded([`season:${maxSeason}`], true);
+    }
+  }, [maxSeason]);
+
   return (
-    <>
-      <GroupTable
-        columns={columns}
-        data={episodes}
-        initialState={{
-          sortBy: [
-            { id: "season", desc: true },
-            { id: "episode", desc: true },
-          ],
-          groupBy: ["season"],
-          expanded: {
-            [`season:${maxSeason}`]: true,
-          },
-        }}
-        emptyText="No Episode Found For This Series"
-      ></GroupTable>
-      <SubtitleTools></SubtitleTools>
-      <EpisodeHistoryModal></EpisodeHistoryModal>
-      <EpisodeSearchModal
-        download={download}
-        query={useEpisodesProvider}
-      ></EpisodeSearchModal>
-    </>
+    <GroupTable
+      columns={columns}
+      data={episodes ?? []}
+      instanceRef={instance}
+      initialState={{
+        sortBy: [
+          { id: "season", desc: true },
+          { id: "episode", desc: true },
+        ],
+        groupBy: ["season"],
+      }}
+      tableStyles={{ emptyText: "No Episode Found For This Series" }}
+    ></GroupTable>
   );
 };
 

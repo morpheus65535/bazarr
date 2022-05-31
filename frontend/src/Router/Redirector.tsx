@@ -1,18 +1,27 @@
-import { useEnabledStatus } from "@/modules/redux/hooks";
-import { FunctionComponent } from "react";
-import { Navigate } from "react-router-dom";
+import { useSystemSettings } from "@/apis/hooks";
+import { LoadingOverlay } from "@mantine/core";
+import { FunctionComponent, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Redirector: FunctionComponent = () => {
-  const { sonarr, radarr } = useEnabledStatus();
+  const { data } = useSystemSettings();
 
-  let path = "/settings/general";
-  if (sonarr) {
-    path = "/series";
-  } else if (radarr) {
-    path = "/movies";
-  }
+  const navigate = useNavigate();
 
-  return <Navigate to={path}></Navigate>;
+  useEffect(() => {
+    if (data) {
+      const { use_sonarr, use_radarr } = data.general;
+      if (use_sonarr) {
+        navigate("/series");
+      } else if (use_radarr) {
+        navigate("/movies");
+      } else {
+        navigate("/settings/general");
+      }
+    }
+  }, [data, navigate]);
+
+  return <LoadingOverlay visible></LoadingOverlay>;
 };
 
 export default Redirector;

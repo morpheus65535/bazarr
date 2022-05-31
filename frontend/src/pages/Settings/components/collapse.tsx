@@ -1,3 +1,4 @@
+import { Collapse } from "@mantine/core";
 import {
   createContext,
   Dispatch,
@@ -6,7 +7,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Collapse } from "react-bootstrap";
 
 type SupportType = string | boolean;
 
@@ -72,7 +72,7 @@ const CollapseBoxContent: FunctionComponent<ContentProps> = ({
   }, [on, value, eventKey]);
 
   return (
-    <Collapse in={open} className={indent === false ? undefined : "pl-4"}>
+    <Collapse in={open} pl={indent ? "md" : undefined}>
       <div>{children}</div>
     </Collapse>
   );

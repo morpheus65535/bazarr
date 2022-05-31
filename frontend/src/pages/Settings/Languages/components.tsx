@@ -1,36 +1,45 @@
 import {
-  LanguageSelector as CLanguageSelector,
+  MultiSelector,
+  MultiSelectorProps,
   SelectorOption,
 } from "@/components";
+import { Language } from "@/components/bazarr";
+import { useSelectorOptions } from "@/utilities";
 import { FunctionComponent, useMemo } from "react";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
-import { BaseInput, Selector, useSingleUpdate } from "../components";
+import { BaseInput, Selector, SelectorProps } from "../components";
+import { useFormActions } from "../utilities/FormValues";
 
-interface LanguageSelectorProps {
+type LanguageSelectorProps = Omit<
+  MultiSelectorProps<Language.Info>,
+  "options" | "value" | "onChange"
+> & {
   options: readonly Language.Info[];
-}
+};
 
 export const LanguageSelector: FunctionComponent<
   LanguageSelectorProps & BaseInput<string[]>
 > = ({ settingKey, options }) => {
   const enabled = useLatestEnabledLanguages();
-  const update = useSingleUpdate();
+  const { setValue } = useFormActions();
+
+  const wrappedOptions = useSelectorOptions(options, (value) => value.name);
 
   return (
-    <CLanguageSelector
-      multiple
+    <MultiSelector
+      {...wrappedOptions}
       value={enabled}
-      options={options}
+      searchable
       onChange={(val) => {
-        update(val, settingKey);
+        setValue(val, settingKey);
       }}
-    ></CLanguageSelector>
+    ></MultiSelector>
   );
 };
 
 export const ProfileSelector: FunctionComponent<
-  BaseInput<Language.Profile>
-> = ({ settingKey }) => {
+  Omit<SelectorProps<number>, "beforeStaged" | "options" | "clearable">
+> = ({ ...props }) => {
   const profiles = useLatestProfiles();
 
   const profileOptions = useMemo<SelectorOption<number>[]>(
@@ -43,9 +52,9 @@ export const ProfileSelector: FunctionComponent<
 
   return (
     <Selector
+      {...props}
       clearable
       options={profileOptions}
-      settingKey={settingKey}
       beforeStaged={(v) => (v === null ? "" : v)}
     ></Selector>
   );

@@ -1,5 +1,5 @@
-import { ActionButton, PageTable } from "@/components";
-import { useModalControl } from "@/modules/modals";
+import { Action, PageTable } from "@/components";
+import { useModals } from "@/modules/modals";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faBug,
@@ -50,18 +50,19 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
       {
         Header: "Date",
         accessor: "timestamp",
-        className: "text-nowrap",
       },
       {
         accessor: "exception",
         Cell: ({ value }) => {
-          const { show } = useModalControl();
+          const modals = useModals();
           if (!isUndefined(value)) {
             return (
-              <ActionButton
+              <Action
                 icon={faLayerGroup}
-                onClick={() => show(SystemLogModal, value)}
-              ></ActionButton>
+                onClick={() =>
+                  modals.openContextModal(SystemLogModal, { stack: value })
+                }
+              ></Action>
             );
           } else {
             return null;
@@ -75,7 +76,6 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
   return (
     <>
       <PageTable columns={columns} data={logs}></PageTable>
-      <SystemLogModal></SystemLogModal>
     </>
   );
 };
