@@ -9,12 +9,14 @@ import {
   Stack,
   Text as MantineText,
 } from "@mantine/core";
+import { useForm } from "@mantine/hooks";
 import { capitalize, isBoolean } from "lodash";
 import {
   forwardRef,
   FunctionComponent,
   useCallback,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -25,21 +27,37 @@ import {
   Text,
   useSettingValue,
 } from "../components";
-import { useFormActions } from "../utilities/FormValues";
+import {
+  FormContext,
+  FormValues,
+  useFormActions,
+  useStagedValues,
+} from "../utilities/FormValues";
+import { SettingsProvider, useSettings } from "../utilities/SettingsProvider";
 import { ProviderInfo, ProviderList } from "./list";
 
 const ProviderKey = "settings-general-enabled_providers";
 
 export const ProviderView: FunctionComponent = () => {
+  const settings = useSettings();
+  const staged = useStagedValues();
   const providers = useSettingValue<string[]>(ProviderKey);
+
+  const { update } = useFormActions();
 
   const modals = useModals();
 
   const select = useCallback(
     (v?: ProviderInfo) => {
-      modals.openContextModal(ProviderModal, { payload: v ?? null });
+      modals.openContextModal(ProviderModal, {
+        payload: v ?? null,
+        enabledProviders: providers ?? [],
+        staged,
+        settings,
+        onChange: update,
+      });
     },
-    [modals]
+    [modals, providers, settings, staged, update]
   );
 
   const cards = useMemo(() => {
@@ -69,13 +87,18 @@ export const ProviderView: FunctionComponent = () => {
   return (
     <SimpleGrid cols={3}>
       {cards}
-      <Card plus onClick={select}></Card>
+      <Card plus onClick={() => select()}></Card>
     </SimpleGrid>
   );
 };
 
 interface ProviderToolProps {
   payload: ProviderInfo | null;
+  // TODO: Find a better solution to pass this info to modal
+  enabledProviders: readonly string[];
+  staged: LooseObject;
+  settings: Settings;
+  onChange: (v: LooseObject) => void;
 }
 
 const SelectItem = forwardRef<
@@ -90,43 +113,56 @@ const SelectItem = forwardRef<
   );
 });
 
-const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
-  const [staged, setChange] = useState<LooseObject>({});
-
+const ProviderTool: FunctionComponent<ProviderToolProps> = ({
+  payload,
+  enabledProviders,
+  staged,
+  settings,
+  onChange,
+}) => {
   const modals = useModals();
+
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload);
 
-  const providers = useSettingValue<string[]>(ProviderKey);
-
-  const { update } = useFormActions();
+  const form = useForm<FormValues>({
+    initialValues: {
+      settings: staged,
+      storages: {},
+    },
+  });
 
   const deletePayload = useCallback(() => {
-    if (payload && providers) {
-      const idx = providers.findIndex((v) => v === payload.key);
+    if (payload && enabledProviders) {
+      const idx = enabledProviders.findIndex((v) => v === payload.key);
       if (idx !== -1) {
-        const newProviders = [...providers];
+        const newProviders = [...enabledProviders];
         newProviders.splice(idx, 1);
-        update({ [ProviderKey]: newProviders });
+        onChangeRef.current({ [ProviderKey]: newProviders });
         modals.closeAll();
       }
     }
-  }, [payload, providers, update, modals]);
+  }, [payload, enabledProviders, modals]);
 
-  const addProvider = useCallback(() => {
-    if (info && providers) {
-      const changes = { ...staged };
+  const submit = useCallback(
+    (values: FormValues) => {
+      if (info && enabledProviders) {
+        const changes = { ...values.settings };
 
-      // Add this provider if not exist
-      if (providers.find((v) => v === info.key) === undefined) {
-        const newProviders = [...providers, info.key];
-        changes[ProviderKey] = newProviders;
+        // Add this provider if not exist
+        if (enabledProviders.find((v) => v === info.key) === undefined) {
+          const newProviders = [...enabledProviders, info.key];
+          changes[ProviderKey] = newProviders;
+        }
+
+        onChangeRef.current(changes);
+        modals.closeAll();
       }
-
-      update(changes);
-      modals.closeAll();
-    }
-  }, [info, providers, staged, update, modals]);
+    },
+    [info, enabledProviders, modals]
+  );
 
   const canSave = info !== null;
 
@@ -145,9 +181,10 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
     () =>
       ProviderList.filter(
         (v) =>
-          providers?.find((p) => p === v.key && p !== info?.key) === undefined
+          enabledProviders?.find((p) => p === v.key && p !== info?.key) ===
+          undefined
       ),
-    [info?.key, providers]
+    [info?.key, enabledProviders]
   );
 
   const options = useSelectorOptions(
@@ -220,33 +257,35 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
   }, [info]);
 
   return (
-    // <StagedChangesContext.Provider value={[staged, setChange]}>
-    <Stack>
-      <Stack spacing="xs">
-        <Selector
-          itemComponent={SelectItem}
-          disabled={payload !== null}
-          {...options}
-          value={info}
-          onChange={onSelect}
-        ></Selector>
-        <Message>{info?.description}</Message>
-        {modification}
-        <div hidden={info?.message === undefined}>
-          <Message>{info?.message}</Message>
-        </div>
-      </Stack>
-      <Divider></Divider>
-      <Group>
-        <Button hidden={!payload} color="danger" onClick={deletePayload}>
-          Delete
-        </Button>
-        <Button disabled={!canSave} onClick={addProvider}>
-          Save
-        </Button>
-      </Group>
-    </Stack>
-    // </StagedChangesContext.Provider>
+    <SettingsProvider value={settings}>
+      <FormContext.Provider value={form}>
+        <Stack>
+          <Stack spacing="xs">
+            <Selector
+              itemComponent={SelectItem}
+              disabled={payload !== null}
+              {...options}
+              value={info}
+              onChange={onSelect}
+            ></Selector>
+            <Message>{info?.description}</Message>
+            {modification}
+            <div hidden={info?.message === undefined}>
+              <Message>{info?.message}</Message>
+            </div>
+          </Stack>
+          <Divider></Divider>
+          <Group position="right">
+            <Button hidden={!payload} color="red" onClick={deletePayload}>
+              Delete
+            </Button>
+            <Button disabled={!canSave} onClick={form.onSubmit(submit)}>
+              Save
+            </Button>
+          </Group>
+        </Stack>
+      </FormContext.Provider>
+    </SettingsProvider>
   );
 };
 
