@@ -5,7 +5,7 @@ import { useTableStyles } from "@/styles";
 import { faClock, faHistory, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Group, Text } from "@mantine/core";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 
 interface Props {

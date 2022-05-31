@@ -4,7 +4,7 @@ import { QueryOverlay } from "@/components/async";
 import { faFileArchive } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import Table from "./table";
 
 const SystemBackupsView: FunctionComponent = () => {

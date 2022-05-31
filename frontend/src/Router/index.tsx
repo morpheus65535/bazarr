@@ -40,7 +40,7 @@ import {
   faLaptop,
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
-import React, {
+import {
   createContext,
   FunctionComponent,
   lazy,
