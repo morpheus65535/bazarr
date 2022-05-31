@@ -116,6 +116,7 @@ const HistoryStats: FunctionComponent = () => {
             ></Selector>
             <Selector
               {...languageOptions}
+              placeholder="Language..."
               clearable
               value={lang}
               onChange={setLanguage}
