@@ -2,5 +2,6 @@ node_modules
 dist
 *.local
 build
+coverage
 
 *.tsbuildinfo
