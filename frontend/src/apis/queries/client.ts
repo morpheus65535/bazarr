@@ -1,4 +1,5 @@
 import SocketIO from "@/modules/socketio";
+import { LOG } from "@/utilities/console";
 import { setLoginRequired } from "@/utilities/event";
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
 import { Environment } from "../../utilities";
@@ -8,6 +9,9 @@ class BazarrClient {
 
   constructor() {
     const baseUrl = `${Environment.baseUrl}/api/`;
+
+    LOG("info", "initializing BazarrClient with", baseUrl);
+
     this.initialize(baseUrl, Environment.apiKey);
     SocketIO.initialize();
   }
