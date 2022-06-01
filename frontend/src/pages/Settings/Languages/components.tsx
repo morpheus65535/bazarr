@@ -5,6 +5,7 @@ import {
 } from "@/components";
 import { Language } from "@/components/bazarr";
 import { useSelectorOptions } from "@/utilities";
+import { InputWrapper } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { BaseInput, Selector, SelectorProps } from "../components";
@@ -19,21 +20,23 @@ type LanguageSelectorProps = Omit<
 
 export const LanguageSelector: FunctionComponent<
   LanguageSelectorProps & BaseInput<string[]>
-> = ({ settingKey, options }) => {
+> = ({ settingKey, location, label, options }) => {
   const enabled = useLatestEnabledLanguages();
   const { setValue } = useFormActions();
 
   const wrappedOptions = useSelectorOptions(options, (value) => value.name);
 
   return (
-    <MultiSelector
-      {...wrappedOptions}
-      value={enabled}
-      searchable
-      onChange={(val) => {
-        setValue(val, settingKey);
-      }}
-    ></MultiSelector>
+    <InputWrapper label={label}>
+      <MultiSelector
+        {...wrappedOptions}
+        value={enabled}
+        searchable
+        onChange={(val) => {
+          setValue(val, settingKey, location);
+        }}
+      ></MultiSelector>
+    </InputWrapper>
   );
 };
 

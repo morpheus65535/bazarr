@@ -71,6 +71,7 @@ const SettingsGeneralView: FunctionComponent = () => {
               label="Authentication"
               clearable
               options={securityOptions}
+              placeholder="No Authentication"
               settingKey="settings-auth-type"
               beforeStaged={(v) => (v === null ? "None" : v)}
             ></Selector>
@@ -122,6 +123,7 @@ const SettingsGeneralView: FunctionComponent = () => {
             <Selector
               clearable
               settingKey="settings-proxy-type"
+              placeholder="No Proxy"
               options={proxyOptions}
               beforeStaged={(v) => (v === null ? "None" : v)}
             ></Selector>

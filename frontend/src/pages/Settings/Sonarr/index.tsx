@@ -61,6 +61,7 @@ const SettingsSonarrView: FunctionComponent = () => {
             </Message>
             <MultiSelector
               label="Excluded Series Types"
+              placeholder="Select series types"
               settingKey="settings-sonarr-excluded_series_types"
               options={seriesTypeOptions}
             ></MultiSelector>

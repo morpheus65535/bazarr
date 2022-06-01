@@ -2,7 +2,7 @@ import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
 import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import {
   Accordion,
   Alert,
@@ -207,7 +207,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         Cell: ({ row }) => {
           return (
             <Action
-              icon={faXmark}
+              icon={faTrash}
               color="red"
               onClick={() => action.remove(row.index)}
             ></Action>

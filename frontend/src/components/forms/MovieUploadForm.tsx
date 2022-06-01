@@ -12,7 +12,7 @@ import {
   faCircleNotch,
   faInfoCircle,
   faTimes,
-  faXmark,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Checkbox, Divider, Stack, Text } from "@mantine/core";
@@ -222,7 +222,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         Cell: ({ row: { index } }) => {
           return (
             <Action
-              icon={faXmark}
+              icon={faTrash}
               color="red"
               onClick={() => action.remove(index)}
             ></Action>

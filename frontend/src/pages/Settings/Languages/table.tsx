@@ -5,7 +5,7 @@ import {
 } from "@/components/forms/ProfileEditForm";
 import { useModals } from "@/modules/modals";
 import { BuildKey, useArrayAction } from "@/utilities";
-import { faWrench, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { Badge, Button, Group } from "@mantine/core";
 import { cloneDeep } from "lodash";
 import { FunctionComponent, useCallback, useMemo } from "react";
@@ -132,7 +132,7 @@ const Table: FunctionComponent = () => {
                 }}
               ></Action>
               <Action
-                icon={faXmark}
+                icon={faTrash}
                 color="red"
                 onClick={() => action.remove(row.index)}
               ></Action>

@@ -99,6 +99,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           <CollapseBox.Control>
             <Selector
               clearable
+              placeholder="Select a provider"
               settingKey="settings-general-anti_captcha_provider"
               beforeStaged={(v) => (v === undefined ? "None" : v)}
               options={antiCaptchaOption}

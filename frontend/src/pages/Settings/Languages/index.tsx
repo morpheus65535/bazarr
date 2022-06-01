@@ -55,6 +55,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
         </Message>
         <LanguageSelector
           label="Languages Filter"
+          placeholder="Select languages"
           settingKey={enabledLanguageKey}
           options={languages ?? []}
         ></LanguageSelector>
@@ -76,6 +77,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
           <CollapseBox.Content indent>
             <ProfileSelector
               label="Profile"
+              placeholder="Select a profile"
               settingKey="settings-general-serie_default_profile"
             ></ProfileSelector>
           </CollapseBox.Content>
@@ -90,9 +92,10 @@ const SettingsLanguagesView: FunctionComponent = () => {
               Apply only to Movies added to Bazarr after enabling this option.
             </Message>
           </CollapseBox.Control>
-          <CollapseBox.Content>
+          <CollapseBox.Content indent>
             <ProfileSelector
               label="Profile"
+              placeholder="Select a profile"
               settingKey="settings-general-movie_default_profile"
             ></ProfileSelector>
           </CollapseBox.Content>
