@@ -285,6 +285,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         Cell: ({ row: { index } }) => {
           return (
             <Action
+              label="Remove"
               icon={faTrash}
               color="red"
               onClick={() => action.remove(index)}

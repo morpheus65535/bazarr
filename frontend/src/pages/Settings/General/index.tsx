@@ -88,6 +88,7 @@ const SettingsGeneralView: FunctionComponent = () => {
           rightSection={
             <MantineGroup spacing="xs" mx="xs" position="right">
               <Action
+                label="Copy API Key"
                 variant="light"
                 settingKey={settingApiKey}
                 color={copied ? "green" : undefined}
@@ -100,6 +101,7 @@ const SettingsGeneralView: FunctionComponent = () => {
                 }}
               ></Action>
               <Action
+                label="Regenerate"
                 variant="light"
                 settingKey={settingApiKey}
                 color="red"

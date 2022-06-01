@@ -192,7 +192,15 @@ const MovieDetailView: FunctionComponent = () => {
             >
               Edit Movie
             </Toolbox.Button>
-            <Menu control={<Action icon={faEllipsis} disabled={hasTask} />}>
+            <Menu
+              control={
+                <Action
+                  label="More Actions"
+                  icon={faEllipsis}
+                  disabled={hasTask}
+                />
+              }
+            >
               <Menu.Item
                 icon={<FontAwesomeIcon icon={faToolbox} />}
                 onClick={() => {

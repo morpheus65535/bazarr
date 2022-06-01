@@ -207,6 +207,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         Cell: ({ row }) => {
           return (
             <Action
+              label="Remove"
               icon={faTrash}
               color="red"
               onClick={() => action.remove(row.index)}

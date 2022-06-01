@@ -162,6 +162,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
           const result = row.original;
           return (
             <Action
+              label="Download"
               icon={faDownload}
               color="brand"
               variant="light"

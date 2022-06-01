@@ -53,6 +53,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
           return (
             <Group spacing="xs" noWrap>
               <Action
+                label="Restore"
                 onClick={() =>
                   modals.openConfirmModal({
                     title: "Restore Backup",
@@ -71,6 +72,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
                 icon={faHistory}
               ></Action>
               <Action
+                label="Delete"
                 onClick={() =>
                   modals.openConfirmModal({
                     title: "Delete Backup",

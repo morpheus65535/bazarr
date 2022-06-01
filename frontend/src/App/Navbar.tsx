@@ -136,6 +136,7 @@ const AppNavbar: FunctionComponent = () => {
         <MantineNavbar.Section mt="xs">
           <Group spacing="xs">
             <Action
+              label="Change Theme"
               color={dark ? "yellow" : "indigo"}
               variant="hover"
               onClick={() => toggleColorScheme()}
@@ -145,7 +146,12 @@ const AppNavbar: FunctionComponent = () => {
               href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
               target="_blank"
             >
-              <Action icon={faHeart} variant="hover" color="red"></Action>
+              <Action
+                label="Donate"
+                icon={faHeart}
+                variant="hover"
+                color="red"
+              ></Action>
             </Anchor>
           </Group>
         </MantineNavbar.Section>

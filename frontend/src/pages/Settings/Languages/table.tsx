@@ -122,6 +122,7 @@ const Table: FunctionComponent = () => {
           return (
             <Group spacing="xs" noWrap>
               <Action
+                label="Edit Profile"
                 icon={faWrench}
                 onClick={() => {
                   modals.openContextModal(ProfileEditModal, {
@@ -132,6 +133,7 @@ const Table: FunctionComponent = () => {
                 }}
               ></Action>
               <Action
+                label="Remove"
                 icon={faTrash}
                 color="red"
                 onClick={() => action.remove(row.index)}

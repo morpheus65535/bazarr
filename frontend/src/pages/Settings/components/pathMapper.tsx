@@ -121,6 +121,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
         Cell: ({ row: { index } }) => {
           return (
             <Action
+              label="Remove"
               icon={faTrash}
               onClick={() => action.remove(index)}
             ></Action>

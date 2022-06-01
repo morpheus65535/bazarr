@@ -84,6 +84,8 @@ const AppHeader: FunctionComponent = () => {
           <Menu
             control={
               <Action
+                label="System"
+                tooltip={{ position: "left" }}
                 loading={offline}
                 color={offline ? "yellow" : undefined}
                 icon={faGear}

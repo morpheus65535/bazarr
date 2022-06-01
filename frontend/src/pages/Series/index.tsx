@@ -83,6 +83,8 @@ const SeriesView: FunctionComponent = () => {
           const modals = useModals();
           return (
             <Action
+              label="Edit Series"
+              tooltip={{ position: "left" }}
               variant="light"
               onClick={() =>
                 modals.openContextModal(

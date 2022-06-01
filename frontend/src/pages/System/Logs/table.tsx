@@ -58,6 +58,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
           if (!isUndefined(value)) {
             return (
               <Action
+                label="Detail"
                 icon={faLayerGroup}
                 onClick={() =>
                   modals.openContextModal(SystemLogModal, { stack: value })

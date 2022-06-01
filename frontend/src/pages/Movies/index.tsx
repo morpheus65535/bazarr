@@ -83,6 +83,8 @@ const MovieView: FunctionComponent = () => {
           const mutation = useMovieModification();
           return (
             <Action
+              label="Edit Movie"
+              tooltip={{ position: "left" }}
               variant="light"
               onClick={() =>
                 modals.openContextModal(

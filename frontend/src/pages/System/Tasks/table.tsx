@@ -2,7 +2,7 @@ import { useRunTask } from "@/apis/hooks";
 import { SimpleTable } from "@/components";
 import MutateAction from "@/components/async/MutateAction";
 import { useTableStyles } from "@/styles";
-import { faSync } from "@fortawesome/free-solid-svg-icons";
+import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import { Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column, useSortBy } from "react-table";
@@ -42,7 +42,8 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
 
           return (
             <MutateAction
-              icon={faSync}
+              label="Run"
+              icon={faPlay}
               iconProps={{ spin: value }}
               mutation={runTask}
               args={() => job_id}

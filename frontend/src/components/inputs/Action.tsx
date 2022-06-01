@@ -3,20 +3,29 @@ import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
-import { ActionIcon, ActionIconProps } from "@mantine/core";
+import {
+  ActionIcon,
+  ActionIconProps,
+  Tooltip,
+  TooltipProps,
+} from "@mantine/core";
 import { forwardRef } from "react";
 
 export type ActionProps = ActionIconProps<"button"> & {
   icon: IconDefinition;
+  label: string;
+  tooltip?: Omit<TooltipProps, "label" | "openDelay" | "children">;
   iconProps?: Omit<FontAwesomeIconProps, "icon">;
 };
 
 const Action = forwardRef<HTMLButtonElement, ActionProps>(
-  ({ icon, iconProps, ...props }, ref) => {
+  ({ icon, iconProps, label, tooltip, ...props }, ref) => {
     return (
-      <ActionIcon {...props} ref={ref}>
-        <FontAwesomeIcon icon={icon} {...iconProps}></FontAwesomeIcon>
-      </ActionIcon>
+      <Tooltip {...tooltip} label={label} openDelay={500}>
+        <ActionIcon aria-label={label} {...props} ref={ref}>
+          <FontAwesomeIcon icon={icon} {...iconProps}></FontAwesomeIcon>
+        </ActionIcon>
+      </Tooltip>
     );
   }
 );

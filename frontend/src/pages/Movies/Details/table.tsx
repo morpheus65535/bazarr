@@ -111,6 +111,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           if (isSubtitleMissing(path)) {
             return (
               <Action
+                label="Search Subtitle"
                 icon={faSearch}
                 disabled={disabled}
                 onClick={() => {
@@ -159,6 +160,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
               }}
             >
               <Action
+                label="Subtitle Actions"
                 disabled={isSubtitleTrack(path)}
                 icon={faEllipsis}
               ></Action>
