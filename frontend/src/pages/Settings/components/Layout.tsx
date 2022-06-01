@@ -64,14 +64,16 @@ const Layout: FunctionComponent<Props> = (props) => {
       const { settings, storages } = values;
 
       if (Object.keys(settings).length > 0) {
-        submitHooks(settings);
-        LOG("info", "submitting settings", settings);
-        mutate(settings);
+        const settingsToSubmit = { ...settings };
+        submitHooks(settingsToSubmit);
+        LOG("info", "submitting settings", settingsToSubmit);
+        mutate(settingsToSubmit);
       }
 
       if (Object.keys(storages).length > 0) {
-        LOG("info", "submitting storages", storages);
-        updateStorage(storages);
+        const storagesToSubmit = { ...storages };
+        LOG("info", "submitting storages", storagesToSubmit);
+        updateStorage(storagesToSubmit);
       }
     },
     [mutate, updateStorage]
