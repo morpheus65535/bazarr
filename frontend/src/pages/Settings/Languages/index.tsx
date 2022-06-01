@@ -64,41 +64,36 @@ const SettingsLanguagesView: FunctionComponent = () => {
         <Table></Table>
       </Section>
       <Section header="Default Settings">
-        <CollapseBox>
-          <CollapseBox.Control>
-            <Check
-              label="Series"
-              settingKey="settings-general-serie_default_enabled"
-            ></Check>
-            <Message>
-              Apply only to Series added to Bazarr after enabling this option.
-            </Message>
-          </CollapseBox.Control>
-          <CollapseBox.Content indent>
-            <ProfileSelector
-              label="Profile"
-              placeholder="Select a profile"
-              settingKey="settings-general-serie_default_profile"
-            ></ProfileSelector>
-          </CollapseBox.Content>
+        <Check
+          label="Series"
+          settingKey="settings-general-serie_default_enabled"
+        ></Check>
+        <Message>
+          Apply only to Series added to Bazarr after enabling this option.
+        </Message>
+
+        <CollapseBox indent settingKey="settings-general-serie_default_enabled">
+          <ProfileSelector
+            label="Profile"
+            placeholder="Select a profile"
+            settingKey="settings-general-serie_default_profile"
+          ></ProfileSelector>
         </CollapseBox>
-        <CollapseBox>
-          <CollapseBox.Control>
-            <Check
-              label="Movies"
-              settingKey="settings-general-movie_default_enabled"
-            ></Check>
-            <Message>
-              Apply only to Movies added to Bazarr after enabling this option.
-            </Message>
-          </CollapseBox.Control>
-          <CollapseBox.Content indent>
-            <ProfileSelector
-              label="Profile"
-              placeholder="Select a profile"
-              settingKey="settings-general-movie_default_profile"
-            ></ProfileSelector>
-          </CollapseBox.Content>
+
+        <Check
+          label="Movies"
+          settingKey="settings-general-movie_default_enabled"
+        ></Check>
+        <Message>
+          Apply only to Movies added to Bazarr after enabling this option.
+        </Message>
+
+        <CollapseBox indent settingKey="settings-general-movie_default_enabled">
+          <ProfileSelector
+            label="Profile"
+            placeholder="Select a profile"
+            settingKey="settings-general-movie_default_profile"
+          ></ProfileSelector>
         </CollapseBox>
       </Section>
     </Layout>

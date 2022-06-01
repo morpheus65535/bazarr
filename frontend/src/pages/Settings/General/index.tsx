@@ -65,24 +65,20 @@ const SettingsGeneralView: FunctionComponent = () => {
         <Message>Reverse proxy support</Message>
       </Section>
       <Section header="Security">
-        <CollapseBox>
-          <CollapseBox.Control>
-            <Selector
-              label="Authentication"
-              clearable
-              options={securityOptions}
-              placeholder="No Authentication"
-              settingKey="settings-auth-type"
-              beforeStaged={(v) => (v === null ? "None" : v)}
-            ></Selector>
-          </CollapseBox.Control>
-          <CollapseBox.Content on={(k) => k !== "" && k !== "None"}>
-            <Text label="Username" settingKey="settings-auth-username"></Text>
-            <Password
-              label="Password"
-              settingKey="settings-auth-password"
-            ></Password>
-          </CollapseBox.Content>
+        <Selector
+          label="Authentication"
+          clearable
+          options={securityOptions}
+          placeholder="No Authentication"
+          settingKey="settings-auth-type"
+          beforeStaged={(v) => (v === null ? "None" : v)}
+        ></Selector>
+        <CollapseBox settingKey="settings-auth-type">
+          <Text label="Username" settingKey="settings-auth-username"></Text>
+          <Password
+            label="Password"
+            settingKey="settings-auth-password"
+          ></Password>
         </CollapseBox>
         <Text
           label="API Key"
@@ -118,38 +114,37 @@ const SettingsGeneralView: FunctionComponent = () => {
         ></Text>
       </Section>
       <Section header="Proxy">
-        <CollapseBox>
-          <CollapseBox.Control>
-            <Selector
-              clearable
-              settingKey="settings-proxy-type"
-              placeholder="No Proxy"
-              options={proxyOptions}
-              beforeStaged={(v) => (v === null ? "None" : v)}
-            ></Selector>
-          </CollapseBox.Control>
-          <CollapseBox.Content on={(k) => k !== "" && k !== "None"}>
-            <Text label="Host" settingKey="settings-proxy-url"></Text>
-            <Number label="Port" settingKey="settings-proxy-port"></Number>
-            <Text label="Username" settingKey="settings-proxy-username"></Text>
-            <Password
-              label="Password"
-              settingKey="settings-proxy-password"
-            ></Password>
-            <Message>
-              You only need to enter a username and password if one is required.
-              Leave them blank otherwise
-            </Message>
-            <Chips
-              label="Ignored Addresses"
-              settingKey="settings-proxy-exclude"
-            ></Chips>
-            <Message>
-              List of excluded domains or IP addresses. Asterisk(wildcard),
-              regex and CIDR are unsupported. You can use '.domain.com' to
-              include all subdomains.
-            </Message>
-          </CollapseBox.Content>
+        <Selector
+          clearable
+          settingKey="settings-proxy-type"
+          placeholder="No Proxy"
+          options={proxyOptions}
+          beforeStaged={(v) => (v === null ? "None" : v)}
+        ></Selector>
+        <CollapseBox
+          settingKey="settings-proxy-type"
+          on={(k) => k !== null && k !== "None"}
+        >
+          <Text label="Host" settingKey="settings-proxy-url"></Text>
+          <Number label="Port" settingKey="settings-proxy-port"></Number>
+          <Text label="Username" settingKey="settings-proxy-username"></Text>
+          <Password
+            label="Password"
+            settingKey="settings-proxy-password"
+          ></Password>
+          <Message>
+            You only need to enter a username and password if one is required.
+            Leave them blank otherwise
+          </Message>
+          <Chips
+            label="Ignored Addresses"
+            settingKey="settings-proxy-exclude"
+          ></Chips>
+          <Message>
+            List of excluded domains or IP addresses. Asterisk(wildcard), regex
+            and CIDR are unsupported. You can use '.domain.com' to include all
+            subdomains.
+          </Message>
         </CollapseBox>
       </Section>
       <Section header="Updates" hidden={!Environment.canUpdate}>

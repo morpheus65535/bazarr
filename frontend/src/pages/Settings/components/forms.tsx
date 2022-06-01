@@ -22,8 +22,8 @@ import {
   TextInput,
   TextInputProps,
 } from "@mantine/core";
-import { FunctionComponent, ReactText, useCallback, useEffect } from "react";
-import { useCollapse, useSettingValue } from ".";
+import { FunctionComponent, ReactText, useCallback } from "react";
+import { useSettingValue } from ".";
 import { FormKey, useFormActions } from "../utilities/FormValues";
 import { OverrideFuncType } from "./hooks";
 
@@ -71,15 +71,12 @@ export const Text: FunctionComponent<TextProps> = ({
   const value = useSettingValue<ReactText>(settingKey, override);
   const { setValue } = useFormActions();
 
-  const collapse = useCollapse();
-
   return (
     <TextInput
       {...props}
       value={value ?? undefined}
       onChange={(e) => {
         const val = e.currentTarget.value;
-        collapse && collapse(val.toString());
         const value = beforeStaged ? beforeStaged(val) : val;
         setValue(value, settingKey, location);
       }}
@@ -124,11 +121,8 @@ export const Check: FunctionComponent<CheckProps> = ({
   settingKey,
   location,
 }) => {
-  const collapse = useCollapse();
   const value = useSettingValue<boolean>(settingKey, override);
   const { setValue } = useFormActions();
-
-  useEffect(() => collapse && collapse(value ?? false), [collapse, value]);
 
   return (
     <Switch
