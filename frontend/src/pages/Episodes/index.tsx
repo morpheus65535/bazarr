@@ -9,10 +9,10 @@ import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { SeriesUploadModal } from "@/components/forms/SeriesUploadForm";
-import File, { FileOverlay } from "@/components/inputs/File";
+import File, { FileOverlay, FileProps } from "@/components/inputs/File";
 import { SubtitleToolsModal } from "@/components/modals";
 import { useModals } from "@/modules/modals";
-import { task, TaskGroup } from "@/modules/task";
+import { notification, task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
@@ -26,6 +26,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Container, Group, Stack } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
+import { showNotification } from "@mantine/notifications";
 import { FunctionComponent, useCallback, useMemo, useRef } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
@@ -73,10 +74,23 @@ const SeriesEpisodesView: FunctionComponent = () => {
           files,
           series,
         });
+      } else {
+        showNotification(
+          notification.warn(
+            "Cannot Upload Files",
+            "series or language profile is not ready"
+          )
+        );
       }
     },
     [modals, profile, series]
   );
+
+  const onReject = useCallback<Sure<FileProps["onReject"]>>((rejections) => {
+    showNotification(
+      notification.warn("Cannot Upload Files", "Some files are invalid")
+    );
+  }, []);
 
   useDocumentTitle(`${series?.title ?? "Unknown Series"} - Bazarr (Series)`);
 
@@ -87,6 +101,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
   return (
     <Container px={0} fluid>
       <QueryOverlay result={seriesQuery}>
+        {/* TODO: Still have some bugs. Handle it later */}
         <FileOverlay
           disabled={profile === undefined}
           accept={[""]}
@@ -96,9 +111,9 @@ const SeriesEpisodesView: FunctionComponent = () => {
           {/* A workaround to allow click to upload files */}
           <File
             disabled={profile === undefined}
-            accept={[""]}
             openRef={dialogRef}
             onDrop={onDrop}
+            onReject={onReject}
           ></File>
         </div>
         <Toolbox>
