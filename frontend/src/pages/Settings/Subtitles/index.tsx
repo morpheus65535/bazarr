@@ -1,4 +1,4 @@
-import { Anchor } from "@mantine/core";
+import { Anchor, Code, Table } from "@mantine/core";
 import { FunctionComponent } from "react";
 import {
   Check,
@@ -31,6 +31,92 @@ const subzeroColorOverride = (settings: Settings) => {
     settings.general.subzero_mods?.find((v) => v.startsWith("color")) ?? ""
   );
 };
+
+interface CommandOption {
+  option: string;
+  description: string;
+}
+
+const commandOptions: CommandOption[] = [
+  {
+    option: "directory",
+    description: "Full path of the episode file parent directory",
+  },
+  {
+    option: "episode",
+    description: "Full path of the episode file",
+  },
+  {
+    option: "episode_name",
+    description:
+      "Filename of the episode without parent directory or extension",
+  },
+  {
+    option: "subtitles",
+    description: "Full path of the subtitles file",
+  },
+  {
+    option: "subtitles_language",
+    description: "Language of the subtitles file (may include HI or forced)",
+  },
+  {
+    option: "subtitles_language_code2",
+    description:
+      "2-letter ISO-639 language code of the subtitles language (may include :hi or :forced)",
+  },
+  {
+    option: "subtitles_language_code2_dot",
+    description:
+      "2-letter ISO-639 language code of the subtitles language (same as previous but with dot separator instead of colon)",
+  },
+  {
+    option: "subtitles_language_code3",
+    description:
+      "3-letter ISO-639 language code of the subtitles language (may include :hi or :forced)",
+  },
+  {
+    option: "subtitles_language_code3_dot",
+    description:
+      "3-letter ISO-639 language code of the subtitles language (same as previous but with dot separator instead of colon)",
+  },
+  {
+    option: "episode_language",
+    description: "Audio language of the episode file",
+  },
+  {
+    option: "episode_language_code2",
+    description: "2-letter ISO-639 language code of the episode audio language",
+  },
+  {
+    option: "episode_language_code3",
+    description: "3-letter ISO-639 language code of the episode audio language",
+  },
+  {
+    option: "score",
+    description: "Score of the subtitle file",
+  },
+  {
+    option: "subtitle_id",
+    description: "Provider ID of the subtitle file",
+  },
+  {
+    option: "series_id",
+    description: "Sonarr series ID (Empty if movie)",
+  },
+  {
+    option: "episode_id",
+    description: "Sonarr episode ID or Radarr movie ID",
+  },
+];
+
+const commandOptionElements: JSX.Element[] = commandOptions.map((op, idx) => (
+  <tr key={idx}>
+    <td>
+      <Code>{op.option}</Code>
+    </td>
+    <td>{op.description}</td>
+  </tr>
+));
 
 const SettingsSubtitlesView: FunctionComponent = () => {
   return (
@@ -255,6 +341,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           Tries to make subtitles that are completely uppercase readable.
         </Message>
         <Selector
+          placeholder="Select a color..."
           label="Color"
           clearable
           options={colorOptions}
@@ -325,7 +412,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             settingKey="settings-general-use_postprocessing_threshold"
             label="Series Score Threshold"
           ></Check>
-          <CollapseBox settingKey="settings-general-use_postprocessing">
+          <CollapseBox settingKey="settings-general-use_postprocessing_threshold">
             <Slider settingKey="settings-general-postprocessing_threshold"></Slider>
           </CollapseBox>
           <Check
@@ -339,66 +426,9 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             label="Command"
             settingKey="settings-general-postprocessing_cmd"
           ></Text>
-          <Message>Variables you can use in your command</Message>
-          <Message>
-            <b>{"{{directory}}"}</b> Full path of the episode file parent
-            directory
-          </Message>
-          <Message>
-            <b>{"{{episode}}"}</b> Full path of the episode file
-          </Message>
-          <Message>
-            <b>{"{{episode_name}}"}</b> Filename of the episode without parent
-            directory or extension
-          </Message>
-          <Message>
-            <b>{"{{subtitles}}"}</b> Full path of the subtitles file
-          </Message>
-          <Message>
-            <b>{"{{subtitles_language}}"}</b> Language of the subtitles file
-            (may include HI or forced)
-          </Message>
-          <Message>
-            <b>{"{{subtitles_language_code2}}"}</b> 2-letter ISO-639 language
-            code of the subtitles language (may include :hi or :forced)
-          </Message>
-          <Message>
-            <b>{"{{subtitles_language_code2_dot}}"}</b> 2-letter ISO-639
-            language code of the subtitles language (same as previous but with
-            dot separator instead of colon)
-          </Message>
-          <Message>
-            <b>{"{{subtitles_language_code3}}"}</b> 3-letter ISO-639 language
-            code of the subtitles language (may include :hi or :forced)
-          </Message>
-          <Message>
-            <b>{"{{subtitles_language_code3_dot}}"}</b> 3-letter ISO-639
-            language code of the subtitles language (same as previous but with
-            dot separator instead of colon)
-          </Message>
-          <Message>
-            <b>{"{{episode_language}}"}</b> Audio language of the episode file
-          </Message>
-          <Message>
-            <b>{"{{episode_language_code2}}"}</b> 2-letter ISO-639 language code
-            of the episode audio language
-          </Message>
-          <Message>
-            <b>{"{{episode_language_code3}}"}</b> 3-letter ISO-639 language code
-            of the episode audio language
-          </Message>
-          <Message>
-            <b>{"{{score}}"}</b> Score of the subtitle file
-          </Message>
-          <Message>
-            <b>{"{{subtitle_id}}"}</b> Provider ID of the subtitle file
-          </Message>
-          <Message>
-            <b>{"{{series_id}}"}</b> Sonarr series ID (Empty if movie)
-          </Message>
-          <Message>
-            <b>{"{{episode_id}}"}</b> Sonarr episode ID or Radarr movie ID
-          </Message>
+          <Table highlightOnHover fontSize="sm">
+            <tbody>{commandOptionElements}</tbody>
+          </Table>
         </CollapseBox>
       </Section>
     </Layout>

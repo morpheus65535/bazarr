@@ -1,4 +1,4 @@
-import { Collapse } from "@mantine/core";
+import { Collapse, Stack } from "@mantine/core";
 import { FunctionComponent, useMemo, useRef } from "react";
 import { useSettingValue } from "./hooks";
 
@@ -29,7 +29,7 @@ const CollapseBox: FunctionComponent<ContentProps> = ({
 
   return (
     <Collapse in={open} pl={indent ? "md" : undefined}>
-      <div>{children}</div>
+      <Stack spacing="xs">{children}</Stack>
     </Collapse>
   );
 };
