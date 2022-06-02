@@ -55,7 +55,8 @@ function DefaultRowRenderer<T extends object>(row: Row<T>): JSX.Element | null {
 export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
   const {
     headerGroups,
-    rows,
+    rows: tableRows,
+    page: tablePages,
     prepareRow,
     getTableProps,
     getTableBodyProps,
@@ -73,6 +74,9 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
       0
     );
   }, [headerGroups]);
+
+  // Switch to usePagination plugin if enabled
+  const rows = tablePages ?? tableRows;
 
   const empty = rows.length === 0;
 

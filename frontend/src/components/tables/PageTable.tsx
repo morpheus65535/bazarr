@@ -1,9 +1,10 @@
 import { ScrollToTop } from "@/utilities";
-import { useEffect, useRef } from "react";
-import { TableInstance, usePagination } from "react-table";
+import { useEffect } from "react";
+import { usePagination, useTable } from "react-table";
+import BaseTable from "./BaseTable";
 import PageControl from "./PageControl";
 import { useDefaultSettings } from "./plugins";
-import SimpleTable, { SimpleTableProps } from "./SimpleTable";
+import { SimpleTableProps } from "./SimpleTable";
 
 type Props<T extends object> = SimpleTableProps<T> & {
   autoScroll?: boolean;
@@ -12,33 +13,40 @@ type Props<T extends object> = SimpleTableProps<T> & {
 const tablePlugins = [useDefaultSettings, usePagination];
 
 export default function PageTable<T extends object>(props: Props<T>) {
-  const { autoScroll, plugins, ...remain } = props;
+  const { autoScroll = true, plugins, instanceRef, ...options } = props;
 
-  const instance = useRef<TableInstance<T> | null>(null);
+  const instance = useTable(
+    options,
+    useDefaultSettings,
+    ...tablePlugins,
+    ...(plugins ?? [])
+  );
+
+  if (instanceRef) {
+    instanceRef.current = instance;
+  }
 
   // Scroll to top when page is changed
   useEffect(() => {
     if (autoScroll) {
       ScrollToTop();
     }
-  }, [instance.current?.state.pageIndex, autoScroll]);
+  }, [instance.state.pageIndex, autoScroll]);
 
   return (
     <>
-      <SimpleTable
-        {...remain}
-        instanceRef={instance}
+      <BaseTable
+        {...options}
+        {...instance}
         plugins={[...tablePlugins, ...(plugins ?? [])]}
-      ></SimpleTable>
-      {instance.current && (
-        <PageControl
-          count={instance.current.pageCount}
-          index={instance.current.state.pageIndex}
-          size={instance.current.state.pageSize}
-          total={instance.current.rows.length}
-          goto={instance.current.gotoPage}
-        ></PageControl>
-      )}
+      ></BaseTable>
+      <PageControl
+        count={instance.pageCount}
+        index={instance.state.pageIndex}
+        size={instance.state.pageSize}
+        total={instance.rows.length}
+        goto={instance.gotoPage}
+      ></PageControl>
     </>
   );
 }
