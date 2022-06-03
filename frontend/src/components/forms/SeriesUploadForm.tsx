@@ -19,7 +19,14 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Checkbox, Divider, Stack, Text } from "@mantine/core";
+import {
+  Button,
+  Checkbox,
+  Divider,
+  MantineColor,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { useForm } from "@mantine/hooks";
 import { isString } from "lodash";
 import { FunctionComponent, useEffect, useMemo } from "react";
@@ -177,10 +184,24 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
             }
           }, [value?.state]);
 
+          const color = useMemo<MantineColor | undefined>(() => {
+            switch (value?.state) {
+              case "valid":
+                return "green";
+              case "warning":
+                return "yellow";
+              case "error":
+                return "red";
+              default:
+                return undefined;
+            }
+          }, [value?.state]);
+
           return (
             <TextPopover text={value?.messages}>
-              {/* TODO: Color */}
-              <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
+              <Text color={color} inline>
+                <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
+              </Text>
             </TextPopover>
           );
         },
