@@ -174,7 +174,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
                   }
                 }}
               >
-                Tools
+                Mass Edit
               </Toolbox.Button>
               <Toolbox.Button
                 disabled={

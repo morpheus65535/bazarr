@@ -230,7 +230,7 @@ const MovieDetailView: FunctionComponent = () => {
                     }
                   }}
                 >
-                  Tools
+                  Mass Edit
                 </Menu.Item>
                 <Menu.Item
                   icon={<FontAwesomeIcon icon={faHistory} />}
