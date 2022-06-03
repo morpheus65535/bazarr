@@ -2,8 +2,8 @@ import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import { task, TaskGroup } from "@/modules/task";
-import { Badge, DefaultMantineColor } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
+import { Badge, FloatingTooltip, MantineColor } from "@mantine/core";
+import { FunctionComponent, useMemo, useState } from "react";
 
 interface Props {
   seriesId: number;
@@ -19,13 +19,20 @@ export const Subtitle: FunctionComponent<Props> = ({
   subtitle,
 }) => {
   const { remove, download } = useEpisodeSubtitleModification();
-  const color: DefaultMantineColor | undefined = useMemo(() => {
-    if (missing) {
+
+  const [opened, setOpen] = useState(false);
+
+  const disabled = subtitle.path === null;
+
+  const color: MantineColor | undefined = useMemo(() => {
+    if (opened && !disabled) {
+      return "cyan";
+    } else if (missing) {
       return "yellow";
-    } else if (subtitle.path === null) {
+    } else if (disabled) {
       return "gray";
     }
-  }, [missing, subtitle.path]);
+  }, [disabled, missing, opened]);
 
   const selections = useMemo<FormType.ModifySubtitle[]>(() => {
     const list: FormType.ModifySubtitle[] = [];
@@ -46,7 +53,9 @@ export const Subtitle: FunctionComponent<Props> = ({
     <SubtitleToolsMenu
       menu={{
         trigger: "hover",
-        opened: subtitle.path === null ? false : undefined,
+        opened: disabled ? false : undefined,
+        onOpen: () => setOpen(true),
+        onClose: () => setOpen(false),
       }}
       selections={selections}
       onAction={(action) => {
@@ -84,9 +93,11 @@ export const Subtitle: FunctionComponent<Props> = ({
         }
       }}
     >
-      <Badge color={color}>
-        <Language.Text value={subtitle} long={false}></Language.Text>
-      </Badge>
+      <FloatingTooltip label="Embedded Subtitle" disabled={!disabled}>
+        <Badge color={color}>
+          <Language.Text value={subtitle} long={false}></Language.Text>
+        </Badge>
+      </FloatingTooltip>
     </SubtitleToolsMenu>
   );
 };
