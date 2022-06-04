@@ -262,6 +262,8 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
         <Stack>
           <Stack spacing="xs">
             <Selector
+              searchable
+              placeholder="Click to Select a Provider"
               itemComponent={SelectItem}
               disabled={payload !== null}
               {...options}
