@@ -15,7 +15,7 @@ const AudioList: FunctionComponent<AudioListProps> = ({
   return (
     <Group spacing="xs" {...group}>
       {audios.map((audio, idx) => (
-        <Badge color="teal" key={BuildKey(idx, audio.code2)} {...badgeProps}>
+        <Badge color="blue" key={BuildKey(idx, audio.code2)} {...badgeProps}>
           {audio.name}
         </Badge>
       ))}
