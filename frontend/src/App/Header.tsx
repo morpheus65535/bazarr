@@ -85,7 +85,7 @@ const AppHeader: FunctionComponent = () => {
             control={
               <Action
                 label="System"
-                tooltip={{ position: "left" }}
+                tooltip={{ position: "left", openDelay: 2000 }}
                 loading={offline}
                 color={offline ? "yellow" : undefined}
                 icon={faGear}

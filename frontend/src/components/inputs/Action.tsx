@@ -14,14 +14,14 @@ import { forwardRef } from "react";
 export type ActionProps = ActionIconProps<"button"> & {
   icon: IconDefinition;
   label: string;
-  tooltip?: Omit<TooltipProps, "label" | "openDelay" | "children">;
+  tooltip?: Omit<TooltipProps, "label" | "children">;
   iconProps?: Omit<FontAwesomeIconProps, "icon">;
 };
 
 const Action = forwardRef<HTMLButtonElement, ActionProps>(
   ({ icon, iconProps, label, tooltip, ...props }, ref) => {
     return (
-      <Tooltip {...tooltip} label={label} openDelay={500}>
+      <Tooltip openDelay={1500} {...tooltip} label={label}>
         <ActionIcon aria-label={label} {...props} ref={ref}>
           <FontAwesomeIcon icon={icon} {...iconProps}></FontAwesomeIcon>
         </ActionIcon>
