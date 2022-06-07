@@ -79,6 +79,9 @@ defaults = {
         'username': '',
         'password': ''
     },
+    'cors': {
+        'enabled': 'False'
+    },
     'backup': {
         'folder': os.path.join(args.config_dir, 'backup'),
         'retention': '31',
