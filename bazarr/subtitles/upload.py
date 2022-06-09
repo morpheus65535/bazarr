@@ -43,6 +43,9 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
     else:
         lang_obj = custom.subzero_language()
 
+    if hi:
+        lang_obj = Language.rebuild(lang_obj, hi=True)
+
     if forced:
         lang_obj = Language.rebuild(lang_obj, forced=True)
 
