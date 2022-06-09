@@ -5,7 +5,7 @@ import os
 import pickle
 import enzyme
 
-from knowit import api
+from knowit.api import know
 from enzyme.exceptions import MalformedMKVError
 
 from languages.custom_lang import CustomLanguage
@@ -106,7 +106,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
 
     # if we have ffprobe available
     if ffprobe_path:
-        data["ffprobe"] = api.know(video_path=file, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path})
+        data["ffprobe"] = know(video_path=file, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path})
     # if not, we use enzyme for mkv files
     else:
         if os.path.splitext(file)[1] == ".mkv":
