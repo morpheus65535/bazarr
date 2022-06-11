@@ -1,7 +1,9 @@
 import {
   faClock,
+  faClosedCaptioning,
   faCloudUploadAlt,
   faDownload,
+  faLanguage,
   faRecycle,
   faTrash,
   faUser,
@@ -16,6 +18,7 @@ enum HistoryAction {
   Upgrade,
   Upload,
   Sync,
+  Translated,
 }
 
 const HistoryIcon: FunctionComponent<{
@@ -41,6 +44,12 @@ const HistoryIcon: FunctionComponent<{
       break;
     case HistoryAction.Upload:
       icon = faCloudUploadAlt;
+      break;
+    case HistoryAction.Translated:
+      icon = faLanguage;
+      break;
+    default:
+      icon = faClosedCaptioning;
       break;
   }
 
