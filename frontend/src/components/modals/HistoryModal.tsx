@@ -5,7 +5,8 @@ import {
   useMovieHistory,
 } from "@/apis/hooks";
 import { withModal } from "@/modules/modals";
-import { faFileExcel } from "@fortawesome/free-solid-svg-icons";
+import { faFileExcel, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Badge, Center, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
@@ -173,6 +174,16 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
           return (
             <TextPopover text={row.original.parsed_timestamp}>
               <Text>{value}</Text>
+            </TextPopover>
+          );
+        },
+      },
+      {
+        accessor: "description",
+        Cell: ({ value }) => {
+          return (
+            <TextPopover text={value}>
+              <FontAwesomeIcon size="sm" icon={faInfoCircle}></FontAwesomeIcon>
             </TextPopover>
           );
         },
