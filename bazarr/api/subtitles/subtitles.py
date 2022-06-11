@@ -60,12 +60,16 @@ class Subtitles(Resource):
             del subsync
             gc.collect()
         elif action == 'translate':
+            from_language = os.path.splitext(subtitles_path)[0].rsplit(".", 1)[1].replace('_', '-')
             dest_language = language
             forced = True if request.form.get('forced') == 'true' else False
             hi = True if request.form.get('hi') == 'true' else False
-            result = translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
-                                              to_lang=dest_language,
-                                              forced=forced, hi=hi)
+            translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
+                                     from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
+                                     media_type="series" if media_type == "episode" else "movies",
+                                     sonarr_series_id=metadata.get('sonarrSeriesId'),
+                                     sonarr_episode_id=int(id),
+                                     radarr_id=id)
         else:
             use_original_format = True if request.form.get('original_format') == 'true' else False
             subtitles_apply_mods(language, subtitles_path, [action], use_original_format)
