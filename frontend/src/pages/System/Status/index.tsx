@@ -1,6 +1,7 @@
 import { useSystemHealth, useSystemStatus } from "@/apis/hooks";
 import { QueryOverlay } from "@/components/async";
 import { GithubRepoRoot } from "@/constants";
+import { useInterval } from "@/utilities";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
   faDiscord,
@@ -10,9 +11,9 @@ import {
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Anchor, Container, Divider, Grid, Stack, Text } from "@mantine/core";
-import { useDocumentTitle, useInterval } from "@mantine/hooks";
+import { useDocumentTitle } from "@mantine/hooks";
 import moment from "moment";
-import { FunctionComponent, ReactNode, useEffect, useState } from "react";
+import { FunctionComponent, ReactNode, useCallback, useState } from "react";
 import Table from "./table";
 
 interface InfoProps {
@@ -71,10 +72,11 @@ const SystemStatusView: FunctionComponent = () => {
 
   const [uptime, setUptime] = useState<string>();
 
-  const interval = useInterval(() => {
-    if (status) {
+  const update = useCallback(() => {
+    const startTime = status?.start_time;
+    if (startTime) {
       const duration = moment.duration(
-          moment().utc().unix() - status.start_time,
+          moment().utc().unix() - startTime,
           "seconds"
         ),
         days = duration.days(),
@@ -83,13 +85,9 @@ const SystemStatusView: FunctionComponent = () => {
         seconds = duration.seconds().toString().padStart(2, "0");
       setUptime(days + "d " + hours + ":" + minutes + ":" + seconds);
     }
-  }, 1000);
+  }, [status?.start_time]);
 
-  useEffect(() => {
-    interval.start();
-    return interval.stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interval]);
+  useInterval(update, 1000);
 
   useDocumentTitle("Status - Bazarr (System)");
 
