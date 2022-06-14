@@ -39,62 +39,68 @@ def time_until_midnight(timezone):
 
 # Titulky resets its download limits at the start of a new day from its perspective - the Europe/Prague timezone
 # Needs to convert to offset-naive dt
-titulky_limit_reset_timedelta = time_until_midnight(timezone=pytz.timezone('Europe/Prague'))
+def titulky_limit_reset_timedelta():
+    return time_until_midnight(timezone=pytz.timezone('Europe/Prague'))
+
 
 # LegendasDivx reset its searches limit at approximately midnight, Lisbon time, everyday.
-legendasdivx_limit_reset_timedelta = time_until_midnight(timezone=pytz.timezone('Europe/Lisbon')) + \
-                                    datetime.timedelta(minutes=15)
+def legendasdivx_limit_reset_timedelta():
+    return time_until_midnight(timezone=pytz.timezone('Europe/Lisbon')) + datetime.timedelta(minutes=15)
 
-hours_until_end_of_day = time_until_midnight(timezone=tzlocal.get_localzone()).days + 1
 
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
                              ParseResponseError, IPAddressBlocked)
 VALID_COUNT_EXCEPTIONS = ('TooManyRequests', 'ServiceUnavailable', 'APIThrottled', requests.exceptions.Timeout,
                           requests.exceptions.ConnectTimeout, requests.exceptions.ReadTimeout, socket.timeout)
 
-PROVIDER_THROTTLE_MAP = {
-    "default": {
-        TooManyRequests: (datetime.timedelta(hours=1), "1 hour"),
-        DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
-        ServiceUnavailable: (datetime.timedelta(minutes=20), "20 minutes"),
-        APIThrottled: (datetime.timedelta(minutes=10), "10 minutes"),
-        ParseResponseError: (datetime.timedelta(hours=6), "6 hours"),
-        requests.exceptions.Timeout: (datetime.timedelta(hours=1), "1 hour"),
-        socket.timeout: (datetime.timedelta(hours=1), "1 hour"),
-        requests.exceptions.ConnectTimeout: (datetime.timedelta(hours=1), "1 hour"),
-        requests.exceptions.ReadTimeout: (datetime.timedelta(hours=1), "1 hour"),
-    },
-    "opensubtitles": {
-        TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
-        DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
-        DownloadLimitReached: (datetime.timedelta(hours=6), "6 hours"),
-        APIThrottled: (datetime.timedelta(seconds=15), "15 seconds"),
-    },
-    "opensubtitlescom": {
-        TooManyRequests: (datetime.timedelta(minutes=1), "1 minute"),
-        DownloadLimitExceeded: (datetime.timedelta(hours=24), "24 hours"),
-    },
-    "addic7ed": {
-        DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
-        TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
-        IPAddressBlocked: (datetime.timedelta(hours=1), "1 hours"),
-    },
-    "titulky": {
-        DownloadLimitExceeded: (titulky_limit_reset_timedelta, f"{titulky_limit_reset_timedelta.seconds // 3600 + 1} hours")
-    },
-    "legendasdivx": {
-        TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
-        DownloadLimitExceeded: (
-            legendasdivx_limit_reset_timedelta,
-            f"{legendasdivx_limit_reset_timedelta.seconds // 3600 + 1} hours"),
-        IPAddressBlocked: (
-            legendasdivx_limit_reset_timedelta,
-            f"{legendasdivx_limit_reset_timedelta.seconds // 3600 + 1} hours"),
-        SearchLimitReached: (
-            legendasdivx_limit_reset_timedelta,
-            f"{legendasdivx_limit_reset_timedelta.seconds // 3600 + 1} hours"),
+
+def provider_throttle_map():
+    return {
+        "default": {
+            TooManyRequests: (datetime.timedelta(hours=1), "1 hour"),
+            DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
+            ServiceUnavailable: (datetime.timedelta(minutes=20), "20 minutes"),
+            APIThrottled: (datetime.timedelta(minutes=10), "10 minutes"),
+            ParseResponseError: (datetime.timedelta(hours=6), "6 hours"),
+            requests.exceptions.Timeout: (datetime.timedelta(hours=1), "1 hour"),
+            socket.timeout: (datetime.timedelta(hours=1), "1 hour"),
+            requests.exceptions.ConnectTimeout: (datetime.timedelta(hours=1), "1 hour"),
+            requests.exceptions.ReadTimeout: (datetime.timedelta(hours=1), "1 hour"),
+        },
+        "opensubtitles": {
+            TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
+            DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
+            DownloadLimitReached: (datetime.timedelta(hours=6), "6 hours"),
+            APIThrottled: (datetime.timedelta(seconds=15), "15 seconds"),
+        },
+        "opensubtitlescom": {
+            TooManyRequests: (datetime.timedelta(minutes=1), "1 minute"),
+            DownloadLimitExceeded: (datetime.timedelta(hours=24), "24 hours"),
+        },
+        "addic7ed": {
+            DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
+            TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
+            IPAddressBlocked: (datetime.timedelta(hours=1), "1 hours"),
+        },
+        "titulky": {
+            DownloadLimitExceeded: (
+                titulky_limit_reset_timedelta(),
+                f"{titulky_limit_reset_timedelta().seconds // 3600 + 1} hours")
+        },
+        "legendasdivx": {
+            TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
+            DownloadLimitExceeded: (
+                legendasdivx_limit_reset_timedelta(),
+                f"{legendasdivx_limit_reset_timedelta().seconds // 3600 + 1} hours"),
+            IPAddressBlocked: (
+                legendasdivx_limit_reset_timedelta(),
+                f"{legendasdivx_limit_reset_timedelta().seconds // 3600 + 1} hours"),
+            SearchLimitReached: (
+                legendasdivx_limit_reset_timedelta(),
+                f"{legendasdivx_limit_reset_timedelta().seconds // 3600 + 1} hours"),
+        }
     }
-}
+
 
 PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendasdivx", "legendastv", "napiprojekt", "shooter",
                         "hosszupuska", "supersubtitles", "titlovi", "argenteam", "assrt", "subscene"]
@@ -252,8 +258,8 @@ def provider_throttle(name, exception):
             if isinstance(cls, valid_cls):
                 cls = valid_cls
 
-    throttle_data = PROVIDER_THROTTLE_MAP.get(name, PROVIDER_THROTTLE_MAP["default"]).get(cls, None) or \
-        PROVIDER_THROTTLE_MAP["default"].get(cls, None)
+    throttle_data = provider_throttle_map().get(name, provider_throttle_map()["default"]).get(cls, None) or \
+        provider_throttle_map()["default"].get(cls, None)
 
     if throttle_data:
         throttle_delta, throttle_description = throttle_data
