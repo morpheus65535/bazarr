@@ -1,8 +1,19 @@
 import SocketIO from "@/modules/socketio";
+import { notification } from "@/modules/task";
 import { LOG } from "@/utilities/console";
 import { setLoginRequired } from "@/utilities/event";
+import { showNotification } from "@mantine/notifications";
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
 import { Environment } from "../../utilities";
+
+function GetErrorMessage(data: unknown, defaultMsg = "Unknown error"): string {
+  if (typeof data === "string") {
+    return data;
+  } else {
+    return defaultMsg;
+  }
+}
+
 class BazarrClient {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
@@ -36,32 +47,43 @@ class BazarrClient {
         if (resp.status >= 200 && resp.status < 300) {
           return Promise.resolve(resp);
         } else {
-          this.handleError(resp.status);
+          const error: BackendError = {
+            code: resp.status,
+            message: GetErrorMessage(resp.data),
+          };
+          this.handleError(error);
           return Promise.reject(resp);
         }
       },
       (error: AxiosError) => {
-        if (error.response) {
-          const response = error.response;
-          this.handleError(response.status);
-        } else {
-          error.message = "You have disconnected to Bazarr backend";
-        }
+        const message = GetErrorMessage(
+          error.response?.data,
+          "You have disconnected from the server"
+        );
+
+        const backendError: BackendError = {
+          code: error.response?.status ?? 500,
+          message,
+        };
+
+        error.message = backendError.message;
+        this.handleError(backendError);
+
         return Promise.reject(error);
       }
     );
   }
 
-  handleError(code: number) {
+  handleError(error: BackendError) {
+    const { code, message } = error;
     switch (code) {
       case 401:
         setLoginRequired();
         break;
-      case 500:
-        break;
-      default:
-        break;
     }
+    LOG("error", "A error has occurred", code);
+
+    showNotification(notification.error(`Error ${code}`, message));
   }
 }
 
