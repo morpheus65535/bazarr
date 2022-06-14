@@ -89,7 +89,7 @@ const SystemStatusView: FunctionComponent = () => {
     interval.start();
     return interval.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [interval]);
 
   useDocumentTitle("Status - Bazarr (System)");
 
@@ -115,6 +115,7 @@ const SystemStatusView: FunctionComponent = () => {
             {status?.bazarr_config_directory}
           </Row>
           <Row title="Uptime">{uptime}</Row>
+          <Row title="Time Zone">{status?.timezone}</Row>
         </InfoContainer>
         <InfoContainer title="More Info">
           <Row title="Home Page">

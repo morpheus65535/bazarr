@@ -5,6 +5,7 @@ import platform
 
 from flask import jsonify
 from flask_restful import Resource
+from tzlocal import get_localzone_name
 
 from radarr.info import get_radarr_info
 from sonarr.info import get_sonarr_info
@@ -34,5 +35,6 @@ class SystemStatus(Resource):
             os.path.dirname(__file__))))})
         system_status.update({'bazarr_config_directory': args.config_dir})
         system_status.update({'start_time': startTime})
+        system_status.update({'timezone': get_localzone_name() or 'Undefined'})
 
         return jsonify(data=system_status)
