@@ -1,5 +1,5 @@
 import { AxiosResponse } from "axios";
-import client from "../queries/client";
+import client from "./client";
 
 class BaseApi {
   prefix: string;
