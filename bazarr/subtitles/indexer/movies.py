@@ -189,9 +189,9 @@ def list_missing_subtitles_movies(no=None, send_event=True):
                         cutoff_met = True
                     elif cutoff_language in actual_subtitles_list:
                         cutoff_met = True
-                    elif cutoff_language and [cutoff_language[0], 'True', 'False'] in actual_subtitles_list:
+                    elif [cutoff_language[0], cutoff_language[1], 'False'] in actual_subtitles_list:
                         cutoff_met = True
-                    elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
+                    elif [cutoff_language[0], 'False', cutoff_language[2]] in actual_subtitles_list:
                         cutoff_met = True
 
             if cutoff_met:
