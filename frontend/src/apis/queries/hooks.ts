@@ -30,7 +30,7 @@ export function usePaginationQuery<
 >(
   queryKey: TQueryKey,
   queryFn: RangeQuery<TObject>,
-  cacheIndividual = false
+  cacheIndividual = true
 ): UsePaginationQueryResult<TObject> {
   const client = useQueryClient();
 
