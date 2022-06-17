@@ -25,7 +25,7 @@ from .post_processing import postprocessing
 
 
 def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_type, subtitle, audio_language):
-    logging.debug('BAZARR Manually uploading subtitles for this file: ' + path)
+    logging.debug(f'BAZARR Manually uploading subtitles for this file: {path}')
 
     single = settings.general.getboolean('single_language')
 
@@ -38,11 +38,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
     language = alpha3_from_alpha2(language)
 
     custom = CustomLanguage.from_value(language, "alpha3")
-    if custom is None:
-        lang_obj = Language(language)
-    else:
-        lang_obj = custom.subzero_language()
-
+    lang_obj = Language(language) if custom is None else custom.subzero_language()
     if hi:
         lang_obj = Language.rebuild(lang_obj, hi=True)
 
@@ -56,7 +52,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
 
     sub.content = subtitle.read()
     if not sub.is_valid():
-        logging.exception('BAZARR Invalid subtitle file: ' + subtitle.filename)
+        logging.exception(f'BAZARR Invalid subtitle file: {subtitle.filename}')
         sub.mods = None
 
     if settings.general.getboolean('utf8_encode'):
@@ -73,11 +69,13 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
                                          formats=(sub.format,),
                                          path_decoder=force_unicode)
     except Exception:
-        logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
+        logging.exception(f'BAZARR Error saving Subtitles file to disk for this file:{path}')
+
         return
 
     if len(saved_subtitles) < 1:
-        logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
+        logging.exception(f'BAZARR Error saving Subtitles file to disk for this file:{path}')
+
         return
 
     subtitle_path = saved_subtitles[0].storage_path
@@ -111,9 +109,8 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
             return
         series_id = episode_metadata['sonarrSeriesId']
         episode_id = episode_metadata['sonarrEpisodeId']
-        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
-                       percent_score=100, sonarr_series_id=episode_metadata['sonarrSeriesId'], forced=forced,
-                       sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
+        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type, percent_score=100, sonarr_series_id=series_id, forced=forced, sonarr_episode_id=episode_id)
+
     else:
         movie_metadata = TableMovies.select(TableMovies.radarrId) \
             .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)) \
@@ -123,8 +120,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
             return
         series_id = ""
         episode_id = movie_metadata['radarrId']
-        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
-                       percent_score=100, radarr_id=movie_metadata['radarrId'], forced=forced)
+        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type, percent_score=100, radarr_id=episode_id, forced=forced)
 
     if use_postprocessing:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,

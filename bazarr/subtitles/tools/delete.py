@@ -29,13 +29,13 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
         language_log += ':forced'
         language_string += ' forced'
 
-    result = language_string + " subtitles deleted from disk."
+    result = f"{language_string} subtitles deleted from disk."
 
     if media_type == 'series':
         try:
             os.remove(path_mappings.path_replace(subtitles_path))
         except OSError:
-            logging.exception('BAZARR cannot delete subtitles file: ' + subtitles_path)
+            logging.exception(f'BAZARR cannot delete subtitles file: {subtitles_path}')
             store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
             return False
         else:
@@ -51,7 +51,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
         try:
             os.remove(path_mappings.path_replace_movie(subtitles_path))
         except OSError:
-            logging.exception('BAZARR cannot delete subtitles file: ' + subtitles_path)
+            logging.exception(f'BAZARR cannot delete subtitles file: {subtitles_path}')
             store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
             return False
         else:

@@ -38,8 +38,8 @@ def series_download_subtitles(no):
         .where(reduce(operator.and_, conditions)) \
         .dicts()
     if not episodes_details:
-        logging.debug("BAZARR no episode for that sonarrSeriesId have been found in database or they have all been "
-                      "ignored because of monitored status, series type or series tags: {}".format(no))
+        logging.debug(f"BAZARR no episode for that sonarrSeriesId have been found in database or they have all been ignored because of monitored status, series type or series tags: {no}")
+
         return
 
     count_episodes_details = len(episodes_details)
@@ -48,14 +48,8 @@ def series_download_subtitles(no):
         providers_list = get_providers()
 
         if providers_list:
-            show_progress(id='series_search_progress_{}'.format(no),
-                          header='Searching missing subtitles...',
-                          name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode['title'],
-                                                                     episode['season'],
-                                                                     episode['episode'],
-                                                                     episode['episodeTitle']),
-                          value=i,
-                          count=count_episodes_details)
+            show_progress(id=f'series_search_progress_{no}', header='Searching missing subtitles...', name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode['title'], episode['season'], episode['episode'], episode['episodeTitle']), value=i, count=count_episodes_details)
+
 
             audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
             if len(audio_language_list) > 0:
@@ -94,9 +88,9 @@ def series_download_subtitles(no):
                     path = result[1]
                     forced = result[5]
                     if result[8]:
-                        language_code = result[2] + ":hi"
+                        language_code = f"{result[2]}:hi"
                     elif forced:
-                        language_code = result[2] + ":forced"
+                        language_code = f"{result[2]}:forced"
                     else:
                         language_code = result[2]
                     provider = result[3]
@@ -111,7 +105,7 @@ def series_download_subtitles(no):
             logging.info("BAZARR All providers are throttled")
             break
 
-    hide_progress(id='series_search_progress_{}'.format(no))
+    hide_progress(id=f'series_search_progress_{no}')
 
 
 def episode_download_subtitles(no, send_progress=False):
@@ -142,14 +136,8 @@ def episode_download_subtitles(no, send_progress=False):
 
         if providers_list:
             if send_progress:
-                show_progress(id='episode_search_progress_{}'.format(no),
-                              header='Searching missing subtitles...',
-                              name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode['title'],
-                                                                         episode['season'],
-                                                                         episode['episode'],
-                                                                         episode['episodeTitle']),
-                              value=0,
-                              count=1)
+                show_progress(id=f'episode_search_progress_{no}', header='Searching missing subtitles...', name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode['title'], episode['season'], episode['episode'], episode['episodeTitle']), value=0, count=1)
+
 
             audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
             if len(audio_language_list) > 0:
@@ -189,9 +177,9 @@ def episode_download_subtitles(no, send_progress=False):
                     path = result[1]
                     forced = result[5]
                     if result[8]:
-                        language_code = result[2] + ":hi"
+                        language_code = f"{result[2]}:hi"
                     elif forced:
-                        language_code = result[2] + ":forced"
+                        language_code = f"{result[2]}:forced"
                     else:
                         language_code = result[2]
                     provider = result[3]
@@ -204,7 +192,7 @@ def episode_download_subtitles(no, send_progress=False):
                     send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
 
             if send_progress:
-                hide_progress(id='episode_search_progress_{}'.format(no))
+                hide_progress(id=f'episode_search_progress_{no}')
         else:
             logging.info("BAZARR All providers are throttled")
             break

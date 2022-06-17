@@ -13,8 +13,8 @@ parser = argparse.ArgumentParser()
 parser.register('type', bool, strtobool)
 
 config_dir = os.path.realpath(os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'data'))
-parser.add_argument('-c', '--config', default=config_dir, type=str, metavar="DIR",
-                    dest="config_dir", help="Directory containing the configuration (default: %s)" % config_dir)
+parser.add_argument('-c', '--config', default=config_dir, type=str, metavar="DIR", dest="config_dir", help=f"Directory containing the configuration (default: {config_dir})")
+
 parser.add_argument('-p', '--port', type=int, metavar="PORT", dest="port",
                     help="Port number (default: 6767)")
 if not no_update:

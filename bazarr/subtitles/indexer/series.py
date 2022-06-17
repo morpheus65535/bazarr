@@ -5,6 +5,7 @@ import os
 import logging
 import ast
 
+import contextlib
 from subliminal_patch import core, search_external_subtitles
 
 from languages.custom_lang import CustomLanguage
@@ -21,7 +22,8 @@ gc.enable()
 
 
 def store_subtitles(original_path, reversed_path, use_cache=True):
-    logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
+    logging.debug(f'BAZARR started subtitles indexing for this file: {reversed_path}')
+
     actual_subtitles = []
     if os.path.exists(reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
@@ -45,24 +47,23 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                                      "vobsub") or \
                                     (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
                                      "ass"):
-                                logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
+                                logging.debug(f"BAZARR skipping {subtitle_codec} sub for language: {alpha2_from_alpha3(subtitle_language)}")
+
                                 continue
 
                             if alpha2_from_alpha3(subtitle_language) is not None:
                                 lang = str(alpha2_from_alpha3(subtitle_language))
                                 if subtitle_forced:
-                                    lang = lang + ":forced"
+                                    lang += ":forced"
                                 if subtitle_hi:
-                                    lang = lang + ":hi"
-                                logging.debug("BAZARR embedded subtitles detected: " + lang)
+                                    lang += ":hi"
+                                logging.debug(f"BAZARR embedded subtitles detected: {lang}")
                                 actual_subtitles.append([lang, None])
                         except Exception as error:
                             logging.debug("BAZARR unable to index this unrecognized language: %s (%s)", subtitle_language, error)
                 except Exception:
-                    logging.exception(
-                        "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1],
-                                                                                  reversed_path))
-                    pass
+                    logging.exception(f"BAZARR error when trying to analyze this {os.path.splitext(reversed_path)[1]} file: {reversed_path}")
+
         try:
             dest_folder = get_subtitle_destination_folder()
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
@@ -98,13 +99,11 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                     actual_subtitles.append([custom, path_mappings.path_replace_reverse(subtitle_path)])
 
                 elif str(language) != 'und':
-                    if language.forced:
+                    if language.forced or not language.hi:
                         language_str = str(language)
-                    elif language.hi:
-                        language_str = str(language) + ':hi'
                     else:
-                        language_str = str(language)
-                    logging.debug("BAZARR external subtitles detected: " + language_str)
+                        language_str = f'{str(language)}:hi'
+                    logging.debug(f"BAZARR external subtitles detected: {language_str}")
                     actual_subtitles.append([language_str, path_mappings.path_replace_reverse(subtitle_path)])
 
         TableEpisodes.update({TableEpisodes.subtitles: str(actual_subtitles)})\
@@ -116,14 +115,15 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
 
         for episode in matching_episodes:
             if episode:
-                logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+                logging.debug(f"BAZARR storing those languages to DB: {actual_subtitles}")
                 list_missing_subtitles(epno=episode['sonarrEpisodeId'])
             else:
                 logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
 
-    logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
+    logging.debug(f'BAZARR ended subtitles indexing for this file: {reversed_path}')
+
 
     return actual_subtitles
 
@@ -144,7 +144,8 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
         .where(episodes_subtitles_clause)\
         .dicts()
     if isinstance(episodes_subtitles, str):
-        logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + episodes_subtitles)
+        logging.error(f"BAZARR list missing subtitles query to DB returned this instead of rows: {episodes_subtitles}")
+
         return
 
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
@@ -156,12 +157,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
             desired_subtitles_temp = get_profiles_list(profile_id=episode_subtitles['profileId'])
             desired_subtitles_list = []
             if desired_subtitles_temp:
-                for language in desired_subtitles_temp['items']:
-                    if language['audio_exclude'] == "True":
-                        if language_from_alpha2(language['language']) in ast.literal_eval(
-                                episode_subtitles['audio_language']):
-                            continue
-                    desired_subtitles_list.append([language['language'], language['forced'], language['hi']])
+                desired_subtitles_list.extend([language['language'], language['forced'], language['hi']] for language in desired_subtitles_temp['items'] if language['audio_exclude'] != "True" or language_from_alpha2(language['language']) not in ast.literal_eval(episode_subtitles['audio_language']))
 
             # get existing subtitles
             actual_subtitles_list = []
@@ -208,19 +204,13 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                 # if cutoff isn't met or None, we continue
 
                 # get difference between desired and existing subtitles
-                missing_subtitles_list = []
-                for item in desired_subtitles_list:
-                    if item not in actual_subtitles_list:
-                        missing_subtitles_list.append(item)
+                missing_subtitles_list = [item for item in desired_subtitles_list if item not in actual_subtitles_list]
 
                 # remove missing that have hi subtitles for this language in existing
                 for item in actual_subtitles_list:
                     if item[2] == 'True':
-                        try:
+                        with contextlib.suppress(ValueError):
                             missing_subtitles_list.remove([item[0], 'False', 'False'])
-                        except ValueError:
-                            pass
-
                 # make the missing languages list looks like expected
                 missing_subtitles_output_list = []
                 for item in missing_subtitles_list:

@@ -13,9 +13,10 @@ def get_profile_list():
     profiles_list = []
     # Get profiles data from radarr
     if get_radarr_info.is_legacy():
-        url_radarr_api_movies = url_radarr() + "/api/profile?apikey=" + apikey_radarr
+        url_radarr_api_movies = f"{url_radarr()}/api/profile?apikey={apikey_radarr}"
     else:
-        url_radarr_api_movies = url_radarr() + "/api/v3/qualityprofile?apikey=" + apikey_radarr
+        url_radarr_api_movies = f"{url_radarr()}/api/v3/qualityprofile?apikey={apikey_radarr}"
+
 
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
@@ -28,11 +29,10 @@ def get_profile_list():
     else:
         # Parsing data returned from radarr
         if get_radarr_info.is_legacy():
-            for profile in profiles_json.json():
-                profiles_list.append([profile['id'], profile['language'].capitalize()])
+            profiles_list.extend([profile['id'], profile['language'].capitalize()] for profile in profiles_json.json())
+
         else:
-            for profile in profiles_json.json():
-                profiles_list.append([profile['id'], profile['language']['name'].capitalize()])
+            profiles_list.extend([profile['id'], profile['language']['name'].capitalize()] for profile in profiles_json.json())
 
         return profiles_list
 
@@ -45,9 +45,9 @@ def get_tags():
 
     # Get tags data from Radarr
     if get_radarr_info.is_legacy():
-        url_radarr_api_series = url_radarr() + "/api/tag?apikey=" + apikey_radarr
+        url_radarr_api_series = f"{url_radarr()}/api/tag?apikey={apikey_radarr}"
     else:
-        url_radarr_api_series = url_radarr() + "/api/v3/tag?apikey=" + apikey_radarr
+        url_radarr_api_series = f"{url_radarr()}/api/v3/tag?apikey={apikey_radarr}"
 
     try:
         tagsDict = requests.get(url_radarr_api_series, timeout=60, verify=False, headers=headers)
@@ -72,11 +72,10 @@ def get_tags():
 
 def get_movies_from_radarr_api(url, apikey_radarr, radarr_id=None):
     if get_radarr_info.is_legacy():
-        url_radarr_api_movies = url + "/api/movie" + ("/{}".format(radarr_id) if radarr_id else "") + "?apikey=" + \
-                                apikey_radarr
+        url_radarr_api_movies = f"{url}/api/movie/{radarr_id or ''}?apikey={apikey_radarr}"
     else:
-        url_radarr_api_movies = url + "/api/v3/movie" + ("/{}".format(radarr_id) if radarr_id else "") + "?apikey=" + \
-                                apikey_radarr
+        url_radarr_api_movies = f"{url}/api/v3/movie/{radarr_id or ''}?apikey={apikey_radarr}"
+
 
     try:
         r = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)

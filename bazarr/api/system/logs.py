@@ -25,10 +25,9 @@ class SystemLogs(Resource):
                 raw_message = line.split('|')
                 raw_message_len = len(raw_message)
                 if raw_message_len > 3:
-                    log = dict()
-                    log["timestamp"] = raw_message[0]
-                    log["type"] = raw_message[1].rstrip()
-                    log["message"] = raw_message[3]
+                    log = {"timestamp": raw_message[0],
+                           "type": raw_message[1].rstrip(),
+                           "message": raw_message[3]}
                     if raw_message_len > 4 and raw_message[4] != '\n':
                         log['exception'] = raw_message[4].strip('\'').replace('  ', '\u2003\u2003')
                 logs.append(log)

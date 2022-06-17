@@ -18,7 +18,7 @@ def check_releases():
     releases = []
     url_releases = 'https://api.github.com/repos/morpheus65535/Bazarr/releases?per_page=100'
     try:
-        logging.debug('BAZARR getting releases from Github: {}'.format(url_releases))
+        logging.debug(f'BAZARR getting releases from Github: {url_releases}')
         r = requests.get(url_releases, allow_redirects=True)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
@@ -44,7 +44,7 @@ def check_releases():
                              'download_link': download_link})
         with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'w') as f:
             json.dump(releases, f)
-        logging.debug('BAZARR saved {} releases to releases.txt'.format(len(r.json())))
+        logging.debug(f'BAZARR saved {len(r.json())} releases to releases.txt')
 
 
 def check_if_new_update():
@@ -53,9 +53,10 @@ def check_if_new_update():
     elif settings.general.branch == 'development':
         use_prerelease = True
     else:
-        logging.error('BAZARR unknown branch provided to updater: {}'.format(settings.general.branch))
+        logging.error(f'BAZARR unknown branch provided to updater: {settings.general.branch}')
+
         return
-    logging.debug('BAZARR updater is using {} branch'.format(settings.general.branch))
+    logging.debug(f'BAZARR updater is using {settings.general.branch} branch')
 
     check_releases()
 
@@ -63,12 +64,12 @@ def check_if_new_update():
         data = json.load(f)
     if not args.no_update:
         if use_prerelease:
-            release = next((item for item in data), None)
+            release = next(iter(data), None)
         else:
             release = next((item for item in data if not item["prerelease"]), None)
 
         if release:
-            logging.debug('BAZARR last release available is {}'.format(release['name']))
+            logging.debug(f"BAZARR last release available is {release['name']}")
 
             current_version = None
             try:
@@ -77,17 +78,18 @@ def check_if_new_update():
             except ValueError:
                 new_version = True
             else:
-                new_version = True if semver.compare(release['name'].lstrip('v'), os.environ["BAZARR_VERSION"]) > 0 \
-                    else False
+                new_version = semver.compare(release['name'].lstrip('v'), os.environ["BAZARR_VERSION"]) > 0
+
 
             # skip update process if latest release is v0.9.1.1 which is the latest pre-semver compatible release
             if new_version and release['name'] != 'v0.9.1.1':
-                logging.debug('BAZARR newer release available and will be downloaded: {}'.format(release['name']))
+                logging.debug(f"BAZARR newer release available and will be downloaded: {release['name']}")
+
                 download_release(url=release['download_link'])
-            # rolling back from nightly to stable release
             elif current_version:
                 if current_version.prerelease and not use_prerelease:
-                    logging.debug('BAZARR previous stable version will be downloaded: {}'.format(release['name']))
+                    logging.debug(f"BAZARR previous stable version will be downloaded: {release['name']}")
+
                     download_release(url=release['download_link'])
             else:
                 logging.debug('BAZARR no newer release have been found')
@@ -103,9 +105,9 @@ def download_release(url):
     try:
         os.makedirs(update_dir, exist_ok=True)
     except Exception:
-        logging.debug('BAZARR unable to create update directory {}'.format(update_dir))
+        logging.debug(f'BAZARR unable to create update directory {update_dir}')
     else:
-        logging.debug('BAZARR downloading release from Github: {}'.format(url))
+        logging.debug(f'BAZARR downloading release from Github: {url}')
         r = requests.get(url, allow_redirects=True)
     if r:
         try:
@@ -124,49 +126,46 @@ def apply_update():
     bazarr_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     build_dir = os.path.join(bazarr_dir, 'frontend', 'build')
 
-    if os.path.isdir(update_dir):
-        if os.path.isfile(bazarr_zip):
-            logging.debug('BAZARR is trying to unzip this release to {0}: {1}'.format(bazarr_dir, bazarr_zip))
-            try:
-                with ZipFile(bazarr_zip, 'r') as archive:
-                    zip_root_directory = ''
-                    if len({item.split('/')[0] for item in archive.namelist()}) == 1:
-                        zip_root_directory = archive.namelist()[0]
-
-                    if os.path.isdir(build_dir):
-                        try:
-                            rmtree(build_dir, ignore_errors=True)
-                        except Exception:
-                            logging.exception(
-                                'BAZARR was unable to delete the previous build directory during upgrade process.')
-
-                    for file in archive.namelist():
-                        if file.startswith(zip_root_directory) and file != zip_root_directory and not \
-                                file.endswith('bazarr.py'):
-                            file_path = os.path.join(bazarr_dir, file[len(zip_root_directory):])
-                            parent_dir = os.path.dirname(file_path)
-                            os.makedirs(parent_dir, exist_ok=True)
-                            if not os.path.isdir(file_path):
-                                with open(file_path, 'wb+') as f:
-                                    f.write(archive.read(file))
-            except Exception:
-                logging.exception('BAZARR unable to unzip release')
-            else:
-                is_updated = True
-                try:
-                    logging.debug('BAZARR successfully unzipped new release and will now try to delete the leftover '
-                                  'files.')
-                    update_cleaner(zipfile=bazarr_zip, bazarr_dir=bazarr_dir, config_dir=args.config_dir)
-                except Exception:
-                    logging.exception('BAZARR unable to cleanup leftover files after upgrade.')
-                else:
-                    logging.debug('BAZARR successfully deleted leftover files.')
-            finally:
-                logging.debug('BAZARR now deleting release archive')
-                os.remove(bazarr_zip)
-    else:
+    if not os.path.isdir(update_dir):
         return
 
+    if os.path.isfile(bazarr_zip):
+        logging.debug('BAZARR is trying to unzip this release to {0}: {1}'.format(bazarr_dir, bazarr_zip))
+        try:
+            with ZipFile(bazarr_zip, 'r') as archive:
+                zip_root_directory = archive.namelist()[0] if len({item.split('/')[0] for item in archive.namelist()}) == 1 else ''
+
+                if os.path.isdir(build_dir):
+                    try:
+                        rmtree(build_dir, ignore_errors=True)
+                    except Exception:
+                        logging.exception(
+                            'BAZARR was unable to delete the previous build directory during upgrade process.')
+
+                for file in archive.namelist():
+                    if file.startswith(zip_root_directory) and file != zip_root_directory and not \
+                            file.endswith('bazarr.py'):
+                        file_path = os.path.join(bazarr_dir, file[len(zip_root_directory):])
+                        parent_dir = os.path.dirname(file_path)
+                        os.makedirs(parent_dir, exist_ok=True)
+                        if not os.path.isdir(file_path):
+                            with open(file_path, 'wb+') as f:
+                                f.write(archive.read(file))
+        except Exception:
+            logging.exception('BAZARR unable to unzip release')
+        else:
+            is_updated = True
+            try:
+                logging.debug('BAZARR successfully unzipped new release and will now try to delete the leftover '
+                              'files.')
+                update_cleaner(zipfile=bazarr_zip, bazarr_dir=bazarr_dir, config_dir=args.config_dir)
+            except Exception:
+                logging.exception('BAZARR unable to cleanup leftover files after upgrade.')
+            else:
+                logging.debug('BAZARR successfully deleted leftover files.')
+        finally:
+            logging.debug('BAZARR now deleting release archive')
+            os.remove(bazarr_zip)
     if is_updated:
         logging.debug('BAZARR new release have been installed, now we restart')
         from .server import webserver
@@ -176,7 +175,8 @@ def apply_update():
 def update_cleaner(zipfile, bazarr_dir, config_dir):
     with ZipFile(zipfile, 'r') as archive:
         file_in_zip = archive.namelist()
-    logging.debug('BAZARR zip file contain {} directories and files'.format(len(file_in_zip)))
+    logging.debug(f'BAZARR zip file contain {len(file_in_zip)} directories and files')
+
     separator = os.path.sep
     if os.path.sep == '\\':
         logging.debug('BAZARR upgrade leftover cleaner is running on Windows. We\'ll fix the zip file separator '
@@ -188,11 +188,8 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
         logging.debug('BAZARR upgrade leftover cleaner is running on something else than Windows. The zip file '
                       'separator are fine.')
 
-    dir_to_ignore = ['^.' + separator,
-                     '^bin' + separator,
-                     '^venv' + separator,
-                     '^WinPython' + separator,
-                     separator + '__pycache__' + separator + '$']
+    dir_to_ignore = [f'^.{separator}', f'^bin{separator}', f'^venv{separator}', f'^WinPython{separator}', f'{separator}__pycache__{separator}$']
+
     if os.path.abspath(bazarr_dir).lower() == os.path.abspath(config_dir).lower():
         # for users who installed Bazarr inside the config directory (ie: `%programdata%\Bazarr` on windows)
         dir_to_ignore.append('^backup' + separator)
@@ -204,26 +201,25 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
         dir_to_ignore.append('^update' + separator)
     elif os.path.abspath(bazarr_dir).lower() in os.path.abspath(config_dir).lower():
         # when config directory is a child of Bazarr installation directory
-        dir_to_ignore.append('^' + os.path.relpath(config_dir, bazarr_dir) + separator)
+        dir_to_ignore.append(f'^{os.path.relpath(config_dir, bazarr_dir)}{separator}')
     dir_to_ignore_regex_string = '(?:% s)' % '|'.join(dir_to_ignore)
     logging.debug(f'BAZARR upgrade leftover cleaner will ignore directories matching this '
                   f'regex: {dir_to_ignore_regex_string}')
     dir_to_ignore_regex = re.compile(dir_to_ignore_regex_string)
 
     file_to_ignore = ['nssm.exe', '7za.exe', 'unins000.exe', 'unins000.dat']
-    logging.debug('BAZARR upgrade leftover cleaner will ignore those files: {}'.format(', '.join(file_to_ignore)))
+    logging.debug(f"BAZARR upgrade leftover cleaner will ignore those files: {', '.join(file_to_ignore)}")
+
     extension_to_ignore = ['.pyc']
-    logging.debug('BAZARR upgrade leftover cleaner will ignore files with those extensions: '
-                  '{}'.format(', '.join(extension_to_ignore)))
+    logging.debug(f"BAZARR upgrade leftover cleaner will ignore files with those extensions: {', '.join(extension_to_ignore)}")
 
     file_on_disk = []
     folder_list = []
     for foldername, subfolders, filenames in os.walk(bazarr_dir):
         relative_foldername = os.path.relpath(foldername, bazarr_dir) + os.path.sep
 
-        if not dir_to_ignore_regex.findall(relative_foldername):
-            if relative_foldername not in folder_list:
-                folder_list.append(relative_foldername)
+        if not dir_to_ignore_regex.findall(relative_foldername) and relative_foldername not in folder_list:
+            folder_list.append(relative_foldername)
 
         for file in filenames:
             if file in file_to_ignore:
@@ -237,14 +233,15 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
                 filepath = os.path.join(current_dir, file)
                 if not dir_to_ignore_regex.findall(filepath):
                     file_on_disk.append(filepath)
-    logging.debug('BAZARR directory contain {} files'.format(len(file_on_disk)))
-    logging.debug('BAZARR directory contain {} directories'.format(len(folder_list)))
+    logging.debug(f'BAZARR directory contain {len(file_on_disk)} files')
+    logging.debug(f'BAZARR directory contain {len(folder_list)} directories')
     file_on_disk += folder_list
-    logging.debug('BAZARR directory contain {} directories and files'.format(len(file_on_disk)))
+    logging.debug(f'BAZARR directory contain {len(file_on_disk)} directories and files')
 
     file_to_remove = list(set(file_on_disk) - set(file_in_zip))
-    logging.debug('BAZARR will delete {} directories and files'.format(len(file_to_remove)))
-    logging.debug('BAZARR will delete this: {}'.format(', '.join(file_to_remove)))
+    logging.debug(f'BAZARR will delete {len(file_to_remove)} directories and files')
+
+    logging.debug(f"BAZARR will delete this: {', '.join(file_to_remove)}")
 
     for file in file_to_remove:
         filepath = os.path.join(bazarr_dir, file)
@@ -254,4 +251,4 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
             else:
                 os.remove(filepath)
         except Exception:
-            logging.debug('BAZARR upgrade leftover cleaner cannot delete {}'.format(filepath))
+            logging.debug(f'BAZARR upgrade leftover cleaner cannot delete {filepath}')

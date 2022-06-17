@@ -28,7 +28,7 @@ class GetRadarrInfo:
             radarr_version = ''
         if settings.general.getboolean('use_radarr'):
             try:
-                rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
+                rv = f"{url_radarr()}/api/system/status?apikey={settings.radarr.apikey}"
                 radarr_json = requests.get(rv, timeout=60, verify=False, headers=headers).json()
                 if 'version' in radarr_json:
                     radarr_version = radarr_json['version']
@@ -36,7 +36,7 @@ class GetRadarrInfo:
                     raise json.decoder.JSONDecodeError
             except json.decoder.JSONDecodeError:
                 try:
-                    rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
+                    rv = f"{url_radarr()}/api/v3/system/status?apikey={settings.radarr.apikey}"
                     radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
                 except json.decoder.JSONDecodeError:
                     logging.debug('BAZARR cannot get Radarr version')
@@ -44,7 +44,7 @@ class GetRadarrInfo:
             except Exception:
                 logging.debug('BAZARR cannot get Radarr version')
                 radarr_version = 'unknown'
-        logging.debug('BAZARR got this Radarr version from its API: {}'.format(radarr_version))
+        logging.debug(f'BAZARR got this Radarr version from its API: {radarr_version}')
         region.set("radarr_version", radarr_version)
         return radarr_version
 
@@ -54,25 +54,18 @@ class GetRadarrInfo:
         @return: bool
         """
         radarr_version = self.version()
-        if radarr_version.startswith('0.'):
-            return True
-        else:
-            return False
+        return bool(radarr_version.startswith('0.'))
 
 
 get_radarr_info = GetRadarrInfo()
 
 
 def url_radarr():
-    if settings.radarr.getboolean('ssl'):
-        protocol_radarr = "https"
-    else:
-        protocol_radarr = "http"
-
+    protocol_radarr = "https" if settings.radarr.getboolean('ssl') else "http"
     if settings.radarr.base_url == '':
         settings.radarr.base_url = "/"
     if not settings.radarr.base_url.startswith("/"):
-        settings.radarr.base_url = "/" + settings.radarr.base_url
+        settings.radarr.base_url = f"/{settings.radarr.base_url}"
     if settings.radarr.base_url.endswith("/"):
         settings.radarr.base_url = settings.radarr.base_url[:-1]
 

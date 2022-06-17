@@ -21,25 +21,15 @@ class Providers(Resource):
             providers += list(TableHistoryMovie.select(TableHistoryMovie.provider)
                               .where(TableHistoryMovie.provider is not None and TableHistoryMovie.provider != "manual")
                               .dicts())
-            providers_list = list(set([x['provider'] for x in providers]))
-            providers_dicts = []
-            for provider in providers_list:
-                providers_dicts.append({
-                    'name': provider,
-                    'status': 'History',
-                    'retry': '-'
-                })
+            providers_list = list({x['provider'] for x in providers})
+            providers_dicts = [{'name': provider, 'status': 'History', 'retry': '-'} for provider in providers_list]
+
             return jsonify(data=sorted(providers_dicts, key=itemgetter('name')))
 
         throttled_providers = list_throttled_providers()
 
-        providers = list()
-        for provider in throttled_providers:
-            providers.append({
-                "name": provider[0],
-                "status": provider[1] if provider[1] is not None else "Good",
-                "retry": provider[2] if provider[2] != "now" else "-"
-            })
+        providers = [{"name": provider[0], "status": provider[1] if provider[1] is not None else "Good", "retry": provider[2] if provider[2] != "now" else "-"} for provider in throttled_providers]
+
         return jsonify(data=providers)
 
     @authenticate

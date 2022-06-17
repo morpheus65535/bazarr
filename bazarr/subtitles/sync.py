@@ -24,7 +24,7 @@ def sync_subtitles(video_path, srt_path, srt_lang, forced, media_type, percent_s
             use_subsync_threshold = settings.subsync.getboolean('use_subsync_movie_threshold')
             subsync_threshold = settings.subsync.subsync_movie_threshold
 
-        if not use_subsync_threshold or (use_subsync_threshold and percent_score < float(subsync_threshold)):
+        if not use_subsync_threshold or percent_score < float(subsync_threshold):
             subsync = SubSyncer()
             subsync.sync(video_path=video_path, srt_path=srt_path, srt_lang=srt_lang, media_type=media_type,
                          sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id, radarr_id=radarr_id)

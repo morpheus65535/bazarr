@@ -44,8 +44,8 @@ class WebHooksPlex(Resource):
         if media_type == 'episode':
             try:
                 episode_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]
-                r = requests.get('https://imdb.com/title/{}'.format(episode_imdb_id),
-                                 headers={"User-Agent": os.environ["SZ_USER_AGENT"]})
+                r = requests.get(f'https://imdb.com/title/{episode_imdb_id}', headers={"User-Agent": os.environ["SZ_USER_AGENT"]})
+
                 soup = bso(r.content, "html.parser")
                 script_tag = soup.find(id='__NEXT_DATA__')
                 script_tag_json = script_tag.string

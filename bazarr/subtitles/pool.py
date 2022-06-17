@@ -40,11 +40,11 @@ def _get_pool(media_type, profile_id=None):
 
 def _update_pool(media_type, profile_id=None):
     pool_key = f'{media_type}_{profile_id or ""}'
-    logging.debug("BAZARR updating pool: %s", pool_key)
+    logging.debug(f"BAZARR updating pool: {pool_key}")
 
     # Init a new pool if not present
     if pool_key not in _pools:
-        logging.debug("BAZARR pool not initialized: %s. Initializing", pool_key)
+        logging.debug(f"BAZARR pool not initialized: {pool_key}. Initializing")
         _pools[pool_key] = _init_pool(media_type, profile_id)
 
     pool = _pools[pool_key]
@@ -64,7 +64,7 @@ def update_pools(f):
     It will detect any config changes in Bazarr"""
 
     def decorated(*args, **kwargs):
-        logging.debug("BAZARR updating pools: %s", _pools)
+        logging.debug(f"BAZARR updating pools: {_pools}", )
 
         start = time.time()
         args_spec = getfullargspec(f).args
@@ -77,11 +77,7 @@ def update_pools(f):
         updated = _update_pool(args[args_spec.index("media_type")], profile_id)
 
         if updated:
-            logging.debug(
-                "BAZARR pools update elapsed time: %sms",
-                round((time.time() - start) * 1000, 2),
-            )
-
+            logging.debug(f"BAZARR pools update elapsed time: {round((time.time() - start) * 1000, 2)}ms")
         return f(*args, **kwargs)
 
     return decorated

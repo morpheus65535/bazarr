@@ -41,11 +41,7 @@ def postprocess(item):
 
     # Parse tags
     if 'tags' in item:
-        if item['tags'] is None:
-            item['tags'] = []
-        else:
-            item['tags'] = ast.literal_eval(item['tags'])
-
+        item['tags'] = [] if item['tags'] is None else ast.literal_eval(item['tags'])
     if 'monitored' in item:
         if item['monitored'] is None:
             item['monitored'] = False
@@ -53,21 +49,14 @@ def postprocess(item):
             item['monitored'] = item['monitored'] == 'True'
 
     if 'hearing_impaired' in item and item['hearing_impaired'] is not None:
-        if item['hearing_impaired'] is None:
-            item['hearing_impaired'] = False
-        else:
-            item['hearing_impaired'] = item['hearing_impaired'] == 'True'
+        item['hearing_impaired'] = item['hearing_impaired'] == 'True'
 
     if 'language' in item:
         if item['language'] == 'None':
             item['language'] = None
         elif item['language'] is not None:
             splitted_language = item['language'].split(':')
-            item['language'] = {"name": language_from_alpha2(splitted_language[0]),
-                                "code2": splitted_language[0],
-                                "code3": alpha3_from_alpha2(splitted_language[0]),
-                                "forced": True if item['language'].endswith(':forced') else False,
-                                "hi": True if item['language'].endswith(':hi') else False}
+            item['language'] = {"name": language_from_alpha2(splitted_language[0]), "code2": splitted_language[0], "code3": alpha3_from_alpha2(splitted_language[0]), "forced": bool(item['language'].endswith(':forced')), "hi": bool(item['language'].endswith(':hi'))}
 
 
 def postprocessSeries(item):
@@ -121,8 +110,8 @@ def postprocessEpisode(item):
                    "forced": False,
                    "hi": False}
             if len(subtitle) > 1:
-                sub["forced"] = True if subtitle[1] == 'forced' else False
-                sub["hi"] = True if subtitle[1] == 'hi' else False
+                sub["forced"] = subtitle[1] == 'forced'
+                sub["hi"] = subtitle[1] == 'hi'
 
             subtitles.append(sub)
 
@@ -142,10 +131,7 @@ def postprocessEpisode(item):
                                             "forced": False,
                                             "hi": False}
             if len(subtitle) > 1:
-                item['missing_subtitles'][i].update({
-                    "forced": True if subtitle[1] == 'forced' else False,
-                    "hi": True if subtitle[1] == 'hi' else False
-                })
+                item['missing_subtitles'][i].update({"forced": subtitle[1] == 'forced', "hi": subtitle[1] == 'hi'})
 
     if 'scene_name' in item:
         item["sceneName"] = item["scene_name"]
@@ -171,9 +157,8 @@ def postprocessMovie(item):
             item['alternativeTitles'] = ast.literal_eval(item['alternativeTitles'])
 
     # Parse failed attempts
-    if 'failedAttempts' in item:
-        if item['failedAttempts']:
-            item['failedAttempts'] = ast.literal_eval(item['failedAttempts'])
+    if 'failedAttempts' in item and item['failedAttempts']:
+        item['failedAttempts'] = ast.literal_eval(item['failedAttempts'])
 
     # Parse subtitles
     if 'subtitles' in item:
@@ -190,10 +175,7 @@ def postprocessMovie(item):
                                     "forced": False,
                                     "hi": False}
             if len(language) > 1:
-                item['subtitles'][i].update({
-                    "forced": True if language[1] == 'forced' else False,
-                    "hi": True if language[1] == 'hi' else False
-                })
+                item['subtitles'][i].update({"forced": language[1] == 'forced', "hi": language[1] == 'hi'})
 
         if settings.general.getboolean('embedded_subs_show_desired'):
             desired_lang_list = get_desired_languages(item['profileId'])
@@ -216,15 +198,12 @@ def postprocessMovie(item):
                                             "forced": False,
                                             "hi": False}
             if len(language) > 1:
-                item['missing_subtitles'][i].update({
-                    "forced": True if language[1] == 'forced' else False,
-                    "hi": True if language[1] == 'hi' else False
-                })
+                item['missing_subtitles'][i].update({"forced": language[1] == 'forced', "hi": language[1] == 'hi'})
+
 
     # Provide mapped path
-    if 'path' in item:
-        if item['path']:
-            item['path'] = path_mappings.path_replace_movie(item['path'])
+    if 'path' in item and item['path']:
+        item['path'] = path_mappings.path_replace_movie(item['path'])
 
     if 'subtitles_path' in item:
         # Provide mapped subtitles path

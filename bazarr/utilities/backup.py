@@ -12,6 +12,7 @@ from glob import glob
 
 from app.get_args import args
 from app.config import settings
+from datetime import timezone
 
 
 def get_backup_path():
@@ -105,10 +106,10 @@ def restore_from_backup():
             logging.exception(f'Unable to restore or delete db to {dest_database_path}')
         else:
             try:
-                if os.path.isfile(dest_database_path + '-shm'):
-                    os.remove(dest_database_path + '-shm')
-                if os.path.isfile(dest_database_path + '-wal'):
-                    os.remove(dest_database_path + '-wal')
+                if os.path.isfile(f'{dest_database_path}-shm'):
+                    os.remove(f'{dest_database_path}-shm')
+                if os.path.isfile(f'{dest_database_path}-wal'):
+                    os.remove(f'{dest_database_path}-wal')
             except OSError:
                 logging.exception('Unable to delete SHM and WAL file.')
 
@@ -117,10 +118,10 @@ def restore_from_backup():
         try:
             restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
         except Exception as e:
-            logging.error('BAZARR Cannot create restart file: ' + repr(e))
+            logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
         else:
             logging.info('Bazarr is being restarted...')
-            restart_file.write(str(''))
+            restart_file.write('')
             restart_file.close()
             os._exit(0)
     elif os.path.isfile(restore_config_path) or os.path.isfile(restore_database_path):
@@ -180,7 +181,7 @@ def backup_rotation():
 
     logging.debug(f'Cleaning up backup files older than {backup_retention} days')
     for file in backup_files:
-        if datetime.fromtimestamp(os.path.getmtime(file)) + timedelta(days=int(backup_retention)) < datetime.utcnow():
+        if datetime.fromtimestamp(os.path.getmtime(file)) + timedelta(days=int(backup_retention)) < datetime.now(timezone.utc):
             logging.debug(f'Deleting old backup file {file}')
             try:
                 os.remove(file)

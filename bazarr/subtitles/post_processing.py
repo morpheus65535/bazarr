@@ -26,13 +26,13 @@ def postprocessing(command, path):
         out = out.replace('\n', ' ').replace('\r', ' ')
 
     except Exception as e:
-        logging.error('BAZARR Post-processing failed for file ' + path + ' : ' + repr(e))
+        logging.error(f'BAZARR Post-processing failed for file {path} : {repr(e)}')
     else:
         if out == "":
-            logging.info(
-                'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
+            logging.info(f'BAZARR Post-processing result for file {path} : Nothing returned from command execution')
+
         elif err:
-            logging.error(
-                'BAZARR Post-processing result for file ' + path + ' : ' + err.replace('\n', ' ').replace('\r', ' '))
+            logging.error(f'BAZARR Post-processing result for file {path} : ' + err.replace('\n', ' ').replace('\r', ' '))
+
         else:
-            logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
+            logging.info(f'BAZARR Post-processing result for file {path} : {out}')

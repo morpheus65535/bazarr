@@ -14,9 +14,9 @@ def get_profile_list():
 
     # Get profiles data from Sonarr
     if get_sonarr_info.is_legacy():
-        url_sonarr_api_series = url_sonarr() + "/api/profile?apikey=" + apikey_sonarr
+        url_sonarr_api_series = f"{url_sonarr()}/api/profile?apikey={apikey_sonarr}"
     else:
-        url_sonarr_api_series = url_sonarr() + "/api/v3/languageprofile?apikey=" + apikey_sonarr
+        url_sonarr_api_series = f"{url_sonarr()}/api/v3/languageprofile?apikey={apikey_sonarr}"
 
     try:
         profiles_json = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
@@ -32,11 +32,9 @@ def get_profile_list():
 
     # Parsing data returned from Sonarr
     if get_sonarr_info.is_legacy():
-        for profile in profiles_json.json():
-            profiles_list.append([profile['id'], profile['language'].capitalize()])
+        profiles_list.extend([profile['id'], profile['language'].capitalize()] for profile in profiles_json.json())
     else:
-        for profile in profiles_json.json():
-            profiles_list.append([profile['id'], profile['name'].capitalize()])
+        profiles_list.extend([profile['id'], profile['name'].capitalize()] for profile in profiles_json.json())
 
     return profiles_list
 
@@ -47,9 +45,9 @@ def get_tags():
 
     # Get tags data from Sonarr
     if get_sonarr_info.is_legacy():
-        url_sonarr_api_series = url_sonarr() + "/api/tag?apikey=" + apikey_sonarr
+        url_sonarr_api_series = f"{url_sonarr()}/api/tag?apikey={apikey_sonarr}"
     else:
-        url_sonarr_api_series = url_sonarr() + "/api/v3/tag?apikey=" + apikey_sonarr
+        url_sonarr_api_series = f"{url_sonarr()}/api/v3/tag?apikey={apikey_sonarr}"
 
     try:
         tagsDict = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
@@ -67,14 +65,14 @@ def get_tags():
 
 
 def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
-    url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format(
-        '' if get_sonarr_info.is_legacy() else 'v3/', sonarr_series_id if sonarr_series_id else "", apikey_sonarr)
+    url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format('' if get_sonarr_info.is_legacy() else 'v3/', sonarr_series_id or "", apikey_sonarr)
+
     try:
         r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError as e:
         if e.response.status_code:
-            raise requests.exceptions.HTTPError
+            raise requests.exceptions.HTTPError from e
         logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
         return
     except requests.exceptions.ConnectionError:
@@ -92,11 +90,9 @@ def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
 
 def get_episodes_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_id=None):
     if series_id:
-        url_sonarr_api_episode = url + "/api/{0}episode?seriesId={1}&apikey={2}".format(
-            '' if get_sonarr_info.is_legacy() else 'v3/', series_id, apikey_sonarr)
+        url_sonarr_api_episode = f"{url}/api/{'' if get_sonarr_info.is_legacy() else 'v3/'}episode?seriesId={series_id}&apikey={apikey_sonarr}"
     elif episode_id:
-        url_sonarr_api_episode = url + "/api/{0}episode/{1}?apikey={2}".format(
-            '' if get_sonarr_info.is_legacy() else 'v3/', episode_id, apikey_sonarr)
+        url_sonarr_api_episode = f"{url}/api/{'' if get_sonarr_info.is_legacy() else 'v3/'}episode/{episode_id}?apikey={apikey_sonarr}"
     else:
         return
 
@@ -121,10 +117,9 @@ def get_episodes_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_id=
 
 def get_episodesFiles_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_file_id=None):
     if series_id:
-        url_sonarr_api_episodeFiles = url + "/api/v3/episodeFile?seriesId={0}&apikey={1}".format(series_id,
-                                                                                                 apikey_sonarr)
+        url_sonarr_api_episodeFiles = f"{url}/api/v3/episodeFile?seriesId={series_id}&apikey={apikey_sonarr}"
     elif episode_file_id:
-        url_sonarr_api_episodeFiles = url + "/api/v3/episodeFile/{0}?apikey={1}".format(episode_file_id, apikey_sonarr)
+        url_sonarr_api_episodeFiles = f"{url}/api/v3/episodeFile/{episode_file_id}?apikey={apikey_sonarr}"
     else:
         return
 

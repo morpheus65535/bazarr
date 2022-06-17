@@ -24,15 +24,15 @@ class HistoryStats(Resource):
         language = request.args.get('language') or 'All'
 
         # timeframe must be in ['week', 'month', 'trimester', 'year']
-        if timeframe == 'year':
-            delay = 364 * 24 * 60 * 60
+        if timeframe == 'month':
+            delay = 30 * 24 * 60 * 60
         elif timeframe == 'trimester':
             delay = 90 * 24 * 60 * 60
-        elif timeframe == 'month':
-            delay = 30 * 24 * 60 * 60
         elif timeframe == 'week':
             delay = 6 * 24 * 60 * 60
 
+        elif timeframe == 'year':
+            delay = 364 * 24 * 60 * 60
         now = time.time()
         past = now - delay
 
@@ -74,9 +74,9 @@ class HistoryStats(Resource):
         for dt in rrule.rrule(rrule.DAILY,
                               dtstart=datetime.datetime.now() - datetime.timedelta(seconds=delay),
                               until=datetime.datetime.now()):
-            if not any(d['date'] == dt.strftime('%Y-%m-%d') for d in data_series):
+            if all(d['date'] != dt.strftime('%Y-%m-%d') for d in data_series):
                 data_series.append({'date': dt.strftime('%Y-%m-%d'), 'count': 0})
-            if not any(d['date'] == dt.strftime('%Y-%m-%d') for d in data_movies):
+            if all(d['date'] != dt.strftime('%Y-%m-%d') for d in data_movies):
                 data_movies.append({'date': dt.strftime('%Y-%m-%d'), 'count': 0})
 
         sorted_data_series = sorted(data_series, key=lambda i: i['date'])

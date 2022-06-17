@@ -261,10 +261,7 @@ def provider_throttle(name, exception):
     throttle_data = provider_throttle_map().get(name, provider_throttle_map()["default"]).get(cls, None) or \
         provider_throttle_map()["default"].get(cls, None)
 
-    if throttle_data:
-        throttle_delta, throttle_description = throttle_data
-    else:
-        throttle_delta, throttle_description = datetime.timedelta(minutes=10), "10 minutes"
+    throttle_delta, throttle_description = throttle_data or (datetime.timedelta(minutes=10), "10 minutes")
 
     throttle_until = datetime.datetime.now() + throttle_delta
 

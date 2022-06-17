@@ -60,11 +60,7 @@ def configure_logging(debug=False):
     warnings.simplefilter('ignore', category=ResourceWarning)
     warnings.simplefilter('ignore', category=PytzUsageWarning)
 
-    if not debug:
-        log_level = "INFO"
-    else:
-        log_level = "DEBUG"
-
+    log_level = "DEBUG" if debug else "INFO"
     logger.handlers = []
 
     logger.setLevel(log_level)
@@ -158,20 +154,16 @@ class PatchedTimedRotatingFileHandler(TimedRotatingFileHandler):
         result = []
         # See bpo-44753: Don't use the extension when computing the prefix.
         n, e = os.path.splitext(baseName)
-        prefix = n + '.'
+        prefix = f'{n}.'
         plen = len(prefix)
         for fileName in fileNames:
             if self.namer is None:
                 # Our files will always start with baseName
                 if not fileName.startswith(baseName):
                     continue
-            else:
-                # Our files could be just about anything after custom naming, but
-                # likely candidates are of the form
-                # foo.log.DATETIME_SUFFIX or foo.DATETIME_SUFFIX.log
-                if (not fileName.startswith(baseName) and fileName.endswith(e) and
+            elif (not fileName.startswith(baseName) and fileName.endswith(e) and
                         len(fileName) > (plen + 1) and not fileName[plen+1].isdigit()):
-                    continue
+                continue
 
             if fileName[:plen] == prefix:
                 suffix = fileName[plen:]
@@ -183,8 +175,6 @@ class PatchedTimedRotatingFileHandler(TimedRotatingFileHandler):
                         result.append(os.path.join(dirName, fileName))
                         break
         if len(result) < self.backupCount:
-            result = []
-        else:
-            result.sort()
-            result = result[:len(result) - self.backupCount]
-        return result
+            return []
+        result.sort()
+        return result[:len(result) - self.backupCount]

@@ -31,17 +31,16 @@ class SystemStatus(Resource):
             timezone = "Exception while getting time zone name."
             logging.exception("BAZARR is unable to get configured time zone name.")
 
-        system_status = {}
-        system_status.update({'bazarr_version': os.environ["BAZARR_VERSION"]})
-        system_status.update({'package_version': package_version})
-        system_status.update({'sonarr_version': get_sonarr_info.version()})
-        system_status.update({'radarr_version': get_radarr_info.version()})
-        system_status.update({'operating_system': platform.platform()})
-        system_status.update({'python_version': platform.python_version()})
-        system_status.update({'bazarr_directory': os.path.dirname(os.path.dirname(os.path.dirname(
-            os.path.dirname(__file__))))})
-        system_status.update({'bazarr_config_directory': args.config_dir})
-        system_status.update({'start_time': startTime})
-        system_status.update({'timezone': timezone})
+        system_status = {'bazarr_version': os.environ["BAZARR_VERSION"],
+                         'package_version': package_version,
+                         'sonarr_version': get_sonarr_info.version(),
+                         'radarr_version': get_radarr_info.version(),
+                         'operating_system': platform.platform(),
+                         'python_version': platform.python_version(),
+                         'bazarr_directory': os.path.dirname(
+                             os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+                         'bazarr_config_directory': args.config_dir,
+                         'start_time': startTime,
+                         'timezone': timezone}
 
         return jsonify(data=system_status)

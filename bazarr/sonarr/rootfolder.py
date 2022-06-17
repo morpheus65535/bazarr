@@ -17,9 +17,9 @@ def get_sonarr_rootfolder():
 
     # Get root folder data from Sonarr
     if get_sonarr_info.is_legacy():
-        url_sonarr_api_rootfolder = url_sonarr() + "/api/rootfolder?apikey=" + apikey_sonarr
+        url_sonarr_api_rootfolder = f"{url_sonarr()}/api/rootfolder?apikey={apikey_sonarr}"
     else:
-        url_sonarr_api_rootfolder = url_sonarr() + "/api/v3/rootfolder?apikey=" + apikey_sonarr
+        url_sonarr_api_rootfolder = f"{url_sonarr()}/api/v3/rootfolder?apikey={apikey_sonarr}"
 
     try:
         rootfolder = requests.get(url_sonarr_api_rootfolder, timeout=60, verify=False, headers=headers)
@@ -62,10 +62,7 @@ def check_sonarr_rootfolder():
     for item in rootfolder:
         root_path = item['path']
         if not root_path.endswith(('/', '\\')):
-            if root_path.startswith('/'):
-                root_path += '/'
-            else:
-                root_path += '\\'
+            root_path += '/' if root_path.startswith('/') else '\\'
         if not os.path.isdir(path_mappings.path_replace(root_path)):
             TableShowsRootfolder.update({TableShowsRootfolder.accessible: 0,
                                          TableShowsRootfolder.error: 'This Sonarr root directory does not seems to '

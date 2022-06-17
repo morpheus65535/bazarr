@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import contextlib
 import os
 import logging
 import re
@@ -89,23 +90,15 @@ def guess_external_subtitles(dest_folder, subtitles):
                     logging.debug('BAZARR was unable to detect encoding for this subtitles file: %r', subtitle_path)
                 finally:
                     if detected_language:
-                        logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
-                            detected_language))
-                        try:
+                        logging.debug(f"BAZARR external subtitles detected and guessed this language: {str(detected_language)}")
+
+                        with contextlib.suppress(Exception):
                             subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language), forced=False,
                                                                    hi=False)
-                        except Exception:
-                            pass
-
         # If language is still None (undetected), skip it
-        if not language:
+        if not language or language.forced:
             pass
 
-        # Skip HI detection if forced
-        elif language.forced:
-            pass
-
-        # Detect hearing-impaired external subtitles not identified in filename
         elif not subtitles[subtitle].hi:
             subtitle_path = os.path.join(dest_folder, subtitle)
 

@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import contextlib
 import hashlib
 import os
 import ast
@@ -250,7 +251,7 @@ defaults = {
 settings = SimpleConfigParser(defaults=defaults, interpolation=None)
 settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 
-settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
+settings.general.base_url = settings.general.base_url or '/'
 base_url = settings.general.base_url.rstrip('/')
 
 ignore_keys = ['flask_secret_key',
@@ -285,12 +286,12 @@ if os.path.exists(os.path.join(args.config_dir, 'config', 'config.ini')):
 
 
 def get_settings():
-    result = dict()
+    result = {}
     sections = settings.sections()
 
     for sec in sections:
         sec_values = settings.items(sec, False)
-        values_dict = dict()
+        values_dict = {}
 
         for sec_val in sec_values:
             key = sec_val[0]
@@ -312,13 +313,9 @@ def get_settings():
                     value = True
                 elif value == 'False':
                     value = False
-                else:
-                    if key not in str_keys:
-                        try:
-                            value = int(value)
-                        except ValueError:
-                            pass
-
+                elif key not in str_keys:
+                    with contextlib.suppress(ValueError):
+                        value = int(value)
             values_dict[key] = value
 
         result[sec] = values_dict
@@ -368,14 +365,13 @@ def save_settings(settings_items):
         elif value == 'false':
             value = 'False'
 
-        if key == 'settings-auth-password':
-            if value != settings.auth.password and value is not None:
-                value = hashlib.md5(value.encode('utf-8')).hexdigest()
+        if key == 'settings-auth-password' and value != settings.auth.password and value is not None:
+            value = hashlib.md5(value.encode('utf-8')).hexdigest()
 
         if key == 'settings-general-debug':
             configure_debug = True
 
-        if key == 'settings-general-hi_extension':
+        elif key == 'settings-general-hi_extension':
             os.environ["SZ_HI_EXTENSION"] = str(value)
 
         if key in ['settings-general-anti_captcha_provider', 'settings-anticaptcha-anti_captcha_key',
@@ -419,48 +415,18 @@ def save_settings(settings_items):
         if key in ['settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:
             radarr_exclusion_updated = True
 
-        if key == 'settings-addic7ed-username':
-            if key != settings.addic7ed.username:
-                region.delete('addic7ed_data')
-        elif key == 'settings-addic7ed-password':
-            if key != settings.addic7ed.password:
-                region.delete('addic7ed_data')
-
-        if key == 'settings-legendasdivx-username':
-            if key != settings.legendasdivx.username:
-                region.delete('legendasdivx_cookies2')
-        elif key == 'settings-legendasdivx-password':
-            if key != settings.legendasdivx.password:
-                region.delete('legendasdivx_cookies2')
-
-        if key == 'settings-opensubtitles-username':
-            if key != settings.opensubtitles.username:
-                region.delete('os_token')
-        elif key == 'settings-opensubtitles-password':
-            if key != settings.opensubtitles.password:
-                region.delete('os_token')
-
-        if key == 'settings-opensubtitlescom-username':
-            if key != settings.opensubtitlescom.username:
-                region.delete('oscom_token')
-        elif key == 'settings-opensubtitlescom-password':
-            if key != settings.opensubtitlescom.password:
-                region.delete('oscom_token')
-
-        if key == 'settings-subscene-username':
-            if key != settings.subscene.username:
-                region.delete('subscene_cookies2')
-        elif key == 'settings-subscene-password':
-            if key != settings.subscene.password:
-                region.delete('subscene_cookies2')
-
-        if key == 'settings-titlovi-username':
-            if key != settings.titlovi.username:
-                region.delete('titlovi_token')
-        elif key == 'settings-titlovi-password':
-            if key != settings.titlovi.password:
-                region.delete('titlovi_token')
-
+        if key == 'settings-addic7ed-username' and key != settings.addic7ed.username or key != 'settings-addic7ed-username' and key == 'settings-addic7ed-password' and key != settings.addic7ed.password:
+            region.delete('addic7ed_data')
+        if key == 'settings-legendasdivx-username' and key != settings.legendasdivx.username or key != 'settings-legendasdivx-username' and key == 'settings-legendasdivx-password' and key != settings.legendasdivx.password:
+            region.delete('legendasdivx_cookies2')
+        if key == 'settings-opensubtitles-username' and key != settings.opensubtitles.username or key != 'settings-opensubtitles-username' and key == 'settings-opensubtitles-password' and key != settings.opensubtitles.password:
+            region.delete('os_token')
+        if key == 'settings-opensubtitlescom-username' and key != settings.opensubtitlescom.username or key != 'settings-opensubtitlescom-username' and key == 'settings-opensubtitlescom-password' and key != settings.opensubtitlescom.password:
+            region.delete('oscom_token')
+        if key == 'settings-subscene-username' and key != settings.subscene.username or key != 'settings-subscene-username' and key == 'settings-subscene-password' and key != settings.subscene.password:
+            region.delete('subscene_cookies2')
+        if key == 'settings-titlovi-username' and key != settings.titlovi.username or key != 'settings-titlovi-username' and key == 'settings-titlovi-password' and key != settings.titlovi.password:
+            region.delete('titlovi_token')
         if settings_keys[0] == 'settings':
             settings[settings_keys[1]][settings_keys[2]] = str(value)
 
@@ -474,11 +440,8 @@ def save_settings(settings_items):
 
             # Handle color
             if mod == 'color':
-                previous = None
-                for exist_mod in subzero_mods:
-                    if exist_mod.startswith('color'):
-                        previous = exist_mod
-                        break
+                previous = next((exist_mod for exist_mod in subzero_mods if exist_mod.startswith('color')), None)
+
                 if previous is not None:
                     subzero_mods.remove(previous)
                 if value not in empty_values:
@@ -508,18 +471,12 @@ def save_settings(settings_items):
 
     if sonarr_changed:
         from .signalr_client import sonarr_signalr_client
-        try:
+        with contextlib.suppress(Exception):
             sonarr_signalr_client.restart()
-        except Exception:
-            pass
-
     if radarr_changed:
         from .signalr_client import radarr_signalr_client
-        try:
+        with contextlib.suppress(Exception):
             radarr_signalr_client.restart()
-        except Exception:
-            pass
-
     if update_path_map:
         from utilities.path_mappings import path_mappings
         path_mappings.update()
@@ -537,15 +494,14 @@ def save_settings(settings_items):
 
 
 def get_array_from(property):
-    if property:
-        if '[' in property:
-            return ast.literal_eval(property)
-        elif ',' in property:
-            return property.split(',')
-        else:
-            return [property]
-    else:
+    if not property:
         return []
+    if '[' in property:
+        return ast.literal_eval(property)
+    elif ',' in property:
+        return property.split(',')
+    else:
+        return [property]
 
 
 def configure_captcha_func():
@@ -556,8 +512,7 @@ def configure_captcha_func():
     elif settings.general.anti_captcha_provider == 'death-by-captcha' and settings.deathbycaptcha.username != "" and \
             settings.deathbycaptcha.password != "":
         os.environ["ANTICAPTCHA_CLASS"] = 'DeathByCaptchaProxyLess'
-        os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = str(':'.join(
-            {settings.deathbycaptcha.username, settings.deathbycaptcha.password}))
+        os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = ':'.join({settings.deathbycaptcha.username, settings.deathbycaptcha.password})
     else:
         os.environ["ANTICAPTCHA_CLASS"] = ''
 
@@ -565,10 +520,9 @@ def configure_captcha_func():
 def configure_proxy_func():
     if settings.proxy.type != 'None':
         if settings.proxy.username != '' and settings.proxy.password != '':
-            proxy = settings.proxy.type + '://' + quote_plus(settings.proxy.username) + ':' + \
-                    quote_plus(settings.proxy.password) + '@' + settings.proxy.url + ':' + settings.proxy.port
+            proxy = f'{settings.proxy.type}://{quote_plus(settings.proxy.username)}:{quote_plus(settings.proxy.password)}@{settings.proxy.url}:{settings.proxy.port}'
         else:
-            proxy = settings.proxy.type + '://' + settings.proxy.url + ':' + settings.proxy.port
+            proxy = f'{settings.proxy.type}://{settings.proxy.url}:{settings.proxy.port}'
         os.environ['HTTP_PROXY'] = str(proxy)
         os.environ['HTTPS_PROXY'] = str(proxy)
         exclude = ','.join(get_array_from(settings.proxy.exclude))

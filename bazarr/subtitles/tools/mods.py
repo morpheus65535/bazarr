@@ -13,17 +13,13 @@ from languages.get_languages import alpha3_from_alpha2
 def subtitles_apply_mods(language, subtitle_path, mods, use_original_format):
     language = alpha3_from_alpha2(language)
     custom = CustomLanguage.from_value(language, "alpha3")
-    if custom is None:
-        lang_obj = Language(language)
-    else:
-        lang_obj = custom.subzero_language()
-
+    lang_obj = Language(language) if custom is None else custom.subzero_language()
     sub = Subtitle(lang_obj, mods=mods, original_format=use_original_format)
     with open(subtitle_path, 'rb') as f:
         sub.content = f.read()
 
     if not sub.is_valid():
-        logging.exception('BAZARR Invalid subtitle file: ' + subtitle_path)
+        logging.exception(f'BAZARR Invalid subtitle file: {subtitle_path}')
         return
 
     if use_original_format:

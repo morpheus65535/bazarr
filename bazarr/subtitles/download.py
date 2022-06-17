@@ -27,7 +27,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     if not languages:
         return None
 
-    logging.debug('BAZARR Searching subtitles for this file: ' + path)
+    logging.debug(f'BAZARR Searching subtitles for this file: {path}')
 
     if settings.general.getboolean('utf8_encode'):
         os.environ["SZ_KEEP_ENCODING"] = ""
@@ -38,8 +38,8 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     providers = pool.providers
 
     language_set = _get_language_obj(languages=languages)
-    hi_required = any([x.hi for x in language_set])
-    forced_required = any([x.forced for x in language_set])
+    hi_required = any(x.hi for x in language_set)
+    forced_required = any(x.forced for x in language_set)
     _set_forced_providers(forced_required=forced_required, pool=pool)
 
     video = get_video(force_unicode(path), title, sceneName, providers=providers, media_type=media_type)
@@ -91,9 +91,8 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                      path_decoder=force_unicode
                                                      )
                 except Exception as e:
-                    logging.exception(
-                        'BAZARR Error saving Subtitles file to disk for this file:' + path + ': ' + repr(e))
-                    pass
+                    logging.exception(f'BAZARR Error saving Subtitles file to disk for this file:{path}: {repr(e)}')
+
                 else:
                     saved_any = True
                     for subtitle in saved_subtitles:
@@ -106,12 +105,12 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                         yield processed_subtitle
 
         if not saved_any:
-            logging.debug('BAZARR No Subtitles were found for this file: ' + path)
+            logging.debug(f'BAZARR No Subtitles were found for this file: {path}')
             return None
 
     subliminal.region.backend.sync()
 
-    logging.debug('BAZARR Ended searching Subtitles for file: ' + path)
+    logging.debug(f'BAZARR Ended searching Subtitles for file: {path}')
 
 
 def _get_language_obj(languages):
@@ -122,11 +121,7 @@ def _get_language_obj(languages):
 
     for language in languages:
         lang, hi_item, forced_item = language
-        if hi_item == "True":
-            hi = "force HI"
-        else:
-            hi = "force non-HI"
-
+        hi = "force HI" if hi_item == "True" else "force non-HI"
         # Always use alpha2 in API Request
         lang = alpha3_from_alpha2(lang)
 

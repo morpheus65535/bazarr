@@ -17,9 +17,7 @@ def check_credentials(user, pw):
 
 
 def get_subtitle_destination_folder():
-    fld_custom = str(settings.general.subfolder_custom).strip() if (settings.general.subfolder_custom and
-                                                                    settings.general.subfolder != 'current') else None
-    return fld_custom
+    return str(settings.general.subfolder_custom).strip() if (settings.general.subfolder_custom and settings.general.subfolder != 'current') else None
 
 
 def get_target_folder(file_path):
@@ -45,7 +43,7 @@ def get_target_folder(file_path):
             try:
                 os.makedirs(fld)
             except Exception:
-                logging.error('BAZARR is unable to create directory to save subtitles: ' + fld)
+                logging.error(f'BAZARR is unable to create directory to save subtitles: {fld}')
                 fld = None
     else:
         fld = None

@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import contextlib
 import logging
 
 from flask import request, jsonify
@@ -77,7 +78,7 @@ class ProviderMovies(Resource):
         else:
             audio_language = 'None'
 
-        try:
+        with contextlib.suppress(OSError):
             result = manual_download_subtitle(moviePath, audio_language, hi, forced, subtitle, selected_provider,
                                               sceneName, title, 'movie', use_original_format, profile_id=get_profile_id(movie_id=radarrId))
             if result is not None:
@@ -85,9 +86,9 @@ class ProviderMovies(Resource):
                 path = result[1]
                 forced = result[5]
                 if result[8]:
-                    language_code = result[2] + ":hi"
+                    language_code = f"{result[2]}:hi"
                 elif forced:
-                    language_code = result[2] + ":forced"
+                    language_code = f"{result[2]}:forced"
                 else:
                     language_code = result[2]
                 provider = result[3]
@@ -98,7 +99,4 @@ class ProviderMovies(Resource):
                 if not settings.general.getboolean('dont_notify_manual_actions'):
                     send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
-        except OSError:
-            pass
-
         return '', 204

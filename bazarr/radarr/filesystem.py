@@ -13,13 +13,10 @@ def browse_radarr_filesystem(path='#'):
         path = ''
 
     if get_radarr_info.is_legacy():
-        url_radarr_api_filesystem = url_radarr() + "/api/filesystem?path=" + path + \
-                                    "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
-                                    settings.radarr.apikey
+        url_radarr_api_filesystem = f"{url_radarr()}/api/filesystem?path={path}&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey={settings.radarr.apikey}"
     else:
-        url_radarr_api_filesystem = url_radarr() + "/api/v3/filesystem?path=" + path + \
-                                    "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
-                                    settings.radarr.apikey
+        url_radarr_api_filesystem = f"{url_radarr()}/api/v3/filesystem?path={path}&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey={settings.radarr.apikey}"
+
     try:
         r = requests.get(url_radarr_api_filesystem, timeout=60, verify=False, headers=headers)
         r.raise_for_status()

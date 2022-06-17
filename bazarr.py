@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import contextlib
 import os
 import platform
 import signal
@@ -17,23 +18,27 @@ def check_python_version():
     minimum_py3_str = ".".join(str(i) for i in minimum_py3_tuple)
 
     if int(python_version[0]) < minimum_py3_tuple[0]:
-        print("Python " + minimum_py3_str + " or greater required. "
-              "Current version is " + platform.python_version() + ". Please upgrade Python.")
+        print(f"Python {minimum_py3_str} or greater required. Current version is {platform.python_version()}. "
+              "Please upgrade Python.")
         sys.exit(1)
     elif int(python_version[0]) == 3 and int(python_version[1]) > 10:
-        print("Python version greater than 3.10.x is unsupported. Current version is " + platform.python_version() +
+        print(f"Python version greater than 3.10.x is unsupported. Current version is {platform.python_version()}"
               ". Keep in mind that even if it works, you're on your own.")
+
     elif (int(python_version[0]) == minimum_py3_tuple[0] and int(python_version[1]) < minimum_py3_tuple[1]) or \
             (int(python_version[0]) != minimum_py3_tuple[0]):
-        print("Python " + minimum_py3_str + " or greater required. "
-              "Current version is " + platform.python_version() + ". Please upgrade Python.")
+        print(
+            f"Python {minimum_py3_str} or greater required. Current version is {platform.python_version()}"
+            ". Please upgrade Python.")
+
         sys.exit(1)
 
 
 def get_python_path():
     if sys.platform == "darwin":
         # Do not run Python from within macOS framework bundle.
-        python_bundle_path = os.path.join(sys.base_exec_prefix, "Resources", "Python.app", "Contents", "MacOS", "Python")
+        python_bundle_path = os.path.join(sys.base_exec_prefix, "Resources", "Python.app", "Contents", "MacOS",
+                                          "Python")
         if os.path.exists(python_bundle_path):
             import tempfile
 
@@ -51,16 +56,13 @@ dir_name = os.path.dirname(__file__)
 
 
 def end_child_process(ep):
-    try:
+    with contextlib.suppress(Exception):
         ep.kill()
-    except:
-        pass
+
 
 def terminate_child_process(ep):
-    try:
+    with contextlib.suppress(Exception):
         ep.terminate()
-    except:
-        pass
 
 
 def start_bazarr():
@@ -95,16 +97,10 @@ if __name__ == '__main__':
     stopfile = os.path.join(args.config_dir, 'bazarr.stop')
 
     # Cleanup leftover files
-    try:
+    with contextlib.suppress(FileNotFoundError):
         os.remove(restartfile)
-    except FileNotFoundError:
-        pass
-
-    try:
+    with contextlib.suppress(FileNotFoundError):
         os.remove(stopfile)
-    except FileNotFoundError:
-        pass
-
     # Initial start of main bazarr process
     print("Bazarr starting...")
     start_bazarr()

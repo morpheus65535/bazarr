@@ -13,11 +13,9 @@ class SubtitleNameInfo(Resource):
         names = request.args.getlist('filenames[]')
         results = []
         for name in names:
-            opts = dict()
-            opts['type'] = 'episode'
+            opts = {'type': 'episode'}
             guessit_result = guessit(name, options=opts)
-            result = {}
-            result['filename'] = name
+            result = {'filename': name}
             if 'subtitle_language' in guessit_result:
                 result['subtitle_language'] = str(guessit_result['subtitle_language'])
 

@@ -26,7 +26,7 @@ startTime = time.time()
 restore_from_backup()
 
 # set subliminal_patch user agent
-os.environ["SZ_USER_AGENT"] = "Bazarr/{}".format(os.environ["BAZARR_VERSION"])
+os.environ["SZ_USER_AGENT"] = f'Bazarr/{os.environ["BAZARR_VERSION"]}'
 
 # Check if args.config_dir exist
 if not os.path.exists(args.config_dir):
@@ -91,7 +91,7 @@ if not args.no_update:
                         pip_command.insert(4, '--user')
                     subprocess.check_output(pip_command, stderr=subprocess.STDOUT)
                 except subprocess.CalledProcessError as e:
-                    logging.exception('BAZARR requirements.txt installation result: {}'.format(e.stdout))
+                    logging.exception(f'BAZARR requirements.txt installation result: {e.stdout}')
                     os._exit(1)
                 else:
                     logging.info('BAZARR requirements installed.')
@@ -99,10 +99,10 @@ if not args.no_update:
                 try:
                     restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
                 except Exception as e:
-                    logging.error('BAZARR Cannot create restart file: ' + repr(e))
+                    logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
                 else:
                     logging.info('Bazarr is being restarted...')
-                    restart_file.write(str(''))
+                    restart_file.write('')
                     restart_file.close()
                     os._exit(0)
 
@@ -205,9 +205,9 @@ def init_binaries():
             rarfile.UNRAR_TOOL = exe
             rarfile.UNAR_TOOL = None
             rarfile.tool_setup(unrar=True, unar=False, bsdtar=False, force=True)
-        except (BinaryNotFound, rarfile.RarCannotExec):
+        except (BinaryNotFound, rarfile.RarCannotExec) as e:
             logging.exception("BAZARR requires a rar archive extraction utilities (unrar, unar) and it can't be found.")
-            raise BinaryNotFound
+            raise BinaryNotFound from e
         else:
             logging.debug("Using UnRAR from: %s", exe)
             return exe

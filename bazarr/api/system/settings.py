@@ -27,9 +27,7 @@ class SystemSettings(Resource):
             item["enabled"] = item["enabled"] == 1
             notifications[i] = item
 
-        data['notifications'] = dict()
-        data['notifications']['providers'] = notifications
-
+        data['notifications'] = {'providers': notifications}
         return jsonify(data)
 
     @authenticate

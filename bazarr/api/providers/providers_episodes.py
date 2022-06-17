@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import contextlib
 from flask import request, jsonify
 from flask_restful import Resource
 
@@ -76,7 +77,7 @@ class ProviderEpisodes(Resource):
         else:
             audio_language = 'None'
 
-        try:
+        with contextlib.suppress(OSError):
             result = manual_download_subtitle(episodePath, audio_language, hi, forced, subtitle, selected_provider,
                                               sceneName, title, 'series', use_original_format, profile_id=get_profile_id(episode_id=sonarrEpisodeId))
             if result is not None:
@@ -84,9 +85,9 @@ class ProviderEpisodes(Resource):
                 path = result[1]
                 forced = result[5]
                 if result[8]:
-                    language_code = result[2] + ":hi"
+                    language_code = f"{result[2]}:hi"
                 elif forced:
-                    language_code = result[2] + ":forced"
+                    language_code = f"{result[2]}:forced"
                 else:
                     language_code = result[2]
                 provider = result[3]
@@ -99,7 +100,4 @@ class ProviderEpisodes(Resource):
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
             return result, 201
-        except OSError:
-            pass
-
         return '', 204

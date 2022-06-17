@@ -104,22 +104,20 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
 
     ffprobe_path = get_binary("ffprobe")
 
-    # if we have ffprobe available
+    # if we have ffprobe available, if not, we use enzyme for mkv files
     if ffprobe_path:
         data["ffprobe"] = know(video_path=file, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path})
-    # if not, we use enzyme for mkv files
-    else:
-        if os.path.splitext(file)[1] == ".mkv":
-            with open(file, "rb") as f:
-                try:
-                    mkv = enzyme.MKV(f)
-                except MalformedMKVError:
-                    logging.error(
-                        "BAZARR cannot analyze this MKV with our built-in MKV parser, you should install "
-                        "ffmpeg/ffprobe: " + file
-                    )
-                else:
-                    data["enzyme"] = mkv
+    elif os.path.splitext(file)[1] == ".mkv":
+        with open(file, "rb") as f:
+            try:
+                mkv = enzyme.MKV(f)
+            except MalformedMKVError:
+                logging.error(
+                    "BAZARR cannot analyze this MKV with our built-in MKV parser, you should install "
+                    "ffmpeg/ffprobe: " + file
+                )
+            else:
+                data["enzyme"] = mkv
 
     # we write to db the result and return the newly cached ffprobe dict
     if episode_file_id:

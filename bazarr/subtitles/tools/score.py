@@ -21,7 +21,7 @@ class Condition:
 
     # {type: provider, value: subdivx, required: False, negate: False}
     def __init__(self, value: str, required=False, negate=False, **kwargs):
-        self._value = str(value)
+        self._value = value
         self._negate = negate
         self.required = required
 
@@ -31,8 +31,8 @@ class Condition:
         dictionary."""
         try:
             new = _registered_conditions[item["type"]]
-        except IndexError:
-            raise NotImplementedError(f"{item} condition doesn't have a class.")
+        except IndexError as e:
+            raise NotImplementedError(f"{item} condition doesn't have a class.") from e
 
         return new(**item)
 
@@ -40,7 +40,7 @@ class Condition:
         """Check if the condition is met against a Subtitle object. **May be implemented
         in a subclass**."""
         to_match = [str(getattr(subtitle, name, None)) for name in self.against]
-        met = any(item == self._value for item in to_match)
+        met = self._value in to_match
         if met and not self._negate:
             return True
 
@@ -99,7 +99,7 @@ class CustomScoreProfile:
                 .dicts()
             ]
         except self.conditions_table.DoesNotExist:
-            logger.debug("Conditions not found for %s", self)
+            logger.debug(f"Conditions not found for {self}")
             self._conditions = []
 
         self._conditions_loaded = True
@@ -111,27 +111,27 @@ class CustomScoreProfile:
 
         # Always return False if no conditions are set
         if not self._conditions:
-            logger.debug("No conditions found in db for %s", self)
+            logger.debug(f"No conditions found in db for {self}")
             return False
 
         return self._check_conditions(subtitle)
 
     def _check_conditions(self, subtitle):
-        logger.debug("Checking conditions for %s profile", self)
+        logger.debug(f"Checking conditions for {self} profile")
 
         matches = []
         for condition in self._conditions:
             matched = condition.check(subtitle)
 
             if matched is True:
-                logger.debug("%s Condition met", condition)
+                logger.debug(f"{condition} Condition met")
                 matches.append(True)
             elif condition.required and not matched:
-                logger.debug("%s not met, discarding profile", condition)
+                logger.debug(f"{condition} not met, discarding profile")
                 return False
 
         met = True in matches
-        logger.debug("Profile conditions met? %s", met)
+        logger.debug(f"Profile conditions met? {met}")
         return met
 
     def __repr__(self):
@@ -171,7 +171,7 @@ class Score:
                 .where(self.profiles_table.media == self.media)
                 .dicts()
             ]
-            logger.debug("Loaded profiles: %s", self._profiles)
+            logger.debug(f"Loaded profiles: {self._profiles}")
         except self.profiles_table.DoesNotExist:
             logger.debug("No score profiles found")
             self._profiles = []

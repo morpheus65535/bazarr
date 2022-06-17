@@ -67,9 +67,9 @@ def _wanted_episode(episode):
             path = result[1]
             forced = result[5]
             if result[8]:
-                language_code = result[2] + ":hi"
+                language_code = f"{result[2]}:hi"
             elif forced:
-                language_code = result[2] + ":forced"
+                language_code = f"{result[2]}:forced"
             else:
                 language_code = result[2]
             provider = result[3]

@@ -69,7 +69,7 @@ def _get_lang_obj(alpha3):
 
 
 def _get_scores(media_type, min_movie=None, min_ep=None):
-    series = "series" == media_type
+    series = media_type == "series"
     handler = series_score if series else movie_score
     min_movie = min_movie or (60 * 100 / handler.max_score)
     min_ep = min_ep or (240 * 100 / handler.max_score)

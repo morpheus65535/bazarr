@@ -30,9 +30,7 @@ def get_health_issues():
                                                  TableShowsRootfolder.error)\
             .where(TableShowsRootfolder.accessible == 0)\
             .dicts()
-        for item in rootfolder:
-            health_issues.append({'object': path_mappings.path_replace(item['path']),
-                                  'issue': item['error']})
+        health_issues.extend({'object': path_mappings.path_replace(item['path']), 'issue': item['error']} for item in rootfolder)
 
     # get Radarr rootfolder issues
     if settings.general.getboolean('use_radarr'):
@@ -41,8 +39,6 @@ def get_health_issues():
                                                   TableMoviesRootfolder.error)\
             .where(TableMoviesRootfolder.accessible == 0)\
             .dicts()
-        for item in rootfolder:
-            health_issues.append({'object': path_mappings.path_replace_movie(item['path']),
-                                  'issue': item['error']})
+        health_issues.extend({'object': path_mappings.path_replace_movie(item['path']), 'issue': item['error']} for item in rootfolder)
 
     return health_issues

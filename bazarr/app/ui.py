@@ -60,10 +60,7 @@ def catch_all(path):
     except Exception:
         updated = '0'
 
-    inject = dict()
-    inject["baseUrl"] = base_url
-    inject["canUpdate"] = not args.no_update
-    inject["hasUpdate"] = updated != '0'
+    inject = {"baseUrl": base_url, "canUpdate": not args.no_update, "hasUpdate": updated != '0'}
 
     if auth:
         inject["apiKey"] = settings.auth.apikey
@@ -104,11 +101,10 @@ def series_images(url):
     apikey = settings.sonarr.apikey
     baseUrl = settings.sonarr.base_url
     if get_sonarr_info.is_legacy():
-        url_image = (url_sonarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' +
-                     apikey).replace('poster-250', 'poster-500')
+        url_image = f'{url_sonarr()}/api/{url.lstrip(baseUrl)}?apikey={apikey}'.replace('poster-250', 'poster-500')
     else:
-        url_image = (url_sonarr() + '/api/v3/' + url.lstrip(baseUrl) + '?apikey=' +
-                     apikey).replace('poster-250', 'poster-500')
+        url_image = f'{url_sonarr()}/api/v3/{url.lstrip(baseUrl)}?apikey={apikey}'.replace('poster-250', 'poster-500')
+
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
     except Exception:
@@ -123,9 +119,9 @@ def movies_images(url):
     apikey = settings.radarr.apikey
     baseUrl = settings.radarr.base_url
     if get_radarr_info.is_legacy():
-        url_image = url_radarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey
+        url_image = f'{url_radarr()}/api/{url.lstrip(baseUrl)}?apikey={apikey}'
     else:
-        url_image = url_radarr() + '/api/v3/' + url.lstrip(baseUrl) + '?apikey=' + apikey
+        url_image = f'{url_radarr()}/api/v3/{url.lstrip(baseUrl)}?apikey={apikey}'
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
     except Exception:
@@ -142,7 +138,7 @@ def configured():
 @ui_bp.route('/test', methods=['GET'])
 @ui_bp.route('/test/<protocol>/<path:url>', methods=['GET'])
 def proxy(protocol, url):
-    url = protocol + '://' + unquote(url)
+    url = f'{protocol}://{unquote(url)}'
     params = request.args
     try:
         result = requests.get(url, params, allow_redirects=False, verify=False, timeout=5, headers=headers)

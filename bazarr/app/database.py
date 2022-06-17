@@ -373,12 +373,11 @@ def get_exclusion_clause(exclusion_type):
     where_clause = []
     if exclusion_type == 'series':
         tagsList = ast.literal_eval(settings.sonarr.excluded_tags)
-        for tag in tagsList:
-            where_clause.append(~(TableShows.tags.contains("\'"+tag+"\'")))
+        where_clause.extend(~(TableShows.tags.contains("\'" + tag + "\'")) for tag in tagsList)
+
     else:
         tagsList = ast.literal_eval(settings.radarr.excluded_tags)
-        for tag in tagsList:
-            where_clause.append(~(TableMovies.tags.contains("\'"+tag+"\'")))
+        where_clause.extend(~(TableMovies.tags.contains("\'" + tag + "\'")) for tag in tagsList)
 
     if exclusion_type == 'series':
         monitoredOnly = settings.sonarr.getboolean('only_monitored')
@@ -391,9 +390,7 @@ def get_exclusion_clause(exclusion_type):
 
     if exclusion_type == 'series':
         typesList = get_array_from(settings.sonarr.excluded_series_types)
-        for item in typesList:
-            where_clause.append((TableShows.seriesType != item))
-
+        where_clause.extend(TableShows.seriesType != item for item in typesList)
         exclude_season_zero = settings.sonarr.getboolean('exclude_season_zero')
         if exclude_season_zero:
             where_clause.append((TableEpisodes.season != 0))
@@ -421,12 +418,11 @@ def update_profile_id_list():
 def get_profiles_list(profile_id=None):
     profile_id_list = update_profile_id_list()
 
-    if profile_id and profile_id != 'null':
-        for profile in profile_id_list:
-            if profile['profileId'] == profile_id:
-                return profile
-    else:
+    if not profile_id or profile_id == 'null':
         return profile_id_list
+    for profile in profile_id_list:
+        if profile['profileId'] == profile_id:
+            return profile
 
 
 def get_desired_languages(profile_id):
@@ -465,13 +461,12 @@ def get_profile_cutoff(profile_id):
         cutoff_language = []
         for profile in profile_id_list:
             profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat = profile.values()
-            if cutoff:
-                if profileId == int(profile_id):
-                    for item in items:
-                        if item['id'] == cutoff:
-                            return [item]
-                        elif cutoff == 65535:
-                            cutoff_language.append(item)
+            if cutoff and profileId == int(profile_id):
+                for item in items:
+                    if item['id'] == cutoff:
+                        return [item]
+                    elif cutoff == 65535:
+                        cutoff_language.append(item)
 
         if not len(cutoff_language):
             cutoff_language = None
@@ -497,12 +492,7 @@ def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
     except ValueError:
         pass
     else:
-        for language in audio_languages_list:
-            audio_languages.append(
-                {"name": language,
-                 "code2": alpha2_from_language(language) or None,
-                 "code3": alpha3_from_language(language) or None}
-            )
+        audio_languages.extend({"name": language, "code2": alpha2_from_language(language) or None, "code3": alpha3_from_language(language) or None} for language in audio_languages_list)
 
     return audio_languages
 
@@ -533,7 +523,4 @@ def get_profile_id(series_id=None, episode_id=None, movie_id=None):
 
 
 def convert_list_to_clause(arr: list):
-    if isinstance(arr, list):
-        return f"({','.join(str(x) for x in arr)})"
-    else:
-        return ""
+    return f"({','.join(str(x) for x in arr)})" if isinstance(arr, list) else ""

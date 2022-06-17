@@ -33,7 +33,7 @@ class SubSyncer:
              radarr_id=None):
         self.reference = video_path
         self.srtin = srt_path
-        self.srtout = '{}.synced.srt'.format(os.path.splitext(self.srtin)[0])
+        self.srtout = f'{os.path.splitext(self.srtin)[0]}.synced.srt'
         self.args = None
 
         ffprobe_exe = get_binary('ffprobe')
@@ -63,8 +63,8 @@ class SubSyncer:
                 logging.debug('BAZARR deleted the previous subtitles synchronization attempt file.')
             result = run(self.args)
         except Exception:
-            logging.exception('BAZARR an exception occurs during the synchronization process for this subtitles: '
-                              '{0}'.format(self.srtin))
+            logging.exception('BAZARR an exception occurs during the synchronization process for this subtitles: ')
+
         else:
             if settings.subsync.getboolean('debug'):
                 return result
@@ -88,6 +88,6 @@ class SubSyncer:
                                           video_path=path_mappings.path_replace_reverse_movie(self.reference),
                                           language=srt_lang, subtitles_path=srt_path)
             else:
-                logging.error('BAZARR unable to sync subtitles: {0}'.format(self.srtin))
+                logging.error(f'BAZARR unable to sync subtitles: {self.srtin}')
 
             return result

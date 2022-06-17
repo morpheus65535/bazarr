@@ -37,7 +37,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         modifier_string = " forced"
     else:
         modifier_string = ""
-    logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
+    logging.debug(f'BAZARR Subtitles file saved to disk: {downloaded_path}')
     if is_upgrade:
         action = "upgraded"
     elif is_manual:
@@ -59,12 +59,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             return
         series_id = episode_metadata['sonarrSeriesId']
         episode_id = episode_metadata['sonarrEpisodeId']
-        sync_subtitles(video_path=path, srt_path=downloaded_path,
-                       forced=subtitle.language.forced,
-                       srt_lang=downloaded_language_code2, media_type=media_type,
-                       percent_score=percent_score,
-                       sonarr_series_id=episode_metadata['sonarrSeriesId'],
-                       sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
+        sync_subtitles(video_path=path, srt_path=downloaded_path, forced=subtitle.language.forced, srt_lang=downloaded_language_code2, media_type=media_type, percent_score=percent_score, sonarr_series_id=series_id, sonarr_episode_id=episode_id)
+
     else:
         movie_metadata = TableMovies.select(TableMovies.radarrId) \
             .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)) \
@@ -74,11 +70,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             return
         series_id = ""
         episode_id = movie_metadata['radarrId']
-        sync_subtitles(video_path=path, srt_path=downloaded_path,
-                       forced=subtitle.language.forced,
-                       srt_lang=downloaded_language_code2, media_type=media_type,
-                       percent_score=percent_score,
-                       radarr_id=movie_metadata['radarrId'])
+        sync_subtitles(video_path=path, srt_path=downloaded_path, forced=subtitle.language.forced, srt_lang=downloaded_language_code2, media_type=media_type, percent_score=percent_score, radarr_id=episode_id)
 
     if use_postprocessing is True:
         command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
@@ -94,8 +86,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold_movie')
             pp_threshold = int(settings.general.postprocessing_threshold_movie)
 
-        if not use_pp_threshold or (use_pp_threshold and percent_score < pp_threshold):
-            logging.debug("BAZARR Using post-processing command: {}".format(command))
+        if not use_pp_threshold or percent_score < pp_threshold:
+            logging.debug(f"BAZARR Using post-processing command: {command}")
             postprocessing(command, path)
         else:
             logging.debug("BAZARR post-processing skipped because subtitles score isn't below this "

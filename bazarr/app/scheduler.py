@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import contextlib
 import os
 import pretty
 
@@ -101,7 +102,7 @@ class Scheduler:
                 if seconds > period_seconds:
                     period_value, seconds = divmod(seconds, period_seconds)
                     has_s = 's' if period_value > 1 else ''
-                    strings.append("%s %s%s" % (period_value, period_name, has_s))
+                    strings.append(f"{period_value} {period_name}{has_s}")
 
             return ", ".join(strings)
 
@@ -113,13 +114,9 @@ class Scheduler:
             day = str(cron[4])
             hour = str(cron[5])
 
-            if day == "*":
-                text = "everyday"
-            else:
-                text = "every " + day_name[int(day)]
-
+            text = "everyday" if day == "*" else f"every {day_name[int(day)]}"
             if hour != "*":
-                text += " at " + hour + ":00"
+                text += f" at {hour}:00"
 
             return text
 
@@ -187,10 +184,8 @@ class Scheduler:
                 max_instances=1, coalesce=True, misfire_grace_time=15, id='backup',
                 name='Backup database and configuration file', replace_existing=True)
         elif backup == "Manually":
-            try:
+            with contextlib.suppress(JobLookupError):
                 self.aps_scheduler.remove_job(job_id='backup')
-            except JobLookupError:
-                pass
 
     def __sonarr_full_update_task(self):
         if settings.general.getboolean('use_sonarr'):

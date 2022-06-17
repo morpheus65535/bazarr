@@ -35,7 +35,7 @@ def track_event(category=None, action=None, label=None):
             visitor = pickle.loads(codecs.decode(visitor_text.encode(), "base64"))
             if visitor.user_agent is None:
                 visitor.user_agent = os.environ.get("SZ_USER_AGENT")
-            if visitor.unique_id > int(0x7fffffff):
+            if visitor.unique_id > 2147483647:
                 visitor.unique_id = random.randint(0, 0x7fffffff)
         else:
             visitor = Visitor()
@@ -64,7 +64,6 @@ def track_event(category=None, action=None, label=None):
         tracker.track_event(event, session, visitor)
     except Exception:
         logging.debug("BAZARR unable to track event.")
-        pass
     else:
         with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics.dat')), 'w+') as handle:
             handle.write(codecs.encode(pickle.dumps(visitor), "base64").decode())

@@ -5,7 +5,7 @@ import string
 
 
 def browse_bazarr_filesystem(path='#'):
-    if path == '#' or path == '/' or path == '':
+    if path in ['#', '/', '']:
         if os.name == 'nt':
             dir_list = []
             for drive in string.ascii_uppercase:
@@ -29,10 +29,4 @@ def browse_bazarr_filesystem(path='#'):
 
     parent = os.path.dirname(path)
 
-    result = {'directories': sorted(data, key=lambda i: i['name'])}
-    if path == '#':
-        result.update({'parent': '#'})
-    else:
-        result.update({'parent': parent})
-
-    return result
+    return {'directories': sorted(data, key=lambda i: i['name']), 'parent': '#' if path == '#' else parent}

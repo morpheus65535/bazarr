@@ -10,7 +10,7 @@ def update_notifier():
     # define apprise object
     a = apprise.Apprise()
 
-    # Retrieve all of the details
+    # Retrieve all the details
     results = a.details()
 
     notifiers_new = []
@@ -18,10 +18,7 @@ def update_notifier():
 
     notifiers_current_db = TableSettingsNotifier.select(TableSettingsNotifier.name).dicts()
 
-    notifiers_current = []
-    for notifier in notifiers_current_db:
-        notifiers_current.append([notifier['name']])
-
+    notifiers_current = [[notifier['name']] for notifier in notifiers_current_db]
     for x in results['schemas']:
         if [str(x['service_name'])] not in notifiers_current:
             notifiers_new.append({'name': str(x['service_name']), 'enabled': 0})
@@ -91,10 +88,7 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
         return
     series_title = series['title']
     series_year = series['year']
-    if series_year not in [None, '', '0']:
-        series_year = ' ({})'.format(series_year)
-    else:
-        series_year = ''
+    series_year = f' ({series_year})' if series_year not in [None, '', '0'] else ''
     episode = get_episode_name(sonarr_episode_id)
     if not episode:
         return
@@ -123,11 +117,7 @@ def send_notifications_movie(radarr_id, message):
         return
     movie_title = movie['title']
     movie_year = movie['year']
-    if movie_year not in [None, '', '0']:
-        movie_year = ' ({})'.format(movie_year)
-    else:
-        movie_year = ''
-
+    movie_year = f' ({movie_year})' if movie_year not in [None, '', '0'] else ''
     asset = apprise.AppriseAsset(async_mode=False)
 
     apobj = apprise.Apprise(asset=asset)
@@ -136,7 +126,4 @@ def send_notifications_movie(radarr_id, message):
         if provider['url'] is not None:
             apobj.add(provider['url'])
 
-    apobj.notify(
-        title='Bazarr notification',
-        body="{}{} : {}".format(movie_title, movie_year, message),
-    )
+    apobj.notify(title='Bazarr notification', body=f"{movie_title}{movie_year} : {message}")

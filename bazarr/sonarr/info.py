@@ -28,7 +28,7 @@ class GetSonarrInfo:
             sonarr_version = ''
         if settings.general.getboolean('use_sonarr'):
             try:
-                sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
+                sv = f"{url_sonarr()}/api/system/status?apikey={settings.sonarr.apikey}"
                 sonarr_json = requests.get(sv, timeout=60, verify=False, headers=headers).json()
                 if 'version' in sonarr_json:
                     sonarr_version = sonarr_json['version']
@@ -36,7 +36,7 @@ class GetSonarrInfo:
                     raise json.decoder.JSONDecodeError
             except json.decoder.JSONDecodeError:
                 try:
-                    sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
+                    sv = f"{url_sonarr()}/api/v3/system/status?apikey={settings.sonarr.apikey}"
                     sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
                 except json.decoder.JSONDecodeError:
                     logging.debug('BAZARR cannot get Sonarr version')
@@ -44,7 +44,7 @@ class GetSonarrInfo:
             except Exception:
                 logging.debug('BAZARR cannot get Sonarr version')
                 sonarr_version = 'unknown'
-        logging.debug('BAZARR got this Sonarr version from its API: {}'.format(sonarr_version))
+        logging.debug(f'BAZARR got this Sonarr version from its API: {sonarr_version}')
         region.set("sonarr_version", sonarr_version)
         return sonarr_version
 
@@ -54,25 +54,18 @@ class GetSonarrInfo:
         @return: bool
         """
         sonarr_version = self.version()
-        if sonarr_version.startswith(('0.', '2.')):
-            return True
-        else:
-            return False
+        return bool(sonarr_version.startswith(('0.', '2.')))
 
 
 get_sonarr_info = GetSonarrInfo()
 
 
 def url_sonarr():
-    if settings.sonarr.getboolean('ssl'):
-        protocol_sonarr = "https"
-    else:
-        protocol_sonarr = "http"
-
+    protocol_sonarr = "https" if settings.sonarr.getboolean('ssl') else "http"
     if settings.sonarr.base_url == '':
         settings.sonarr.base_url = "/"
     if not settings.sonarr.base_url.startswith("/"):
-        settings.sonarr.base_url = "/" + settings.sonarr.base_url
+        settings.sonarr.base_url = f"/{settings.sonarr.base_url}"
     if settings.sonarr.base_url.endswith("/"):
         settings.sonarr.base_url = settings.sonarr.base_url[:-1]
 

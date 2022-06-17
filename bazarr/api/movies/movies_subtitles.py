@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import contextlib
 import os
 import logging
 
@@ -57,7 +58,7 @@ class MoviesSubtitles(Resource):
         else:
             audio_language = None
 
-        try:
+        with contextlib.suppress(OSError):
             result = list(generate_subtitles(moviePath, [(language, hi, forced)], audio_language,
                                              sceneName, title, 'movie', profile_id=get_profile_id(movie_id=radarrId)))
             if result:
@@ -66,9 +67,9 @@ class MoviesSubtitles(Resource):
                 path = result[1]
                 forced = result[5]
                 if result[8]:
-                    language_code = result[2] + ":hi"
+                    language_code = f"{result[2]}:hi"
                 elif forced:
-                    language_code = result[2] + ":forced"
+                    language_code = f"{result[2]}:forced"
                 else:
                     language_code = result[2]
                 provider = result[3]
@@ -80,9 +81,6 @@ class MoviesSubtitles(Resource):
                 store_subtitles_movie(path, moviePath)
             else:
                 event_stream(type='movie', payload=radarrId)
-        except OSError:
-            pass
-
         return '', 204
 
     @authenticate
@@ -108,8 +106,8 @@ class MoviesSubtitles(Resource):
         audioLanguage = movieInfo['audio_language']
 
         language = request.form.get('language')
-        forced = True if request.form.get('forced') == 'true' else False
-        hi = True if request.form.get('hi') == 'true' else False
+        forced = request.form.get('forced') == 'true'
+        hi = request.form.get('hi') == 'true'
         subFile = request.files.get('file')
 
         _, ext = os.path.splitext(subFile.filename)
@@ -117,7 +115,7 @@ class MoviesSubtitles(Resource):
         if ext not in SUBTITLE_EXTENSIONS:
             raise ValueError('A subtitle of an invalid format was uploaded.')
 
-        try:
+        with contextlib.suppress(OSError):
             result = manual_upload_subtitle(path=moviePath,
                                             language=language,
                                             forced=forced,
@@ -135,9 +133,9 @@ class MoviesSubtitles(Resource):
                 path = result[1]
                 subs_path = result[2]
                 if hi:
-                    language_code = language + ":hi"
+                    language_code = f"{language}:hi"
                 elif forced:
-                    language_code = language + ":forced"
+                    language_code = f"{language}:forced"
                 else:
                     language_code = language
                 provider = "manual"
@@ -146,9 +144,6 @@ class MoviesSubtitles(Resource):
                 if not settings.general.getboolean('dont_notify_manual_actions'):
                     send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
-        except OSError:
-            pass
-
         return '', 204
 
     @authenticate
@@ -179,7 +174,4 @@ class MoviesSubtitles(Resource):
                                   media_path=moviePath,
                                   subtitles_path=subtitlesPath,
                                   radarr_id=radarrId)
-        if result:
-            return '', 202
-        else:
-            return '', 204
+        return ('', 202) if result else ('', 204)

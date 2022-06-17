@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import contextlib
 import os
 import logging
 
@@ -55,7 +56,7 @@ class EpisodesSubtitles(Resource):
         else:
             audio_language = None
 
-        try:
+        with contextlib.suppress(OSError):
             result = list(generate_subtitles(episodePath, [(language, hi, forced)], audio_language, sceneName,
                                              title, 'series', profile_id=get_profile_id(episode_id=sonarrEpisodeId)))
             if result:
@@ -64,9 +65,9 @@ class EpisodesSubtitles(Resource):
                 path = result[1]
                 forced = result[5]
                 if result[8]:
-                    language_code = result[2] + ":hi"
+                    language_code = f"{result[2]}:hi"
                 elif forced:
-                    language_code = result[2] + ":forced"
+                    language_code = f"{result[2]}:forced"
                 else:
                     language_code = result[2]
                 provider = result[3]
@@ -79,9 +80,6 @@ class EpisodesSubtitles(Resource):
                 store_subtitles(path, episodePath)
             else:
                 event_stream(type='episode', payload=sonarrEpisodeId)
-
-        except OSError:
-            pass
 
         return '', 204
 
@@ -106,8 +104,8 @@ class EpisodesSubtitles(Resource):
         audio_language = episodeInfo['audio_language']
 
         language = request.form.get('language')
-        forced = True if request.form.get('forced') == 'true' else False
-        hi = True if request.form.get('hi') == 'true' else False
+        forced = request.form.get('forced') == 'true'
+        hi = request.form.get('hi') == 'true'
         subFile = request.files.get('file')
 
         _, ext = os.path.splitext(subFile.filename)
@@ -115,7 +113,7 @@ class EpisodesSubtitles(Resource):
         if ext not in SUBTITLE_EXTENSIONS:
             raise ValueError('A subtitle of an invalid format was uploaded.')
 
-        try:
+        with contextlib.suppress(OSError):
             result = manual_upload_subtitle(path=episodePath,
                                             language=language,
                                             forced=forced,
@@ -125,17 +123,14 @@ class EpisodesSubtitles(Resource):
                                             media_type='series',
                                             subtitle=subFile,
                                             audio_language=audio_language)
-
-            if not result:
-                logging.debug(f"BAZARR unable to process subtitles for this episode: {episodePath}")
-            else:
+            if result:
                 message = result[0]
                 path = result[1]
                 subs_path = result[2]
                 if hi:
-                    language_code = language + ":hi"
+                    language_code = f"{language}:hi"
                 elif forced:
-                    language_code = language + ":forced"
+                    language_code = f"{language}:forced"
                 else:
                     language_code = language
                 provider = "manual"
@@ -146,9 +141,8 @@ class EpisodesSubtitles(Resource):
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
 
-        except OSError:
-            pass
-
+            else:
+                logging.debug(f"BAZARR unable to process subtitles for this episode: {episodePath}")
         return '', 204
 
     @authenticate

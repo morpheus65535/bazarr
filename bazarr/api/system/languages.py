@@ -21,7 +21,7 @@ class Languages(Resource):
             languages += list(TableHistoryMovie.select(TableHistoryMovie.language)
                               .where(TableHistoryMovie.language.is_null(False))
                               .dicts())
-            languages_list = list(set([lang['language'].split(':')[0] for lang in languages]))
+            languages_list = list({lang['language'].split(':')[0] for lang in languages})
             languages_dicts = []
             for language in languages_list:
                 code2 = None
@@ -32,7 +32,7 @@ class Languages(Resource):
                 else:
                     continue
 
-                if not any(x['code2'] == code2 for x in languages_dicts):
+                if all(x['code2'] != code2 for x in languages_dicts):
                     try:
                         languages_dicts.append({
                             'code2': code2,

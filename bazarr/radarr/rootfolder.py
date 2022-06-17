@@ -17,9 +17,9 @@ def get_radarr_rootfolder():
 
     # Get root folder data from Radarr
     if get_radarr_info.is_legacy():
-        url_radarr_api_rootfolder = url_radarr() + "/api/rootfolder?apikey=" + apikey_radarr
+        url_radarr_api_rootfolder = f"{url_radarr()}/api/rootfolder?apikey={apikey_radarr}"
     else:
-        url_radarr_api_rootfolder = url_radarr() + "/api/v3/rootfolder?apikey=" + apikey_radarr
+        url_radarr_api_rootfolder = f"{url_radarr()}/api/v3/rootfolder?apikey={apikey_radarr}"
 
     try:
         rootfolder = requests.get(url_radarr_api_rootfolder, timeout=60, verify=False, headers=headers)
@@ -61,10 +61,7 @@ def check_radarr_rootfolder():
     for item in rootfolder:
         root_path = item['path']
         if not root_path.endswith(('/', '\\')):
-            if root_path.startswith('/'):
-                root_path += '/'
-            else:
-                root_path += '\\'
+            root_path += '/' if root_path.startswith('/') else '\\'
         if not os.path.isdir(path_mappings.path_replace_movie(root_path)):
             TableMoviesRootfolder.update({TableMoviesRootfolder.accessible: 0,
                                          TableMoviesRootfolder.error: 'This Radarr root directory does not seems to '

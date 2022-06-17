@@ -12,13 +12,10 @@ def browse_sonarr_filesystem(path='#'):
     if path == '#':
         path = ''
     if get_sonarr_info.is_legacy():
-        url_sonarr_api_filesystem = url_sonarr() + "/api/filesystem?path=" + path + \
-                                    "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
-                                    settings.sonarr.apikey
+        url_sonarr_api_filesystem = f"{url_sonarr()}/api/filesystem?path={path}&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey={settings.sonarr.apikey}"
     else:
-        url_sonarr_api_filesystem = url_sonarr() + "/api/v3/filesystem?path=" + path + \
-                                    "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
-                                    settings.sonarr.apikey
+        url_sonarr_api_filesystem = f"{url_sonarr()}/api/v3/filesystem?path={path}&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey={settings.sonarr.apikey}"
+
     try:
         r = requests.get(url_sonarr_api_filesystem, timeout=60, verify=False, headers=headers)
         r.raise_for_status()
