@@ -22,8 +22,14 @@ ui_bp = Blueprint('ui', __name__,
                   template_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
                                                'frontend', 'build'),
                   static_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend',
-                                             'build', 'static'),
-                  static_url_path=base_url.rstrip('/') + '/static')
+                                             'build', 'assets'),
+                  static_url_path='/assets')
+
+static_bp = Blueprint('images', __name__,
+                     static_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend',
+                                             'build', 'images'), static_url_path='/images')
+
+ui_bp.register_blueprint(static_bp)
 
 
 def check_login(actual_method):
@@ -73,22 +79,6 @@ def catch_all(path):
         template_url += "/"
 
     return render_template("index.html", BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
-
-
-@ui_bp.route('/assets/<path:filename>')
-def web_assets(filename):
-    # forcing mimetypes to prevent bad configuration in Windows registry to prevent Bazarr UI from showing
-    mimetypes.add_type('application/javascript', '.js')
-    mimetypes.add_type('text/css', '.css')
-    mimetypes.add_type('font/woff2', '.woff2')
-    mimetypes.add_type('image/svg+xml', '.svg')
-    mimetypes.add_type('image/png', '.png')
-    mimetypes.add_type('image/x-icon', '.ico')
-
-    # send_from_directory needs an absolute path then we'll use realpath() here
-    path = os.path.realpath(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend',
-                                         'build', 'assets'))
-    return send_from_directory(path, filename)
 
 
 @check_login
