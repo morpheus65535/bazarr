@@ -197,9 +197,8 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                         cutoff_met = True
                     elif cutoff_language in actual_subtitles_list:
                         cutoff_met = True
-                    elif cutoff_language and [cutoff_language[0], 'True', 'False'] in actual_subtitles_list:
-                        cutoff_met = True
-                    elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
+                    # HI is considered as good as normal
+                    elif [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
                         cutoff_met = True
 
             if cutoff_met:
