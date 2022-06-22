@@ -759,8 +759,8 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
 
     # guess
     hints["single_value"] = True
-    if "title" in hints:
-        hints["expected_title"] = [hints["title"]]
+    #    if "title" in hints:
+    #        hints["expected_title"] = [hints["title"]]
 
     guessed_result = guessit(guess_from, options=hints)
 

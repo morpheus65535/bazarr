@@ -26,6 +26,16 @@ def test_list_subtitles_movie_with_year_fallback(movies):
         assert provider.list_subtitles(item, {Language("spa", "MX")})
 
 
+def test_handle_multi_page_search(episodes):
+    with SubdivxSubtitlesProvider() as provider:
+        subs = list(
+            provider._handle_multi_page_search(
+                "Game Of Thrones", episodes["got_s03e10"]
+            )
+        )
+        assert len(subs) > 100
+
+
 @pytest.mark.parametrize(
     "episode_key,expected", [("breaking_bad_s01e01", 15), ("inexistent", 0)]
 )
