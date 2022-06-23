@@ -43,9 +43,10 @@ def titulky_limit_reset_timedelta():
     return time_until_midnight(timezone=pytz.timezone('Europe/Prague'))
 
 
-# LegendasDivx reset its searches limit at approximately midnight, Lisbon time, everyday.
+# LegendasDivx reset its searches limit at approximately midnight, Lisbon time, every day. We wait 1 more hours just
+# to be sure.
 def legendasdivx_limit_reset_timedelta():
-    return time_until_midnight(timezone=pytz.timezone('Europe/Lisbon')) + datetime.timedelta(minutes=15)
+    return time_until_midnight(timezone=pytz.timezone('Europe/Lisbon')) + datetime.timedelta(minutes=60)
 
 
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
