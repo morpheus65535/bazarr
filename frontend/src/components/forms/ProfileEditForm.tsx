@@ -2,6 +2,7 @@ import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
 import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
+import { LOG } from "@/utilities/console";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import {
   Accordion,
@@ -230,6 +231,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
   return (
     <form
       onSubmit={form.onSubmit((value) => {
+        LOG("info", "Submitting language profile", value);
         onComplete?.(value);
         modals.closeSelf();
       })}
@@ -297,6 +299,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             <Stack my="xs">
               <Switch
                 label="Use Original Format"
+                checked={form.values.originalFormat ?? false}
                 {...form.getInputProps("originalFormat")}
               ></Switch>
               <Text size="sm">
