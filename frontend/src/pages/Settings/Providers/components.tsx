@@ -1,6 +1,7 @@
 import { Selector } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
-import { BuildKey, isReactText, useSelectorOptions } from "@/utilities";
+import { BuildKey, useSelectorOptions } from "@/utilities";
+import { ASSERT } from "@/utilities/console";
 import {
   Button,
   Divider,
@@ -10,7 +11,7 @@ import {
   Text as MantineText,
 } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
-import { capitalize, isBoolean } from "lodash";
+import { capitalize } from "lodash";
 import {
   forwardRef,
   FunctionComponent,
@@ -22,6 +23,7 @@ import {
 import {
   Card,
   Check,
+  Chips,
   Message,
   Password,
   Text,
@@ -192,42 +194,21 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     (v) => v.name ?? capitalize(v.key)
   );
 
-  const modification = useMemo(() => {
-    if (info === null) {
-      return null;
-    }
-
-    const defaultKey = info.defaultKey;
-    const override = info.keyNameOverride ?? {};
-    if (defaultKey === undefined) {
+  const inputs = useMemo(() => {
+    if (info === null || info.inputs === undefined) {
       return null;
     }
 
     const itemKey = info.key;
 
     const elements: JSX.Element[] = [];
-    const checks: JSX.Element[] = [];
 
-    for (const key in defaultKey) {
-      const value = defaultKey[key];
-      let label = key;
+    info.inputs?.forEach((value) => {
+      const key = value.key;
+      const label = value.name ?? capitalize(value.key);
 
-      if (label in override) {
-        label = override[label];
-      } else {
-        label = capitalize(key);
-      }
-
-      if (isReactText(value)) {
-        if (key === "password") {
-          elements.push(
-            <Password
-              key={BuildKey(itemKey, key)}
-              label={label}
-              settingKey={`settings-${itemKey}-${key}`}
-            ></Password>
-          );
-        } else {
+      switch (value.type) {
+        case "text":
           elements.push(
             <Text
               key={BuildKey(itemKey, key)}
@@ -235,25 +216,41 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
               settingKey={`settings-${itemKey}-${key}`}
             ></Text>
           );
-        }
-      } else if (isBoolean(value)) {
-        checks.push(
-          <Check
-            key={key}
-            inline
-            label={label}
-            settingKey={`settings-${itemKey}-${key}`}
-          ></Check>
-        );
+          return;
+        case "password":
+          elements.push(
+            <Password
+              key={BuildKey(itemKey, key)}
+              label={label}
+              settingKey={`settings-${itemKey}-${key}`}
+            ></Password>
+          );
+          return;
+        case "switch":
+          elements.push(
+            <Check
+              key={key}
+              inline
+              label={label}
+              settingKey={`settings-${itemKey}-${key}`}
+            ></Check>
+          );
+          return;
+        case "chips":
+          elements.push(
+            <Chips
+              key={key}
+              label={label}
+              settingKey={`settings-${itemKey}-${key}`}
+            ></Chips>
+          );
+          return;
+        default:
+          ASSERT(false, "Implement your new input here");
       }
-    }
+    });
 
-    return (
-      <Stack spacing="xs">
-        {elements}
-        <Group hidden={checks.length === 0}>{checks}</Group>
-      </Stack>
-    );
+    return <Stack spacing="xs">{elements}</Stack>;
   }, [info]);
 
   return (
@@ -271,7 +268,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
               onChange={onSelect}
             ></Selector>
             <Message>{info?.description}</Message>
-            {modification}
+            {inputs}
             <div hidden={info?.message === undefined}>
               <Message>{info?.message}</Message>
             </div>
