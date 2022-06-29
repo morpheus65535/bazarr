@@ -2,10 +2,8 @@
 
 import os
 import requests
-import mimetypes
 
-from flask import request, redirect, abort, render_template, Response, session, send_file, stream_with_context, \
-    send_from_directory, Blueprint
+from flask import request, abort, render_template, Response, session, send_file, stream_with_context, Blueprint
 from functools import wraps
 from urllib.parse import unquote
 
@@ -26,8 +24,8 @@ ui_bp = Blueprint('ui', __name__,
                   static_url_path='/assets')
 
 static_bp = Blueprint('images', __name__,
-                     static_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend',
-                                             'build', 'images'), static_url_path='/images')
+                      static_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                                                 'frontend', 'build', 'images'), static_url_path='/images')
 
 ui_bp.register_blueprint(static_bp)
 

@@ -9,7 +9,6 @@ import pretty
 import time
 import socket
 import requests
-import tzlocal
 
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
     MustGetBlacklisted, SearchLimitReached
