@@ -24,3 +24,13 @@ def test_get_providers_auth_with_provider_registry():
                 raise ValueError(f"'{sub_key}' parameter not present in {provider}")
 
             assert sign.parameters[sub_key] is not None
+
+
+def test_get_providers_auth_embeddedsubtitles():
+    item = get_providers.get_providers_auth()["embeddedsubtitles"]
+    assert isinstance(item["included_codecs"], list)
+    assert isinstance(item["hi_fallback"], bool)
+    assert isinstance(item["cache_dir"], str)
+    assert isinstance(item["ffprobe_path"], str)
+    assert isinstance(item["ffmpeg_path"], str)
+    assert isinstance(item["timeout"], str)

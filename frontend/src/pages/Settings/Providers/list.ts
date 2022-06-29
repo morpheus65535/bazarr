@@ -87,32 +87,21 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Embedded Subtitles from your Media Files",
     inputs: [
       {
-        type: "switch",
-        key: "include_srt",
-        name: "Include SRT",
-        defaultValue: true,
-      },
-      {
-        type: "switch",
-        key: "include_ass",
-        name: "Include ASS (will be converted to SRT)",
-        defaultValue: true,
-      },
-      {
-        type: "switch",
-        key: "hi_fallback",
-        name: "Use HI subtitles as a fallback (don't enable it if you have a HI language profile)",
-      },
-      {
-        type: "switch",
-        key: "mergerfs_mode",
-        name: "[EXPERIMENTAL] Ignore cloud video files from rclone/mergerfs",
+        type: "chips",
+        key: "included_codecs",
+        name: "Allowed codecs (subrip, ass, webvtt, mov_text). Leave empty to allow all.",
+        defaultValue: [],
       },
       {
         type: "text",
         key: "timeout",
         defaultValue: 600,
         name: "Extraction timeout in seconds",
+      },
+      {
+        type: "switch",
+        key: "hi_fallback",
+        name: "Use HI subtitles as a fallback (don't enable it if you have a HI language profile)",
       },
     ],
     message:

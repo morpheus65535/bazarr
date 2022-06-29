@@ -227,15 +227,13 @@ def get_providers_auth():
             'hashed_password': settings.ktuvit.hashed_password,
         },
         'embeddedsubtitles': {
-            'include_ass': settings.embeddedsubtitles.getboolean('include_ass'),
-            'include_srt': settings.embeddedsubtitles.getboolean('include_srt'),
+            'included_codecs': get_array_from(settings.embeddedsubtitles.included_codecs),
             'hi_fallback': settings.embeddedsubtitles.getboolean('hi_fallback'),
-            'mergerfs_mode': settings.embeddedsubtitles.getboolean('mergerfs_mode'),
             'cache_dir': os.path.join(args.config_dir, "cache"),
             'ffprobe_path': _FFPROBE_BINARY,
             'ffmpeg_path': _FFMPEG_BINARY,
             'timeout': settings.embeddedsubtitles.timeout,
-        }
+        },
     }
 
 
