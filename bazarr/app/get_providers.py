@@ -233,6 +233,12 @@ def get_providers_auth():
             'ffmpeg_path': _FFMPEG_BINARY,
             'timeout': settings.embeddedsubtitles.timeout,
         },
+        'karagarga': {
+            'username': settings.karagarga.username,
+            'password': settings.karagarga.password,
+            'f_username': settings.karagarga.f_username,
+            'f_password': settings.karagarga.f_password,
+        },
     }
 
 

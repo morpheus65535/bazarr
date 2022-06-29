@@ -140,6 +140,31 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "karagarga",
+    name: "Karagarga.in",
+    description: "Movie Subtitles Provider (Private Tracker)",
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+      {
+        type: "text",
+        key: "f_username",
+        name: "Forum username",
+      },
+      {
+        type: "password",
+        key: "f_password",
+        name: "Forum password",
+      },
+    ],
+  },
+  {
     key: "ktuvit",
     name: "Ktuvit",
     description: "Hebrew Subtitles Provider",

@@ -34,3 +34,11 @@ def test_get_providers_auth_embeddedsubtitles():
     assert isinstance(item["ffprobe_path"], str)
     assert isinstance(item["ffmpeg_path"], str)
     assert isinstance(item["timeout"], str)
+
+
+def test_get_providers_auth_karagarga():
+    item = get_providers.get_providers_auth()["karagarga"]
+    assert item["username"] is not None
+    assert item["password"] is not None
+    assert item["f_username"] is not None
+    assert item["f_password"] is not None

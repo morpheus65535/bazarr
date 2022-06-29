@@ -207,6 +207,12 @@ defaults = {
         'hi_fallback': 'False',
         'timeout': '600',
     },
+    'karagarga': {
+        'username': '',
+        'password': '',
+        'f_username': '',
+        'f_password': '',
+    },
     'subsync': {
         'use_subsync': 'False',
         'use_subsync_threshold': 'False',
