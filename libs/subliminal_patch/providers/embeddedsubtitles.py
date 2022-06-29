@@ -81,7 +81,7 @@ class EmbeddedSubtitlesProvider(Provider):
         timeout=600,
         include_ass=None,
         include_srt=None,
-        mergerfs_mode=None
+        mergerfs_mode=None,
     ):
         self._included_codecs = set(included_codecs or _ALLOWED_CODECS)
 
@@ -122,8 +122,7 @@ class EmbeddedSubtitlesProvider(Provider):
             self._blacklist.add(path)
             streams = []
 
-        streams = list(streams)
-        #        streams = _discard_possible_incomplete_subtitles(list(streams))
+        streams = _discard_possible_incomplete_subtitles(list(streams))
 
         if not streams:
             logger.debug("No subtitles found for container: %s", video)
