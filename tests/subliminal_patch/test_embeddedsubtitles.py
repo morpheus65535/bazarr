@@ -1,23 +1,21 @@
 # -*- coding: utf-8 -*-
 import os
-import tempfile
 
-import fese
 from fese import FFprobeSubtitleStream
+from fese import FFprobeVideoContainer
+from fese import tags
 import pytest
-import subliminal_patch
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
-from subliminal_patch.exceptions import MustGetBlacklisted
-from subliminal_patch.providers.embeddedsubtitles import _MemoizedFFprobeVideoContainer
-from subliminal_patch.providers.embeddedsubtitles import EmbeddedSubtitlesProvider
 from subliminal_patch.providers.embeddedsubtitles import (
     _discard_possible_incomplete_subtitles,
 )
+from subliminal_patch.providers.embeddedsubtitles import _get_pretty_release_name
+from subliminal_patch.providers.embeddedsubtitles import _MemoizedFFprobeVideoContainer
+from subliminal_patch.providers.embeddedsubtitles import EmbeddedSubtitlesProvider
 from subzero.language import Language
 
-
-fese.Language = Language
+tags.Language = Language
 
 
 @pytest.fixture
@@ -46,8 +44,7 @@ def video_multiple_languages(data):
 @pytest.fixture
 def config(tmpdir):
     return {
-        "include_ass": True,
-        "include_srt": True,
+        "included_codecs": None,
         "cache_dir": tmpdir,
         "ffprobe_path": None,
         "ffmpeg_path": None,
@@ -65,9 +62,23 @@ def video_inexistent(tmpdir):
     )
 
 
+def test_language_is_subzero_type():
+    assert tags.Language == Language
+
+
 def test_init(config):
     with EmbeddedSubtitlesProvider(**config) as provider:
         assert provider is not None
+
+
+def test_init_empty_included_codecs():
+    with EmbeddedSubtitlesProvider(included_codecs=[]) as provider:
+        assert provider._included_codecs == {"ass", "subrip", "webvtt", "mov_text"}
+
+
+def test_init_custom_included_codecs():
+    with EmbeddedSubtitlesProvider(included_codecs=["ass"]) as provider:
+        assert provider._included_codecs == {"ass"}
 
 
 def test_inexistent_video(video_inexistent):
@@ -124,7 +135,6 @@ def test_list_subtitles_hi_fallback_one_stream(
         )
         fake = _MemoizedFFprobeVideoContainer.get_subtitles("")[0]
         assert fake.disposition.hearing_impaired == True
-
         subs = provider.list_subtitles(video_single_language, {language})
         assert subs
         assert subs[0].hearing_impaired == False
@@ -154,13 +164,17 @@ def test_list_subtitles_hi_fallback_multiple_language_streams(
         mocker.patch(
             # "fese.FFprobeVideoContainer.get_subtitles",
             "subliminal_patch.providers.embeddedsubtitles._MemoizedFFprobeVideoContainer.get_subtitles",
-            return_value=[fake_streams["en_hi"], fake_streams["es"], fake_streams["es_hi"]],
+            return_value=[
+                fake_streams["en_hi"],
+                fake_streams["es"],
+                fake_streams["es_hi"],
+            ],
         )
         subs = provider.list_subtitles(video_single_language, languages)
         assert len(subs) == 3
         assert subs[0].hearing_impaired == False  # English subittle
         assert subs[1].hearing_impaired == False  # Spanish subtitle
-        assert subs[2].hearing_impaired == True # Spanish HI subtitle
+        assert subs[2].hearing_impaired == True  # Spanish HI subtitle
 
 
 def test_list_subtitles_hi_fallback_multiple_hi_streams(
@@ -218,7 +232,7 @@ def test_list_subtitles_multiple_languages(video_multiple_languages):
 
 
 def test_list_subtitles_wo_ass(video_single_language):
-    with EmbeddedSubtitlesProvider(include_ass=False) as provider:
+    with EmbeddedSubtitlesProvider(included_codecs=("srt",)) as provider:
         subs = provider.list_subtitles(
             video_single_language, {Language.fromalpha2("en")}
         )
@@ -226,11 +240,23 @@ def test_list_subtitles_wo_ass(video_single_language):
 
 
 def test_list_subtitles_wo_srt(video_multiple_languages):
-    with EmbeddedSubtitlesProvider(include_srt=False) as provider:
+    with EmbeddedSubtitlesProvider(included_codecs=("ass",)) as provider:
         subs = provider.list_subtitles(
             video_multiple_languages, {Language.fromalpha2("en")}
         )
         assert not subs
+
+
+def test_get_pretty_release_name():
+    stream = FFprobeSubtitleStream(
+        {
+            "index": 1,
+            "codec_name": "subrip",
+            "tags": {"language": "eng", "title": "forced"},
+        }
+    )
+    container = FFprobeVideoContainer("foo.mkv")
+    assert _get_pretty_release_name(stream, container) == "foo.en.forced.srt"
 
 
 def test_download_subtitle_multiple(video_multiple_languages):
@@ -242,7 +268,7 @@ def test_download_subtitle_multiple(video_multiple_languages):
         subs = provider.list_subtitles(video_multiple_languages, languages)
         for sub in subs:
             provider.download_subtitle(sub)
-            assert sub.content is not None
+            assert sub.is_valid()
 
 
 def test_download_subtitle_single(video_single_language):
@@ -251,23 +277,7 @@ def test_download_subtitle_single(video_single_language):
             video_single_language, {Language.fromalpha2("en")}
         )[0]
         provider.download_subtitle(subtitle)
-        assert subtitle.content is not None
-
-
-def test_download_invalid_subtitle(video_single_language):
-    with EmbeddedSubtitlesProvider() as provider:
-        subtitle = provider.list_subtitles(
-            video_single_language, {Language.fromalpha2("en")}
-        )[0]
-
-        provider._cached_paths[subtitle.container.path] = {
-            subtitle.stream.index: "dummy.srt"
-        }
-        try:
-            provider.download_subtitle(subtitle)
-        except MustGetBlacklisted as error:
-            assert error.id == subtitle.id
-            assert error.media_type == subtitle.media_type
+        assert subtitle.is_valid()
 
 
 def test_memoized(video_single_language, mocker):

@@ -203,10 +203,8 @@ defaults = {
         'approved_only': 'False'
     },
     'embeddedsubtitles': {
-        'include_ass': 'True',
-        'include_srt': 'True',
+        'included_codecs': '[]',
         'hi_fallback': 'False',
-        'mergerfs_mode': 'False',
         'timeout': '600',
     },
     'subsync': {
@@ -261,6 +259,7 @@ raw_keys = ['movie_default_forced', 'serie_default_forced']
 
 array_keys = ['excluded_tags',
               'exclude',
+              'included_codecs',
               'subzero_mods',
               'excluded_series_types',
               'enabled_providers',
