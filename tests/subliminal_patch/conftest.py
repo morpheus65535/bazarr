@@ -17,7 +17,7 @@ def vcr_cassette_dir(request):
     return os.path.join("tests/subliminal_patch/cassettes", request.module.__name__)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def movies():
     return {
         "dune": Movie(
@@ -85,7 +85,7 @@ def movies():
     }
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def episodes():
     return {
         "got_s03e10": Episode(

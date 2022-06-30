@@ -1,6 +1,5 @@
 # coding=utf-8
 from __future__ import absolute_import
-import codecs
 import json
 import re
 import os
@@ -13,7 +12,6 @@ import operator
 import unicodedata
 
 import itertools
-from six.moves.http_client import ResponseNotReady
 
 import rarfile
 import requests
@@ -27,13 +25,11 @@ from concurrent.futures import as_completed
 
 from .extensions import provider_registry
 from .exceptions import MustGetBlacklisted
-from subliminal.exceptions import ServiceUnavailable, DownloadLimitExceeded
 from subliminal.score import compute_score as default_compute_score
 from subliminal.utils import hash_napiprojekt, hash_opensubtitles, hash_shooter, hash_thesubdb
 from subliminal.video import VIDEO_EXTENSIONS, Video, Episode, Movie
 from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, \
     ThreadPoolExecutor, check_video
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled
 
 from subzero.language import Language, ENDSWITH_LANGUAGECODE_RE, FULL_LANGUAGE_LIST
 try:
@@ -142,8 +138,7 @@ class _Blacklist(list):
 
 
 class SZProviderPool(ProviderPool):
-    def __init__(self, providers=None, provider_configs=None, blacklist=None, ban_list=None, throttle_callback=None,
-                 pre_download_hook=None, post_download_hook=None, language_hook=None):
+    def __init__(self, providers=None, provider_configs=None, blacklist=None, ban_list=None, throttle_callback=None):
         #: Name of providers to use
         self.providers = set(providers or [])
 
@@ -159,10 +154,6 @@ class SZProviderPool(ProviderPool):
         self.ban_list = _Banlist(**(ban_list or {'must_contain': [], 'must_not_contain': []}))
 
         self.throttle_callback = throttle_callback
-
-        self.pre_download_hook = pre_download_hook
-        self.post_download_hook = post_download_hook
-        self.language_hook = language_hook
 
         self._born = time.time()
 
@@ -266,10 +257,7 @@ class SZProviderPool(ProviderPool):
         :rtype: list of :class:`~subliminal.subtitle.Subtitle` or None
 
         """
-        if self.language_hook:
-            languages_search_base = self.language_hook(provider)
-        else:
-            languages_search_base = languages
+        languages_search_base = languages
 
         # check video validity
         if not provider_registry[provider].check(video):
@@ -377,13 +365,7 @@ class SZProviderPool(ProviderPool):
         while True:
             tries += 1
             try:
-                if self.pre_download_hook:
-                    self.pre_download_hook(subtitle)
-
                 self[subtitle.provider_name].download_subtitle(subtitle)
-                if self.post_download_hook:
-                    self.post_download_hook(subtitle)
-
                 break
             except (requests.ConnectionError,
                     requests.exceptions.ProxyError,
