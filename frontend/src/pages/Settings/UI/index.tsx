@@ -13,7 +13,7 @@ const SettingsUIView: FunctionComponent = () => {
           options={pageSizeOptions}
           location="storages"
           settingKey={uiPageSizeKey}
-          override={(_) => pageSize}
+          settingOptions={{ onLoaded: () => pageSize }}
         ></Selector>
       </Section>
     </Layout>

@@ -1,5 +1,5 @@
 import { Code } from "@mantine/core";
-import { FunctionComponent, useCallback } from "react";
+import { FunctionComponent } from "react";
 import {
   Check,
   Chips,
@@ -16,12 +16,9 @@ import {
 } from "../components";
 import { seriesEnabledKey } from "../keys";
 import { seriesTypeOptions } from "../options";
+import { BaseUrlModification } from "../utilities/modifications";
 
 const SettingsSonarrView: FunctionComponent = () => {
-  const baseUrlOverride = useCallback((settings: Settings) => {
-    return settings.sonarr.base_url?.slice(1) ?? "";
-  }, []);
-
   return (
     <Layout name="Sonarr">
       <Section header="Use Sonarr">
@@ -36,8 +33,10 @@ const SettingsSonarrView: FunctionComponent = () => {
             label="Base URL"
             icon="/"
             settingKey="settings-sonarr-base_url"
-            override={baseUrlOverride}
-            beforeStaged={(v) => "/" + v}
+            settingOptions={{
+              onLoaded: BaseUrlModification,
+              onSubmit: (v) => "/" + v,
+            }}
           ></Text>
           <Text label="API Key" settingKey="settings-sonarr-apikey"></Text>
           <Check label="SSL" settingKey="settings-sonarr-ssl"></Check>

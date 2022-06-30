@@ -1,3 +1,4 @@
+import { LOG } from "@/utilities/console";
 import { UseForm } from "@mantine/hooks/lib/use-form/use-form";
 import { createContext, useCallback, useContext, useRef } from "react";
 
@@ -26,6 +27,7 @@ export function useFormActions() {
 
   const update = useCallback(
     (object: LooseObject, location: FormKey = "settings") => {
+      LOG("info", `Updating values in ${location}`, object);
       formRef.current.setValues((values) => {
         const changes = { ...values[location], ...object };
         return { ...values, [location]: changes };
@@ -36,6 +38,7 @@ export function useFormActions() {
 
   const setValue = useCallback(
     (v: unknown, key: string, location: FormKey = "settings") => {
+      LOG("info", `Updating value of ${key} in ${location}`, v);
       formRef.current.setValues((values) => {
         const changes = { ...values[location], [key]: v };
         return { ...values, [location]: changes };

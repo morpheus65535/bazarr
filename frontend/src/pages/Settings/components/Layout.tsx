@@ -8,28 +8,27 @@ import { faSave } from "@fortawesome/free-solid-svg-icons";
 import { Container, Group, LoadingOverlay } from "@mantine/core";
 import { useDocumentTitle, useForm } from "@mantine/hooks";
 import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
-import {
-  enabledLanguageKey,
-  languageProfileKey,
-  notificationsKey,
-} from "../keys";
+import { enabledLanguageKey, languageProfileKey } from "../keys";
 import { FormContext, FormValues } from "../utilities/FormValues";
 import { SettingsProvider } from "../utilities/SettingsProvider";
 
-function submitHooks(settings: LooseObject) {
-  if (languageProfileKey in settings) {
-    const item = settings[languageProfileKey];
-    settings[languageProfileKey] = JSON.stringify(item);
-  }
+type SubmitHookType = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: (value: any) => unknown;
+};
 
-  if (enabledLanguageKey in settings) {
-    const item = settings[enabledLanguageKey] as Language.Info[];
-    settings[enabledLanguageKey] = item.map((v) => v.code2);
-  }
+export const submitHooks: SubmitHookType = {
+  [languageProfileKey]: (value) => JSON.stringify(value),
+  [enabledLanguageKey]: (value: Language.Info[]) => value.map((v) => v.code2),
+};
 
-  if (notificationsKey in settings) {
-    const item = settings[notificationsKey] as Settings.NotificationInfo[];
-    settings[notificationsKey] = item.map((v) => JSON.stringify(v));
+function invokeHooks(settings: LooseObject) {
+  for (const key in settings) {
+    if (key in submitHooks) {
+      const value = settings[key];
+      const fn = submitHooks[key];
+      settings[key] = fn(value);
+    }
   }
 }
 
@@ -65,7 +64,7 @@ const Layout: FunctionComponent<Props> = (props) => {
 
       if (Object.keys(settings).length > 0) {
         const settingsToSubmit = { ...settings };
-        submitHooks(settingsToSubmit);
+        invokeHooks(settingsToSubmit);
         LOG("info", "submitting settings", settingsToSubmit);
         mutate(settingsToSubmit);
       }

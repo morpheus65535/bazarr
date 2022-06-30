@@ -1,7 +1,7 @@
 import api from "@/apis/raw";
 import { Button } from "@mantine/core";
 import { FunctionComponent, useCallback, useState } from "react";
-import { useSettingValue } from "./hooks";
+import { useSettingValue } from "../utilities/hooks";
 
 export const URLTestButton: FunctionComponent<{
   category: "sonarr" | "radarr";
@@ -60,7 +60,6 @@ export * from "./Card";
 export * from "./collapse";
 export { default as CollapseBox } from "./collapse";
 export * from "./forms";
-export * from "./hooks";
 export * from "./Layout";
 export { default as Layout } from "./Layout";
 export * from "./Message";

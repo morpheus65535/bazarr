@@ -8,8 +8,9 @@ import { useSelectorOptions } from "@/utilities";
 import { InputWrapper } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
-import { BaseInput, Selector, SelectorProps } from "../components";
+import { Selector, SelectorProps } from "../components";
 import { useFormActions } from "../utilities/FormValues";
+import { BaseInput } from "../utilities/hooks";
 
 type LanguageSelectorProps = Omit<
   MultiSelectorProps<Language.Info>,
@@ -41,7 +42,7 @@ export const LanguageSelector: FunctionComponent<
 };
 
 export const ProfileSelector: FunctionComponent<
-  Omit<SelectorProps<number>, "beforeStaged" | "options" | "clearable">
+  Omit<SelectorProps<number>, "settingOptions" | "options" | "clearable">
 > = ({ ...props }) => {
   const profiles = useLatestProfiles();
 
@@ -58,7 +59,7 @@ export const ProfileSelector: FunctionComponent<
       {...props}
       clearable
       options={profileOptions}
-      beforeStaged={(v) => (v === null ? "" : v)}
+      settingOptions={{ onSubmit: (v) => (v === null ? "" : v) }}
     ></Selector>
   );
 };

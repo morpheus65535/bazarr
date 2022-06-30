@@ -26,7 +26,7 @@ const UIError: FunctionComponent<Props> = ({ error }) => {
     let callStack = error.stack ?? "";
 
     // Remove sensitive information from the stack
-    callStack = callStack.replaceAll(window.location.hostname, Placeholder);
+    callStack = callStack.replaceAll(window.location.host, Placeholder);
 
     return callStack;
   }, [error.stack]);

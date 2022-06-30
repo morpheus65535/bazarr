@@ -20,21 +20,14 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  Card,
-  Check,
-  Chips,
-  Message,
-  Password,
-  Text,
-  useSettingValue,
-} from "../components";
+import { Card, Check, Chips, Message, Password, Text } from "../components";
 import {
   FormContext,
   FormValues,
   useFormActions,
   useStagedValues,
 } from "../utilities/FormValues";
+import { useSettingValue } from "../utilities/hooks";
 import { SettingsProvider, useSettings } from "../utilities/SettingsProvider";
 import { ProviderInfo, ProviderList } from "./list";
 

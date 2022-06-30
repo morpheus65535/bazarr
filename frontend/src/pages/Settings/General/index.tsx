@@ -21,6 +21,7 @@ import {
   Selector,
   Text,
 } from "../components";
+import { BaseUrlModification } from "../utilities/modifications";
 import { branchOptions, proxyOptions, securityOptions } from "./options";
 
 const characters = "abcdef0123456789";
@@ -32,9 +33,6 @@ const generateApiKey = () => {
     .map(() => characters.charAt(Math.floor(Math.random() * characters.length)))
     .join("");
 };
-
-const baseUrlOverride = (settings: Settings) =>
-  settings.general.base_url?.slice(1) ?? "";
 
 const SettingsGeneralView: FunctionComponent = () => {
   const [copied, setCopy] = useState(false);
@@ -59,8 +57,10 @@ const SettingsGeneralView: FunctionComponent = () => {
           label="Base URL"
           icon="/"
           settingKey="settings-general-base_url"
-          override={baseUrlOverride}
-          beforeStaged={(v) => "/" + v}
+          settingOptions={{
+            onLoaded: BaseUrlModification,
+            onSubmit: (v) => "/" + v,
+          }}
         ></Text>
         <Message>Reverse proxy support</Message>
       </Section>
@@ -71,7 +71,9 @@ const SettingsGeneralView: FunctionComponent = () => {
           options={securityOptions}
           placeholder="No Authentication"
           settingKey="settings-auth-type"
-          beforeStaged={(v) => (v === null ? "None" : v)}
+          settingOptions={{
+            onSubmit: (v) => (v === null ? "None" : v),
+          }}
         ></Selector>
         <CollapseBox settingKey="settings-auth-type">
           <Text label="Username" settingKey="settings-auth-username"></Text>
@@ -121,7 +123,9 @@ const SettingsGeneralView: FunctionComponent = () => {
           settingKey="settings-proxy-type"
           placeholder="No Proxy"
           options={proxyOptions}
-          beforeStaged={(v) => (v === null ? "None" : v)}
+          settingOptions={{
+            onSubmit: (v) => (v === null ? "None" : v),
+          }}
         ></Selector>
         <CollapseBox
           settingKey="settings-proxy-type"
