@@ -421,13 +421,13 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                                                     season=video.season,
                                                     episode=video.episode)
             else:
-                raise ProviderError("No IMDB ID found for the series!")
+                logger.info(f"Titulky.com: Skipping {video}! No IMDB ID found.")
         elif isinstance(video, Movie):
             if video.imdb_id:
                 logger.info("Titulky.com: Searching subtitles for a movie")
                 subtitles = self.query(languages, SubtitlesType.MOVIE, imdb_id=video.imdb_id)
             else:
-                raise ProviderError("No IMDB ID found for the movie!")
+                logger.info(f"Titulky.com: Skipping {video}! No IMDB ID found.")
 
         return subtitles
 
