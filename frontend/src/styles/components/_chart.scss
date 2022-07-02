@@ -1,6 +1,0 @@
-@use "../variables" as vars;
-
-.chart-container {
-  height: calc(100vh - #{vars.$header-height});
-  padding-bottom: 0.6rem;
-}

@@ -62,6 +62,7 @@ export default defineConfig(async ({ mode, command }) => {
         },
       },
       host: true,
+      open: "/",
     },
   };
 });

@@ -1,36 +1,49 @@
 import {
-  LanguageSelector as CLanguageSelector,
+  MultiSelector,
+  MultiSelectorProps,
   SelectorOption,
 } from "@/components";
+import { Language } from "@/components/bazarr";
+import { useSelectorOptions } from "@/utilities";
+import { InputWrapper } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
-import { BaseInput, Selector, useSingleUpdate } from "../components";
+import { Selector, SelectorProps } from "../components";
+import { useFormActions } from "../utilities/FormValues";
+import { BaseInput } from "../utilities/hooks";
 
-interface LanguageSelectorProps {
+type LanguageSelectorProps = Omit<
+  MultiSelectorProps<Language.Info>,
+  "options" | "value" | "onChange"
+> & {
   options: readonly Language.Info[];
-}
+};
 
 export const LanguageSelector: FunctionComponent<
   LanguageSelectorProps & BaseInput<string[]>
-> = ({ settingKey, options }) => {
+> = ({ settingKey, location, label, options }) => {
   const enabled = useLatestEnabledLanguages();
-  const update = useSingleUpdate();
+  const { setValue } = useFormActions();
+
+  const wrappedOptions = useSelectorOptions(options, (value) => value.name);
 
   return (
-    <CLanguageSelector
-      multiple
-      value={enabled}
-      options={options}
-      onChange={(val) => {
-        update(val, settingKey);
-      }}
-    ></CLanguageSelector>
+    <InputWrapper label={label}>
+      <MultiSelector
+        {...wrappedOptions}
+        value={enabled}
+        searchable
+        onChange={(val) => {
+          setValue(val, settingKey, location);
+        }}
+      ></MultiSelector>
+    </InputWrapper>
   );
 };
 
 export const ProfileSelector: FunctionComponent<
-  BaseInput<Language.Profile>
-> = ({ settingKey }) => {
+  Omit<SelectorProps<number>, "settingOptions" | "options" | "clearable">
+> = ({ ...props }) => {
   const profiles = useLatestProfiles();
 
   const profileOptions = useMemo<SelectorOption<number>[]>(
@@ -43,10 +56,10 @@ export const ProfileSelector: FunctionComponent<
 
   return (
     <Selector
+      {...props}
       clearable
       options={profileOptions}
-      settingKey={settingKey}
-      beforeStaged={(v) => (v === null ? "" : v)}
+      settingOptions={{ onSubmit: (v) => (v === null ? "" : v) }}
     ></Selector>
   );
 };

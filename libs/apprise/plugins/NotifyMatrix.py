@@ -42,7 +42,7 @@ from ..common import NotifyImageSize
 from ..common import NotifyFormat
 from ..utils import parse_bool
 from ..utils import parse_list
-from ..utils import apply_template
+from ..utils import is_hostname
 from ..utils import validate_regex
 from ..AppriseLocale import gettext_lazy as _
 
@@ -287,6 +287,22 @@ class NotifyMatrix(NotifyBase):
                 self.logger.warning(msg)
                 raise TypeError(msg)
 
+        elif not is_hostname(self.host):
+            msg = 'An invalid Matrix Hostname ({}) was specified'\
+                  .format(self.host)
+            self.logger.warning(msg)
+            raise TypeError(msg)
+        else:
+            # Verify port if specified
+            if self.port is not None and not (
+                    isinstance(self.port, int)
+                    and self.port >= self.template_tokens['port']['min']
+                    and self.port <= self.template_tokens['port']['max']):
+                msg = 'An invalid Matrix Port ({}) was specified'\
+                      .format(self.port)
+                self.logger.warning(msg)
+                raise TypeError(msg)
+
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
         Perform Matrix Notification
@@ -453,21 +469,16 @@ class NotifyMatrix(NotifyBase):
         }
 
         if self.notify_format == NotifyFormat.HTML:
-            # Add additional information to our content; use {{app_title}}
-            # to apply the title to the html body
-            tokens = {
-                'app_title': NotifyMatrix.escape_html(
-                    title, whitespace=False),
-            }
-            payload['text'] = apply_template(body, **tokens)
+            payload['text'] = '{title}{body}'.format(
+                title='' if not title else '<h1>{}</h1>'.format(
+                    NotifyMatrix.escape_html(title)),
+                body=body)
 
         elif self.notify_format == NotifyFormat.MARKDOWN:
-            # Add additional information to our content; use {{app_title}}
-            # to apply the title to the html body
-            tokens = {
-                'app_title': title,
-            }
-            payload['text'] = markdown(apply_template(body, **tokens))
+            payload['text'] = '{title}{body}'.format(
+                title='' if not title else '<h1>{}</h1>'.format(
+                    NotifyMatrix.escape_html(title)),
+                body=markdown(body))
 
         else:  # NotifyFormat.TEXT
             payload['text'] = \
@@ -566,32 +577,29 @@ class NotifyMatrix(NotifyBase):
             payload = {
                 'msgtype': 'm.{}'.format(self.msgtype),
                 'body': '{title}{body}'.format(
-                    title='' if not title else '{}\r\n'.format(title),
+                    title='' if not title else '# {}\r\n'.format(title),
                     body=body),
             }
 
             # Update our payload advance formatting for the services that
             # support them.
             if self.notify_format == NotifyFormat.HTML:
-                # Add additional information to our content; use {{app_title}}
-                # to apply the title to the html body
-                tokens = {
-                    'app_title': NotifyMatrix.escape_html(
-                        title, whitespace=False),
-                }
-
                 payload.update({
                     'format': 'org.matrix.custom.html',
-                    'formatted_body': apply_template(body, **tokens),
+                    'formatted_body': '{title}{body}'.format(
+                        title='' if not title else '<h1>{}</h1>'.format(title),
+                        body=body,
+                    )
                 })
 
             elif self.notify_format == NotifyFormat.MARKDOWN:
-                tokens = {
-                    'app_title': title,
-                }
                 payload.update({
                     'format': 'org.matrix.custom.html',
-                    'formatted_body': markdown(apply_template(body, **tokens))
+                    'formatted_body': '{title}{body}'.format(
+                        title='' if not title else '<h1>{}</h1>'.format(
+                            NotifyMatrix.escape_html(title, whitespace=False)),
+                        body=markdown(body),
+                    )
                 })
 
             # Build our path

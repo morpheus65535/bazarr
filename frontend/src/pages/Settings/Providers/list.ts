@@ -1,56 +1,79 @@
 import { ReactText } from "react";
 
-type AvailableType = ReactText | boolean;
+type Input<T, N> = {
+  type: N;
+  key: string;
+  defaultValue?: T;
+  name?: string;
+  description?: string;
+};
+
+type AvailableInput =
+  | Input<ReactText, "text">
+  | Input<string, "password">
+  | Input<boolean, "switch">
+  | Input<ReactText[], "chips">;
+
 export interface ProviderInfo {
   key: string;
   name?: string;
   description?: string;
   message?: string;
-  defaultKey?: {
-    [key: string]: AvailableType;
-  };
-  keyNameOverride?: {
-    [key: string]: string;
-  };
+  inputs?: AvailableInput[];
 }
 
 export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "addic7ed",
     description: "Requires Anti-Captcha Provider or cookies",
-    defaultKey: {
-      username: "",
-      password: "",
-      cookies: "",
-      user_agent: "",
-      vip: false,
-    },
-    keyNameOverride: {
-      vip: "VIP",
-      cookies:
-        "Cookies, e.g., PHPSESSID=abc; wikisubtitlesuser=xyz; wikisubtitlespass=efg",
-      user_agent:
-        "User-Agent, e.g., Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+      {
+        type: "text",
+        key: "cookies",
+        name: "Cookies, e.g., PHPSESSID=abc; wikisubtitlesuser=xyz; wikisubtitlespass=efg",
+      },
+      {
+        type: "text",
+        key: "user_agent",
+        name: "User-Agent, e.g., Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0",
+      },
+      {
+        type: "switch",
+        key: "vip",
+        name: "VIP",
+      },
+    ],
   },
   { key: "argenteam", description: "LATAM Spanish Subtitles Provider" },
   {
     key: "assrt",
     description: "Chinese Subtitles Provider",
-    defaultKey: {
-      token: "",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "token",
+      },
+    ],
   },
   {
     key: "betaseries",
     name: "BetaSeries",
     description: "French / English Provider for TV Shows Only",
-    defaultKey: {
-      token: "",
-    },
-    keyNameOverride: {
-      token: "API KEY",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "token",
+        name: "API KEY",
+      },
+    ],
   },
   {
     key: "bsplayer",
@@ -62,24 +85,32 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "embeddedsubtitles",
     name: "Embedded Subtitles",
     description: "Embedded Subtitles from your Media Files",
-    defaultKey: {
-      include_srt: true,
-      include_ass: true,
-      hi_fallback: false,
-      mergerfs_mode: false,
-      timeout: 600,
-    },
+    inputs: [
+      {
+        type: "chips",
+        key: "included_codecs",
+        name: "Allowed codecs (subrip, ass, webvtt, mov_text). Leave empty to allow all.",
+        defaultValue: [],
+      },
+      {
+        type: "text",
+        key: "timeout",
+        defaultValue: 600,
+        name: "Extraction timeout in seconds",
+      },
+      {
+        type: "switch",
+        key: "hi_fallback",
+        name: "Use HI subtitles as a fallback (don't enable it if you have a HI language profile)",
+      },
+    ],
     message:
       "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
-    keyNameOverride: {
-      include_srt: "Include SRT",
-      include_ass: "Include ASS (will be converted to SRT)",
-      hi_fallback:
-        "Use HI subtitles as a fallback (don't enable it if you have a HI language profile)",
-      mergerfs_mode:
-        "[EXPERIMENTAL] Ignore cloud video files from rclone/mergerfs",
-      timeout: "Extraction timeout in seconds",
-    },
+  },
+  {
+    key: "gestdown",
+    name: "Gestdown (Addic7ed proxy)",
+    description: "Proxy for Addic7ed website. No need for login or cookie.",
   },
   {
     key: "greeksubs",
@@ -96,39 +127,78 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "legendasdivx",
     name: "LegendasDivx",
     description: "Brazilian / Portuguese Subtitles Provider",
-    defaultKey: {
-      username: "",
-      password: "",
-      skip_wrong_fps: false,
-    },
-    keyNameOverride: {
-      skip_wrong_fps: "Skip Wrong FPS",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+      { type: "switch", key: "skip_wrong_fps", name: "Skip Wrong FPS" },
+    ],
+  },
+  {
+    key: "karagarga",
+    name: "Karagarga.in",
+    description: "Movie Subtitles Provider (Private Tracker)",
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+      {
+        type: "text",
+        key: "f_username",
+        name: "Forum username",
+      },
+      {
+        type: "password",
+        key: "f_password",
+        name: "Forum password",
+      },
+    ],
   },
   {
     key: "ktuvit",
     name: "Ktuvit",
     description: "Hebrew Subtitles Provider",
-    defaultKey: {
-      email: "",
-      hashed_password: "",
-    },
-    keyNameOverride: {
-      hashed_password: "Hashed Password",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "email",
+      },
+      {
+        type: "text",
+        key: "hashed_password",
+        name: "Hashed Password",
+      },
+    ],
   },
   {
     key: "legendastv",
     name: "LegendasTV",
     description: "Brazilian / Portuguese Subtitles Provider",
-    defaultKey: {
-      username: "",
-      password: "",
-      featured_only: false,
-    },
-    keyNameOverride: {
-      featured_only: "Only Download Featured",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+      {
+        type: "switch",
+        key: "featured_only",
+        name: "Only Download Featured",
+      },
+    ],
   },
   { key: "napiprojekt", description: "Polish Subtitles Provider" },
   {
@@ -136,50 +206,77 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Polish Subtitles Provider",
     message:
       "The provided credentials must have API access. Leave empty to use the defaults.",
-    defaultKey: {
-      username: "",
-      password: "",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+    ],
   },
   { key: "nekur", description: "Latvian Subtitles Provider" },
   {
     key: "opensubtitles",
     name: "OpenSubtitles.org",
-    defaultKey: {
-      username: "",
-      password: "",
-      vip: false,
-      ssl: false,
-      skip_wrong_fps: false,
-    },
-    keyNameOverride: {
-      vip: "VIP",
-      ssl: "Use SSL",
-      skip_wrong_fps: "Skip Wrong FPS",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+      {
+        type: "switch",
+        key: "vip",
+        name: "VIP",
+      },
+      {
+        type: "switch",
+        key: "ssl",
+        name: "Use SSL",
+      },
+      {
+        type: "switch",
+        key: "skip_wrong_fps",
+        name: "Skip Wrong FPS",
+      },
+    ],
   },
   {
     key: "opensubtitlescom",
     name: "OpenSubtitles.com",
-    defaultKey: {
-      username: "",
-      password: "",
-      use_hash: false,
-    },
-    keyNameOverride: {
-      use_hash: "Use Hash",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+      {
+        type: "switch",
+        key: "use_hash",
+        name: "Use Hash",
+      },
+    ],
   },
   {
     key: "podnapisi",
     name: "Podnapisi",
-    defaultKey: {
-      verify_ssl: true,
-    },
-    keyNameOverride: {
-      verify_ssl:
-        "Verify SSL certificate (disabling introduce a MitM attack risk)",
-    },
+    inputs: [
+      {
+        type: "switch",
+        key: "verify_ssl",
+        name: "Verify SSL certificate (disabling introduce a MitM attack risk)",
+        defaultValue: true,
+      },
+    ],
   },
   {
     key: "regielive",
@@ -215,10 +312,16 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   {
     key: "subscene",
-    defaultKey: {
-      username: "",
-      password: "",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+    ],
   },
   { key: "subscenter" },
   {
@@ -246,10 +349,16 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   { key: "supersubtitles" },
   {
     key: "titlovi",
-    defaultKey: {
-      username: "",
-      password: "",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+    ],
   },
   {
     key: "titrari",
@@ -267,18 +376,21 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "titulky",
     name: "Titulky.com",
     description: "CZ/SK Subtitles Provider. Available only with VIP",
-    defaultKey: {
-      username: "",
-      password: "",
-      skip_wrong_fps: false,
-      approved_only: false,
-      multithreading: true,
-    },
-    keyNameOverride: {
-      skip_wrong_fps: "Skip mismatching FPS",
-      approved_only: "Skip unapproved subtitles",
-      multithreading: "Enable multithreading",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+      {
+        type: "switch",
+        key: "approved_only",
+        name: "Skip unapproved subtitles",
+      },
+    ],
   },
   { key: "tvsubtitles", name: "TVSubtitles" },
   { key: "wizdom", description: "Wizdom.xyz Subtitles Provider." },
@@ -286,10 +398,16 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "xsubs",
     name: "XSubs",
     description: "Greek Subtitles Provider",
-    defaultKey: {
-      username: "",
-      password: "",
-    },
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+    ],
   },
   {
     key: "yavkanet",

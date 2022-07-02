@@ -10,6 +10,7 @@ import socket
 import traceback
 import time
 import operator
+import unicodedata
 
 import itertools
 from six.moves.http_client import ResponseNotReady
@@ -69,14 +70,82 @@ def remove_crap_from_fn(fn):
     return REMOVE_CRAP_FROM_FILENAME.sub(repl, fn)
 
 
+class _ProviderConfigs(dict):
+    def __init__(self, pool, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._pool = pool
+
+    def update(self, items):
+        updated = set()
+        # Restart providers with new configs
+        for key, val in items.items():
+            # Don't restart providers that are not enabled
+            if key not in self._pool.providers:
+                continue
+
+            # key: provider's name; val: config dict
+            registered_val = self.get(key)
+
+            if registered_val is None or registered_val == val:
+                continue
+
+            updated.add(key)
+
+            # The new dict might be a partial dict
+            registered_val.update(val)
+
+            logger.debug("Config changed. Restarting provider: %s", key)
+            try:
+                provider = provider_registry[key](**registered_val) # type: ignore
+                provider.initialize()
+            except Exception as error:
+                self._pool.throttle_callback(key, error)
+            else:
+                self._pool.initialized_providers[key] = provider
+
+        if updated:
+            logger.debug("Providers with config updates: %s", updated)
+        else:
+            logger.debug("No provider config updates")
+
+        return super().update(items)
+
+
+class _Banlist:
+    def __init__(self, must_not_contain, must_contain):
+        self.must_not_contain = must_not_contain
+        self.must_contain = must_contain
+
+    def is_valid(self, subtitle):
+        if subtitle.release_info is None:
+            return True
+
+        if any([x for x in self.must_not_contain
+                if re.search(x, subtitle.release_info, flags=re.IGNORECASE) is not None]):
+            logger.info("Skipping subtitle because release name contains prohibited string: %s", subtitle)
+            return False
+        if any([x for x in self.must_contain
+                if re.search(x, subtitle.release_info, flags=re.IGNORECASE) is None]):
+            logger.info("Skipping subtitle because release name does not contains required string: %s", subtitle)
+            return False
+
+        return True
+
+
+class _Blacklist(list):
+    def is_valid(self, provider, subtitle):
+        blacklisted = (str(provider), str(subtitle.id)) in self
+        if blacklisted:
+            logger.debug("Blacklisted subtitle: %s", subtitle)
+
+        return not blacklisted
+
+
 class SZProviderPool(ProviderPool):
     def __init__(self, providers=None, provider_configs=None, blacklist=None, ban_list=None, throttle_callback=None,
                  pre_download_hook=None, post_download_hook=None, language_hook=None):
         #: Name of providers to use
         self.providers = set(providers or [])
-
-        #: Provider configuration
-        self.provider_configs = provider_configs or {}
 
         #: Initialized providers
         self.initialized_providers = {}
@@ -84,10 +153,10 @@ class SZProviderPool(ProviderPool):
         #: Discarded providers
         self.discarded_providers = set()
 
-        self.blacklist = blacklist or []
+        self.blacklist = _Blacklist(blacklist or [])
 
         #: Should be a dict of 2 lists of strings
-        self.ban_list = ban_list or {'must_contain': [], 'must_not_contain': []}
+        self.ban_list = _Banlist(**(ban_list or {'must_contain': [], 'must_not_contain': []}))
 
         self.throttle_callback = throttle_callback
 
@@ -100,14 +169,20 @@ class SZProviderPool(ProviderPool):
         if not self.throttle_callback:
             self.throttle_callback = lambda x, y: x
 
+        #: Provider configuration
+        self.provider_configs = _ProviderConfigs(self)
+        self.provider_configs.update(provider_configs or {})
+
     def update(self, providers, provider_configs, blacklist, ban_list):
         # Check if the pool was initialized enough hours ago
         self._check_lifetime()
 
+        providers = set(providers or [])
+
         # Check if any new provider has been added
-        updated = set(providers) != self.providers or ban_list != self.ban_list
-        removed_providers = list(sorted(self.providers - set(providers)))
-        new_providers = list(sorted(set(providers) - self.providers))
+        updated = providers != self.providers or ban_list != self.ban_list
+        removed_providers = list(sorted(self.providers - providers))
+        new_providers = list(sorted(providers - self.providers))
 
         # Terminate and delete removed providers from instance
         for removed in removed_providers:
@@ -127,31 +202,11 @@ class SZProviderPool(ProviderPool):
             self.providers.difference_update(removed_providers)
             self.providers.update(list(providers))
 
-        self.blacklist = blacklist
+        # self.provider_configs = provider_configs
+        self.provider_configs.update(provider_configs)
 
-        # Restart providers with new configs
-        for key, val in provider_configs.items():
-            # Don't restart providers that are not enabled
-            if key not in self.providers:
-                continue
-
-            # key: provider's name; val: config dict
-            old_val = self.provider_configs.get(key)
-
-            if old_val == val:
-                continue
-
-            logger.debug("Restarting provider: %s", key)
-            try:
-                provider = provider_registry[key](**val)
-                provider.initialize()
-            except Exception as error:
-                self.throttle_callback(key, error)
-            else:
-                self.initialized_providers[key] = provider
-                updated = True
-
-        self.provider_configs = provider_configs
+        self.blacklist = _Blacklist(blacklist or [])
+        self.ban_list = _Banlist(**ban_list or {'must_contain': [], 'must_not_contain': []})
 
         return updated
 
@@ -242,18 +297,12 @@ class SZProviderPool(ProviderPool):
             seen = []
             out = []
             for s in results:
-                if (str(provider), str(s.id)) in self.blacklist:
-                    logger.info("Skipping blacklisted subtitle: %s", s)
+                if not self.blacklist.is_valid(provider, s):
                     continue
-                if s.release_info is not None:
-                    if any([x for x in self.ban_list["must_not_contain"]
-                            if re.search(x, s.release_info, flags=re.IGNORECASE) is not None]):
-                        logger.info("Skipping subtitle because release name contains prohibited string: %s", s)
-                        continue
-                    if any([x for x in self.ban_list["must_contain"]
-                            if re.search(x, s.release_info, flags=re.IGNORECASE) is None]):
-                        logger.info("Skipping subtitle because release name does not contains required string: %s", s)
-                        continue
+
+                if not self.ban_list.is_valid(s):
+                    continue
+
                 if s.id in seen:
                     continue
 
@@ -536,6 +585,12 @@ class SZProviderPool(ProviderPool):
 
         return video_types
 
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__} [{len(self.providers)} providers ({len(self.initialized_providers)} "
+            f"initialized; {len(self.discarded_providers)} discarded)]"
+        )
+
 
 class SZAsyncProviderPool(SZProviderPool):
     """Subclass of :class:`ProviderPool` with asynchronous support for :meth:`~ProviderPool.list_subtitles`.
@@ -704,8 +759,8 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
 
     # guess
     hints["single_value"] = True
-    if "title" in hints:
-        hints["expected_title"] = [hints["title"]]
+    #    if "title" in hints:
+    #        hints["expected_title"] = [hints["title"]]
 
     guessed_result = guessit(guess_from, options=hints)
 
@@ -784,7 +839,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
         if not entry.is_file(follow_symlinks=False):
             continue
 
-        p = entry.name
+        p = unicodedata.normalize('NFC', entry.name)
 
         # keep only valid subtitle filenames
         if not p.lower().endswith(SUBTITLE_EXTENSIONS):

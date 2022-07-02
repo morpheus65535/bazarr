@@ -17,6 +17,25 @@ def test_list_subtitles_movie(movies):
         assert len(subtitles) >= 9
 
 
+def test_list_subtitles_movie_with_year_fallback(movies):
+    item = list(movies.values())[0]
+    item.title = "Everything Everywhere All at Once"
+    item.year = 2022
+
+    with SubdivxSubtitlesProvider() as provider:
+        assert provider.list_subtitles(item, {Language("spa", "MX")})
+
+
+def test_handle_multi_page_search(episodes):
+    with SubdivxSubtitlesProvider() as provider:
+        subs = list(
+            provider._handle_multi_page_search(
+                "Game Of Thrones", episodes["got_s03e10"]
+            )
+        )
+        assert len(subs) > 100
+
+
 @pytest.mark.parametrize(
     "episode_key,expected", [("breaking_bad_s01e01", 15), ("inexistent", 0)]
 )
@@ -25,6 +44,12 @@ def test_list_subtitles_episode(episodes, episode_key, expected):
     with SubdivxSubtitlesProvider() as provider:
         subtitles = provider.list_subtitles(item, {Language("spa", "MX")})
         assert len(subtitles) >= expected
+
+
+def test_list_subtitles_castillian_spanish(episodes):
+    item = episodes["better_call_saul_s06e04"]
+    with SubdivxSubtitlesProvider() as provider:
+        assert provider.list_subtitles(item, {Language.fromietf("es")})
 
 
 def test_download_subtitle(movies):

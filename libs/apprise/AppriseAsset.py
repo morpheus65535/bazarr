@@ -58,6 +58,14 @@ class AppriseAsset(object):
         NotifyType.WARNING: '#CACF29',
     }
 
+    # Ascii Notification
+    ascii_notify_map = {
+        NotifyType.INFO: '[i]',
+        NotifyType.SUCCESS: '[+]',
+        NotifyType.FAILURE: '[!]',
+        NotifyType.WARNING: '[~]',
+    }
+
     # The default color to return if a mapping isn't found in our table above
     default_html_color = '#888888'
 
@@ -109,6 +117,9 @@ class AppriseAsset(object):
     # to passing it upstream. Such as converting \t to an actual tab and \n
     # to a new line.
     interpret_escapes = False
+
+    # Defines the encoding of the content passed into Apprise
+    encoding = 'utf-8'
 
     # For more detail see CWE-312 @
     #    https://cwe.mitre.org/data/definitions/312.html
@@ -180,6 +191,15 @@ class AppriseAsset(object):
         # Unsupported type
         raise ValueError(
             'AppriseAsset html_color(): An invalid color_type was specified.')
+
+    def ascii(self, notify_type):
+        """
+        Returns an ascii representation based on passed in notify type
+
+        """
+
+        # look our response up
+        return self.ascii_notify_map.get(notify_type, self.default_html_color)
 
     def image_url(self, notify_type, image_size, logo=False, extension=None):
         """

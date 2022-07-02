@@ -1,5 +1,5 @@
+import { useLocalStorage } from "@mantine/hooks";
 import { useCallback } from "react";
-import { useLocalstorageState } from "rooks";
 
 export const uiPageSizeKey = "storage-ui-pageSize";
 
@@ -13,5 +13,5 @@ export function useUpdateLocalStorage() {
 }
 
 export function usePageSize() {
-  return useLocalstorageState(uiPageSizeKey, 50);
+  return useLocalStorage({ key: uiPageSizeKey, defaultValue: 50 });
 }

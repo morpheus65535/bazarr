@@ -1,32 +1,18 @@
-import { ActionButton, SimpleTable } from "@/components";
-import { useModalControl } from "@/modules/modals";
-import { LOG } from "@/utilities/console";
-import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
-import { cloneDeep } from "lodash";
+import { Action, SimpleTable } from "@/components";
 import {
-  createContext,
-  FunctionComponent,
-  useCallback,
-  useContext,
-  useMemo,
-} from "react";
-import { Badge, Button, ButtonGroup } from "react-bootstrap";
+  anyCutoff,
+  ProfileEditModal,
+} from "@/components/forms/ProfileEditForm";
+import { useModals } from "@/modules/modals";
+import { BuildKey, useArrayAction } from "@/utilities";
+import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
+import { Badge, Button, Group } from "@mantine/core";
+import { cloneDeep } from "lodash";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
-import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
-import Modal from "./modal";
-import { anyCutoff } from "./options";
-
-type ModifyFn = (index: number, item?: Language.Profile) => void;
-
-const RowContext = createContext<ModifyFn>(() => {
-  LOG("error", "RowContext not initialized");
-});
-
-function useRowMutation() {
-  return useContext(RowContext);
-}
+import { useFormActions } from "../utilities/FormValues";
 
 const Table: FunctionComponent = () => {
   const profiles = useLatestProfiles();
@@ -40,15 +26,15 @@ const Table: FunctionComponent = () => {
     [profiles]
   );
 
-  const update = useSingleUpdate();
+  const { setValue } = useFormActions();
 
-  const { show } = useModalControl();
+  const modals = useModals();
 
   const submitProfiles = useCallback(
     (list: Language.Profile[]) => {
-      update(list, languageProfileKey);
+      setValue(list, languageProfileKey);
     },
-    [update]
+    [setValue]
   );
 
   const updateProfile = useCallback(
@@ -66,18 +52,10 @@ const Table: FunctionComponent = () => {
     [profiles, submitProfiles]
   );
 
-  const mutateRow = useCallback<ModifyFn>(
-    (index, item) => {
-      if (item) {
-        show(Modal, cloneDeep(item));
-      } else {
-        const list = [...profiles];
-        list.splice(index, 1);
-        submitProfiles(list);
-      }
-    },
-    [show, profiles, submitProfiles]
-  );
+  const action = useArrayAction<Language.Profile>((fn) => {
+    const list = [...profiles];
+    submitProfiles(fn(list));
+  });
 
   const columns = useMemo<Column<Language.Profile>[]>(
     () => [
@@ -91,17 +69,16 @@ const Table: FunctionComponent = () => {
         Cell: (row) => {
           const items = row.value;
           const cutoff = row.row.original.cutoff;
-          return items.map((v) => {
-            const isCutoff = v.id === cutoff || cutoff === anyCutoff;
-            return (
-              <ItemBadge
-                key={v.id}
-                cutoff={isCutoff}
-                className="mx-1"
-                item={v}
-              ></ItemBadge>
-            );
-          });
+          return (
+            <Group spacing="xs" noWrap>
+              {items.map((v) => {
+                const isCutoff = v.id === cutoff || cutoff === anyCutoff;
+                return (
+                  <ItemBadge key={v.id} cutoff={isCutoff} item={v}></ItemBadge>
+                );
+              })}
+            </Group>
+          );
         },
       },
       {
@@ -112,9 +89,9 @@ const Table: FunctionComponent = () => {
           if (!items) {
             return false;
           }
-          return items.map((v) => {
+          return items.map((v, idx) => {
             return (
-              <Badge className={"mx-1"} variant={"secondary"}>
+              <Badge key={BuildKey(idx, v)} color="gray">
                 {v}
               </Badge>
             );
@@ -129,9 +106,9 @@ const Table: FunctionComponent = () => {
           if (!items) {
             return false;
           }
-          return items.map((v) => {
+          return items.map((v, idx) => {
             return (
-              <Badge className={"mx-1"} variant={"secondary"}>
+              <Badge key={BuildKey(idx, v)} color="gray">
                 {v}
               </Badge>
             );
@@ -142,39 +119,43 @@ const Table: FunctionComponent = () => {
         accessor: "profileId",
         Cell: ({ row }) => {
           const profile = row.original;
-          const mutate = useRowMutation();
-
           return (
-            <ButtonGroup>
-              <ActionButton
+            <Group spacing="xs" noWrap>
+              <Action
+                label="Edit Profile"
                 icon={faWrench}
                 onClick={() => {
-                  mutate(row.index, profile);
+                  modals.openContextModal(ProfileEditModal, {
+                    languages,
+                    profile: cloneDeep(profile),
+                    onComplete: updateProfile,
+                  });
                 }}
-              ></ActionButton>
-              <ActionButton
+              ></Action>
+              <Action
+                label="Remove"
                 icon={faTrash}
-                onClick={() => mutate(row.index)}
-              ></ActionButton>
-            </ButtonGroup>
+                color="red"
+                onClick={() => action.remove(row.index)}
+              ></Action>
+            </Group>
           );
         },
       },
     ],
-    []
+    // TODO: Optimize this
+    [action, languages, modals, updateProfile]
   );
 
   const canAdd = languages.length !== 0;
 
   return (
     <>
-      <RowContext.Provider value={mutateRow}>
-        <SimpleTable columns={columns} data={profiles}></SimpleTable>
-      </RowContext.Provider>
+      <SimpleTable columns={columns} data={profiles}></SimpleTable>
       <Button
-        block
+        fullWidth
         disabled={!canAdd}
-        variant="light"
+        color="light"
         onClick={() => {
           const profile = {
             profileId: nextProfileId,
@@ -185,27 +166,25 @@ const Table: FunctionComponent = () => {
             mustNotContain: [],
             originalFormat: false,
           };
-          show(Modal, profile);
+          modals.openContextModal(ProfileEditModal, {
+            languages,
+            profile,
+            onComplete: updateProfile,
+          });
         }}
       >
         {canAdd ? "Add New Profile" : "No Enabled Languages"}
       </Button>
-      <Modal update={updateProfile}></Modal>
     </>
   );
 };
 
 interface ItemProps {
-  className?: string;
   item: Language.ProfileItem;
   cutoff: boolean;
 }
 
-const ItemBadge: FunctionComponent<ItemProps> = ({
-  cutoff,
-  item,
-  className,
-}) => {
+const ItemBadge: FunctionComponent<ItemProps> = ({ cutoff, item }) => {
   const text = useMemo(() => {
     let result = item.language;
     if (item.hi === "True") {
@@ -217,9 +196,8 @@ const ItemBadge: FunctionComponent<ItemProps> = ({
   }, [item.hi, item.forced, item.language]);
   return (
     <Badge
-      className={className}
       title={cutoff ? "Ignore others if this one is available" : undefined}
-      variant={cutoff ? "primary" : "secondary"}
+      color={cutoff ? "primary" : "secondary"}
     >
       {text}
     </Badge>

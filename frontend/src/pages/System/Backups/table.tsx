@@ -1,12 +1,12 @@
-import { ActionButton, PageTable } from "@/components";
-import { useModalControl } from "@/modules/modals";
+import { useDeleteBackups, useRestoreBackups } from "@/apis/hooks";
+import { Action, PageTable } from "@/components";
+import { useModals } from "@/modules/modals";
+import { useTableStyles } from "@/styles";
 import { faClock, faHistory, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useMemo } from "react";
-import { ButtonGroup } from "react-bootstrap";
+import { Group, Text } from "@mantine/core";
+import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
-import SystemBackupDeleteModal from "./BackupDeleteModal";
-import SystemBackupRestoreModal from "./BackupRestoreModal";
 
 interface Props {
   backups: readonly System.Backups[];
@@ -22,37 +22,74 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
       {
         Header: "Name",
         accessor: "filename",
-        className: "text-nowrap",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.primary}>{value}</Text>;
+        },
       },
       {
         Header: "Size",
         accessor: "size",
-        className: "text-nowrap",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.noWrap}>{value}</Text>;
+        },
       },
       {
         Header: "Time",
         accessor: "date",
-        className: "text-nowrap",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.noWrap}>{value}</Text>;
+        },
       },
       {
-        accessor: "id",
-        Cell: (row) => {
-          const { show } = useModalControl();
+        id: "actions",
+        accessor: "filename",
+        Cell: ({ value }) => {
+          const modals = useModals();
+          const restore = useRestoreBackups();
+          const remove = useDeleteBackups();
           return (
-            <ButtonGroup>
-              <ActionButton
+            <Group spacing="xs" noWrap>
+              <Action
+                label="Restore"
+                onClick={() =>
+                  modals.openConfirmModal({
+                    title: "Restore Backup",
+                    children: (
+                      <Text size="sm">
+                        Are you sure you want to restore the backup ({value})?
+                        Bazarr will automatically restart and reload the UI
+                        during the restore process.
+                      </Text>
+                    ),
+                    labels: { confirm: "Restore", cancel: "Cancel" },
+                    confirmProps: { color: "red" },
+                    onConfirm: () => restore.mutate(value),
+                  })
+                }
                 icon={faHistory}
+              ></Action>
+              <Action
+                label="Delete"
+                color="red"
                 onClick={() =>
-                  show(SystemBackupRestoreModal, row.row.original.filename)
+                  modals.openConfirmModal({
+                    title: "Delete Backup",
+                    children: (
+                      <Text size="sm">
+                        Are you sure you want to delete the backup ({value})?
+                      </Text>
+                    ),
+                    labels: { confirm: "Delete", cancel: "Cancel" },
+                    confirmProps: { color: "red" },
+                    onConfirm: () => remove.mutate(value),
+                  })
                 }
-              ></ActionButton>
-              <ActionButton
                 icon={faTrash}
-                onClick={() =>
-                  show(SystemBackupDeleteModal, row.row.original.filename)
-                }
-              ></ActionButton>
-            </ButtonGroup>
+              ></Action>
+            </Group>
           );
         },
       },
@@ -60,13 +97,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
     []
   );
 
-  return (
-    <React.Fragment>
-      <PageTable columns={columns} data={backups}></PageTable>
-      <SystemBackupRestoreModal></SystemBackupRestoreModal>
-      <SystemBackupDeleteModal></SystemBackupDeleteModal>
-    </React.Fragment>
-  );
+  return <PageTable columns={columns} data={backups}></PageTable>;
 };
 
 export default Table;

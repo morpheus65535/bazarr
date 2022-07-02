@@ -1,4 +1,6 @@
 import { SimpleTable } from "@/components";
+import { useTableStyles } from "@/styles";
+import { Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 
@@ -12,11 +14,18 @@ const Table: FunctionComponent<Props> = ({ health }) => {
       {
         Header: "Object",
         accessor: "object",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.noWrap}>{value}</Text>;
+        },
       },
       {
         Header: "Issue",
         accessor: "issue",
-        className: "status-issue",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.primary}>{value}</Text>;
+        },
       },
     ],
     []
@@ -24,10 +33,9 @@ const Table: FunctionComponent<Props> = ({ health }) => {
 
   return (
     <SimpleTable
-      responsive
       columns={columns}
       data={health}
-      emptyText="No issues with your configuration"
+      tableStyles={{ emptyText: "No issues with your configuration" }}
     ></SimpleTable>
   );
 };

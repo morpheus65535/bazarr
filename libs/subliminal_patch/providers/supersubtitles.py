@@ -168,8 +168,8 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         'hun', 'eng'
     ]}
     video_types = (Episode, Movie)
-    # https://www.feliratok.info/?search=&soriSorszam=&nyelv=&sorozatnev=The+Flash+%282014%29&sid=3212&complexsearch=true&knyelv=0&evad=4&epizod1=1&cimke=0&minoseg=0&rlsr=0&tab=all
-    server_url = 'https://www.feliratok.info/'
+    # https://www.feliratok.eu/?search=&soriSorszam=&nyelv=&sorozatnev=The+Flash+%282014%29&sid=3212&complexsearch=true&knyelv=0&evad=4&epizod1=1&cimke=0&minoseg=0&rlsr=0&tab=all
+    server_url = 'https://www.feliratok.eu/'
     hearing_impaired_verifiable = False
     multi_result_throttle = 2  # seconds
 
@@ -180,7 +180,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         self.session = Session()
         self.session.headers = {
             'User-Agent': AGENT_LIST[randint(0, len(AGENT_LIST) - 1)],
-            'Referer': 'https://www.feliratok.info/index.php'
+            'Referer': 'https://www.feliratok.eu/index.php'
         }
 
     def terminate(self):
@@ -201,7 +201,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         # TODO: add memoization to this method logic
 
         url = self.server_url + "index.php?tipus=adatlap&azon=a_" + str(sub_id)
-        # url = https://www.feliratok.info/index.php?tipus=adatlap&azon=a_1518600916
+        # url = https://www.feliratok.eu/index.php?tipus=adatlap&azon=a_1518600916
         logger.info('Get IMDB id from URL %s', url)
         r = self.session.get(url, timeout=10).content
 
@@ -222,7 +222,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
     def find_id(self, series, year, original_title):
         """
         We need to find the id of the series at the following url:
-        https://www.feliratok.info/index.php?term=SERIESNAME&nyelv=0&action=autoname
+        https://www.feliratok.eu/index.php?term=SERIESNAME&nyelv=0&action=autoname
         Where SERIESNAME is a searchable string.
         The result will be something like this:
         [{"name":"DC\u2019s Legends of Tomorrow (2016)","ID":"3725"},{"name":"Miles from Tomorrowland (2015)",
@@ -310,7 +310,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         if isinstance(video, Movie):
             title = urllib.parse.quote_plus(series)
 
-            # https://www.feliratok.info/index.php?search=The+Hitman%27s+BodyGuard&soriSorszam=&nyelv=&tab=film
+            # https://www.feliratok.eu/index.php?search=The+Hitman%27s+BodyGuard&soriSorszam=&nyelv=&tab=film
             url = self.server_url + "index.php?search=" + title + "&soriSorszam=&nyelv=&tab=film"
             subtitle = self.process_subs(languages, video, url)
 
@@ -372,7 +372,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
     def get_subtitle_list(self, series_id, season, episode, video):
         """
         We can retrieve the list of subtitles for a given show via the following url:
-        https://www.feliratok.info/index.php?action=xbmc&sid=SERIES_ID&ev=SEASON&rtol=EPISODE
+        https://www.feliratok.eu/index.php?action=xbmc&sid=SERIES_ID&ev=SEASON&rtol=EPISODE
         SERIES_ID is the ID of the show returned by the @find_id method. It is a mandatory parameter.
         SEASON is the season number. Optional paramter.
         EPISODE is the episode number. Optional parameter (using this param can cause problems).
@@ -399,7 +399,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
             "10": {
                 "language":"Angol",
                 "nev":"The Flash (Season 5) (1080p)",
-                "baselink":"http://www.feliratok.info/index.php",
+                "baselink":"http://www.feliratok.eu/index.php",
                 "fnev":"The.Flash.S05.HDTV.WEB.720p.1080p.ENG.zip",
                 "felirat":"1560706755",
                 "evad":"5",

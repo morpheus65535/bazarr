@@ -3,13 +3,11 @@ import { FunctionComponent, useMemo } from "react";
 
 interface Props {
   index: number | null;
-  className?: string;
   empty?: string;
 }
 
-const LanguageProfile: FunctionComponent<Props> = ({
+const LanguageProfileName: FunctionComponent<Props> = ({
   index,
-  className,
   empty = "Unknown Profile",
 }) => {
   const { data } = useLanguageProfiles();
@@ -19,7 +17,7 @@ const LanguageProfile: FunctionComponent<Props> = ({
     [data, empty, index]
   );
 
-  return <span className={className}>{name}</span>;
+  return <>{name}</>;
 };
 
-export default LanguageProfile;
+export default LanguageProfileName;

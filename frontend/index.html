@@ -4,7 +4,7 @@
     <title>Bazarr</title>
     <base href="{{baseUrl}}" />
     <meta charset="utf-8" />
-    <link rel="icon" type="image/x-icon" href="./static/favicon.ico" />
+    <link rel="icon" type="image/x-icon" href="./favicon.ico" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1"
@@ -18,7 +18,9 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <script>
-      window.Bazarr = {{BAZARR_SERVER_INJECT | tojson | safe}};
+      try {
+        window.Bazarr = JSON.parse(`{{BAZARR_SERVER_INJECT | tojson | safe}}`);
+      } catch (error) {}
     </script>
     <script type="module" src="./src/dom.tsx"></script>
   </body>

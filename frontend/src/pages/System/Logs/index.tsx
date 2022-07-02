@@ -1,10 +1,11 @@
 import { useDeleteLogs, useSystemLogs } from "@/apis/hooks";
-import { ContentHeader, QueryOverlay } from "@/components";
+import { Toolbox } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import { Environment } from "@/utilities";
 import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { Container, Group } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useCallback } from "react";
-import { Container, Row } from "react-bootstrap";
-import { Helmet } from "react-helmet";
 import Table from "./table";
 
 const SystemLogsView: FunctionComponent = () => {
@@ -17,36 +18,35 @@ const SystemLogsView: FunctionComponent = () => {
     window.open(`${Environment.baseUrl}/bazarr.log`);
   }, []);
 
+  useDocumentTitle("Logs - Bazarr (System)");
+
   return (
-    <QueryOverlay result={logs}>
-      <Container fluid>
-        <Helmet>
-          <title>Logs - Bazarr (System)</title>
-        </Helmet>
-        <ContentHeader>
-          <ContentHeader.Button
-            updating={isFetching}
-            icon={faSync}
-            onClick={() => refetch()}
-          >
-            Refresh
-          </ContentHeader.Button>
-          <ContentHeader.Button icon={faDownload} onClick={download}>
-            Download
-          </ContentHeader.Button>
-          <ContentHeader.Button
-            updating={isLoading}
-            icon={faTrash}
-            onClick={() => mutate()}
-          >
-            Empty
-          </ContentHeader.Button>
-        </ContentHeader>
-        <Row>
-          <Table logs={data ?? []}></Table>
-        </Row>
-      </Container>
-    </QueryOverlay>
+    <Container fluid px={0}>
+      <QueryOverlay result={logs}>
+        <Toolbox>
+          <Group spacing="xs">
+            <Toolbox.Button
+              loading={isFetching}
+              icon={faSync}
+              onClick={() => refetch()}
+            >
+              Refresh
+            </Toolbox.Button>
+            <Toolbox.Button icon={faDownload} onClick={download}>
+              Download
+            </Toolbox.Button>
+            <Toolbox.Button
+              loading={isLoading}
+              icon={faTrash}
+              onClick={() => mutate()}
+            >
+              Empty
+            </Toolbox.Button>
+          </Group>
+        </Toolbox>
+        <Table logs={data ?? []}></Table>
+      </QueryOverlay>
+    </Container>
   );
 };
 

@@ -1,7 +1,9 @@
 import { useRunTask } from "@/apis/hooks";
-import { AsyncButton, SimpleTable } from "@/components";
-import { faSync } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { SimpleTable } from "@/components";
+import MutateAction from "@/components/async/MutateAction";
+import { useTableStyles } from "@/styles";
+import { faPlay } from "@fortawesome/free-solid-svg-icons";
+import { Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column, useSortBy } from "react-table";
 
@@ -15,33 +17,37 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
       {
         Header: "Name",
         accessor: "name",
-        className: "text-nowrap",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.primary}>{value}</Text>;
+        },
       },
       {
         Header: "Interval",
         accessor: "interval",
-        className: "text-nowrap",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.noWrap}>{value}</Text>;
+        },
       },
       {
         Header: "Next Execution",
         accessor: "next_run_in",
-        className: "text-nowrap",
       },
       {
         accessor: "job_running",
-        Cell: (row) => {
-          const { job_id } = row.row.original;
-          const { mutateAsync } = useRunTask();
+        Cell: ({ row, value }) => {
+          const { job_id } = row.original;
+          const runTask = useRunTask();
+
           return (
-            <AsyncButton
-              promise={() => mutateAsync(job_id)}
-              variant="light"
-              size="sm"
-              disabled={row.value}
-              animation={false}
-            >
-              <FontAwesomeIcon icon={faSync} spin={row.value}></FontAwesomeIcon>
-            </AsyncButton>
+            <MutateAction
+              label="Run"
+              icon={faPlay}
+              iconProps={{ spin: value }}
+              mutation={runTask}
+              args={() => job_id}
+            ></MutateAction>
           );
         },
       },

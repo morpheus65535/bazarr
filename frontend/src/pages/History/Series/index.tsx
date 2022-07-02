@@ -2,14 +2,20 @@ import {
   useEpisodeAddBlacklist,
   useEpisodeHistoryPagination,
 } from "@/apis/hooks";
-import { HistoryIcon, TextPopover } from "@/components";
+import { MutateAction } from "@/components/async";
+import { HistoryIcon } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
-import { BlacklistButton } from "@/components/inputs/blacklist";
-import HistoryView from "@/components/views/HistoryView";
-import { faInfoCircle, faRecycle } from "@fortawesome/free-solid-svg-icons";
+import TextPopover from "@/components/TextPopover";
+import HistoryView from "@/pages/views/HistoryView";
+import { useTableStyles } from "@/styles";
+import {
+  faFileExcel,
+  faInfoCircle,
+  faRecycle,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Anchor, Badge, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
@@ -18,19 +24,19 @@ const SeriesHistoryView: FunctionComponent = () => {
     () => [
       {
         accessor: "action",
-        className: "text-center",
         Cell: ({ value }) => <HistoryIcon action={value}></HistoryIcon>,
       },
       {
         Header: "Series",
         accessor: "seriesTitle",
         Cell: (row) => {
+          const { classes } = useTableStyles();
           const target = `/series/${row.row.original.sonarrSeriesId}`;
 
           return (
-            <Link to={target}>
-              <span>{row.value}</span>
-            </Link>
+            <Anchor className={classes.primary} component={Link} to={target}>
+              {row.value}
+            </Anchor>
           );
         },
       },
@@ -41,6 +47,10 @@ const SeriesHistoryView: FunctionComponent = () => {
       {
         Header: "Title",
         accessor: "episodeTitle",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.noWrap}>{value}</Text>;
+        },
       },
       {
         Header: "Language",
@@ -48,7 +58,7 @@ const SeriesHistoryView: FunctionComponent = () => {
         Cell: ({ value }) => {
           if (value) {
             return (
-              <Badge variant="secondary">
+              <Badge color="secondary">
                 <Language.Text value={value} long></Language.Text>
               </Badge>
             );
@@ -67,8 +77,8 @@ const SeriesHistoryView: FunctionComponent = () => {
         Cell: (row) => {
           if (row.value) {
             return (
-              <TextPopover text={row.row.original.parsed_timestamp} delay={1}>
-                <span>{row.value}</span>
+              <TextPopover text={row.row.original.parsed_timestamp}>
+                <Text>{row.value}</Text>
               </TextPopover>
             );
           } else {
@@ -79,33 +89,21 @@ const SeriesHistoryView: FunctionComponent = () => {
       {
         accessor: "description",
         Cell: ({ row, value }) => {
-          const overlay = (
-            <Popover id={`description-${row.id}`}>
-              <Popover.Content>{value}</Popover.Content>
-            </Popover>
-          );
           return (
-            <OverlayTrigger overlay={overlay}>
+            <TextPopover text={value}>
               <FontAwesomeIcon size="sm" icon={faInfoCircle}></FontAwesomeIcon>
-            </OverlayTrigger>
+            </TextPopover>
           );
         },
       },
       {
         accessor: "upgradable",
         Cell: (row) => {
-          const overlay = (
-            <Popover id={`description-${row.row.id}`}>
-              <Popover.Content>
-                This Subtitles File Is Eligible For An Upgrade.
-              </Popover.Content>
-            </Popover>
-          );
           if (row.value) {
             return (
-              <OverlayTrigger overlay={overlay}>
+              <TextPopover text="This Subtitles File Is Eligible For An Upgrade.">
                 <FontAwesomeIcon size="sm" icon={faRecycle}></FontAwesomeIcon>
-              </OverlayTrigger>
+              </TextPopover>
             );
           } else {
             return null;
@@ -114,23 +112,39 @@ const SeriesHistoryView: FunctionComponent = () => {
       },
       {
         accessor: "blacklisted",
-        Cell: ({ row }) => {
-          const original = row.original;
+        Cell: ({ row, value }) => {
+          const {
+            sonarrEpisodeId,
+            sonarrSeriesId,
+            provider,
+            subs_id,
+            language,
+            subtitles_path,
+          } = row.original;
+          const add = useEpisodeAddBlacklist();
 
-          const { sonarrEpisodeId, sonarrSeriesId } = original;
-          const { mutateAsync } = useEpisodeAddBlacklist();
-          return (
-            <BlacklistButton
-              history={original}
-              promise={(form) =>
-                mutateAsync({
+          if (subs_id && provider && language) {
+            return (
+              <MutateAction
+                label="Add to Blacklist"
+                disabled={value}
+                icon={faFileExcel}
+                mutation={add}
+                args={() => ({
                   seriesId: sonarrSeriesId,
                   episodeId: sonarrEpisodeId,
-                  form,
-                })
-              }
-            ></BlacklistButton>
-          );
+                  form: {
+                    provider,
+                    subs_id,
+                    subtitles_path,
+                    language: language.code2,
+                  },
+                })}
+              ></MutateAction>
+            );
+          } else {
+            return null;
+          }
         },
       },
     ],

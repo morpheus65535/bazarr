@@ -134,7 +134,7 @@ class WizdomProvider(Provider):
 
         # search
         logger.debug('Using IMDB ID %r', imdb_id)
-        url = 'http://json.{}/{}.json'.format(self.server_url, imdb_id)
+        url = 'https://{}/api/releases/{}'.format(self.server_url, imdb_id)
         page_link = 'http://{}/#/{}/{}'.format(self.server_url, 'movies' if is_movie else 'series', imdb_id)
 
         # get the list of subtitles

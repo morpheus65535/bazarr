@@ -1,14 +1,15 @@
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
-import { ActionBadge } from "@/components";
-import LanguageProfile from "@/components/bazarr/LanguageProfile";
-import { ItemEditorModal } from "@/components/modals";
-import ItemView from "@/components/views/ItemView";
-import { useModalControl } from "@/modules/modals";
-import { BuildKey } from "@/utilities";
+import { Action } from "@/components";
+import { AudioList } from "@/components/bazarr";
+import LanguageProfileName from "@/components/bazarr/LanguageProfile";
+import { ItemEditModal } from "@/components/forms/ItemEditForm";
+import { useModals } from "@/modules/modals";
+import ItemView from "@/pages/views/ItemView";
+import { useTableStyles } from "@/styles";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
+import { Anchor, Container, Progress } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
-import { Badge, Container, ProgressBar } from "react-bootstrap";
-import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
@@ -22,36 +23,30 @@ const SeriesView: FunctionComponent = () => {
       {
         Header: "Name",
         accessor: "title",
-        className: "text-nowrap",
         Cell: ({ row, value }) => {
+          const { classes } = useTableStyles();
           const target = `/series/${row.original.sonarrSeriesId}`;
           return (
-            <Link to={target}>
-              <span>{value}</span>
-            </Link>
+            <Anchor className={classes.primary} component={Link} to={target}>
+              {value}
+            </Anchor>
           );
         },
       },
       {
         Header: "Audio",
         accessor: "audio_language",
-        Cell: (row) => {
-          return row.value.map((v) => (
-            <Badge
-              variant="secondary"
-              className="mr-2"
-              key={BuildKey(v.code2, v.forced, v.hi)}
-            >
-              {v.name}
-            </Badge>
-          ));
+        Cell: ({ value }) => {
+          return <AudioList audios={value}></AudioList>;
         },
       },
       {
         Header: "Languages Profile",
         accessor: "profileId",
         Cell: ({ value }) => {
-          return <LanguageProfile index={value} empty=""></LanguageProfile>;
+          return (
+            <LanguageProfileName index={value} empty=""></LanguageProfileName>
+          );
         },
       },
       {
@@ -65,50 +60,58 @@ const SeriesView: FunctionComponent = () => {
           if (episodeFileCount === 0 || !profileId) {
             progress = 0.0;
           } else {
-            progress = episodeFileCount - episodeMissingCount;
+            progress = (1.0 - episodeMissingCount / episodeFileCount) * 100.0;
             label = `${
               episodeFileCount - episodeMissingCount
             }/${episodeFileCount}`;
           }
 
-          const color = episodeMissingCount === 0 ? "primary" : "warning";
-
           return (
-            <ProgressBar
-              className="my-a"
+            <Progress
               key={title}
-              variant={color}
-              min={0}
-              max={episodeFileCount}
-              now={progress}
+              size="xl"
+              color={episodeMissingCount === 0 ? "brand" : "yellow"}
+              value={progress}
               label={label}
-            ></ProgressBar>
+            ></Progress>
           );
         },
       },
       {
         accessor: "sonarrSeriesId",
         Cell: ({ row: { original } }) => {
-          const { show } = useModalControl();
+          const modals = useModals();
           return (
-            <ActionBadge
+            <Action
+              label="Edit Series"
+              tooltip={{ position: "left" }}
+              variant="light"
+              onClick={() =>
+                modals.openContextModal(
+                  ItemEditModal,
+                  {
+                    mutation,
+                    item: original,
+                  },
+                  {
+                    title: original.title,
+                  }
+                )
+              }
               icon={faWrench}
-              onClick={() => show(ItemEditorModal, original)}
-            ></ActionBadge>
+            ></Action>
           );
         },
       },
     ],
-    []
+    [mutation]
   );
 
+  useDocumentTitle("Series - Bazarr");
+
   return (
-    <Container fluid>
-      <Helmet>
-        <title>Series - Bazarr</title>
-      </Helmet>
+    <Container px={0} fluid>
       <ItemView query={query} columns={columns}></ItemView>
-      <ItemEditorModal mutation={mutation}></ItemEditorModal>
     </Container>
   );
 };

@@ -18,6 +18,7 @@ declare namespace System {
     radarr_version: string;
     sonarr_version: string;
     start_time: number;
+    timezone: string;
   }
 
   interface Backups {

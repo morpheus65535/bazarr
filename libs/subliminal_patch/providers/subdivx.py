@@ -42,12 +42,14 @@ class SubdivxSubtitle(Subtitle):
             language, hearing_impaired=False, page_link=page_link
         )
         self.video = video
-        self.title = title
+
         self.download_url = download_url
-        self.description = description
         self.uploader = uploader
-        self.release_info = self.title
-        if self.description and self.description.strip():
+
+        self.release_info = str(title)
+        self.description = str(description).strip()
+
+        if self.description:
             self.release_info += " | " + self.description
 
     @property
@@ -109,10 +111,11 @@ class SubdivxSubtitlesProvider(Provider):
             ):
                 subtitles += self._handle_multi_page_search(query, video)
         else:
-            # Subdvix has problems searching foreign movies if the year is
-            # appended. A proper solution would be filtering results with the
-            # year in self._parse_subtitles_page.
-            subtitles += self._handle_multi_page_search(video.title, video)
+            for query in (video.title, f"{video.title} ({video.year})"):
+                subtitles += self._handle_multi_page_search(query, video)
+                # Second query is a fallback
+                if subtitles:
+                    break
 
         return subtitles
 
@@ -123,7 +126,7 @@ class SubdivxSubtitlesProvider(Provider):
             "masdesc": "",
             "subtitulos": "1",
             "realiza_b": "1",
-            "pg": "1",
+            "pg": 1,
         }
         logger.debug("Query: %s", query)
 
@@ -216,12 +219,13 @@ class SubdivxSubtitlesProvider(Provider):
             if not any(item in datos for item in ("Cds:</b> 1", "SubRip")):
                 continue
 
-            spain = "/pais/7.gif" in datos
-            language = Language.fromalpha2("es") if spain else Language("spa", "MX")
-
             # description
             sub_details = body_soup.find("div", {"id": "buscador_detalle_sub"}).text
             description = sub_details.replace(",", " ")
+
+            # language
+            spain = "/pais/7.gif" in datos or "españa" in description.lower()
+            language = Language.fromalpha2("es") if spain else Language("spa", "MX")
 
             # uploader
             uploader = body_soup.find("a", {"class": "link1"}).text

@@ -1,29 +1,23 @@
-import { PluginHook, TableOptions, useTable } from "react-table";
-import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
+import { PluginHook, TableInstance, TableOptions, useTable } from "react-table";
+import BaseTable, { TableStyleProps } from "./BaseTable";
 import { useDefaultSettings } from "./plugins";
 
-type Props<T extends object> = TableOptions<T> &
-  TableStyleProps<T> & {
-    plugins?: PluginHook<T>[];
-  };
+export type SimpleTableProps<T extends object> = TableOptions<T> & {
+  plugins?: PluginHook<T>[];
+  instanceRef?: React.MutableRefObject<TableInstance<T> | null>;
+  tableStyles?: TableStyleProps<T>;
+};
 
-export default function SimpleTable<T extends object>(props: Props<T>) {
-  const { plugins, ...other } = props;
-  const { style, options } = useStyleAndOptions(other);
+export default function SimpleTable<T extends object>(
+  props: SimpleTableProps<T>
+) {
+  const { plugins, instanceRef, tableStyles, ...options } = props;
 
   const instance = useTable(options, useDefaultSettings, ...(plugins ?? []));
 
-  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
-    instance;
+  if (instanceRef) {
+    instanceRef.current = instance;
+  }
 
-  return (
-    <BaseTable
-      {...style}
-      headers={headerGroups}
-      rows={rows}
-      prepareRow={prepareRow}
-      tableProps={getTableProps()}
-      tableBodyProps={getTableBodyProps()}
-    ></BaseTable>
-  );
+  return <BaseTable tableStyles={tableStyles} {...instance}></BaseTable>;
 }

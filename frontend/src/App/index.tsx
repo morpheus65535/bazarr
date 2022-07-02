@@ -1,58 +1,67 @@
-import { LoadingIndicator } from "@/components";
+import AppNavbar from "@/App/Navbar";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { useNotification } from "@/modules/redux/hooks";
-import { useReduxStore } from "@/modules/redux/hooks/base";
-import SocketIO from "@/modules/socketio";
-import LaunchError from "@/pages/LaunchError";
-import Sidebar from "@/Sidebar";
+import { Layout } from "@/constants";
+import NavbarProvider from "@/contexts/Navbar";
+import OnlineProvider from "@/contexts/Online";
+import { notification } from "@/modules/task";
+import CriticalError from "@/pages/CriticalError";
 import { Environment } from "@/utilities";
-import { FunctionComponent, useEffect } from "react";
-import { Row } from "react-bootstrap";
-import { Navigate, Outlet } from "react-router-dom";
-import { useEffectOnceWhen } from "rooks";
-import Header from "./Header";
+import { AppShell } from "@mantine/core";
+import { useWindowEvent } from "@mantine/hooks";
+import { showNotification } from "@mantine/notifications";
+import { FunctionComponent, useEffect, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import AppHeader from "./Header";
 
 const App: FunctionComponent = () => {
-  const { status } = useReduxStore((s) => s.site);
+  const navigate = useNavigate();
+
+  const [criticalError, setCriticalError] = useState<string | null>(null);
+  const [navbar, setNavbar] = useState(false);
+  const [online, setOnline] = useState(true);
+
+  useWindowEvent("app-critical-error", ({ detail }) => {
+    setCriticalError(detail.message);
+  });
+
+  useWindowEvent("app-login-required", () => {
+    navigate("/login");
+  });
+
+  useWindowEvent("app-online-status", ({ detail }) => {
+    setOnline(detail.online);
+  });
 
   useEffect(() => {
-    SocketIO.initialize();
+    if (Environment.hasUpdate) {
+      showNotification(
+        notification.info(
+          "Update available",
+          "A new version of Bazarr is ready, restart is required"
+        )
+      );
+    }
   }, []);
 
-  const notify = useNotification("has-update", 10 * 1000);
-
-  // Has any update?
-  useEffectOnceWhen(() => {
-    if (Environment.hasUpdate) {
-      notify({
-        type: "info",
-        message: "A new version of Bazarr is ready, restart is required",
-        // TODO: Restart action
-      });
-    }
-  }, status === "initialized");
-
-  if (status === "unauthenticated") {
-    return <Navigate to="/login"></Navigate>;
-  } else if (status === "uninitialized") {
-    return (
-      <LoadingIndicator>
-        <span>Please wait</span>
-      </LoadingIndicator>
-    );
-  } else if (status === "error") {
-    return <LaunchError>Cannot Initialize Bazarr</LaunchError>;
+  if (criticalError !== null) {
+    return <CriticalError message={criticalError}></CriticalError>;
   }
 
   return (
     <ErrorBoundary>
-      <Row noGutters className="header-container">
-        <Header></Header>
-      </Row>
-      <Row noGutters className="flex-nowrap">
-        <Sidebar></Sidebar>
-        <Outlet></Outlet>
-      </Row>
+      <NavbarProvider value={{ showed: navbar, show: setNavbar }}>
+        <OnlineProvider value={{ online, setOnline }}>
+          <AppShell
+            navbarOffsetBreakpoint={Layout.MOBILE_BREAKPOINT}
+            header={<AppHeader></AppHeader>}
+            navbar={<AppNavbar></AppNavbar>}
+            padding={0}
+            fixed
+          >
+            <Outlet></Outlet>
+          </AppShell>
+        </OnlineProvider>
+      </NavbarProvider>
     </ErrorBoundary>
   );
 };

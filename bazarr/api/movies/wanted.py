@@ -6,7 +6,8 @@ from flask import request, jsonify
 from flask_restful import Resource
 from functools import reduce
 
-from database import get_exclusion_clause, TableMovies
+from app.database import get_exclusion_clause, TableMovies
+
 from ..utils import authenticate, postprocessMovie
 
 

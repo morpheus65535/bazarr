@@ -1,7 +1,8 @@
 import { useBadges } from "@/apis/hooks";
+import { useEnabledStatus } from "@/apis/hooks/site";
 import App from "@/App";
-import Lazy from "@/components/Lazy";
-import { useEnabledStatus } from "@/modules/redux/hooks";
+import { Lazy } from "@/components/async";
+import Authentication from "@/pages/Authentication";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
 import Episodes from "@/pages/Episodes";
@@ -10,6 +11,7 @@ import SeriesHistoryView from "@/pages/History/Series";
 import MovieView from "@/pages/Movies";
 import MovieDetailView from "@/pages/Movies/Details";
 import MovieMassEditor from "@/pages/Movies/Editor";
+import NotFound from "@/pages/NotFound";
 import SeriesView from "@/pages/Series";
 import SeriesMassEditor from "@/pages/Series/Editor";
 import SettingsGeneralView from "@/pages/Settings/General";
@@ -38,7 +40,7 @@ import {
   faLaptop,
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
-import React, {
+import {
   createContext,
   FunctionComponent,
   lazy,
@@ -51,8 +53,6 @@ import { CustomRouteObject } from "./type";
 
 const HistoryStats = lazy(() => import("@/pages/History/Statistics"));
 const SystemStatusView = lazy(() => import("@/pages/System/Status"));
-const Authentication = lazy(() => import("@/pages/Authentication"));
-const NotFound = lazy(() => import("@/pages/404"));
 
 function useRoutes(): CustomRouteObject[] {
   const { data } = useBadges();
@@ -277,25 +277,17 @@ function useRoutes(): CustomRouteObject[] {
               },
             ],
           },
+          {
+            path: "*",
+            hidden: true,
+            element: <NotFound></NotFound>,
+          },
         ],
       },
       {
         path: "/login",
         hidden: true,
-        element: (
-          <Lazy>
-            <Authentication></Authentication>
-          </Lazy>
-        ),
-      },
-      {
-        path: "*",
-        hidden: true,
-        element: (
-          <Lazy>
-            <NotFound></NotFound>
-          </Lazy>
-        ),
+        element: <Authentication></Authentication>,
       },
     ],
     [data?.episodes, data?.movies, data?.providers, radarr, sonarr]

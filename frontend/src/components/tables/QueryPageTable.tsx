@@ -1,77 +1,37 @@
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
+import { LoadingProvider } from "@/contexts";
 import { ScrollToTop } from "@/utilities";
 import { useEffect } from "react";
-import { PluginHook, TableOptions, useTable } from "react-table";
-import { LoadingIndicator } from "..";
-import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
-import { useDefaultSettings } from "./plugins";
+import SimpleTable, { SimpleTableProps } from "./SimpleTable";
 
-type Props<T extends object> = TableOptions<T> &
-  TableStyleProps<T> & {
-    plugins?: PluginHook<T>[];
-    query: UsePaginationQueryResult<T>;
-  };
+type Props<T extends object> = Omit<SimpleTableProps<T>, "data"> & {
+  query: UsePaginationQueryResult<T>;
+};
 
 export default function QueryPageTable<T extends object>(props: Props<T>) {
-  const { plugins, query, ...remain } = props;
-  const { style, options } = useStyleAndOptions(remain);
+  const { query, ...remain } = props;
 
   const {
-    data,
-    isLoading,
-    paginationStatus: {
-      page,
-      pageCount,
-      totalCount,
-      canPrevious,
-      canNext,
-      pageSize,
-    },
-    controls: { previousPage, nextPage, gotoPage },
+    data = { data: [], total: 0 },
+    paginationStatus: { page, pageCount, totalCount, pageSize, isPageLoading },
+    controls: { gotoPage },
   } = query;
-
-  const instance = useTable(
-    {
-      ...options,
-      data: data?.data ?? [],
-    },
-    useDefaultSettings,
-    ...(plugins ?? [])
-  );
-
-  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
-    instance;
 
   useEffect(() => {
     ScrollToTop();
   }, [page]);
 
-  if (isLoading) {
-    return <LoadingIndicator></LoadingIndicator>;
-  }
-
   return (
-    <>
-      <BaseTable
-        {...style}
-        headers={headerGroups}
-        rows={rows}
-        prepareRow={prepareRow}
-        tableProps={getTableProps()}
-        tableBodyProps={getTableBodyProps()}
-      ></BaseTable>
+    <LoadingProvider value={isPageLoading}>
+      <SimpleTable {...remain} data={data.data}></SimpleTable>
       <PageControl
         count={pageCount}
         index={page}
         size={pageSize}
         total={totalCount}
-        canPrevious={canPrevious}
-        canNext={canNext}
-        previous={previousPage}
-        next={nextPage}
         goto={gotoPage}
       ></PageControl>
-    </>
+    </LoadingProvider>
   );
 }

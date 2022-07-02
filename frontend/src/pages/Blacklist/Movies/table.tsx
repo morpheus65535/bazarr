@@ -1,8 +1,11 @@
 import { useMovieDeleteBlacklist } from "@/apis/hooks";
-import { AsyncButton, PageTable, TextPopover } from "@/components";
+import { PageTable } from "@/components";
+import MutateAction from "@/components/async/MutateAction";
 import Language from "@/components/bazarr/Language";
+import TextPopover from "@/components/TextPopover";
+import { useTableStyles } from "@/styles";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Anchor, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -17,13 +20,13 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
       {
         Header: "Name",
         accessor: "title",
-        className: "text-nowrap",
         Cell: (row) => {
           const target = `/movies/${row.row.original.radarrId}`;
+          const { classes } = useTableStyles();
           return (
-            <Link to={target}>
-              <span>{row.value}</span>
-            </Link>
+            <Anchor className={classes.primary} component={Link} to={target}>
+              {row.value}
+            </Anchor>
           );
         },
       },
@@ -48,8 +51,8 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         Cell: (row) => {
           if (row.value) {
             return (
-              <TextPopover text={row.row.original.parsed_timestamp} delay={1}>
-                <span>{row.value}</span>
+              <TextPopover text={row.row.original.parsed_timestamp}>
+                <Text>{row.value}</Text>
               </TextPopover>
             );
           } else {
@@ -60,25 +63,22 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
       {
         accessor: "subs_id",
         Cell: ({ row, value }) => {
-          const { mutateAsync } = useMovieDeleteBlacklist();
+          const remove = useMovieDeleteBlacklist();
 
           return (
-            <AsyncButton
-              size="sm"
-              variant="light"
+            <MutateAction
+              label="Remove from Blacklist"
               noReset
-              promise={() =>
-                mutateAsync({
-                  all: false,
-                  form: {
-                    provider: row.original.provider,
-                    subs_id: value,
-                  },
-                })
-              }
-            >
-              <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-            </AsyncButton>
+              icon={faTrash}
+              mutation={remove}
+              args={() => ({
+                all: false,
+                form: {
+                  provider: row.original.provider,
+                  subs_id: value,
+                },
+              })}
+            ></MutateAction>
           );
         },
       },
@@ -87,7 +87,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
   );
   return (
     <PageTable
-      emptyText="No Blacklisted Movies Subtitles"
+      tableStyles={{ emptyText: "No blacklisted movies subtitles" }}
       columns={columns}
       data={blacklist}
     ></PageTable>

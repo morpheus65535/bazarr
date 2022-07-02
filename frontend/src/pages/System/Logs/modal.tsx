@@ -1,28 +1,26 @@
-import { useModal, usePayload, withModal } from "@/modules/modals";
+import { withModal } from "@/modules/modals";
+import { Code, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 
-const SystemLogModal: FunctionComponent = () => {
-  const stack = usePayload<string>();
+interface Props {
+  stack: string;
+}
 
-  const Modal = useModal();
-
+const SystemLogModal: FunctionComponent<Props> = ({ stack }) => {
   const result = useMemo(
     () =>
-      stack?.split("\\n").map((v, idx) => (
-        <p key={idx} className="text-nowrap my-1">
+      stack.split("\\n").map((v, idx) => (
+        <Text my="xs" inherit key={idx}>
           {v}
-        </p>
+        </Text>
       )),
     [stack]
   );
 
-  return (
-    <Modal title="Stack traceback">
-      <pre>
-        <code>{result}</code>
-      </pre>
-    </Modal>
-  );
+  return <Code block>{result}</Code>;
 };
 
-export default withModal(SystemLogModal, "system-log");
+export default withModal(SystemLogModal, "system-log", {
+  title: "Stack Traceback",
+  size: "xl",
+});

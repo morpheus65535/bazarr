@@ -1,15 +1,23 @@
-import { useHistoryStats, useSystemProviders } from "@/apis/hooks";
 import {
-  ContentHeader,
-  QueryOverlay,
-  Selector,
-  SelectorOption,
-} from "@/components";
+  useHistoryStats,
+  useLanguages,
+  useSystemProviders,
+} from "@/apis/hooks";
+import { Selector, Toolbox } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import Language from "@/components/bazarr/Language";
+import { Layout } from "@/constants";
+import { useSelectorOptions } from "@/utilities";
+import {
+  Box,
+  Container,
+  createStyles,
+  SimpleGrid,
+  useMantineTheme,
+} from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { merge } from "lodash";
 import { FunctionComponent, useMemo, useState } from "react";
-import { Col, Container } from "react-bootstrap";
-import { Helmet } from "react-helmet";
 import {
   Bar,
   BarChart,
@@ -22,23 +30,32 @@ import {
 } from "recharts";
 import { actionOptions, timeFrameOptions } from "./options";
 
-const SelectorContainer: FunctionComponent = ({ children }) => (
-  <Col xs={6} lg={3} className="p-1">
-    {children}
-  </Col>
-);
+const useStyles = createStyles((theme) => ({
+  container: {
+    display: "flex",
+    flexDirection: "column",
+    height: `calc(100vh - ${Layout.HEADER_HEIGHT}px)`,
+  },
+  chart: {
+    height: "90%",
+  },
+}));
 
 const HistoryStats: FunctionComponent = () => {
   const { data: providers } = useSystemProviders(true);
 
-  const providerOptions = useMemo<SelectorOption<System.Provider>[]>(
-    () => providers?.map((value) => ({ label: value.name, value })) ?? [],
-    [providers]
+  const providerOptions = useSelectorOptions(providers ?? [], (v) => v.name);
+
+  const { data: historyLanguages } = useLanguages(true);
+
+  const languageOptions = useSelectorOptions(
+    historyLanguages ?? [],
+    (value) => value.name
   );
 
   const [timeFrame, setTimeFrame] = useState<History.TimeFrameOptions>("month");
   const [action, setAction] = useState<Nullable<History.ActionOptions>>(null);
-  const [lang, setLanguage] = useState<Nullable<Language.Info>>(null);
+  const [lang, setLanguage] = useState<Nullable<Language.Server>>(null);
   const [provider, setProvider] = useState<Nullable<System.Provider>>(null);
 
   const stats = useHistoryStats(timeFrame, action, provider, lang);
@@ -61,61 +78,72 @@ const HistoryStats: FunctionComponent = () => {
     }
   }, [data]);
 
+  useDocumentTitle("History Statistics - Bazarr");
+
+  const { classes } = useStyles();
+  const theme = useMantineTheme();
+
   return (
-    <Container fluid className="vh-75">
-      <Helmet>
-        <title>History Statistics - Bazarr</title>
-      </Helmet>
+    <Container fluid px={0} className={classes.container}>
       <QueryOverlay result={stats}>
-        <div className="chart-container">
-          <ContentHeader scroll={false}>
-            <SelectorContainer>
-              <Selector
-                placeholder="Time..."
-                options={timeFrameOptions}
-                value={timeFrame}
-                onChange={(v) => setTimeFrame(v ?? "month")}
-              ></Selector>
-            </SelectorContainer>
-            <SelectorContainer>
-              <Selector
-                placeholder="Action..."
-                clearable
-                options={actionOptions}
-                value={action}
-                onChange={setAction}
-              ></Selector>
-            </SelectorContainer>
-            <SelectorContainer>
-              <Selector
-                placeholder="Provider..."
-                clearable
-                options={providerOptions}
-                value={provider}
-                onChange={setProvider}
-              ></Selector>
-            </SelectorContainer>
-            <SelectorContainer>
-              <Language.Selector
-                clearable
-                value={lang}
-                onChange={setLanguage}
-                history
-              ></Language.Selector>
-            </SelectorContainer>
-          </ContentHeader>
-          <ResponsiveContainer height="100%">
-            <BarChart data={convertedData}>
+        <Toolbox>
+          <SimpleGrid
+            cols={4}
+            breakpoints={[
+              { maxWidth: "sm", cols: 4 },
+              { maxWidth: "xs", cols: 2 },
+            ]}
+          >
+            <Selector
+              placeholder="Time..."
+              options={timeFrameOptions}
+              value={timeFrame}
+              onChange={(v) => setTimeFrame(v ?? "month")}
+            ></Selector>
+            <Selector
+              placeholder="Action..."
+              clearable
+              options={actionOptions}
+              value={action}
+              onChange={setAction}
+            ></Selector>
+            <Selector
+              {...providerOptions}
+              placeholder="Provider..."
+              clearable
+              value={provider}
+              onChange={setProvider}
+            ></Selector>
+            <Selector
+              {...languageOptions}
+              placeholder="Language..."
+              clearable
+              value={lang}
+              onChange={setLanguage}
+            ></Selector>
+          </SimpleGrid>
+        </Toolbox>
+        <Box className={classes.chart} m="xs">
+          <ResponsiveContainer>
+            <BarChart className={classes.chart} data={convertedData}>
               <CartesianGrid strokeDasharray="4 2"></CartesianGrid>
               <XAxis dataKey="date"></XAxis>
               <YAxis allowDecimals={false}></YAxis>
               <Tooltip></Tooltip>
               <Legend verticalAlign="top"></Legend>
-              <Bar name="Series" dataKey="series" fill="#2493B6"></Bar>
-              <Bar name="Movies" dataKey="movies" fill="#FFC22F"></Bar>
+              <Bar
+                name="Series"
+                dataKey="series"
+                fill={theme.colors.blue[4]}
+              ></Bar>
+              <Bar
+                name="Movies"
+                dataKey="movies"
+                fill={theme.colors.yellow[4]}
+              ></Bar>
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </Box>
       </QueryOverlay>
     </Container>
   );

@@ -4,8 +4,9 @@ from flask import request, jsonify
 from flask_restful import Resource
 from operator import itemgetter
 
-from database import TableHistory, TableHistoryMovie
-from get_providers import list_throttled_providers, reset_throttled_providers
+from app.database import TableHistory, TableHistoryMovie
+from app.get_providers import list_throttled_providers, reset_throttled_providers
+
 from ..utils import authenticate, False_Keys
 
 

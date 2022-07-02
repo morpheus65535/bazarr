@@ -320,14 +320,16 @@ def patch_create_connection():
         """Wrap urllib3's create_connection to resolve the name elsewhere"""
         # resolve hostname to an ip address; use your own
         # resolver here, as otherwise the system resolver will be used.
+        __custom_resolver_ips = os.environ.get("dns_resolvers", None)
+        if not __custom_resolver_ips:
+            return _orig_create_connection(address, *args, **kwargs)
+
         global _custom_resolver, _custom_resolver_ips, dns_cache
         host, port = address
 
         try:
             ipaddress.ip_address(six.text_type(host))
         except (ipaddress.AddressValueError, ValueError):
-            __custom_resolver_ips = os.environ.get("dns_resolvers", None)
-
             # resolver ips changed in the meantime?
             if __custom_resolver_ips != _custom_resolver_ips:
                 _custom_resolver = None
@@ -362,7 +364,7 @@ def patch_create_connection():
                     except dns.exception.DNSException:
                         logger.warning("DNS: Couldn't resolve %s with DNS: %s", host, custom_resolver.nameservers)
 
-        # logger.debug("DNS: Falling back to default DNS or IP on %s", host) <-- commented because it makes way too much noise in debug logs
+        logger.debug("DNS: Falling back to default DNS or IP on %s", host)
         return _orig_create_connection((host, port), *args, **kwargs)
 
     patch_create_connection._sz_patched = True

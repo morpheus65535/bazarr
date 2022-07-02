@@ -126,6 +126,15 @@ def episodes():
             resolution="720p",
             video_codec="H.264",
         ),
+        "better_call_saul_s06e04": Episode(
+            "Better.Call.Saul.S06E04.720p.WEBRIP.X264.mkv",
+            "Better Call Saul",
+            6,
+            4,
+            source="Web",
+            resolution="720p",
+            video_codec="H.264",
+        ),
         "inexistent": Episode(
             "Inexistent.TVShow.S01E01.720p.BluRay.X264-REWARD.mkv",
             "121361asdfgh",

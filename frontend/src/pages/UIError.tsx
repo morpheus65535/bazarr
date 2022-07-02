@@ -1,35 +1,60 @@
+import { GithubRepoRoot } from "@/constants";
 import { Reload } from "@/utilities";
-import { GithubRepoRoot } from "@/utilities/constants";
 import { faDizzy } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { FunctionComponent } from "react";
-import { Button, Container } from "react-bootstrap";
+import {
+  Anchor,
+  Box,
+  Button,
+  Center,
+  Code,
+  Container,
+  Group,
+  Text,
+  Title,
+} from "@mantine/core";
+import { FunctionComponent, useMemo } from "react";
+
+const Placeholder = "********";
 
 interface Props {
   error: Error;
 }
 
-const UIError: FunctionComponent<Props> = ({ error }) => (
-  <Container className="d-flex flex-column align-items-center my-5">
-    <h1>
-      <FontAwesomeIcon className="mr-2" icon={faDizzy}></FontAwesomeIcon>
-      Oops! UI is crashed!
-    </h1>
-    <p>{error.message}</p>
-    <div className="d-flex flex-row">
-      <Button
-        className="mx-1"
-        href={`${GithubRepoRoot}/issues/new/choose`}
-        target="_blank"
-        variant="warning"
-      >
-        Report Issue
-      </Button>
-      <Button className="mx-1" onClick={Reload} variant="light">
-        Reload Page
-      </Button>
-    </div>
-  </Container>
-);
+const UIError: FunctionComponent<Props> = ({ error }) => {
+  const stack = useMemo(() => {
+    let callStack = error.stack ?? "";
+
+    // Remove sensitive information from the stack
+    callStack = callStack.replaceAll(window.location.host, Placeholder);
+
+    return callStack;
+  }, [error.stack]);
+  return (
+    <Container my="lg">
+      <Center>
+        <Title>
+          <Box component="span" mr="md">
+            <FontAwesomeIcon icon={faDizzy}></FontAwesomeIcon>
+          </Box>
+          <Text component="span" inherit>
+            Oops! UI is crashed!
+          </Text>
+        </Title>
+      </Center>
+      <Center my="xl">
+        <Code>{stack}</Code>
+      </Center>
+      <Group position="center">
+        <Anchor href={`${GithubRepoRoot}/issues/new/choose`} target="_blank">
+          <Button color="yellow">Report Issue</Button>
+        </Anchor>
+        <Button onClick={Reload} color="light">
+          Reload Page
+        </Button>
+      </Group>
+    </Container>
+  );
+};
 
 export default UIError;

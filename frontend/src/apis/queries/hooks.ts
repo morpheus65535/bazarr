@@ -1,4 +1,4 @@
-import { GetItemId } from "@/utilities";
+import { GetItemId, useOnValueChange } from "@/utilities";
 import { usePageSize } from "@/utilities/storage";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -13,17 +13,14 @@ export type UsePaginationQueryResult<T extends object> = UseQueryResult<
   DataWrapperWithTotal<T>
 > & {
   controls: {
-    previousPage: () => void;
-    nextPage: () => void;
     gotoPage: (index: number) => void;
   };
   paginationStatus: {
+    isPageLoading: boolean;
     totalCount: number;
     pageSize: number;
     pageCount: number;
     page: number;
-    canPrevious: boolean;
-    canNext: boolean;
   };
 };
 
@@ -32,7 +29,8 @@ export function usePaginationQuery<
   TQueryKey extends QueryKey = QueryKey
 >(
   queryKey: TQueryKey,
-  queryFn: RangeQuery<TObject>
+  queryFn: RangeQuery<TObject>,
+  cacheIndividual = true
 ): UsePaginationQueryResult<TObject> {
   const client = useQueryClient();
 
@@ -52,12 +50,14 @@ export function usePaginationQuery<
     },
     {
       onSuccess: ({ data }) => {
-        data.forEach((item) => {
-          const id = GetItemId(item);
-          if (id) {
-            client.setQueryData([...queryKey, id], item);
-          }
-        });
+        if (cacheIndividual) {
+          data.forEach((item) => {
+            const id = GetItemId(item);
+            if (id) {
+              client.setQueryData([...queryKey, id], item);
+            }
+          });
+        }
       },
     }
   );
@@ -67,16 +67,6 @@ export function usePaginationQuery<
   const totalCount = data?.total ?? 0;
   const pageCount = Math.ceil(totalCount / pageSize);
 
-  const previousPage = useCallback(() => {
-    setIndex((index) => Math.max(0, index - 1));
-  }, []);
-
-  const nextPage = useCallback(() => {
-    if (pageCount > 0) {
-      setIndex((index) => Math.min(pageCount - 1, index + 1));
-    }
-  }, [pageCount]);
-
   const gotoPage = useCallback(
     (idx: number) => {
       if (idx >= 0 && idx < pageCount) {
@@ -85,6 +75,20 @@ export function usePaginationQuery<
     },
     [pageCount]
   );
+
+  const [isPageLoading, setIsPageLoading] = useState(false);
+
+  useOnValueChange(page, () => {
+    if (results.isFetching) {
+      setIsPageLoading(true);
+    }
+  });
+
+  useEffect(() => {
+    if (!results.isFetching) {
+      setIsPageLoading(false);
+    }
+  }, [results.isFetching]);
 
   // Reset page index if we out of bound
   useEffect(() => {
@@ -100,17 +104,14 @@ export function usePaginationQuery<
   return {
     ...results,
     paginationStatus: {
+      isPageLoading,
       totalCount,
       pageCount,
       pageSize,
       page,
-      canPrevious: page > 0,
-      canNext: page < pageCount - 1,
     },
     controls: {
       gotoPage,
-      previousPage,
-      nextPage,
     },
   };
 }

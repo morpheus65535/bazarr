@@ -123,8 +123,10 @@ export function useMovieDeleteBlacklist() {
 }
 
 export function useMovieHistoryPagination() {
-  return usePaginationQuery([QueryKeys.Movies, QueryKeys.History], (param) =>
-    api.movies.history(param)
+  return usePaginationQuery(
+    [QueryKeys.Movies, QueryKeys.History],
+    (param) => api.movies.history(param),
+    false
   );
 }
 

@@ -24,11 +24,6 @@ export function useEnabledLanguages() {
   return enabled;
 }
 
-export function useLanguageBy(code?: string) {
-  const { data } = useLanguages();
-  return useMemo(() => data?.find((v) => v.code2 === code), [data, code]);
-}
-
 // Convert languageprofile items to language
 export function useProfileItemsToLanguages(profile?: Language.Profile) {
   const { data } = useLanguages();

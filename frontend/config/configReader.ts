@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /// <reference types="node" />
 
 import { readFile } from "fs/promises";
@@ -40,6 +41,8 @@ export default async function overrideEnv(env: Record<string, string>) {
     try {
       const apiKey = await read(configPath, "auth", "apikey");
 
+      console.log(`Using API key: ${apiKey}`);
+
       env["VITE_API_KEY"] = apiKey;
       process.env["VITE_API_KEY"] = apiKey;
     } catch (err) {
@@ -54,7 +57,9 @@ export default async function overrideEnv(env: Record<string, string>) {
       const port = await read(configPath, "general", "port");
       const baseUrl = await read(configPath, "general", "base_url");
 
-      const url = `http://localhost:${port}${baseUrl}`;
+      const url = `http://127.0.0.1:${port}${baseUrl}`;
+
+      console.log(`Using backend url: ${url}`);
 
       env["VITE_PROXY_URL"] = url;
       process.env["VITE_PROXY_URL"] = url;

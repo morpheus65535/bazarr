@@ -1,76 +1,59 @@
 import { useSystem } from "@/apis/hooks";
-import { useReduxStore } from "@/modules/redux/hooks/base";
-import { FunctionComponent, useState } from "react";
-import { Button, Card, Form, Image, Spinner } from "react-bootstrap";
-import { Navigate } from "react-router-dom";
+import { Environment } from "@/utilities";
+import {
+  Avatar,
+  Button,
+  Card,
+  Container,
+  Divider,
+  PasswordInput,
+  Stack,
+  TextInput,
+} from "@mantine/core";
+import { useForm } from "@mantine/hooks";
+import { FunctionComponent } from "react";
 
 const Authentication: FunctionComponent = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const { login } = useSystem();
 
-  const { login, isWorking } = useSystem();
-
-  const authenticated = useReduxStore(
-    (s) => s.site.status !== "unauthenticated"
-  );
-
-  if (authenticated) {
-    return <Navigate to="/"></Navigate>;
-  }
+  const form = useForm({
+    initialValues: {
+      username: "",
+      password: "",
+    },
+  });
 
   return (
-    <div className="d-flex bg-light vh-100 justify-content-center align-items-center">
-      <Card className="auth-card shadow">
-        <Form
-          onSubmit={(e) => {
-            e.preventDefault();
-            login({ username, password });
-          }}
-        >
-          <Card.Body>
-            <Form.Group className="mb-5 d-flex justify-content-center">
-              <Image width="64" height="64" src="/static/logo128.png"></Image>
-            </Form.Group>
-            <Form.Group>
-              <Form.Control
-                disabled={isWorking}
-                name="username"
-                type="text"
+    <Container my="xl" size={400}>
+      <Card shadow="xl">
+        <Stack>
+          <Avatar
+            mx="auto"
+            size={64}
+            src={`${Environment.baseUrl}/images/logo128.png`}
+          ></Avatar>
+          <Divider></Divider>
+          <form onSubmit={form.onSubmit(login)}>
+            <Stack>
+              <TextInput
                 placeholder="Username"
                 required
-                onChange={(e) => setUsername(e.currentTarget.value)}
-              ></Form.Control>
-            </Form.Group>
-            <Form.Group>
-              <Form.Control
-                disabled={isWorking}
-                name="password"
-                type="password"
-                placeholder="Password"
+                {...form.getInputProps("username")}
+              ></TextInput>
+              <PasswordInput
                 required
-                onChange={(e) => setPassword(e.currentTarget.value)}
-              ></Form.Control>
-            </Form.Group>
-            {/* <Collapse in={error.length !== 0}>
-              <div>
-                <Alert variant="danger" className="m-0">
-                  {error}
-                </Alert>
-              </div>
-            </Collapse> */}
-          </Card.Body>
-          <Card.Footer>
-            <Button type="submit" disabled={isWorking} block>
-              {isWorking ? (
-                <Spinner size="sm" animation="border"></Spinner>
-              ) : (
-                "LOGIN"
-              )}
-            </Button>
-          </Card.Footer>
-        </Form>
+                placeholder="Password"
+                {...form.getInputProps("password")}
+              ></PasswordInput>
+              <Divider></Divider>
+              <Button fullWidth uppercase type="submit">
+                Login
+              </Button>
+            </Stack>
+          </form>
+        </Stack>
       </Card>
-    </div>
+    </Container>
   );
 };
 

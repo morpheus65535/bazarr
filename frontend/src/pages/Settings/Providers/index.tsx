@@ -1,15 +1,13 @@
 import { FunctionComponent } from "react";
-import { Group, Input, Layout } from "../components";
+import { Layout, Section } from "../components";
 import { ProviderView } from "./components";
 
 const SettingsProvidersView: FunctionComponent = () => {
   return (
     <Layout name="Providers">
-      <Group header="Providers">
-        <Input>
-          <ProviderView></ProviderView>
-        </Input>
-      </Group>
+      <Section header="Providers">
+        <ProviderView></ProviderView>
+      </Section>
     </Layout>
   );
 };

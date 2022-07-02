@@ -1,9 +1,10 @@
 import { useSystemTasks } from "@/apis/hooks";
-import { ContentHeader, QueryOverlay } from "@/components";
+import { Toolbox } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
+import { Container } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent } from "react";
-import { Container, Row } from "react-bootstrap";
-import { Helmet } from "react-helmet";
 import Table from "./table";
 
 const SystemTasksView: FunctionComponent = () => {
@@ -11,24 +12,21 @@ const SystemTasksView: FunctionComponent = () => {
 
   const { isFetching, data, refetch } = tasks;
 
+  useDocumentTitle("Tasks - Bazarr (System)");
+
   return (
     <QueryOverlay result={tasks}>
-      <Container fluid>
-        <Helmet>
-          <title>Tasks - Bazarr (System)</title>
-        </Helmet>
-        <ContentHeader>
-          <ContentHeader.Button
-            updating={isFetching}
+      <Container fluid px={0}>
+        <Toolbox>
+          <Toolbox.Button
+            loading={isFetching}
             icon={faSync}
             onClick={() => refetch()}
           >
             Refresh
-          </ContentHeader.Button>
-        </ContentHeader>
-        <Row>
-          <Table tasks={data ?? []}></Table>
-        </Row>
+          </Toolbox.Button>
+        </Toolbox>
+        <Table tasks={data ?? []}></Table>
       </Container>
     </QueryOverlay>
   );

@@ -5,13 +5,15 @@ import json
 from flask import request, jsonify
 from flask_restful import Resource
 
+from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableShows, TableMovies, \
+    TableSettingsNotifier
+from app.event_handler import event_stream
+from app.config import settings, save_settings, get_settings
+from app.scheduler import scheduler
+from subtitles.indexer.series import list_missing_subtitles
+from subtitles.indexer.movies import list_missing_subtitles_movies
+
 from ..utils import authenticate
-from database import TableLanguagesProfiles, TableSettingsLanguages, TableShows, TableMovies, TableSettingsNotifier, \
-    update_profile_id_list
-from event_handler import event_stream
-from config import settings, save_settings, get_settings
-from scheduler import scheduler
-from list_subtitles import list_missing_subtitles, list_missing_subtitles_movies
 
 
 class SystemSettings(Resource):
@@ -86,7 +88,6 @@ class SystemSettings(Resource):
                 # Remove deleted profiles
                 TableLanguagesProfiles.delete().where(TableLanguagesProfiles.profileId == profileId).execute()
 
-            update_profile_id_list()
             event_stream("languages")
 
             if settings.general.getboolean('use_sonarr'):

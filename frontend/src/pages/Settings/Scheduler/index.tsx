@@ -3,10 +3,9 @@ import { FunctionComponent, useMemo } from "react";
 import {
   Check,
   CollapseBox,
-  Group,
-  Input,
   Layout,
   Message,
+  Section,
   Selector,
 } from "../components";
 import {
@@ -31,148 +30,145 @@ const SettingsSchedulerView: FunctionComponent = () => {
 
   return (
     <Layout name="Scheduler">
-      <Group header="Sonarr/Radarr Sync">
-        <Input name="Update Series List from Sonarr">
+      <Section header="Sonarr/Radarr Sync">
+        <Selector
+          label="Update Series List from Sonarr"
+          options={seriesSyncOptions}
+          settingKey="settings-sonarr-series_sync"
+        ></Selector>
+
+        <Selector
+          label="Update Episodes List from Sonarr"
+          options={episodesSyncOptions}
+          settingKey="settings-sonarr-episodes_sync"
+        ></Selector>
+
+        <Selector
+          label="Update Movies List from Radarr"
+          options={moviesSyncOptions}
+          settingKey="settings-radarr-movies_sync"
+        ></Selector>
+      </Section>
+      <Section header="Disk Indexing">
+        <Selector
+          label="Update all Episode Subtitles from Disk"
+          settingKey="settings-sonarr-full_update"
+          options={diskUpdateOptions}
+        ></Selector>
+
+        <CollapseBox
+          settingKey="settings-sonarr-full_update"
+          on={(k) => k === "Weekly"}
+        >
           <Selector
-            options={seriesSyncOptions}
-            settingKey="settings-sonarr-series_sync"
+            label="Day of The Week"
+            settingKey="settings-sonarr-full_update_day"
+            options={dayOptions}
           ></Selector>
-        </Input>
-        <Input name="Update Episodes List from Sonarr">
-          <Selector
-            options={episodesSyncOptions}
-            settingKey="settings-sonarr-episodes_sync"
-          ></Selector>
-        </Input>
-        <Input name="Update Movies List from Radarr">
-          <Selector
-            options={moviesSyncOptions}
-            settingKey="settings-radarr-movies_sync"
-          ></Selector>
-        </Input>
-      </Group>
-      <Group header="Disk Indexing">
-        <CollapseBox>
-          <CollapseBox.Control>
-            <Input name="Update all Episode Subtitles from Disk">
-              <Selector
-                settingKey="settings-sonarr-full_update"
-                options={diskUpdateOptions}
-              ></Selector>
-            </Input>
-          </CollapseBox.Control>
-          <CollapseBox.Content on={(k) => k === "Weekly"}>
-            <Input name="Day of The Week">
-              <Selector
-                settingKey="settings-sonarr-full_update_day"
-                options={dayOptions}
-              ></Selector>
-            </Input>
-          </CollapseBox.Content>
-          <CollapseBox.Content on={(k) => k === "Daily" || k === "Weekly"}>
-            <Input name="Time of The Day">
-              <Selector
-                settingKey="settings-sonarr-full_update_hour"
-                options={timeOptions}
-              ></Selector>
-            </Input>
-          </CollapseBox.Content>
-          <Input>
-            <Check
-              label="Use cached ffprobe results"
-              settingKey="settings-sonarr-use_ffprobe_cache"
-            ></Check>
-            <Message>
-              If disabled, Bazarr will use ffprobe to index video file
-              properties on each run. This will result in higher disk I/O.
-            </Message>
-          </Input>
         </CollapseBox>
-        <CollapseBox>
-          <CollapseBox.Control>
-            <Input name="Update all Movie Subtitles from Disk">
-              <Selector
-                settingKey="settings-radarr-full_update"
-                options={diskUpdateOptions}
-              ></Selector>
-            </Input>
-          </CollapseBox.Control>
-          <CollapseBox.Content on={(k) => k === "Weekly"}>
-            <Input name="Day of The Week">
-              <Selector
-                settingKey="settings-radarr-full_update_day"
-                options={dayOptions}
-              ></Selector>
-            </Input>
-          </CollapseBox.Content>
-          <CollapseBox.Content on={(k) => k === "Daily" || k === "Weekly"}>
-            <Input name="Time of The Day">
-              <Selector
-                settingKey="settings-radarr-full_update_hour"
-                options={timeOptions}
-              ></Selector>
-            </Input>
-          </CollapseBox.Content>
-          <Input>
-            <Check
-              label="Use cached ffprobe results"
-              settingKey="settings-radarr-use_ffprobe_cache"
-            ></Check>
-            <Message>
-              If disabled, Bazarr will use ffprobe to index video file
-              properties on each run. This will result in higher disk I/O.
-            </Message>
-          </Input>
+        <CollapseBox
+          settingKey="settings-sonarr-full_update"
+          on={(k) => k === "Daily" || k === "Weekly"}
+        >
+          <Selector
+            label="Time of The Day"
+            settingKey="settings-sonarr-full_update_hour"
+            options={timeOptions}
+          ></Selector>
         </CollapseBox>
-      </Group>
-      <Group header="Search and Upgrade Subtitles">
-        <Input name="Search for Missing Series Subtitles">
+
+        <Check
+          label="Use cached ffprobe results"
+          settingKey="settings-sonarr-use_ffprobe_cache"
+        ></Check>
+        <Message>
+          If disabled, Bazarr will use ffprobe to index video file properties on
+          each run. This will result in higher disk I/O.
+        </Message>
+
+        <Selector
+          label="Update all Movie Subtitles from Disk"
+          settingKey="settings-radarr-full_update"
+          options={diskUpdateOptions}
+        ></Selector>
+
+        <CollapseBox
+          settingKey="settings-radarr-full_update"
+          on={(k) => k === "Weekly"}
+        >
           <Selector
-            settingKey="settings-general-wanted_search_frequency"
-            options={upgradeOptions}
+            label="Day of The Week"
+            settingKey="settings-radarr-full_update_day"
+            options={dayOptions}
           ></Selector>
-        </Input>
-        <Input name="Search for Missing Movies Subtitles">
-          <Selector
-            options={upgradeOptions}
-            settingKey="settings-general-wanted_search_frequency_movie"
-          ></Selector>
-        </Input>
-        <Input name="Upgrade Previously Downloaded Subtitles">
-          <Selector
-            options={upgradeOptions}
-            settingKey="settings-general-upgrade_frequency"
-          ></Selector>
-        </Input>
-      </Group>
-      <Group header="Backup">
-        <CollapseBox>
-          <CollapseBox.Control>
-            <Input name="Backup config and database">
-              <Selector
-                settingKey="settings-backup-frequency"
-                options={backupOptions}
-              ></Selector>
-            </Input>
-          </CollapseBox.Control>
-          <CollapseBox.Content on={(k) => k === "Weekly"}>
-            <Input name="Day of The Week">
-              <Selector
-                settingKey="settings-backup-day"
-                options={dayOptions}
-              ></Selector>
-            </Input>
-          </CollapseBox.Content>
-          <CollapseBox.Content on={(k) => k === "Daily" || k === "Weekly"}>
-            <Input name="Time of The Day">
-              <Selector
-                settingKey="settings-backup-hour"
-                options={timeOptions}
-              ></Selector>
-            </Input>
-          </CollapseBox.Content>
         </CollapseBox>
-      </Group>
+        <CollapseBox
+          settingKey="settings-radarr-full_update"
+          on={(k) => k === "Daily" || k === "Weekly"}
+        >
+          <Selector
+            label="Time of The Day"
+            settingKey="settings-radarr-full_update_hour"
+            options={timeOptions}
+          ></Selector>
+        </CollapseBox>
+
+        <Check
+          label="Use cached ffprobe results"
+          settingKey="settings-radarr-use_ffprobe_cache"
+        ></Check>
+        <Message>
+          If disabled, Bazarr will use ffprobe to index video file properties on
+          each run. This will result in higher disk I/O.
+        </Message>
+      </Section>
+      <Section header="Search and Upgrade Subtitles">
+        <Selector
+          label="Search for Missing Series Subtitles"
+          settingKey="settings-general-wanted_search_frequency"
+          options={upgradeOptions}
+        ></Selector>
+
+        <Selector
+          label="Search for Missing Movies Subtitles"
+          options={upgradeOptions}
+          settingKey="settings-general-wanted_search_frequency_movie"
+        ></Selector>
+
+        <Selector
+          label="Upgrade Previously Downloaded Subtitles"
+          options={upgradeOptions}
+          settingKey="settings-general-upgrade_frequency"
+        ></Selector>
+      </Section>
+      <Section header="Backup">
+        <Selector
+          label="Backup config and database"
+          settingKey="settings-backup-frequency"
+          options={backupOptions}
+        ></Selector>
+
+        <CollapseBox
+          settingKey="settings-backup-frequency"
+          on={(k) => k === "Weekly"}
+        >
+          <Selector
+            label="Day of The Week"
+            settingKey="settings-backup-day"
+            options={dayOptions}
+          ></Selector>
+        </CollapseBox>
+        <CollapseBox
+          settingKey="settings-backup-frequency"
+          on={(k) => k === "Daily" || k === "Weekly"}
+        >
+          <Selector
+            label="Time of The Day"
+            settingKey="settings-backup-hour"
+            options={timeOptions}
+          ></Selector>
+        </CollapseBox>
+      </Section>
     </Layout>
   );
 };

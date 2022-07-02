@@ -1,21 +1,20 @@
 import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Box, Text } from "@mantine/core";
 import {
   Cell,
   HeaderGroup,
   Row,
-  TableOptions,
   useExpanded,
   useGroupBy,
   useSortBy,
 } from "react-table";
-import { TableStyleProps } from "./BaseTable";
-import SimpleTable from "./SimpleTable";
+import SimpleTable, { SimpleTableProps } from "./SimpleTable";
 
 function renderCell<T extends object = object>(cell: Cell<T>, row: Row<T>) {
   if (cell.isGrouped) {
     return (
-      <span {...row.getToggleRowExpandedProps()}>{cell.render("Cell")}</span>
+      <div {...row.getToggleRowExpandedProps()}>{cell.render("Cell")}</div>
     );
   } else if (row.canExpand || cell.isAggregated) {
     return null;
@@ -31,22 +30,16 @@ function renderRow<T extends object>(row: Row<T>) {
       const rotation = row.isExpanded ? 90 : undefined;
       return (
         <tr {...row.getRowProps()}>
-          <td
-            className="p-0"
-            {...cell.getCellProps()}
-            colSpan={row.cells.length}
-          >
-            <span
-              {...row.getToggleRowExpandedProps()}
-              className="d-flex align-items-center p-2"
-            >
+          <td {...cell.getCellProps()} colSpan={row.cells.length}>
+            <Text {...row.getToggleRowExpandedProps()} p={2}>
               {cell.render("Cell")}
-              <FontAwesomeIcon
-                className="mx-2"
-                icon={faChevronCircleRight}
-                rotation={rotation}
-              ></FontAwesomeIcon>
-            </span>
+              <Box component="span" mx={12}>
+                <FontAwesomeIcon
+                  icon={faChevronCircleRight}
+                  rotation={rotation}
+                ></FontAwesomeIcon>
+              </Box>
+            </Text>
           </td>
         </tr>
       );
@@ -59,9 +52,7 @@ function renderRow<T extends object>(row: Row<T>) {
         {row.cells
           .filter((cell) => !cell.isPlaceholder)
           .map((cell) => (
-            <td className={cell.column.className} {...cell.getCellProps()}>
-              {renderCell(cell, row)}
-            </td>
+            <td {...cell.getCellProps()}>{renderCell(cell, row)}</td>
           ))}
       </tr>
     );
@@ -76,16 +67,19 @@ function renderHeaders<T extends object>(
     .map((col) => <th {...col.getHeaderProps()}>{col.render("Header")}</th>);
 }
 
-type Props<T extends object> = TableOptions<T> & TableStyleProps<T>;
+type Props<T extends object> = Omit<
+  SimpleTableProps<T>,
+  "plugins" | "headersRenderer" | "rowRenderer"
+>;
+
+const plugins = [useGroupBy, useSortBy, useExpanded];
 
 function GroupTable<T extends object = object>(props: Props<T>) {
-  const plugins = [useGroupBy, useSortBy, useExpanded];
   return (
     <SimpleTable
       {...props}
       plugins={plugins}
-      headersRenderer={renderHeaders}
-      rowRenderer={renderRow}
+      tableStyles={{ headersRenderer: renderHeaders, rowRenderer: renderRow }}
     ></SimpleTable>
   );
 }

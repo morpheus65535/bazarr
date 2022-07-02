@@ -35,6 +35,16 @@ from ..common import NotifyType
 from ..AppriseLocale import gettext_lazy as _
 
 
+# Defines the method to send the notification
+METHODS = (
+    'POST',
+    'GET',
+    'DELETE',
+    'PUT',
+    'HEAD'
+)
+
+
 class NotifyXML(NotifyBase):
     """
     A wrapper for XML Notifications
@@ -98,6 +108,17 @@ class NotifyXML(NotifyBase):
             'type': 'string',
             'private': True,
         },
+
+    })
+
+    # Define our template arguments
+    template_args = dict(NotifyBase.template_args, **{
+        'method': {
+            'name': _('Fetch Method'),
+            'type': 'choice:string',
+            'values': METHODS,
+            'default': METHODS[0],
+        },
     })
 
     # Define any kwargs we're using
@@ -106,9 +127,13 @@ class NotifyXML(NotifyBase):
             'name': _('HTTP Header'),
             'prefix': '+',
         },
+        'payload': {
+            'name': _('Payload Extras'),
+            'prefix': ':',
+        },
     }
 
-    def __init__(self, headers=None, **kwargs):
+    def __init__(self, headers=None, method=None, payload=None, **kwargs):
         """
         Initialize XML Object
 
@@ -124,24 +149,42 @@ class NotifyXML(NotifyBase):
     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <soapenv:Body>
-        <Notification xmlns:xsi="{XSD_URL}">
-            <Version>{XSD_VER}</Version>
-            <Subject>{SUBJECT}</Subject>
-            <MessageType>{MESSAGE_TYPE}</MessageType>
-            <Message>{MESSAGE}</Message>
-            {ATTACHMENTS}
+        <Notification xmlns:xsi="{{XSD_URL}}">
+            {{CORE}}
+            {{ATTACHMENTS}}
        </Notification>
     </soapenv:Body>
 </soapenv:Envelope>"""
 
         self.fullpath = kwargs.get('fullpath')
         if not isinstance(self.fullpath, six.string_types):
-            self.fullpath = '/'
+            self.fullpath = ''
+
+        self.method = self.template_args['method']['default'] \
+            if not isinstance(method, six.string_types) else method.upper()
+
+        if self.method not in METHODS:
+            msg = 'The method specified ({}) is invalid.'.format(method)
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         self.headers = {}
         if headers:
             # Store our extra headers
             self.headers.update(headers)
+
+        self.payload_extras = {}
+        if payload:
+            # Store our extra payload entries (but tidy them up since they will
+            # become XML Keys (they can't contain certain characters
+            for k, v in payload.items():
+                key = re.sub(r'[^A-Za-z0-9_-]*', '', k)
+                if not key:
+                    self.logger.warning(
+                        'Ignoring invalid XML Stanza element name({})'
+                        .format(k))
+                    continue
+                self.payload_extras[key] = v
 
         return
 
@@ -150,11 +193,20 @@ class NotifyXML(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Store our defined headers into our URL parameters
-        params = {'+{}'.format(k): v for k, v in self.headers.items()}
+        # Define any URL parameters
+        params = {
+            'method': self.method,
+        }
 
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
+        # Append our headers into our parameters
+        params.update({'+{}'.format(k): v for k, v in self.headers.items()})
+
+        # Append our payload extra's into our parameters
+        params.update(
+            {':{}'.format(k): v for k, v in self.payload_extras.items()})
 
         # Determine Authentication
         auth = ''
@@ -171,14 +223,15 @@ class NotifyXML(NotifyBase):
 
         default_port = 443 if self.secure else 80
 
-        return '{schema}://{auth}{hostname}{port}{fullpath}/?{params}'.format(
+        return '{schema}://{auth}{hostname}{port}{fullpath}?{params}'.format(
             schema=self.secure_protocol if self.secure else self.protocol,
             auth=auth,
             # never encode hostname since we're expecting it to be a valid one
             hostname=self.host,
             port='' if self.port is None or self.port == default_port
                  else ':{}'.format(self.port),
-            fullpath=NotifyXML.quote(self.fullpath, safe='/'),
+            fullpath=NotifyXML.quote(self.fullpath, safe='/')
+            if self.fullpath else '/',
             params=NotifyXML.urlencode(params),
         )
 
@@ -200,7 +253,24 @@ class NotifyXML(NotifyBase):
         # Our XML Attachmement subsitution
         xml_attachments = ''
 
-        # Track our potential attachments
+        # Our Payload Base
+        payload_base = {
+            'Version': self.xsd_ver,
+            'Subject': NotifyXML.escape_html(title, whitespace=False),
+            'MessageType': NotifyXML.escape_html(
+                notify_type, whitespace=False),
+            'Message': NotifyXML.escape_html(body, whitespace=False),
+        }
+
+        # Apply our payload extras
+        payload_base.update(
+            {k: NotifyXML.escape_html(v, whitespace=False)
+                for k, v in self.payload_extras.items()})
+
+        # Base Entres
+        xml_base = ''.join(
+            ['<{}>{}</{}>'.format(k, v, k) for k, v in payload_base.items()])
+
         attachments = []
         if attach:
             for attachment in attach:
@@ -239,13 +309,9 @@ class NotifyXML(NotifyBase):
                 ''.join(attachments) + '</Attachments>'
 
         re_map = {
-            '{XSD_VER}': self.xsd_ver,
-            '{XSD_URL}': self.xsd_url.format(version=self.xsd_ver),
-            '{MESSAGE_TYPE}': NotifyXML.escape_html(
-                notify_type, whitespace=False),
-            '{SUBJECT}': NotifyXML.escape_html(title, whitespace=False),
-            '{MESSAGE}': NotifyXML.escape_html(body, whitespace=False),
-            '{ATTACHMENTS}': xml_attachments,
+            '{{XSD_URL}}': self.xsd_url.format(version=self.xsd_ver),
+            '{{ATTACHMENTS}}': xml_attachments,
+            '{{CORE}}': xml_base,
         }
 
         # Iterate over above list and store content accordingly
@@ -277,8 +343,23 @@ class NotifyXML(NotifyBase):
         # Always call throttle before any remote server i/o is made
         self.throttle()
 
+        if self.method == 'GET':
+            method = requests.get
+
+        elif self.method == 'PUT':
+            method = requests.put
+
+        elif self.method == 'DELETE':
+            method = requests.delete
+
+        elif self.method == 'HEAD':
+            method = requests.head
+
+        else:  # POST
+            method = requests.post
+
         try:
-            r = requests.post(
+            r = method(
                 url,
                 data=payload,
                 headers=headers,
@@ -286,17 +367,17 @@ class NotifyXML(NotifyBase):
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
             )
-            if r.status_code != requests.codes.ok:
+            if r.status_code < 200 or r.status_code >= 300:
                 # We had a problem
                 status_str = \
                     NotifyXML.http_response_code_lookup(r.status_code)
 
                 self.logger.warning(
-                    'Failed to send XML notification: '
-                    '{}{}error={}.'.format(
-                        status_str,
-                        ', ' if status_str else '',
-                        r.status_code))
+                    'Failed to send JSON %s notification: %s%serror=%s.',
+                    self.method,
+                    status_str,
+                    ', ' if status_str else '',
+                    str(r.status_code))
 
                 self.logger.debug('Response Details:\r\n{}'.format(r.content))
 
@@ -304,7 +385,7 @@ class NotifyXML(NotifyBase):
                 return False
 
             else:
-                self.logger.info('Sent XML notification.')
+                self.logger.info('Sent XML %s notification.', self.method)
 
         except requests.RequestException as e:
             self.logger.warning(
@@ -329,6 +410,10 @@ class NotifyXML(NotifyBase):
             # We're done early as we couldn't load the results
             return results
 
+        # store any additional payload extra's defined
+        results['payload'] = {NotifyXML.unquote(x): NotifyXML.unquote(y)
+                              for x, y in results['qsd:'].items()}
+
         # Add our headers that the user can potentially over-ride if they wish
         # to to our returned result set
         results['headers'] = results['qsd+']
@@ -341,5 +426,9 @@ class NotifyXML(NotifyBase):
         # Tidy our header entries by unquoting them
         results['headers'] = {NotifyXML.unquote(x): NotifyXML.unquote(y)
                               for x, y in results['headers'].items()}
+
+        # Set method if not otherwise set
+        if 'method' in results['qsd'] and len(results['qsd']['method']):
+            results['method'] = NotifyXML.unquote(results['qsd']['method'])
 
         return results

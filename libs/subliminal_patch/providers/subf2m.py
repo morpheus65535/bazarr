@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
 
+import functools
 import logging
 
+from bs4 import BeautifulSoup as bso
 from guessit import guessit
 from requests import Session
-from bs4 import BeautifulSoup as bso
-
-from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
+from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.providers import Provider
-from subliminal_patch.subtitle import Subtitle
-from subliminal_patch.subtitle import guess_matches
 from subliminal_patch.providers.utils import get_archive_from_bytes
 from subliminal_patch.providers.utils import get_subtitle_from_archive
-
+from subliminal_patch.providers.utils import update_matches
+from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
 
 logger = logging.getLogger(__name__)
@@ -24,19 +23,20 @@ class Subf2mSubtitle(Subtitle):
     provider_name = "subf2m"
     hash_verifiable = False
 
-    def __init__(self, language, page_link, release_info):
+    def __init__(self, language, page_link, release_info, episode_number=None):
         super().__init__(language, page_link=page_link)
 
         self.release_info = release_info
-        self._matches = set()
+        self.episode_number = episode_number
+
+        self._matches = set(
+            ("title", "year")
+            if episode_number is None
+            else ("title", "series", "season", "episode")
+        )
 
     def get_matches(self, video):
-        type_ = "episode" if isinstance(video, Episode) else "movie"
-
-        for release in self.release_info.split("\n"):
-            self._matches |= guess_matches(
-                video, guessit(release.strip(), {"type": type_})
-            )
+        update_matches(self._matches, video, self.release_info)
 
         return self._matches
 
@@ -102,7 +102,6 @@ class Subf2mProvider(Provider):
 
     video_types = (Episode, Movie)
     subtitle_class = Subf2mSubtitle
-    _session = None
 
     def initialize(self):
         self._session = Session()
@@ -171,20 +170,42 @@ class Subf2mProvider(Provider):
         return subtitles
 
     def _find_episode_subtitles(self, path, season, episode, language):
-        # TODO: add season packs support?
-
         soup = self._get_subtitle_page_soup(path, language)
-        expected_substring = f"s{season:02}e{episode:02}".lower()
+
         subtitles = []
 
         for item in soup.select("li.item"):
-            if expected_substring in item.text.lower():
-                subtitle = _get_subtitle_from_item(item, language)
-                if subtitle is None:
-                    continue
+            valid_item = None
+            clean_text = " ".join(item.text.split())
 
-                logger.debug("Found subtitle: %s", subtitle)
-                subtitles.append(subtitle)
+            if not clean_text:
+                continue
+
+            # It will return list values
+            guess = _memoized_episode_guess(clean_text)
+
+            if "season" not in guess:
+                logger.debug("Nothing guessed from release: %s", clean_text)
+                continue
+
+            if season in guess["season"] and episode in guess.get("episode", []):
+                logger.debug("Episode match found: %s - %s", guess, clean_text)
+                valid_item = item
+
+            elif season in guess["season"] and not "episode" in guess:
+                logger.debug("Season pack found: %s", clean_text)
+                valid_item = item
+
+            if valid_item is None:
+                continue
+
+            subtitle = _get_subtitle_from_item(item, language, episode)
+
+            if subtitle is None:
+                continue
+
+            logger.debug("Found subtitle: %s", subtitle)
+            subtitles.append(subtitle)
 
         return subtitles
 
@@ -242,13 +263,37 @@ class Subf2mProvider(Provider):
         if archive is None:
             raise APIThrottled(f"Invalid archive: {subtitle.page_link}")
 
-        subtitle.content = get_subtitle_from_archive(archive, get_first_subtitle=True)
+        subtitle.content = get_subtitle_from_archive(
+            archive, episode=subtitle.episode_number
+        )
 
 
-def _get_subtitle_from_item(item, language):
-    release_info = "\n".join(
-        release.text for release in item.find("ul", {"class": "scrolllist"})
-    ).strip()
+@functools.lru_cache(2048)
+def _memoized_episode_guess(content):
+    # Use include to save time from unnecessary checks
+    return guessit(
+        content,
+        {
+            "type": "episode",
+            # Add codec keys to avoid matching x264, 5.1, etc as episode info
+            "includes": ["season", "episode", "video_codec", "audio_codec"],
+            "enforce_list": True,
+        },
+    )
+
+
+def _get_subtitle_from_item(item, language, episode_number=None):
+    release_info = [
+        rel.text.strip() for rel in item.find("ul", {"class": "scrolllist"})
+    ]
+
+    try:
+        text = item.find("div", {"class": "comment-col"}).find("p").text
+        release_info.append(text.replace("\n", " ").strip())
+    except AttributeError:
+        pass
+
+    release_info = "\n".join([item for item in release_info if item])
 
     try:
         path = item.find("a", {"class": "download icon-download"})["href"]  # type: ignore
@@ -256,4 +301,4 @@ def _get_subtitle_from_item(item, language):
         logger.debug("Couldn't get path: %s", item)
         return None
 
-    return Subf2mSubtitle(language, _BASE_URL + path, release_info)
+    return Subf2mSubtitle(language, _BASE_URL + path, release_info, episode_number)
