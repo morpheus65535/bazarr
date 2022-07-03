@@ -70,6 +70,16 @@ def remove_crap_from_fn(fn):
     return REMOVE_CRAP_FROM_FILENAME.sub(repl, fn)
 
 
+def _nested_update(item, to_update):
+    for k, v in to_update.items():
+        if isinstance(v, dict):
+            item[k] = _nested_update(item.get(k, {}), v)
+        else:
+            item[k] = v
+
+    return item
+
+
 class _ProviderConfigs(dict):
     def __init__(self, pool, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -108,7 +118,9 @@ class _ProviderConfigs(dict):
         else:
             logger.debug("No provider config updates")
 
-        return super().update(items)
+        _nested_update(self, items)
+
+        return None
 
 
 class _Banlist:
