@@ -130,15 +130,16 @@ type SliderProps = BaseInput<number> &
 
 export const Slider: FunctionComponent<SliderProps> = (props) => {
   const { value, update, rest } = useBaseInput(props);
+  const { label, ...sliderProps } = rest;
 
   const { min = 0, max = 100 } = props;
 
   const marks = useSliderMarks([min, max]);
 
   return (
-    <InputWrapper label={rest.label}>
+    <InputWrapper label={label}>
       <MantineSlider
-        {...rest}
+        {...sliderProps}
         marks={marks}
         onChange={update}
         value={value ?? 0}
