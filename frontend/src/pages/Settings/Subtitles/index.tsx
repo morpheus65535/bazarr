@@ -365,6 +365,14 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           <Message>Must be 4 digit octal</Message>
         </CollapseBox>
         <Check
+          label="Always use Audio Track as Reference for Syncing"
+          settingKey="settings-subsync-force_audio"
+        ></Check>
+        <Message>
+          Use the audio track as reference for syncing, instead of using the
+          embedded subtitle.
+        </Message>
+        <Check
           label="Automatic Subtitles Synchronization"
           settingKey="settings-subsync-use_subsync"
         ></Check>
