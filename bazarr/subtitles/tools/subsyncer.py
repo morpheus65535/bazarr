@@ -54,6 +54,10 @@ class SubSyncer:
         try:
             unparsed_args = [self.reference, '-i', self.srtin, '-o', self.srtout, '--ffmpegpath', self.ffmpeg_path,
                              '--vad', self.vad, '--log-dir-path', self.log_dir_path]
+            if settings.subsync.getboolean('force_audio'):
+                unparsed_args.append('--no-fix-framerate ')
+                unparsed_args.append('--reference-stream')
+                unparsed_args.append('a:0')
             if settings.subsync.getboolean('debug'):
                 unparsed_args.append('--make-test-case')
             parser = make_parser()
