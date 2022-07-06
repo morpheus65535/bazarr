@@ -111,6 +111,7 @@ declare namespace Settings {
     use_subsync_movie_threshold: boolean;
     subsync_movie_threshold: number;
     debug: boolean;
+    force_audio: boolean;
   }
 
   interface Analytic {
