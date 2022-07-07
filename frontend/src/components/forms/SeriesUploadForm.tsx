@@ -291,6 +291,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
           return (
             <Selector
               {...episodeOptions}
+              searchable
               className={classes.select}
               value={value}
               onChange={(item) => {
