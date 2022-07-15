@@ -18,10 +18,16 @@ export const URLTestButton: FunctionComponent<{
   const click = useCallback(() => {
     if (address && apikey && ssl !== null) {
       let testUrl: string;
+
+      let baseUrl = url;
+      if (baseUrl && baseUrl.startsWith("/") === false) {
+        baseUrl = "/" + baseUrl;
+      }
+
       if (port) {
-        testUrl = `${address}:${port}${url ?? ""}`;
+        testUrl = `${address}:${port}${baseUrl ?? ""}`;
       } else {
-        testUrl = `${address}${url ?? ""}`;
+        testUrl = `${address}${baseUrl ?? ""}`;
       }
       const request = {
         protocol: ssl ? "https" : "http",
