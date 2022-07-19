@@ -1,4 +1,4 @@
-import client from "../queries/client";
+import client from "./client";
 
 type UrlTestResponse =
   | {

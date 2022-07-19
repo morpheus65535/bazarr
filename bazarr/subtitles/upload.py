@@ -1,12 +1,14 @@
 # coding=utf-8
 # fmt: off
 
+import os
 import sys
 import logging
 
 from subzero.language import Language
 from subliminal_patch.core import save_subtitles
 from subliminal_patch.subtitle import Subtitle
+from pysubs2.formats import get_format_identifier
 
 from languages.get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, \
     alpha2_from_language, alpha3_from_language
@@ -17,7 +19,7 @@ from utilities.path_mappings import path_mappings
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
 from languages.custom_lang import CustomLanguage
-from app.database import TableEpisodes, TableMovies
+from app.database import TableEpisodes, TableMovies, TableShows, get_profiles_list
 from app.event_handler import event_stream
 
 from .sync import sync_subtitles
@@ -43,6 +45,9 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
     else:
         lang_obj = custom.subzero_language()
 
+    if hi:
+        lang_obj = Language.rebuild(lang_obj, hi=True)
+
     if forced:
         lang_obj = Language.rebuild(lang_obj, forced=True)
 
@@ -59,6 +64,35 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
     if settings.general.getboolean('utf8_encode'):
         sub.set_encoding("utf-8")
 
+    if media_type == 'series':
+        episode_metadata = TableEpisodes.select(TableEpisodes.sonarrSeriesId,
+                                                TableEpisodes.sonarrEpisodeId,
+                                                TableShows.profileId) \
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)) \
+            .dicts() \
+            .get_or_none()
+
+        if episode_metadata:
+            use_original_format = bool(get_profiles_list(episode_metadata["profileId"])["originalFormat"])
+        else:
+            use_original_format = False
+    else:
+        movie_metadata = TableMovies.select(TableMovies.radarrId, TableMovies.profileId) \
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)) \
+            .dicts() \
+            .get_or_none()
+
+        if movie_metadata:
+            use_original_format = bool(get_profiles_list(movie_metadata["profileId"])["originalFormat"])
+        else:
+            use_original_format = False
+
+    try:
+        sub.format = (get_format_identifier(os.path.splitext(subtitle.filename)[1]),)
+    except Exception:
+        pass
+
     saved_subtitles = []
     try:
         saved_subtitles = save_subtitles(path,
@@ -67,7 +101,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
                                          tags=None,  # fixme
                                          directory=get_target_folder(path),
                                          chmod=chmod,
-                                         formats=(sub.format,),
+                                         formats=(sub.format,) if use_original_format else ("srt",),
                                          path_decoder=force_unicode)
     except Exception:
         logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
@@ -100,10 +134,6 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
     audio_language_code3 = alpha3_from_language(audio_language)
 
     if media_type == 'series':
-        episode_metadata = TableEpisodes.select(TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId) \
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)) \
-            .dicts() \
-            .get_or_none()
         if not episode_metadata:
             return
         series_id = episode_metadata['sonarrSeriesId']
@@ -112,10 +142,6 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
                        percent_score=100, sonarr_series_id=episode_metadata['sonarrSeriesId'], forced=forced,
                        sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
     else:
-        movie_metadata = TableMovies.select(TableMovies.radarrId) \
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)) \
-            .dicts() \
-            .get_or_none()
         if not movie_metadata:
             return
         series_id = ""

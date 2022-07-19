@@ -186,7 +186,7 @@ export function useSystem() {
     {
       onSuccess: () => {
         // TODO: Hard-coded value
-        window.location.replace(`/${Environment.baseUrl}`);
+        window.location.replace(Environment.baseUrl);
       },
     }
   );

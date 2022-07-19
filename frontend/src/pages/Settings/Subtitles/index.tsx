@@ -12,6 +12,10 @@ import {
   Text,
 } from "../components";
 import {
+  SubzeroColorModification,
+  SubzeroModification,
+} from "../utilities/modifications";
+import {
   adaptiveSearchingDelayOption,
   adaptiveSearchingDeltaOption,
   antiCaptchaOption,
@@ -19,18 +23,6 @@ import {
   folderOptions,
   hiExtensionOptions,
 } from "./options";
-
-const subzeroOverride = (key: string) => {
-  return (settings: Settings) => {
-    return settings.general.subzero_mods?.includes(key) ?? false;
-  };
-};
-
-const subzeroColorOverride = (settings: Settings) => {
-  return (
-    settings.general.subzero_mods?.find((v) => v.startsWith("color")) ?? ""
-  );
-};
 
 interface CommandOption {
   option: string;
@@ -179,7 +171,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           clearable
           placeholder="Select a provider"
           settingKey="settings-general-anti_captcha_provider"
-          beforeStaged={(v) => (v === undefined ? "None" : v)}
+          settingOptions={{ onSubmit: (v) => (v === undefined ? "None" : v) }}
           options={antiCaptchaOption}
         ></Selector>
         <Message>Choose the anti-captcha provider you want to use</Message>
@@ -224,7 +216,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         <CollapseBox settingKey="settings-general-adaptive_searching">
           <Selector
             settingKey="settings-general-adaptive_searching_delay"
-            beforeStaged={(v) => (v === undefined ? "3w" : v)}
+            settingOptions={{ onSaved: (v) => (v === undefined ? "3w" : v) }}
             options={adaptiveSearchingDelayOption}
           ></Selector>
           <Message>
@@ -233,7 +225,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           </Message>
           <Selector
             settingKey="settings-general-adaptive_searching_delta"
-            beforeStaged={(v) => (v === undefined ? "1w" : v)}
+            settingOptions={{ onSaved: (v) => (v === undefined ? "1w" : v) }}
             options={adaptiveSearchingDeltaOption}
           ></Selector>
           <Message>
@@ -299,7 +291,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         </Message>
         <Check
           label="Hearing Impaired"
-          override={subzeroOverride("remove_HI")}
+          settingOptions={{ onLoaded: SubzeroModification("remove_HI") }}
           settingKey="subzero-remove_HI"
         ></Check>
         <Message>
@@ -308,7 +300,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         </Message>
         <Check
           label="Remove Tags"
-          override={subzeroOverride("remove_tags")}
+          settingOptions={{ onLoaded: SubzeroModification("remove_tags") }}
           settingKey="subzero-remove_tags"
         ></Check>
         <Message>
@@ -317,7 +309,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         </Message>
         <Check
           label="OCR Fixes"
-          override={subzeroOverride("OCR_fixes")}
+          settingOptions={{ onLoaded: SubzeroModification("OCR_fixes") }}
           settingKey="subzero-OCR_fixes"
         ></Check>
         <Message>
@@ -326,7 +318,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         </Message>
         <Check
           label="Common Fixes"
-          override={subzeroOverride("common")}
+          settingOptions={{ onLoaded: SubzeroModification("common") }}
           settingKey="subzero-common"
         ></Check>
         <Message>
@@ -334,7 +326,9 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         </Message>
         <Check
           label="Fix Uppercase"
-          override={subzeroOverride("fix_uppercase")}
+          settingOptions={{
+            onLoaded: SubzeroModification("fix_uppercase"),
+          }}
           settingKey="subzero-fix_uppercase"
         ></Check>
         <Message>
@@ -345,7 +339,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           label="Color"
           clearable
           options={colorOptions}
-          override={subzeroColorOverride}
+          settingOptions={{ onLoaded: SubzeroColorModification }}
           settingKey="subzero-color"
         ></Selector>
         <Message>
@@ -355,7 +349,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         </Message>
         <Check
           label="Reverse RTL"
-          override={subzeroOverride("reverse_rtl")}
+          settingOptions={{ onLoaded: SubzeroModification("reverse_rtl") }}
           settingKey="subzero-reverse_rtl"
         ></Check>
         <Message>
@@ -370,6 +364,14 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           <Text placeholder="0777" settingKey="settings-general-chmod"></Text>
           <Message>Must be 4 digit octal</Message>
         </CollapseBox>
+        <Check
+          label="Always use Audio Track as Reference for Syncing"
+          settingKey="settings-subsync-force_audio"
+        ></Check>
+        <Message>
+          Use the audio track as reference for syncing, instead of using the
+          embedded subtitle.
+        </Message>
         <Check
           label="Automatic Subtitles Synchronization"
           settingKey="settings-subsync-use_subsync"

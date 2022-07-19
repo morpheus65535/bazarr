@@ -126,19 +126,6 @@ const MovieDetailView: FunctionComponent = () => {
     <Container fluid px={0}>
       <QueryOverlay result={movieQuery}>
         <DropOverlay state={dropzone}>
-          {/* <FileOverlay
-          disabled={profile === undefined}
-          accept={[""]}
-          onDrop={onDrop}
-        ></FileOverlay> */}
-          {/* <div hidden>
-          <File
-            disabled={profile === undefined}
-            accept={[""]}
-            openRef={dialogRef}
-            onDrop={onDrop}
-          ></File>
-        </div> */}
           <Toolbox>
             <Group spacing="xs">
               <Toolbox.Button

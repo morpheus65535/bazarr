@@ -42,12 +42,14 @@ class SubdivxSubtitle(Subtitle):
             language, hearing_impaired=False, page_link=page_link
         )
         self.video = video
-        self.title = title
+
         self.download_url = download_url
-        self.description = description
         self.uploader = uploader
-        self.release_info = self.title
-        if self.description and self.description.strip():
+
+        self.release_info = str(title)
+        self.description = str(description).strip()
+
+        if self.description:
             self.release_info += " | " + self.description
 
     @property
@@ -124,7 +126,7 @@ class SubdivxSubtitlesProvider(Provider):
             "masdesc": "",
             "subtitulos": "1",
             "realiza_b": "1",
-            "pg": "1",
+            "pg": 1,
         }
         logger.debug("Query: %s", query)
 

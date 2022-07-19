@@ -1,15 +1,9 @@
 import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 import { useEnabledLanguages } from "@/utilities/languages";
 import { FunctionComponent } from "react";
-import {
-  Check,
-  CollapseBox,
-  Layout,
-  Message,
-  Section,
-  useSettingValue,
-} from "../components";
+import { Check, CollapseBox, Layout, Message, Section } from "../components";
 import { enabledLanguageKey, languageProfileKey } from "../keys";
+import { useSettingValue } from "../utilities/hooks";
 import { LanguageSelector, ProfileSelector } from "./components";
 import Table from "./table";
 

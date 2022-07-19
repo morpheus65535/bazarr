@@ -22,3 +22,5 @@ export function ENSURE(condition: boolean, msg: string, ...payload: any[]) {
     LOG("error", msg, payload);
   }
 }
+
+export const ASSERT = console.assert;

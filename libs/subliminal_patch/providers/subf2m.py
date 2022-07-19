@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import functools
 import logging
 
 from bs4 import BeautifulSoup as bso
+from guessit import guessit
 from requests import Session
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
@@ -10,7 +12,6 @@ from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.utils import get_archive_from_bytes
 from subliminal_patch.providers.utils import get_subtitle_from_archive
-from subliminal_patch.providers.utils import is_episode
 from subliminal_patch.providers.utils import update_matches
 from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
@@ -169,35 +170,37 @@ class Subf2mProvider(Provider):
         return subtitles
 
     def _find_episode_subtitles(self, path, season, episode, language):
-        # TODO: add season packs support?
         soup = self._get_subtitle_page_soup(path, language)
-
-        season_pack_substrings = _get_season_pack_substrings(season)
 
         subtitles = []
 
         for item in soup.select("li.item"):
             valid_item = None
+            clean_text = " ".join(item.text.split())
 
-            if not item.text.strip():
+            if not clean_text:
                 continue
 
-            if f"s{season:02}e{episode:02}" in item.text.lower():
+            # It will return list values
+            guess = _memoized_episode_guess(clean_text)
+
+            if "season" not in guess:
+                logger.debug("Nothing guessed from release: %s", clean_text)
+                continue
+
+            if season in guess["season"] and episode in guess.get("episode", []):
+                logger.debug("Episode match found: %s - %s", guess, clean_text)
                 valid_item = item
 
-            elif any(sp in item.text.lower() for sp in season_pack_substrings):
-                logger.debug("Possible season pack found")
-                if is_episode(item.text):
-                    logger.debug("It's an episode: %s", " ".join(item.text.split()))
-                    continue
-
-                logger.debug("Season pack found: %s", " ".join(item.text.split()))
+            elif season in guess["season"] and not "episode" in guess:
+                logger.debug("Season pack found: %s", clean_text)
                 valid_item = item
 
             if valid_item is None:
                 continue
 
             subtitle = _get_subtitle_from_item(item, language, episode)
+
             if subtitle is None:
                 continue
 
@@ -265,20 +268,18 @@ class Subf2mProvider(Provider):
         )
 
 
-def _get_season_pack_substrings(season):
-    season_pack_substrings = [
-        f"season {season:02}",
-        f"season {season}",
-        f" s{season:02}",
-        f" s{season}",
-    ]
-
-    try:
-        season_pack_substrings.append(f"{_SEASONS[season - 1]} season")
-    except IndexError:
-        pass
-
-    return season_pack_substrings
+@functools.lru_cache(2048)
+def _memoized_episode_guess(content):
+    # Use include to save time from unnecessary checks
+    return guessit(
+        content,
+        {
+            "type": "episode",
+            # Add codec keys to avoid matching x264, 5.1, etc as episode info
+            "includes": ["season", "episode", "video_codec", "audio_codec"],
+            "enforce_list": True,
+        },
+    )
 
 
 def _get_subtitle_from_item(item, language, episode_number=None):

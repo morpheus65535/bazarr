@@ -58,6 +58,7 @@ export const DropOverlay: FunctionComponent<DropOverlayProps> = ({
 }) => {
   const {
     getRootProps,
+    getInputProps,
     isDragActive,
     isDragAccept: accepted,
     isDragReject: rejected,
@@ -99,6 +100,8 @@ export const DropOverlay: FunctionComponent<DropOverlayProps> = ({
 
   return (
     <Box sx={{ position: "relative" }} {...getRootProps()}>
+      {/* Fix for some browsers. Some browsers need a input element to trigger the file browser panel */}
+      <input {...getInputProps()} hidden />
       {visible && (
         <Box className={classes.container} style={{ zIndex }}>
           <Stack

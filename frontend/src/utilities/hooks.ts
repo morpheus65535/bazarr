@@ -150,3 +150,15 @@ export function useOnValueChange<T>(value: T, onChange: (value: T) => void) {
     }
   }, [value]);
 }
+
+// Mantine's useInterval has some weird issues. This is a workaround.
+export function useInterval(fn: VoidFunction, ms: number) {
+  const timer = useRef<number>();
+
+  useEffect(() => {
+    timer.current = window.setInterval(fn, ms);
+    return () => {
+      clearInterval(timer.current);
+    };
+  }, [fn, ms]);
+}

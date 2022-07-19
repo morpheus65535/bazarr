@@ -29,7 +29,8 @@ export function usePaginationQuery<
   TQueryKey extends QueryKey = QueryKey
 >(
   queryKey: TQueryKey,
-  queryFn: RangeQuery<TObject>
+  queryFn: RangeQuery<TObject>,
+  cacheIndividual = true
 ): UsePaginationQueryResult<TObject> {
   const client = useQueryClient();
 
@@ -49,12 +50,14 @@ export function usePaginationQuery<
     },
     {
       onSuccess: ({ data }) => {
-        data.forEach((item) => {
-          const id = GetItemId(item);
-          if (id) {
-            client.setQueryData([...queryKey, id], item);
-          }
-        });
+        if (cacheIndividual) {
+          data.forEach((item) => {
+            const id = GetItemId(item);
+            if (id) {
+              client.setQueryData([...queryKey, id], item);
+            }
+          });
+        }
       },
     }
   );

@@ -1,5 +1,5 @@
 import { Code } from "@mantine/core";
-import { FunctionComponent, useCallback } from "react";
+import { FunctionComponent } from "react";
 import {
   Check,
   Chips,
@@ -14,12 +14,9 @@ import {
   URLTestButton,
 } from "../components";
 import { moviesEnabledKey } from "../keys";
+import { BaseUrlModification } from "../utilities/modifications";
 
 const SettingsRadarrView: FunctionComponent = () => {
-  const baseUrlOverride = useCallback((settings: Settings) => {
-    return settings.radarr.base_url?.slice(1) ?? "";
-  }, []);
-
   return (
     <Layout name="Radarr">
       <Section header="Use Radarr">
@@ -34,8 +31,10 @@ const SettingsRadarrView: FunctionComponent = () => {
             label="Base URL"
             icon="/"
             settingKey="settings-radarr-base_url"
-            override={baseUrlOverride}
-            beforeStaged={(v) => "/" + v}
+            settingOptions={{
+              onLoaded: BaseUrlModification,
+              onSubmit: (v) => "/" + v,
+            }}
           ></Text>
           <Text label="API Key" settingKey="settings-radarr-apikey"></Text>
           <Check label="SSL" settingKey="settings-radarr-ssl"></Check>

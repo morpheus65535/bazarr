@@ -8,10 +8,13 @@ from subzero.language import Language
 from deep_translator import GoogleTranslator
 
 from languages.custom_lang import CustomLanguage
-from languages.get_languages import alpha3_from_alpha2
+from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
+from radarr.history import history_log_movie
+from sonarr.history import history_log
 
 
-def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
+def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, forced, hi, media_type, sonarr_series_id,
+                             sonarr_episode_id, radarr_id):
     language_code_convert_dict = {
         'he': 'iw',
         'zt': 'zh-CN',
@@ -78,5 +81,14 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
             logging.error(f'BAZARR is unable to translate malformed subtitles: {source_srt_file}')
             return False
     subs.save(dest_srt_file)
+
+    message = f"{language_from_alpha2(from_lang)} subtitles translated to {language_from_alpha3(to_lang)}."
+
+    if media_type == 'series':
+        history_log(action=6, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
+                    description=message, video_path=video_path, language=to_lang, subtitles_path=dest_srt_file)
+    else:
+        history_log_movie(action=6, radarr_id=radarr_id, description=message,
+                          video_path=video_path, language=to_lang, subtitles_path=dest_srt_file)
 
     return dest_srt_file

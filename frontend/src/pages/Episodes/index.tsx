@@ -100,12 +100,6 @@ const SeriesEpisodesView: FunctionComponent = () => {
     onDrop,
   });
 
-  // const onReject = useCallback<Sure<FileProps["onReject"]>>((rejections) => {
-  //   showNotification(
-  //     notification.warn("Cannot Upload Files", "Some files are invalid")
-  //   );
-  // }, []);
-
   useDocumentTitle(`${series?.title ?? "Unknown Series"} - Bazarr (Series)`);
 
   if (isNaN(id) || (isFetched && !series)) {

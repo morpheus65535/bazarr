@@ -2,9 +2,11 @@
 
 import os
 import platform
+import logging
 
 from flask import jsonify
 from flask_restful import Resource
+from tzlocal import get_localzone_name
 
 from radarr.info import get_radarr_info
 from sonarr.info import get_sonarr_info
@@ -23,6 +25,12 @@ class SystemStatus(Resource):
         if 'BAZARR_PACKAGE_AUTHOR' in os.environ and os.environ['BAZARR_PACKAGE_AUTHOR'] != '':
             package_version = f'{package_version} by {os.environ["BAZARR_PACKAGE_AUTHOR"]}'
 
+        try:
+            timezone = get_localzone_name() or "Undefined"
+        except Exception:
+            timezone = "Exception while getting time zone name."
+            logging.exception("BAZARR is unable to get configured time zone name.")
+
         system_status = {}
         system_status.update({'bazarr_version': os.environ["BAZARR_VERSION"]})
         system_status.update({'package_version': package_version})
@@ -34,5 +42,6 @@ class SystemStatus(Resource):
             os.path.dirname(__file__))))})
         system_status.update({'bazarr_config_directory': args.config_dir})
         system_status.update({'start_time': startTime})
+        system_status.update({'timezone': timezone})
 
         return jsonify(data=system_status)

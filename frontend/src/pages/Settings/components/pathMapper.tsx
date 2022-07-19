@@ -13,7 +13,7 @@ import {
   seriesEnabledKey,
 } from "../keys";
 import { useFormActions } from "../utilities/FormValues";
-import { useExtract, useSettingValue } from "./hooks";
+import { useSettingValue } from "../utilities/hooks";
 import { Message } from "./Message";
 
 type SupportType = "sonarr" | "radarr";
@@ -48,7 +48,8 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
   const items = useSettingValue<[string, string][]>(key);
 
   const enabledKey = getEnabledKey(type);
-  const enabled = useExtract<boolean>(enabledKey);
+  const enabled = useSettingValue<boolean>(enabledKey, { original: true });
+
   const { setValue } = useFormActions();
 
   const updateRow = useCallback(

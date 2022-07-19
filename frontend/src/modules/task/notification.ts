@@ -18,6 +18,15 @@ export const notification = {
     };
   },
 
+  error: (title: string, message: string): NotificationProps => {
+    return {
+      title,
+      message,
+      color: "red",
+      autoClose: 7 * 1000,
+    };
+  },
+
   PROGRESS_TIMEOUT: 10 * 1000,
 
   progress: {

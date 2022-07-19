@@ -7,16 +7,14 @@ import shutil
 import tempfile
 
 from babelfish import language_converters
-import fese
-from fese import check_integrity
+from fese import tags
+from fese import container
 from fese import FFprobeSubtitleStream
 from fese import FFprobeVideoContainer
-from fese import InvalidFile
-from fese import to_srt
+from fese.exceptions import InvalidSource
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
-from subliminal_patch.exceptions import MustGetBlacklisted
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
@@ -24,7 +22,7 @@ from subzero.language import Language
 logger = logging.getLogger(__name__)
 
 # Replace Babelfish's Language with Subzero's Language
-fese.Language = Language
+tags.Language = Language
 
 
 class EmbeddedSubtitle(Subtitle):
@@ -57,6 +55,9 @@ class EmbeddedSubtitle(Subtitle):
         return f"{self.container.path}_{self.stream.index}"
 
 
+_ALLOWED_CODECS = ("ass", "subrip", "webvtt", "mov_text")
+
+
 class EmbeddedSubtitlesProvider(Provider):
     provider_name = "embeddedsubtitles"
 
@@ -72,33 +73,37 @@ class EmbeddedSubtitlesProvider(Provider):
 
     def __init__(
         self,
-        include_ass=True,
-        include_srt=True,
+        included_codecs=None,
         cache_dir=None,
         ffprobe_path=None,
         ffmpeg_path=None,
         hi_fallback=False,
-        mergerfs_mode=False,
         timeout=600,
+        include_ass=None,
+        include_srt=None,
+        mergerfs_mode=None,
     ):
-        self._include_ass = include_ass
-        self._include_srt = include_srt
+        self._included_codecs = set(included_codecs or _ALLOWED_CODECS)
+
+        for codec in self._included_codecs:
+            if codec not in _ALLOWED_CODECS:
+                logger.warning("Unallowed codec: %s", codec)
+
         self._cache_dir = os.path.join(
             cache_dir or tempfile.gettempdir(), self.__class__.__name__.lower()
         )
         self._hi_fallback = hi_fallback
         self._cached_paths = {}
-        self._mergerfs_mode = mergerfs_mode
-        self._timeout = float(timeout)
+        self._timeout = int(timeout)
 
-        fese.FFPROBE_PATH = ffprobe_path or fese.FFPROBE_PATH
-        fese.FFMPEG_PATH = ffmpeg_path or fese.FFMPEG_PATH
+        container.FFPROBE_PATH = ffprobe_path or container.FFPROBE_PATH
+        container.FFMPEG_PATH = ffmpeg_path or container.FFMPEG_PATH
 
         if logger.getEffectiveLevel() == logging.DEBUG:
-            fese.FF_LOG_LEVEL = "warning"
+            container.FF_LOG_LEVEL = "warning"
         else:
             # Default is True
-            fese.FFMPEG_STATS = False
+            container.FFMPEG_STATS = False
 
     def initialize(self):
         os.makedirs(self._cache_dir, exist_ok=True)
@@ -111,8 +116,8 @@ class EmbeddedSubtitlesProvider(Provider):
         video = _get_memoized_video_container(path)
 
         try:
-            streams = filter(_check_allowed_extensions, video.get_subtitles())
-        except fese.InvalidSource as error:
+            streams = filter(_check_allowed_codecs, video.get_subtitles())
+        except InvalidSource as error:
             logger.error("Error trying to get subtitles for %s: %s", video, error)
             self._blacklist.add(path)
             streams = []
@@ -128,12 +133,12 @@ class EmbeddedSubtitlesProvider(Provider):
         allowed_streams = []
 
         for stream in streams:
-            if not self._include_ass and stream.extension == "ass":
-                logger.debug("Ignoring ASS: %s", stream)
-                continue
-
-            if not self._include_srt and stream.extension == "srt":
-                logger.debug("Ignoring SRT: %s", stream)
+            if stream.codec_name not in self._included_codecs:
+                logger.debug(
+                    "Ignoring %s (codec not included in %s)",
+                    stream,
+                    self._included_codecs,
+                )
                 continue
 
             if stream.language not in languages:
@@ -188,28 +193,19 @@ class EmbeddedSubtitlesProvider(Provider):
         if container.path not in self._cached_paths:
             # Extract all subittle streams to avoid reading the entire
             # container over and over
-            streams = filter(_check_allowed_extensions, container.get_subtitles())
-            extracted = container.extract_subtitles(
-                list(streams), self._cache_dir, timeout=self._timeout
+            streams = filter(_check_allowed_codecs, container.get_subtitles())
+            extracted = container.copy_subtitles(
+                list(streams),
+                self._cache_dir,
+                timeout=self._timeout,
+                fallback_to_convert=True,
             )
             # Add the extracted paths to the containter path key
             self._cached_paths[container.path] = extracted
 
         cached_path = self._cached_paths[container.path]
         # Get the subtitle file by index
-        subtitle_path = cached_path[subtitle.stream.index]
-
-        try:
-            check_integrity(subtitle.stream, subtitle_path)
-        except InvalidFile as error:
-            raise MustGetBlacklisted(subtitle.id, subtitle.media_type) from error
-
-        # Convert to SRT if the subtitle is ASS
-        new_subtitle_path = to_srt(subtitle_path, remove_source=True)
-        if new_subtitle_path != subtitle_path:
-            cached_path[subtitle.stream.index] = new_subtitle_path
-
-        return new_subtitle_path
+        return cached_path[subtitle.stream.index]
 
     def _is_path_valid(self, path):
         if path in self._blacklist:
@@ -218,10 +214,6 @@ class EmbeddedSubtitlesProvider(Provider):
 
         if not os.path.isfile(path):
             logger.debug("Inexistent file: %s", path)
-            return False
-
-        if self._mergerfs_mode and _is_fuse_rclone_mount(path):
-            logger.debug("Potential cloud file: %s", path)
             return False
 
         return True
@@ -239,8 +231,12 @@ def _get_memoized_video_container(path: str):
     return _MemoizedFFprobeVideoContainer(path)
 
 
-def _check_allowed_extensions(subtitle: FFprobeSubtitleStream):
-    return subtitle.extension in ("ass", "srt")
+def _check_allowed_codecs(subtitle: FFprobeSubtitleStream):
+    if subtitle.codec_name not in _ALLOWED_CODECS:
+        logger.debug("Unallowed codec: %s", subtitle)
+        return False
+
+    return True
 
 
 def _check_hi_fallback(streams, languages):
@@ -270,10 +266,10 @@ def _check_hi_fallback(streams, languages):
 
 
 def _discard_possible_incomplete_subtitles(streams):
-    """Check number_of_frames attributes from subtitle streams in order to find
+    """Check frame properties from subtitle streams in order to find
     supposedly incomplete subtitles"""
     try:
-        max_frames = max(stream.number_of_frames for stream in streams)
+        max_frames = max(stream.tags.frames for stream in streams)
     except ValueError:
         return []
 
@@ -288,11 +284,11 @@ def _discard_possible_incomplete_subtitles(streams):
 
     for stream in streams:
         # 500 < 1200
-        if stream.number_of_frames < max_frames // 2:
+        if stream.tags.frames < max_frames // 2:
             logger.debug(
                 "Possible bad subtitle found: %s (%s frames - %s frames)",
                 stream,
-                stream.number_of_frames,
+                stream.tags.frames,
                 max_frames,
             )
             continue
@@ -300,20 +296,6 @@ def _discard_possible_incomplete_subtitles(streams):
         valid_streams.append(stream)
 
     return valid_streams
-
-
-def _is_fuse_rclone_mount(path: str):
-    # Experimental!
-
-    # This function only makes sense if you are combining a rclone mount with a local mount
-    # with mergerfs or similar tools. Don't use it otherwise.
-
-    # It tries to guess whether a file is a cloud mount by the length
-    # of the inode number. See the following links for reference.
-
-    # https://forum.rclone.org/t/fuse-inode-number-aufs/215/5
-    # https://pkg.go.dev/bazil.org/fuse/fs?utm_source=godoc#GenerateDynamicInode
-    return len(str(os.stat(path).st_ino)) > 18
 
 
 def _get_pretty_release_name(stream, container):

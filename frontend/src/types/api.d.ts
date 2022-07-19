@@ -275,3 +275,8 @@ type ItemSearchResult = Partial<SeriesIdType> &
     title: string;
     year: string;
   };
+
+type BackendError = {
+  code: number;
+  message: string;
+};

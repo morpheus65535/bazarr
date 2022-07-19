@@ -1,6 +1,6 @@
 import { Collapse, Stack } from "@mantine/core";
 import { FunctionComponent, useMemo, useRef } from "react";
-import { useSettingValue } from "./hooks";
+import { useSettingValue } from "../utilities/hooks";
 
 interface ContentProps {
   settingKey: string;

@@ -99,7 +99,8 @@ export function useEpisodeDeleteBlacklist() {
 export function useEpisodeHistoryPagination() {
   return usePaginationQuery(
     [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.History],
-    (param) => api.episodes.history(param)
+    (param) => api.episodes.history(param),
+    false
   );
 }
 

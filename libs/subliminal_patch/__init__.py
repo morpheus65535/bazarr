@@ -15,6 +15,7 @@ from .score import compute_score
 from .video import Video
 from . import extensions
 from . import http
+from . import core
 
 # patch subliminal's core functions
 subliminal.scan_video = subliminal.core.scan_video = scan_video

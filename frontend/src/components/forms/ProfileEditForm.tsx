@@ -2,6 +2,7 @@ import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
 import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
+import { LOG } from "@/utilities/console";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import {
   Accordion,
@@ -65,7 +66,8 @@ const ProfileEditForm: FunctionComponent<Props> = ({
 
   const itemCutoffOptions = useSelectorOptions(
     form.values.items,
-    (v) => v.language
+    (v) => v.language,
+    (v) => String(v.id)
   );
 
   const cutoffOptions = useMemo(
@@ -74,6 +76,13 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       options: [...itemCutoffOptions.options, ...defaultCutoffOptions],
     }),
     [itemCutoffOptions]
+  );
+
+  const selectedCutoff = useMemo(
+    () =>
+      cutoffOptions.options.find((v) => v.value.id === form.values.cutoff)
+        ?.value ?? null,
+    [cutoffOptions, form.values.cutoff]
   );
 
   const mustContainOptions = useSelectorOptions(
@@ -222,6 +231,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
   return (
     <form
       onSubmit={form.onSubmit((value) => {
+        LOG("info", "Submitting language profile", value);
         onComplete?.(value);
         modals.closeSelf();
       })}
@@ -255,7 +265,10 @@ const ProfileEditForm: FunctionComponent<Props> = ({
                 clearable
                 label="Cutoff"
                 {...cutoffOptions}
-                {...form.getInputProps("cutoff")}
+                value={selectedCutoff}
+                onChange={(value) => {
+                  form.setFieldValue("cutoff", value?.id ?? null);
+                }}
               ></Selector>
             </Stack>
           </Accordion.Item>
@@ -286,6 +299,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             <Stack my="xs">
               <Switch
                 label="Use Original Format"
+                checked={form.values.originalFormat ?? false}
                 {...form.getInputProps("originalFormat")}
               ></Switch>
               <Text size="sm">

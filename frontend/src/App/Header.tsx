@@ -61,7 +61,7 @@ const AppHeader: FunctionComponent = () => {
               <Avatar
                 alt="brand"
                 size={32}
-                src={`${Environment.baseUrl}/static/logo64.png`}
+                src={`${Environment.baseUrl}/images/logo64.png`}
               ></Avatar>
             </Anchor>
           </MediaQuery>

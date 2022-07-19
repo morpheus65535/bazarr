@@ -14,8 +14,9 @@ import {
 import { useForm } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
 import { useMutation } from "react-query";
-import { Card, useLatestArray, useUpdateArray } from "../components";
+import { Card } from "../components";
 import { notificationsKey } from "../keys";
+import { useSettingValue, useUpdateArray } from "../utilities/hooks";
 
 interface Props {
   selections: readonly Settings.NotificationInfo[];
@@ -100,10 +101,12 @@ const NotificationModal = withModal(NotificationForm, "notification-tool", {
 });
 
 export const NotificationView: FunctionComponent = () => {
-  const notifications = useLatestArray<Settings.NotificationInfo>(
+  const notifications = useSettingValue<Settings.NotificationInfo[]>(
     notificationsKey,
-    "name",
-    (s) => s.notifications.providers
+    {
+      onLoaded: (settings) => settings.notifications.providers,
+      onSubmit: (value) => value.map((v) => JSON.stringify(v)),
+    }
   );
 
   const update = useUpdateArray<Settings.NotificationInfo>(

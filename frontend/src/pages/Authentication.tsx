@@ -30,7 +30,7 @@ const Authentication: FunctionComponent = () => {
           <Avatar
             mx="auto"
             size={64}
-            src={`${Environment.baseUrl}/static/logo128.png`}
+            src={`${Environment.baseUrl}/images/logo128.png`}
           ></Avatar>
           <Divider></Divider>
           <form onSubmit={form.onSubmit(login)}>

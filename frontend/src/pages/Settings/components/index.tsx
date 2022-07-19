@@ -1,7 +1,7 @@
 import api from "@/apis/raw";
 import { Button } from "@mantine/core";
 import { FunctionComponent, useCallback, useState } from "react";
-import { useSettingValue } from "./hooks";
+import { useSettingValue } from "../utilities/hooks";
 
 export const URLTestButton: FunctionComponent<{
   category: "sonarr" | "radarr";
@@ -18,10 +18,16 @@ export const URLTestButton: FunctionComponent<{
   const click = useCallback(() => {
     if (address && apikey && ssl !== null) {
       let testUrl: string;
+
+      let baseUrl = url;
+      if (baseUrl && baseUrl.startsWith("/") === false) {
+        baseUrl = "/" + baseUrl;
+      }
+
       if (port) {
-        testUrl = `${address}:${port}${url ?? ""}`;
+        testUrl = `${address}:${port}${baseUrl ?? ""}`;
       } else {
-        testUrl = `${address}${url ?? ""}`;
+        testUrl = `${address}${baseUrl ?? ""}`;
       }
       const request = {
         protocol: ssl ? "https" : "http",
@@ -60,7 +66,6 @@ export * from "./Card";
 export * from "./collapse";
 export { default as CollapseBox } from "./collapse";
 export * from "./forms";
-export * from "./hooks";
 export * from "./Layout";
 export { default as Layout } from "./Layout";
 export * from "./Message";
