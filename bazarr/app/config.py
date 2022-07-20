@@ -206,6 +206,7 @@ defaults = {
         'included_codecs': '[]',
         'hi_fallback': 'False',
         'timeout': '600',
+        'unknown_as_english': 'False',
     },
     'karagarga': {
         'username': '',

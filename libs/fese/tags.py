@@ -8,12 +8,21 @@ from .exceptions import LanguageNotFound
 
 logger = logging.getLogger(__name__)
 
+LANGUAGE_FALLBACK = None
+
 
 class FFprobeGenericSubtitleTags:
     _DETECTABLE_TAGS = None
 
     def __init__(self, data: dict):
-        self.language = _get_language(data)
+        try:
+            self.language = _get_language(data)
+        except LanguageNotFound:
+            if LANGUAGE_FALLBACK is not None:
+                self.language = Language.fromietf(LANGUAGE_FALLBACK)
+            else:
+                raise
+
         self._data = data
 
     @classmethod

@@ -4,6 +4,7 @@ import os
 from fese import FFprobeSubtitleStream
 from fese import FFprobeVideoContainer
 from fese import tags
+from fese.exceptions import LanguageNotFound
 import pytest
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
@@ -123,13 +124,36 @@ def fake_streams():
     }
 
 
+@pytest.mark.parametrize("tags_", [{}, {"language": "und", "title": "Unknown"}])
+def test_list_subtitles_unknown_as_english(mocker, tags_):
+    with EmbeddedSubtitlesProvider(unknown_as_english=True):
+        fake = FFprobeSubtitleStream(
+            {"index": 3, "codec_name": "subrip", "tags": tags_}
+        )
+        mocker.patch(
+            "subliminal_patch.providers.embeddedsubtitles._MemoizedFFprobeVideoContainer.get_subtitles",
+            return_value=[fake],
+        )
+        streams = _MemoizedFFprobeVideoContainer.get_subtitles("")
+        assert len(streams) == 1
+        assert streams[0].language == Language.fromietf("en")
+
+
+@pytest.mark.parametrize("tags_", [{}, {"language": "und", "title": "Unknown"}])
+def test_list_subtitles_unknown_as_english_disabled(tags_):
+    with EmbeddedSubtitlesProvider(unknown_as_english=False):
+        with pytest.raises(LanguageNotFound):
+            assert FFprobeSubtitleStream(
+                {"index": 3, "codec_name": "subrip", "tags": tags_}
+            )
+
+
 def test_list_subtitles_hi_fallback_one_stream(
     video_single_language, fake_streams, mocker
 ):
     with EmbeddedSubtitlesProvider(hi_fallback=True) as provider:
         language = Language.fromalpha2("en")
         mocker.patch(
-            #            "fese.FFprobeVideoContainer.get_subtitles",
             "subliminal_patch.providers.embeddedsubtitles._MemoizedFFprobeVideoContainer.get_subtitles",
             return_value=[fake_streams["en_hi"]],
         )

@@ -103,6 +103,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "hi_fallback",
         name: "Use HI subtitles as a fallback (don't enable it if you have a HI language profile)",
       },
+      {
+        type: "switch",
+        key: "unknown_as_english",
+        name: "Use subtitles with unknown info/language as english",
+      },
     ],
     message:
       "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
