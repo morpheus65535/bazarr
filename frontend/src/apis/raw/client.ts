@@ -79,7 +79,7 @@ class BazarrClient {
     switch (code) {
       case 401:
         setLoginRequired();
-        break;
+        return;
     }
     LOG("error", "A error has occurred", code);
 
