@@ -21,7 +21,6 @@ import {
   Selector,
   Text,
 } from "../components";
-import { BaseUrlModification } from "../utilities/modifications";
 import { branchOptions, proxyOptions, securityOptions } from "./options";
 
 const characters = "abcdef0123456789";
@@ -58,7 +57,7 @@ const SettingsGeneralView: FunctionComponent = () => {
           icon="/"
           settingKey="settings-general-base_url"
           settingOptions={{
-            onLoaded: BaseUrlModification,
+            onLoaded: (s) => s.general.base_url?.slice(1) ?? "",
             onSubmit: (v) => "/" + v,
           }}
         ></Text>

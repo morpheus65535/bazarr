@@ -16,7 +16,6 @@ import {
 } from "../components";
 import { seriesEnabledKey } from "../keys";
 import { seriesTypeOptions } from "../options";
-import { BaseUrlModification } from "../utilities/modifications";
 
 const SettingsSonarrView: FunctionComponent = () => {
   return (
@@ -34,7 +33,7 @@ const SettingsSonarrView: FunctionComponent = () => {
             icon="/"
             settingKey="settings-sonarr-base_url"
             settingOptions={{
-              onLoaded: BaseUrlModification,
+              onLoaded: (s) => s.sonarr.base_url?.slice(1) ?? "",
               onSubmit: (v) => "/" + v,
             }}
           ></Text>

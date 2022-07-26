@@ -1,6 +1,3 @@
-export const BaseUrlModification = (settings: Settings) =>
-  settings.general.base_url?.slice(1) ?? "";
-
 export const SubzeroModification = (key: string) => (settings: Settings) =>
   settings.general.subzero_mods?.includes(key) ?? false;
 
