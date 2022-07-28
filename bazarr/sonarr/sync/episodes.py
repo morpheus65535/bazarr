@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import os
 import logging
 
 from peewee import IntegrityError
@@ -71,7 +72,12 @@ def sync_episodes(series_id=None, send_event=True):
                 if 'hasFile' in episode:
                     if episode['hasFile'] is True:
                         if 'episodeFile' in episode:
-                            if episode['episodeFile']['size'] > 20480:
+                            try:
+                                bazarr_file_size = \
+                                    os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
+                            except OSError:
+                                bazarr_file_size = 0
+                            if episode['episodeFile']['size'] > 20480 or bazarr_file_size > 20480:
                                 # Add episodes in sonarr to current episode list
                                 current_episodes_sonarr.append(episode['id'])
 

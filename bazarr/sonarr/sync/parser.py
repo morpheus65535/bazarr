@@ -4,6 +4,7 @@ import os
 
 from app.database import TableShows
 from sonarr.info import get_sonarr_info
+from utilities.path_mappings import path_mappings
 
 from .converter import SonarrFormatVideoCodec, SonarrFormatAudioCodec
 
@@ -79,7 +80,11 @@ def episodeParser(episode):
     if 'hasFile' in episode:
         if episode['hasFile'] is True:
             if 'episodeFile' in episode:
-                if episode['episodeFile']['size'] > 20480:
+                try:
+                    bazarr_file_size = os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
+                except OSError:
+                    bazarr_file_size = 0
+                if episode['episodeFile']['size'] > 20480 or bazarr_file_size > 20480:
                     if 'sceneName' in episode['episodeFile']:
                         sceneName = episode['episodeFile']['sceneName']
                     else:

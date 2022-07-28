@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import os
 import logging
 
 from peewee import IntegrityError
@@ -69,7 +70,12 @@ def update_movies(send_event=True):
 
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
-                        if movie['movieFile']['size'] > 20480:
+                        try:
+                            bazarr_file_size = \
+                                os.path.getsize(path_mappings.path_replace_movie(movie['movieFile']['path']))
+                        except OSError:
+                            bazarr_file_size = 0
+                        if movie['movieFile']['size'] > 20480 or bazarr_file_size > 20480:
                             # Add movies in radarr to current movies list
                             current_movies_radarr.append(str(movie['tmdbId']))
 
