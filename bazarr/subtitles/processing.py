@@ -81,11 +81,9 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                        radarr_id=movie_metadata['radarrId'])
 
     if use_postprocessing is True:
-        command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
-                             downloaded_language_code2, downloaded_language_code3, audio_language,
-                             audio_language_code2, audio_language_code3, subtitle.language.forced,
-                             percent_score, subtitle_id, downloaded_provider, series_id, episode_id,
-                             subtitle.language.hi)
+        command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
+                             downloaded_language_code3, audio_language, audio_language_code2, audio_language_code3,
+                             percent_score, subtitle_id, downloaded_provider, series_id, episode_id)
 
         if media_type == 'series':
             use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
