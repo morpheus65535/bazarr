@@ -20,6 +20,12 @@ class SimpleConfigParser(simpleconfigparser):
             return None
 
 
+def base_url_slash_cleaner(uri):
+    while "//" in uri:
+        uri = uri.replace("//", "/")
+    return uri
+
+
 defaults = {
     'general': {
         'ip': '0.0.0.0',
@@ -286,6 +292,11 @@ if int(settings.sonarr.episodes_sync) < 15:
 if int(settings.radarr.movies_sync) < 15:
     settings.radarr.movies_sync = "60"
 
+# Make sure to get of double slashes in base_url
+settings.general.base_url = base_url_slash_cleaner(uri=settings.general.base_url)
+settings.sonarr.base_url = base_url_slash_cleaner(uri=settings.sonarr.base_url)
+settings.radarr.base_url = base_url_slash_cleaner(uri=settings.radarr.base_url)
+
 if os.path.exists(os.path.join(args.config_dir, 'config', 'config.ini')):
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
@@ -374,6 +385,9 @@ def save_settings(settings_items):
             value = 'True'
         elif value == 'false':
             value = 'False'
+
+        if key in ['settings-general-base_url', 'settings-sonarr-base_url', 'settings-radarr-base_url']:
+            value = base_url_slash_cleaner(value)
 
         if key == 'settings-auth-password':
             if value != settings.auth.password and value is not None:
