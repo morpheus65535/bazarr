@@ -436,9 +436,14 @@ def get_desired_languages(profile_id):
     if profile_id and profile_id != 'null':
         for profile in profile_id_list:
             profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat = profile.values()
-            if profileId == int(profile_id):
-                languages = [x['language'] for x in items]
-                break
+            try:
+                profile_id_int = int(profile_id)
+            except ValueError:
+                continue
+            else:
+                if profileId == profile_id_int:
+                    languages = [x['language'] for x in items]
+                    break
 
     return languages
 
