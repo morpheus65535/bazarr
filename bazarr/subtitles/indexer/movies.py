@@ -55,7 +55,7 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                                 if subtitle_hi:
                                     lang = lang + ':hi'
                                 logging.debug("BAZARR embedded subtitles detected: " + lang)
-                                actual_subtitles.append([lang, None])
+                                actual_subtitles.append([lang, None, None])
                         except Exception:
                             logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_language)
                             pass
@@ -68,6 +68,22 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
         try:
             dest_folder = get_subtitle_destination_folder() or ''
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
+
+            # get previously indexed subtitles that haven't changed:
+            item = TableMovies.select(TableMovies.subtitles) \
+                .where(TableMovies.path == original_path) \
+                .dicts() \
+                .get_or_none()
+            if not item:
+                previously_indexed_subtitles_to_exclude = []
+            else:
+                previously_indexed_subtitles = ast.literal_eval(item['subtitles'])
+                previously_indexed_subtitles_to_exclude = [x for x in previously_indexed_subtitles
+                                                           if len(x) == 3 and
+                                                           x[1] and
+                                                           os.path.isfile(path_mappings.path_replace(x[1])) and
+                                                           os.stat(path_mappings.path_replace(x[1])).st_size == x[2]]
+
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set())
             full_dest_folder_path = os.path.dirname(reversed_path)
             if dest_folder:
@@ -75,7 +91,8 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                     full_dest_folder_path = dest_folder
                 elif settings.general.subfolder == "relative":
                     full_dest_folder_path = os.path.join(os.path.dirname(reversed_path), dest_folder)
-            subtitles = guess_external_subtitles(full_dest_folder_path, subtitles)
+            subtitles = guess_external_subtitles(full_dest_folder_path, subtitles, "movie",
+                                                 previously_indexed_subtitles_to_exclude)
         except Exception:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
@@ -107,7 +124,8 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                     else:
                         language_str = str(language)
                     logging.debug("BAZARR external subtitles detected: " + language_str)
-                    actual_subtitles.append([language_str, path_mappings.path_replace_reverse_movie(subtitle_path)])
+                    actual_subtitles.append([language_str, path_mappings.path_replace_reverse_movie(subtitle_path),
+                                             os.stat(subtitle_path).st_size])
 
         TableMovies.update({TableMovies.subtitles: str(actual_subtitles)})\
             .where(TableMovies.path == original_path)\
