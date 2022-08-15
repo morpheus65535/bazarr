@@ -48,8 +48,15 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
             else path_mappings.path_replace_reverse_movie(subtitle_path)
 
         if previously_indexed_subtitles_to_exclude:
-            if [x for x in previously_indexed_subtitles_to_exclude
-                if x[1] == reversed_subtitle_path and x[2] == os.stat(subtitle_path).st_size]:
+            x_found_lang = None
+            for x_lang, x_path, x_size in previously_indexed_subtitles_to_exclude:
+                if x_path == reversed_subtitle_path and x_size == os.stat(subtitle_path).st_size:
+                    x_found_lang = x_lang
+                    break
+            if x_found_lang:
+                if not language:
+                    x_hi = ':hi' in x_found_lang
+                    subtitles[subtitle] = Language.rebuild(Language.fromietf(x_found_lang), hi=x_hi)
                 continue
 
         if not language:
