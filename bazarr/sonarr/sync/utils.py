@@ -30,6 +30,10 @@ def get_profile_list():
         logging.exception("BAZARR Error trying to get profiles from Sonarr.")
         return None
 
+    # return an empty list when using Sonarr v4 that do not support series languages profiles anymore
+    if profiles_json.status_code == 404:
+        return profiles_list
+
     # Parsing data returned from Sonarr
     if get_sonarr_info.is_legacy():
         for profile in profiles_json.json():

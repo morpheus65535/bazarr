@@ -29,7 +29,10 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
     if get_sonarr_info.is_legacy():
         audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
     else:
-        audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
+        if 'languageProfileId' in show:
+            audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
+        else:
+            audio_language = []
 
     tags = [d['label'] for d in tags_dict if d['id'] in show['tags']]
 
@@ -96,6 +99,12 @@ def episodeParser(episode):
                         if isinstance(item, dict):
                             if 'name' in item:
                                 audio_language.append(item['name'])
+                    elif 'languages' in episode['episodeFile'] and len(episode['episodeFile']['languages']):
+                        items = episode['episodeFile']['languages']
+                        if isinstance(items, list):
+                            for item in items:
+                                if 'name' in item:
+                                    audio_language.append(item['name'])
                     else:
                         audio_language = TableShows.get(TableShows.sonarrSeriesId == episode['seriesId']).audio_language
 
