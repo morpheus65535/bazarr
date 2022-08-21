@@ -6,7 +6,7 @@ interface SocketIODebugger {
 declare global {
   interface Window {
     Bazarr: BazarrServer;
-    _socketio: SocketIODebugger;
+    socketIO: SocketIODebugger;
   }
 
   interface WindowEventMap {

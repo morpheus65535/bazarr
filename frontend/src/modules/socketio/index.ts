@@ -1,8 +1,8 @@
 import { debounce, forIn, remove, uniq } from "lodash";
 import { onlineManager } from "react-query";
 import { io, Socket } from "socket.io-client";
-import { Environment } from "../../utilities";
-import { ENSURE, LOG } from "../../utilities/console";
+import { Environment, isDevEnv } from "../../utilities";
+import { ENSURE, GROUP, LOG } from "../../utilities/console";
 import { createDefaultReducer } from "./reducer";
 
 class SocketIOClient {
@@ -31,6 +31,23 @@ class SocketIOClient {
     this.reducers = [];
 
     onlineManager.setOnline(false);
+
+    if (isDevEnv) {
+      window.socketIO = {
+        dump: () => {
+          GROUP("Socket.IO Reducers", (logger) => {
+            this.reducers.forEach((reducer) => {
+              logger(reducer.key);
+            });
+          });
+        },
+        emit: (e) => {
+          if (e) {
+            this.onEvent(e);
+          }
+        },
+      };
+    }
   }
 
   initialize() {
