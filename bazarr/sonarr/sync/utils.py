@@ -91,7 +91,11 @@ def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
         logging.exception("BAZARR Error trying to get series from Sonarr.")
         return
     else:
-        return r.json()
+        result = r.json()
+        if isinstance(result, dict):
+            return list(result)
+        else:
+            return r.json()
 
 
 def get_episodes_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_id=None):
