@@ -77,7 +77,7 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
             if not item:
                 previously_indexed_subtitles_to_exclude = []
             else:
-                previously_indexed_subtitles = ast.literal_eval(item['subtitles'])
+                previously_indexed_subtitles = ast.literal_eval(item['subtitles']) if item['subtitles'] else []
                 previously_indexed_subtitles_to_exclude = [x for x in previously_indexed_subtitles
                                                            if len(x) == 3 and
                                                            x[1] and
