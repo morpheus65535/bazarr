@@ -10,6 +10,8 @@ import api from "../raw";
 
 const cacheEpisodes = (client: QueryClient, episodes: Item.Episode[]) => {
   episodes.forEach((item) => {
+    client.setQueryData([QueryKeys.Episodes, item.sonarrEpisodeId], item);
+
     client.setQueryData(
       [
         QueryKeys.Series,

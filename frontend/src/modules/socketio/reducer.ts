@@ -1,5 +1,6 @@
 import queryClient from "@/apis/queries";
 import { QueryKeys } from "@/apis/queries/keys";
+import { LOG } from "@/utilities/console";
 import { setCriticalError, setOnlineStatus } from "@/utilities/event";
 import { showNotification } from "@mantine/notifications";
 import { notification, task } from "../task";
@@ -36,11 +37,13 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "series",
       update: (ids) => {
+        LOG("info", "Invalidating series", ids);
         ids.forEach((id) => {
           queryClient.invalidateQueries([QueryKeys.Series, id]);
         });
       },
       delete: (ids) => {
+        LOG("info", "Invalidating series", ids);
         ids.forEach((id) => {
           queryClient.invalidateQueries([QueryKeys.Series, id]);
         });
@@ -49,11 +52,13 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "movie",
       update: (ids) => {
+        LOG("info", "Invalidating movies", ids);
         ids.forEach((id) => {
           queryClient.invalidateQueries([QueryKeys.Movies, id]);
         });
       },
       delete: (ids) => {
+        LOG("info", "Invalidating movies", ids);
         ids.forEach((id) => {
           queryClient.invalidateQueries([QueryKeys.Movies, id]);
         });
@@ -62,13 +67,36 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "episode",
       update: (ids) => {
+        // Currently invalidate episodes is impossible because we don't directly fetch episodes (we fetch episodes by series id)
+        // So we need to invalidate series instead
+        // TODO: Make a query for episodes and invalidate that instead
+        LOG("info", "Invalidating episodes", ids);
         ids.forEach((id) => {
-          queryClient.invalidateQueries([QueryKeys.Episodes, id]);
+          const episode = queryClient.getQueryData<Item.Episode>([
+            QueryKeys.Episodes,
+            id,
+          ]);
+          if (episode !== undefined) {
+            queryClient.invalidateQueries([
+              QueryKeys.Series,
+              episode.sonarrSeriesId,
+            ]);
+          }
         });
       },
       delete: (ids) => {
+        LOG("info", "Invalidating episodes", ids);
         ids.forEach((id) => {
-          queryClient.invalidateQueries([QueryKeys.Episodes, id]);
+          const episode = queryClient.getQueryData<Item.Episode>([
+            QueryKeys.Episodes,
+            id,
+          ]);
+          if (episode !== undefined) {
+            queryClient.invalidateQueries([
+              QueryKeys.Series,
+              episode.sonarrSeriesId,
+            ]);
+          }
         });
       },
     },
