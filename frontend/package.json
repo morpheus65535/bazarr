@@ -50,7 +50,7 @@
     "lodash": "^4",
     "moment": "^2.29",
     "prettier": "^2",
-    "prettier-plugin-organize-imports": "^2",
+    "prettier-plugin-organize-imports": "^3",
     "pretty-quick": "^3",
     "react-dropzone": "^14",
     "react-table": "^7",
