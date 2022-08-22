@@ -115,6 +115,14 @@ const SettingsGeneralView: FunctionComponent = () => {
           }
           settingKey={settingApiKey}
         ></Text>
+        <Check
+          label="Enable CORS headers"
+          settingKey="settings-cors-enabled"
+        ></Check>
+        <Message>
+          Allow third parties to make requests towards your Bazarr installation.
+          Requires a restart of Bazarr when changed
+        </Message>
       </Section>
       <Section header="Proxy">
         <Selector

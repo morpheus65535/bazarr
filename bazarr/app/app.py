@@ -1,6 +1,9 @@
 # coding=utf-8
 
 from flask import Flask, redirect
+import os
+
+from flask_cors import CORS
 from flask_socketio import SocketIO
 
 from .get_args import args
@@ -17,6 +20,9 @@ def create_app():
     app.config["SECRET_KEY"] = settings.general.flask_secret_key
     app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
     app.config['JSON_AS_ASCII'] = False
+
+    if settings.get('cors', 'enabled'):
+        CORS(app)
 
     if args.dev:
         app.config["DEBUG"] = True
