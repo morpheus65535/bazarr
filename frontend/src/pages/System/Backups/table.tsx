@@ -2,9 +2,10 @@ import { useDeleteBackups, useRestoreBackups } from "@/apis/hooks";
 import { Action, PageTable } from "@/components";
 import { useModals } from "@/modules/modals";
 import { useTableStyles } from "@/styles";
+import { Environment } from "@/utilities";
 import { faClock, faHistory, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Group, Text } from "@mantine/core";
+import { Anchor, Group, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 
@@ -23,8 +24,13 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
         Header: "Name",
         accessor: "filename",
         Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-          return <Text className={classes.primary}>{value}</Text>;
+          return (
+            <Anchor
+              href={`${Environment.baseUrl}/system/backup/download/${value}`}
+            >
+              {value}
+            </Anchor>
+          );
         },
       },
       {

@@ -131,6 +131,12 @@ def movies_images(url):
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 
 
+@check_login
+@ui_bp.route('/system/backup/download/<path:filename>', methods=['GET'])
+def backup_download(filename):
+    return send_file(os.path.join(settings.backup.folder, filename), cache_timeout=0, as_attachment=True)
+
+
 def configured():
     System.update({System.configured: '1'}).execute()
 
