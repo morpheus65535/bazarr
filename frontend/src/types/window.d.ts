@@ -10,8 +10,8 @@ declare global {
   }
 
   interface WindowEventMap {
+    "app-auth-changed": CustomEvent<{ authenticated: boolean }>;
     "app-critical-error": CustomEvent<{ message: string }>;
-    "app-login-required": CustomEvent;
     "app-online-status": CustomEvent<{ online: boolean }>;
   }
 }

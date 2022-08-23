@@ -24,8 +24,10 @@ const App: FunctionComponent = () => {
     setCriticalError(detail.message);
   });
 
-  useWindowEvent("app-login-required", () => {
-    navigate("/login");
+  useWindowEvent("app-auth-changed", (ev) => {
+    if (!ev.detail.authenticated) {
+      navigate("/login");
+    }
   });
 
   useWindowEvent("app-online-status", ({ detail }) => {

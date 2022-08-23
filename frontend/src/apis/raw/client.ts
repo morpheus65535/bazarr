@@ -1,7 +1,7 @@
-import SocketIO from "@/modules/socketio";
+import socketio from "@/modules/socketio";
 import { notification } from "@/modules/task";
 import { LOG } from "@/utilities/console";
-import { setLoginRequired } from "@/utilities/event";
+import { setAuthenticated } from "@/utilities/event";
 import { showNotification } from "@mantine/notifications";
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
 import { Environment } from "../../utilities";
@@ -17,17 +17,19 @@ function GetErrorMessage(data: unknown, defaultMsg = "Unknown error"): string {
 class BazarrClient {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
+  bIsAuthenticated: boolean;
 
   constructor() {
+    this.bIsAuthenticated = false;
     const baseUrl = `${Environment.baseUrl}/api/`;
 
-    LOG("info", "initializing BazarrClient with", baseUrl);
-
     this.initialize(baseUrl, Environment.apiKey);
-    SocketIO.initialize();
+    socketio.initialize();
   }
 
   initialize(url: string, apikey?: string) {
+    LOG("info", "initializing BazarrClient with baseUrl", url);
+
     this.axios = Axios.create({
       baseURL: url,
     });
@@ -45,6 +47,10 @@ class BazarrClient {
     this.axios.interceptors.response.use(
       (resp) => {
         if (resp.status >= 200 && resp.status < 300) {
+          if (!this.bIsAuthenticated) {
+            this.bIsAuthenticated = true;
+            setAuthenticated(true);
+          }
           return Promise.resolve(resp);
         } else {
           const error: BackendError = {
@@ -78,7 +84,8 @@ class BazarrClient {
     const { code, message } = error;
     switch (code) {
       case 401:
-        setLoginRequired();
+        this.bIsAuthenticated = false;
+        setAuthenticated(false);
         return;
     }
     LOG("error", "A error has occurred", code);

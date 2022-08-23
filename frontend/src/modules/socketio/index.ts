@@ -51,8 +51,28 @@ class SocketIOClient {
   }
 
   initialize() {
+    LOG("info", "Initializing Socket.IO client...");
     this.reducers.push(...createDefaultReducer());
+
+    window.addEventListener("app-auth-changed", (ev) => {
+      const authenticated = ev.detail.authenticated;
+      LOG("info", "Authentication status change to", authenticated);
+      if (authenticated) {
+        this.connect();
+      } else {
+        this.disconnect();
+      }
+    });
+  }
+
+  connect() {
+    LOG("info", "Connecting Socket.IO client...");
     this.socket.connect();
+  }
+
+  disconnect() {
+    LOG("info", "Disconnecting Socket.IO client...");
+    this.socket.disconnect();
   }
 
   addReducer(reducer: SocketIO.Reducer) {
