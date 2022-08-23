@@ -26,15 +26,14 @@ import {
   createStyles,
   Grid,
   Group,
+  HoverCard,
   Image,
   List,
   MediaQuery,
-  Popover,
   Stack,
   Text,
   Title,
 } from "@mantine/core";
-import { useHover } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
 
 interface Props {
@@ -138,8 +137,6 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     return badges;
   }, [profile, profileItems]);
 
-  const { ref, hovered } = useHover();
-
   return (
     <BackgroundImage src={item?.fanart ?? ""}>
       <Grid
@@ -179,22 +176,23 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
                   {item?.title}
                 </Text>
               </Title>
-              <Popover opened={hovered} position="bottom" withArrow>
-                <Popover.Target>
+              <HoverCard position="bottom" withArrow>
+                <HoverCard.Target>
                   <Text
                     hidden={item?.alternativeTitles.length === 0}
                     color="white"
-                    ref={ref}
                   >
                     <FontAwesomeIcon icon={faClone} />
                   </Text>
-                </Popover.Target>
-                <List>
-                  {item?.alternativeTitles.map((v, idx) => (
-                    <List.Item key={BuildKey(idx, v)}>{v}</List.Item>
-                  ))}
-                </List>
-              </Popover>
+                </HoverCard.Target>
+                <HoverCard.Dropdown>
+                  <List>
+                    {item?.alternativeTitles.map((v, idx) => (
+                      <List.Item key={BuildKey(idx, v)}>{v}</List.Item>
+                    ))}
+                  </List>
+                </HoverCard.Dropdown>
+              </HoverCard>
             </Group>
             <Group spacing="xs" className={classes.group}>
               {detailBadges}
