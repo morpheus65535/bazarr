@@ -17,6 +17,7 @@ import {
   Anchor,
   Badge,
   Button,
+  Code,
   Collapse,
   Divider,
   Group,
@@ -26,6 +27,7 @@ import {
   Text,
 } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
+import { isString } from "lodash";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { UseQueryResult } from "react-query";
 import { Column } from "react-table";
@@ -186,6 +188,9 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
     [download, item]
   );
 
+  const bSceneNameAvailable =
+    isString(item.sceneName) && item.sceneName.length !== 0;
+
   return (
     <Stack>
       <Alert
@@ -193,7 +198,9 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         color="gray"
         icon={<FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>}
       >
-        {item?.path}
+        <Text size="sm">{item?.path}</Text>
+        <Divider hidden={!bSceneNameAvailable} my="xs"></Divider>
+        <Code hidden={!bSceneNameAvailable}>{item?.sceneName}</Code>
       </Alert>
       <Collapse in={!isStale && !results.isFetching}>
         <PageTable
