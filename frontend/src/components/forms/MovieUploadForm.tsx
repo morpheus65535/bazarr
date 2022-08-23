@@ -23,7 +23,7 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
-import { useForm } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
 import { isString } from "lodash";
 import { FunctionComponent, useEffect, useMemo } from "react";
 import { Column } from "react-table";
@@ -112,7 +112,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
           validateResult: validator(movie, v),
         })),
     },
-    validationRules: {
+    validate: {
       files: (values) => {
         return (
           values.find(

@@ -179,11 +179,8 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
                   {item?.title}
                 </Text>
               </Title>
-              <Popover
-                opened={hovered}
-                position="bottom"
-                withArrow
-                target={
+              <Popover opened={hovered} position="bottom" withArrow>
+                <Popover.Target>
                   <Text
                     hidden={item?.alternativeTitles.length === 0}
                     color="white"
@@ -191,8 +188,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
                   >
                     <FontAwesomeIcon icon={faClone} />
                   </Text>
-                }
-              >
+                </Popover.Target>
                 <List>
                   {item?.alternativeTitles.map((v, idx) => (
                     <List.Item key={BuildKey(idx, v)}>{v}</List.Item>
@@ -219,17 +215,23 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   );
 };
 
-type ItemBadgeProps = Omit<BadgeProps<"div">, "leftSection"> & {
+type ItemBadgeProps = Omit<BadgeProps, "leftSection"> & {
   icon: IconDefinition;
+  title?: string;
 };
 
-const ItemBadge: FunctionComponent<ItemBadgeProps> = ({ icon, ...props }) => (
+const ItemBadge: FunctionComponent<ItemBadgeProps> = ({
+  icon,
+  title,
+  ...props
+}) => (
   <Badge
     leftSection={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
     radius="sm"
     color="dark"
     size="sm"
     style={{ textTransform: "none" }}
+    aria-label={title}
     {...props}
   ></Badge>
 );

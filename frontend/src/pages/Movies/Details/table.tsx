@@ -42,7 +42,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         Cell: ({ value }) => {
           const { classes } = useTableStyles();
 
-          const props: TextProps<"div"> = {
+          const props: TextProps = {
             className: classes.primary,
           };
 

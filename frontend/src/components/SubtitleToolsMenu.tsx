@@ -138,70 +138,67 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
   const disabledTools = selections.length === 0;
 
   return (
-    <Menu
-      control={children}
-      withArrow
-      placement="end"
-      position="left"
-      {...menu}
-    >
-      <Menu.Label>Tools</Menu.Label>
-      {tools.map((tool) => (
+    <Menu withArrow position="left-end" {...menu}>
+      <Menu.Target>{children}</Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Label>Tools</Menu.Label>
+        {tools.map((tool) => (
+          <Menu.Item
+            key={tool.key}
+            disabled={disabledTools}
+            icon={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
+            onClick={() => {
+              if (tool.modal) {
+                modals.openContextModal(tool.modal, { selections });
+              } else {
+                process(tool.key, tool.name);
+              }
+            }}
+          >
+            {tool.name}
+          </Menu.Item>
+        ))}
+        <Divider></Divider>
+        <Menu.Label>Actions</Menu.Label>
         <Menu.Item
-          key={tool.key}
-          disabled={disabledTools}
-          icon={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
+          disabled={selections.length !== 0 || onAction === undefined}
+          icon={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}
           onClick={() => {
-            if (tool.modal) {
-              modals.openContextModal(tool.modal, { selections });
-            } else {
-              process(tool.key, tool.name);
-            }
+            onAction?.("search");
           }}
         >
-          {tool.name}
+          Search
         </Menu.Item>
-      ))}
-      <Divider></Divider>
-      <Menu.Label>Actions</Menu.Label>
-      <Menu.Item
-        disabled={selections.length !== 0 || onAction === undefined}
-        icon={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}
-        onClick={() => {
-          onAction?.("search");
-        }}
-      >
-        Search
-      </Menu.Item>
-      <Menu.Item
-        disabled={selections.length === 0 || onAction === undefined}
-        color="red"
-        icon={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
-        onClick={() => {
-          modals.openConfirmModal({
-            title: "The following subtitles will be deleted",
-            size: "lg",
-            children: (
-              <ScrollArea style={{ maxHeight: "20rem" }}>
-                <List>
-                  {selections.map((s) => (
-                    <List.Item my="md" key={s.path}>
-                      {s.path}
-                    </List.Item>
-                  ))}
-                </List>
-              </ScrollArea>
-            ),
-            onConfirm: () => {
-              onAction?.("delete");
-            },
-            labels: { confirm: "Delete", cancel: "Cancel" },
-            confirmProps: { color: "red" },
-          });
-        }}
-      >
-        Delete...
-      </Menu.Item>
+        <Menu.Item
+          disabled={selections.length === 0 || onAction === undefined}
+          color="red"
+          icon={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
+          onClick={() => {
+            modals.openConfirmModal({
+              title: "The following subtitles will be deleted",
+              size: "lg",
+              children: (
+                <ScrollArea style={{ maxHeight: "20rem" }}>
+                  <List>
+                    {selections.map((s) => (
+                      <List.Item my="md" key={s.path}>
+                        {s.path}
+                      </List.Item>
+                    ))}
+                  </List>
+                </ScrollArea>
+              ),
+              onConfirm: () => {
+                onAction?.("delete");
+              },
+              labels: { confirm: "Delete", cancel: "Cancel" },
+              confirmProps: { color: "red" },
+            });
+          }}
+        >
+          Delete...
+        </Menu.Item>
+      </Menu.Dropdown>
     </Menu>
   );
 };

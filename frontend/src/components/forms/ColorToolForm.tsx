@@ -3,7 +3,7 @@ import { Selector, SelectorOption } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import { Button, Divider, Stack } from "@mantine/core";
-import { useForm } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
 import { FunctionComponent } from "react";
 
 const TaskName = "Changing Color";
@@ -92,7 +92,7 @@ const ColorToolForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
     initialValues: {
       color: "",
     },
-    validationRules: {
+    validate: {
       color: (c) => colorOptions.find((op) => op.value === c) !== undefined,
     },
   });

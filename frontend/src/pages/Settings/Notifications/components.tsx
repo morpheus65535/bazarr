@@ -11,7 +11,8 @@ import {
   Stack,
   Textarea,
 } from "@mantine/core";
-import { useForm } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
+import { isObject } from "lodash";
 import { FunctionComponent, useMemo } from "react";
 import { useMutation } from "react-query";
 import { Card } from "../components";
@@ -42,8 +43,8 @@ const NotificationForm: FunctionComponent<Props> = ({
       selection: payload,
       url: payload?.url ?? "",
     },
-    validationRules: {
-      selection: (value) => value !== null,
+    validate: {
+      selection: isObject,
       url: (value) => value.trim() !== "",
     },
   });

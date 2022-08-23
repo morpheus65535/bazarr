@@ -2,7 +2,7 @@ import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import { task, TaskGroup } from "@/modules/task";
-import { Badge, FloatingTooltip, MantineColor } from "@mantine/core";
+import { Badge, MantineColor, Tooltip } from "@mantine/core";
 import { FunctionComponent, useMemo, useState } from "react";
 
 interface Props {
@@ -93,11 +93,11 @@ export const Subtitle: FunctionComponent<Props> = ({
         }
       }}
     >
-      <FloatingTooltip label="Embedded Subtitle" disabled={!disabled}>
+      <Tooltip.Floating label="Embedded Subtitle" disabled={!disabled}>
         <Badge color={color}>
           <Language.Text value={subtitle} long={false}></Language.Text>
         </Badge>
-      </FloatingTooltip>
+      </Tooltip.Floating>
     </SubtitleToolsMenu>
   );
 };

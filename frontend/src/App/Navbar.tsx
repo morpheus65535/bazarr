@@ -138,7 +138,7 @@ const AppNavbar: FunctionComponent = () => {
             <Action
               label="Change Theme"
               color={dark ? "yellow" : "indigo"}
-              variant="hover"
+              variant="subtle"
               onClick={() => toggleColorScheme()}
               icon={dark ? faSun : faMoon}
             ></Action>
@@ -149,7 +149,7 @@ const AppNavbar: FunctionComponent = () => {
               <Action
                 label="Donate"
                 icon={faHeart}
-                variant="hover"
+                variant="subtle"
                 color="red"
               ></Action>
             </Anchor>

@@ -198,37 +198,38 @@ const MovieDetailView: FunctionComponent = () => {
               >
                 Edit Movie
               </Toolbox.Button>
-              <Menu
-                control={
+              <Menu>
+                <Menu.Target>
                   <Action
                     label="More Actions"
                     icon={faEllipsis}
                     disabled={hasTask}
                   />
-                }
-              >
-                <Menu.Item
-                  icon={<FontAwesomeIcon icon={faToolbox} />}
-                  onClick={() => {
-                    if (movie) {
-                      modals.openContextModal(SubtitleToolsModal, {
-                        payload: [movie],
-                      });
-                    }
-                  }}
-                >
-                  Mass Edit
-                </Menu.Item>
-                <Menu.Item
-                  icon={<FontAwesomeIcon icon={faHistory} />}
-                  onClick={() => {
-                    if (movie) {
-                      modals.openContextModal(MovieHistoryModal, { movie });
-                    }
-                  }}
-                >
-                  History
-                </Menu.Item>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item
+                    icon={<FontAwesomeIcon icon={faToolbox} />}
+                    onClick={() => {
+                      if (movie) {
+                        modals.openContextModal(SubtitleToolsModal, {
+                          payload: [movie],
+                        });
+                      }
+                    }}
+                  >
+                    Mass Edit
+                  </Menu.Item>
+                  <Menu.Item
+                    icon={<FontAwesomeIcon icon={faHistory} />}
+                    onClick={() => {
+                      if (movie) {
+                        modals.openContextModal(MovieHistoryModal, { movie });
+                      }
+                    }}
+                  >
+                    History
+                  </Menu.Item>
+                </Menu.Dropdown>
               </Menu>
             </Group>
           </Toolbox>
