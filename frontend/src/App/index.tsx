@@ -5,6 +5,7 @@ import NavbarProvider from "@/contexts/Navbar";
 import OnlineProvider from "@/contexts/Online";
 import { notification } from "@/modules/task";
 import CriticalError from "@/pages/CriticalError";
+import { RouterNames } from "@/Router/RouterNames";
 import { Environment } from "@/utilities";
 import { AppShell } from "@mantine/core";
 import { useWindowEvent } from "@mantine/hooks";
@@ -26,7 +27,7 @@ const App: FunctionComponent = () => {
 
   useWindowEvent("app-auth-changed", (ev) => {
     if (!ev.detail.authenticated) {
-      navigate("/login");
+      navigate(RouterNames.Auth);
     }
   });
 

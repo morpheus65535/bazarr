@@ -17,6 +17,7 @@ import { MovieSearchModal } from "@/components/modals/ManualSearchModal";
 import { useModals } from "@/modules/modals";
 import { notification, task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
+import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
   faCloudUploadAlt,
@@ -105,7 +106,7 @@ const MovieDetailView: FunctionComponent = () => {
   const openDropzone = useRef<VoidFunction>(null);
 
   if (isNaN(id) || (isFetched && !movie)) {
-    return <Navigate to="/not-found"></Navigate>;
+    return <Navigate to={RouterNames.NotFound}></Navigate>;
   }
 
   const allowEdit = movie?.profileId !== undefined;
@@ -196,6 +197,7 @@ const MovieDetailView: FunctionComponent = () => {
               <Menu.Target>
                 <Action
                   label="More Actions"
+                  color="dark"
                   icon={faEllipsis}
                   disabled={hasTask}
                 />

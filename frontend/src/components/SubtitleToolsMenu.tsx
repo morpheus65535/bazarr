@@ -105,7 +105,7 @@ export function useTools() {
 interface Props {
   selections: FormType.ModifySubtitle[];
   children?: ReactElement;
-  menu?: Omit<MenuProps, "control" | "children">;
+  menu?: Omit<MenuProps, "children">;
   onAction?: (action: "delete" | "search") => void;
 }
 

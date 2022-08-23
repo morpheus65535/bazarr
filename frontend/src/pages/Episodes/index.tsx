@@ -13,6 +13,7 @@ import { SubtitleToolsModal } from "@/components/modals";
 import { useModals } from "@/modules/modals";
 import { notification, task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
+import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
   faAdjust,
@@ -90,7 +91,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
   const openDropzone = useRef<VoidFunction>(null);
 
   if (isNaN(id) || (isFetched && !series)) {
-    return <Navigate to="/not-found"></Navigate>;
+    return <Navigate to={RouterNames.NotFound}></Navigate>;
   }
 
   return (

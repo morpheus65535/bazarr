@@ -254,8 +254,16 @@ const useStyles = createStyles((theme) => {
   const hoverBackgroundColor =
     theme.colorScheme === "light" ? theme.colors.gray[0] : theme.colors.dark[7];
 
+  const textColor =
+    theme.colorScheme === "light" ? theme.colors.gray[8] : theme.colors.gray[5];
+
   return {
-    text: { display: "inline-flex", alignItems: "center", width: "100%" },
+    text: {
+      display: "inline-flex",
+      alignItems: "center",
+      width: "100%",
+      color: textColor,
+    },
     anchor: {
       textDecoration: "none",
       borderLeft: `2px solid ${borderColor}`,
@@ -273,6 +281,7 @@ const useStyles = createStyles((theme) => {
       marginLeft: "auto",
       textDecoration: "none",
       boxShadow: theme.shadows.xs,
+      color: textColor,
     },
   };
 });
@@ -323,7 +332,6 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
         inline
         p="xs"
         size="sm"
-        color="gray"
         weight={primary ? "bold" : "normal"}
         className={classes.text}
       >
@@ -336,7 +344,6 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
         {name}
         <Badge
           className={classes.badge}
-          color="gray"
           radius="xs"
           hidden={badge === undefined || badge === 0}
         >
