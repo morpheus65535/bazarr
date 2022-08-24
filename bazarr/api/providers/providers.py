@@ -50,4 +50,4 @@ class Providers(Resource):
             reset_throttled_providers()
             return '', 204
 
-        return '', 400
+        return 'Unknown action', 400

@@ -26,7 +26,7 @@ class SystemBackups(Resource):
             restored = prepare_restore(filename)
             if restored:
                 return '', 204
-        return '', 501
+        return 'Filename not provided', 400
 
     @authenticate
     def delete(self):
@@ -35,4 +35,4 @@ class SystemBackups(Resource):
             deleted = delete_backup_file(filename)
             if deleted:
                 return '', 204
-        return '', 501
+        return 'Filename not provided', 400

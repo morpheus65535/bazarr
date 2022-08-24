@@ -12,7 +12,7 @@ from utilities.helper import check_credentials
 class SystemAccount(Resource):
     def post(self):
         if settings.auth.type != 'form':
-            return '', 405
+            return 'Unknown authentication type define in config.ini', 404
 
         action = request.args.get('action')
         if action == 'login':
@@ -26,4 +26,4 @@ class SystemAccount(Resource):
             gc.collect()
             return '', 204
 
-        return '', 401
+        return 'Unknown action', 400

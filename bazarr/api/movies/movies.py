@@ -49,7 +49,7 @@ class Movies(Resource):
                 try:
                     profileId = int(profileId)
                 except Exception:
-                    return '', 400
+                    return 'Languages profile not found', 404
 
             TableMovies.update({
                 TableMovies.profileId: profileId
@@ -79,4 +79,4 @@ class Movies(Resource):
             wanted_search_missing_subtitles_movies()
             return '', 204
 
-        return '', 400
+        return 'Unknown action', 400

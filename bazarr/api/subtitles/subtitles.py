@@ -37,14 +37,14 @@ class Subtitles(Resource):
                 .get_or_none()
 
             if not metadata:
-                return 'Episode not found', 500
+                return 'Episode not found', 404
 
             video_path = path_mappings.path_replace(metadata['path'])
         else:
             metadata = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == id).dicts().get_or_none()
 
             if not metadata:
-                return 'Movie not found', 500
+                return 'Movie not found', 404
 
             video_path = path_mappings.path_replace_movie(metadata['path'])
 

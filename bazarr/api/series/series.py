@@ -75,7 +75,7 @@ class Series(Resource):
                 try:
                     profileId = int(profileId)
                 except Exception:
-                    return '', 400
+                    return 'Languages profile not found', 404
 
             TableShows.update({
                 TableShows.profileId: profileId
@@ -113,4 +113,4 @@ class Series(Resource):
             wanted_search_missing_subtitles_series()
             return '', 204
 
-        return '', 400
+        return 'Unknown action', 400
