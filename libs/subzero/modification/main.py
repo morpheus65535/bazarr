@@ -191,7 +191,9 @@ class SubtitleModifications(object):
                     sub = processor.process(sub)
 
                 if sub.strip():
-                    if not sub.isupper():
+                    # only consider alphabetic characters to determine if uppercase
+                    alpha_sub = ''.join([i for i in sub if i.isalpha()])
+                    if alpha_sub and not alpha_sub.isupper():
                         return False
 
                     entry_used = True
