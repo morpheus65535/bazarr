@@ -3,5 +3,5 @@
 
 [ -n "$CI" ] && exit 0
 
-cd frontend
-npx pretty-quick --staged
+cd frontend || exit
+npx pretty-quick --staged --pattern "frontend/**/*.*"
