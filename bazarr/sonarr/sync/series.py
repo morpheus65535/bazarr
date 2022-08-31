@@ -189,7 +189,7 @@ def update_one_series(series_id, action):
                                       serie_default_profile=serie_default_profile,
                                       audio_profiles=audio_profiles)
     except Exception:
-        logging.debug('BAZARR cannot parse series returned by SignalR feed.')
+        logging.exception('BAZARR cannot get series returned by SignalR feed from Sonarr API.')
         return
 
     # Update existing series in DB
