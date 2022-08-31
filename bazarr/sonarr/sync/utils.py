@@ -30,6 +30,10 @@ def get_profile_list():
         logging.exception("BAZARR Error trying to get profiles from Sonarr.")
         return None
 
+    # return an empty list when using Sonarr v4 that do not support series languages profiles anymore
+    if profiles_json.status_code == 404:
+        return profiles_list
+
     # Parsing data returned from Sonarr
     if get_sonarr_info.is_legacy():
         for profile in profiles_json.json():
@@ -87,7 +91,11 @@ def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
         logging.exception("BAZARR Error trying to get series from Sonarr.")
         return
     else:
-        return r.json()
+        result = r.json()
+        if isinstance(result, dict):
+            return list(result)
+        else:
+            return r.json()
 
 
 def get_episodes_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_id=None):

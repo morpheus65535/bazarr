@@ -167,16 +167,19 @@ class Episode(Video):
         if guess['type'] != 'episode':
             raise ValueError('The guess must be an episode guess')
 
-        if 'title' not in guess or 'episode' not in guess:
-            raise ValueError('Insufficient data to process the guess')
+        # We'll ignore missing fields. The Video instance will be refined anyway.
+
+        # if 'title' not in guess or 'episode' not in guess:
+        #    raise ValueError('Insufficient data to process the guess')
+
 
         # Currently we only have single-ep support (guessit returns a multi-ep as a list with int values)
         # Most providers only support single-ep, so make sure it contains only 1 episode
         # In case of multi-ep, take the lowest episode (subtitles will normally be available on lowest episode number)
-        episode_guess = guess.get('episode')
+        episode_guess = guess.get('episode', 1)
         episode = min(episode_guess) if episode_guess and isinstance(episode_guess, list) else episode_guess
 
-        return cls(name, guess['title'], guess.get('season', 1), episode, title=guess.get('episode_title'),
+        return cls(name, guess.get("title", "Unknown Title"), guess.get('season', 1), episode, title=guess.get('episode_title'),
                    year=guess.get('year'), source=guess.get('source'), original_series='year' not in guess,
                    release_group=guess.get('release_group'), resolution=guess.get('screen_size'),
                    video_codec=guess.get('video_codec'), audio_codec=guess.get('audio_codec'),
@@ -220,14 +223,16 @@ class Movie(Video):
         if guess['type'] != 'movie':
             raise ValueError('The guess must be a movie guess')
 
-        if 'title' not in guess:
-            raise ValueError('Insufficient data to process the guess')
+        # We'll ignore missing fields. The Video instance will be refined anyway.
+
+        # if 'title' not in guess:
+        #   raise ValueError('Insufficient data to process the guess')
 
         alternative_titles = []
         if 'alternative_title' in guess:
             alternative_titles.append(u"%s %s" % (guess['title'], guess['alternative_title']))
 
-        return cls(name, guess['title'], source=guess.get('source'), release_group=guess.get('release_group'),
+        return cls(name, guess.get('title', 'Unknown Title'), source=guess.get('source'), release_group=guess.get('release_group'),
                    resolution=guess.get('screen_size'), video_codec=guess.get('video_codec'),
                    audio_codec=guess.get('audio_codec'), year=guess.get('year'), alternative_titles=alternative_titles,
                    streaming_service=guess.get("streaming_service"), edition=guess.get("edition"))

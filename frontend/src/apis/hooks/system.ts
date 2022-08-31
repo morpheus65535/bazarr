@@ -1,5 +1,5 @@
 import { Environment } from "@/utilities";
-import { setLoginRequired } from "@/utilities/event";
+import { setAuthenticated } from "@/utilities/event";
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { QueryKeys } from "../queries/keys";
@@ -173,7 +173,7 @@ export function useSystem() {
     () => api.system.logout(),
     {
       onSuccess: () => {
-        setLoginRequired();
+        setAuthenticated(false);
         client.clear();
       },
     }

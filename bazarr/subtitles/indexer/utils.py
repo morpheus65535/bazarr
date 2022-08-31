@@ -11,6 +11,7 @@ from charamel import Detector
 
 from app.config import settings
 from constants import hi_regex
+from utilities.path_mappings import path_mappings
 
 
 def get_external_subtitles_path(file, subtitle):
@@ -40,16 +41,34 @@ def get_external_subtitles_path(file, subtitle):
     return path
 
 
-def guess_external_subtitles(dest_folder, subtitles):
+def guess_external_subtitles(dest_folder, subtitles, media_type, previously_indexed_subtitles_to_exclude=None):
     for subtitle, language in subtitles.items():
+        subtitle_path = os.path.join(dest_folder, subtitle)
+        reversed_subtitle_path = path_mappings.path_replace_reverse(subtitle_path) if media_type == "series" \
+            else path_mappings.path_replace_reverse_movie(subtitle_path)
+
+        if previously_indexed_subtitles_to_exclude:
+            x_found_lang = None
+            for x_lang, x_path, x_size in previously_indexed_subtitles_to_exclude:
+                if x_path == reversed_subtitle_path and x_size == os.stat(subtitle_path).st_size:
+                    x_found_lang = x_lang
+                    break
+            if x_found_lang:
+                if not language:
+                    x_hi = ':hi' in x_found_lang
+                    subtitles[subtitle] = Language.rebuild(Language.fromietf(x_found_lang), hi=x_hi)
+                continue
+
         if not language:
-            subtitle_path = os.path.join(dest_folder, subtitle)
             if os.path.exists(subtitle_path) and os.path.splitext(subtitle_path)[1] in core.SUBTITLE_EXTENSIONS:
                 logging.debug("BAZARR falling back to file content analysis to detect language.")
                 detected_language = None
 
+                # detect forced subtitles
+                forced = True if os.path.splitext(os.path.splitext(subtitle)[0])[1] == '.forced' else False
+
                 # to improve performance, skip detection of files larger that 1M
-                if os.path.getsize(subtitle_path) > 1*1024*1024:
+                if os.path.getsize(subtitle_path) > 1 * 1024 * 1024:
                     logging.debug("BAZARR subtitles file is too large to be text based. Skipping this file: " +
                                   subtitle_path)
                     continue
@@ -92,21 +111,21 @@ def guess_external_subtitles(dest_folder, subtitles):
                         logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
                             detected_language))
                         try:
-                            subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language), forced=False,
+                            subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language), forced=forced,
                                                                    hi=False)
                         except Exception:
                             pass
 
         # If language is still None (undetected), skip it
-        if not language:
-            pass
+        if hasattr(subtitles[subtitle], 'basename') and not subtitles[subtitle].basename:
+            continue
 
         # Skip HI detection if forced
-        elif language.forced:
-            pass
+        if hasattr(language, 'forced') and language.forced:
+            continue
 
         # Detect hearing-impaired external subtitles not identified in filename
-        elif not subtitles[subtitle].hi:
+        if hasattr(subtitles[subtitle], 'hi') and not subtitles[subtitle].hi:
             subtitle_path = os.path.join(dest_folder, subtitle)
 
             # check if file exist:

@@ -23,4 +23,15 @@ export function ENSURE(condition: boolean, msg: string, ...payload: any[]) {
   }
 }
 
+export function GROUP(
+  header: string,
+  content: (logger: typeof console.log) => void
+) {
+  if (!isProdEnv) {
+    console.group(header);
+    content(console.log);
+    console.groupEnd();
+  }
+}
+
 export const ASSERT = console.assert;

@@ -7,8 +7,8 @@ function createEvent<
   return new CustomEvent<P>(event, { bubbles: true, detail: payload });
 }
 
-export function setLoginRequired() {
-  const event = createEvent("app-login-required", {});
+export function setAuthenticated(authenticated: boolean) {
+  const event = createEvent("app-auth-changed", { authenticated });
   window.dispatchEvent(event);
 }
 

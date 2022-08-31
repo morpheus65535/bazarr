@@ -22,7 +22,7 @@ class Episodes(Resource):
                 .order_by(TableEpisodes.season.desc(), TableEpisodes.episode.desc())\
                 .dicts()
         else:
-            return "Series or Episode ID not provided", 400
+            return "Series or Episode ID not provided", 404
 
         result = list(result)
         for item in result:

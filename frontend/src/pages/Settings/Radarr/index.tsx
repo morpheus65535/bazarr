@@ -14,7 +14,6 @@ import {
   URLTestButton,
 } from "../components";
 import { moviesEnabledKey } from "../keys";
-import { BaseUrlModification } from "../utilities/modifications";
 
 const SettingsRadarrView: FunctionComponent = () => {
   return (
@@ -32,7 +31,7 @@ const SettingsRadarrView: FunctionComponent = () => {
             icon="/"
             settingKey="settings-radarr-base_url"
             settingOptions={{
-              onLoaded: BaseUrlModification,
+              onLoaded: (s) => s.radarr.base_url?.slice(1) ?? "",
               onSubmit: (v) => "/" + v,
             }}
           ></Text>

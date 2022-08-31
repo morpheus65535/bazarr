@@ -6,12 +6,12 @@ interface SocketIODebugger {
 declare global {
   interface Window {
     Bazarr: BazarrServer;
-    _socketio: SocketIODebugger;
+    socketIO: SocketIODebugger;
   }
 
   interface WindowEventMap {
+    "app-auth-changed": CustomEvent<{ authenticated: boolean }>;
     "app-critical-error": CustomEvent<{ message: string }>;
-    "app-login-required": CustomEvent;
     "app-online-status": CustomEvent<{ online: boolean }>;
   }
 }

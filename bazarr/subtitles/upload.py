@@ -150,10 +150,9 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
                        percent_score=100, radarr_id=movie_metadata['radarrId'], forced=forced)
 
     if use_postprocessing:
-        command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
-                             uploaded_language_code2, uploaded_language_code3, audio_language,
-                             audio_language_code2, audio_language_code3, forced, 100, "1", "manual", series_id,
-                             episode_id, hi=hi)
+        command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,
+                             uploaded_language_code3, audio_language, audio_language_code2, audio_language_code3, 100,
+                             "1", "manual", series_id, episode_id)
         postprocessing(command, path)
 
     if media_type == 'series':

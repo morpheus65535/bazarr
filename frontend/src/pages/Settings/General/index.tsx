@@ -21,7 +21,6 @@ import {
   Selector,
   Text,
 } from "../components";
-import { BaseUrlModification } from "../utilities/modifications";
 import { branchOptions, proxyOptions, securityOptions } from "./options";
 
 const characters = "abcdef0123456789";
@@ -58,7 +57,7 @@ const SettingsGeneralView: FunctionComponent = () => {
           icon="/"
           settingKey="settings-general-base_url"
           settingOptions={{
-            onLoaded: BaseUrlModification,
+            onLoaded: (s) => s.general.base_url?.slice(1) ?? "",
             onSubmit: (v) => "/" + v,
           }}
         ></Text>
@@ -116,6 +115,14 @@ const SettingsGeneralView: FunctionComponent = () => {
           }
           settingKey={settingApiKey}
         ></Text>
+        <Check
+          label="Enable CORS headers"
+          settingKey="settings-cors-enabled"
+        ></Check>
+        <Message>
+          Allow third parties to make requests towards your Bazarr installation.
+          Requires a restart of Bazarr when changed
+        </Message>
       </Section>
       <Section header="Proxy">
         <Selector

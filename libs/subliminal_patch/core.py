@@ -70,6 +70,16 @@ def remove_crap_from_fn(fn):
     return REMOVE_CRAP_FROM_FILENAME.sub(repl, fn)
 
 
+def _nested_update(item, to_update):
+    for k, v in to_update.items():
+        if isinstance(v, dict):
+            item[k] = _nested_update(item.get(k, {}), v)
+        else:
+            item[k] = v
+
+    return item
+
+
 class _ProviderConfigs(dict):
     def __init__(self, pool, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -108,7 +118,9 @@ class _ProviderConfigs(dict):
         else:
             logger.debug("No provider config updates")
 
-        return super().update(items)
+        _nested_update(self, items)
+
+        return None
 
 
 class _Banlist:
@@ -727,7 +739,6 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
 
     """
     hints = hints or {}
-    video_type = hints.get("type")
 
     # check for non-existing path
     if not dont_use_actual_file and not os.path.exists(path):
@@ -740,42 +751,15 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
     dirpath, filename = os.path.split(path)
     logger.info('Determining basic video properties for %r in %r', filename, dirpath)
 
-    # hint guessit the filename itself and its 2 parent directories if we're an episode (most likely
-    # Series name/Season/filename), else only one
-    split_path = os.path.normpath(path).split(os.path.sep)[-3 if video_type == "episode" else -2:]
-
-    # remove crap from folder names
-    if video_type == "episode":
-        if len(split_path) > 2:
-            split_path[-3] = remove_crap_from_fn(split_path[-3])
-    else:
-        if len(split_path) > 1:
-            split_path[-2] = remove_crap_from_fn(split_path[-2])
-
-    guess_from = os.path.join(*split_path)
-
-    # remove crap from file name
-    guess_from = remove_crap_from_fn(guess_from)
-
-    # guess
     hints["single_value"] = True
     #    if "title" in hints:
     #        hints["expected_title"] = [hints["title"]]
 
-    guessed_result = guessit(guess_from, options=hints)
+    guessed_result = guessit(path, options=hints)
 
     logger.debug('GuessIt found: %s', json.dumps(guessed_result, cls=GuessitEncoder, indent=4, ensure_ascii=False))
     video = Video.fromguess(path, guessed_result)
-    video.hints = hints
-
-    # get possibly alternative title from the filename itself
-    alt_guess = guessit(filename, options=hints)
-    if "title" in alt_guess and alt_guess["title"] != guessed_result["title"]:
-        if video_type == "episode":
-            video.alternative_series.append(alt_guess["title"])
-        else:
-            video.alternative_titles.append(alt_guess["title"])
-        logger.debug("Adding alternative title: %s", alt_guess["title"])
+    video.hints = hints # ?
 
     if dont_use_actual_file and not hash_from:
         return video

@@ -37,7 +37,7 @@ def upgrade_subtitles():
     if settings.general.getboolean('use_sonarr'):
         upgradable_episodes_conditions = [(TableHistory.action << query_actions),
                                           (TableHistory.timestamp > minimum_timestamp),
-                                          (TableHistory.score is not None)]
+                                          (TableHistory.score.is_null(False))]
         upgradable_episodes_conditions += get_exclusion_clause('series')
         upgradable_episodes = TableHistory.select(TableHistory.video_path,
                                                   TableHistory.language,
@@ -86,7 +86,7 @@ def upgrade_subtitles():
     if settings.general.getboolean('use_radarr'):
         upgradable_movies_conditions = [(TableHistoryMovie.action << query_actions),
                                         (TableHistoryMovie.timestamp > minimum_timestamp),
-                                        (TableHistoryMovie.score is not None)]
+                                        (TableHistoryMovie.score.is_null(False))]
         upgradable_movies_conditions += get_exclusion_clause('movie')
         upgradable_movies = TableHistoryMovie.select(TableHistoryMovie.video_path,
                                                      TableHistoryMovie.language,

@@ -39,7 +39,7 @@ class MoviesSubtitles(Resource):
             .get_or_none()
 
         if not movieInfo:
-            return 'Movie not found', 500
+            return 'Movie not found', 404
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName'] or 'None'
@@ -99,7 +99,7 @@ class MoviesSubtitles(Resource):
             .get_or_none()
 
         if not movieInfo:
-            return 'Movie not found', 500
+            return 'Movie not found', 404
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName'] or 'None'
@@ -161,7 +161,7 @@ class MoviesSubtitles(Resource):
             .get_or_none()
 
         if not movieInfo:
-            return 'Movie not found', 500
+            return 'Movie not found', 404
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
 

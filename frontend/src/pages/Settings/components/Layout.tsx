@@ -3,9 +3,10 @@ import { Toolbox } from "@/components";
 import { LoadingProvider } from "@/contexts";
 import { useOnValueChange } from "@/utilities";
 import { LOG } from "@/utilities/console";
+import { usePrompt } from "@/utilities/routers";
 import { useUpdateLocalStorage } from "@/utilities/storage";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
-import { Container, Group, LoadingOverlay } from "@mantine/core";
+import { Badge, Container, Group, LoadingOverlay } from "@mantine/core";
 import { useDocumentTitle, useForm } from "@mantine/hooks";
 import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
 import { enabledLanguageKey, languageProfileKey } from "../keys";
@@ -84,6 +85,11 @@ const Layout: FunctionComponent<Props> = (props) => {
     return Object.keys(object).length;
   }, [form.values.settings, form.values.storages]);
 
+  usePrompt(
+    totalStagedCount > 0,
+    `You have ${totalStagedCount} unsaved changes, are you sure you want to leave?`
+  );
+
   useDocumentTitle(`${name} - Bazarr (Settings)`);
 
   if (settings === undefined) {
@@ -101,6 +107,11 @@ const Layout: FunctionComponent<Props> = (props) => {
                 icon={faSave}
                 loading={isMutating}
                 disabled={totalStagedCount === 0}
+                rightIcon={
+                  <Badge size="xs" radius="sm" hidden={totalStagedCount === 0}>
+                    {totalStagedCount}
+                  </Badge>
+                }
               >
                 Save
               </Toolbox.Button>

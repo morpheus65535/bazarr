@@ -39,7 +39,7 @@ class WebHooksPlex(Resource):
             if len(splitted_id) == 2:
                 ids.append({splitted_id[0]: splitted_id[1]})
         if not ids:
-            return '', 404
+            return 'No GUID found', 400
 
         if media_type == 'episode':
             try:
@@ -53,7 +53,7 @@ class WebHooksPlex(Resource):
                 series_imdb_id = show_metadata_dict['props']['pageProps']['aboveTheFoldData']['series']['series']['id']
             except Exception:
                 logging.debug('BAZARR is unable to get series IMDB id.')
-                return '', 404
+                return 'IMDB series ID not found', 404
             else:
                 sonarrEpisodeId = TableEpisodes.select(TableEpisodes.sonarrEpisodeId) \
                     .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
@@ -69,7 +69,8 @@ class WebHooksPlex(Resource):
             try:
                 movie_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]
             except Exception:
-                return '', 404
+                logging.debug('BAZARR is unable to get movie IMDB id.')
+                return 'IMDB movie ID not found', 404
             else:
                 radarrId = TableMovies.select(TableMovies.radarrId)\
                     .where(TableMovies.imdbId == movie_imdb_id)\

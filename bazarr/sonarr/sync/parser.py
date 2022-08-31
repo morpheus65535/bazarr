@@ -4,6 +4,7 @@ import os
 
 from app.database import TableShows
 from sonarr.info import get_sonarr_info
+from utilities.path_mappings import path_mappings
 
 from .converter import SonarrFormatVideoCodec, SonarrFormatAudioCodec
 
@@ -28,7 +29,10 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
     if get_sonarr_info.is_legacy():
         audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
     else:
-        audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
+        if 'languageProfileId' in show:
+            audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
+        else:
+            audio_language = []
 
     tags = [d['label'] for d in tags_dict if d['id'] in show['tags']]
 
@@ -79,7 +83,11 @@ def episodeParser(episode):
     if 'hasFile' in episode:
         if episode['hasFile'] is True:
             if 'episodeFile' in episode:
-                if episode['episodeFile']['size'] > 20480:
+                try:
+                    bazarr_file_size = os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
+                except OSError:
+                    bazarr_file_size = 0
+                if episode['episodeFile']['size'] > 20480 or bazarr_file_size > 20480:
                     if 'sceneName' in episode['episodeFile']:
                         sceneName = episode['episodeFile']['sceneName']
                     else:
@@ -91,6 +99,12 @@ def episodeParser(episode):
                         if isinstance(item, dict):
                             if 'name' in item:
                                 audio_language.append(item['name'])
+                    elif 'languages' in episode['episodeFile'] and len(episode['episodeFile']['languages']):
+                        items = episode['episodeFile']['languages']
+                        if isinstance(items, list):
+                            for item in items:
+                                if 'name' in item:
+                                    audio_language.append(item['name'])
                     else:
                         audio_language = TableShows.get(TableShows.sonarrSeriesId == episode['seriesId']).audio_language
 

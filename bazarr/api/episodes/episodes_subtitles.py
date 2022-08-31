@@ -39,7 +39,7 @@ class EpisodesSubtitles(Resource):
             .get_or_none()
 
         if not episodeInfo:
-            return 'Episode not found', 500
+            return 'Episode not found', 404
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
@@ -98,7 +98,7 @@ class EpisodesSubtitles(Resource):
             .get_or_none()
 
         if not episodeInfo:
-            return 'Episode not found', 500
+            return 'Episode not found', 404
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
@@ -164,7 +164,7 @@ class EpisodesSubtitles(Resource):
             .get_or_none()
 
         if not episodeInfo:
-            return 'Episode not found', 500
+            return 'Episode not found', 404
 
         episodePath = path_mappings.path_replace(episodeInfo['path'])
 

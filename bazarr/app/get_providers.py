@@ -232,6 +232,7 @@ def get_providers_auth():
             'ffprobe_path': _FFPROBE_BINARY,
             'ffmpeg_path': _FFMPEG_BINARY,
             'timeout': settings.embeddedsubtitles.timeout,
+            'unknown_as_english': settings.embeddedsubtitles.getboolean('unknown_as_english'),
         },
         'karagarga': {
             'username': settings.karagarga.username,

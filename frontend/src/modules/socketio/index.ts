@@ -1,8 +1,8 @@
 import { debounce, forIn, remove, uniq } from "lodash";
 import { onlineManager } from "react-query";
 import { io, Socket } from "socket.io-client";
-import { Environment } from "../../utilities";
-import { ENSURE, LOG } from "../../utilities/console";
+import { Environment, isDevEnv } from "../../utilities";
+import { ENSURE, GROUP, LOG } from "../../utilities/console";
 import { createDefaultReducer } from "./reducer";
 
 class SocketIOClient {
@@ -31,11 +31,48 @@ class SocketIOClient {
     this.reducers = [];
 
     onlineManager.setOnline(false);
+
+    if (isDevEnv) {
+      window.socketIO = {
+        dump: () => {
+          GROUP("Socket.IO Reducers", (logger) => {
+            this.reducers.forEach((reducer) => {
+              logger(reducer.key);
+            });
+          });
+        },
+        emit: (e) => {
+          if (e) {
+            this.onEvent(e);
+          }
+        },
+      };
+    }
   }
 
   initialize() {
+    LOG("info", "Initializing Socket.IO client...");
     this.reducers.push(...createDefaultReducer());
+
+    window.addEventListener("app-auth-changed", (ev) => {
+      const authenticated = ev.detail.authenticated;
+      LOG("info", "Authentication status change to", authenticated);
+      if (authenticated) {
+        this.connect();
+      } else {
+        this.disconnect();
+      }
+    });
+  }
+
+  connect() {
+    LOG("info", "Connecting Socket.IO client...");
     this.socket.connect();
+  }
+
+  disconnect() {
+    LOG("info", "Disconnecting Socket.IO client...");
+    this.socket.disconnect();
   }
 
   addReducer(reducer: SocketIO.Reducer) {

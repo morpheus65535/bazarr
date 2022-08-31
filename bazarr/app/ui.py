@@ -2,6 +2,7 @@
 
 import os
 import requests
+import mimetypes
 
 from flask import request, abort, render_template, Response, session, send_file, stream_with_context, Blueprint
 from functools import wraps
@@ -28,6 +29,14 @@ static_bp = Blueprint('images', __name__,
                                                  'frontend', 'build', 'images'), static_url_path='/images')
 
 ui_bp.register_blueprint(static_bp)
+
+
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('text/css', '.css')
+mimetypes.add_type('font/woff2', '.woff2')
+mimetypes.add_type('image/svg+xml', '.svg')
+mimetypes.add_type('image/png', '.png')
+mimetypes.add_type('image/x-icon', '.ico')
 
 
 def check_login(actual_method):
@@ -120,6 +129,12 @@ def movies_images(url):
         return '', 404
     else:
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
+
+
+@check_login
+@ui_bp.route('/system/backup/download/<path:filename>', methods=['GET'])
+def backup_download(filename):
+    return send_file(os.path.join(settings.backup.folder, filename), cache_timeout=0, as_attachment=True)
 
 
 def configured():
