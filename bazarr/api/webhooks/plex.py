@@ -6,7 +6,7 @@ import os
 import logging
 
 from flask import request
-from flask_restful import Resource
+from flask_restx import Resource
 from bs4 import BeautifulSoup as bso
 
 from app.database import TableEpisodes, TableShows, TableMovies

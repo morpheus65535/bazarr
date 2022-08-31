@@ -7,7 +7,7 @@ import io
 
 from waitress.server import create_server
 
-from api import api_bp_list
+from api import api_bp
 from .ui import ui_bp
 from .get_args import args
 from .config import settings, base_url
@@ -15,10 +15,7 @@ from .database import database
 from .app import create_app
 
 app = create_app()
-
-for item in api_bp_list:
-    ui_bp.register_blueprint(item, url_prefix='/api')
-
+ui_bp.register_blueprint(api_bp, url_prefix='/api')
 app.register_blueprint(ui_bp, url_prefix=base_url.rstrip('/'))
 
 

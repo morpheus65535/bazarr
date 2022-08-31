@@ -3,7 +3,7 @@
 import operator
 
 from flask import request, jsonify
-from flask_restful import Resource
+from flask_restx import Resource
 from functools import reduce
 
 from app.database import get_exclusion_clause, TableMovies

@@ -1,12 +1,10 @@
 # coding=utf-8
 
-from flask import Blueprint
-from flask_restful import Api
+from flask_restx import Namespace
 
 from .badges import Badges
 
 
-api_bp_badges = Blueprint('api_badges', __name__)
-api = Api(api_bp_badges)
+api_ns_badges = Namespace('badges', description='Badges API endpoint')
 
-api.add_resource(Badges, '/badges')
+api_ns_badges.add_resource(Badges, 'badges')

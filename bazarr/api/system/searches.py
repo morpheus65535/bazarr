@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restful import Resource
+from flask_restx import Resource
 
 from app.config import settings
 from app.database import TableShows, TableMovies

@@ -3,7 +3,7 @@
 import gc
 
 from flask import request, session
-from flask_restful import Resource
+from flask_restx import Resource
 
 from app.config import settings
 from utilities.helper import check_credentials

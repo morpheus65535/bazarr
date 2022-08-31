@@ -4,7 +4,7 @@ import os
 import logging
 
 from flask import request
-from flask_restful import Resource
+from flask_restx import Resource
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
 from app.database import TableMovies, get_audio_profile_languages, get_profile_id

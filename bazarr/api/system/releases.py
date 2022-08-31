@@ -6,7 +6,7 @@ import os
 import logging
 
 from flask import jsonify
-from flask_restful import Resource
+from flask_restx import Resource
 
 from app.config import settings
 from app.get_args import args

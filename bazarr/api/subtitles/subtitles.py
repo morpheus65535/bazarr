@@ -5,7 +5,7 @@ import sys
 import gc
 
 from flask import request
-from flask_restful import Resource
+from flask_restx import Resource
 
 from app.database import TableEpisodes, TableMovies
 from utilities.path_mappings import path_mappings

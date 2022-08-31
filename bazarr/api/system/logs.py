@@ -4,7 +4,7 @@ import io
 import os
 
 from flask import jsonify
-from flask_restful import Resource
+from flask_restx import Resource
 
 from app.logger import empty_log
 from app.get_args import args

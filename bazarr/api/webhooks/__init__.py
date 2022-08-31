@@ -1,16 +1,14 @@
 # coding=utf-8
 
-from flask import Blueprint
-from flask_restful import Api
+from flask_restx import Namespace
 
 from .plex import WebHooksPlex
 from .sonarr import WebHooksSonarr
 from .radarr import WebHooksRadarr
 
 
-api_bp_webhooks = Blueprint('api_webhooks', __name__)
-api = Api(api_bp_webhooks)
+api_ns_webhooks = Namespace('webhooks', description='Webhooks API endpoint')
 
-api.add_resource(WebHooksPlex, '/webhooks/plex')
-api.add_resource(WebHooksSonarr, '/webhooks/sonarr')
-api.add_resource(WebHooksRadarr, '/webhooks/radarr')
+api_ns_webhooks.add_resource(WebHooksPlex, 'webhooks/plex')
+api_ns_webhooks.add_resource(WebHooksSonarr, 'webhooks/sonarr')
+api_ns_webhooks.add_resource(WebHooksRadarr, 'webhooks/radarr')

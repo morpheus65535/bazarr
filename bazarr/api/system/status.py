@@ -5,7 +5,7 @@ import platform
 import logging
 
 from flask import jsonify
-from flask_restful import Resource
+from flask_restx import Resource
 from tzlocal import get_localzone_name
 
 from radarr.info import get_radarr_info

@@ -1,16 +1,14 @@
 # coding=utf-8
 
-from flask import Blueprint
-from flask_restful import Api
+from flask_restx import Namespace
 
 from .files import BrowseBazarrFS
 from .files_sonarr import BrowseSonarrFS
 from .files_radarr import BrowseRadarrFS
 
 
-api_bp_files = Blueprint('api_files', __name__)
-api = Api(api_bp_files)
+api_ns_files = Namespace('files', description='Files API endpoint')
 
-api.add_resource(BrowseBazarrFS, '/files')
-api.add_resource(BrowseSonarrFS, '/files/sonarr')
-api.add_resource(BrowseRadarrFS, '/files/radarr')
+api_ns_files.add_resource(BrowseBazarrFS, 'files')
+api_ns_files.add_resource(BrowseSonarrFS, 'files/sonarr')
+api_ns_files.add_resource(BrowseRadarrFS, 'files/radarr')

@@ -1,7 +1,6 @@
 # coding=utf-8
 
-from flask import Blueprint
-from flask_restful import Api
+from flask_restx import Namespace
 
 from .system import System
 from .searches import Searches
@@ -17,19 +16,18 @@ from .languages import Languages
 from .languages_profiles import LanguagesProfiles
 from .notifications import Notifications
 
-api_bp_system = Blueprint('api_system', __name__)
-api = Api(api_bp_system)
+api_ns_system = Namespace('system', description='System API endpoint')
 
-api.add_resource(System, '/system')
-api.add_resource(Searches, '/system/searches')
-api.add_resource(SystemAccount, '/system/account')
-api.add_resource(SystemBackups, '/system/backups')
-api.add_resource(SystemTasks, '/system/tasks')
-api.add_resource(SystemLogs, '/system/logs')
-api.add_resource(SystemStatus, '/system/status')
-api.add_resource(SystemHealth, '/system/health')
-api.add_resource(SystemReleases, '/system/releases')
-api.add_resource(SystemSettings, '/system/settings')
-api.add_resource(Languages, '/system/languages')
-api.add_resource(LanguagesProfiles, '/system/languages/profiles')
-api.add_resource(Notifications, '/system/notifications')
+api_ns_system.add_resource(System, 'system')
+api_ns_system.add_resource(Searches, 'system/searches')
+api_ns_system.add_resource(SystemAccount, 'system/account')
+api_ns_system.add_resource(SystemBackups, 'system/backups')
+api_ns_system.add_resource(SystemTasks, 'system/tasks')
+api_ns_system.add_resource(SystemLogs, 'system/logs')
+api_ns_system.add_resource(SystemStatus, 'system/status')
+api_ns_system.add_resource(SystemHealth, 'system/health')
+api_ns_system.add_resource(SystemReleases, 'system/releases')
+api_ns_system.add_resource(SystemSettings, 'system/settings')
+api_ns_system.add_resource(Languages, 'system/languages')
+api_ns_system.add_resource(LanguagesProfiles, 'system/languages/profiles')
+api_ns_system.add_resource(Notifications, 'system/notifications')

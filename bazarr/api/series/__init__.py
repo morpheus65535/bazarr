@@ -1,12 +1,10 @@
 # coding=utf-8
 
-from flask import Blueprint
-from flask_restful import Api
+from flask_restx import Namespace
 
 from .series import Series
 
 
-api_bp_series = Blueprint('api_series', __name__)
-api = Api(api_bp_series)
+api_ns_series = Namespace('series', description='Series API endpoint')
 
-api.add_resource(Series, '/series')
+api_ns_series.add_resource(Series, 'series')

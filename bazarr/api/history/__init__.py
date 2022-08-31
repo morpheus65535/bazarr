@@ -1,12 +1,10 @@
 # coding=utf-8
 
-from flask import Blueprint
-from flask_restful import Api
+from flask_restx import Namespace
 
 from .stats import HistoryStats
 
 
-api_bp_history = Blueprint('api_history', __name__)
-api = Api(api_bp_history)
+api_ns_history = Namespace('history', decription='History API endpoint')
 
-api.add_resource(HistoryStats, '/history/stats')
+api_ns_history.add_resource(HistoryStats, 'history/stats')

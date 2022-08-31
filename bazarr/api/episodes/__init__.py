@@ -1,7 +1,6 @@
 # coding=utf-8
 
-from flask import Blueprint
-from flask_restful import Api
+from flask_restx import Namespace
 
 from .episodes import Episodes
 from .episodes_subtitles import EpisodesSubtitles
@@ -10,11 +9,10 @@ from .wanted import EpisodesWanted
 from .blacklist import EpisodesBlacklist
 
 
-api_bp_episodes = Blueprint('api_episodes', __name__)
-api = Api(api_bp_episodes)
+api_ns_episodes = Namespace('episodes', description='Episodes API endpoint')
 
-api.add_resource(Episodes, '/episodes')
-api.add_resource(EpisodesWanted, '/episodes/wanted')
-api.add_resource(EpisodesSubtitles, '/episodes/subtitles')
-api.add_resource(EpisodesHistory, '/episodes/history')
-api.add_resource(EpisodesBlacklist, '/episodes/blacklist')
+api_ns_episodes.add_resource(Episodes, 'episodes')
+api_ns_episodes.add_resource(EpisodesWanted, 'episodes/wanted')
+api_ns_episodes.add_resource(EpisodesSubtitles, 'episodes/subtitles')
+api_ns_episodes.add_resource(EpisodesHistory, 'episodes/history')
+api_ns_episodes.add_resource(EpisodesBlacklist, 'episodes/blacklist')

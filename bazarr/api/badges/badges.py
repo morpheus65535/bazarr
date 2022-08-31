@@ -4,7 +4,7 @@ import operator
 
 from functools import reduce
 from flask import jsonify
-from flask_restful import Resource
+from flask_restx import Resource
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies
 from app.get_providers import get_throttled_providers

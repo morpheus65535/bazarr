@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restful import Resource
+from flask_restx import Resource
 
 from app.database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id
 from utilities.path_mappings import path_mappings
