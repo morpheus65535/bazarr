@@ -181,11 +181,11 @@ def update_one_series(series_id, action):
             return
         else:
             if action == 'updated' and existing_series:
-                series = seriesParser(series_data, action='update', tags_dict=tagsDict,
+                series = seriesParser(series_data[0], action='update', tags_dict=tagsDict,
                                       serie_default_profile=serie_default_profile,
                                       audio_profiles=audio_profiles)
             elif action == 'updated' and not existing_series:
-                series = seriesParser(series_data, action='insert', tags_dict=tagsDict,
+                series = seriesParser(series_data[0], action='insert', tags_dict=tagsDict,
                                       serie_default_profile=serie_default_profile,
                                       audio_profiles=audio_profiles)
     except Exception:

@@ -93,7 +93,7 @@ def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
     else:
         result = r.json()
         if isinstance(result, dict):
-            return list(result)
+            return [result]
         else:
             return r.json()
 
