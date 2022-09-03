@@ -388,6 +388,12 @@ class Subtitle(Subtitle_):
         """
         :return: string
         """
+        # ASS and other formats are not tested and are likely to break the application.
+        # We will ignore them for now.
+        if self.format != "srt":
+            logger.debug("'%s' format does not support mods", self.format)
+            return self.content
+
         if not self.mods:
             return fix_text(self.content.decode(encoding=self.get_encoding()), **ftfy_defaults).encode(
                 encoding=self.get_encoding())
