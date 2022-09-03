@@ -10,6 +10,7 @@ from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
 from subliminal_patch.providers.embeddedsubtitles import (
     _discard_possible_incomplete_subtitles,
+    _clean_ass_subtitles,
 )
 from subliminal_patch.providers.embeddedsubtitles import _get_pretty_release_name
 from subliminal_patch.providers.embeddedsubtitles import _MemoizedFFprobeVideoContainer
@@ -281,6 +282,20 @@ def test_get_pretty_release_name():
     )
     container = FFprobeVideoContainer("foo.mkv")
     assert _get_pretty_release_name(stream, container) == "foo.en.forced.srt"
+
+
+def test_clean_ass_subtitles(data, tmp_path):
+    path = os.path.join(data, "subs.ass")
+
+    with open(path, "r") as f:
+        og_lines_len = len(f.readlines())
+
+    output_path = os.path.join(tmp_path, "subs.ass")
+
+    _clean_ass_subtitles(path, output_path)
+
+    with open(output_path, "r") as f:
+        assert og_lines_len > len(f.readlines())
 
 
 def test_download_subtitle_multiple(video_multiple_languages):
