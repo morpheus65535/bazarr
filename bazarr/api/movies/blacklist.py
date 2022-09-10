@@ -4,7 +4,7 @@ import datetime
 import pretty
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from app.database import TableMovies, TableBlacklistMovie
 from subtitles.tools.delete import delete_subtitles
@@ -16,6 +16,10 @@ from app.event_handler import event_stream
 from ..utils import authenticate, postprocessMovie
 
 
+api_ns_movies_blacklist = Namespace('moviesBlacklist', description='Movies blacklist API endpoint')
+
+
+@api_ns_movies_blacklist.route('movies/blacklist')
 # GET: get blacklist
 # POST: add blacklist
 # DELETE: remove blacklist

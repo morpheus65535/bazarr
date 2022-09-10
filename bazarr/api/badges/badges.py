@@ -3,8 +3,7 @@
 import operator
 
 from functools import reduce
-from flask import jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace, fields
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies
 from app.get_providers import get_throttled_providers
@@ -12,9 +11,21 @@ from utilities.health import get_health_issues
 
 from ..utils import authenticate
 
+api_ns_badges = Namespace('badges', description='Badges API endpoint')
 
+
+@api_ns_badges.route('badges')
 class Badges(Resource):
+    badges_get_model = api_ns_badges.model('BadgesGet', {
+        'episodes': fields.Integer(min=0, required=True),
+        'movies': fields.Integer(min=0, required=True),
+        'providers': fields.Integer(min=0, required=True),
+        'status': fields.Integer(min=0, required=True),
+    })
+
     @authenticate
+    @api_ns_badges.marshal_with(badges_get_model)
+    @api_ns_badges.doc(parser=None)
     def get(self):
         episodes_conditions = [(TableEpisodes.missing_subtitles.is_null(False)),
                                (TableEpisodes.missing_subtitles != '[]')]
@@ -44,4 +55,4 @@ class Badges(Resource):
             "providers": throttled_providers,
             "status": health_issues
         }
-        return jsonify(result)
+        return result

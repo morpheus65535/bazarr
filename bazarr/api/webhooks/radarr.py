@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from flask import request
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from app.database import TableMovies
 from subtitles.mass_download import movies_download_subtitles
@@ -11,6 +11,10 @@ from utilities.path_mappings import path_mappings
 from ..utils import authenticate
 
 
+api_ns_webhooks_radarr = Namespace('webhooksRadarr', description='Webhooks Radarr API endpoint')
+
+
+@api_ns_webhooks_radarr.route('webhooks/radarr')
 class WebHooksRadarr(Resource):
     @authenticate
     def post(self):

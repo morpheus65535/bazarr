@@ -6,7 +6,7 @@ import operator
 import pretty
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from functools import reduce
 from peewee import fn
 from datetime import timedelta
@@ -17,7 +17,10 @@ from utilities.path_mappings import path_mappings
 
 from ..utils import authenticate, postprocessEpisode
 
+api_ns_episodes_history = Namespace('episodesHistory', description='Episodes history API endpoint')
 
+
+@api_ns_episodes_history.route('episodes/history')
 class EpisodesHistory(Resource):
     @authenticate
     def get(self):

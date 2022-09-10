@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from app.database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id
 from utilities.path_mappings import path_mappings
@@ -15,6 +15,10 @@ from subtitles.indexer.series import store_subtitles
 from ..utils import authenticate
 
 
+api_ns_providers_episodes = Namespace('providersEpisodes', description='Providers episodes API endpoint')
+
+
+@api_ns_providers_episodes.route('providers/episodes')
 class ProviderEpisodes(Resource):
     @authenticate
     def get(self):

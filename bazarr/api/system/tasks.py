@@ -1,13 +1,16 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from app.scheduler import scheduler
 
 from ..utils import authenticate
 
+api_ns_system_tasks = Namespace('systemTasks', description='System tasks API endpoint')
 
+
+@api_ns_system_tasks.route('system/tasks')
 class SystemTasks(Resource):
     @authenticate
     def get(self):

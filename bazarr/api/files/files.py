@@ -1,13 +1,16 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from utilities.filesystem import browse_bazarr_filesystem
 
 from ..utils import authenticate
 
+api_ns_files = Namespace('files', description='Files API endpoint')
 
+
+@api_ns_files.route('files')
 class BrowseBazarrFS(Resource):
     @authenticate
     def get(self):

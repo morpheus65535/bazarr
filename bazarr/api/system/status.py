@@ -5,7 +5,7 @@ import platform
 import logging
 
 from flask import jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from tzlocal import get_localzone_name
 
 from radarr.info import get_radarr_info
@@ -15,7 +15,10 @@ from init import startTime
 
 from ..utils import authenticate
 
+api_ns_system_status = Namespace('systemStatus', description='System status API endpoint')
 
+
+@api_ns_system_status.route('system/status')
 class SystemStatus(Resource):
     @authenticate
     def get(self):

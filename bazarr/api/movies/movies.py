@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource,Namespace
 
 from app.database import TableMovies
 from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
@@ -12,6 +12,10 @@ from subtitles.mass_download import movies_download_subtitles
 from ..utils import authenticate, postprocessMovie, None_Keys
 
 
+api_ns_movies = Namespace('movies', description='Movies API endpoint')
+
+
+@api_ns_movies.route('movies')
 class Movies(Resource):
     @authenticate
     def get(self):

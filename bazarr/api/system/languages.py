@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from operator import itemgetter
 
 from app.database import TableHistory, TableHistoryMovie, TableSettingsLanguages
@@ -9,7 +9,10 @@ from languages.get_languages import alpha2_from_alpha3, language_from_alpha2
 
 from ..utils import authenticate, False_Keys
 
+api_ns_system_languages = Namespace('systemLanguages', description='System languages API endpoint')
 
+
+@api_ns_system_languages.route('system/languages')
 class Languages(Resource):
     @authenticate
     def get(self):

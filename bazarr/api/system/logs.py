@@ -4,14 +4,17 @@ import io
 import os
 
 from flask import jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from app.logger import empty_log
 from app.get_args import args
 
 from ..utils import authenticate
 
+api_ns_system_logs = Namespace('systemLogs', description='System logs API endpoint')
 
+
+@api_ns_system_logs.route('system/logs')
 class SystemLogs(Resource):
     @authenticate
     def get(self):

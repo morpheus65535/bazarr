@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from flask import request
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from app.database import TableEpisodes, TableShows
 from subtitles.mass_download import episode_download_subtitles
@@ -11,6 +11,10 @@ from utilities.path_mappings import path_mappings
 from ..utils import authenticate
 
 
+api_ns_webhooks_sonarr = Namespace('webhooksSonarr', description='Webhooks Sonarr API endpoint')
+
+
+@api_ns_webhooks_sonarr.route('webhooks/sonarr')
 class WebHooksSonarr(Resource):
     @authenticate
     def post(self):

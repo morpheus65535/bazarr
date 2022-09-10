@@ -4,7 +4,7 @@ import os
 import logging
 
 from flask import request
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
 from app.database import TableMovies, get_audio_profile_languages, get_profile_id
@@ -21,6 +21,10 @@ from app.config import settings
 from ..utils import authenticate
 
 
+api_ns_movies_subtitles = Namespace('moviesSubtitles', description='Movies subtitles API endpoint')
+
+
+@api_ns_movies_subtitles.route('movies/subtitles')
 # PATCH: Download Subtitles
 # POST: Upload Subtitles
 # DELETE: Delete Subtitles

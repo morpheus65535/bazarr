@@ -1,13 +1,16 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from radarr.filesystem import browse_radarr_filesystem
 
 from ..utils import authenticate
 
+api_ns_files_radarr = Namespace('filesRadarr', description='Files Radarr API endpoint')
 
+
+@api_ns_files_radarr.route('files/radarr')
 class BrowseRadarrFS(Resource):
     @authenticate
     def get(self):

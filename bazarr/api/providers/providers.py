@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from operator import itemgetter
 
 from app.database import TableHistory, TableHistoryMovie
@@ -9,7 +9,10 @@ from app.get_providers import list_throttled_providers, reset_throttled_provider
 
 from ..utils import authenticate, False_Keys
 
+api_ns_providers = Namespace('providers', description='Providers API endpoint')
 
+
+@api_ns_providers.route('providers')
 class Providers(Resource):
     @authenticate
     def get(self):

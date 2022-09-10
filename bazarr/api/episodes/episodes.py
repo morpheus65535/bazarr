@@ -1,13 +1,16 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from app.database import TableEpisodes
 
 from ..utils import authenticate, postprocessEpisode
 
+api_ns_episodes = Namespace('episodes', description='Episodes API endpoint')
 
+
+@api_ns_episodes.route('episodes')
 class Episodes(Resource):
     @authenticate
     def get(self):

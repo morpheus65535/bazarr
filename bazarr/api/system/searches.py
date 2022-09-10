@@ -1,14 +1,17 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from app.config import settings
 from app.database import TableShows, TableMovies
 
 from ..utils import authenticate
 
+api_ns_system_searches = Namespace('systemSearches', description='System searches API endpoint')
 
+
+@api_ns_system_searches.route('system/searches')
 class Searches(Resource):
     @authenticate
     def get(self):

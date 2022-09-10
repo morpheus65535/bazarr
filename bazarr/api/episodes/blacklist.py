@@ -4,7 +4,7 @@ import datetime
 import pretty
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace, reqparse, fields
 
 from app.database import TableEpisodes, TableShows, TableBlacklist
 from subtitles.tools.delete import delete_subtitles
@@ -15,12 +15,33 @@ from app.event_handler import event_stream
 
 from ..utils import authenticate, postprocessEpisode
 
+api_ns_episodes_blacklist = Namespace('episodesBlacklist', description='Episodes blacklist API endpoint')
+
 
 # GET: get blacklist
 # POST: add blacklist
 # DELETE: remove blacklist
+@api_ns_episodes_blacklist.route('episodes/blacklist')
 class EpisodesBlacklist(Resource):
+    blacklist_get_parser = reqparse.RequestParser()
+    blacklist_get_parser.add_argument('start', type=int, required=False, help='Paging start integer')
+    blacklist_get_parser.add_argument('length', type=int, required=False, help='Paging length integer')
+
+    blacklist_get_model = api_ns_episodes_blacklist.model('BlacklistGet', {
+        'seriesTitle': fields.String(required=True),
+        'episode_number': fields.Integer(min=0, required=True),
+        'episodeTitle': fields.String(required=True),
+        'sonarrSeriesId': fields.Integer(min=0, required=True),
+        'provider': fields.String(required=True),
+        'subs_id': fields.String(required=True),
+        'language': fields.String(required=True),
+        'timestamp': fields.Integer(min=0, required=True),
+        'parsed_timestamp': fields.String(required=True),
+    })
+
     @authenticate
+    @api_ns_episodes_blacklist.marshal_with(blacklist_get_model)
+    @api_ns_episodes_blacklist.doc(parser=blacklist_get_parser, enveloppe='data')
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
@@ -48,7 +69,7 @@ class EpisodesBlacklist(Resource):
 
             postprocessEpisode(item)
 
-        return jsonify(data=data)
+        return data
 
     @authenticate
     def post(self):

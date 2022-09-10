@@ -3,12 +3,15 @@
 import gc
 
 from flask import request, session
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from app.config import settings
 from utilities.helper import check_credentials
 
+api_ns_system_account = Namespace('systemAccount', description='System account API endpoint')
 
+
+@api_ns_system_account.route('system/account')
 class SystemAccount(Resource):
     def post(self):
         if settings.auth.type != 'form':

@@ -6,7 +6,7 @@ import os
 import logging
 
 from flask import request
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from bs4 import BeautifulSoup as bso
 
 from app.database import TableEpisodes, TableShows, TableMovies
@@ -15,6 +15,10 @@ from subtitles.mass_download import episode_download_subtitles, movies_download_
 from ..utils import authenticate
 
 
+api_ns_webhooks_plex = Namespace('webhooksPlex', description='Webhooks Plex API endpoint')
+
+
+@api_ns_webhooks_plex.route('webhooks/plex')
 class WebHooksPlex(Resource):
     @authenticate
     def post(self):

@@ -3,7 +3,7 @@
 import logging
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from app.database import TableMovies, get_audio_profile_languages, get_profile_id
 from utilities.path_mappings import path_mappings
@@ -17,6 +17,10 @@ from subtitles.indexer.movies import store_subtitles_movie
 from ..utils import authenticate
 
 
+api_ns_providers_movies = Namespace('providersMovies', description='Providers movies API endpoint')
+
+
+@api_ns_providers_movies.route('providers/movies')
 class ProviderMovies(Resource):
     @authenticate
     def get(self):

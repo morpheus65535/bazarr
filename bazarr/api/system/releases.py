@@ -6,14 +6,17 @@ import os
 import logging
 
 from flask import jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from app.config import settings
 from app.get_args import args
 
 from ..utils import authenticate
 
+api_ns_system_releases = Namespace('systemReleases', description='System releases API endpoint')
 
+
+@api_ns_system_releases.route('system/releases')
 class SystemReleases(Resource):
     @authenticate
     def get(self):

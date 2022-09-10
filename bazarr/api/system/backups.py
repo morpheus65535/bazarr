@@ -1,13 +1,16 @@
 # coding=utf-8
 
 from flask import jsonify, request
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from utilities.backup import get_backup_files, prepare_restore, delete_backup_file, backup_to_zip
 
 from ..utils import authenticate
 
+api_ns_system_backups = Namespace('systemBackups', description='System backups API endpoint')
 
+
+@api_ns_system_backups.route('system/backups')
 class SystemBackups(Resource):
     @authenticate
     def get(self):

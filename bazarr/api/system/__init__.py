@@ -1,33 +1,31 @@
 # coding=utf-8
 
-from flask_restx import Namespace
+from .system import api_ns_system
+from .searches import api_ns_system_searches
+from .account import api_ns_system_account
+from .backups import api_ns_system_backups
+from .tasks import api_ns_system_tasks
+from .logs import api_ns_system_logs
+from .status import api_ns_system_status
+from .health import api_ns_system_health
+from .releases import api_ns_system_releases
+from .settings import api_ns_system_settings
+from .languages import api_ns_system_languages
+from .languages_profiles import api_ns_system_languages_profiles
+from .notifications import api_ns_system_notifications
 
-from .system import System
-from .searches import Searches
-from .account import SystemAccount
-from .backups import SystemBackups
-from .tasks import SystemTasks
-from .logs import SystemLogs
-from .status import SystemStatus
-from .health import SystemHealth
-from .releases import SystemReleases
-from .settings import SystemSettings
-from .languages import Languages
-from .languages_profiles import LanguagesProfiles
-from .notifications import Notifications
-
-api_ns_system = Namespace('system', description='System API endpoint')
-
-api_ns_system.add_resource(System, 'system')
-api_ns_system.add_resource(Searches, 'system/searches')
-api_ns_system.add_resource(SystemAccount, 'system/account')
-api_ns_system.add_resource(SystemBackups, 'system/backups')
-api_ns_system.add_resource(SystemTasks, 'system/tasks')
-api_ns_system.add_resource(SystemLogs, 'system/logs')
-api_ns_system.add_resource(SystemStatus, 'system/status')
-api_ns_system.add_resource(SystemHealth, 'system/health')
-api_ns_system.add_resource(SystemReleases, 'system/releases')
-api_ns_system.add_resource(SystemSettings, 'system/settings')
-api_ns_system.add_resource(Languages, 'system/languages')
-api_ns_system.add_resource(LanguagesProfiles, 'system/languages/profiles')
-api_ns_system.add_resource(Notifications, 'system/notifications')
+api_ns_list_system = [
+    api_ns_system,
+    api_ns_system_searches,
+    api_ns_system_account,
+    api_ns_system_backups,
+    api_ns_system_tasks,
+    api_ns_system_logs,
+    api_ns_system_status,
+    api_ns_system_health,
+    api_ns_system_releases,
+    api_ns_system_settings,
+    api_ns_system_languages,
+    api_ns_system_languages_profiles,
+    api_ns_system_notifications,
+]

@@ -3,11 +3,14 @@
 import apprise
 
 from flask import request
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from ..utils import authenticate
 
+api_ns_system_notifications = Namespace('systemNotifications', description='System notifications API endpoint')
 
+
+@api_ns_system_notifications.route('system/notifications')
 class Notifications(Resource):
     @authenticate
     def patch(self):

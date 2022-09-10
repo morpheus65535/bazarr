@@ -4,7 +4,7 @@ import os
 import logging
 
 from flask import request
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
 from app.database import TableShows, TableEpisodes, get_audio_profile_languages, get_profile_id
@@ -20,10 +20,13 @@ from app.config import settings
 
 from ..utils import authenticate
 
+api_ns_episodes_subtitles = Namespace('episodesSubtitles', description='Episodes subtitles API endpoint')
+
 
 # PATCH: Download Subtitles
 # POST: Upload Subtitles
 # DELETE: Delete Subtitles
+@api_ns_episodes_subtitles.route('episodes/subtitles')
 class EpisodesSubtitles(Resource):
     @authenticate
     def patch(self):

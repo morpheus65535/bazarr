@@ -3,7 +3,7 @@
 import operator
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from functools import reduce
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows
@@ -15,6 +15,10 @@ from app.event_handler import event_stream
 from ..utils import authenticate, postprocessSeries, None_Keys
 
 
+api_ns_series = Namespace('series', description='Series API endpoint')
+
+
+@api_ns_series.route('series')
 class Series(Resource):
     @authenticate
     def get(self):

@@ -1,12 +1,16 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from subliminal_patch.core import guessit
 
 from ..utils import authenticate
 
 
+api_ns_subtitles_info = Namespace('subtitlesInfo', description='Subtitles info API endpoint')
+
+
+@api_ns_subtitles_info.route('subtitles/info')
 class SubtitleNameInfo(Resource):
     @authenticate
     def get(self):

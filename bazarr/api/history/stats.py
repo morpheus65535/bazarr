@@ -6,7 +6,7 @@ import operator
 
 from dateutil import rrule
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from functools import reduce
 from peewee import fn
 
@@ -14,7 +14,10 @@ from app.database import TableHistory, TableHistoryMovie
 
 from ..utils import authenticate
 
+api_ns_history_stats = Namespace('historyStats', description='Stats API endpoint')
 
+
+@api_ns_history_stats.route('history/stats')
 class HistoryStats(Resource):
     @authenticate
     def get(self):

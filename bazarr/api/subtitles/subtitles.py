@@ -5,7 +5,7 @@ import sys
 import gc
 
 from flask import request
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from app.database import TableEpisodes, TableMovies
 from utilities.path_mappings import path_mappings
@@ -20,6 +20,10 @@ from app.event_handler import event_stream
 from ..utils import authenticate
 
 
+api_ns_subtitles = Namespace('subtitles', description='Subtitles API endpoint')
+
+
+@api_ns_subtitles.route('subtitles')
 class Subtitles(Resource):
     @authenticate
     def patch(self):

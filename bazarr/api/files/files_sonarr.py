@@ -1,13 +1,16 @@
 # coding=utf-8
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from sonarr.filesystem import browse_sonarr_filesystem
 
 from ..utils import authenticate
 
+api_ns_files_sonarr = Namespace('filesSonarr', description='Files Sonarr API endpoint')
 
+
+@api_ns_files_sonarr.route('files/sonarr')
 class BrowseSonarrFS(Resource):
     @authenticate
     def get(self):

@@ -3,7 +3,7 @@
 import operator
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from functools import reduce
 
 from app.database import get_exclusion_clause, TableMovies
@@ -11,6 +11,10 @@ from app.database import get_exclusion_clause, TableMovies
 from ..utils import authenticate, postprocessMovie
 
 
+api_ns_movies_wanted = Namespace('moviesWanted', description='Movies wanted API endpoint')
+
+
+@api_ns_movies_wanted.route('movies/wanted')
 # GET: Get Wanted Movies
 class MoviesWanted(Resource):
     @authenticate

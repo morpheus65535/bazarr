@@ -3,15 +3,18 @@
 import operator
 
 from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from functools import reduce
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows
 
 from ..utils import authenticate, postprocessEpisode
 
+api_ns_episodes_wanted = Namespace('episodesWanted', description='Episodes wanted API endpoint')
+
 
 # GET: Get Wanted Episodes
+@api_ns_episodes_wanted.route('episodes/wanted')
 class EpisodesWanted(Resource):
     @authenticate
     def get(self):
