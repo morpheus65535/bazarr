@@ -45,7 +45,7 @@ def update_movies(send_event=True):
 
         # Get movies data from radarr
         movies = get_movies_from_radarr_api(url=url_radarr(), apikey_radarr=apikey_radarr)
-        if not movies:
+        if not isinstance(movies, list):
             return
         else:
             # Get current movies in DB

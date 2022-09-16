@@ -37,7 +37,7 @@ def update_series(send_event=True):
 
     # Get shows data from Sonarr
     series = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr)
-    if not series:
+    if not isinstance(series, list):
         return
     else:
         # Get current shows in DB
