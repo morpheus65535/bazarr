@@ -1,7 +1,6 @@
 # coding=utf-8
 
 from flask import Flask, redirect
-import os
 
 from flask_cors import CORS
 from flask_socketio import SocketIO

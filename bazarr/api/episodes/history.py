@@ -5,8 +5,7 @@ import os
 import operator
 import pretty
 
-from flask import request, jsonify
-from flask_restx import Resource, Namespace
+from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 from peewee import fn
 from datetime import timedelta
@@ -14,19 +13,60 @@ from datetime import timedelta
 from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableHistory, TableBlacklist
 from app.config import settings
 from utilities.path_mappings import path_mappings
+from api.swaggerui import subtitles_language_model
 
 from ..utils import authenticate, postprocessEpisode
 
-api_ns_episodes_history = Namespace('episodesHistory', description='Episodes history API endpoint')
+api_ns_episodes_history = Namespace('Episodes History', description='List episodes history events')
 
 
 @api_ns_episodes_history.route('episodes/history')
 class EpisodesHistory(Resource):
+    get_request_parser = reqparse.RequestParser()
+    get_request_parser.add_argument('start', type=int, required=False, default=0, help='Paging start integer')
+    get_request_parser.add_argument('length', type=int, required=False, default=-1, help='Paging length integer')
+    get_request_parser.add_argument('episodeid', type=int, required=False, help='Episode ID')
+
+    get_language_model = api_ns_episodes_history.model('language_model', subtitles_language_model)
+
+    data_model = api_ns_episodes_history.model('data_model', {
+        'id': fields.Integer(),
+        'seriesTitle': fields.String(),
+        'monitored': fields.Boolean(),
+        'episode_number': fields.String(),
+        'episodeTitle': fields.String(),
+        'timestamp': fields.String(),
+        'subs_id': fields.String(),
+        'description': fields.String(),
+        'sonarrSeriesId': fields.Integer(),
+        'language': fields.Nested(get_language_model),
+        'score': fields.String(),
+        'tags': fields.List(fields.String),
+        'action': fields.Integer(),
+        'video_path': fields.String(),
+        'subtitles_path': fields.String(),
+        'sonarrEpisodeId': fields.Integer(),
+        'provider': fields.String(),
+        'seriesType': fields.String(),
+        'upgradable': fields.Boolean(),
+        'raw_timestamp': fields.Integer(),
+        'parsed_timestamp': fields.String(),
+        'blacklisted': fields.Boolean(),
+    })
+
+    get_response_model = api_ns_episodes_history.model('EpisodeHistoryGetResponse', {
+        'data': fields.Nested(data_model),
+        'total': fields.Integer(),
+    })
+
     @authenticate
+    @api_ns_episodes_history.marshal_with(get_response_model, code=200)
+    @api_ns_episodes_history.doc(parser=get_request_parser)
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-        episodeid = request.args.get('episodeid')
+        args = self.get_request_parser.parse_args()
+        start = args.get('start')
+        length = args.get('length')
+        episodeid = args.get('episodeid')
 
         upgradable_episodes_not_perfect = []
         if settings.general.getboolean('upgrade_subs'):
@@ -136,4 +176,4 @@ class EpisodesHistory(Resource):
             .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
             .where(TableEpisodes.title.is_null(False)).count()
 
-        return jsonify(data=episode_history, total=count)
+        return {'data': episode_history, 'total': count}

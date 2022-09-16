@@ -11,20 +11,22 @@ from utilities.health import get_health_issues
 
 from ..utils import authenticate
 
-api_ns_badges = Namespace('badges', description='Badges API endpoint')
+api_ns_badges = Namespace('Badges', description='Get badges count to update the UI (episodes and movies wanted '
+                                                'subtitles, providers with issues and health issues.')
 
 
 @api_ns_badges.route('badges')
 class Badges(Resource):
-    badges_get_model = api_ns_badges.model('BadgesGet', {
-        'episodes': fields.Integer(min=0, required=True),
-        'movies': fields.Integer(min=0, required=True),
-        'providers': fields.Integer(min=0, required=True),
-        'status': fields.Integer(min=0, required=True),
+    # GET badges count
+    get_model = api_ns_badges.model('BadgesGet', {
+        'episodes': fields.Integer(),
+        'movies': fields.Integer(),
+        'providers': fields.Integer(),
+        'status': fields.Integer(),
     })
 
     @authenticate
-    @api_ns_badges.marshal_with(badges_get_model)
+    @api_ns_badges.marshal_with(get_model, code=200)
     @api_ns_badges.doc(parser=None)
     def get(self):
         episodes_conditions = [(TableEpisodes.missing_subtitles.is_null(False)),
