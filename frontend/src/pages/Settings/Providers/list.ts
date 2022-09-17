@@ -286,7 +286,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "regielive",
     name: "RegieLive",
-    description: "Romanian Subtitles Provider",
+    description: "Romanian Subtitles Provider. Broken, will not works.",
   },
   {
     key: "soustitreseu",
@@ -307,7 +307,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "subs4free",
     name: "Subs4Free",
-    description: "Greek Subtitles Provider",
+    description: "Greek Subtitles Provider. Broken, may not works for some.",
   },
   {
     key: "subs4series",
@@ -327,6 +327,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "password",
       },
     ],
+    description: "Broken, may not works for some. Use subf2m instead.",
   },
   { key: "subscenter" },
   {
