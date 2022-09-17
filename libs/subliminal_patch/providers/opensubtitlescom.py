@@ -205,7 +205,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         )
 
         if results == 401:
-            logging.debug('Authentification failed: clearing cache and attempting to login.')
+            logging.debug('Authentication failed: clearing cache and attempting to login.')
             region.delete("oscom_token")
             self.login()
 
@@ -245,6 +245,9 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             logger.debug(f'No match found for {title}')
 
     def query(self, languages, video):
+        if region.get("oscom_token", expiration_time=TOKEN_EXPIRATION_TIME) is NO_VALUE:
+            logger.debug("No cached token, we'll try to login again.")
+            self.login()
         self.video = video
         if self.use_hash:
             file_hash = self.video.hashes.get('opensubtitlescom')
@@ -363,7 +366,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         return self.query(languages, video)
 
     def download_subtitle(self, subtitle):
-        if self.token is NO_VALUE:
+        if region.get("oscom_token", expiration_time=TOKEN_EXPIRATION_TIME) is NO_VALUE:
             logger.debug("No cached token, we'll try to login again.")
             self.login()
         if self.token is NO_VALUE:
