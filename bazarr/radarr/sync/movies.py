@@ -45,7 +45,7 @@ def update_movies(send_event=True):
 
         # Get movies data from radarr
         movies = get_movies_from_radarr_api(url=url_radarr(), apikey_radarr=apikey_radarr)
-        if not movies:
+        if not isinstance(movies, list):
             return
         else:
             # Get current movies in DB
@@ -219,7 +219,7 @@ def update_one_movie(movie_id, action, defer_search=False):
                 movie = movieParser(movie_data, action='insert', tags_dict=tagsDict,
                                     movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
     except Exception:
-        logging.debug('BAZARR cannot get movie returned by SignalR feed from Radarr API.')
+        logging.exception('BAZARR cannot get movie returned by SignalR feed from Radarr API.')
         return
 
     # Drop useless events

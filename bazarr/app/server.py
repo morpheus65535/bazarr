@@ -4,8 +4,10 @@ import warnings
 import logging
 import os
 import io
+import errno
 
 from waitress.server import create_server
+from time import sleep
 
 from api import api_bp
 from .ui import ui_bp
@@ -28,16 +30,39 @@ class Server:
         # Mute Python3 BrokenPipeError
         warnings.simplefilter("ignore", BrokenPipeError)
 
-        self.server = create_server(app,
-                                    host=str(settings.general.ip),
-                                    port=int(args.port) if args.port else int(settings.general.port),
-                                    threads=100)
+        self.server = None
+        self.connected = False
+        self.address = str(settings.general.ip)
+        self.port = int(args.port) if args.port else int(settings.general.port)
+
+        while not self.connected:
+            sleep(0.1)
+            self.configure_server()
+
+    def configure_server(self):
+        try:
+            self.server = create_server(app,
+                                        host=self.address,
+                                        port=self.port,
+                                        threads=100)
+            self.connected = True
+        except OSError as error:
+            if error.errno == errno.EADDRNOTAVAIL:
+                logging.exception("BAZARR cannot bind to specified IP, trying with default (0.0.0.0)")
+                self.address = '0.0.0.0'
+                self.connected = False
+            elif error.errno == errno.EADDRINUSE:
+                logging.exception("BAZARR cannot bind to specified TCP port, trying with default (6767)")
+                self.port = '6767'
+                self.connected = False
+            else:
+                logging.exception("BAZARR cannot start because of unhandled exception.")
+                self.shutdown()
 
     def start(self):
         try:
-            logging.info(
-                'BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
-                    args.port) if args.port else str(settings.general.port)) + str(base_url))
+            logging.info(f'BAZARR is started and waiting for request on http://{self.server.effective_host}:'
+                         f'{self.server.effective_port}')
             try:
                 self.server.run()
             except Exception:

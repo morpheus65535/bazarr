@@ -101,7 +101,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "switch",
         key: "hi_fallback",
-        name: "Use HI subtitles as a fallback (don't enable it if you have a HI language profile)",
+        name: "Use HI subtitles as a fallback (don't enable this if you have a HI language profile)",
       },
       {
         type: "switch",
@@ -115,7 +115,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "gestdown",
     name: "Gestdown (Addic7ed proxy)",
-    description: "Proxy for Addic7ed website. No need for login or cookie.",
+    description: "Proxy for Addic7ed website. No need for login or cookies.",
   },
   {
     key: "greeksubs",
@@ -278,7 +278,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "switch",
         key: "verify_ssl",
-        name: "Verify SSL certificate (disabling introduce a MitM attack risk)",
+        name: "Verify SSL certificate (disabling this introduces a MitM attack risk)",
         defaultValue: true,
       },
     ],
@@ -286,7 +286,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "regielive",
     name: "RegieLive",
-    description: "Romanian Subtitles Provider",
+    description: "Romanian Subtitles Provider. Broken, will not works.",
   },
   {
     key: "soustitreseu",
@@ -307,13 +307,13 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "subs4free",
     name: "Subs4Free",
-    description: "Greek Subtitles Provider",
+    description: "Greek Subtitles Provider. Broken, may not works for some.",
   },
   {
     key: "subs4series",
     name: "Subs4Series",
     description:
-      "Greek Subtitles Provider. Require anti-captcha provider to solve on each download.",
+      "Greek Subtitles Provider. Requires anti-captcha provider to solve captchas for each download.",
   },
   {
     key: "subscene",
@@ -327,6 +327,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "password",
       },
     ],
+    description: "Broken, may not works for some. Use subf2m instead.",
   },
   { key: "subscenter" },
   {
