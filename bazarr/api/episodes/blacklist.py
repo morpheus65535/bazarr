@@ -42,6 +42,7 @@ class EpisodesBlacklist(Resource):
 
     @authenticate
     @api_ns_episodes_blacklist.marshal_with(get_response_model, envelope='data', code=200)
+    @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
     @api_ns_episodes_blacklist.doc(parser=get_request_parser)
     def get(self):
         args = self.get_request_parser.parse_args()
@@ -85,6 +86,7 @@ class EpisodesBlacklist(Resource):
     @authenticate
     @api_ns_episodes_blacklist.doc(parser=post_request_parser)
     @api_ns_episodes_blacklist.response(200, 'Success')
+    @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
     @api_ns_episodes_blacklist.response(404, 'Episode not found')
     def post(self):
         args = self.post_request_parser.parse_args()
@@ -131,9 +133,9 @@ class EpisodesBlacklist(Resource):
     @authenticate
     @api_ns_episodes_blacklist.doc(parser=delete_request_parser)
     @api_ns_episodes_blacklist.response(204, 'Success')
+    @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
     def delete(self):
         args = self.post_request_parser.parse_args()
-
         if args.get("all") == "true":
             blacklist_delete_all()
         else:

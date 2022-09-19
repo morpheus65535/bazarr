@@ -11,6 +11,7 @@ from utilities.helper import check_credentials
 api_ns_system_account = Namespace('systemAccount', description='System account API endpoint')
 
 
+@api_ns_system_account.hide
 @api_ns_system_account.route('system/account')
 class SystemAccount(Resource):
     def post(self):

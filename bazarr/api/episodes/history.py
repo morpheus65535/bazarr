@@ -61,6 +61,7 @@ class EpisodesHistory(Resource):
 
     @authenticate
     @api_ns_episodes_history.marshal_with(get_response_model, code=200)
+    @api_ns_episodes_history.response(401, 'Not Authenticated')
     @api_ns_episodes_history.doc(parser=get_request_parser)
     def get(self):
         args = self.get_request_parser.parse_args()

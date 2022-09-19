@@ -10,6 +10,7 @@ from ..utils import authenticate
 api_ns_system_notifications = Namespace('systemNotifications', description='System notifications API endpoint')
 
 
+@api_ns_system_notifications.hide
 @api_ns_system_notifications.route('system/notifications')
 class Notifications(Resource):
     @authenticate

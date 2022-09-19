@@ -27,6 +27,7 @@ class Badges(Resource):
 
     @authenticate
     @api_ns_badges.marshal_with(get_model, code=200)
+    @api_ns_badges.response(401, 'Not Authenticated')
     @api_ns_badges.doc(parser=None)
     def get(self):
         episodes_conditions = [(TableEpisodes.missing_subtitles.is_null(False)),

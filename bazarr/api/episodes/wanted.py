@@ -45,6 +45,7 @@ class EpisodesWanted(Resource):
 
     @authenticate
     @api_ns_episodes_wanted.marshal_with(get_response_model, code=200)
+    @api_ns_episodes_wanted.response(401, 'Not Authenticated')
     @api_ns_episodes_wanted.doc(parser=get_request_parser)
     def get(self):
         args = self.get_request_parser.parse_args()

@@ -3,8 +3,7 @@
 import datetime
 import pretty
 
-from flask import request, jsonify
-from flask_restx import Resource, Namespace
+from flask_restx import Resource, Namespace, reqparse, fields
 
 from app.database import TableMovies, TableBlacklistMovie
 from subtitles.tools.delete import delete_subtitles
@@ -12,22 +11,41 @@ from radarr.blacklist import blacklist_log_movie, blacklist_delete_all_movie, bl
 from utilities.path_mappings import path_mappings
 from subtitles.mass_download import movies_download_subtitles
 from app.event_handler import event_stream
+from api.swaggerui import subtitles_language_model
 
 from ..utils import authenticate, postprocessMovie
 
-
-api_ns_movies_blacklist = Namespace('moviesBlacklist', description='Movies blacklist API endpoint')
+api_ns_movies_blacklist = Namespace('moviesBlacklist', description='List, add or remove subtitles to or from '
+                                                                   'movies blacklist')
 
 
 @api_ns_movies_blacklist.route('movies/blacklist')
-# GET: get blacklist
-# POST: add blacklist
-# DELETE: remove blacklist
 class MoviesBlacklist(Resource):
+    # GET: get blacklist
+    get_request_parser = reqparse.RequestParser()
+    get_request_parser.add_argument('start', type=int, required=False, default=0, help='Paging start integer')
+    get_request_parser.add_argument('length', type=int, required=False, default=-1, help='Paging length integer')
+
+    get_language_model = api_ns_movies_blacklist.model('language_model', subtitles_language_model)
+
+    get_response_model = api_ns_movies_blacklist.model('MovieBlacklistGetResponse', {
+        'title': fields.String(),
+        'radarrId': fields.Integer(),
+        'provider': fields.String(),
+        'subs_id': fields.String(),
+        'language': fields.Nested(get_language_model),
+        'timestamp': fields.String(),
+        'parsed_timestamp': fields.String(),
+    })
+
     @authenticate
+    @api_ns_movies_blacklist.marshal_with(get_response_model, envelope='data', code=200)
+    @api_ns_movies_blacklist.response(401, 'Not Authenticated')
+    @api_ns_movies_blacklist.doc(parser=get_request_parser)
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
+        args = self.get_request_parser.parse_args()
+        start = args.get('start')
+        length = args.get('length')
 
         data = TableBlacklistMovie.select(TableMovies.title,
                                           TableMovies.radarrId,
@@ -49,14 +67,27 @@ class MoviesBlacklist(Resource):
             item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
             item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
 
-        return jsonify(data=data)
+        return data
+
+    # POST: add blacklist
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('radarrid', type=int, required=True, help='Radarr ID')
+    post_request_parser.add_argument('provider', type=str, required=True, help='Provider name')
+    post_request_parser.add_argument('subs_id', type=str, required=True, help='Subtitles ID')
+    post_request_parser.add_argument('language', type=str, required=True, help='Subtitles language')
+    post_request_parser.add_argument('subtitles_path', type=str, required=True, help='Subtitles file path')
 
     @authenticate
+    @api_ns_movies_blacklist.doc(parser=post_request_parser)
+    @api_ns_movies_blacklist.response(200, 'Success')
+    @api_ns_movies_blacklist.response(401, 'Not Authenticated')
+    @api_ns_movies_blacklist.response(404, 'Movie not found')
     def post(self):
-        radarr_id = int(request.args.get('radarrid'))
-        provider = request.form.get('provider')
-        subs_id = request.form.get('subs_id')
-        language = request.form.get('language')
+        args = self.post_request_parser.parse_args()
+        radarr_id = args.get('radarrid')
+        provider = args.get('provider')
+        subs_id = args.get('subs_id')
+        language = args.get('language')
         # TODO
         forced = False
         hi = False
@@ -67,7 +98,7 @@ class MoviesBlacklist(Resource):
             return 'Movie not found', 404
 
         media_path = data['path']
-        subtitles_path = request.form.get('subtitles_path')
+        subtitles_path = args.get('subtitles_path')
 
         blacklist_log_movie(radarr_id=radarr_id,
                             provider=provider,
@@ -84,12 +115,22 @@ class MoviesBlacklist(Resource):
         event_stream(type='movie-history')
         return '', 200
 
+    # DELETE: remove blacklist
+    delete_request_parser = reqparse.RequestParser()
+    delete_request_parser.add_argument('all', type=str, required=False, help='Empty movies subtitles blacklist')
+    delete_request_parser.add_argument('provider', type=str, required=True, help='Provider name')
+    delete_request_parser.add_argument('subs_id', type=str, required=True, help='Subtitles ID')
+
     @authenticate
+    @api_ns_movies_blacklist.doc(parser=delete_request_parser)
+    @api_ns_movies_blacklist.response(204, 'Success')
+    @api_ns_movies_blacklist.response(401, 'Not Authenticated')
     def delete(self):
-        if request.args.get("all") == "true":
+        args = self.post_request_parser.parse_args()
+        if args.get("all") == "true":
             blacklist_delete_all_movie()
         else:
-            provider = request.form.get('provider')
-            subs_id = request.form.get('subs_id')
+            provider = args.get('provider')
+            subs_id = args.get('subs_id')
             blacklist_delete_movie(provider=provider, subs_id=subs_id)
         return '', 200

@@ -8,6 +8,7 @@ from ..utils import authenticate
 api_ns_system = Namespace('system', description='System API endpoint')
 
 
+@api_ns_system.hide
 @api_ns_system.route('system')
 class System(Resource):
     @authenticate

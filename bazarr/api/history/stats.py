@@ -5,8 +5,7 @@ import datetime
 import operator
 
 from dateutil import rrule
-from flask import request, jsonify
-from flask_restx import Resource, Namespace
+from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 from peewee import fn
 
@@ -14,17 +13,44 @@ from app.database import TableHistory, TableHistoryMovie
 
 from ..utils import authenticate
 
-api_ns_history_stats = Namespace('historyStats', description='Stats API endpoint')
+api_ns_history_stats = Namespace('History Statistics', description='Get history statistics')
 
 
 @api_ns_history_stats.route('history/stats')
 class HistoryStats(Resource):
+    get_request_parser = reqparse.RequestParser()
+    get_request_parser.add_argument('timeFrame', type=str, default='month',
+                                    help='Timeframe to get stats for. Must be in ["week", "month", "trimester", '
+                                         '"year"]')
+    get_request_parser.add_argument('action', type=str, default='All', help='Action type to filter for.')
+    get_request_parser.add_argument('provider', type=str, default='All', help='Provider name to filter for.')
+    get_request_parser.add_argument('language', type=str, default='All', help='Language name to filter for')
+
+    series_data_model = api_ns_history_stats.model('series_data_model', {
+        'date': fields.String(),
+        'count': fields.Integer(),
+    })
+
+    movies_data_model = api_ns_history_stats.model('movies_data_model', {
+        'date': fields.String(),
+        'count': fields.Integer(),
+    })
+
+    get_response_model = api_ns_history_stats.model('HistoryStatsGetResponse', {
+        'series': fields.Nested(series_data_model),
+        'movies': fields.Nested(movies_data_model),
+    })
+
     @authenticate
+    @api_ns_history_stats.marshal_with(get_response_model, code=200)
+    @api_ns_history_stats.response(401, 'Not Authenticated')
+    @api_ns_history_stats.doc(parser=get_request_parser)
     def get(self):
-        timeframe = request.args.get('timeFrame') or 'month'
-        action = request.args.get('action') or 'All'
-        provider = request.args.get('provider') or 'All'
-        language = request.args.get('language') or 'All'
+        args = self.get_request_parser.parse_args()
+        timeframe = args.get('timeFrame')
+        action = args.get('action')
+        provider = args.get('provider')
+        language = args.get('language')
 
         # timeframe must be in ['week', 'month', 'trimester', 'year']
         if timeframe == 'year':
@@ -85,4 +111,4 @@ class HistoryStats(Resource):
         sorted_data_series = sorted(data_series, key=lambda i: i['date'])
         sorted_data_movies = sorted(data_movies, key=lambda i: i['date'])
 
-        return jsonify(series=sorted_data_series, movies=sorted_data_movies)
+        return {'series': sorted_data_series, 'movies': sorted_data_movies}

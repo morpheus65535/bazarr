@@ -48,6 +48,7 @@ class Episodes(Resource):
     @api_ns_episodes.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_episodes.doc(parser=get_request_parser)
     @api_ns_episodes.response(200, 'Success')
+    @api_ns_episodes.response(401, 'Not Authenticated')
     @api_ns_episodes.response(404, 'Series or Episode ID not provided')
     def get(self):
         args = self.get_request_parser.parse_args()

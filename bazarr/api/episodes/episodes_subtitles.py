@@ -36,6 +36,7 @@ class EpisodesSubtitles(Resource):
     @authenticate
     @api_ns_episodes_subtitles.doc(parser=patch_request_parser)
     @api_ns_episodes_subtitles.response(204, 'Success')
+    @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
     def patch(self):
         args = self.patch_request_parser.parse_args()
@@ -110,6 +111,7 @@ class EpisodesSubtitles(Resource):
     @authenticate
     @api_ns_episodes_subtitles.doc(parser=post_request_parser)
     @api_ns_episodes_subtitles.response(204, 'Success')
+    @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
     def post(self):
         args = self.post_request_parser.parse_args()
@@ -189,6 +191,7 @@ class EpisodesSubtitles(Resource):
     @authenticate
     @api_ns_episodes_subtitles.doc(parser=delete_request_parser)
     @api_ns_episodes_subtitles.response(204, 'Success')
+    @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
     def delete(self):
         args = self.delete_request_parser.parse_args()

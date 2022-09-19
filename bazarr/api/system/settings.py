@@ -18,6 +18,7 @@ from ..utils import authenticate
 api_ns_system_settings = Namespace('systemSettings', description='System settings API endpoint')
 
 
+@api_ns_system_settings.hide
 @api_ns_system_settings.route('system/settings')
 class SystemSettings(Resource):
     @authenticate
