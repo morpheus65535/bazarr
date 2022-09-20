@@ -38,7 +38,7 @@
     "@testing-library/react-hooks": "latest",
     "@testing-library/user-event": "latest",
     "@types/lodash": "^4",
-    "@types/node": "^17",
+    "@types/node": "^18",
     "@types/react": "^17",
     "@types/react-dom": "^17",
     "@types/react-table": "^7",
