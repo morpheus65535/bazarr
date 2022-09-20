@@ -3,9 +3,9 @@
 import os
 import logging
 
-from flask import request
-from flask_restx import Resource, Namespace
+from flask_restx import Resource, Namespace, reqparse
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
+from werkzeug.datastructures import FileStorage
 
 from app.database import TableMovies, get_audio_profile_languages, get_profile_id
 from utilities.path_mappings import path_mappings
@@ -21,18 +21,26 @@ from app.config import settings
 from ..utils import authenticate
 
 
-api_ns_movies_subtitles = Namespace('moviesSubtitles', description='Movies subtitles API endpoint')
+api_ns_movies_subtitles = Namespace('Movies Subtitles', description='Download, upload or delete movies subtitles')
 
 
 @api_ns_movies_subtitles.route('movies/subtitles')
-# PATCH: Download Subtitles
-# POST: Upload Subtitles
-# DELETE: Delete Subtitles
 class MoviesSubtitles(Resource):
+    # PATCH: Download Subtitles
+    patch_request_parser = reqparse.RequestParser()
+    patch_request_parser.add_argument('radarrid', type=int, required=True, help='Movie ID')
+    patch_request_parser.add_argument('language', type=str, required=True, help='Language code2')
+    patch_request_parser.add_argument('forced', type=str, required=True, help='Forced true/false as string')
+    patch_request_parser.add_argument('hi', type=str, required=True, help='HI true/false as string')
+
     @authenticate
+    @api_ns_movies_subtitles.doc(parser=patch_request_parser)
+    @api_ns_movies_subtitles.response(204, 'Success')
+    @api_ns_movies_subtitles.response(401, 'Not Authenticated')
+    @api_ns_movies_subtitles.response(404, 'Movie not found')
     def patch(self):
-        # Download
-        radarrId = request.args.get('radarrid')
+        args = self.patch_request_parser.parse_args()
+        radarrId = args.get('radarrid')
 
         movieInfo = TableMovies.select(TableMovies.title,
                                        TableMovies.path,
@@ -51,9 +59,9 @@ class MoviesSubtitles(Resource):
         title = movieInfo['title']
         audio_language = movieInfo['audio_language']
 
-        language = request.form.get('language')
-        hi = request.form.get('hi').capitalize()
-        forced = request.form.get('forced').capitalize()
+        language = args.get('language')
+        hi = args.get('hi').capitalize()
+        forced = args.get('forced').capitalize()
 
         audio_language_list = get_audio_profile_languages(movie_id=radarrId)
         if len(audio_language_list) > 0:
@@ -89,11 +97,24 @@ class MoviesSubtitles(Resource):
 
         return '', 204
 
+    # POST: Upload Subtitles
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('radarrid', type=int, required=True, help='Movie ID')
+    post_request_parser.add_argument('language', type=str, required=True, help='Language code2')
+    post_request_parser.add_argument('forced', type=str, required=True, help='Forced true/false as string')
+    post_request_parser.add_argument('hi', type=str, required=True, help='HI true/false as string')
+    post_request_parser.add_argument('file', type=FileStorage, location='files', required=True,
+                                     help='Subtitles file as file upload object')
+
     @authenticate
+    @api_ns_movies_subtitles.doc(parser=post_request_parser)
+    @api_ns_movies_subtitles.response(204, 'Success')
+    @api_ns_movies_subtitles.response(401, 'Not Authenticated')
+    @api_ns_movies_subtitles.response(404, 'Movie not found')
     def post(self):
-        # Upload
         # TODO: Support Multiply Upload
-        radarrId = request.args.get('radarrid')
+        args = self.post_request_parser.parse_args()
+        radarrId = args.get('radarrid')
         movieInfo = TableMovies.select(TableMovies.title,
                                        TableMovies.path,
                                        TableMovies.sceneName,
@@ -111,10 +132,10 @@ class MoviesSubtitles(Resource):
         title = movieInfo['title']
         audioLanguage = movieInfo['audio_language']
 
-        language = request.form.get('language')
-        forced = True if request.form.get('forced') == 'true' else False
-        hi = True if request.form.get('hi') == 'true' else False
-        subFile = request.files.get('file')
+        language = args.get('language')
+        forced = True if args.get('forced') == 'true' else False
+        hi = True if args.get('hi') == 'true' else False
+        subFile = args.get('file')
 
         _, ext = os.path.splitext(subFile.filename)
 
@@ -155,10 +176,22 @@ class MoviesSubtitles(Resource):
 
         return '', 204
 
+    # DELETE: Delete Subtitles
+    delete_request_parser = reqparse.RequestParser()
+    delete_request_parser.add_argument('radarrid', type=int, required=True, help='Movie ID')
+    delete_request_parser.add_argument('language', type=str, required=True, help='Language code2')
+    delete_request_parser.add_argument('forced', type=str, required=True, help='Forced true/false as string')
+    delete_request_parser.add_argument('hi', type=str, required=True, help='HI true/false as string')
+    delete_request_parser.add_argument('path', type=str, required=True, help='Path of the subtitles file')
+
     @authenticate
+    @api_ns_movies_subtitles.doc(parser=delete_request_parser)
+    @api_ns_movies_subtitles.response(204, 'Success')
+    @api_ns_movies_subtitles.response(401, 'Not Authenticated')
+    @api_ns_movies_subtitles.response(404, 'Movie not found')
     def delete(self):
-        # Delete
-        radarrId = request.args.get('radarrid')
+        args = self.delete_request_parser.parse_args()
+        radarrId = args.get('radarrid')
         movieInfo = TableMovies.select(TableMovies.path) \
             .where(TableMovies.radarrId == radarrId) \
             .dicts() \
@@ -169,21 +202,19 @@ class MoviesSubtitles(Resource):
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
 
-        language = request.form.get('language')
-        forced = request.form.get('forced')
-        hi = request.form.get('hi')
-        subtitlesPath = request.form.get('path')
+        language = args.get('language')
+        forced = args.get('forced')
+        hi = args.get('hi')
+        subtitlesPath = args.get('path')
 
         subtitlesPath = path_mappings.path_replace_reverse_movie(subtitlesPath)
 
-        result = delete_subtitles(media_type='movie',
-                                  language=language,
-                                  forced=forced,
-                                  hi=hi,
-                                  media_path=moviePath,
-                                  subtitles_path=subtitlesPath,
-                                  radarr_id=radarrId)
-        if result:
-            return '', 202
-        else:
-            return '', 204
+        delete_subtitles(media_type='movie',
+                         language=language,
+                         forced=forced,
+                         hi=hi,
+                         media_path=moviePath,
+                         subtitles_path=subtitlesPath,
+                         radarr_id=radarrId)
+
+        return '', 204

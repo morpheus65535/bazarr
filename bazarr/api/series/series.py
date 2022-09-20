@@ -2,8 +2,7 @@
 
 import operator
 
-from flask import request, jsonify
-from flask_restx import Resource, Namespace
+from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows
@@ -11,20 +10,62 @@ from subtitles.indexer.series import list_missing_subtitles, series_scan_subtitl
 from subtitles.mass_download import series_download_subtitles
 from subtitles.wanted import wanted_search_missing_subtitles_series
 from app.event_handler import event_stream
+from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
 from ..utils import authenticate, postprocessSeries, None_Keys
 
 
-api_ns_series = Namespace('series', description='Series API endpoint')
+api_ns_series = Namespace('Series', description='List series metadata, update series languages profile or run actions '
+                                                'for specific series.')
 
 
 @api_ns_series.route('series')
 class Series(Resource):
+    get_request_parser = reqparse.RequestParser()
+    get_request_parser.add_argument('start', type=int, required=False, default=0, help='Paging start integer')
+    get_request_parser.add_argument('length', type=int, required=False, default=-1, help='Paging length integer')
+    get_request_parser.add_argument('seriesid[]', type=int, action='append', required=False, default=[],
+                                    help='Series IDs to get metadata for')
+
+    get_subtitles_model = api_ns_series.model('language_model', subtitles_model)
+    get_subtitles_language_model = api_ns_series.model('language_model', subtitles_language_model)
+    get_audio_language_model = api_ns_series.model('language_model', audio_language_model)
+
+    data_model = api_ns_series.model('data_model', {
+        'alternativeTitles': fields.List(fields.String),
+        'audio_language': fields.Nested(get_audio_language_model),
+        'episodeFileCount': fields.Integer(),
+        'episodeMissingCount': fields.Integer(),
+        'fanart': fields.String(),
+        'imdbId': fields.String(),
+        'overview': fields.String(),
+        'path': fields.String(),
+        'poster': fields.String(),
+        'profileId': fields.Integer(),
+        'seriesType': fields.String(),
+        'sonarrSeriesId': fields.Integer(),
+        'sortTitle': fields.String(),
+        'tags': fields.List(fields.String),
+        'title': fields.String(),
+        'tvdbId': fields.Integer(),
+        'year': fields.String(),
+    })
+
+    get_response_model = api_ns_series.model('SeriesGetResponse', {
+        'data': fields.Nested(data_model),
+        'total': fields.Integer(),
+    })
+
     @authenticate
+    @api_ns_series.marshal_with(get_response_model, code=200)
+    @api_ns_series.doc(parser=get_request_parser)
+    @api_ns_series.response(200, 'Success')
+    @api_ns_series.response(401, 'Not Authenticated')
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-        seriesId = request.args.getlist('seriesid[]')
+        args = self.get_request_parser.parse_args()
+        start = args.get('start')
+        length = args.get('length')
+        seriesId = args.get('seriesid[]')
 
         count = TableShows.select().count()
 
@@ -62,12 +103,23 @@ class Series(Resource):
                 .count()
             item.update({"episodeFileCount": episodeFileCount})
 
-        return jsonify(data=result, total=count)
+        return {'data': result, 'total': count}
+
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('seriesid', type=int, action='append', required=False, default=[],
+                                     help='Sonarr series ID')
+    post_request_parser.add_argument('profileid', type=str, action='append', required=False, default=[],
+                                     help='Languages profile(s) ID or "none"')
 
     @authenticate
+    @api_ns_series.doc(parser=post_request_parser)
+    @api_ns_series.response(204, 'Success')
+    @api_ns_series.response(401, 'Not Authenticated')
+    @api_ns_series.response(404, 'Languages profile not found')
     def post(self):
-        seriesIdList = request.form.getlist('seriesid')
-        profileIdList = request.form.getlist('profileid')
+        args = self.post_request_parser.parse_args()
+        seriesIdList = args.get('seriesid')
+        profileIdList = args.get('profileid')
 
         for idx in range(len(seriesIdList)):
             seriesId = seriesIdList[idx]
@@ -103,10 +155,20 @@ class Series(Resource):
 
         return '', 204
 
+    patch_request_parser = reqparse.RequestParser()
+    patch_request_parser.add_argument('seriesid', type=int, required=False, help='Sonarr series ID')
+    patch_request_parser.add_argument('action', type=str, required=False, help='Action to perform from ["scan-disk", '
+                                                                               '"search-missing", "search-wanted"]')
+
     @authenticate
+    @api_ns_series.doc(parser=patch_request_parser)
+    @api_ns_series.response(204, 'Success')
+    @api_ns_series.response(400, 'Unknown action')
+    @api_ns_series.response(401, 'Not Authenticated')
     def patch(self):
-        seriesid = request.form.get('seriesid')
-        action = request.form.get('action')
+        args = self.patch_request_parser.parse_args()
+        seriesid = args.get('seriesid')
+        action = args.get('action')
         if action == "scan-disk":
             series_scan_subtitles(seriesid)
             return '', 204

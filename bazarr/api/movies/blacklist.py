@@ -15,8 +15,8 @@ from api.swaggerui import subtitles_language_model
 
 from ..utils import authenticate, postprocessMovie
 
-api_ns_movies_blacklist = Namespace('moviesBlacklist', description='List, add or remove subtitles to or from '
-                                                                   'movies blacklist')
+api_ns_movies_blacklist = Namespace('Movies Blacklist', description='List, add or remove subtitles to or from '
+                                                                    'movies blacklist')
 
 
 @api_ns_movies_blacklist.route('movies/blacklist')

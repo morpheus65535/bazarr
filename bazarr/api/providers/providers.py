@@ -1,7 +1,6 @@
 # coding=utf-8
 
-from flask import request, jsonify
-from flask_restx import Resource, Namespace
+from flask_restx import Resource, Namespace, reqparse, fields
 from operator import itemgetter
 
 from app.database import TableHistory, TableHistoryMovie
@@ -9,14 +8,28 @@ from app.get_providers import list_throttled_providers, reset_throttled_provider
 
 from ..utils import authenticate, False_Keys
 
-api_ns_providers = Namespace('providers', description='Providers API endpoint')
+api_ns_providers = Namespace('Providers', description='Get and reset providers status')
 
 
 @api_ns_providers.route('providers')
 class Providers(Resource):
+    get_request_parser = reqparse.RequestParser()
+    get_request_parser.add_argument('history', type=str, required=False, help='Provider name for history stats')
+
+    get_response_model = api_ns_providers.model('MovieBlacklistGetResponse', {
+        'name': fields.String(),
+        'status': fields.String(),
+        'retry': fields.String(),
+    })
+
     @authenticate
+    @api_ns_providers.marshal_with(get_response_model, envelope='data', code=200)
+    @api_ns_providers.response(200, 'Success')
+    @api_ns_providers.response(401, 'Not Authenticated')
+    @api_ns_providers.doc(parser=get_request_parser)
     def get(self):
-        history = request.args.get('history')
+        args = self.get_request_parser.parse_args()
+        history = args.get('history')
         if history and history not in False_Keys:
             providers = list(TableHistory.select(TableHistory.provider)
                              .where(TableHistory.provider is not None and TableHistory.provider != "manual")
@@ -32,22 +45,29 @@ class Providers(Resource):
                     'status': 'History',
                     'retry': '-'
                 })
-            return jsonify(data=sorted(providers_dicts, key=itemgetter('name')))
+        else:
+            throttled_providers = list_throttled_providers()
 
-        throttled_providers = list_throttled_providers()
+            providers_dicts = list()
+            for provider in throttled_providers:
+                providers_dicts.append({
+                    "name": provider[0],
+                    "status": provider[1] if provider[1] is not None else "Good",
+                    "retry": provider[2] if provider[2] != "now" else "-"
+                })
+        return sorted(providers_dicts, key=itemgetter('name'))
 
-        providers = list()
-        for provider in throttled_providers:
-            providers.append({
-                "name": provider[0],
-                "status": provider[1] if provider[1] is not None else "Good",
-                "retry": provider[2] if provider[2] != "now" else "-"
-            })
-        return jsonify(data=providers)
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('action', type=str, required=True, help='Action to perform from ["reset"]')
 
     @authenticate
+    @api_ns_providers.doc(parser=post_request_parser)
+    @api_ns_providers.response(204, 'Success')
+    @api_ns_providers.response(401, 'Not Authenticated')
+    @api_ns_providers.response(400, 'Unknown action')
     def post(self):
-        action = request.form.get('action')
+        args = self.post_request_parser.parse_args()
+        action = args.get('action')
 
         if action == 'reset':
             reset_throttled_providers()
