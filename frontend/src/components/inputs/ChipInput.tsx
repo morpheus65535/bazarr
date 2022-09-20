@@ -26,6 +26,7 @@ const ChipInput: FunctionComponent<ChipInputProps> = ({ ...props }) => {
       getCreateLabel={(query) => `Add "${query}"`}
       onCreate={(query) => {
         onChange?.([...(value ?? []), query]);
+        return query;
       }}
     ></MultiSelector>
   );

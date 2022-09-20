@@ -11,7 +11,7 @@ import {
 } from "@mantine/core";
 import { forwardRef } from "react";
 
-export type ActionProps = ActionIconProps<"button"> & {
+export type ActionProps = MantineComp<ActionIconProps, "button"> & {
   icon: IconDefinition;
   label: string;
   tooltip?: Omit<TooltipProps, "label" | "children">;

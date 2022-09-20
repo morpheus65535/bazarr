@@ -2,7 +2,7 @@ import { BuildKey } from "@/utilities";
 import { Badge, Group, Text, TextProps } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 
-type LanguageTextProps = TextProps<"div"> & {
+type LanguageTextProps = TextProps & {
   value: Language.Info;
   long?: boolean;
 };

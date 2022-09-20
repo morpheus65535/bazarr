@@ -10,7 +10,7 @@ import {
   Stack,
   Text as MantineText,
 } from "@mantine/core";
-import { useForm } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
 import { capitalize } from "lodash";
 import {
   forwardRef,
@@ -271,7 +271,12 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
             <Button hidden={!payload} color="red" onClick={deletePayload}>
               Delete
             </Button>
-            <Button disabled={!canSave} onClick={form.onSubmit(submit)}>
+            <Button
+              disabled={!canSave}
+              onClick={() => {
+                submit(form.values);
+              }}
+            >
               Save
             </Button>
           </Group>

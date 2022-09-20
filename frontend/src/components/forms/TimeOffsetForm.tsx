@@ -4,7 +4,7 @@ import { task } from "@/modules/task";
 import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
-import { useForm } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
 import { FunctionComponent } from "react";
 
 const TaskName = "Changing Time";
@@ -30,7 +30,7 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       sec: 0,
       ms: 0,
     },
-    validationRules: {
+    validate: {
       hour: (v) => v >= 0,
       min: (v) => v >= 0,
       sec: (v) => v >= 0,
