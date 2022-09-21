@@ -45,7 +45,7 @@ class ProviderEpisodes(Resource):
     @api_ns_providers_episodes.response(404, 'Episode not found')
     @api_ns_providers_episodes.doc(parser=get_request_parser)
     def get(self):
-        # Manual Search
+        """Search manually for an episode subtitles"""
         args = self.get_request_parser.parse_args()
         sonarrEpisodeId = args.get('episodeid')
         episodeInfo = TableEpisodes.select(TableEpisodes.path,
@@ -88,7 +88,7 @@ class ProviderEpisodes(Resource):
     @api_ns_providers_episodes.response(401, 'Not Authenticated')
     @api_ns_providers_episodes.response(404, 'Episode not found')
     def post(self):
-        # Manual Download
+        """Manually download an episode subtitles"""
         args = self.post_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')

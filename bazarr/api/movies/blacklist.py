@@ -21,12 +21,11 @@ api_ns_movies_blacklist = Namespace('Movies Blacklist', description='List, add o
 
 @api_ns_movies_blacklist.route('movies/blacklist')
 class MoviesBlacklist(Resource):
-    # GET: get blacklist
     get_request_parser = reqparse.RequestParser()
     get_request_parser.add_argument('start', type=int, required=False, default=0, help='Paging start integer')
     get_request_parser.add_argument('length', type=int, required=False, default=-1, help='Paging length integer')
 
-    get_language_model = api_ns_movies_blacklist.model('language_model', subtitles_language_model)
+    get_language_model = api_ns_movies_blacklist.model('subtitles_language_model', subtitles_language_model)
 
     get_response_model = api_ns_movies_blacklist.model('MovieBlacklistGetResponse', {
         'title': fields.String(),
@@ -43,6 +42,7 @@ class MoviesBlacklist(Resource):
     @api_ns_movies_blacklist.response(401, 'Not Authenticated')
     @api_ns_movies_blacklist.doc(parser=get_request_parser)
     def get(self):
+        """List blacklisted movies subtitles"""
         args = self.get_request_parser.parse_args()
         start = args.get('start')
         length = args.get('length')
@@ -69,7 +69,6 @@ class MoviesBlacklist(Resource):
 
         return data
 
-    # POST: add blacklist
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, required=True, help='Radarr ID')
     post_request_parser.add_argument('provider', type=str, required=True, help='Provider name')
@@ -83,6 +82,7 @@ class MoviesBlacklist(Resource):
     @api_ns_movies_blacklist.response(401, 'Not Authenticated')
     @api_ns_movies_blacklist.response(404, 'Movie not found')
     def post(self):
+        """Add a movies subtitles to blacklist"""
         args = self.post_request_parser.parse_args()
         radarr_id = args.get('radarrid')
         provider = args.get('provider')
@@ -115,7 +115,6 @@ class MoviesBlacklist(Resource):
         event_stream(type='movie-history')
         return '', 200
 
-    # DELETE: remove blacklist
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('all', type=str, required=False, help='Empty movies subtitles blacklist')
     delete_request_parser.add_argument('provider', type=str, required=True, help='Provider name')
@@ -126,6 +125,7 @@ class MoviesBlacklist(Resource):
     @api_ns_movies_blacklist.response(204, 'Success')
     @api_ns_movies_blacklist.response(401, 'Not Authenticated')
     def delete(self):
+        """Delete a movies subtitles from blacklist"""
         args = self.post_request_parser.parse_args()
         if args.get("all") == "true":
             blacklist_delete_all_movie()

@@ -26,7 +26,6 @@ api_ns_movies_subtitles = Namespace('Movies Subtitles', description='Download, u
 
 @api_ns_movies_subtitles.route('movies/subtitles')
 class MoviesSubtitles(Resource):
-    # PATCH: Download Subtitles
     patch_request_parser = reqparse.RequestParser()
     patch_request_parser.add_argument('radarrid', type=int, required=True, help='Movie ID')
     patch_request_parser.add_argument('language', type=str, required=True, help='Language code2')
@@ -39,6 +38,7 @@ class MoviesSubtitles(Resource):
     @api_ns_movies_subtitles.response(401, 'Not Authenticated')
     @api_ns_movies_subtitles.response(404, 'Movie not found')
     def patch(self):
+        """Download a movie subtitles"""
         args = self.patch_request_parser.parse_args()
         radarrId = args.get('radarrid')
 
@@ -112,6 +112,7 @@ class MoviesSubtitles(Resource):
     @api_ns_movies_subtitles.response(401, 'Not Authenticated')
     @api_ns_movies_subtitles.response(404, 'Movie not found')
     def post(self):
+        """Upload a movie subtitles"""
         # TODO: Support Multiply Upload
         args = self.post_request_parser.parse_args()
         radarrId = args.get('radarrid')
@@ -190,6 +191,7 @@ class MoviesSubtitles(Resource):
     @api_ns_movies_subtitles.response(401, 'Not Authenticated')
     @api_ns_movies_subtitles.response(404, 'Movie not found')
     def delete(self):
+        """Delete a movie subtitles"""
         args = self.delete_request_parser.parse_args()
         radarrId = args.get('radarrid')
         movieInfo = TableMovies.select(TableMovies.path) \

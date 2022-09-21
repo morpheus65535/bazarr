@@ -27,9 +27,9 @@ class EpisodesHistory(Resource):
     get_request_parser.add_argument('length', type=int, required=False, default=-1, help='Paging length integer')
     get_request_parser.add_argument('episodeid', type=int, required=False, help='Episode ID')
 
-    get_language_model = api_ns_episodes_history.model('language_model', subtitles_language_model)
+    get_language_model = api_ns_episodes_history.model('subtitles_language_model', subtitles_language_model)
 
-    data_model = api_ns_episodes_history.model('data_model', {
+    data_model = api_ns_episodes_history.model('history_episodes_data_model', {
         'id': fields.Integer(),
         'seriesTitle': fields.String(),
         'monitored': fields.Boolean(),
@@ -64,6 +64,7 @@ class EpisodesHistory(Resource):
     @api_ns_episodes_history.response(401, 'Not Authenticated')
     @api_ns_episodes_history.doc(parser=get_request_parser)
     def get(self):
+        """List episodes history events"""
         args = self.get_request_parser.parse_args()
         start = args.get('start')
         length = args.get('length')

@@ -21,12 +21,11 @@ api_ns_episodes_blacklist = Namespace('Episodes Blacklist', description='List, a
 
 @api_ns_episodes_blacklist.route('episodes/blacklist')
 class EpisodesBlacklist(Resource):
-    # GET: get blacklist
     get_request_parser = reqparse.RequestParser()
     get_request_parser.add_argument('start', type=int, required=False, default=0, help='Paging start integer')
     get_request_parser.add_argument('length', type=int, required=False, default=-1, help='Paging length integer')
 
-    get_language_model = api_ns_episodes_blacklist.model('language_model', subtitles_language_model)
+    get_language_model = api_ns_episodes_blacklist.model('subtitles_language_model', subtitles_language_model)
 
     get_response_model = api_ns_episodes_blacklist.model('EpisodeBlacklistGetResponse', {
         'seriesTitle': fields.String(),
@@ -45,6 +44,7 @@ class EpisodesBlacklist(Resource):
     @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
     @api_ns_episodes_blacklist.doc(parser=get_request_parser)
     def get(self):
+        """List blacklisted episodes subtitles"""
         args = self.get_request_parser.parse_args()
         start = args.get('start')
         length = args.get('length')
@@ -74,7 +74,6 @@ class EpisodesBlacklist(Resource):
 
         return data
 
-    # POST: add blacklist
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
     post_request_parser.add_argument('episodeid', type=int, required=True, help='Episode ID')
@@ -89,6 +88,7 @@ class EpisodesBlacklist(Resource):
     @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
     @api_ns_episodes_blacklist.response(404, 'Episode not found')
     def post(self):
+        """Add an episodes subtitles to blacklist"""
         args = self.post_request_parser.parse_args()
         sonarr_series_id = args.get('seriesid')
         sonarr_episode_id = args.get('episodeid')
@@ -124,7 +124,6 @@ class EpisodesBlacklist(Resource):
         event_stream(type='episode-history')
         return '', 200
 
-    # DELETE: remove blacklist
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('all', type=str, required=False, help='Empty episodes subtitles blacklist')
     delete_request_parser.add_argument('provider', type=str, required=True, help='Provider name')
@@ -135,6 +134,7 @@ class EpisodesBlacklist(Resource):
     @api_ns_episodes_blacklist.response(204, 'Success')
     @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
     def delete(self):
+        """Delete an episodes subtitles from blacklist"""
         args = self.post_request_parser.parse_args()
         if args.get("all") == "true":
             blacklist_delete_all()

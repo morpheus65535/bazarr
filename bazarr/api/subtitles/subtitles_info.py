@@ -1,20 +1,37 @@
 # coding=utf-8
 
-from flask import request, jsonify
-from flask_restx import Resource, Namespace
+from flask_restx import Resource, Namespace, reqparse, fields
 from subliminal_patch.core import guessit
 
 from ..utils import authenticate
 
 
-api_ns_subtitles_info = Namespace('subtitlesInfo', description='Subtitles info API endpoint')
+api_ns_subtitles_info = Namespace('Subtitles Info', description='Guess season number, episode number or language from '
+                                                                'uploaded subtitles filename')
 
 
 @api_ns_subtitles_info.route('subtitles/info')
 class SubtitleNameInfo(Resource):
+    get_request_parser = reqparse.RequestParser()
+    get_request_parser.add_argument('filenames[]', type=str, required=True, action='append',
+                                    help='Subtitles filenames')
+
+    get_response_model = api_ns_subtitles_info.model('SubtitlesInfoGetResponse', {
+        'filename': fields.String(),
+        'subtitle_language': fields.String(),
+        'season': fields.Integer(),
+        'episode': fields.Integer(),
+    })
+
     @authenticate
+    @api_ns_subtitles_info.marshal_with(get_response_model, envelope='data', code=200)
+    @api_ns_subtitles_info.response(200, 'Success')
+    @api_ns_subtitles_info.response(401, 'Not Authenticated')
+    @api_ns_subtitles_info.doc(parser=get_request_parser)
     def get(self):
-        names = request.args.getlist('filenames[]')
+        """Guessit over subtitles filename"""
+        args = self.get_request_parser.parse_args()
+        names = args.get('filenames[]')
         results = []
         for name in names:
             opts = dict()
@@ -31,16 +48,16 @@ class SubtitleNameInfo(Resource):
                     # for multiple episodes file, choose the first episode number
                     if len(guessit_result['episode']):
                         # make sure that guessit returned a list of more than 0 items
-                        result['episode'] = int(guessit_result['episode'][0])
-                elif isinstance(guessit_result['episode'], (str, int)):
-                    # if single episode (should be int but just in case we cast it to int)
-                    result['episode'] = int(guessit_result['episode'])
+                        result['episode'] = guessit_result['episode'][0]
+                elif isinstance(guessit_result['episode'], int):
+                    # if single episode
+                    result['episode'] = guessit_result['episode']
 
             if 'season' in guessit_result:
-                result['season'] = int(guessit_result['season'])
+                result['season'] = guessit_result['season']
             else:
                 result['season'] = 0
 
             results.append(result)
 
-        return jsonify(data=results)
+        return results

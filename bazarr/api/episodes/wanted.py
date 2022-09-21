@@ -13,7 +13,6 @@ from ..utils import authenticate, postprocessEpisode
 api_ns_episodes_wanted = Namespace('Episodes Wanted', description='List episodes wanted subtitles')
 
 
-# GET: Get Wanted Episodes
 @api_ns_episodes_wanted.route('episodes/wanted')
 class EpisodesWanted(Resource):
     get_request_parser = reqparse.RequestParser()
@@ -22,9 +21,9 @@ class EpisodesWanted(Resource):
     get_request_parser.add_argument('episodeid[]', type=int, action='append', required=False, default=[],
                                     help='Episodes ID to list')
 
-    get_subtitles_language_model = api_ns_episodes_wanted.model('language_model', subtitles_language_model)
+    get_subtitles_language_model = api_ns_episodes_wanted.model('subtitles_language_model', subtitles_language_model)
 
-    data_model = api_ns_episodes_wanted.model('data_model', {
+    data_model = api_ns_episodes_wanted.model('wanted_episodes_data_model', {
         'seriesTitle': fields.String(),
         'monitored': fields.Boolean(),
         'episode_number': fields.String(),
@@ -48,6 +47,7 @@ class EpisodesWanted(Resource):
     @api_ns_episodes_wanted.response(401, 'Not Authenticated')
     @api_ns_episodes_wanted.doc(parser=get_request_parser)
     def get(self):
+        """List episodes wanted subtitles"""
         args = self.get_request_parser.parse_args()
         episodeid = args.get('episodeid[]')
 

@@ -15,7 +15,6 @@ api_ns_movies_wanted = Namespace('Movies Wanted', description='List movies wante
 
 
 @api_ns_movies_wanted.route('movies/wanted')
-# GET: Get Wanted Movies
 class MoviesWanted(Resource):
     get_request_parser = reqparse.RequestParser()
     get_request_parser.add_argument('start', type=int, required=False, default=0, help='Paging start integer')
@@ -23,9 +22,9 @@ class MoviesWanted(Resource):
     get_request_parser.add_argument('radarrid[]', type=int, action='append', required=False, default=[],
                                     help='Movies ID to list')
 
-    get_subtitles_language_model = api_ns_movies_wanted.model('language_model', subtitles_language_model)
+    get_subtitles_language_model = api_ns_movies_wanted.model('subtitles_language_model', subtitles_language_model)
 
-    data_model = api_ns_movies_wanted.model('data_model', {
+    data_model = api_ns_movies_wanted.model('wanted_movies_data_model', {
         'title': fields.String(),
         'monitored': fields.Boolean(),
         'missing_subtitles': fields.Nested(get_subtitles_language_model),
@@ -45,6 +44,7 @@ class MoviesWanted(Resource):
     @api_ns_movies_wanted.response(401, 'Not Authenticated')
     @api_ns_movies_wanted.doc(parser=get_request_parser)
     def get(self):
+        """List movies wanted subtitles"""
         args = self.get_request_parser.parse_args()
         radarrid = args.get("radarrid[]")
 

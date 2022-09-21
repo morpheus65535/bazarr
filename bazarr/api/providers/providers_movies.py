@@ -1,7 +1,5 @@
 # coding=utf-8
 
-import logging
-
 from flask_restx import Resource, Namespace, reqparse, fields
 
 from app.database import TableMovies, get_audio_profile_languages, get_profile_id
@@ -47,7 +45,7 @@ class ProviderMovies(Resource):
     @api_ns_providers_movies.response(404, 'Movie not found')
     @api_ns_providers_movies.doc(parser=get_request_parser)
     def get(self):
-        # Manual Search
+        """Search manually for a movie subtitles"""
         args = self.get_request_parser.parse_args()
         radarrId = args.get('radarrid')
         movieInfo = TableMovies.select(TableMovies.title,
@@ -88,7 +86,7 @@ class ProviderMovies(Resource):
     @api_ns_providers_movies.response(401, 'Not Authenticated')
     @api_ns_providers_movies.response(404, 'Movie not found')
     def post(self):
-        # Manual Download
+        """Manually download a movie subtitles"""
         args = self.post_request_parser.parse_args()
         radarrId = args.get('radarrid')
         movieInfo = TableMovies.select(TableMovies.title,

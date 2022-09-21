@@ -27,9 +27,9 @@ class MoviesHistory(Resource):
     get_request_parser.add_argument('length', type=int, required=False, default=-1, help='Paging length integer')
     get_request_parser.add_argument('radarrid', type=int, required=False, help='Movie ID')
 
-    get_language_model = api_ns_movies_history.model('language_model', subtitles_language_model)
+    get_language_model = api_ns_movies_history.model('subtitles_language_model', subtitles_language_model)
 
-    data_model = api_ns_movies_history.model('data_model', {
+    data_model = api_ns_movies_history.model('history_movies_data_model', {
         'id': fields.Integer(),
         'action': fields.Integer(),
         'title': fields.String(),
@@ -60,6 +60,7 @@ class MoviesHistory(Resource):
     @api_ns_movies_history.response(401, 'Not Authenticated')
     @api_ns_movies_history.doc(parser=get_request_parser)
     def get(self):
+        """List movies history events"""
         args = self.get_request_parser.parse_args()
         start = args.get('start')
         length = args.get('length')

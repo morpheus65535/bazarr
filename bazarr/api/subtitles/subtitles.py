@@ -4,8 +4,7 @@ import os
 import sys
 import gc
 
-from flask import request
-from flask_restx import Resource, Namespace
+from flask_restx import Resource, Namespace, reqparse
 
 from app.database import TableEpisodes, TableMovies
 from utilities.path_mappings import path_mappings
@@ -20,19 +19,37 @@ from app.event_handler import event_stream
 from ..utils import authenticate
 
 
-api_ns_subtitles = Namespace('subtitles', description='Subtitles API endpoint')
+api_ns_subtitles = Namespace('Subtitles', description='Apply mods/tools on external subtitles')
 
 
 @api_ns_subtitles.route('subtitles')
 class Subtitles(Resource):
-    @authenticate
-    def patch(self):
-        action = request.args.get('action')
+    patch_request_parser = reqparse.RequestParser()
+    patch_request_parser.add_argument('action', type=str, required=True,
+                                      help='Action from ["sync", "translate" or mods name]')
+    patch_request_parser.add_argument('language', type=str, required=True, help='Language code2')
+    patch_request_parser.add_argument('path', type=str, required=True, help='Subtitles file path')
+    patch_request_parser.add_argument('type', type=str, required=True, help='Media type from ["episode", "movie"]')
+    patch_request_parser.add_argument('id', type=int, required=True, help='Episode ID')
+    patch_request_parser.add_argument('forced', type=str, required=False, help='Forced subtitles from ["True", "False"]')
+    patch_request_parser.add_argument('hi', type=str, required=False, help='HI subtitles from ["True", "False"]')
+    patch_request_parser.add_argument('original_format', type=str, required=False,
+                                      help='Use original subtitles format from ["True", "False"]')
 
-        language = request.form.get('language')
-        subtitles_path = request.form.get('path')
-        media_type = request.form.get('type')
-        id = request.form.get('id')
+    @authenticate
+    @api_ns_subtitles.doc(parser=patch_request_parser)
+    @api_ns_subtitles.response(204, 'Success')
+    @api_ns_subtitles.response(401, 'Not Authenticated')
+    @api_ns_subtitles.response(404, 'Episode/movie not found')
+    def patch(self):
+        """Apply mods/tools on external subtitles"""
+        args = self.patch_request_parser.parse_args()
+        action = args.get('action')
+
+        language = args.get('language')
+        subtitles_path = args.get('path')
+        media_type = args.get('type')
+        id = args.get('id')
 
         if media_type == 'episode':
             metadata = TableEpisodes.select(TableEpisodes.path, TableEpisodes.sonarrSeriesId)\
@@ -66,8 +83,8 @@ class Subtitles(Resource):
         elif action == 'translate':
             from_language = os.path.splitext(subtitles_path)[0].rsplit(".", 1)[1].replace('_', '-')
             dest_language = language
-            forced = True if request.form.get('forced') == 'true' else False
-            hi = True if request.form.get('hi') == 'true' else False
+            forced = True if args.get('forced') == 'true' else False
+            hi = True if args.get('hi') == 'true' else False
             translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
                                      from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
                                      media_type="series" if media_type == "episode" else "movies",
@@ -75,7 +92,7 @@ class Subtitles(Resource):
                                      sonarr_episode_id=int(id),
                                      radarr_id=id)
         else:
-            use_original_format = True if request.form.get('original_format') == 'true' else False
+            use_original_format = True if args.get('original_format') == 'true' else False
             subtitles_apply_mods(language, subtitles_path, [action], use_original_format)
 
         # apply chmod if required

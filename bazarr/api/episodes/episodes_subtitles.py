@@ -25,7 +25,6 @@ api_ns_episodes_subtitles = Namespace('Episodes Subtitles', description='Downloa
 
 @api_ns_episodes_subtitles.route('episodes/subtitles')
 class EpisodesSubtitles(Resource):
-    # PATCH: Download Subtitles
     patch_request_parser = reqparse.RequestParser()
     patch_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
     patch_request_parser.add_argument('episodeid', type=int, required=True, help='Episode ID')
@@ -39,6 +38,7 @@ class EpisodesSubtitles(Resource):
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
     def patch(self):
+        """Download an episode subtitles"""
         args = self.patch_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
@@ -98,7 +98,6 @@ class EpisodesSubtitles(Resource):
 
         return '', 204
 
-    # POST: Upload Subtitles
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
     post_request_parser.add_argument('episodeid', type=int, required=True, help='Episode ID')
@@ -114,6 +113,7 @@ class EpisodesSubtitles(Resource):
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
     def post(self):
+        """Upload an episode subtitles"""
         args = self.post_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
@@ -179,7 +179,6 @@ class EpisodesSubtitles(Resource):
 
         return '', 204
 
-    # DELETE: Delete Subtitles
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
     delete_request_parser.add_argument('episodeid', type=int, required=True, help='Episode ID')
@@ -194,6 +193,7 @@ class EpisodesSubtitles(Resource):
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
     def delete(self):
+        """Delete an episode subtitles"""
         args = self.delete_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')

@@ -24,11 +24,11 @@ class Movies(Resource):
     get_request_parser.add_argument('radarrid[]', type=int, action='append', required=False, default=[],
                                     help='Movies IDs to get metadata for')
 
-    get_subtitles_model = api_ns_movies.model('language_model', subtitles_model)
-    get_subtitles_language_model = api_ns_movies.model('language_model', subtitles_language_model)
-    get_audio_language_model = api_ns_movies.model('language_model', audio_language_model)
+    get_subtitles_model = api_ns_movies.model('subtitles_model', subtitles_model)
+    get_subtitles_language_model = api_ns_movies.model('subtitles_language_model', subtitles_language_model)
+    get_audio_language_model = api_ns_movies.model('audio_language_model', audio_language_model)
 
-    data_model = api_ns_movies.model('data_model', {
+    data_model = api_ns_movies.model('movies_data_model', {
         'alternativeTitles': fields.List(fields.String),
         'audio_codec': fields.String(),
         'audio_language': fields.Nested(get_audio_language_model),
@@ -68,6 +68,7 @@ class Movies(Resource):
     @api_ns_movies.response(200, 'Success')
     @api_ns_movies.response(401, 'Not Authenticated')
     def get(self):
+        """List movies metadata for specific movies"""
         args = self.get_request_parser.parse_args()
         start = args.get('start')
         length = args.get('length')
@@ -100,6 +101,7 @@ class Movies(Resource):
     @api_ns_movies.response(401, 'Not Authenticated')
     @api_ns_movies.response(404, 'Languages profile not found')
     def post(self):
+        """Update specific movies languages profile"""
         args = self.post_request_parser.parse_args()
         radarrIdList = args.get('radarrid')
         profileIdList = args.get('profileid')
@@ -141,6 +143,7 @@ class Movies(Resource):
     @api_ns_movies.response(400, 'Unknown action')
     @api_ns_movies.response(401, 'Not Authenticated')
     def patch(self):
+        """Run actions on specific movies"""
         args = self.patch_request_parser.parse_args()
         radarrid = args.get('radarrid')
         action = args.get('action')

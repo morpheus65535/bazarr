@@ -26,6 +26,7 @@ class BrowseRadarrFS(Resource):
     @api_ns_files_radarr.response(401, 'Not Authenticated')
     @api_ns_files_radarr.doc(parser=get_request_parser)
     def get(self):
+        """List Radarr file system content"""
         args = self.get_request_parser.parse_args()
         path = args.get('path')
         data = []

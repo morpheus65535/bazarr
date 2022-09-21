@@ -27,11 +27,11 @@ class Series(Resource):
     get_request_parser.add_argument('seriesid[]', type=int, action='append', required=False, default=[],
                                     help='Series IDs to get metadata for')
 
-    get_subtitles_model = api_ns_series.model('language_model', subtitles_model)
-    get_subtitles_language_model = api_ns_series.model('language_model', subtitles_language_model)
-    get_audio_language_model = api_ns_series.model('language_model', audio_language_model)
+    get_subtitles_model = api_ns_series.model('subtitles_model', subtitles_model)
+    get_subtitles_language_model = api_ns_series.model('subtitles_language_model', subtitles_language_model)
+    get_audio_language_model = api_ns_series.model('audio_language_model', audio_language_model)
 
-    data_model = api_ns_series.model('data_model', {
+    data_model = api_ns_series.model('series_data_model', {
         'alternativeTitles': fields.List(fields.String),
         'audio_language': fields.Nested(get_audio_language_model),
         'episodeFileCount': fields.Integer(),
@@ -62,6 +62,7 @@ class Series(Resource):
     @api_ns_series.response(200, 'Success')
     @api_ns_series.response(401, 'Not Authenticated')
     def get(self):
+        """List series metadata for specific series"""
         args = self.get_request_parser.parse_args()
         start = args.get('start')
         length = args.get('length')
@@ -117,6 +118,7 @@ class Series(Resource):
     @api_ns_series.response(401, 'Not Authenticated')
     @api_ns_series.response(404, 'Languages profile not found')
     def post(self):
+        """Update specific series languages profile"""
         args = self.post_request_parser.parse_args()
         seriesIdList = args.get('seriesid')
         profileIdList = args.get('profileid')
@@ -166,6 +168,7 @@ class Series(Resource):
     @api_ns_series.response(400, 'Unknown action')
     @api_ns_series.response(401, 'Not Authenticated')
     def patch(self):
+        """Run actions on specific series"""
         args = self.patch_request_parser.parse_args()
         seriesid = args.get('seriesid')
         action = args.get('action')

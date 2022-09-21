@@ -25,6 +25,7 @@ class BrowseBazarrFS(Resource):
     @api_ns_files.response(401, 'Not Authenticated')
     @api_ns_files.doc(parser=get_request_parser)
     def get(self):
+        """List Bazarr file system content"""
         args = self.get_request_parser.parse_args()
         path = args.get('path')
         data = []

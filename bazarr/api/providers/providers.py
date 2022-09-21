@@ -28,6 +28,7 @@ class Providers(Resource):
     @api_ns_providers.response(401, 'Not Authenticated')
     @api_ns_providers.doc(parser=get_request_parser)
     def get(self):
+        """Get providers status"""
         args = self.get_request_parser.parse_args()
         history = args.get('history')
         if history and history not in False_Keys:
@@ -66,6 +67,7 @@ class Providers(Resource):
     @api_ns_providers.response(401, 'Not Authenticated')
     @api_ns_providers.response(400, 'Unknown action')
     def post(self):
+        """Reset providers status"""
         args = self.post_request_parser.parse_args()
         action = args.get('action')
 

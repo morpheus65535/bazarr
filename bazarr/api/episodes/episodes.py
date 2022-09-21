@@ -18,9 +18,9 @@ class Episodes(Resource):
     get_request_parser.add_argument('episodeid[]', type=int, action='append', required=False, default=[],
                                     help='Episodes ID to list')
 
-    get_subtitles_model = api_ns_episodes.model('language_model', subtitles_model)
-    get_subtitles_language_model = api_ns_episodes.model('language_model', subtitles_language_model)
-    get_audio_language_model = api_ns_episodes.model('language_model', audio_language_model)
+    get_subtitles_model = api_ns_episodes.model('subtitles_model', subtitles_model)
+    get_subtitles_language_model = api_ns_episodes.model('subtitles_language_model', subtitles_language_model)
+    get_audio_language_model = api_ns_episodes.model('audio_language_model', audio_language_model)
 
     get_response_model = api_ns_episodes.model('EpisodeGetResponse', {
         'rowid': fields.Integer(),
@@ -51,6 +51,7 @@ class Episodes(Resource):
     @api_ns_episodes.response(401, 'Not Authenticated')
     @api_ns_episodes.response(404, 'Series or Episode ID not provided')
     def get(self):
+        """List episodes metadata for specific series or episodes"""
         args = self.get_request_parser.parse_args()
         seriesId = args.get('seriesid[]')
         episodeId = args.get('episodeid[]')

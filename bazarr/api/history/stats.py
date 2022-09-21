@@ -26,12 +26,12 @@ class HistoryStats(Resource):
     get_request_parser.add_argument('provider', type=str, default='All', help='Provider name to filter for.')
     get_request_parser.add_argument('language', type=str, default='All', help='Language name to filter for')
 
-    series_data_model = api_ns_history_stats.model('series_data_model', {
+    series_data_model = api_ns_history_stats.model('history_series_stats_data_model', {
         'date': fields.String(),
         'count': fields.Integer(),
     })
 
-    movies_data_model = api_ns_history_stats.model('movies_data_model', {
+    movies_data_model = api_ns_history_stats.model('history_movies_stats_data_model', {
         'date': fields.String(),
         'count': fields.Integer(),
     })
@@ -46,6 +46,7 @@ class HistoryStats(Resource):
     @api_ns_history_stats.response(401, 'Not Authenticated')
     @api_ns_history_stats.doc(parser=get_request_parser)
     def get(self):
+        """Get history statistics"""
         args = self.get_request_parser.parse_args()
         timeframe = args.get('timeFrame')
         action = args.get('action')

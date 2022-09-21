@@ -17,7 +17,6 @@ api_ns_badges = Namespace('Badges', description='Get badges count to update the 
 
 @api_ns_badges.route('badges')
 class Badges(Resource):
-    # GET badges count
     get_model = api_ns_badges.model('BadgesGet', {
         'episodes': fields.Integer(),
         'movies': fields.Integer(),
@@ -30,6 +29,7 @@ class Badges(Resource):
     @api_ns_badges.response(401, 'Not Authenticated')
     @api_ns_badges.doc(parser=None)
     def get(self):
+        """Get badges count to update the UI"""
         episodes_conditions = [(TableEpisodes.missing_subtitles.is_null(False)),
                                (TableEpisodes.missing_subtitles != '[]')]
         episodes_conditions += get_exclusion_clause('series')
