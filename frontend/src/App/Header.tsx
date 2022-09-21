@@ -81,8 +81,8 @@ const AppHeader: FunctionComponent = () => {
         </Group>
         <Group spacing="xs" position="right" noWrap>
           <Search></Search>
-          <Menu
-            control={
+          <Menu>
+            <Menu.Target>
               <Action
                 label="System"
                 tooltip={{ position: "left", openDelay: 2000 }}
@@ -92,24 +92,25 @@ const AppHeader: FunctionComponent = () => {
                 size="lg"
                 variant="light"
               ></Action>
-            }
-          >
-            <Menu.Item
-              icon={<FontAwesomeIcon icon={faArrowRotateLeft} />}
-              onClick={() => restart()}
-            >
-              Restart
-            </Menu.Item>
-            <Menu.Item
-              icon={<FontAwesomeIcon icon={faPowerOff} />}
-              onClick={() => shutdown()}
-            >
-              Shutdown
-            </Menu.Item>
-            <Divider hidden={!hasLogout}></Divider>
-            <Menu.Item hidden={!hasLogout} onClick={() => logout()}>
-              Logout
-            </Menu.Item>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                icon={<FontAwesomeIcon icon={faArrowRotateLeft} />}
+                onClick={() => restart()}
+              >
+                Restart
+              </Menu.Item>
+              <Menu.Item
+                icon={<FontAwesomeIcon icon={faPowerOff} />}
+                onClick={() => shutdown()}
+              >
+                Shutdown
+              </Menu.Item>
+              <Divider hidden={!hasLogout}></Divider>
+              <Menu.Item hidden={!hasLogout} onClick={() => logout()}>
+                Logout
+              </Menu.Item>
+            </Menu.Dropdown>
           </Menu>
         </Group>
       </Group>

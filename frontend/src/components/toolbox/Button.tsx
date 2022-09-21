@@ -2,19 +2,18 @@ import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, ButtonProps, Text } from "@mantine/core";
 import {
+  ComponentProps,
   FunctionComponent,
   PropsWithChildren,
   useCallback,
   useState,
 } from "react";
 
-type ToolboxButtonProps = Omit<
-  ButtonProps<"button">,
-  "color" | "variant" | "leftIcon"
-> & {
-  icon: IconDefinition;
-  children: string;
-};
+type ToolboxButtonProps = Omit<ButtonProps, "color" | "variant" | "leftIcon"> &
+  Omit<ComponentProps<"button">, "ref"> & {
+    icon: IconDefinition;
+    children: string;
+  };
 
 const ToolboxButton: FunctionComponent<ToolboxButtonProps> = ({
   icon,

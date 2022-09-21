@@ -27,7 +27,7 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
-import { useForm } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
 import { isString } from "lodash";
 import { FunctionComponent, useEffect, useMemo } from "react";
 import { Column } from "react-table";
@@ -125,7 +125,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
           validateResult: validator(file),
         })),
     },
-    validationRules: {
+    validate: {
       files: (values) =>
         values.find(
           (v) =>

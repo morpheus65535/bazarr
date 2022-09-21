@@ -10,7 +10,7 @@ import {
   Stack,
   TextInput,
 } from "@mantine/core";
-import { useForm } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
 import { FunctionComponent } from "react";
 
 const Authentication: FunctionComponent = () => {
@@ -33,7 +33,11 @@ const Authentication: FunctionComponent = () => {
             src={`${Environment.baseUrl}/images/logo128.png`}
           ></Avatar>
           <Divider></Divider>
-          <form onSubmit={form.onSubmit(login)}>
+          <form
+            onSubmit={form.onSubmit((values) => {
+              login(values);
+            })}
+          >
             <Stack>
               <TextInput
                 placeholder="Username"

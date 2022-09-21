@@ -49,6 +49,7 @@ import {
 } from "react";
 import { BrowserRouter } from "react-router-dom";
 import Redirector from "./Redirector";
+import { RouterNames } from "./RouterNames";
 import { CustomRouteObject } from "./type";
 
 const HistoryStats = lazy(() => import("@/pages/History/Statistics"));
@@ -285,7 +286,7 @@ function useRoutes(): CustomRouteObject[] {
         ],
       },
       {
-        path: "/login",
+        path: RouterNames.Auth,
         hidden: true,
         element: <Authentication></Authentication>,
       },

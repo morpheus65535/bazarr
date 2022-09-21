@@ -3,7 +3,7 @@ import { MultiSelector, Selector } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
 import { GetItemId, useSelectorOptions } from "@/utilities";
 import { Button, Divider, Group, LoadingOverlay, Stack } from "@mantine/core";
-import { useForm } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
 import { FunctionComponent, useMemo } from "react";
 import { UseMutationResult } from "react-query";
 

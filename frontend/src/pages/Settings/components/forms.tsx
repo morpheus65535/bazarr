@@ -11,7 +11,7 @@ import { ActionProps as GlobalActionProps } from "@/components/inputs/Action";
 import ChipInput, { ChipInputProps } from "@/components/inputs/ChipInput";
 import { useSliderMarks } from "@/utilities";
 import {
-  InputWrapper,
+  Input,
   NumberInput,
   NumberInputProps,
   PasswordInput,
@@ -137,14 +137,14 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
   const marks = useSliderMarks([min, max]);
 
   return (
-    <InputWrapper label={label}>
+    <Input.Wrapper label={label}>
       <MantineSlider
         {...sliderProps}
         marks={marks}
         onChange={update}
         value={value ?? 0}
       ></MantineSlider>
-    </InputWrapper>
+    </Input.Wrapper>
   );
 };
 

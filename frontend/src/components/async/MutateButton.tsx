@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import { UseMutationResult } from "react-query";
 
 type MutateButtonProps<DATA, VAR> = Omit<
-  ButtonProps<"button">,
+  ButtonProps,
   "onClick" | "loading" | "color"
 > & {
   mutation: UseMutationResult<DATA, unknown, VAR>;

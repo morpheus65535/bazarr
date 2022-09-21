@@ -4,7 +4,7 @@ import { task } from "@/modules/task";
 import { useSelectorOptions } from "@/utilities";
 import { useEnabledLanguages } from "@/utilities/languages";
 import { Alert, Button, Divider, Stack } from "@mantine/core";
-import { useForm } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
 import { isObject } from "lodash";
 import { FunctionComponent, useMemo } from "react";
 import { Selector } from "../inputs";
@@ -138,7 +138,7 @@ const TranslationForm: FunctionComponent<Props> = ({
     initialValues: {
       language: null as Language.Info | null,
     },
-    validationRules: {
+    validate: {
       language: isObject,
     },
   });

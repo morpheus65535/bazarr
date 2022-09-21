@@ -163,6 +163,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
               <Action
                 label="Manual Search"
                 disabled={disabled}
+                color="dark"
                 onClick={() => {
                   modals.openContextModal(EpisodeSearchModal, {
                     item: row.original,
@@ -175,6 +176,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
               <Action
                 label="History"
                 disabled={disabled}
+                color="dark"
                 onClick={() => {
                   modals.openContextModal(
                     EpisodeHistoryModal,

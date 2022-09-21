@@ -4,7 +4,7 @@ import { FunctionComponent } from "react";
 
 export type AudioListProps = GroupProps & {
   audios: Language.Info[];
-  badgeProps?: BadgeProps<"div">;
+  badgeProps?: BadgeProps;
 };
 
 const AudioList: FunctionComponent<AudioListProps> = ({
