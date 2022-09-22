@@ -49,7 +49,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
   const form = useForm({
     initialValues: profile,
     validate: {
-      name: (value) => value.length > 0,
+      name: (value) => (value.length > 0 ? null : "Must have a name"),
       items: (value) =>
         value.length > 0 ? null : "Must contain at lease 1 language",
     },
