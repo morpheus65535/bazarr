@@ -19,6 +19,7 @@ import app.libs  # noqa W0611
 from app.get_args import args  # noqa E402
 from app.check_update import apply_update, check_releases, check_if_new_update  # noqa E402
 from app.config import settings, configure_proxy_func, base_url  # noqa E402
+from init import *  # noqa E402
 
 # Install downloaded update
 if bazarr_version != '':
@@ -33,7 +34,6 @@ else:
     # there's missing embedded packages after a commit
     check_if_new_update()
 
-from init import *  # noqa E402
 from app.database import System  # noqa E402
 from app.notifier import update_notifier  # noqa E402
 from languages.get_languages import load_language_in_db  # noqa E402
