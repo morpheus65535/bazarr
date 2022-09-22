@@ -3,7 +3,7 @@
 import json
 
 from flask import request, jsonify
-from flask_restful import Resource
+from flask_restx import Resource, Namespace
 
 from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableShows, TableMovies, \
     TableSettingsNotifier
@@ -15,7 +15,11 @@ from subtitles.indexer.movies import list_missing_subtitles_movies
 
 from ..utils import authenticate
 
+api_ns_system_settings = Namespace('systemSettings', description='System settings API endpoint')
 
+
+@api_ns_system_settings.hide
+@api_ns_system_settings.route('system/settings')
 class SystemSettings(Resource):
     @authenticate
     def get(self):

@@ -1,14 +1,10 @@
 # coding=utf-8
 
-from flask import Blueprint
-from flask_restful import Api
-
-from .subtitles import Subtitles
-from .subtitles_info import SubtitleNameInfo
+from .subtitles import api_ns_subtitles
+from .subtitles_info import api_ns_subtitles_info
 
 
-api_bp_subtitles = Blueprint('api_subtitles', __name__)
-api = Api(api_bp_subtitles)
-
-api.add_resource(Subtitles, '/subtitles')
-api.add_resource(SubtitleNameInfo, '/subtitles/info')
+api_ns_list_subtitles = [
+    api_ns_subtitles,
+    api_ns_subtitles_info,
+]

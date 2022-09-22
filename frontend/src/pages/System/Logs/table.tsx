@@ -10,7 +10,6 @@ import {
   faQuestion,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { isUndefined } from "lodash";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import SystemLogModal from "./modal";
@@ -55,7 +54,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
         accessor: "exception",
         Cell: ({ value }) => {
           const modals = useModals();
-          if (!isUndefined(value)) {
+          if (value) {
             return (
               <Action
                 label="Detail"

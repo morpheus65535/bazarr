@@ -20,6 +20,8 @@ def create_app():
     app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
     app.config['JSON_AS_ASCII'] = False
 
+    app.config['RESTX_MASK_SWAGGER'] = False
+
     if settings.get('cors', 'enabled'):
         CORS(app)
 

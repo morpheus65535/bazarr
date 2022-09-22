@@ -4,8 +4,7 @@ import os
 import platform
 import logging
 
-from flask import jsonify
-from flask_restful import Resource
+from flask_restx import Resource, Namespace
 from tzlocal import get_localzone_name
 
 from radarr.info import get_radarr_info
@@ -15,10 +14,14 @@ from init import startTime
 
 from ..utils import authenticate
 
+api_ns_system_status = Namespace('System Status', description='List environment information and versions')
 
+
+@api_ns_system_status.route('system/status')
 class SystemStatus(Resource):
     @authenticate
     def get(self):
+        """Return environment information and versions"""
         package_version = ''
         if 'BAZARR_PACKAGE_VERSION' in os.environ:
             package_version = os.environ['BAZARR_PACKAGE_VERSION']
@@ -44,4 +47,4 @@ class SystemStatus(Resource):
         system_status.update({'start_time': startTime})
         system_status.update({'timezone': timezone})
 
-        return jsonify(data=system_status)
+        return {'data': system_status}

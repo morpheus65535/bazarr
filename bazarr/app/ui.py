@@ -137,6 +137,12 @@ def backup_download(filename):
     return send_file(os.path.join(settings.backup.folder, filename), cache_timeout=0, as_attachment=True)
 
 
+@ui_bp.route('/api/swaggerui/static/<path:filename>', methods=['GET'])
+def swaggerui_static(filename):
+    return send_file(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'libs', 'flask_restx',
+                     'static', filename))
+
+
 def configured():
     System.update({System.configured: '1'}).execute()
 

@@ -1,7 +1,6 @@
 # coding=utf-8
 
-from flask import request
-from flask_restful import Resource
+from flask_restx import Resource, Namespace, reqparse
 
 from app.database import TableMovies
 from subtitles.mass_download import movies_download_subtitles
@@ -11,10 +10,23 @@ from utilities.path_mappings import path_mappings
 from ..utils import authenticate
 
 
+api_ns_webhooks_radarr = Namespace('Webhooks Radarr', description='Webhooks to trigger subtitles search based on '
+                                                                  'Radarr movie file ID')
+
+
+@api_ns_webhooks_radarr.route('webhooks/radarr')
 class WebHooksRadarr(Resource):
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('radarr_moviefile_id', type=int, required=True, help='Movie file ID')
+
     @authenticate
+    @api_ns_webhooks_radarr.doc(parser=post_request_parser)
+    @api_ns_webhooks_radarr.response(200, 'Success')
+    @api_ns_webhooks_radarr.response(401, 'Not Authenticated')
     def post(self):
-        movie_file_id = request.form.get('radarr_moviefile_id')
+        """Search for missing subtitles for a specific movie file id"""
+        args = self.post_request_parser.parse_args()
+        movie_file_id = args.get('radarr_moviefile_id')
 
         radarrMovieId = TableMovies.select(TableMovies.radarrId,
                                            TableMovies.path) \

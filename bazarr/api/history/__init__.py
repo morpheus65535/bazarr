@@ -1,12 +1,8 @@
 # coding=utf-8
 
-from flask import Blueprint
-from flask_restful import Api
-
-from .stats import HistoryStats
+from .stats import api_ns_history_stats
 
 
-api_bp_history = Blueprint('api_history', __name__)
-api = Api(api_bp_history)
-
-api.add_resource(HistoryStats, '/history/stats')
+api_ns_list_history = [
+    api_ns_history_stats
+]
