@@ -1,14 +1,14 @@
 import { useSystemHealth, useSystemStatus } from "@/apis/hooks";
 import { QueryOverlay } from "@/components/async";
 import { GithubRepoRoot } from "@/constants";
-import { useInterval } from "@/utilities";
+import { Environment, useInterval } from "@/utilities";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
   faDiscord,
   faGithub,
   faWikipediaW,
 } from "@fortawesome/free-brands-svg-icons";
-import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { faCode, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Anchor, Container, Divider, Grid, Stack, Text } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
@@ -129,6 +129,11 @@ const SystemStatusView: FunctionComponent = () => {
           <Row title="Wiki">
             <Label icon={faWikipediaW} link="https://wiki.bazarr.media">
               Bazarr Wiki
+            </Label>
+          </Row>
+          <Row title="API documentation">
+            <Label icon={faCode} link={`${Environment.baseUrl}/api/`}>
+              Swagger UI
             </Label>
           </Row>
           <Row title="Discord">
