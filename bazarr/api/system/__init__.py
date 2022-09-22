@@ -16,16 +16,16 @@ from .notifications import api_ns_system_notifications
 
 api_ns_list_system = [
     api_ns_system,
-    api_ns_system_searches,
     api_ns_system_account,
     api_ns_system_backups,
-    api_ns_system_tasks,
-    api_ns_system_logs,
-    api_ns_system_status,
     api_ns_system_health,
-    api_ns_system_releases,
-    api_ns_system_settings,
     api_ns_system_languages,
     api_ns_system_languages_profiles,
+    api_ns_system_logs,
     api_ns_system_notifications,
+    api_ns_system_releases,
+    api_ns_system_searches,
+    api_ns_system_settings,
+    api_ns_system_status,
+    api_ns_system_tasks,
 ]
