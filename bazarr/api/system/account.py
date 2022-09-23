@@ -25,7 +25,7 @@ class SystemAccount(Resource):
     @api_ns_system_account.response(404, 'Unknown authentication type define in config.ini')
     def post(self):
         """Login or logout from Bazarr UI when using form login"""
-        args = self.patch_request_parser.parse_args()
+        args = self.post_request_parser.parse_args()
         if settings.auth.type != 'form':
             return 'Unknown authentication type define in config.ini', 404
 
