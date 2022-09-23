@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse
+from flask_restx import Resource, Namespace
 
 from app.database import get_profiles_list
 

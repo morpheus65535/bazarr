@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse
 from operator import itemgetter
 
 from app.database import TableHistory, TableHistoryMovie, TableSettingsLanguages
