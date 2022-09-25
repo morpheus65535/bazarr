@@ -18,6 +18,7 @@ from sonarr.sync.series import update_series, update_one_series
 from radarr.sync.movies import update_movies, update_one_movie
 from sonarr.info import get_sonarr_info, url_sonarr
 from radarr.info import url_radarr
+from .database import TableShows
 
 from .config import settings
 from .scheduler import scheduler
@@ -236,8 +237,17 @@ def dispatcher(data):
                 series_title = data['body']['resource']['title']
                 series_year = data['body']['resource']['year']
             elif topic == 'episode':
-                series_title = data['body']['resource']['series']['title']
-                series_year = data['body']['resource']['series']['year']
+                if 'series' in data['body']['resource']:
+                    series_title = data['body']['resource']['series']['title']
+                    series_year = data['body']['resource']['series']['year']
+                else:
+                    series_metadata = TableShows.select(TableShows.title, TableShows.year)\
+                        .where(TableShows.sonarrSeriesId == data['body']['resource']['seriesId'])\
+                        .dicts()\
+                        .get_or_none()
+                    if series_metadata:
+                        series_title = series_metadata['title']
+                        series_year = series_metadata['year']
                 episode_title = data['body']['resource']['title']
                 season_number = data['body']['resource']['seasonNumber']
                 episode_number = data['body']['resource']['episodeNumber']
