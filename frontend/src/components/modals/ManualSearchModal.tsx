@@ -245,28 +245,30 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
           ></FontAwesomeIcon>
         </Text>
       </Popover.Target>
-      <Group align="flex-start" spacing="xl">
-        <Stack align="flex-start" spacing="xs">
-          <Text color="green">
-            <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>
-          </Text>
-          <List>
-            {matches.map((v, idx) => (
-              <List.Item key={BuildKey(idx, v, "match")}>{v}</List.Item>
-            ))}
-          </List>
-        </Stack>
-        <Stack align="flex-start" spacing="xs">
-          <Text color="yellow">
-            <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>
-          </Text>
-          <List>
-            {dont.map((v, idx) => (
-              <List.Item key={BuildKey(idx, v, "miss")}>{v}</List.Item>
-            ))}
-          </List>
-        </Stack>
-      </Group>
+      <Popover.Dropdown>
+        <Group align="flex-start" spacing="xl">
+          <Stack align="flex-start" spacing="xs">
+            <Text color="green">
+              <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>
+            </Text>
+            <List>
+              {matches.map((v, idx) => (
+                <List.Item key={BuildKey(idx, v, "match")}>{v}</List.Item>
+              ))}
+            </List>
+          </Stack>
+          <Stack align="flex-start" spacing="xs">
+            <Text color="yellow">
+              <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>
+            </Text>
+            <List>
+              {dont.map((v, idx) => (
+                <List.Item key={BuildKey(idx, v, "miss")}>{v}</List.Item>
+              ))}
+            </List>
+          </Stack>
+        </Group>
+      </Popover.Dropdown>
     </Popover>
   );
 };
