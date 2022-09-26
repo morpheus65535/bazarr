@@ -84,13 +84,10 @@ class GestdownProvider(Provider):
         self._session.close()
 
     def _subtitles_search(self, video, language: Language):
-        json_data = {
-            "search": f"{video.series} S{video.season:02}E{video.episode:02}",
-            "language": self._converter.convert(language.alpha3),
-        }
 
         logger.debug("Post data: %s", json_data)
-        response = self._session.post(f"{_BASE_URL}/subtitles/search", json=json_data)
+        lang = self._converter.convert(language.alpha3)
+        response = self._session.get(f"{_BASE_URL}/subtitles/find/{lang}/{video.series}/{video.season}/{video.episode}")
 
         # TODO: implement rate limiting
         response.raise_for_status()
