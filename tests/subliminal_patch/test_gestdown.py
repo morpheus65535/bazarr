@@ -78,7 +78,9 @@ def test_subtitle_download(subtitle):
 
 def test_list_subtitles_423(episodes, requests_mock, mocker):
     mocker.patch("time.sleep")
-    requests_mock.post(f"{_BASE_URL}/subtitles/search", status_code=423)
+    requests_mock.get(
+        f"{_BASE_URL}/subtitles/find/English/Breaking%20Bad/1/1", status_code=423
+    )
 
     with GestdownProvider() as provider:
         assert not provider.list_subtitles(

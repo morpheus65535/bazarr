@@ -84,8 +84,6 @@ class GestdownProvider(Provider):
         self._session.close()
 
     def _subtitles_search(self, video, language: Language):
-
-        logger.debug("Post data: %s", json_data)
         lang = self._converter.convert(language.alpha3)
         response = self._session.get(f"{_BASE_URL}/subtitles/find/{lang}/{video.series}/{video.season}/{video.episode}")
 
