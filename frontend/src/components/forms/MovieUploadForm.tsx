@@ -3,6 +3,7 @@ import { useModals, withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
 import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
+import FormUtils from "@/utilities/form";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
@@ -113,7 +114,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         })),
     },
     validate: {
-      files: (values) => {
+      files: FormUtils.validation((values) => {
         return (
           values.find(
             (v) =>
@@ -122,7 +123,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
               v.validateResult.state === "error"
           ) === undefined
         );
-      },
+      }, "Some files cannot be uploaded, please check"),
     },
   });
 

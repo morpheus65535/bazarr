@@ -1,6 +1,7 @@
 import { useSubtitleAction } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
+import FormUtils from "@/utilities/form";
 import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
@@ -31,10 +32,13 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       ms: 0,
     },
     validate: {
-      hour: (v) => v >= 0,
-      min: (v) => v >= 0,
-      sec: (v) => v >= 0,
-      ms: (v) => v >= 0,
+      hour: FormUtils.validation((v) => v >= 0, "Hour must be larger than 0"),
+      min: FormUtils.validation((v) => v >= 0, "Minute must be larger than 0"),
+      sec: FormUtils.validation((v) => v >= 0, "Second must be larger than 0"),
+      ms: FormUtils.validation(
+        (v) => v >= 0,
+        "Millisecond must be larger than 0"
+      ),
     },
   });
 

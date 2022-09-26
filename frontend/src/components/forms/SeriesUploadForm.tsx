@@ -7,6 +7,7 @@ import { useModals, withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
 import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
+import FormUtils from "@/utilities/form";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
@@ -126,14 +127,17 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         })),
     },
     validate: {
-      files: (values) =>
-        values.find(
-          (v) =>
-            v.language === null ||
-            v.episode === null ||
-            v.validateResult === undefined ||
-            v.validateResult.state === "error"
-        ) === undefined,
+      files: FormUtils.validation(
+        (values) =>
+          values.find(
+            (v) =>
+              v.language === null ||
+              v.episode === null ||
+              v.validateResult === undefined ||
+              v.validateResult.state === "error"
+          ) === undefined,
+        "Some files cannot be uploaded, please check"
+      ),
     },
   });
 

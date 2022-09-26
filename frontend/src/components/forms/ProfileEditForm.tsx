@@ -3,6 +3,7 @@ import { useModals, withModal } from "@/modules/modals";
 import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
+import FormUtils from "@/utilities/form";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import {
   Accordion,
@@ -49,9 +50,14 @@ const ProfileEditForm: FunctionComponent<Props> = ({
   const form = useForm({
     initialValues: profile,
     validate: {
-      name: (value) => (value.length > 0 ? null : "Must have a name"),
-      items: (value) =>
-        value.length > 0 ? null : "Must contain at lease 1 language",
+      name: FormUtils.validation(
+        (value) => value.length > 0,
+        "Must have a name"
+      ),
+      items: FormUtils.validation(
+        (value) => value.length > 0,
+        "Must contain at lease 1 language"
+      ),
     },
   });
 

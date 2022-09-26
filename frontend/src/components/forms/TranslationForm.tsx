@@ -2,6 +2,7 @@ import { useSubtitleAction } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import { useSelectorOptions } from "@/utilities";
+import FormUtils from "@/utilities/form";
 import { useEnabledLanguages } from "@/utilities/languages";
 import { Alert, Button, Divider, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
@@ -139,7 +140,7 @@ const TranslationForm: FunctionComponent<Props> = ({
       language: null as Language.Info | null,
     },
     validate: {
-      language: isObject,
+      language: FormUtils.validation(isObject, "Please select a language"),
     },
   });
 

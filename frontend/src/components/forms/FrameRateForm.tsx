@@ -1,6 +1,7 @@
 import { useSubtitleAction } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
+import FormUtils from "@/utilities/form";
 import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FunctionComponent } from "react";
@@ -26,8 +27,14 @@ const FrameRateForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       to: 0,
     },
     validate: {
-      from: (v) => v > 0,
-      to: (v) => v > 0,
+      from: FormUtils.validation(
+        (value) => value > 0,
+        "The From value must be larger than 0"
+      ),
+      to: FormUtils.validation(
+        (value) => value > 0,
+        "The To value must be larger than 0"
+      ),
     },
   });
 

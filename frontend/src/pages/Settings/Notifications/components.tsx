@@ -3,6 +3,7 @@ import { Selector } from "@/components";
 import MutateButton from "@/components/async/MutateButton";
 import { useModals, withModal } from "@/modules/modals";
 import { BuildKey, useSelectorOptions } from "@/utilities";
+import FormUtils from "@/utilities/form";
 import {
   Button,
   Divider,
@@ -44,8 +45,14 @@ const NotificationForm: FunctionComponent<Props> = ({
       url: payload?.url ?? "",
     },
     validate: {
-      selection: isObject,
-      url: (value) => value.trim() !== "",
+      selection: FormUtils.validation(
+        isObject,
+        "Please select a notification provider"
+      ),
+      url: FormUtils.validation(
+        (value) => value.trim().length !== 0,
+        "URL must not be empty"
+      ),
     },
   });
 

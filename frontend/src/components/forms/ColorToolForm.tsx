@@ -2,6 +2,7 @@ import { useSubtitleAction } from "@/apis/hooks";
 import { Selector, SelectorOption } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
+import FormUtils from "@/utilities/form";
 import { Button, Divider, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FunctionComponent } from "react";
@@ -93,7 +94,10 @@ const ColorToolForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       color: "",
     },
     validate: {
-      color: (c) => colorOptions.find((op) => op.value === c) !== undefined,
+      color: FormUtils.validation(
+        (value) => colorOptions.find((op) => op.value === value) !== undefined,
+        "Must select a color"
+      ),
     },
   });
 
