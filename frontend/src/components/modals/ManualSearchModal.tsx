@@ -237,7 +237,7 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
   const { ref, hovered } = useHover();
 
   return (
-    <Popover opened={hovered} position="top">
+    <Popover opened={hovered} position="top" width={360} withArrow>
       <Popover.Target>
         <Text color={hasIssues ? "yellow" : "green"} ref={ref}>
           <FontAwesomeIcon
@@ -246,8 +246,8 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
         </Text>
       </Popover.Target>
       <Popover.Dropdown>
-        <Group align="flex-start" spacing="xl">
-          <Stack align="flex-start" spacing="xs">
+        <Group position="left" spacing="xl" noWrap grow>
+          <Stack align="flex-start" justify="flex-start" spacing="xs" mb="auto">
             <Text color="green">
               <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>
             </Text>
@@ -257,7 +257,7 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
               ))}
             </List>
           </Stack>
-          <Stack align="flex-start" spacing="xs">
+          <Stack align="flex-start" justify="flex-start" spacing="xs" mb="auto">
             <Text color="yellow">
               <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>
             </Text>
