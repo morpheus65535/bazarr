@@ -25,6 +25,7 @@ _CLEAN_TITLE_RES = [
     (r"´|`", "'"),
     (r" {2,}", " "),
 ]
+_SPANISH_RE = re.compile(r"españa|ib[eé]rico|castellano|gallego|castilla")
 
 _YEAR_RE = re.compile(r"(\(\d{4}\))")
 
@@ -224,7 +225,10 @@ class SubdivxSubtitlesProvider(Provider):
             description = sub_details.replace(",", " ")
 
             # language
-            spain = "/pais/7.gif" in datos or "españa" in description.lower()
+            spain = (
+                "/pais/7.gif" in datos
+                or _SPANISH_RE.search(description.lower()) is not None
+            )
             language = Language.fromalpha2("es") if spain else Language("spa", "MX")
 
             # uploader
