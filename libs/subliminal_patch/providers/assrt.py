@@ -8,6 +8,7 @@ import re
 from babelfish import language_converters
 from guessit import guessit
 from requests import Session
+from time import sleep
 
 from subliminal import Movie, Episode, ProviderError, __short_version__
 from subliminal.exceptions import AuthenticationError, ConfigurationError, DownloadLimitExceeded, ProviderError
@@ -62,6 +63,7 @@ class AssrtSubtitle(Subtitle):
             return self._detail
         params = {'token': self.token, 'id': self.id}
         logger.info('Get subtitle detail: GET /sub/detail %r', params)
+        sleep(3)
         r = self.session.get(server_url + '/sub/detail', params=params, timeout=10)
         r.raise_for_status()
 
@@ -146,6 +148,7 @@ class AssrtProvider(Provider):
 
         params = {'token': self.token, 'q': query, 'is_file': 1}
         logger.debug('Searching subtitles: GET /sub/search %r', params)
+        sleep(3)
         res = self.session.get(server_url + '/sub/search', params=params, timeout=10)
         res.raise_for_status()
         result = res.json()
@@ -176,6 +179,7 @@ class AssrtProvider(Provider):
         return self.query(languages, video)
 
     def download_subtitle(self, subtitle):
+        sleep(3)
         r = self.session.get(subtitle.download_link, timeout=10)
         r.raise_for_status()
 
