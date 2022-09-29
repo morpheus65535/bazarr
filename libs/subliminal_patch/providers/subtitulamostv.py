@@ -34,7 +34,7 @@ class SubtitulamosTVSubtitle(Subtitle):
         if video.release_group and video.release_group.lower() in self.release_info.lower():
             matches.add('release_group')
 
-        matches = guess_matches(video, guessit(self.release_info, {"type": "episode"}))
+        matches |= guess_matches(video, guessit(self.release_info, {"type": "episode"}))
 
         return matches
 
