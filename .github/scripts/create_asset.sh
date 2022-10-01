@@ -16,13 +16,13 @@ file_list=$(cat .github/files_to_copy)
 for f in $file_list
 do
     echo "**** copying $f to release ****"
-    cp -r --parents $f $to_dist
+    cp -r --parents "$f" $to_dist
 done
 
 # COPY VERSION file
 cp VERSION $to_dist
 
 pushd __builds__/bazarr
-zip -r ../bazarr.zip . -b $(mktemp -d)
+zip -r ../bazarr.zip . -b "$(mktemp -d)"
 popd
 rm -rf $to_dist
