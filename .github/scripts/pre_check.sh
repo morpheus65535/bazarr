@@ -9,7 +9,7 @@ file_list=$(cat .github/files_to_copy)
 for f in $file_list
 do
     echo "**** checking $f ****"
-    if [ ! -f $f ] && [ ! -d $f ]; then
+    if [ ! -f "$f" ] && [ ! -d "$f" ]; then
       echo "**** $f doesn't exist, skipping release ****"
       exit 1
     fi
