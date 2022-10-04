@@ -104,9 +104,24 @@ class GestdownProvider(Provider):
             logger.debug("Found subtitle: %s", sub)
             yield sub
 
+    def _show_exists(self, video):
+        try:
+            response = self._session.get(f"{_BASE_URL}/shows/search/{video.series}")
+            response.raise_for_status()
+            return True
+        except HTTPError as error:
+            if error.response.status_code == 404:
+                return False
+            raise
+
+
     @_retry_on_423
     def list_subtitles(self, video, languages):
         subtitles = []
+        if not self._show_exists(video):
+            logger.debug("Couldn't find the show")
+            return subtitles
+
         for language in languages:
             try:
                 subtitles += self._subtitles_search(video, language)

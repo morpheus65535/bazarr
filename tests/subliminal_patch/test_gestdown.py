@@ -78,6 +78,7 @@ def test_subtitle_download(subtitle):
 
 def test_list_subtitles_423(episodes, requests_mock, mocker):
     mocker.patch("time.sleep")
+    requests_mock.get("https://api.gestdown.info/shows/search/Breaking%20Bad", status_code=200)
     requests_mock.get(
         f"{_BASE_URL}/subtitles/find/English/Breaking%20Bad/1/1", status_code=423
     )
