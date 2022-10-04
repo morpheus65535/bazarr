@@ -193,11 +193,22 @@ class SZProviderPool(ProviderPool):
 
         # Check if any new provider has been added
         updated = providers != self.providers or ban_list != self.ban_list
-        removed_providers = list(sorted(self.providers - providers))
-        new_providers = list(sorted(providers - self.providers))
+        removed_providers = set(sorted(self.providers - providers))
+
+        logger.debug("Discarded providers: %s | New providers: %s", self.discarded_providers, providers)
+        self.discarded_providers.difference_update(providers)
+        logger.debug("Updated discarded providers: %s", self.discarded_providers)
+
+        removed_providers.update(self.discarded_providers)
+
+        logger.debug("Removed providers: %s", removed_providers)
+
+        self.providers.difference_update(removed_providers)
+        self.providers.update(list(providers))
 
         # Terminate and delete removed providers from instance
         for removed in removed_providers:
+            logger.debug("Removing provider: %s", removed)
             try:
                 del self[removed]
                 # If the user has updated the providers but hasn't made any
@@ -205,14 +216,6 @@ class SZProviderPool(ProviderPool):
                 # self dictionary
             except KeyError:
                 pass
-
-        if updated:
-            logger.debug("Removed providers: %s", removed_providers)
-            logger.debug("New providers: %s", new_providers)
-
-            self.discarded_providers.difference_update(new_providers)
-            self.providers.difference_update(removed_providers)
-            self.providers.update(list(providers))
 
         # self.provider_configs = provider_configs
         self.provider_configs.update(provider_configs)
