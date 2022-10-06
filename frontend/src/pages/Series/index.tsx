@@ -6,7 +6,9 @@ import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
 import { useTableStyles } from "@/styles";
-import { faWrench } from "@fortawesome/free-solid-svg-icons";
+import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
+import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Anchor, Container, Progress } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
@@ -20,6 +22,15 @@ const SeriesView: FunctionComponent = () => {
 
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
+      {
+        accessor: "monitored",
+        Cell: ({ value }) => (
+          <FontAwesomeIcon
+            title={value ? "monitored" : "unmonitored"}
+            icon={value ? faBookmark : farBookmark}
+          ></FontAwesomeIcon>
+        ),
+      },
       {
         Header: "Name",
         accessor: "title",

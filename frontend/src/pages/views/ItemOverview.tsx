@@ -1,5 +1,5 @@
 import { Language } from "@/components/bazarr";
-import { BuildKey, isMovie } from "@/utilities";
+import { BuildKey } from "@/utilities";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
@@ -165,14 +165,12 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             <Group align="flex-start" noWrap className={classes.group}>
               <Title my={0}>
                 <Text inherit color="white">
-                  {item && isMovie(item) ? (
-                    <Box component="span" mr={12}>
-                      <FontAwesomeIcon
-                        title={item.monitored ? "monitored" : "unmonitored"}
-                        icon={item.monitored ? faBookmark : farBookmark}
-                      ></FontAwesomeIcon>
-                    </Box>
-                  ) : null}
+                  <Box component="span" mr={12}>
+                    <FontAwesomeIcon
+                      title={item?.monitored ? "unmonitored" : "monitored"}
+                      icon={item?.monitored ? faBookmark : farBookmark}
+                    ></FontAwesomeIcon>
+                  </Box>
                   {item?.title}
                 </Text>
               </Title>

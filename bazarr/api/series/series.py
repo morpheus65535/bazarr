@@ -38,6 +38,7 @@ class Series(Resource):
         'episodeMissingCount': fields.Integer(),
         'fanart': fields.String(),
         'imdbId': fields.String(),
+        'monitored': fields.Boolean(),
         'overview': fields.String(),
         'path': fields.String(),
         'poster': fields.String(),

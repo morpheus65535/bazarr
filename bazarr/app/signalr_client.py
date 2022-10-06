@@ -13,6 +13,7 @@ from collections import deque
 from time import sleep
 
 from constants import headers
+from app.event_handler import event_stream
 from sonarr.sync.episodes import sync_episodes, sync_one_episode
 from sonarr.sync.series import update_series, update_one_series
 from radarr.sync.movies import update_movies, update_one_movie
@@ -274,6 +275,7 @@ def dispatcher(data):
     except Exception as e:
         logging.debug('BAZARR an exception occurred while parsing SignalR feed: {}'.format(repr(e)))
     finally:
+        event_stream(type='badges')
         return
 
 

@@ -52,7 +52,8 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
                 'alternateTitles': alternate_titles,
                 'tags': str(tags),
                 'seriesType': show['seriesType'],
-                'imdbId': imdbId}
+                'imdbId': imdbId,
+                'monitored': str(bool(show['monitored']))}
     else:
         return {'title': show["title"],
                 'path': show["path"],
@@ -68,7 +69,8 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
                 'tags': str(tags),
                 'seriesType': show['seriesType'],
                 'imdbId': imdbId,
-                'profileId': serie_default_profile}
+                'profileId': serie_default_profile,
+                'monitored': str(bool(show['monitored']))}
 
 
 def profile_id_to_language(id_, profiles):

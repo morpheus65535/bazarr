@@ -215,6 +215,7 @@ class TableShows(BaseModel):
     audio_language = TextField(null=True)
     fanart = TextField(null=True)
     imdbId = TextField(default='""', null=True)
+    monitored = TextField(null=True)
     overview = TextField(null=True)
     path = TextField(unique=True)
     poster = TextField(null=True)
@@ -302,6 +303,7 @@ def migrate_db():
         migrator.add_column('table_shows', 'seriesType', TextField(default='""', null=True)),
         migrator.add_column('table_shows', 'imdbId', TextField(default='""', null=True)),
         migrator.add_column('table_shows', 'profileId', IntegerField(null=True)),
+        migrator.add_column('table_shows', 'monitored', TextField(null=True)),
         migrator.add_column('table_episodes', 'format', TextField(null=True)),
         migrator.add_column('table_episodes', 'resolution', TextField(null=True)),
         migrator.add_column('table_episodes', 'video_codec', TextField(null=True)),
@@ -384,6 +386,7 @@ def get_exclusion_clause(exclusion_type):
         monitoredOnly = settings.sonarr.getboolean('only_monitored')
         if monitoredOnly:
             where_clause.append((TableEpisodes.monitored == 'True'))
+            where_clause.append((TableShows.monitored == 'True'))
     else:
         monitoredOnly = settings.radarr.getboolean('only_monitored')
         if monitoredOnly:

@@ -100,7 +100,8 @@ def update_series(send_event=True):
                                          TableShows.alternateTitles,
                                          TableShows.tags,
                                          TableShows.seriesType,
-                                         TableShows.imdbId).dicts()
+                                         TableShows.imdbId,
+                                         TableShows.monitored).dicts()
 
         for item in series_in_db:
             series_in_db_list.append(item)
