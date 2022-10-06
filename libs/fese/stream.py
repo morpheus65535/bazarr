@@ -20,7 +20,7 @@ class FFprobeSubtitleStream:
         :raises: LanguageNotFound, UnsupportedCodec
         """
         self.index = int(stream["index"])
-        self.codec_name = stream["codec_name"]
+        self.codec_name = stream.get("codec_name", "Unknown")
 
         try:
             self._codec = _codecs[self.codec_name]
