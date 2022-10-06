@@ -6,6 +6,7 @@ import os
 import pytest
 
 from subliminal_patch.core import Movie, Episode
+from subzero.language import Language
 
 
 logging.getLogger("vcr").setLevel(logging.WARNING)
@@ -146,6 +147,11 @@ def episodes():
             video_codec="H.264",
         ),
     }
+
+
+@pytest.fixture
+def languages():
+    return {"en": Language.fromietf("en"), "es-MX": Language("spa", "MX")}
 
 
 @pytest.fixture
