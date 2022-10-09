@@ -452,7 +452,11 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         else:
             subtitle_content = fix_line_ending(res.content)
 
-        if not subtitle_content:
+        if archive and len(archive.infolist()) > 1 and not subtitle_content:
+            logger.info(f"Titulky.com: Couldn't find a proper subtitle file in the downloaded archive.")
+        elif archive and len(archive.infolist()) == 1 and not subtitle_content:
             raise DownloadLimitExceeded("Subtitles download limit has been exceeded")
+        elif not subtitle_content:
+            raise ProviderError("No subtitles provided from titulky")
 
         subtitle.content = subtitle_content
