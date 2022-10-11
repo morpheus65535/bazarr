@@ -2,7 +2,12 @@ import { useServerSearch } from "@/apis/hooks";
 import { useDebouncedValue } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Autocomplete, SelectItemProps } from "@mantine/core";
+import {
+  Anchor,
+  Autocomplete,
+  createStyles,
+  SelectItemProps,
+} from "@mantine/core";
 import { forwardRef, FunctionComponent, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -36,12 +41,31 @@ function useSearch(query: string) {
   );
 }
 
+const useStyles = createStyles((theme) => {
+  return {
+    result: {
+      color:
+        theme.colorScheme === "light"
+          ? theme.colors.dark[8]
+          : theme.colors.gray[1],
+    },
+  };
+});
+
 type ResultCompProps = SelectItemProps & SearchResultItem;
 
 const ResultComponent = forwardRef<HTMLDivElement, ResultCompProps>(
   ({ link, value }, ref) => {
+    const styles = useStyles();
+
     return (
-      <Anchor component={Link} to={link} underline={false} color="gray" p="sm">
+      <Anchor
+        component={Link}
+        to={link}
+        underline={false}
+        className={styles.classes.result}
+        p="sm"
+      >
         {value}
       </Anchor>
     );
