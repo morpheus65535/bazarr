@@ -25,22 +25,18 @@
 
 import os
 import re
-import six
 import yaml
 import time
 
 from .. import plugins
+from .. import common
 from ..AppriseAsset import AppriseAsset
 from ..URLBase import URLBase
-from ..common import ConfigFormat
-from ..common import CONFIG_FORMATS
-from ..common import ContentIncludeMode
 from ..utils import GET_SCHEMA_RE
 from ..utils import parse_list
 from ..utils import parse_bool
 from ..utils import parse_urls
 from ..utils import cwe312_url
-from . import SCHEMA_MAP
 
 # Test whether token is valid or not
 VALID_TOKEN = re.compile(
@@ -57,7 +53,7 @@ class ConfigBase(URLBase):
 
     # The default expected configuration format unless otherwise
     # detected by the sub-modules
-    default_config_format = ConfigFormat.TEXT
+    default_config_format = common.ConfigFormat.TEXT
 
     # This is only set if the user overrides the config format on the URL
     # this should always initialize itself as None
@@ -70,7 +66,7 @@ class ConfigBase(URLBase):
 
     # By default all configuration is not includable using the 'include'
     # line found in configuration files.
-    allow_cross_includes = ContentIncludeMode.NEVER
+    allow_cross_includes = common.ContentIncludeMode.NEVER
 
     # the config path manages the handling of relative include
     config_path = os.getcwd()
@@ -138,11 +134,11 @@ class ConfigBase(URLBase):
             self.encoding = kwargs.get('encoding')
 
         if 'format' in kwargs \
-                and isinstance(kwargs['format'], six.string_types):
+                and isinstance(kwargs['format'], str):
             # Store the enforced config format
             self.config_format = kwargs.get('format').lower()
 
-            if self.config_format not in CONFIG_FORMATS:
+            if self.config_format not in common.CONFIG_FORMATS:
                 # Simple error checking
                 err = 'An invalid config format ({}) was specified.'.format(
                     self.config_format)
@@ -183,7 +179,7 @@ class ConfigBase(URLBase):
         # config plugin to load the data source and return unparsed content
         # None is returned if there was an error or simply no data
         content = self.read(**kwargs)
-        if not isinstance(content, six.string_types):
+        if not isinstance(content, str):
             # Set the time our content was cached at
             self._cached_time = time.time()
 
@@ -230,7 +226,7 @@ class ConfigBase(URLBase):
                     schema = schema.group('schema').lower()
 
                     # Some basic validation
-                    if schema not in SCHEMA_MAP:
+                    if schema not in common.CONFIG_SCHEMA_MAP:
                         ConfigBase.logger.warning(
                             'Unsupported include schema {}.'.format(schema))
                         continue
@@ -241,7 +237,7 @@ class ConfigBase(URLBase):
 
                 # Parse our url details of the server object as dictionary
                 # containing all of the information parsed from our URL
-                results = SCHEMA_MAP[schema].parse_url(url)
+                results = common.CONFIG_SCHEMA_MAP[schema].parse_url(url)
                 if not results:
                     # Failed to parse the server URL
                     self.logger.warning(
@@ -249,12 +245,13 @@ class ConfigBase(URLBase):
                     continue
 
                 # Handle cross inclusion based on allow_cross_includes rules
-                if (SCHEMA_MAP[schema].allow_cross_includes ==
-                        ContentIncludeMode.STRICT
+                if (common.CONFIG_SCHEMA_MAP[schema].allow_cross_includes ==
+                        common.ContentIncludeMode.STRICT
                         and schema not in self.schemas()
                         and not self.insecure_includes) or \
-                        SCHEMA_MAP[schema].allow_cross_includes == \
-                        ContentIncludeMode.NEVER:
+                        common.CONFIG_SCHEMA_MAP[schema] \
+                        .allow_cross_includes == \
+                        common.ContentIncludeMode.NEVER:
 
                     # Prevent the loading if insecure base protocols
                     ConfigBase.logger.warning(
@@ -280,7 +277,8 @@ class ConfigBase(URLBase):
                 try:
                     # Attempt to create an instance of our plugin using the
                     # parsed URL information
-                    cfg_plugin = SCHEMA_MAP[results['schema']](**results)
+                    cfg_plugin = \
+                        common.CONFIG_SCHEMA_MAP[results['schema']](**results)
 
                 except Exception as e:
                     # the arguments are invalid or can not be used.
@@ -379,7 +377,7 @@ class ConfigBase(URLBase):
         # Allow overriding the default config format
         if 'format' in results['qsd']:
             results['format'] = results['qsd'].get('format')
-            if results['format'] not in CONFIG_FORMATS:
+            if results['format'] not in common.CONFIG_FORMATS:
                 URLBase.logger.warning(
                     'Unsupported format specified {}'.format(
                         results['format']))
@@ -457,14 +455,14 @@ class ConfigBase(URLBase):
 
             # Attempt to detect configuration
             if result.group('yaml'):
-                config_format = ConfigFormat.YAML
+                config_format = common.ConfigFormat.YAML
                 ConfigBase.logger.debug(
                     'Detected YAML configuration '
                     'based on line {}.'.format(line))
                 break
 
             elif result.group('text'):
-                config_format = ConfigFormat.TEXT
+                config_format = common.ConfigFormat.TEXT
                 ConfigBase.logger.debug(
                     'Detected TEXT configuration '
                     'based on line {}.'.format(line))
@@ -472,7 +470,7 @@ class ConfigBase(URLBase):
 
             # If we reach here, we have a comment entry
             # Adjust default format to TEXT
-            config_format = ConfigFormat.TEXT
+            config_format = common.ConfigFormat.TEXT
 
         return config_format
 
@@ -493,7 +491,7 @@ class ConfigBase(URLBase):
                 ConfigBase.logger.error('Could not detect configuration')
                 return (list(), list())
 
-        if config_format not in CONFIG_FORMATS:
+        if config_format not in common.CONFIG_FORMATS:
             # Invalid configuration type specified
             ConfigBase.logger.error(
                 'An invalid configuration format ({}) was specified'.format(
@@ -618,7 +616,7 @@ class ConfigBase(URLBase):
             try:
                 # Attempt to create an instance of our plugin using the
                 # parsed URL information
-                plugin = plugins.SCHEMA_MAP[results['schema']](**results)
+                plugin = common.NOTIFY_SCHEMA_MAP[results['schema']](**results)
 
                 # Create log entry of loaded URL
                 ConfigBase.logger.debug(
@@ -705,7 +703,7 @@ class ConfigBase(URLBase):
 
                 if not (hasattr(asset, k) and
                         isinstance(getattr(asset, k),
-                                   (bool, six.string_types))):
+                                   (bool, str))):
 
                     # We can't set a function or non-string set value
                     ConfigBase.logger.warning(
@@ -716,7 +714,7 @@ class ConfigBase(URLBase):
                     # Convert to an empty string
                     v = ''
 
-                if (isinstance(v, (bool, six.string_types))
+                if (isinstance(v, (bool, str))
                         and isinstance(getattr(asset, k), bool)):
 
                     # If the object in the Asset is a boolean, then
@@ -724,7 +722,7 @@ class ConfigBase(URLBase):
                     # match that.
                     setattr(asset, k, parse_bool(v))
 
-                elif isinstance(v, six.string_types):
+                elif isinstance(v, str):
                     # Set our asset object with the new value
                     setattr(asset, k, v.strip())
 
@@ -739,7 +737,7 @@ class ConfigBase(URLBase):
         global_tags = set()
 
         tags = result.get('tag', None)
-        if tags and isinstance(tags, (list, tuple, six.string_types)):
+        if tags and isinstance(tags, (list, tuple, str)):
             # Store any preset tags
             global_tags = set(parse_list(tags))
 
@@ -747,7 +745,7 @@ class ConfigBase(URLBase):
         # include root directive
         #
         includes = result.get('include', None)
-        if isinstance(includes, six.string_types):
+        if isinstance(includes, str):
             # Support a single inline string or multiple ones separated by a
             # comma and/or space
             includes = parse_urls(includes)
@@ -759,7 +757,7 @@ class ConfigBase(URLBase):
         # Iterate over each config URL
         for no, url in enumerate(includes):
 
-            if isinstance(url, six.string_types):
+            if isinstance(url, str):
                 # Support a single inline string or multiple ones separated by
                 # a comma and/or space
                 configs.extend(parse_urls(url))
@@ -787,7 +785,7 @@ class ConfigBase(URLBase):
             loggable_url = url if not asset.secure_logging \
                 else cwe312_url(url)
 
-            if isinstance(url, six.string_types):
+            if isinstance(url, str):
                 # We're just a simple URL string...
                 schema = GET_SCHEMA_RE.match(url)
                 if schema is None:
@@ -818,10 +816,7 @@ class ConfigBase(URLBase):
                 # can at least tell the end user what entries were ignored
                 # due to errors
 
-                if six.PY2:
-                    it = url.iteritems()
-                else:  # six.PY3
-                    it = iter(url.items())
+                it = iter(url.items())
 
                 # Track the URL to-load
                 _url = None
@@ -871,17 +866,14 @@ class ConfigBase(URLBase):
 
                         # We are a url string with additional unescaped options
                         if isinstance(entries, dict):
-                            if six.PY2:
-                                _url, tokens = next(url.iteritems())
-                            else:  # six.PY3
-                                _url, tokens = next(iter(url.items()))
+                            _url, tokens = next(iter(url.items()))
 
                             # Tags you just can't over-ride
                             if 'schema' in entries:
                                 del entries['schema']
 
                             # support our special tokens (if they're present)
-                            if schema in plugins.SCHEMA_MAP:
+                            if schema in common.NOTIFY_SCHEMA_MAP:
                                 entries = ConfigBase._special_token_handler(
                                     schema, entries)
 
@@ -893,7 +885,7 @@ class ConfigBase(URLBase):
 
                 elif isinstance(tokens, dict):
                     # support our special tokens (if they're present)
-                    if schema in plugins.SCHEMA_MAP:
+                    if schema in common.NOTIFY_SCHEMA_MAP:
                         tokens = ConfigBase._special_token_handler(
                             schema, tokens)
 
@@ -927,6 +919,14 @@ class ConfigBase(URLBase):
                 # Grab our first item
                 _results = results.pop(0)
 
+                if _results['schema'] not in common.NOTIFY_SCHEMA_MAP:
+                    # the arguments are invalid or can not be used.
+                    ConfigBase.logger.warning(
+                        'An invalid Apprise schema ({}) in YAML configuration '
+                        'entry #{}, item #{}'
+                        .format(_results['schema'], no + 1, entry))
+                    continue
+
                 # tag is a special keyword that is managed by Apprise object.
                 # The below ensures our tags are set correctly
                 if 'tag' in _results:
@@ -958,10 +958,12 @@ class ConfigBase(URLBase):
                 # Prepare our Asset Object
                 _results['asset'] = asset
 
+                # Now we generate our plugin
                 try:
                     # Attempt to create an instance of our plugin using the
                     # parsed URL information
-                    plugin = plugins.SCHEMA_MAP[_results['schema']](**_results)
+                    plugin = common.\
+                        NOTIFY_SCHEMA_MAP[_results['schema']](**_results)
 
                     # Create log entry of loaded URL
                     ConfigBase.logger.debug(
@@ -1014,7 +1016,7 @@ class ConfigBase(URLBase):
         # Create a copy of our dictionary
         tokens = tokens.copy()
 
-        for kw, meta in plugins.SCHEMA_MAP[schema]\
+        for kw, meta in common.NOTIFY_SCHEMA_MAP[schema]\
                 .template_kwargs.items():
 
             # Determine our prefix:
@@ -1059,7 +1061,7 @@ class ConfigBase(URLBase):
         # This function here allows these mappings to take place within the
         # YAML file as independant arguments.
         class_templates = \
-            plugins.details(plugins.SCHEMA_MAP[schema])
+            plugins.details(common.NOTIFY_SCHEMA_MAP[schema])
 
         for key in list(tokens.keys()):
 
@@ -1088,7 +1090,7 @@ class ConfigBase(URLBase):
 
             # Detect if we're dealign with a list or not
             is_list = re.search(
-                r'^(list|choice):.*',
+                r'^list:.*',
                 meta.get('type'),
                 re.IGNORECASE)
 
@@ -1105,7 +1107,7 @@ class ConfigBase(URLBase):
                     r'^(choice:)?string',
                     meta.get('type'),
                     re.IGNORECASE) \
-                    and not isinstance(value, six.string_types):
+                    and not isinstance(value, str):
 
                 # Ensure our format is as expected
                 value = str(value)
@@ -1158,19 +1160,8 @@ class ConfigBase(URLBase):
 
     def __bool__(self):
         """
-        Allows the Apprise object to be wrapped in an Python 3.x based 'if
-        statement'.  True is returned if our content was downloaded correctly.
-        """
-        if not isinstance(self._cached_servers, list):
-            # Generate ourselves a list of content we can pull from
-            self.servers()
-
-        return True if self._cached_servers else False
-
-    def __nonzero__(self):
-        """
-        Allows the Apprise object to be wrapped in an Python 2.x based 'if
-        statement'.  True is returned if our content was downloaded correctly.
+        Allows the Apprise object to be wrapped in an 'if statement'.
+        True is returned if our content was downloaded correctly.
         """
         if not isinstance(self._cached_servers, list):
             # Generate ourselves a list of content we can pull from

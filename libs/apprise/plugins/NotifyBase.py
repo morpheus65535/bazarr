@@ -24,7 +24,6 @@
 # THE SOFTWARE.
 
 import re
-import six
 
 from ..URLBase import URLBase
 from ..common import NotifyType
@@ -37,14 +36,9 @@ from ..AppriseLocale import gettext_lazy as _
 from ..AppriseAttachment import AppriseAttachment
 
 
-if six.PY3:
-    # Wrap our base with the asyncio wrapper
-    from ..py3compat.asyncio import AsyncNotifyBase
-    BASE_OBJECT = AsyncNotifyBase
-
-else:
-    # Python v2.7 (backwards compatibility)
-    BASE_OBJECT = URLBase
+# Wrap our base with the asyncio wrapper
+from ..py3compat.asyncio import AsyncNotifyBase
+BASE_OBJECT = AsyncNotifyBase
 
 
 class NotifyBase(BASE_OBJECT):
@@ -58,6 +52,15 @@ class NotifyBase(BASE_OBJECT):
     # dependencies that are not present).  By default all plugins are
     # enabled.
     enabled = True
+
+    # The category allows for parent inheritance of this object to alter
+    # this when it's function/use is intended to behave differently. The
+    # following category types exist:
+    #
+    #  native: Is a native plugin written/stored in `apprise/plugins/Notify*`
+    #  custom: Is a custom plugin written/stored in a users plugin directory
+    #          that they loaded at execution time.
+    category = 'native'
 
     # Some plugins may require additional packages above what is provided
     # already by Apprise.

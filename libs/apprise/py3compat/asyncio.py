@@ -36,9 +36,7 @@ ASYNCIO_RUN_SUPPORT = \
     (sys.version_info.major == 3 and sys.version_info.minor >= 7)
 
 
-# async reference produces a SyntaxError (E999) in Python v2.7
-# For this reason we turn on the noqa flag
-async def notify(coroutines):  # noqa: E999
+async def notify(coroutines):
     """
     An async wrapper to the AsyncNotifyBase.async_notify() calls allowing us
     to call gather() and collect the responses
@@ -63,7 +61,20 @@ def tosync(cor, debug=False):
     """
 
     if ASYNCIO_RUN_SUPPORT:
-        return asyncio.run(cor, debug=debug)
+        try:
+            loop = asyncio.get_running_loop()
+
+        except RuntimeError:
+            # There is no existing event loop, so we can start our own.
+            return asyncio.run(cor, debug=debug)
+
+        else:
+            # Enable debug mode
+            loop.set_debug(debug)
+
+            # Run the coroutine and wait for the result.
+            task = loop.create_task(cor)
+            return asyncio.ensure_future(task, loop=loop)
 
     else:
         # The Deprecated Way (<= Python v3.6)
@@ -85,7 +96,7 @@ def tosync(cor, debug=False):
         return loop.run_until_complete(cor)
 
 
-async def toasyncwrap(v):  # noqa: E999
+async def toasyncwrapvalue(v):
     """
     Create a coroutine that, when run, returns the provided value.
     """
@@ -93,12 +104,20 @@ async def toasyncwrap(v):  # noqa: E999
     return v
 
 
+async def toasyncwrap(fn):
+    """
+    Create a coroutine that, when run, executes the provided function.
+    """
+
+    return fn()
+
+
 class AsyncNotifyBase(URLBase):
     """
     asyncio wrapper for the NotifyBase object
     """
 
-    async def async_notify(self, *args, **kwargs):  # noqa: E999
+    async def async_notify(self, *args, **kwargs):
         """
         Async Notification Wrapper
         """
@@ -110,11 +129,11 @@ class AsyncNotifyBase(URLBase):
                 None, partial(self.notify, *args, **kwargs))
 
         except TypeError:
-            # These our our internally thrown notifications
+            # These are our internally thrown notifications
             pass
 
         except Exception:
-            # A catch all so we don't have to abort early
+            # A catch-all so we don't have to abort early
             # just because one of our plugins has a bug in it.
             logger.exception("Notification Exception")
 

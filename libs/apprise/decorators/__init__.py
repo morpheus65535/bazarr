@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2021 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2022 Chris Caron <lead2gold@gmail.com>
 # All rights reserved.
 #
 # This code is licensed under the MIT License.
@@ -22,21 +22,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-class FCMMode:
-    """
-    Define the Firebase Cloud Messaging Modes
-    """
-    # The legacy way of sending a message
-    Legacy = "legacy"
-
-    # The new API
-    OAuth2 = "oauth2"
+from .notify import notify
 
 
-# FCM Modes
-FCM_MODES = (
-    # Legacy API
-    FCMMode.Legacy,
-    # HTTP v1 URL
-    FCMMode.OAuth2,
-)
+__all__ = [
+    'notify'
+]

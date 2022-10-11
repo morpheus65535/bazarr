@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2021 <example@example.com>
+# Copyright (C) 2021 Chris Caron <lead2gold@gmail.com>
 # All rights reserved.
 #
 # This code is licensed under the MIT License.
@@ -42,7 +42,7 @@ from ..AppriseLocale import gettext_lazy as _
 
 
 # calls
-class StrmlabsCall(object):
+class StrmlabsCall:
     ALERT = 'ALERTS'
     DONATION = 'DONATIONS'
 
@@ -55,7 +55,7 @@ STRMLABS_CALLS = (
 
 
 # alerts
-class StrmlabsAlert(object):
+class StrmlabsAlert:
     FOLLOW = 'follow'
     SUBSCRIPTION = 'subscription'
     DONATION = 'donation'

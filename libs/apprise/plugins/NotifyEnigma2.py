@@ -31,7 +31,6 @@
 # - https://github.com/E2OpenPlugins/e2openplugin-OpenWebif/wiki/\
 #       OpenWebif-API-documentation#message
 
-import six
 import requests
 from json import loads
 
@@ -41,7 +40,7 @@ from ..common import NotifyType
 from ..AppriseLocale import gettext_lazy as _
 
 
-class Enigma2MessageType(object):
+class Enigma2MessageType:
     # Defines the Enigma2 notification types Apprise can map to
     INFO = 1
     WARNING = 2
@@ -169,7 +168,7 @@ class NotifyEnigma2(NotifyBase):
             self.timeout = self.template_args['timeout']['default']
 
         self.fullpath = kwargs.get('fullpath')
-        if not isinstance(self.fullpath, six.string_types):
+        if not isinstance(self.fullpath, str):
             self.fullpath = '/'
 
         self.headers = {}
@@ -337,18 +336,10 @@ class NotifyEnigma2(NotifyBase):
             return results
 
         # Add our headers that the user can potentially over-ride if they wish
-        # to to our returned result set
-        results['headers'] = results['qsd+']
-        if results['qsd-']:
-            results['headers'].update(results['qsd-'])
-            NotifyBase.logger.deprecate(
-                "minus (-) based Enigma header tokens are being "
-                " removed; use the plus (+) symbol instead.")
-
-        # Tidy our header entries by unquoting them
+        # to to our returned result set and tidy entries by unquoting them
         results['headers'] = {
             NotifyEnigma2.unquote(x): NotifyEnigma2.unquote(y)
-            for x, y in results['headers'].items()}
+            for x, y in results['qsd+'].items()}
 
         # Save timeout value (if specified)
         if 'timeout' in results['qsd'] and len(results['qsd']['timeout']):

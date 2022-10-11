@@ -24,14 +24,11 @@
 # THE SOFTWARE.
 
 import re
-import six
 from os import listdir
 from os.path import dirname
 from os.path import abspath
 from ..logger import logger
-
-# Maintains a mapping of all of the configuration services
-SCHEMA_MAP = {}
+from ..common import CONFIG_SCHEMA_MAP
 
 __all__ = []
 
@@ -89,40 +86,20 @@ def __load_matrix(path=abspath(dirname(__file__)), name='apprise.config'):
         globals()[plugin_name] = plugin
 
         fn = getattr(plugin, 'schemas', None)
-        try:
-            schemas = set([]) if not callable(fn) else fn(plugin)
-
-        except TypeError:
-            # Python v2.x support where functions associated with classes
-            # were considered bound to them and could not be called prior
-            # to the classes initialization.  This code can be dropped
-            # once Python v2.x support is dropped. The below code introduces
-            # replication as it already exists and is tested in
-            # URLBase.schemas()
-            schemas = set([])
-            for key in ('protocol', 'secure_protocol'):
-                schema = getattr(plugin, key, None)
-                if isinstance(schema, six.string_types):
-                    schemas.add(schema)
-
-                elif isinstance(schema, (set, list, tuple)):
-                    # Support iterables list types
-                    for s in schema:
-                        if isinstance(s, six.string_types):
-                            schemas.add(s)
+        schemas = set([]) if not callable(fn) else fn(plugin)
 
         # map our schema to our plugin
         for schema in schemas:
-            if schema in SCHEMA_MAP:
+            if schema in CONFIG_SCHEMA_MAP:
                 logger.error(
                     "Config schema ({}) mismatch detected - {} to {}"
-                    .format(schema, SCHEMA_MAP[schema], plugin))
+                    .format(schema, CONFIG_SCHEMA_MAP[schema], plugin))
                 continue
 
             # Assign plugin
-            SCHEMA_MAP[schema] = plugin
+            CONFIG_SCHEMA_MAP[schema] = plugin
 
-    return SCHEMA_MAP
+    return CONFIG_SCHEMA_MAP
 
 
 # Dynamically build our schema base

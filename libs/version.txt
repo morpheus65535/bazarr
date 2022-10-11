@@ -1,7 +1,7 @@
 # Bazarr dependencies
 aniso8601==9.0.1
 argparse==1.4.0
-apprise==0.9.8.3
+apprise==1.1.0
 apscheduler==3.8.1
 attrs==22.1.0
 charamel==1.0.0

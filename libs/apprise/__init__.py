@@ -24,7 +24,7 @@
 # THE SOFTWARE.
 
 __title__ = 'Apprise'
-__version__ = '0.9.8.3'
+__version__ = '1.1.0'
 __author__ = 'Chris Caron'
 __license__ = 'MIT'
 __copywrite__ = 'Copyright (C) 2022 Chris Caron <lead2gold@gmail.com>'
@@ -57,6 +57,8 @@ from .AppriseAsset import AppriseAsset
 from .AppriseConfig import AppriseConfig
 from .AppriseAttachment import AppriseAttachment
 
+from . import decorators
+
 # Inherit our logging with our additional entries added to it
 from .logger import logging
 from .logger import logger
@@ -77,6 +79,9 @@ __all__ = [
     'ContentIncludeMode', 'CONTENT_INCLUDE_MODES',
     'ContentLocation', 'CONTENT_LOCATIONS',
     'PrivacyMode',
+
+    # Decorator
+    'decorators',
 
     # Logging
     'logging', 'logger', 'LogCapture',

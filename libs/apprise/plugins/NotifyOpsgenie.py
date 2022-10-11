@@ -74,7 +74,7 @@ OPSGENIE_CATEGORIES = (
 
 
 # Regions
-class OpsgenieRegion(object):
+class OpsgenieRegion:
     US = 'us'
     EU = 'eu'
 
@@ -93,7 +93,7 @@ OPSGENIE_REGIONS = (
 
 
 # Priorities
-class OpsgeniePriority(object):
+class OpsgeniePriority:
     LOW = 1
     MODERATE = 2
     NORMAL = 3
@@ -101,13 +101,40 @@ class OpsgeniePriority(object):
     EMERGENCY = 5
 
 
-OPSGENIE_PRIORITIES = (
-    OpsgeniePriority.LOW,
-    OpsgeniePriority.MODERATE,
-    OpsgeniePriority.NORMAL,
-    OpsgeniePriority.HIGH,
-    OpsgeniePriority.EMERGENCY,
-)
+OPSGENIE_PRIORITIES = {
+    # Note: This also acts as a reverse lookup mapping
+    OpsgeniePriority.LOW: 'low',
+    OpsgeniePriority.MODERATE: 'moderate',
+    OpsgeniePriority.NORMAL: 'normal',
+    OpsgeniePriority.HIGH: 'high',
+    OpsgeniePriority.EMERGENCY: 'emergency',
+}
+
+OPSGENIE_PRIORITY_MAP = {
+    # Maps against string 'low'
+    'l': OpsgeniePriority.LOW,
+    # Maps against string 'moderate'
+    'm': OpsgeniePriority.MODERATE,
+    # Maps against string 'normal'
+    'n': OpsgeniePriority.NORMAL,
+    # Maps against string 'high'
+    'h': OpsgeniePriority.HIGH,
+    # Maps against string 'emergency'
+    'e': OpsgeniePriority.EMERGENCY,
+
+    # Entries to additionally support (so more like Opsgenie's API)
+    '1': OpsgeniePriority.LOW,
+    '2': OpsgeniePriority.MODERATE,
+    '3': OpsgeniePriority.NORMAL,
+    '4': OpsgeniePriority.HIGH,
+    '5': OpsgeniePriority.EMERGENCY,
+    # Support p-prefix
+    'p1': OpsgeniePriority.LOW,
+    'p2': OpsgeniePriority.MODERATE,
+    'p3': OpsgeniePriority.NORMAL,
+    'p4': OpsgeniePriority.HIGH,
+    'p5': OpsgeniePriority.EMERGENCY,
+}
 
 
 class NotifyOpsgenie(NotifyBase):
@@ -246,11 +273,12 @@ class NotifyOpsgenie(NotifyBase):
             raise TypeError(msg)
 
         # The Priority of the message
-        if priority not in OPSGENIE_PRIORITIES:
-            self.priority = OpsgeniePriority.NORMAL
-
-        else:
-            self.priority = priority
+        self.priority = NotifyOpsgenie.template_args['priority']['default'] \
+            if not priority else \
+            next((
+                v for k, v in OPSGENIE_PRIORITY_MAP.items()
+                if str(priority).lower().startswith(k)),
+                NotifyOpsgenie.template_args['priority']['default'])
 
         # Store our region
         try:
@@ -353,8 +381,8 @@ class NotifyOpsgenie(NotifyBase):
         # Initialize our has_error flag
         has_error = False
 
-        # We want to manually set the title onto the body if specified
-        title_body = body if not title else '{}: {}'.format(title, body)
+        # Use body if title not set
+        title_body = body if not title else body
 
         # Create a copy ouf our details object
         details = self.details.copy()
@@ -374,7 +402,7 @@ class NotifyOpsgenie(NotifyBase):
         # limitation
         if len(payload['message']) > self.opsgenie_body_minlen:
             payload['message'] = '{}...'.format(
-                body[:self.opsgenie_body_minlen - 3])
+                title_body[:self.opsgenie_body_minlen - 3])
 
         if self.__tags:
             payload['tags'] = self.__tags
@@ -450,20 +478,13 @@ class NotifyOpsgenie(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        _map = {
-            OpsgeniePriority.LOW: 'low',
-            OpsgeniePriority.MODERATE: 'moderate',
-            OpsgeniePriority.NORMAL: 'normal',
-            OpsgeniePriority.HIGH: 'high',
-            OpsgeniePriority.EMERGENCY: 'emergency',
-        }
-
         # Define any URL parameters
         params = {
             'region': self.region_name,
             'priority':
-                _map[OpsgeniePriority.NORMAL] if self.priority not in _map
-                else _map[self.priority],
+                OPSGENIE_PRIORITIES[self.template_args['priority']['default']]
+                if self.priority not in OPSGENIE_PRIORITIES
+                else OPSGENIE_PRIORITIES[self.priority],
             'batch': 'yes' if self.batch_size > 1 else 'no',
         }
 
@@ -530,38 +551,10 @@ class NotifyOpsgenie(NotifyBase):
         results['details'] = {NotifyBase.unquote(x): NotifyBase.unquote(y)
                               for x, y in results['qsd+'].items()}
 
+        # Set our priority
         if 'priority' in results['qsd'] and len(results['qsd']['priority']):
-            _map = {
-                # Letter Assignnments
-                'l': OpsgeniePriority.LOW,
-                'm': OpsgeniePriority.MODERATE,
-                'n': OpsgeniePriority.NORMAL,
-                'h': OpsgeniePriority.HIGH,
-                'e': OpsgeniePriority.EMERGENCY,
-                'lo': OpsgeniePriority.LOW,
-                'me': OpsgeniePriority.MODERATE,
-                'no': OpsgeniePriority.NORMAL,
-                'hi': OpsgeniePriority.HIGH,
-                'em': OpsgeniePriority.EMERGENCY,
-                # Support 3rd Party API Documented Scale
-                '1': OpsgeniePriority.LOW,
-                '2': OpsgeniePriority.MODERATE,
-                '3': OpsgeniePriority.NORMAL,
-                '4': OpsgeniePriority.HIGH,
-                '5': OpsgeniePriority.EMERGENCY,
-                'p1': OpsgeniePriority.LOW,
-                'p2': OpsgeniePriority.MODERATE,
-                'p3': OpsgeniePriority.NORMAL,
-                'p4': OpsgeniePriority.HIGH,
-                'p5': OpsgeniePriority.EMERGENCY,
-            }
-            try:
-                results['priority'] = \
-                    _map[results['qsd']['priority'][0:2].lower()]
-
-            except KeyError:
-                # No priority was set
-                pass
+            results['priority'] = \
+                NotifyOpsgenie.unquote(results['qsd']['priority'])
 
         # Get Batch Boolean (if set)
         results['batch'] = \

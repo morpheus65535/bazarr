@@ -23,23 +23,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import six
-
 from . import config
 from . import ConfigBase
 from . import CONFIG_FORMATS
 from . import URLBase
 from .AppriseAsset import AppriseAsset
-
-from .common import MATCH_ALL_TAG
-from .common import MATCH_ALWAYS_TAG
+from . import common
 from .utils import GET_SCHEMA_RE
 from .utils import parse_list
 from .utils import is_exclusive_match
 from .logger import logger
 
 
-class AppriseConfig(object):
+class AppriseConfig:
     """
     Our Apprise Configuration File Manager
 
@@ -171,7 +167,7 @@ class AppriseConfig(object):
             self.configs.append(configs)
             return True
 
-        elif isinstance(configs, six.string_types):
+        elif isinstance(configs, str):
             # Save our path
             configs = (configs, )
 
@@ -189,7 +185,7 @@ class AppriseConfig(object):
                 self.configs.append(_config)
                 continue
 
-            elif not isinstance(_config, six.string_types):
+            elif not isinstance(_config, str):
                 logger.warning(
                     "An invalid configuration (type={}) was specified.".format(
                         type(_config)))
@@ -243,7 +239,7 @@ class AppriseConfig(object):
             # prepare default asset
             asset = self.asset
 
-        if not isinstance(content, six.string_types):
+        if not isinstance(content, str):
             logger.warning(
                 "An invalid configuration (type={}) was specified.".format(
                     type(content)))
@@ -267,7 +263,8 @@ class AppriseConfig(object):
         # Return our status
         return True
 
-    def servers(self, tag=MATCH_ALL_TAG, match_always=True, *args, **kwargs):
+    def servers(self, tag=common.MATCH_ALL_TAG, match_always=True, *args,
+                **kwargs):
         """
         Returns all of our servers dynamically build based on parsed
         configuration.
@@ -285,7 +282,7 @@ class AppriseConfig(object):
 
         # A match_always flag allows us to pick up on our 'any' keyword
         # and notify these services under all circumstances
-        match_always = MATCH_ALWAYS_TAG if match_always else None
+        match_always = common.MATCH_ALWAYS_TAG if match_always else None
 
         # Build our tag setup
         #   - top level entries are treated as an 'or'
@@ -303,7 +300,7 @@ class AppriseConfig(object):
 
             # Apply our tag matching based on our defined logic
             if is_exclusive_match(
-                    logic=tag, data=entry.tags, match_all=MATCH_ALL_TAG,
+                    logic=tag, data=entry.tags, match_all=common.MATCH_ALL_TAG,
                     match_always=match_always):
                 # Build ourselves a list of services dynamically and return the
                 # as a list
@@ -334,13 +331,13 @@ class AppriseConfig(object):
             schema = schema.group('schema').lower()
 
             # Some basic validation
-            if schema not in config.SCHEMA_MAP:
+            if schema not in common.CONFIG_SCHEMA_MAP:
                 logger.warning('Unsupported schema {}.'.format(schema))
                 return None
 
         # Parse our url details of the server object as dictionary containing
         # all of the information parsed from our URL
-        results = config.SCHEMA_MAP[schema].parse_url(url)
+        results = common.CONFIG_SCHEMA_MAP[schema].parse_url(url)
 
         if not results:
             # Failed to parse the server URL
@@ -368,7 +365,8 @@ class AppriseConfig(object):
             try:
                 # Attempt to create an instance of our plugin using the parsed
                 # URL information
-                cfg_plugin = config.SCHEMA_MAP[results['schema']](**results)
+                cfg_plugin = \
+                    common.CONFIG_SCHEMA_MAP[results['schema']](**results)
 
             except Exception:
                 # the arguments are invalid or can not be used.
@@ -378,7 +376,7 @@ class AppriseConfig(object):
         else:
             # Attempt to create an instance of our plugin using the parsed
             # URL information but don't wrap it in a try catch
-            cfg_plugin = config.SCHEMA_MAP[results['schema']](**results)
+            cfg_plugin = common.CONFIG_SCHEMA_MAP[results['schema']](**results)
 
         return cfg_plugin
 
@@ -432,15 +430,8 @@ class AppriseConfig(object):
 
     def __bool__(self):
         """
-        Allows the Apprise object to be wrapped in an Python 3.x based 'if
-        statement'.  True is returned if at least one service has been loaded.
-        """
-        return True if self.configs else False
-
-    def __nonzero__(self):
-        """
-        Allows the Apprise object to be wrapped in an Python 2.x based 'if
-        statement'.  True is returned if at least one service has been loaded.
+        Allows the Apprise object to be wrapped in an 'if statement'.
+        True is returned if at least one service has been loaded.
         """
         return True if self.configs else False
 

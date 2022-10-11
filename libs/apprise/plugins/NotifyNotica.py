@@ -37,7 +37,6 @@
 #       notica://abc123
 #
 import re
-import six
 import requests
 
 from .NotifyBase import NotifyBase
@@ -47,7 +46,7 @@ from ..utils import validate_regex
 from ..AppriseLocale import gettext_lazy as _
 
 
-class NoticaMode(object):
+class NoticaMode:
     """
     Tracks if we're accessing the notica upstream server or a locally hosted
     one.
@@ -176,7 +175,7 @@ class NotifyNotica(NotifyBase):
 
         # prepare our fullpath
         self.fullpath = kwargs.get('fullpath')
-        if not isinstance(self.fullpath, six.string_types):
+        if not isinstance(self.fullpath, str):
             self.fullpath = '/'
 
         self.headers = {}
@@ -364,13 +363,11 @@ class NotifyNotica(NotifyBase):
                 '/' if not entries else '/{}/'.format('/'.join(entries))
 
             # Add our headers that the user can potentially over-ride if they
-            # wish to to our returned result set
-            results['headers'] = results['qsd+']
-            if results['qsd-']:
-                results['headers'].update(results['qsd-'])
-                NotifyBase.logger.deprecate(
-                    "minus (-) based Notica header tokens are being "
-                    " removed; use the plus (+) symbol instead.")
+            # wish to to our returned result set and tidy entries by unquoting
+            # them
+            results['headers'] = {
+                NotifyNotica.unquote(x): NotifyNotica.unquote(y)
+                for x, y in results['qsd+'].items()}
 
         return results
 
