@@ -28,6 +28,7 @@ const ChipInput: FunctionComponent<ChipInputProps> = ({ ...props }) => {
         onChange?.([...(value ?? []), query]);
         return query;
       }}
+      buildOption={(value) => value}
     ></MultiSelector>
   );
 };
