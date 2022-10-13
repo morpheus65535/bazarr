@@ -9,7 +9,7 @@ from requests import Session
 from time import sleep
 from math import ceil
 
-from subliminal import Movie, Episode, ProviderError, __short_version__
+from subliminal import Movie, Episode
 from subliminal.exceptions import AuthenticationError, ConfigurationError, DownloadLimitExceeded, ProviderError
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal.subtitle import fix_line_ending
@@ -71,7 +71,7 @@ class AssrtSubtitle(Subtitle):
         params = {'token': self.token, 'id': self.id}
         logger.info('Get subtitle detail: GET /sub/detail %r', params)
         sleep(get_request_delay(self.max_request_per_minute))
-        r = self.session.get(server_url + '/sub/detail', params=params, timeout=10)
+        r = self.session.get(server_url + '/sub/detail', params=params, timeout=15)
         r.raise_for_status()
 
         result = r.json()
@@ -130,16 +130,22 @@ class AssrtProvider(Provider):
 
     def initialize(self):
         self.session.headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")}
-        res = self.session.get(server_url + '/user/quota', params={'token': self.token}, timeout=10)
+        res = self.session.get(server_url + '/user/quota', params={'token': self.token}, timeout=15)
         res.raise_for_status()
+        result = res.json()
+        if 'user' in result and 'quota' in result['user']:
+            self.max_request_per_minute = result['user']['quota']
+
+        if not self.max_request_per_minute:
+            raise ProviderError(f'Cannot get user request quota per minute from provider: {result}')
+
         try:
-            result = res.json()
-        except:
-            self.max_request_per_minute = self.default_max_request_per_minute
+            int(self.max_request_per_minute)
+        except ValueError:
+            raise ProviderError(f'User request quota is not a valid integer: {self.max_request_per_minute}')
         else:
-            if 'user' in result:
-                if 'quota' in result['user']:
-                    self.max_request_per_minute = result['user']['quota']
+            if self.max_request_per_minute <= 0:
+                raise ProviderError(f'User request quota is not a positive integer: {self.max_request_per_minute}')
 
     def terminate(self):
         self.session.close()
@@ -168,7 +174,7 @@ class AssrtProvider(Provider):
         params = {'token': self.token, 'q': query, 'is_file': 1}
         logger.debug('Searching subtitles: GET /sub/search %r', params)
         sleep(get_request_delay(self.max_request_per_minute))
-        res = self.session.get(server_url + '/sub/search', params=params, timeout=10)
+        res = self.session.get(server_url + '/sub/search', params=params, timeout=15)
         res.raise_for_status()
         result = res.json()
 
@@ -200,7 +206,7 @@ class AssrtProvider(Provider):
 
     def download_subtitle(self, subtitle):
         sleep(get_request_delay(self.max_request_per_minute))
-        r = self.session.get(subtitle.download_link, timeout=10)
+        r = self.session.get(subtitle.download_link, timeout=15)
         r.raise_for_status()
 
         subtitle.content = fix_line_ending(r.content)
