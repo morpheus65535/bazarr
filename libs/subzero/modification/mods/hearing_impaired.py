@@ -34,7 +34,7 @@ class HearingImpaired(SubtitleTextModification):
 
         # uppercase text before colon (at least 3 uppercase chars); at start or after a sentence,
         # possibly with a dash in front; ignore anything ending with a quote
-        NReProcessor(re.compile(r'(?u)(?:(?<=^)|(?<=[.\-!?\"\']))([\s\->~]*(?=[A-ZÀ-Ž&+]\s*[A-ZÀ-Ž&+]\s*[A-ZÀ-Ž&+])'
+        NReProcessor(re.compile(r'(?u)(?:(?<=^)|(?<=[.\-!?\"\'])\s)([\s\->~]*(?=[A-ZÀ-Ž&+]\s*[A-ZÀ-Ž&+]\s*[A-ZÀ-Ž&+])'
                                 r'[A-zÀ-ž-_0-9\s\"\'&+()\[\],:]+:(?![\"\'’ʼ❜‘‛”“‟„])(?:\s+|$))(?![0-9])'), "",
                      name="HI_before_colon_caps"),
 
