@@ -1,6 +1,7 @@
 import {
   ColorScheme,
   ColorSchemeProvider,
+  createEmotionCache,
   MantineProvider,
   MantineThemeOverride,
 } from "@mantine/core";
@@ -49,6 +50,8 @@ function useAutoColorScheme() {
   return { colorScheme, setColorScheme, toggleColorScheme };
 }
 
+const emotionCache = createEmotionCache({ key: "bazarr" });
+
 const ThemeProvider: FunctionComponent = ({ children }) => {
   const { colorScheme, toggleColorScheme } = useAutoColorScheme();
 
@@ -61,7 +64,7 @@ const ThemeProvider: FunctionComponent = ({ children }) => {
         withGlobalStyles
         withNormalizeCSS
         theme={{ colorScheme, ...theme }}
-        emotionOptions={{ key: "bazarr" }}
+        emotionCache={emotionCache}
       >
         {children}
       </MantineProvider>

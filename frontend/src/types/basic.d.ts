@@ -17,3 +17,5 @@ type SimpleStateType<T> = [
 ];
 
 type Factory<T> = () => T;
+
+type MantineComp<T, C> = T & Omit<React.ComponentProps<C>, "ref">;

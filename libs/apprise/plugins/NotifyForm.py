@@ -23,7 +23,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import six
 import requests
 
 from .NotifyBase import NotifyBase
@@ -137,11 +136,11 @@ class NotifyForm(NotifyBase):
         super(NotifyForm, self).__init__(**kwargs)
 
         self.fullpath = kwargs.get('fullpath')
-        if not isinstance(self.fullpath, six.string_types):
+        if not isinstance(self.fullpath, str):
             self.fullpath = ''
 
         self.method = self.template_args['method']['default'] \
-            if not isinstance(method, six.string_types) else method.upper()
+            if not isinstance(method, str) else method.upper()
 
         if self.method not in METHODS:
             msg = 'The method specified ({}) is invalid.'.format(method)
@@ -374,17 +373,9 @@ class NotifyForm(NotifyBase):
                               for x, y in results['qsd:'].items()}
 
         # Add our headers that the user can potentially over-ride if they wish
-        # to to our returned result set
-        results['headers'] = results['qsd+']
-        if results['qsd-']:
-            results['headers'].update(results['qsd-'])
-            NotifyBase.logger.deprecate(
-                "minus (-) based Form header tokens are being "
-                " removed; use the plus (+) symbol instead.")
-
-        # Tidy our header entries by unquoting them
+        # to to our returned result set and tidy entries by unquoting them
         results['headers'] = {NotifyForm.unquote(x): NotifyForm.unquote(y)
-                              for x, y in results['headers'].items()}
+                              for x, y in results['qsd+'].items()}
 
         # Set method if not otherwise set
         if 'method' in results['qsd'] and len(results['qsd']['method']):

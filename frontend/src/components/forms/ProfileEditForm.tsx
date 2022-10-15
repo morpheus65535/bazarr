@@ -3,10 +3,10 @@ import { useModals, withModal } from "@/modules/modals";
 import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
+import FormUtils from "@/utilities/form";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import {
   Accordion,
-  Alert,
   Button,
   Checkbox,
   Stack,
@@ -14,7 +14,7 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
-import { useForm } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import ChipInput from "../inputs/ChipInput";
@@ -49,15 +49,14 @@ const ProfileEditForm: FunctionComponent<Props> = ({
 
   const form = useForm({
     initialValues: profile,
-    validationRules: {
-      name: (value) => value.length > 0,
-      items: (value) => value.length > 0,
-    },
-    errorMessages: {
-      items: (
-        <Alert color="yellow" variant="outline">
-          Must contain at lease 1 language
-        </Alert>
+    validate: {
+      name: FormUtils.validation(
+        (value) => value.length > 0,
+        "Must have a name"
+      ),
+      items: FormUtils.validation(
+        (value) => value.length > 0,
+        "Must contain at lease 1 language"
       ),
     },
   });
@@ -239,19 +238,18 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       <Stack>
         <TextInput label="Name" {...form.getInputProps("name")}></TextInput>
         <Accordion
-          offsetIcon={false}
           multiple
-          iconPosition="right"
-          initialItem={0}
+          chevronPosition="right"
+          defaultValue={["Languages"]}
           styles={(theme) => ({
-            contentInner: {
+            content: {
               [theme.fn.smallerThan("md")]: {
                 padding: 0,
               },
             },
           })}
         >
-          <Accordion.Item label="Languages">
+          <Accordion.Item value="Languages">
             <Stack>
               {form.errors.items}
               <SimpleTable
@@ -272,7 +270,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
               ></Selector>
             </Stack>
           </Accordion.Item>
-          <Accordion.Item label="Release Info">
+          <Accordion.Item value="Release Info">
             <Stack>
               <ChipInput
                 label="Must contain"
@@ -295,7 +293,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
               </Text>
             </Stack>
           </Accordion.Item>
-          <Accordion.Item label="Subtitles">
+          <Accordion.Item value="Subtitles">
             <Stack my="xs">
               <Switch
                 label="Use Original Format"

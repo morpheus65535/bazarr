@@ -128,7 +128,11 @@ def _get_language(tags) -> Language:
                 return Language(*extra["language_args"])
 
         try:
-            lang = Language.fromalpha3b(og_lang)
+            if len(og_lang) == 3:
+                lang = Language.fromalpha3b(og_lang)
+            else:
+                lang = Language.fromalpha2(og_lang[:2])
+
             # Test for suffix
             assert lang.alpha2
 

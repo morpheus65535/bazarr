@@ -24,7 +24,6 @@
 # THE SOFTWARE.
 
 import re
-import six
 import requests
 import base64
 
@@ -157,11 +156,11 @@ class NotifyXML(NotifyBase):
 </soapenv:Envelope>"""
 
         self.fullpath = kwargs.get('fullpath')
-        if not isinstance(self.fullpath, six.string_types):
+        if not isinstance(self.fullpath, str):
             self.fullpath = ''
 
         self.method = self.template_args['method']['default'] \
-            if not isinstance(method, six.string_types) else method.upper()
+            if not isinstance(method, str) else method.upper()
 
         if self.method not in METHODS:
             msg = 'The method specified ({}) is invalid.'.format(method)
@@ -284,8 +283,7 @@ class NotifyXML(NotifyBase):
 
                 try:
                     with open(attachment.path, 'rb') as f:
-                        # Output must be in a DataURL format (that's what
-                        # PushSafer calls it):
+                        # Prepare our Attachment in Base64
                         entry = \
                             '<Attachment filename="{}" mimetype="{}">'.format(
                                 NotifyXML.escape_html(
@@ -415,17 +413,9 @@ class NotifyXML(NotifyBase):
                               for x, y in results['qsd:'].items()}
 
         # Add our headers that the user can potentially over-ride if they wish
-        # to to our returned result set
-        results['headers'] = results['qsd+']
-        if results['qsd-']:
-            results['headers'].update(results['qsd-'])
-            NotifyBase.logger.deprecate(
-                "minus (-) based XML header tokens are being "
-                "removed; use the plus (+) symbol instead.")
-
-        # Tidy our header entries by unquoting them
+        # to to our returned result set and tidy entries by unquoting them
         results['headers'] = {NotifyXML.unquote(x): NotifyXML.unquote(y)
-                              for x, y in results['headers'].items()}
+                              for x, y in results['qsd+'].items()}
 
         # Set method if not otherwise set
         if 'method' in results['qsd'] and len(results['qsd']['method']):

@@ -1,7 +1,6 @@
 # coding=utf-8
 
-from flask import request
-from flask_restful import Resource
+from flask_restx import Resource, Namespace, reqparse
 
 from app.database import TableEpisodes, TableShows
 from subtitles.mass_download import episode_download_subtitles
@@ -11,10 +10,23 @@ from utilities.path_mappings import path_mappings
 from ..utils import authenticate
 
 
+api_ns_webhooks_sonarr = Namespace('Webhooks Sonarr', description='Webhooks to trigger subtitles search based on '
+                                                                  'Sonarr episode file ID')
+
+
+@api_ns_webhooks_sonarr.route('webhooks/sonarr')
 class WebHooksSonarr(Resource):
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('sonarr_episodefile_id', type=int, required=True, help='Episode file ID')
+
     @authenticate
+    @api_ns_webhooks_sonarr.doc(parser=post_request_parser)
+    @api_ns_webhooks_sonarr.response(200, 'Success')
+    @api_ns_webhooks_sonarr.response(401, 'Not Authenticated')
     def post(self):
-        episode_file_id = request.form.get('sonarr_episodefile_id')
+        """Search for missing subtitles for a specific episode file id"""
+        args = self.post_request_parser.parse_args()
+        episode_file_id = args.get('sonarr_episodefile_id')
 
         sonarrEpisodeId = TableEpisodes.select(TableEpisodes.sonarrEpisodeId,
                                                TableEpisodes.path) \

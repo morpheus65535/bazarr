@@ -24,27 +24,55 @@
 # THE SOFTWARE.
 
 import re
-import six
+import sys
 import json
 import contextlib
 import os
+import hashlib
 from itertools import chain
 from os.path import expanduser
 from functools import reduce
-from .common import MATCH_ALL_TAG
-from .common import MATCH_ALWAYS_TAG
+from . import common
+from .logger import logger
 
-try:
-    # Python 2.7
-    from urllib import unquote
-    from urllib import quote
-    from urlparse import urlparse
+from urllib.parse import unquote
+from urllib.parse import quote
+from urllib.parse import urlparse
+from urllib.parse import urlencode as _urlencode
 
-except ImportError:
-    # Python 3.x
-    from urllib.parse import unquote
-    from urllib.parse import quote
-    from urllib.parse import urlparse
+import importlib.util
+
+
+def import_module(path, name):
+    """
+    Load our module based on path
+    """
+    # if path.endswith('test_module_detection0/a/hook.py'):
+    #     import pdb
+    #     pdb.set_trace()
+
+    spec = importlib.util.spec_from_file_location(name, path)
+    try:
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+
+        spec.loader.exec_module(module)
+
+    except Exception as e:
+        # module isn't loadable
+        del sys.modules[name]
+        module = None
+
+        logger.debug(
+            'Custom module exception raised from %s (name=%s) %s',
+            path, name, str(e))
+
+    return module
+
+
+# Hash of all paths previously scanned so we don't waste effort/overhead doing
+# it again
+PATHS_PREVIOUSLY_SCANNED = set()
 
 # URL Indexing Table for returns via parse_url()
 # The below accepts and scans for:
@@ -107,6 +135,13 @@ NOTIFY_CUSTOM_COLON_TOKENS = re.compile(r'^:(?P<key>.*)\s*')
 # Used for attempting to acquire the schema if the URL can't be parsed.
 GET_SCHEMA_RE = re.compile(r'\s*(?P<schema>[a-z0-9]{2,9})://.*$', re.I)
 
+# Used for validating that a provided entry is indeed a schema
+# this is slightly different then the GET_SCHEMA_RE above which
+# insists the schema is only valid with a :// entry.  this one
+# extrapolates the individual entries
+URL_DETAILS_RE = re.compile(
+    r'\s*(?P<schema>[a-z0-9]{2,9})(://(?P<base>.*))?$', re.I)
+
 # Regular expression based and expanded from:
 # http://www.regular-expressions.info/email.html
 # Extended to support colon (:) delimiter for parsing names from the URL
@@ -167,7 +202,7 @@ UUID4_RE = re.compile(
 REGEX_VALIDATE_LOOKUP = {}
 
 
-class TemplateType(object):
+class TemplateType:
     """
     Defines the different template types we can perform parsing on
     """
@@ -294,7 +329,7 @@ def is_uuid(uuid):
     return True if match else False
 
 
-def is_phone_no(phone, min_len=11):
+def is_phone_no(phone, min_len=10):
     """Determine if the specified entry is a phone number
 
     Args:
@@ -477,16 +512,14 @@ def tidy_path(path):
     # Windows
     path = TIDY_WIN_PATH_RE.sub('\\1', path.strip())
     # Linux
-    path = TIDY_NUX_PATH_RE.sub('\\1', path.strip())
+    path = TIDY_NUX_PATH_RE.sub('\\1', path)
 
-    # Linux Based Trim
-    path = TIDY_NUX_TRIM_RE.sub('\\1', path.strip())
-    # Windows Based Trim
-    path = expanduser(TIDY_WIN_TRIM_RE.sub('\\1', path.strip()))
+    # Windows Based (final) Trim
+    path = expanduser(TIDY_WIN_TRIM_RE.sub('\\1', path))
     return path
 
 
-def parse_qsd(qs):
+def parse_qsd(qs, simple=False):
     """
     Query String Dictionary Builder
 
@@ -505,6 +538,9 @@ def parse_qsd(qs):
 
     This function returns a result object that fits with the apprise
     expected parameters (populating the 'qsd' portion of the dictionary
+
+    if simple is set to true, then a ONE dictionary is returned and is not
+    sub-parsed for additional elements
     """
 
     # Our return result set:
@@ -520,7 +556,7 @@ def parse_qsd(qs):
         'qsd+': {},
         'qsd-': {},
         'qsd:': {},
-    }
+    } if not simple else {'qsd': {}}
 
     pairs = [s2 for s1 in qs.split('&') for s2 in s1.split(';')]
     for name_value in pairs:
@@ -547,6 +583,10 @@ def parse_qsd(qs):
         # content is always made lowercase for easy indexing
         result['qsd'][key.lower().strip()] = val
 
+        if simple:
+            # move along
+            continue
+
         # Check for tokens that start with a addition/plus symbol (+)
         k = NOTIFY_CUSTOM_ADD_TOKENS.match(key)
         if k is not None:
@@ -568,7 +608,8 @@ def parse_qsd(qs):
     return result
 
 
-def parse_url(url, default_schema='http', verify_host=True, strict_port=False):
+def parse_url(url, default_schema='http', verify_host=True, strict_port=False,
+              simple=False):
     """A function that greatly simplifies the parsing of a url
     specified by the end user.
 
@@ -590,9 +631,42 @@ def parse_url(url, default_schema='http', verify_host=True, strict_port=False):
      The function returns a simple dictionary with all of
      the parsed content within it and returns 'None' if the
      content could not be extracted.
+
+     The output of 'http://hostname' would look like:
+        {
+          'schema': 'http',
+          'url': 'http://hostname',
+          'host': 'hostname',
+
+          'user': None,
+          'password': None,
+          'port': None,
+          'fullpath': None,
+          'path': None,
+          'query': None,
+
+          'qsd': {},
+
+          'qsd+': {},
+          'qsd-': {},
+          'qsd:': {}
+        }
+
+     The simple switch cleans the dictionary response to only include the
+     fields that were detected.
+
+     The output of 'http://hostname' with the simple flag set would look like:
+        {
+          'schema': 'http',
+          'url': 'http://hostname',
+          'host': 'hostname',
+        }
+
+     If the URL can't be parsed then None is returned
+
     """
 
-    if not isinstance(url, six.string_types):
+    if not isinstance(url, str):
         # Simple error checking
         return None
 
@@ -628,7 +702,7 @@ def parse_url(url, default_schema='http', verify_host=True, strict_port=False):
         'qsd+': {},
         'qsd-': {},
         'qsd:': {},
-    }
+    } if not simple else {}
 
     qsdata = ''
     match = VALID_URL_RE.search(url)
@@ -648,7 +722,7 @@ def parse_url(url, default_schema='http', verify_host=True, strict_port=False):
     # Parse Query Arugments ?val=key&key=val
     # while ensuring that all keys are lowercase
     if qsdata:
-        result.update(parse_qsd(qsdata))
+        result.update(parse_qsd(qsdata, simple=simple))
 
     # Now do a proper extraction of data; http:// is just substitued in place
     # to allow urlparse() to function as expected, we'll swap this back to the
@@ -671,8 +745,12 @@ def parse_url(url, default_schema='http', verify_host=True, strict_port=False):
         pass
 
     if not result['fullpath']:
-        # Default
-        result['fullpath'] = None
+        if not simple:
+            # Default
+            result['fullpath'] = None
+        else:
+            # Remove entry
+            del result['fullpath']
 
     else:
         # Using full path, extract query from path
@@ -680,7 +758,11 @@ def parse_url(url, default_schema='http', verify_host=True, strict_port=False):
         result['path'] = match.group('path')
         result['query'] = match.group('query')
         if not result['query']:
-            result['query'] = None
+            if not simple:
+                result['query'] = None
+            else:
+                del result['query']
+
     try:
         (result['user'], result['host']) = \
             re.split(r'[@]+', result['host'])[:2]
@@ -690,7 +772,7 @@ def parse_url(url, default_schema='http', verify_host=True, strict_port=False):
         # and it's already assigned
         pass
 
-    if result['user'] is not None:
+    if result.get('user') is not None:
         try:
             (result['user'], result['password']) = \
                 re.split(r'[:]+', result['user'])[:2]
@@ -724,6 +806,9 @@ def parse_url(url, default_schema='http', verify_host=True, strict_port=False):
                 # Invalid Host Specified
                 return None
 
+    # Acquire our port (if defined)
+    _port = result.get('port')
+
     if verify_host:
         # Verify and Validate our hostname
         result['host'] = is_hostname(result['host'])
@@ -733,15 +818,14 @@ def parse_url(url, default_schema='http', verify_host=True, strict_port=False):
             return None
 
         # Max port is 65535 and min is 1
-        if isinstance(result['port'], int) and not ((
+        if isinstance(_port, int) and not ((
             not strict_port or (
-                strict_port and
-                result['port'] > 0 and result['port'] <= 65535))):
+                strict_port and _port > 0 and _port <= 65535))):
 
             # An invalid port was specified
             return None
 
-    elif pmatch and not isinstance(result['port'], int):
+    elif pmatch and not isinstance(_port, int):
         if strict_port:
             # Store port
             result['port'] = pmatch.group('port').strip()
@@ -754,25 +838,33 @@ def parse_url(url, default_schema='http', verify_host=True, strict_port=False):
 
     # Re-assemble cleaned up version of the url
     result['url'] = '%s://' % result['schema']
-    if isinstance(result['user'], six.string_types):
+    if isinstance(result.get('user'), str):
         result['url'] += result['user']
 
-        if isinstance(result['password'], six.string_types):
+        if isinstance(result.get('password'), str):
             result['url'] += ':%s@' % result['password']
 
         else:
             result['url'] += '@'
     result['url'] += result['host']
 
-    if result['port'] is not None:
+    if result.get('port') is not None:
         try:
             result['url'] += ':%d' % result['port']
 
         except TypeError:
             result['url'] += ':%s' % result['port']
 
-    if result['fullpath']:
+    elif 'port' in result and simple:
+        # Eliminate empty fields
+        del result['port']
+
+    if result.get('fullpath'):
         result['url'] += result['fullpath']
+
+    if simple and not result['host']:
+        # simple mode does not carry over empty host names
+        del result['host']
 
     return result
 
@@ -784,7 +876,7 @@ def parse_bool(arg, default=False):
     If the content could not be parsed, then the default is returned.
     """
 
-    if isinstance(arg, six.string_types):
+    if isinstance(arg, str):
         # no = no - False
         # of = short for off - False
         # 0  = int for False
@@ -814,20 +906,15 @@ def parse_bool(arg, default=False):
     return bool(arg)
 
 
-def parse_phone_no(*args, **kwargs):
+def parse_phone_no(*args, store_unparseable=True, **kwargs):
     """
     Takes a string containing phone numbers separated by comma's and/or spaces
     and returns a list.
     """
 
-    # for Python 2.7 support, store_unparsable is not in the url above
-    # as just parse_emails(*args, store_unparseable=True) since it is
-    # an invalid syntax.  This is the workaround to be backards compatible:
-    store_unparseable = kwargs.get('store_unparseable', True)
-
     result = []
     for arg in args:
-        if isinstance(arg, six.string_types) and arg:
+        if isinstance(arg, str) and arg:
             _result = PHONE_NO_DETECTION_RE.findall(arg)
             if _result:
                 result += _result
@@ -851,20 +938,15 @@ def parse_phone_no(*args, **kwargs):
     return result
 
 
-def parse_call_sign(*args, **kwargs):
+def parse_call_sign(*args, store_unparseable=True, **kwargs):
     """
     Takes a string containing ham radio call signs separated by
     comma and/or spacesand returns a list.
     """
 
-    # for Python 2.7 support, store_unparsable is not in the url above
-    # as just parse_emails(*args, store_unparseable=True) since it is
-    # an invalid syntax.  This is the workaround to be backards compatible:
-    store_unparseable = kwargs.get('store_unparseable', True)
-
     result = []
     for arg in args:
-        if isinstance(arg, six.string_types) and arg:
+        if isinstance(arg, str) and arg:
             _result = CALL_SIGN_DETECTION_RE.findall(arg)
             if _result:
                 result += _result
@@ -888,20 +970,15 @@ def parse_call_sign(*args, **kwargs):
     return result
 
 
-def parse_emails(*args, **kwargs):
+def parse_emails(*args, store_unparseable=True, **kwargs):
     """
     Takes a string containing emails separated by comma's and/or spaces and
     returns a list.
     """
 
-    # for Python 2.7 support, store_unparsable is not in the url above
-    # as just parse_emails(*args, store_unparseable=True) since it is
-    # an invalid syntax.  This is the workaround to be backards compatible:
-    store_unparseable = kwargs.get('store_unparseable', True)
-
     result = []
     for arg in args:
-        if isinstance(arg, six.string_types) and arg:
+        if isinstance(arg, str) and arg:
             _result = EMAIL_DETECTION_RE.findall(arg)
             if _result:
                 result += _result
@@ -924,20 +1001,15 @@ def parse_emails(*args, **kwargs):
     return result
 
 
-def parse_urls(*args, **kwargs):
+def parse_urls(*args, store_unparseable=True, **kwargs):
     """
     Takes a string containing URLs separated by comma's and/or spaces and
     returns a list.
     """
 
-    # for Python 2.7 support, store_unparsable is not in the url above
-    # as just parse_urls(*args, store_unparseable=True) since it is
-    # an invalid syntax.  This is the workaround to be backards compatible:
-    store_unparseable = kwargs.get('store_unparseable', True)
-
     result = []
     for arg in args:
-        if isinstance(arg, six.string_types) and arg:
+        if isinstance(arg, str) and arg:
             _result = URL_DETECTION_RE.findall(arg)
             if _result:
                 result += _result
@@ -958,6 +1030,75 @@ def parse_urls(*args, **kwargs):
             result += parse_urls(*arg, store_unparseable=store_unparseable)
 
     return result
+
+
+def url_assembly(**kwargs):
+    """
+    This function reverses the parse_url() function by taking in the provided
+    result set and re-assembling a URL
+
+    """
+    # Determine Authentication
+    auth = ''
+    if kwargs.get('user') is not None and \
+            kwargs.get('password') is not None:
+
+        auth = '{user}:{password}@'.format(
+            user=quote(kwargs.get('user'), safe=''),
+            password=quote(kwargs.get('password'), safe=''),
+        )
+
+    elif kwargs.get('user') is not None:
+        auth = '{user}@'.format(
+            user=quote(kwargs.get('user'), safe=''),
+        )
+
+    return '{schema}://{auth}{hostname}{port}{fullpath}{params}'.format(
+        schema='' if not kwargs.get('schema') else kwargs.get('schema'),
+        auth=auth,
+        # never encode hostname since we're expecting it to be a valid one
+        hostname='' if not kwargs.get('host') else kwargs.get('host', ''),
+        port='' if not kwargs.get('port')
+        else ':{}'.format(kwargs.get('port')),
+        fullpath=quote(kwargs.get('fullpath', ''), safe='/'),
+        params='' if not kwargs.get('qsd')
+        else '?{}'.format(urlencode(kwargs.get('qsd'))),
+    )
+
+
+def urlencode(query, doseq=False, safe='', encoding=None, errors=None):
+    """Convert a mapping object or a sequence of two-element tuples
+
+    Wrapper to Python's unquote while remaining compatible with both
+    Python 2 & 3 since the reference to this function changed between
+    versions.
+
+    The resulting string is a series of key=value pairs separated by '&'
+    characters, where both key and value are quoted using the quote()
+    function.
+
+    Note: If the dictionary entry contains an entry that is set to None
+          it is not included in the final result set. If you want to
+          pass in an empty variable, set it to an empty string.
+
+    Args:
+        query (str): The dictionary to encode
+        doseq (:obj:`bool`, optional): Handle sequences
+        safe (:obj:`str`): non-ascii characters and URI specific ones that
+            you do not wish to escape (if detected). Setting this string
+            to an empty one causes everything to be escaped.
+        encoding (:obj:`str`, optional): encoding type
+        errors (:obj:`str`, errors): how to handle invalid character found
+            in encoded string (defined by encoding)
+
+    Returns:
+        str: The escaped parameters returned as a string
+    """
+    # Tidy query by eliminating any records set to None
+    _query = {k: v for (k, v) in query.items() if v is not None}
+    return _urlencode(
+        _query, doseq=doseq, safe=safe, encoding=encoding,
+        errors=errors)
 
 
 def parse_list(*args):
@@ -983,7 +1124,7 @@ def parse_list(*args):
 
     result = []
     for arg in args:
-        if isinstance(arg, six.string_types):
+        if isinstance(arg, str):
             result += re.split(STRING_DELIMITERS, arg)
 
         elif isinstance(arg, (set, list, tuple)):
@@ -992,14 +1133,15 @@ def parse_list(*args):
     #
     # filter() eliminates any empty entries
     #
-    # Since Python v3 returns a filter (iterator) where-as Python v2 returned
+    # Since Python v3 returns a filter (iterator) whereas Python v2 returned
     # a list, we need to change it into a list object to remain compatible with
     # both distribution types.
+    # TODO: Review after dropping support for Python 2.
     return sorted([x for x in filter(bool, list(set(result)))])
 
 
-def is_exclusive_match(logic, data, match_all=MATCH_ALL_TAG,
-                       match_always=MATCH_ALWAYS_TAG):
+def is_exclusive_match(logic, data, match_all=common.MATCH_ALL_TAG,
+                       match_always=common.MATCH_ALWAYS_TAG):
     """
 
     The data variable should always be a set of strings that the logic can be
@@ -1020,7 +1162,7 @@ def is_exclusive_match(logic, data, match_all=MATCH_ALL_TAG,
     to all specified logic searches.
     """
 
-    if isinstance(logic, six.string_types):
+    if isinstance(logic, str):
         # Update our logic to support our delimiters
         logic = set(parse_list(logic))
 
@@ -1043,7 +1185,7 @@ def is_exclusive_match(logic, data, match_all=MATCH_ALL_TAG,
 
     # Every entry here will be or'ed with the next
     for entry in logic:
-        if not isinstance(entry, (six.string_types, list, tuple, set)):
+        if not isinstance(entry, (str, list, tuple, set)):
             # Garbage entry in our logic found
             return False
 
@@ -1109,7 +1251,7 @@ def validate_regex(value, regex=r'[^\s]+', flags=re.I, strip=True, fmt=None):
             'x': re.X,
         }
 
-        if isinstance(flags, six.string_types):
+        if isinstance(flags, str):
             # Convert a string of regular expression flags into their
             # respected integer (expected) Python values and perform
             # a bit-wise or on each match found:
@@ -1164,7 +1306,7 @@ def cwe312_word(word, force=False, advanced=True, threshold=5):
     reached, then content is considered secret
     """
 
-    class Variance(object):
+    class Variance:
         """
         A Simple List of Possible Character Variances
         """
@@ -1177,7 +1319,7 @@ def cwe312_word(word, force=False, advanced=True, threshold=5):
         # A Numerical Character (1234... etc)
         NUMERIC = 'n'
 
-    if not (isinstance(word, six.string_types) and word.strip()):
+    if not (isinstance(word, str) and word.strip()):
         # not a password if it's not something we even support
         return word
 
@@ -1379,3 +1521,161 @@ def apply_template(template, app_mode=TemplateType.RAW, **kwargs):
     # to drop the '{{' and '}}' surrounding our match so that we can
     # re-index it back into our list
     return mask_r.sub(lambda x: fn(kwargs[x.group()[2:-2].strip()]), template)
+
+
+def remove_suffix(value, suffix):
+    """
+    Removes a suffix from the end of a string.
+    """
+    return value[:-len(suffix)] if value.endswith(suffix) else value
+
+
+def module_detection(paths, cache=True):
+    """
+    Iterates over a defined path for apprise decorators to load such as
+    @notify.
+
+    """
+
+    # A simple restriction that we don't allow periods in the filename at all
+    # so it can't be hidden (Linux OS's) and it won't conflict with Python
+    # path naming.  This also prevents us from loading any python file that
+    # starts with an underscore or dash
+    # We allow __init__.py as well
+    module_re = re.compile(
+        r'^(?P<name>[_a-z0-9][a-z0-9._-]+)?(\.py)?$', re.I)
+
+    if isinstance(paths, str):
+        paths = [paths, ]
+
+    if not paths or not isinstance(paths, (tuple, list)):
+        # We're done
+        return None
+
+    def _import_module(path):
+        # Since our plugin name can conflict (as a module) with another
+        # we want to generate random strings to avoid steping on
+        # another's namespace
+        module_name = hashlib.sha1(path.encode('utf-8')).hexdigest()
+        module_pyname = "{prefix}.{name}".format(
+            prefix='apprise.custom.module', name=module_name)
+
+        if module_pyname in common.NOTIFY_CUSTOM_MODULE_MAP:
+            # First clear out existing entries
+            for schema in common.\
+                    NOTIFY_CUSTOM_MODULE_MAP[module_pyname]['notify'] \
+                    .keys():
+                # Remove any mapped modules to this file
+                del common.NOTIFY_SCHEMA_MAP[schema]
+
+            # Reset
+            del common.NOTIFY_CUSTOM_MODULE_MAP[module_pyname]
+
+        # Load our module
+        module = import_module(path, module_pyname)
+        if not module:
+            # No problem, we can't use this object
+            logger.warning('Failed to load custom module: %s', _path)
+            return None
+
+        # Print our loaded modules if any
+        if module_pyname in common.NOTIFY_CUSTOM_MODULE_MAP:
+            logger.debug(
+                'Loaded custom module: %s (name=%s)',
+                _path, module_name)
+
+            for schema, meta in common.\
+                    NOTIFY_CUSTOM_MODULE_MAP[module_pyname]['notify']\
+                    .items():
+
+                logger.info('Loaded custom notification: %s://', schema)
+        else:
+            # The code reaches here if we successfully loaded the Python
+            # module but no hooks/triggers were found. So we can safely
+            # just remove/ignore this entry
+            del sys.modules[module_pyname]
+            return None
+
+        # end of _import_module()
+        return None
+
+    for _path in paths:
+        path = os.path.abspath(os.path.expanduser(_path))
+        if (cache and path in PATHS_PREVIOUSLY_SCANNED) \
+                or not os.path.exists(path):
+            # We're done as we've already scanned this
+            continue
+
+        # Store our path as a way of hashing it has been handled
+        PATHS_PREVIOUSLY_SCANNED.add(path)
+
+        if os.path.isdir(path) and not \
+                os.path.isfile(os.path.join(path, '__init__.py')):
+
+            logger.debug('Scanning for custom plugins in: %s', path)
+            for entry in os.listdir(path):
+                re_match = module_re.match(entry)
+                if not re_match:
+                    # keep going
+                    logger.trace('Plugin Scan: Ignoring %s', entry)
+                    continue
+
+                new_path = os.path.join(path, entry)
+                if os.path.isdir(new_path):
+                    # Update our path
+                    new_path = os.path.join(path, entry, '__init__.py')
+                    if not os.path.isfile(new_path):
+                        logger.trace(
+                            'Plugin Scan: Ignoring %s',
+                            os.path.join(path, entry))
+                        continue
+
+                if not cache or \
+                        (cache and new_path not in PATHS_PREVIOUSLY_SCANNED):
+                    # Load our module
+                    _import_module(new_path)
+
+                    # Add our subdir path
+                    PATHS_PREVIOUSLY_SCANNED.add(new_path)
+        else:
+            if os.path.isdir(path):
+                # This logic is safe to apply because we already validated
+                # the directories state above; update our path
+                path = os.path.join(path, '__init__.py')
+                if cache and path in PATHS_PREVIOUSLY_SCANNED:
+                    continue
+
+                PATHS_PREVIOUSLY_SCANNED.add(path)
+
+            # directly load as is
+            re_match = module_re.match(os.path.basename(path))
+            # must be a match and must have a .py extension
+            if not re_match or not re_match.group(1):
+                # keep going
+                logger.trace('Plugin Scan: Ignoring %s', path)
+                continue
+
+            # Load our module
+            _import_module(path)
+
+        return None
+
+
+def dict_full_update(dict1, dict2):
+    """
+    Takes 2 dictionaries (dict1 and dict2) that contain sub-dictionaries and
+    gracefully merges them into dict1.
+
+    This is similar to: dict1.update(dict2) except that internal dictionaries
+    are also recursively applied.
+    """
+    def _merge(dict1, dict2):
+        for k in dict2:
+            if k in dict1 and isinstance(dict1[k], dict) \
+                    and isinstance(dict2[k], dict):
+                _merge(dict1[k], dict2[k])
+            else:
+                dict1[k] = dict2[k]
+
+    _merge(dict1, dict2)
+    return

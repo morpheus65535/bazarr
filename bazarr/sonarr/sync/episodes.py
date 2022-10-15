@@ -198,7 +198,7 @@ def sync_one_episode(episode_id, defer_search=False):
                                                       episode_file_id=episode_data['episodeFileId'])
             episode = episodeParser(episode_data)
     except Exception:
-        logging.debug('BAZARR cannot get episode returned by SignalR feed from Sonarr API.')
+        logging.exception('BAZARR cannot get episode returned by SignalR feed from Sonarr API.')
         return
 
     # Drop useless events

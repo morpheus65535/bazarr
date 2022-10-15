@@ -37,7 +37,7 @@ def update_series(send_event=True):
 
     # Get shows data from Sonarr
     series = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr)
-    if not series:
+    if not isinstance(series, list):
         return
     else:
         # Get current shows in DB
@@ -100,7 +100,8 @@ def update_series(send_event=True):
                                          TableShows.alternateTitles,
                                          TableShows.tags,
                                          TableShows.seriesType,
-                                         TableShows.imdbId).dicts()
+                                         TableShows.imdbId,
+                                         TableShows.monitored).dicts()
 
         for item in series_in_db:
             series_in_db_list.append(item)
@@ -181,15 +182,15 @@ def update_one_series(series_id, action):
             return
         else:
             if action == 'updated' and existing_series:
-                series = seriesParser(series_data, action='update', tags_dict=tagsDict,
+                series = seriesParser(series_data[0], action='update', tags_dict=tagsDict,
                                       serie_default_profile=serie_default_profile,
                                       audio_profiles=audio_profiles)
             elif action == 'updated' and not existing_series:
-                series = seriesParser(series_data, action='insert', tags_dict=tagsDict,
+                series = seriesParser(series_data[0], action='insert', tags_dict=tagsDict,
                                       serie_default_profile=serie_default_profile,
                                       audio_profiles=audio_profiles)
     except Exception:
-        logging.debug('BAZARR cannot parse series returned by SignalR feed.')
+        logging.exception('BAZARR cannot get series returned by SignalR feed from Sonarr API.')
         return
 
     # Update existing series in DB

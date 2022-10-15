@@ -84,13 +84,8 @@ class GestdownProvider(Provider):
         self._session.close()
 
     def _subtitles_search(self, video, language: Language):
-        json_data = {
-            "search": f"{video.series} S{video.season:02}E{video.episode:02}",
-            "language": self._converter.convert(language.alpha3),
-        }
-
-        logger.debug("Post data: %s", json_data)
-        response = self._session.post(f"{_BASE_URL}/subtitles/search", json=json_data)
+        lang = self._converter.convert(language.alpha3)
+        response = self._session.get(f"{_BASE_URL}/subtitles/find/{lang}/{video.series}/{video.season}/{video.episode}")
 
         # TODO: implement rate limiting
         response.raise_for_status()
@@ -109,9 +104,24 @@ class GestdownProvider(Provider):
             logger.debug("Found subtitle: %s", sub)
             yield sub
 
+    def _show_exists(self, video):
+        try:
+            response = self._session.get(f"{_BASE_URL}/shows/search/{video.series}")
+            response.raise_for_status()
+            return True
+        except HTTPError as error:
+            if error.response.status_code == 404:
+                return False
+            raise
+
+
     @_retry_on_423
     def list_subtitles(self, video, languages):
         subtitles = []
+        if not self._show_exists(video):
+            logger.debug("Couldn't find the show")
+            return subtitles
+
         for language in languages:
             try:
                 subtitles += self._subtitles_search(video, language)

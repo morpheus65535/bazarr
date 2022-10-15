@@ -1,5 +1,5 @@
 import { Language } from "@/components/bazarr";
-import { BuildKey, isMovie } from "@/utilities";
+import { BuildKey } from "@/utilities";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
@@ -26,15 +26,14 @@ import {
   createStyles,
   Grid,
   Group,
+  HoverCard,
   Image,
   List,
   MediaQuery,
-  Popover,
   Stack,
   Text,
   Title,
 } from "@mantine/core";
-import { useHover } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
 
 interface Props {
@@ -138,8 +137,6 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     return badges;
   }, [profile, profileItems]);
 
-  const { ref, hovered } = useHover();
-
   return (
     <BackgroundImage src={item?.fanart ?? ""}>
       <Grid
@@ -168,37 +165,32 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             <Group align="flex-start" noWrap className={classes.group}>
               <Title my={0}>
                 <Text inherit color="white">
-                  {item && isMovie(item) ? (
-                    <Box component="span" mr={12}>
-                      <FontAwesomeIcon
-                        title={item.monitored ? "monitored" : "unmonitored"}
-                        icon={item.monitored ? faBookmark : farBookmark}
-                      ></FontAwesomeIcon>
-                    </Box>
-                  ) : null}
+                  <Box component="span" mr={12}>
+                    <FontAwesomeIcon
+                      title={item?.monitored ? "unmonitored" : "monitored"}
+                      icon={item?.monitored ? faBookmark : farBookmark}
+                    ></FontAwesomeIcon>
+                  </Box>
                   {item?.title}
                 </Text>
               </Title>
-              <Popover
-                opened={hovered}
-                position="bottom"
-                withArrow
-                target={
+              <HoverCard position="bottom" withArrow>
+                <HoverCard.Target>
                   <Text
                     hidden={item?.alternativeTitles.length === 0}
                     color="white"
-                    ref={ref}
                   >
                     <FontAwesomeIcon icon={faClone} />
                   </Text>
-                }
-              >
-                <List>
-                  {item?.alternativeTitles.map((v, idx) => (
-                    <List.Item key={BuildKey(idx, v)}>{v}</List.Item>
-                  ))}
-                </List>
-              </Popover>
+                </HoverCard.Target>
+                <HoverCard.Dropdown>
+                  <List>
+                    {item?.alternativeTitles.map((v, idx) => (
+                      <List.Item key={BuildKey(idx, v)}>{v}</List.Item>
+                    ))}
+                  </List>
+                </HoverCard.Dropdown>
+              </HoverCard>
             </Group>
             <Group spacing="xs" className={classes.group}>
               {detailBadges}
@@ -219,17 +211,23 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   );
 };
 
-type ItemBadgeProps = Omit<BadgeProps<"div">, "leftSection"> & {
+type ItemBadgeProps = Omit<BadgeProps, "leftSection"> & {
   icon: IconDefinition;
+  title?: string;
 };
 
-const ItemBadge: FunctionComponent<ItemBadgeProps> = ({ icon, ...props }) => (
+const ItemBadge: FunctionComponent<ItemBadgeProps> = ({
+  icon,
+  title,
+  ...props
+}) => (
   <Badge
     leftSection={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
     radius="sm"
     color="dark"
     size="sm"
     style={{ textTransform: "none" }}
+    aria-label={title}
     {...props}
   ></Badge>
 );

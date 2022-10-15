@@ -7,6 +7,7 @@ import { useModals, withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
 import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
+import FormUtils from "@/utilities/form";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
@@ -27,7 +28,7 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
-import { useForm } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
 import { isString } from "lodash";
 import { FunctionComponent, useEffect, useMemo } from "react";
 import { Column } from "react-table";
@@ -125,15 +126,18 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
           validateResult: validator(file),
         })),
     },
-    validationRules: {
-      files: (values) =>
-        values.find(
-          (v) =>
-            v.language === null ||
-            v.episode === null ||
-            v.validateResult === undefined ||
-            v.validateResult.state === "error"
-        ) === undefined,
+    validate: {
+      files: FormUtils.validation(
+        (values) =>
+          values.find(
+            (v) =>
+              v.language === null ||
+              v.episode === null ||
+              v.validateResult === undefined ||
+              v.validateResult.state === "error"
+          ) === undefined,
+        "Some files cannot be uploaded, please check"
+      ),
     },
   });
 

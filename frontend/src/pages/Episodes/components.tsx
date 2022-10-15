@@ -2,7 +2,7 @@ import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import { task, TaskGroup } from "@/modules/task";
-import { Badge, FloatingTooltip, MantineColor } from "@mantine/core";
+import { Badge, MantineColor, Tooltip } from "@mantine/core";
 import { FunctionComponent, useMemo, useState } from "react";
 
 interface Props {
@@ -49,11 +49,20 @@ export const Subtitle: FunctionComponent<Props> = ({
     return list;
   }, [episodeId, subtitle.code2, subtitle.path]);
 
+  const ctx = (
+    <Badge color={color}>
+      <Language.Text value={subtitle} long={false}></Language.Text>
+    </Badge>
+  );
+
+  if (disabled) {
+    return <Tooltip.Floating label="Embedded Subtitle">{ctx}</Tooltip.Floating>;
+  }
+
   return (
     <SubtitleToolsMenu
       menu={{
         trigger: "hover",
-        opened: disabled ? false : undefined,
         onOpen: () => setOpen(true),
         onClose: () => setOpen(false),
       }}
@@ -93,11 +102,7 @@ export const Subtitle: FunctionComponent<Props> = ({
         }
       }}
     >
-      <FloatingTooltip label="Embedded Subtitle" disabled={!disabled}>
-        <Badge color={color}>
-          <Language.Text value={subtitle} long={false}></Language.Text>
-        </Badge>
-      </FloatingTooltip>
+      {ctx}
     </SubtitleToolsMenu>
   );
 };

@@ -5,8 +5,7 @@ import requests
 import os
 import logging
 
-from flask import request
-from flask_restful import Resource
+from flask_restx import Resource, Namespace, reqparse
 from bs4 import BeautifulSoup as bso
 
 from app.database import TableEpisodes, TableShows, TableMovies
@@ -15,15 +14,31 @@ from subtitles.mass_download import episode_download_subtitles, movies_download_
 from ..utils import authenticate
 
 
+api_ns_webhooks_plex = Namespace('Webhooks Plex', description='Webhooks endpoint that can be configured in Plex to '
+                                                              'trigger a subtitles search when playback start.')
+
+
+@api_ns_webhooks_plex.route('webhooks/plex')
 class WebHooksPlex(Resource):
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('payload', type=str, required=True, help='Webhook payload')
+
     @authenticate
+    @api_ns_webhooks_plex.doc(parser=post_request_parser)
+    @api_ns_webhooks_plex.response(200, 'Success')
+    @api_ns_webhooks_plex.response(204, 'Unhandled event')
+    @api_ns_webhooks_plex.response(400, 'No GUID found')
+    @api_ns_webhooks_plex.response(401, 'Not Authenticated')
+    @api_ns_webhooks_plex.response(404, 'IMDB series/movie ID not found')
     def post(self):
-        json_webhook = request.form.get('payload')
+        """Trigger subtitles search on play media event in Plex"""
+        args = self.post_request_parser.parse_args()
+        json_webhook = args.get('payload')
         parsed_json_webhook = json.loads(json_webhook)
 
         event = parsed_json_webhook['event']
         if event not in ['media.play']:
-            return '', 204
+            return 'Unhandled event', 204
 
         media_type = parsed_json_webhook['Metadata']['type']
 

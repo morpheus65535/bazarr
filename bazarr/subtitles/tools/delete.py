@@ -18,6 +18,10 @@ from radarr.notify import notify_radarr
 
 def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_path, sonarr_series_id=None,
                      sonarr_episode_id=None, radarr_id=None):
+    if not subtitles_path:
+        logging.error('No subtitles to delete.')
+        return False
+
     if not os.path.splitext(subtitles_path)[1] in SUBTITLE_EXTENSIONS:
         logging.error('BAZARR can only delete subtitles files.')
         return False

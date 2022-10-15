@@ -1,16 +1,11 @@
 # coding=utf-8
 
-from flask import Blueprint
-from flask_restful import Api
+from .files import api_ns_files
+from .files_sonarr import api_ns_files_sonarr
+from .files_radarr import api_ns_files_radarr
 
-from .files import BrowseBazarrFS
-from .files_sonarr import BrowseSonarrFS
-from .files_radarr import BrowseRadarrFS
-
-
-api_bp_files = Blueprint('api_files', __name__)
-api = Api(api_bp_files)
-
-api.add_resource(BrowseBazarrFS, '/files')
-api.add_resource(BrowseSonarrFS, '/files/sonarr')
-api.add_resource(BrowseRadarrFS, '/files/radarr')
+api_ns_list_files = [
+    api_ns_files,
+    api_ns_files_radarr,
+    api_ns_files_sonarr,
+]

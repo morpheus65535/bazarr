@@ -3,6 +3,7 @@
 import functools
 import logging
 import os
+import re
 import shutil
 import tempfile
 
@@ -182,8 +183,19 @@ class EmbeddedSubtitlesProvider(Provider):
             "series" if isinstance(video, Episode) else "movie",
         )
 
-    def download_subtitle(self, subtitle):
+    def download_subtitle(self, subtitle: EmbeddedSubtitle):
         path = self._get_subtitle_path(subtitle)
+
+        modifiers = _type_modifiers.get(subtitle.stream.codec_name)
+        logger.debug(
+            "Found modifiers for %s type: %s", subtitle.stream.codec_name, modifiers
+        )
+
+        if modifiers is not None:
+            for mod in modifiers:
+                logger.debug("Running %s modifier for %s", mod, path)
+                mod(path, path)
+
         with open(path, "rb") as sub:
             content = sub.read()
             subtitle.content = fix_line_ending(content)
@@ -303,3 +315,28 @@ def _discard_possible_incomplete_subtitles(streams):
 def _get_pretty_release_name(stream, container):
     bname = os.path.basename(container.path)
     return f"{os.path.splitext(bname)[0]}.{stream.suffix}"
+
+
+# TODO: improve this
+_SIGNS_LINE_RE = re.compile(r",([\w|_]{,15}(sign|fx|karaoke))", flags=re.IGNORECASE)
+
+
+def _clean_ass_subtitles(path, output_path):
+    """An attempt to ignore extraneous lines from ASS anime subtitles. Experimental."""
+
+    clean_lines = []
+
+    with open(path, "r") as f:
+        lines = f.readlines()
+        for line in lines:
+            if _SIGNS_LINE_RE.search(line) is None:
+                clean_lines.append(line)
+
+    logger.debug("Cleaned lines: %d", abs(len(lines) - len(clean_lines)))
+
+    with open(output_path, "w") as f:
+        f.writelines(clean_lines)
+        logger.debug("Lines written to output path: %s", output_path)
+
+
+_type_modifiers = {"ass": {_clean_ass_subtitles}}

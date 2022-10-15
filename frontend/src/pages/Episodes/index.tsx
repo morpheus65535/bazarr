@@ -5,7 +5,7 @@ import {
   useSeriesById,
   useSeriesModification,
 } from "@/apis/hooks";
-import { DropOverlay, Toolbox } from "@/components";
+import { DropContent, Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { SeriesUploadModal } from "@/components/forms/SeriesUploadForm";
@@ -13,6 +13,7 @@ import { SubtitleToolsModal } from "@/components/modals";
 import { useModals } from "@/modules/modals";
 import { notification, task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
+import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
   faAdjust,
@@ -24,10 +25,10 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import { Container, Group, Stack } from "@mantine/core";
+import { Dropzone } from "@mantine/dropzone";
 import { useDocumentTitle } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
-import { FunctionComponent, useCallback, useMemo } from "react";
-import { FileRejection, useDropzone } from "react-dropzone";
+import { FunctionComponent, useCallback, useMemo, useRef } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
 
@@ -67,17 +68,8 @@ const SeriesEpisodesView: FunctionComponent = () => {
   const hasTask = useIsAnyActionRunning();
 
   const onDrop = useCallback(
-    (files: File[], rejections: FileRejection[]) => {
+    (files: File[]) => {
       if (series && profile) {
-        if (rejections.length > 0) {
-          showNotification(
-            notification.warn(
-              "Some files are rejected",
-              `${rejections.length} files are invalid`
-            )
-          );
-        }
-
         modals.openContextModal(SeriesUploadModal, {
           files,
           series,
@@ -94,128 +86,121 @@ const SeriesEpisodesView: FunctionComponent = () => {
     [modals, profile, series]
   );
 
-  const dropzone = useDropzone({
-    disabled: profile === undefined,
-    noClick: true,
-    onDrop,
-  });
-
   useDocumentTitle(`${series?.title ?? "Unknown Series"} - Bazarr (Series)`);
 
+  const openDropzone = useRef<VoidFunction>(null);
+
   if (isNaN(id) || (isFetched && !series)) {
-    return <Navigate to="/not-found"></Navigate>;
+    return <Navigate to={RouterNames.NotFound}></Navigate>;
   }
 
   return (
     <Container px={0} fluid>
       <QueryOverlay result={seriesQuery}>
-        <DropOverlay state={dropzone}>
-          <Toolbox>
-            <Group spacing="xs">
-              <Toolbox.Button
-                icon={faSync}
-                disabled={!available || hasTask}
-                onClick={() => {
-                  if (series) {
-                    task.create(series.title, TaskGroup.ScanDisk, action, {
-                      action: "scan-disk",
-                      seriesid: id,
-                    });
-                  }
-                }}
-              >
-                Scan Disk
-              </Toolbox.Button>
-              <Toolbox.Button
-                icon={faSearch}
-                onClick={() => {
-                  if (series) {
-                    task.create(
-                      series.title,
-                      TaskGroup.SearchSubtitle,
-                      action,
-                      {
-                        action: "search-missing",
-                        seriesid: id,
-                      }
-                    );
-                  }
-                }}
-                disabled={
-                  series === undefined ||
-                  series.episodeFileCount === 0 ||
-                  series.profileId === null ||
-                  !available
+        <Dropzone.FullScreen
+          openRef={openDropzone}
+          active={profile !== undefined}
+          onDrop={onDrop}
+        >
+          <DropContent></DropContent>
+        </Dropzone.FullScreen>
+        <Toolbox>
+          <Group spacing="xs">
+            <Toolbox.Button
+              icon={faSync}
+              disabled={!available || hasTask}
+              onClick={() => {
+                if (series) {
+                  task.create(series.title, TaskGroup.ScanDisk, action, {
+                    action: "scan-disk",
+                    seriesid: id,
+                  });
                 }
-              >
-                Search
-              </Toolbox.Button>
-            </Group>
-            <Group spacing="xs">
-              <Toolbox.Button
-                disabled={
-                  series === undefined ||
-                  series.episodeFileCount === 0 ||
-                  !available ||
-                  hasTask
+              }}
+            >
+              Scan Disk
+            </Toolbox.Button>
+            <Toolbox.Button
+              icon={faSearch}
+              onClick={() => {
+                if (series) {
+                  task.create(series.title, TaskGroup.SearchSubtitle, action, {
+                    action: "search-missing",
+                    seriesid: id,
+                  });
                 }
-                icon={faBriefcase}
-                onClick={() => {
-                  if (episodes) {
-                    modals.openContextModal(SubtitleToolsModal, {
-                      payload: episodes,
-                    });
-                  }
-                }}
-              >
-                Mass Edit
-              </Toolbox.Button>
-              <Toolbox.Button
-                disabled={
-                  series === undefined ||
-                  series.episodeFileCount === 0 ||
-                  series.profileId === null ||
-                  !available
+              }}
+              disabled={
+                series === undefined ||
+                series.episodeFileCount === 0 ||
+                series.profileId === null ||
+                !available
+              }
+            >
+              Search
+            </Toolbox.Button>
+          </Group>
+          <Group spacing="xs">
+            <Toolbox.Button
+              disabled={
+                series === undefined ||
+                series.episodeFileCount === 0 ||
+                !available ||
+                hasTask
+              }
+              icon={faBriefcase}
+              onClick={() => {
+                if (episodes) {
+                  modals.openContextModal(SubtitleToolsModal, {
+                    payload: episodes,
+                  });
                 }
-                icon={faCloudUploadAlt}
-                onClick={dropzone.open}
-              >
-                Upload
-              </Toolbox.Button>
-              <Toolbox.Button
-                icon={faWrench}
-                disabled={hasTask}
-                onClick={() => {
-                  if (series) {
-                    modals.openContextModal(
-                      ItemEditModal,
-                      {
-                        item: series,
-                        mutation,
-                      },
-                      { title: series.title }
-                    );
-                  }
-                }}
-              >
-                Edit Series
-              </Toolbox.Button>
-            </Group>
-          </Toolbox>
-          <Stack>
-            <ItemOverview
-              item={series ?? null}
-              details={details}
-            ></ItemOverview>
-            <QueryOverlay result={episodesQuery}>
-              <Table
-                episodes={episodes ?? null}
-                profile={profile}
-                disabled={hasTask || !series || series.profileId === null}
-              ></Table>
-            </QueryOverlay>
-          </Stack>
-        </DropOverlay>
+              }}
+            >
+              Mass Edit
+            </Toolbox.Button>
+            <Toolbox.Button
+              disabled={
+                series === undefined ||
+                series.episodeFileCount === 0 ||
+                series.profileId === null ||
+                !available
+              }
+              icon={faCloudUploadAlt}
+              onClick={() => openDropzone.current?.()}
+            >
+              Upload
+            </Toolbox.Button>
+            <Toolbox.Button
+              icon={faWrench}
+              disabled={hasTask}
+              onClick={() => {
+                if (series) {
+                  modals.openContextModal(
+                    ItemEditModal,
+                    {
+                      item: series,
+                      mutation,
+                    },
+                    { title: series.title }
+                  );
+                }
+              }}
+            >
+              Edit Series
+            </Toolbox.Button>
+          </Group>
+        </Toolbox>
+        <Stack>
+          <ItemOverview item={series ?? null} details={details}></ItemOverview>
+          <QueryOverlay result={episodesQuery}>
+            <Table
+              episodes={episodes ?? null}
+              profile={profile}
+              disabled={hasTask || !series || series.profileId === null}
+            ></Table>
+          </QueryOverlay>
+        </Stack>
       </QueryOverlay>
     </Container>
   );

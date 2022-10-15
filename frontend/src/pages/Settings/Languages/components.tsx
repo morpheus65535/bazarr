@@ -5,7 +5,7 @@ import {
 } from "@/components";
 import { Language } from "@/components/bazarr";
 import { useSelectorOptions } from "@/utilities";
-import { InputWrapper } from "@mantine/core";
+import { Input } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { Selector, SelectorProps } from "../components";
@@ -28,7 +28,7 @@ export const LanguageSelector: FunctionComponent<
   const wrappedOptions = useSelectorOptions(options, (value) => value.name);
 
   return (
-    <InputWrapper label={label}>
+    <Input.Wrapper label={label}>
       <MultiSelector
         {...wrappedOptions}
         value={enabled}
@@ -37,7 +37,7 @@ export const LanguageSelector: FunctionComponent<
           setValue(val, settingKey, location);
         }}
       ></MultiSelector>
-    </InputWrapper>
+    </Input.Wrapper>
   );
 };
 

@@ -24,7 +24,6 @@
 # THE SOFTWARE.
 
 import re
-import six
 import requests
 import hmac
 from json import dumps
@@ -181,7 +180,7 @@ class NotifyBoxcar(NotifyBase):
             self.tags.append(DEFAULT_TAG)
             targets = []
 
-        elif isinstance(targets, six.string_types):
+        elif isinstance(targets, str):
             targets = [x for x in filter(bool, TAGS_LIST_DELIM.split(
                 targets,
             ))]
@@ -357,13 +356,8 @@ class NotifyBoxcar(NotifyBase):
         # by default
         entries = NotifyBoxcar.split_path(results['fullpath'])
 
-        try:
-            # Now fetch the remaining tokens
-            results['secret'] = entries.pop(0)
-
-        except IndexError:
-            # secret wasn't specified
-            results['secret'] = None
+        # Now fetch the remaining tokens
+        results['secret'] = entries.pop(0) if entries else None
 
         # Our recipients make up the remaining entries of our array
         results['targets'] = entries

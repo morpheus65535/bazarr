@@ -109,6 +109,7 @@ export type MultiSelectorProps<T> = Override<
     options: readonly SelectorOption<T>[];
     onChange?: (value: T[]) => void;
     getkey?: (value: T) => string;
+    buildOption?: (value: string) => T;
   },
   Omit<MultiSelectProps, "data">
 >;
@@ -119,10 +120,14 @@ export function MultiSelector<T>({
   options,
   onChange,
   getkey = DefaultKeyBuilder,
+  buildOption,
   ...select
 }: MultiSelectorProps<T>) {
   const labelRef = useRef(getkey);
   labelRef.current = getkey;
+
+  const buildRef = useRef(buildOption);
+  buildRef.current = buildOption;
 
   const data = useMemo(
     () =>
@@ -150,6 +155,8 @@ export function MultiSelector<T>({
         const payload = data.find((v) => v.value === value)?.payload;
         if (payload) {
           payloads.push(payload);
+        } else if (buildRef.current) {
+          payloads.push(buildRef.current(value));
         }
       }
       onChange?.(payloads);
@@ -159,10 +166,10 @@ export function MultiSelector<T>({
 
   return (
     <MultiSelect
+      {...select}
       value={wrappedValue}
       defaultValue={wrappedDefaultValue}
       onChange={wrappedOnChange}
-      {...select}
       data={data}
     ></MultiSelect>
   );

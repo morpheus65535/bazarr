@@ -3,6 +3,7 @@ import { Selector } from "@/components";
 import MutateButton from "@/components/async/MutateButton";
 import { useModals, withModal } from "@/modules/modals";
 import { BuildKey, useSelectorOptions } from "@/utilities";
+import FormUtils from "@/utilities/form";
 import {
   Button,
   Divider,
@@ -11,7 +12,8 @@ import {
   Stack,
   Textarea,
 } from "@mantine/core";
-import { useForm } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
+import { isObject } from "lodash";
 import { FunctionComponent, useMemo } from "react";
 import { useMutation } from "react-query";
 import { Card } from "../components";
@@ -42,9 +44,15 @@ const NotificationForm: FunctionComponent<Props> = ({
       selection: payload,
       url: payload?.url ?? "",
     },
-    validationRules: {
-      selection: (value) => value !== null,
-      url: (value) => value.trim() !== "",
+    validate: {
+      selection: FormUtils.validation(
+        isObject,
+        "Please select a notification provider"
+      ),
+      url: FormUtils.validation(
+        (value) => value.trim().length !== 0,
+        "URL must not be empty"
+      ),
     },
   });
 

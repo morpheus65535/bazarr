@@ -24,7 +24,6 @@
 # THE SOFTWARE.
 
 import os
-import six
 import re
 import copy
 
@@ -33,7 +32,6 @@ from os.path import abspath
 
 # Used for testing
 from . import NotifyEmail as NotifyEmailBase
-from .NotifyXMPP import SliXmppAdapter
 
 # NotifyBase object is passed in as a module not class
 from . import NotifyBase
@@ -42,15 +40,13 @@ from ..common import NotifyImageSize
 from ..common import NOTIFY_IMAGE_SIZES
 from ..common import NotifyType
 from ..common import NOTIFY_TYPES
+from .. import common
 from ..utils import parse_list
 from ..utils import cwe312_url
 from ..utils import GET_SCHEMA_RE
 from ..logger import logger
 from ..AppriseLocale import gettext_lazy as _
 from ..AppriseLocale import LazyTranslation
-
-# Maintains a mapping of all of the Notification services
-SCHEMA_MAP = {}
 
 __all__ = [
     # Reference
@@ -62,14 +58,7 @@ __all__ = [
 
     # Tokenizer
     'url_to_dict',
-
-    # slixmpp access points (used for NotifyXMPP Testing)
-    'SliXmppAdapter',
 ]
-
-# we mirror our base purely for the ability to reset everything; this
-# is generally only used in testing and should not be used by developers
-MODULE_MAP = {}
 
 
 # Load our Lookup Matrix
@@ -113,12 +102,12 @@ def __load_matrix(path=abspath(dirname(__file__)), name='apprise.plugins'):
             # Filter out non-notification modules
             continue
 
-        elif plugin_name in MODULE_MAP:
+        elif plugin_name in common.NOTIFY_MODULE_MAP:
             # we're already handling this object
             continue
 
         # Add our plugin name to our module map
-        MODULE_MAP[plugin_name] = {
+        common.NOTIFY_MODULE_MAP[plugin_name] = {
             'plugin': plugin,
             'module': module,
         }
@@ -130,40 +119,20 @@ def __load_matrix(path=abspath(dirname(__file__)), name='apprise.plugins'):
         globals()[plugin_name] = plugin
 
         fn = getattr(plugin, 'schemas', None)
-        try:
-            schemas = set([]) if not callable(fn) else fn(plugin)
-
-        except TypeError:
-            # Python v2.x support where functions associated with classes
-            # were considered bound to them and could not be called prior
-            # to the classes initialization.  This code can be dropped
-            # once Python v2.x support is dropped. The below code introduces
-            # replication as it already exists and is tested in
-            # URLBase.schemas()
-            schemas = set([])
-            for key in ('protocol', 'secure_protocol'):
-                schema = getattr(plugin, key, None)
-                if isinstance(schema, six.string_types):
-                    schemas.add(schema)
-
-                elif isinstance(schema, (set, list, tuple)):
-                    # Support iterables list types
-                    for s in schema:
-                        if isinstance(s, six.string_types):
-                            schemas.add(s)
+        schemas = set([]) if not callable(fn) else fn(plugin)
 
         # map our schema to our plugin
         for schema in schemas:
-            if schema in SCHEMA_MAP:
+            if schema in common.NOTIFY_SCHEMA_MAP:
                 logger.error(
                     "Notification schema ({}) mismatch detected - {} to {}"
-                    .format(schema, SCHEMA_MAP[schema], plugin))
+                    .format(schema, common.NOTIFY_SCHEMA_MAP[schema], plugin))
                 continue
 
             # Assign plugin
-            SCHEMA_MAP[schema] = plugin
+            common.NOTIFY_SCHEMA_MAP[schema] = plugin
 
-    return SCHEMA_MAP
+    return common.NOTIFY_SCHEMA_MAP
 
 
 # Reset our Lookup Matrix
@@ -174,10 +143,10 @@ def __reset_matrix():
     """
 
     # Reset our schema map
-    SCHEMA_MAP.clear()
+    common.NOTIFY_SCHEMA_MAP.clear()
 
     # Iterate over our module map so we can clear out our __all__ and globals
-    for plugin_name in MODULE_MAP.keys():
+    for plugin_name in common.NOTIFY_MODULE_MAP.keys():
         # Clear out globals
         del globals()[plugin_name]
 
@@ -185,7 +154,7 @@ def __reset_matrix():
         __all__.remove(plugin_name)
 
     # Clear out our module map
-    MODULE_MAP.clear()
+    common.NOTIFY_MODULE_MAP.clear()
 
 
 # Dynamically build our schema base
@@ -242,7 +211,7 @@ def _sanitize_token(tokens, default_delimiter):
 
         if 'regex' in tokens[key]:
             # Verify that we are a tuple; convert strings to tuples
-            if isinstance(tokens[key]['regex'], six.string_types):
+            if isinstance(tokens[key]['regex'], str):
                 # Default tuple setup
                 tokens[key]['regex'] = \
                     (tokens[key]['regex'], None)
@@ -483,7 +452,7 @@ def requirements(plugin):
 
     # Get our required packages
     _req_packages = plugin.requirements.get('packages_required')
-    if isinstance(_req_packages, six.string_types):
+    if isinstance(_req_packages, str):
         # Convert to list
         _req_packages = [_req_packages]
 
@@ -495,7 +464,7 @@ def requirements(plugin):
 
     # Get our recommended packages
     _opt_packages = plugin.requirements.get('packages_recommended')
-    if isinstance(_opt_packages, six.string_types):
+    if isinstance(_opt_packages, str):
         # Convert to list
         _opt_packages = [_opt_packages]
 
@@ -554,14 +523,14 @@ def url_to_dict(url, secure_logging=True):
 
     # Ensure our schema is always in lower case
     schema = schema.group('schema').lower()
-    if schema not in SCHEMA_MAP:
+    if schema not in common.NOTIFY_SCHEMA_MAP:
         # Give the user the benefit of the doubt that the user may be using
         # one of the URLs provided to them by their notification service.
         # Before we fail for good, just scan all the plugins that support the
         # native_url() parse function
         results = \
             next((r['plugin'].parse_native_url(_url)
-                  for r in MODULE_MAP.values()
+                  for r in common.NOTIFY_MODULE_MAP.values()
                   if r['plugin'].parse_native_url(_url) is not None),
                  None)
 
@@ -576,14 +545,14 @@ def url_to_dict(url, secure_logging=True):
     else:
         # Parse our url details of the server object as dictionary
         # containing all of the information parsed from our URL
-        results = SCHEMA_MAP[schema].parse_url(_url)
+        results = common.NOTIFY_SCHEMA_MAP[schema].parse_url(_url)
         if not results:
             logger.error('Unparseable {} URL {}'.format(
-                SCHEMA_MAP[schema].service_name, loggable_url))
+                common.NOTIFY_SCHEMA_MAP[schema].service_name, loggable_url))
             return None
 
         logger.trace('{} URL {} unpacked as:{}{}'.format(
-            SCHEMA_MAP[schema].service_name, url,
+            common.NOTIFY_SCHEMA_MAP[schema].service_name, url,
             os.linesep, os.linesep.join(
                 ['{}="{}"'.format(k, v) for k, v in results.items()])))
 

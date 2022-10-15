@@ -5,18 +5,33 @@ import json
 import os
 import logging
 
-from flask import jsonify
-from flask_restful import Resource
+from flask_restx import Resource, Namespace, fields
 
 from app.config import settings
 from app.get_args import args
 
 from ..utils import authenticate
 
+api_ns_system_releases = Namespace('System Releases', description='List Bazarr releases from Github')
 
+
+@api_ns_system_releases.route('system/releases')
 class SystemReleases(Resource):
+    get_response_model = api_ns_system_releases.model('SystemBackupsGetResponse', {
+        'body': fields.List(fields.String),
+        'name': fields.String(),
+        'date': fields.String(),
+        'prerelease': fields.Boolean(),
+        'current': fields.Boolean(),
+    })
+
     @authenticate
+    @api_ns_system_releases.marshal_with(get_response_model, envelope='data', code=200)
+    @api_ns_system_releases.doc(parser=None)
+    @api_ns_system_releases.response(200, 'Success')
+    @api_ns_system_releases.response(401, 'Not Authenticated')
     def get(self):
+        """Get Bazarr releases"""
         filtered_releases = []
         try:
             with io.open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r', encoding='UTF-8') as f:
@@ -45,4 +60,4 @@ class SystemReleases(Resource):
         except Exception:
             logging.exception(
                 'BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
-        return jsonify(data=filtered_releases)
+        return filtered_releases

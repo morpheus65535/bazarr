@@ -51,19 +51,6 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
     if forced:
         lang_obj = Language.rebuild(lang_obj, forced=True)
 
-    sub = Subtitle(
-        lang_obj,
-        mods=get_array_from(settings.general.subzero_mods)
-    )
-
-    sub.content = subtitle.read()
-    if not sub.is_valid():
-        logging.exception('BAZARR Invalid subtitle file: ' + subtitle.filename)
-        sub.mods = None
-
-    if settings.general.getboolean('utf8_encode'):
-        sub.set_encoding("utf-8")
-
     if media_type == 'series':
         episode_metadata = TableEpisodes.select(TableEpisodes.sonarrSeriesId,
                                                 TableEpisodes.sonarrEpisodeId,
@@ -87,6 +74,20 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
             use_original_format = bool(get_profiles_list(movie_metadata["profileId"])["originalFormat"])
         else:
             use_original_format = False
+
+    sub = Subtitle(
+        lang_obj,
+        mods=get_array_from(settings.general.subzero_mods),
+        original_format=use_original_format
+    )
+
+    sub.content = subtitle.read()
+    if not sub.is_valid():
+        logging.exception('BAZARR Invalid subtitle file: ' + subtitle.filename)
+        sub.mods = None
+
+    if settings.general.getboolean('utf8_encode'):
+        sub.set_encoding("utf-8")
 
     try:
         sub.format = (get_format_identifier(os.path.splitext(subtitle.filename)[1]),)

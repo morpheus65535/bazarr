@@ -1,24 +1,31 @@
-# MIT License
-
-# Copyright (c) 2022 Joey Espinosa <@particledecay>
-
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2022 Chris Caron <lead2gold@gmail.com>
+# All rights reserved.
+#
+# This code is licensed under the MIT License.
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
+# of this software and associated documentation files(the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
 # copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
+# furnished to do so, subject to the following conditions :
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+# Great sources
+# - https://github.com/matrix-org/matrix-python-sdk
+# - https://github.com/matrix-org/synapse/blob/master/docs/reverse_proxy.rst
 #
 # Examples:
 #   ntfys://my-topic
@@ -27,7 +34,6 @@
 #   ntfy://ntfy.local.domain/?priority=max
 import re
 import requests
-import six
 from json import loads
 from json import dumps
 from os.path import basename
@@ -43,7 +49,7 @@ from ..URLBase import PrivacyMode
 from ..attachment.AttachBase import AttachBase
 
 
-class NtfyMode(object):
+class NtfyMode:
     """
     Define ntfy Notification Modes
     """
@@ -60,7 +66,7 @@ NTFY_MODES = (
 )
 
 
-class NtfyPriority(object):
+class NtfyPriority:
     """
     Ntfy Priority Definitions
     """
@@ -78,6 +84,39 @@ NTFY_PRIORITIES = (
     NtfyPriority.LOW,
     NtfyPriority.MIN,
 )
+
+NTFY_PRIORITY_MAP = {
+    # Maps against string 'low' but maps to Moderate to avoid
+    # conflicting with actual ntfy mappings
+    'l': NtfyPriority.LOW,
+    # Maps against string 'moderate'
+    'mo': NtfyPriority.LOW,
+    # Maps against string 'normal'
+    'n': NtfyPriority.NORMAL,
+    # Maps against string 'high'
+    'h': NtfyPriority.HIGH,
+    # Maps against string 'emergency'
+    'e': NtfyPriority.MAX,
+
+    # Entries to additionally support (so more like Ntfy's API)
+    # Maps against string 'min'
+    'mi': NtfyPriority.MIN,
+    # Maps against string 'max'
+    'ma': NtfyPriority.MAX,
+    # Maps against string 'default'
+    'd': NtfyPriority.NORMAL,
+
+    # support 1-5 values as well
+    '1': NtfyPriority.MIN,
+    # Maps against string 'moderate'
+    '2': NtfyPriority.LOW,
+    # Maps against string 'normal'
+    '3': NtfyPriority.NORMAL,
+    # Maps against string 'high'
+    '4': NtfyPriority.HIGH,
+    # Maps against string 'emergency'
+    '5': NtfyPriority.MAX,
+}
 
 
 class NotifyNtfy(NotifyBase):
@@ -207,7 +246,7 @@ class NotifyNtfy(NotifyBase):
 
         # Prepare our mode
         self.mode = mode.strip().lower() \
-            if isinstance(mode, six.string_types) \
+            if isinstance(mode, str) \
             else self.template_args['mode']['default']
 
         if self.mode not in NTFY_MODES:
@@ -230,18 +269,13 @@ class NotifyNtfy(NotifyBase):
         # An email to forward notifications to
         self.email = email
 
-        # The priority of the message
-
-        if priority is None:
-            self.priority = self.template_args['priority']['default']
-        else:
-            self.priority = priority
-
-        if self.priority not in NTFY_PRIORITIES:
-            msg = 'An invalid ntfy Priority ({}) was specified.'.format(
-                priority)
-            self.logger.warning(msg)
-            raise TypeError(msg)
+        # The Priority of the message
+        self.priority = NotifyNtfy.template_args['priority']['default'] \
+            if not priority else \
+            next((
+                v for k, v in NTFY_PRIORITY_MAP.items()
+                if str(priority).lower().startswith(k)),
+                NotifyNtfy.template_args['priority']['default'])
 
         # Any optional tags to attach to the notification
         self.__tags = parse_list(tags)
@@ -274,7 +308,7 @@ class NotifyNtfy(NotifyBase):
             self.logger.warning('There are no ntfy topics to notify')
             return False
 
-        # Create a copy of the subreddits list
+        # Create a copy of the topics
         topics = list(self.topics)
         while len(topics) > 0:
             # Retrieve our topic
@@ -558,31 +592,10 @@ class NotifyNtfy(NotifyBase):
             # We're done early as we couldn't load the results
             return results
 
+        # Set our priority
         if 'priority' in results['qsd'] and len(results['qsd']['priority']):
-            _map = {
-                # Supported lookups
-                'mi': NtfyPriority.MIN,
-                '1': NtfyPriority.MIN,
-                'l': NtfyPriority.LOW,
-                '2': NtfyPriority.LOW,
-                'n': NtfyPriority.NORMAL,  # support normal keyword
-                'd': NtfyPriority.NORMAL,  # default keyword
-                '3': NtfyPriority.NORMAL,
-                'h': NtfyPriority.HIGH,
-                '4': NtfyPriority.HIGH,
-                'ma': NtfyPriority.MAX,
-                '5': NtfyPriority.MAX,
-            }
-            try:
-                # pretty-format (and update short-format)
-                results['priority'] = \
-                    _map[results['qsd']['priority'][0:2].lower()]
-
-            except KeyError:
-                # Pass along what was set so it can be handed during
-                # initialization
-                results['priority'] = str(results['qsd']['priority'])
-                pass
+            results['priority'] = \
+                NotifyNtfy.unquote(results['qsd']['priority'])
 
         if 'attach' in results['qsd'] and len(results['qsd']['attach']):
             results['attach'] = NotifyNtfy.unquote(results['qsd']['attach'])

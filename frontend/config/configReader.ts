@@ -3,31 +3,48 @@
 
 import { readFile } from "fs/promises";
 
-async function read(path: string, sectionName: string, fieldName: string) {
-  const config = await readFile(path, "utf8");
+class ConfigReader {
+  config?: string;
 
-  const targetSection = config
-    .split("\n\n")
-    .filter((section) => section.includes(`[${sectionName}]`));
-
-  if (targetSection.length === 0) {
-    throw new Error(`Cannot find [${sectionName}] section in config`);
+  constructor() {
+    this.config = undefined;
   }
 
-  const section = targetSection[0];
-
-  for (const line of section.split("\n")) {
-    const matched = line.startsWith(fieldName);
-    if (matched) {
-      const results = line.split("=");
-      if (results.length === 2) {
-        const key = results[1].trim();
-        return key;
-      }
+  async open(path: string) {
+    try {
+      this.config = await readFile(path, "utf8");
+    } catch (err) {
+      // We don't want to catch the error here, handle it on getValue method
     }
   }
 
-  throw new Error(`Cannot find ${fieldName} in config`);
+  getValue(sectionName: string, fieldName: string) {
+    if (!this.config) {
+      throw new Error("Cannot find config to read");
+    }
+    const targetSection = this.config
+      .split("\n\n")
+      .filter((section) => section.includes(`[${sectionName}]`));
+
+    if (targetSection.length === 0) {
+      throw new Error(`Cannot find [${sectionName}] section in config`);
+    }
+
+    const section = targetSection[0];
+
+    for (const line of section.split("\n")) {
+      const matched = line.startsWith(fieldName);
+      if (matched) {
+        const results = line.split("=");
+        if (results.length === 2) {
+          const key = results[1].trim();
+          return key;
+        }
+      }
+    }
+
+    throw new Error(`Cannot find ${fieldName} in config`);
+  }
 }
 
 export default async function overrideEnv(env: Record<string, string>) {
@@ -37,9 +54,12 @@ export default async function overrideEnv(env: Record<string, string>) {
     return;
   }
 
+  const reader = new ConfigReader();
+  await reader.open(configPath);
+
   if (env["VITE_API_KEY"] === undefined) {
     try {
-      const apiKey = await read(configPath, "auth", "apikey");
+      const apiKey = reader.getValue("auth", "apikey");
 
       console.log(`Using API key: ${apiKey}`);
 
@@ -54,8 +74,8 @@ export default async function overrideEnv(env: Record<string, string>) {
 
   if (env["VITE_PROXY_URL"] === undefined) {
     try {
-      const port = await read(configPath, "general", "port");
-      const baseUrl = await read(configPath, "general", "base_url");
+      const port = reader.getValue("general", "port");
+      const baseUrl = reader.getValue("general", "base_url");
 
       const url = `http://127.0.0.1:${port}${baseUrl}`;
 
