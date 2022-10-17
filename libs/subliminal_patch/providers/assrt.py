@@ -75,7 +75,13 @@ class AssrtSubtitle(Subtitle):
         r.raise_for_status()
 
         result = r.json()
+        if not len(result['sub']['subs']):
+            logger.error('Can\'t get subtitle details')
+            return False
         sub = result['sub']['subs'][0]
+        if not len(sub['filelist']):
+            logger.error('Can\'t get filelist from subtitle details')
+            return False
         files = sub['filelist']
 
         # first pass: guessit
