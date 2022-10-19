@@ -63,6 +63,8 @@ class SubdivxSubtitle(Subtitle):
         # episode
         if isinstance(video, Episode):
             # already matched in search query
+
+            # TODO: avoid false positive with some short/common titles
             matches.update(["title", "series", "season", "episode", "year"])
 
         # movie
@@ -106,11 +108,23 @@ class SubdivxSubtitlesProvider(Provider):
         subtitles = []
 
         if isinstance(video, Episode):
+            # TODO: cache pack queries (TV SHOW S01 / TV SHOW 2022 S01).
+            # Too many redundant server calls.
+
             for query in (
                 f"{video.series} S{video.season:02}E{video.episode:02}",
                 f"{video.series} S{video.season:02}",
             ):
                 subtitles += self._handle_multi_page_search(query, video)
+
+            # Try with year
+            if len(subtitles) <= 5 and video.year:
+                logger.debug("Few results. Trying with year")
+                for query in (
+                    f"{video.series} {video.year} S{video.season:02}E{video.episode:02}",
+                    f"{video.series} {video.year} S{video.season:02}",
+                ):
+                    subtitles += self._handle_multi_page_search(query, video)
         else:
             for query in (video.title, f"{video.title} ({video.year})"):
                 subtitles += self._handle_multi_page_search(query, video)

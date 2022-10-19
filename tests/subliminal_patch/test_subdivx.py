@@ -52,6 +52,19 @@ def test_list_subtitles_castillian_spanish(episodes):
         assert provider.list_subtitles(item, {Language.fromietf("es")})
 
 
+def test_list_subtitles_episode_with_year(episodes):
+    item = list(episodes.values())[0]
+    item.series = "The Bear"
+    item.name = "The Bear"
+    item.season = 1
+    item.episode = 1
+    item.year = 2022
+
+    with SubdivxSubtitlesProvider() as provider:
+        subtitles = provider.list_subtitles(item, {Language("spa", "MX")})
+        assert len(subtitles) > 2
+
+
 def test_download_subtitle(movies):
     subtitle = SubdivxSubtitle(
         Language("spa", "MX"),
