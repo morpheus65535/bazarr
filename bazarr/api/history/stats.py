@@ -3,11 +3,11 @@
 import time
 import datetime
 import operator
+import itertools
 
 from dateutil import rrule
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
-from peewee import fn
 
 from app.database import TableHistory, TableHistoryMovie
 
@@ -87,19 +87,21 @@ class HistoryStats(Resource):
         history_where_clause = reduce(operator.and_, history_where_clauses)
         history_where_clause_movie = reduce(operator.and_, history_where_clauses_movie)
 
-        data_series = TableHistory.select(fn.strftime('%Y-%m-%d', TableHistory.timestamp, 'unixepoch').alias('date'),
-                                          fn.COUNT(TableHistory.id).alias('count'))\
+        data_series = TableHistory.select(TableHistory.timestamp, TableHistory.id)\
             .where(history_where_clause) \
-            .group_by(fn.strftime('%Y-%m-%d', TableHistory.timestamp, 'unixepoch'))\
             .dicts()
-        data_series = list(data_series)
+        data_series = [{'date': date[0], 'count': sum(1 for item in date[1])} for date in
+                       itertools.groupby(list(data_series),
+                                         key=lambda x: datetime.datetime.fromtimestamp(x['timestamp']).strftime(
+                                             '%Y-%m-%d'))]
 
-        data_movies = TableHistoryMovie.select(fn.strftime('%Y-%m-%d', TableHistoryMovie.timestamp, 'unixepoch').alias('date'),
-                                               fn.COUNT(TableHistoryMovie.id).alias('count')) \
+        data_movies = TableHistoryMovie.select(TableHistoryMovie.timestamp, TableHistoryMovie.id) \
             .where(history_where_clause_movie) \
-            .group_by(fn.strftime('%Y-%m-%d', TableHistoryMovie.timestamp, 'unixepoch')) \
             .dicts()
-        data_movies = list(data_movies)
+        data_movies = [{'date': date[0], 'count': sum(1 for item in date[1])} for date in
+                       itertools.groupby(list(data_movies),
+                                         key=lambda x: datetime.datetime.fromtimestamp(x['timestamp']).strftime(
+                                             '%Y-%m-%d'))]
 
         for dt in rrule.rrule(rrule.DAILY,
                               dtstart=datetime.datetime.now() - datetime.timedelta(seconds=delay),
