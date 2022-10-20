@@ -2,6 +2,7 @@
 
 import functools
 import logging
+import urllib.parse
 
 from bs4 import BeautifulSoup as bso
 from guessit import guessit
@@ -134,7 +135,7 @@ class Subf2mProvider(Provider):
 
     def _gen_results(self, query):
         req = self._session.get(
-            f"{_BASE_URL}/subtitles/searchbytitle?query={query.replace(' ', '+')}&l=",
+            f"{_BASE_URL}/subtitles/searchbytitle?query={urllib.parse.quote(query)}&l=",
             stream=True,
         )
         text = "\n".join(line for line in req.iter_lines(decode_unicode=True) if line)
