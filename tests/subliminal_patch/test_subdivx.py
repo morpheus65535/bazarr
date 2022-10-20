@@ -33,8 +33,6 @@ def test_handle_multi_page_search(episodes):
                 "Game Of Thrones", episodes["got_s03e10"]
             )
         )
-        print(len(subs))
-        return
         assert len(subs) > 100
 
 
