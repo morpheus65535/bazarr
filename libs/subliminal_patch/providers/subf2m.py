@@ -114,6 +114,7 @@ class Subf2mProvider(Provider):
     provider_name = "subf2m"
 
     _movie_title_regex = re.compile(r"^(.+?)( \((\d{4})\))?$")
+    _tv_show_title_regex = re.compile(r"^(.+?) - (.*?) season( \((\d{4})\))?$")
     _supported_languages = {}
     _supported_languages["brazillian-portuguese"] = Language("por", "BR")
 
@@ -175,20 +176,31 @@ class Subf2mProvider(Provider):
 
     def _search_tv_show_season(self, title, season):
         try:
-            season_str = f"{_SEASONS[season - 1]} Season"
+            season_str = _SEASONS[season - 1].lower()
         except IndexError:
             logger.debug("Season number not supported: %s", season)
             return None
 
-        expected_result = f"{title} - {season_str}".lower()
-
         found_tv_show_season = None
 
+        results = []
         for result in self._gen_results(title):
-            if expected_result in result.text.lower():
-                found_tv_show_season = result.get("href")
-                logger.debug("TV Show season found: %s", found_tv_show_season)
-                break
+            text = result.text.lower()
+            match = self._tv_show_title_regex.match(text)
+            if not match:
+                continue
+            match_title = match.group(1)
+            match_season = match.group(2)
+            if season_str == match_season:
+                results.append({
+                    "href": result.get("href"),
+                    "similarity": SequenceMatcher(None, title, match_title).ratio()
+                })
+
+        if results:
+            results.sort(key=lambda x: x["similarity"], reverse=True)
+            found_tv_show_season = results[0]["href"]
+            logger.debug("TV Show season found: %s", found_tv_show_season)
 
         return found_tv_show_season
 
