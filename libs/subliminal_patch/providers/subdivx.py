@@ -28,7 +28,17 @@ _CLEAN_TITLE_RES = [
 
 _SPANISH_RE = re.compile(r"españa|ib[eé]rico|castellano|gallego|castilla")
 _YEAR_RE = re.compile(r"(\(\d{4}\))")
-_SERIES_RE = re.compile(r"\(?\d{4}\)?|[sS]\d{2}([eE]\d{2})?")
+_SERIES_RE = re.compile(
+    r"\(?\d{4}\)?|(s\d{1,2}(e\d{1,2})?|(season|temporada)\s\d{1,2}).*?$",
+    flags=re.IGNORECASE,
+)
+_EPISODE_NUM_RE = re.compile(r"[eE](?P<x>\d{1,2})")
+_SEASON_NUM_RE = re.compile(
+    r"(s|(season|temporada)\s)(?P<x>\d{1,2})", flags=re.IGNORECASE
+)
+_UNSUPPORTED_RE = re.compile(
+    r"(\)?\d{4}\)?|[sS]\d{1,2})\s.{,3}(extras|forzado(s)?|forced)", flags=re.IGNORECASE
+)
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +141,7 @@ class SubdivxSubtitlesProvider(Provider):
 
         return subtitles
 
-    def _handle_multi_page_search(self, query, video, max_loops=3):
+    def _handle_multi_page_search(self, query, video, max_loops=2):
         params = {
             "buscar2": query,
             "accion": "5",
@@ -163,7 +173,7 @@ class SubdivxSubtitlesProvider(Provider):
             time.sleep(self.multi_result_throttle)
 
         if not max_loops_not_met:
-            logger.debug("Max loops limit exceeded")
+            logger.debug("Max loops limit exceeded (%d)", max_loops)
 
     def _get_page_subtitles(self, params, video):
         search_link = f"{_SERVER_URL}/index.php"
@@ -222,9 +232,8 @@ class SubdivxSubtitlesProvider(Provider):
             # title
             title = _clean_title(title_soup.find("a").text)
 
-            # Forced subtitles are not supported
-            if title.lower().rstrip().endswith(("forzado", "forzados")):
-                logger.debug("Skipping forced subtitles: %s", title)
+            if _UNSUPPORTED_RE.search(title):
+                logger.debug("Skipping unsupported subtitles: %s", title)
                 continue
 
             if not title_checker(video, title):
@@ -285,17 +294,33 @@ def _get_download_url(data):
 
 
 def _check_episode(video, title):
+    ep_num = _EPISODE_NUM_RE.search(title)
+    season_num = _SEASON_NUM_RE.search(title)
+
+    if season_num is None:
+        logger.debug("Not a season/episode: %s", title)
+        return False
+
+    season_num = int(season_num.group("x"))
+
+    if ep_num is not None:
+        ep_num = int(ep_num.group("x"))
+
+    ep_matches = (
+        (video.episode == ep_num) or (ep_num is None)
+    ) and season_num == video.season
+
     series_title = _SERIES_RE.sub("", title).strip()
 
     distance = abs(len(series_title) - len(video.series))
 
-    series_matched = distance < 4
+    series_matched = distance < 4 and ep_matches
 
     logger.debug(
-        "Series matched? %s [%s -> %s] [distance: %d]",
+        "Series matched? %s [%s -> %s] [title distance: %d]",
         series_matched,
-        video.series,
-        series_title,
+        video,
+        title,
         distance,
     )
 
