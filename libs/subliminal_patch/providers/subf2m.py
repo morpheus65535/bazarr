@@ -105,6 +105,7 @@ _LANGUAGE_MAP = {
     "polish": "pol",
     "romanian": "rum",
     "russian": "rus",
+    "serbian": "srp",
     "thai": "tha",
     "turkish": "tur",
 }
