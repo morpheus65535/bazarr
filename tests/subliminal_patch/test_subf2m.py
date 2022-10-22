@@ -5,20 +5,45 @@ from subliminal_patch.providers.subf2m import Subf2mSubtitle
 from subzero.language import Language
 
 
-def test_search_movie(movies):
-    movie = movies["dune"]
+@pytest.mark.parametrize(
+    "title,year,expected_url",
+    [
+        (
+            "Dead Man's Chest",
+            2006,
+            "/subtitles/pirates-of-the-caribbean-2-dead-mans-chest",
+        ),
+        ("Dune", 2021, "/subtitles/dune-2021"),
+        ("Cure", 1997, "/subtitles/cure-kyua"),
+    ],
+)
+def test_search_movie(movies, title, year, expected_url):
+    movie = list(movies.values())[0]
+    movie.title = title
+    movie.year = year
 
     with Subf2mProvider() as provider:
         result = provider._search_movie(movie.title, movie.year)
-        assert result == "/subtitles/dune-2021"
+        assert result == expected_url
 
 
-def test_search_tv_show_season(episodes):
-    episode = episodes["breaking_bad_s01e01"]
+@pytest.mark.parametrize(
+    "title,season,expected_url",
+    [
+        ("Breaking Bad", 1, "/subtitles/breaking-bad-first-season"),
+        ("House Of The Dragon", 1, "/subtitles/house-of-the-dragon-first-season"),
+        ("The Bear", 1, "/subtitles/the-bear-first-season"),
+    ],
+)
+def test_search_tv_show_season(episodes, title, season, expected_url):
+    episode = list(episodes.values())[0]
+    episode.name = title
+    episode.series = title
+    episode.season = season
 
     with Subf2mProvider() as provider:
         result = provider._search_tv_show_season(episode.series, episode.season)
-        assert result == "/subtitles/breaking-bad-first-season"
+        assert result == expected_url
 
 
 @pytest.mark.parametrize("language", [Language.fromalpha2("en"), Language("por", "BR")])
