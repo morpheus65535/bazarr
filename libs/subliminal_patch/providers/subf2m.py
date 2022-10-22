@@ -163,15 +163,17 @@ class Subf2mProvider(Provider):
             match_title = match.group(1)
             match_year = match.group(3)
             if year == match_year:
-                results.append({
-                    "href": result.get("href"),
-                    "similarity": SequenceMatcher(None, title, match_title).ratio()
-                })
+                results.append(
+                    {
+                        "href": result.get("href"),
+                        "similarity": SequenceMatcher(None, title, match_title).ratio(),
+                    }
+                )
 
         if results:
             results.sort(key=lambda x: x["similarity"], reverse=True)
             found_movie = results[0]["href"]
-            logger.debug("Movie found: %s", found_movie)
+            logger.debug("Movie found: %s", results[0])
         return found_movie
 
     def _search_tv_show_season(self, title, season):
@@ -192,15 +194,17 @@ class Subf2mProvider(Provider):
             match_title = match.group(1)
             match_season = match.group(2)
             if season_str == match_season:
-                results.append({
-                    "href": result.get("href"),
-                    "similarity": SequenceMatcher(None, title, match_title).ratio()
-                })
+                results.append(
+                    {
+                        "href": result.get("href"),
+                        "similarity": SequenceMatcher(None, title, match_title).ratio(),
+                    }
+                )
 
         if results:
             results.sort(key=lambda x: x["similarity"], reverse=True)
             found_tv_show_season = results[0]["href"]
-            logger.debug("TV Show season found: %s", found_tv_show_season)
+            logger.debug("TV Show season found: %s", results[0])
 
         return found_tv_show_season
 
