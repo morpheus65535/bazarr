@@ -2,10 +2,13 @@
 
 import functools
 import logging
+import urllib.parse
+import re
 
 from bs4 import BeautifulSoup as bso
 from guessit import guessit
 from requests import Session
+from difflib import SequenceMatcher
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
 from subliminal_patch.exceptions import APIThrottled
@@ -82,12 +85,37 @@ _LANGUAGE_MAP = {
     "dutch": "dut",
     "hebrew": "heb",
     "indonesian": "ind",
+    "danish": "dan",
+    "norwegian": "nor",
+    "bengali": "ben",
+    "bulgarian": "bul",
+    "croatian": "hrv",
+    "swedish": "swe",
+    "vietnamese": "vie",
+    "czech": "cze",
+    "finnish": "fin",
+    "french": "fre",
+    "german": "ger",
+    "greek": "gre",
+    "hungarian": "hun",
+    "icelandic": "ice",
+    "japanese": "jpn",
+    "macedonian": "mac",
+    "malay": "may",
+    "polish": "pol",
+    "romanian": "rum",
+    "russian": "rus",
+    "serbian": "srp",
+    "thai": "tha",
+    "turkish": "tur",
 }
 
 
 class Subf2mProvider(Provider):
     provider_name = "subf2m"
 
+    _movie_title_regex = re.compile(r"^(.+?)( \((\d{4})\))?$")
+    _tv_show_title_regex = re.compile(r"^(.+?) - (.*?) season( \((\d{4})\))?$")
     _supported_languages = {}
     _supported_languages["brazillian-portuguese"] = Language("por", "BR")
 
@@ -112,7 +140,7 @@ class Subf2mProvider(Provider):
 
     def _gen_results(self, query):
         req = self._session.get(
-            f"{_BASE_URL}/subtitles/searchbytitle?query={query.replace(' ', '+')}&l=",
+            f"{_BASE_URL}/subtitles/searchbytitle?query={urllib.parse.quote(query)}&l=",
             stream=True,
         )
         text = "\n".join(line for line in req.iter_lines(decode_unicode=True) if line)
@@ -123,35 +151,61 @@ class Subf2mProvider(Provider):
 
     def _search_movie(self, title, year):
         title = title.lower()
-        year = f"({year})"
+        year = str(year)
 
         found_movie = None
 
+        results = []
         for result in self._gen_results(title):
             text = result.text.lower()
-            if title.lower() in text and year in text:
-                found_movie = result.get("href")
-                logger.debug("Movie found: %s", found_movie)
-                break
+            match = self._movie_title_regex.match(text)
+            if not match:
+                continue
+            match_title = match.group(1)
+            match_year = match.group(3)
+            if year == match_year:
+                results.append(
+                    {
+                        "href": result.get("href"),
+                        "similarity": SequenceMatcher(None, title, match_title).ratio(),
+                    }
+                )
 
+        if results:
+            results.sort(key=lambda x: x["similarity"], reverse=True)
+            found_movie = results[0]["href"]
+            logger.debug("Movie found: %s", results[0])
         return found_movie
 
     def _search_tv_show_season(self, title, season):
         try:
-            season_str = f"{_SEASONS[season - 1]} Season"
+            season_str = _SEASONS[season - 1].lower()
         except IndexError:
             logger.debug("Season number not supported: %s", season)
             return None
 
-        expected_result = f"{title} - {season_str}".lower()
-
         found_tv_show_season = None
 
+        results = []
         for result in self._gen_results(title):
-            if expected_result in result.text.lower():
-                found_tv_show_season = result.get("href")
-                logger.debug("TV Show season found: %s", found_tv_show_season)
-                break
+            text = result.text.lower()
+            match = self._tv_show_title_regex.match(text)
+            if not match:
+                continue
+            match_title = match.group(1)
+            match_season = match.group(2)
+            if season_str == match_season:
+                results.append(
+                    {
+                        "href": result.get("href"),
+                        "similarity": SequenceMatcher(None, title, match_title).ratio(),
+                    }
+                )
+
+        if results:
+            results.sort(key=lambda x: x["similarity"], reverse=True)
+            found_tv_show_season = results[0]["href"]
+            logger.debug("TV Show season found: %s", results[0])
 
         return found_tv_show_season
 

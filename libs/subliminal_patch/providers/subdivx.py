@@ -25,9 +25,20 @@ _CLEAN_TITLE_RES = [
     (r"´|`", "'"),
     (r" {2,}", " "),
 ]
-_SPANISH_RE = re.compile(r"españa|ib[eé]rico|castellano|gallego|castilla")
 
+_SPANISH_RE = re.compile(r"españa|ib[eé]rico|castellano|gallego|castilla")
 _YEAR_RE = re.compile(r"(\(\d{4}\))")
+_SERIES_RE = re.compile(
+    r"\(?\d{4}\)?|(s\d{1,2}(e\d{1,2})?|(season|temporada)\s\d{1,2}).*?$",
+    flags=re.IGNORECASE,
+)
+_EPISODE_NUM_RE = re.compile(r"[eE](?P<x>\d{1,2})")
+_SEASON_NUM_RE = re.compile(
+    r"(s|(season|temporada)\s)(?P<x>\d{1,2})", flags=re.IGNORECASE
+)
+_UNSUPPORTED_RE = re.compile(
+    r"(\)?\d{4}\)?|[sS]\d{1,2})\s.{,3}(extras|forzado(s)?|forced)", flags=re.IGNORECASE
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +58,13 @@ class SubdivxSubtitle(Subtitle):
         self.download_url = download_url
         self.uploader = uploader
 
-        self.release_info = str(title)
-        self.description = str(description).strip()
+        self._title = str(title).strip()
+        self._description = str(description).strip()
 
-        if self.description:
-            self.release_info += " | " + self.description
+        self.release_info = self._title
+
+        if self._description:
+            self.release_info += " | " + self._description
 
     @property
     def id(self):
@@ -62,18 +75,18 @@ class SubdivxSubtitle(Subtitle):
 
         # episode
         if isinstance(video, Episode):
-            # already matched in search query
+            # already matched within provider
             matches.update(["title", "series", "season", "episode", "year"])
 
         # movie
         elif isinstance(video, Movie):
-            # already matched in search query
+            # already matched within provider
             matches.update(["title", "year"])
 
-        update_matches(matches, video, self.description)
+        update_matches(matches, video, self._description)
 
         # Don't lowercase; otherwise it will match a lot of false positives
-        if video.release_group and video.release_group in self.description:
+        if video.release_group and video.release_group in self._description:
             matches.add("release_group")
 
         return matches
@@ -106,11 +119,19 @@ class SubdivxSubtitlesProvider(Provider):
         subtitles = []
 
         if isinstance(video, Episode):
+            # TODO: cache pack queries (TV SHOW S01).
+            # Too many redundant server calls.
+
             for query in (
                 f"{video.series} S{video.season:02}E{video.episode:02}",
                 f"{video.series} S{video.season:02}",
             ):
                 subtitles += self._handle_multi_page_search(query, video)
+
+            # Try only with series title
+            if len(subtitles) <= 5:
+                subtitles += self._handle_multi_page_search(video.series, video, 1)
+
         else:
             for query in (video.title, f"{video.title} ({video.year})"):
                 subtitles += self._handle_multi_page_search(query, video)
@@ -120,7 +141,7 @@ class SubdivxSubtitlesProvider(Provider):
 
         return subtitles
 
-    def _handle_multi_page_search(self, query, video, max_loops=3):
+    def _handle_multi_page_search(self, query, video, max_loops=2):
         params = {
             "buscar2": query,
             "accion": "5",
@@ -135,19 +156,24 @@ class SubdivxSubtitlesProvider(Provider):
         max_loops_not_met = True
 
         while max_loops_not_met:
-            loops += 1
             max_loops_not_met = loops < max_loops
 
-            page_subtitles = self._get_page_subtitles(params, video)
+            page_subtitles, last_page = self._get_page_subtitles(params, video)
 
-            logger.debug("Yielding %d subtitles", len(page_subtitles))
+            logger.debug("Yielding %d subtitles [loop #%d]", len(page_subtitles), loops)
             yield from page_subtitles
 
-            if len(page_subtitles) < 100:
-                break  # this is the last page
+            if last_page:
+                logger.debug("Last page for '%s' query. Breaking loop", query)
+                break
+
+            loops += 1
 
             params["pg"] += 1  # search next page
             time.sleep(self.multi_result_throttle)
+
+        if not max_loops_not_met:
+            logger.debug("Max loops limit exceeded (%d)", max_loops)
 
     def _get_page_subtitles(self, params, video):
         search_link = f"{_SERVER_URL}/index.php"
@@ -156,19 +182,19 @@ class SubdivxSubtitlesProvider(Provider):
         )
 
         try:
-            page_subtitles = self._parse_subtitles_page(video, response)
+            page_subtitles, last_page = self._parse_subtitles_page(video, response)
         except Exception as error:
             logger.error(f"Error parsing subtitles list: {error}")
             return []
 
-        return page_subtitles
+        return page_subtitles, last_page
 
     def list_subtitles(self, video, languages):
         return self.query(video, languages)
 
     def download_subtitle(self, subtitle):
         # download the subtitle
-        logger.info("Downloading subtitle %r", subtitle)
+        logger.debug("Downloading subtitle %r", subtitle)
 
         # download zip / rar file with the subtitle
         response = self.session.get(
@@ -198,20 +224,19 @@ class SubdivxSubtitlesProvider(Provider):
         )
         title_soups = page_soup.find_all("div", {"id": "menu_detalle_buscador"})
         body_soups = page_soup.find_all("div", {"id": "buscador_detalle"})
-        episode = isinstance(video, Episode)
+
+        title_checker = _check_episode if isinstance(video, Episode) else _check_movie
 
         for subtitle in range(0, len(title_soups)):
             title_soup, body_soup = title_soups[subtitle], body_soups[subtitle]
             # title
             title = _clean_title(title_soup.find("a").text)
 
-            # Forced subtitles are not supported
-            if title.lower().rstrip().endswith(("forzado", "forzados")):
-                logger.debug("Skipping forced subtitles: %s", title)
+            if _UNSUPPORTED_RE.search(title):
+                logger.debug("Skipping unsupported subtitles: %s", title)
                 continue
 
-            # Check movie title (if the video is a movie)
-            if not episode and not _check_movie(video, title):
+            if not title_checker(video, title):
                 continue
 
             # Data
@@ -243,7 +268,7 @@ class SubdivxSubtitlesProvider(Provider):
             logger.debug("Found subtitle %r", subtitle)
             subtitles.append(subtitle)
 
-        return subtitles
+        return subtitles, len(title_soups) < 100
 
 
 def _clean_title(title):
@@ -266,6 +291,40 @@ def _get_download_url(data):
         ][0]
     except IndexError:
         return None
+
+
+def _check_episode(video, title):
+    ep_num = _EPISODE_NUM_RE.search(title)
+    season_num = _SEASON_NUM_RE.search(title)
+
+    if season_num is None:
+        logger.debug("Not a season/episode: %s", title)
+        return False
+
+    season_num = int(season_num.group("x"))
+
+    if ep_num is not None:
+        ep_num = int(ep_num.group("x"))
+
+    ep_matches = (
+        (video.episode == ep_num) or (ep_num is None)
+    ) and season_num == video.season
+
+    series_title = _SERIES_RE.sub("", title).strip()
+
+    distance = abs(len(series_title) - len(video.series))
+
+    series_matched = distance < 4 and ep_matches
+
+    logger.debug(
+        "Series matched? %s [%s -> %s] [title distance: %d]",
+        series_matched,
+        video,
+        title,
+        distance,
+    )
+
+    return series_matched
 
 
 def _check_movie(video, title):
