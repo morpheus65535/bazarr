@@ -126,7 +126,7 @@ class MoviesBlacklist(Resource):
     @api_ns_movies_blacklist.response(401, 'Not Authenticated')
     def delete(self):
         """Delete a movies subtitles from blacklist"""
-        args = self.post_request_parser.parse_args()
+        args = self.delete_request_parser.parse_args()
         if args.get("all") == "true":
             blacklist_delete_all_movie()
         else:
