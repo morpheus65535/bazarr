@@ -10,29 +10,12 @@ import { Badge, Container, Group, LoadingOverlay } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
-import { enabledLanguageKey, languageProfileKey } from "../keys";
 import { FormContext, FormValues } from "../utilities/FormValues";
+import {
+  SubmitHooksProvider,
+  useSubmitHooksSource,
+} from "../utilities/HooksProvider";
 import { SettingsProvider } from "../utilities/SettingsProvider";
-
-type SubmitHookType = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: (value: any) => unknown;
-};
-
-export const submitHooks: SubmitHookType = {
-  [languageProfileKey]: (value) => JSON.stringify(value),
-  [enabledLanguageKey]: (value: Language.Info[]) => value.map((v) => v.code2),
-};
-
-function invokeHooks(settings: LooseObject) {
-  for (const key in settings) {
-    if (key in submitHooks) {
-      const value = settings[key];
-      const fn = submitHooks[key];
-      settings[key] = fn(value);
-    }
-  }
-}
 
 interface Props {
   name: string;
@@ -44,6 +27,8 @@ const Layout: FunctionComponent<Props> = (props) => {
 
   const { data: settings, isLoading, isRefetching } = useSystemSettings();
   const { mutate, isLoading: isMutating } = useSettingsMutation();
+
+  const submitHooks = useSubmitHooksSource();
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -66,7 +51,7 @@ const Layout: FunctionComponent<Props> = (props) => {
 
       if (Object.keys(settings).length > 0) {
         const settingsToSubmit = { ...settings };
-        invokeHooks(settingsToSubmit);
+        submitHooks.invoke(settingsToSubmit);
         LOG("info", "submitting settings", settingsToSubmit);
         mutate(settingsToSubmit);
       }
@@ -77,7 +62,7 @@ const Layout: FunctionComponent<Props> = (props) => {
         updateStorage(storagesToSubmit);
       }
     },
-    [mutate, updateStorage]
+    [mutate, submitHooks, updateStorage]
   );
 
   const totalStagedCount = useMemo(() => {
@@ -100,30 +85,36 @@ const Layout: FunctionComponent<Props> = (props) => {
   return (
     <SettingsProvider value={settings}>
       <LoadingProvider value={isLoading || isMutating}>
-        <form onSubmit={form.onSubmit(submit)}>
-          <Toolbox>
-            <Group>
-              <Toolbox.Button
-                type="submit"
-                icon={faSave}
-                loading={isMutating}
-                disabled={totalStagedCount === 0}
-                rightIcon={
-                  <Badge size="xs" radius="sm" hidden={totalStagedCount === 0}>
-                    {totalStagedCount}
-                  </Badge>
-                }
-              >
-                Save
-              </Toolbox.Button>
-            </Group>
-          </Toolbox>
-          <FormContext.Provider value={form}>
-            <Container size="xl" mx={0}>
-              {children}
-            </Container>
-          </FormContext.Provider>
-        </form>
+        <SubmitHooksProvider value={submitHooks}>
+          <form onSubmit={form.onSubmit(submit)}>
+            <Toolbox>
+              <Group>
+                <Toolbox.Button
+                  type="submit"
+                  icon={faSave}
+                  loading={isMutating}
+                  disabled={totalStagedCount === 0}
+                  rightIcon={
+                    <Badge
+                      size="xs"
+                      radius="sm"
+                      hidden={totalStagedCount === 0}
+                    >
+                      {totalStagedCount}
+                    </Badge>
+                  }
+                >
+                  Save
+                </Toolbox.Button>
+              </Group>
+            </Toolbox>
+            <FormContext.Provider value={form}>
+              <Container size="xl" mx={0}>
+                {children}
+              </Container>
+            </FormContext.Provider>
+          </form>
+        </SubmitHooksProvider>
       </LoadingProvider>
     </SettingsProvider>
   );

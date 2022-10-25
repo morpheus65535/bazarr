@@ -1,13 +1,13 @@
 import { LOG } from "@/utilities/console";
 import { get, isNull, isUndefined, uniqBy } from "lodash";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { submitHooks } from "../components";
 import {
   FormKey,
   useFormActions,
   useStagedValues,
 } from "../utilities/FormValues";
 import { useSettings } from "../utilities/SettingsProvider";
+import { useSubmitHooks } from "./HooksProvider";
 
 export interface BaseInput<T> {
   disabled?: boolean;
@@ -52,20 +52,22 @@ export function useSettingValue<T>(
 
   const optionsRef = useRef(options);
 
+  const submitHooks = useSubmitHooks();
+
   useEffect(() => {
     const onSubmit = optionsRef.current?.onSubmit;
     if (onSubmit) {
       LOG("info", "Adding submit hook for", key);
-      submitHooks[key] = onSubmit;
+      submitHooks.add(key, onSubmit);
     }
 
     return () => {
       if (key in submitHooks) {
         LOG("info", "Removing submit hook for", key);
-        delete submitHooks[key];
+        submitHooks.remove(key);
       }
     };
-  }, [key]);
+  }, [key, submitHooks]);
 
   const originalValue = useMemo(() => {
     const onLoaded = optionsRef.current?.onLoaded;
