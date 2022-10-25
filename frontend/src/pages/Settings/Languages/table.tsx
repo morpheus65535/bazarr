@@ -13,6 +13,7 @@ import { Column } from "react-table";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { languageProfileKey } from "../keys";
 import { useFormActions } from "../utilities/FormValues";
+import { useSubmitHookWith } from "../utilities/HooksProvider";
 
 const Table: FunctionComponent = () => {
   const profiles = useLatestProfiles();
@@ -25,6 +26,8 @@ const Table: FunctionComponent = () => {
       profiles.reduce<number>((val, prof) => Math.max(prof.profileId, val), 0),
     [profiles]
   );
+
+  useSubmitHookWith(languageProfileKey, (value) => JSON.stringify(value));
 
   const { setValue } = useFormActions();
 

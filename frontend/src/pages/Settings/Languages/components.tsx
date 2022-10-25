@@ -11,6 +11,7 @@ import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { Selector, SelectorProps } from "../components";
 import { useFormActions } from "../utilities/FormValues";
 import { BaseInput } from "../utilities/hooks";
+import { useSubmitHookWith } from "../utilities/HooksProvider";
 
 type LanguageSelectorProps = Omit<
   MultiSelectorProps<Language.Info>,
@@ -24,6 +25,10 @@ export const LanguageSelector: FunctionComponent<
 > = ({ settingKey, location, label, options }) => {
   const enabled = useLatestEnabledLanguages();
   const { setValue } = useFormActions();
+
+  useSubmitHookWith(settingKey, (value: Language.Info[]) =>
+    value.map((v) => v.code2)
+  );
 
   const wrappedOptions = useSelectorOptions(options, (value) => value.name);
 
