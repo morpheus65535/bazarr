@@ -28,6 +28,10 @@ import {
   useStagedValues,
 } from "../utilities/FormValues";
 import { useSettingValue } from "../utilities/hooks";
+import {
+  SubmitHooksProvider,
+  useSubmitHooksSource,
+} from "../utilities/HooksProvider";
 import { SettingsProvider, useSettings } from "../utilities/SettingsProvider";
 import { ProviderInfo, ProviderList } from "./list";
 
@@ -129,6 +133,8 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     },
   });
 
+  const submitHooks = useSubmitHooksSource();
+
   const deletePayload = useCallback(() => {
     if (payload && enabledProviders) {
       const idx = enabledProviders.findIndex((v) => v === payload.key);
@@ -152,11 +158,14 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
           changes[ProviderKey] = newProviders;
         }
 
+        // Apply submit hooks
+        submitHooks.invoke(changes);
+
         onChangeRef.current(changes);
         modals.closeAll();
       }
     },
-    [info, enabledProviders, modals]
+    [info, enabledProviders, submitHooks, modals]
   );
 
   const canSave = info !== null;
@@ -249,38 +258,40 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   return (
     <SettingsProvider value={settings}>
       <FormContext.Provider value={form}>
-        <Stack>
-          <Stack spacing="xs">
-            <Selector
-              searchable
-              placeholder="Click to Select a Provider"
-              itemComponent={SelectItem}
-              disabled={payload !== null}
-              {...options}
-              value={info}
-              onChange={onSelect}
-            ></Selector>
-            <Message>{info?.description}</Message>
-            {inputs}
-            <div hidden={info?.message === undefined}>
-              <Message>{info?.message}</Message>
-            </div>
+        <SubmitHooksProvider value={submitHooks}>
+          <Stack>
+            <Stack spacing="xs">
+              <Selector
+                searchable
+                placeholder="Click to Select a Provider"
+                itemComponent={SelectItem}
+                disabled={payload !== null}
+                {...options}
+                value={info}
+                onChange={onSelect}
+              ></Selector>
+              <Message>{info?.description}</Message>
+              {inputs}
+              <div hidden={info?.message === undefined}>
+                <Message>{info?.message}</Message>
+              </div>
+            </Stack>
+            <Divider></Divider>
+            <Group position="right">
+              <Button hidden={!payload} color="red" onClick={deletePayload}>
+                Delete
+              </Button>
+              <Button
+                disabled={!canSave}
+                onClick={() => {
+                  submit(form.values);
+                }}
+              >
+                Save
+              </Button>
+            </Group>
           </Stack>
-          <Divider></Divider>
-          <Group position="right">
-            <Button hidden={!payload} color="red" onClick={deletePayload}>
-              Delete
-            </Button>
-            <Button
-              disabled={!canSave}
-              onClick={() => {
-                submit(form.values);
-              }}
-            >
-              Save
-            </Button>
-          </Group>
-        </Stack>
+        </SubmitHooksProvider>
       </FormContext.Provider>
     </SettingsProvider>
   );
