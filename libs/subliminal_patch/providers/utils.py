@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 _MatchingSub = namedtuple("_MatchingSub", ("file", "priority"))
 
 
-def _get_matching_sub(sub_names, forced=False, episode=None, episode_title=None):
+def _get_matching_sub(
+    sub_names, forced=False, episode=None, episode_title=None, **kwargs
+):
     guess_options = {"single_value": True}
     if episode is not None:
         guess_options["type"] = "episode"  # type: ignore
