@@ -27,6 +27,44 @@ def test_get_matching_sub(sub_names, episode, forced, expected):
     assert utils._get_matching_sub(sub_names, forced, episode) == expected
 
 
+def test_get_matching_sub_complex_season_pack():
+    files = [
+        "30. Hard Drive Courage. The Ride Of The Valkyries.srt",
+        "34. So In Louvre Are We Two. Night Of The Scarecrow.srt",
+        "31. Scuba Scuba Doo. Conway The Contaminationist.srt",
+        "32. Katz Under The Sea. Curtain Of Cruelty.srt",
+        "27. Muriel Meets Her Match. Courage Vs. Mecha-Courage.srt",
+        "36. Fishy Business. Angry Nasty People.srt",
+        "28. Campsite Of Terror. The Record Deal.srt",
+        "33. Feast Of The Bullfrogs. Tulip's Worm.srt",
+        "37. Dome Of Doom. Snowman's Revenge.srt",
+        "35. Mondo Magic. Watch The Birdies.srt",
+        "29. Stormy Weather. The Sandman Sleeps.srt",
+        "38. The Quilt Club. Swindlin' Wind.srt",
+    ]
+    # Courage the Cowardly Dog S03E17 "Mondo Magic"
+    matched = utils._get_matching_sub(files, False, 17, episode_title="Mondo Magic")
+    assert matched == "35. Mondo Magic. Watch The Birdies.srt"
+
+
+def test_get_matching_sub_complex_season_pack_mixed_files():
+    files = [
+        "30. Hard Drive Courage. The Ride Of The Valkyries.srt",
+        "S03E15.srt",
+        "S03E16.srt",
+        "S03E17.srt",
+        "28. Campsite Of Terror. The Record Deal.srt",
+        "33. Feast Of The Bullfrogs. Tulip's Worm.srt",
+        "37. Dome Of Doom. Snowman's Revenge.srt",
+        "35. Mondo Magic. Watch The Birdies.srt",
+        "29. Stormy Weather. The Sandman Sleeps.srt",
+        "38. The Quilt Club. Swindlin' Wind.srt",
+    ]
+    # Courage the Cowardly Dog S03E17 "Mondo Magic"
+    matched = utils._get_matching_sub(files, False, 17, episode_title="Mondo Magic")
+    assert matched == "S03E17.srt"
+
+
 def test_get_subtitle_from_archive_movie(data):
     with ZipFile(os.path.join(data, "archive_1.zip")) as zf:
         assert utils.get_subtitle_from_archive(zf) is not None
