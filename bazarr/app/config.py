@@ -358,6 +358,7 @@ def save_settings(settings_items):
     exclusion_updated = False
     sonarr_exclusion_updated = False
     radarr_exclusion_updated = False
+    use_embedded_subs_changed = False
 
     # Subzero Mods
     update_subzero = False
@@ -388,6 +389,10 @@ def save_settings(settings_items):
             value = 'True'
         elif value == 'false':
             value = 'False'
+
+        if key in ['settings-general-use_embedded_subs', 'settings-general-ignore_pgs_subs',
+                   'settings-general-ignore_vobsub_subs', 'settings-general-ignore_ass_subs']:
+            use_embedded_subs_changed = True
 
         if key in ['settings-general-base_url', 'settings-sonarr-base_url', 'settings-radarr-base_url']:
             value = base_url_slash_cleaner(value)
@@ -509,6 +514,15 @@ def save_settings(settings_items):
                     subzero_mods.append(value)
 
             update_subzero = True
+
+    if use_embedded_subs_changed:
+        from .scheduler import scheduler
+        from subtitles.indexer.series import list_missing_subtitles
+        from subtitles.indexer.movies import list_missing_subtitles_movies
+        if settings.general.getboolean('use_sonarr'):
+            scheduler.add_job(list_missing_subtitles, kwargs={'send_event': True})
+        if settings.general.getboolean('use_radarr'):
+            scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': True})
 
     if update_subzero:
         settings.set('general', 'subzero_mods', ','.join(subzero_mods))
