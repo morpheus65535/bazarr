@@ -63,7 +63,7 @@ def test_find_episode_subtitles(language):
             assert sub.language == language
 
 
-def test_fint_episode_subtitles_from_complete_series_path(episodes):
+def test_find_episode_subtitles_from_complete_series_path():
     path = "/subtitles/courage-the-cowardly-dog"
 
     with Subf2mProvider() as provider:
@@ -71,6 +71,25 @@ def test_fint_episode_subtitles_from_complete_series_path(episodes):
             path, 1, 1, Language.fromalpha2("en")
         ):
             assert sub.language == Language.fromalpha2("en")
+
+
+def test_list_and_download_subtitles_complete_series_pack(episodes):
+    episode = list(episodes.values())[0]
+
+    episode.series = "Sam & Max: Freelance Police"
+    episode.name = "The Glazed McGuffin Affair"
+    episode.title = "The Glazed McGuffin Affair"
+    episode.season = 1
+    episode.episode = 21
+
+    with Subf2mProvider() as provider:
+        subtitles = provider.list_subtitles(episode, {Language.fromalpha2("en")})
+        assert subtitles
+
+        subtitle = subtitles[0]
+        provider.download_subtitle(subtitle)
+
+        assert subtitle.is_valid()
 
 
 @pytest.fixture

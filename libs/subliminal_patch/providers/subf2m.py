@@ -272,8 +272,12 @@ class Subf2mProvider(Provider):
             guess = _memoized_episode_guess(clean_text)
 
             if "season" not in guess:
-                logger.debug("Nothing guessed from release: %s", clean_text)
-                continue
+                if "complete series" in clean_text.lower():
+                    logger.debug("Complete series pack found: %s", clean_text)
+                    guess["season"] = [season]
+                else:
+                    logger.debug("Nothing guessed from release: %s", clean_text)
+                    continue
 
             if season in guess["season"] and episode in guess.get("episode", []):
                 logger.debug("Episode match found: %s - %s", guess, clean_text)
