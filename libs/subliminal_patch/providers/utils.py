@@ -17,7 +17,7 @@ from ._agent_list import FIRST_THOUSAND_OR_SO_USER_AGENTS
 logger = logging.getLogger(__name__)
 
 
-_MatchingSub = namedtuple("_MatchingSub", ("file", "priority"))
+_MatchingSub = namedtuple("_MatchingSub", ("file", "priority", "context"))
 
 
 def _get_matching_sub(
@@ -37,7 +37,7 @@ def _get_matching_sub(
         # If it's a movie then get the first subtitle
         if episode is None and episode_title is None:
             logger.debug("Movie subtitle found: %s", sub_name)
-            matching_subs.append(_MatchingSub(sub_name, 2))
+            matching_subs.append(_MatchingSub(sub_name, 2, "Movie subtitle"))
             break
 
         guess = guessit(sub_name, options=guess_options)
@@ -46,17 +46,14 @@ def _get_matching_sub(
         if matched_episode_num:
             logger.debug("No episode number found in file: %s", sub_name)
 
-        matched_title = None
         if episode_title is not None:
-            matched_title = _analize_sub_name(sub_name, episode_title)
+            from_name = _analize_sub_name(sub_name, episode_title)
+            if from_name is not None:
+                matching_subs.append(from_name)
 
         if episode == matched_episode_num:
             logger.debug("Episode matched from number: %s", sub_name)
-            matching_subs.append(_MatchingSub(sub_name, 2))
-        elif matched_title:
-            matching_subs.append(_MatchingSub(sub_name, 1))
-        else:
-            logger.debug("Ignoring incorrect episode: '%s'", sub_name)
+            matching_subs.append(_MatchingSub(sub_name, 2, "Episode number matched"))
 
     if matching_subs:
         matching_subs.sort(key=lambda x: x.priority, reverse=True)
@@ -70,15 +67,21 @@ def _get_matching_sub(
 def _analize_sub_name(sub_name: str, title_):
     titles = re.split(r"[.-]", os.path.splitext(sub_name)[0])
     for title in titles:
+        title = title.strip()
         ratio = SequenceMatcher(None, title, title_).ratio()
         if ratio > 0.85:
             logger.debug(
                 "Episode title matched: '%s' -> '%s' [%s]", title, sub_name, ratio
             )
-            return True
 
-    logger.debug("No episode title matched from file")
-    return False
+            # Avoid false positives with short titles
+            if len(title_) > 4 and ratio >= 0.98:
+                return _MatchingSub(sub_name, 3, "Perfect title ratio")
+
+            return _MatchingSub(sub_name, 1, "Normal title ratio")
+
+    logger.debug("No episode title matched from file: %s", sub_name)
+    return None
 
 
 def get_subtitle_from_archive(

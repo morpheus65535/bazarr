@@ -30,26 +30,6 @@ def test_get_matching_sub(sub_names, episode, forced, expected):
 def test_get_matching_sub_complex_season_pack():
     files = [
         "30. Hard Drive Courage. The Ride Of The Valkyries.srt",
-        "34. So In Louvre Are We Two. Night Of The Scarecrow.srt",
-        "31. Scuba Scuba Doo. Conway The Contaminationist.srt",
-        "32. Katz Under The Sea. Curtain Of Cruelty.srt",
-        "27. Muriel Meets Her Match. Courage Vs. Mecha-Courage.srt",
-        "36. Fishy Business. Angry Nasty People.srt",
-        "28. Campsite Of Terror. The Record Deal.srt",
-        "33. Feast Of The Bullfrogs. Tulip's Worm.srt",
-        "37. Dome Of Doom. Snowman's Revenge.srt",
-        "35. Mondo Magic. Watch The Birdies.srt",
-        "29. Stormy Weather. The Sandman Sleeps.srt",
-        "38. The Quilt Club. Swindlin' Wind.srt",
-    ]
-    # Courage the Cowardly Dog S03E17 "Mondo Magic"
-    matched = utils._get_matching_sub(files, False, 17, episode_title="Mondo Magic")
-    assert matched == "35. Mondo Magic. Watch The Birdies.srt"
-
-
-def test_get_matching_sub_complex_season_pack_mixed_files():
-    files = [
-        "30. Hard Drive Courage. The Ride Of The Valkyries.srt",
         "S03E15.srt",
         "S03E16.srt",
         "S03E17.srt",
@@ -62,7 +42,56 @@ def test_get_matching_sub_complex_season_pack_mixed_files():
     ]
     # Courage the Cowardly Dog S03E17 "Mondo Magic"
     matched = utils._get_matching_sub(files, False, 17, episode_title="Mondo Magic")
-    assert matched == "S03E17.srt"
+    assert matched == "35. Mondo Magic. Watch The Birdies.srt"
+
+
+def _gen_subs():
+    files = {
+        15: "11b - Little Bigfoot.srt",
+        14: "11a - Kiss Kiss, Bang Bang.srt",
+        17: "10b - The Invaders.srt",
+        18: "09a - The Tell Tale Tail.srt",
+        1: "01 - The Thing That Wouldn't Stop It.srt",
+        5: "03b - They Came from Down There.srt",
+        4: "03a - Bad Day on the Moon.srt",
+        8: "04a - The Friend for Life.srt",
+        21: "08b - The Glazed McGuffin Affair.srt",
+        13: "07b - It's Dangly Deever Time.srt",
+        9: "04b - Dysfunction of the Gods.srt",
+    }
+    for episode, title in files.items():
+        yield episode, title.split("-")[1].strip().rstrip(".srt"), title
+
+
+@pytest.mark.parametrize("episode,title,file", _gen_subs())
+def test_get_matching_sub_complete_series_pack_mixed(episode, title, file):
+    files = [
+        "11b - Little Bigfoot.srt",
+        "11a - Kiss Kiss, Bang Bang.srt",
+        "10b - The Invaders.srt",
+        "09a - The Tell Tale Tail.srt",
+        "01 - The Thing That Wouldn't Stop It.srt",
+        "03b - They Came from Down There.srt",
+        "03a - Bad Day on the Moon.srt",
+        "04a - The Friend for Life.srt",
+        "08b - The Glazed McGuffin Affair.srt",
+        "07b - It's Dangly Deever Time.srt",
+        "04b - Dysfunction of the Gods.srt",
+        "05b - A Glitch in Time.srt",
+        "12b - Sam & Max vs. the Uglions.srt",
+        "08a - Aaiiieee Robot.srt",
+        "02b - Max's Big Day.srt",
+        "05a - Big Trouble at the Earth's Core.srt",
+        "13 - The Final Episode.srt",
+        "02a - The Second Show Ever.srt",
+        "10a - Tonight We Love.srt",
+        "12a - Fools Die on Friday.srt",
+        "09b - The Trouble with Gary.srt",
+        "06b - We Drop at Dawn.srt",
+        "07a - Christmas Bloody Christmas.srt",
+        "06a - That Darn Gator.srt",
+    ]
+    assert utils._get_matching_sub(files, False, episode, title) == file
 
 
 def test_get_subtitle_from_archive_movie(data):
