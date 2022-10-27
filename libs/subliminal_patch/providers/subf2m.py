@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 
+from difflib import SequenceMatcher
 import functools
 import logging
-import urllib.parse
 import re
+import time
+import urllib.parse
 
 from bs4 import BeautifulSoup as bso
 from guessit import guessit
 from requests import Session
-from difflib import SequenceMatcher
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
 from subliminal_patch.exceptions import APIThrottled
@@ -31,6 +32,7 @@ class Subf2mSubtitle(Subtitle):
 
         self.release_info = release_info
         self.episode_number = episode_number
+        self.episode_title = None
 
         self._matches = set(
             ("title", "year")
@@ -115,7 +117,7 @@ class Subf2mProvider(Provider):
     provider_name = "subf2m"
 
     _movie_title_regex = re.compile(r"^(.+?)( \((\d{4})\))?$")
-    _tv_show_title_regex = re.compile(r"^(.+?) - (.*?) season( \((\d{4})\))?$")
+    _tv_show_title_regex = re.compile(r"^(.+?) - (.*?) (season|series)( \((\d{4})\))?$")
     _supported_languages = {}
     _supported_languages["brazillian-portuguese"] = Language("por", "BR")
 
@@ -138,12 +140,34 @@ class Subf2mProvider(Provider):
     def terminate(self):
         self._session.close()
 
+    def _safe_get_text(self, url, retry=3, default_return=""):
+        req = None
+
+        for n in range(retry):
+            req = self._session.get(url, stream=True)
+            # Sometimes subf2m will return a 503 code. This error usually disappears
+            # retrying the query
+            if req.status_code == 503:
+                logger.debug("503 returned. Trying again [%d] in 3 seconds", n + 1)
+                time.sleep(3)
+                continue
+            else:
+                req.raise_for_status()
+                break
+
+        if req is not None:
+            return "\n".join(
+                line for line in req.iter_lines(decode_unicode=True) if line
+            )
+
+        return default_return
+
     def _gen_results(self, query):
-        req = self._session.get(
-            f"{_BASE_URL}/subtitles/searchbytitle?query={urllib.parse.quote(query)}&l=",
-            stream=True,
-        )
-        text = "\n".join(line for line in req.iter_lines(decode_unicode=True) if line)
+        query = urllib.parse.quote(query)
+
+        url = f"{_BASE_URL}/subtitles/searchbytitle?query={query}&l="
+
+        text = self._safe_get_text(url)
         soup = bso(text, "html.parser")
 
         for title in soup.select("li div[class='title'] a"):
@@ -189,12 +213,19 @@ class Subf2mProvider(Provider):
         results = []
         for result in self._gen_results(title):
             text = result.text.lower()
+
             match = self._tv_show_title_regex.match(text)
             if not match:
+                logger.debug("Series title not matched: %s", text)
                 continue
+            else:
+                logger.debug("Series title matched: %s", text)
+
             match_title = match.group(1)
             match_season = match.group(2)
-            if season_str == match_season:
+
+            # Match "complete series" titles as they usually contain season packs
+            if season_str == match_season or match_season == "complete":
                 results.append(
                     {
                         "href": result.get("href"),
@@ -223,7 +254,9 @@ class Subf2mProvider(Provider):
 
         return subtitles
 
-    def _find_episode_subtitles(self, path, season, episode, language):
+    def _find_episode_subtitles(
+        self, path, season, episode, language, episode_title=None
+    ):
         soup = self._get_subtitle_page_soup(path, language)
 
         subtitles = []
@@ -258,6 +291,8 @@ class Subf2mProvider(Provider):
             if subtitle is None:
                 continue
 
+            subtitle.episode_title = episode_title
+
             logger.debug("Found subtitle: %s", subtitle)
             subtitles.append(subtitle)
 
@@ -266,8 +301,7 @@ class Subf2mProvider(Provider):
     def _get_subtitle_page_soup(self, path, language):
         language_path = self._supported_languages_reversed[language]
 
-        req = self._session.get(f"{_BASE_URL}{path}/{language_path}", stream=True)
-        text = "\n".join(line for line in req.iter_lines(decode_unicode=True) if line)
+        text = self._safe_get_text(f"{_BASE_URL}{path}/{language_path}")
 
         return bso(text, "html.parser")
 
@@ -289,7 +323,7 @@ class Subf2mProvider(Provider):
             if is_episode:
                 subtitles.extend(
                     self._find_episode_subtitles(
-                        result, video.season, video.episode, language
+                        result, video.season, video.episode, language, video.title
                     )
                 )
             else:
@@ -300,14 +334,13 @@ class Subf2mProvider(Provider):
     def download_subtitle(self, subtitle):
         # TODO: add MustGetBlacklisted support
 
-        req = self._session.get(subtitle.page_link, stream=True)
-        text = "\n".join(line for line in req.iter_lines(decode_unicode=True) if line)
+        text = self._safe_get_text(subtitle.page_link)
         soup = bso(text, "html.parser")
         try:
             download_url = _BASE_URL + str(
                 soup.select_one("a[id='downloadButton']")["href"]  # type: ignore
             )
-        except (AttributeError, KeyError):
+        except (AttributeError, KeyError, TypeError):
             raise APIThrottled(f"Couldn't get download url from {subtitle.page_link}")
 
         downloaded = self._session.get(download_url, allow_redirects=True)
@@ -318,7 +351,9 @@ class Subf2mProvider(Provider):
             raise APIThrottled(f"Invalid archive: {subtitle.page_link}")
 
         subtitle.content = get_subtitle_from_archive(
-            archive, episode=subtitle.episode_number
+            archive,
+            episode=subtitle.episode_number,
+            episode_title=subtitle.episode_title,
         )
 
 

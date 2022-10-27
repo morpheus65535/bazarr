@@ -33,6 +33,7 @@ def test_search_movie(movies, title, year, expected_url):
         ("Breaking Bad", 1, "/subtitles/breaking-bad-first-season"),
         ("House Of The Dragon", 1, "/subtitles/house-of-the-dragon-first-season"),
         ("The Bear", 1, "/subtitles/the-bear-first-season"),
+        ("Courage the Cowardly Dog", 1, "/subtitles/courage-the-cowardly-dog"),
     ],
 )
 def test_search_tv_show_season(episodes, title, season, expected_url):
@@ -60,6 +61,16 @@ def test_find_episode_subtitles(language):
     with Subf2mProvider() as provider:
         for sub in provider._find_episode_subtitles(path, 1, 1, language):
             assert sub.language == language
+
+
+def test_fint_episode_subtitles_from_complete_series_path(episodes):
+    path = "/subtitles/courage-the-cowardly-dog"
+
+    with Subf2mProvider() as provider:
+        for sub in provider._find_episode_subtitles(
+            path, 1, 1, Language.fromalpha2("en")
+        ):
+            assert sub.language == Language.fromalpha2("en")
 
 
 @pytest.fixture
@@ -143,3 +154,17 @@ def test_download_subtitle_episode(subtitle_episode):
     with Subf2mProvider() as provider:
         provider.download_subtitle(subtitle_episode)
         assert subtitle_episode.is_valid()
+
+
+def test_download_subtitle_episode_with_title():
+    sub = Subf2mSubtitle(
+        Language.fromalpha2("en"),
+        "https://subf2m.co/subtitles/courage-the-cowardly-dog/english/2232402",
+        "Season 3 complete.",
+        13,
+    )
+
+    sub.episode_title = "Feast of the Bullfrogs"
+    with Subf2mProvider() as provider:
+        provider.download_subtitle(sub)
+        assert sub.is_valid()
