@@ -134,12 +134,13 @@ const MovieUploadForm: FunctionComponent<Props> = ({
   }, [form.values.files.length, modals]);
 
   const action = useArrayAction<SubtitleFile>((fn) => {
-    form.setValues(({ files, ...rest }) => {
-      const newFiles = fn(files);
+    form.setValues((values) => {
+      const newFiles = fn(values.files ?? []);
       newFiles.forEach((v) => {
         v.validateResult = validator(movie, v);
       });
-      return { ...rest, files: newFiles };
+
+      return { ...values, files: newFiles };
     });
   });
 
