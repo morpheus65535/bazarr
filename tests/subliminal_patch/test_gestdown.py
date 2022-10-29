@@ -78,9 +78,13 @@ def test_subtitle_download(subtitle):
 
 def test_list_subtitles_423(episodes, requests_mock, mocker):
     mocker.patch("time.sleep")
-    requests_mock.get("https://api.gestdown.info/shows/search/Breaking%20Bad", status_code=200)
     requests_mock.get(
-        f"{_BASE_URL}/subtitles/find/English/Breaking%20Bad/1/1", status_code=423
+        "https://api.gestdown.info/shows/search/Breaking%20Bad",
+        status_code=200,
+        text='{"shows":[{"id":"cd880e2e-ef44-47cd-9f3d-a03b343ba2d0","name":"Breaking Bad","nbSeasons":5,"seasons":[1,2,3,4,5]}]}'
+    )
+    requests_mock.get(
+        f"{_BASE_URL}/subtitles/get/cd880e2e-ef44-47cd-9f3d-a03b343ba2d0/1/1/English", status_code=423
     )
 
     with GestdownProvider() as provider:
