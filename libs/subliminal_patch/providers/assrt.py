@@ -45,6 +45,15 @@ def search_language_in_list(lang, langlist):
     return None
 
 
+def check_status_code(resp):
+    try:
+        response = resp.json()
+        if 'status' in response and 'errmsg' in response:
+            raise ProviderError(f'{response["errmsg"]} ({response["status"]})')
+    except Exception:
+        pass
+
+
 class AssrtSubtitle(Subtitle):
     """Assrt Sbutitle."""
     provider_name = 'assrt'
@@ -72,6 +81,7 @@ class AssrtSubtitle(Subtitle):
         logger.info('Get subtitle detail: GET /sub/detail %r', params)
         sleep(get_request_delay(self.max_request_per_minute))
         r = self.session.get(server_url + '/sub/detail', params=params, timeout=15)
+        check_status_code(r)
         r.raise_for_status()
 
         result = r.json()
@@ -137,6 +147,7 @@ class AssrtProvider(Provider):
     def initialize(self):
         self.session.headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")}
         res = self.session.get(server_url + '/user/quota', params={'token': self.token}, timeout=15)
+        check_status_code(res)
         res.raise_for_status()
         result = res.json()
         if 'user' in result and 'quota' in result['user']:
@@ -181,12 +192,9 @@ class AssrtProvider(Provider):
         logger.debug('Searching subtitles: GET /sub/search %r', params)
         sleep(get_request_delay(self.max_request_per_minute))
         res = self.session.get(server_url + '/sub/search', params=params, timeout=15)
+        check_status_code(res)
         res.raise_for_status()
         result = res.json()
-
-        if result['status'] != 0:
-            logger.error('status error: %r', result['status'])
-            return []
 
         # parse the subtitles
         pattern = re.compile(r'lang(?P<code>\w+)')
@@ -213,6 +221,7 @@ class AssrtProvider(Provider):
     def download_subtitle(self, subtitle):
         sleep(get_request_delay(self.max_request_per_minute))
         r = self.session.get(subtitle.download_link, timeout=15)
+        check_status_code(r)
         r.raise_for_status()
 
         subtitle.content = fix_line_ending(r.content)
