@@ -17,7 +17,7 @@ from languages.get_languages import alpha3_from_alpha2
 from subtitles.tools.score import movie_score, series_score
 
 from .pool import update_pools, _get_pool
-from .utils import get_video, _get_lang_obj, _get_scores
+from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
 from .processing import process_subtitle
 
 
@@ -39,8 +39,9 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
 
     language_set = _get_language_obj(languages=languages)
     hi_required = any([x.hi for x in language_set])
-    forced_required = any([x.forced for x in language_set])
-    _set_forced_providers(forced_required=forced_required, pool=pool)
+    also_forced = any([x.forced for x in language_set])
+    forced_required = all([x.forced for x in language_set])
+    _set_forced_providers(pool=pool, also_forced=also_forced, forced_required=forced_required)
 
     video = get_video(force_unicode(path), title, sceneName, providers=providers, media_type=media_type)
 
@@ -140,16 +141,3 @@ def _get_language_obj(languages):
         language_set.add(lang_obj)
 
     return language_set
-
-
-def _set_forced_providers(forced_required, pool):
-    # TODO: maybe a separate pool for forced configs? only_foreign is hardcoded
-    # in get_providers and this causes updating the pool on every call
-    if forced_required:
-        pool.provider_configs.update(
-            {
-                "podnapisi": {"only_foreign": True},
-                "subscene": {"only_foreign": True},
-                "opensubtitles": {"only_foreign": True}
-             }
-        )

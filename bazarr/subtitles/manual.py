@@ -20,7 +20,7 @@ from app.database import get_profiles_list
 from subtitles.tools.score import movie_score, series_score
 
 from .pool import update_pools, _get_pool, _init_pool
-from .utils import get_video, _get_lang_obj, _get_scores
+from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
 from .processing import process_subtitle
 
 
@@ -34,7 +34,8 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
 
     language_set, initial_language_set, original_format = _get_language_obj(profile_id=profile_id)
     also_forced = any([x.forced for x in initial_language_set])
-    _set_forced_providers(also_forced=also_forced, pool=pool)
+    forced_required = all([x.forced for x in initial_language_set])
+    _set_forced_providers(pool=pool, also_forced=also_forced, forced_required=forced_required)
 
     if providers:
         video = get_video(force_unicode(path), title, sceneName, providers=providers, media_type=media_type)
@@ -264,8 +265,3 @@ def _get_language_obj(profile_id):
         language_set.add(lang_obj_hi)
 
     return language_set, initial_language_set, original_format
-
-
-def _set_forced_providers(also_forced, pool):
-    if also_forced:
-        pool.provider_configs.update({'podnapisi': {'also_foreign': True}, 'opensubtitles': {'also_foreign': True}})
