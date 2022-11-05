@@ -9,12 +9,11 @@ import subliminal
 from subzero.language import Language
 from subliminal_patch.core import save_subtitles
 from subliminal_patch.core_persistent import download_best_subtitles
-from subliminal_patch.score import compute_score
+from subliminal_patch.score import ComputeScore
 
-from app.config import settings, get_array_from
+from app.config import settings, get_array_from, get_scores
 from utilities.helper import get_target_folder, force_unicode
 from languages.get_languages import alpha3_from_alpha2
-from subtitles.tools.score import movie_score, series_score
 
 from .pool import update_pools, _get_pool
 from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
@@ -46,7 +45,6 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     video = get_video(force_unicode(path), title, sceneName, providers=providers, media_type=media_type)
 
     if video:
-        handler = series_score if media_type == "series" else movie_score
         minimum_score = settings.general.minimum_score
         minimum_score_movie = settings.general.minimum_score_movie
         min_score, max_score, scores = _get_scores(media_type, minimum_score_movie, minimum_score)
@@ -59,9 +57,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                            pool_instance=pool,
                                                            min_score=int(min_score),
                                                            hearing_impaired=hi_required,
-                                                           compute_score=compute_score,
-                                                           throttle_time=None,  # fixme
-                                                           score_obj=handler)
+                                                           compute_score=ComputeScore(get_scores()))
         else:
             downloaded_subtitles = None
             logging.info("BAZARR All providers are throttled")

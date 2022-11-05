@@ -27,8 +27,8 @@ from concurrent.futures import as_completed
 
 from .extensions import provider_registry
 from .exceptions import MustGetBlacklisted
+from .score import compute_score as default_compute_score
 from subliminal.exceptions import ServiceUnavailable, DownloadLimitExceeded
-from subliminal.score import compute_score as default_compute_score
 from subliminal.utils import hash_napiprojekt, hash_opensubtitles, hash_shooter, hash_thesubdb
 from subliminal.video import VIDEO_EXTENSIONS, Video, Episode, Movie
 from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, \
@@ -440,7 +440,7 @@ class SZProviderPool(ProviderPool):
         return True
 
     def download_best_subtitles(self, subtitles, video, languages, min_score=0, hearing_impaired=False, only_one=False,
-                                compute_score=None, score_obj=None):
+                                compute_score=None):
         """Download the best matching subtitles.
         
         patch: 
@@ -486,8 +486,7 @@ class SZProviderPool(ProviderPool):
             orig_matches = matches.copy()
 
             logger.debug('%r: Found matches %r', s, matches)
-            score, score_without_hash = compute_score(matches, s, video, hearing_impaired=use_hearing_impaired,
-                                                      score_obj=score_obj)
+            score, score_without_hash = compute_score(matches, s, video, use_hearing_impaired)
             unsorted_subtitles.append(
                 (s, score, score_without_hash, matches, orig_matches))
 
@@ -1005,7 +1004,7 @@ def download_subtitles(subtitles, pool_class=ProviderPool, **kwargs):
 
 
 def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=False, only_one=False, compute_score=None,
-                            pool_class=ProviderPool, throttle_time=0, score_obj=None, **kwargs):
+                            pool_class=ProviderPool, throttle_time=0, **kwargs):
     """List and download the best matching subtitles.
 
     The `videos` must pass the `languages` and `undefined` (`only_one`) checks of :func:`check_video`.
@@ -1049,7 +1048,7 @@ def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=Fal
             subtitles = pool.download_best_subtitles(pool.list_subtitles(video, languages - video.subtitle_languages),
                                                      video, languages, min_score=min_score,
                                                      hearing_impaired=hearing_impaired, only_one=only_one,
-                                                     compute_score=compute_score, score_obj=score_obj)
+                                                     compute_score=compute_score)
             logger.info('Downloaded %d subtitle(s)', len(subtitles))
             downloaded_subtitles[video].extend(subtitles)
 

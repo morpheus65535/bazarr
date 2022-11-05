@@ -238,27 +238,26 @@ defaults = {
         "year": 90,
         "season": 30,
         "episode": 30,
-        "release_group": 15,
+        "release_group": 14,
         "source": 7,
         "audio_codec": 3,
         "resolution": 2,
         "video_codec": 2,
+        "streaming_service": 1,
         "hearing_impaired": 1,
-        "streaming_service": 0,
-        "edition": 0,
     },
     'movie_scores': {
         "hash": 119,
         "title": 60,
         "year": 30,
-        "release_group": 15,
+        "release_group": 13,
         "source": 7,
         "audio_codec": 3,
         "resolution": 2,
         "video_codec": 2,
+        "streaming_service": 1,
+        "edition": 1,
         "hearing_impaired": 1,
-        "streaming_service": 0,
-        "edition": 0,
     }
 }
 
@@ -611,3 +610,8 @@ def configure_proxy_func():
         os.environ['HTTPS_PROXY'] = str(proxy)
         exclude = ','.join(get_array_from(settings.proxy.exclude))
         os.environ['NO_PROXY'] = exclude
+
+
+def get_scores():
+    settings = get_settings()
+    return {"movie": settings["movie_scores"], "episode": settings["series_scores"]}

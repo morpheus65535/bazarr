@@ -548,12 +548,23 @@ def guess_matches(video, guess, partial=False):
         if _has_match(video, guess, key):
             matches.add(key)
 
-    # Add streaming service match for non-web sources
-    if video.source and video.source != "Web":
-        matches.add("streaming_service")
-
-    # As edition tags are rare, add edition match if the video doesn't have an edition
-    if not video.edition:
-        matches.add("edition")
+    for key in ("streaming_service", "edition"):
+        if _check_optional(video, guess, key):
+            matches.add(key)
 
     return matches
+
+
+def _check_optional(video, guess, key="edition"):
+    guess_optional = guess.get(key)
+    video_optional = getattr(video, key, None)
+
+    if video_optional and guess_optional:
+        return _has_match(video, guess, key)
+
+    if not video_optional and not guess_optional:
+        logger.debug("Both video and guess don't have %s. Returning True", key)
+        return True
+
+    logger.debug("One item doesn't have %s (%s -> %s). Returning False", key, guess_optional, video_optional)
+    return False
