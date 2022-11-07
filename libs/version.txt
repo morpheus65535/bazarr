@@ -103,7 +103,7 @@ babelfish==0.6.0
 beautifulsoup4==4.11.1
 chardet==5.0.0
 pysrt==1.1.2
-stevedore==4.1.0
+#stevedore==3.5.2 # Do not upgrade. Version newer than that have issues with importlib on Python 3.7
 
 # Required-by: subliminal_patch
 cloudscraper==1.2.58

@@ -12,7 +12,12 @@
 """Tests for the sphinx extension
 """
 
-import importlib.metadata as importlib_metadata
+try:
+    # For python 3.8 and later
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    # For everyone else
+    import importlib_metadata
 
 from stevedore import extension
 from stevedore import sphinxext

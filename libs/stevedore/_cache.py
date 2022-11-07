@@ -15,7 +15,6 @@
 import errno
 import glob
 import hashlib
-import importlib.metadata as importlib_metadata
 import itertools
 import json
 import logging
@@ -23,6 +22,13 @@ import os
 import os.path
 import struct
 import sys
+
+try:
+    # For python 3.8 and later
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    # For everyone else
+    import importlib_metadata
 
 
 log = logging.getLogger('stevedore._cache')
@@ -104,7 +110,8 @@ def _build_cacheable_data():
         # importlib-metadata 4.0 or later (or stdlib importlib.metadata in
         # Python 3.9 or later)
         real_groups = {
-            name: real_groups.select(name=name) for name in real_groups.names
+            group: real_groups.select(group=group)
+            for group in real_groups.groups
         }
 
     # Convert the namedtuple values to regular tuples
