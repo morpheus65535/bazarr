@@ -76,7 +76,14 @@ class AsyncPubSubManager(AsyncManager):
         else:
             # client is in another server, so we post request to the queue
             await self._publish({'method': 'disconnect', 'sid': sid,
-                                'namespace': namespace or '/'})
+                                 'namespace': namespace or '/'})
+
+    async def disconnect(self, sid, namespace, **kwargs):
+        if kwargs.get('ignore_queue'):
+            return await super(AsyncPubSubManager, self).disconnect(
+                sid, namespace=namespace)
+        await self._publish({'method': 'disconnect', 'sid': sid,
+                             'namespace': namespace or '/'})
 
     async def close_room(self, room, namespace=None):
         await self._publish({'method': 'close_room', 'room': room,
@@ -166,14 +173,20 @@ class AsyncPubSubManager(AsyncManager):
                     if data and 'method' in data:
                         self._get_logger().info('pubsub message: {}'.format(
                             data['method']))
-                        if data['method'] == 'emit':
-                            await self._handle_emit(data)
-                        elif data['method'] == 'callback':
-                            await self._handle_callback(data)
-                        elif data['method'] == 'disconnect':
-                            await self._handle_disconnect(data)
-                        elif data['method'] == 'close_room':
-                            await self._handle_close_room(data)
+                        try:
+                            if data['method'] == 'emit':
+                                await self._handle_emit(data)
+                            elif data['method'] == 'callback':
+                                await self._handle_callback(data)
+                            elif data['method'] == 'disconnect':
+                                await self._handle_disconnect(data)
+                            elif data['method'] == 'close_room':
+                                await self._handle_close_room(data)
+                        except asyncio.CancelledError:
+                            raise  # let the outer try/except handle it
+                        except:
+                            self.server.logger.exception(
+                                'Unknown error in pubsub listening task')
             except asyncio.CancelledError:  # pragma: no cover
                 break
             except:  # pragma: no cover

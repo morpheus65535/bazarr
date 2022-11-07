@@ -11,10 +11,8 @@ docReady(() => {
   if (EVALEX) {
     addConsoleIconToFrames(frames);
   }
-  addEventListenersToElements(
-    document.querySelectorAll("div.detail"),
-    "click",
-    () => document.querySelector("div.traceback").scrollIntoView(false)
+  addEventListenersToElements(document.querySelectorAll("div.detail"), "click", () =>
+    document.querySelector("div.traceback").scrollIntoView(false)
   );
   addToggleFrameTraceback(frames);
   addToggleTraceTypesOnClick(document.querySelectorAll("h2.traceback"));
@@ -25,12 +23,11 @@ docReady(() => {
 function addToggleFrameTraceback(frames) {
   frames.forEach((frame) => {
     frame.addEventListener("click", () => {
-      frame
-        .getElementsByTagName("pre")[0]
-        .parentElement.classList.toggle("expanded");
+      frame.getElementsByTagName("pre")[0].parentElement.classList.toggle("expanded");
     });
-  });
+  })
 }
+
 
 function wrapPlainTraceback() {
   const plainTraceback = document.querySelector("div.plain textarea");
@@ -54,7 +51,7 @@ function initPinBox() {
         `${document.location.pathname}?__debugger__=yes&cmd=pinauth&pin=${pin}&s=${encodedSecret}`
       )
         .then((res) => res.json())
-        .then(({ auth, exhausted }) => {
+        .then(({auth, exhausted}) => {
           if (auth) {
             EVALEX_TRUSTED = true;
             fadeOut(document.getElementsByClassName("pin-prompt")[0]);
@@ -279,9 +276,7 @@ function handleConsoleSubmit(e, command, frameID) {
     };
     const paramString = Object.keys(params)
       .map((key) => {
-        return (
-          "&" + encodeURIComponent(key) + "=" + encodeURIComponent(params[key])
-        );
+        return "&" + encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
       })
       .join("");
 
@@ -356,10 +351,7 @@ function fadeIn(element, display) {
 }
 
 function docReady(fn) {
-  if (
-    document.readyState === "complete" ||
-    document.readyState === "interactive"
-  ) {
+  if (document.readyState === "complete" || document.readyState === "interactive") {
     setTimeout(fn, 1);
   } else {
     document.addEventListener("DOMContentLoaded", fn);

@@ -26,6 +26,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
     def __init__(self, app):
         self.app = app
         self._sock = None
+        self.received_messages = []
 
     def __call__(self, environ, start_response):
         self._sock = uwsgi.connection_fd()
@@ -117,6 +118,9 @@ class uWSGIWebSocket(object):  # pragma: no cover
                     return None
                 return self._decode_received(msg)
             else:
+                if self.received_messages:
+                    return self.received_messages.pop(0)
+
                 # we wake up at least every 3 seconds to let uWSGI
                 # do its ping/ponging
                 event_set = self._event.wait(timeout=3)
@@ -133,13 +137,19 @@ class uWSGIWebSocket(object):  # pragma: no cover
                         self._send(msg)
                 # maybe there is something to receive, if not, at least
                 # ensure uWSGI does its ping/ponging
-                try:
-                    msg = uwsgi.websocket_recv_nb()
-                except IOError:  # connection closed
-                    self._select_greenlet.kill()
-                    return None
-                if msg:  # message available
-                    return self._decode_received(msg)
+                while True:
+                    try:
+                        msg = uwsgi.websocket_recv_nb()
+                    except IOError:  # connection closed
+                        self._select_greenlet.kill()
+                        return None
+                    if msg:  # message available
+                        self.received_messages.append(
+                            self._decode_received(msg))
+                    else:
+                        break
+                if self.received_messages:
+                    return self.received_messages.pop(0)
 
 
 _async = {

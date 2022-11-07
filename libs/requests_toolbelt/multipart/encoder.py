@@ -36,7 +36,7 @@ class MultipartEncoder(object):
         from requests_toolbelt import MultipartEncoder
 
         encoder = MultipartEncoder({'field': 'value',
-                                    'other_field', 'other_value'})
+                                    'other_field': 'other_value'})
         r = requests.post('https://httpbin.org/post', data=encoder,
                           headers={'Content-Type': encoder.content_type})
 
@@ -89,7 +89,7 @@ class MultipartEncoder(object):
         self.boundary_value = boundary or uuid4().hex
 
         # Computed boundary
-        self.boundary = '--{0}'.format(self.boundary_value)
+        self.boundary = '--{}'.format(self.boundary_value)
 
         #: Encoding of the data being passed in
         self.encoding = encoding
@@ -148,7 +148,7 @@ class MultipartEncoder(object):
         return self._len or self._calculate_length()
 
     def __repr__(self):
-        return '<MultipartEncoder: {0!r}>'.format(self.fields)
+        return '<MultipartEncoder: {!r}>'.format(self.fields)
 
     def _calculate_length(self):
         """
@@ -273,7 +273,7 @@ class MultipartEncoder(object):
     @property
     def content_type(self):
         return str(
-            'multipart/form-data; boundary={0}'.format(self.boundary_value)
+            'multipart/form-data; boundary={}'.format(self.boundary_value)
             )
 
     def to_string(self):

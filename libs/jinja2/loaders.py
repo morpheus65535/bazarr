@@ -3,6 +3,7 @@ sources.
 """
 import importlib.util
 import os
+import posixpath
 import sys
 import typing as t
 import weakref
@@ -193,7 +194,9 @@ class FileSystemLoader(BaseLoader):
     ) -> t.Tuple[str, str, t.Callable[[], bool]]:
         pieces = split_template_path(template)
         for searchpath in self.searchpath:
-            filename = os.path.join(searchpath, *pieces)
+            # Use posixpath even on Windows to avoid "drive:" or UNC
+            # segments breaking out of the search directory.
+            filename = posixpath.join(searchpath, *pieces)
             f = open_if_exists(filename)
             if f is None:
                 continue
@@ -210,7 +213,8 @@ class FileSystemLoader(BaseLoader):
                 except OSError:
                     return False
 
-            return contents, filename, uptodate
+            # Use normpath to convert Windows altsep to sep.
+            return contents, os.path.normpath(filename), uptodate
         raise TemplateNotFound(template)
 
     def list_templates(self) -> t.List[str]:
@@ -296,7 +300,7 @@ class PackageLoader(BaseLoader):
         if isinstance(loader, zipimport.zipimporter):
             self._archive = loader.archive
             pkgdir = next(iter(spec.submodule_search_locations))  # type: ignore
-            template_root = os.path.join(pkgdir, package_path)
+            template_root = os.path.join(pkgdir, package_path).rstrip(os.path.sep)
         else:
             roots: t.List[str] = []
 
@@ -326,7 +330,12 @@ class PackageLoader(BaseLoader):
     def get_source(
         self, environment: "Environment", template: str
     ) -> t.Tuple[str, str, t.Optional[t.Callable[[], bool]]]:
-        p = os.path.join(self._template_root, *split_template_path(template))
+        # Use posixpath even on Windows to avoid "drive:" or UNC
+        # segments breaking out of the search directory. Use normpath to
+        # convert Windows altsep to sep.
+        p = os.path.normpath(
+            posixpath.join(self._template_root, *split_template_path(template))
+        )
         up_to_date: t.Optional[t.Callable[[], bool]]
 
         if self._archive is None:
@@ -603,7 +612,7 @@ class ModuleLoader(BaseLoader):
         if not isinstance(path, abc.Iterable) or isinstance(path, str):
             path = [path]
 
-        mod.__path__ = [os.fspath(p) for p in path]  # type: ignore
+        mod.__path__ = [os.fspath(p) for p in path]
 
         sys.modules[package_name] = weakref.proxy(
             mod, lambda x: sys.modules.pop(package_name, None)

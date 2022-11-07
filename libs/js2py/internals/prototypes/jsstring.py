@@ -22,6 +22,11 @@ def replacement_template(rep, source, span, npar):
                 res += '$'
                 n += 2
                 continue
+            elif rep[n + 1] == '&':
+                # replace with matched string
+                res += source[span[0]:span[1]]
+                n += 2
+                continue
             elif rep[n + 1] == '`':
                 # replace with string that is BEFORE match
                 res += source[:span[0]]

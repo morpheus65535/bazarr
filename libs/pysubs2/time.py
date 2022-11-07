@@ -1,13 +1,13 @@
 from collections import namedtuple
 import re
-
-
-#: Pattern that matches both SubStation and SubRip timestamps.
 from typing import Optional, List, Tuple, Sequence
-
 from pysubs2.common import IntOrFloat
 
-TIMESTAMP = re.compile(r"(\d{1,2}):(\d{2}):(\d{2})[.,](\d{2,3})")
+#: Pattern that matches both SubStation and SubRip timestamps.
+TIMESTAMP = re.compile(r"(\d{1,2}):(\d{1,2}):(\d{1,2})[.,](\d{1,3})")
+
+#: Pattern that matches H:MM:SS or HH:MM:SS timestamps.
+TIMESTAMP_SHORT = re.compile(r"(\d{1,2}):(\d{2}):(\d{2})")
 
 Times = namedtuple("Times", ["h", "m", "s", "ms"])
 
@@ -40,32 +40,26 @@ def make_time(h: IntOrFloat=0, m: IntOrFloat=0, s: IntOrFloat=0, ms: IntOrFloat=
 
 def timestamp_to_ms(groups: Sequence[str]):
     """
-    Convert groups from :data:`pysubs2.time.TIMESTAMP` match to milliseconds.
+    Convert groups from :data:`pysubs2.time.TIMESTAMP` or :data:`pysubs2.time.TIMESTAMP_SHORT`
+    match to milliseconds.
     
     Example:
         >>> timestamp_to_ms(TIMESTAMP.match("0:00:00.42").groups())
         420
-    
-    """
-    h, m, s, frac = map(int, groups)
-    ms = frac * 10**(3 - len(groups[-1]))
-    ms += s * 1000
-    ms += m * 60000
-    ms += h * 3600000
-    return ms
-
-
-def tmptimestamp_to_ms(groups: Sequence[str]):
-    """
-    Convert groups from :data:`pysubs2.time.TMPTIMESTAMP` match to milliseconds.
-    
-    Example:
-        >>> timestamp_to_ms(TIMESTAMP.match("0:00:01").groups())
+        >>> timestamp_to_ms(TIMESTAMP_SHORT.match("0:00:01").groups())
         1000
-    
+
     """
-    h, m, s  = map(int, groups)
-    ms = s * 1000
+    if len(groups) == 4:
+        h, m, s, frac = map(int, groups)
+        ms = frac * 10**(3 - len(groups[-1]))
+    elif len(groups) == 3:
+        h, m, s = map(int, groups)
+        ms = 0
+    else:
+        raise ValueError("Unexpected number of groups")
+
+    ms += s * 1000
     ms += m * 60000
     ms += h * 3600000
     return ms

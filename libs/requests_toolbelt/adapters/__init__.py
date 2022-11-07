@@ -3,7 +3,7 @@
 requests-toolbelt.adapters
 ==========================
 
-See http://toolbelt.rtfd.org/ for documentation
+See https://toolbelt.readthedocs.io/ for documentation
 
 :copyright: (c) 2014 by Ian Cordasco and Cory Benfield
 :license: Apache v2.0, see LICENSE for more details

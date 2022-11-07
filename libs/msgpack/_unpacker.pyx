@@ -440,34 +440,30 @@ cdef class Unpacker(object):
         self.buf_size = buf_size
         self.buf_tail = tail + _buf_len
 
-    cdef read_from_file(self):
-        next_bytes = self.file_like_read(
-                min(self.read_size,
-                    self.max_buffer_size - (self.buf_tail - self.buf_head)
-                    ))
+    cdef int read_from_file(self) except -1:
+        cdef Py_ssize_t remains = self.max_buffer_size - (self.buf_tail - self.buf_head)
+        if remains <= 0:
+            raise BufferFull
+
+        next_bytes = self.file_like_read(min(self.read_size, remains))
         if next_bytes:
             self.append_buffer(PyBytes_AsString(next_bytes), PyBytes_Size(next_bytes))
         else:
             self.file_like = None
+        return 0
 
     cdef object _unpack(self, execute_fn execute, bint iter=0):
         cdef int ret
         cdef object obj
         cdef Py_ssize_t prev_head
 
-        if self.buf_head >= self.buf_tail and self.file_like is not None:
-            self.read_from_file()
-
         while 1:
             prev_head = self.buf_head
-            if prev_head >= self.buf_tail:
-                if iter:
-                    raise StopIteration("No more data to unpack.")
-                else:
-                    raise OutOfData("No more data to unpack.")
-
-            ret = execute(&self.ctx, self.buf, self.buf_tail, &self.buf_head)
-            self.stream_offset += self.buf_head - prev_head
+            if prev_head < self.buf_tail:
+                ret = execute(&self.ctx, self.buf, self.buf_tail, &self.buf_head)
+                self.stream_offset += self.buf_head - prev_head
+            else:
+                ret = 0
 
             if ret == 1:
                 obj = unpack_data(&self.ctx)

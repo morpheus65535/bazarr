@@ -14,7 +14,6 @@ followed immediately by currency symbols.
 
 import warnings
 import re
-from ftfy import chardata
 
 
 # There are only 403 characters that occur in known UTF-8 mojibake, and we can
@@ -196,6 +195,7 @@ MOJIBAKE_CATEGORIES = {
         "\N{LATIN SMALL LETTER S WITH CEDILLA}"
         "\N{LATIN SMALL LETTER S WITH CARON}"
         "\N{LATIN SMALL LETTER T WITH CARON}"
+        "\N{LATIN SMALL LETTER U WITH DIAERESIS}"
         "\N{LATIN SMALL LETTER Z WITH ACUTE}"
         "\N{LATIN SMALL LETTER Z WITH DOT ABOVE}"
         "\N{LATIN SMALL LETTER Z WITH CARON}"
@@ -285,7 +285,7 @@ BADNESS_RE = re.compile(
     |
     [{box}] [{end_punctuation}]
     |
-    [{lower_accented}{upper_accented}] [{end_punctuation}] \\w
+    [{lower_accented}{upper_accented}] [{end_punctuation}] \w
     |
 
     # The ligature œ when not followed by an unaccented Latin letter
@@ -293,7 +293,7 @@ BADNESS_RE = re.compile(
     |
 
     # Common Windows-1252 2-character mojibake that isn't covered by the cases above
-    [ÂÃÎÐ][€Šš¢£Ÿž\xa0\xad®©°·»{end_punctuation}–—´]
+    [ÂÃÎÐ][€Šš¢£Ÿž\xa0\xad®©°·»{start_punctuation}{end_punctuation}–—´]
     |
     × [²³]
     |
@@ -340,7 +340,7 @@ BADNESS_RE = re.compile(
     |
     ^[ÃÂ][ ]
     |
-    
+
     # Cases where Â precedes a character as an encoding of exactly the same
     # character, and the character is common enough
     [a-z.,?!{end_punctuation}] Â [ {start_punctuation}{end_punctuation}]

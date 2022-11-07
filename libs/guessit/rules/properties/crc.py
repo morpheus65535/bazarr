@@ -35,9 +35,9 @@ def crc(config):  # pylint:disable=unused-argument
     return rebulk
 
 
-_DIGIT = 0
-_LETTER = 1
-_OTHER = 2
+_digit = 0
+_letter = 1
+_other = 2
 
 _idnum = re.compile(r'(?P<uuid>[a-zA-Z0-9-]{20,})')  # 1.0, (0, 0))
 
@@ -61,18 +61,18 @@ def guess_idnumber(string):
         letter_count = 0
         last_letter = None
 
-        last = _LETTER
+        last = _letter
         for c in result['uuid']:
             if c in '0123456789':
-                ci = _DIGIT
+                ci = _digit
             elif c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ':
-                ci = _LETTER
+                ci = _letter
                 if c != last_letter:
                     switch_letter_count += 1
                 last_letter = c
                 letter_count += 1
             else:
-                ci = _OTHER
+                ci = _other
 
             if ci != last:
                 switch_count += 1

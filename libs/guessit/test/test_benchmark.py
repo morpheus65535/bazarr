@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=no-self-use,pointless-statement,missing-docstring,invalid-name,line-too-long
+# pylint: disable=pointless-statement,missing-docstring,invalid-name,line-too-long
 import time
 
 import pytest
@@ -34,7 +34,7 @@ def case4():
     warmup=False
 )
 @pytest.mark.skipif(True, reason="Disabled")
-class TestBenchmark(object):
+class TestBenchmark:
     def test_case1(self, benchmark):
         ret = benchmark(case1)
         assert ret

@@ -25,7 +25,7 @@ class MarkdownElement:
         """Factory to create markdown element,
 
         Args:
-            markdown (Markdown): THe parent Markdown object.
+            markdown (Markdown): The parent Markdown object.
             node (Any): A node from Pygments.
 
         Returns:
@@ -166,7 +166,7 @@ class CodeBlock(TextElement):
     def create(cls, markdown: "Markdown", node: Any) -> "CodeBlock":
         node_info = node.info or ""
         lexer_name = node_info.partition(" ")[0]
-        return cls(lexer_name or "default", markdown.code_theme)
+        return cls(lexer_name or "text", markdown.code_theme)
 
     def __init__(self, lexer_name: str, theme: str) -> None:
         self.lexer_name = lexer_name
@@ -176,10 +176,8 @@ class CodeBlock(TextElement):
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
         code = str(self.text).rstrip()
-        syntax = Panel(
-            Syntax(code, self.lexer_name, theme=self.theme, word_wrap=True),
-            border_style="dim",
-            box=box.SQUARE,
+        syntax = Syntax(
+            code, self.lexer_name, theme=self.theme, word_wrap=True, padding=0
         )
         yield syntax
 
@@ -312,7 +310,7 @@ class ImageItem(TextElement):
         """Factory to create markdown element,
 
         Args:
-            markdown (Markdown): THe parent Markdown object.
+            markdown (Markdown): The parent Markdown object.
             node (Any): A node from Pygments.
 
         Returns:
@@ -610,14 +608,15 @@ if __name__ == "__main__":  # pragma: no cover
         inline_code_lexer=args.inline_code_lexer,
     )
     if args.page:
-        import pydoc
         import io
+        import pydoc
 
+        fileio = io.StringIO()
         console = Console(
-            file=io.StringIO(), force_terminal=args.force_color, width=args.width
+            file=fileio, force_terminal=args.force_color, width=args.width
         )
         console.print(markdown)
-        pydoc.pager(console.file.getvalue())  # type: ignore
+        pydoc.pager(fileio.getvalue())
 
     else:
         console = Console(force_terminal=args.force_color, width=args.width)

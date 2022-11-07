@@ -4,7 +4,7 @@
 
     Lexers for other C-like languages.
 
-    :copyright: Copyright 2006-2021 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -304,8 +304,8 @@ class CudaLexer(CLexer):
                  '__syncthreads_or'}
     execution_confs = {'<<<', '>>>'}
 
-    def get_tokens_unprocessed(self, text):
-        for index, token, value in CLexer.get_tokens_unprocessed(self, text):
+    def get_tokens_unprocessed(self, text, stack=('root',)):
+        for index, token, value in CLexer.get_tokens_unprocessed(self, text, stack):
             if token is Name:
                 if value in self.variable_qualifiers:
                     token = Keyword.Type
@@ -525,8 +525,8 @@ class ArduinoLexer(CppLexer):
         'typename', 'this', 'alignof', 'constexpr', 'decltype', 'noexcept',
         'static_assert', 'thread_local', 'restrict'}
 
-    def get_tokens_unprocessed(self, text):
-        for index, token, value in CppLexer.get_tokens_unprocessed(self, text):
+    def get_tokens_unprocessed(self, text, stack=('root',)):
+        for index, token, value in CppLexer.get_tokens_unprocessed(self, text, stack):
             if value in self.structure:
                 yield index, Name.Builtin, value
             elif value in self.operators:
@@ -573,12 +573,13 @@ class CharmciLexer(CppLexer):
 
 class OmgIdlLexer(CLexer):
     """
-    Lexer for `Object Management Group Interface Definition Language <https://www.omg.org/spec/IDL/About-IDL/>`_.
+    Lexer for Object Management Group Interface Definition Language.
 
     .. versionadded:: 2.9
     """
 
     name = 'OMG Interface Definition Language'
+    url = 'https://www.omg.org/spec/IDL/About-IDL/'
     aliases = ['omg-idl']
     filenames = ['*.idl', '*.pidl']
     mimetypes = []

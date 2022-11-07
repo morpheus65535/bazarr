@@ -65,7 +65,7 @@ class HTTPProxyDigestAuth(auth.HTTPDigestAuth):
                 self._pat.sub('', s_auth, count=1))
 
             # if we present the user/passwd and still get rejected
-            # http://tools.ietf.org/html/rfc2617#section-3.2.1
+            # https://tools.ietf.org/html/rfc2617#section-3.2.1
             if ('Proxy-Authorization' in r.request.headers and
                     'stale' in self.chal):
                 if self.chal['stale'].lower() == 'true':  # try again

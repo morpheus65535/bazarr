@@ -60,7 +60,7 @@ class AuthHandler(AuthBase):
         return auth(request)
 
     def __repr__(self):
-        return '<AuthHandler({0!r})>'.format(self.strategies)
+        return '<AuthHandler({!r})>'.format(self.strategies)
 
     def _make_uniform(self):
         existing_strategies = list(self.strategies.items())

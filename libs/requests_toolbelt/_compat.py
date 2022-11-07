@@ -49,18 +49,6 @@ else:
     except ImportError:
         from urllib3.contrib import appengine as gaecontrib
 
-if requests.__build__ < 0x021200:
-    PyOpenSSLContext = None
-else:
-    try:
-        from requests.packages.urllib3.contrib.pyopenssl \
-                import PyOpenSSLContext
-    except ImportError:
-        try:
-            from urllib3.contrib.pyopenssl import PyOpenSSLContext
-        except ImportError:
-            PyOpenSSLContext = None
-
 PY3 = sys.version_info > (3, 0)
 
 if PY3:
@@ -143,8 +131,8 @@ class HTTPHeaderDict(MutableMapping):
             return False
         if not isinstance(other, type(self)):
             other = type(self)(other)
-        return (dict((k.lower(), v) for k, v in self.itermerged()) ==
-                dict((k.lower(), v) for k, v in other.itermerged()))
+        return ({k.lower(): v for k, v in self.itermerged()} ==
+                {k.lower(): v for k, v in other.itermerged()})
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -320,5 +308,4 @@ __all__ = (
     'urlencode',
     'gaecontrib',
     'urljoin',
-    'PyOpenSSLContext',
 )

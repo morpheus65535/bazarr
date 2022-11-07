@@ -4,7 +4,7 @@
 
     Lexers for the Spice programming language.
 
-    :copyright: Copyright 2006-2021 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -19,42 +19,48 @@ __all__ = ['SpiceLexer']
 
 class SpiceLexer(RegexLexer):
     """
-    For `Spice <http://spicelang.com>`_ source.
+    For Spice source.
 
     .. versionadded:: 2.11
     """
     name = 'Spice'
+    url = 'https://www.spicelang.com'
     filenames = ['*.spice']
     aliases = ['spice', 'spicelang']
     mimetypes = ['text/x-spice']
-
-    flags = re.MULTILINE | re.UNICODE
 
     tokens = {
         'root': [
             (r'\n', Whitespace),
             (r'\s+', Whitespace),
-            (r'\\\n', Text),  # line continuations
+            (r'\\\n', Text),
+            # comments
             (r'//(.*?)\n', Comment.Single),
+            (r'/(\\\n)?[*]{2}(.|\n)*?[*](\\\n)?/', String.Doc),
             (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            # keywords
             (r'(import|as)\b', Keyword.Namespace),
-            (r'(f|p|type|struct|const)\b', Keyword.Declaration),
-            (words(('if', 'else', 'for', 'foreach', 'while', 'break', 'continue', 'return', 'new', 'ext'), suffix=r'\b'), Keyword),
-            (r'(true|false)\b', Keyword.Constant),
-            (words(('printf', 'sizeof'), suffix=r'\b(\()'), bygroups(Name.Builtin, Punctuation)),
+            (r'(f|p|type|struct)\b', Keyword.Declaration),
+            (words(('if', 'else', 'for', 'foreach', 'while', 'break', 'continue', 'return', 'assert', 'thread', 'unsafe', 'ext', 'dll'), suffix=r'\b'), Keyword),
+            (words(('const', 'signed', 'unsigned', 'inline', 'public'), suffix=r'\b'), Keyword.Pseudo),
+            (words(('new', 'switch', 'case', 'yield', 'stash', 'pick', 'sync'), suffix=r'\b'), Keyword.Reserved),
+            (r'(true|false|nil)\b', Keyword.Constant),
             (words(('double', 'int', 'short', 'long', 'byte', 'char', 'string', 'bool', 'dyn'), suffix=r'\b'), Keyword.Type),
-            # double_lit
-            (r'\d+(\.\d+[eE][+\-]?\d+|\.\d*|[eE][+\-]?\d+)', Number.Double),
-            (r'\.\d+([eE][+\-]?\d+)?', Number.Double),
-            # int_lit
-            (r'(0|[1-9][0-9]*)', Number.Integer),
-            # StringLiteral
-            # -- interpreted_string_lit
+            (words(('printf', 'sizeof', 'len', 'tid', 'join'), suffix=r'\b(\()'), bygroups(Name.Builtin, Punctuation)),
+            # numeric literals
+            (r'([0-9]*[.][0-9]+)', Number.Double),
+            (r'((0[dD])?[0-9]+[sl]?)', Number.Integer),
+            (r'(0[bB][01]+[sl]?)', Number.Bin),
+            (r'(0[oO][0-7]+[sl]?)', Number.Oct),
+            (r'(0[xXhH][0-9a-fA-F]+[sl]?)', Number.Hex),
+            # string literal
             (r'"(\\\\|\\[^\\]|[^"\\])*"', String),
-            # Tokens
-            (r'(<<=|>>=|<<|>>|<=|>=|\+=|-=|\*=|/=|&&|\|\||&|\||\+\+|--|\%|==|!=|[.]{3}|[+\-*/&])', Operator),
+            # char literal
+            (r'\'(\\\\|\\[^\\]|[^\'\\])\'', String.Char),
+            # tokens
+            (r'(<<=|>>=|<<|>>|<=|>=|\+=|-=|\*=|/=|\%=|\|=|&=|\^=|&&|\|\||&|\||\+\+|--|\%|\^|\~|==|!=|[.]{3}|[+\-*/&])', Operator),
             (r'[|<>=!()\[\]{}.,;:\?]', Punctuation),
-            # identifier
+            # identifiers
             (r'[^\W\d]\w*', Name.Other),
         ]
     }

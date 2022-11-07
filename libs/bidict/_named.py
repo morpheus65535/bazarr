@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2022 Joshua Bronson. All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,11 +6,19 @@
 
 """Provide :func:`bidict.namedbidict`."""
 
-import typing as _t
+import typing as t
 from sys import _getframe
 
-from ._abc import BidirectionalMapping, KT, VT
+from ._base import BidictBase
 from ._bidict import bidict
+from ._typing import KT, VT
+
+
+# pyright: reportPrivateUsage=false, reportUnnecessaryIsInstance=false
+
+
+class NamedBidictBase:
+    """Base class that namedbidicts derive from."""
 
 
 def namedbidict(
@@ -19,8 +26,8 @@ def namedbidict(
     keyname: str,
     valname: str,
     *,
-    base_type: _t.Type[BidirectionalMapping[KT, VT]] = bidict,
-) -> _t.Type[BidirectionalMapping[KT, VT]]:
+    base_type: t.Type[BidictBase[KT, VT]] = bidict,
+) -> t.Type[BidictBase[KT, VT]]:
     r"""Create a new subclass of *base_type* with custom accessors.
 
     Like :func:`collections.namedtuple` for bidicts.
@@ -36,64 +43,57 @@ def namedbidict(
 
     *See also* the :ref:`namedbidict usage documentation
     <other-bidict-types:\:func\:\`~bidict.namedbidict\`>`
+    (https://bidict.rtfd.io/other-bidict-types.html#namedbidict)
 
     :raises ValueError: if any of the *typename*, *keyname*, or *valname*
         strings is not a valid Python identifier, or if *keyname == valname*.
 
-    :raises TypeError: if *base_type* is not a :class:`BidirectionalMapping` subclass
-        that provides ``_isinv`` and :meth:`~object.__getstate__` attributes.
-        (Any :class:`~bidict.BidictBase` subclass can be passed in, including all the
-        concrete bidict types pictured in the :ref:`other-bidict-types:Bidict Types Diagram`.
+    :raises TypeError: if *base_type* is not a :class:`bidict.BidictBase` subclass.
+        Any of the concrete bidict types pictured in the
+        :ref:`other-bidict-types:Bidict Types Diagram` may be provided
+        (https://bidict.rtfd.io/other-bidict-types.html#bidict-types-diagram).
     """
-    if not issubclass(base_type, BidirectionalMapping) or not all(hasattr(base_type, i) for i in ('_isinv', '__getstate__')):
-        raise TypeError(base_type)
+    if not issubclass(base_type, BidictBase):
+        raise TypeError(f'{base_type} is not a BidictBase subclass')
     names = (typename, keyname, valname)
     if not all(map(str.isidentifier, names)) or keyname == valname:
         raise ValueError(names)
 
-    class _Named(base_type):  # type: ignore [valid-type,misc]
+    basename = base_type.__name__
+    get_keyname = property(lambda self: keyname, doc='The keyname of this namedbidict.')
+    get_valname = property(lambda self: valname, doc='The valname of this namedbidict.')
+    val_by_key_name = f'{valname}_for'
+    key_by_val_name = f'{keyname}_for'
+    val_by_key_doc = f'{typename} forward {basename}: {keyname} -> {valname}'
+    key_by_val_doc = f'{typename} inverse {basename}: {valname} -> {keyname}'
+    get_val_by_key = property(lambda self: self, doc=val_by_key_doc)
+    get_key_by_val = property(lambda self: self.inverse, doc=key_by_val_doc)
 
-        __slots__ = ()
+    class NamedBidict(base_type, NamedBidictBase):  # type: ignore [valid-type,misc]  # https://github.com/python/mypy/issues/5865
+        """NamedBidict."""
 
-        def _getfwd(self) -> '_Named':
-            return self.inverse if self._isinv else self  # type: ignore [no-any-return]
+        keyname = get_keyname
+        valname = get_valname
 
-        def _getinv(self) -> '_Named':
-            return self if self._isinv else self.inverse  # type: ignore [no-any-return]
+        @classmethod
+        def _inv_cls_dict_diff(cls) -> t.Dict[str, t.Any]:
+            base_diff = super()._inv_cls_dict_diff()
+            return {
+                **base_diff,
+                'keyname': get_valname,
+                'valname': get_keyname,
+                val_by_key_name: get_key_by_val,
+                key_by_val_name: get_val_by_key,
+            }
 
-        @property
-        def _keyname(self) -> str:
-            return valname if self._isinv else keyname
-
-        @property
-        def _valname(self) -> str:
-            return keyname if self._isinv else valname
-
-        def __reduce__(self) -> '_t.Tuple[_t.Callable[[str, str, str, _t.Type[BidirectionalMapping]], BidirectionalMapping], _t.Tuple[str, str, str, _t.Type[BidirectionalMapping]], dict]':
-            return (_make_empty, (typename, keyname, valname, base_type), self.__getstate__())
-
-    bname = base_type.__name__
-    fname = valname + '_for'
-    iname = keyname + '_for'
-    fdoc = f'{typename} forward {bname}: {keyname} → {valname}'
-    idoc = f'{typename} inverse {bname}: {valname} → {keyname}'
-    setattr(_Named, fname, property(_Named._getfwd, doc=fdoc))
-    setattr(_Named, iname, property(_Named._getinv, doc=idoc))
-
-    _Named.__name__ = typename
-    _Named.__qualname__ = typename
-    _Named.__module__ = _getframe(1).f_globals.get('__name__')  # type: ignore [assignment]
-    return _Named
-
-
-def _make_empty(
-    typename: str,
-    keyname: str,
-    valname: str,
-    base_type: _t.Type[BidirectionalMapping] = bidict,
-) -> BidirectionalMapping:
-    """Create a named bidict with the indicated arguments and return an empty instance.
-    Used to make :func:`bidict.namedbidict` instances picklable.
-    """
-    cls = namedbidict(typename, keyname, valname, base_type=base_type)
-    return cls()
+    NamedInv = NamedBidict._inv_cls
+    assert NamedInv is not NamedBidict, 'namedbidict classes are not their own inverses'
+    setattr(NamedBidict, val_by_key_name, get_val_by_key)
+    setattr(NamedBidict, key_by_val_name, get_key_by_val)
+    NamedBidict.__name__ = NamedBidict.__qualname__ = typename
+    NamedInv.__name__ = NamedInv.__qualname__ = f'{typename}Inv'
+    NamedBidict.__doc__ = f'NamedBidict({basename}) {typename!r}: {keyname} -> {valname}'
+    NamedInv.__doc__ = f'NamedBidictInv({basename}) {typename!r}: {valname} -> {keyname}'
+    caller_module = _getframe(1).f_globals.get('__name__', '__main__')
+    NamedBidict.__module__ = NamedInv.__module__ = caller_module
+    return NamedBidict  # pyright: ignore [reportUnknownVariableType]

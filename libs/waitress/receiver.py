@@ -14,6 +14,7 @@
 """Data Chunk Receiver
 """
 
+from waitress.rfc7230 import CHUNK_EXT_RE, ONLY_HEXDIG_RE
 from waitress.utilities import BadRequest, find_double_newline
 
 
@@ -110,6 +111,7 @@ class ChunkedReceiver:
                     s = b""
                 else:
                     self.chunk_end = b""
+
                     if pos == 0:
                         # Chop off the terminating CR LF from the chunk
                         s = s[2:]
@@ -133,20 +135,32 @@ class ChunkedReceiver:
                     line = s[:pos]
                     s = s[pos + 2 :]
                     self.control_line = b""
-                    line = line.strip()
 
                     if line:
                         # Begin a new chunk.
                         semi = line.find(b";")
 
                         if semi >= 0:
-                            # discard extension info.
+                            extinfo = line[semi:]
+                            valid_ext_info = CHUNK_EXT_RE.match(extinfo)
+
+                            if not valid_ext_info:
+                                self.error = BadRequest("Invalid chunk extension")
+                                self.all_chunks_received = True
+
+                                break
+
                             line = line[:semi]
-                        try:
-                            sz = int(line.strip(), 16)  # hexadecimal
-                        except ValueError:  # garbage in input
-                            self.error = BadRequest("garbage in chunked encoding input")
-                            sz = 0
+
+                        if not ONLY_HEXDIG_RE.match(line):
+                            self.error = BadRequest("Invalid chunk size")
+                            self.all_chunks_received = True
+
+                            break
+
+                        # Can not fail due to matching against the regular
+                        # expression above
+                        sz = int(line, 16)  # hexadecimal
 
                         if sz > 0:
                             # Start a new chunk.

@@ -15,11 +15,15 @@
 ? +DD
 ? +Dolby Digital
 ? +AC3
+? +AC-3
 : audio_codec: Dolby Digital
 
 ? +DDP
 ? +DD+
 ? +EAC3
+? +EAC-3
+? +E-AC-3
+? +E-AC3
 : audio_codec: Dolby Digital Plus
 
 ? +DolbyAtmos

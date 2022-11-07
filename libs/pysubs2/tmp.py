@@ -3,10 +3,8 @@ from .formatbase import FormatBase
 from .ssaevent import SSAEvent
 from .ssastyle import SSAStyle
 from .substation import parse_tags
-from .time import ms_to_times, make_time, tmptimestamp_to_ms
+from .time import ms_to_times, make_time, TIMESTAMP_SHORT, timestamp_to_ms
 
-#: Pattern that matches TMP timestamp
-TMPTIMESTAMP = re.compile(r"(\d{1,2}):(\d{2}):(\d{2})")
 #: Pattern that matches TMP line
 TMP_LINE = re.compile(r"(\d{1,2}:\d{2}:\d{2}):(.+)")
 
@@ -54,7 +52,7 @@ class TmpFormat(FormatBase):
                 continue
 
             start, text = match.groups()
-            start = tmptimestamp_to_ms(TMPTIMESTAMP.match(start).groups())
+            start = timestamp_to_ms(TIMESTAMP_SHORT.match(start).groups())
 
             # Unfortunately, end timestamp is not given; try to estimate something reasonable:
             # start + 500 ms + 67 ms/character (15 chars per second)

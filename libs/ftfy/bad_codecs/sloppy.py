@@ -75,7 +75,7 @@ import codecs
 from encodings import normalize_encoding
 import sys
 
-REPLACEMENT_CHAR = '\ufffd'
+REPLACEMENT_CHAR = "\ufffd"
 PY26 = sys.version_info[:2] == (2, 6)
 
 
@@ -93,14 +93,14 @@ def make_sloppy_codec(encoding):
     all_bytes = bytes(range(256))
 
     # Get a list of what they would decode to in Latin-1.
-    sloppy_chars = list(all_bytes.decode('latin-1'))
+    sloppy_chars = list(all_bytes.decode("latin-1"))
 
     # Get a list of what they decode to in the given encoding. Use the
     # replacement character for unassigned bytes.
     if PY26:
-        decoded_chars = all_bytes.decode(encoding, 'replace')
+        decoded_chars = all_bytes.decode(encoding, "replace")
     else:
-        decoded_chars = all_bytes.decode(encoding, errors='replace')
+        decoded_chars = all_bytes.decode(encoding, errors="replace")
 
     # Update the sloppy_chars list. Each byte that was successfully decoded
     # gets its decoded value in the list. The unassigned bytes are left as
@@ -111,21 +111,21 @@ def make_sloppy_codec(encoding):
 
     # For ftfy's own purposes, we're going to allow byte 1A, the "Substitute"
     # control code, to encode the Unicode replacement character U+FFFD.
-    sloppy_chars[0x1a] = REPLACEMENT_CHAR
+    sloppy_chars[0x1A] = REPLACEMENT_CHAR
 
     # Create the data structures that tell the charmap methods how to encode
     # and decode in this sloppy encoding.
-    decoding_table = ''.join(sloppy_chars)
+    decoding_table = "".join(sloppy_chars)
     encoding_table = codecs.charmap_build(decoding_table)
 
     # Now produce all the class boilerplate. Look at the Python source for
     # `encodings.cp1252` for comparison; this is almost exactly the same,
     # except I made it follow pep8.
     class Codec(codecs.Codec):
-        def encode(self, input, errors='strict'):
+        def encode(self, input, errors="strict"):
             return codecs.charmap_encode(input, errors, encoding_table)
 
-        def decode(self, input, errors='strict'):
+        def decode(self, input, errors="strict"):
             return codecs.charmap_decode(input, errors, decoding_table)
 
     class IncrementalEncoder(codecs.IncrementalEncoder):
@@ -143,7 +143,7 @@ def make_sloppy_codec(encoding):
         pass
 
     return codecs.CodecInfo(
-        name='sloppy-' + encoding,
+        name="sloppy-" + encoding,
         encode=Codec().encode,
         decode=Codec().decode,
         incrementalencoder=IncrementalEncoder,
@@ -157,11 +157,12 @@ def make_sloppy_codec(encoding):
 # can be used by the main module of ftfy.bad_codecs.
 CODECS = {}
 INCOMPLETE_ENCODINGS = (
-    ['windows-%s' % num for num in range(1250, 1259)] +
-    ['iso-8859-%s' % num for num in (3, 6, 7, 8, 11)] +
-    ['cp%s' % num for num in range(1250, 1259)] + ['cp874']
+    ["windows-%s" % num for num in range(1250, 1259)]
+    + ["iso-8859-%s" % num for num in (3, 6, 7, 8, 11)]
+    + ["cp%s" % num for num in range(1250, 1259)]
+    + ["cp874"]
 )
 
 for _encoding in INCOMPLETE_ENCODINGS:
-    _new_name = normalize_encoding('sloppy-' + _encoding)
+    _new_name = normalize_encoding("sloppy-" + _encoding)
     CODECS[_new_name] = make_sloppy_codec(_encoding)

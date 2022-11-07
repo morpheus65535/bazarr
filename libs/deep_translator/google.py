@@ -74,6 +74,7 @@ class GoogleTranslator(BaseTranslator):
             soup = BeautifulSoup(response.text, "html.parser")
 
             element = soup.find(self._element_tag, self._element_query)
+            response.close()
 
             if not element:
                 element = soup.find(self._element_tag, self._alt_element_query)
@@ -118,6 +119,6 @@ class GoogleTranslator(BaseTranslator):
 
 
 if __name__ == "__main__":
-    trans = GoogleTranslator(source='auto', target='zh-CN')
+    trans = GoogleTranslator(source="auto", target="zh-CN")
     res = trans.translate("good")
     print("translation: ", res)

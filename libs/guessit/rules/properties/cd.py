@@ -11,7 +11,7 @@ from ..common.pattern import is_disabled
 from ...config import load_config_patterns
 
 
-def cd(config):  # pylint:disable=unused-argument
+def cd(config):  # pylint:disable=unused-argument,invalid-name
     """
     Builder for rebulk object.
 

@@ -27,7 +27,7 @@ class LibreTranslator(BaseTranslator):
         source: str = "en",
         target: str = "es",
         use_free_api: bool = True,
-        custom_url:  Optional[str] = None,
+        custom_url: Optional[str] = None,
         **kwargs
     ):
         """
@@ -40,7 +40,9 @@ class LibreTranslator(BaseTranslator):
         @param custom_url: you can use a custom endpoint
         """
         self.api_key = api_key
-        url = BASE_URLS.get("LIBRE") if not use_free_api else BASE_URLS.get('LIBRE_FREE')
+        url = (
+            BASE_URLS.get("LIBRE") if not use_free_api else BASE_URLS.get("LIBRE_FREE")
+        )
         super().__init__(
             base_url=url if not custom_url else custom_url,
             source=source,
@@ -107,7 +109,7 @@ class LibreTranslator(BaseTranslator):
         return self._translate_batch(batch, **kwargs)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     l = LibreTranslator(source="en", target="de")
     res = l.translate("good")
     print("res: ", res)

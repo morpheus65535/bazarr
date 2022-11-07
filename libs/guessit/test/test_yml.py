@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=no-self-use, pointless-statement, missing-docstring, invalid-name
+# pylint: disable=pointless-statement, missing-docstring, invalid-name
 import logging
 import os
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 
-class EntryResult(object):
+class EntryResult:
     def __init__(self, string, negates=False):
         self.string = string
         self.negates = negates
@@ -114,7 +114,7 @@ def files_and_ids(predicate=None):
     return files, ids
 
 
-class TestYml(object):
+class TestYml:
     """
     Run tests from yaml files.
     Multiple input strings having same expected results can be chained.

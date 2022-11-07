@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
 from . import fields, reqparse, apidoc, inputs, cors
 from .api import Api  # noqa
 from .marshalling import marshal, marshal_with, marshal_with_field  # noqa

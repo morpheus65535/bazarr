@@ -4,7 +4,10 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Union
 
 from deep_translator.constants import GOOGLE_LANGUAGES_TO_CODES
-from deep_translator.exceptions import InvalidSourceOrTargetLanguage, LanguageNotSupportedException
+from deep_translator.exceptions import (
+    InvalidSourceOrTargetLanguage,
+    LanguageNotSupportedException,
+)
 
 
 class BaseTranslator(ABC):
@@ -21,7 +24,7 @@ class BaseTranslator(ABC):
         payload_key: Optional[str] = None,
         element_tag: Optional[str] = None,
         element_query: Optional[dict] = None,
-        **url_params
+        **url_params,
     ):
         """
         @param source: source language to translate from
@@ -76,8 +79,9 @@ class BaseTranslator(ABC):
                 raise LanguageNotSupportedException(
                     language,
                     message=f"No support for the provided language.\n"
-                            f"Please select on of the supported languages:\n"
-                            f"{self._languages}")
+                    f"Please select on of the supported languages:\n"
+                    f"{self._languages}",
+                )
 
     def _same_source_target(self) -> bool:
         return self._source == self._target

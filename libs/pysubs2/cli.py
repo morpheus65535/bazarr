@@ -102,6 +102,19 @@ class Pysubs2CLI:
         group.add_argument("--transform-framerate", nargs=2, metavar=("FPS1", "FPS2"), type=positive_float,
                            help="Multiply all timestamps by FPS1/FPS2 ratio.")
 
+        extra_srt_options = parser.add_argument_group("optional arguments (SRT)")
+        extra_srt_options.add_argument("--srt-keep-unknown-html-tags", action="store_true",
+                                       help="(input) do not strip unrecognized HTML tags")
+        extra_srt_options.add_argument("--srt-keep-html-tags", action="store_true",
+                                       help="(input) do not convert HTML tags to SubStation internally,"
+                                            " this implies --srt-keep-unknown-html-tags")
+        extra_srt_options.add_argument("--srt-keep-ssa-tags", action="store_true",
+                                       help="(output) do not convert/strip SubStation tags for output")
+
+        extra_sub_options = parser.add_argument_group("optional arguments (MicroDVD)")
+        extra_sub_options.add_argument("--sub-no-write-fps-declaration", action="store_true",
+                                       help="(output) omit writing FPS as first zero-length subtitle")
+
     def __call__(self, argv):
         try:
             self.main(argv)
@@ -121,6 +134,19 @@ class Pysubs2CLI:
         if args.output_enc is None:
             args.output_enc = args.input_enc
 
+        extra_input_args = {}
+        extra_output_args = {}
+        if args.srt_keep_unknown_html_tags:
+            extra_input_args["keep_unknown_html_tags"] = True
+        if args.srt_keep_html_tags:
+            extra_input_args["keep_html_tags"] = True
+        if args.srt_keep_ssa_tags:
+            extra_output_args["keep_ssa_tags"] = True
+        if args.sub_no_write_fps_declaration:
+            extra_output_args["write_fps_declaration"] = False
+        logging.debug("Extra arguments to SSAFile.from_file(): %r", extra_input_args)
+        logging.debug("Extra arguments to SSAFile.to_file(): %r", extra_output_args)
+
         if args.files:
             for path in args.files:
                 if not op.exists(path):
@@ -131,7 +157,7 @@ class Pysubs2CLI:
                     errors += 1
                 else:
                     with open(path, encoding=args.input_enc) as infile:
-                        subs = SSAFile.from_file(infile, args.input_format, args.fps)
+                        subs = SSAFile.from_file(infile, args.input_format, args.fps, **extra_input_args)
 
                     self.process(subs, args)
 
@@ -148,7 +174,8 @@ class Pysubs2CLI:
                         outpath = op.join(args.output_dir, filename)
 
                     with open(outpath, "w", encoding=args.output_enc) as outfile:
-                        subs.to_file(outfile, output_format, args.fps, apply_styles=not args.clean)
+                        subs.to_file(outfile, output_format, args.fps, apply_styles=not args.clean,
+                                     **extra_output_args)
         else:
             infile = io.TextIOWrapper(sys.stdin.buffer, args.input_enc)
             outfile = io.TextIOWrapper(sys.stdout.buffer, args.output_enc)

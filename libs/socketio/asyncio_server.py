@@ -40,18 +40,23 @@ class AsyncServer(server.Server):
                            connect handler and your client is confused when it
                            receives events before the connection acceptance.
                            In any other case use the default of ``False``.
+    :param namespaces: a list of namespaces that are accepted, in addition to
+                       any namespaces for which handlers have been defined. The
+                       default is `['/']`, which always accepts connections to
+                       the default namespace. Set to `'*'` to accept all
+                       namespaces.
     :param kwargs: Connection parameters for the underlying Engine.IO server.
 
     The Engine.IO configuration supports the following settings:
 
     :param async_mode: The asynchronous model to use. See the Deployment
                        section in the documentation for a description of the
-                       available options. Valid async modes are "threading",
-                       "eventlet", "gevent" and "gevent_uwsgi". If this
-                       argument is not given, "eventlet" is tried first, then
-                       "gevent_uwsgi", then "gevent", and finally "threading".
-                       The first async mode that has all its dependencies
-                       installed is then one that is chosen.
+                       available options. Valid async modes are "aiohttp",
+                       "sanic", "tornado" and "asgi". If this argument is not
+                       given, "aiohttp" is tried first, followed by "sanic",
+                       "tornado", and finally "asgi". The first async mode that
+                       has all its dependencies installed is the one that is
+                       chosen.
     :param ping_interval: The interval in seconds at which the server pings
                           the client. The default is 25 seconds. For advanced
                           control, a two element tuple can be given, where
@@ -97,11 +102,12 @@ class AsyncServer(server.Server):
                             ``engineio_logger`` is ``False``.
     """
     def __init__(self, client_manager=None, logger=False, json=None,
-                 async_handlers=True, **kwargs):
+                 async_handlers=True, namespaces=None, **kwargs):
         if client_manager is None:
             client_manager = asyncio_manager.AsyncManager()
         super().__init__(client_manager=client_manager, logger=logger,
-                         json=json, async_handlers=async_handlers, **kwargs)
+                         json=json, async_handlers=async_handlers,
+                         namespaces=namespaces, **kwargs)
 
     def is_asyncio_based(self):
         return True
@@ -378,7 +384,8 @@ class AsyncServer(server.Server):
             await self._send_packet(eio_sid, self.packet_class(
                 packet.DISCONNECT, namespace=namespace))
             await self._trigger_event('disconnect', namespace, sid)
-            self.manager.disconnect(sid, namespace=namespace)
+            await self.manager.disconnect(sid, namespace=namespace,
+                                          ignore_queue=True)
 
     async def handle_request(self, *args, **kwargs):
         """Handle an HTTP request from the client.
@@ -442,7 +449,16 @@ class AsyncServer(server.Server):
     async def _handle_connect(self, eio_sid, namespace, data):
         """Handle a client connection request."""
         namespace = namespace or '/'
-        sid = self.manager.connect(eio_sid, namespace)
+        sid = None
+        if namespace in self.handlers or namespace in self.namespace_handlers \
+                or self.namespaces == '*' or namespace in self.namespaces:
+            sid = self.manager.connect(eio_sid, namespace)
+        if sid is None:
+            await self._send_packet(eio_sid, self.packet_class(
+                packet.CONNECT_ERROR, data='Unable to connect',
+                namespace=namespace))
+            return
+
         if self.always_connect:
             await self._send_packet(eio_sid, self.packet_class(
                 packet.CONNECT, {'sid': sid}, namespace=namespace))
@@ -471,7 +487,7 @@ class AsyncServer(server.Server):
                 await self._send_packet(eio_sid, self.packet_class(
                     packet.CONNECT_ERROR, data=fail_reason,
                     namespace=namespace))
-            self.manager.disconnect(sid, namespace)
+            await self.manager.disconnect(sid, namespace, ignore_queue=True)
         elif not self.always_connect:
             await self._send_packet(eio_sid, self.packet_class(
                 packet.CONNECT, {'sid': sid}, namespace=namespace))
@@ -484,7 +500,7 @@ class AsyncServer(server.Server):
             return
         self.manager.pre_disconnect(sid, namespace=namespace)
         await self._trigger_event('disconnect', namespace, sid)
-        self.manager.disconnect(sid, namespace)
+        await self.manager.disconnect(sid, namespace, ignore_queue=True)
 
     async def _handle_event(self, eio_sid, namespace, id, data):
         """Handle an incoming client event."""
@@ -506,7 +522,7 @@ class AsyncServer(server.Server):
     async def _handle_event_internal(self, server, sid, eio_sid, data,
                                      namespace, id):
         r = await server._trigger_event(data[0], namespace, sid, *data[1:])
-        if id is not None:
+        if r != self.not_handled and id is not None:
             # send ACK packet with the response returned by the handler
             # tuples are expanded as multiple arguments
             if r is None:
@@ -545,9 +561,11 @@ class AsyncServer(server.Server):
                 else:
                     ret = handler(*args)
                 return ret
+            else:
+                return self.not_handled
 
         # or else, forward the event to a namepsace handler if one exists
-        elif namespace in self.namespace_handlers:
+        elif namespace in self.namespace_handlers:  # pragma: no branch
             return await self.namespace_handlers[namespace].trigger_event(
                 event, *args)
 

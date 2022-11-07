@@ -4,7 +4,7 @@ to add toolz as a dependency.
 
 See https://github.com/pytoolz/toolz/.
 
-toolz is relased under BSD licence. Below is the licence text
+toolz is released under BSD licence. Below is the licence text
 from toolz as it appeared when copying the code.
 
 --------------------------------------------------------------
@@ -72,7 +72,7 @@ def get_in(keys, coll, default=None, no_default=False):
     0
     >>> get_in(['y'], {}, no_default=True)
     Traceback (most recent call last):
-        ...
+    ...
     KeyError: 'y'
     """
     try:

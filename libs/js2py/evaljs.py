@@ -53,7 +53,7 @@ def write_file_contents(path_or_file, contents):
     if hasattr(path_or_file, 'write'):
         path_or_file.write(contents)
     else:
-        with open(path_as_local(path_or_file), 'w') as f:
+        with codecs.open(path_as_local(path_or_file), "w", "utf-8") as f:
             f.write(contents)
 
 

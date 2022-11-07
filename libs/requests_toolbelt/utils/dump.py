@@ -81,6 +81,7 @@ def _dump_request_data(request, prefixes, bytearr, proxy_info=None):
             # In the event that the body is a file-like object, let's not try
             # to read everything into memory.
             bytearr.extend(b'<< Request body is not a string-like type >>')
+        bytearr.extend(b'\r\n')
     bytearr.extend(b'\r\n')
 
 

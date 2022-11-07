@@ -4,7 +4,7 @@
 
     Lexers for "business-oriented" languages.
 
-    :copyright: Copyright 2006-2021 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -129,7 +129,7 @@ class CobolLexer(RegexLexer):
                 'SEQUENCE', 'SEQUENTIAL', 'SHARING', 'SIGN', 'SIGNED', 'SIGNED-INT',
                 'SIGNED-LONG', 'SIGNED-SHORT', 'SIZE', 'SORT-MERGE', 'SOURCE',
                 'SOURCE-COMPUTER', 'SPECIAL-NAMES', 'STANDARD',
-                'STANDARD-1', 'STANDARD-2', 'STATUS', 'SUM',
+                'STANDARD-1', 'STANDARD-2', 'STATUS', 'SUBKEY', 'SUM',
                 'SYMBOLIC', 'SYNC', 'SYNCHRONIZED', 'TALLYING', 'TAPE',
                 'TEST', 'THROUGH', 'THRU', 'TIME', 'TIMES', 'TO', 'TOP', 'TRAILING',
                 'TRANSFORM', 'TYPE', 'UNDERLINE', 'UNIT', 'UNSIGNED',

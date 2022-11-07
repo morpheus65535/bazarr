@@ -50,9 +50,9 @@ class AsyncClient(client.Client):
 
     :param request_timeout: A timeout in seconds for requests. The default is
                             5 seconds.
-    :param http_session: an initialized ``requests.Session`` object to be used
-                         when sending requests to the server. Use it if you
-                         need to add special client options such as proxy
+    :param http_session: an initialized ``aiohttp.ClientSession`` object to be
+                         used when sending requests to the server. Use it if
+                         you need to add special client options such as proxy
                          servers, SSL certificates, etc.
     :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
                        skip SSL certificate verification, allowing
@@ -497,7 +497,7 @@ class AsyncClient(client.Client):
         """Handle the Engine.IO connection event."""
         self.logger.info('Engine.IO connection established')
         self.sid = self.eio.sid
-        real_auth = await self._get_real_value(self.connection_auth)
+        real_auth = await self._get_real_value(self.connection_auth) or {}
         for n in self.connection_namespaces:
             await self._send_packet(self.packet_class(
                 packet.CONNECT, data=real_auth, namespace=n))

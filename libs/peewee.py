@@ -70,7 +70,7 @@ except ImportError:
         mysql = None
 
 
-__version__ = '3.14.8'
+__version__ = '3.15.3'
 __all__ = [
     'AnyField',
     'AsIs',
@@ -640,6 +640,9 @@ class Context(object):
             with self.scope_column():
                 return self.sql(value)
 
+        if self.state.value_literals:
+            return self.literal(_query_val_transform(value))
+
         self._values.append(value)
         return self.literal(self.state.param or '?') if add_param else self
 
@@ -1125,6 +1128,9 @@ class ColumnBase(Node):
     def unalias(self):
         return self
 
+    def bind_to(self, dest):
+        return BindTo(self, dest)
+
     def cast(self, as_type):
         return Cast(self, as_type)
 
@@ -1198,7 +1204,13 @@ class ColumnBase(Node):
     def _escape_like_expr(self, s, template):
         if s.find('_') >= 0 or s.find('%') >= 0 or s.find('\\') >= 0:
             s = s.replace('\\', '\\\\').replace('_', '\\_').replace('%', '\\%')
-            return NodeList((template % s, SQL('ESCAPE'), '\\'))
+            # Pass the expression and escape string as unconverted values, to
+            # avoid (e.g.) a Json field converter turning the escaped LIKE
+            # pattern into a Json-quoted string.
+            return NodeList((
+                Value(template % s, converter=False),
+                SQL('ESCAPE'),
+                Value('\\', converter=False)))
         return template % s
     def contains(self, rhs):
         if isinstance(rhs, Node):
@@ -1234,6 +1246,7 @@ class ColumnBase(Node):
                                  'end-point.')
             return self.between(item.start, item.stop)
         return self == item
+    __iter__ = None  # Prevent infinite loop.
 
     def distinct(self):
         return NodeList((SQL('DISTINCT'), self))
@@ -1306,6 +1319,13 @@ class Alias(WrappedNode):
     def __hash__(self):
         return hash(self._alias)
 
+    @property
+    def name(self):
+        return self._alias
+    @name.setter
+    def name(self, value):
+        self._alias = value
+
     def alias(self, alias=None):
         if alias is None:
             return self.node
@@ -1326,6 +1346,15 @@ class Alias(WrappedNode):
                     .sql(Entity(self._alias)))
         else:
             return ctx.sql(Entity(self._alias))
+
+
+class BindTo(WrappedNode):
+    def __init__(self, node, dest):
+        super(BindTo, self).__init__(node)
+        self.dest = dest
+
+    def __sql__(self, ctx):
+        return ctx.sql(self.node)
 
 
 class Negated(WrappedNode):
@@ -1381,6 +1410,12 @@ class Value(ColumnBase):
             return ctx.sql(EnclosedNodeList(self.values))
 
         return ctx.value(self.value, self.converter)
+
+
+class ValueLiterals(WrappedNode):
+    def __sql__(self, ctx):
+        with ctx(value_literals=True):
+            return ctx.sql(self.node)
 
 
 def AsIs(value):
@@ -2170,9 +2205,16 @@ class SelectBase(_HashableSource, Source, SelectQuery):
         return self.peek(database, n=n)
 
     @database_required
-    def scalar(self, database, as_tuple=False):
+    def scalar(self, database, as_tuple=False, as_dict=False):
+        if as_dict:
+            return self.dicts().peek(database)
         row = self.tuples().peek(database)
         return row[0] if row and not as_tuple else row
+
+    @database_required
+    def scalars(self, database):
+        for row in self.tuples().execute(database):
+            yield row[0]
 
     @database_required
     def count(self, database, clear_limit=False):
@@ -2314,6 +2356,13 @@ class Select(SelectBase):
     def select_extend(self, *columns):
         self._returning = tuple(self._returning) + columns
 
+    @property
+    def selected_columns(self):
+        return self._returning
+    @selected_columns.setter
+    def selected_columns(self, value):
+        self._returning = value
+
     @Node.copy
     def from_(self, *sources):
         self._from_list = list(sources)
@@ -2324,6 +2373,9 @@ class Select(SelectBase):
             raise ValueError('No sources to join on.')
         item = self._from_list.pop()
         self._from_list.append(Join(item, dest, join_type, on))
+
+    def left_outer_join(self, dest, on=None):
+        return self.join(dest, JOIN.LEFT_OUTER, on)
 
     @Node.copy
     def group_by(self, *columns):
@@ -2461,6 +2513,10 @@ class _WriteQuery(Query):
         self._return_cursor = True if returning else False
         super(_WriteQuery, self).__init__(**kwargs)
 
+    def cte(self, name, recursive=False, columns=None, materialized=None):
+        return CTE(name, self, recursive=recursive, columns=columns,
+                   materialized=materialized)
+
     @Node.copy
     def returning(self, *returning):
         self._returning = returning
@@ -2565,9 +2621,14 @@ class Insert(_WriteQuery):
         self._columns = columns
         self._on_conflict = on_conflict
         self._query_type = None
+        self._as_rowcount = False
 
     def where(self, *expressions):
         raise NotImplementedError('INSERT queries cannot have a WHERE clause.')
+
+    @Node.copy
+    def as_rowcount(self, _as_rowcount=True):
+        self._as_rowcount = _as_rowcount
 
     @Node.copy
     def on_conflict_ignore(self, ignore=True):
@@ -2765,7 +2826,7 @@ class Insert(_WriteQuery):
     def handle_result(self, database, cursor):
         if self._return_cursor:
             return cursor
-        if self._query_type != Insert.SIMPLE and not self._returning:
+        if self._as_rowcount:
             return database.rows_affected(cursor)
         return database.last_insert_id(cursor, self._query_type)
 
@@ -3323,6 +3384,10 @@ class Database(_callable_context_manager):
                     yield obj
 
     def table_exists(self, table_name, schema=None):
+        if is_model(table_name):
+            model = table_name
+            table_name = model._meta.table_name
+            schema = model._meta.schema
         return table_name in self.get_tables(schema=schema)
 
     def get_tables(self, schema=None):
@@ -3415,11 +3480,16 @@ class SqliteDatabase(Database):
         self.register_function(_sqlite_date_trunc, 'date_trunc', 2)
         self.nulls_ordering = self.server_version >= (3, 30, 0)
 
-    def init(self, database, pragmas=None, timeout=5, **kwargs):
+    def init(self, database, pragmas=None, timeout=5, returning_clause=None,
+             **kwargs):
         if pragmas is not None:
             self._pragmas = pragmas
         if isinstance(self._pragmas, dict):
             self._pragmas = list(self._pragmas.items())
+        if returning_clause is not None:
+            if __sqlite_version__ < (3, 35, 0):
+                warnings.warn('RETURNING clause requires Sqlite 3.35 or newer')
+            self.returning_clause = returning_clause
         self._timeout = timeout
         super(SqliteDatabase, self).init(database, **kwargs)
 
@@ -3491,6 +3561,9 @@ class SqliteDatabase(Database):
     read_uncommitted = __pragma__('read_uncommitted')
     synchronous = __pragma__('synchronous')
     wal_autocheckpoint = __pragma__('wal_autocheckpoint')
+    application_id = __pragma__('application_id')
+    user_version = __pragma__('user_version')
+    data_version = __pragma__('data_version')
 
     @property
     def timeout(self):
@@ -3641,6 +3714,22 @@ class SqliteDatabase(Database):
         if not self.is_closed():
             self.execute_sql('DETACH DATABASE "%s"' % name)
         return True
+
+    def last_insert_id(self, cursor, query_type=None):
+        if not self.returning_clause:
+            return cursor.lastrowid
+        elif query_type == Insert.SIMPLE:
+            try:
+                return cursor[0][0]
+            except (IndexError, KeyError, TypeError):
+                pass
+        return cursor
+
+    def rows_affected(self, cursor):
+        try:
+            return cursor.rowcount
+        except AttributeError:
+            return cursor.cursor.rowcount  # This was a RETURNING query.
 
     def begin(self, lock_type=None):
         statement = 'BEGIN %s' % lock_type if lock_type else 'BEGIN'
@@ -3828,6 +3917,12 @@ class PostgresqlDatabase(Database):
             return cursor if query_type != Insert.SIMPLE else cursor[0][0]
         except (IndexError, KeyError, TypeError):
             pass
+
+    def rows_affected(self, cursor):
+        try:
+            return cursor.rowcount
+        except AttributeError:
+            return cursor.cursor.rowcount
 
     def get_tables(self, schema=None):
         query = ('SELECT tablename FROM pg_catalog.pg_tables '
@@ -4031,6 +4126,18 @@ class MySQLDatabase(Database):
 
         warnings.warn('Unable to determine MySQL version: "%s"' % version)
         return (0, 0, 0)  # Unable to determine version!
+
+    def is_connection_usable(self):
+        if self._state.closed:
+            return False
+
+        conn = self._state.conn
+        if hasattr(conn, 'ping'):
+            try:
+                conn.ping(False)
+            except Exception:
+                return False
+        return True
 
     def default_values_insert(self, ctx):
         return ctx.literal('() VALUES ()')
@@ -5736,6 +5843,10 @@ class SchemaManager(object):
                 index = index.safe(False)
             elif index._safe != safe:
                 index = index.safe(safe)
+            if isinstance(self._database, SqliteDatabase):
+                # Ensure we do not use value placeholders with Sqlite, as they
+                # are not supported.
+                index = ValueLiterals(index)
         return self._create_context().sql(index)
 
     def create_indexes(self, safe=True):
@@ -6121,7 +6232,11 @@ class Metadata(object):
         self.model._schema._database = database
         del self.table
 
-        # Apply any hooks that have been registered.
+        # Apply any hooks that have been registered. If we have an
+        # uninitialized proxy object, we will treat that as `None`.
+        if isinstance(database, Proxy) and database.obj is None:
+            database = None
+
         for hook in self._db_hooks:
             hook(database)
 
@@ -7005,6 +7120,11 @@ class ModelSelect(BaseModelSelect, Select):
             return super(ModelSelect, self).select(*fields)
         return self
 
+    def select_extend(self, *columns):
+        self._is_default = False
+        fields = _normalize_model_select(columns)
+        return super(ModelSelect, self).select_extend(*fields)
+
     def switch(self, ctx=None):
         self._join_ctx = self.model if ctx is None else ctx
         return self
@@ -7172,6 +7292,9 @@ class ModelSelect(BaseModelSelect, Select):
         item = self._from_list.pop()
         self._from_list.append(Join(item, dest, join_type, on))
 
+    def left_outer_join(self, dest, on=None, src=None, attr=None):
+        return self.join(dest, JOIN.LEFT_OUTER, on, src, attr)
+
     def join_from(self, src, dest, join_type=JOIN.INNER, on=None, attr=None):
         return self.join(dest, join_type, on, src, attr)
 
@@ -7210,6 +7333,8 @@ class ModelSelect(BaseModelSelect, Select):
             else:
                 for piece in key.split('__'):
                     for dest, attr, _, _ in self._joins.get(curr, ()):
+                        try: model_attr = getattr(curr, piece, None)
+                        except: pass
                         if attr == piece or (isinstance(dest, ModelAlias) and
                                              dest.alias == piece):
                             curr = dest
@@ -7620,6 +7745,12 @@ class ModelCursorWrapper(BaseModelCursorWrapper):
                     key = field.source
                 else:
                     key = field.model
+            elif isinstance(node, BindTo):
+                if node.dest not in self.key_to_constructor:
+                    raise ValueError('%s specifies bind-to %s, but %s is not '
+                                     'among the selected sources.' %
+                                     (node.unwrap(), node.dest, node.dest))
+                key = node.dest
             else:
                 if isinstance(node, Node):
                     node = node.unwrap()

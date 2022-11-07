@@ -1,4 +1,5 @@
 import warnings
+from base64 import standard_b64decode
 from collections import OrderedDict
 from datetime import datetime, date, time, timedelta
 from decimal import Decimal
@@ -87,7 +88,7 @@ def json_date_time_hook(dct):
 
 def json_complex_hook(dct):
 	"""
-	Return an encoded complex number to it's python representation.
+	Return an encoded complex number to Python complex type.
 
 	:param dct: (dict) json encoded complex number (__complex__)
 	:return: python complex number
@@ -99,6 +100,22 @@ def json_complex_hook(dct):
 	parts = dct['__complex__']
 	assert len(parts) == 2
 	return parts[0] + parts[1] * 1j
+
+
+def json_bytes_hook(dct):
+	"""
+	Return encoded bytes, either base64 or utf8, back to Python bytes.
+
+	:param dct: any object, if it is a dict containing encoded bytes, they will be converted
+	:return: python complex number
+	"""
+	if not isinstance(dct, dict):
+		return dct
+	if '__bytes_b64__' in dct:
+		return standard_b64decode(dct['__bytes_b64__'])
+	if '__bytes_utf8__' in dct:
+		return dct['__bytes_utf8__'].encode('utf-8')
+	return dct
 
 
 def numeric_types_hook(dct):

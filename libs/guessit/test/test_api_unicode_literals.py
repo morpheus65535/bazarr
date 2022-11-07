@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=no-self-use, pointless-statement, missing-docstring, invalid-name, pointless-string-statement
+# pylint: disable=pointless-statement, missing-docstring, invalid-name, pointless-string-statement
 
 
 import os
@@ -60,6 +60,6 @@ def test_properties():
 def test_exception():
     with pytest.raises(GuessitException) as excinfo:
         guessit(object())
-    assert "An internal error has occured in guessit" in str(excinfo.value)
+    assert "An internal error has occurred in guessit" in str(excinfo.value)
     assert "Guessit Exception Report" in str(excinfo.value)
     assert "Please report at https://github.com/guessit-io/guessit/issues" in str(excinfo.value)

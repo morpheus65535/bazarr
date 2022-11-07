@@ -6,8 +6,12 @@ import srt
 import logging
 import sys
 import itertools
-import collections
 import os
+
+try:
+    from collections.abc import MutableSequence
+except ImportError:
+    from collections import MutableSequence
 
 PROG_NAME = os.path.basename(sys.argv[0]).replace("-", " ", 1)
 
@@ -175,7 +179,7 @@ def set_basic_args(args):
         else:
             log.debug("%s not in DASH_STREAM_MAP", stream_name)
             if stream is args.input:
-                if isinstance(args.input, collections.MutableSequence):
+                if isinstance(args.input, MutableSequence):
                     for i, input_fn in enumerate(args.input):
                         if input_fn in DASH_STREAM_MAP.values():
                             if stream is args.input:

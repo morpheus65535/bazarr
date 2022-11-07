@@ -200,7 +200,7 @@ def _check_version():
     if gaecontrib is None:
         raise exc.VersionMismatchError(
             "The toolbelt requires at least Requests 2.10.0 to be "
-            "installed. Version {0} was found instead.".format(
+            "installed. Version {} was found instead.".format(
                 requests.__version__
             )
         )

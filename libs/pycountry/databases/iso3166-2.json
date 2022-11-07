@@ -6693,7 +6693,7 @@
     },
     {
       "code": "FI-01",
-      "name": "Ahvenanmaan maakunta",
+      "name": "Åland",
       "type": "Region"
     },
     {
@@ -6718,7 +6718,7 @@
     },
     {
       "code": "FI-06",
-      "name": "Egentliga Tavastland",
+      "name": "Kanta-Häme",
       "type": "Region"
     },
     {
@@ -6743,7 +6743,7 @@
     },
     {
       "code": "FI-11",
-      "name": "Birkaland",
+      "name": "Pirkanmaa",
       "type": "Region"
     },
     {
@@ -6753,37 +6753,37 @@
     },
     {
       "code": "FI-13",
-      "name": "Norra Karelen",
+      "name": "Pohjois-Karjala",
       "type": "Region"
     },
     {
       "code": "FI-14",
-      "name": "Norra Österbotten",
+      "name": "Pohjois-Pohjanmaa",
       "type": "Region"
     },
     {
       "code": "FI-15",
-      "name": "Norra Savolax",
+      "name": "Pohjois-Savo",
       "type": "Region"
     },
     {
       "code": "FI-16",
-      "name": "Päijänne-Tavastland",
+      "name": "Päijät-Häme",
       "type": "Region"
     },
     {
       "code": "FI-17",
-      "name": "Satakunda",
+      "name": "Satakunta",
       "type": "Region"
     },
     {
       "code": "FI-18",
-      "name": "Nyland",
+      "name": "Uusimaa",
       "type": "Region"
     },
     {
       "code": "FI-19",
-      "name": "Egentliga Finland",
+      "name": "Varsinais-Suomi",
       "type": "Region"
     },
     {
@@ -7699,1081 +7699,1317 @@
     {
       "code": "GB-ABC",
       "name": "Armagh City, Banbridge and Craigavon",
+      "parent": "GB-NIR",
       "type": "District"
     },
     {
       "code": "GB-ABD",
       "name": "Aberdeenshire",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-ABE",
       "name": "Aberdeen City",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-AGB",
       "name": "Argyll and Bute",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-AGY",
       "name": "Isle of Anglesey [Sir Ynys Môn GB-YNM]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-AND",
       "name": "Ards and North Down",
+      "parent": "GB-NIR",
       "type": "District"
     },
     {
       "code": "GB-ANN",
       "name": "Antrim and Newtownabbey",
+      "parent": "GB-NIR",
       "type": "District"
     },
     {
       "code": "GB-ANS",
       "name": "Angus",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-BAS",
       "name": "Bath and North East Somerset",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-BBD",
       "name": "Blackburn with Darwen",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-BCP",
       "name": "Bournemouth, Christchurch and Poole",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-BDF",
       "name": "Bedford",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-BDG",
       "name": "Barking and Dagenham",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-BEN",
       "name": "Brent",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-BEX",
       "name": "Bexley",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-BFS",
       "name": "Belfast City",
+      "parent": "GB-NIR",
       "type": "District"
     },
     {
       "code": "GB-BGE",
       "name": "Bridgend [Pen-y-bont ar Ogwr GB-POG]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-BGW",
       "name": "Blaenau Gwent",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-BIR",
       "name": "Birmingham",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-BKM",
       "name": "Buckinghamshire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-BNE",
       "name": "Barnet",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-BNH",
       "name": "Brighton and Hove",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-BNS",
       "name": "Barnsley",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-BOL",
       "name": "Bolton",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-BPL",
       "name": "Blackpool",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-BRC",
       "name": "Bracknell Forest",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-BRD",
       "name": "Bradford",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-BRY",
       "name": "Bromley",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-BST",
       "name": "Bristol, City of",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-BUR",
       "name": "Bury",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-CAM",
       "name": "Cambridgeshire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-CAY",
       "name": "Caerphilly [Caerffili GB-CAF]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-CBF",
       "name": "Central Bedfordshire",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-CCG",
       "name": "Causeway Coast and Glens",
+      "parent": "GB-NIR",
       "type": "District"
     },
     {
       "code": "GB-CGN",
       "name": "Ceredigion [Sir Ceredigion]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-CHE",
       "name": "Cheshire East",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-CHW",
       "name": "Cheshire West and Chester",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-CLD",
       "name": "Calderdale",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-CLK",
       "name": "Clackmannanshire",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-CMA",
       "name": "Cumbria",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-CMD",
       "name": "Camden",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-CMN",
       "name": "Carmarthenshire [Sir Gaerfyrddin GB-GFY]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-CON",
       "name": "Cornwall",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-COV",
       "name": "Coventry",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-CRF",
       "name": "Cardiff [Caerdydd GB-CRD]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-CRY",
       "name": "Croydon",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-CWY",
       "name": "Conwy",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-DAL",
       "name": "Darlington",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-DBY",
       "name": "Derbyshire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-DEN",
       "name": "Denbighshire [Sir Ddinbych GB-DDB]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-DER",
       "name": "Derby",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-DEV",
       "name": "Devon",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-DGY",
       "name": "Dumfries and Galloway",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-DNC",
       "name": "Doncaster",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-DND",
       "name": "Dundee City",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-DOR",
       "name": "Dorset",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-DRS",
       "name": "Derry and Strabane",
+      "parent": "GB-NIR",
       "type": "District"
     },
     {
       "code": "GB-DUD",
       "name": "Dudley",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-DUR",
       "name": "Durham, County",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-EAL",
       "name": "Ealing",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-EAY",
       "name": "East Ayrshire",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-EDH",
       "name": "Edinburgh, City of",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-EDU",
       "name": "East Dunbartonshire",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-ELN",
       "name": "East Lothian",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-ELS",
       "name": "Eilean Siar",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-ENF",
       "name": "Enfield",
+      "parent": "GB-ENG",
       "type": "London borough"
+    },
+    {
+      "code": "GB-ENG",
+      "name": "England",
+      "type": "Country"
     },
     {
       "code": "GB-ERW",
       "name": "East Renfrewshire",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-ERY",
       "name": "East Riding of Yorkshire",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-ESS",
       "name": "Essex",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-ESX",
       "name": "East Sussex",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-FAL",
       "name": "Falkirk",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-FIF",
       "name": "Fife",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-FLN",
       "name": "Flintshire [Sir y Fflint GB-FFL]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-FMO",
       "name": "Fermanagh and Omagh",
+      "parent": "GB-NIR",
       "type": "District"
     },
     {
       "code": "GB-GAT",
       "name": "Gateshead",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-GLG",
       "name": "Glasgow City",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-GLS",
       "name": "Gloucestershire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-GRE",
       "name": "Greenwich",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-GWN",
       "name": "Gwynedd",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-HAL",
       "name": "Halton",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-HAM",
       "name": "Hampshire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-HAV",
       "name": "Havering",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-HCK",
       "name": "Hackney",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-HEF",
       "name": "Herefordshire",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-HIL",
       "name": "Hillingdon",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-HLD",
       "name": "Highland",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-HMF",
       "name": "Hammersmith and Fulham",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-HNS",
       "name": "Hounslow",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-HPL",
       "name": "Hartlepool",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-HRT",
       "name": "Hertfordshire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-HRW",
       "name": "Harrow",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-HRY",
       "name": "Haringey",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-IOS",
       "name": "Isles of Scilly",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-IOW",
       "name": "Isle of Wight",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-ISL",
       "name": "Islington",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-IVC",
       "name": "Inverclyde",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-KEC",
       "name": "Kensington and Chelsea",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-KEN",
       "name": "Kent",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-KHL",
       "name": "Kingston upon Hull",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-KIR",
       "name": "Kirklees",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-KTT",
       "name": "Kingston upon Thames",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-KWL",
       "name": "Knowsley",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-LAN",
       "name": "Lancashire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-LBC",
       "name": "Lisburn and Castlereagh",
+      "parent": "GB-NIR",
       "type": "District"
     },
     {
       "code": "GB-LBH",
       "name": "Lambeth",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-LCE",
       "name": "Leicester",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-LDS",
       "name": "Leeds",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-LEC",
       "name": "Leicestershire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-LEW",
       "name": "Lewisham",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-LIN",
       "name": "Lincolnshire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-LIV",
       "name": "Liverpool",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-LND",
       "name": "London, City of",
+      "parent": "GB-ENG",
       "type": "City corporation"
     },
     {
       "code": "GB-LUT",
       "name": "Luton",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-MAN",
       "name": "Manchester",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-MDB",
       "name": "Middlesbrough",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-MDW",
       "name": "Medway",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-MEA",
       "name": "Mid and East Antrim",
+      "parent": "GB-NIR",
       "type": "District"
     },
     {
       "code": "GB-MIK",
       "name": "Milton Keynes",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-MLN",
       "name": "Midlothian",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-MON",
       "name": "Monmouthshire [Sir Fynwy GB-FYN]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-MRT",
       "name": "Merton",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-MRY",
       "name": "Moray",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-MTY",
       "name": "Merthyr Tydfil [Merthyr Tudful GB-MTU]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-MUL",
       "name": "Mid-Ulster",
+      "parent": "GB-NIR",
       "type": "District"
     },
     {
       "code": "GB-NAY",
       "name": "North Ayrshire",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-NBL",
       "name": "Northumberland",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-NEL",
       "name": "North East Lincolnshire",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-NET",
       "name": "Newcastle upon Tyne",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-NFK",
       "name": "Norfolk",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-NGM",
       "name": "Nottingham",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
+    },
+    {
+      "code": "GB-NIR",
+      "name": "Northern Ireland",
+      "type": "Province"
     },
     {
       "code": "GB-NLK",
       "name": "North Lanarkshire",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-NLN",
       "name": "North Lincolnshire",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-NMD",
       "name": "Newry, Mourne and Down",
+      "parent": "GB-NIR",
       "type": "District"
     },
     {
       "code": "GB-NSM",
       "name": "North Somerset",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-NTH",
       "name": "Northamptonshire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-NTL",
       "name": "Neath Port Talbot [Castell-nedd Port Talbot GB-CTL]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-NTT",
       "name": "Nottinghamshire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-NTY",
       "name": "North Tyneside",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-NWM",
       "name": "Newham",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-NWP",
       "name": "Newport [Casnewydd GB-CNW]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-NYK",
       "name": "North Yorkshire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-OLD",
       "name": "Oldham",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-ORK",
       "name": "Orkney Islands",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-OXF",
       "name": "Oxfordshire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-PEM",
       "name": "Pembrokeshire [Sir Benfro GB-BNF]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-PKN",
       "name": "Perth and Kinross",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-PLY",
       "name": "Plymouth",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-POR",
       "name": "Portsmouth",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-POW",
       "name": "Powys",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-PTE",
       "name": "Peterborough",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-RCC",
       "name": "Redcar and Cleveland",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-RCH",
       "name": "Rochdale",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-RCT",
       "name": "Rhondda Cynon Taff [Rhondda CynonTaf]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-RDB",
       "name": "Redbridge",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-RDG",
       "name": "Reading",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-RFW",
       "name": "Renfrewshire",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-RIC",
       "name": "Richmond upon Thames",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-ROT",
       "name": "Rotherham",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-RUT",
       "name": "Rutland",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-SAW",
       "name": "Sandwell",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-SAY",
       "name": "South Ayrshire",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-SCB",
       "name": "Scottish Borders",
+      "parent": "GB-SCT",
       "type": "Council area"
+    },
+    {
+      "code": "GB-SCT",
+      "name": "Scotland",
+      "type": "Country"
     },
     {
       "code": "GB-SFK",
       "name": "Suffolk",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-SFT",
       "name": "Sefton",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-SGC",
       "name": "South Gloucestershire",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-SHF",
       "name": "Sheffield",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-SHN",
       "name": "St. Helens",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-SHR",
       "name": "Shropshire",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-SKP",
       "name": "Stockport",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-SLF",
       "name": "Salford",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-SLG",
       "name": "Slough",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-SLK",
       "name": "South Lanarkshire",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-SND",
       "name": "Sunderland",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-SOL",
       "name": "Solihull",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-SOM",
       "name": "Somerset",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-SOS",
       "name": "Southend-on-Sea",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-SRY",
       "name": "Surrey",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-STE",
       "name": "Stoke-on-Trent",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-STG",
       "name": "Stirling",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-STH",
       "name": "Southampton",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-STN",
       "name": "Sutton",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-STS",
       "name": "Staffordshire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-STT",
       "name": "Stockton-on-Tees",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-STY",
       "name": "South Tyneside",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-SWA",
       "name": "Swansea [Abertawe GB-ATA]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-SWD",
       "name": "Swindon",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-SWK",
       "name": "Southwark",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-TAM",
       "name": "Tameside",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-TFW",
       "name": "Telford and Wrekin",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-THR",
       "name": "Thurrock",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-TOB",
       "name": "Torbay",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-TOF",
       "name": "Torfaen [Tor-faen]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-TRF",
       "name": "Trafford",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-TWH",
       "name": "Tower Hamlets",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-VGL",
       "name": "Vale of Glamorgan, The [Bro Morgannwg GB-BMG]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-WAR",
       "name": "Warwickshire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-WBK",
       "name": "West Berkshire",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-WDU",
       "name": "West Dunbartonshire",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {
       "code": "GB-WFT",
       "name": "Waltham Forest",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-WGN",
       "name": "Wigan",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-WIL",
       "name": "Wiltshire",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-WKF",
       "name": "Wakefield",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-WLL",
       "name": "Walsall",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-WLN",
       "name": "West Lothian",
+      "parent": "GB-SCT",
       "type": "Council area"
+    },
+    {
+      "code": "GB-WLS",
+      "name": "Wales [Cymru GB-CYM]",
+      "type": "Country"
     },
     {
       "code": "GB-WLV",
       "name": "Wolverhampton",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-WND",
       "name": "Wandsworth",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-WNM",
       "name": "Windsor and Maidenhead",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-WOK",
       "name": "Wokingham",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-WOR",
       "name": "Worcestershire",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-WRL",
       "name": "Wirral",
+      "parent": "GB-ENG",
       "type": "Metropolitan district"
     },
     {
       "code": "GB-WRT",
       "name": "Warrington",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-WRX",
       "name": "Wrexham [Wrecsam GB-WRC]",
+      "parent": "GB-WLS",
       "type": "Unitary authority"
     },
     {
       "code": "GB-WSM",
       "name": "Westminster",
+      "parent": "GB-ENG",
       "type": "London borough"
     },
     {
       "code": "GB-WSX",
       "name": "West Sussex",
+      "parent": "GB-ENG",
       "type": "Two-tier county"
     },
     {
       "code": "GB-YOR",
       "name": "York",
+      "parent": "GB-ENG",
       "type": "Unitary authority"
     },
     {
       "code": "GB-ZET",
       "name": "Shetland Islands",
+      "parent": "GB-SCT",
       "type": "Council area"
     },
     {

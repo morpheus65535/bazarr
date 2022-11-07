@@ -58,12 +58,17 @@ class MicrosoftTranslator(BaseTranslator):
     # a common variable used in the other translators would be: MICROSOFT_CODES_TO_LANGUAGES
     def _get_supported_languages(self):
 
-        microsoft_languages_api_url = "https://api.cognitive.microsofttranslator.com/languages?api-version=3.0&scope" \
-                                      "=translation "
+        microsoft_languages_api_url = (
+            "https://api.cognitive.microsofttranslator.com/languages?api-version=3.0&scope"
+            "=translation "
+        )
         microsoft_languages_response = requests.get(microsoft_languages_api_url)
         translation_dict = microsoft_languages_response.json()["translation"]
 
-        return {translation_dict[k]["name"].lower(): k.lower() for k in translation_dict.keys()}
+        return {
+            translation_dict[k]["name"].lower(): k.lower()
+            for k in translation_dict.keys()
+        }
 
     def translate(self, text: str, **kwargs) -> str:
         """

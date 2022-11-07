@@ -52,7 +52,7 @@ def proxy_headers_middleware(
                     ex.reason,
                     ex.value,
                 )
-                error = BadRequest('Header "{}" malformed.'.format(ex.header))
+                error = BadRequest(f'Header "{ex.header}" malformed.')
                 return error.wsgi_response(environ, start_response)
 
         # Clear out the untrusted proxy headers
@@ -95,7 +95,7 @@ def parse_proxy_headers(
                 if "." not in forward_hop and (
                     ":" in forward_hop and forward_hop[-1] != "]"
                 ):
-                    forwarded_for.append("[{}]".format(forward_hop))
+                    forwarded_for.append(f"[{forward_hop}]")
                 else:
                     forwarded_for.append(forward_hop)
 

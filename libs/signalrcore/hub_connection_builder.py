@@ -27,7 +27,7 @@ class HubConnectionBuilder(object):
             "access_token_factory": None
         }
         self.token = None
-        self.headers = None
+        self.headers = dict()
         self.negotiate_headers = None
         self.has_auth_configured = None
         self.protocol = None
@@ -160,11 +160,10 @@ class HubConnectionBuilder(object):
         """
         if self.protocol is None:
             self.protocol = JsonHubProtocol()
-        self.headers = {}
 
         if "headers" in self.options.keys()\
                 and type(self.options["headers"]) is dict:
-            self.headers = self.options["headers"]
+            self.headers.update(self.options["headers"])
 
         if self.has_auth_configured:
             auth_function = self.options["access_token_factory"]

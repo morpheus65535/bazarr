@@ -568,7 +568,12 @@ static inline int msgpack_pack_float(msgpack_packer* x, float d)
 {
     unsigned char buf[5];
     buf[0] = 0xca;
+
+#if PY_VERSION_HEX >= 0x030B00A7
+    PyFloat_Pack4(d, (char *)&buf[1], 0);
+#else
     _PyFloat_Pack4(d, &buf[1], 0);
+#endif
     msgpack_pack_append_buffer(x, buf, 5);
 }
 
@@ -576,7 +581,11 @@ static inline int msgpack_pack_double(msgpack_packer* x, double d)
 {
     unsigned char buf[9];
     buf[0] = 0xcb;
+#if PY_VERSION_HEX >= 0x030B00A7
+    PyFloat_Pack8(d, (char *)&buf[1], 0);
+#else
     _PyFloat_Pack8(d, &buf[1], 0);
+#endif
     msgpack_pack_append_buffer(x, buf, 9);
 }
 

@@ -31,7 +31,6 @@ if TYPE_CHECKING:
     import jsonschema
 
 from jsonschema.exceptions import ValidationError
-from jsonschema.validators import RefResolver
 
 # For code authors working on the validator protocol, these are the three
 # use-cases which should be kept in mind:
@@ -49,7 +48,7 @@ from jsonschema.validators import RefResolver
 @runtime_checkable
 class Validator(Protocol):
     """
-    The protocol to which all validator classes should adhere.
+    The protocol to which all validator classes adhere.
 
     Arguments:
 
@@ -75,6 +74,11 @@ class Validator(Protocol):
             against instances. Ensure you've installed `jsonschema` with
             its `extra (optional) dependencies <index:extras>` when
             invoking ``pip``.
+
+    .. deprecated:: v4.12.0
+
+        Subclassing validator classes now explicitly warns this is not part of
+        their public API.
     """
 
     #: An object representing the validator's meta schema (the schema that
@@ -91,7 +95,7 @@ class Validator(Protocol):
     TYPE_CHECKER: ClassVar[jsonschema.TypeChecker]
 
     #: A `jsonschema.FormatChecker` that will be used when validating
-    #: :kw:`format` properties in JSON schemas.
+    #: :kw:`format` keywords in JSON schemas.
     FORMAT_CHECKER: ClassVar[jsonschema.FormatChecker]
 
     #: A function which given a schema returns its ID.
@@ -103,7 +107,7 @@ class Validator(Protocol):
     def __init__(
         self,
         schema: Mapping | bool,
-        resolver: RefResolver | None = None,
+        resolver: jsonschema.RefResolver | None = None,
         format_checker: jsonschema.FormatChecker | None = None,
     ) -> None:
         ...
@@ -172,6 +176,11 @@ class Validator(Protocol):
         ...     print(error.message)
         4 is not one of [1, 2, 3]
         [2, 3, 4] is too long
+
+        .. deprecated:: v4.0.0
+
+            Calling this function with a second schema argument is deprecated.
+            Use `Validator.evolve` instead.
         """
 
     def validate(self, instance: Any) -> None:

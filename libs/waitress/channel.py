@@ -25,7 +25,7 @@ from . import wasyncore
 
 
 class ClientDisconnected(Exception):
-    """ Raised when attempting to write to a closed socket."""
+    """Raised when attempting to write to a closed socket."""
 
 
 class HTTPChannel(wasyncore.dispatcher):
@@ -78,6 +78,7 @@ class HTTPChannel(wasyncore.dispatcher):
         may occasionally check if the client has disconnected and interrupt
         execution.
         """
+
         return not self.connected
 
     def writable(self):
@@ -116,16 +117,7 @@ class HTTPChannel(wasyncore.dispatcher):
             #    right now.
             flush = None
 
-        if flush:
-            try:
-                flush()
-            except OSError:
-                if self.adj.log_socket_errors:
-                    self.logger.exception("Socket error")
-                self.will_close = True
-            except Exception:  # pragma: nocover
-                self.logger.exception("Unexpected exception when flushing")
-                self.will_close = True
+        self._flush_exception(flush)
 
         if self.close_when_flushed and not self.total_outbufs_len:
             self.close_when_flushed = False
@@ -133,6 +125,22 @@ class HTTPChannel(wasyncore.dispatcher):
 
         if self.will_close:
             self.handle_close()
+
+    def _flush_exception(self, flush, do_close=True):
+        if flush:
+            try:
+                return (flush(do_close=do_close), False)
+            except OSError:
+                if self.adj.log_socket_errors:
+                    self.logger.exception("Socket error")
+                self.will_close = True
+
+                return (False, True)
+            except Exception:  # pragma: nocover
+                self.logger.exception("Unexpected exception when flushing")
+                self.will_close = True
+
+                return (False, True)
 
     def readable(self):
         # We might want to read more requests. We can only do this if:
@@ -190,6 +198,7 @@ class HTTPChannel(wasyncore.dispatcher):
         Receives input asynchronously and assigns one or more requests to the
         channel.
         """
+
         if not data:
             return False
 
@@ -201,6 +210,7 @@ class HTTPChannel(wasyncore.dispatcher):
 
                 # if there are requests queued, we can not send the continue
                 # header yet since the responses need to be kept in order
+
                 if (
                     self.request.expect_continue
                     and self.request.headers_finished
@@ -215,6 +225,7 @@ class HTTPChannel(wasyncore.dispatcher):
 
                     if not self.request.empty:
                         self.requests.append(self.request)
+
                         if len(self.requests) == 1:
                             # self.requests was empty before so the main thread
                             # is in charge of starting the task. Otherwise,
@@ -229,20 +240,20 @@ class HTTPChannel(wasyncore.dispatcher):
 
         return True
 
-    def _flush_some_if_lockable(self):
+    def _flush_some_if_lockable(self, do_close=True):
         # Since our task may be appending to the outbuf, we try to acquire
         # the lock, but we don't block if we can't.
 
         if self.outbuf_lock.acquire(False):
             try:
-                self._flush_some()
+                self._flush_some(do_close=do_close)
 
                 if self.total_outbufs_len < self.adj.outbuf_high_watermark:
                     self.outbuf_lock.notify()
             finally:
                 self.outbuf_lock.release()
 
-    def _flush_some(self):
+    def _flush_some(self, do_close=True):
         # Send as much data as possible to our client
 
         sent = 0
@@ -256,7 +267,7 @@ class HTTPChannel(wasyncore.dispatcher):
 
             while outbuflen > 0:
                 chunk = outbuf.get(self.sendbuf_len)
-                num_sent = self.send(chunk)
+                num_sent = self.send(chunk, do_close=do_close)
 
                 if num_sent:
                     outbuf.skip(num_sent, True)
@@ -363,7 +374,16 @@ class HTTPChannel(wasyncore.dispatcher):
                 self.total_outbufs_len += num_bytes
 
                 if self.total_outbufs_len >= self.adj.send_bytes:
-                    self.server.pull_trigger()
+                    (flushed, exception) = self._flush_exception(
+                        self._flush_some, do_close=False
+                    )
+
+                    if (
+                        exception
+                        or not flushed
+                        or self.total_outbufs_len >= self.adj.send_bytes
+                    ):
+                        self.server.pull_trigger()
 
             return num_bytes
 
@@ -374,6 +394,17 @@ class HTTPChannel(wasyncore.dispatcher):
 
         if self.total_outbufs_len > self.adj.outbuf_high_watermark:
             with self.outbuf_lock:
+                (_, exception) = self._flush_exception(self._flush_some, do_close=False)
+
+                if exception:
+                    # An exception happened while flushing, wake up the main
+                    # thread, then wait for it to decide what to do next
+                    # (probably close the socket, and then just return)
+                    self.server.pull_trigger()
+                    self.outbuf_lock.wait()
+
+                    return
+
                 while (
                     self.connected
                     and self.total_outbufs_len > self.adj.outbuf_high_watermark
@@ -460,6 +491,7 @@ class HTTPChannel(wasyncore.dispatcher):
             # Add new task to process the next request
             with self.requests_lock:
                 self.requests.pop(0)
+
                 if self.connected and self.requests:
                     self.server.add_task(self)
                 elif (
@@ -480,7 +512,7 @@ class HTTPChannel(wasyncore.dispatcher):
         self.last_activity = time.time()
 
     def cancel(self):
-        """ Cancels all pending / active requests """
+        """Cancels all pending / active requests"""
         self.will_close = True
         self.connected = False
         self.last_activity = time.time()

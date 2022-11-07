@@ -70,13 +70,16 @@ def _tz_name_from_env(tzenv=None):
     if not tzenv:
         return None
 
+    if tzenv[0] == ":":
+        tzenv = tzenv[1:]
+
     if tzenv in windows_tz.tz_win:
         # Yup, it's a timezone
         return tzenv
 
     if os.path.isabs(tzenv) and os.path.exists(tzenv):
-        # It's a file specification
-        parts = tzenv.split(os.sep)
+        # It's a file specification, expand it, if possible
+        parts = os.path.realpath(tzenv).split(os.sep)
 
         # Is it a zone info zone?
         possible_tz = "/".join(parts[-2:])

@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, absolute_import
-
 from time import time
 from uuid import uuid5, NAMESPACE_URL
 
-from six import iteritems
-from six.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 
 
 def clean(data):
     """Remove all keys where value is None"""
-    return dict((k, v) for k, v in iteritems(data) if v is not None)
+    return dict((k, v) for k, v in data.items() if v is not None)
 
 
 DEFAULT_VARS = {
@@ -56,15 +53,15 @@ class Request(object):
 
         # Add security headers if needed (global then local)
         for security in self.collection.api.__schema__.get("security", []):
-            for key, header in iteritems(self.collection.apikeys):
+            for key, header in self.collection.apikeys.items():
                 if key in security:
                     headers[header] = ""
         for security in self.operation.get("security", []):
-            for key, header in iteritems(self.collection.apikeys):
+            for key, header in self.collection.apikeys.items():
                 if key in security:
                     headers[header] = ""
 
-        lines = [":".join(line) for line in iteritems(headers)]
+        lines = [":".join(line) for line in headers.items()]
         return "\n".join(lines)
 
     @property
@@ -103,7 +100,7 @@ class Request(object):
         )
         if not params:
             return url, None
-        for name, param in iteritems(params):
+        for name, param in params.items():
             if param["in"] == "path":
                 url = url.replace("{%s}" % name, ":%s" % name)
                 path_vars[name] = DEFAULT_VARS.get(param["type"], "")
@@ -171,10 +168,10 @@ class PostmanCollectionV1(object):
                 },
             )
         # Then iter over API paths and methods
-        for path, operations in iteritems(self.api.__schema__["paths"]):
+        for path, operations in self.api.__schema__["paths"].items():
             path_params = operations.get("parameters", [])
 
-            for method, operation in iteritems(operations):
+            for method, operation in operations.items():
                 if method != "parameters":
                     yield Request(self, path, path_params, method, operation)
 
@@ -187,9 +184,7 @@ class PostmanCollectionV1(object):
     def apikeys(self):
         return dict(
             (name, secdef["name"])
-            for name, secdef in iteritems(
-                self.api.__schema__.get("securityDefinitions")
-            )
+            for name, secdef in self.api.__schema__.get("securityDefinitions").items()
             if secdef.get("in") == "header" and secdef.get("type") == "apiKey"
         )
 
