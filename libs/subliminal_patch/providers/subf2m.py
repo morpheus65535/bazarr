@@ -37,7 +37,7 @@ class Subf2mSubtitle(Subtitle):
         self._matches = set(
             ("title", "year")
             if episode_number is None
-            else ("title", "series", "season", "episode")
+            else ("title", "series", "year", "season", "episode")
         )
 
     def get_matches(self, video):
