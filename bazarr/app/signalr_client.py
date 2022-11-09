@@ -11,6 +11,7 @@ from requests.exceptions import ConnectionError
 from signalrcore.hub_connection_builder import HubConnectionBuilder
 from collections import deque
 from time import sleep
+from websocket._exceptions import WebSocketBadStatusException
 
 from constants import headers
 from app.event_handler import event_stream
@@ -66,11 +67,15 @@ class SonarrSignalrClientLegacy:
                                   "permissions on that directory and restart Sonarr. Also, if you're a Docker image "
                                   "user, you should make sure you properly defined PUID/PGID environment variables. "
                                   "Otherwise, please contact Sonarr support.")
+                except WebSocketBadStatusException:
+                    logging.debug("BAZARR cannot connect to Sonarr SignalR feed using websocket. We'll fall back to "
+                                  "SSE.")
+                    self.configure(force_sse=True)
+                    self.restart()
                 else:
                     self.connected = True
                     event_stream(type='badges')
                     logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
-                finally:
                     if not args.dev:
                         scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
                         scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
@@ -97,9 +102,9 @@ class SonarrSignalrClientLegacy:
         logging.error('BAZARR connection to Sonarr SignalR feed has been lost.')
         self.restart()
 
-    def configure(self):
+    def configure(self, force_sse=False):
         self.apikey_sonarr = settings.sonarr.apikey
-        self.connection = Connection(url_sonarr() + "/signalr", self.session)
+        self.connection = Connection(url_sonarr() + "/signalr", self.session, force_sse=force_sse)
         self.connection.qs = {'apikey': self.apikey_sonarr}
         sonarr_hub = self.connection.register_hub('')  # Sonarr doesn't use named hub
 
