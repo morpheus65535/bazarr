@@ -28,22 +28,23 @@ def test_search_movie(movies, title, year, expected_url):
 
 
 @pytest.mark.parametrize(
-    "title,season,expected_url",
+    "series_title,season,year,expected_url",
     [
-        ("Breaking Bad", 1, "/subtitles/breaking-bad-first-season"),
-        ("House Of The Dragon", 1, "/subtitles/house-of-the-dragon-first-season"),
-        ("The Bear", 1, "/subtitles/the-bear-first-season"),
-        ("Courage the Cowardly Dog", 1, "/subtitles/courage-the-cowardly-dog"),
+        ("Breaking Bad", 1, None, "/subtitles/breaking-bad-first-season"),
+        ("House Of The Dragon", 1, None, "/subtitles/house-of-the-dragon-first-season"),
+        ("The Bear", 1, None, "/subtitles/the-bear-first-season"),
+        ("Courage the Cowardly Dog", 1, None, "/subtitles/courage-the-cowardly-dog"),
+        (
+            "The Twilight Zone",
+            2,
+            1959,
+            "/subtitles/the-twilight-zone-the-complete-original-series",
+        ),
     ],
 )
-def test_search_tv_show_season(episodes, title, season, expected_url):
-    episode = list(episodes.values())[0]
-    episode.name = title
-    episode.series = title
-    episode.season = season
-
+def test_search_tv_show_season(series_title, season, year, expected_url):
     with Subf2mProvider() as provider:
-        result = provider._search_tv_show_season(episode.series, episode.season)
+        result = provider._search_tv_show_season(series_title, season, year)
         assert result == expected_url
 
 

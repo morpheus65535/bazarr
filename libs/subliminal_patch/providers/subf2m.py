@@ -117,7 +117,9 @@ class Subf2mProvider(Provider):
     provider_name = "subf2m"
 
     _movie_title_regex = re.compile(r"^(.+?)( \((\d{4})\))?$")
-    _tv_show_title_regex = re.compile(r"^(.+?) - (.*?) (season|series)( \((\d{4})\))?$")
+    _tv_show_title_regex = re.compile(
+        r"^(.+?) [-\(]\s?(.*?) (season|series)\)?( \((\d{4})\))?$"
+    )
     _supported_languages = {}
     _supported_languages["brazillian-portuguese"] = Language("por", "BR")
 
@@ -201,7 +203,7 @@ class Subf2mProvider(Provider):
             logger.debug("Movie found: %s", results[0])
         return found_movie
 
-    def _search_tv_show_season(self, title, season):
+    def _search_tv_show_season(self, title, season, year=None):
         try:
             season_str = _SEASONS[season - 1].lower()
         except IndexError:
@@ -225,11 +227,13 @@ class Subf2mProvider(Provider):
             match_season = match.group(2)
 
             # Match "complete series" titles as they usually contain season packs
-            if season_str == match_season or match_season == "complete":
+            if season_str == match_season or "complete" in match_season:
+                plus = 0.1 if year and str(year) in text else 0
                 results.append(
                     {
                         "href": result.get("href"),
-                        "similarity": SequenceMatcher(None, title, match_title).ratio(),
+                        "similarity": SequenceMatcher(None, title, match_title).ratio()
+                        + plus,
                     }
                 )
 
