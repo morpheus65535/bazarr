@@ -3,6 +3,8 @@ interface Badge {
   movies: number;
   providers: number;
   status: number;
+  sonarr_signalr: string;
+  radarr_signalr: string;
 }
 
 declare namespace Language {

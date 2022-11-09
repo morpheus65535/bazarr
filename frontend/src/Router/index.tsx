@@ -73,6 +73,7 @@ function useRoutes(): CustomRouteObject[] {
             icon: faPlay,
             name: "Series",
             path: "series",
+            badge: data?.sonarr_signalr,
             hidden: !sonarr,
             children: [
               {
@@ -94,6 +95,7 @@ function useRoutes(): CustomRouteObject[] {
             icon: faFilm,
             name: "Movies",
             path: "movies",
+            badge: data?.radarr_signalr,
             hidden: !radarr,
             children: [
               {
@@ -291,7 +293,15 @@ function useRoutes(): CustomRouteObject[] {
         element: <Authentication></Authentication>,
       },
     ],
-    [data?.episodes, data?.movies, data?.providers, radarr, sonarr]
+    [
+      data?.episodes,
+      data?.movies,
+      data?.providers,
+      data?.sonarr_signalr,
+      data?.radarr_signalr,
+      radarr,
+      sonarr,
+    ]
   );
 }
 
