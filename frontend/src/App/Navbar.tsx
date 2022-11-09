@@ -53,6 +53,10 @@ function useSelection() {
 function useBadgeValue(route: Route.Item) {
   const { badge, children } = route;
   return useMemo(() => {
+    if (typeof badge === "string") {
+      return badge;
+    }
+
     let value = badge ?? 0;
 
     if (children === undefined) {
@@ -61,8 +65,9 @@ function useBadgeValue(route: Route.Item) {
 
     value +=
       children.reduce((acc, child: Route.Item) => {
-        if (child.badge && child.hidden !== true) {
-          return acc + (child.badge ?? 0);
+        const childBadgeValue = child.badge;
+        if (typeof childBadgeValue === "number" && child.hidden !== true) {
+          return acc + childBadgeValue;
         }
         return acc;
       }, 0) ?? 0;
@@ -290,7 +295,7 @@ interface NavbarItemProps {
   name: string;
   link: string;
   icon?: IconDefinition;
-  badge?: number;
+  badge?: number | string;
   primary?: boolean;
   onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
 }
@@ -308,6 +313,16 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
   const { show } = useNavbar();
 
   const { ref, hovered } = useHover();
+
+  const shouldHideBadge = useMemo(() => {
+    if (typeof badge === "number") {
+      return badge === 0;
+    } else if (typeof badge === "string") {
+      return badge.length === 0;
+    }
+
+    return true;
+  }, [badge]);
 
   return (
     <NavLink
@@ -342,11 +357,7 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
           ></FontAwesomeIcon>
         )}
         {name}
-        <Badge
-          className={classes.badge}
-          radius="xs"
-          hidden={badge === undefined || badge === 0}
-        >
+        <Badge className={classes.badge} radius="xs" hidden={shouldHideBadge}>
           {badge}
         </Badge>
       </Text>
