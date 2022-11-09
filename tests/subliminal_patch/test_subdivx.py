@@ -44,6 +44,19 @@ def test_list_subtitles_episode(episodes, episode_key, expected):
         assert len(subtitles) >= expected
 
 
+def test_list_subtitles_episode_with_year(episodes):
+    item = list(episodes.values())[0]
+
+    item.series = "The Twilight Zone"
+    item.name = "The Twilight Zone"
+    item.year = 1959
+    item.season = 1
+    item.episode = 1
+
+    with SubdivxSubtitlesProvider() as provider:
+        assert provider.list_subtitles(item, {Language.fromietf("es")})
+
+
 def test_list_subtitles_castillian_spanish(episodes):
     item = episodes["better_call_saul_s06e04"]
     with SubdivxSubtitlesProvider() as provider:

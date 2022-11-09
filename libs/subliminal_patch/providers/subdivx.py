@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+
 import logging
 import re
 import time
 
-from subzero.language import Language
 from requests import Session
-
+from six.moves import range
 from subliminal import __short_version__
 from subliminal.providers import ParserBeautifulSoup
-from subliminal.video import Episode, Movie
+from subliminal.video import Episode
+from subliminal.video import Movie
 from subliminal_patch.exceptions import APIThrottled
-from six.moves import range
-from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.utils import get_archive_from_bytes
 from subliminal_patch.providers.utils import get_subtitle_from_archive
 from subliminal_patch.providers.utils import update_matches
+from subliminal_patch.subtitle import Subtitle
+from subzero.language import Language
 
 _SERVER_URL = "https://www.subdivx.com"
 
@@ -28,6 +29,8 @@ _CLEAN_TITLE_RES = [
 
 _SPANISH_RE = re.compile(r"españa|ib[eé]rico|castellano|gallego|castilla")
 _YEAR_RE = re.compile(r"(\(\d{4}\))")
+
+
 _SERIES_RE = re.compile(
     r"\(?\d{4}\)?|(s\d{1,2}(e\d{1,2})?|(season|temporada)\s\d{1,2}).*?$",
     flags=re.IGNORECASE,
@@ -36,6 +39,7 @@ _EPISODE_NUM_RE = re.compile(r"[eE](?P<x>\d{1,2})")
 _SEASON_NUM_RE = re.compile(
     r"(s|(season|temporada)\s)(?P<x>\d{1,2})", flags=re.IGNORECASE
 )
+_EPISODE_YEAR_RE = re.compile(r"\((?P<x>(19\d{2}|20[0-2]\d))\)")
 _UNSUPPORTED_RE = re.compile(
     r"(\)?\d{4}\)?|[sS]\d{1,2})\s.{,3}(extras|forzado(s)?|forced)", flags=re.IGNORECASE
 )
@@ -296,6 +300,15 @@ def _get_download_url(data):
 def _check_episode(video, title):
     ep_num = _EPISODE_NUM_RE.search(title)
     season_num = _SEASON_NUM_RE.search(title)
+    year = _EPISODE_YEAR_RE.search(title)
+
+    # Only check if both video and Subdivx's title have year metadata
+    if year is not None and video.year:
+        year = int(year.group("x"))
+        # Tolerancy of 1 year difference
+        if abs(year - (video.year or 0)) > 1:
+            logger.debug("Series year doesn't match: %s", title)
+            return False
 
     if season_num is None:
         logger.debug("Not a season/episode: %s", title)
