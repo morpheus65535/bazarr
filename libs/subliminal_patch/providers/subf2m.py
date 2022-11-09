@@ -317,7 +317,7 @@ class Subf2mProvider(Provider):
         is_episode = isinstance(video, Episode)
 
         if is_episode:
-            result = self._search_tv_show_season(video.series, video.season)
+            result = self._search_tv_show_season(video.series, video.season, video.year)
         else:
             result = self._search_movie(video.title, video.year)
 
