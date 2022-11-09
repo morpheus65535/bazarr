@@ -6,6 +6,7 @@ import re
 from babelfish import language_converters
 from guessit import guessit
 from requests import Session
+from requests.exceptions import JSONDecodeError
 from time import sleep
 from math import ceil
 
@@ -50,7 +51,7 @@ def check_status_code(resp):
         response = resp.json()
         if 'status' in response and 'errmsg' in response:
             raise ProviderError(f'{response["errmsg"]} ({response["status"]})')
-    except Exception:
+    except JSONDecodeError:
         pass
 
 
