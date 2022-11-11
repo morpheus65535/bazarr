@@ -4,13 +4,12 @@ from threading import Thread
 from signalr.events import EventHook
 from signalr.hubs import Hub
 from signalr.transports import AutoTransport
-from signalr.transports._sse_transport import ServerSentEventsTransport
 
 
 class Connection:
     protocol_version = '1.5'
 
-    def __init__(self, url, session, force_sse=False):
+    def __init__(self, url, session):
         self.url = url
         self.__hubs = {}
         self.qs = {}
@@ -24,7 +23,7 @@ class Connection:
         self.stopping = EventHook()
         self.exception = EventHook()
         self.is_open = False
-        self.__transport = ServerSentEventsTransport(session, self) if force_sse else AutoTransport(session, self)
+        self.__transport = AutoTransport(session, self)
         self.__listener_thread = None
         self.started = False
 
