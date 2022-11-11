@@ -70,7 +70,6 @@ class SonarrSignalrClientLegacy:
                     self.connected = True
                     event_stream(type='badges')
                     logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
-                finally:
                     if not args.dev:
                         scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
                         scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
