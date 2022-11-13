@@ -118,7 +118,7 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
 
                     # Already matched within query
                     if is_episode:
-                        matches = {"series", "title", "season", "episode", "imdb_id"}
+                        matches = {"series", "title", "season", "episode", "imdb_id", "year"}
                     else:
                         matches = {"title", "year", "imdb_id"}
 
