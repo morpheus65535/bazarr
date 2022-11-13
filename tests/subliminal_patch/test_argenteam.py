@@ -8,14 +8,39 @@ from subliminal_patch.core import Episode
 from subzero.language import Language
 
 
+@pytest.mark.parametrize(
+    "imdb_id,expected_id", [("tt0028950", 62790), ("tt0054407", 102006)]
+)
+def test_search_ids_movie(imdb_id, expected_id):
+    with ArgenteamProvider() as provider:
+        ids = provider._search_ids(imdb_id)
+        assert ids[0] == expected_id
+
+
+def test_search_ids_tv_show():
+    with ArgenteamProvider() as provider:
+        ids = provider._search_ids("tt0306414", season=1, episode=1)
+        assert ids[0] == 10075
+
+
+def test_parse_subtitles_episode():
+    with ArgenteamProvider() as provider:
+        assert len(provider._parse_subtitles([10075])) > 1
+
+
+def test_parse_subtitles_movie():
+    with ArgenteamProvider() as provider:
+        assert len(provider._parse_subtitles([61], is_episode=False)) > 3
+
+
 def test_get_matches_episode(episodes):
     episode = episodes["breaking_bad_s01e01"]
     subtitle = ArgenteamSubtitle(
         Language.fromalpha2("es"),
         None,
         "https://argenteam.net/subtitles/24002/Breaking.Bad.%282008%29.S01E01-Pilot.BluRay.x264.720p-REWARD",
-        "BluRay x264 720p",
-        {"title", "season", "episode", "imdb_id"},
+        "Breaking.Bad.(2008).S01E01-Pilot.BluRay.x264.720p-REWARD\nBluRay x264 720p",
+        {"series", "title", "season", "episode", "imdb_id"},
     )
     matches = subtitle.get_matches(episode)
     assert matches == {
@@ -52,10 +77,10 @@ def test_get_matches_movie(movies):
         "resolution",
         "edition",
         "video_codec",
+        "streaming_service",
     }
 
 
-@pytest.mark.vcr
 def test_list_subtitles_movie(movies):
     item = movies["dune"]
     with ArgenteamProvider() as provider:
@@ -69,7 +94,20 @@ def test_list_subtitles_movie(movies):
         assert any(expected == sub.download_link for sub in subtitles)
 
 
-@pytest.mark.vcr
+def test_list_subtitles_movie_no_imdb(movies):
+    item = movies["dune"]
+    item.imdb_id = None
+    with ArgenteamProvider() as provider:
+        assert not provider.list_subtitles(item, {Language("spa", "MX")})
+
+
+def test_list_subtitles_movie_not_found(movies):
+    item = movies["dune"]
+    item.imdb_id = "tt29318321832"
+    with ArgenteamProvider() as provider:
+        assert not provider.list_subtitles(item, {Language("spa", "MX")})
+
+
 def test_list_subtitles_episode(episodes):
     item = episodes["breaking_bad_s01e01"]
     with ArgenteamProvider() as provider:
@@ -82,29 +120,23 @@ def test_list_subtitles_episode(episodes):
         assert any(expected == sub.download_link for sub in subtitles)
 
 
-@pytest.mark.vcr
+def test_list_subtitles_episode_no_imdb_id(episodes):
+    item = episodes["breaking_bad_s01e01"]
+    item.series_imdb_id = None
+    with ArgenteamProvider() as provider:
+        assert not provider.list_subtitles(item, {Language("spa", "MX")})
+
+
+def test_list_subtitles_episode_not_found(episodes):
+    item = episodes["breaking_bad_s01e01"]
+    item.series_imdb_id = "tt29318321832"
+    with ArgenteamProvider() as provider:
+        assert not provider.list_subtitles(item, {Language("spa", "MX")})
+
+
 def test_download_subtitle(episodes):
     item = episodes["breaking_bad_s01e01"]
     with ArgenteamProvider() as provider:
         subtitles = provider.list_subtitles(item, {Language("spa", "MX")})
-        subtitle = subtitles[0]
-        provider.download_subtitle(subtitle)
-        assert subtitle.content is not None
-
-
-@pytest.mark.vcr
-def test_list_subtitles_episode_with_tvdb():
-    video = Episode(
-        "Severance.S01E01.720p.BluRay.X264-REWARD.mkv",
-        "Severance",
-        1,
-        1,
-        source="Blu-Ray",
-        release_group="REWARD",
-        resolution="720p",
-        video_codec="H.264",
-        series_tvdb_id=371980,
-    )
-    with ArgenteamProvider() as provider:
-        subtitles = provider.list_subtitles(video, {Language("spa", "MX")})
-        assert len(subtitles) == 0
+        provider.download_subtitle(subtitles[0])
+        assert subtitles[0].is_valid()
