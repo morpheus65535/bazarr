@@ -28,18 +28,6 @@ def _wanted_episode(episode):
 
     languages = []
     for language in ast.literal_eval(episode['missing_subtitles']):
-
-        # confirm if language is still missing or if cutoff have been reached
-        confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
-            .where(TableEpisodes.sonarrEpisodeId == episode['sonarrEpisodeId']) \
-            .dicts() \
-            .get_or_none()
-        if not confirmed_missing_subs:
-            continue
-
-        if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
-            continue
-
         if is_search_active(desired_language=language, attempt_string=episode['failedAttempts']):
             TableEpisodes.update({TableEpisodes.failedAttempts:
                                   updateFailedAttempts(desired_language=language,
@@ -61,7 +49,8 @@ def _wanted_episode(episode):
                                      audio_language,
                                      str(episode['scene_name']),
                                      episode['title'],
-                                     'series'):
+                                     'series',
+                                     check_if_still_required=True):
         if result:
             message = result[0]
             path = result[1]

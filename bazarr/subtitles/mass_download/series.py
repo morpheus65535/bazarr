@@ -65,17 +65,6 @@ def series_download_subtitles(no):
 
             languages = []
             for language in ast.literal_eval(episode['missing_subtitles']):
-                # confirm if language is still missing or if cutoff have been reached
-                confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
-                    .where(TableEpisodes.sonarrEpisodeId == episode['sonarrEpisodeId']) \
-                    .dicts() \
-                    .get_or_none()
-                if not confirmed_missing_subs:
-                    continue
-
-                if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
-                    continue
-
                 if language is not None:
                     hi_ = "True" if language.endswith(':hi') else "False"
                     forced_ = "True" if language.endswith(':forced') else "False"
@@ -88,7 +77,9 @@ def series_download_subtitles(no):
                                              languages,
                                              audio_language,
                                              str(episode['scene_name']),
-                                             episode['title'], 'series'):
+                                             episode['title'],
+                                             'series',
+                                             check_if_still_required=True):
                 if result:
                     message = result[0]
                     path = result[1]
@@ -159,17 +150,6 @@ def episode_download_subtitles(no, send_progress=False):
 
             languages = []
             for language in ast.literal_eval(episode['missing_subtitles']):
-                # confirm if language is still missing or if cutoff have been reached
-                confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
-                    .where(TableEpisodes.sonarrEpisodeId == episode['sonarrEpisodeId']) \
-                    .dicts() \
-                    .get_or_none()
-                if not confirmed_missing_subs:
-                    continue
-
-                if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
-                    continue
-
                 if language is not None:
                     hi_ = "True" if language.endswith(':hi') else "False"
                     forced_ = "True" if language.endswith(':forced') else "False"
@@ -183,7 +163,8 @@ def episode_download_subtitles(no, send_progress=False):
                                              audio_language,
                                              str(episode['scene_name']),
                                              episode['title'],
-                                             'series'):
+                                             'series',
+                                             check_if_still_required=True):
                 if result:
                     message = result[0]
                     path = result[1]
