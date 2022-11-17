@@ -66,6 +66,8 @@ class SonarrSignalrClientLegacy:
                                   "permissions on that directory and restart Sonarr. Also, if you're a Docker image "
                                   "user, you should make sure you properly defined PUID/PGID environment variables. "
                                   "Otherwise, please contact Sonarr support.")
+                    self.stop()
+                    break
                 else:
                     self.connected = True
                     event_stream(type='badges')
