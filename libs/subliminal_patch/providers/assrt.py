@@ -142,7 +142,6 @@ class AssrtProvider(Provider):
             raise ConfigurationError('Token must be specified')
         self.token = token
         self.session = Session()
-        self.default_max_request_per_minute = 20
         self.max_request_per_minute = None
 
     def initialize(self):
@@ -154,16 +153,11 @@ class AssrtProvider(Provider):
         if 'user' in result and 'quota' in result['user']:
             self.max_request_per_minute = result['user']['quota']
 
-        if not self.max_request_per_minute:
+        if not isinstance(self.max_request_per_minute, int):
             raise ProviderError(f'Cannot get user request quota per minute from provider: {result}')
 
-        try:
-            int(self.max_request_per_minute)
-        except ValueError:
-            raise ProviderError(f'User request quota is not a valid integer: {self.max_request_per_minute}')
-        else:
-            if self.max_request_per_minute <= 0:
-                raise ProviderError(f'User request quota is not a positive integer: {self.max_request_per_minute}')
+        if self.max_request_per_minute <= 0:
+            raise ProviderError(f'User request quota is not a positive integer: {self.max_request_per_minute}')
 
     def terminate(self):
         self.session.close()
