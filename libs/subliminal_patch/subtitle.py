@@ -548,7 +548,7 @@ def guess_matches(video, guess, partial=False):
         if _has_match(video, guess, key):
             matches.add(key)
 
-    for key in ("streaming_service", "edition"):
+    for key in ("streaming_service", "edition", "other"):
         if _check_optional(video, guess, key):
             matches.add(key)
 
