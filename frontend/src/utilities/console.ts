@@ -34,4 +34,5 @@ export function GROUP(
   }
 }
 
-export const ASSERT = console.assert;
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export const ASSERT = isProdEnv ? () => {} : console.assert;
