@@ -169,7 +169,7 @@ def check_missing_languages(path, media_type):
             .get_or_none()
     else:
         confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles) \
-            .where(TableMovies.path == path_mappings.path_replace_movie_reverse(path)) \
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)) \
             .dicts() \
             .get_or_none()
 
