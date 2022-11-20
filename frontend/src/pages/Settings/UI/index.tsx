@@ -1,10 +1,9 @@
-import { uiPageSizeKey, usePageSize } from "@/utilities/storage";
+import { uiPageSizeKey } from "@/utilities/storage";
 import { FunctionComponent } from "react";
 import { Layout, Section, Selector } from "../components";
 import { pageSizeOptions } from "./options";
 
 const SettingsUIView: FunctionComponent = () => {
-  const [pageSize] = usePageSize();
   return (
     <Layout name="Interface">
       <Section header="UI">
@@ -13,7 +12,7 @@ const SettingsUIView: FunctionComponent = () => {
           options={pageSizeOptions}
           location="storages"
           settingKey={uiPageSizeKey}
-          settingOptions={{ onLoaded: () => pageSize }}
+          defaultValue={50}
         ></Selector>
       </Section>
     </Layout>

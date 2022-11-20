@@ -12,6 +12,18 @@ export function useUpdateLocalStorage() {
   }, []);
 }
 
+export function getPageSize(storage: Storage): number {
+  const defaultValue = 50;
+
+  const value = storage.getItem(uiPageSizeKey);
+
+  if (value === null) {
+    return defaultValue;
+  }
+
+  return JSON.parse(value);
+}
+
 export function usePageSize() {
   return useLocalStorage({ key: uiPageSizeKey, defaultValue: 50 });
 }

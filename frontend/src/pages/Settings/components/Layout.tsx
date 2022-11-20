@@ -39,7 +39,7 @@ const Layout: FunctionComponent<Props> = (props) => {
 
   useOnValueChange(isRefetching, (value) => {
     if (!value) {
-      form.reset();
+      form.setValues((values) => ({ ...values, settings: {} }));
     }
   });
 
@@ -60,9 +60,11 @@ const Layout: FunctionComponent<Props> = (props) => {
         const storagesToSubmit = { ...storages };
         LOG("info", "submitting storages", storagesToSubmit);
         updateStorage(storagesToSubmit);
+
+        form.setValues((values) => ({ ...values, storages: {} }));
       }
     },
-    [mutate, submitHooks, updateStorage]
+    [form, mutate, submitHooks, updateStorage]
   );
 
   const totalStagedCount = useMemo(() => {
