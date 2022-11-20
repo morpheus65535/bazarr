@@ -9,7 +9,7 @@ function useDefaultSettings<T extends object>(hooks: Hooks<T>) {
 useDefaultSettings.pluginName = pluginName;
 
 function useOptions<T extends object>(options: TableOptions<T>) {
-  const [pageSize] = usePageSize();
+  const pageSize = usePageSize();
 
   if (options.autoResetPage === undefined) {
     options.autoResetPage = false;

@@ -129,7 +129,6 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   const form = useForm<FormValues>({
     initialValues: {
       settings: staged,
-      storages: {},
     },
   });
 

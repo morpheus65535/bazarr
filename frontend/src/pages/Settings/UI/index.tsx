@@ -10,7 +10,6 @@ const SettingsUIView: FunctionComponent = () => {
         <Selector
           label="Page Size"
           options={pageSizeOptions}
-          location="storages"
           settingKey={uiPageSizeKey}
           defaultValue={50}
         ></Selector>

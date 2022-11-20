@@ -18,7 +18,7 @@ export function useFormValues() {
 
 export function useStagedValues() {
   const form = useFormValues();
-  return { ...form.values.settings, ...form.values.storages };
+  return { ...form.values.settings };
 }
 
 export function useFormActions() {
@@ -27,27 +27,21 @@ export function useFormActions() {
   const formRef = useRef(form);
   formRef.current = form;
 
-  const update = useCallback(
-    (object: LooseObject, location: FormKey = "settings") => {
-      LOG("info", `Updating values in ${location}`, object);
-      formRef.current.setValues((values) => {
-        const changes = { ...values[location], ...object };
-        return { ...values, [location]: changes };
-      });
-    },
-    []
-  );
+  const update = useCallback((object: LooseObject) => {
+    LOG("info", `Updating values`, object);
+    formRef.current.setValues((values) => {
+      const changes = { ...values.settings, ...object };
+      return { ...values, settings: changes };
+    });
+  }, []);
 
-  const setValue = useCallback(
-    (v: unknown, key: string, location: FormKey = "settings") => {
-      LOG("info", `Updating value of ${key} in ${location}`, v);
-      formRef.current.setValues((values) => {
-        const changes = { ...values[location], [key]: v };
-        return { ...values, [location]: changes };
-      });
-    },
-    []
-  );
+  const setValue = useCallback((v: unknown, key: string) => {
+    LOG("info", `Updating value of ${key}`, v);
+    formRef.current.setValues((values) => {
+      const changes = { ...values.settings, [key]: v };
+      return { ...values, settings: changes };
+    });
+  }, []);
 
   return { update, setValue };
 }
@@ -57,5 +51,5 @@ export type FormValues = {
   // Settings that saved to the backend
   settings: LooseObject;
   // Settings that saved to the frontend
-  storages: LooseObject;
+  // storages: LooseObject;
 };

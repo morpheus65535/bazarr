@@ -1,7 +1,7 @@
-import { useLocalStorage } from "@mantine/hooks";
+import { useSystemSettings } from "@/apis/hooks";
 import { useCallback } from "react";
 
-export const uiPageSizeKey = "storage-ui-pageSize";
+export const uiPageSizeKey = "settings-general-page_size";
 
 export function useUpdateLocalStorage() {
   return useCallback((newVals: LooseObject) => {
@@ -12,18 +12,8 @@ export function useUpdateLocalStorage() {
   }, []);
 }
 
-export function getPageSize(storage: Storage): number {
-  const defaultValue = 50;
-
-  const value = storage.getItem(uiPageSizeKey);
-
-  if (value === null) {
-    return defaultValue;
-  }
-
-  return JSON.parse(value);
-}
-
 export function usePageSize() {
-  return useLocalStorage({ key: uiPageSizeKey, defaultValue: 50 });
+  const settings = useSystemSettings();
+
+  return settings.data?.general.page_size ?? 50;
 }

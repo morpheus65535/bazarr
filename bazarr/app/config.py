@@ -267,9 +267,7 @@ settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
 base_url = settings.general.base_url.rstrip('/')
 
-ignore_keys = ['flask_secret_key',
-               'page_size',
-               'page_size_manual_search']
+ignore_keys = ['flask_secret_key']
 
 raw_keys = ['movie_default_forced', 'serie_default_forced']
 
