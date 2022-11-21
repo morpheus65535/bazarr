@@ -4,7 +4,6 @@ import { LoadingProvider } from "@/contexts";
 import { useOnValueChange } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { usePrompt } from "@/utilities/routers";
-import { useUpdateLocalStorage } from "@/utilities/storage";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 import { Badge, Container, Group, LoadingOverlay } from "@mantine/core";
 import { useForm } from "@mantine/form";
@@ -33,7 +32,6 @@ const Layout: FunctionComponent<Props> = (props) => {
   const form = useForm<FormValues>({
     initialValues: {
       settings: {},
-      storages: {},
     },
   });
 
@@ -43,11 +41,9 @@ const Layout: FunctionComponent<Props> = (props) => {
     }
   });
 
-  const updateStorage = useUpdateLocalStorage();
-
   const submit = useCallback(
     (values: FormValues) => {
-      const { settings, storages } = values;
+      const { settings } = values;
 
       if (Object.keys(settings).length > 0) {
         const settingsToSubmit = { ...settings };
@@ -55,23 +51,13 @@ const Layout: FunctionComponent<Props> = (props) => {
         LOG("info", "submitting settings", settingsToSubmit);
         mutate(settingsToSubmit);
       }
-
-      if (Object.keys(storages).length > 0) {
-        const storagesToSubmit = { ...storages };
-        LOG("info", "submitting storages", storagesToSubmit);
-        updateStorage(storagesToSubmit);
-
-        form.setValues((values) => ({ ...values, storages: {} }));
-      }
     },
-    [form, mutate, submitHooks, updateStorage]
+    [mutate, submitHooks]
   );
 
   const totalStagedCount = useMemo(() => {
-    const object = { ...form.values.settings, ...form.values.storages };
-
-    return Object.keys(object).length;
-  }, [form.values.settings, form.values.storages]);
+    return Object.keys(form.values.settings).length;
+  }, [form.values.settings]);
 
   usePrompt(
     totalStagedCount > 0,

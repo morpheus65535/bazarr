@@ -22,7 +22,7 @@ type LanguageSelectorProps = Omit<
 
 export const LanguageSelector: FunctionComponent<
   LanguageSelectorProps & BaseInput<string[]>
-> = ({ settingKey, location, label, options }) => {
+> = ({ settingKey, label, options }) => {
   const enabled = useLatestEnabledLanguages();
   const { setValue } = useFormActions();
 
@@ -39,7 +39,7 @@ export const LanguageSelector: FunctionComponent<
         value={enabled}
         searchable
         onChange={(val) => {
-          setValue(val, settingKey, location);
+          setValue(val, settingKey);
         }}
       ></MultiSelector>
     </Input.Wrapper>

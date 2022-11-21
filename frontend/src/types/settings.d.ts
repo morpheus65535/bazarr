@@ -55,6 +55,7 @@ declare namespace Settings {
     serie_default_profile?: number;
     path_mappings: [string, string][];
     path_mappings_movie: [string, string][];
+    page_size: number;
     port: number;
     upgrade_subs: boolean;
     postprocessing_cmd?: string;

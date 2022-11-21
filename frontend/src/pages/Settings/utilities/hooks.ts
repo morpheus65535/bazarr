@@ -1,31 +1,26 @@
-import { ASSERT, LOG } from "@/utilities/console";
+import { LOG } from "@/utilities/console";
 import { get, isNull, isUndefined, uniqBy } from "lodash";
 import { useCallback, useMemo, useRef } from "react";
-import {
-  FormKey,
-  useFormActions,
-  useStagedValues,
-} from "../utilities/FormValues";
+import { useFormActions, useStagedValues } from "../utilities/FormValues";
 import { useSettings } from "../utilities/SettingsProvider";
 import { useSubmitHookWith } from "./HooksProvider";
 
 export interface BaseInput<T> {
   disabled?: boolean;
   settingKey: string;
-  location?: FormKey;
   settingOptions?: SettingValueOptions<T>;
 }
 
 export type SettingValueOptions<T> = {
   original?: boolean;
   defaultValue?: T;
-  onLoaded?: (settings: Settings, storage: Storage) => T;
+  onLoaded?: (settings: Settings) => T;
   onSaved?: (value: T) => unknown;
   onSubmit?: (value: T) => unknown;
 };
 
 export function useBaseInput<T, V>(props: T & BaseInput<V>) {
-  const { settingKey, settingOptions, location, ...rest } = props;
+  const { settingKey, settingOptions, ...rest } = props;
   // TODO: Opti options
   const value = useSettingValue<V>(settingKey, settingOptions);
 
@@ -36,9 +31,9 @@ export function useBaseInput<T, V>(props: T & BaseInput<V>) {
       const moddedValue =
         (newValue && settingOptions?.onSaved?.(newValue)) ?? newValue;
 
-      setValue(moddedValue, settingKey, location);
+      setValue(moddedValue, settingKey);
     },
-    [settingOptions, setValue, settingKey, location]
+    [settingOptions, setValue, settingKey]
   );
 
   return { value, update, rest };
@@ -49,11 +44,6 @@ export function useSettingValue<T>(
   options?: SettingValueOptions<T>
 ): Readonly<Nullable<T>> {
   const settings = useSettings();
-  const storage = window.localStorage;
-
-  const isSettingsKey = useMemo(() => key.startsWith("settings"), [key]);
-
-  ASSERT(isSettingsKey === false && key.startsWith("storage"));
 
   const optionsRef = useRef(options);
   optionsRef.current = options;
@@ -66,20 +56,12 @@ export function useSettingValue<T>(
     if (onLoaded) {
       LOG("info", `${key} is using custom loader`);
 
-      return onLoaded(settings, storage);
+      return onLoaded(settings);
     }
 
-    let value: Nullable<T> = null;
-    if (isSettingsKey) {
-      const path = key.replaceAll("-", ".");
+    const path = key.replaceAll("-", ".");
 
-      value = get({ settings }, path, null) as Nullable<T>;
-    } else {
-      const storageValue = storage.getItem(key);
-      if (storageValue !== null) {
-        value = JSON.parse(storageValue);
-      }
-    }
+    const value = get({ settings }, path, null) as Nullable<T>;
 
     if (defaultValue && (isNull(value) || isUndefined(value))) {
       LOG("info", `${key} is falling back to`, defaultValue);
@@ -88,7 +70,7 @@ export function useSettingValue<T>(
     }
 
     return value;
-  }, [isSettingsKey, key, settings, storage]);
+  }, [key, settings]);
 
   const stagedValue = useStagedValues();
 

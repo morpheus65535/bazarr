@@ -35,7 +35,7 @@ export function usePaginationQuery<
   const client = useQueryClient();
 
   const [page, setIndex] = useState(0);
-  const [pageSize] = usePageSize();
+  const pageSize = usePageSize();
 
   const start = page * pageSize;
 
