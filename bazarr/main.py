@@ -52,10 +52,11 @@ login_auth = settings.auth.type
 
 update_notifier()
 
-if settings.general.getboolean('use_sonarr'):
-    Thread(target=sonarr_signalr_client.start).start()
-if settings.general.getboolean('use_radarr'):
-    Thread(target=radarr_signalr_client.start).start()
+if not args.no_signalr:
+    if settings.general.getboolean('use_sonarr'):
+        Thread(target=sonarr_signalr_client.start).start()
+    if settings.general.getboolean('use_radarr'):
+        Thread(target=radarr_signalr_client.start).start()
 
 
 if __name__ == "__main__":
