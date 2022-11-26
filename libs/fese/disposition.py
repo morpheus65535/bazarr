@@ -55,6 +55,12 @@ class FFprobeSubtitleDisposition:
     def suffix(self):
         return self._content_type or ""
 
+    def language_kwargs(self):
+        return {
+            "hi": self._content_type == "hearing_impaired",
+            "forced": self._content_type == "forced",
+        }
+
     def __str__(self):
         return self.suffix.upper() or "GENERIC"
 

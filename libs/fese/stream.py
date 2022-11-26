@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import timedelta
 import logging
 
+from babelfish import Language
+
 from .disposition import FFprobeSubtitleDisposition
 from .exceptions import UnsupportedCodec
 from .tags import FFprobeGenericSubtitleTags
@@ -84,6 +86,10 @@ class FFprobeSubtitleStream:
     def language(self):
         # Legacy
         return self.tags.language
+
+    @language.setter
+    def language(self, value: Language):
+        self.tags.language = value
 
     @property
     def extension(self):
