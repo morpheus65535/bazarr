@@ -480,8 +480,12 @@ def guess_matches(video, guess, partial=False):
         # Most providers only support single-ep, so make sure it contains only 1 episode
         # In case of multi-ep, take the lowest episode (subtitles will normally be available on lowest episode number)
         if video.episode and 'episode' in guess:
-            episode_guess = guess['episode']
-            episode = min(episode_guess) if episode_guess and isinstance(episode_guess, list) else episode_guess
+            episode = episode_guess = guess['episode']
+            if isinstance(episode_guess, list):
+                try:
+                    episode = min([int(x) for x in episode_guess])
+                except (TypeError, ValueError):
+                    pass
             if episode == video.episode:
                 matches.add('episode')
 
