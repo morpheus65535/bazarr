@@ -129,6 +129,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
     languages = {Language.fromopensubtitles(lang) for lang in language_converters['szopensubtitles'].codes}
     languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
+    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
     video_types = (Episode, Movie)
 
