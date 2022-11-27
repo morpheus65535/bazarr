@@ -3,7 +3,6 @@ import { get, isNull, isUndefined, uniqBy } from "lodash";
 import { useCallback, useMemo, useRef } from "react";
 import { useFormActions, useStagedValues } from "../utilities/FormValues";
 import { useSettings } from "../utilities/SettingsProvider";
-import { useSubmitHookWith } from "./HooksProvider";
 
 export interface BaseInput<T> {
   disabled?: boolean;
@@ -31,7 +30,7 @@ export function useBaseInput<T, V>(props: T & BaseInput<V>) {
       const moddedValue =
         (newValue && settingOptions?.onSaved?.(newValue)) ?? newValue;
 
-      setValue(moddedValue, settingKey);
+      setValue(moddedValue, settingKey, settingOptions?.onSubmit);
     },
     [settingOptions, setValue, settingKey]
   );
@@ -48,12 +47,10 @@ export function useSettingValue<T>(
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  useSubmitHookWith(key, options?.onSubmit);
-
   const originalValue = useMemo(() => {
     const onLoaded = optionsRef.current?.onLoaded;
     const defaultValue = optionsRef.current?.defaultValue;
-    if (onLoaded) {
+    if (onLoaded && settings) {
       LOG("info", `${key} is using custom loader`);
 
       return onLoaded(settings);

@@ -13,7 +13,6 @@ import { Column } from "react-table";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { languageProfileKey } from "../keys";
 import { useFormActions } from "../utilities/FormValues";
-import { useSubmitHookWith } from "../utilities/HooksProvider";
 
 const Table: FunctionComponent = () => {
   const profiles = useLatestProfiles();
@@ -27,15 +26,13 @@ const Table: FunctionComponent = () => {
     [profiles]
   );
 
-  useSubmitHookWith(languageProfileKey, (value) => JSON.stringify(value));
-
   const { setValue } = useFormActions();
 
   const modals = useModals();
 
   const submitProfiles = useCallback(
     (list: Language.Profile[]) => {
-      setValue(list, languageProfileKey);
+      setValue(list, languageProfileKey, (value) => JSON.stringify(value));
     },
     [setValue]
   );

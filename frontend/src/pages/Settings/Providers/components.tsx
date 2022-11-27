@@ -24,14 +24,11 @@ import { Card, Check, Chips, Message, Password, Text } from "../components";
 import {
   FormContext,
   FormValues,
+  runHooks,
   useFormActions,
   useStagedValues,
 } from "../utilities/FormValues";
 import { useSettingValue } from "../utilities/hooks";
-import {
-  SubmitHooksProvider,
-  useSubmitHooksSource,
-} from "../utilities/HooksProvider";
 import { SettingsProvider, useSettings } from "../utilities/SettingsProvider";
 import { ProviderInfo, ProviderList } from "./list";
 
@@ -48,13 +45,15 @@ export const ProviderView: FunctionComponent = () => {
 
   const select = useCallback(
     (v?: ProviderInfo) => {
-      modals.openContextModal(ProviderModal, {
-        payload: v ?? null,
-        enabledProviders: providers ?? [],
-        staged,
-        settings,
-        onChange: update,
-      });
+      if (settings) {
+        modals.openContextModal(ProviderModal, {
+          payload: v ?? null,
+          enabledProviders: providers ?? [],
+          staged,
+          settings,
+          onChange: update,
+        });
+      }
     },
     [modals, providers, settings, staged, update]
   );
@@ -129,10 +128,9 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   const form = useForm<FormValues>({
     initialValues: {
       settings: staged,
+      hooks: {},
     },
   });
-
-  const submitHooks = useSubmitHooksSource();
 
   const deletePayload = useCallback(() => {
     if (payload && enabledProviders) {
@@ -150,6 +148,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     (values: FormValues) => {
       if (info && enabledProviders) {
         const changes = { ...values.settings };
+        const hooks = values.hooks;
 
         // Add this provider if not exist
         if (enabledProviders.find((v) => v === info.key) === undefined) {
@@ -158,13 +157,13 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
         }
 
         // Apply submit hooks
-        submitHooks.invoke(changes);
+        runHooks(hooks, changes);
 
         onChangeRef.current(changes);
         modals.closeAll();
       }
     },
-    [info, enabledProviders, submitHooks, modals]
+    [info, enabledProviders, modals]
   );
 
   const canSave = info !== null;
@@ -257,40 +256,38 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   return (
     <SettingsProvider value={settings}>
       <FormContext.Provider value={form}>
-        <SubmitHooksProvider value={submitHooks}>
-          <Stack>
-            <Stack spacing="xs">
-              <Selector
-                searchable
-                placeholder="Click to Select a Provider"
-                itemComponent={SelectItem}
-                disabled={payload !== null}
-                {...options}
-                value={info}
-                onChange={onSelect}
-              ></Selector>
-              <Message>{info?.description}</Message>
-              {inputs}
-              <div hidden={info?.message === undefined}>
-                <Message>{info?.message}</Message>
-              </div>
-            </Stack>
-            <Divider></Divider>
-            <Group position="right">
-              <Button hidden={!payload} color="red" onClick={deletePayload}>
-                Delete
-              </Button>
-              <Button
-                disabled={!canSave}
-                onClick={() => {
-                  submit(form.values);
-                }}
-              >
-                Save
-              </Button>
-            </Group>
+        <Stack>
+          <Stack spacing="xs">
+            <Selector
+              searchable
+              placeholder="Click to Select a Provider"
+              itemComponent={SelectItem}
+              disabled={payload !== null}
+              {...options}
+              value={info}
+              onChange={onSelect}
+            ></Selector>
+            <Message>{info?.description}</Message>
+            {inputs}
+            <div hidden={info?.message === undefined}>
+              <Message>{info?.message}</Message>
+            </div>
           </Stack>
-        </SubmitHooksProvider>
+          <Divider></Divider>
+          <Group position="right">
+            <Button hidden={!payload} color="red" onClick={deletePayload}>
+              Delete
+            </Button>
+            <Button
+              disabled={!canSave}
+              onClick={() => {
+                submit(form.values);
+              }}
+            >
+              Save
+            </Button>
+          </Group>
+        </Stack>
       </FormContext.Provider>
     </SettingsProvider>
   );

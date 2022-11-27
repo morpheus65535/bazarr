@@ -33,7 +33,7 @@ export const Number: FunctionComponent<NumberProps> = (props) => {
   return (
     <NumberInput
       {...rest}
-      value={value ?? undefined}
+      value={value ?? 0}
       onChange={(val = 0) => {
         update(val);
       }}
@@ -49,7 +49,7 @@ export const Text: FunctionComponent<TextProps> = (props) => {
   return (
     <TextInput
       {...rest}
-      value={value ?? undefined}
+      value={value ?? ""}
       onChange={(e) => {
         update(e.currentTarget.value);
       }}
@@ -65,7 +65,7 @@ export const Password: FunctionComponent<PasswordProps> = (props) => {
   return (
     <PasswordInput
       {...rest}
-      value={value ?? undefined}
+      value={value ?? ""}
       onChange={(e) => {
         update(e.currentTarget.value);
       }}

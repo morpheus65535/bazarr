@@ -9,11 +9,7 @@ import { Badge, Container, Group, LoadingOverlay } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
-import { FormContext, FormValues } from "../utilities/FormValues";
-import {
-  SubmitHooksProvider,
-  useSubmitHooksSource,
-} from "../utilities/HooksProvider";
+import { FormContext, FormValues, runHooks } from "../utilities/FormValues";
 import { SettingsProvider } from "../utilities/SettingsProvider";
 
 interface Props {
@@ -27,11 +23,10 @@ const Layout: FunctionComponent<Props> = (props) => {
   const { data: settings, isLoading, isRefetching } = useSystemSettings();
   const { mutate, isLoading: isMutating } = useSettingsMutation();
 
-  const submitHooks = useSubmitHooksSource();
-
   const form = useForm<FormValues>({
     initialValues: {
       settings: {},
+      hooks: {},
     },
   });
 
@@ -43,16 +38,16 @@ const Layout: FunctionComponent<Props> = (props) => {
 
   const submit = useCallback(
     (values: FormValues) => {
-      const { settings } = values;
+      const { settings, hooks } = values;
 
       if (Object.keys(settings).length > 0) {
         const settingsToSubmit = { ...settings };
-        submitHooks.invoke(settingsToSubmit);
+        runHooks(hooks, settingsToSubmit);
         LOG("info", "submitting settings", settingsToSubmit);
         mutate(settingsToSubmit);
       }
     },
-    [mutate, submitHooks]
+    [mutate]
   );
 
   const totalStagedCount = useMemo(() => {
@@ -66,43 +61,34 @@ const Layout: FunctionComponent<Props> = (props) => {
 
   useDocumentTitle(`${name} - Bazarr (Settings)`);
 
-  if (settings === undefined) {
-    return <LoadingOverlay visible></LoadingOverlay>;
-  }
-
   return (
-    <SettingsProvider value={settings}>
+    <SettingsProvider value={settings ?? null}>
       <LoadingProvider value={isLoading || isMutating}>
-        <SubmitHooksProvider value={submitHooks}>
-          <form onSubmit={form.onSubmit(submit)}>
-            <Toolbox>
-              <Group>
-                <Toolbox.Button
-                  type="submit"
-                  icon={faSave}
-                  loading={isMutating}
-                  disabled={totalStagedCount === 0}
-                  rightIcon={
-                    <Badge
-                      size="xs"
-                      radius="sm"
-                      hidden={totalStagedCount === 0}
-                    >
-                      {totalStagedCount}
-                    </Badge>
-                  }
-                >
-                  Save
-                </Toolbox.Button>
-              </Group>
-            </Toolbox>
-            <FormContext.Provider value={form}>
-              <Container size="xl" mx={0}>
-                {children}
-              </Container>
-            </FormContext.Provider>
-          </form>
-        </SubmitHooksProvider>
+        <form onSubmit={form.onSubmit(submit)} style={{ position: "relative" }}>
+          <LoadingOverlay visible={settings === undefined}></LoadingOverlay>
+          <Toolbox>
+            <Group>
+              <Toolbox.Button
+                type="submit"
+                icon={faSave}
+                loading={isMutating}
+                disabled={totalStagedCount === 0}
+                rightIcon={
+                  <Badge size="xs" radius="sm" hidden={totalStagedCount === 0}>
+                    {totalStagedCount}
+                  </Badge>
+                }
+              >
+                Save
+              </Toolbox.Button>
+            </Group>
+          </Toolbox>
+          <FormContext.Provider value={form}>
+            <Container size="xl" mx={0}>
+              {children}
+            </Container>
+          </FormContext.Provider>
+        </form>
       </LoadingProvider>
     </SettingsProvider>
   );
