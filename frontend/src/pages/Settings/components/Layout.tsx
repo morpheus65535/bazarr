@@ -32,7 +32,7 @@ const Layout: FunctionComponent<Props> = (props) => {
 
   useOnValueChange(isRefetching, (value) => {
     if (!value) {
-      form.setValues((values) => ({ ...values, settings: {} }));
+      form.reset();
     }
   });
 
