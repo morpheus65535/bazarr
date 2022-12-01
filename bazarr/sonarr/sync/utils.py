@@ -16,6 +16,9 @@ def get_profile_list():
     if get_sonarr_info.is_legacy():
         url_sonarr_api_series = url_sonarr() + "/api/profile?apikey=" + apikey_sonarr
     else:
+        if not get_sonarr_info.version().startswith('3.'):
+            # return an empty list when using Sonarr >= v4 that does not support series languages profiles anymore
+            return profiles_list
         url_sonarr_api_series = url_sonarr() + "/api/v3/languageprofile?apikey=" + apikey_sonarr
 
     try:
@@ -29,10 +32,6 @@ def get_profile_list():
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get profiles from Sonarr.")
         return None
-
-    # return an empty list when using Sonarr v4 that do not support series languages profiles anymore
-    if profiles_json.status_code == 404:
-        return profiles_list
 
     # Parsing data returned from Sonarr
     if get_sonarr_info.is_legacy():
