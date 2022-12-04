@@ -443,7 +443,9 @@ def checked(fn, raise_api_limit=False, validate_token=False, validate_json=False
     except Exception:
         status_code = None
     else:
-        if status_code == 401:
+        if status_code == 400:
+            raise ConfigurationError('Do not use email but username')
+        elif status_code == 401:
             time.sleep(1)
             if validate_token:
                 return 401
