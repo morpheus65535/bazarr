@@ -140,7 +140,7 @@ class EpisodesSubtitles(Resource):
 
         _, ext = os.path.splitext(subFile.filename)
 
-        if ext not in SUBTITLE_EXTENSIONS:
+        if not isinstance(ext, str) or ext.lower() not in SUBTITLE_EXTENSIONS:
             raise ValueError('A subtitle of an invalid format was uploaded.')
 
         try:

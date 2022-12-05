@@ -1,16 +1,14 @@
 # vim:fileencoding=utf-8
 
-from io import open
 import json
 import logging
 import threading
+from io import open
 
-
-logger = logging.getLogger('pycountry.db')
+logger = logging.getLogger("pycountry.db")
 
 
 class Data:
-
     def __init__(self, **fields):
         self._fields = fields
 
@@ -20,14 +18,14 @@ class Data:
         return self._fields[key]
 
     def __setattr__(self, key, value):
-        if key != '_fields':
+        if key != "_fields":
             self._fields[key] = value
         super(Data, self).__setattr__(key, value)
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        fields = ', '.join('%s=%r' % i for i in sorted(self._fields.items()))
-        return '%s(%s)' % (cls_name, fields)
+        fields = ", ".join("%s=%r" % i for i in sorted(self._fields.items()))
+        return "%s(%s)" % (cls_name, fields)
 
     def __dir__(self):
         return dir(self.__class__) + list(self._fields)
@@ -39,6 +37,7 @@ def lazy_load(f):
             with self._load_lock:
                 self._load()
         return f(self, *args, **kw)
+
     return load_if_needed
 
 
@@ -64,9 +63,10 @@ class Database:
         self.indices = {}
 
         self.data_class = type(
-            self.data_class_name, (self.data_class_base,), {})
+            self.data_class_name, (self.data_class_base,), {}
+        )
 
-        with open(self.filename, 'r', encoding="utf-8") as f:
+        with open(self.filename, "r", encoding="utf-8") as f:
             tree = json.load(f)
 
         for entry in tree[self.root_key]:
@@ -82,9 +82,10 @@ class Database:
                 index = self.indices.setdefault(key, {})
                 if value in index:
                     logger.debug(
-                        '%s %r already taken in index %r and will be '
-                        'ignored. This is an error in the databases.' %
-                        (self.data_class_name, value, key))
+                        "%s %r already taken in index %r and will be "
+                        "ignored. This is an error in the databases."
+                        % (self.data_class_name, value, key)
+                    )
                 index[value] = obj
 
         self._is_loaded = True
@@ -101,10 +102,10 @@ class Database:
 
     @lazy_load
     def get(self, **kw):
-        kw.setdefault('default', None)
-        default = kw.pop('default')
+        kw.setdefault("default", None)
+        default = kw.pop("default")
         if len(kw) != 1:
-            raise TypeError('Only one criteria may be given')
+            raise TypeError("Only one criteria may be given")
         field, value = kw.popitem()
         if not isinstance(value, str):
             raise LookupError()
@@ -143,4 +144,4 @@ class Database:
                 if v.lower() == value:
                     return candidate
 
-        raise LookupError('Could not find a record for %r' % value)
+        raise LookupError("Could not find a record for %r" % value)

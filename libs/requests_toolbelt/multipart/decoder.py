@@ -82,7 +82,7 @@ class MultipartDecoder(object):
         import requests
         from requests_toolbelt import MultipartDecoder
 
-        response = request.get(url)
+        response = requests.get(url)
         decoder = MultipartDecoder.from_response(response)
         for part in decoder.parts:
             print(part.headers['content-type'])
@@ -115,7 +115,7 @@ class MultipartDecoder(object):
         mimetype = ct_info[0]
         if mimetype.split('/')[0].lower() != 'multipart':
             raise NonMultipartContentTypeException(
-                "Unexpected mimetype in content-type: '{0}'".format(mimetype)
+                "Unexpected mimetype in content-type: '{}'".format(mimetype)
             )
         for item in ct_info[1:]:
             attr, value = _split_on_find(

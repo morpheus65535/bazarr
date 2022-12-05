@@ -4,7 +4,7 @@
 
     Lexers for the Google Go language.
 
-    :copyright: Copyright 2006-2021 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -19,16 +19,15 @@ __all__ = ['GoLexer']
 
 class GoLexer(RegexLexer):
     """
-    For `Go <http://golang.org>`_ source.
+    For Go source.
 
     .. versionadded:: 1.2
     """
     name = 'Go'
+    url = 'https://go.dev/'
     filenames = ['*.go']
     aliases = ['go', 'golang']
     mimetypes = ['text/x-gosrc']
-
-    flags = re.MULTILINE | re.UNICODE
 
     tokens = {
         'root': [
@@ -53,7 +52,7 @@ class GoLexer(RegexLexer):
                 'int', 'int8', 'int16', 'int32', 'int64',
                 'float', 'float32', 'float64',
                 'complex64', 'complex128', 'byte', 'rune',
-                'string', 'bool', 'error', 'uintptr',
+                'string', 'bool', 'error', 'uintptr', 'any', 'comparable',
                 'print', 'println', 'panic', 'recover', 'close', 'complex',
                 'real', 'imag', 'len', 'cap', 'append', 'copy', 'delete',
                 'new', 'make'), suffix=r'\b(\()'),
@@ -63,7 +62,7 @@ class GoLexer(RegexLexer):
                 'int', 'int8', 'int16', 'int32', 'int64',
                 'float', 'float32', 'float64',
                 'complex64', 'complex128', 'byte', 'rune',
-                'string', 'bool', 'error', 'uintptr'), suffix=r'\b'),
+                'string', 'bool', 'error', 'uintptr', 'any', 'comparable'), suffix=r'\b'),
              Keyword.Type),
             # imaginary_lit
             (r'\d+i', Number),
@@ -92,7 +91,8 @@ class GoLexer(RegexLexer):
             (r'"(\\\\|\\[^\\]|[^"\\])*"', String),
             # Tokens
             (r'(<<=|>>=|<<|>>|<=|>=|&\^=|&\^|\+=|-=|\*=|/=|%=|&=|\|=|&&|\|\|'
-             r'|<-|\+\+|--|==|!=|:=|\.\.\.|[+\-*/%&])', Operator),
+             r'|<-|\+\+|--|==|!=|:=|\.\.\.|[+\-*/%&]'
+             r'|~|\|)', Operator),
             (r'[|^<>=!()\[\]{}.,;:]', Punctuation),
             # identifier
             (r'[^\W\d]\w*', Name.Other),

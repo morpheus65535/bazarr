@@ -80,7 +80,7 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
 
   const empty = rows.length === 0;
 
-  const [pageSize] = usePageSize();
+  const pageSize = usePageSize();
   const isLoading = useIsLoading();
 
   let body: ReactNode;

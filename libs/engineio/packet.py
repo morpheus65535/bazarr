@@ -48,6 +48,8 @@ class Packet(object):
     def decode(self, encoded_packet):
         """Decode a transmitted package."""
         self.binary = isinstance(encoded_packet, binary_types)
+        if not self.binary and len(encoded_packet) == 0:
+            raise ValueError('Invalid empty packet received')
         b64 = not self.binary and encoded_packet[0] == 'b'
         if b64:
             self.binary = True

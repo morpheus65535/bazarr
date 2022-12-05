@@ -238,27 +238,26 @@ defaults = {
         "year": 90,
         "season": 30,
         "episode": 30,
-        "release_group": 15,
+        "release_group": 14,
         "source": 7,
         "audio_codec": 3,
         "resolution": 2,
         "video_codec": 2,
+        "streaming_service": 1,
         "hearing_impaired": 1,
-        "streaming_service": 0,
-        "edition": 0,
     },
     'movie_scores': {
         "hash": 119,
         "title": 60,
         "year": 30,
-        "release_group": 15,
+        "release_group": 13,
         "source": 7,
         "audio_codec": 3,
         "resolution": 2,
         "video_codec": 2,
+        "streaming_service": 1,
+        "edition": 1,
         "hearing_impaired": 1,
-        "streaming_service": 0,
-        "edition": 0,
     }
 }
 
@@ -268,9 +267,7 @@ settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
 base_url = settings.general.base_url.rstrip('/')
 
-ignore_keys = ['flask_secret_key',
-               'page_size',
-               'page_size_manual_search']
+ignore_keys = ['flask_secret_key']
 
 raw_keys = ['movie_default_forced', 'serie_default_forced']
 
@@ -358,6 +355,7 @@ def save_settings(settings_items):
     exclusion_updated = False
     sonarr_exclusion_updated = False
     radarr_exclusion_updated = False
+    use_embedded_subs_changed = False
 
     # Subzero Mods
     update_subzero = False
@@ -388,6 +386,10 @@ def save_settings(settings_items):
             value = 'True'
         elif value == 'false':
             value = 'False'
+
+        if key in ['settings-general-use_embedded_subs', 'settings-general-ignore_pgs_subs',
+                   'settings-general-ignore_vobsub_subs', 'settings-general-ignore_ass_subs']:
+            use_embedded_subs_changed = True
 
         if key in ['settings-general-base_url', 'settings-sonarr-base_url', 'settings-radarr-base_url']:
             value = base_url_slash_cleaner(value)
@@ -510,6 +512,15 @@ def save_settings(settings_items):
 
             update_subzero = True
 
+    if use_embedded_subs_changed:
+        from .scheduler import scheduler
+        from subtitles.indexer.series import list_missing_subtitles
+        from subtitles.indexer.movies import list_missing_subtitles_movies
+        if settings.general.getboolean('use_sonarr'):
+            scheduler.add_job(list_missing_subtitles, kwargs={'send_event': True})
+        if settings.general.getboolean('use_radarr'):
+            scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': True})
+
     if update_subzero:
         settings.set('general', 'subzero_mods', ','.join(subzero_mods))
 
@@ -597,3 +608,8 @@ def configure_proxy_func():
         os.environ['HTTPS_PROXY'] = str(proxy)
         exclude = ','.join(get_array_from(settings.proxy.exclude))
         os.environ['NO_PROXY'] = exclude
+
+
+def get_scores():
+    settings = get_settings()
+    return {"movie": settings["movie_scores"], "episode": settings["series_scores"]}

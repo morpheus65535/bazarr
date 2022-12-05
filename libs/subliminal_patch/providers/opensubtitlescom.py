@@ -129,6 +129,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
     languages = {Language.fromopensubtitles(lang) for lang in language_converters['szopensubtitles'].codes}
     languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
+    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
     video_types = (Episode, Movie)
 
@@ -442,7 +443,9 @@ def checked(fn, raise_api_limit=False, validate_token=False, validate_json=False
     except Exception:
         status_code = None
     else:
-        if status_code == 401:
+        if status_code == 400:
+            raise ConfigurationError('Do not use email but username')
+        elif status_code == 401:
             time.sleep(1)
             if validate_token:
                 return 401

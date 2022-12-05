@@ -297,8 +297,13 @@ def _discard_possible_incomplete_subtitles(streams):
     valid_streams = []
 
     for stream in streams:
+        # Make sure to update stream's language to reflect disposition
+        stream.language = Language.rebuild(
+            stream.language, **stream.disposition.language_kwargs()
+        )
+
         # 500 < 1200
-        if stream.tags.frames < max_frames // 2:
+        if not stream.language.forced and stream.tags.frames < max_frames // 2:
             logger.debug(
                 "Possible bad subtitle found: %s (%s frames - %s frames)",
                 stream,

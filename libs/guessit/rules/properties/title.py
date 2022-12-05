@@ -49,7 +49,7 @@ class TitleBaseRule(Rule):
     """
     Add title match in existing matches
     """
-    # pylint:disable=no-self-use,unused-argument
+    # pylint:disable=unused-argument
     consequence = [AppendMatch, RemoveMatch]
 
     def __init__(self, match_name, match_tags=None, alternative_match_name=None):

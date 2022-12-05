@@ -2,7 +2,7 @@
 _handshake.py
 websocket - WebSocket client library for Python
 
-Copyright 2021 engn33r
+Copyright 2022 engn33r
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -47,8 +47,8 @@ class handshake_response:
         CookieJar.add(headers.get("set-cookie"))
 
 
-def handshake(sock, hostname, port, resource, **options):
-    headers, key = _get_handshake_headers(resource, hostname, port, options)
+def handshake(sock, url, hostname, port, resource, **options):
+    headers, key = _get_handshake_headers(resource, url, hostname, port, options)
 
     header_str = "\r\n".join(headers)
     send(sock, header_str)
@@ -72,7 +72,7 @@ def _pack_hostname(hostname):
     return hostname
 
 
-def _get_handshake_headers(resource, host, port, options):
+def _get_handshake_headers(resource, url, host, port, options):
     headers = [
         "GET %s HTTP/1.1" % resource,
         "Upgrade: websocket"
@@ -81,30 +81,34 @@ def _get_handshake_headers(resource, host, port, options):
         hostport = _pack_hostname(host)
     else:
         hostport = "%s:%d" % (_pack_hostname(host), port)
-    if "host" in options and options["host"] is not None:
+    if options.get("host"):
         headers.append("Host: %s" % options["host"])
     else:
         headers.append("Host: %s" % hostport)
 
-    if "suppress_origin" not in options or not options["suppress_origin"]:
+    # scheme indicates whether http or https is used in Origin
+    # The same approach is used in parse_url of _url.py to set default port
+    scheme, url = url.split(":", 1)
+    if not options.get("suppress_origin"):
         if "origin" in options and options["origin"] is not None:
             headers.append("Origin: %s" % options["origin"])
+        elif scheme == "wss":
+            headers.append("Origin: https://%s" % hostport)
         else:
             headers.append("Origin: http://%s" % hostport)
 
     key = _create_sec_websocket_key()
 
     # Append Sec-WebSocket-Key & Sec-WebSocket-Version if not manually specified
-    if 'header' not in options or 'Sec-WebSocket-Key' not in options['header']:
-        key = _create_sec_websocket_key()
+    if not options.get('header') or 'Sec-WebSocket-Key' not in options['header']:
         headers.append("Sec-WebSocket-Key: %s" % key)
     else:
         key = options['header']['Sec-WebSocket-Key']
 
-    if 'header' not in options or 'Sec-WebSocket-Version' not in options['header']:
+    if not options.get('header') or 'Sec-WebSocket-Version' not in options['header']:
         headers.append("Sec-WebSocket-Version: %s" % VERSION)
 
-    if 'connection' not in options or options['connection'] is None:
+    if not options.get('connection'):
         headers.append('Connection: Upgrade')
     else:
         headers.append(options['connection'])
@@ -113,8 +117,8 @@ def _get_handshake_headers(resource, host, port, options):
     if subprotocols:
         headers.append("Sec-WebSocket-Protocol: %s" % ",".join(subprotocols))
 
-    if "header" in options:
-        header = options["header"]
+    header = options.get("header")
+    if header:
         if isinstance(header, dict):
             header = [
                 ": ".join([k, v])

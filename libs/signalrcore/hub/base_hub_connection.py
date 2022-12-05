@@ -1,3 +1,4 @@
+from operator import inv
 import websocket
 import threading
 import requests
@@ -19,14 +20,22 @@ from ..helpers import Helpers
 from ..subject import Subject
 from ..messages.invocation_message import InvocationMessage
 
+class InvocationResult(object):
+    def __init__(self, invocation_id) -> None:
+        self.invocation_id = invocation_id
+        self.message = None
+
 class BaseHubConnection(object):
     def __init__(
             self,
             url,
             protocol,
-            headers={},
-            **kwargs):        
-        self.headers = headers
+            headers=None,
+            **kwargs):
+        if headers is None:
+            self.headers = dict()
+        else:
+            self.headers = headers
         self.logger = Helpers.get_logger()
         self.handlers = []
         self.stream_handlers = []
@@ -35,7 +44,7 @@ class BaseHubConnection(object):
         self.transport = WebsocketTransport(
             url=url,
             protocol=protocol,
-            headers=headers,
+            headers=self.headers,
             on_message=self.on_message,
             **kwargs)
 
@@ -97,7 +106,7 @@ class BaseHubConnection(object):
         self.logger.debug("Handler registered started {0}".format(event))
         self.handlers.append((event, callback_function))
 
-    def send(self, method, arguments, on_invocation=None):
+    def send(self, method, arguments, on_invocation=None, invocation_id=str(uuid.uuid4())) -> InvocationResult:
         """Sends a message
 
         Args:
@@ -105,6 +114,9 @@ class BaseHubConnection(object):
             arguments (list|Subject): Method parameters
             on_invocation (function, optional): On invocation send callback
                 will be raised on send server function ends. Defaults to None.
+            invocation_id (string, optional): Override invocation ID. Exceptions
+                thrown by the hub will use this ID, making it easier to handle
+                with the on_error call.
 
         Raises:
             HubConnectionError: If hub is not ready to send
@@ -117,9 +129,11 @@ class BaseHubConnection(object):
         if type(arguments) is not list and type(arguments) is not Subject:
             raise TypeError("Arguments of a message must be a list or subject")
 
+        result = InvocationResult(invocation_id)
+
         if type(arguments) is list:
             message = InvocationMessage(
-                str(uuid.uuid4()),
+                invocation_id,
                 method,
                 arguments,
                 headers=self.headers)
@@ -131,11 +145,17 @@ class BaseHubConnection(object):
                         on_invocation))
             
             self.transport.send(message)
-
+            result.message = message
+        
         if type(arguments) is Subject:
             arguments.connection = self
             arguments.target = method
             arguments.start()
+            result.invocation_id = arguments.invocation_id
+            result.message = arguments
+        
+
+        return result
 
 
     def on_message(self, messages):
@@ -154,9 +174,7 @@ class BaseHubConnection(object):
                         lambda h: h[0] == message.target,
                         self.handlers))
                 if len(fired_handlers) == 0:
-                    self.logger.warning(
-                        "event '{0}' hasn't fire any handler".format(
-                            message.target))
+                    self.logger.debug(f"event '{message.target}' hasn't fired any handler")
                 for _, handler in fired_handlers:
                     handler(message.arguments)
 

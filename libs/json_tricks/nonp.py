@@ -10,13 +10,13 @@ from .comment import strip_comments  # keep 'unused' imports
 from .encoders import TricksEncoder, json_date_time_encode, \
 	class_instance_encode, json_complex_encode, json_set_encode, numeric_types_encode, numpy_encode, \
 	nonumpy_encode, nopandas_encode, pandas_encode, noenum_instance_encode, \
-	enum_instance_encode, pathlib_encode # keep 'unused' imports
+	enum_instance_encode, pathlib_encode, bytes_encode  # keep 'unused' imports
 from .decoders import TricksPairHook, \
 	json_date_time_hook, ClassInstanceHook, \
 	json_complex_hook, json_set_hook, numeric_types_hook, json_numpy_obj_hook, \
 	json_nonumpy_obj_hook, \
 	nopandas_hook, pandas_hook, EnumInstanceHook, \
-	noenum_hook, pathlib_hook, nopathlib_hook  # keep 'unused' imports
+	noenum_hook, pathlib_hook, nopathlib_hook, json_bytes_hook  # keep 'unused' imports
 
 
 ENCODING = 'UTF-8'
@@ -25,9 +25,9 @@ ENCODING = 'UTF-8'
 _cih_instance = ClassInstanceHook()
 _eih_instance = EnumInstanceHook()
 DEFAULT_ENCODERS = [json_date_time_encode, json_complex_encode, json_set_encode,
-					numeric_types_encode, class_instance_encode, ]
+					numeric_types_encode, class_instance_encode, bytes_encode,]
 DEFAULT_HOOKS = [json_date_time_hook, json_complex_hook, json_set_hook,
-				numeric_types_hook, _cih_instance, ]
+				numeric_types_hook, _cih_instance, json_bytes_hook,]
 
 
 #TODO @mark: add properties to all built-in encoders (for speed - but it should keep working without)
@@ -103,9 +103,10 @@ def dumps(obj, sort_keys=None, cls=None, obj_encoders=DEFAULT_ENCODERS, extra_ob
 	dict_default(properties, 'allow_nan', allow_nan)
 	if cls is None:
 		cls = TricksEncoder
-	txt = cls(sort_keys=sort_keys, obj_encoders=encoders, allow_nan=allow_nan,
+	combined_encoder = cls(sort_keys=sort_keys, obj_encoders=encoders, allow_nan=allow_nan,
 		primitives=primitives, fallback_encoders=fallback_encoders,
-	  	properties=properties, **jsonkwargs).encode(obj)
+	  	properties=properties, **jsonkwargs)
+	txt = combined_encoder.encode(obj)
 	if not is_py3 and isinstance(txt, str):
 		txt = unicode(txt, ENCODING)
 	if not compression:
@@ -187,7 +188,7 @@ def loads(string, preserve_order=True, ignore_comments=None, decompression=None,
 	:param string: The string containing a json encoded data structure.
 	:param decode_cls_instances: True to attempt to decode class instances (requires the environment to be similar the the encoding one).
 	:param preserve_order: Whether to preserve order by using OrderedDicts or not.
-	:param ignore_comments: Remove comments (starting with # or //).
+	:param ignore_comments: Remove comments (starting with # or //). By default (`None`), try without comments first, and re-try with comments upon failure.
 	:param decompression: True to use gzip decompression, False to use raw data, None to automatically determine (default). Assumes utf-8 encoding!
 	:param obj_pairs_hooks: A list of dictionary hooks to apply.
 	:param extra_obj_pairs_hooks: Like `obj_pairs_hooks` but on top of them: use this to add hooks without replacing defaults. Since v3.5 these happen before default hooks.
@@ -215,16 +216,6 @@ def loads(string, preserve_order=True, ignore_comments=None, decompression=None,
 				'for example bytevar.encode("utf-8") if utf-8 is the encoding. Alternatively you can '
 				'force an attempt by passing conv_str_byte=True, but this may cause decoding issues.')
 					.format(type(string)))
-	if ignore_comments or ignore_comments is None:
-		new_string = strip_comments(string)
-		if ignore_comments is None and not getattr(loads, '_ignore_comments_warned', False) and string != new_string:
-			warnings.warn('`json_tricks.load(s)` stripped some comments, but `ignore_comments` was '
-				'not passed; in the next major release, the behaviour when `ignore_comments` is not '
-				'passed will change; it is recommended to explicitly pass `ignore_comments=True` if '
-				'you want to strip comments; see https://github.com/mverleg/pyjson_tricks/issues/74',
-				JsonTricksDeprecation)
-			loads._ignore_comments_warned = True
-		string = new_string
 	properties = properties or {}
 	dict_default(properties, 'preserve_order', preserve_order)
 	dict_default(properties, 'ignore_comments', ignore_comments)
@@ -233,7 +224,30 @@ def loads(string, preserve_order=True, ignore_comments=None, decompression=None,
 	dict_default(properties, 'allow_duplicates', allow_duplicates)
 	hooks = tuple(extra_obj_pairs_hooks) + tuple(obj_pairs_hooks)
 	hook = TricksPairHook(ordered=preserve_order, obj_pairs_hooks=hooks, allow_duplicates=allow_duplicates, properties=properties)
-	return json_loads(string, object_pairs_hook=hook, **jsonkwargs)
+	if ignore_comments is None:
+		try:
+			# first try to parse without stripping comments
+			return _strip_loads(string, hook, False, **jsonkwargs)
+		except ValueError:
+			# if this fails, re-try parsing after stripping comments
+			result = _strip_loads(string, hook, True, **jsonkwargs)
+			if not getattr(loads, '_ignore_comments_warned', False):
+				warnings.warn('`json_tricks.load(s)` stripped some comments, but `ignore_comments` was '
+					'not passed; in the next major release, the behaviour when `ignore_comments` is not '
+					'passed will change; it is recommended to explicitly pass `ignore_comments=True` if '
+					'you want to strip comments; see https://github.com/mverleg/pyjson_tricks/issues/74',
+					JsonTricksDeprecation)
+				loads._ignore_comments_warned = True
+			return result
+	if ignore_comments:
+		return _strip_loads(string, hook, True, **jsonkwargs)
+	return _strip_loads(string, hook, False, **jsonkwargs)
+
+
+def _strip_loads(string, object_pairs_hook, ignore_comments_bool, **jsonkwargs):
+	if ignore_comments_bool:
+		string = strip_comments(string)
+	return json_loads(string, object_pairs_hook=object_pairs_hook, **jsonkwargs)
 
 
 def load(fp, preserve_order=True, ignore_comments=None, decompression=None, obj_pairs_hooks=DEFAULT_HOOKS,

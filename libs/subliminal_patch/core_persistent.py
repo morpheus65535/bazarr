@@ -50,8 +50,7 @@ def download_best_subtitles(
     hearing_impaired=False,
     only_one=False,
     compute_score=None,
-    throttle_time=0,
-    score_obj=None,
+    **kwargs
 ):
     downloaded_subtitles = defaultdict(list)
 
@@ -67,8 +66,6 @@ def download_best_subtitles(
     if not checked_videos:
         return downloaded_subtitles
 
-    got_multiple = len(checked_videos) > 1
-
     # download best subtitles
     for video in checked_videos:
         logger.info("Downloading best subtitles for %r", video)
@@ -80,13 +77,8 @@ def download_best_subtitles(
             hearing_impaired=hearing_impaired,
             only_one=only_one,
             compute_score=compute_score,
-            score_obj=score_obj,
         )
         logger.info("Downloaded %d subtitle(s)", len(subtitles))
         downloaded_subtitles[video].extend(subtitles)
-
-        if got_multiple and throttle_time:
-            logger.debug("Waiting %ss before continuing ...", throttle_time)
-            time.sleep(throttle_time)
 
     return downloaded_subtitles

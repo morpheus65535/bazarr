@@ -256,7 +256,9 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
 
         if send_event:
             event_stream(type='episode', payload=episode_subtitles['sonarrEpisodeId'])
-            event_stream(type='badges')
+            event_stream(type='episode-wanted', action='update', payload=episode_subtitles['sonarrEpisodeId'])
+    if send_event:
+        event_stream(type='badges')
 
 
 def series_full_scan_subtitles():

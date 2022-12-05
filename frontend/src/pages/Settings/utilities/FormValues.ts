@@ -18,7 +18,7 @@ export function useFormValues() {
 
 export function useStagedValues() {
   const form = useFormValues();
-  return { ...form.values.settings, ...form.values.storages };
+  return { ...form.values.settings };
 }
 
 export function useFormActions() {
@@ -27,35 +27,60 @@ export function useFormActions() {
   const formRef = useRef(form);
   formRef.current = form;
 
-  const update = useCallback(
-    (object: LooseObject, location: FormKey = "settings") => {
-      LOG("info", `Updating values in ${location}`, object);
-      formRef.current.setValues((values) => {
-        const changes = { ...values[location], ...object };
-        return { ...values, [location]: changes };
-      });
-    },
-    []
-  );
+  const update = useCallback((object: LooseObject) => {
+    LOG("info", `Updating values`, object);
+    formRef.current.setValues((values) => {
+      const changes = { ...values.settings, ...object };
+      return { ...values, settings: changes };
+    });
+  }, []);
 
-  const setValue = useCallback(
-    (v: unknown, key: string, location: FormKey = "settings") => {
-      LOG("info", `Updating value of ${key} in ${location}`, v);
-      formRef.current.setValues((values) => {
-        const changes = { ...values[location], [key]: v };
-        return { ...values, [location]: changes };
-      });
-    },
-    []
-  );
+  const setValue = useCallback((v: unknown, key: string, hook?: HookType) => {
+    LOG("info", `Updating value of ${key}`, v);
+    formRef.current.setValues((values) => {
+      const changes = { ...values.settings, [key]: v };
+      const hooks = { ...values.hooks };
+
+      if (hook) {
+        LOG(
+          "info",
+          `Adding submit hook ${key}, will be executed before submitting`
+        );
+        hooks[key] = hook;
+      }
+
+      return { ...values, settings: changes, hooks };
+    });
+  }, []);
 
   return { update, setValue };
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type HookType = (value: any) => unknown;
 
 export type FormKey = keyof FormValues;
 export type FormValues = {
   // Settings that saved to the backend
   settings: LooseObject;
   // Settings that saved to the frontend
-  storages: LooseObject;
+  // storages: LooseObject;
+
+  // submit hooks
+  hooks: StrictObject<HookType>;
 };
+
+export function runHooks(
+  hooks: FormValues["hooks"],
+  settings: FormValues["settings"]
+) {
+  for (const key in settings) {
+    if (key in hooks) {
+      LOG("info", "Running submit hook for", key, settings[key]);
+      const value = settings[key];
+      const fn = hooks[key];
+      settings[key] = fn(value);
+      LOG("info", "Finish submit hook", key, settings[key]);
+    }
+  }
+}

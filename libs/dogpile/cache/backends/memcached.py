@@ -58,7 +58,7 @@ class MemcachedLock(object):
             elif not wait:
                 return False
             else:
-                sleep_time = (((i + 1) * random.random()) + 2 ** i) / 2.5
+                sleep_time = (((i + 1) * random.random()) + 2**i) / 2.5
                 time.sleep(sleep_time)
             if i < 15:
                 i += 1
@@ -220,7 +220,6 @@ class GenericMemcachedBackend(CacheBackend):
 class MemcacheArgs(GenericMemcachedBackend):
     """Mixin which provides support for the 'time' argument to set(),
     'min_compress_len' to other methods.
-
     """
 
     def __init__(self, arguments):
@@ -303,14 +302,39 @@ class MemcachedBackend(MemcacheArgs, GenericMemcachedBackend):
             }
         )
 
+    :param dead_retry: Number of seconds memcached server is considered dead
+     before it is tried again. Will be passed to ``memcache.Client``
+     as the ``dead_retry`` parameter.
+
+     .. versionchanged:: 1.1.8  Moved the ``dead_retry`` argument which was
+        erroneously added to "set_parameters" to
+        be part of the Memcached connection arguments.
+
+    :param socket_timeout: Timeout in seconds for every call to a server.
+      Will be passed to ``memcache.Client`` as the ``socket_timeout``
+      parameter.
+
+      .. versionchanged:: 1.1.8  Moved the ``socket_timeout`` argument which
+         was erroneously added to "set_parameters"
+         to be part of the Memcached connection arguments.
+
     """
+
+    def __init__(self, arguments):
+        self.dead_retry = arguments.get("dead_retry", 30)
+        self.socket_timeout = arguments.get("socket_timeout", 3)
+        super(MemcachedBackend, self).__init__(arguments)
 
     def _imports(self):
         global memcache
         import memcache  # noqa
 
     def _create_client(self):
-        return memcache.Client(self.url)
+        return memcache.Client(
+            self.url,
+            dead_retry=self.dead_retry,
+            socket_timeout=self.socket_timeout,
+        )
 
 
 class BMemcachedBackend(GenericMemcachedBackend):

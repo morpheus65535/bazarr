@@ -1,21 +1,13 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, absolute_import
-
 import itertools
 import re
 
 from inspect import isclass, getdoc
 from collections import OrderedDict
 
-try:
-    from collections.abc import Hashable
-except ImportError:
-    # TODO Remove this to drop Python2 support
-    from collections import Hashable
-from six import string_types, itervalues, iteritems, iterkeys
+from collections.abc import Hashable
 
 from flask import current_app
-from werkzeug.routing import parse_rule
 
 from . import fields
 from .model import Model, ModelBase, OrderedModel
@@ -23,10 +15,7 @@ from .reqparse import RequestParser
 from .utils import merge, not_none, not_none_sorted
 from ._http import HTTPStatus
 
-try:
-    from urllib.parse import quote
-except ImportError:
-    from urllib import quote
+from urllib.parse import quote
 
 #: Maps Flask/Werkzeug rooting types to Swagger ones
 PATH_TYPES = {
@@ -35,7 +24,6 @@ PATH_TYPES = {
     "string": "string",
     "default": "string",
 }
-
 
 #: Maps Python primitives types to Swagger ones
 PY_TYPES = {
@@ -55,6 +43,21 @@ RE_RAISES = re.compile(
     r"^:raises\s+(?P<name>[\w\d_]+)\s*:\s*(?P<description>.*)$", re.MULTILINE
 )
 
+RE_PARSE_RULE = re.compile(
+    r"""
+    (?P<static>[^<]*)                           # static rule data
+    <
+    (?:
+        (?P<converter>[a-zA-Z_][a-zA-Z0-9_]*)   # converter name
+        (?:\((?P<args>.*?)\))?                  # converter arguments
+        \:                                      # variable delimiter
+    )?
+    (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)        # variable name
+    >
+    """,
+    re.VERBOSE,
+)
+
 
 def ref(model):
     """Return a reference to model in definitions"""
@@ -72,6 +75,39 @@ def extract_path(path):
     Transform a Flask/Werkzeug URL pattern in a Swagger one.
     """
     return RE_URL.sub(r"{\1}", path)
+
+
+def parse_rule(rule):
+    """
+    Parse a rule and return it as generator. Each iteration yields tuples in the form
+    ``(converter, arguments, variable)``. If the converter is `None` it's a static url part, otherwise it's a dynamic
+    one.
+
+    Note: This originally lived in werkzeug.routing.parse_rule until it was removed in werkzeug 2.2.0.
+    """
+    pos = 0
+    end = len(rule)
+    do_match = RE_PARSE_RULE.match
+    used_names = set()
+    while pos < end:
+        m = do_match(rule, pos)
+        if m is None:
+            break
+        data = m.groupdict()
+        if data["static"]:
+            yield None, None, data["static"]
+        variable = data["variable"]
+        converter = data["converter"] or "default"
+        if variable in used_names:
+            raise ValueError(f"variable name {variable!r} used twice.")
+        used_names.add(variable)
+        yield converter, data["args"] or None, variable
+        pos = m.end()
+    if pos < end:
+        remaining = rule[pos:]
+        if ">" in remaining or "<" in remaining:
+            raise ValueError(f"malformed url rule: {rule!r}")
+        yield None, None, remaining
 
 
 def extract_path_params(path):
@@ -101,7 +137,7 @@ def _param_to_header(param):
 
 
 def _clean_header(header):
-    if isinstance(header, string_types):
+    if isinstance(header, str):
         header = {"description": header}
     typedef = header.get("type", "string")
     if isinstance(typedef, Hashable) and typedef in PY_TYPES:
@@ -260,7 +296,7 @@ class Swagger(object):
             "basePath": basepath,
             "paths": not_none_sorted(paths),
             "info": infos,
-            "produces": list(iterkeys(self.api.representations)),
+            "produces": list(self.api.representations.keys()),
             "consumes": ["application/json"],
             "securityDefinitions": self.api.authorizations or None,
             "security": self.security_requirements(self.api.security) or None,
@@ -281,7 +317,7 @@ class Swagger(object):
         tags = []
         by_name = {}
         for tag in api.tags:
-            if isinstance(tag, string_types):
+            if isinstance(tag, str):
                 tag = {"name": tag}
             elif isinstance(tag, (list, tuple)):
                 tag = {"name": tag[0], "description": tag[1]}
@@ -343,7 +379,7 @@ class Swagger(object):
                 method_params = self.expected_params(method_doc)
                 method_params = merge(method_params, method_doc.get("params", {}))
                 inherited_params = OrderedDict(
-                    (k, v) for k, v in iteritems(params) if k in method_params
+                    (k, v) for k, v in params.items() if k in method_params
                 )
                 method_doc["params"] = merge(inherited_params, method_params)
                 for name, param in method_doc["params"].items():
@@ -423,7 +459,7 @@ class Swagger(object):
 
     def register_errors(self):
         responses = {}
-        for exception, handler in iteritems(self.api.error_handlers):
+        for exception, handler in self.api.error_handlers.items():
             doc = parse_docstring(handler)
             response = {"description": doc["summary"]}
             apidoc = getattr(handler, "__apidoc__", {})
@@ -484,7 +520,7 @@ class Swagger(object):
         """
         return dict(
             (k if k.startswith("x-") else "x-{0}".format(k), v)
-            for k, v in iteritems(doc[method].get("vendor", {}))
+            for k, v in doc[method].get("vendor", {}).items()
         )
 
     def description_for(self, doc, method):
@@ -509,7 +545,7 @@ class Swagger(object):
 
     def parameters_for(self, doc):
         params = []
-        for name, param in iteritems(doc["params"]):
+        for name, param in doc["params"].items():
             param["name"] = name
             if "type" not in param and "schema" not in param:
                 param["type"] = "string"
@@ -538,7 +574,7 @@ class Swagger(object):
                 "format": "mask",
                 "description": "An optional fields mask",
             }
-            if isinstance(mask, string_types):
+            if isinstance(mask, str):
                 param["default"] = mask
             params.append(param)
 
@@ -550,9 +586,9 @@ class Swagger(object):
 
         for d in doc, doc[method]:
             if "responses" in d:
-                for code, response in iteritems(d["responses"]):
+                for code, response in d["responses"].items():
                     code = str(code)
-                    if isinstance(response, string_types):
+                    if isinstance(response, str):
                         description = response
                         model = None
                         kwargs = {}
@@ -586,8 +622,8 @@ class Swagger(object):
                 responses[code]["schema"] = self.serialize_schema(d["model"])
 
             if "docstring" in d:
-                for name, description in iteritems(d["docstring"]["raises"]):
-                    for exception, handler in iteritems(self.api.error_handlers):
+                for name, description in d["docstring"]["raises"].items():
+                    for exception, handler in self.api.error_handlers.items():
                         error_responses = getattr(handler, "__apidoc__", {}).get(
                             "responses", {}
                         )
@@ -612,17 +648,16 @@ class Swagger(object):
             response["headers"] = dict(
                 (k, _clean_header(v))
                 for k, v in itertools.chain(
-                    iteritems(doc.get("headers", {})),
-                    iteritems(method_doc.get("headers", {})),
-                    iteritems(headers or {}),
+                    doc.get("headers", {}).items(),
+                    method_doc.get("headers", {}).items(),
+                    (headers or {}).items(),
                 )
             )
         return response
 
     def serialize_definitions(self):
         return dict(
-            (name, model.__schema__)
-            for name, model in iteritems(self._registered_models)
+            (name, model.__schema__) for name, model in self._registered_models.items()
         )
 
     def serialize_schema(self, model):
@@ -637,7 +672,7 @@ class Swagger(object):
             self.register_model(model)
             return ref(model)
 
-        elif isinstance(model, string_types):
+        elif isinstance(model, str):
             self.register_model(model)
             return ref(model)
 
@@ -664,13 +699,13 @@ class Swagger(object):
             for parent in specs.__parents__:
                 self.register_model(parent)
         if isinstance(specs, (Model, OrderedModel)):
-            for field in itervalues(specs):
+            for field in specs.values():
                 self.register_field(field)
         return ref(model)
 
     def register_field(self, field):
         if isinstance(field, fields.Polymorph):
-            for model in itervalues(field.mapping):
+            for model in field.mapping.values():
                 self.register_model(model)
         elif isinstance(field, fields.Nested):
             self.register_model(field.nested)
@@ -699,12 +734,12 @@ class Swagger(object):
             return []
 
     def security_requirement(self, value):
-        if isinstance(value, (string_types)):
+        if isinstance(value, (str)):
             return {value: []}
         elif isinstance(value, dict):
             return dict(
                 (k, v if isinstance(v, (list, tuple)) else [v])
-                for k, v in iteritems(value)
+                for k, v in value.items()
             )
         else:
             return None

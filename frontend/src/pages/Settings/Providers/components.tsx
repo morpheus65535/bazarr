@@ -24,6 +24,7 @@ import { Card, Check, Chips, Message, Password, Text } from "../components";
 import {
   FormContext,
   FormValues,
+  runHooks,
   useFormActions,
   useStagedValues,
 } from "../utilities/FormValues";
@@ -44,13 +45,15 @@ export const ProviderView: FunctionComponent = () => {
 
   const select = useCallback(
     (v?: ProviderInfo) => {
-      modals.openContextModal(ProviderModal, {
-        payload: v ?? null,
-        enabledProviders: providers ?? [],
-        staged,
-        settings,
-        onChange: update,
-      });
+      if (settings) {
+        modals.openContextModal(ProviderModal, {
+          payload: v ?? null,
+          enabledProviders: providers ?? [],
+          staged,
+          settings,
+          onChange: update,
+        });
+      }
     },
     [modals, providers, settings, staged, update]
   );
@@ -125,7 +128,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   const form = useForm<FormValues>({
     initialValues: {
       settings: staged,
-      storages: {},
+      hooks: {},
     },
   });
 
@@ -145,12 +148,16 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     (values: FormValues) => {
       if (info && enabledProviders) {
         const changes = { ...values.settings };
+        const hooks = values.hooks;
 
         // Add this provider if not exist
         if (enabledProviders.find((v) => v === info.key) === undefined) {
           const newProviders = [...enabledProviders, info.key];
           changes[ProviderKey] = newProviders;
         }
+
+        // Apply submit hooks
+        runHooks(hooks, changes);
 
         onChangeRef.current(changes);
         modals.closeAll();

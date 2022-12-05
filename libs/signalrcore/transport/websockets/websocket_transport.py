@@ -2,7 +2,6 @@ import websocket
 import threading
 import requests
 import traceback
-import uuid
 import time
 import ssl
 from .reconnection import ConnectionStateChecker
@@ -17,7 +16,7 @@ from ...helpers import Helpers
 class WebsocketTransport(BaseTransport):
     def __init__(self,
             url="",
-            headers={},
+            headers=None,
             keep_alive_interval=15,
             reconnection_handler=None,
             verify_ssl=False,
@@ -30,7 +29,10 @@ class WebsocketTransport(BaseTransport):
         self._thread = None
         self.skip_negotiation = skip_negotiation
         self.url = url
-        self.headers = headers
+        if headers is None:
+            self.headers = dict()
+        else:
+            self.headers = headers
         self.handshake_received = False
         self.token = None  # auth
         self.state = ConnectionState.disconnected

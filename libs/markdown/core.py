@@ -122,7 +122,7 @@ class Markdown:
             if isinstance(ext, str):
                 ext = self.build_extension(ext, configs.get(ext, {}))
             if isinstance(ext, Extension):
-                ext._extendMarkdown(self)
+                ext.extendMarkdown(self)
                 logger.debug(
                     'Successfully loaded extension "%s.%s".'
                     % (ext.__class__.__module__, ext.__class__.__name__)
@@ -150,7 +150,7 @@ class Markdown:
         """
         configs = dict(configs)
 
-        entry_points = [ep for ep in util.INSTALLED_EXTENSIONS if ep.name == ext_name]
+        entry_points = [ep for ep in util.get_installed_extensions() if ep.name == ext_name]
         if entry_points:
             ext = entry_points[0].load()
             return ext(**configs)

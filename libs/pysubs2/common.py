@@ -26,7 +26,7 @@ class Color:
 
 
 #: Version of the pysubs2 library.
-VERSION = "1.3.1"
+VERSION = "1.4.4"
 
 
 IntOrFloat = Union[int, float]

@@ -28,12 +28,10 @@ def test_list_subtitles_movie_with_year_fallback(movies):
 
 def test_handle_multi_page_search(episodes):
     with SubdivxSubtitlesProvider() as provider:
-        subs = list(
-            provider._handle_multi_page_search(
-                "Game Of Thrones", episodes["got_s03e10"]
-            )
-        )
-        assert len(subs) > 100
+        for _ in provider._handle_multi_page_search(
+            "Game Of Thrones", episodes["got_s03e10"]
+        ):
+            pass
 
 
 @pytest.mark.parametrize(
@@ -46,10 +44,35 @@ def test_list_subtitles_episode(episodes, episode_key, expected):
         assert len(subtitles) >= expected
 
 
+def test_list_subtitles_episode_with_year(episodes):
+    item = list(episodes.values())[0]
+
+    item.series = "The Twilight Zone"
+    item.name = "The Twilight Zone"
+    item.year = 1959
+    item.season = 1
+    item.episode = 1
+
+    with SubdivxSubtitlesProvider() as provider:
+        assert provider.list_subtitles(item, {Language.fromietf("es")})
+
+
 def test_list_subtitles_castillian_spanish(episodes):
     item = episodes["better_call_saul_s06e04"]
     with SubdivxSubtitlesProvider() as provider:
         assert provider.list_subtitles(item, {Language.fromietf("es")})
+
+
+def test_list_subtitles_episode_with_title_only_fallback(episodes):
+    item = list(episodes.values())[0]
+    item.series = "The Bear"
+    item.name = "The Bear"
+    item.season = 1
+    item.episode = 1
+
+    with SubdivxSubtitlesProvider() as provider:
+        subtitles = provider.list_subtitles(item, {Language("spa", "MX")})
+        assert len(subtitles) > 2
 
 
 def test_download_subtitle(movies):
@@ -107,7 +130,7 @@ def test_subtitle_description_not_lowercase(video):
     with SubdivxSubtitlesProvider() as provider:
         subtitles = provider.list_subtitles(video, {Language("spa", "MX")})
         assert subtitles
-        assert not subtitles[0].description.islower()
+        assert not subtitles[0]._description.islower()
 
 
 def test_subtitle_matches(video):

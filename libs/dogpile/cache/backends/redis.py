@@ -24,7 +24,7 @@ __all__ = ("RedisBackend", "RedisSentinelBackend")
 
 
 class RedisBackend(BytesBackend):
-    """A `Redis <http://redis.io/>`_ backend, using the
+    r"""A `Redis <http://redis.io/>`_ backend, using the
     `redis-py <http://pypi.python.org/pypi/redis/>`_ backend.
 
     Example configuration::
@@ -88,6 +88,14 @@ class RedisBackend(BytesBackend):
      asynchronous runners, as they run in a different thread than the one
      used to create the lock.
 
+    :param connection_kwargs: dict, additional keyword arguments are passed
+     along to the
+     ``StrictRedis.from_url()`` method or ``StrictRedis()`` constructor
+     directly, including parameters like ``ssl``, ``ssl_certfile``,
+     ``charset``, etc.
+
+     .. versionadded:: 1.1.6  Added ``connection_kwargs`` parameter.
+
     """
 
     def __init__(self, arguments):
@@ -98,12 +106,12 @@ class RedisBackend(BytesBackend):
         self.password = arguments.pop("password", None)
         self.port = arguments.pop("port", 6379)
         self.db = arguments.pop("db", 0)
-        self.distributed_lock = arguments.get("distributed_lock", False)
+        self.distributed_lock = arguments.pop("distributed_lock", False)
         self.socket_timeout = arguments.pop("socket_timeout", None)
-
-        self.lock_timeout = arguments.get("lock_timeout", None)
-        self.lock_sleep = arguments.get("lock_sleep", 0.1)
-        self.thread_local_lock = arguments.get("thread_local_lock", True)
+        self.lock_timeout = arguments.pop("lock_timeout", None)
+        self.lock_sleep = arguments.pop("lock_sleep", 0.1)
+        self.thread_local_lock = arguments.pop("thread_local_lock", True)
+        self.connection_kwargs = arguments.pop("connection_kwargs", {})
 
         if self.distributed_lock and self.thread_local_lock:
             warnings.warn(
@@ -112,7 +120,7 @@ class RedisBackend(BytesBackend):
             )
 
         self.redis_expiration_time = arguments.pop("redis_expiration_time", 0)
-        self.connection_pool = arguments.get("connection_pool", None)
+        self.connection_pool = arguments.pop("connection_pool", None)
         self._create_client()
 
     def _imports(self):
@@ -131,6 +139,7 @@ class RedisBackend(BytesBackend):
             self.reader_client = self.writer_client
         else:
             args = {}
+            args.update(self.connection_kwargs)
             if self.socket_timeout:
                 args["socket_timeout"] = self.socket_timeout
 
@@ -150,11 +159,13 @@ class RedisBackend(BytesBackend):
 
     def get_mutex(self, key):
         if self.distributed_lock:
-            return self.writer_client.lock(
-                "_lock{0}".format(key),
-                timeout=self.lock_timeout,
-                sleep=self.lock_sleep,
-                thread_local=self.thread_local_lock,
+            return _RedisLockWrapper(
+                self.writer_client.lock(
+                    "_lock{0}".format(key),
+                    timeout=self.lock_timeout,
+                    sleep=self.lock_sleep,
+                    thread_local=self.thread_local_lock,
+                )
             )
         else:
             return None
@@ -191,6 +202,22 @@ class RedisBackend(BytesBackend):
 
     def delete_multi(self, keys):
         self.writer_client.delete(*keys)
+
+
+class _RedisLockWrapper:
+    __slots__ = ("mutex", "__weakref__")
+
+    def __init__(self, mutex: typing.Any):
+        self.mutex = mutex
+
+    def acquire(self, wait: bool = True) -> typing.Any:
+        return self.mutex.acquire(blocking=wait)
+
+    def release(self) -> typing.Any:
+        return self.mutex.release()
+
+    def locked(self) -> bool:
+        return self.mutex.locked()  # type: ignore
 
 
 class RedisSentinelBackend(RedisBackend):
@@ -251,9 +278,11 @@ class RedisSentinelBackend(RedisBackend):
      a normal Redis connection can be specified here.
      Default is {}.
 
-    :param connection_kwargs: dict, are keyword arguments that will be used
-     when establishing a connection to a Redis server.
-     Default is {}.
+    :param connection_kwargs: dict, additional keyword arguments are passed
+     along to the
+     ``StrictRedis.from_url()`` method or ``StrictRedis()`` constructor
+     directly, including parameters like ``ssl``, ``ssl_certfile``,
+     ``charset``, etc.
 
     :param lock_sleep: integer, number of seconds to sleep when failed to
      acquire a lock.  This argument is only valid when
@@ -272,7 +301,6 @@ class RedisSentinelBackend(RedisBackend):
         self.sentinels = arguments.pop("sentinels", None)
         self.service_name = arguments.pop("service_name", "mymaster")
         self.sentinel_kwargs = arguments.pop("sentinel_kwargs", {})
-        self.connection_kwargs = arguments.pop("connection_kwargs", {})
 
         super().__init__(
             arguments={

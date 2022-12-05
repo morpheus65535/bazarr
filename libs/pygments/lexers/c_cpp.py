@@ -4,7 +4,7 @@
 
     Lexers for C/C++ languages.
 
-    :copyright: Copyright 2006-2021 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -42,6 +42,17 @@ class CFamilyLexer(RegexLexer):
     _ident = r'(?!\d)(?:[\w$]|\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8})+'
     _namespaced_ident = r'(?!\d)(?:[\w$]|\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8}|::)+'
 
+    # Single and multiline comment regexes
+    # Beware not to use *? for the inner content! When these regexes
+    # are embedded in larger regexes, that can cause the stuff*? to
+    # match more than it would have if the regex had been used in
+    # a standalone way ...
+    _comment_single = r'//(?:.|(?<=\\)\n)*\n'
+    _comment_multiline = r'/(?:\\\n)?[*](?:[^*]|[*](?!(?:\\\n)?/))*[*](?:\\\n)?/'
+
+    # Regex to match optional comments
+    _possible_comments = rf'\s*(?:(?:(?:{_comment_single})|(?:{_comment_multiline}))\s*)*'
+
     tokens = {
         'whitespace': [
             # preprocessor directives: without whitespace
@@ -52,14 +63,17 @@ class CFamilyLexer(RegexLexer):
              bygroups(using(this), Comment.Preproc), 'if0'),
             ('^(' + _ws1 + ')(#)',
              bygroups(using(this), Comment.Preproc), 'macro'),
-            (r'(^[ \t]*)(?!(?:public|private|protected|default)\b)(case\b\s+)?(' + _ident + r')(\s*)(:)(?!:)',
-             bygroups(Whitespace, using(this), Name.Label, Whitespace, Punctuation)),
+            # Labels:
+            (r'(^[ \t]*)'                                  # Line start and possible indentation.
+             r'(?!(?:public|private|protected|default)\b)' # Not followed by keywords which can be mistaken as labels.
+             r'(' + _ident + r')(\s*)(:)(?!:)',            # Actual label, followed by a single colon.
+             bygroups(Whitespace, Name.Label, Whitespace, Punctuation)),
             (r'\n', Whitespace),
             (r'[^\S\n]+', Whitespace),
             (r'\\\n', Text),  # line continuation
-            (r'//(\n|[\w\W]*?[^\\]\n)', Comment.Single),
-            (r'/(\\\n)?[*][\w\W]*?[*](\\\n)?/', Comment.Multiline),
-            # Open until EOF, so no ending delimeter
+            (_comment_single, Comment.Single),
+            (_comment_multiline, Comment.Multiline),
+            # Open until EOF, so no ending delimiter
             (r'/(\\\n)?[*][\w\W]*', Comment.Multiline),
         ],
         'statements': [
@@ -91,9 +105,10 @@ class CFamilyLexer(RegexLexer):
         ],
         'keywords': [
             (r'(struct|union)(\s+)', bygroups(Keyword, Whitespace), 'classname'),
-            (words(('asm', 'auto', 'break', 'case', 'const', 'continue',
-                    'default', 'do', 'else', 'enum', 'extern', 'for', 'goto',
-                    'if', 'register', 'restricted', 'return', 'sizeof', 'struct',
+            (r'case\b', Keyword, 'case-value'),
+            (words(('asm', 'auto', 'break', 'const', 'continue', 'default', 
+                    'do', 'else', 'enum', 'extern', 'for', 'goto', 'if',
+                    'register', 'restricted', 'return', 'sizeof', 'struct',
                     'static', 'switch', 'typedef', 'volatile', 'while', 'union',
                     'thread_local', 'alignas', 'alignof', 'static_assert', '_Pragma'),
                    suffix=r'\b'), Keyword),
@@ -114,19 +129,25 @@ class CFamilyLexer(RegexLexer):
             include('keywords'),
             # functions
             (r'(' + _namespaced_ident + r'(?:[&*\s])+)'  # return arguments
+             r'(' + _possible_comments + r')'    # possible comments
              r'(' + _namespaced_ident + r')'             # method name
-             r'(\s*\([^;]*?\))'                          # signature
-             r'([^;{]*)(\{)',
-             bygroups(using(this), Name.Function, using(this), using(this),
-                      Punctuation),
+             r'(' + _possible_comments + r')'    # possible comments
+             r'(\([^;"\']*?\))'                          # signature
+             r'(' + _possible_comments + r')'    # possible comments
+             r'([^;{/"\']*)(\{)',
+             bygroups(using(this), using(this, state='whitespace'), Name.Function, using(this, state='whitespace'),
+                      using(this), using(this, state='whitespace'), using(this), Punctuation),
              'function'),
             # function declarations
             (r'(' + _namespaced_ident + r'(?:[&*\s])+)'  # return arguments
+             r'(' + _possible_comments + r')'    # possible comments
              r'(' + _namespaced_ident + r')'             # method name
-             r'(\s*\([^;]*?\))'                          # signature
-             r'([^;]*)(;)',
-             bygroups(using(this), Name.Function, using(this), using(this),
-                      Punctuation)),
+             r'(' + _possible_comments + r')'    # possible comments
+             r'(\([^;"\']*?\))'                          # signature
+             r'(' + _possible_comments + r')'    # possible comments
+             r'([^;/"\']*)(;)',
+             bygroups(using(this), using(this, state='whitespace'), Name.Function, using(this, state='whitespace'),
+                      using(this), using(this, state='whitespace'), using(this), Punctuation)),
             include('types'),
             default('statement'),
         ],
@@ -174,6 +195,13 @@ class CFamilyLexer(RegexLexer):
             # template specification
             (r'\s*(?=>)', Text, '#pop'),
             default('#pop')
+        ],
+        # Mark identifiers preceded by `case` keyword as constants.
+        'case-value': [
+            (r'(?<!:)(:)(?!:)', Punctuation, '#pop'),
+            (_ident, Name.Constant),
+            include('whitespace'),
+            include('statements'),
         ]
     }
 
@@ -211,9 +239,9 @@ class CFamilyLexer(RegexLexer):
         self.platformhighlighting = get_bool_opt(options, 'platformhighlighting', True)
         RegexLexer.__init__(self, **options)
 
-    def get_tokens_unprocessed(self, text):
+    def get_tokens_unprocessed(self, text, stack=('root',)):
         for index, token, value in \
-                RegexLexer.get_tokens_unprocessed(self, text):
+                RegexLexer.get_tokens_unprocessed(self, text, stack):
             if token is Name:
                 if self.stdlibhighlighting and value in self.stdlib_types:
                     token = Keyword.Type
@@ -300,10 +328,11 @@ class CppLexer(CFamilyLexer):
         (default: ``True``).
     """
     name = 'C++'
+    url = 'https://isocpp.org/'
     aliases = ['cpp', 'c++']
     filenames = ['*.cpp', '*.hpp', '*.c++', '*.h++',
                  '*.cc', '*.hh', '*.cxx', '*.hxx',
-                 '*.C', '*.H', '*.cp', '*.CPP']
+                 '*.C', '*.H', '*.cp', '*.CPP', '*.tpp']
     mimetypes = ['text/x-c++hdr', 'text/x-c++src']
     priority = 0.1
 

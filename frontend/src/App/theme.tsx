@@ -9,14 +9,7 @@ import { useColorScheme } from "@mantine/hooks";
 import { FunctionComponent, useCallback, useEffect, useState } from "react";
 
 const theme: MantineThemeOverride = {
-  fontFamily: [
-    "Roboto",
-    "open sans",
-    "Helvetica Neue",
-    "Helvetica",
-    "Arial",
-    "sans-serif",
-  ],
+  fontFamily: "Roboto, open sans, Helvetica Neue, Helvetica, Arial, sans-serif",
   colors: {
     brand: [
       "#F8F0FC",

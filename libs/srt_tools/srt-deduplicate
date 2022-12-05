@@ -41,7 +41,7 @@ def parse_args():
 
 def deduplicate_subs(orig_subs, acceptable_diff):
     """Remove subtitles with duplicated content."""
-    indices_to_remove = set()
+    indices_to_remove = []
 
     # If we only store the subtitle itself and compare that, it's possible that
     # we'll not only remove the duplicate, but also the _original_ subtitle if
@@ -67,7 +67,7 @@ def deduplicate_subs(orig_subs, acceptable_diff):
                 cur_idx,
                 cur_sub.index,
             )
-            indices_to_remove.add(next_idx)
+            indices_to_remove.append(next_idx)
 
     offset = 0
     for idx in indices_to_remove:

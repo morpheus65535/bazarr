@@ -7,7 +7,7 @@ class AutoTransport(Transport):
     def __init__(self, session, connection):
         Transport.__init__(self, session, connection)
         self.__available_transports = [
-            WebSocketsTransport(session, connection),
+            #WebSocketsTransport(session, connection),
             ServerSentEventsTransport(session, connection)
         ]
         self.__transport = None

@@ -1,5 +1,5 @@
 r"""
-The `ftfy.bad_codecs` module gives Python the ability to decode some common, 
+The `ftfy.bad_codecs` module gives Python the ability to decode some common,
 flawed encodings.
 
 Python does not want you to be sloppy with your text. Its encoders and decoders
@@ -38,11 +38,16 @@ _CACHE: Dict[str, codecs.CodecInfo] = {}
 # Define some aliases for 'utf-8-variants'. All hyphens get turned into
 # underscores, because of `normalize_encoding`.
 UTF8_VAR_NAMES = (
-    'utf_8_variants', 'utf8_variants',
-    'utf_8_variant', 'utf8_variant',
-    'utf_8_var', 'utf8_var',
-    'cesu_8', 'cesu8',
-    'java_utf_8', 'java_utf8'
+    "utf_8_variants",
+    "utf8_variants",
+    "utf_8_variant",
+    "utf8_variant",
+    "utf_8_var",
+    "utf8_var",
+    "cesu_8",
+    "cesu8",
+    "java_utf_8",
+    "java_utf8",
 )
 
 
@@ -67,9 +72,11 @@ def search_function(encoding):
     codec = None
     if norm_encoding in UTF8_VAR_NAMES:
         from ftfy.bad_codecs.utf8_variants import CODEC_INFO
+
         codec = CODEC_INFO
-    elif norm_encoding.startswith('sloppy_'):
+    elif norm_encoding.startswith("sloppy_"):
         from ftfy.bad_codecs.sloppy import CODECS
+
         codec = CODECS.get(norm_encoding)
 
     if codec is not None:

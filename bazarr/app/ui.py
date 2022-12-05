@@ -91,7 +91,7 @@ def catch_all(path):
 @check_login
 @ui_bp.route('/bazarr.log')
 def download_log():
-    return send_file(os.path.join(args.config_dir, 'log', 'bazarr.log'), cache_timeout=0, as_attachment=True)
+    return send_file(os.path.join(args.config_dir, 'log', 'bazarr.log'), max_age=0, as_attachment=True)
 
 
 @check_login
@@ -134,7 +134,7 @@ def movies_images(url):
 @check_login
 @ui_bp.route('/system/backup/download/<path:filename>', methods=['GET'])
 def backup_download(filename):
-    return send_file(os.path.join(settings.backup.folder, filename), cache_timeout=0, as_attachment=True)
+    return send_file(os.path.join(settings.backup.folder, filename), max_age=0, as_attachment=True)
 
 
 @ui_bp.route('/api/swaggerui/static/<path:filename>', methods=['GET'])

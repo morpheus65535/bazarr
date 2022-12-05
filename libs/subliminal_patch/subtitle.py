@@ -480,8 +480,12 @@ def guess_matches(video, guess, partial=False):
         # Most providers only support single-ep, so make sure it contains only 1 episode
         # In case of multi-ep, take the lowest episode (subtitles will normally be available on lowest episode number)
         if video.episode and 'episode' in guess:
-            episode_guess = guess['episode']
-            episode = min(episode_guess) if episode_guess and isinstance(episode_guess, list) else episode_guess
+            episode = episode_guess = guess['episode']
+            if isinstance(episode_guess, list):
+                try:
+                    episode = min([int(x) for x in episode_guess])
+                except (TypeError, ValueError):
+                    pass
             if episode == video.episode:
                 matches.add('episode')
 
@@ -548,12 +552,23 @@ def guess_matches(video, guess, partial=False):
         if _has_match(video, guess, key):
             matches.add(key)
 
-    # Add streaming service match for non-web sources
-    if video.source and video.source != "Web":
-        matches.add("streaming_service")
-
-    # As edition tags are rare, add edition match if the video doesn't have an edition
-    if not video.edition:
-        matches.add("edition")
+    for key in ("streaming_service", "edition", "other"):
+        if _check_optional(video, guess, key):
+            matches.add(key)
 
     return matches
+
+
+def _check_optional(video, guess, key="edition"):
+    guess_optional = guess.get(key)
+    video_optional = getattr(video, key, None)
+
+    if video_optional and guess_optional:
+        return _has_match(video, guess, key)
+
+    if not video_optional and not guess_optional:
+        logger.debug("Both video and guess don't have %s. Returning True", key)
+        return True
+
+    logger.debug("One item doesn't have %s (%s -> %s). Returning False", key, guess_optional, video_optional)
+    return False

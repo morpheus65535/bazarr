@@ -63,12 +63,13 @@ class RefreshTokenGrant(GrantTypeBase):
                                            refresh_token=self.issue_new_refresh_tokens)
 
         for modifier in self._token_modifiers:
-            token = modifier(token)
+            token = modifier(token, token_handler, request)
 
         self.request_validator.save_token(token, request)
 
         log.debug('Issuing new token to client id %r (%r), %r.',
                   request.client_id, request.client, token)
+        headers.update(self._create_cors_headers(request))
         return headers, json.dumps(token), 200
 
     def validate_token_request(self, request):

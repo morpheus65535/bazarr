@@ -8,7 +8,7 @@ try:
 except ImportError as e:
     HTML5LIB_PRESENT = False
 from bs4.element import SoupStrainer
-from bs4.testing import (
+from . import (
     HTML5TreeBuilderSmokeTest,
     SoupTest,
     skipIf,
@@ -17,7 +17,7 @@ from bs4.testing import (
 @skipIf(
     not HTML5LIB_PRESENT,
     "html5lib seems not to be present, not testing its tree builder.")
-class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
+class TestHTML5LibBuilder(SoupTest, HTML5TreeBuilderSmokeTest):
     """See ``HTML5TreeBuilderSmokeTest``."""
 
     @property
@@ -30,12 +30,9 @@ class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
         markup = "<p>A <b>bold</b> statement.</p>"
         with warnings.catch_warnings(record=True) as w:
             soup = self.soup(markup, parse_only=strainer)
-        self.assertEqual(
-            soup.decode(), self.document_for(markup))
+        assert soup.decode() == self.document_for(markup)
 
-        self.assertTrue(
-            "the html5lib tree builder doesn't support parse_only" in
-            str(w[0].message))
+        assert "the html5lib tree builder doesn't support parse_only" in str(w[0].message)
 
     def test_correctly_nested_tables(self):
         """html5lib inserts <tbody> tags where other parsers don't."""
@@ -46,13 +43,13 @@ class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
                   '<tr><td>foo</td></tr>'
                   '</table></td>')
 
-        self.assertSoupEquals(
+        self.assert_soup(
             markup,
             '<table id="1"><tbody><tr><td>Here\'s another table:'
             '<table id="2"><tbody><tr><td>foo</td></tr></tbody></table>'
             '</td></tr></tbody></table>')
 
-        self.assertSoupEquals(
+        self.assert_soup(
             "<table><thead><tr><td>Foo</td></tr></thead>"
             "<tbody><tr><td>Bar</td></tr></tbody>"
             "<tfoot><tr><td>Baz</td></tr></tfoot></table>")
@@ -69,20 +66,20 @@ class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
 </html>'''
         soup = self.soup(markup)
         # Verify that we can reach the <p> tag; this means the tree is connected.
-        self.assertEqual(b"<p>foo</p>", soup.p.encode())
+        assert b"<p>foo</p>" == soup.p.encode()
 
     def test_reparented_markup(self):
         markup = '<p><em>foo</p>\n<p>bar<a></a></em></p>'
         soup = self.soup(markup)
-        self.assertEqual("<body><p><em>foo</em></p><em>\n</em><p><em>bar<a></a></em></p></body>", soup.body.decode())
-        self.assertEqual(2, len(soup.find_all('p')))
+        assert "<body><p><em>foo</em></p><em>\n</em><p><em>bar<a></a></em></p></body>" == soup.body.decode()
+        assert 2 == len(soup.find_all('p'))
 
 
     def test_reparented_markup_ends_with_whitespace(self):
         markup = '<p><em>foo</p>\n<p>bar<a></a></em></p>\n'
         soup = self.soup(markup)
-        self.assertEqual("<body><p><em>foo</em></p><em>\n</em><p><em>bar<a></a></em></p>\n</body>", soup.body.decode())
-        self.assertEqual(2, len(soup.find_all('p')))
+        assert "<body><p><em>foo</em></p><em>\n</em><p><em>bar<a></a></em></p>\n</body>" == soup.body.decode()
+        assert 2 == len(soup.find_all('p'))
 
     def test_reparented_markup_containing_identical_whitespace_nodes(self):
         """Verify that we keep the two whitespace nodes in this
@@ -99,7 +96,7 @@ class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
         markup = '<div><a>aftermath<p><noscript>target</noscript>aftermath</a></p></div>'
         soup = self.soup(markup)
         noscript = soup.noscript
-        self.assertEqual("target", noscript.next_element)
+        assert "target" == noscript.next_element
         target = soup.find(string='target')
 
         # The 'aftermath' string was duplicated; we want the second one.
@@ -108,8 +105,8 @@ class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
         # The <noscript> tag was moved beneath a copy of the <a> tag,
         # but the 'target' string within is still connected to the
         # (second) 'aftermath' string.
-        self.assertEqual(final_aftermath, target.next_element)
-        self.assertEqual(target, final_aftermath.previous_element)
+        assert final_aftermath == target.next_element
+        assert target == final_aftermath.previous_element
         
     def test_processing_instruction(self):
         """Processing instructions become comments."""
@@ -121,13 +118,13 @@ class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
         markup = b"""<a class="my_class"><p></a>"""
         soup = self.soup(markup)
         a1, a2 = soup.find_all('a')
-        self.assertEqual(a1, a2)
+        assert a1 == a2
         assert a1 is not a2
 
     def test_foster_parenting(self):
         markup = b"""<table><td></tbody>A"""
         soup = self.soup(markup)
-        self.assertEqual("<body>A<table><tbody><tr><td></td></tr></tbody></table></body>", soup.body.decode())
+        assert "<body>A<table><tbody><tr><td></td></tr></tbody></table></body>" == soup.body.decode()
 
     def test_extraction(self):
         """
@@ -145,7 +142,7 @@ class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
         [s.extract() for s in soup('script')]
         [s.extract() for s in soup('style')]
 
-        self.assertEqual(len(soup.find_all("p")), 1)
+        assert len(soup.find_all("p")) == 1
 
     def test_empty_comment(self):
         """
@@ -167,21 +164,21 @@ class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
         inputs = []
         for form in soup.find_all('form'):
             inputs.extend(form.find_all('input'))
-        self.assertEqual(len(inputs), 1)
+        assert len(inputs) == 1
 
     def test_tracking_line_numbers(self):
         # The html.parser TreeBuilder keeps track of line number and
         # position of each element.
         markup = "\n   <p>\n\n<sourceline>\n<b>text</b></sourceline><sourcepos></p>"
         soup = self.soup(markup)
-        self.assertEqual(2, soup.p.sourceline)
-        self.assertEqual(5, soup.p.sourcepos)
-        self.assertEqual("sourceline", soup.p.find('sourceline').name)
+        assert 2 == soup.p.sourceline
+        assert 5 == soup.p.sourcepos
+        assert "sourceline" == soup.p.find('sourceline').name
 
         # You can deactivate this behavior.
         soup = self.soup(markup, store_line_numbers=False)
-        self.assertEqual("sourceline", soup.p.sourceline.name)
-        self.assertEqual("sourcepos", soup.p.sourcepos.name)
+        assert "sourceline" == soup.p.sourceline.name
+        assert "sourcepos" == soup.p.sourcepos.name
 
     def test_special_string_containers(self):
         # The html5lib tree builder doesn't support this standard feature,
@@ -219,8 +216,8 @@ class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
             div = self.soup(markup).div
             without_element = div.encode()
             expect = b"<div>%s</div>" % output_unicode.encode("utf8")
-            self.assertEqual(without_element, expect)
+            assert without_element == expect
 
             with_element = div.encode(formatter="html")
             expect = b"<div>%s</div>" % output_element
-            self.assertEqual(with_element, expect)
+            assert with_element == expect

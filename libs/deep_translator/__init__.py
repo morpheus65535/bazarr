@@ -14,7 +14,7 @@ from deep_translator.yandex import YandexTranslator
 
 __author__ = """Nidhal Baccouri"""
 __email__ = "nidhalbacc@gmail.com"
-__version__ = "1.8.0"
+__version__ = "1.9.1"
 
 __all__ = [
     "GoogleTranslator",

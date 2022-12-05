@@ -159,7 +159,7 @@ class Serializer:
                 "Could not load the payload because an exception"
                 " occurred on unserializing the data.",
                 original_error=e,
-            )
+            ) from e
 
     def dump_payload(self, obj: _t.Any) -> bytes:
         """Dumps the encoded object. The return value is always bytes.

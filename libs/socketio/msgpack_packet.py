@@ -13,6 +13,6 @@ class MsgPackPacket(packet.Packet):
         """Decode a transmitted package."""
         decoded = msgpack.loads(encoded_packet)
         self.packet_type = decoded['type']
-        self.data = decoded['data']
+        self.data = decoded.get('data')
         self.id = decoded.get('id')
         self.namespace = decoded['nsp']

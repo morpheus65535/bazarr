@@ -84,3 +84,18 @@ def get_ban_list(profile_id):
             return {'must_contain': profile['mustContain'] or [],
                     'must_not_contain': profile['mustNotContain'] or []}
     return None
+
+
+def _set_forced_providers(pool, also_forced=False, forced_required=False):
+    # TODO: maybe a separate pool for forced configs? also_foreign/only_foreign is hardcoded
+    # in get_providers and this causes updating the pool on every call
+    if also_forced and forced_required:
+        logging.debug('also_forced and forced_required cannot be both True. also_forced will prevail.')
+        forced_required = False
+    pool.provider_configs.update(
+        {
+            "podnapisi": {'also_foreign': also_forced, "only_foreign": forced_required},
+            "subscene": {"only_foreign": forced_required},
+            "opensubtitles": {'also_foreign': also_forced, "only_foreign": forced_required}
+        }
+    )

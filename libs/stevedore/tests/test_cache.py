@@ -54,3 +54,11 @@ class TestCache(utils.TestCase):
         mock_open.side_effect = IOError
         sot._get_data_for_path('fake')
         mock_mkdir.assert_not_called()
+
+    def test__build_cacheable_data(self):
+        # this is a rubbish test as we don't actually do anything with the
+        # data, but it's too hard to script since it's totally environmentally
+        # dependent and mocking out the underlying calls would remove the value
+        # of this test (we want to test those underlying API calls)
+        ret = _cache._build_cacheable_data()
+        self.assertIsInstance(ret['groups'], dict)

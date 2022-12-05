@@ -4,7 +4,7 @@
 
     Lexers for Haskell and related languages.
 
-    :copyright: Copyright 2006-2021 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -31,11 +31,10 @@ class HaskellLexer(RegexLexer):
     .. versionadded:: 0.8
     """
     name = 'Haskell'
+    url = 'https://www.haskell.org/'
     aliases = ['haskell', 'hs']
     filenames = ['*.hs']
     mimetypes = ['text/x-haskell']
-
-    flags = re.MULTILINE | re.UNICODE
 
     reserved = ('case', 'class', 'data', 'default', 'deriving', 'do', 'else',
                 'family', 'if', 'in', 'infix[lr]?', 'instance',
@@ -189,6 +188,7 @@ class IdrisLexer(RegexLexer):
     .. versionadded:: 2.0
     """
     name = 'Idris'
+    url = 'https://www.idris-lang.org/'
     aliases = ['idris', 'idr']
     filenames = ['*.idr']
     mimetypes = ['text/x-idris']
@@ -293,30 +293,34 @@ class IdrisLexer(RegexLexer):
 
 class AgdaLexer(RegexLexer):
     """
-    For the `Agda <http://wiki.portal.chalmers.se/agda/pmwiki.php>`_
-    dependently typed functional programming language and proof assistant.
+    For the Agda dependently typed functional programming language and
+    proof assistant.
 
     .. versionadded:: 2.0
     """
 
     name = 'Agda'
+    url = 'http://wiki.portal.chalmers.se/agda/pmwiki.php'
     aliases = ['agda']
     filenames = ['*.agda']
     mimetypes = ['text/x-agda']
 
-    reserved = ['abstract', 'codata', 'coinductive', 'constructor', 'data',
-                'field', 'forall', 'hiding', 'in', 'inductive', 'infix',
-                'infixl', 'infixr', 'instance', 'let', 'mutual', 'open',
-                'pattern', 'postulate', 'primitive', 'private',
-                'quote', 'quoteGoal', 'quoteTerm',
-                'record', 'renaming', 'rewrite', 'syntax', 'tactic',
-                'unquote', 'unquoteDecl', 'using', 'where', 'with']
+    reserved = (
+        'abstract', 'codata', 'coinductive', 'constructor', 'data', 'do',
+        'eta-equality', 'field', 'forall', 'hiding', 'in', 'inductive', 'infix',
+        'infixl', 'infixr', 'instance', 'interleaved', 'let', 'macro', 'mutual',
+        'no-eta-equality', 'open', 'overlap', 'pattern', 'postulate', 'primitive',
+        'private', 'quote', 'quoteTerm', 'record', 'renaming', 'rewrite',
+        'syntax', 'tactic', 'unquote', 'unquoteDecl', 'unquoteDef', 'using',
+        'variable', 'where', 'with',
+    )
 
     tokens = {
         'root': [
             # Declaration
             (r'^(\s*)([^\s(){}]+)(\s*)(:)(\s*)',
-             bygroups(Whitespace, Name.Function, Whitespace, Operator.Word, Whitespace)),
+             bygroups(Whitespace, Name.Function, Whitespace,
+                      Operator.Word, Whitespace)),
             # Comments
             (r'--(?![!#$%&*+./<=>?@^|_~:\\]).*?$', Comment.Single),
             (r'\{-', Comment.Multiline, 'comment'),
@@ -325,7 +329,8 @@ class AgdaLexer(RegexLexer):
             # Lexemes:
             #  Identifiers
             (r'\b(%s)(?!\')\b' % '|'.join(reserved), Keyword.Reserved),
-            (r'(import|module)(\s+)', bygroups(Keyword.Reserved, Whitespace), 'module'),
+            (r'(import|module)(\s+)', bygroups(Keyword.Reserved, Whitespace),
+             'module'),
             (r'\b(Set|Prop)[\u2080-\u2089]*\b', Keyword.Type),
             #  Special Symbols
             (r'(\(|\)|\{|\})', Operator),
@@ -350,7 +355,7 @@ class AgdaLexer(RegexLexer):
         ],
         'module': [
             (r'\{-', Comment.Multiline, 'comment'),
-            (r'[a-zA-Z][\w.]*', Name, '#pop'),
+            (r'[a-zA-Z][\w.\']*', Name, '#pop'),
             (r'[\W0-9_]+', Text)
         ],
         'comment': HaskellLexer.tokens['comment'],
@@ -655,13 +660,13 @@ class LiterateCryptolLexer(LiterateLexer):
 
 class KokaLexer(RegexLexer):
     """
-    Lexer for the `Koka <http://koka.codeplex.com>`_
-    language.
+    Lexer for the Koka language.
 
     .. versionadded:: 1.6
     """
 
     name = 'Koka'
+    url = 'https://koka-lang.github.io/koka/doc/index.html'
     aliases = ['koka']
     filenames = ['*.kk', '*.kki']
     mimetypes = ['text/x-koka']

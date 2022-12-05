@@ -10,7 +10,7 @@ from rebulk.remodule import re
 from ..common import seps
 
 
-class Quantity(object):
+class Quantity:
     """
     Represent a quantity object with magnitude and units.
     """

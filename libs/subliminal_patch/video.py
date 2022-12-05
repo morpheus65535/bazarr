@@ -15,12 +15,36 @@ class Video(Video_):
     audio_languages = None
     external_subtitle_languages = None
 
-    def __init__(self, name, source=None, release_group=None, resolution=None, video_codec=None, audio_codec=None,
-                 imdb_id=None, hashes=None, size=None, subtitle_languages=None, audio_languages=None,
-                 streaming_service=None, edition=None):
-        super(Video, self).__init__(name, source=source, release_group=release_group, resolution=resolution,
-                                    video_codec=video_codec, audio_codec=audio_codec, imdb_id=imdb_id, hashes=hashes,
-                                    size=size, subtitle_languages=subtitle_languages)
+    def __init__(
+        self,
+        name,
+        source=None,
+        release_group=None,
+        resolution=None,
+        video_codec=None,
+        audio_codec=None,
+        imdb_id=None,
+        hashes=None,
+        size=None,
+        subtitle_languages=None,
+        audio_languages=None,
+        streaming_service=None,
+        edition=None,
+        other=None,
+        **kwargs
+    ):
+        super(Video, self).__init__(
+            name,
+            source=source,
+            release_group=release_group,
+            resolution=resolution,
+            video_codec=video_codec,
+            audio_codec=audio_codec,
+            imdb_id=imdb_id,
+            hashes=hashes,
+            size=size,
+            subtitle_languages=subtitle_languages,
+        )
         self.original_name = os.path.basename(name)
         self.plexapi_metadata = {}
         self.hints = {}
@@ -29,3 +53,4 @@ class Video(Video_):
         self.streaming_service = streaming_service
         self.edition = edition
         self.original_path = name
+        self.other = other

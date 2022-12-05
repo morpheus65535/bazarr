@@ -25,7 +25,7 @@ class LingueeTranslator(BaseTranslator):
     """
 
     def __init__(
-        self, source: str, target: str = "en", proxies: Optional[dict] = None, **kwargs
+        self, source: str = "en", target: str = "de", proxies: Optional[dict] = None, **kwargs
     ):
         """
         @param source: source language to translate from
@@ -71,6 +71,8 @@ class LingueeTranslator(BaseTranslator):
                 raise RequestError()
             soup = BeautifulSoup(response.text, "html.parser")
             elements = soup.find_all(self._element_tag, self._element_query)
+            response.close()
+            
             if not elements:
                 raise ElementNotFoundInGetRequest(elements)
 

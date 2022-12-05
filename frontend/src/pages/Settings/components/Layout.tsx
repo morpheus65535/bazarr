@@ -4,35 +4,13 @@ import { LoadingProvider } from "@/contexts";
 import { useOnValueChange } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { usePrompt } from "@/utilities/routers";
-import { useUpdateLocalStorage } from "@/utilities/storage";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 import { Badge, Container, Group, LoadingOverlay } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
-import { enabledLanguageKey, languageProfileKey } from "../keys";
-import { FormContext, FormValues } from "../utilities/FormValues";
+import { FormContext, FormValues, runHooks } from "../utilities/FormValues";
 import { SettingsProvider } from "../utilities/SettingsProvider";
-
-type SubmitHookType = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: (value: any) => unknown;
-};
-
-export const submitHooks: SubmitHookType = {
-  [languageProfileKey]: (value) => JSON.stringify(value),
-  [enabledLanguageKey]: (value: Language.Info[]) => value.map((v) => v.code2),
-};
-
-function invokeHooks(settings: LooseObject) {
-  for (const key in settings) {
-    if (key in submitHooks) {
-      const value = settings[key];
-      const fn = submitHooks[key];
-      settings[key] = fn(value);
-    }
-  }
-}
 
 interface Props {
   name: string;
@@ -48,7 +26,7 @@ const Layout: FunctionComponent<Props> = (props) => {
   const form = useForm<FormValues>({
     initialValues: {
       settings: {},
-      storages: {},
+      hooks: {},
     },
   });
 
@@ -58,33 +36,23 @@ const Layout: FunctionComponent<Props> = (props) => {
     }
   });
 
-  const updateStorage = useUpdateLocalStorage();
-
   const submit = useCallback(
     (values: FormValues) => {
-      const { settings, storages } = values;
+      const { settings, hooks } = values;
 
       if (Object.keys(settings).length > 0) {
         const settingsToSubmit = { ...settings };
-        invokeHooks(settingsToSubmit);
+        runHooks(hooks, settingsToSubmit);
         LOG("info", "submitting settings", settingsToSubmit);
         mutate(settingsToSubmit);
       }
-
-      if (Object.keys(storages).length > 0) {
-        const storagesToSubmit = { ...storages };
-        LOG("info", "submitting storages", storagesToSubmit);
-        updateStorage(storagesToSubmit);
-      }
     },
-    [mutate, updateStorage]
+    [mutate]
   );
 
   const totalStagedCount = useMemo(() => {
-    const object = { ...form.values.settings, ...form.values.storages };
-
-    return Object.keys(object).length;
-  }, [form.values.settings, form.values.storages]);
+    return Object.keys(form.values.settings).length;
+  }, [form.values.settings]);
 
   usePrompt(
     totalStagedCount > 0,
@@ -93,14 +61,11 @@ const Layout: FunctionComponent<Props> = (props) => {
 
   useDocumentTitle(`${name} - Bazarr (Settings)`);
 
-  if (settings === undefined) {
-    return <LoadingOverlay visible></LoadingOverlay>;
-  }
-
   return (
-    <SettingsProvider value={settings}>
+    <SettingsProvider value={settings ?? null}>
       <LoadingProvider value={isLoading || isMutating}>
-        <form onSubmit={form.onSubmit(submit)}>
+        <form onSubmit={form.onSubmit(submit)} style={{ position: "relative" }}>
+          <LoadingOverlay visible={settings === undefined}></LoadingOverlay>
           <Toolbox>
             <Group>
               <Toolbox.Button

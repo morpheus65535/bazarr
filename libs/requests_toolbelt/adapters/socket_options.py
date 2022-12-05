@@ -84,9 +84,9 @@ class TCPKeepAliveAdapter(SocketOptionsAdapter):
 
     The latter three can be overridden by keyword arguments (respectively):
 
-    - ``idle``
     - ``interval``
     - ``count``
+    - ``idle``
 
     You can use this adapter like so::
 

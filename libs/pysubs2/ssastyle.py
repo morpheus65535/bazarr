@@ -30,11 +30,11 @@ class SSAStyle:
 
     fontname: str = "Arial"  #: Font name
     fontsize: float = 20.0  #: Font size (in pixels)
-    primarycolor: Color = Color(255, 255, 255, 0)  #: Primary color (:class:`pysubs2.Color` instance)
-    secondarycolor: Color = Color(255, 0, 0, 0)  #: Secondary color (:class:`pysubs2.Color` instance)
-    tertiarycolor: Color = Color(0, 0, 0, 0)  #: Tertiary color (:class:`pysubs2.Color` instance)
-    outlinecolor: Color = Color(0, 0, 0, 0)  #: Outline color (:class:`pysubs2.Color` instance)
-    backcolor: Color = Color(0, 0, 0, 0)  #: Back, ie. shadow color (:class:`pysubs2.Color` instance)
+    primarycolor: Color = dataclasses.field(default_factory=lambda: Color(255, 255, 255, 0))  #: Primary color (:class:`pysubs2.Color` instance)
+    secondarycolor: Color = dataclasses.field(default_factory=lambda: Color(255, 0, 0, 0))  #: Secondary color (:class:`pysubs2.Color` instance)
+    tertiarycolor: Color = dataclasses.field(default_factory=lambda: Color(0, 0, 0, 0))  #: Tertiary color (:class:`pysubs2.Color` instance)
+    outlinecolor: Color = dataclasses.field(default_factory=lambda: Color(0, 0, 0, 0))  #: Outline color (:class:`pysubs2.Color` instance)
+    backcolor: Color = dataclasses.field(default_factory=lambda: Color(0, 0, 0, 0))  #: Back, ie. shadow color (:class:`pysubs2.Color` instance)
     bold: bool = False  #: Bold
     italic: bool = False  #: Italic
     underline: bool = False  #: Underline (ASS only)

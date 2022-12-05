@@ -1,4 +1,5 @@
 import warnings
+from base64 import standard_b64encode
 from datetime import datetime, date, time, timedelta
 from decimal import Decimal
 from fractions import Fraction
@@ -7,7 +8,7 @@ from json import JSONEncoder
 from sys import version, stderr
 
 from .utils import hashodict, get_module_name_from_object, NoEnumException, NoPandasException, \
-	NoNumpyException, str_type, JsonTricksDeprecation, gzip_compress, filtered_wrapper
+	NoNumpyException, str_type, JsonTricksDeprecation, gzip_compress, filtered_wrapper, is_py3
 
 
 def _fallback_wrapper(encoder):
@@ -186,9 +187,12 @@ def class_instance_encode(obj, primitives=False):
 			slots = obj.__slots__
 			if isinstance(slots, str):
 				slots = [slots]
-			slots = list(item for item in slots if item != '__dict__')
 			dct['slots'] = hashodict([])
 			for s in slots:
+				if s == '__dict__':
+					continue
+				if s == '__weakref__':
+					continue
 				dct['slots'][s] = getattr(obj, s)
 		if hasattr(obj, '__dict__'):
 			dct['attributes'] = hashodict(obj.__dict__)
@@ -203,7 +207,7 @@ def class_instance_encode(obj, primitives=False):
 
 def json_complex_encode(obj, primitives=False):
 	"""
-	Encode a complex number as a json dictionary of it's real and imaginary part.
+	Encode a complex number as a json dictionary of its real and imaginary part.
 
 	:param obj: complex number, e.g. `2+1j`
 	:return: (dict) json primitives representation of `obj`
@@ -213,6 +217,29 @@ def json_complex_encode(obj, primitives=False):
 			return [obj.real, obj.imag]
 		else:
 			return hashodict(__complex__=[obj.real, obj.imag])
+	return obj
+
+
+def bytes_encode(obj, primitives=False):
+	"""
+	Encode bytes as one of these:
+
+	* A utf8-string with special `__bytes_utf8__` marking, if the bytes are valid utf8 and primitives is False.
+	* A base64 encoded string of the bytes with special `__bytes_b64__` marking, if the bytes are not utf8, or if primitives is True.
+
+	:param obj: any object, which will be transformed if it is of type bytes
+	:return: (dict) json primitives representation of `obj`
+	"""
+	if isinstance(obj, bytes):
+		if not is_py3:
+			return obj
+		if primitives:
+			return hashodict(__bytes_b64__=standard_b64encode(obj).decode('ascii'))
+		else:
+			try:
+				return hashodict(__bytes_utf8__=obj.decode('utf-8'))
+			except UnicodeDecodeError:
+				return hashodict(__bytes_b64__=standard_b64encode(obj).decode('ascii'))
 	return obj
 
 
@@ -242,14 +269,14 @@ def numeric_types_encode(obj, primitives=False):
 
 
 def pathlib_encode(obj, primitives=False):
-    from pathlib import Path
-    if not isinstance(obj, Path):
-        return obj
+	from pathlib import Path
+	if not isinstance(obj, Path):
+		return obj
 
-    if primitives:
-        return str(obj)
+	if primitives:
+		return str(obj)
 
-    return {'__pathlib__': str(obj)}
+	return {'__pathlib__': str(obj)}
 
 
 class ClassInstanceEncoder(JSONEncoder):

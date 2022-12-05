@@ -69,6 +69,7 @@ class PonsTranslator(BaseTranslator):
 
             soup = BeautifulSoup(response.text, "html.parser")
             elements = soup.findAll(self._element_tag, self._element_query)
+            response.close()
 
             if not elements:
                 raise ElementNotFoundInGetRequest(word)

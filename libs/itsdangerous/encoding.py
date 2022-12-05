@@ -34,8 +34,8 @@ def base64_decode(string: _t_str_bytes) -> bytes:
 
     try:
         return base64.urlsafe_b64decode(string)
-    except (TypeError, ValueError):
-        raise BadData("Invalid base64-encoded data")
+    except (TypeError, ValueError) as e:
+        raise BadData("Invalid base64-encoded data") from e
 
 
 # The alphabet used by base64.urlsafe_*

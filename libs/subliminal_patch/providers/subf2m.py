@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 
+from difflib import SequenceMatcher
 import functools
 import logging
+import re
+import time
+import urllib.parse
 
 from bs4 import BeautifulSoup as bso
 from guessit import guessit
@@ -28,11 +32,12 @@ class Subf2mSubtitle(Subtitle):
 
         self.release_info = release_info
         self.episode_number = episode_number
+        self.episode_title = None
 
         self._matches = set(
             ("title", "year")
             if episode_number is None
-            else ("title", "series", "season", "episode")
+            else ("title", "series", "year", "season", "episode")
         )
 
     def get_matches(self, video):
@@ -82,12 +87,39 @@ _LANGUAGE_MAP = {
     "dutch": "dut",
     "hebrew": "heb",
     "indonesian": "ind",
+    "danish": "dan",
+    "norwegian": "nor",
+    "bengali": "ben",
+    "bulgarian": "bul",
+    "croatian": "hrv",
+    "swedish": "swe",
+    "vietnamese": "vie",
+    "czech": "cze",
+    "finnish": "fin",
+    "french": "fre",
+    "german": "ger",
+    "greek": "gre",
+    "hungarian": "hun",
+    "icelandic": "ice",
+    "japanese": "jpn",
+    "macedonian": "mac",
+    "malay": "may",
+    "polish": "pol",
+    "romanian": "rum",
+    "russian": "rus",
+    "serbian": "srp",
+    "thai": "tha",
+    "turkish": "tur",
 }
 
 
 class Subf2mProvider(Provider):
     provider_name = "subf2m"
 
+    _movie_title_regex = re.compile(r"^(.+?)( \((\d{4})\))?$")
+    _tv_show_title_regex = re.compile(
+        r"^(.+?) [-\(]\s?(.*?) (season|series)\)?( \((\d{4})\))?$"
+    )
     _supported_languages = {}
     _supported_languages["brazillian-portuguese"] = Language("por", "BR")
 
@@ -110,12 +142,34 @@ class Subf2mProvider(Provider):
     def terminate(self):
         self._session.close()
 
+    def _safe_get_text(self, url, retry=3, default_return=""):
+        req = None
+
+        for n in range(retry):
+            req = self._session.get(url, stream=True)
+            # Sometimes subf2m will return a 503 code. This error usually disappears
+            # retrying the query
+            if req.status_code == 503:
+                logger.debug("503 returned. Trying again [%d] in 3 seconds", n + 1)
+                time.sleep(3)
+                continue
+            else:
+                req.raise_for_status()
+                break
+
+        if req is not None:
+            return "\n".join(
+                line for line in req.iter_lines(decode_unicode=True) if line
+            )
+
+        return default_return
+
     def _gen_results(self, query):
-        req = self._session.get(
-            f"{_BASE_URL}/subtitles/searchbytitle?query={query.replace(' ', '+')}&l=",
-            stream=True,
-        )
-        text = "\n".join(line for line in req.iter_lines(decode_unicode=True) if line)
+        query = urllib.parse.quote(query)
+
+        url = f"{_BASE_URL}/subtitles/searchbytitle?query={query}&l="
+
+        text = self._safe_get_text(url)
         soup = bso(text, "html.parser")
 
         for title in soup.select("li div[class='title'] a"):
@@ -123,35 +177,70 @@ class Subf2mProvider(Provider):
 
     def _search_movie(self, title, year):
         title = title.lower()
-        year = f"({year})"
+        year = str(year)
 
         found_movie = None
 
+        results = []
         for result in self._gen_results(title):
             text = result.text.lower()
-            if title.lower() in text and year in text:
-                found_movie = result.get("href")
-                logger.debug("Movie found: %s", found_movie)
-                break
+            match = self._movie_title_regex.match(text)
+            if not match:
+                continue
+            match_title = match.group(1)
+            match_year = match.group(3)
+            if year == match_year:
+                results.append(
+                    {
+                        "href": result.get("href"),
+                        "similarity": SequenceMatcher(None, title, match_title).ratio(),
+                    }
+                )
 
+        if results:
+            results.sort(key=lambda x: x["similarity"], reverse=True)
+            found_movie = results[0]["href"]
+            logger.debug("Movie found: %s", results[0])
         return found_movie
 
-    def _search_tv_show_season(self, title, season):
+    def _search_tv_show_season(self, title, season, year=None):
         try:
-            season_str = f"{_SEASONS[season - 1]} Season"
+            season_str = _SEASONS[season - 1].lower()
         except IndexError:
             logger.debug("Season number not supported: %s", season)
             return None
 
-        expected_result = f"{title} - {season_str}".lower()
-
         found_tv_show_season = None
 
+        results = []
         for result in self._gen_results(title):
-            if expected_result in result.text.lower():
-                found_tv_show_season = result.get("href")
-                logger.debug("TV Show season found: %s", found_tv_show_season)
-                break
+            text = result.text.lower()
+
+            match = self._tv_show_title_regex.match(text)
+            if not match:
+                logger.debug("Series title not matched: %s", text)
+                continue
+            else:
+                logger.debug("Series title matched: %s", text)
+
+            match_title = match.group(1)
+            match_season = match.group(2)
+
+            # Match "complete series" titles as they usually contain season packs
+            if season_str == match_season or "complete" in match_season:
+                plus = 0.1 if year and str(year) in text else 0
+                results.append(
+                    {
+                        "href": result.get("href"),
+                        "similarity": SequenceMatcher(None, title, match_title).ratio()
+                        + plus,
+                    }
+                )
+
+        if results:
+            results.sort(key=lambda x: x["similarity"], reverse=True)
+            found_tv_show_season = results[0]["href"]
+            logger.debug("TV Show season found: %s", results[0])
 
         return found_tv_show_season
 
@@ -169,7 +258,9 @@ class Subf2mProvider(Provider):
 
         return subtitles
 
-    def _find_episode_subtitles(self, path, season, episode, language):
+    def _find_episode_subtitles(
+        self, path, season, episode, language, episode_title=None
+    ):
         soup = self._get_subtitle_page_soup(path, language)
 
         subtitles = []
@@ -185,8 +276,12 @@ class Subf2mProvider(Provider):
             guess = _memoized_episode_guess(clean_text)
 
             if "season" not in guess:
-                logger.debug("Nothing guessed from release: %s", clean_text)
-                continue
+                if "complete series" in clean_text.lower():
+                    logger.debug("Complete series pack found: %s", clean_text)
+                    guess["season"] = [season]
+                else:
+                    logger.debug("Nothing guessed from release: %s", clean_text)
+                    continue
 
             if season in guess["season"] and episode in guess.get("episode", []):
                 logger.debug("Episode match found: %s - %s", guess, clean_text)
@@ -204,6 +299,8 @@ class Subf2mProvider(Provider):
             if subtitle is None:
                 continue
 
+            subtitle.episode_title = episode_title
+
             logger.debug("Found subtitle: %s", subtitle)
             subtitles.append(subtitle)
 
@@ -212,8 +309,7 @@ class Subf2mProvider(Provider):
     def _get_subtitle_page_soup(self, path, language):
         language_path = self._supported_languages_reversed[language]
 
-        req = self._session.get(f"{_BASE_URL}{path}/{language_path}", stream=True)
-        text = "\n".join(line for line in req.iter_lines(decode_unicode=True) if line)
+        text = self._safe_get_text(f"{_BASE_URL}{path}/{language_path}")
 
         return bso(text, "html.parser")
 
@@ -221,7 +317,7 @@ class Subf2mProvider(Provider):
         is_episode = isinstance(video, Episode)
 
         if is_episode:
-            result = self._search_tv_show_season(video.series, video.season)
+            result = self._search_tv_show_season(video.series, video.season, video.year)
         else:
             result = self._search_movie(video.title, video.year)
 
@@ -235,7 +331,7 @@ class Subf2mProvider(Provider):
             if is_episode:
                 subtitles.extend(
                     self._find_episode_subtitles(
-                        result, video.season, video.episode, language
+                        result, video.season, video.episode, language, video.title
                     )
                 )
             else:
@@ -246,14 +342,13 @@ class Subf2mProvider(Provider):
     def download_subtitle(self, subtitle):
         # TODO: add MustGetBlacklisted support
 
-        req = self._session.get(subtitle.page_link, stream=True)
-        text = "\n".join(line for line in req.iter_lines(decode_unicode=True) if line)
+        text = self._safe_get_text(subtitle.page_link)
         soup = bso(text, "html.parser")
         try:
             download_url = _BASE_URL + str(
                 soup.select_one("a[id='downloadButton']")["href"]  # type: ignore
             )
-        except (AttributeError, KeyError):
+        except (AttributeError, KeyError, TypeError):
             raise APIThrottled(f"Couldn't get download url from {subtitle.page_link}")
 
         downloaded = self._session.get(download_url, allow_redirects=True)
@@ -264,7 +359,9 @@ class Subf2mProvider(Provider):
             raise APIThrottled(f"Invalid archive: {subtitle.page_link}")
 
         subtitle.content = get_subtitle_from_archive(
-            archive, episode=subtitle.episode_number
+            archive,
+            episode=subtitle.episode_number,
+            episode_title=subtitle.episode_title,
         )
 
 

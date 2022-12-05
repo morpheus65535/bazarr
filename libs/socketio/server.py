@@ -49,6 +49,11 @@ class Server(object):
                            connect handler and your client is confused when it
                            receives events before the connection acceptance.
                            In any other case use the default of ``False``.
+    :param namespaces: a list of namespaces that are accepted, in addition to
+                       any namespaces for which handlers have been defined. The
+                       default is `['/']`, which always accepts connections to
+                       the default namespace. Set to `'*'` to accept all
+                       namespaces.
     :param kwargs: Connection parameters for the underlying Engine.IO server.
 
     The Engine.IO configuration supports the following settings:
@@ -110,7 +115,7 @@ class Server(object):
 
     def __init__(self, client_manager=None, logger=False, serializer='default',
                  json=None, async_handlers=True, always_connect=False,
-                 **kwargs):
+                 namespaces=None, **kwargs):
         engineio_options = kwargs
         engineio_logger = engineio_options.pop('engineio_logger', None)
         if engineio_logger is not None:
@@ -134,6 +139,7 @@ class Server(object):
         self.environ = {}
         self.handlers = {}
         self.namespace_handlers = {}
+        self.not_handled = object()
 
         self._binary_packet = {}
 
@@ -156,6 +162,7 @@ class Server(object):
 
         self.async_handlers = async_handlers
         self.always_connect = always_connect
+        self.namespaces = namespaces or ['/']
 
         self.async_mode = self.eio.async_mode
 
@@ -558,7 +565,8 @@ class Server(object):
             self._send_packet(eio_sid, self.packet_class(
                 packet.DISCONNECT, namespace=namespace))
             self._trigger_event('disconnect', namespace, sid)
-            self.manager.disconnect(sid, namespace=namespace)
+            self.manager.disconnect(sid, namespace=namespace,
+                                    ignore_queue=True)
 
     def transport(self, sid):
         """Return the name of the transport used by the client.
@@ -648,7 +656,10 @@ class Server(object):
     def _handle_connect(self, eio_sid, namespace, data):
         """Handle a client connection request."""
         namespace = namespace or '/'
-        sid = self.manager.connect(eio_sid, namespace)
+        sid = None
+        if namespace in self.handlers or namespace in self.namespace_handlers \
+                or self.namespaces == '*' or namespace in self.namespaces:
+            sid = self.manager.connect(eio_sid, namespace)
         if sid is None:
             self._send_packet(eio_sid, self.packet_class(
                 packet.CONNECT_ERROR, data='Unable to connect',
@@ -683,7 +694,7 @@ class Server(object):
                 self._send_packet(eio_sid, self.packet_class(
                     packet.CONNECT_ERROR, data=fail_reason,
                     namespace=namespace))
-            self.manager.disconnect(sid, namespace)
+            self.manager.disconnect(sid, namespace, ignore_queue=True)
         elif not self.always_connect:
             self._send_packet(eio_sid, self.packet_class(
                 packet.CONNECT, {'sid': sid}, namespace=namespace))
@@ -696,7 +707,7 @@ class Server(object):
             return
         self.manager.pre_disconnect(sid, namespace=namespace)
         self._trigger_event('disconnect', namespace, sid)
-        self.manager.disconnect(sid, namespace)
+        self.manager.disconnect(sid, namespace, ignore_queue=True)
 
     def _handle_event(self, eio_sid, namespace, id, data):
         """Handle an incoming client event."""
@@ -718,7 +729,7 @@ class Server(object):
     def _handle_event_internal(self, server, sid, eio_sid, data, namespace,
                                id):
         r = server._trigger_event(data[0], namespace, sid, *data[1:])
-        if id is not None:
+        if r != self.not_handled and id is not None:
             # send ACK packet with the response returned by the handler
             # tuples are expanded as multiple arguments
             if r is None:
@@ -746,9 +757,11 @@ class Server(object):
             elif event not in self.reserved_events and \
                     '*' in self.handlers[namespace]:
                 return self.handlers[namespace]['*'](event, *args)
+            else:
+                return self.not_handled
 
         # or else, forward the event to a namespace handler if one exists
-        elif namespace in self.namespace_handlers:
+        elif namespace in self.namespace_handlers:  # pragma: no branch
             return self.namespace_handlers[namespace].trigger_event(
                 event, *args)
 

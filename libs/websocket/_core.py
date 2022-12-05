@@ -1,27 +1,3 @@
-"""
-_core.py
-====================================
-WebSocket Python client
-"""
-
-"""
-_core.py
-websocket - WebSocket client library for Python
-
-Copyright 2021 engn33r
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
 import socket
 import struct
 import threading
@@ -37,6 +13,25 @@ from ._socket import *
 from ._ssl_compat import *
 from ._utils import *
 
+"""
+_core.py
+websocket - WebSocket client library for Python
+
+Copyright 2022 engn33r
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 __all__ = ['WebSocket', 'create_connection']
 
 
@@ -51,8 +46,11 @@ class WebSocket:
 
     >>> import websocket
     >>> ws = websocket.WebSocket()
-    >>> ws.connect("ws://echo.websocket.org")
+    >>> ws.connect("ws://echo.websocket.events")
+    >>> ws.recv()
+    'echo.websocket.events sponsored by Lob.com'
     >>> ws.send("Hello, Server")
+    19
     >>> ws.recv()
     'Hello, Server'
     >>> ws.close()
@@ -208,7 +206,7 @@ class WebSocket:
         If you set "header" list object, you can set your own custom header.
 
         >>> ws = WebSocket()
-        >>> ws.connect("ws://echo.websocket.org/",
+        >>> ws.connect("ws://echo.websocket.events",
                 ...     header=["User-Agent: MyProgram",
                 ...             "x-custom: header"])
 
@@ -238,6 +236,8 @@ class WebSocket:
             Whitelisted host names that don't use the proxy.
         http_proxy_auth: tuple
             HTTP proxy auth information. Tuple of username and password. Default is None.
+        http_proxy_timeout: int or float
+            HTTP proxy timeout, default is 60 sec as per python-socks.
         redirect_limit: int
             Number of redirects to follow.
         subprotocols: list
@@ -250,14 +250,14 @@ class WebSocket:
                                    options.pop('socket', None))
 
         try:
-            self.handshake_response = handshake(self.sock, *addrs, **options)
+            self.handshake_response = handshake(self.sock, url, *addrs, **options)
             for attempt in range(options.pop('redirect_limit', 3)):
                 if self.handshake_response.status in SUPPORTED_REDIRECT_STATUSES:
                     url = self.handshake_response.headers['location']
                     self.sock.close()
                     self.sock, addrs = connect(url, self.sock_opt, proxy_info(**options),
                                                options.pop('socket', None))
-                    self.handshake_response = handshake(self.sock, *addrs, **options)
+                    self.handshake_response = handshake(self.sock, url, *addrs, **options)
             self.connected = True
         except:
             if self.sock:
@@ -286,7 +286,7 @@ class WebSocket:
         """
         Send the data frame.
 
-        >>> ws = create_connection("ws://echo.websocket.org/")
+        >>> ws = create_connection("ws://echo.websocket.events")
         >>> frame = ABNF.create_frame("Hello", ABNF.OPCODE_TEXT)
         >>> ws.send_frame(frame)
         >>> cont_frame = ABNF.create_frame("My name is ", ABNF.OPCODE_CONT, 0)
@@ -546,7 +546,7 @@ def create_connection(url, timeout=None, class_=WebSocket, **options):
     You can customize using 'options'.
     If you set "header" list object, you can set your own custom header.
 
-    >>> conn = create_connection("ws://echo.websocket.org/",
+    >>> conn = create_connection("ws://echo.websocket.events",
          ...     header=["User-Agent: MyProgram",
          ...             "x-custom: header"])
 
@@ -577,6 +577,8 @@ def create_connection(url, timeout=None, class_=WebSocket, **options):
         Whitelisted host names that don't use the proxy.
     http_proxy_auth: tuple
         HTTP proxy auth information. tuple of username and password. Default is None.
+    http_proxy_timeout: int or float
+        HTTP proxy timeout, default is 60 sec as per python-socks.
     enable_multithread: bool
         Enable lock for multithread.
     redirect_limit: int

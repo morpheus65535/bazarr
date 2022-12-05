@@ -23,6 +23,7 @@ from urllib.parse import unquote_to_bytes
 
 from waitress.buffers import OverflowableBuffer
 from waitress.receiver import ChunkedReceiver, FixedStreamReceiver
+from waitress.rfc7230 import HEADER_FIELD_RE, ONLY_DIGIT_RE
 from waitress.utilities import (
     BadRequest,
     RequestEntityTooLarge,
@@ -30,8 +31,6 @@ from waitress.utilities import (
     ServerNotImplemented,
     find_double_newline,
 )
-
-from .rfc7230 import HEADER_FIELD
 
 
 def unquote_bytes_to_wsgi(bytestring):
@@ -104,7 +103,7 @@ class HTTPRequestParser:
                 # If the headers have ended, and we also have part of the body
                 # message in data we still want to validate we aren't going
                 # over our limit for received headers.
-                self.header_bytes_received += index
+                self.header_bytes_received = index
                 consumed = datalen - (len(s) - index)
             else:
                 self.header_bytes_received += datalen
@@ -221,7 +220,7 @@ class HTTPRequestParser:
         headers = self.headers
 
         for line in lines:
-            header = HEADER_FIELD.match(line)
+            header = HEADER_FIELD_RE.match(line)
 
             if not header:
                 raise ParsingError("Invalid header")
@@ -248,6 +247,9 @@ class HTTPRequestParser:
 
         # command, uri, version will be bytes
         command, uri, version = crack_first_line(first_line)
+        # self.request_uri is like nginx's request_uri:
+        # "full original request URI (with arguments)"
+        self.request_uri = uri.decode("latin-1")
         version = version.decode("latin-1")
         command = command.decode("latin-1")
         self.command = command
@@ -314,11 +316,12 @@ class HTTPRequestParser:
                 self.connection_close = True
 
         if not self.chunked:
-            try:
-                cl = int(headers.get("CONTENT_LENGTH", 0))
-            except ValueError:
+            cl = headers.get("CONTENT_LENGTH", "0")
+
+            if not ONLY_DIGIT_RE.match(cl.encode("latin-1")):
                 raise ParsingError("Content-Length is invalid")
 
+            cl = int(cl)
             self.content_length = cl
 
             if cl > 0:

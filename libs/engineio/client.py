@@ -417,7 +417,8 @@ class Client(object):
         try:
             ws = websocket.create_connection(
                 websocket_url + self._get_url_timestamp(), header=headers,
-                cookie=cookies, enable_multithread=True, **extra_options)
+                cookie=cookies, enable_multithread=True,
+                timeout=self.request_timeout, **extra_options)
         except (ConnectionError, IOError, websocket.WebSocketException):
             if upgrade:
                 self.logger.warning(

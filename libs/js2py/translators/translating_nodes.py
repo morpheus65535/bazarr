@@ -14,26 +14,36 @@ if six.PY3:
 LINE_LEN_LIMIT = 400  #  200  # or any other value - the larger the smaller probability of errors :)
 
 
-class ForController:
+class LoopController:
     def __init__(self):
-        self.inside = [False]
-        self.update = ''
+        self.update = [""]
+        self.label_to_update_idx = {}
 
-    def enter_for(self, update):
-        self.inside.append(True)
-        self.update = update
+    def enter(self, update=""):
+        self.update.append(update)
 
-    def leave_for(self):
-        self.inside.pop()
+    def leave(self):
+        self.update.pop()
 
-    def enter_other(self):
-        self.inside.append(False)
+    def get_update(self, label=None):
+        if label is None:
+            return self.update[-1]
+        if label not in self.label_to_update_idx:
+            raise SyntaxError("Undefined label %s" % label)
+        if self.label_to_update_idx[label] >= len(self.update):
+            raise SyntaxError("%s is not a iteration statement label?" % label)
+        return self.update[self.label_to_update_idx[label]]
 
-    def leave_other(self):
-        self.inside.pop()
+    def register_label(self, label):
+        if label in self.label_to_update_idx:
+            raise SyntaxError("label %s already used")
+        self.label_to_update_idx[label] = len(self.update)
 
-    def is_inside(self):
-        return self.inside[-1]
+    def deregister_label(self, label):
+        del self.label_to_update_idx[label]
+
+
+
 
 
 class InlineStack:
@@ -86,9 +96,10 @@ class ContextStack:
 
 
 def clean_stacks():
-    global Context, inline_stack
+    global Context, inline_stack, loop_controller
     Context = ContextStack()
     inline_stack = InlineStack()
+    loop_controller = LoopController()
 
 
 def to_key(literal_or_identifier):
@@ -374,9 +385,14 @@ def BreakStatement(type, label):
 
 def ContinueStatement(type, label):
     if label:
-        return 'raise %s("Continued")\n' % (get_continue_label(label['name']))
+        maybe_update_expr = loop_controller.get_update(label=label['name'])
+        continue_stmt = 'raise %s("Continued")\n' % (get_continue_label(label['name']))
     else:
-        return 'continue\n'
+        maybe_update_expr = loop_controller.get_update()
+        continue_stmt = "continue\n"
+    if maybe_update_expr:
+        return "# continue update\n%s\n%s" % (maybe_update_expr, continue_stmt)
+    return continue_stmt
 
 
 def ReturnStatement(type, argument):
@@ -393,24 +409,28 @@ def DebuggerStatement(type):
 
 
 def DoWhileStatement(type, body, test):
-    inside = trans(body) + 'if not %s:\n' % trans(test) + indent('break\n')
+    loop_controller.enter()
+    body_code = trans(body)
+    loop_controller.leave()
+    inside = body_code + 'if not %s:\n' % trans(test) + indent('break\n')
     result = 'while 1:\n' + indent(inside)
     return result
 
 
 def ForStatement(type, init, test, update, body):
-    update = indent(trans(update)) if update else ''
+    update = trans(update) if update else ''
     init = trans(init) if init else ''
     if not init.endswith('\n'):
         init += '\n'
     test = trans(test) if test else '1'
+    loop_controller.enter(update)
     if not update:
         result = '#for JS loop\n%swhile %s:\n%s%s\n' % (
             init, test, indent(trans(body)), update)
     else:
         result = '#for JS loop\n%swhile %s:\n' % (init, test)
-        body = 'try:\n%sfinally:\n    %s\n' % (indent(trans(body)), update)
-        result += indent(body)
+        result += indent("%s# update\n%s\n" % (trans(body), update))
+    loop_controller.leave()
     return result
 
 
@@ -429,7 +449,9 @@ def ForInStatement(type, left, right, body, each):
         name = left['name']
     else:
         raise RuntimeError('Unusual ForIn loop')
+    loop_controller.enter()
     res += indent('var.put(%s, PyJsTemp)\n' % repr(name) + trans(body))
+    loop_controller.leave()
     return res
 
 
@@ -445,20 +467,23 @@ def IfStatement(type, test, consequent, alternate):
 
 def LabeledStatement(type, label, body):
     # todo consider using smarter approach!
+    label_name = label['name']
+    loop_controller.register_label(label_name)
     inside = trans(body)
+    loop_controller.deregister_label(label_name)
     defs = ''
     if is_iteration_statement(body) and (inside.startswith('while ') or inside.startswith(
             'for ') or inside.startswith('#for')):
         # we have to add contine label as well...
         # 3 or 1 since #for loop type has more lines before real for.
         sep = 1 if not inside.startswith('#for') else 3
-        cont_label = get_continue_label(label['name'])
+        cont_label = get_continue_label(label_name)
         temp = inside.split('\n')
         injected = 'try:\n' + '\n'.join(temp[sep:])
         injected += 'except %s:\n    pass\n' % cont_label
         inside = '\n'.join(temp[:sep]) + '\n' + indent(injected)
         defs += 'class %s(Exception): pass\n' % cont_label
-    break_label = get_break_label(label['name'])
+    break_label = get_break_label(label_name)
     inside = 'try:\n%sexcept %s:\n    pass\n' % (indent(inside), break_label)
     defs += 'class %s(Exception): pass\n' % break_label
     return defs + inside
@@ -553,7 +578,11 @@ def VariableDeclaration(type, declarations, kind):
 
 
 def WhileStatement(type, test, body):
-    result = 'while %s:\n' % trans(test) + indent(trans(body))
+    test_code = trans(test)
+    loop_controller.enter()
+    body_code = trans(body)
+    loop_controller.leave()
+    result = 'while %s:\n' % test_code + indent(body_code)
     return result
 
 

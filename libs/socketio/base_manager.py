@@ -68,6 +68,7 @@ class BaseManager(object):
             return self.rooms[namespace][None][sid] is not None
         except KeyError:
             pass
+        return False
 
     def sid_from_eio_sid(self, eio_sid, namespace):
         try:
@@ -94,7 +95,7 @@ class BaseManager(object):
         self.pending_disconnect[namespace].append(sid)
         return self.rooms[namespace][None].get(sid)
 
-    def disconnect(self, sid, namespace):
+    def disconnect(self, sid, namespace, **kwargs):
         """Register a client disconnect from a namespace."""
         if namespace not in self.rooms:
             return

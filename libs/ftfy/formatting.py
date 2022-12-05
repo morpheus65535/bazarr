@@ -10,6 +10,7 @@ from unicodedata import normalize
 from wcwidth import wcswidth, wcwidth
 from ftfy.fixes import remove_terminal_escapes
 
+
 def character_width(char: str) -> int:
     r"""
     Determine the width that a character is likely to be displayed as in
@@ -70,10 +71,10 @@ def monospaced_width(text: str) -> int:
     #
     # Remove terminal escapes before calculating width, because if they are
     # displayed as intended, they will have zero width.
-    return wcswidth(remove_terminal_escapes(normalize('NFC', text)))
+    return wcswidth(remove_terminal_escapes(normalize("NFC", text)))
 
 
-def display_ljust(text, width, fillchar=' '):
+def display_ljust(text, width, fillchar=" "):
     """
     Return `text` left-justified in a Unicode string whose display width,
     in a monospaced terminal, should be at least `width` character cells.
@@ -107,7 +108,7 @@ def display_ljust(text, width, fillchar=' '):
     return text + fillchar * padding
 
 
-def display_rjust(text, width, fillchar=' '):
+def display_rjust(text, width, fillchar=" "):
     """
     Return `text` right-justified in a Unicode string whose display width,
     in a monospaced terminal, should be at least `width` character cells.
@@ -136,7 +137,7 @@ def display_rjust(text, width, fillchar=' '):
     return fillchar * padding + text
 
 
-def display_center(text, width, fillchar=' '):
+def display_center(text, width, fillchar=" "):
     """
     Return `text` centered in a Unicode string whose display width, in a
     monospaced terminal, should be at least `width` character cells. The rest

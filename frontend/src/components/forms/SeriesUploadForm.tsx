@@ -142,12 +142,12 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
   });
 
   const action = useArrayAction<SubtitleFile>((fn) => {
-    form.setValues(({ files, ...rest }) => {
-      const newFiles = fn(files);
+    form.setValues((values) => {
+      const newFiles = fn(values.files ?? []);
       newFiles.forEach((v) => {
         v.validateResult = validator(v);
       });
-      return { ...rest, files: newFiles };
+      return { ...values, files: newFiles };
     });
   });
 

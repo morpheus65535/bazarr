@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2022 Joshua Bronson. All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,11 +8,11 @@
 """Provide :class:`OnDup` and related functionality."""
 
 
-from collections import namedtuple
 from enum import Enum
+import typing as t
 
 
-class OnDupAction(Enum):
+class OD(Enum):
     """An action to take to prevent duplication from occurring."""
 
     #: Raise a :class:`~bidict.DuplicationError`.
@@ -24,25 +23,26 @@ class OnDupAction(Enum):
     DROP_NEW = 'DROP_NEW'
 
     def __repr__(self) -> str:
-        return f'<{self.name}>'
+        return f'{self.__class__.__name__}.{self.name}'
 
 
-RAISE = OnDupAction.RAISE
-DROP_OLD = OnDupAction.DROP_OLD
-DROP_NEW = OnDupAction.DROP_NEW
+RAISE = OD.RAISE
+DROP_OLD = OD.DROP_OLD
+DROP_NEW = OD.DROP_NEW
 
 
-class OnDup(namedtuple('_OnDup', 'key val kv')):
-    r"""A 3-tuple of :class:`OnDupAction`\s specifying how to handle the 3 kinds of duplication.
+class OnDup(t.NamedTuple('_OnDup', [('key', OD), ('val', OD), ('kv', OD)])):
+    r"""A 3-tuple of :class:`OD`\s specifying how to handle the 3 kinds of duplication.
 
     *See also* :ref:`basic-usage:Values Must Be Unique`
+    (https://bidict.rtfd.io/basic-usage.html#values-must-be-unique)
 
     If *kv* is not specified, *val* will be used for *kv*.
     """
 
     __slots__ = ()
 
-    def __new__(cls, key: OnDupAction = DROP_OLD, val: OnDupAction = RAISE, kv: OnDupAction = RAISE) -> 'OnDup':
+    def __new__(cls, key: OD = DROP_OLD, val: OD = RAISE, kv: t.Optional[OD] = None) -> 'OnDup':
         """Override to provide user-friendly default values."""
         return super().__new__(cls, key, val, kv or val)
 
@@ -51,7 +51,7 @@ class OnDup(namedtuple('_OnDup', 'key val kv')):
 #: :meth:`~bidict.bidict.__init__`,
 #: :meth:`~bidict.bidict.__setitem__`, and
 #: :meth:`~bidict.bidict.update` methods.
-ON_DUP_DEFAULT = OnDup()
+ON_DUP_DEFAULT = OnDup(key=DROP_OLD, val=RAISE, kv=RAISE)
 #: An :class:`OnDup` whose members are all :obj:`RAISE`.
 ON_DUP_RAISE = OnDup(key=RAISE, val=RAISE, kv=RAISE)
 #: An :class:`OnDup` whose members are all :obj:`DROP_OLD`.

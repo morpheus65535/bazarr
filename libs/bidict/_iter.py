@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2022 Joshua Bronson. All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,48 +7,26 @@
 
 """Functions for iterating over items in a mapping."""
 
-import typing as _t
-from collections.abc import Mapping
-from itertools import chain
+from operator import itemgetter
+import typing as t
 
 from ._typing import KT, VT, IterItems, MapOrIterItems
 
 
-_NULL_IT: IterItems = iter(())
+def iteritems_mapping_or_iterable(arg: MapOrIterItems[KT, VT]) -> IterItems[KT, VT]:
+    """Yield the items in *arg* based on whether it's a mapping."""
+    yield from arg.items() if isinstance(arg, t.Mapping) else arg  # pyright: ignore
 
 
-def _iteritems_mapping_or_iterable(arg: MapOrIterItems[KT, VT]) -> IterItems[KT, VT]:
-    """Yield the items in *arg*.
-
-    If *arg* is a :class:`~collections.abc.Mapping`, return an iterator over its items.
-    Otherwise return an iterator over *arg* itself.
-    """
-    return iter(arg.items() if isinstance(arg, Mapping) else arg)
+def iteritems(__arg: MapOrIterItems[KT, VT], **kw: VT) -> IterItems[KT, VT]:
+    """Yield the items from *arg* and then any from *kw* in the order given."""
+    yield from iteritems_mapping_or_iterable(__arg)
+    yield from kw.items()  # type: ignore [misc]
 
 
-def _iteritems_args_kw(*args: MapOrIterItems[KT, VT], **kw: VT) -> IterItems[KT, VT]:
-    """Yield the items from the positional argument (if given) and then any from *kw*.
-
-    :raises TypeError: if more than one positional argument is given.
-    """
-    args_len = len(args)
-    if args_len > 1:
-        raise TypeError(f'Expected at most 1 positional argument, got {args_len}')
-    it: IterItems = ()
-    if args:
-        arg = args[0]
-        if arg:
-            it = _iteritems_mapping_or_iterable(arg)
-    if kw:
-        iterkw = iter(kw.items())
-        it = chain(it, iterkw) if it else iterkw
-    return it or _NULL_IT
+swap = itemgetter(1, 0)
 
 
-@_t.overload
-def inverted(arg: _t.Mapping[KT, VT]) -> IterItems[VT, KT]: ...
-@_t.overload
-def inverted(arg: IterItems[KT, VT]) -> IterItems[VT, KT]: ...
 def inverted(arg: MapOrIterItems[KT, VT]) -> IterItems[VT, KT]:
     """Yield the inverse items of the provided object.
 
@@ -61,7 +38,8 @@ def inverted(arg: MapOrIterItems[KT, VT]) -> IterItems[VT, KT]:
 
     *See also* :attr:`bidict.BidirectionalMapping.__inverted__`
     """
-    inv = getattr(arg, '__inverted__', None)
-    if callable(inv):
-        return inv()  # type: ignore [no-any-return]
-    return ((val, key) for (key, val) in _iteritems_mapping_or_iterable(arg))
+    invattr = getattr(arg, '__inverted__', None)
+    if callable(invattr):
+        inv: IterItems[VT, KT] = invattr()
+        return inv
+    return map(swap, iteritems_mapping_or_iterable(arg))

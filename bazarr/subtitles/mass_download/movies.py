@@ -58,17 +58,6 @@ def movies_download_subtitles(no):
                 hi_ = "True" if language.endswith(':hi') else "False"
                 forced_ = "True" if language.endswith(':forced') else "False"
                 languages.append((language.split(":")[0], hi_, forced_))
-
-            # confirm if language is still missing or if cutoff have been reached
-            confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles) \
-                .where(TableMovies.radarrId == movie['radarrId']) \
-                .dicts() \
-                .get_or_none()
-            if not confirmed_missing_subs:
-                continue
-
-            if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
-                continue
         else:
             logging.info("BAZARR All providers are throttled")
             break
@@ -84,7 +73,8 @@ def movies_download_subtitles(no):
                                      audio_language,
                                      str(movie['sceneName']),
                                      movie['title'],
-                                     'movie'):
+                                     'movie',
+                                     check_if_still_required=True):
 
         if result:
             message = result[0]

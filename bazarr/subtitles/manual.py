@@ -11,16 +11,15 @@ import subliminal
 from subzero.language import Language
 from subliminal_patch.core import save_subtitles
 from subliminal_patch.core_persistent import list_all_subtitles, download_subtitles
-from subliminal_patch.score import compute_score
+from subliminal_patch.score import ComputeScore
 
 from languages.get_languages import alpha3_from_alpha2
-from app.config import settings, get_array_from
+from app.config import get_scores, settings, get_array_from, get_settings
 from utilities.helper import get_target_folder, force_unicode
 from app.database import get_profiles_list
-from subtitles.tools.score import movie_score, series_score
 
 from .pool import update_pools, _get_pool, _init_pool
-from .utils import get_video, _get_lang_obj, _get_scores
+from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
 from .processing import process_subtitle
 
 
@@ -34,7 +33,9 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
 
     language_set, initial_language_set, original_format = _get_language_obj(profile_id=profile_id)
     also_forced = any([x.forced for x in initial_language_set])
-    _set_forced_providers(also_forced=also_forced, pool=pool)
+    forced_required = all([x.forced for x in initial_language_set])
+    compute_score = ComputeScore(get_scores())
+    _set_forced_providers(pool=pool, also_forced=also_forced, forced_required=forced_required)
 
     if providers:
         video = get_video(force_unicode(path), title, sceneName, providers=providers, media_type=media_type)
@@ -42,8 +43,6 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
         logging.info("BAZARR All providers are throttled")
         return None
     if video:
-        handler = series_score if media_type == "series" else movie_score
-
         try:
             if providers:
                 subtitles = list_all_subtitles([video], language_set, pool)
@@ -100,8 +99,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
                     initial_hi = None
 
                 _, max_score, scores = _get_scores(media_type, minimum_score_movie, minimum_score)
-                score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi,
-                                                          score_obj=handler)
+                score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
                 if 'hash' not in matches:
                     not_matched = scores - matches
                     s.score = score_without_hash
@@ -264,8 +262,3 @@ def _get_language_obj(profile_id):
         language_set.add(lang_obj_hi)
 
     return language_set, initial_language_set, original_format
-
-
-def _set_forced_providers(also_forced, pool):
-    if also_forced:
-        pool.provider_configs.update({'podnapisi': {'also_foreign': True}, 'opensubtitles': {'also_foreign': True}})

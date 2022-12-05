@@ -798,7 +798,7 @@ OP_CODES = {}
 g = ''
 for g in globals():
     try:
-        if not issubclass(globals()[g], OP_CODE) or g is 'OP_CODE':
+        if not issubclass(globals()[g], OP_CODE) or g == 'OP_CODE':
             continue
     except:
         continue

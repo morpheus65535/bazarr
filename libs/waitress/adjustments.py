@@ -147,7 +147,7 @@ class Adjustments:
     # TCP port to listen on
     port = _int_marker(8080)
 
-    listen = ["{}:{}".format(host, port)]
+    listen = [f"{host}:{port}"]
 
     # number of threads available for tasks
     threads = 4
@@ -327,7 +327,7 @@ class Adjustments:
         if not isinstance(self.host, _str_marker) or not isinstance(
             self.port, _int_marker
         ):
-            self.listen = ["{}:{}".format(self.host, self.port)]
+            self.listen = [f"{self.host}:{self.port}"]
 
         enabled_families = socket.AF_UNSPEC
 

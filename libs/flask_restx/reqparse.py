@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import decimal
-import six
 
 try:
     from collections.abc import Hashable
@@ -66,8 +62,6 @@ PY_TYPES = {
 
 SPLIT_CHAR = ","
 
-text_type = lambda x: six.text_type(x)  # noqa
-
 
 class Argument(object):
     """
@@ -81,7 +75,7 @@ class Argument(object):
     :param bool ignore: Whether to ignore cases where the argument fails type conversion
     :param type: The type to which the request argument should be converted.
         If a type raises an exception, the message in the error will be returned in the response.
-        Defaults to :class:`unicode` in python2 and :class:`str` in python3.
+        Defaults to  :class:`str`.
     :param location: The attributes of the :class:`flask.Request` object
         to source the arguments from (ex: headers, args, etc.), can be an
         iterator. The last item listed takes precedence in the result set.
@@ -105,8 +99,11 @@ class Argument(object):
         dest=None,
         required=False,
         ignore=False,
-        type=text_type,
-        location=("json", "values",),
+        type=str,
+        location=(
+            "json",
+            "values",
+        ),
         choices=(),
         action="store",
         help=None,
@@ -137,8 +134,11 @@ class Argument(object):
         Pulls values off the request in the provided location
         :param request: The flask request object to parse arguments from
         """
-        if isinstance(self.location, six.string_types):
-            value = getattr(request, self.location, MultiDict())
+        if isinstance(self.location, str):
+            if self.location in {"json", "get_json"}:
+                value = request.get_json(silent=True)
+            else:
+                value = getattr(request, self.location, MultiDict())
             if callable(value):
                 value = value()
             if value is not None:
@@ -146,7 +146,10 @@ class Argument(object):
         else:
             values = MultiDict()
             for l in self.location:
-                value = getattr(request, l, None)
+                if l in {"json", "get_json"}:
+                    value = request.get_json(silent=True)
+                else:
+                    value = getattr(request, l, None)
                 if callable(value):
                     value = value()
                 if value is not None:
@@ -191,10 +194,8 @@ class Argument(object):
             dict with the name of the argument and the error message to be
             bundled
         """
-        error_str = six.text_type(error)
-        error_msg = (
-            " ".join([six.text_type(self.help), error_str]) if self.help else error_str
-        )
+        error_str = str(error)
+        error_msg = " ".join([str(self.help), error_str]) if self.help else error_str
         errors = {self.name: error_msg}
 
         if bundle_errors:
@@ -262,7 +263,7 @@ class Argument(object):
                     results.append(value)
 
         if not results and self.required:
-            if isinstance(self.location, six.string_types):
+            if isinstance(self.location, str):
                 location = _friendly_location.get(self.location, self.location)
             else:
                 locations = [_friendly_location.get(loc, loc) for loc in self.location]
@@ -299,6 +300,8 @@ class Argument(object):
             )
         if self.action == "append":
             param["items"] = {"type": param["type"]}
+            if "pattern" in param:
+                param["items"]["pattern"] = param.pop("pattern")
             param["type"] = "array"
             param["collectionFormat"] = "multi"
         if self.action == "split":

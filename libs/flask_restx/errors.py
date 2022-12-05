@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import flask
 
 from werkzeug.exceptions import HTTPException

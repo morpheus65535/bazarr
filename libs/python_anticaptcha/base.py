@@ -30,6 +30,9 @@ class Job(object):
     def get_solution_response(self):  # Recaptcha
         return self._last_result["solution"]["gRecaptchaResponse"]
 
+    def get_solution(self):
+        return self._last_result["solution"]
+
     def get_token_response(self):  # Funcaptcha
         return self._last_result["solution"]["token"]
 

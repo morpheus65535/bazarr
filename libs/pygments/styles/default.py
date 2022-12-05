@@ -4,7 +4,7 @@
 
     The default highlighting style.
 
-    :copyright: Copyright 2006-2021 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -19,7 +19,6 @@ class DefaultStyle(Style):
     """
 
     background_color = "#f8f8f8"
-    default_style = ""
 
     styles = {
         Whitespace:                "#bbbbbb",

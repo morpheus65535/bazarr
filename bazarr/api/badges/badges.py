@@ -7,6 +7,7 @@ from flask_restx import Resource, Namespace, fields
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies
 from app.get_providers import get_throttled_providers
+from app.signalr_client import sonarr_signalr_client, radarr_signalr_client
 from utilities.health import get_health_issues
 
 from ..utils import authenticate
@@ -22,6 +23,8 @@ class Badges(Resource):
         'movies': fields.Integer(),
         'providers': fields.Integer(),
         'status': fields.Integer(),
+        'sonarr_signalr': fields.String(),
+        'radarr_signalr': fields.String(),
     })
 
     @authenticate
@@ -56,6 +59,8 @@ class Badges(Resource):
             "episodes": missing_episodes,
             "movies": missing_movies,
             "providers": throttled_providers,
-            "status": health_issues
+            "status": health_issues,
+            'sonarr_signalr': "LIVE" if sonarr_signalr_client.connected else "",
+            'radarr_signalr': "LIVE" if radarr_signalr_client.connected else "",
         }
         return result

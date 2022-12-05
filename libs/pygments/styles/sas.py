@@ -6,7 +6,7 @@
     meant to be a complete style. It's merely meant to mimic SAS'
     program editor syntax highlighting.
 
-    :copyright: Copyright 2006-2021 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -21,8 +21,6 @@ class SasStyle(Style):
     meant to be a complete style. It's merely meant to mimic SAS'
     program editor syntax highlighting.
     """
-
-    default_style = ''
 
     styles = {
         Whitespace:            '#bbbbbb',

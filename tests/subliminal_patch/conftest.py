@@ -123,6 +123,7 @@ def episodes():
             1,
             1,
             source="Blu-Ray",
+            series_imdb_id="tt0903747",
             release_group="REWARD",
             resolution="720p",
             video_codec="H.264",

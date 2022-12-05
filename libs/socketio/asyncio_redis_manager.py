@@ -1,10 +1,16 @@
 import asyncio
 import pickle
 
-try:
-    import aioredis
-except ImportError:
-    aioredis = None
+try:  # pragma: no cover
+    from redis import asyncio as aioredis
+    from redis.exceptions import RedisError
+except ImportError:  # pragma: no cover
+    try:
+        import aioredis
+        from aioredis.exceptions import RedisError
+    except ImportError:
+        aioredis = None
+        RedisError = None
 
 from .asyncio_pubsub_manager import AsyncPubSubManager
 
@@ -39,8 +45,7 @@ class AsyncRedisManager(AsyncPubSubManager):  # pragma: no cover
                  write_only=False, logger=None, redis_options=None):
         if aioredis is None:
             raise RuntimeError('Redis package is not installed '
-                               '(Run "pip install aioredis" in your '
-                               'virtualenv).')
+                               '(Run "pip install redis" in your virtualenv).')
         if not hasattr(aioredis.Redis, 'from_url'):
             raise RuntimeError('Version 2 of aioredis package is required.')
         self.redis_url = url
@@ -61,7 +66,7 @@ class AsyncRedisManager(AsyncPubSubManager):  # pragma: no cover
                     self._redis_connect()
                 return await self.redis.publish(
                     self.channel, pickle.dumps(data))
-            except aioredis.exceptions.RedisError:
+            except RedisError:
                 if retry:
                     self._get_logger().error('Cannot publish to redis... '
                                              'retrying')
@@ -82,7 +87,7 @@ class AsyncRedisManager(AsyncPubSubManager):  # pragma: no cover
                     retry_sleep = 1
                 async for message in self.pubsub.listen():
                     yield message
-            except aioredis.exceptions.RedisError:
+            except RedisError:
                 self._get_logger().error('Cannot receive from redis... '
                                          'retrying in '
                                          '{} secs'.format(retry_sleep))

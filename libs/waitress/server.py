@@ -157,7 +157,7 @@ class MultiSocketServer:
             l = list(l)
 
             if ":" in l[0]:
-                l[0] = "[{}]".format(l[0])
+                l[0] = f"[{l[0]}]"
 
             self.log_info(format_str.format(*l))
 

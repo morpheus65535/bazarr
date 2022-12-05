@@ -1,21 +1,14 @@
-# -*- coding: utf-8 -*-
 """
 This module give access to OpenAPI specifications schemas
 and allows to validate specs against them.
 
 .. versionadded:: 0.12.1
 """
-from __future__ import unicode_literals
-
 import io
 import json
 import pkg_resources
 
-try:
-    from collections.abc import Mapping
-except ImportError:
-    # TODO Remove this to drop Python2 support
-    from collections import Mapping
+from collections.abc import Mapping
 from jsonschema import Draft4Validator
 
 from flask_restx import errors

@@ -55,10 +55,10 @@
       "audio_codec": {
         "MP3": {"string": ["MP3", "LAME"],"regex": ["LAME(?:\\d)+-?(?:\\d)+"]},
         "MP2": "MP2",
-        "Dolby Digital": {"string": ["Dolby", "DolbyDigital"], "regex": ["Dolby-Digital", "DD", "AC3D?"]},
+        "Dolby Digital": {"string": ["Dolby", "DolbyDigital"], "regex": ["Dolby-Digital", "DD", "AC-?3D?"]},
         "Dolby Atmos": {"string": ["Atmos"], "regex": ["Dolby-?Atmos"]},
         "AAC": "AAC",
-        "Dolby Digital Plus": ["EAC3", "DDP", "DD+"],
+        "Dolby Digital Plus": {"string": ["DDP", "DD+"], "regex": ["E-?AC-?3"]},
         "FLAC": "Flac",
         "DTS": "DTS",
         "DTS-HD": {"regex":  ["DTS-?HD", "DTS(?=-?MA)"], "conflict_solver": "lambda match, other: other if other.name == 'audio_codec' else '__default__'"},

@@ -36,7 +36,7 @@ class URLSafeSerializerMixin(Serializer):
             raise BadPayload(
                 "Could not base64 decode the payload because of an exception",
                 original_error=e,
-            )
+            ) from e
 
         if decompress:
             try:
@@ -45,7 +45,7 @@ class URLSafeSerializerMixin(Serializer):
                 raise BadPayload(
                     "Could not zlib decompress the payload before decoding the payload",
                     original_error=e,
-                )
+                ) from e
 
         return super().load_payload(json, *args, **kwargs)
 

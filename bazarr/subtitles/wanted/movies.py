@@ -29,17 +29,6 @@ def _wanted_movie(movie):
     languages = []
 
     for language in ast.literal_eval(movie['missing_subtitles']):
-        # confirm if language is still missing or if cutoff have been reached
-        confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles) \
-            .where(TableMovies.radarrId == movie['radarrId']) \
-            .dicts() \
-            .get_or_none()
-        if not confirmed_missing_subs:
-            continue
-
-        if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
-            continue
-
         if is_search_active(desired_language=language, attempt_string=movie['failedAttempts']):
             TableMovies.update({TableMovies.failedAttempts:
                                 updateFailedAttempts(desired_language=language,
@@ -59,7 +48,9 @@ def _wanted_movie(movie):
                                      languages,
                                      audio_language,
                                      str(movie['sceneName']),
-                                     movie['title'], 'movie'):
+                                     movie['title'],
+                                     'movie',
+                                     check_if_still_required=True):
 
         if result:
             message = result[0]

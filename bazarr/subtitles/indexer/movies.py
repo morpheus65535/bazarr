@@ -246,7 +246,9 @@ def list_missing_subtitles_movies(no=None, send_event=True):
 
         if send_event:
             event_stream(type='movie', payload=movie_subtitles['radarrId'])
-            event_stream(type='badges')
+            event_stream(type='movie-wanted', action='update', payload=movie_subtitles['radarrId'])
+    if send_event:
+        event_stream(type='badges')
 
 
 def movies_full_scan_subtitles():

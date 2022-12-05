@@ -12,6 +12,9 @@ from app.database import TableShows, TableEpisodes, TableMovies
 from .utils import convert_to_guessit
 
 
+_TITLE_RE = re.compile(r'\s(\(\d{4}\))')
+
+
 def refine_from_db(path, video):
     if isinstance(video, Episode):
         data = TableEpisodes.select(TableShows.title.alias('seriesTitle'),
@@ -33,13 +36,15 @@ def refine_from_db(path, video):
 
         if len(data):
             data = data[0]
-            video.series = re.sub(r'\s(\(\d\d\d\d\))', '', data['seriesTitle'])
+            video.series = _TITLE_RE.sub('', data['seriesTitle'])
             video.season = int(data['season'])
             video.episode = int(data['episode'])
             video.title = data['episodeTitle']
-            # Commented out because Sonarr provided so much bad year
-            # if data['year']:
-            #     if int(data['year']) > 0: video.year = int(data['year'])
+
+            # Only refine year as a fallback
+            if not video.year and data['year']:
+                if int(data['year']) > 0: video.year = int(data['year'])
+
             video.series_tvdb_id = int(data['tvdbId'])
             video.alternative_series = ast.literal_eval(data['alternateTitles'])
             if data['imdbId'] and not video.series_imdb_id:
@@ -68,10 +73,12 @@ def refine_from_db(path, video):
 
         if len(data):
             data = data[0]
-            video.title = re.sub(r'\s(\(\d\d\d\d\))', '', data['title'])
-            # Commented out because Radarr provided so much bad year
-            # if data['year']:
-            #     if int(data['year']) > 0: video.year = int(data['year'])
+            video.title = _TITLE_RE.sub('', data['title'])
+
+            # Only refine year as a fallback
+            if not video.year and data['year']:
+                if int(data['year']) > 0: video.year = int(data['year'])
+
             if data['imdbId'] and not video.imdb_id:
                 video.imdb_id = data['imdbId']
             video.alternative_titles = ast.literal_eval(data['alternativeTitles'])

@@ -1,18 +1,12 @@
 import { LOG } from "@/utilities/console";
 import { get, isNull, isUndefined, uniqBy } from "lodash";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { submitHooks } from "../components";
-import {
-  FormKey,
-  useFormActions,
-  useStagedValues,
-} from "../utilities/FormValues";
+import { useCallback, useMemo, useRef } from "react";
+import { useFormActions, useStagedValues } from "../utilities/FormValues";
 import { useSettings } from "../utilities/SettingsProvider";
 
 export interface BaseInput<T> {
   disabled?: boolean;
   settingKey: string;
-  location?: FormKey;
   settingOptions?: SettingValueOptions<T>;
 }
 
@@ -25,7 +19,7 @@ export type SettingValueOptions<T> = {
 };
 
 export function useBaseInput<T, V>(props: T & BaseInput<V>) {
-  const { settingKey, settingOptions, location, ...rest } = props;
+  const { settingKey, settingOptions, ...rest } = props;
   // TODO: Opti options
   const value = useSettingValue<V>(settingKey, settingOptions);
 
@@ -36,9 +30,9 @@ export function useBaseInput<T, V>(props: T & BaseInput<V>) {
       const moddedValue =
         (newValue && settingOptions?.onSaved?.(newValue)) ?? newValue;
 
-      setValue(moddedValue, settingKey, location);
+      setValue(moddedValue, settingKey, settingOptions?.onSubmit);
     },
-    [settingOptions, setValue, settingKey, location]
+    [settingOptions, setValue, settingKey]
   );
 
   return { value, update, rest };
@@ -51,26 +45,12 @@ export function useSettingValue<T>(
   const settings = useSettings();
 
   const optionsRef = useRef(options);
-
-  useEffect(() => {
-    const onSubmit = optionsRef.current?.onSubmit;
-    if (onSubmit) {
-      LOG("info", "Adding submit hook for", key);
-      submitHooks[key] = onSubmit;
-    }
-
-    return () => {
-      if (key in submitHooks) {
-        LOG("info", "Removing submit hook for", key);
-        delete submitHooks[key];
-      }
-    };
-  }, [key]);
+  optionsRef.current = options;
 
   const originalValue = useMemo(() => {
     const onLoaded = optionsRef.current?.onLoaded;
     const defaultValue = optionsRef.current?.defaultValue;
-    if (onLoaded) {
+    if (onLoaded && settings) {
       LOG("info", `${key} is using custom loader`);
 
       return onLoaded(settings);

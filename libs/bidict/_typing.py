@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2022 Joshua Bronson. All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,26 +7,28 @@
 
 """Provide typing-related objects."""
 
-import typing as _t
+import typing as t
+from enum import Enum
 
 
-KT = _t.TypeVar('KT')
-VT = _t.TypeVar('VT')
-IterItems = _t.Iterable[_t.Tuple[KT, VT]]
-MapOrIterItems = _t.Union[_t.Mapping[KT, VT], IterItems[KT, VT]]
-
-DT = _t.TypeVar('DT')   #: for default arguments
-VDT = _t.Union[VT, DT]
+KT = t.TypeVar('KT')
+VT = t.TypeVar('VT')
+IterItems = t.Iterable[t.Tuple[KT, VT]]
+MapOrIterItems = t.Union[t.Mapping[KT, VT], IterItems[KT, VT]]
 
 
-class _BareReprMeta(type):
-    def __repr__(cls) -> str:
-        return f'<{cls.__name__}>'
+class MissingT(Enum):
+    """Sentinel used to represent none/missing when None itself can't be used."""
+
+    MISSING = 'MISSING'
+
+    def __repr__(self) -> str:
+        return '<MISSING>'
 
 
-class _NONE(metaclass=_BareReprMeta):
-    """Sentinel type used to represent 'missing'."""
+MISSING = MissingT.MISSING
+OKT = t.Union[KT, MissingT]  #: optional key type
+OVT = t.Union[VT, MissingT]  #: optional value type
 
-
-OKT = _t.Union[KT, _NONE]    #: optional key type
-OVT = _t.Union[VT, _NONE]    #: optional value type
+DT = t.TypeVar('DT')  #: for default arguments
+ODT = t.Union[DT, MissingT]

@@ -243,10 +243,20 @@ static inline int unpack_execute(unpack_context* ctx, const char* data, Py_ssize
                                           _msgpack_load32(uint32_t,n)+1,
                                           _ext_zero);
             case CS_FLOAT: {
-                    double f = _PyFloat_Unpack4((unsigned char*)n, 0);
+                    double f;
+#if PY_VERSION_HEX >= 0x030B00A7
+                    f = PyFloat_Unpack4((const char*)n, 0);
+#else
+                    f = _PyFloat_Unpack4((unsigned char*)n, 0);
+#endif
                     push_fixed_value(_float, f); }
             case CS_DOUBLE: {
-                    double f = _PyFloat_Unpack8((unsigned char*)n, 0);
+                    double f;
+#if PY_VERSION_HEX >= 0x030B00A7
+                    f = PyFloat_Unpack8((const char*)n, 0);
+#else
+                    f = _PyFloat_Unpack8((unsigned char*)n, 0);
+#endif
                     push_fixed_value(_double, f); }
             case CS_UINT_8:
                 push_fixed_value(_uint8, *(uint8_t*)n);

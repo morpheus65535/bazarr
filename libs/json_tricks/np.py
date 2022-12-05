@@ -10,7 +10,7 @@ from .comment import strip_comment_line_with_symbol, strip_comments  # keep 'unu
 from .encoders import TricksEncoder, json_date_time_encode, class_instance_encode, ClassInstanceEncoder, \
 	numpy_encode, NumpyEncoder # keep 'unused' imports
 from .decoders import DuplicateJsonKeyException, TricksPairHook, json_date_time_hook, ClassInstanceHook, \
-	json_complex_hook, json_set_hook, json_numpy_obj_hook  # keep 'unused' imports
+	json_complex_hook, json_set_hook, json_numpy_obj_hook, json_bytes_hook  # keep 'unused' imports
 
 try:
 	import numpy

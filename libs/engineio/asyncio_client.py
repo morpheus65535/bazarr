@@ -95,9 +95,9 @@ class AsyncClient(client.Client):
             try:
                 asyncio.get_event_loop().add_signal_handler(
                     signal.SIGINT, async_signal_handler)
-                async_signal_handler_set = True
             except NotImplementedError:  # pragma: no cover
                 self.logger.warning('Signal handler is unsupported')
+        async_signal_handler_set = True
 
         if self.state != 'disconnected':
             raise ValueError('Client is not in a disconnected state')
@@ -158,6 +158,8 @@ class AsyncClient(client.Client):
                 client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
+            if self.http and not self.http.closed:  # pragma: no cover
+                await self.http.close()
         self._reset()
 
     def start_background_task(self, target, *args, **kwargs):
@@ -302,11 +304,12 @@ class AsyncClient(client.Client):
                 ssl_context.verify_mode = ssl.CERT_NONE
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers, ssl=ssl_context)
+                    headers=headers, ssl=ssl_context,
+                    timeout=self.request_timeout)
             else:
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers)
+                    headers=headers, timeout=self.request_timeout)
         except (aiohttp.client_exceptions.WSServerHandshakeError,
                 aiohttp.client_exceptions.ServerConnectionError,
                 aiohttp.client_exceptions.ClientConnectionError):

@@ -47,7 +47,7 @@ RGX_POSSIBLE_CRLF = r"\r?\n"
 TS_REGEX = re.compile(RGX_TIMESTAMP_PARSEABLE)
 MULTI_WS_REGEX = re.compile(r"\n\n+")
 SRT_REGEX = re.compile(
-    r"\s*({idx})\s*{eof}({ts}) *-[ -] *> *({ts}) ?({proprietary})(?:{eof}|\Z)({content})"
+    r"\s*(?:({idx})\s*{eof})?({ts}) *-[ -] *> *({ts}) ?({proprietary})(?:{eof}|\Z)({content})"
     # Many sub editors don't add a blank line to the end, and many editors and
     # players accept that. We allow it to be missing in input.
     #
@@ -64,7 +64,7 @@ SRT_REGEX = re.compile(
     # inside the subtitle content. We look ahead a little to check that the
     # next lines look like an index and a timestamp as a best-effort
     # solution to work around these.
-    r"(?=(?:{idx}\s*{eof}{ts}|\Z))".format(
+    r"(?=(?:(?:{idx}\s*{eof})?{ts}|\Z))".format(
         idx=RGX_INDEX,
         ts=RGX_TIMESTAMP,
         proprietary=RGX_PROPRIETARY,
@@ -98,9 +98,11 @@ except NameError:  # `file` doesn't exist in Python 3
 class Subtitle(object):
     r"""
     The metadata relating to a single subtitle. Subtitles are sorted by start
-    time by default.
+    time by default. If no index was provided, index 0 will be used on writing
+    an SRT block.
 
-    :param int index: The SRT index for this subtitle
+    :param index: The SRT index for this subtitle
+    :type index: int or None
     :param start: The time that the subtitle should start being shown
     :type start: :py:class:`datetime.timedelta`
     :param end: The time that the subtitle should stop being shown
@@ -167,7 +169,7 @@ class Subtitle(object):
 
         template = "{idx}{eol}{start} --> {end}{prop}{eol}{content}{eol}{eol}"
         return template.format(
-            idx=self.index,
+            idx=self.index or 0,
             start=timedelta_to_srt_timestamp(self.start),
             end=timedelta_to_srt_timestamp(self.end),
             prop=output_proprietary,
@@ -295,7 +297,12 @@ def sort_and_reindex(subtitles, start_index=1, in_place=False, skip=True):
             try:
                 _should_skip_sub(subtitle)
             except _ShouldSkipException as thrown_exc:
-                LOG.info("Skipped subtitle at index %d: %s", subtitle.index, thrown_exc)
+                if subtitle.index is None:
+                    LOG.info("Skipped subtitle with no index: %s", thrown_exc)
+                else:
+                    LOG.info(
+                        "Skipped subtitle at index %d: %s", subtitle.index, thrown_exc
+                    )
                 skipped_subs += 1
                 continue
 
@@ -379,6 +386,10 @@ def parse(srt, ignore_errors=False):
             #
             # The pytype disable is for the same reason as content, above.
             raw_index = int(raw_index.split(".")[0])  # pytype: disable=attribute-error
+        except TypeError:
+            # There's no index, so raw_index is already set to None. We'll
+            # handle this when rendering the subtitle with to_srt.
+            pass
 
         yield Subtitle(
             index=raw_index,

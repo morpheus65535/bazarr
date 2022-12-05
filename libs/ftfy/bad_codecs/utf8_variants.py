@@ -42,39 +42,41 @@ never.
 import re
 import codecs
 from typing import Tuple
-from encodings.utf_8 import (IncrementalDecoder as UTF8IncrementalDecoder,
-                             IncrementalEncoder as UTF8IncrementalEncoder)
+from encodings.utf_8 import (
+    IncrementalDecoder as UTF8IncrementalDecoder,
+    IncrementalEncoder as UTF8IncrementalEncoder,
+)
 
-NAME = 'utf-8-variants'
+NAME = "utf-8-variants"
 
 # This regular expression matches all possible six-byte CESU-8 sequences,
 # plus truncations of them at the end of the string. (If any of the
 # subgroups matches $, then all the subgroups after it also have to match $,
 # as there are no more characters to match.)
 CESU8_EXPR = (
-    b'('
-    b'\xed'
-    b'([\xa0-\xaf]|$)'
-    b'([\x80-\xbf]|$)'
-    b'(\xed|$)'
-    b'([\xb0-\xbf]|$)'
-    b'([\x80-\xbf]|$)'
-    b')'
+    b"("
+    b"\xed"
+    b"([\xa0-\xaf]|$)"
+    b"([\x80-\xbf]|$)"
+    b"(\xed|$)"
+    b"([\xb0-\xbf]|$)"
+    b"([\x80-\xbf]|$)"
+    b")"
 )
 
 CESU8_RE = re.compile(CESU8_EXPR)
 
 # This expression matches isolated surrogate characters that aren't
 # CESU-8, which have to be handled carefully on Python 2.
-SURROGATE_EXPR = (b'(\xed([\xa0-\xbf]|$)([\x80-\xbf]|$))')
+SURROGATE_EXPR = b"(\xed([\xa0-\xbf]|$)([\x80-\xbf]|$))"
 
 # This expression matches the Java encoding of U+0, including if it's
 # truncated and we need more bytes.
-NULL_EXPR = b'(\xc0(\x80|$))'
+NULL_EXPR = b"(\xc0(\x80|$))"
 
 # This regex matches cases that we need to decode differently from
 # standard UTF-8.
-SPECIAL_BYTES_RE = re.compile(b'|'.join([NULL_EXPR, CESU8_EXPR, SURROGATE_EXPR]))
+SPECIAL_BYTES_RE = re.compile(b"|".join([NULL_EXPR, CESU8_EXPR, SURROGATE_EXPR]))
 
 
 class IncrementalDecoder(UTF8IncrementalDecoder):
@@ -87,6 +89,7 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
     the real UTF-8 decoder is way optimized, but to call specialized methods
     we define here for the cases the real encoder isn't expecting.
     """
+
     def _buffer_decode(self, input, errors, final):
         """
         Decode bytes that may be arriving in a stream, following the Codecs
@@ -110,9 +113,7 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
         while True:
             # Use _buffer_decode_step to decode a segment of text.
             decoded, consumed = self._buffer_decode_step(
-                input[position:],
-                errors,
-                final
+                input[position:], errors, final
             )
             if consumed == 0:
                 # Either there's nothing left to decode, or we need to wait
@@ -128,7 +129,7 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
             # true.
             assert position == len(input)
 
-        return ''.join(decoded_segments), position
+        return "".join(decoded_segments), position
 
     def _buffer_decode_step(self, input, errors, final):
         """
@@ -155,10 +156,10 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
 
         # Some byte sequence that we intend to handle specially matches
         # at the beginning of the input.
-        if input.startswith(b'\xc0'):
+        if input.startswith(b"\xc0"):
             if len(input) > 1:
                 # Decode the two-byte sequence 0xc0 0x80.
-                return '\u0000', 2
+                return "\u0000", 2
             else:
                 if final:
                     # We hit the end of the stream. Let the superclass method
@@ -166,7 +167,7 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
                     return sup(input, errors, True)
                 else:
                     # Wait to see another byte.
-                    return '', 0
+                    return "", 0
         else:
             # Decode a possible six-byte sequence starting with 0xed.
             return self._buffer_decode_surrogates(sup, input, errors, final)
@@ -197,17 +198,17 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
                 # We found a surrogate, the stream isn't over yet, and we don't
                 # know enough of the following bytes to decode anything, so
                 # consume zero bytes and wait.
-                return '', 0
+                return "", 0
         else:
             if CESU8_RE.match(input):
                 # Given this is a CESU-8 sequence, do some math to pull out
                 # the intended 20-bit value, and consume six bytes.
                 codepoint = (
-                    ((input[1] & 0x0f) << 16) +
-                    ((input[2] & 0x3f) << 10) +
-                    ((input[4] & 0x0f) << 6) +
-                    (input[5] & 0x3f) +
-                    0x10000
+                    ((input[1] & 0x0F) << 16)
+                    + ((input[2] & 0x3F) << 10)
+                    + ((input[4] & 0x0F) << 6)
+                    + (input[5] & 0x3F)
+                    + 0x10000
                 )
                 return chr(codepoint), 6
             else:
@@ -221,28 +222,22 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
 IncrementalEncoder = UTF8IncrementalEncoder
 
 
-# Everything below here is boilerplate that matches the modules in the
-# built-in `encodings` package.
-def encode(input, errors='strict'):
-    return IncrementalEncoder(errors).encode(input, final=True), len(input)
-
-
-def decode(input, errors='strict'):
-    return IncrementalDecoder(errors).decode(input, final=True), len(input)
-
-
 class StreamWriter(codecs.StreamWriter):
-    encode = encode
+    @staticmethod
+    def encode(input: str, errors: str = "strict") -> Tuple[bytes, int]:
+        return IncrementalEncoder(errors).encode(input, final=True), len(input)
 
 
 class StreamReader(codecs.StreamReader):
-    decode = decode
+    @staticmethod
+    def decode(input: bytes, errors: str = "strict") -> Tuple[str, int]:
+        return IncrementalDecoder(errors).decode(input, final=True), len(input)
 
 
 CODEC_INFO = codecs.CodecInfo(
     name=NAME,
-    encode=encode,
-    decode=decode,
+    encode=StreamWriter.encode,
+    decode=StreamReader.decode,
     incrementalencoder=IncrementalEncoder,
     incrementaldecoder=IncrementalDecoder,
     streamreader=StreamReader,

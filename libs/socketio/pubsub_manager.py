@@ -75,7 +75,10 @@ class PubSubManager(BaseManager):
             self._publish({'method': 'disconnect', 'sid': sid,
                            'namespace': namespace or '/'})
 
-    def disconnect(self, sid, namespace=None):
+    def disconnect(self, sid, namespace=None, **kwargs):
+        if kwargs.get('ignore_queue'):
+            return super(PubSubManager, self).disconnect(
+                sid, namespace=namespace)
         self._publish({'method': 'disconnect', 'sid': sid,
                        'namespace': namespace or '/'})
 
@@ -164,11 +167,15 @@ class PubSubManager(BaseManager):
             if data and 'method' in data:
                 self._get_logger().info('pubsub message: {}'.format(
                     data['method']))
-                if data['method'] == 'emit':
-                    self._handle_emit(data)
-                elif data['method'] == 'callback':
-                    self._handle_callback(data)
-                elif data['method'] == 'disconnect':
-                    self._handle_disconnect(data)
-                elif data['method'] == 'close_room':
-                    self._handle_close_room(data)
+                try:
+                    if data['method'] == 'emit':
+                        self._handle_emit(data)
+                    elif data['method'] == 'callback':
+                        self._handle_callback(data)
+                    elif data['method'] == 'disconnect':
+                        self._handle_disconnect(data)
+                    elif data['method'] == 'close_room':
+                        self._handle_close_room(data)
+                except:
+                    self.server.logger.exception(
+                        'Unknown error in pubsub listening thread')

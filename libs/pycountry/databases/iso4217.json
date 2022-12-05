@@ -47,7 +47,7 @@
     },
     {
       "alpha_3": "AZN",
-      "name": "Azerbaijanian Manat",
+      "name": "Azerbaijan Manat",
       "numeric": "944"
     },
     {
@@ -96,6 +96,11 @@
       "numeric": "068"
     },
     {
+      "alpha_3": "BOV",
+      "name": "Mvdol",
+      "numeric": "984"
+    },
+    {
       "alpha_3": "BRL",
       "name": "Brazilian Real",
       "numeric": "986"
@@ -136,9 +141,24 @@
       "numeric": "976"
     },
     {
+      "alpha_3": "CHE",
+      "name": "WIR Euro",
+      "numeric": "947"
+    },
+    {
       "alpha_3": "CHF",
       "name": "Swiss Franc",
       "numeric": "756"
+    },
+    {
+      "alpha_3": "CHW",
+      "name": "WIR Franc",
+      "numeric": "948"
+    },
+    {
+      "alpha_3": "CLF",
+      "name": "Unidad de Fomento",
+      "numeric": "990"
     },
     {
       "alpha_3": "CLP",
@@ -154,6 +174,11 @@
       "alpha_3": "COP",
       "name": "Colombian Peso",
       "numeric": "170"
+    },
+    {
+      "alpha_3": "COU",
+      "name": "Unidad de Valor Real",
+      "numeric": "970"
     },
     {
       "alpha_3": "CRC",
@@ -257,7 +282,7 @@
     },
     {
       "alpha_3": "GNF",
-      "name": "Guinea Franc",
+      "name": "Guinean Franc",
       "numeric": "324"
     },
     {
@@ -357,7 +382,7 @@
     },
     {
       "alpha_3": "KMF",
-      "name": "Comoro Franc",
+      "name": "Comorian Franc",
       "numeric": "174"
     },
     {
@@ -387,7 +412,7 @@
     },
     {
       "alpha_3": "LAK",
-      "name": "Kip",
+      "name": "Lao Kip",
       "numeric": "418"
     },
     {
@@ -451,9 +476,9 @@
       "numeric": "446"
     },
     {
-      "alpha_3": "MRO",
+      "alpha_3": "MRU",
       "name": "Ouguiya",
-      "numeric": "478"
+      "numeric": "929"
     },
     {
       "alpha_3": "MUR",
@@ -474,6 +499,11 @@
       "alpha_3": "MXN",
       "name": "Mexican Peso",
       "numeric": "484"
+    },
+    {
+      "alpha_3": "MXV",
+      "name": "Mexican Unidad de Inversion (UDI)",
+      "numeric": "979"
     },
     {
       "alpha_3": "MYR",
@@ -616,6 +646,11 @@
       "numeric": "654"
     },
     {
+      "alpha_3": "SLE",
+      "name": "Leone",
+      "numeric": "925"
+    },
+    {
       "alpha_3": "SLL",
       "name": "Leone",
       "numeric": "694"
@@ -636,9 +671,9 @@
       "numeric": "728"
     },
     {
-      "alpha_3": "STD",
+      "alpha_3": "STN",
       "name": "Dobra",
-      "numeric": "678"
+      "numeric": "930"
     },
     {
       "alpha_3": "SVC",
@@ -716,9 +751,24 @@
       "numeric": "840"
     },
     {
+      "alpha_3": "USN",
+      "name": "US Dollar (Next day)",
+      "numeric": "997"
+    },
+    {
+      "alpha_3": "UYI",
+      "name": "Uruguay Peso en Unidades Indexadas (UI)",
+      "numeric": "940"
+    },
+    {
       "alpha_3": "UYU",
       "name": "Peso Uruguayo",
       "numeric": "858"
+    },
+    {
+      "alpha_3": "UYW",
+      "name": "Unidad Previsional",
+      "numeric": "927"
     },
     {
       "alpha_3": "UZS",
@@ -726,9 +776,14 @@
       "numeric": "860"
     },
     {
-      "alpha_3": "VEF",
-      "name": "Bolívar",
-      "numeric": "937"
+      "alpha_3": "VED",
+      "name": "Bolívar Soberano",
+      "numeric": "926"
+    },
+    {
+      "alpha_3": "VES",
+      "name": "Bolívar Soberano",
+      "numeric": "928"
     },
     {
       "alpha_3": "VND",

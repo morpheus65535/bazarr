@@ -697,6 +697,10 @@ class Server(object):
             allowed_origins = None
         elif isinstance(self.cors_allowed_origins, str):
             allowed_origins = [self.cors_allowed_origins]
+        elif callable(self.cors_allowed_origins):
+            origin = environ.get('HTTP_ORIGIN')
+            allowed_origins = [origin] \
+                if self.cors_allowed_origins(origin) else []
         else:
             allowed_origins = self.cors_allowed_origins
         return allowed_origins

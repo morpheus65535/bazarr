@@ -338,7 +338,6 @@ def episodes(config):
 
     rebulk.defaults(private_names=['episodeSeparator', 'seasonSeparator'])
 
-    # TODO: List of words
     # detached of X count (season/episode)
     rebulk.regex(r'(?P<episode>\d+)-?' + build_or_pattern(of_words) +
                  r'-?(?P<count>\d+)-?' + build_or_pattern(episode_words) + '?',
@@ -843,7 +842,7 @@ class RemoveDetachedEpisodeNumber(Rule):
                 episode_numbers[0].value < 10 and \
                 episode_numbers[1].value - episode_numbers[0].value != 1:
             parent = episode_numbers[0]
-            while parent:  # TODO: Add a feature in rebulk to avoid this ...
+            while parent:
                 ret.append(parent)
                 parent = parent.parent
         return ret

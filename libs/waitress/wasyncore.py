@@ -328,7 +328,7 @@ class dispatcher:
                 status.append("%s:%d" % self.addr)
             except TypeError:  # pragma: no cover
                 status.append(repr(self.addr))
-        return "<%s at %#x>" % (" ".join(status), id(self))
+        return "<{} at {:#x}>".format(" ".join(status), id(self))
 
     __str__ = __repr__
 
@@ -426,7 +426,7 @@ class dispatcher:
         else:
             return conn, addr
 
-    def send(self, data):
+    def send(self, data, do_close=True):
         try:
             result = self.socket.send(data)
             return result
@@ -434,7 +434,8 @@ class dispatcher:
             if why.args[0] == EWOULDBLOCK:
                 return 0
             elif why.args[0] in _DISCONNECTED:
-                self.handle_close()
+                if do_close:
+                    self.handle_close()
                 return 0
             else:
                 raise

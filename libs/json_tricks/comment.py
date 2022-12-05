@@ -16,6 +16,8 @@ def strip_comment_line_with_symbol(line, start):
 
 def strip_comments(string, comment_symbols=frozenset(('#', '//'))):
 	"""
+	Stripping comments usually works, but there are a few edge cases that trip it up, like https://github.com/mverleg/pyjson_tricks/issues/57.
+
 	:param string: A string containing json with comments started by comment_symbols.
 	:param comment_symbols: Iterable of symbols that start a line comment (default # or //).
 	:return: The string with the comments removed.

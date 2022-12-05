@@ -32,7 +32,7 @@ const Table: FunctionComponent = () => {
 
   const submitProfiles = useCallback(
     (list: Language.Profile[]) => {
-      setValue(list, languageProfileKey);
+      setValue(list, languageProfileKey, (value) => JSON.stringify(value));
     },
     [setValue]
   );

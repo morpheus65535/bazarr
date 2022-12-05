@@ -137,7 +137,7 @@ def length_comparator(value):
 _LanguageMatch = namedtuple('_LanguageMatch', ['property_name', 'word', 'lang'])
 
 
-class LanguageWord(object):
+class LanguageWord:
     """
     Extension to the Word namedtuple in order to create compound words.
 
@@ -191,7 +191,7 @@ def to_rebulk_match(language_match):
     }
 
 
-class LanguageFinder(object):
+class LanguageFinder:
     """
     Helper class to search and return language matches: 'language' and 'subtitle_language' properties
     """

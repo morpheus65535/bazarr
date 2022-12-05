@@ -1,12 +1,10 @@
-"""
-
-"""
+import logging
 
 """
 _logging.py
 websocket - WebSocket client library for Python
 
-Copyright 2021 engn33r
+Copyright 2022 engn33r
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,7 +18,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import logging
 
 _logger = logging.getLogger('websocket')
 try:
@@ -38,7 +35,7 @@ __all__ = ["enableTrace", "dump", "error", "warning", "debug", "trace",
            "isEnabledForError", "isEnabledForDebug", "isEnabledForTrace"]
 
 
-def enableTrace(traceable, handler=logging.StreamHandler()):
+def enableTrace(traceable, handler=logging.StreamHandler(), level="DEBUG"):
     """
     Turn on/off the traceability.
 
@@ -51,7 +48,7 @@ def enableTrace(traceable, handler=logging.StreamHandler()):
     _traceEnabled = traceable
     if traceable:
         _logger.addHandler(handler)
-        _logger.setLevel(logging.DEBUG)
+        _logger.setLevel(getattr(logging, level))
 
 
 def dump(title, message):
@@ -71,6 +68,10 @@ def warning(msg):
 
 def debug(msg):
     _logger.debug(msg)
+
+
+def info(msg):
+    _logger.info(msg)
 
 
 def trace(msg):

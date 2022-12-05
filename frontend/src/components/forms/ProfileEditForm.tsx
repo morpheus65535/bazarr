@@ -95,7 +95,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
   );
 
   const action = useArrayAction<Language.ProfileItem>((fn) => {
-    form.setValues((values) => ({ ...values, items: fn(values.items) }));
+    form.setValues((values) => ({ ...values, items: fn(values.items ?? []) }));
   });
 
   const addItem = useCallback(() => {

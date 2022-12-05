@@ -5,7 +5,7 @@ declare namespace Route {
   export type Item = {
     icon?: IconDefinition;
     name?: string;
-    badge?: number;
+    badge?: number | string;
     hidden?: boolean;
     children?: Item[];
   };

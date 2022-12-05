@@ -83,9 +83,9 @@ class GestdownProvider(Provider):
     def terminate(self):
         self._session.close()
 
-    def _subtitles_search(self, video, language: Language):
+    def _subtitles_search(self, video, language: Language, show_id):
         lang = self._converter.convert(language.alpha3)
-        response = self._session.get(f"{_BASE_URL}/subtitles/find/{lang}/{video.series}/{video.season}/{video.episode}")
+        response = self._session.get(f"{_BASE_URL}/subtitles/get/{show_id}/{video.season}/{video.episode}/{lang}")
 
         # TODO: implement rate limiting
         response.raise_for_status()
@@ -104,27 +104,28 @@ class GestdownProvider(Provider):
             logger.debug("Found subtitle: %s", sub)
             yield sub
 
-    def _show_exists(self, video):
+    def _search_show(self, video):
         try:
             response = self._session.get(f"{_BASE_URL}/shows/search/{video.series}")
             response.raise_for_status()
-            return True
+            return response.json()["shows"][0]
         except HTTPError as error:
             if error.response.status_code == 404:
-                return False
+                return None
             raise
 
 
     @_retry_on_423
     def list_subtitles(self, video, languages):
         subtitles = []
-        if not self._show_exists(video):
+        show = self._search_show(video)
+        if show is None:
             logger.debug("Couldn't find the show")
             return subtitles
 
         for language in languages:
             try:
-                subtitles += self._subtitles_search(video, language)
+                subtitles += self._subtitles_search(video, language, show["id"])
             except HTTPError as error:
                 if error.response.status_code == 404:
                     logger.debug("Couldn't find the show or its season/episode")

@@ -28,6 +28,8 @@ parser.add_argument('--dev', default=False, type=bool, const=True, metavar="BOOL
                     help="Enable developer mode (default: False)")
 parser.add_argument('--no-tasks', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
                     help="Disable all tasks (default: False)")
+parser.add_argument('--no-signalr', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
+                    help="Disable SignalR connections to Sonarr and/or Radarr (default: False)")
 
 
 if not no_cli:
