@@ -1,7 +1,11 @@
 import { LOG } from "@/utilities/console";
 import { get, isNull, isUndefined, uniqBy } from "lodash";
 import { useCallback, useMemo, useRef } from "react";
-import { useFormActions, useStagedValues } from "../utilities/FormValues";
+import {
+  HookType,
+  useFormActions,
+  useStagedValues,
+} from "../utilities/FormValues";
 import { useSettings } from "../utilities/SettingsProvider";
 
 export interface BaseInput<T> {
@@ -94,9 +98,9 @@ export function useUpdateArray<T>(key: string, compare: keyof T) {
   }, [key, stagedValue]);
 
   return useCallback(
-    (v: T) => {
+    (v: T, hook?: HookType) => {
       const newArray = uniqBy([v, ...staged], compareRef.current);
-      setValue(newArray, key);
+      setValue(newArray, key, hook);
     },
     [staged, setValue, key]
   );

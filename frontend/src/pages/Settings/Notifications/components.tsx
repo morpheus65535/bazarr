@@ -14,11 +14,15 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { isObject } from "lodash";
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { useMutation } from "react-query";
 import { Card } from "../components";
 import { notificationsKey } from "../keys";
 import { useSettingValue, useUpdateArray } from "../utilities/hooks";
+
+const notificationHook = (notifications: Settings.NotificationInfo[]) => {
+  return notifications.map((info) => JSON.stringify(info));
+};
 
 interface Props {
   selections: readonly Settings.NotificationInfo[];
@@ -122,6 +126,13 @@ export const NotificationView: FunctionComponent = () => {
     "name"
   );
 
+  const updateWrapper = useCallback(
+    (info: Settings.NotificationInfo) => {
+      update(info, notificationHook);
+    },
+    [update]
+  );
+
   const modals = useModals();
 
   const elements = useMemo(() => {
@@ -135,12 +146,12 @@ export const NotificationView: FunctionComponent = () => {
             modals.openContextModal(NotificationModal, {
               payload,
               selections: notifications,
-              onComplete: update,
+              onComplete: updateWrapper,
             })
           }
         ></Card>
       ));
-  }, [modals, notifications, update]);
+  }, [modals, notifications, updateWrapper]);
 
   return (
     <SimpleGrid cols={3}>
@@ -151,7 +162,7 @@ export const NotificationView: FunctionComponent = () => {
           modals.openContextModal(NotificationModal, {
             payload: null,
             selections: notifications ?? [],
-            onComplete: update,
+            onComplete: updateWrapper,
           })
         }
       ></Card>
