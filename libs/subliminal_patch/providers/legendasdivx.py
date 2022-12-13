@@ -9,6 +9,7 @@ from urllib.parse import quote
 from urllib.parse import parse_qs
 from requests.exceptions import HTTPError
 import rarfile
+from bs4 import FeatureNotFound
 
 from guessit import guessit
 from requests.exceptions import RequestException
@@ -204,6 +205,10 @@ class LegendasdivxProvider(Provider):
                 raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
             logger.error("Legendasdivx.pt :: HTTP Error %s", e)
             raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s", e)
+        except FeatureNotFound:
+            logger.error("LegendasDivx.pt :: lxml Python module isn't installed. Make sure to install requirements.")
+            raise ConfigurationError("LegendasDivx.pt :: lxml Python module isn't installed. Make sure to install "
+                                     "requirements.")
         except Exception as e:
             logger.error("LegendasDivx.pt :: Uncaught error: %r", e)
             raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r", e)
