@@ -57,7 +57,7 @@ export function useFormActions() {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type HookType = (value: any) => unknown;
+export type HookType = (value: any) => unknown;
 
 export type FormKey = keyof FormValues;
 export type FormValues = {
