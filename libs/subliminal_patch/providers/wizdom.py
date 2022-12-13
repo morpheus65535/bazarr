@@ -140,6 +140,9 @@ class WizdomProvider(Provider):
         # get the list of subtitles
         logger.debug('Getting the list of subtitles')
         r = self.session.get(url)
+        if r.status_code == 500:
+            logger.debug(f'No subtitles found for imdb id {imdb_id}')
+            return []
         r.raise_for_status()
         try:
             results = r.json()
