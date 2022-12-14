@@ -108,6 +108,14 @@ PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendasdivx", "legendastv",
 throttle_count = {}
 
 
+def clean_enabled_providers():
+    existing_providers = provider_registry.names()
+    enabled_providers = get_array_from(settings.general.enabled_providers)
+    settings.general.enabled_providers = str([x for x in enabled_providers if x in existing_providers])
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+
+
 def provider_pool():
     if settings.general.getboolean('multithreading'):
         return subliminal_patch.core.SZAsyncProviderPool

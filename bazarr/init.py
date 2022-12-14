@@ -14,6 +14,7 @@ from dogpile.cache.region import register_backend as register_cache_backend
 from app.config import settings, configure_captcha_func
 from app.get_args import args
 from app.logger import configure_logging
+from app.get_providers import clean_enabled_providers
 from utilities.binaries import get_binary, BinaryNotFound
 from utilities.path_mappings import path_mappings
 from utilities.backup import restore_from_backup
@@ -191,6 +192,10 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
     settings.remove_option('general', 'throtteled_providers')
     settings.remove_option('general', 'update_restart')
     settings.write(handle)
+
+
+# Remove deprecated providers from enabled providers in config.ini
+clean_enabled_providers()
 
 
 def init_binaries():
