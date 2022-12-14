@@ -5,7 +5,7 @@ import logging
 import re
 import zipfile
 from random import randint
-from urllib.parse import urlparse, parse_qs, quote
+from urllib.parse import urljoin, urlparse, parse_qs, quote
 
 import rarfile
 from guessit import guessit
@@ -179,7 +179,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
 
         # If the response is a redirect and doesnt point to an error message page, then we are logged in
         if res.status_code == 302 and location_qs['msg_type'][0] == 'i':
-            if 'omezené' in location_qs['msg'][0]:
+            if 'omezené' in location_qs['msg'][0].lower():
                 raise AuthenticationError("V.I.P. account is required for this provider to work!")
             else:
                 logger.info("Titulky.com: Successfully logged in, caching cookies for future connections...")
@@ -203,35 +203,44 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         cache.delete('titulky_user_agent')
 
         # If the response is a redirect and doesnt point to an error message page, then we are logged out
-        if res.status_code == 302 and location_qs['msg_type'][0] == 'i':
+        if res.is_redirect and location_qs['msg_type'][0] == 'i':
             return True
         else:
             raise AuthenticationError("Logout failed.")
 
     # GET request a page. This functions acts as a requests.session.get proxy handling expired cached cookies
     # and subsequent relogging and sending the original request again. If all went well, returns the response.
+    # Additionally handle allow_redirects by ourselves to follow redirects UNLESS they are redirecting to an
+    # error page. In such case we would like to know what has happend and act accordingly.
     def get_request(self, url, ref=server_url, allow_redirects=False, _recursion=0):
         # That's deep... recursion... Stop. We don't have infinite memmory. And don't want to
         # spam titulky's server either. So we have to just accept the defeat. Let it throw!
-        if _recursion >= 5:
-            raise AuthenticationError("Got into a loop and couldn't get authenticated!")
+        if _recursion >= 10:
+            raise AuthenticationError("Got into a redirect loop! Oops.")
 
         logger.debug(f"Titulky.com: Fetching url: {url}")
 
         res = self.session.get(
             url,
             timeout=self.timeout,
-            allow_redirects=allow_redirects,
+            allow_redirects=False,
             headers={'Referer': quote(ref) if ref else None})  # URL encode ref if it has value
 
-        # Check if we got redirected because login cookies expired.
-        # Note: microoptimization - don't bother parsing qs for non 302 responses.
-        if res.status_code == 302:
+        if res.is_redirect:
+            # Dont bother doing anything if we do not want to redirect. Just return the original response..
+            if allow_redirects is False:
+                return res
+            
             location_qs = parse_qs(urlparse(res.headers['Location']).query)
-            if location_qs['msg_type'][0] == 'e' and "Přihlašte se" in location_qs['msg'][0]:
+            # If the msg_type query parameter does NOT equal to 'e' or is absent, follow the URL in the Location header.
+            if allow_redirects is True and ('msg_type' not in location_qs or ('msg_type' in location_qs and location_qs['msg_type'][0] != 'e')):
+                return self.get_request(urljoin(res.headers['Origin'] or self.server_url, res.headers['Location']), ref=url, allow_redirects=True, _recursion=(_recursion + 1))
+            
+            # Check if we got redirected because login cookies expired.
+            if "přihlašte" in location_qs['msg'][0].lower():
                 logger.info(f"Titulky.com: Login cookies expired.")
                 self.login(True)
-                return self.get_request(url, ref=ref, _recursion=(_recursion + 1))
+                return self.get_request(url, ref=ref, allow_redirects=True, _recursion=(_recursion + 1))
 
         return res
 
