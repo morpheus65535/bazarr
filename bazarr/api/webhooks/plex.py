@@ -35,6 +35,9 @@ class WebHooksPlex(Resource):
         args = self.post_request_parser.parse_args()
         json_webhook = args.get('payload')
         parsed_json_webhook = json.loads(json_webhook)
+        if 'Guid' not in parsed_json_webhook['Metadata']:
+            logging.debug('No GUID provided in Plex json payload. Probably a pre-roll video.')
+            return "No GUID found in JSON request body", 200
 
         event = parsed_json_webhook['event']
         if event not in ['media.play']:
