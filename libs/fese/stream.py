@@ -41,8 +41,7 @@ class FFprobeSubtitleStream:
         )
         self.disposition = FFprobeSubtitleDisposition(stream.get("disposition", {}))
 
-        if stream.get("tags") is not None:
-            self.disposition.update_from_tags(stream["tags"])
+        self.disposition.update_from_tags(stream.get("tags", {}) or {})
 
     def convert_args(self, convert_format, outfile):
         """
