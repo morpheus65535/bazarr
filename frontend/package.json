@@ -34,7 +34,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.2.0",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^12.1.5",
+    "@testing-library/react": "^13.4.0",
     "@testing-library/react-hooks": "^8.0.1",
     "@testing-library/user-event": "^14.4.3",
     "@types/lodash": "^4.14.0",
@@ -60,7 +60,7 @@
     "typescript": "^4",
     "vite": "^3.2.1",
     "vite-plugin-checker": "^0.5.1",
-    "vitest": "^0.24.3"
+    "vitest": "^0.25.0"
   },
   "scripts": {
     "start": "vite",
