@@ -1,42 +1,37 @@
 import { faStickyNote } from "@fortawesome/free-regular-svg-icons";
-import { fireEvent, render, RenderResult } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, it, vitest } from "vitest";
 import Action from "./Action";
 
-describe("Action button", () => {
-  const testLabel = "Test Label";
-  const testIcon = faStickyNote;
+const testLabel = "Test Label";
+const testIcon = faStickyNote;
 
+describe("Action button", () => {
   const onClickFn = vitest.fn();
 
-  let renderResult: RenderResult;
   beforeEach(() => {
-    renderResult = render(
+    render(
       <Action icon={testIcon} label={testLabel} onClick={onClickFn}></Action>
     );
   });
 
-  it.concurrent("should be a button", () => {
-    const element = renderResult.container.querySelector("button");
-    expect(element).toBeDefined();
-    expect(element?.type).toEqual("button");
+  it("should be a button", () => {
+    const element = screen.getByRole("button", { name: testLabel });
 
-    expect(element?.getAttribute("aria-label")).toEqual(testLabel);
+    expect(element.getAttribute("type")).toEqual("button");
+    expect(element.getAttribute("aria-label")).toEqual(testLabel);
   });
 
-  it.concurrent("should call on-click event when clicked", () => {
-    fireEvent(
-      renderResult.container,
-      new MouseEvent("click", { bubbles: true, cancelable: true })
-    );
-    expect(onClickFn).toHaveBeenCalled();
-  });
-
-  it.concurrent("should show icon", () => {
-    const element = renderResult.container.querySelector("svg");
-    expect(element).toBeDefined();
+  it("should show icon", () => {
+    // TODO: use getBy...
+    const element = screen.getByRole("button").querySelector("svg");
 
     expect(element?.getAttribute("data-prefix")).toEqual(testIcon.prefix);
     expect(element?.getAttribute("data-icon")).toEqual(testIcon.iconName);
+  });
+
+  it("should call on-click event when clicked", () => {
+    fireEvent.click(screen.getByRole("button", { name: testLabel }));
+    expect(onClickFn).toHaveBeenCalled();
   });
 });
