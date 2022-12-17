@@ -8,15 +8,8 @@ const testLabel = "Test Label";
 const testIcon = faStickyNote;
 
 describe("Action button", () => {
-  const onClickFn = vitest.fn();
-
-  beforeEach(() => {
-    render(
-      <Action icon={testIcon} label={testLabel} onClick={onClickFn}></Action>
-    );
-  });
-
   it("should be a button", () => {
+    render(<Action icon={testIcon} label={testLabel}></Action>);
     const element = screen.getByRole("button", { name: testLabel });
 
     expect(element.getAttribute("type")).toEqual("button");
@@ -24,14 +17,20 @@ describe("Action button", () => {
   });
 
   it("should show icon", () => {
+    render(<Action icon={testIcon} label={testLabel}></Action>);
     // TODO: use getBy...
-    const element = screen.getByRole("button").querySelector("svg");
+    const element = screen.getByRole("img", { hidden: true });
 
-    expect(element?.getAttribute("data-prefix")).toEqual(testIcon.prefix);
-    expect(element?.getAttribute("data-icon")).toEqual(testIcon.iconName);
+    expect(element.getAttribute("data-prefix")).toEqual(testIcon.prefix);
+    expect(element.getAttribute("data-icon")).toEqual(testIcon.iconName);
   });
 
   it("should call on-click event when clicked", async () => {
+    const onClickFn = vitest.fn();
+    render(
+      <Action icon={testIcon} label={testLabel} onClick={onClickFn}></Action>
+    );
+
     await userEvent.click(screen.getByRole("button", { name: testLabel }));
 
     expect(onClickFn).toHaveBeenCalled();
