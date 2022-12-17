@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+
 import "@testing-library/jest-dom";
 import { vitest } from "vitest";
 
@@ -15,3 +17,12 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: vitest.fn(),
   })),
 });
+
+// From https://github.com/mantinedev/mantine/blob/master/configuration/jest/jsdom.mocks.js
+class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+window.ResizeObserver = ResizeObserver;

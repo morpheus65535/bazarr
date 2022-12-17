@@ -1,5 +1,6 @@
 import { faStickyNote } from "@fortawesome/free-regular-svg-icons";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, vitest } from "vitest";
 import Action from "./Action";
 
@@ -30,8 +31,9 @@ describe("Action button", () => {
     expect(element?.getAttribute("data-icon")).toEqual(testIcon.iconName);
   });
 
-  it("should call on-click event when clicked", () => {
-    fireEvent.click(screen.getByRole("button", { name: testLabel }));
+  it("should call on-click event when clicked", async () => {
+    await userEvent.click(screen.getByRole("button", { name: testLabel }));
+
     expect(onClickFn).toHaveBeenCalled();
   });
 });
