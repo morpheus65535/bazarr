@@ -13,16 +13,8 @@ describe("Authentication", () => {
       </QueryClientProvider>
     );
 
-    // expect(
-    //   screen.getByRole("textbox", {
-    //     name: "Username",
-    //   })
-    // ).toBeDefined();
-    // expect(
-    //   screen.getByRole("textbox", {
-    //     name: "Password",
-    //   })
-    // ).toBeDefined();
+    expect(screen.getByPlaceholderText("Username")).toBeDefined();
+    expect(screen.getByPlaceholderText("Password")).toBeDefined();
     expect(screen.getByRole("button", { name: "Login" })).toBeDefined();
   });
 });
