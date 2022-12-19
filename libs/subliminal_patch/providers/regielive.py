@@ -70,7 +70,7 @@ class RegieLiveProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.url = 'http://api.regielive.ro/kodi/cauta.php'
+        self.url = 'http://subtitles.24-7.ro/index.php'
         self.api = 'API-KODI-KINGUL'
         self.headers = {'RL-API': self.api}
 
