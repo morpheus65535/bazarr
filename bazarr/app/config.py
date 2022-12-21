@@ -78,7 +78,8 @@ defaults = {
         'wanted_search_frequency_movie': '3',
         'subzero_mods': '[]',
         'dont_notify_manual_actions': 'False',
-        'hi_extension': 'hi'
+        'hi_extension': 'hi',
+        'embedded_subtitles_parser': 'ffprobe'
     },
     'auth': {
         'type': 'None',

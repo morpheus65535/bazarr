@@ -11,6 +11,7 @@ from enzyme.exceptions import MalformedMKVError
 from languages.custom_lang import CustomLanguage
 from app.database import TableEpisodes, TableMovies
 from utilities.path_mappings import path_mappings
+from app.config import settings
 
 
 def _handle_alpha3(detected_language: dict):
@@ -30,6 +31,24 @@ def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=No
     subtitles_list = []
     if data["ffprobe"] and "subtitle" in data["ffprobe"]:
         for detected_language in data["ffprobe"]["subtitle"]:
+            if "language" not in detected_language:
+                continue
+
+            # Avoid commentary subtitles
+            name = detected_language.get("name", "").lower()
+            if "commentary" in name:
+                logging.debug("Ignoring commentary subtitle: %s", name)
+                continue
+
+            language = _handle_alpha3(detected_language)
+
+            forced = detected_language.get("forced", False)
+            hearing_impaired = detected_language.get("hearing_impaired", False)
+            codec = detected_language.get("format")  # or None
+            subtitles_list.append([language, forced, hearing_impaired, codec])
+
+    elif 'mediainfo' in data and data["mediainfo"] and "subtitle" in data["mediainfo"]:
+        for detected_language in data["mediainfo"]["subtitle"]:
             if "language" not in detected_language:
                 continue
 
@@ -68,6 +87,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     # Define default data keys value
     data = {
         "ffprobe": {},
+        "mediainfo": {},
         "enzyme": {},
         "file_id": episode_file_id or movie_file_id,
         "file_size": file_size,
@@ -102,12 +122,19 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     # if not, we retrieve the metadata from the file
     from utilities.binaries import get_binary
 
-    ffprobe_path = get_binary("ffprobe")
+    ffprobe_path = mediainfo_path = None
+    if settings.general.embedded_subtitles_parser == 'ffprobe':
+        ffprobe_path = get_binary("ffprobe")
+    elif settings.general.embedded_subtitles_parser == 'mediainfo':
+        mediainfo_path = get_binary("mediainfo")
 
     # if we have ffprobe available
     if ffprobe_path:
         data["ffprobe"] = know(video_path=file, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path})
-    # if not, we use enzyme for mkv files
+    # or if we have mediainfo available
+    elif mediainfo_path:
+        data["mediainfo"] = know(video_path=file, context={"provider": "mediainfo", "mediainfo": mediainfo_path})
+    # else, we use enzyme for mkv files
     else:
         if os.path.splitext(file)[1] == ".mkv":
             with open(file, "rb") as f:
@@ -116,7 +143,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
                 except MalformedMKVError:
                     logging.error(
                         "BAZARR cannot analyze this MKV with our built-in MKV parser, you should install "
-                        "ffmpeg/ffprobe: " + file
+                        "ffmpeg/ffprobe or mediainfo: " + file
                     )
                 else:
                     data["enzyme"] = mkv
