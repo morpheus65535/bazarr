@@ -1,12 +1,9 @@
 # coding=utf-8
 
 import logging
-import os
 import pickle
-import enzyme
 
 from knowit.api import know
-from enzyme.exceptions import MalformedMKVError
 
 from languages.custom_lang import CustomLanguage
 from app.database import TableEpisodes, TableMovies
@@ -65,21 +62,6 @@ def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=No
             codec = detected_language.get("format")  # or None
             subtitles_list.append([language, forced, hearing_impaired, codec])
 
-    elif data["enzyme"]:
-        for subtitle_track in data["enzyme"].subtitle_tracks:
-            hearing_impaired = (
-                subtitle_track.name and "sdh" in subtitle_track.name.lower()
-            )
-
-            subtitles_list.append(
-                [
-                    subtitle_track.language,
-                    subtitle_track.forced,
-                    hearing_impaired,
-                    subtitle_track.codec_id,
-                ]
-            )
-
     return subtitles_list
 
 
@@ -88,7 +70,6 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     data = {
         "ffprobe": {},
         "mediainfo": {},
-        "enzyme": {},
         "file_id": episode_file_id or movie_file_id,
         "file_size": file_size,
     }
@@ -120,12 +101,14 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
             # Check if file size and file id matches and if so, we return the cached value if available for the
             # desired parser
             if cached_value['file_size'] == file_size and cached_value['file_id'] in [episode_file_id, movie_file_id]:
-                if ((embedded_subs_parser == 'ffprobe' and 'ffprobe' in cached_value and cached_value['ffprobe']) or
-                        (embedded_subs_parser == 'mediainfo' and 'mediainfo' in cached_value and
-                         cached_value['mediainfo']) or
-                        (all(['ffprobe', 'mediainfo']) not in cached_value and 'enzyme' in cached_value and
-                         cached_value['enzyme'])):
+                if embedded_subs_parser in cached_value and cached_value[embedded_subs_parser]:
                     return cached_value
+                else:
+                    # no valid cache
+                    pass
+            else:
+                # cache mut be renewed
+                pass
 
     # if not, we retrieve the metadata from the file
     from utilities.binaries import get_binary
@@ -142,19 +125,11 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     # or if we have mediainfo available
     elif mediainfo_path:
         data["mediainfo"] = know(video_path=file, context={"provider": "mediainfo", "mediainfo": mediainfo_path})
-    # else, we use enzyme for mkv files
+    # else, we warn user of missing binary
     else:
-        if os.path.splitext(file)[1] == ".mkv":
-            with open(file, "rb") as f:
-                try:
-                    mkv = enzyme.MKV(f)
-                except MalformedMKVError:
-                    logging.error(
-                        "BAZARR cannot analyze this MKV with our built-in MKV parser, you should install "
-                        "ffmpeg/ffprobe or mediainfo: " + file
-                    )
-                else:
-                    data["enzyme"] = mkv
+        logging.error("BAZARR require ffmpeg/ffprobe or mediainfo, please install it and make sure to choose it in "
+                      "Settings-->Subtitles.")
+        return
 
     # we write to db the result and return the newly cached ffprobe dict
     if episode_file_id:

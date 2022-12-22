@@ -32,8 +32,8 @@ def refine_from_ffprobe(path, video):
         data = parse_video_metadata(file=path, file_size=file_id['file_size'],
                                     episode_file_id=file_id['episode_file_id'])
 
-    if not any([data['ffprobe'], data['mediainfo'], data['enzyme']]):
-        logging.error("No cache available for this file: {}".format(path))
+    if 'ffprobe' not in data and 'mediainfo' not in data:
+        logging.debug("No cache available for this file: {}".format(path))
         return video
 
     if data['ffprobe']:
@@ -42,9 +42,6 @@ def refine_from_ffprobe(path, video):
     elif data['mediainfo']:
         logging.debug('Mediainfo found: %s', data['mediainfo'])
         parser_data = data['mediainfo']
-    elif data['enzyme']:
-        logging.debug('Enzyme found: %s', data['enzyme'])
-        parser_data = data['enzyme']
     else:
         parser_data = {}
 
