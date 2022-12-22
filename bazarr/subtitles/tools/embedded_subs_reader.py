@@ -93,6 +93,8 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
         "file_size": file_size,
     }
 
+    embedded_subs_parser = settings.general.embedded_subtitles_parser
+
     if use_cache:
         # Get the actual cache value form database
         if episode_file_id:
@@ -115,17 +117,23 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
         except Exception:
             pass
         else:
-            # Check if file size and file id matches and if so, we return the cached value
+            # Check if file size and file id matches and if so, we return the cached value if available for the
+            # desired parser
             if cached_value['file_size'] == file_size and cached_value['file_id'] in [episode_file_id, movie_file_id]:
-                return cached_value
+                if ((embedded_subs_parser == 'ffprobe' and 'ffprobe' in cached_value and cached_value['ffprobe']) or
+                        (embedded_subs_parser == 'mediainfo' and 'mediainfo' in cached_value and
+                         cached_value['mediainfo']) or
+                        (all(['ffprobe', 'mediainfo']) not in cached_value and 'enzyme' in cached_value and
+                         cached_value['enzyme'])):
+                    return cached_value
 
     # if not, we retrieve the metadata from the file
     from utilities.binaries import get_binary
 
     ffprobe_path = mediainfo_path = None
-    if settings.general.embedded_subtitles_parser == 'ffprobe':
+    if embedded_subs_parser == 'ffprobe':
         ffprobe_path = get_binary("ffprobe")
-    elif settings.general.embedded_subtitles_parser == 'mediainfo':
+    elif embedded_subs_parser == 'mediainfo':
         mediainfo_path = get_binary("mediainfo")
 
     # if we have ffprobe available
