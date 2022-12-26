@@ -76,8 +76,10 @@ class Series(Resource):
                 .where(TableShows.sonarrSeriesId.in_(seriesId)) \
                 .order_by(TableShows.sortTitle).dicts()
         else:
-            result = TableShows.select().order_by(TableShows.sortTitle).limit(length).offset(start).dicts()
-
+            result = TableShows.select().order_by(TableShows.sortTitle)
+            if length > 0:
+                result = result.limit(length).offset(start)
+            result = result.dicts()
         result = list(result)
 
         for item in result:

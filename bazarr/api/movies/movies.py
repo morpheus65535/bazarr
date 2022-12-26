@@ -82,7 +82,10 @@ class Movies(Resource):
                 .order_by(TableMovies.sortTitle)\
                 .dicts()
         else:
-            result = TableMovies.select().order_by(TableMovies.sortTitle).limit(length).offset(start).dicts()
+            result = TableMovies.select().order_by(TableMovies.sortTitle)
+            if length > 0:
+                result = result.limit(length).offset(start)
+            result = result.dicts()
         result = list(result)
         for item in result:
             postprocessMovie(item)

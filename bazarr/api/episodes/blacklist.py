@@ -59,11 +59,10 @@ class EpisodesBlacklist(Resource):
                                      TableBlacklist.timestamp)\
             .join(TableEpisodes, on=(TableBlacklist.sonarr_episode_id == TableEpisodes.sonarrEpisodeId))\
             .join(TableShows, on=(TableBlacklist.sonarr_series_id == TableShows.sonarrSeriesId))\
-            .order_by(TableBlacklist.timestamp.desc())\
-            .limit(length)\
-            .offset(start)\
-            .dicts()
-        data = list(data)
+            .order_by(TableBlacklist.timestamp.desc())
+        if length > 0:
+            data = data.limit(length).offset(start)
+        data = list(data.dicts())
 
         for item in data:
             # Make timestamp pretty

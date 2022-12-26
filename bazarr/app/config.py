@@ -261,6 +261,14 @@ defaults = {
         "streaming_service": 1,
         "edition": 1,
         "hearing_impaired": 1,
+    },
+    'postgresql': {
+        'enabled': 'False',
+        'host': 'localhost',
+        'port': '5432',
+        'database': '',
+        'username': '',
+        'password': '',
     }
 }
 

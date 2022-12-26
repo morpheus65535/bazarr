@@ -86,10 +86,14 @@ class MoviesHistory(Resource):
                                                          fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
                                                          TableHistoryMovie.score,
                                                          TableMovies.tags,
-                                                         TableMovies.monitored)\
-                .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
-                .where(reduce(operator.and_, upgradable_movies_conditions))\
-                .group_by(TableHistoryMovie.video_path)\
+                                                         TableMovies.monitored) \
+                .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId)) \
+                .where(reduce(operator.and_, upgradable_movies_conditions)) \
+                .group_by(TableHistoryMovie.video_path,
+                          TableHistoryMovie.score,
+                          TableMovies.tags,
+                          TableMovies.monitored
+                          ) \
                 .dicts()
             upgradable_movies = list(upgradable_movies)
 
@@ -122,14 +126,13 @@ class MoviesHistory(Resource):
                                                  TableHistoryMovie.subs_id,
                                                  TableHistoryMovie.provider,
                                                  TableHistoryMovie.subtitles_path,
-                                                 TableHistoryMovie.video_path)\
-            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
-            .where(query_condition)\
-            .order_by(TableHistoryMovie.timestamp.desc())\
-            .limit(length)\
-            .offset(start)\
-            .dicts()
-        movie_history = list(movie_history)
+                                                 TableHistoryMovie.video_path) \
+            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId)) \
+            .where(query_condition) \
+            .order_by(TableHistoryMovie.timestamp.desc())
+        if length > 0:
+            movie_history = movie_history.limit(length).offset(start)
+        movie_history = list(movie_history.dicts())
 
         blacklist_db = TableBlacklistMovie.select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id).dicts()
         blacklist_db = list(blacklist_db)
@@ -138,7 +141,8 @@ class MoviesHistory(Resource):
             # Mark movies as upgradable or not
             item.update({"upgradable": False})
             if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
-                "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:  # noqa: E129
+                "tags": str(item['tags']),
+                "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:  # noqa: E129
                 if os.path.exists(path_mappings.path_replace_movie(item['subtitles_path'])) and \
                         os.path.exists(path_mappings.path_replace_movie(item['video_path'])):
                     item.update({"upgradable": True})
@@ -165,9 +169,9 @@ class MoviesHistory(Resource):
                         item.update({"blacklisted": True})
                         break
 
-        count = TableHistoryMovie.select()\
-            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
-            .where(TableMovies.title.is_null(False))\
+        count = TableHistoryMovie.select() \
+            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId)) \
+            .where(TableMovies.title.is_null(False)) \
             .count()
 
         return {'data': movie_history, 'total': count}

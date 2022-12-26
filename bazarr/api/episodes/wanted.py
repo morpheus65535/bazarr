@@ -88,10 +88,10 @@ class EpisodesWanted(Resource):
                                         TableShows.seriesType)\
                 .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
                 .where(wanted_condition)\
-                .order_by(TableEpisodes.rowid.desc())\
-                .limit(length)\
-                .offset(start)\
-                .dicts()
+                .order_by(TableEpisodes.rowid.desc())
+            if length > 0:
+                data = data.limit(length).offset(start)
+            data = data.dicts()
         data = list(data)
 
         for item in data:
