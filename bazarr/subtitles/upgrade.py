@@ -56,11 +56,27 @@ def upgrade_subtitles():
                                                   TableEpisodes.season,
                                                   TableEpisodes.episode,
                                                   TableShows.title.alias('seriesTitle'),
-                                                  TableShows.seriesType)\
-            .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId))\
-            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
-            .where(reduce(operator.and_, upgradable_episodes_conditions))\
-            .group_by(TableHistory.video_path, TableHistory.language)\
+                                                  TableShows.seriesType) \
+            .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId)) \
+            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)) \
+            .where(reduce(operator.and_, upgradable_episodes_conditions)) \
+            .group_by(TableHistory.video_path,
+                      TableHistory.language,
+                      TableHistory.score,
+                      TableShows.tags,
+                      TableShows.profileId,
+                      TableEpisodes.audio_language,
+                      TableEpisodes.scene_name,
+                      TableEpisodes.title,
+                      TableEpisodes.sonarrSeriesId,
+                      TableHistory.action,
+                      TableHistory.subtitles_path,
+                      TableEpisodes.sonarrEpisodeId,
+                      TableEpisodes.monitored,
+                      TableEpisodes.season,
+                      TableEpisodes.episode,
+                      TableShows.title.alias('seriesTitle'),
+                      TableShows.seriesType) \
             .dicts()
         upgradable_episodes_not_perfect = []
         for upgradable_episode in upgradable_episodes:
@@ -100,10 +116,22 @@ def upgrade_subtitles():
                                                      TableMovies.monitored,
                                                      TableMovies.tags,
                                                      TableMovies.radarrId,
-                                                     TableMovies.title)\
-            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
-            .where(reduce(operator.and_, upgradable_movies_conditions))\
-            .group_by(TableHistoryMovie.video_path, TableHistoryMovie.language)\
+                                                     TableMovies.title) \
+            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId)) \
+            .where(reduce(operator.and_, upgradable_movies_conditions)) \
+            .group_by(TableHistoryMovie.video_path,
+                      TableHistoryMovie.language,
+                      TableHistoryMovie.score,
+                      TableMovies.profileId,
+                      TableHistoryMovie.action,
+                      TableHistoryMovie.subtitles_path,
+                      TableMovies.audio_language,
+                      TableMovies.sceneName,
+                      TableMovies.monitored,
+                      TableMovies.tags,
+                      TableMovies.radarrId,
+                      TableMovies.title
+                      ) \
             .dicts()
         upgradable_movies_not_perfect = []
         for upgradable_movie in upgradable_movies:
@@ -249,7 +277,8 @@ def upgrade_subtitles():
                 subs_path = result[7]
                 store_subtitles_movie(movie['video_path'],
                                       path_mappings.path_replace_movie(movie['video_path']))
-                history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id, subs_path)
+                history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id,
+                                  subs_path)
                 send_notifications_movie(movie['radarrId'], message)
 
         hide_progress(id='upgrade_movies_progress')

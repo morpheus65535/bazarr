@@ -75,10 +75,10 @@ class MoviesWanted(Resource):
                                         TableMovies.tags,
                                         TableMovies.monitored)\
                 .where(wanted_condition)\
-                .order_by(TableMovies.rowid.desc())\
-                .limit(length)\
-                .offset(start)\
-                .dicts()
+                .order_by(TableMovies.rowid.desc())
+            if length > 0:
+                result = result.limit(length).offset(start)
+            result = result.dicts()
         result = list(result)
 
         for item in result:

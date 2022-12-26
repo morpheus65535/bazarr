@@ -1,26 +1,47 @@
 # -*- coding: utf-8 -*-
-
+import logging
 import os
 import atexit
 import json
 import ast
 import time
 
-from peewee import Model, AutoField, TextField, IntegerField, ForeignKeyField, BlobField, BooleanField
+from peewee import Model, AutoField, TextField, IntegerField, ForeignKeyField, BlobField, BooleanField, BigIntegerField
 from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.migrate import SqliteMigrator, migrate
 from playhouse.sqlite_ext import RowIDField
 
 from utilities.path_mappings import path_mappings
 
+from peewee import PostgresqlDatabase
+from playhouse.migrate import PostgresqlMigrator
+
 from .config import settings, get_array_from
 from .get_args import args
 
-database = SqliteQueueDatabase(os.path.join(args.config_dir, 'db', 'bazarr.db'),
-                               use_gevent=False,
-                               autostart=True,
-                               queue_max_size=256)
-migrator = SqliteMigrator(database)
+logger = logging.getLogger(__name__)
+
+postgresql = settings.postgresql.getboolean('enabled')
+
+if postgresql:
+    logger.debug(
+        f"Connecting to PostgreSQL database: {settings.postgresql.host}:{settings.postgresql.port}/{settings.postgresql.database}")
+    database = PostgresqlDatabase(settings.postgresql.database,
+                                        user=settings.postgresql.username,
+                                        password=settings.postgresql.password,
+                                        host=settings.postgresql.host,
+                                        port=settings.postgresql.port,
+                                        autoconnect=True
+                                        )
+    migrator = PostgresqlMigrator(database)
+else:
+    db_path = os.path.join(args.config_dir, 'db', 'bazarr.db')
+    logger.debug(f"Connecting to SQLite database: {db_path}")
+    database = SqliteQueueDatabase(db_path,
+                                   use_gevent=False,
+                                   autostart=True,
+                                   queue_max_size=256)
+    migrator = SqliteMigrator(database)
 
 
 @atexit.register
@@ -79,7 +100,10 @@ class TableEpisodes(BaseModel):
     episode_file_id = IntegerField(null=True)
     failedAttempts = TextField(null=True)
     ffprobe_cache = BlobField(null=True)
-    file_size = IntegerField(default=0, null=True)
+    if postgresql:
+        file_size = BigIntegerField(default=0, null=True)
+    else:
+        file_size = IntegerField(default=0, null=True)
     format = TextField(null=True)
     missing_subtitles = TextField(null=True)
     monitored = TextField(null=True)
@@ -154,7 +178,10 @@ class TableMovies(BaseModel):
     failedAttempts = TextField(null=True)
     fanart = TextField(null=True)
     ffprobe_cache = BlobField(null=True)
-    file_size = IntegerField(default=0, null=True)
+    if postgresql:
+        file_size = BigIntegerField(default=0, null=True)
+    else:
+        file_size = IntegerField(default=0, null=True)
     format = TextField(null=True)
     imdbId = TextField(null=True)
     missing_subtitles = TextField(null=True)
@@ -296,6 +323,9 @@ def init_db():
 
 
 def migrate_db():
+    if postgresql:
+        # Disable migration for postgresql until we have a proper migration system
+        return
     migrate(
         migrator.add_column('table_shows', 'year', TextField(null=True)),
         migrator.add_column('table_shows', 'alternateTitles', TextField(null=True)),
@@ -376,11 +406,11 @@ def get_exclusion_clause(exclusion_type):
     if exclusion_type == 'series':
         tagsList = ast.literal_eval(settings.sonarr.excluded_tags)
         for tag in tagsList:
-            where_clause.append(~(TableShows.tags.contains("\'"+tag+"\'")))
+            where_clause.append(~(TableShows.tags.contains("\'" + tag + "\'")))
     else:
         tagsList = ast.literal_eval(settings.radarr.excluded_tags)
         for tag in tagsList:
-            where_clause.append(~(TableMovies.tags.contains("\'"+tag+"\'")))
+            where_clause.append(~(TableMovies.tags.contains("\'" + tag + "\'")))
 
     if exclusion_type == 'series':
         monitoredOnly = settings.sonarr.getboolean('only_monitored')
@@ -517,22 +547,22 @@ def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
 
 def get_profile_id(series_id=None, episode_id=None, movie_id=None):
     if series_id:
-        data = TableShows.select(TableShows.profileId)\
-            .where(TableShows.sonarrSeriesId == series_id)\
+        data = TableShows.select(TableShows.profileId) \
+            .where(TableShows.sonarrSeriesId == series_id) \
             .get_or_none()
         if data:
             return data.profileId
     elif episode_id:
-        data = TableShows.select(TableShows.profileId)\
-            .join(TableEpisodes, on=(TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId))\
-            .where(TableEpisodes.sonarrEpisodeId == episode_id)\
+        data = TableShows.select(TableShows.profileId) \
+            .join(TableEpisodes, on=(TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId)) \
+            .where(TableEpisodes.sonarrEpisodeId == episode_id) \
             .get_or_none()
         if data:
             return data.profileId
 
     elif movie_id:
-        data = TableMovies.select(TableMovies.profileId)\
-            .where(TableMovies.radarrId == movie_id)\
+        data = TableMovies.select(TableMovies.profileId) \
+            .where(TableMovies.radarrId == movie_id) \
             .get_or_none()
         if data:
             return data.profileId

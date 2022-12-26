@@ -90,11 +90,15 @@ class EpisodesHistory(Resource):
                                                       TableHistory.score,
                                                       TableShows.tags,
                                                       TableEpisodes.monitored,
-                                                      TableShows.seriesType)\
-                .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
-                .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId))\
-                .where(reduce(operator.and_, upgradable_episodes_conditions))\
-                .group_by(TableHistory.video_path)\
+                                                      TableShows.seriesType) \
+                .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)) \
+                .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId)) \
+                .where(reduce(operator.and_, upgradable_episodes_conditions)) \
+                .group_by(TableHistory.video_path,
+                          TableHistory.score,
+                          TableShows.tags,
+                          TableEpisodes.monitored,
+                          TableShows.seriesType) \
                 .dicts()
             upgradable_episodes = list(upgradable_episodes)
             for upgradable_episode in upgradable_episodes:
@@ -114,7 +118,8 @@ class EpisodesHistory(Resource):
         episode_history = TableHistory.select(TableHistory.id,
                                               TableShows.title.alias('seriesTitle'),
                                               TableEpisodes.monitored,
-                                              TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
+                                              TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias(
+                                                  'episode_number'),
                                               TableEpisodes.title.alias('episodeTitle'),
                                               TableHistory.timestamp,
                                               TableHistory.subs_id,
@@ -129,15 +134,14 @@ class EpisodesHistory(Resource):
                                               TableHistory.subtitles_path,
                                               TableHistory.sonarrEpisodeId,
                                               TableHistory.provider,
-                                              TableShows.seriesType)\
-            .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId))\
-            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
-            .where(query_condition)\
-            .order_by(TableHistory.timestamp.desc())\
-            .limit(length)\
-            .offset(start)\
-            .dicts()
-        episode_history = list(episode_history)
+                                              TableShows.seriesType) \
+            .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId)) \
+            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)) \
+            .where(query_condition) \
+            .order_by(TableHistory.timestamp.desc())
+        if length > 0:
+            episode_history = episode_history.limit(length).offset(start)
+        episode_history = list(episode_history.dicts())
 
         blacklist_db = TableBlacklist.select(TableBlacklist.provider, TableBlacklist.subs_id).dicts()
         blacklist_db = list(blacklist_db)
@@ -174,8 +178,8 @@ class EpisodesHistory(Resource):
                         item.update({"blacklisted": True})
                         break
 
-        count = TableHistory.select()\
-            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
+        count = TableHistory.select() \
+            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)) \
             .where(TableEpisodes.title.is_null(False)).count()
 
         return {'data': episode_history, 'total': count}

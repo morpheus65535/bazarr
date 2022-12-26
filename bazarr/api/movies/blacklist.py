@@ -54,11 +54,10 @@ class MoviesBlacklist(Resource):
                                           TableBlacklistMovie.language,
                                           TableBlacklistMovie.timestamp)\
             .join(TableMovies, on=(TableBlacklistMovie.radarr_id == TableMovies.radarrId))\
-            .order_by(TableBlacklistMovie.timestamp.desc())\
-            .limit(length)\
-            .offset(start)\
-            .dicts()
-        data = list(data)
+            .order_by(TableBlacklistMovie.timestamp.desc())
+        if length > 0:
+            data = data.limit(length).offset(start)
+        data = list(data.dicts())
 
         for item in data:
             postprocessMovie(item)

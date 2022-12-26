@@ -147,12 +147,12 @@ def update_movies(send_event=True):
             # Insert new movies in DB
             for added_movie in movies_to_add:
                 try:
-                    result = TableMovies.insert(added_movie).on_conflict(action='IGNORE').execute()
+                    result = TableMovies.insert(added_movie).on_conflict_ignore().execute()
                 except IntegrityError as e:
                     logging.error(f"BAZARR cannot insert movie {added_movie['path']} because of {e}")
                     continue
                 else:
-                    if result > 0:
+                    if result and result > 0:
                         altered_movies.append([added_movie['tmdbId'],
                                                added_movie['path'],
                                                added_movie['radarrId'],
