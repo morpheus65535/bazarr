@@ -63,8 +63,8 @@ class HistoryStats(Resource):
         elif timeframe == 'week':
             delay = 6 * 24 * 60 * 60
 
-        now = time.time()
-        past = now - delay
+        now = datetime.datetime.now()
+        past = now - datetime.timedelta(seconds=delay)
 
         history_where_clauses = [(TableHistory.timestamp.between(past, now))]
         history_where_clauses_movie = [(TableHistoryMovie.timestamp.between(past, now))]
@@ -92,7 +92,7 @@ class HistoryStats(Resource):
             .dicts()
         data_series = [{'date': date[0], 'count': sum(1 for item in date[1])} for date in
                        itertools.groupby(list(data_series),
-                                         key=lambda x: datetime.datetime.fromtimestamp(x['timestamp']).strftime(
+                                         key=lambda x: x['timestamp'].strftime(
                                              '%Y-%m-%d'))]
 
         data_movies = TableHistoryMovie.select(TableHistoryMovie.timestamp, TableHistoryMovie.id) \
@@ -100,7 +100,7 @@ class HistoryStats(Resource):
             .dicts()
         data_movies = [{'date': date[0], 'count': sum(1 for item in date[1])} for date in
                        itertools.groupby(list(data_movies),
-                                         key=lambda x: datetime.datetime.fromtimestamp(x['timestamp']).strftime(
+                                         key=lambda x: x['timestamp'].strftime(
                                              '%Y-%m-%d'))]
 
         for dt in rrule.rrule(rrule.DAILY,
