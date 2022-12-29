@@ -63,8 +63,8 @@ class MoviesBlacklist(Resource):
             postprocessMovie(item)
 
             # Make timestamp pretty
-            item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
-            item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
+            item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
+            item.update({'timestamp': pretty.date(item['timestamp'])})
 
         return data
 

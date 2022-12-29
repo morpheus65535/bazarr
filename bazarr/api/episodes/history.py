@@ -73,8 +73,7 @@ class EpisodesHistory(Resource):
         upgradable_episodes_not_perfect = []
         if settings.general.getboolean('upgrade_subs'):
             days_to_upgrade_subs = settings.general.days_to_upgrade_subs
-            minimum_timestamp = ((datetime.datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
-                                 datetime.datetime(1970, 1, 1)).total_seconds()
+            minimum_timestamp = (datetime.datetime.now() - timedelta(days=int(days_to_upgrade_subs)))
 
             if settings.general.getboolean('upgrade_manual'):
                 query_actions = [1, 2, 3, 6]
@@ -149,7 +148,7 @@ class EpisodesHistory(Resource):
         for item in episode_history:
             # Mark episode as upgradable or not
             item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
+            if {"video_path": str(item['path']), "timestamp": item['timestamp'], "score": str(item['score']),
                 "tags": str(item['tags']), "monitored": str(item['monitored']),
                 "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:  # noqa: E129
                 if os.path.exists(path_mappings.path_replace(item['subtitles_path'])) and \
@@ -165,9 +164,9 @@ class EpisodesHistory(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
-                item["raw_timestamp"] = int(item['timestamp'])
-                item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
-                item['timestamp'] = pretty.date(item["raw_timestamp"])
+                item["raw_timestamp"] = item['timestamp'].timestamp()
+                item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
+                item['timestamp'] = pretty.date(item["timestamp"])
 
             # Check if subtitles is blacklisted
             item.update({"blacklisted": False})

@@ -26,8 +26,7 @@ from .download import generate_subtitles
 
 def upgrade_subtitles():
     days_to_upgrade_subs = settings.general.days_to_upgrade_subs
-    minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
-                         datetime(1970, 1, 1)).total_seconds()
+    minimum_timestamp = (datetime.now() - timedelta(days=int(days_to_upgrade_subs)))
 
     if settings.general.getboolean('upgrade_manual'):
         query_actions = [1, 2, 3, 4, 6]
