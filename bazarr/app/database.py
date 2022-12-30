@@ -646,18 +646,9 @@ def get_profile_cutoff(profile_id):
     return cutoff_language
 
 
-def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
+def get_audio_profile_languages(audio_languages_list_str):
     from languages.get_languages import alpha2_from_language, alpha3_from_language
     audio_languages = []
-
-    if series_id:
-        audio_languages_list_str = TableShows.get(TableShows.sonarrSeriesId == series_id).audio_language
-    elif episode_id:
-        audio_languages_list_str = TableEpisodes.get(TableEpisodes.sonarrEpisodeId == episode_id).audio_language
-    elif movie_id:
-        audio_languages_list_str = TableMovies.get(TableMovies.radarrId == movie_id).audio_language
-    else:
-        return audio_languages
 
     try:
         audio_languages_list = ast.literal_eval(audio_languages_list_str)
