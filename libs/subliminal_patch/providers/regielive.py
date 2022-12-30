@@ -11,6 +11,7 @@ from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending
 from subliminal.video import Episode, Movie
 from subzero.language import Language
+from regielive_api.regielive import RegieLiveSearchAPI, RegieLiveAPIData, RegieLiveAPIRating
 
 import zipfile
 
@@ -80,25 +81,15 @@ class RegieLiveProvider(Provider):
         self.session.close()
 
     def query(self, video, language):
-        payload = {}
-        if isinstance (video, Episode):
-            payload['nume'] = video.series
-            payload['sezon'] = video.season
-            payload['episod'] = video.episode
-        elif isinstance(video, Movie):
-            payload['nume'] = video.title
-        payload['an'] = video.year
-        response = self.session.post(self.url, data=payload, headers=self.headers)
-        logger.info(response.json())
+        search_api = RegieLiveSearchAPI(video)
+        results = search_api.search_video()
         subtitles = []
-        if response.json()['cod'] == 200:
-            results_subs = response.json()['rezultate']
-            for film in results_subs:
-                for sub in results_subs[film]['subtitrari']:
-                    logger.debug(sub)
-                    subtitles.append(
-                            RegieLiveSubtitle(sub['titlu'], video, sub['url'], sub['rating'], language)
-                    )
+        if results:
+            for result in results:
+                logger.debug(result)
+                subtitles.append(
+                        RegieLiveSubtitle(result.name, video, result.download_url, result.rating, language)
+                )
 
         # {'titlu': 'Chernobyl.S01E04.The.Happiness.of.All.Mankind.720p.AMZN.WEB-DL.DDP5.1.H.264-NTb', 'url': 'https://subtitrari.regielive.ro/descarca-33336-418567.zip', 'rating': {'nota': 4.89, 'voturi': 48}}
         # subtitle def __init__(self, language, filename, subtype, video, link):
