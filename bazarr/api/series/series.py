@@ -6,6 +6,7 @@ from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows
+from peewee import fn, JOIN
 from subtitles.indexer.series import list_missing_subtitles, series_scan_subtitles
 from subtitles.mass_download import series_download_subtitles
 from subtitles.wanted import wanted_search_missing_subtitles_series
@@ -13,7 +14,6 @@ from app.event_handler import event_stream
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
 from ..utils import authenticate, postprocessSeries, None_Keys
-
 
 api_ns_series = Namespace('Series', description='List series metadata, update series languages profile or run actions '
                                                 'for specific series.')
@@ -34,8 +34,8 @@ class Series(Resource):
     data_model = api_ns_series.model('series_data_model', {
         'alternativeTitles': fields.List(fields.String),
         'audio_language': fields.Nested(get_audio_language_model),
-        'episodeFileCount': fields.Integer(),
-        'episodeMissingCount': fields.Integer(),
+        'episodeFileCount': fields.Integer(default=0),
+        'episodeMissingCount': fields.Integer(default=0),
         'fanart': fields.String(),
         'imdbId': fields.String(),
         'monitored': fields.Boolean(),
@@ -70,42 +70,36 @@ class Series(Resource):
         seriesId = args.get('seriesid[]')
 
         count = TableShows.select().count()
+        episodeFileCount = TableEpisodes.select(TableShows.sonarrSeriesId,
+                                                fn.COUNT(TableEpisodes.sonarrSeriesId).coerce(False).alias('episodeFileCount')) \
+                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
+                .group_by(TableShows.sonarrSeriesId).alias('episodeFileCount')
+
+        episodes_missing_conditions = [(TableEpisodes.missing_subtitles != '[]')]
+        episodes_missing_conditions += get_exclusion_clause('series')
+
+        episodeMissingCount = (TableEpisodes.select(TableShows.sonarrSeriesId,
+                                                    fn.COUNT(TableEpisodes.sonarrSeriesId).coerce(False).alias('episodeMissingCount'))
+                               .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))
+                               .where(reduce(operator.and_, episodes_missing_conditions)).group_by(
+            TableShows.sonarrSeriesId).alias('episodeMissingCount'))
+
+        result = TableShows.select(TableShows, episodeFileCount.c.episodeFileCount,
+                                   episodeMissingCount.c.episodeMissingCount).join(episodeFileCount,
+                                                                                   join_type=JOIN.LEFT_OUTER, on=(
+                        TableShows.sonarrSeriesId == episodeFileCount.c.sonarrSeriesId)) \
+                .join(episodeMissingCount, join_type=JOIN.LEFT_OUTER,
+                  on=(TableShows.sonarrSeriesId == episodeMissingCount.c.sonarrSeriesId)).order_by(TableShows.sortTitle)
+
 
         if len(seriesId) != 0:
-            result = TableShows.select() \
-                .where(TableShows.sonarrSeriesId.in_(seriesId)) \
-                .order_by(TableShows.sortTitle).dicts()
-        else:
-            result = TableShows.select().order_by(TableShows.sortTitle)
-            if length > 0:
-                result = result.limit(length).offset(start)
-            result = result.dicts()
-        result = list(result)
+            result = result.where(TableShows.sonarrSeriesId.in_(seriesId))
+        elif length > 0:
+            result = result.limit(length).offset(start)
+        result = list(result.dicts())
 
         for item in result:
             postprocessSeries(item)
-
-            # Add missing subtitles episode count
-            episodes_missing_conditions = [(TableEpisodes.sonarrSeriesId == item['sonarrSeriesId']),
-                                           (TableEpisodes.missing_subtitles != '[]')]
-            episodes_missing_conditions += get_exclusion_clause('series')
-
-            episodeMissingCount = TableEpisodes.select(TableShows.tags,
-                                                       TableEpisodes.monitored,
-                                                       TableShows.seriesType) \
-                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-                .where(reduce(operator.and_, episodes_missing_conditions)) \
-                .count()
-            item.update({"episodeMissingCount": episodeMissingCount})
-
-            # Add episode count
-            episodeFileCount = TableEpisodes.select(TableShows.tags,
-                                                    TableEpisodes.monitored,
-                                                    TableShows.seriesType) \
-                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-                .where(TableEpisodes.sonarrSeriesId == item['sonarrSeriesId']) \
-                .count()
-            item.update({"episodeFileCount": episodeFileCount})
 
         return {'data': result, 'total': count}
 
