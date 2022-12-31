@@ -454,7 +454,17 @@ def checked(fn, raise_api_limit=False, validate_token=False, validate_json=False
         elif status_code == 403:
             raise ProviderError("Bazarr API key seems to be in problem")
         elif status_code == 406:
-            raise DownloadLimitExceeded("Daily download limit reached")
+            try:
+                json_response = response.json()
+                download_count = json_response['requests']
+                remaining_download = json_response['remaining']
+                quota_reset_time = json_response['reset_time']
+            except JSONDecodeError:
+                raise ProviderError('Invalid JSON returned by provider')
+            else:
+                raise DownloadLimitExceeded(f"Daily download limit reached. {download_count} subtitles have been "
+                                            f"downloaded and {remaining_download} remaining subtitles can be "
+                                            f"downloaded. Quota will be reset in {quota_reset_time}.")
         elif status_code == 410:
             raise ProviderError("Download as expired")
         elif status_code == 429:

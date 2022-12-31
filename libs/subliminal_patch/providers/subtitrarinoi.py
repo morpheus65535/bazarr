@@ -1,27 +1,29 @@
 # coding=utf-8
 
 from __future__ import absolute_import
-import os
-import io
+
 import logging
 import re
 
-from zipfile import ZipFile, is_zipfile
-from rarfile import RarFile, is_rarfile
-from guessit import guessit
+from subliminal.providers import ParserBeautifulSoup
+from subliminal.video import Episode
+from subliminal.video import Movie
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
-from subliminal_patch.subtitle import Subtitle, guess_matches
-from subliminal_patch.utils import sanitize, fix_inconsistent_naming as _fix_inconsistent_naming
-from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
-from subliminal.exceptions import ProviderError
-from subliminal.providers import ParserBeautifulSoup
-from subliminal.video import Episode, Movie
-from subliminal.subtitle import SUBTITLE_EXTENSIONS
+from subliminal_patch.providers.utils import get_archive_from_bytes
+from subliminal_patch.providers.utils import get_subtitle_from_archive
+from subliminal_patch.providers.utils import update_matches
+from subliminal_patch.subtitle import guess_matches
+from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.utils import \
+    fix_inconsistent_naming as _fix_inconsistent_naming
+from subliminal_patch.utils import sanitize
 from subzero.language import Language
 
 # parsing regex definitions
 title_re = re.compile(r'(?P<title>(?:.+(?= [Aa][Kk][Aa] ))|.+)(?:(?:.+)(?P<altitle>(?<= [Aa][Kk][Aa] ).+))?')
+
+_SEASON_RE = re.compile(r"(s|(season|sezonul)\s)(?P<x>\d{1,2})", flags=re.IGNORECASE)
 
 
 def fix_inconsistent_naming(title):
@@ -48,7 +50,7 @@ class SubtitrarinoiSubtitle(Subtitle):
         super(SubtitrarinoiSubtitle, self).__init__(language)
         self.sid = sid
         self.title = title
-        self.imdb_id = imdb_id
+        self.imdb_id = (imdb_id or "").rstrip("/")
         self.download_link = download_link
         self.year = year
         self.download_count = download_count
@@ -87,8 +89,7 @@ class SubtitrarinoiSubtitle(Subtitle):
             if video.imdb_id and self.imdb_id == video.imdb_id:
                 matches.add('imdb_id')
 
-            # guess match others
-            matches |= guess_matches(video, guessit(self.comments, {"type": "movie"}))
+            update_matches(matches, video, self.comments)
 
         else:
             # title
@@ -100,16 +101,19 @@ class SubtitrarinoiSubtitle(Subtitle):
             if video.series_imdb_id and self.imdb_id == video.series_imdb_id:
                 matches.add('imdb_id')
 
-            # season
-            if f"Sezonul {video.season}" in self.comments:
-                matches.add('season')
+            season = _SEASON_RE.search(self.comments)
+            if season is not None:
+                season = int(season.group("x"))
+                if season == video.season:
+                    matches.add('season')
+
+            logger.debug("Season matched? %s [%s -> %s]", "season" in matches, video.season, self.comments)
 
             # episode
             if {"imdb_id", "season"}.issubset(matches):
                 matches.add('episode')
 
-            # guess match others
-            matches |= guess_matches(video, guessit(self.comments, {"type": "episode"}))
+            update_matches(matches, video, self.comments)
 
         self.matches = matches
 
@@ -277,42 +281,5 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
         r = self.session.get(subtitle.download_link, headers={'Referer': self.api_url}, timeout=10)
         r.raise_for_status()
 
-        # open the archive
-        archive_stream = io.BytesIO(r.content)
-        if is_rarfile(archive_stream):
-            logger.debug('Archive identified as rar')
-            archive = RarFile(archive_stream)
-        elif is_zipfile(archive_stream):
-            logger.debug('Archive identified as zip')
-            archive = ZipFile(archive_stream)
-        else:
-            subtitle.content = r.content
-            if subtitle.is_valid():
-                return
-            subtitle.content = None
-
-            raise ProviderError('Unidentified archive type')
-        
-        if subtitle.is_episode:
-            subtitle.content = self._get_subtitle_from_archive(subtitle, archive)
-        else:
-            subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
-
-    @staticmethod
-    def _get_subtitle_from_archive(subtitle, archive):
-        for name in archive.namelist():
-            # discard hidden files
-            if os.path.split(name)[-1].startswith('.'):
-                continue
-
-            # discard non-subtitle files
-            if not name.lower().endswith(SUBTITLE_EXTENSIONS):
-                continue
-
-            _guess = guessit(name)
-            if subtitle.desired_episode == _guess['episode']:
-                return archive.read(name)
-
-        return None
-
-# vim: set expandtab ts=4 sw=4:
+        archive = get_archive_from_bytes(r.content)
+        subtitle.content = get_subtitle_from_archive(archive, episode=subtitle.desired_episode)

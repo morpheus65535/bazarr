@@ -78,7 +78,8 @@ defaults = {
         'wanted_search_frequency_movie': '3',
         'subzero_mods': '[]',
         'dont_notify_manual_actions': 'False',
-        'hi_extension': 'hi'
+        'hi_extension': 'hi',
+        'embedded_subtitles_parser': 'ffprobe'
     },
     'auth': {
         'type': 'None',
@@ -297,6 +298,11 @@ settings.general.base_url = base_url_slash_cleaner(uri=settings.general.base_url
 settings.sonarr.base_url = base_url_slash_cleaner(uri=settings.sonarr.base_url)
 settings.radarr.base_url = base_url_slash_cleaner(uri=settings.radarr.base_url)
 
+# fixing issue with improper page_size value
+if settings.general.page_size not in ['25', '50', '100', '250', '500', '1000']:
+    settings.general.page_size = defaults['general']['page_size']
+
+# save updated settings to file
 if os.path.exists(os.path.join(args.config_dir, 'config', 'config.ini')):
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)

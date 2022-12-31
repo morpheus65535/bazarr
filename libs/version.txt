@@ -7,7 +7,6 @@ attrs==22.1.0
 charamel==1.0.0
 deep-translator==1.9.1
 dogpile.cache==1.1.8
-enzyme==0.4.1
 fese==0.1.2
 ffsubsync==0.4.20
 flask-cors==3.0.10
@@ -110,6 +109,7 @@ cloudscraper==1.2.58
 #deathbycaptcha # unknown version, only found on gist
 decorator==5.1.1
 dnspython==2.2.1
+enzyme==0.4.1
 ftfy==6.1.1
 html5lib==1.1
 Js2Py==0.74

@@ -135,11 +135,14 @@ class WizdomProvider(Provider):
         # search
         logger.debug('Using IMDB ID %r', imdb_id)
         url = 'https://{}/api/releases/{}'.format(self.server_url, imdb_id)
-        page_link = 'http://{}/#/{}/{}'.format(self.server_url, 'movies' if is_movie else 'series', imdb_id)
+        page_link = 'http://{}/{}/{}'.format(self.server_url, 'movies' if is_movie else 'series', imdb_id)
 
         # get the list of subtitles
         logger.debug('Getting the list of subtitles')
         r = self.session.get(url)
+        if r.status_code == 500:
+            logger.debug(f'No subtitles found for imdb id {imdb_id}')
+            return []
         r.raise_for_status()
         try:
             results = r.json()
@@ -199,7 +202,7 @@ class WizdomProvider(Provider):
 
     def download_subtitle(self, subtitle):
         # download
-        url = 'http://zip.{}/{}.zip'.format(self.server_url, subtitle.subtitle_id)
+        url = 'http://{}/api/files/sub/{}'.format(self.server_url, subtitle.subtitle_id)
         r = self.session.get(url, headers={'Referer': subtitle.page_link}, timeout=10)
         r.raise_for_status()
 

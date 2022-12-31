@@ -147,6 +147,11 @@ class Subf2mProvider(Provider):
 
         for n in range(retry):
             req = self._session.get(url, stream=True)
+
+            if req.status_code == 403:
+                logger.debug("Access to this resource is forbidden: %s", url)
+                break
+
             # Sometimes subf2m will return a 503 code. This error usually disappears
             # retrying the query
             if req.status_code == 503:

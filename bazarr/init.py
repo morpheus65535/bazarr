@@ -10,8 +10,9 @@ import time
 import rarfile
 
 from dogpile.cache.region import register_backend as register_cache_backend
+from subliminal_patch.extensions import provider_registry
 
-from app.config import settings, configure_captcha_func
+from app.config import settings, configure_captcha_func, get_array_from
 from app.get_args import args
 from app.logger import configure_logging
 from utilities.binaries import get_binary, BinaryNotFound
@@ -190,6 +191,14 @@ if settings.analytics.visitor:
 with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')), 'w+') as handle:
     settings.remove_option('general', 'throtteled_providers')
     settings.remove_option('general', 'update_restart')
+    settings.write(handle)
+
+
+# Remove deprecated providers from enabled providers in config.ini
+existing_providers = provider_registry.names()
+enabled_providers = get_array_from(settings.general.enabled_providers)
+settings.general.enabled_providers = str([x for x in enabled_providers if x in existing_providers])
+with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
     settings.write(handle)
 
 

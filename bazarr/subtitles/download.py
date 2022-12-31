@@ -174,7 +174,10 @@ def check_missing_languages(path, media_type):
             .get_or_none()
 
     if not confirmed_missing_subs:
-        return None
+        reversed_path = path_mappings.path_replace_reverse(path) if media_type == 'series' else \
+            path_mappings.path_replace_reverse_movie(path)
+        logging.debug(f"BAZARR no media with this path have been found in database: {reversed_path}")
+        return []
 
     languages = []
     for language in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):

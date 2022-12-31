@@ -41,6 +41,18 @@ export const antiCaptchaOption: SelectorOption<string>[] = [
   },
 ];
 
+export const embeddedSubtitlesParserOption: SelectorOption<string>[] = [
+  {
+    label: "ffprobe (faster)",
+    value: "ffprobe",
+  },
+  {
+    label:
+      "mediainfo (slower but may give better results. Must be already installed)",
+    value: "mediainfo",
+  },
+];
+
 export const adaptiveSearchingDelayOption: SelectorOption<string>[] = [
   {
     label: "1 week",

@@ -20,6 +20,7 @@ import {
   adaptiveSearchingDeltaOption,
   antiCaptchaOption,
   colorOptions,
+  embeddedSubtitlesParserOption,
   folderOptions,
   hiExtensionOptions,
 } from "./options";
@@ -278,6 +279,14 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             Hide embedded subtitles for languages that are not currently
             desired.
           </Message>
+          <Selector
+            settingKey="settings-general-embedded_subtitles_parser"
+            settingOptions={{
+              onSaved: (v) => (v === undefined ? "ffprobe" : v),
+            }}
+            options={embeddedSubtitlesParserOption}
+          ></Selector>
+          <Message>Embedded subtitles video parser</Message>
         </CollapseBox>
       </Section>
       <Section header="Post-Processing">

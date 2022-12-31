@@ -32,38 +32,45 @@ def refine_from_ffprobe(path, video):
         data = parse_video_metadata(file=path, file_size=file_id['file_size'],
                                     episode_file_id=file_id['episode_file_id'])
 
-    if not data['ffprobe']:
-        logging.debug("No FFprobe available in cache for this file: {}".format(path))
+    if 'ffprobe' not in data and 'mediainfo' not in data:
+        logging.debug("No cache available for this file: {}".format(path))
         return video
 
-    logging.debug('FFprobe found: %s', data['ffprobe'])
-
-    if 'video' not in data['ffprobe']:
-        logging.debug('BAZARR FFprobe was unable to find video tracks in the file!')
+    if data['ffprobe']:
+        logging.debug('FFprobe found: %s', data['ffprobe'])
+        parser_data = data['ffprobe']
+    elif data['mediainfo']:
+        logging.debug('Mediainfo found: %s', data['mediainfo'])
+        parser_data = data['mediainfo']
     else:
-        if 'resolution' in data['ffprobe']['video'][0]:
+        parser_data = {}
+
+    if 'video' not in parser_data:
+        logging.debug('BAZARR parser was unable to find video tracks in the file!')
+    else:
+        if 'resolution' in parser_data['video'][0]:
             if not video.resolution:
-                video.resolution = data['ffprobe']['video'][0]['resolution']
-        if 'codec' in data['ffprobe']['video'][0]:
+                video.resolution = parser_data['video'][0]['resolution']
+        if 'codec' in parser_data['video'][0]:
             if not video.video_codec:
-                video.video_codec = data['ffprobe']['video'][0]['codec']
-        if 'frame_rate' in data['ffprobe']['video'][0]:
+                video.video_codec = parser_data['video'][0]['codec']
+        if 'frame_rate' in parser_data['video'][0]:
             if not video.fps:
-                if isinstance(data['ffprobe']['video'][0]['frame_rate'], float):
-                    video.fps = data['ffprobe']['video'][0]['frame_rate']
+                if isinstance(parser_data['video'][0]['frame_rate'], float):
+                    video.fps = parser_data['video'][0]['frame_rate']
                 else:
                     try:
-                        video.fps = data['ffprobe']['video'][0]['frame_rate'].magnitude
+                        video.fps = parser_data['video'][0]['frame_rate'].magnitude
                     except AttributeError:
-                        video.fps = data['ffprobe']['video'][0]['frame_rate']
+                        video.fps = parser_data['video'][0]['frame_rate']
 
-    if 'audio' not in data['ffprobe']:
-        logging.debug('BAZARR FFprobe was unable to find audio tracks in the file!')
+    if 'audio' not in parser_data:
+        logging.debug('BAZARR parser was unable to find audio tracks in the file!')
     else:
-        if 'codec' in data['ffprobe']['audio'][0]:
+        if 'codec' in parser_data['audio'][0]:
             if not video.audio_codec:
-                video.audio_codec = data['ffprobe']['audio'][0]['codec']
-        for track in data['ffprobe']['audio']:
+                video.audio_codec = parser_data['audio'][0]['codec']
+        for track in parser_data['audio']:
             if 'language' in track:
                 video.audio_languages.add(track['language'].alpha3)
 
