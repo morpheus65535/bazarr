@@ -13,7 +13,7 @@ from subtitles.mass_download import movies_download_subtitles
 from app.event_handler import event_stream
 from api.swaggerui import subtitles_language_model
 
-from ..utils import authenticate, postprocessMovie
+from ..utils import authenticate, postprocess
 
 api_ns_movies_blacklist = Namespace('Movies Blacklist', description='List, add or remove subtitles to or from '
                                                                     'movies blacklist')
@@ -60,7 +60,7 @@ class MoviesBlacklist(Resource):
         data = list(data.dicts())
 
         for item in data:
-            postprocessMovie(item)
+            postprocess(item)
 
             # Make timestamp pretty
             item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')

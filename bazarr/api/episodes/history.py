@@ -15,7 +15,7 @@ from app.config import settings
 from utilities.path_mappings import path_mappings
 from api.swaggerui import subtitles_language_model
 
-from ..utils import authenticate, postprocessEpisode
+from ..utils import authenticate, postprocess
 
 api_ns_episodes_history = Namespace('Episodes History', description='List episodes history events')
 
@@ -157,7 +157,7 @@ class EpisodesHistory(Resource):
 
             del item['path']
 
-            postprocessEpisode(item)
+            postprocess(item)
 
             if item['score']:
                 item['score'] = str(round((int(item['score']) * 100 / 360), 2)) + "%"

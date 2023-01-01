@@ -119,7 +119,7 @@ def sync_episodes(series_id=None, send_event=True):
                                           TableEpisodes.path,
                                           TableEpisodes.season,
                                           TableEpisodes.episode,
-                                          TableEpisodes.scene_name,
+                                          TableEpisodes.sceneName,
                                           TableEpisodes.monitored,
                                           TableEpisodes.format,
                                           TableEpisodes.resolution,

@@ -44,7 +44,7 @@ def upgrade_subtitles():
                                                   TableShows.tags,
                                                   TableShows.profileId,
                                                   TableEpisodes.audio_language,
-                                                  TableEpisodes.scene_name,
+                                                  TableEpisodes.sceneName,
                                                   TableEpisodes.title,
                                                   TableEpisodes.sonarrSeriesId,
                                                   TableHistory.action,
@@ -65,7 +65,7 @@ def upgrade_subtitles():
                       TableShows.tags,
                       TableShows.profileId,
                       TableEpisodes.audio_language,
-                      TableEpisodes.scene_name,
+                      TableEpisodes.sceneName,
                       TableEpisodes.title,
                       TableEpisodes.sonarrSeriesId,
                       TableHistory.action,
@@ -182,7 +182,7 @@ def upgrade_subtitles():
                 is_forced = "False"
                 is_hi = "False"
 
-            audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+            audio_language_list = get_audio_profile_languages(episode['audio_language'])
             if len(audio_language_list) > 0:
                 audio_language = audio_language_list[0]['name']
             else:
@@ -191,7 +191,7 @@ def upgrade_subtitles():
             result = list(generate_subtitles(path_mappings.path_replace(episode['video_path']),
                                              [(language, is_hi, is_forced)],
                                              audio_language,
-                                             str(episode['scene_name']),
+                                             str(episode['sceneName']),
                                              episode['seriesTitle'],
                                              'series',
                                              forced_minimum_score=int(episode['score']),
@@ -245,7 +245,7 @@ def upgrade_subtitles():
                 is_forced = "False"
                 is_hi = "False"
 
-            audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
+            audio_language_list = get_audio_profile_languages(movie['audio_language'])
             if len(audio_language_list) > 0:
                 audio_language = audio_language_list[0]['name']
             else:
