@@ -8,7 +8,7 @@ from functools import reduce
 from app.database import get_exclusion_clause, TableEpisodes, TableShows
 from api.swaggerui import subtitles_language_model
 
-from ..utils import authenticate, postprocessEpisode
+from ..utils import authenticate, postprocess
 
 api_ns_episodes_wanted = Namespace('Episodes Wanted', description='List episodes wanted subtitles')
 
@@ -65,7 +65,7 @@ class EpisodesWanted(Resource):
                                         TableEpisodes.missing_subtitles,
                                         TableEpisodes.sonarrSeriesId,
                                         TableEpisodes.sonarrEpisodeId,
-                                        TableEpisodes.scene_name.alias('sceneName'),
+                                        TableEpisodes.sceneName.alias('sceneName'),
                                         TableShows.tags,
                                         TableEpisodes.failedAttempts,
                                         TableShows.seriesType)\
@@ -82,7 +82,7 @@ class EpisodesWanted(Resource):
                                         TableEpisodes.missing_subtitles,
                                         TableEpisodes.sonarrSeriesId,
                                         TableEpisodes.sonarrEpisodeId,
-                                        TableEpisodes.scene_name.alias('sceneName'),
+                                        TableEpisodes.sceneName.alias('sceneName'),
                                         TableShows.tags,
                                         TableEpisodes.failedAttempts,
                                         TableShows.seriesType)\
@@ -95,7 +95,7 @@ class EpisodesWanted(Resource):
         data = list(data)
 
         for item in data:
-            postprocessEpisode(item)
+            postprocess(item)
 
         count_conditions = [(TableEpisodes.missing_subtitles != '[]')]
         count_conditions += get_exclusion_clause('series')

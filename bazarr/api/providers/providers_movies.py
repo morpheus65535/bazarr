@@ -110,7 +110,7 @@ class ProviderMovies(Resource):
         selected_provider = args.get('provider')
         subtitle = args.get('subtitle')
 
-        audio_language_list = get_audio_profile_languages(movie_id=radarrId)
+        audio_language_list = get_audio_profile_languages(movieInfo["audio_language"])
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
         else:

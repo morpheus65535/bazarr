@@ -9,8 +9,7 @@ from subtitles.wanted import wanted_search_missing_subtitles_movies
 from subtitles.mass_download import movies_download_subtitles
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
-from ..utils import authenticate, postprocessMovie, None_Keys
-
+from api.utils import authenticate, None_Keys, postprocess
 
 api_ns_movies = Namespace('Movies', description='List movies metadata, update movie languages profile or run actions '
                                                 'for specific movies.')
@@ -88,7 +87,7 @@ class Movies(Resource):
             result = result.dicts()
         result = list(result)
         for item in result:
-            postprocessMovie(item)
+            postprocess(item)
 
         return {'data': result, 'total': count}
 

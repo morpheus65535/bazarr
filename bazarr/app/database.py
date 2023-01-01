@@ -109,7 +109,7 @@ class TableEpisodes(BaseModel):
     monitored = TextField(null=True)
     path = TextField()
     resolution = TextField(null=True)
-    scene_name = TextField(null=True)
+    sceneName = TextField(null=True)
     season = IntegerField()
     sonarrEpisodeId = IntegerField(unique=True)
     sonarrSeriesId = IntegerField()
@@ -235,7 +235,7 @@ class TableSettingsNotifier(BaseModel):
 
 
 class TableShows(BaseModel):
-    alternateTitles = TextField(null=True)
+    alternativeTitles = TextField(null=True)
     audio_language = TextField(null=True)
     fanart = TextField(null=True)
     imdbId = TextField(default='""', null=True)
@@ -328,8 +328,8 @@ def migrate_db():
     table_languages_profiles = [t.name for t in database.get_columns('table_languages_profiles')]
     if "year" not in table_shows:
         migrate(migrator.add_column('table_shows', 'year', TextField(null=True)))
-    if "alternateTitles" not in table_shows:
-        migrate(migrator.add_column('table_shows', 'alternateTitles', TextField(null=True)))
+    if "alternativeTitle" not in table_shows:
+        migrate(migrator.add_column('table_shows', 'alternativeTitle', TextField(null=True)))
     if "tags" not in table_shows:
         migrate(migrator.add_column('table_shows', 'tags', TextField(default='[]', null=True)))
     if "seriesType" not in table_shows:
@@ -501,6 +501,12 @@ def migrate_db():
     if database.get_columns('table_settings_providers'):
         database.execute_sql('drop table if exists table_settings_providers;')
 
+    if "alternateTitles" in table_shows:
+        migrate(migrator.rename_column('table_shows', 'alternateTitles', "alternativeTitles"))
+
+    if "scene_name" in table_episodes:
+        migrate(migrator.rename_column('table_episodes', 'scene_name', "sceneName"))
+
 
 class SqliteDictPathMapper:
     def __init__(self):
@@ -651,7 +657,7 @@ def get_audio_profile_languages(audio_languages_list_str):
     audio_languages = []
 
     try:
-        audio_languages_list = ast.literal_eval(audio_languages_list_str)
+        audio_languages_list = ast.literal_eval(audio_languages_list_str or '[]')
     except ValueError:
         pass
     else:

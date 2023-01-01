@@ -13,7 +13,7 @@ from subtitles.wanted import wanted_search_missing_subtitles_series
 from app.event_handler import event_stream
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
-from ..utils import authenticate, postprocessSeries, None_Keys
+from api.utils import authenticate, None_Keys, postprocess
 
 api_ns_series = Namespace('Series', description='List series metadata, update series languages profile or run actions '
                                                 'for specific series.')
@@ -99,7 +99,7 @@ class Series(Resource):
         result = list(result.dicts())
 
         for item in result:
-            postprocessSeries(item)
+            postprocess(item)
 
         return {'data': result, 'total': count}
 

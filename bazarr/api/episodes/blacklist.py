@@ -13,7 +13,7 @@ from subtitles.mass_download import episode_download_subtitles
 from app.event_handler import event_stream
 from api.swaggerui import subtitles_language_model
 
-from ..utils import authenticate, postprocessEpisode
+from ..utils import authenticate, postprocess
 
 api_ns_episodes_blacklist = Namespace('Episodes Blacklist', description='List, add or remove subtitles to or from '
                                                                         'episodes blacklist')
@@ -69,7 +69,7 @@ class EpisodesBlacklist(Resource):
             item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
             item.update({'timestamp': pretty.date(item['timestamp'])})
 
-            postprocessEpisode(item)
+            postprocess(item)
 
         return data
 

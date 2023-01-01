@@ -5,7 +5,7 @@ from flask_restx import Resource, Namespace, reqparse, fields
 from app.database import TableEpisodes
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
-from ..utils import authenticate, postprocessEpisode
+from ..utils import authenticate, postprocess
 
 api_ns_episodes = Namespace('Episodes', description='List episodes metadata for specific series or episodes.')
 
@@ -68,6 +68,6 @@ class Episodes(Resource):
 
         result = list(result)
         for item in result:
-            postprocessEpisode(item)
+            postprocess(item)
 
         return result

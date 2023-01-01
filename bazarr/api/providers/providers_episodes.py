@@ -13,7 +13,6 @@ from subtitles.indexer.series import store_subtitles
 
 from ..utils import authenticate
 
-
 api_ns_providers_episodes = Namespace('Providers Episodes', description='List and download episodes subtitles manually')
 
 
@@ -49,10 +48,10 @@ class ProviderEpisodes(Resource):
         args = self.get_request_parser.parse_args()
         sonarrEpisodeId = args.get('episodeid')
         episodeInfo = TableEpisodes.select(TableEpisodes.path,
-                                           TableEpisodes.scene_name,
+                                           TableEpisodes.sceneName,
                                            TableShows.title,
                                            TableShows.profileId) \
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
             .dicts() \
             .get_or_none()
@@ -62,7 +61,7 @@ class ProviderEpisodes(Resource):
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['scene_name'] or "None"
+        sceneName = episodeInfo['sceneName'] or "None"
         profileId = episodeInfo['profileId']
 
         providers_list = get_providers()
@@ -92,9 +91,11 @@ class ProviderEpisodes(Resource):
         args = self.post_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.path,
-                                           TableEpisodes.scene_name,
-                                           TableShows.title) \
+        episodeInfo = TableEpisodes.select(
+            TableEpisodes.audio_language,
+            TableEpisodes.path,
+            TableEpisodes.sceneName,
+            TableShows.title) \
             .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
             .dicts() \
@@ -105,7 +106,7 @@ class ProviderEpisodes(Resource):
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['scene_name'] or "None"
+        sceneName = episodeInfo['sceneName'] or "None"
 
         hi = args.get('hi').capitalize()
         forced = args.get('forced').capitalize()
@@ -113,7 +114,7 @@ class ProviderEpisodes(Resource):
         selected_provider = args.get('provider')
         subtitle = args.get('subtitle')
 
-        audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
+        audio_language_list = get_audio_profile_languages(episodeInfo["audio_language"])
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
         else:

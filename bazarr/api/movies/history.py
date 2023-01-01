@@ -15,7 +15,7 @@ from app.config import settings
 from utilities.path_mappings import path_mappings
 from api.swaggerui import subtitles_language_model
 
-from ..utils import authenticate, postprocessMovie
+from api.utils import authenticate, postprocess
 
 api_ns_movies_history = Namespace('Movies History', description='List movies history events')
 
@@ -148,7 +148,7 @@ class MoviesHistory(Resource):
 
             del item['path']
 
-            postprocessMovie(item)
+            postprocess(item)
 
             if item['score']:
                 item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + "%"
