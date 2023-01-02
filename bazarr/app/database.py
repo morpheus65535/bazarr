@@ -13,6 +13,7 @@ from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.migrate import SqliteMigrator, migrate
 from playhouse.sqlite_ext import RowIDField
 
+from dogpile.cache import make_region
 from utilities.path_mappings import path_mappings
 
 from peewee import PostgresqlDatabase
@@ -24,6 +25,8 @@ from .get_args import args
 logger = logging.getLogger(__name__)
 
 postgresql = settings.postgresql.getboolean('enabled')
+
+region = make_region().configure('dogpile.cache.memory')
 
 if postgresql:
     logger.debug(
@@ -569,6 +572,7 @@ def get_exclusion_clause(exclusion_type):
     return where_clause
 
 
+@region.cache_on_arguments()
 def update_profile_id_list():
     profile_id_list = TableLanguagesProfiles.select(TableLanguagesProfiles.profileId,
                                                     TableLanguagesProfiles.name,
