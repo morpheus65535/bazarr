@@ -1,6 +1,5 @@
 # coding=utf-8
 
-import datetime
 import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields

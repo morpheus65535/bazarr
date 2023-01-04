@@ -36,6 +36,10 @@ def authenticate(actual_method):
 
 def postprocess(item):
     # Remove ffprobe_cache
+    if item.get('movie_file_id'):
+        path_replace = path_mappings.path_replace_movie
+    else:
+        path_replace = path_mappings.path_replace
     if item.get('ffprobe_cache'):
         del item['ffprobe_cache']
 
@@ -60,7 +64,7 @@ def postprocess(item):
         item['subtitles'] = ast.literal_eval(item['subtitles'])
         for i, subs in enumerate(item['subtitles']):
             language = subs[0].split(':')
-            item['subtitles'][i] = {"path": path_mappings.path_replace_movie(subs[1]),
+            item['subtitles'][i] = {"path": path_replace(subs[1]),
                                     "name": language_from_alpha2(language[0]),
                                     "code2": language[0],
                                     "code3": alpha3_from_alpha2(language[0]),
@@ -122,11 +126,11 @@ def postprocess(item):
         item['seriesType'] = item['seriesType'].capitalize()
 
     if item.get('path'):
-        item['path'] = path_mappings.path_replace(item['path'])
+        item['path'] = path_replace(item['path'])
 
     if item.get('subtitles_path'):
         # Provide mapped subtitles path
-        item['subtitles_path'] = path_mappings.path_replace_movie(item['subtitles_path'])
+        item['subtitles_path'] = path_replace(item['subtitles_path'])
 
     # map poster and fanart to server proxy
     if item.get('poster') is not None:
