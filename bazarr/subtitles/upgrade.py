@@ -40,7 +40,7 @@ def upgrade_subtitles():
         upgradable_episodes_conditions += get_exclusion_clause('series')
         upgradable_episodes = TableHistory.select(TableHistory.video_path,
                                                   TableHistory.language,
-                                                  TableHistory.score,
+                                                  fn.MAX(TableHistory.score).alias('score'),
                                                   TableShows.tags,
                                                   TableShows.profileId,
                                                   TableEpisodes.audio_language,
@@ -61,7 +61,6 @@ def upgrade_subtitles():
             .where(reduce(operator.and_, upgradable_episodes_conditions)) \
             .group_by(TableHistory.video_path,
                       TableHistory.language,
-                      TableHistory.score,
                       TableShows.tags,
                       TableShows.profileId,
                       TableEpisodes.audio_language,
@@ -105,7 +104,7 @@ def upgrade_subtitles():
         upgradable_movies_conditions += get_exclusion_clause('movie')
         upgradable_movies = TableHistoryMovie.select(TableHistoryMovie.video_path,
                                                      TableHistoryMovie.language,
-                                                     TableHistoryMovie.score,
+                                                     fn.MAX(TableHistoryMovie.score).alias('score'),
                                                      TableMovies.profileId,
                                                      TableHistoryMovie.action,
                                                      TableHistoryMovie.subtitles_path,
@@ -120,7 +119,6 @@ def upgrade_subtitles():
             .where(reduce(operator.and_, upgradable_movies_conditions)) \
             .group_by(TableHistoryMovie.video_path,
                       TableHistoryMovie.language,
-                      TableHistoryMovie.score,
                       TableMovies.profileId,
                       TableHistoryMovie.action,
                       TableHistoryMovie.subtitles_path,
