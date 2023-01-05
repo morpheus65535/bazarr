@@ -274,6 +274,7 @@ class RegieLiveSearchAPI():
         data['data'] = self.parse_json_results(data['data'])
 
         if data['data'] and len(data['data']) > 0:
+            data['error'] = False
             region.set(cache_key, data)
 
         return data
