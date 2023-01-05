@@ -64,6 +64,7 @@ class RegieLiveProvider(Provider):
     languages = {Language(l) for l in ['ron']}
     language = list(languages)[0]
     video_types = (Episode, Movie)
+    download_cookies = None
     SEARCH_THROTTLE = 8
 
     def __init__(self):
@@ -88,11 +89,12 @@ class RegieLiveProvider(Provider):
             for result in results:
                 logger.debug(result)
                 subtitles.append(
-                        RegieLiveSubtitle(result.name, video, result.download_url, result.rating, language)
+                        RegieLiveSubtitle(result.title, video, result.download_url, result.rating, language)
                 )
 
         # {'titlu': 'Chernobyl.S01E04.The.Happiness.of.All.Mankind.720p.AMZN.WEB-DL.DDP5.1.H.264-NTb', 'url': 'https://subtitrari.regielive.ro/descarca-33336-418567.zip', 'rating': {'nota': 4.89, 'voturi': 48}}
         # subtitle def __init__(self, language, filename, subtype, video, link):
+        self.download_cookies = search_api.get_req_cookies()
         return subtitles
 
     def list_subtitles(self, video, languages):
@@ -109,9 +111,14 @@ class RegieLiveProvider(Provider):
             'Pragma': 'no-cache',
             'Cache-Control': 'no-cache'
         }
+
         session.headers.update(_addheaders)
-        res = session.get('https://subtitrari.regielive.ro')
-        cookies = res.cookies
+        if self.download_cookies is None: #try and get the needed cookies through a request if no cookies exist from the API
+            res = session.get('https://subtitrari.regielive.ro')
+            cookies = res.cookies
+        else:
+            cookies = self.download_cookies
+
         _zipped = session.get(subtitle.page_link, cookies=cookies)
         if _zipped:
             if _zipped.text == '500':
