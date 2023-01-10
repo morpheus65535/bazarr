@@ -47,27 +47,29 @@ def get_backup_files(fullpath=True):
 
 def backup_to_zip():
     now = datetime.now()
+    database_backup_file = None
     now_string = now.strftime("%Y.%m.%d_%H.%M.%S")
     backup_filename = f"bazarr_backup_v{os.environ['BAZARR_VERSION']}_{now_string}.zip"
     logging.debug(f'Backup filename will be: {backup_filename}')
 
-    database_src_file = os.path.join(args.config_dir, 'db', 'bazarr.db')
-    logging.debug(f'Database file path to backup is: {database_src_file}')
+    if not settings.postgresql.getboolean('enabled'):
+        database_src_file = os.path.join(args.config_dir, 'db', 'bazarr.db')
+        logging.debug(f'Database file path to backup is: {database_src_file}')
 
-    try:
-        database_src_con = sqlite3.connect(database_src_file)
+        try:
+            database_src_con = sqlite3.connect(database_src_file)
 
-        database_backup_file = os.path.join(get_backup_path(), 'bazarr_temp.db')
-        database_backup_con = sqlite3.connect(database_backup_file)
+            database_backup_file = os.path.join(get_backup_path(), 'bazarr_temp.db')
+            database_backup_con = sqlite3.connect(database_backup_file)
 
-        with database_backup_con:
-            database_src_con.backup(database_backup_con)
+            with database_backup_con:
+                database_src_con.backup(database_backup_con)
 
-        database_backup_con.close()
-        database_src_con.close()
-    except Exception:
-        database_backup_file = None
-        logging.exception('Unable to backup database file.')
+            database_backup_con.close()
+            database_src_con.close()
+        except Exception:
+            database_backup_file = None
+            logging.exception('Unable to backup database file.')
 
     config_file = os.path.join(args.config_dir, 'config', 'config.ini')
     logging.debug(f'Config file path to backup is: {config_file}')
@@ -75,14 +77,13 @@ def backup_to_zip():
     with ZipFile(os.path.join(get_backup_path(), backup_filename), 'w') as backupZip:
         if database_backup_file:
             backupZip.write(database_backup_file, 'bazarr.db')
+            try:
+                os.remove(database_backup_file)
+            except OSError:
+                logging.exception(f'Unable to delete temporary database backup file: {database_backup_file}')
         else:
             logging.debug('Database file is not included in backup. See previous exception')
         backupZip.write(config_file, 'config.ini')
-
-    try:
-        os.remove(database_backup_file)
-    except OSError:
-        logging.exception(f'Unable to delete temporary database backup file: {database_backup_file}')
 
 
 def restore_from_backup():
@@ -97,30 +98,34 @@ def restore_from_backup():
             os.remove(restore_config_path)
         except OSError:
             logging.exception(f'Unable to restore or delete config.ini to {dest_config_path}')
-
-        try:
-            shutil.copy(restore_database_path, dest_database_path)
-            os.remove(restore_database_path)
-        except OSError:
-            logging.exception(f'Unable to restore or delete db to {dest_database_path}')
-        else:
+        if not settings.postgresql.getboolean('enabled'):
             try:
-                if os.path.isfile(dest_database_path + '-shm'):
-                    os.remove(dest_database_path + '-shm')
-                if os.path.isfile(dest_database_path + '-wal'):
-                    os.remove(dest_database_path + '-wal')
+                shutil.copy(restore_database_path, dest_database_path)
+                os.remove(restore_database_path)
             except OSError:
-                logging.exception('Unable to delete SHM and WAL file.')
+                logging.exception(f'Unable to restore or delete db to {dest_database_path}')
+            else:
+                try:
+                    if os.path.isfile(f'{dest_database_path}-shm'):
+                        os.remove(f'{dest_database_path}-shm')
+                    if os.path.isfile(f'{dest_database_path}-wal'):
+                        os.remove(f'{dest_database_path}-wal')
+                except OSError:
+                    logging.exception('Unable to delete SHM and WAL file.')
+            try:
+                os.remove(restore_database_path)
+            except OSError:
+                logging.exception(f'Unable to delete {dest_database_path}')
 
         logging.info('Backup restored successfully. Bazarr will restart.')
 
         try:
             restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
         except Exception as e:
-            logging.error('BAZARR Cannot create restart file: ' + repr(e))
+            logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
         else:
             logging.info('Bazarr is being restarted...')
-            restart_file.write(str(''))
+            restart_file.write('')
             restart_file.close()
             os._exit(0)
     elif os.path.isfile(restore_config_path) or os.path.isfile(restore_database_path):
@@ -134,10 +139,7 @@ def restore_from_backup():
     except OSError:
         logging.exception(f'Unable to delete {dest_config_path}')
 
-    try:
-        os.remove(restore_database_path)
-    except OSError:
-        logging.exception(f'Unable to delete {dest_database_path}')
+
 
 
 def prepare_restore(filename):
