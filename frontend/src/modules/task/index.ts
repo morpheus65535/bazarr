@@ -10,10 +10,12 @@ import { notification } from "./notification";
 class TaskDispatcher {
   private running: boolean;
   private tasks: Record<string, Task.Callable[]> = {};
+  private progress: Record<string, Site.Progress> = {};
 
   constructor() {
     this.running = false;
     this.tasks = {};
+    this.progress = {};
 
     window.addEventListener("beforeunload", this.onBeforeUnload.bind(this));
   }
@@ -108,9 +110,10 @@ class TaskDispatcher {
       // TODO: FIX ME!
       item.value += 1;
 
-      if (item.value >= item.count) {
+      if (item.value >= item.count && this.progress[item.id] !== undefined) {
         updateNotification(notification.progress.end(item.id, item.header));
-      } else if (item.value > 1) {
+        delete this.progress[item.id];
+      } else if (item.value > 1 && this.progress[item.id] !== undefined) {
         updateNotification(
           notification.progress.update(
             item.id,
@@ -122,6 +125,7 @@ class TaskDispatcher {
         );
       } else {
         showNotification(notification.progress.pending(item.id, item.header));
+        this.progress[item.id] = item;
       }
     });
   }
