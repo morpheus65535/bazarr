@@ -35,4 +35,4 @@ def postprocessing(command, path):
             logging.info(
                 'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
         else:
-                logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
+            logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
