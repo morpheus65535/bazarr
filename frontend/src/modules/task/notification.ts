@@ -54,7 +54,7 @@ export const notification = {
         title: header,
         message: `[${current}/${total}] ${body}`,
         loading: true,
-        autoClose: 2 * 60 * 1000,
+        autoClose: false,
       };
     },
     end: (id: string, header: string): NotificationProps & { id: string } => {
