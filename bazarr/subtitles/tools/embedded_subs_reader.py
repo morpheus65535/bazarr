@@ -3,7 +3,7 @@
 import logging
 import pickle
 
-from knowit.api import know
+from knowit.api import know, KnowitException
 
 from languages.custom_lang import CustomLanguage
 from app.database import TableEpisodes, TableMovies
@@ -26,6 +26,10 @@ def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=No
     data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, use_cache=use_cache)
 
     subtitles_list = []
+
+    if not data:
+        return subtitles_list
+
     if data["ffprobe"] and "subtitle" in data["ffprobe"]:
         for detected_language in data["ffprobe"]["subtitle"]:
             if "language" not in detected_language:
@@ -121,10 +125,18 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
 
     # if we have ffprobe available
     if ffprobe_path:
-        data["ffprobe"] = know(video_path=file, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path})
+        try:
+            data["ffprobe"] = know(video_path=file, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path})
+        except KnowitException as e:
+            logging.error(f"BAZARR ffprobe cannot analyze this video file {file}. Could it be corrupted? {e}")
+            return None
     # or if we have mediainfo available
     elif mediainfo_path:
-        data["mediainfo"] = know(video_path=file, context={"provider": "mediainfo", "mediainfo": mediainfo_path})
+        try:
+            data["mediainfo"] = know(video_path=file, context={"provider": "mediainfo", "mediainfo": mediainfo_path})
+        except KnowitException as e:
+            logging.error(f"BAZARR mediainfo cannot analyze this video file {file}. Could it be corrupted? {e}")
+            return None
     # else, we warn user of missing binary
     else:
         logging.error("BAZARR require ffmpeg/ffprobe or mediainfo, please install it and make sure to choose it in "
