@@ -15,6 +15,7 @@ from random import randrange
 from tzlocal import get_localzone
 from tzlocal.utils import ZoneInfoNotFoundError
 from dateutil import tz
+import logging
 
 from sonarr.sync.series import update_series
 from sonarr.sync.episodes import sync_episodes, update_all_episodes
@@ -42,7 +43,8 @@ class Scheduler:
 
         try:
             self.timezone = get_localzone()
-        except ZoneInfoNotFoundError:
+        except ZoneInfoNotFoundError as e:
+            logging.error(f"BAZARR cannot use specified timezone: {e}")
             self.timezone = tz.gettz("UTC")
 
         self.aps_scheduler = BackgroundScheduler({'apscheduler.timezone': self.timezone})
