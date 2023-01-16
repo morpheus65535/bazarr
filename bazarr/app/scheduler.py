@@ -12,6 +12,9 @@ from apscheduler.jobstores.base import JobLookupError
 from datetime import datetime, timedelta
 from calendar import day_name
 from random import randrange
+from tzlocal import get_localzone
+from tzlocal.utils import ZoneInfoNotFoundError
+from dateutil import tz
 
 from sonarr.sync.series import update_series
 from sonarr.sync.episodes import sync_episodes, update_all_episodes
@@ -37,7 +40,12 @@ class Scheduler:
     def __init__(self):
         self.__running_tasks = []
 
-        self.aps_scheduler = BackgroundScheduler()
+        try:
+            self.timezone = get_localzone()
+        except ZoneInfoNotFoundError:
+            self.timezone = tz.gettz("UTC")
+
+        self.aps_scheduler = BackgroundScheduler({'apscheduler.timezone': self.timezone})
 
         # task listener
         def task_listener_add(event):
@@ -255,13 +263,15 @@ class Scheduler:
     def __search_wanted_subtitles_task(self):
         if settings.general.getboolean('use_sonarr'):
             self.aps_scheduler.add_job(
-                wanted_search_missing_subtitles_series, IntervalTrigger(hours=int(settings.general.wanted_search_frequency)),
-                max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles_series',
-                name='Search for wanted Series Subtitles', replace_existing=True)
+                wanted_search_missing_subtitles_series,
+                IntervalTrigger(hours=int(settings.general.wanted_search_frequency)), max_instances=1, coalesce=True,
+                misfire_grace_time=15, id='wanted_search_missing_subtitles_series', replace_existing=True,
+                name='Search for wanted Series Subtitles')
         if settings.general.getboolean('use_radarr'):
             self.aps_scheduler.add_job(
-                wanted_search_missing_subtitles_movies, IntervalTrigger(hours=int(settings.general.wanted_search_frequency_movie)),
-                max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles_movies',
+                wanted_search_missing_subtitles_movies,
+                IntervalTrigger(hours=int(settings.general.wanted_search_frequency_movie)), max_instances=1,
+                coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles_movies',
                 name='Search for wanted Movies Subtitles', replace_existing=True)
 
     def __upgrade_subtitles_task(self):
@@ -275,7 +285,11 @@ class Scheduler:
     def __randomize_interval_task(self):
         for job in self.aps_scheduler.get_jobs():
             if isinstance(job.trigger, IntervalTrigger):
-                self.aps_scheduler.modify_job(job.id, next_run_time=datetime.now() + timedelta(seconds=randrange(job.trigger.interval.total_seconds()*0.75, job.trigger.interval.total_seconds())))
+                self.aps_scheduler.modify_job(job.id,
+                                              next_run_time=datetime.now(tz=self.timezone) +
+                                              timedelta(seconds=randrange(
+                                                  job.trigger.interval.total_seconds() * 0.75,
+                                                  job.trigger.interval.total_seconds())))
 
     def __no_task(self):
         for job in self.aps_scheduler.get_jobs():
