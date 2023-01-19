@@ -15,11 +15,14 @@ class FFprobeGenericSubtitleTags:
     _DETECTABLE_TAGS = None
 
     def __init__(self, data: dict):
+        self._language_fallback = False
+
         try:
             self.language = _get_language(data)
         except LanguageNotFound:
             if LANGUAGE_FALLBACK is not None:
                 self.language = Language.fromietf(LANGUAGE_FALLBACK)
+                self._language_fallback = True
             else:
                 raise
 
@@ -34,6 +37,10 @@ class FFprobeGenericSubtitleTags:
 
         logger.debug("Unable to detect tags class. Using generic")
         return FFprobeGenericSubtitleTags(data)
+
+    @property
+    def language_fallback(self):
+        return self._language_fallback
 
     @property
     def suffix(self):
