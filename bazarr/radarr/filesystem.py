@@ -5,7 +5,7 @@ import logging
 
 from app.config import settings
 from radarr.info import get_radarr_info, url_radarr
-from constants import headers
+from constants import headers, radarr_http_timeout
 
 
 def browse_radarr_filesystem(path='#'):
@@ -21,7 +21,7 @@ def browse_radarr_filesystem(path='#'):
                                     "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
                                     settings.radarr.apikey
     try:
-        r = requests.get(url_radarr_api_filesystem, timeout=60, verify=False, headers=headers)
+        r = requests.get(url_radarr_api_filesystem, timeout=radarr_http_timeout, verify=False, headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get series from Radarr. Http error.")

@@ -8,7 +8,7 @@ from app.config import settings
 from app.database import TableShowsRootfolder, TableShows
 from utilities.path_mappings import path_mappings
 from sonarr.info import get_sonarr_info, url_sonarr
-from constants import headers
+from constants import headers, sonarr_http_timeout
 
 
 def get_sonarr_rootfolder():
@@ -22,7 +22,7 @@ def get_sonarr_rootfolder():
         url_sonarr_api_rootfolder = url_sonarr() + "/api/v3/rootfolder?apikey=" + apikey_sonarr
 
     try:
-        rootfolder = requests.get(url_sonarr_api_rootfolder, timeout=60, verify=False, headers=headers)
+        rootfolder = requests.get(url_sonarr_api_rootfolder, timeout=sonarr_http_timeout, verify=False, headers=headers)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get rootfolder from Sonarr. Connection Error.")
         return []

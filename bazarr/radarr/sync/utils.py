@@ -5,7 +5,7 @@ import logging
 
 from app.config import settings
 from radarr.info import get_radarr_info, url_radarr
-from constants import headers
+from constants import headers, radarr_http_timeout
 
 
 def get_profile_list():
@@ -18,7 +18,7 @@ def get_profile_list():
         url_radarr_api_movies = url_radarr() + "/api/v3/qualityprofile?apikey=" + apikey_radarr
 
     try:
-        profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
+        profiles_json = requests.get(url_radarr_api_movies, timeout=radarr_http_timeout, verify=False, headers=headers)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get profiles from Radarr. Connection Error.")
     except requests.exceptions.Timeout:
@@ -50,7 +50,7 @@ def get_tags():
         url_radarr_api_series = url_radarr() + "/api/v3/tag?apikey=" + apikey_radarr
 
     try:
-        tagsDict = requests.get(url_radarr_api_series, timeout=60, verify=False, headers=headers)
+        tagsDict = requests.get(url_radarr_api_series, timeout=radarr_http_timeout, verify=False, headers=headers)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get tags from Radarr. Connection Error.")
         return []
@@ -79,7 +79,7 @@ def get_movies_from_radarr_api(url, apikey_radarr, radarr_id=None):
                                 apikey_radarr
 
     try:
-        r = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
+        r = requests.get(url_radarr_api_movies, timeout=radarr_http_timeout, verify=False, headers=headers)
         if r.status_code == 404:
             return
         r.raise_for_status()
