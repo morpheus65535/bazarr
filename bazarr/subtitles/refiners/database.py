@@ -43,7 +43,8 @@ def refine_from_db(path, video):
 
             # Only refine year as a fallback
             if not video.year and data['year']:
-                if int(data['year']) > 0: video.year = int(data['year'])
+                if int(data['year']) > 0:
+                    video.year = int(data['year'])
 
             video.series_tvdb_id = int(data['tvdbId'])
             video.alternative_series = ast.literal_eval(data['alternateTitles'])
@@ -77,7 +78,8 @@ def refine_from_db(path, video):
 
             # Only refine year as a fallback
             if not video.year and data['year']:
-                if int(data['year']) > 0: video.year = int(data['year'])
+                if int(data['year']) > 0:
+                    video.year = int(data['year'])
 
             if data['imdbId'] and not video.imdb_id:
                 video.imdb_id = data['imdbId']
