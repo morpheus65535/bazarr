@@ -74,12 +74,14 @@ def catch_all(path):
         updated = '0'
 
     inject = dict()
-    inject["baseUrl"] = base_url
-    inject["canUpdate"] = not args.no_update
-    inject["hasUpdate"] = updated != '0'
 
-    if auth:
-        inject["apiKey"] = settings.auth.apikey
+    if not path.startswith('api/'):
+        inject["baseUrl"] = base_url
+        inject["canUpdate"] = not args.no_update
+        inject["hasUpdate"] = updated != '0'
+
+        if auth:
+            inject["apiKey"] = settings.auth.apikey
 
     template_url = base_url
     if not template_url.endswith("/"):
