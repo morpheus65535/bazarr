@@ -22,7 +22,7 @@ def get_sonarr_rootfolder():
         url_sonarr_api_rootfolder = url_sonarr() + "/api/v3/rootfolder?apikey=" + apikey_sonarr
 
     try:
-        rootfolder = requests.get(url_sonarr_api_rootfolder, timeout=settings.sonarr.http_timeout, verify=False, headers=headers)
+        rootfolder = requests.get(url_sonarr_api_rootfolder, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get rootfolder from Sonarr. Connection Error.")
         return []
