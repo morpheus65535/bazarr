@@ -427,13 +427,11 @@ def save_settings(settings_items):
             update_schedule = True
 
         if key in ['settings-general-use_sonarr', 'settings-sonarr-ip', 'settings-sonarr-port',
-                   'settings-sonarr-base_url', 'settings-sonarr-ssl', 'settings-sonarr-http_timeout',
-                   'settings-sonarr-apikey']:
+                   'settings-sonarr-base_url', 'settings-sonarr-ssl', 'settings-sonarr-apikey']:
             sonarr_changed = True
 
         if key in ['settings-general-use_radarr', 'settings-radarr-ip', 'settings-radarr-port',
-                   'settings-radarr-base_url', 'settings-radarr-ssl', 'settings-radarr-http_timeout',
-                   'settings-radarr-apikey']:
+                   'settings-radarr-base_url', 'settings-radarr-ssl', 'settings-radarr-apikey']:
             radarr_changed = True
 
         if key in ['settings-general-path_mappings', 'settings-general-path_mappings_movie']:
