@@ -18,6 +18,6 @@ def notify_sonarr(sonarr_series_id):
             'name': 'RescanSeries',
             'seriesId': int(sonarr_series_id)
         }
-        requests.post(url, json=data, timeout=60, verify=False, headers=headers)
+        requests.post(url, json=data, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
     except Exception:
         logging.exception('BAZARR cannot notify Sonarr')
