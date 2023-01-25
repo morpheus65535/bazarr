@@ -76,6 +76,10 @@ def postprocessSeries(item):
     if 'audio_language' in item and item['audio_language'] is not None:
         item['audio_language'] = get_audio_profile_languages(series_id=item['sonarrSeriesId'])
 
+    # Make sure profileId is a valid None value
+    if 'profileId' in item and item['profileId'] in None_Keys:
+        item['profileId'] = None
+
     if 'alternateTitles' in item:
         if item['alternateTitles'] is None:
             item['alternativeTitles'] = []
@@ -162,6 +166,10 @@ def postprocessMovie(item):
     # Parse audio language
     if 'audio_language' in item and item['audio_language'] is not None:
         item['audio_language'] = get_audio_profile_languages(movie_id=item['radarrId'])
+
+    # Make sure profileId is a valid None value
+    if 'profileId' in item and item['profileId'] in None_Keys:
+        item['profileId'] = None
 
     # Parse alternate titles
     if 'alternativeTitles' in item:
