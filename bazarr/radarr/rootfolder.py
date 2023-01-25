@@ -8,7 +8,7 @@ from app.config import settings
 from utilities.path_mappings import path_mappings
 from app.database import TableMoviesRootfolder, TableMovies
 from radarr.info import get_radarr_info, url_radarr
-from constants import headers, radarr_http_timeout
+from constants import headers
 
 
 def get_radarr_rootfolder():
@@ -22,7 +22,7 @@ def get_radarr_rootfolder():
         url_radarr_api_rootfolder = url_radarr() + "/api/v3/rootfolder?apikey=" + apikey_radarr
 
     try:
-        rootfolder = requests.get(url_radarr_api_rootfolder, timeout=radarr_http_timeout, verify=False, headers=headers)
+        rootfolder = requests.get(url_radarr_api_rootfolder, timeout=settings.radarr.http_timeout, verify=False, headers=headers)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get rootfolder from Radarr. Connection Error.")
         return []
