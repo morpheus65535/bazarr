@@ -140,8 +140,6 @@ def restore_from_backup():
         logging.exception(f'Unable to delete {dest_config_path}')
 
 
-
-
 def prepare_restore(filename):
     src_zip_file_path = os.path.join(get_backup_path(), filename)
     dest_zip_file_path = os.path.join(get_restore_path(), filename)

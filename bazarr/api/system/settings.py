@@ -92,7 +92,7 @@ class SystemSettings(Resource):
                 # Remove deleted profiles
                 TableLanguagesProfiles.delete().where(TableLanguagesProfiles.profileId == profileId).execute()
 
-            #invalidate cache
+            # invalidate cache
             update_profile_id_list.invalidate()
 
             event_stream("languages")

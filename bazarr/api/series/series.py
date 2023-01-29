@@ -72,8 +72,8 @@ class Series(Resource):
         count = TableShows.select().count()
         episodeFileCount = TableEpisodes.select(TableShows.sonarrSeriesId,
                                                 fn.COUNT(TableEpisodes.sonarrSeriesId).coerce(False).alias('episodeFileCount')) \
-                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-                .group_by(TableShows.sonarrSeriesId).alias('episodeFileCount')
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
+            .group_by(TableShows.sonarrSeriesId).alias('episodeFileCount')
 
         episodes_missing_conditions = [(TableEpisodes.missing_subtitles != '[]')]
         episodes_missing_conditions += get_exclusion_clause('series')
@@ -87,10 +87,11 @@ class Series(Resource):
         result = TableShows.select(TableShows, episodeFileCount.c.episodeFileCount,
                                    episodeMissingCount.c.episodeMissingCount).join(episodeFileCount,
                                                                                    join_type=JOIN.LEFT_OUTER, on=(
-                        TableShows.sonarrSeriesId == episodeFileCount.c.sonarrSeriesId)) \
-                .join(episodeMissingCount, join_type=JOIN.LEFT_OUTER,
+                                                                                    TableShows.sonarrSeriesId ==
+                                                                                    episodeFileCount.c.sonarrSeriesId)
+                                                                                   ) \
+            .join(episodeMissingCount, join_type=JOIN.LEFT_OUTER,
                   on=(TableShows.sonarrSeriesId == episodeMissingCount.c.sonarrSeriesId)).order_by(TableShows.sortTitle)
-
 
         if len(seriesId) != 0:
             result = result.where(TableShows.sonarrSeriesId.in_(seriesId))

@@ -47,9 +47,9 @@ class MoviesSubtitles(Resource):
             TableMovies.path,
             TableMovies.sceneName,
             TableMovies.audio_language) \
-                .where(TableMovies.radarrId == radarrId) \
-                .dicts() \
-                .get_or_none()
+            .where(TableMovies.radarrId == radarrId) \
+            .dicts() \
+            .get_or_none()
 
         if not movieInfo:
             return 'Movie not found', 404
@@ -117,9 +117,9 @@ class MoviesSubtitles(Resource):
                                        TableMovies.path,
                                        TableMovies.sceneName,
                                        TableMovies.audio_language) \
-                        .where(TableMovies.radarrId == radarrId) \
-                        .dicts() \
-                        .get_or_none()
+            .where(TableMovies.radarrId == radarrId) \
+            .dicts() \
+            .get_or_none()
 
         if not movieInfo:
             return 'Movie not found', 404

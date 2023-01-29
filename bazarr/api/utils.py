@@ -137,7 +137,6 @@ def postprocess(item):
         poster = item['poster']
         item['poster'] = f"{base_url}/images/{'movies' if item.get('movie_file_id') else 'series'}{poster}" if poster else None
 
-
     if item.get('fanart') is not None:
         fanart = item['fanart']
         item['fanart'] = f"{base_url}/images/{'movies' if item.get('movie_file_id') else 'series'}{fanart}" if fanart else None

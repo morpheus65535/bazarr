@@ -435,8 +435,7 @@ def migrate_db():
     if not any(
             x
             for x in database.get_columns('table_blacklist')
-            if x.name == "timestamp"
-               and x.data_type in ["DATETIME", "timestamp without time zone"]
+            if x.name == "timestamp" and x.data_type in ["DATETIME", "timestamp without time zone"]
     ):
         migrate(migrator.alter_column_type('table_blacklist', 'timestamp', DateTimeField(default=datetime.now)))
         update = TableBlacklist.select()
@@ -446,16 +445,12 @@ def migrate_db():
     if not any(
             x
             for x in database.get_columns('table_blacklist_movie')
-            if x.name == "timestamp"
-               and x.data_type in ["DATETIME", "timestamp without time zone"]
+            if x.name == "timestamp" and x.data_type in ["DATETIME", "timestamp without time zone"]
     ):
         migrate(migrator.alter_column_type('table_blacklist_movie', 'timestamp', DateTimeField(default=datetime.now)))
         update = TableBlacklistMovie.select()
         for item in update:
             item.update({"timestamp": datetime.fromtimestamp(int(item.timestamp))}).execute()
-
-    # if not any(x for x in database.get_columns('table_episodes') if x.name == "monitored" and x.data_type == "BOOLEAN"):
-    #     migrate(migrator.alter_column_type('table_episodes', 'monitored', BooleanField(null=True)))
 
     if not any(
             x for x in database.get_columns('table_history') if x.name == "score" and x.data_type.lower() == "integer"):
@@ -463,8 +458,7 @@ def migrate_db():
     if not any(
             x
             for x in database.get_columns('table_history')
-            if x.name == "timestamp"
-               and x.data_type in ["DATETIME", "timestamp without time zone"]
+            if x.name == "timestamp" and x.data_type in ["DATETIME", "timestamp without time zone"]
     ):
         migrate(migrator.alter_column_type('table_history', 'timestamp', DateTimeField(default=datetime.now)))
         update = TableHistory.select()
@@ -484,8 +478,7 @@ def migrate_db():
     if not any(
             x
             for x in database.get_columns('table_history_movie')
-            if x.name == "timestamp"
-               and x.data_type in ["DATETIME", "timestamp without time zone"]
+            if x.name == "timestamp" and x.data_type in ["DATETIME", "timestamp without time zone"]
     ):
         migrate(migrator.alter_column_type('table_history_movie', 'timestamp', DateTimeField(default=datetime.now)))
         update = TableHistoryMovie.select()
@@ -553,12 +546,12 @@ def get_exclusion_clause(exclusion_type):
     if exclusion_type == 'series':
         monitoredOnly = settings.sonarr.getboolean('only_monitored')
         if monitoredOnly:
-            where_clause.append((TableEpisodes.monitored == True))
-            where_clause.append((TableShows.monitored == True))
+            where_clause.append((TableEpisodes.monitored == True))  # noqa E712
+            where_clause.append((TableShows.monitored == True))  # noqa E712
     else:
         monitoredOnly = settings.radarr.getboolean('only_monitored')
         if monitoredOnly:
-            where_clause.append((TableMovies.monitored == True))
+            where_clause.append((TableMovies.monitored == True))  # noqa E712
 
     if exclusion_type == 'series':
         typesList = get_array_from(settings.sonarr.excluded_series_types)
