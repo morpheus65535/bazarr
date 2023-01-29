@@ -2,7 +2,7 @@ import queryClient from "@/apis/queries";
 import { QueryKeys } from "@/apis/queries/keys";
 import { LOG } from "@/utilities/console";
 import { setCriticalError, setOnlineStatus } from "@/utilities/event";
-import { showNotification } from "@mantine/notifications";
+import { cleanNotifications, showNotification } from "@mantine/notifications";
 import { notification, task } from "../task";
 
 export function createDefaultReducer(): SocketIO.Reducer[] {
@@ -15,6 +15,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
       key: "connect_error",
       any: () => {
         setCriticalError("Cannot connect to backend");
+        cleanNotifications();
       },
     },
     {
