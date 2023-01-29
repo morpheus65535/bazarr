@@ -65,7 +65,7 @@ class EpisodesWanted(Resource):
                                         TableEpisodes.missing_subtitles,
                                         TableEpisodes.sonarrSeriesId,
                                         TableEpisodes.sonarrEpisodeId,
-                                        TableEpisodes.sceneName.alias('sceneName'),
+                                        TableEpisodes.sceneName,
                                         TableShows.tags,
                                         TableEpisodes.failedAttempts,
                                         TableShows.seriesType)\
@@ -82,7 +82,7 @@ class EpisodesWanted(Resource):
                                         TableEpisodes.missing_subtitles,
                                         TableEpisodes.sonarrSeriesId,
                                         TableEpisodes.sonarrEpisodeId,
-                                        TableEpisodes.sceneName.alias('sceneName'),
+                                        TableEpisodes.sceneName,
                                         TableShows.tags,
                                         TableEpisodes.failedAttempts,
                                         TableShows.seriesType)\
