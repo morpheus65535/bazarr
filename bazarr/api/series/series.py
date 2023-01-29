@@ -7,7 +7,6 @@ from functools import reduce
 from peewee import fn, JOIN
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows
-from peewee import fn, JOIN
 from subtitles.indexer.series import list_missing_subtitles, series_scan_subtitles
 from subtitles.mass_download import series_download_subtitles
 from subtitles.wanted import wanted_search_missing_subtitles_series
