@@ -36,186 +36,55 @@ def authenticate(actual_method):
 
 def postprocess(item):
     # Remove ffprobe_cache
-    if 'ffprobe_cache' in item:
-        del (item['ffprobe_cache'])
+    if item.get('movie_file_id'):
+        path_replace = path_mappings.path_replace_movie
+    else:
+        path_replace = path_mappings.path_replace
+    if item.get('ffprobe_cache'):
+        del item['ffprobe_cache']
 
-    # Parse tags
-    if 'tags' in item:
-        if item['tags'] is None:
-            item['tags'] = []
-        else:
-            item['tags'] = ast.literal_eval(item['tags'])
-
-    if 'monitored' in item:
-        if item['monitored'] is None:
-            item['monitored'] = False
-        else:
-            item['monitored'] = item['monitored'] == 'True'
-
-    if 'hearing_impaired' in item and item['hearing_impaired'] is not None:
-        if item['hearing_impaired'] is None:
-            item['hearing_impaired'] = False
-        else:
-            item['hearing_impaired'] = item['hearing_impaired'] == 'True'
-
-    if 'language' in item:
-        if item['language'] == 'None':
-            item['language'] = None
-        elif item['language'] is not None:
-            splitted_language = item['language'].split(':')
-            item['language'] = {"name": language_from_alpha2(splitted_language[0]),
-                                "code2": splitted_language[0],
-                                "code3": alpha3_from_alpha2(splitted_language[0]),
-                                "forced": True if item['language'].endswith(':forced') else False,
-                                "hi": True if item['language'].endswith(':hi') else False}
-
-
-def postprocessSeries(item):
-    postprocess(item)
     # Parse audio language
-    if 'audio_language' in item and item['audio_language'] is not None:
-        item['audio_language'] = get_audio_profile_languages(series_id=item['sonarrSeriesId'])
+    if item.get('audio_language') is not None:
+        item['audio_language'] = get_audio_profile_languages(item['audio_language'])
 
     # Make sure profileId is a valid None value
-    if 'profileId' in item and item['profileId'] in None_Keys:
-        item['profileId'] = None
-
-    if 'alternateTitles' in item:
-        if item['alternateTitles'] is None:
-            item['alternativeTitles'] = []
-        else:
-            item['alternativeTitles'] = ast.literal_eval(item['alternateTitles'])
-        del item["alternateTitles"]
-
-    # Parse seriesType
-    if 'seriesType' in item and item['seriesType'] is not None:
-        item['seriesType'] = item['seriesType'].capitalize()
-
-    if 'path' in item:
-        item['path'] = path_mappings.path_replace(item['path'])
-
-    # map poster and fanart to server proxy
-    if 'poster' in item:
-        poster = item['poster']
-        item['poster'] = f"{base_url}/images/series{poster}" if poster else None
-
-    if 'fanart' in item:
-        fanart = item['fanart']
-        item['fanart'] = f"{base_url}/images/series{fanart}" if fanart else None
-
-
-def postprocessEpisode(item):
-    postprocess(item)
-    if 'audio_language' in item and item['audio_language'] is not None:
-        item['audio_language'] = get_audio_profile_languages(episode_id=item['sonarrEpisodeId'])
-
-    if 'subtitles' in item:
-        if item['subtitles'] is None:
-            raw_subtitles = []
-        else:
-            raw_subtitles = ast.literal_eval(item['subtitles'])
-        subtitles = []
-
-        for subs in raw_subtitles:
-            subtitle = subs[0].split(':')
-            sub = {"name": language_from_alpha2(subtitle[0]),
-                   "code2": subtitle[0],
-                   "code3": alpha3_from_alpha2(subtitle[0]),
-                   "path": path_mappings.path_replace(subs[1]),
-                   "forced": False,
-                   "hi": False}
-            if len(subtitle) > 1:
-                sub["forced"] = True if subtitle[1] == 'forced' else False
-                sub["hi"] = True if subtitle[1] == 'hi' else False
-
-            subtitles.append(sub)
-
-        item.update({"subtitles": subtitles})
-
-    # Parse missing subtitles
-    if 'missing_subtitles' in item:
-        if item['missing_subtitles'] is None:
-            item['missing_subtitles'] = []
-        else:
-            item['missing_subtitles'] = ast.literal_eval(item['missing_subtitles'])
-        for i, subs in enumerate(item['missing_subtitles']):
-            subtitle = subs.split(':')
-            item['missing_subtitles'][i] = {"name": language_from_alpha2(subtitle[0]),
-                                            "code2": subtitle[0],
-                                            "code3": alpha3_from_alpha2(subtitle[0]),
-                                            "forced": False,
-                                            "hi": False}
-            if len(subtitle) > 1:
-                item['missing_subtitles'][i].update({
-                    "forced": True if subtitle[1] == 'forced' else False,
-                    "hi": True if subtitle[1] == 'hi' else False
-                })
-
-    if 'scene_name' in item:
-        item["sceneName"] = item["scene_name"]
-        del item["scene_name"]
-
-    if 'path' in item and item['path']:
-        # Provide mapped path
-        item['path'] = path_mappings.path_replace(item['path'])
-
-
-# TODO: Move
-def postprocessMovie(item):
-    postprocess(item)
-    # Parse audio language
-    if 'audio_language' in item and item['audio_language'] is not None:
-        item['audio_language'] = get_audio_profile_languages(movie_id=item['radarrId'])
-
-    # Make sure profileId is a valid None value
-    if 'profileId' in item and item['profileId'] in None_Keys:
+    if item.get('profileId') and item['profileId'] in None_Keys:
         item['profileId'] = None
 
     # Parse alternate titles
-    if 'alternativeTitles' in item:
-        if item['alternativeTitles'] is None:
-            item['alternativeTitles'] = []
-        else:
-            item['alternativeTitles'] = ast.literal_eval(item['alternativeTitles'])
+    if item.get('alternativeTitles'):
+        item['alternativeTitles'] = ast.literal_eval(item['alternativeTitles'])
 
     # Parse failed attempts
-    if 'failedAttempts' in item:
-        if item['failedAttempts']:
-            item['failedAttempts'] = ast.literal_eval(item['failedAttempts'])
+    if item.get('failedAttempts'):
+        item['failedAttempts'] = ast.literal_eval(item['failedAttempts'])
 
     # Parse subtitles
-    if 'subtitles' in item:
-        if item['subtitles'] is None:
-            item['subtitles'] = []
-        else:
-            item['subtitles'] = ast.literal_eval(item['subtitles'])
+    if item.get('subtitles'):
+        item['subtitles'] = ast.literal_eval(item['subtitles'])
         for i, subs in enumerate(item['subtitles']):
             language = subs[0].split(':')
-            item['subtitles'][i] = {"path": path_mappings.path_replace_movie(subs[1]),
+            item['subtitles'][i] = {"path": path_replace(subs[1]),
                                     "name": language_from_alpha2(language[0]),
                                     "code2": language[0],
                                     "code3": alpha3_from_alpha2(language[0]),
                                     "forced": False,
                                     "hi": False}
             if len(language) > 1:
-                item['subtitles'][i].update({
-                    "forced": True if language[1] == 'forced' else False,
-                    "hi": True if language[1] == 'hi' else False
-                })
-
-        if settings.general.getboolean('embedded_subs_show_desired'):
+                item['subtitles'][i].update(
+                    {
+                        "forced": language[1] == 'forced',
+                        "hi": language[1] == 'hi',
+                    }
+                )
+        if settings.general.getboolean('embedded_subs_show_desired') and item.get('profileId'):
             desired_lang_list = get_desired_languages(item['profileId'])
             item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
-
-        if item['subtitles']:
-            item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
+        item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
 
     # Parse missing subtitles
-    if 'missing_subtitles' in item:
-        if item['missing_subtitles'] is None:
-            item['missing_subtitles'] = []
-        else:
-            item['missing_subtitles'] = ast.literal_eval(item['missing_subtitles'])
+    if item.get('missing_subtitles'):
+        item['missing_subtitles'] = ast.literal_eval(item['missing_subtitles'])
         for i, subs in enumerate(item['missing_subtitles']):
             language = subs.split(':')
             item['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),
@@ -224,25 +93,50 @@ def postprocessMovie(item):
                                             "forced": False,
                                             "hi": False}
             if len(language) > 1:
-                item['missing_subtitles'][i].update({
-                    "forced": True if language[1] == 'forced' else False,
-                    "hi": True if language[1] == 'hi' else False
-                })
+                item['missing_subtitles'][i].update(
+                    {
+                        "forced": language[1] == 'forced',
+                        "hi": language[1] == 'hi',
+                    }
+                )
 
-    # Provide mapped path
-    if 'path' in item:
-        if item['path']:
-            item['path'] = path_mappings.path_replace_movie(item['path'])
+    # Parse tags
+    if item.get('tags') is not None:
+        item['tags'] = ast.literal_eval(item.get('tags', '[]'))
+    if item.get('monitored'):
+        item['monitored'] = item.get('monitored') == 'True'
+    if item.get('hearing_impaired'):
+        item['hearing_impaired'] = item.get('hearing_impaired') == 'True'
 
-    if 'subtitles_path' in item:
+    if item.get('language'):
+        if item['language'] == 'None':
+            item['language'] = None
+        if item['language'] is not None:
+            splitted_language = item['language'].split(':')
+            item['language'] = {
+                "name": language_from_alpha2(splitted_language[0]),
+                "code2": splitted_language[0],
+                "code3": alpha3_from_alpha2(splitted_language[0]),
+                "forced": bool(item['language'].endswith(':forced')),
+                "hi": bool(item['language'].endswith(':hi')),
+            }
+
+    # Parse seriesType
+    if item.get('seriesType') is not None:
+        item['seriesType'] = item['seriesType'].capitalize()
+
+    if item.get('path'):
+        item['path'] = path_replace(item['path'])
+
+    if item.get('subtitles_path'):
         # Provide mapped subtitles path
-        item['subtitles_path'] = path_mappings.path_replace_movie(item['subtitles_path'])
+        item['subtitles_path'] = path_replace(item['subtitles_path'])
 
     # map poster and fanart to server proxy
-    if 'poster' in item:
+    if item.get('poster') is not None:
         poster = item['poster']
-        item['poster'] = f"{base_url}/images/movies{poster}" if poster else None
+        item['poster'] = f"{base_url}/images/{'movies' if item.get('movie_file_id') else 'series'}{poster}" if poster else None
 
-    if 'fanart' in item:
+    if item.get('fanart') is not None:
         fanart = item['fanart']
-        item['fanart'] = f"{base_url}/images/movies{fanart}" if fanart else None
+        item['fanart'] = f"{base_url}/images/{'movies' if item.get('movie_file_id') else 'series'}{fanart}" if fanart else None

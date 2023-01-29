@@ -1,6 +1,5 @@
 # coding=utf-8
 
-import datetime
 import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields
@@ -13,7 +12,7 @@ from subtitles.mass_download import episode_download_subtitles
 from app.event_handler import event_stream
 from api.swaggerui import subtitles_language_model
 
-from ..utils import authenticate, postprocessEpisode
+from ..utils import authenticate, postprocess
 
 api_ns_episodes_blacklist = Namespace('Episodes Blacklist', description='List, add or remove subtitles to or from '
                                                                         'episodes blacklist')
@@ -59,18 +58,17 @@ class EpisodesBlacklist(Resource):
                                      TableBlacklist.timestamp)\
             .join(TableEpisodes, on=(TableBlacklist.sonarr_episode_id == TableEpisodes.sonarrEpisodeId))\
             .join(TableShows, on=(TableBlacklist.sonarr_series_id == TableShows.sonarrSeriesId))\
-            .order_by(TableBlacklist.timestamp.desc())\
-            .limit(length)\
-            .offset(start)\
-            .dicts()
-        data = list(data)
+            .order_by(TableBlacklist.timestamp.desc())
+        if length > 0:
+            data = data.limit(length).offset(start)
+        data = list(data.dicts())
 
         for item in data:
             # Make timestamp pretty
-            item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
-            item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
+            item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
+            item.update({'timestamp': pretty.date(item['timestamp'])})
 
-            postprocessEpisode(item)
+            postprocess(item)
 
         return data
 

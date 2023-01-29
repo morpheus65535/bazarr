@@ -1,6 +1,6 @@
 # coding=utf-8
 
-import time
+from datetime import datetime
 
 from app.database import TableBlacklist
 from app.event_handler import event_stream
@@ -20,7 +20,7 @@ def blacklist_log(sonarr_series_id, sonarr_episode_id, provider, subs_id, langua
     TableBlacklist.insert({
         TableBlacklist.sonarr_series_id: sonarr_series_id,
         TableBlacklist.sonarr_episode_id: sonarr_episode_id,
-        TableBlacklist.timestamp: time.time(),
+        TableBlacklist.timestamp: datetime.now(),
         TableBlacklist.provider: provider,
         TableBlacklist.subs_id: subs_id,
         TableBlacklist.language: language

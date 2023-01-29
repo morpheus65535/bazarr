@@ -1,6 +1,6 @@
 # coding=utf-8
 
-import time
+from datetime import datetime
 
 from app.database import TableHistory
 from app.event_handler import event_stream
@@ -12,7 +12,7 @@ def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_
         TableHistory.action: action,
         TableHistory.sonarrSeriesId: sonarr_series_id,
         TableHistory.sonarrEpisodeId: sonarr_episode_id,
-        TableHistory.timestamp: time.time(),
+        TableHistory.timestamp: datetime.now(),
         TableHistory.description: description,
         TableHistory.video_path: video_path,
         TableHistory.language: language,

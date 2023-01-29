@@ -42,7 +42,7 @@ def movies_download_subtitles(no):
     else:
         count_movie = 0
 
-    audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
+    audio_language_list = get_audio_profile_languages(movie['audio_language'])
     if len(audio_language_list) > 0:
         audio_language = audio_language_list[0]['name']
     else:

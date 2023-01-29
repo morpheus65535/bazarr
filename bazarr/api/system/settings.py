@@ -6,7 +6,7 @@ from flask import request, jsonify
 from flask_restx import Resource, Namespace
 
 from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableShows, TableMovies, \
-    TableSettingsNotifier
+    TableSettingsNotifier, update_profile_id_list
 from app.event_handler import event_stream
 from app.config import settings, save_settings, get_settings
 from app.scheduler import scheduler
@@ -91,6 +91,9 @@ class SystemSettings(Resource):
                 }).where(TableMovies.profileId == profileId).execute()
                 # Remove deleted profiles
                 TableLanguagesProfiles.delete().where(TableLanguagesProfiles.profileId == profileId).execute()
+
+            # invalidate cache
+            update_profile_id_list.invalidate()
 
             event_stream("languages")
 

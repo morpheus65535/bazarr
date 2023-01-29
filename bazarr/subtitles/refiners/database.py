@@ -23,7 +23,7 @@ def refine_from_db(path, video):
                                     TableEpisodes.title.alias('episodeTitle'),
                                     TableShows.year,
                                     TableShows.tvdbId,
-                                    TableShows.alternateTitles,
+                                    TableShows.alternativeTitles,
                                     TableEpisodes.format,
                                     TableEpisodes.resolution,
                                     TableEpisodes.video_codec,
@@ -47,7 +47,7 @@ def refine_from_db(path, video):
                     video.year = int(data['year'])
 
             video.series_tvdb_id = int(data['tvdbId'])
-            video.alternative_series = ast.literal_eval(data['alternateTitles'])
+            video.alternative_series = ast.literal_eval(data['alternativeTitles'])
             if data['imdbId'] and not video.series_imdb_id:
                 video.series_imdb_id = data['imdbId']
             if not video.source:

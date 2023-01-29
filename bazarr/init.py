@@ -65,7 +65,7 @@ import logging  # noqa E402
 def is_virtualenv():
     # return True if Bazarr have been start from within a virtualenv or venv
     base_prefix = getattr(sys, "base_prefix", None)
-    # real_prefix will return None if not in a virtualenv enviroment or the default python path
+    # real_prefix will return None if not in a virtualenv environment or the default python path
     real_prefix = getattr(sys, "real_prefix", None) or sys.prefix
     return base_prefix != real_prefix
 
