@@ -20,7 +20,7 @@ def browse_sonarr_filesystem(path='#'):
                                     "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
                                     settings.sonarr.apikey
     try:
-        r = requests.get(url_sonarr_api_filesystem, timeout=60, verify=False, headers=headers)
+        r = requests.get(url_sonarr_api_filesystem, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")

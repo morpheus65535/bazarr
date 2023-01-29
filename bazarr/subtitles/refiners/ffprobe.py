@@ -32,7 +32,7 @@ def refine_from_ffprobe(path, video):
         data = parse_video_metadata(file=path, file_size=file_id['file_size'],
                                     episode_file_id=file_id['episode_file_id'])
 
-    if 'ffprobe' not in data and 'mediainfo' not in data:
+    if not data or ('ffprobe' not in data and 'mediainfo' not in data):
         logging.debug("No cache available for this file: {}".format(path))
         return video
 

@@ -286,7 +286,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "regielive",
     name: "RegieLive",
-    description: "Romanian Subtitles Provider. Broken, will not works.",
+    description: "Romanian Subtitles Provider.",
   },
   {
     key: "soustitreseu",

@@ -20,7 +20,6 @@ from radarr.sync.movies import update_movies, update_one_movie
 from sonarr.info import get_sonarr_info, url_sonarr
 from radarr.info import url_radarr
 from .database import TableShows
-from .event_handler import event_stream
 
 from .config import settings
 from .scheduler import scheduler

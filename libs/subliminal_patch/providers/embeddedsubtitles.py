@@ -6,12 +6,13 @@ import os
 import re
 import shutil
 import tempfile
+from typing import List
 
 from babelfish import language_converters
-from fese import tags
 from fese import container
 from fese import FFprobeSubtitleStream
 from fese import FFprobeVideoContainer
+from fese import tags
 from fese.exceptions import InvalidSource
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.core import Episode
@@ -119,13 +120,13 @@ class EmbeddedSubtitlesProvider(Provider):
         video = _get_memoized_video_container(path)
 
         try:
-            streams = filter(_check_allowed_codecs, video.get_subtitles())
+            streams = list(_filter_subtitles(video.get_subtitles()))
         except InvalidSource as error:
             logger.error("Error trying to get subtitles for %s: %s", video, error)
             self._blacklist.add(path)
             streams = []
 
-        streams = _discard_possible_incomplete_subtitles(list(streams))
+        streams = _discard_possible_incomplete_subtitles(streams)
 
         if not streams:
             logger.debug("No subtitles found for container: %s", video)
@@ -207,9 +208,10 @@ class EmbeddedSubtitlesProvider(Provider):
         if container.path not in self._cached_paths:
             # Extract all subittle streams to avoid reading the entire
             # container over and over
-            streams = filter(_check_allowed_codecs, container.get_subtitles())
+            subs = list(_filter_subtitles(container.get_subtitles()))
+
             extracted = container.copy_subtitles(
-                list(streams),
+                subs,
                 self._cache_dir,
                 timeout=self._timeout,
                 fallback_to_convert=True,
@@ -245,12 +247,20 @@ def _get_memoized_video_container(path: str):
     return _MemoizedFFprobeVideoContainer(path)
 
 
-def _check_allowed_codecs(subtitle: FFprobeSubtitleStream):
-    if subtitle.codec_name not in _ALLOWED_CODECS:
-        logger.debug("Unallowed codec: %s", subtitle)
-        return False
+def _filter_subtitles(subtitles: List[FFprobeSubtitleStream]):
+    for subtitle in subtitles:
+        if subtitle.codec_name not in _ALLOWED_CODECS:
+            logger.debug("Unallowed codec: %s", subtitle)
+            continue
 
-    return True
+        if subtitle.tags.language_fallback is True and any(
+            (subtitle.language == sub.language) and (subtitle.index != sub.index)
+            for sub in subtitles
+        ):
+            logger.debug("Not using language fallback. Language already found")
+            continue
+
+        yield subtitle
 
 
 def _check_hi_fallback(streams, languages):

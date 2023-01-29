@@ -47,6 +47,10 @@ def postprocess(item):
     if item.get('audio_language') is not None:
         item['audio_language'] = get_audio_profile_languages(item['audio_language'])
 
+    # Make sure profileId is a valid None value
+    if item.get('profileId') and item['profileId'] in None_Keys:
+        item['profileId'] = None
+
     # Parse alternate titles
     if item.get('alternativeTitles'):
         item['alternativeTitles'] = ast.literal_eval(item['alternativeTitles'])
