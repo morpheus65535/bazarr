@@ -146,7 +146,7 @@ class MoviesSubtitles(Resource):
                                             forced=forced,
                                             hi=hi,
                                             title=title,
-                                            scene_name=sceneName,
+                                            sceneName=sceneName,
                                             media_type='movie',
                                             subtitle=subFile,
                                             audio_language=audioLanguage)
