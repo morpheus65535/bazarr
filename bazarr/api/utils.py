@@ -44,20 +44,24 @@ def postprocess(item):
         del item['ffprobe_cache']
 
     # Parse audio language
-    if item.get('audio_language') is not None:
+    if item.get('audio_language'):
         item['audio_language'] = get_audio_profile_languages(item['audio_language'])
 
     # Make sure profileId is a valid None value
-    if item.get('profileId') and item['profileId'] in None_Keys:
+    if item.get('profileId') in None_Keys:
         item['profileId'] = None
 
     # Parse alternate titles
     if item.get('alternativeTitles'):
         item['alternativeTitles'] = ast.literal_eval(item['alternativeTitles'])
+    else:
+        item['alternativeTitles'] = []
 
     # Parse failed attempts
     if item.get('failedAttempts'):
         item['failedAttempts'] = ast.literal_eval(item['failedAttempts'])
+    else:
+        item['failedAttempts'] = []
 
     # Parse subtitles
     if item.get('subtitles'):
@@ -81,6 +85,8 @@ def postprocess(item):
             desired_lang_list = get_desired_languages(item['profileId'])
             item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
         item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
+    else:
+        item['subtitles'] = []
 
     # Parse missing subtitles
     if item.get('missing_subtitles'):
@@ -99,14 +105,22 @@ def postprocess(item):
                         "hi": language[1] == 'hi',
                     }
                 )
+    else:
+        item['missing_subtitles'] = []
 
     # Parse tags
     if item.get('tags') is not None:
         item['tags'] = ast.literal_eval(item.get('tags', '[]'))
+    else:
+        item['tags'] = []
     if item.get('monitored'):
         item['monitored'] = item.get('monitored') == 'True'
+    else:
+        item['monitored'] = False
     if item.get('hearing_impaired'):
         item['hearing_impaired'] = item.get('hearing_impaired') == 'True'
+    else:
+        item['hearing_impaired'] = False
 
     if item.get('language'):
         if item['language'] == 'None':
@@ -122,7 +136,7 @@ def postprocess(item):
             }
 
     # Parse seriesType
-    if item.get('seriesType') is not None:
+    if item.get('seriesType'):
         item['seriesType'] = item['seriesType'].capitalize()
 
     if item.get('path'):
