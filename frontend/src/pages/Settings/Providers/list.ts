@@ -303,6 +303,14 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "subf2m",
     name: "subf2m.co",
     description: "Subscene Alternative Provider",
+    inputs: [
+      {
+        type: "switch",
+        key: "verify_ssl",
+        name: "Verify SSL",
+        defaultValue: true,
+      },
+    ],
   },
   {
     key: "subs4free",

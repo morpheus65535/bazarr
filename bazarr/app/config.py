@@ -163,6 +163,9 @@ defaults = {
     'podnapisi': {
         'verify_ssl': 'True'
     },
+    'subf2m': {
+        'verify_ssl': 'True'
+    },
     'legendasdivx': {
         'username': '',
         'password': '',
