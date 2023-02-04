@@ -29,7 +29,7 @@ class YifySubtitle(Subtitle):
         super(YifySubtitle, self).__init__(language)
         self.page_link = page_link
         self.hearing_impaired = hi
-        self.release_info = release
+        self.release_info = release.replace('\n', ', ')
         self.uploader = uploader
         self.rating = rating
 
@@ -116,8 +116,8 @@ class YifySubtitlesProvider(Provider):
         td = row.findAll('td')
         rating = int(td[0].text)
         sub_lang = td[1].text
-        release = re.sub(r'^subtitle ', '', td[2].text)
-        page_link = server_url + td[2].find('a').get('href')
+        release = re.sub(r'^\nsubtitle ', '', td[2].text)
+        page_link = td[2].find('a').get('href')
         hi = True if td[3].find('span', {'class': 'hi-subtitle'}) else False
         uploader = td[4].text
 

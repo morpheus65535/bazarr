@@ -78,7 +78,8 @@ defaults = {
         'wanted_search_frequency_movie': '3',
         'subzero_mods': '[]',
         'dont_notify_manual_actions': 'False',
-        'hi_extension': 'hi'
+        'hi_extension': 'hi',
+        'embedded_subtitles_parser': 'ffprobe'
     },
     'auth': {
         'type': 'None',
@@ -100,6 +101,7 @@ defaults = {
         'port': '8989',
         'base_url': '/',
         'ssl': 'False',
+        'http_timeout': '60',
         'apikey': '',
         'full_update': 'Daily',
         'full_update_day': '6',
@@ -118,6 +120,7 @@ defaults = {
         'port': '7878',
         'base_url': '/',
         'ssl': 'False',
+        'http_timeout': '60',
         'apikey': '',
         'full_update': 'Daily',
         'full_update_day': '6',
@@ -158,6 +161,9 @@ defaults = {
         'vip': 'False'
     },
     'podnapisi': {
+        'verify_ssl': 'True'
+    },
+    'subf2m': {
         'verify_ssl': 'True'
     },
     'legendasdivx': {
@@ -258,6 +264,14 @@ defaults = {
         "streaming_service": 1,
         "edition": 1,
         "hearing_impaired": 1,
+    },
+    'postgresql': {
+        'enabled': 'False',
+        'host': 'localhost',
+        'port': '5432',
+        'database': '',
+        'username': '',
+        'password': '',
     }
 }
 

@@ -26,8 +26,8 @@ from .sync import sync_subtitles
 from .post_processing import postprocessing
 
 
-def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_type, subtitle, audio_language):
-    logging.debug('BAZARR Manually uploading subtitles for this file: ' + path)
+def manual_upload_subtitle(path, language, forced, hi, title, sceneName, media_type, subtitle, audio_language):
+    logging.debug(f'BAZARR Manually uploading subtitles for this file: {path}')
 
     single = settings.general.getboolean('single_language')
 

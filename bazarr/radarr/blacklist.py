@@ -1,6 +1,6 @@
 # coding=utf-8
 
-import time
+from datetime import datetime
 
 from app.database import TableBlacklistMovie
 from app.event_handler import event_stream
@@ -19,7 +19,7 @@ def get_blacklist_movie():
 def blacklist_log_movie(radarr_id, provider, subs_id, language):
     TableBlacklistMovie.insert({
         TableBlacklistMovie.radarr_id: radarr_id,
-        TableBlacklistMovie.timestamp: time.time(),
+        TableBlacklistMovie.timestamp: datetime.now(),
         TableBlacklistMovie.provider: provider,
         TableBlacklistMovie.subs_id: subs_id,
         TableBlacklistMovie.language: language

@@ -135,8 +135,14 @@ class Subf2mProvider(Provider):
     video_types = (Episode, Movie)
     subtitle_class = Subf2mSubtitle
 
+    def __init__(self, verify_ssl=True):
+        super().__init__()
+        self._verify_ssl = verify_ssl
+
     def initialize(self):
         self._session = Session()
+        self._session.verify = self._verify_ssl
+
         self._session.headers.update({"user-agent": "Bazarr"})
 
     def terminate(self):
@@ -147,6 +153,11 @@ class Subf2mProvider(Provider):
 
         for n in range(retry):
             req = self._session.get(url, stream=True)
+
+            if req.status_code == 403:
+                logger.debug("Access to this resource is forbidden: %s", url)
+                break
+
             # Sometimes subf2m will return a 503 code. This error usually disappears
             # retrying the query
             if req.status_code == 503:

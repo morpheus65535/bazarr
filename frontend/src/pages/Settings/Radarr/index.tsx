@@ -9,11 +9,13 @@ import {
   Number,
   PathMappingTable,
   Section,
+  Selector,
   Slider,
   Text,
   URLTestButton,
 } from "../components";
 import { moviesEnabledKey } from "../keys";
+import { timeoutOptions } from "./options";
 
 const SettingsRadarrView: FunctionComponent = () => {
   return (
@@ -35,6 +37,11 @@ const SettingsRadarrView: FunctionComponent = () => {
               onSubmit: (v) => "/" + v,
             }}
           ></Text>
+          <Selector
+            label="HTTP Timeout"
+            options={timeoutOptions}
+            settingKey="settings-radarr-http_timeout"
+          ></Selector>
           <Text label="API Key" settingKey="settings-radarr-apikey"></Text>
           <Check label="SSL" settingKey="settings-radarr-ssl"></Check>
           <URLTestButton category="radarr"></URLTestButton>

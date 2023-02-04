@@ -42,13 +42,14 @@ class EpisodesSubtitles(Resource):
         args = self.patch_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.path,
-                                           TableEpisodes.scene_name,
-                                           TableEpisodes.audio_language,
-                                           TableShows.title) \
+        episodeInfo = TableEpisodes.select(
+            TableEpisodes.path,
+            TableEpisodes.sceneName,
+            TableEpisodes.audio_language,
+            TableShows.title) \
             .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)\
-            .dicts()\
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
+            .dicts() \
             .get_or_none()
 
         if not episodeInfo:
@@ -56,13 +57,13 @@ class EpisodesSubtitles(Resource):
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['scene_name'] or "None"
+        sceneName = episodeInfo['sceneName'] or "None"
 
         language = args.get('language')
         hi = args.get('hi').capitalize()
         forced = args.get('forced').capitalize()
 
-        audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
+        audio_language_list = get_audio_profile_languages(episodeInfo["audio_language"])
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
         else:
@@ -119,10 +120,10 @@ class EpisodesSubtitles(Resource):
         sonarrEpisodeId = args.get('episodeid')
         episodeInfo = TableEpisodes.select(TableEpisodes.title,
                                            TableEpisodes.path,
-                                           TableEpisodes.scene_name,
-                                           TableEpisodes.audio_language)\
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)\
-            .dicts()\
+                                           TableEpisodes.sceneName,
+                                           TableEpisodes.audio_language) \
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
+            .dicts() \
             .get_or_none()
 
         if not episodeInfo:
@@ -130,7 +131,7 @@ class EpisodesSubtitles(Resource):
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['scene_name'] or "None"
+        sceneName = episodeInfo['sceneName'] or "None"
         audio_language = episodeInfo['audio_language']
 
         language = args.get('language')
@@ -149,7 +150,7 @@ class EpisodesSubtitles(Resource):
                                             forced=forced,
                                             hi=hi,
                                             title=title,
-                                            scene_name=sceneName,
+                                            sceneName=sceneName,
                                             media_type='series',
                                             subtitle=subFile,
                                             audio_language=audio_language)
@@ -199,10 +200,10 @@ class EpisodesSubtitles(Resource):
         sonarrEpisodeId = args.get('episodeid')
         episodeInfo = TableEpisodes.select(TableEpisodes.title,
                                            TableEpisodes.path,
-                                           TableEpisodes.scene_name,
-                                           TableEpisodes.audio_language)\
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)\
-            .dicts()\
+                                           TableEpisodes.sceneName,
+                                           TableEpisodes.audio_language) \
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
+            .dicts() \
             .get_or_none()
 
         if not episodeInfo:

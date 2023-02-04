@@ -1,16 +1,14 @@
 # coding=utf-8
 
 import logging
-import os
 import pickle
-import enzyme
 
-from knowit.api import know
-from enzyme.exceptions import MalformedMKVError
+from knowit.api import know, KnowitException
 
 from languages.custom_lang import CustomLanguage
 from app.database import TableEpisodes, TableMovies
 from utilities.path_mappings import path_mappings
+from app.config import settings
 
 
 def _handle_alpha3(detected_language: dict):
@@ -28,6 +26,10 @@ def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=No
     data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, use_cache=use_cache)
 
     subtitles_list = []
+
+    if not data:
+        return subtitles_list
+
     if data["ffprobe"] and "subtitle" in data["ffprobe"]:
         for detected_language in data["ffprobe"]["subtitle"]:
             if "language" not in detected_language:
@@ -46,20 +48,23 @@ def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=No
             codec = detected_language.get("format")  # or None
             subtitles_list.append([language, forced, hearing_impaired, codec])
 
-    elif data["enzyme"]:
-        for subtitle_track in data["enzyme"].subtitle_tracks:
-            hearing_impaired = (
-                subtitle_track.name and "sdh" in subtitle_track.name.lower()
-            )
+    elif 'mediainfo' in data and data["mediainfo"] and "subtitle" in data["mediainfo"]:
+        for detected_language in data["mediainfo"]["subtitle"]:
+            if "language" not in detected_language:
+                continue
 
-            subtitles_list.append(
-                [
-                    subtitle_track.language,
-                    subtitle_track.forced,
-                    hearing_impaired,
-                    subtitle_track.codec_id,
-                ]
-            )
+            # Avoid commentary subtitles
+            name = detected_language.get("name", "").lower()
+            if "commentary" in name:
+                logging.debug("Ignoring commentary subtitle: %s", name)
+                continue
+
+            language = _handle_alpha3(detected_language)
+
+            forced = detected_language.get("forced", False)
+            hearing_impaired = detected_language.get("hearing_impaired", False)
+            codec = detected_language.get("format")  # or None
+            subtitles_list.append([language, forced, hearing_impaired, codec])
 
     return subtitles_list
 
@@ -68,10 +73,12 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     # Define default data keys value
     data = {
         "ffprobe": {},
-        "enzyme": {},
+        "mediainfo": {},
         "file_id": episode_file_id or movie_file_id,
         "file_size": file_size,
     }
+
+    embedded_subs_parser = settings.general.embedded_subtitles_parser
 
     if use_cache:
         # Get the actual cache value form database
@@ -95,31 +102,46 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
         except Exception:
             pass
         else:
-            # Check if file size and file id matches and if so, we return the cached value
+            # Check if file size and file id matches and if so, we return the cached value if available for the
+            # desired parser
             if cached_value['file_size'] == file_size and cached_value['file_id'] in [episode_file_id, movie_file_id]:
-                return cached_value
+                if embedded_subs_parser in cached_value and cached_value[embedded_subs_parser]:
+                    return cached_value
+                else:
+                    # no valid cache
+                    pass
+            else:
+                # cache mut be renewed
+                pass
 
     # if not, we retrieve the metadata from the file
     from utilities.binaries import get_binary
 
-    ffprobe_path = get_binary("ffprobe")
+    ffprobe_path = mediainfo_path = None
+    if embedded_subs_parser == 'ffprobe':
+        ffprobe_path = get_binary("ffprobe")
+    elif embedded_subs_parser == 'mediainfo':
+        mediainfo_path = get_binary("mediainfo")
 
     # if we have ffprobe available
     if ffprobe_path:
-        data["ffprobe"] = know(video_path=file, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path})
-    # if not, we use enzyme for mkv files
+        try:
+            data["ffprobe"] = know(video_path=file, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path})
+        except KnowitException as e:
+            logging.error(f"BAZARR ffprobe cannot analyze this video file {file}. Could it be corrupted? {e}")
+            return None
+    # or if we have mediainfo available
+    elif mediainfo_path:
+        try:
+            data["mediainfo"] = know(video_path=file, context={"provider": "mediainfo", "mediainfo": mediainfo_path})
+        except KnowitException as e:
+            logging.error(f"BAZARR mediainfo cannot analyze this video file {file}. Could it be corrupted? {e}")
+            return None
+    # else, we warn user of missing binary
     else:
-        if os.path.splitext(file)[1] == ".mkv":
-            with open(file, "rb") as f:
-                try:
-                    mkv = enzyme.MKV(f)
-                except MalformedMKVError:
-                    logging.error(
-                        "BAZARR cannot analyze this MKV with our built-in MKV parser, you should install "
-                        "ffmpeg/ffprobe: " + file
-                    )
-                else:
-                    data["enzyme"] = mkv
+        logging.error("BAZARR require ffmpeg/ffprobe or mediainfo, please install it and make sure to choose it in "
+                      "Settings-->Subtitles.")
+        return
 
     # we write to db the result and return the newly cached ffprobe dict
     if episode_file_id:

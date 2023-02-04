@@ -97,7 +97,7 @@ def update_series(send_event=True):
                                          TableShows.audio_language,
                                          TableShows.sortTitle,
                                          TableShows.year,
-                                         TableShows.alternateTitles,
+                                         TableShows.alternativeTitles,
                                          TableShows.tags,
                                          TableShows.seriesType,
                                          TableShows.imdbId,

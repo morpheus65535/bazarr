@@ -26,7 +26,7 @@ def series_download_subtitles(no):
                                             TableEpisodes.missing_subtitles,
                                             TableEpisodes.monitored,
                                             TableEpisodes.sonarrEpisodeId,
-                                            TableEpisodes.scene_name,
+                                            TableEpisodes.sceneName,
                                             TableShows.tags,
                                             TableShows.seriesType,
                                             TableEpisodes.audio_language,
@@ -57,7 +57,7 @@ def series_download_subtitles(no):
                           value=i,
                           count=count_episodes_details)
 
-            audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+            audio_language_list = get_audio_profile_languages(episode['audio_language'])
             if len(audio_language_list) > 0:
                 audio_language = audio_language_list[0]['name']
             else:
@@ -76,7 +76,7 @@ def series_download_subtitles(no):
             for result in generate_subtitles(path_mappings.path_replace(episode['path']),
                                              languages,
                                              audio_language,
-                                             str(episode['scene_name']),
+                                             str(episode['sceneName']),
                                              episode['title'],
                                              'series',
                                              check_if_still_required=True):
@@ -112,7 +112,7 @@ def episode_download_subtitles(no, send_progress=False):
                                             TableEpisodes.missing_subtitles,
                                             TableEpisodes.monitored,
                                             TableEpisodes.sonarrEpisodeId,
-                                            TableEpisodes.scene_name,
+                                            TableEpisodes.sceneName,
                                             TableShows.tags,
                                             TableShows.title,
                                             TableShows.sonarrSeriesId,
@@ -142,7 +142,7 @@ def episode_download_subtitles(no, send_progress=False):
                               value=0,
                               count=1)
 
-            audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+            audio_language_list = get_audio_profile_languages(episode['audio_language'])
             if len(audio_language_list) > 0:
                 audio_language = audio_language_list[0]['name']
             else:
@@ -161,7 +161,7 @@ def episode_download_subtitles(no, send_progress=False):
             for result in generate_subtitles(path_mappings.path_replace(episode['path']),
                                              languages,
                                              audio_language,
-                                             str(episode['scene_name']),
+                                             str(episode['sceneName']),
                                              episode['title'],
                                              'series',
                                              check_if_still_required=True):

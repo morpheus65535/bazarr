@@ -20,7 +20,7 @@ from ..download import generate_subtitles
 
 
 def _wanted_episode(episode):
-    audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+    audio_language_list = get_audio_profile_languages(episode['audio_language'])
     if len(audio_language_list) > 0:
         audio_language = audio_language_list[0]['name']
     else:
@@ -47,7 +47,7 @@ def _wanted_episode(episode):
     for result in generate_subtitles(path_mappings.path_replace(episode['path']),
                                      languages,
                                      audio_language,
-                                     str(episode['scene_name']),
+                                     str(episode['sceneName']),
                                      episode['title'],
                                      'series',
                                      check_if_still_required=True):
@@ -56,9 +56,9 @@ def _wanted_episode(episode):
             path = result[1]
             forced = result[5]
             if result[8]:
-                language_code = result[2] + ":hi"
+                language_code = f"{result[2]}:hi"
             elif forced:
-                language_code = result[2] + ":forced"
+                language_code = f"{result[2]}:forced"
             else:
                 language_code = result[2]
             provider = result[3]
@@ -79,7 +79,7 @@ def wanted_download_subtitles(sonarr_episode_id):
                                             TableEpisodes.sonarrEpisodeId,
                                             TableEpisodes.sonarrSeriesId,
                                             TableEpisodes.audio_language,
-                                            TableEpisodes.scene_name,
+                                            TableEpisodes.sceneName,
                                             TableEpisodes.failedAttempts,
                                             TableShows.title)\
         .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\

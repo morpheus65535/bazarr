@@ -78,12 +78,13 @@ const SettingsSchedulerView: FunctionComponent = () => {
         </CollapseBox>
 
         <Check
-          label="Use cached ffprobe results"
+          label="Use cached embedded subtitles parser results"
           settingKey="settings-sonarr-use_ffprobe_cache"
         ></Check>
         <Message>
-          If disabled, Bazarr will use ffprobe to index video file properties on
-          each run. This will result in higher disk I/O.
+          If disabled, Bazarr will use the embedded subtitles parser to index
+          episodes file properties on each run. This will result in higher disk
+          I/O.
         </Message>
 
         <Selector
@@ -114,12 +115,12 @@ const SettingsSchedulerView: FunctionComponent = () => {
         </CollapseBox>
 
         <Check
-          label="Use cached ffprobe results"
+          label="Use cached embedded subtitles parser results"
           settingKey="settings-radarr-use_ffprobe_cache"
         ></Check>
         <Message>
-          If disabled, Bazarr will use ffprobe to index video file properties on
-          each run. This will result in higher disk I/O.
+          If disabled, Bazarr will use embedded subtitles parser to index movies
+          file properties on each run. This will result in higher disk I/O.
         </Message>
       </Section>
       <Section header="Search and Upgrade Subtitles">

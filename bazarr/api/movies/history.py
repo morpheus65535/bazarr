@@ -15,7 +15,7 @@ from app.config import settings
 from utilities.path_mappings import path_mappings
 from api.swaggerui import subtitles_language_model
 
-from ..utils import authenticate, postprocessMovie
+from api.utils import authenticate, postprocess
 
 api_ns_movies_history = Namespace('Movies History', description='List movies history events')
 
@@ -70,8 +70,7 @@ class MoviesHistory(Resource):
         upgradable_movies_not_perfect = []
         if settings.general.getboolean('upgrade_subs'):
             days_to_upgrade_subs = settings.general.days_to_upgrade_subs
-            minimum_timestamp = ((datetime.datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
-                                 datetime.datetime(1970, 1, 1)).total_seconds()
+            minimum_timestamp = (datetime.datetime.now() - timedelta(days=int(days_to_upgrade_subs)))
 
             if settings.general.getboolean('upgrade_manual'):
                 query_actions = [1, 2, 3, 6]
@@ -86,10 +85,14 @@ class MoviesHistory(Resource):
                                                          fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
                                                          TableHistoryMovie.score,
                                                          TableMovies.tags,
-                                                         TableMovies.monitored)\
-                .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
-                .where(reduce(operator.and_, upgradable_movies_conditions))\
-                .group_by(TableHistoryMovie.video_path)\
+                                                         TableMovies.monitored) \
+                .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId)) \
+                .where(reduce(operator.and_, upgradable_movies_conditions)) \
+                .group_by(TableHistoryMovie.video_path,
+                          TableHistoryMovie.score,
+                          TableMovies.tags,
+                          TableMovies.monitored
+                          ) \
                 .dicts()
             upgradable_movies = list(upgradable_movies)
 
@@ -122,14 +125,13 @@ class MoviesHistory(Resource):
                                                  TableHistoryMovie.subs_id,
                                                  TableHistoryMovie.provider,
                                                  TableHistoryMovie.subtitles_path,
-                                                 TableHistoryMovie.video_path)\
-            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
-            .where(query_condition)\
-            .order_by(TableHistoryMovie.timestamp.desc())\
-            .limit(length)\
-            .offset(start)\
-            .dicts()
-        movie_history = list(movie_history)
+                                                 TableHistoryMovie.video_path) \
+            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId)) \
+            .where(query_condition) \
+            .order_by(TableHistoryMovie.timestamp.desc())
+        if length > 0:
+            movie_history = movie_history.limit(length).offset(start)
+        movie_history = list(movie_history.dicts())
 
         blacklist_db = TableBlacklistMovie.select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id).dicts()
         blacklist_db = list(blacklist_db)
@@ -137,24 +139,25 @@ class MoviesHistory(Resource):
         for item in movie_history:
             # Mark movies as upgradable or not
             item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
-                "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:  # noqa: E129
+            if {"video_path": str(item['path']), "timestamp": item['timestamp'], "score": str(item['score']),
+                "tags": str(item['tags']),
+                "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:  # noqa: E129
                 if os.path.exists(path_mappings.path_replace_movie(item['subtitles_path'])) and \
                         os.path.exists(path_mappings.path_replace_movie(item['video_path'])):
                     item.update({"upgradable": True})
 
             del item['path']
 
-            postprocessMovie(item)
+            postprocess(item)
 
             if item['score']:
                 item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + "%"
 
             # Make timestamp pretty
             if item['timestamp']:
-                item["raw_timestamp"] = int(item['timestamp'])
-                item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
-                item['timestamp'] = pretty.date(item["raw_timestamp"])
+                item["raw_timestamp"] = item['timestamp'].timestamp()
+                item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
+                item['timestamp'] = pretty.date(item["timestamp"])
 
             # Check if subtitles is blacklisted
             item.update({"blacklisted": False})
@@ -165,9 +168,9 @@ class MoviesHistory(Resource):
                         item.update({"blacklisted": True})
                         break
 
-        count = TableHistoryMovie.select()\
-            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
-            .where(TableMovies.title.is_null(False))\
+        count = TableHistoryMovie.select() \
+            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId)) \
+            .where(TableMovies.title.is_null(False)) \
             .count()
 
         return {'data': movie_history, 'total': count}

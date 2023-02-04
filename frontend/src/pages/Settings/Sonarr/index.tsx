@@ -10,12 +10,14 @@ import {
   Number,
   PathMappingTable,
   Section,
+  Selector,
   Slider,
   Text,
   URLTestButton,
 } from "../components";
 import { seriesEnabledKey } from "../keys";
 import { seriesTypeOptions } from "../options";
+import { timeoutOptions } from "./options";
 
 const SettingsSonarrView: FunctionComponent = () => {
   return (
@@ -37,6 +39,11 @@ const SettingsSonarrView: FunctionComponent = () => {
               onSubmit: (v) => "/" + v,
             }}
           ></Text>
+          <Selector
+            label="HTTP Timeout"
+            options={timeoutOptions}
+            settingKey="settings-sonarr-http_timeout"
+          ></Selector>
           <Text label="API Key" settingKey="settings-sonarr-apikey"></Text>
           <Check label="SSL" settingKey="settings-sonarr-ssl"></Check>
           <URLTestButton category="sonarr"></URLTestButton>

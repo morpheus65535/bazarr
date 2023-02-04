@@ -11,7 +11,7 @@ from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending
 from subliminal.video import Episode, Movie
 from subzero.language import Language
-
+import urllib
 import zipfile
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class RegieLiveSubtitle(Subtitle):
     def get_matches(self, video):
         type_ = "movie" if isinstance(video, Movie) else "episode"
         matches = set()
-        subtitle_filename = self.filename
+        subtitle_filename = self.filename.lower()
 
         # episode
         if type_ == "episode":
@@ -49,9 +49,8 @@ class RegieLiveSubtitle(Subtitle):
             # already matched in search query
             matches.update(['title', 'year'])
 
-        # release_group
         if video.release_group and video.release_group.lower() in subtitle_filename:
-            matches.add('release_group')
+            matches.update(['release_group', 'hash'])
 
         matches |= guess_matches(video, guessit(self.filename, {"type": type_}))
 
@@ -64,14 +63,15 @@ class RegieLiveProvider(Provider):
     language = list(languages)[0]
     video_types = (Episode, Movie)
     SEARCH_THROTTLE = 8
+    hash_verifiable = False
 
     def __init__(self):
         self.initialize()
 
     def initialize(self):
         self.session = Session()
-        self.url = 'http://api.regielive.ro/kodi/cauta.php'
-        self.api = 'API-KODI-KINGUL'
+        self.url = 'https://api.regielive.ro/bazarr/search.php'
+        self.api = 'API-BAZARR-YTZ-SL'
         self.headers = {'RL-API': self.api}
 
     def terminate(self):
@@ -79,39 +79,42 @@ class RegieLiveProvider(Provider):
 
     def query(self, video, language):
         payload = {}
-        if isinstance (video, Episode):
+        if isinstance(video, Episode):
             payload['nume'] = video.series
             payload['sezon'] = video.season
             payload['episod'] = video.episode
         elif isinstance(video, Movie):
             payload['nume'] = video.title
         payload['an'] = video.year
-        response = self.session.post(self.url, data=payload, headers=self.headers)
-        logger.info(response.json())
+
+        response = self.session.get(
+            self.url + "?" + urllib.parse.urlencode(payload),
+            data=payload, headers=self.headers)
+
         subtitles = []
         if response.json()['cod'] == 200:
             results_subs = response.json()['rezultate']
             for film in results_subs:
                 for sub in results_subs[film]['subtitrari']:
-                    logger.debug(sub)
                     subtitles.append(
-                            RegieLiveSubtitle(sub['titlu'], video, sub['url'], sub['rating'], language)
-                    )
-
-        # {'titlu': 'Chernobyl.S01E04.The.Happiness.of.All.Mankind.720p.AMZN.WEB-DL.DDP5.1.H.264-NTb', 'url': 'https://subtitrari.regielive.ro/descarca-33336-418567.zip', 'rating': {'nota': 4.89, 'voturi': 48}}
-        # subtitle def __init__(self, language, filename, subtype, video, link):
+                        RegieLiveSubtitle(
+                            results_subs[film]['subtitrari'][sub]['titlu'],
+                            video,
+                            results_subs[film]['subtitrari'][sub]['url'],
+                            results_subs[film]['subtitrari'][sub]['rating']['nota'],
+                            language))
         return subtitles
 
     def list_subtitles(self, video, languages):
         return self.query(video, self.language)
 
     def download_subtitle(self, subtitle):
-        session = Session()
+        session = self.session
         _addheaders = {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Origin': 'https://subtitrari.regielive.ro',
-            'Accept-Language' : 'en-US,en;q=0.5',
+            'Accept-Language': 'en-US,en;q=0.5',
             'Referer': 'https://subtitrari.regielive.ro',
             'Pragma': 'no-cache',
             'Cache-Control': 'no-cache'
