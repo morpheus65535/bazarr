@@ -304,9 +304,12 @@ if settings.general.page_size not in ['25', '50', '100', '250', '500', '1000']:
 
 # save updated settings to file
 if os.path.exists(os.path.join(args.config_dir, 'config', 'config.ini')):
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-        settings.write(handle)
-
+    try:
+        with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+            settings.write(handle)
+    except:
+        # add log.Info("Config is read-only!") and print it in webUI
+        pass
 
 def get_settings():
     result = dict()
