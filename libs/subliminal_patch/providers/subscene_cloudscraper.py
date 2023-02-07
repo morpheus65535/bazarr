@@ -12,6 +12,7 @@ import cloudscraper
 from guessit import guessit
 from requests import Session
 from requests.exceptions import HTTPError
+from subliminal.exceptions import ProviderError
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
 from subliminal_patch.exceptions import APIThrottled
@@ -21,8 +22,6 @@ from subliminal_patch.providers.utils import get_subtitle_from_archive
 from subliminal_patch.providers.utils import update_matches
 from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
-
-from libs.subliminal.exceptions import ProviderError
 
 logger = logging.getLogger(__name__)
 
