@@ -59,7 +59,7 @@
     "sass": "^1.55.0",
     "typescript": "^4",
     "vite": "^3.2.1",
-    "vite-plugin-checker": "^0.5.1",
+    "vite-plugin-checker": "^0.5.5",
     "vitest": "^0.24.3"
   },
   "scripts": {
