@@ -32,7 +32,6 @@ export const dayOptions: SelectorOption<number>[] = [
 ];
 
 export const upgradeOptions: SelectorOption<number>[] = [
-  { label: "3 Hours", value: 3 },
   { label: "6 Hours", value: 6 },
   { label: "12 Hours", value: 12 },
   { label: "24 Hours", value: 24 },

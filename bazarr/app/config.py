@@ -74,8 +74,8 @@ defaults = {
         'days_to_upgrade_subs': '7',
         'upgrade_manual': 'True',
         'anti_captcha_provider': 'None',
-        'wanted_search_frequency': '3',
-        'wanted_search_frequency_movie': '3',
+        'wanted_search_frequency': '6',
+        'wanted_search_frequency_movie': '6',
         'subzero_mods': '[]',
         'dont_notify_manual_actions': 'False',
         'hi_extension': 'hi',
@@ -314,6 +314,12 @@ settings.radarr.base_url = base_url_slash_cleaner(uri=settings.radarr.base_url)
 # fixing issue with improper page_size value
 if settings.general.page_size not in ['25', '50', '100', '250', '500', '1000']:
     settings.general.page_size = defaults['general']['page_size']
+
+# increase delay between searches to reduce impact on providers
+if settings.general.wanted_search_frequency == '3':
+    settings.general.wanted_search_frequency = '6'
+if settings.general.wanted_search_frequency_movie == '3':
+    settings.general.wanted_search_frequency_movie = '6'
 
 # save updated settings to file
 if os.path.exists(os.path.join(args.config_dir, 'config', 'config.ini')):
