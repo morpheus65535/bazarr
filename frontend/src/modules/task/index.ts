@@ -126,7 +126,7 @@ class TaskDispatcher {
       } else {
         showNotification(notification.progress.pending(item.id, item.header));
         this.progress[item.id] = item;
-        this.updateProgress(items);
+        setTimeout(() => this.updateProgress(items), 1000);
       }
     });
   }
