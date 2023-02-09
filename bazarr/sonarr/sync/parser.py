@@ -2,9 +2,8 @@
 
 import os
 
-from app.database import TableShows
-from sonarr.info import get_sonarr_info
 from utilities.path_mappings import path_mappings
+from utilities.video_analyzer import embedded_audio_reader
 
 from .converter import SonarrFormatVideoCodec, SonarrFormatAudioCodec
 
@@ -25,15 +24,6 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
     if show['alternateTitles'] is not None:
         alternate_titles = str([item['title'] for item in show['alternateTitles']])
 
-    audio_language = []
-    if get_sonarr_info.is_legacy():
-        audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
-    else:
-        if 'languageProfileId' in show:
-            audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
-        else:
-            audio_language = []
-
     tags = [d['label'] for d in tags_dict if d['id'] in show['tags']]
 
     imdbId = show['imdbId'] if 'imdbId' in show else None
@@ -46,7 +36,7 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
                 'overview': overview,
                 'poster': poster,
                 'fanart': fanart,
-                'audio_language': str(audio_language),
+                'audio_language': str([]),
                 'sortTitle': show['sortTitle'],
                 'year': str(show['year']),
                 'alternativeTitles': alternate_titles,
@@ -62,7 +52,7 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
                 'overview': overview,
                 'poster': poster,
                 'fanart': fanart,
-                'audio_language': str(audio_language),
+                'audio_language': str([]),
                 'sortTitle': show['sortTitle'],
                 'year': str(show['year']),
                 'alternativeTitles': alternate_titles,
@@ -95,20 +85,10 @@ def episodeParser(episode):
                     else:
                         sceneName = None
 
-                    audio_language = []
-                    if 'language' in episode['episodeFile'] and len(episode['episodeFile']['language']):
-                        item = episode['episodeFile']['language']
-                        if isinstance(item, dict):
-                            if 'name' in item:
-                                audio_language.append(item['name'])
-                    elif 'languages' in episode['episodeFile'] and len(episode['episodeFile']['languages']):
-                        items = episode['episodeFile']['languages']
-                        if isinstance(items, list):
-                            for item in items:
-                                if 'name' in item:
-                                    audio_language.append(item['name'])
-                    else:
-                        audio_language = TableShows.get(TableShows.sonarrSeriesId == episode['seriesId']).audio_language
+                    audio_language = embedded_audio_reader(path_mappings.path_replace(episode['episodeFile']['path']),
+                                                           file_size=episode['episodeFile']['size'],
+                                                           episode_file_id=episode['episodeFile']['id'],
+                                                           use_cache=True)
 
                     if 'mediaInfo' in episode['episodeFile']:
                         if 'videoCodec' in episode['episodeFile']['mediaInfo']:

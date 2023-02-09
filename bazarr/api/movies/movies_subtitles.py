@@ -113,9 +113,7 @@ class MoviesSubtitles(Resource):
         # TODO: Support Multiply Upload
         args = self.post_request_parser.parse_args()
         radarrId = args.get('radarrid')
-        movieInfo = TableMovies.select(TableMovies.title,
-                                       TableMovies.path,
-                                       TableMovies.sceneName,
+        movieInfo = TableMovies.select(TableMovies.path,
                                        TableMovies.audio_language) \
             .where(TableMovies.radarrId == radarrId) \
             .dicts() \
@@ -125,10 +123,12 @@ class MoviesSubtitles(Resource):
             return 'Movie not found', 404
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName'] or 'None'
 
-        title = movieInfo['title']
-        audioLanguage = movieInfo['audio_language']
+        audio_language = get_audio_profile_languages(movieInfo['audio_language'])
+        if len(audio_language) and isinstance(audio_language[0], dict):
+            audio_language = audio_language[0]
+        else:
+            audio_language = {'name': '', 'code2': '', 'code3': ''}
 
         language = args.get('language')
         forced = args.get('forced') == 'true'
@@ -145,11 +145,9 @@ class MoviesSubtitles(Resource):
                                             language=language,
                                             forced=forced,
                                             hi=hi,
-                                            title=title,
-                                            sceneName=sceneName,
                                             media_type='movie',
                                             subtitle=subFile,
-                                            audio_language=audioLanguage)
+                                            audio_language=audio_language)
 
             if not result:
                 logging.debug(f"BAZARR unable to process subtitles for this movie: {moviePath}")

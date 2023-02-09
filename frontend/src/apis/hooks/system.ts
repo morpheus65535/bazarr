@@ -49,6 +49,11 @@ export function useSettingsMutation() {
     {
       onSuccess: () => {
         client.invalidateQueries([QueryKeys.System]);
+        client.invalidateQueries([QueryKeys.Series]);
+        client.invalidateQueries([QueryKeys.Episodes]);
+        client.invalidateQueries([QueryKeys.Movies]);
+        client.invalidateQueries([QueryKeys.Wanted]);
+        client.invalidateQueries([QueryKeys.Badges]);
       },
     }
   );

@@ -118,9 +118,7 @@ class EpisodesSubtitles(Resource):
         args = self.post_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.title,
-                                           TableEpisodes.path,
-                                           TableEpisodes.sceneName,
+        episodeInfo = TableEpisodes.select(TableEpisodes.path,
                                            TableEpisodes.audio_language) \
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
             .dicts() \
@@ -129,10 +127,13 @@ class EpisodesSubtitles(Resource):
         if not episodeInfo:
             return 'Episode not found', 404
 
-        title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['sceneName'] or "None"
-        audio_language = episodeInfo['audio_language']
+
+        audio_language = get_audio_profile_languages(episodeInfo['audio_language'])
+        if len(audio_language) and isinstance(audio_language[0], dict):
+            audio_language = audio_language[0]
+        else:
+            audio_language = {'name': '', 'code2': '', 'code3': ''}
 
         language = args.get('language')
         forced = True if args.get('forced') == 'true' else False
@@ -149,8 +150,6 @@ class EpisodesSubtitles(Resource):
                                             language=language,
                                             forced=forced,
                                             hi=hi,
-                                            title=title,
-                                            sceneName=sceneName,
                                             media_type='series',
                                             subtitle=subFile,
                                             audio_language=audio_language)

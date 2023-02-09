@@ -650,8 +650,10 @@ def get_profile_cutoff(profile_id):
 
 
 def get_audio_profile_languages(audio_languages_list_str):
-    from languages.get_languages import alpha2_from_language, alpha3_from_language
+    from languages.get_languages import alpha2_from_language, alpha3_from_language, language_from_alpha2
     audio_languages = []
+
+    und_default_language = language_from_alpha2(settings.general.default_und_audio_lang)
 
     try:
         audio_languages_list = ast.literal_eval(audio_languages_list_str or '[]')
@@ -659,11 +661,20 @@ def get_audio_profile_languages(audio_languages_list_str):
         pass
     else:
         for language in audio_languages_list:
-            audio_languages.append(
-                {"name": language,
-                 "code2": alpha2_from_language(language) or None,
-                 "code3": alpha3_from_language(language) or None}
-            )
+            if language:
+                audio_languages.append(
+                    {"name": language,
+                     "code2": alpha2_from_language(language) or None,
+                     "code3": alpha3_from_language(language) or None}
+                )
+            else:
+                if und_default_language:
+                    logging.debug(f"Undefined language audio track treated as {und_default_language}")
+                    audio_languages.append(
+                        {"name": und_default_language,
+                         "code2": alpha2_from_language(und_default_language) or None,
+                         "code3": alpha3_from_language(und_default_language) or None}
+                    )
 
     return audio_languages
 

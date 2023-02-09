@@ -10,8 +10,7 @@ from subliminal_patch.core import save_subtitles
 from subliminal_patch.subtitle import Subtitle
 from pysubs2.formats import get_format_identifier
 
-from languages.get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, \
-    alpha2_from_language, alpha3_from_language
+from languages.get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from app.config import settings, get_array_from
 from utilities.helper import get_target_folder, force_unicode
 from utilities.post_processing import pp_replace
@@ -26,7 +25,7 @@ from .sync import sync_subtitles
 from .post_processing import postprocessing
 
 
-def manual_upload_subtitle(path, language, forced, hi, title, sceneName, media_type, subtitle, audio_language):
+def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, audio_language):
     logging.debug(f'BAZARR Manually uploading subtitles for this file: {path}')
 
     single = settings.general.getboolean('single_language')
@@ -131,8 +130,6 @@ def manual_upload_subtitle(path, language, forced, hi, title, sceneName, media_t
     uploaded_language_code3 = language + modifier_code
     uploaded_language = language_from_alpha3(language) + modifier_string
     uploaded_language_code2 = alpha2_from_alpha3(language) + modifier_code
-    audio_language_code2 = alpha2_from_language(audio_language)
-    audio_language_code3 = alpha3_from_language(audio_language)
 
     if media_type == 'series':
         if not episode_metadata:
@@ -152,8 +149,8 @@ def manual_upload_subtitle(path, language, forced, hi, title, sceneName, media_t
 
     if use_postprocessing:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,
-                             uploaded_language_code3, audio_language, audio_language_code2, audio_language_code3, 100,
-                             "1", "manual", series_id, episode_id)
+                             uploaded_language_code3, audio_language['name'], audio_language['code2'],
+                             audio_language['code3'], 100, "1", "manual", series_id, episode_id)
         postprocessing(command, path)
 
     if media_type == 'series':

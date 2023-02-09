@@ -7,7 +7,7 @@ from subliminal import Movie
 
 from utilities.path_mappings import path_mappings
 from app.database import TableEpisodes, TableMovies
-from subtitles.tools.embedded_subs_reader import parse_video_metadata
+from utilities.video_analyzer import parse_video_metadata
 
 
 def refine_from_ffprobe(path, video):

@@ -79,7 +79,9 @@ defaults = {
         'subzero_mods': '[]',
         'dont_notify_manual_actions': 'False',
         'hi_extension': 'hi',
-        'embedded_subtitles_parser': 'ffprobe'
+        'embedded_subtitles_parser': 'ffprobe',
+        'default_und_audio_lang': '',
+        'default_und_embedded_subtitles_lang': ''
     },
     'auth': {
         'type': 'None',
@@ -381,6 +383,8 @@ def save_settings(settings_items):
     sonarr_exclusion_updated = False
     radarr_exclusion_updated = False
     use_embedded_subs_changed = False
+    undefined_audio_track_default_changed = False
+    undefined_subtitles_track_default_changed = False
 
     # Subzero Mods
     update_subzero = False
@@ -415,6 +419,12 @@ def save_settings(settings_items):
         if key in ['settings-general-use_embedded_subs', 'settings-general-ignore_pgs_subs',
                    'settings-general-ignore_vobsub_subs', 'settings-general-ignore_ass_subs']:
             use_embedded_subs_changed = True
+
+        if key == 'settings-general-default_und_audio_lang':
+            undefined_audio_track_default_changed = True
+
+        if key == 'settings-general-default_und_embedded_subtitles_lang':
+            undefined_subtitles_track_default_changed = True
 
         if key in ['settings-general-base_url', 'settings-sonarr-base_url', 'settings-radarr-base_url']:
             value = base_url_slash_cleaner(value)
@@ -537,7 +547,7 @@ def save_settings(settings_items):
 
             update_subzero = True
 
-    if use_embedded_subs_changed:
+    if use_embedded_subs_changed or undefined_audio_track_default_changed:
         from .scheduler import scheduler
         from subtitles.indexer.series import list_missing_subtitles
         from subtitles.indexer.movies import list_missing_subtitles_movies
@@ -545,6 +555,15 @@ def save_settings(settings_items):
             scheduler.add_job(list_missing_subtitles, kwargs={'send_event': True})
         if settings.general.getboolean('use_radarr'):
             scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': True})
+
+    if undefined_subtitles_track_default_changed:
+        from .scheduler import scheduler
+        from subtitles.indexer.series import series_full_scan_subtitles
+        from subtitles.indexer.movies import movies_full_scan_subtitles
+        if settings.general.getboolean('use_sonarr'):
+            scheduler.add_job(series_full_scan_subtitles, kwargs={'use_cache': True})
+        if settings.general.getboolean('use_radarr'):
+            scheduler.add_job(movies_full_scan_subtitles, kwargs={'use_cache': True})
 
     if update_subzero:
         settings.set('general', 'subzero_mods', ','.join(subzero_mods))

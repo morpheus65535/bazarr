@@ -6,6 +6,7 @@ import pickle
 from knowit.api import know, KnowitException
 
 from languages.custom_lang import CustomLanguage
+from languages.get_languages import language_from_alpha3, alpha3_from_alpha2
 from app.database import TableEpisodes, TableMovies
 from utilities.path_mappings import path_mappings
 from app.config import settings
@@ -24,42 +25,38 @@ def _handle_alpha3(detected_language: dict):
 
 def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
     data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, use_cache=use_cache)
+    und_default_language = alpha3_from_alpha2(settings.general.default_und_embedded_subtitles_lang)
 
     subtitles_list = []
 
     if not data:
         return subtitles_list
 
+    cache_provider = None
     if data["ffprobe"] and "subtitle" in data["ffprobe"]:
-        for detected_language in data["ffprobe"]["subtitle"]:
-            if "language" not in detected_language:
-                continue
-
-            # Avoid commentary subtitles
-            name = detected_language.get("name", "").lower()
-            if "commentary" in name:
-                logging.debug("Ignoring commentary subtitle: %s", name)
-                continue
-
-            language = _handle_alpha3(detected_language)
-
-            forced = detected_language.get("forced", False)
-            hearing_impaired = detected_language.get("hearing_impaired", False)
-            codec = detected_language.get("format")  # or None
-            subtitles_list.append([language, forced, hearing_impaired, codec])
-
+        cache_provider = 'ffprobe'
     elif 'mediainfo' in data and data["mediainfo"] and "subtitle" in data["mediainfo"]:
-        for detected_language in data["mediainfo"]["subtitle"]:
-            if "language" not in detected_language:
-                continue
+        cache_provider = 'mediainfo'
 
+    if cache_provider:
+        for detected_language in data[cache_provider]["subtitle"]:
             # Avoid commentary subtitles
             name = detected_language.get("name", "").lower()
             if "commentary" in name:
-                logging.debug("Ignoring commentary subtitle: %s", name)
+                logging.debug(f"Ignoring commentary subtitle: {name}")
                 continue
 
-            language = _handle_alpha3(detected_language)
+            if "language" not in detected_language:
+                language = None
+            else:
+                language = _handle_alpha3(detected_language)
+
+            if not language and und_default_language:
+                logging.debug(f"Undefined language embedded subtitles track treated as {language}")
+                language = und_default_language
+
+            if not language:
+                continue
 
             forced = detected_language.get("forced", False)
             hearing_impaired = detected_language.get("hearing_impaired", False)
@@ -67,6 +64,34 @@ def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=No
             subtitles_list.append([language, forced, hearing_impaired, codec])
 
     return subtitles_list
+
+
+def embedded_audio_reader(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
+    data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, use_cache=use_cache)
+
+    audio_list = []
+
+    if not data:
+        return audio_list
+
+    cache_provider = None
+    if data["ffprobe"] and "audio" in data["ffprobe"]:
+        cache_provider = 'ffprobe'
+    elif 'mediainfo' in data and data["mediainfo"] and "audio" in data["mediainfo"]:
+        cache_provider = 'mediainfo'
+
+    if cache_provider:
+        for detected_language in data[cache_provider]["audio"]:
+            if "language" not in detected_language:
+                audio_list.append(None)
+                continue
+
+            language = language_from_alpha3(detected_language["language"].alpha3)
+
+            if language not in audio_list:
+                audio_list.append(language)
+
+    return audio_list
 
 
 def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
