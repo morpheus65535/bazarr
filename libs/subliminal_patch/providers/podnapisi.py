@@ -112,7 +112,7 @@ class PodnapisiSubtitle(_PodnapisiSubtitle):
 class PodnapisiAdapter(HTTPAdapter):
     def init_poolmanager(self, connections, maxsize, block=False):
         ctx = ssl.create_default_context()
-        ctx.set_ciphers('DEFAULT@SECLEVEL=1')
+        ctx.set_ciphers('DEFAULT@SECLEVEL=0')
         ctx.check_hostname = False
         self.poolmanager = poolmanager.PoolManager(
                 num_pools=connections,
