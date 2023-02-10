@@ -1,10 +1,20 @@
 import { StrictMode } from "react";
 import ReactDOM from "react-dom";
-import { Main } from "./main";
+import { useRoutes } from "react-router-dom";
+import { AllProviders } from "./providers";
+import { useRouteItems } from "./Router";
+
+const RouteApp = () => {
+  const items = useRouteItems();
+
+  return useRoutes(items);
+};
 
 ReactDOM.render(
   <StrictMode>
-    <Main />
+    <AllProviders>
+      <RouteApp />
+    </AllProviders>
   </StrictMode>,
   document.getElementById("root")
 );

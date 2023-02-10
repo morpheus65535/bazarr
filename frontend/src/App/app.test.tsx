@@ -1,13 +1,13 @@
-import { render } from "@testing-library/react";
+import { render } from "@/tests";
 import { StrictMode } from "react";
 import { describe, it } from "vitest";
-import { Main } from "../src/main";
+import App from ".";
 
 describe("App", () => {
   it("should render without crash", () => {
     render(
       <StrictMode>
-        <Main />
+        <App />
       </StrictMode>
     );
   });
