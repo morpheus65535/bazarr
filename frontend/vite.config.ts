@@ -50,7 +50,7 @@ export default defineConfig(async ({ mode, command }) => {
     test: {
       globals: true,
       environment: "jsdom",
-      setupFiles: "./test/setup.ts",
+      setupFiles: "./src/tests/setup.ts",
     },
     server: {
       proxy: {

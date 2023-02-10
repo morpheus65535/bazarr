@@ -16,6 +16,7 @@ export const AllProviders: FunctionComponent = ({ children }) => {
         <ModalsProvider>
           <NotificationsProvider limit={5}>
             <Router>
+              {/* c8 ignore next 3 */}
               {Environment.queryDev && (
                 <ReactQueryDevtools initialIsOpen={false} />
               )}
