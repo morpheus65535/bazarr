@@ -26,3 +26,5 @@ class ResizeObserver {
 }
 
 window.ResizeObserver = ResizeObserver;
+
+window.scrollTo = () => {};

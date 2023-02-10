@@ -4,7 +4,7 @@ import { Layout } from "@/constants";
 import NavbarProvider from "@/contexts/Navbar";
 import OnlineProvider from "@/contexts/Online";
 import { notification } from "@/modules/task";
-import CriticalError from "@/pages/CriticalError";
+import CriticalError from "@/pages/errors/CriticalError";
 import { RouterNames } from "@/Router/RouterNames";
 import { Environment } from "@/utilities";
 import { AppShell } from "@mantine/core";
