@@ -45,9 +45,8 @@ declare module "react-table" {
   interface CustomTableProps<D extends Record<string, unknown>>
     extends useSelectionProps<D> {}
 
-  export interface TableOptions<
-    D extends Record<string, unknown>
-  > extends UseExpandedOptions<D>,
+  export interface TableOptions<D extends Record<string, unknown>>
+    extends UseExpandedOptions<D>,
       // UseFiltersOptions<D>,
       // UseGlobalFiltersOptions<D>,
       UseGroupByOptions<D>,

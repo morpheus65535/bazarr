@@ -40,11 +40,13 @@ const Authentication: FunctionComponent = () => {
           >
             <Stack>
               <TextInput
+                name="Username"
                 placeholder="Username"
                 required
                 {...form.getInputProps("username")}
               ></TextInput>
               <PasswordInput
+                name="Password"
                 required
                 placeholder="Password"
                 {...form.getInputProps("password")}

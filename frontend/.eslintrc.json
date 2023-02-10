@@ -11,5 +11,15 @@
     "plugin:react-hooks/recommended",
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended"
+  ],
+  "plugins": ["testing-library"],
+  "overrides": [
+    {
+      "files": [
+        "**/__tests__/**/*.[jt]s?(x)",
+        "**/?(*.)+(spec|test).[jt]s?(x)"
+      ],
+      "extends": ["plugin:testing-library/react"]
+    }
   ]
 }
