@@ -11,3 +11,4 @@ const customRender = (
 export * from "@testing-library/react";
 // override render method
 export { customRender as render };
+export { render as rawRender };

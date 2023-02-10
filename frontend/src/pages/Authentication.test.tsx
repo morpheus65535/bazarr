@@ -1,17 +1,10 @@
-import { render, screen } from "@testing-library/react";
-import { QueryClientProvider } from "react-query";
+import { render, screen } from "@/tests";
 import { describe, it } from "vitest";
 import Authentication from "./Authentication";
 
-import queryClient from "@/apis/queries";
-
 describe("Authentication", () => {
   it("should render without crash", () => {
-    render(
-      <QueryClientProvider client={queryClient}>
-        <Authentication></Authentication>
-      </QueryClientProvider>
-    );
+    render(<Authentication></Authentication>);
 
     expect(screen.getByPlaceholderText("Username")).toBeDefined();
     expect(screen.getByPlaceholderText("Password")).toBeDefined();

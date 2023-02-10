@@ -1,6 +1,6 @@
+import { rawRender, RenderOptions, screen } from "@/tests";
 import { useForm } from "@mantine/form";
-import { render, screen } from "@testing-library/react";
-import { FunctionComponent } from "react";
+import { FunctionComponent, ReactElement } from "react";
 import { describe, it } from "vitest";
 import { FormContext, FormValues } from "../utilities/FormValues";
 import { Number, Text } from "./forms";
@@ -15,14 +15,15 @@ const FormSupport: FunctionComponent = ({ children }) => {
   return <FormContext.Provider value={form}>{children}</FormContext.Provider>;
 };
 
+const formRender = (
+  ui: ReactElement,
+  options?: Omit<RenderOptions, "wrapper">
+) => rawRender(ui, { wrapper: FormSupport, ...options });
+
 describe("Settings form", () => {
   describe("number component", () => {
     it("should be able to render", () => {
-      render(
-        <FormSupport>
-          <Number settingKey="test-numberValue"></Number>
-        </FormSupport>
-      );
+      formRender(<Number settingKey="test-numberValue"></Number>);
 
       expect(screen.getByRole("textbox")).toBeDefined();
     });
@@ -30,11 +31,7 @@ describe("Settings form", () => {
 
   describe("text component", () => {
     it("should be able to render", () => {
-      render(
-        <FormSupport>
-          <Text settingKey="test-textValue"></Text>
-        </FormSupport>
-      );
+      formRender(<Text settingKey="test-textValue"></Text>);
 
       expect(screen.getByRole("textbox")).toBeDefined();
     });
