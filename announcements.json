@@ -1,0 +1,11 @@
+{
+  "data": [
+    {
+      "text": "Test announcement",
+      "link": "https://www.python.org",
+      "hash": "",
+      "dismissible": true,
+      "enabled": true
+    }
+  ]
+}
