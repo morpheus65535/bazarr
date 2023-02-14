@@ -291,6 +291,15 @@ class TableCustomScoreProfileConditions(BaseModel):
         table_name = 'table_custom_score_profile_conditions'
 
 
+class TableAnnouncements(BaseModel):
+    timestamp = DateTimeField()
+    hash = TextField(null=True, unique=True)
+    text = TextField(null=True)
+
+    class Meta:
+        table_name = 'table_announcements'
+
+
 def init_db():
     # Create tables if they don't exists.
     database.create_tables([System,
@@ -307,7 +316,8 @@ def init_db():
                             TableShows,
                             TableShowsRootfolder,
                             TableCustomScoreProfiles,
-                            TableCustomScoreProfileConditions])
+                            TableCustomScoreProfileConditions,
+                            TableAnnouncements])
 
     # add the system table single row if it's not existing
     # we must retry until the tables are created

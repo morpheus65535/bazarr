@@ -87,6 +87,19 @@ class SystemApi extends BaseApi {
     await this.delete("/logs");
   }
 
+  async announcements() {
+    const response = await this.get<DataWrapper<System.Announcements[]>>(
+      "/announcements"
+    );
+    return response.data;
+  }
+
+  async addAnnouncementsDismiss(hash: string) {
+    await this.post<DataWrapper<System.Announcements[]>>("/announcements", {
+      hash,
+    });
+  }
+
   async tasks() {
     const response = await this.get<DataWrapper<System.Task[]>>("/tasks");
     return response.data;

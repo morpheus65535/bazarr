@@ -17,6 +17,7 @@ from tzlocal.utils import ZoneInfoNotFoundError
 from dateutil import tz
 import logging
 
+from app.announcements import get_announcements_to_file
 from sonarr.sync.series import update_series
 from sonarr.sync.episodes import sync_episodes, update_all_episodes
 from radarr.sync.movies import update_movies, update_all_movies
@@ -261,6 +262,10 @@ class Scheduler:
             self.aps_scheduler.add_job(
                 check_releases, IntervalTrigger(hours=3), max_instances=1, coalesce=True, misfire_grace_time=15,
                 id='update_release', name='Update Release Info', replace_existing=True)
+
+        self.aps_scheduler.add_job(
+            get_announcements_to_file, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15,
+            id='update_announcements', name='Update Announcements File', replace_existing=True)
 
     def __search_wanted_subtitles_task(self):
         if settings.general.getboolean('use_sonarr'):

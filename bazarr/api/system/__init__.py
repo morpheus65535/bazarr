@@ -3,6 +3,7 @@
 from .system import api_ns_system
 from .searches import api_ns_system_searches
 from .account import api_ns_system_account
+from .announcements import api_ns_system_announcements
 from .backups import api_ns_system_backups
 from .tasks import api_ns_system_tasks
 from .logs import api_ns_system_logs
@@ -17,6 +18,7 @@ from .notifications import api_ns_system_notifications
 api_ns_list_system = [
     api_ns_system,
     api_ns_system_account,
+    api_ns_system_announcements,
     api_ns_system_backups,
     api_ns_system_health,
     api_ns_system_languages,

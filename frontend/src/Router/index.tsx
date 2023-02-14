@@ -23,6 +23,7 @@ import SettingsSchedulerView from "@/pages/Settings/Scheduler";
 import SettingsSonarrView from "@/pages/Settings/Sonarr";
 import SettingsSubtitlesView from "@/pages/Settings/Subtitles";
 import SettingsUIView from "@/pages/Settings/UI";
+import SystemAnnouncementsView from "@/pages/System/Announcements";
 import SystemBackupsView from "@/pages/System/Backups";
 import SystemLogsView from "@/pages/System/Logs";
 import SystemProvidersView from "@/pages/System/Providers";
@@ -278,6 +279,12 @@ function useRoutes(): CustomRouteObject[] {
                 name: "Releases",
                 element: <SystemReleasesView></SystemReleasesView>,
               },
+              {
+                path: "announcements",
+                name: "Announcements",
+                badge: data?.announcements,
+                element: <SystemAnnouncementsView></SystemAnnouncementsView>,
+              },
             ],
           },
           {
@@ -299,6 +306,7 @@ function useRoutes(): CustomRouteObject[] {
       data?.providers,
       data?.sonarr_signalr,
       data?.radarr_signalr,
+      data?.announcements,
       radarr,
       sonarr,
     ]

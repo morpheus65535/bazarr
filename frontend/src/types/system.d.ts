@@ -1,4 +1,12 @@
 declare namespace System {
+  interface Announcements {
+    text: string;
+    link: string;
+    hash: string;
+    dismissible: boolean;
+    timestamp: string;
+  }
+
   interface Task {
     interval: string;
     job_id: string;

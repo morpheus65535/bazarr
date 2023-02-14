@@ -8,12 +8,13 @@ from flask_restx import Resource, Namespace, fields
 from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies
 from app.get_providers import get_throttled_providers
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client
+from app.announcements import get_all_announcements
 from utilities.health import get_health_issues
 
 from ..utils import authenticate
 
 api_ns_badges = Namespace('Badges', description='Get badges count to update the UI (episodes and movies wanted '
-                                                'subtitles, providers with issues and health issues.')
+                                                'subtitles, providers with issues, health issues and announcements.')
 
 
 @api_ns_badges.route('badges')
@@ -25,6 +26,7 @@ class Badges(Resource):
         'status': fields.Integer(),
         'sonarr_signalr': fields.String(),
         'radarr_signalr': fields.String(),
+        'announcements': fields.Integer(),
     })
 
     @authenticate
@@ -62,5 +64,6 @@ class Badges(Resource):
             "status": health_issues,
             'sonarr_signalr': "LIVE" if sonarr_signalr_client.connected else "",
             'radarr_signalr': "LIVE" if radarr_signalr_client.connected else "",
+            'announcements': len(get_all_announcements()),
         }
         return result
