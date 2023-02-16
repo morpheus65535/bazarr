@@ -122,6 +122,14 @@ def test_update_matches(movies):
     assert "source" in matches
 
 
+def test_update_matches_iterable(movies):
+    matches = set()
+    utils.update_matches(
+        matches, movies["dune"], ["Subs for dune 2021 bluray x264", "Dune webrip x264"]
+    )
+    assert "source" in matches
+
+
 @pytest.mark.parametrize(
     "content,expected", [("the.wire.s01e01", True), ("taxi driver 1976", False)]
 )
