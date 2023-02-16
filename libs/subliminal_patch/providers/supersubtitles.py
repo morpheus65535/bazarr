@@ -1,32 +1,34 @@
 # coding=utf-8
-import io
 import logging
+from random import randint
 import re
 import time
+import urllib.parse
 
 from babelfish import language_converters
-from subzero.language import Language
+from bs4.element import NavigableString
+from bs4.element import Tag
+from guessit import guessit
 from requests import Session
 from requests.exceptions import JSONDecodeError
-import urllib.parse
-from random import randint
-
-from subliminal.subtitle import fix_line_ending
+from subliminal.providers import ParserBeautifulSoup
+from subliminal.score import get_equivalent_release_groups
+from subliminal.utils import sanitize
+from subliminal.utils import sanitize_release_group
+from subliminal.video import Episode
+from subliminal.video import Movie
+from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
-from subliminal.providers import ParserBeautifulSoup
-from bs4.element import Tag, NavigableString
-from subliminal.score import get_equivalent_release_groups
-from subliminal_patch.subtitle import Subtitle, guess_matches
-from subliminal_patch.exceptions import APIThrottled
-from subliminal.utils import sanitize, sanitize_release_group
-from subliminal.video import Episode, Movie
-from zipfile import ZipFile, is_zipfile
-from rarfile import RarFile, is_rarfile
-from subliminal_patch.utils import sanitize, fix_inconsistent_naming
-from guessit import guessit
-from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
+from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.utils import fix_inconsistent_naming
+from subliminal_patch.utils import sanitize
+from subzero.language import Language
 
+from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
+from .utils import get_archive_from_bytes
+from .utils import get_subtitle_from_archive
+from .utils import update_matches
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +80,7 @@ class SuperSubtitlesSubtitle(Subtitle):
         self.season = season
         self.episode = episode
         self.version = version
-        self.releases = releases
+        self.releases = releases or []
         self.year = year
         self.uploader = uploader
         if year:
@@ -91,7 +93,7 @@ class SuperSubtitlesSubtitle(Subtitle):
         self.asked_for_episode = asked_for_episode
         self.imdb_id = imdb_id
         self.is_pack = True
-        self.matches = None
+        self.matches = set()
 
     def numeric_id(self):
         return self.subtitle_id
@@ -109,8 +111,8 @@ class SuperSubtitlesSubtitle(Subtitle):
         return str(self.subtitle_id)
 
     def get_matches(self, video):
-        type_ = "movie" if isinstance(video, Movie) else "episode"
-        matches = guess_matches(video, guessit(self.release_info, {"type": type_}))
+        matches = set()
+        update_matches(matches, video, self.releases)
 
         # episode
         if isinstance(video, Episode):
@@ -543,21 +545,12 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
             return subtitles
 
     def download_subtitle(self, subtitle):
-
-        # download as a zip
-        logger.info('Downloading subtitle %r', subtitle.subtitle_id)
         r = self.session.get(subtitle.page_link, timeout=10)
         r.raise_for_status()
 
-        archive_stream = io.BytesIO(r.content)
-        archive = None
+        archive = get_archive_from_bytes(r.content)
 
-        if is_rarfile(archive_stream):
-            archive = RarFile(archive_stream)
-        elif is_zipfile(archive_stream):
-            archive = ZipFile(archive_stream)
-        else:
-            subtitle.content = fix_line_ending(r.content)
+        if archive is None:
+            raise APIThrottled(f"Invalid archive from {subtitle.page_link}")
 
-        if archive is not None:
-            subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
+        subtitle.content = get_subtitle_from_archive(archive, episode=subtitle.episode or None)
