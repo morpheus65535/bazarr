@@ -1,26 +1,24 @@
 # coding=utf-8
 # fmt: off
 
-import os
 import logging
 import operator
-
-from functools import reduce
-from peewee import fn
+import os
 from datetime import datetime, timedelta
+from functools import reduce
 
 from app.config import settings
-from utilities.path_mappings import path_mappings
-from subtitles.indexer.series import store_subtitles
-from subtitles.indexer.movies import store_subtitles_movie
-from radarr.history import history_log_movie
-from sonarr.history import history_log
-from app.notifier import send_notifications, send_notifications_movie
-from app.get_providers import get_providers
 from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies, \
     TableHistory, TableHistoryMovie
 from app.event_handler import show_progress, hide_progress
-
+from app.get_providers import get_providers
+from app.notifier import send_notifications, send_notifications_movie
+from peewee import fn
+from radarr.history import history_log_movie
+from sonarr.history import history_log
+from subtitles.indexer.movies import store_subtitles_movie
+from subtitles.indexer.series import store_subtitles
+from utilities.path_mappings import path_mappings
 from .download import generate_subtitles
 
 
@@ -40,7 +38,7 @@ def upgrade_subtitles():
         upgradable_episodes_conditions += get_exclusion_clause('series')
         upgradable_episodes = TableHistory.select(TableHistory.video_path,
                                                   TableHistory.language,
-                                                  fn.MAX(TableHistory.score).alias('score'),
+                                                  TableHistory.score,
                                                   TableShows.tags,
                                                   TableShows.profileId,
                                                   TableEpisodes.audio_language,
@@ -61,6 +59,7 @@ def upgrade_subtitles():
             .where(reduce(operator.and_, upgradable_episodes_conditions)) \
             .group_by(TableHistory.video_path,
                       TableHistory.language,
+                      TableHistory.score,
                       TableShows.tags,
                       TableShows.profileId,
                       TableEpisodes.audio_language,
@@ -86,7 +85,15 @@ def upgrade_subtitles():
                 else:
                     if int(upgradable_episode['score']) < 360 or (settings.general.getboolean('upgrade_manual') and
                                                                   upgradable_episode['action'] in [2, 4, 6]):
-                        upgradable_episodes_not_perfect.append(upgradable_episode)
+                        #check episode is already in list and replace it is episode have better score
+                        if upgradable_episode['video_path'] in [x['video_path'] for x in upgradable_episodes_not_perfect]:
+                            for item in upgradable_episodes_not_perfect:
+                                if item['video_path'] == upgradable_episode['video_path'] and \
+                                        int(item['score']) <= int(upgradable_episode['score']):
+                                    upgradable_episodes_not_perfect.remove(item)
+                                    upgradable_episodes_not_perfect.append(upgradable_episode)
+                        else:
+                            upgradable_episodes_not_perfect.append(upgradable_episode)
 
         episodes_to_upgrade = []
         for episode in upgradable_episodes_not_perfect:
@@ -104,7 +111,7 @@ def upgrade_subtitles():
         upgradable_movies_conditions += get_exclusion_clause('movie')
         upgradable_movies = TableHistoryMovie.select(TableHistoryMovie.video_path,
                                                      TableHistoryMovie.language,
-                                                     fn.MAX(TableHistoryMovie.score).alias('score'),
+                                                     TableHistoryMovie.score,
                                                      TableMovies.profileId,
                                                      TableHistoryMovie.action,
                                                      TableHistoryMovie.subtitles_path,
@@ -119,6 +126,7 @@ def upgrade_subtitles():
             .where(reduce(operator.and_, upgradable_movies_conditions)) \
             .group_by(TableHistoryMovie.video_path,
                       TableHistoryMovie.language,
+                      TableHistoryMovie.score,
                       TableMovies.profileId,
                       TableHistoryMovie.action,
                       TableHistoryMovie.subtitles_path,
@@ -140,6 +148,16 @@ def upgrade_subtitles():
                 else:
                     if int(upgradable_movie['score']) < 120 or (settings.general.getboolean('upgrade_manual') and
                                                                 upgradable_movie['action'] in [2, 4, 6]):
+                        # check episode is already in list and replace it is episode have better score
+                        if upgradable_movie['video_path'] in [x['video_path'] for x in
+                                                                upgradable_movies_not_perfect]:
+                            for item in upgradable_movies_not_perfect:
+                                if item['video_path'] == upgradable_movie['video_path'] and \
+                                        int(item['score']) <= int(upgradable_movie['score']):
+                                    upgradable_movies_not_perfect.remove(item)
+                                    upgradable_movies_not_perfect.append(upgradable_movie)
+                        else:
+                            upgradable_movies_not_perfect.append(upgradable_movie)
                         upgradable_movies_not_perfect.append(upgradable_movie)
 
         movies_to_upgrade = []
