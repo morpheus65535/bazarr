@@ -148,7 +148,7 @@ class EpisodesHistory(Resource):
         for item in episode_history:
             # Mark episode as upgradable or not
             item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": item['timestamp'], "score": str(item['score']),
+            if {"video_path": str(item['path']), "timestamp": item['timestamp'], "score": item['score'],
                 "tags": str(item['tags']), "monitored": str(item['monitored']),
                 "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:  # noqa: E129
                 if os.path.exists(path_mappings.path_replace(item['subtitles_path'])) and \
