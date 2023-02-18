@@ -200,7 +200,7 @@ def update_one_series(series_id, action):
         except IntegrityError as e:
             logging.error(f"BAZARR cannot update series {series['path']} because of {e}")
         else:
-            sync_episodes(series_id=int(series_id), send_event=True)
+            sync_episodes(series_id=int(series_id), send_event=False)
             event_stream(type='series', action='update', payload=int(series_id))
             logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
                 series['path'])))
