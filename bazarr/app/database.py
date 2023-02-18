@@ -131,6 +131,19 @@ class TableEpisodes(BaseModel):
         table_name = 'table_episodes'
         primary_key = False
 
+    @classmethod
+    def need_update(cls, episode):
+        try:
+            data = cls.get(cls.sonarrEpisodeId == episode['sonarrEpisodeId']).__data__
+        except cls.DoesNotExist:
+            return True
+        for key, value in data.items():
+            if not episode.get(key):
+                continue
+            if value != episode[key]:
+                return True
+        return False
+
 
 class TableHistory(BaseModel):
     action = IntegerField()
