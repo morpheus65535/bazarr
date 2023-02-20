@@ -177,6 +177,11 @@ if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
     check_releases()
     logging.debug("BAZARR Created releases file")
 
+if not os.path.exists(os.path.join(args.config_dir, 'config', 'announcements.txt')):
+    from app.announcements import get_announcements_to_file
+    get_announcements_to_file()
+    logging.debug("BAZARR Created announcements file")
+
 config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
 
 # Move GA visitor from config.ini to dedicated file

@@ -1,3 +1,4 @@
+import SystemAnnouncementsView from "@/pages/System/Announcements";
 import { renderTest, RenderTestCase } from "@/tests/render";
 import SystemBackupsView from "./Backups";
 import SystemLogsView from "./Logs";
@@ -30,6 +31,10 @@ const cases: RenderTestCase[] = [
   {
     name: "tasks page",
     ui: SystemTasksView,
+  },
+  {
+    name: "announcements page",
+    ui: SystemAnnouncementsView,
   },
 ];
 
