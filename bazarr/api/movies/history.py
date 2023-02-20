@@ -139,7 +139,7 @@ class MoviesHistory(Resource):
         for item in movie_history:
             # Mark movies as upgradable or not
             item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": item['timestamp'], "score": str(item['score']),
+            if {"video_path": str(item['path']), "timestamp": item['timestamp'], "score": item['score'],
                 "tags": str(item['tags']),
                 "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:  # noqa: E129
                 if os.path.exists(path_mappings.path_replace_movie(item['subtitles_path'])) and \

@@ -44,7 +44,7 @@ def test_list_episode_subtitles(episode):
 def test_download_episode_subtitle(episode):
     subtitle = SuperSubtitlesSubtitle(
         Language.fromalpha2("en"),
-        "https://www.feliratok.info/index.php?action=letolt&felirat=1643361676",
+        "https://www.feliratok.eu/index.php?action=letolt&felirat=1643361676",
         1643361676,
         "All of us are dead",
         1,
@@ -82,7 +82,7 @@ def test_download_movie_subtitle(movies):
 
     subtitle = SuperSubtitlesSubtitle(
         Language.fromalpha2("en"),
-        "https://www.feliratok.info/index.php?action=letolt&felirat=1634579718",
+        "https://www.feliratok.eu/index.php?action=letolt&felirat=1634579718",
         1634579718,
         "Dune",
         0,

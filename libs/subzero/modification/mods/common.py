@@ -175,10 +175,35 @@ class FixUppercase(SubtitleModification):
 
     long_description = "Some subtitles are in all-uppercase letters. This at least makes them readable."
 
+    def detect_uppercase(self, parent):
+        entries_used = 0
+        for entry in parent.f:
+            entry_used = False
+            for sub in entry.text.strip().split(r"\N"):
+                if sub.strip():
+                    alpha_sub = ''.join([i for i in sub if i.isalpha()])
+                    if alpha_sub and not alpha_sub.isupper():
+                        return False
+
+                    entry_used = True
+                else:
+                    # skip full entry
+                    break
+
+            if entry_used:
+                entries_used += 1
+
+            if entries_used == 40:
+                break
+
+        return True
+
     def capitalize(self, c):
         return u"".join([s.capitalize() for s in split_upper_re.split(c)])
 
     def modify(self, content, debug=False, parent=None, **kwargs):
+        if not self.detect_uppercase(parent):
+            return
         for entry in parent.f:
             entry.plaintext = self.capitalize(entry.plaintext)
 

@@ -5,7 +5,7 @@ import logging
 
 from app.config import settings
 from utilities.path_mappings import path_mappings
-from utilities.post_processing import pp_replace
+from utilities.post_processing import pp_replace, set_chmod
 from languages.get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
 from app.database import TableEpisodes, TableMovies
 from utilities.analytics import track_event
@@ -95,6 +95,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         if not use_pp_threshold or (use_pp_threshold and percent_score < pp_threshold):
             logging.debug("BAZARR Using post-processing command: {}".format(command))
             postprocessing(command, path)
+            set_chmod(subtitles_path=downloaded_path)
         else:
             logging.debug("BAZARR post-processing skipped because subtitles score isn't below this "
                           "threshold value: " + str(pp_threshold) + "%")
