@@ -44,7 +44,7 @@
     "@types/react-table": "^7.7.0",
     "@vitejs/plugin-react": "^2.2.0",
     "@vitest/coverage-c8": "^0.25.0",
-    "@vitest/ui": "^0.25.0",
+    "@vitest/ui": "^0.28.5",
     "clsx": "^1.2.0",
     "eslint": "^8.26.0",
     "eslint-config-react-app": "^7.0.1",
