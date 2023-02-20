@@ -84,10 +84,8 @@ interface LabelProps {
 function Label(props: LabelProps): JSX.Element {
   const { link, children } = props;
   return (
-    <>
-      <Anchor href={link} target="_blank" rel="noopener noreferrer">
-        {children}
-      </Anchor>
-    </>
+    <Anchor href={link} target="_blank" rel="noopener noreferrer">
+      {children}
+    </Anchor>
   );
 }

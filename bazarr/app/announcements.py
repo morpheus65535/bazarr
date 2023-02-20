@@ -61,6 +61,12 @@ def get_online_announcements():
     except (OSError, json.JSONDecodeError):
         return []
     else:
+        for announcement in data['data']:
+            if 'enabled' not in announcement:
+                data['data'][announcement]['enabled'] = True
+            if 'dismissible' not in announcement:
+                data['data'][announcement]['dismissible'] = True
+
         return data['data']
 
 
@@ -77,6 +83,12 @@ def get_local_announcements():
             'dismissible': False,
             'timestamp': 1676236978,
         })
+
+    for announcement in announcements:
+        if 'enabled' not in announcement:
+            announcement['enabled'] = True
+        if 'dismissible' not in announcement:
+            announcement['dismissible'] = True
 
     return announcements
 
