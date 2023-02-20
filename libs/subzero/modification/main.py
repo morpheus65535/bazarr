@@ -22,7 +22,6 @@ class SubtitleModifications(object):
     language = None
     initialized_mods = {}
     mods_used = []
-    only_uppercase = False
     f = None
 
     font_style_tag_start = u"{\\"
@@ -111,11 +110,6 @@ class SubtitleModifications(object):
                                  identifier, self.language)
                 continue
 
-            if mod_cls.only_uppercase and not self.only_uppercase:
-                if self.debug:
-                    logger.debug("Skipping %s, because the subtitle isn't all uppercase", identifier)
-                continue
-
             # merge args of duplicate mods if possible
             elif mod_cls.args_mergeable and identifier in mods_merged:
                 mods_merged[identifier] = mod_cls.merge_args(mods_merged[identifier], args)
@@ -180,42 +174,9 @@ class SubtitleModifications(object):
 
         return line_mods, non_line_mods, used_mods
 
-    def detect_uppercase(self):
-        entries_used = 0
-        for entry in self.f:
-            entry_used = False
-            for sub in entry.text.strip().split(r"\N"):
-                # skip HI bracket entries, those might actually be lowercase
-                sub = sub.strip()
-                for processor in registry.mods["remove_HI"].processors[:4]:
-                    sub = processor.process(sub)
-
-                if sub.strip():
-                    # only consider alphabetic characters to determine if uppercase
-                    alpha_sub = ''.join([i for i in sub if i.isalpha()])
-                    if alpha_sub and not alpha_sub.isupper():
-                        return False
-
-                    entry_used = True
-                else:
-                    # skip full entry
-                    break
-
-            if entry_used:
-                entries_used += 1
-
-            if entries_used == 40:
-                break
-
-        return True
-
     def modify(self, *mods):
         new_entries = []
         start = time.time()
-        self.only_uppercase = self.detect_uppercase()
-
-        if self.only_uppercase and self.debug:
-            logger.debug("Full-uppercase subtitle found")
 
         line_mods, non_line_mods, mods_used = self.prepare_mods(*mods)
         self.mods_used = mods_used
