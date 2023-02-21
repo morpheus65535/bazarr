@@ -22,6 +22,7 @@ class SubtitleModifications(object):
     language = None
     initialized_mods = {}
     mods_used = []
+    only_uppercase = False
     f = None
 
     font_style_tag_start = u"{\\"
