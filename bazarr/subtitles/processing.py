@@ -18,6 +18,24 @@ from .sync import sync_subtitles
 from .post_processing import postprocessing
 
 
+class ProcessSubtitlesResult:
+    def __init__(self, message, reversed_path, downloaded_language_code2, downloaded_provider, score, forced,
+                 subtitle_id, reversed_subtitles_path, hearing_impaired):
+        self.message = message
+        self.path = reversed_path
+        self.provider = downloaded_provider
+        self.score = score
+        self.subs_id = subtitle_id
+        self.subs_path = reversed_subtitles_path
+
+        if hearing_impaired:
+            self.language_code = downloaded_language_code2 + ":hi"
+        elif forced:
+            self.language_code = downloaded_language_code2 + ":forced"
+        else:
+            self.language_code = downloaded_language_code2
+
+
 def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_upgrade=False, is_manual=False):
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
@@ -116,5 +134,12 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
 
     track_event(category=downloaded_provider, action=action, label=downloaded_language)
 
-    return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, \
-        subtitle.language.forced, subtitle.id, reversed_subtitles_path, subtitle.language.hi
+    return ProcessSubtitlesResult(message=message,
+                                  reversed_path=reversed_path,
+                                  downloaded_language_code2=downloaded_language_code2,
+                                  downloaded_provider=downloaded_provider,
+                                  score=subtitle.score,
+                                  forced=subtitle.language.forced,
+                                  subtitle_id=subtitle.id,
+                                  reversed_subtitles_path=reversed_subtitles_path,
+                                  hearing_impaired=subtitle.language.hi)

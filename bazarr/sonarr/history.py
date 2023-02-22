@@ -6,8 +6,15 @@ from app.database import TableHistory
 from app.event_handler import event_stream
 
 
-def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_path=None, language=None, provider=None,
-                score=None, subs_id=None, subtitles_path=None):
+def history_log(action, sonarr_series_id, sonarr_episode_id, result):
+    description = result.message
+    video_path = result.path
+    language = result.language_code
+    provider = result.provider
+    score = result.score
+    subs_id = result.subs_id
+    subtitles_path = result.subs_path
+
     TableHistory.insert({
         TableHistory.action: action,
         TableHistory.sonarrSeriesId: sonarr_series_id,

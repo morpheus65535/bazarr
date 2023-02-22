@@ -124,26 +124,11 @@ class ProviderEpisodes(Resource):
             result = manual_download_subtitle(episodePath, audio_language, hi, forced, subtitle, selected_provider,
                                               sceneName, title, 'series', use_original_format,
                                               profile_id=get_profile_id(episode_id=sonarrEpisodeId))
-            if result is not None:
-                message = result[0]
-                path = result[1]
-                forced = result[5]
-                if result[8]:
-                    language_code = result[2] + ":hi"
-                elif forced:
-                    language_code = result[2] + ":forced"
-                else:
-                    language_code = result[2]
-                provider = result[3]
-                score = result[4]
-                subs_id = result[6]
-                subs_path = result[7]
-                history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id,
-                            subs_path)
+            if result:
+                history_log(2, sonarrSeriesId, sonarrEpisodeId, result)
                 if not settings.general.getboolean('dont_notify_manual_actions'):
-                    send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-                store_subtitles(path, episodePath)
-            return result, 201
+                    send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
+                store_subtitles(result.path, episodePath)
         except OSError:
             pass
 

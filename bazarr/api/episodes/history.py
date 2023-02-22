@@ -1,17 +1,14 @@
 # coding=utf-8
 
-import datetime
 import os
 import operator
 import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
-from peewee import fn
-from datetime import timedelta
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableHistory, TableBlacklist
-from app.config import settings
+from app.database import TableEpisodes, TableShows, TableHistory, TableBlacklist
+from subtitles.upgrade import get_upgradable_episode_subtitles
 from utilities.path_mappings import path_mappings
 from api.swaggerui import subtitles_language_model
 
@@ -70,45 +67,15 @@ class EpisodesHistory(Resource):
         length = args.get('length')
         episodeid = args.get('episodeid')
 
-        upgradable_episodes_not_perfect = []
-        if settings.general.getboolean('upgrade_subs'):
-            days_to_upgrade_subs = settings.general.days_to_upgrade_subs
-            minimum_timestamp = (datetime.datetime.now() - timedelta(days=int(days_to_upgrade_subs)))
-
-            if settings.general.getboolean('upgrade_manual'):
-                query_actions = [1, 2, 3, 6]
-            else:
-                query_actions = [1, 3]
-
-            upgradable_episodes_conditions = [(TableHistory.action.in_(query_actions)),
-                                              (TableHistory.timestamp > minimum_timestamp),
-                                              (TableHistory.score.is_null(False))]
-            upgradable_episodes_conditions += get_exclusion_clause('series')
-            upgradable_episodes = TableHistory.select(TableHistory.video_path,
-                                                      fn.MAX(TableHistory.timestamp).alias('timestamp'),
-                                                      TableHistory.score,
-                                                      TableShows.tags,
-                                                      TableEpisodes.monitored,
-                                                      TableShows.seriesType) \
-                .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)) \
-                .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-                .where(reduce(operator.and_, upgradable_episodes_conditions)) \
-                .group_by(TableHistory.video_path,
-                          TableHistory.score,
-                          TableShows.tags,
-                          TableEpisodes.monitored,
-                          TableShows.seriesType) \
-                .dicts()
-            upgradable_episodes = list(upgradable_episodes)
-            for upgradable_episode in upgradable_episodes:
-                if upgradable_episode['timestamp'] > minimum_timestamp:
-                    try:
-                        int(upgradable_episode['score'])
-                    except ValueError:
-                        pass
-                    else:
-                        if int(upgradable_episode['score']) < 360:
-                            upgradable_episodes_not_perfect.append(upgradable_episode)
+        upgradable_episodes_not_perfect = get_upgradable_episode_subtitles()
+        if len(upgradable_episodes_not_perfect):
+            upgradable_episodes_not_perfect = [{"video_path": x['video_path'],
+                                                "timestamp": x['timestamp'],
+                                                "score": x['score'],
+                                                "tags": x['tags'],
+                                                "monitored": x['monitored'],
+                                                "seriesType": x['seriesType']}
+                                               for x in upgradable_episodes_not_perfect]
 
         query_conditions = [(TableEpisodes.title.is_null(False))]
         if episodeid:

@@ -53,24 +53,10 @@ def _wanted_movie(movie):
                                      check_if_still_required=True):
 
         if result:
-            message = result[0]
-            path = result[1]
-            forced = result[5]
-            if result[8]:
-                language_code = result[2] + ":hi"
-            elif forced:
-                language_code = result[2] + ":forced"
-            else:
-                language_code = result[2]
-            provider = result[3]
-            score = result[4]
-            subs_id = result[6]
-            subs_path = result[7]
             store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-            history_log_movie(1, movie['radarrId'], message, path, language_code, provider, score,
-                              subs_id, subs_path)
+            history_log_movie(1, movie['radarrId'], result)
             event_stream(type='movie-wanted', action='delete', payload=movie['radarrId'])
-            send_notifications_movie(movie['radarrId'], message)
+            send_notifications_movie(movie['radarrId'], result.message)
 
 
 def wanted_download_subtitles_movie(radarr_id):

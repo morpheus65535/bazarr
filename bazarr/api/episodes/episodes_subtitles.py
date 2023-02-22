@@ -74,23 +74,9 @@ class EpisodesSubtitles(Resource):
                                              title, 'series', profile_id=get_profile_id(episode_id=sonarrEpisodeId)))
             if result:
                 result = result[0]
-                message = result[0]
-                path = result[1]
-                forced = result[5]
-                if result[8]:
-                    language_code = result[2] + ":hi"
-                elif forced:
-                    language_code = result[2] + ":forced"
-                else:
-                    language_code = result[2]
-                provider = result[3]
-                score = result[4]
-                subs_id = result[6]
-                subs_path = result[7]
-                history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id,
-                            subs_path)
-                send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-                store_subtitles(path, episodePath)
+                history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
+                send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
+                store_subtitles(result.path, episodePath)
             else:
                 event_stream(type='episode', payload=sonarrEpisodeId)
 
@@ -157,22 +143,12 @@ class EpisodesSubtitles(Resource):
             if not result:
                 logging.debug(f"BAZARR unable to process subtitles for this episode: {episodePath}")
             else:
-                message = result[0]
-                path = result[1]
-                subs_path = result[2]
-                if hi:
-                    language_code = language + ":hi"
-                elif forced:
-                    language_code = language + ":forced"
-                else:
-                    language_code = language
                 provider = "manual"
                 score = 360
-                history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score,
-                            subtitles_path=subs_path)
+                history_log(4, sonarrSeriesId, sonarrEpisodeId, result)
                 if not settings.general.getboolean('dont_notify_manual_actions'):
-                    send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-                store_subtitles(path, episodePath)
+                    send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
+                store_subtitles(result.path, episodePath)
 
         except OSError:
             pass
