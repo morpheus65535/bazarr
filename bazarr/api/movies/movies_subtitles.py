@@ -140,7 +140,7 @@ class MoviesSubtitles(Resource):
             else:
                 provider = "manual"
                 score = 120
-                history_log_movie(4, radarrId, result)
+                history_log_movie(4, radarrId, result, fake_provider=provider, fake_score=score)
                 if not settings.general.getboolean('dont_notify_manual_actions'):
                     send_notifications_movie(radarrId, result.message)
                 store_subtitles_movie(result.path, moviePath)
