@@ -81,7 +81,8 @@ defaults = {
         'hi_extension': 'hi',
         'embedded_subtitles_parser': 'ffprobe',
         'default_und_audio_lang': '',
-        'default_und_embedded_subtitles_lang': ''
+        'default_und_embedded_subtitles_lang': '',
+        'parse_embedded_audio_track': 'False'
     },
     'auth': {
         'type': 'None',
@@ -385,6 +386,7 @@ def save_settings(settings_items):
     use_embedded_subs_changed = False
     undefined_audio_track_default_changed = False
     undefined_subtitles_track_default_changed = False
+    audio_tracks_parsing_changed = False
 
     # Subzero Mods
     update_subzero = False
@@ -422,6 +424,9 @@ def save_settings(settings_items):
 
         if key == 'settings-general-default_und_audio_lang':
             undefined_audio_track_default_changed = True
+
+        if key == 'settings-general-parse_embedded_audio_track':
+            audio_tracks_parsing_changed = True
 
         if key == 'settings-general-default_und_embedded_subtitles_lang':
             undefined_subtitles_track_default_changed = True
@@ -564,6 +569,17 @@ def save_settings(settings_items):
             scheduler.add_job(series_full_scan_subtitles, kwargs={'use_cache': True})
         if settings.general.getboolean('use_radarr'):
             scheduler.add_job(movies_full_scan_subtitles, kwargs={'use_cache': True})
+
+    if audio_tracks_parsing_changed:
+        from .scheduler import scheduler
+        if settings.general.getboolean('use_sonarr'):
+            from sonarr.sync.episodes import sync_episodes
+            from sonarr.sync.series import update_series
+            scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
+            scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
+        if settings.general.getboolean('use_radarr'):
+            from radarr.sync.movies import update_movies
+            scheduler.add_job(update_movies, kwargs={'send_event': True}, max_instances=1)
 
     if update_subzero:
         settings.set('general', 'subzero_mods', ','.join(subzero_mods))

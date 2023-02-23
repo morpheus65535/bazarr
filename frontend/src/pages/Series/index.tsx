@@ -1,5 +1,6 @@
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
 import { Action } from "@/components";
+import { AudioList } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { useModals } from "@/modules/modals";
@@ -41,6 +42,13 @@ const SeriesView: FunctionComponent = () => {
               {value}
             </Anchor>
           );
+        },
+      },
+      {
+        Header: "Audio",
+        accessor: "audio_language",
+        Cell: ({ value }) => {
+          return <AudioList audios={value}></AudioList>;
         },
       },
       {

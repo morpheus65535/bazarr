@@ -69,19 +69,28 @@ const SettingsLanguagesView: FunctionComponent = () => {
         ></LanguageSelector>
       </Section>
 
-      <Section header="Default Unknown Track Language">
-        <Selector
-          clearable
-          settingKey={defaultUndAudioLang}
-          label="Treat unknown language audio track as (changing this will trigger missing subtitles calculation)"
-          placeholder="Select languages"
-          options={und_audio_languages.map((v) => {
-            return { label: v.name, value: v.code2 };
-          })}
-          settingOptions={{
-            onSubmit: (v) => (v === null ? "" : v),
-          }}
-        ></Selector>
+      <Section header="Embedded Tracks Language">
+        <Check
+          label="Deep analyze media file to get audio tracks language."
+          settingKey="settings-general-parse_embedded_audio_track"
+        ></Check>
+        <CollapseBox
+          indent
+          settingKey="settings-general-parse_embedded_audio_track"
+        >
+          <Selector
+            clearable
+            settingKey={defaultUndAudioLang}
+            label="Treat unknown language audio track as (changing this will trigger missing subtitles calculation)"
+            placeholder="Select languages"
+            options={und_audio_languages.map((v) => {
+              return { label: v.name, value: v.code2 };
+            })}
+            settingOptions={{
+              onSubmit: (v) => (v === null ? "" : v),
+            }}
+          ></Selector>
+        </CollapseBox>
 
         <Selector
           clearable
