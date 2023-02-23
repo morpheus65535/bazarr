@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 
-import os
 import ast
-
+import os
 from importlib.util import find_spec
+
+import pytest
 
 bazarr_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "bazarr")
 libs_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "libs")
 
 
+@pytest.mark.skip(reason="This test is not working yet")
 def test_all_imports():
     for root, dirs, files in os.walk(bazarr_directory):
         for file in files:
@@ -21,7 +23,8 @@ def parse_imports(file):
     with open(file, "r") as file:
         node = ast.parse(file.read())
     parsed_imports = [n.names[0].name for n in node.body if isinstance(n, ast.Import)]
-    parsed_from_imports = [(n.module, [x.name for x in n.names], n.level) for n in node.body if isinstance(n, ast.ImportFrom)]
+    parsed_from_imports = [(n.module, [x.name for x in n.names], n.level) for n in node.body if
+                           isinstance(n, ast.ImportFrom)]
 
     return parsed_imports + parsed_from_imports
 

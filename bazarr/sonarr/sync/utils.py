@@ -1,11 +1,11 @@
 # coding=utf-8
 
-import requests
 import logging
 
+import requests
 from app.config import settings
-from sonarr.info import get_sonarr_info, url_sonarr
 from constants import headers
+from sonarr.info import get_sonarr_info, url_sonarr
 
 
 def get_profile_list():
@@ -14,15 +14,18 @@ def get_profile_list():
 
     # Get profiles data from Sonarr
     if get_sonarr_info.is_legacy():
-        url_sonarr_api_series = url_sonarr() + "/api/profile?apikey=" + apikey_sonarr
-    else:
-        if not get_sonarr_info.version().startswith('3.'):
-            # return an empty list when using Sonarr >= v4 that does not support series languages profiles anymore
-            return profiles_list
-        url_sonarr_api_series = url_sonarr() + "/api/v3/languageprofile?apikey=" + apikey_sonarr
+        url_sonarr_api_series = f"{url_sonarr()}/api/profile?apikey={apikey_sonarr}"
+    elif get_sonarr_info.version().startswith('3.'):
+        url_sonarr_api_series = (
+            f"{url_sonarr()}/api/v3/languageprofile?apikey={apikey_sonarr}"
+        )
 
+    else:
+        # return an empty list when using Sonarr >= v4 that does not support series languages profiles anymore
+        return profiles_list
     try:
-        profiles_json = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
+        profiles_json = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False,
+                                     headers=headers)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
         return None
@@ -35,12 +38,15 @@ def get_profile_list():
 
     # Parsing data returned from Sonarr
     if get_sonarr_info.is_legacy():
-        for profile in profiles_json.json():
-            profiles_list.append([profile['id'], profile['language'].capitalize()])
+        profiles_list.extend(
+            [profile['id'], profile['language'].capitalize()]
+            for profile in profiles_json.json()
+        )
     else:
-        for profile in profiles_json.json():
-            profiles_list.append([profile['id'], profile['name'].capitalize()])
-
+        profiles_list.extend(
+            [profile['id'], profile['name'].capitalize()]
+            for profile in profiles_json.json()
+        )
     return profiles_list
 
 
@@ -50,12 +56,13 @@ def get_tags():
 
     # Get tags data from Sonarr
     if get_sonarr_info.is_legacy():
-        url_sonarr_api_series = url_sonarr() + "/api/tag?apikey=" + apikey_sonarr
+        url_sonarr_api_series = f"{url_sonarr()}/api/tag?apikey={apikey_sonarr}"
     else:
-        url_sonarr_api_series = url_sonarr() + "/api/v3/tag?apikey=" + apikey_sonarr
+        url_sonarr_api_series = f"{url_sonarr()}/api/v3/tag?apikey={apikey_sonarr}"
 
     try:
-        tagsDict = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
+        tagsDict = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False,
+                                headers=headers)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get tags from Sonarr. Connection Error.")
         return []
@@ -70,25 +77,23 @@ def get_tags():
 
 
 def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
-    url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format(
-        '' if get_sonarr_info.is_legacy() else 'v3/', sonarr_series_id if sonarr_series_id else "", apikey_sonarr)
+    url_sonarr_api_series = f"{url}/api/{'' if get_sonarr_info.is_legacy() else 'v3/'}series/{sonarr_series_id or ''}?apikey={apikey_sonarr}"
     try:
-        r = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
+        r = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False,
+                         headers=headers)
         r.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code:
-            raise requests.exceptions.HTTPError
+    except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
-        return
+        raise
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get series from Sonarr. Connection Error.")
-        return
+        raise
     except requests.exceptions.Timeout:
         logging.exception("BAZARR Error trying to get series from Sonarr. Timeout Error.")
-        return
+        raise
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get series from Sonarr.")
-        return
+        raise
     else:
         result = r.json()
         if isinstance(result, dict):
@@ -108,20 +113,21 @@ def get_episodes_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_id=
         return
 
     try:
-        r = requests.get(url_sonarr_api_episode, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
+        r = requests.get(url_sonarr_api_episode, timeout=int(settings.sonarr.http_timeout), verify=False,
+                         headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get episodes from Sonarr. Http error.")
-        return
+        raise
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get episodes from Sonarr. Connection Error.")
-        return
+        raise
     except requests.exceptions.Timeout:
         logging.exception("BAZARR Error trying to get episodes from Sonarr. Timeout Error.")
-        return
+        raise
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get episodes from Sonarr.")
-        return
+        raise
     else:
         return r.json()
 
@@ -136,19 +142,20 @@ def get_episodesFiles_from_sonarr_api(url, apikey_sonarr, series_id=None, episod
         return
 
     try:
-        r = requests.get(url_sonarr_api_episodeFiles, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
+        r = requests.get(url_sonarr_api_episodeFiles, timeout=int(settings.sonarr.http_timeout), verify=False,
+                         headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get episodeFiles from Sonarr. Http error.")
-        return
+        raise
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get episodeFiles from Sonarr. Connection Error.")
-        return
+        raise
     except requests.exceptions.Timeout:
         logging.exception("BAZARR Error trying to get episodeFiles from Sonarr. Timeout Error.")
-        return
+        raise
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get episodeFiles from Sonarr.")
-        return
+        raise
     else:
         return r.json()

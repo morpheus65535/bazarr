@@ -88,23 +88,22 @@ def episodeParser(episode):
     if 'hasFile' in episode:
         if episode['hasFile'] is True:
             if 'episodeFile' in episode:
-                try:
-                    bazarr_file_size = os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
-                except OSError:
-                    bazarr_file_size = 0
-                if episode['episodeFile']['size'] > 20480 or bazarr_file_size > 20480:
-                    if 'sceneName' in episode['episodeFile']:
-                        sceneName = episode['episodeFile']['sceneName']
-                    else:
-                        sceneName = None
+                if episode['episodeFile']['size'] <= 20480:
+                    try:
+                        bazarr_file_size = os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
+                    except OSError:
+                        return
+                    if bazarr_file_size <= 20480:
+                        return
+                if 'sceneName' in episode['episodeFile']:
+                    sceneName = episode['episodeFile']['sceneName']
+                else:
+                    sceneName = None
 
-                    if settings.general.getboolean('parse_embedded_audio_track'):
-                        audio_language = embedded_audio_reader(path_mappings.path_replace(episode['episodeFile']
-                                                                                          ['path']),
-                                                               file_size=episode['episodeFile']['size'],
-                                                               episode_file_id=episode['episodeFile']['id'],
-                                                               use_cache=True)
-                    else:
+                if settings.general.getboolean('parse_embedded_audio_track'):audio_language = embedded_audio_reader(path_mappings.path_replace(episode['episodeFile']['path']),
+                                                       file_size=episode['episodeFile']['size'],
+                                                       episode_file_id=episode['episodeFile']['id'],
+                                                       use_cache=True)else:
                         audio_language = []
                         if 'language' in episode['episodeFile'] and len(episode['episodeFile']['language']):
                             item = episode['episodeFile']['language']
@@ -121,44 +120,44 @@ def episodeParser(episode):
                             audio_language = TableShows.get(
                                 TableShows.sonarrSeriesId == episode['seriesId']).audio_language
 
-                    if 'mediaInfo' in episode['episodeFile']:
-                        if 'videoCodec' in episode['episodeFile']['mediaInfo']:
-                            videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
-                            videoCodec = SonarrFormatVideoCodec(videoCodec)
-                        else:
-                            videoCodec = None
-
-                        if 'audioCodec' in episode['episodeFile']['mediaInfo']:
-                            audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
-                            audioCodec = SonarrFormatAudioCodec(audioCodec)
-                        else:
-                            audioCodec = None
+                if 'mediaInfo' in episode['episodeFile']:
+                    if 'videoCodec' in episode['episodeFile']['mediaInfo']:
+                        videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
+                        videoCodec = SonarrFormatVideoCodec(videoCodec)
                     else:
                         videoCodec = None
+
+                    if 'audioCodec' in episode['episodeFile']['mediaInfo']:
+                        audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
+                        audioCodec = SonarrFormatAudioCodec(audioCodec)
+                    else:
                         audioCodec = None
+                else:
+                    videoCodec = None
+                    audioCodec = None
 
+                try:
+                    video_format, video_resolution = episode['episodeFile']['quality']['quality']['name'].split('-')
+                except Exception:
+                    video_format = episode['episodeFile']['quality']['quality']['name']
                     try:
-                        video_format, video_resolution = episode['episodeFile']['quality']['quality']['name'].split('-')
+                        video_resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
                     except Exception:
-                        video_format = episode['episodeFile']['quality']['quality']['name']
-                        try:
-                            video_resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
-                        except Exception:
-                            video_resolution = None
+                        video_resolution = None
 
-                    return {'sonarrSeriesId': episode['seriesId'],
-                            'sonarrEpisodeId': episode['id'],
-                            'title': episode['title'],
-                            'path': episode['episodeFile']['path'],
-                            'season': episode['seasonNumber'],
-                            'episode': episode['episodeNumber'],
-                            'sceneName': sceneName,
-                            'monitored': str(bool(episode['monitored'])),
-                            'format': video_format,
-                            'resolution': video_resolution,
-                            'video_codec': videoCodec,
-                            'audio_codec': audioCodec,
-                            'episode_file_id': episode['episodeFile']['id'],
-                            'audio_language': str(audio_language),
-                            'file_size': episode['episodeFile']['size']}
+                return {'sonarrSeriesId': episode['seriesId'],
+                        'sonarrEpisodeId': episode['id'],
+                        'title': episode['title'],
+                        'path': episode['episodeFile']['path'],
+                        'season': episode['seasonNumber'],
+                        'episode': episode['episodeNumber'],
+                        'sceneName': sceneName,
+                        'monitored': str(bool(episode['monitored'])),
+                        'format': video_format,
+                        'resolution': video_resolution,
+                        'video_codec': videoCodec,
+                        'audio_codec': audioCodec,
+                        'episode_file_id': episode['episodeFile']['id'],
+                        'audio_language': str(audio_language),
+                        'file_size': episode['episodeFile']['size']}
     return

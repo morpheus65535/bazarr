@@ -70,9 +70,9 @@ def configure_logging(debug=False):
     logger.setLevel(log_level)
 
     # Console logging
-    ch = logging.StreamHandler()
+    ch = logging.StreamHandler(sys.stdout)
     cf = (debug and logging.Formatter or NoExceptionFormatter)(
-        '%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(module)s:%(lineno)d) - %(message)s')
+        '%(asctime)-15s - %(module)s.%(funcName)s :  %(levelname)s (%(module)s:%(lineno)d) - %(message)s')
     ch.setFormatter(cf)
 
     ch.setLevel(log_level)
