@@ -52,25 +52,11 @@ def _wanted_episode(episode):
                                      'series',
                                      check_if_still_required=True):
         if result:
-            message = result[0]
-            path = result[1]
-            forced = result[5]
-            if result[8]:
-                language_code = f"{result[2]}:hi"
-            elif forced:
-                language_code = f"{result[2]}:forced"
-            else:
-                language_code = result[2]
-            provider = result[3]
-            score = result[4]
-            subs_id = result[6]
-            subs_path = result[7]
             store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
-            history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
-                        language_code, provider, score, subs_id, subs_path)
+            history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result)
             event_stream(type='series', action='update', payload=episode['sonarrSeriesId'])
             event_stream(type='episode-wanted', action='delete', payload=episode['sonarrEpisodeId'])
-            send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
+            send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result.message)
 
 
 def wanted_download_subtitles(sonarr_episode_id):

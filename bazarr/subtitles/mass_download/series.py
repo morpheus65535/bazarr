@@ -81,23 +81,9 @@ def series_download_subtitles(no):
                                              'series',
                                              check_if_still_required=True):
                 if result:
-                    message = result[0]
-                    path = result[1]
-                    forced = result[5]
-                    if result[8]:
-                        language_code = result[2] + ":hi"
-                    elif forced:
-                        language_code = result[2] + ":forced"
-                    else:
-                        language_code = result[2]
-                    provider = result[3]
-                    score = result[4]
-                    subs_id = result[6]
-                    subs_path = result[7]
                     store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
-                    history_log(1, no, episode['sonarrEpisodeId'], message, path, language_code, provider, score,
-                                subs_id, subs_path)
-                    send_notifications(no, episode['sonarrEpisodeId'], message)
+                    history_log(1, no, episode['sonarrEpisodeId'], result)
+                    send_notifications(no, episode['sonarrEpisodeId'], result.message)
         else:
             logging.info("BAZARR All providers are throttled")
             break
@@ -166,23 +152,9 @@ def episode_download_subtitles(no, send_progress=False):
                                              'series',
                                              check_if_still_required=True):
                 if result:
-                    message = result[0]
-                    path = result[1]
-                    forced = result[5]
-                    if result[8]:
-                        language_code = result[2] + ":hi"
-                    elif forced:
-                        language_code = result[2] + ":forced"
-                    else:
-                        language_code = result[2]
-                    provider = result[3]
-                    score = result[4]
-                    subs_id = result[6]
-                    subs_path = result[7]
                     store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
-                    history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
-                                language_code, provider, score, subs_id, subs_path)
-                    send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
+                    history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result)
+                    send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result.message)
 
             if send_progress:
                 hide_progress(id='episode_search_progress_{}'.format(no))
