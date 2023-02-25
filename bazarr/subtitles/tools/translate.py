@@ -11,6 +11,7 @@ from languages.custom_lang import CustomLanguage
 from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
 from radarr.history import history_log_movie
 from sonarr.history import history_log
+from subtitles.processing import ProcessSubtitlesResult
 
 
 def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, forced, hi, media_type, sonarr_series_id,
@@ -84,11 +85,19 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
 
     message = f"{language_from_alpha2(from_lang)} subtitles translated to {language_from_alpha3(to_lang)}."
 
+    result = ProcessSubtitlesResult(message=message,
+                                    reversed_path=video_path,
+                                    downloaded_language_code2=to_lang,
+                                    downloaded_provider=None,
+                                    score=None,
+                                    forced=None,
+                                    subtitle_id=None,
+                                    reversed_subtitles_path=dest_srt_file,
+                                    hearing_impaired=None)
+
     if media_type == 'series':
-        history_log(action=6, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
-                    description=message, video_path=video_path, language=to_lang, subtitles_path=dest_srt_file)
+        history_log(action=6, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id, result=result)
     else:
-        history_log_movie(action=6, radarr_id=radarr_id, description=message,
-                          video_path=video_path, language=to_lang, subtitles_path=dest_srt_file)
+        history_log_movie(action=6, radarr_id=radarr_id, result=result)
 
     return dest_srt_file

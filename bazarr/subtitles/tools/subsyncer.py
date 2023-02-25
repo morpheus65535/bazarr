@@ -8,6 +8,7 @@ from ffsubsync.ffsubsync import run, make_parser
 from utilities.binaries import get_binary
 from radarr.history import history_log_movie
 from sonarr.history import history_log
+from subtitles.processing import ProcessSubtitlesResult
 from languages.get_languages import language_from_alpha2
 from utilities.path_mappings import path_mappings
 from app.config import settings
@@ -83,14 +84,21 @@ class SubSyncer:
                               "scale factor of {2}.".format(language_from_alpha2(srt_lang), offset_seconds,
                                                             "{:.2f}".format(framerate_scale_factor))
 
+                    result = ProcessSubtitlesResult(message=message,
+                                                    reversed_path=path_mappings.path_replace_reverse(self.reference),
+                                                    downloaded_language_code2=srt_lang,
+                                                    downloaded_provider=None,
+                                                    score=None,
+                                                    forced=None,
+                                                    subtitle_id=None,
+                                                    reversed_subtitles_path=srt_path,
+                                                    hearing_impaired=None)
+
                     if media_type == 'series':
                         history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
-                                    description=message, video_path=path_mappings.path_replace_reverse(self.reference),
-                                    language=srt_lang, subtitles_path=srt_path)
+                                    result=result)
                     else:
-                        history_log_movie(action=5, radarr_id=radarr_id, description=message,
-                                          video_path=path_mappings.path_replace_reverse_movie(self.reference),
-                                          language=srt_lang, subtitles_path=srt_path)
+                        history_log_movie(action=5, radarr_id=radarr_id, result=result)
             else:
                 logging.error('BAZARR unable to sync subtitles: {0}'.format(self.srtin))
 
