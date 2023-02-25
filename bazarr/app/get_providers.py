@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import ast
 import os
 import datetime
 import pytz
@@ -141,6 +142,14 @@ def get_providers():
         providers_list = None
 
     return providers_list
+
+
+def get_enabled_providers():
+    # return enabled provider including those who can be throttled
+    try:
+        return ast.literal_eval(settings.general.enabled_providers)
+    except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+        return []
 
 
 _FFPROBE_BINARY = get_binary("ffprobe")

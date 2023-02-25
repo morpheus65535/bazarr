@@ -10,7 +10,7 @@ import pretty
 from datetime import datetime
 from operator import itemgetter
 
-from app.get_providers import get_providers
+from app.get_providers import get_enabled_providers
 from app.database import TableAnnouncements
 from .get_args import args
 
@@ -74,7 +74,7 @@ def get_local_announcements():
     announcements = []
 
     # opensubtitles.org end-of-life
-    enabled_providers = get_providers()
+    enabled_providers = get_enabled_providers()
     if enabled_providers and 'opensubtitles' in enabled_providers:
         announcements.append({
             'text': 'Opensubtitles.org will be deprecated soon, migrate to Opensubtitles.com ASAP and disable this '
