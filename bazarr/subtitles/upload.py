@@ -20,6 +20,7 @@ from sonarr.notify import notify_sonarr
 from languages.custom_lang import CustomLanguage
 from app.database import TableEpisodes, TableMovies, TableShows, get_profiles_list
 from app.event_handler import event_stream
+from subtitles.processing import ProcessSubtitlesResult
 
 from .sync import sync_subtitles
 from .post_processing import postprocessing
@@ -119,7 +120,6 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
         modifier_string = " forced"
     else:
         modifier_string = ""
-    message = language_from_alpha3(language) + modifier_string + " Subtitles manually uploaded."
 
     if hi:
         modifier_code = ":hi"
@@ -167,4 +167,15 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
         event_stream(type='movie', action='update', payload=movie_metadata['radarrId'])
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata['radarrId'])
 
-    return message, reversed_path, reversed_subtitles_path
+    result = ProcessSubtitlesResult(message=language_from_alpha3(language) + modifier_string + " Subtitles manually "
+                                                                                               "uploaded.",
+                                    reversed_path=reversed_path,
+                                    downloaded_language_code2=uploaded_language_code2,
+                                    downloaded_provider=None,
+                                    score=None,
+                                    forced=None,
+                                    subtitle_id=None,
+                                    reversed_subtitles_path=reversed_subtitles_path,
+                                    hearing_impaired=None)
+
+    return result
