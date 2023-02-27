@@ -207,6 +207,16 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   { key: "napiprojekt", description: "Polish Subtitles Provider" },
   {
+    key: "whisperai",
+    description: "AI Generated Subtitles powered by Whisper",
+    inputs: [
+      {
+        type: "text",
+        key: "endpoint",
+      },
+    ],
+  },
+  {
     key: "napisy24",
     description: "Polish Subtitles Provider",
     message:
