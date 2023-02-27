@@ -1,24 +1,22 @@
 # -*- coding: utf-8 -*-
-import logging
-import os
+import ast
 import atexit
 import json
-import ast
+import logging
+import os
 import time
 from datetime import datetime
 
-from peewee import Model, AutoField, TextField, IntegerField, ForeignKeyField, BlobField, BooleanField, BigIntegerField, \
-    DateTimeField
-from playhouse.sqliteq import SqliteQueueDatabase
-from playhouse.migrate import SqliteMigrator, migrate
-from playhouse.sqlite_ext import RowIDField
-
 from dogpile.cache import make_region
-from utilities.path_mappings import path_mappings
-
-from peewee import PostgresqlDatabase
+from peewee import Model, AutoField, TextField, IntegerField, ForeignKeyField, BlobField, BooleanField, BigIntegerField, \
+    DateTimeField, OperationalError, PostgresqlDatabase
 from playhouse.migrate import PostgresqlMigrator
+from playhouse.migrate import SqliteMigrator, migrate
+from playhouse.shortcuts import ThreadSafeDatabaseMetadata, ReconnectMixin
+from playhouse.sqlite_ext import RowIDField
+from playhouse.sqliteq import SqliteQueueDatabase
 
+from utilities.path_mappings import path_mappings
 from .config import settings, get_array_from
 from .get_args import args
 
@@ -29,15 +27,22 @@ postgresql = settings.postgresql.getboolean('enabled')
 region = make_region().configure('dogpile.cache.memory')
 
 if postgresql:
+    class ReconnectPostgresqlDatabase(ReconnectMixin, PostgresqlDatabase):
+        reconnect_errors = (
+            (OperationalError, 'server closed the connection unexpectedly'),
+        )
+
+
     logger.debug(
         f"Connecting to PostgreSQL database: {settings.postgresql.host}:{settings.postgresql.port}/{settings.postgresql.database}")
-    database = PostgresqlDatabase(settings.postgresql.database,
-                                  user=settings.postgresql.username,
-                                  password=settings.postgresql.password,
-                                  host=settings.postgresql.host,
-                                  port=settings.postgresql.port,
-                                  autoconnect=True
-                                  )
+    database = ReconnectPostgresqlDatabase(settings.postgresql.database,
+                                           user=settings.postgresql.username,
+                                           password=settings.postgresql.password,
+                                           host=settings.postgresql.host,
+                                           port=settings.postgresql.port,
+                                           autocommit=True,
+                                           autoconnect=True,
+                                           )
     migrator = PostgresqlMigrator(database)
 else:
     db_path = os.path.join(args.config_dir, 'db', 'bazarr.db')
@@ -62,6 +67,7 @@ class UnknownField(object):
 class BaseModel(Model):
     class Meta:
         database = database
+        model_metadata_class = ThreadSafeDatabaseMetadata
 
 
 class System(BaseModel):
