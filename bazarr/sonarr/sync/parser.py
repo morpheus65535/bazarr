@@ -4,21 +4,23 @@ import os
 
 from app.config import settings
 from app.database import TableShows
+from sonarr.info import get_sonarr_info
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import embedded_audio_reader
-from sonarr.info import get_sonarr_info
-
 from .converter import SonarrFormatVideoCodec, SonarrFormatAudioCodec
+from .utils import get_tags, get_profile_list
 
 
-def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles):
-    overview = show['overview'] if 'overview' in show else ''
+def seriesParser(show: dict) -> dict:
+    tags_dict = get_tags()
+    audio_profiles = get_profile_list()
+    overview = show.get('overview')
     poster = ''
     fanart = ''
     for image in show['images']:
         if image['coverType'] == 'poster':
             poster_big = image['url'].split('?')[0]
-            poster = os.path.splitext(poster_big)[0] + '-250' + os.path.splitext(poster_big)[1]
+            poster = f'{os.path.splitext(poster_big)[0]}-250{os.path.splitext(poster_big)[1]}'
 
         if image['coverType'] == 'fanart':
             fanart = image['url'].split('?')[0]
@@ -29,51 +31,30 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
 
     tags = [d['label'] for d in tags_dict if d['id'] in show['tags']]
 
-    imdbId = show['imdbId'] if 'imdbId' in show else None
+    imdbId = show.get('imdbId')
 
     audio_language = []
     if not settings.general.getboolean('parse_embedded_audio_track'):
         if get_sonarr_info.is_legacy():
             audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
-        else:
-            if 'languageProfileId' in show:
-                audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
-            else:
-                audio_language = []
+        elif 'languageProfileId' in show:
+            audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
 
-    if action == 'update':
-        return {'title': show["title"],
-                'path': show["path"],
-                'tvdbId': int(show["tvdbId"]),
-                'sonarrSeriesId': int(show["id"]),
-                'overview': overview,
-                'poster': poster,
-                'fanart': fanart,
-                'audio_language': str(audio_language),
-                'sortTitle': show['sortTitle'],
-                'year': str(show['year']),
-                'alternativeTitles': alternate_titles,
-                'tags': str(tags),
-                'seriesType': show['seriesType'],
-                'imdbId': imdbId,
-                'monitored': str(bool(show['monitored']))}
-    else:
-        return {'title': show["title"],
-                'path': show["path"],
-                'tvdbId': show["tvdbId"],
-                'sonarrSeriesId': show["id"],
-                'overview': overview,
-                'poster': poster,
-                'fanart': fanart,
-                'audio_language': str(audio_language),
-                'sortTitle': show['sortTitle'],
-                'year': str(show['year']),
-                'alternativeTitles': alternate_titles,
-                'tags': str(tags),
-                'seriesType': show['seriesType'],
-                'imdbId': imdbId,
-                'profileId': serie_default_profile,
-                'monitored': str(bool(show['monitored']))}
+    return {'title': show["title"],
+            'path': show["path"],
+            'tvdbId': int(show["tvdbId"]),
+            'sonarrSeriesId': int(show["id"]),
+            'overview': overview,
+            'poster': poster,
+            'fanart': fanart,
+            'audio_language': str(audio_language),
+            'sortTitle': show['sortTitle'],
+            'year': str(show['year']),
+            'alternativeTitles': alternate_titles,
+            'tags': str(tags),
+            'seriesType': show['seriesType'],
+            'imdbId': imdbId,
+            'monitored': str(bool(show['monitored']))}
 
 
 def profile_id_to_language(id_, profiles):
@@ -100,25 +81,27 @@ def episodeParser(episode):
                 else:
                     sceneName = None
 
-                if settings.general.getboolean('parse_embedded_audio_track'):audio_language = embedded_audio_reader(path_mappings.path_replace(episode['episodeFile']['path']),
-                                                       file_size=episode['episodeFile']['size'],
-                                                       episode_file_id=episode['episodeFile']['id'],
-                                                       use_cache=True)else:
-                        audio_language = []
-                        if 'language' in episode['episodeFile'] and len(episode['episodeFile']['language']):
-                            item = episode['episodeFile']['language']
-                            if isinstance(item, dict):
+                if settings.general.getboolean('parse_embedded_audio_track'):
+                    audio_language = embedded_audio_reader(path_mappings.path_replace(episode['episodeFile']['path']),
+                                                           file_size=episode['episodeFile']['size'],
+                                                           episode_file_id=episode['episodeFile']['id'],
+                                                           use_cache=True)
+                else:
+                    audio_language = []
+                    if 'language' in episode['episodeFile'] and len(episode['episodeFile']['language']):
+                        item = episode['episodeFile']['language']
+                        if isinstance(item, dict):
+                            if 'name' in item:
+                                audio_language.append(item['name'])
+                    elif 'languages' in episode['episodeFile'] and len(episode['episodeFile']['languages']):
+                        items = episode['episodeFile']['languages']
+                        if isinstance(items, list):
+                            for item in items:
                                 if 'name' in item:
                                     audio_language.append(item['name'])
-                        elif 'languages' in episode['episodeFile'] and len(episode['episodeFile']['languages']):
-                            items = episode['episodeFile']['languages']
-                            if isinstance(items, list):
-                                for item in items:
-                                    if 'name' in item:
-                                        audio_language.append(item['name'])
-                        else:
-                            audio_language = TableShows.get(
-                                TableShows.sonarrSeriesId == episode['seriesId']).audio_language
+                    else:
+                        audio_language = TableShows.get(
+                            TableShows.sonarrSeriesId == episode['seriesId']).audio_language
 
                 if 'mediaInfo' in episode['episodeFile']:
                     if 'videoCodec' in episode['episodeFile']['mediaInfo']:

@@ -15,7 +15,7 @@ from time import sleep
 from constants import headers
 from app.event_handler import event_stream
 from sonarr.sync.episodes import sync_episodes, sync_one_episode
-from sonarr.sync.series import update_series, update_one_series
+from sonarr.sync.series import sync_sonarr, update_one_series
 from radarr.sync.movies import update_movies, update_one_movie
 from sonarr.info import get_sonarr_info, url_sonarr
 from radarr.info import url_radarr
@@ -72,8 +72,7 @@ class SonarrSignalrClientLegacy:
                     event_stream(type='badges')
                     logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
                     if not args.dev:
-                        scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
-                        scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
+                        scheduler.add_job(sync_sonarr, kwargs={'send_event': True}, max_instances=1)
 
     def stop(self, log=True):
         try:
@@ -149,8 +148,7 @@ class SonarrSignalrClient:
         event_stream(type='badges')
         logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
         if not args.dev:
-            scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
-            scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
+            scheduler.add_job(sync_sonarr, kwargs={'send_event': True}, max_instances=1)
 
     def on_reconnect_handler(self):
         self.connected = False
@@ -287,7 +285,7 @@ def dispatcher(data):
             update_one_series(series_id=media_id, action=action, send_event=False)
             if episodesChanged:
                 # this will happen if a season monitored status is changed.
-                sync_episodes(series_id=media_id, send_event=False)
+                sync_episodes(serie_id=media_id, send_event=False)
         elif topic == 'episode':
             logging.debug(f'Event received from Sonarr for episode: {series_title} ({series_year}) - '
                           f'S{season_number:0>2}E{episode_number:0>2} - {episode_title}')

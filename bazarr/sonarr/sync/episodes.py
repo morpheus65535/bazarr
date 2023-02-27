@@ -3,15 +3,13 @@
 import logging
 
 from app.database import TableEpisodes
-from app.config import settings
-from utilities.path_mappings import path_mappings
+from app.event_handler import event_stream, hide_progress
+from sonarr.info import get_sonarr_info, url_sonarr
 from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
 from subtitles.mass_download import episode_download_subtitles
-from app.event_handler import event_stream, show_progress, hide_progress
-from sonarr.info import get_sonarr_info, url_sonarr
-
+from utilities.path_mappings import path_mappings
 from .parser import episodeParser
-from .utils import get_series_from_sonarr_api, get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
+from .utils import get_episodes_from_sonarr_api, get_episodes_files_from_sonarr_api
 
 
 def update_all_episodes():
@@ -19,59 +17,41 @@ def update_all_episodes():
     logging.info('BAZARR All existing episode subtitles indexed from disk.')
 
 
-def sync_episodes(series_id=None, send_event=True):
-    logging.debug('BAZARR Starting episodes sync from Sonarr.')
-    apikey_sonarr = settings.sonarr.apikey
+def sync_episodes(serie_id: int = None) -> None:
+    logging.debug(f'BAZARR Starting episodes sync for serie_id={serie_id}.')
 
     # Get current episodes id in DB
-    current_episodes_db = TableEpisodes.select(TableEpisodes.sonarrEpisodeId)\
-        .where((TableEpisodes.sonarrSeriesId == series_id) if series_id else None)\
+    current_episodes_db = TableEpisodes.select(TableEpisodes.sonarrEpisodeId) \
+        .where((TableEpisodes.sonarrSeriesId == serie_id) if serie_id else None) \
         .dicts()
 
     current_episodes_db_list = [x['sonarrEpisodeId'] for x in current_episodes_db]
 
     current_episodes_sonarr = []
 
-    # Get sonarrId for each series from database
-    seriesIdList = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr, sonarr_series_id=series_id)
-
-    series_count = len(seriesIdList)
-    for i, seriesId in enumerate(seriesIdList):
-        if send_event:
-            show_progress(id='episodes_progress',
-                          header='Syncing episodes...',
-                          name=seriesId['title'],
-                          value=i,
-                          count=series_count)
-
-        # Get episodes data for a series from Sonarr
-        episodes = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
-                                                series_id=seriesId['id'])
-        if not episodes:
-            continue
-        # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
-        if not get_sonarr_info.is_legacy():
-            episodeFiles = get_episodesFiles_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
-                                                             series_id=seriesId['id'])
-            for episode in episodes:
-                if episode['hasFile']:
-                    item = [x for x in episodeFiles if x['id'] == episode['episodeFileId']]
-                    if item:
-                        episode['episodeFile'] = item[0]
-
+    # Get episodes data for a series from Sonarr
+    episodes = get_episodes_from_sonarr_api(series_id=serie_id)
+    if not episodes:
+        return
+    # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
+    if not get_sonarr_info.is_legacy():
+        episodeFiles = get_episodes_files_from_sonarr_api(series_id=serie_id)
         for episode in episodes:
-            parsed_episode = episodeParser(episode)
-            if parsed_episode:
-                # Add episodes in sonarr to current episode list
-                current_episodes_sonarr.append(episode['id'])
-                # Parse episode data
-                if episode['id'] in current_episodes_db_list:
-                    update_episode(parsed_episode)
-                else:
-                    add_episode(parsed_episode, send_event)
+            if episode['hasFile']:
+                item = [x for x in episodeFiles if x['id'] == episode['episodeFileId']]
+                if item:
+                    episode['episodeFile'] = item[0]
 
-    if send_event:
-        hide_progress(id='episodes_progress')
+    for episode in episodes:
+        parsed_episode = episodeParser(episode)
+        if parsed_episode:
+            # Add episodes in sonarr to current episode list
+            current_episodes_sonarr.append(episode['id'])
+            # Parse episode data
+            if episode['id'] in current_episodes_db_list:
+                update_episode(parsed_episode)
+            else:
+                add_episode(parsed_episode, send_event=False)
 
     # Remove old episodes from DB
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
@@ -84,13 +64,10 @@ def sync_one_episode(episode_id, defer_search=False):
     logging.debug(
         f'BAZARR syncing this specific episode from Sonarr: {episode_id}'
     )
-    url = url_sonarr()
-    apikey_sonarr = settings.sonarr.apikey
 
     try:
         # Get episode data from sonarr api
-        episode_data = get_episodes_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
-                                                    episode_id=episode_id)
+        episode_data = get_episodes_from_sonarr_api(episode_id=episode_id)
         if not episode_data:
             # Remove episode from DB
             remove_old_episodes([episode_id])
@@ -99,8 +76,7 @@ def sync_one_episode(episode_id, defer_search=False):
         # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
         if not get_sonarr_info.is_legacy() and episode_data['hasFile']:
             episode_data['episodeFile'] = \
-                get_episodesFiles_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
-                                                  episode_file_id=episode_data['episodeFileId'])
+                get_episodes_files_from_sonarr_api(episode_file_id=episode_data['episodeFileId'])
         episode = episodeParser(episode_data)
     except Exception:
         logging.exception('BAZARR cannot get episode returned by SignalR feed from Sonarr API.')
@@ -113,8 +89,9 @@ def sync_one_episode(episode_id, defer_search=False):
     add_episode(episode)
 
     # Storing existing subtitles
-    logging.debug('BAZARR storing subtitles for this episode: {}'.format(path_mappings.path_replace(
-            episode['path'])))
+    logging.debug(
+        f"BAZARR storing subtitles for this episode: {path_mappings.path_replace(episode['path'])}"
+    )
     store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
 
     # Downloading missing subtitles
@@ -123,8 +100,9 @@ def sync_one_episode(episode_id, defer_search=False):
             f"BAZARR searching for missing subtitles is deferred until scheduled task execution for this episode: {path_mappings.path_replace(episode['path'])}"
         )
     else:
-        logging.debug('BAZARR downloading missing subtitles for this episode: {}'.format(path_mappings.path_replace(
-            episode['path'])))
+        logging.debug(
+            f"BAZARR downloading missing subtitles for this episode: {path_mappings.path_replace(episode['path'])}"
+        )
         episode_download_subtitles(episode_id)
 
 

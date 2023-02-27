@@ -573,10 +573,8 @@ def save_settings(settings_items):
     if audio_tracks_parsing_changed:
         from .scheduler import scheduler
         if settings.general.getboolean('use_sonarr'):
-            from sonarr.sync.episodes import sync_episodes
-            from sonarr.sync.series import update_series
-            scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
-            scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
+            from sonarr.sync.series import sync_sonarr
+            scheduler.add_job(sync_sonarr, kwargs={'send_event': True}, max_instances=1)
         if settings.general.getboolean('use_radarr'):
             from radarr.sync.movies import update_movies
             scheduler.add_job(update_movies, kwargs={'send_event': True}, max_instances=1)

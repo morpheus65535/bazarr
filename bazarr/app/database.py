@@ -278,6 +278,19 @@ class TableShows(BaseModel):
     class Meta:
         table_name = 'table_shows'
 
+    @classmethod
+    def need_update(cls, show):
+        try:
+            data = cls.get(cls.sonarrSeriesId == show['sonarrSeriesId']).__data__
+        except cls.DoesNotExist:
+            return
+        for key, value in data.items():
+            if not show.get(key):
+                continue
+            if value != show[key]:
+                return True
+        return False
+
 
 class TableShowsRootfolder(BaseModel):
     accessible = IntegerField(null=True)

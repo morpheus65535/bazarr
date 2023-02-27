@@ -18,8 +18,8 @@ from dateutil import tz
 import logging
 
 from app.announcements import get_announcements_to_file
-from sonarr.sync.series import update_series
-from sonarr.sync.episodes import sync_episodes, update_all_episodes
+from sonarr.sync.series import sync_sonarr
+from sonarr.sync.episodes import update_all_episodes
 from radarr.sync.movies import update_movies, update_all_movies
 from subtitles.wanted import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies
 from subtitles.upgrade import upgrade_subtitles
@@ -162,12 +162,8 @@ class Scheduler:
     def __sonarr_update_task(self):
         if settings.general.getboolean('use_sonarr'):
             self.aps_scheduler.add_job(
-                update_series, IntervalTrigger(minutes=int(settings.sonarr.series_sync)), max_instances=1,
-                coalesce=True, misfire_grace_time=15, id='update_series', name='Update Series list from Sonarr',
-                replace_existing=True)
-            self.aps_scheduler.add_job(
-                sync_episodes, IntervalTrigger(minutes=int(settings.sonarr.episodes_sync)), max_instances=1,
-                coalesce=True, misfire_grace_time=15, id='sync_episodes', name='Sync episodes with Sonarr',
+                sync_sonarr, IntervalTrigger(minutes=int(settings.sonarr.series_sync)), max_instances=1,
+                coalesce=True, misfire_grace_time=15, id='sync_sonarr', name='Update Series/Episodes list from Sonarr',
                 replace_existing=True)
 
     def __radarr_update_task(self):
@@ -308,8 +304,7 @@ scheduler = Scheduler()
 # Force the execution of the sync process with Sonarr and Radarr after migration to v0.9.1
 if 'BAZARR_AUDIO_PROFILES_MIGRATION' in os.environ:
     if settings.general.getboolean('use_sonarr'):
-        scheduler.aps_scheduler.modify_job('update_series', next_run_time=datetime.now())
-        scheduler.aps_scheduler.modify_job('sync_episodes', next_run_time=datetime.now())
+        scheduler.aps_scheduler.modify_job('sync_sonarr', next_run_time=datetime.now())
     if settings.general.getboolean('use_radarr'):
         scheduler.aps_scheduler.modify_job('update_movies', next_run_time=datetime.now())
     del os.environ['BAZARR_AUDIO_PROFILES_MIGRATION']

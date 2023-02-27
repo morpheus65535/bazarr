@@ -1,5 +1,4 @@
-# coding=utf-8
-
+import contextlib
 from .app import socketio
 
 
@@ -12,10 +11,8 @@ def event_stream(type, action="update", payload=None):
         :param payload: The payload to send, can be anything
     """
 
-    try:
+    with contextlib.suppress(ValueError, TypeError):
         payload = int(payload)
-    except (ValueError, TypeError):
-        pass
     socketio.emit("data", {"type": type, "action": action, "payload": payload})
 
 
