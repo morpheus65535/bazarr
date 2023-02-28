@@ -9,6 +9,7 @@ import {
   Accordion,
   Button,
   Checkbox,
+  Select,
   Stack,
   Switch,
   Text,
@@ -31,6 +32,21 @@ const defaultCutoffOptions: SelectorOption<Language.ProfileItem>[] = [
       hi: "False",
       language: "any",
     },
+  },
+];
+
+const subtitlesTypeOptions: SelectorOption<string>[] = [
+  {
+    label: "Normal or hearing-impaired",
+    value: "normal",
+  },
+  {
+    label: "Hearing-impaired required",
+    value: "hi",
+  },
+  {
+    label: "Forced (foreign part only)",
+    value: "forced",
   },
 ];
 
@@ -157,43 +173,38 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         },
       },
       {
-        Header: "Forced",
+        Header: "Subtitles Type",
         accessor: "forced",
         Cell: ({ row: { original: item, index }, value }) => {
+          const selectValue = useMemo(() => {
+            if (item.forced === "True") {
+              return "forced";
+            } else if (item.hi === "True") {
+              return "hi";
+            } else {
+              return "normal";
+            }
+          }, [item.forced, item.hi]);
+
           return (
-            <Checkbox
-              checked={value === "True"}
-              onChange={({ currentTarget: { checked } }) => {
-                action.mutate(index, {
-                  ...item,
-                  forced: checked ? "True" : "False",
-                  hi: checked ? "False" : item.hi,
-                });
+            <Select
+              value={selectValue}
+              data={subtitlesTypeOptions}
+              onChange={(value) => {
+                if (value) {
+                  action.mutate(index, {
+                    ...item,
+                    hi: value === "hi" ? "True" : "False",
+                    forced: value === "forced" ? "True" : "False",
+                  });
+                }
               }}
-            ></Checkbox>
+            ></Select>
           );
         },
       },
       {
-        Header: "HI",
-        accessor: "hi",
-        Cell: ({ row: { original: item, index }, value }) => {
-          return (
-            <Checkbox
-              checked={value === "True"}
-              onChange={({ currentTarget: { checked } }) => {
-                action.mutate(index, {
-                  ...item,
-                  hi: checked ? "True" : "False",
-                  forced: checked ? "False" : item.forced,
-                });
-              }}
-            ></Checkbox>
-          );
-        },
-      },
-      {
-        Header: "Exclude Audio",
+        Header: "Exclude If Matching Audio",
         accessor: "audio_exclude",
         Cell: ({ row: { original: item, index }, value }) => {
           return (
@@ -317,8 +328,6 @@ export const ProfileEditModal = withModal(
   "languages-profile-editor",
   {
     title: "Edit Languages Profile",
-    size: "lg",
+    size: "xl",
   }
 );
-
-export default ProfileEditForm;
