@@ -54,7 +54,7 @@ def get_series_from_sonarr_api(sonarr_series_id: int = None) -> List[Dict]:
     return call_sonarr_api(url_sonarr_api_series)
 
 
-def get_episodes_from_sonarr_api(series_id: int = None, episode_id: int = None) -> Optional[List[Dict]]:
+def get_episodes_from_sonarr_api(series_id: int = None, episode_id: int = None) -> Optional[Union[List[Dict], Dict]]:
     if series_id:
         url_sonarr_api_episode = f"{url_sonarr()}/api/{'' if get_sonarr_info.is_legacy() else 'v3/'}episode?seriesId={series_id}&apikey={settings.sonarr.apikey}"
     elif episode_id:
@@ -65,7 +65,7 @@ def get_episodes_from_sonarr_api(series_id: int = None, episode_id: int = None) 
     return call_sonarr_api(url_sonarr_api_episode)
 
 
-def get_episodes_files_from_sonarr_api(series_id=None, episode_file_id=None) -> Optional[List[Dict]]:
+def get_episodes_files_from_sonarr_api(series_id=None, episode_file_id=None) -> Optional[Union[List[Dict], Dict]]:
 
     if series_id:
         url_sonarr_api_episodeFiles = f"{url_sonarr()}/api/v3/episodeFile?seriesId={series_id}&apikey={settings.sonarr.apikey}"
@@ -77,7 +77,7 @@ def get_episodes_files_from_sonarr_api(series_id=None, episode_file_id=None) -> 
     return call_sonarr_api(url_sonarr_api_episodeFiles)
 
 
-def call_sonarr_api(url: str) -> List[Dict]:
+def call_sonarr_api(url: str) -> Optional[Union[List[Dict], Dict]]:
     try:
         r = requests.get(url, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
         r.raise_for_status()
@@ -93,6 +93,4 @@ def call_sonarr_api(url: str) -> List[Dict]:
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to call Sonarr API.")
         raise
-
-    result = r.json()
-    return [result] if isinstance(result, dict) else r.json()
+    return r.json()
