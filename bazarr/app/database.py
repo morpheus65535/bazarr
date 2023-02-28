@@ -41,6 +41,7 @@ if postgresql:
                                            host=settings.postgresql.host,
                                            port=settings.postgresql.port,
                                            autocommit=True,
+                                           autorollback=True,
                                            autoconnect=True,
                                            )
     migrator = PostgresqlMigrator(database)
