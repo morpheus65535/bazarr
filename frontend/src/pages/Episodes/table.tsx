@@ -47,7 +47,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
         forced,
         provider,
         subtitle,
-        original_format,
+        original_format: originalFormat,
       } = result;
       const { sonarrSeriesId: seriesId, sonarrEpisodeId: episodeId } = item;
 
@@ -60,7 +60,8 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
           forced,
           provider,
           subtitle,
-          original_format,
+          // eslint-disable-next-line camelcase
+          original_format: originalFormat,
         },
       });
     },
@@ -129,12 +130,12 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
               ></Subtitle>
             ));
 
-            let raw_subtitles = episode.subtitles;
+            let rawSubtitles = episode.subtitles;
             if (onlyDesired) {
-              raw_subtitles = filterSubtitleBy(raw_subtitles, profileItems);
+              rawSubtitles = filterSubtitleBy(rawSubtitles, profileItems);
             }
 
-            const subtitles = raw_subtitles.map((val, idx) => (
+            const subtitles = rawSubtitles.map((val, idx) => (
               <Subtitle
                 key={BuildKey(idx, val.code2, "valid")}
                 seriesId={seriesId}

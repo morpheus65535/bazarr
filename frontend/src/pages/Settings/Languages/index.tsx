@@ -43,8 +43,8 @@ export function useLatestProfiles() {
 
 const SettingsLanguagesView: FunctionComponent = () => {
   const { data: languages } = useLanguages();
-  const { data: und_audio_languages } = useEnabledLanguages();
-  const { data: und_embedded_subtitles_languages } = useEnabledLanguages();
+  const { data: undAudioLanguages } = useEnabledLanguages();
+  const { data: undEmbeddedSubtitlesLanguages } = useEnabledLanguages();
   return (
     <Layout name="Languages">
       <Section header="Subtitles Language">
@@ -83,7 +83,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
             settingKey={defaultUndAudioLang}
             label="Treat unknown language audio track as (changing this will trigger missing subtitles calculation)"
             placeholder="Select languages"
-            options={und_audio_languages.map((v) => {
+            options={undAudioLanguages.map((v) => {
               return { label: v.name, value: v.code2 };
             })}
             settingOptions={{
@@ -97,7 +97,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
           settingKey={defaultUndEmbeddedSubtitlesLang}
           label="Treat unknown language embedded subtitles track as (changing this will trigger full subtitles indexation using cache)"
           placeholder="Select languages"
-          options={und_embedded_subtitles_languages.map((v) => {
+          options={undEmbeddedSubtitlesLanguages.map((v) => {
             return { label: v.name, value: v.code2 };
           })}
           settingOptions={{

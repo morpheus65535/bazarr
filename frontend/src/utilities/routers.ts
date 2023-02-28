@@ -3,6 +3,7 @@
 
 import type { Blocker, History, Transition } from "history";
 import { useContext, useEffect } from "react";
+// eslint-disable-next-line camelcase
 import { UNSAFE_NavigationContext } from "react-router-dom";
 
 export function useBlocker(blocker: Blocker, when = true) {
