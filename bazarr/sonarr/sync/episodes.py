@@ -87,6 +87,8 @@ def sync_one_episode(episode_id, defer_search=False):
     # Remove episode from DB
     if not episode:
         remove_old_episodes([episode_id])
+        logging.debug(f'BAZARR deleted this episode from the database:{episode_id}')
+        return
 
     add_episode(episode)
 

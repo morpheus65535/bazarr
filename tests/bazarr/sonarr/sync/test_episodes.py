@@ -63,7 +63,7 @@ sonarr_response = {
 
 def test_sync_one_episode_add(mocker, db):
     mocker.patch('sonarr.sync.episodes.get_episodes_from_sonarr_api', return_value=sonarr_response)
-    mocker.patch('sonarr.sync.episodes.get_episodesFiles_from_sonarr_api', return_value=sonarr_response['episodeFile'])
+    mocker.patch('sonarr.sync.episodes.get_episodes_files_from_sonarr_api', return_value=sonarr_response['episodeFile'])
     mocker.patch("sonarr.sync.episodes.get_sonarr_info.is_legacy", return_value=False)
     mocker.patch('sonarr.sync.episodes.event_stream')
     # Arrange
@@ -81,7 +81,7 @@ def test_sync_one_episode_add(mocker, db):
     assert result.episode == 1
     assert result.subtitles is None
     assert result.audio_codec == "AC3"
-    assert result.audio_language == "[]"
+    assert result.audio_language == "['English']"
     assert result.episode_file_id == 118111
     assert result.file_size == 416622404
     assert result.format == "SDTV"
@@ -93,7 +93,7 @@ def test_sync_one_episode_add(mocker, db):
 def test_sync_one_episode_update(mocker, db):
     sonarr_response['title'] = 'test2'
     mocker.patch('sonarr.sync.episodes.get_episodes_from_sonarr_api', return_value=sonarr_response)
-    mocker.patch('sonarr.sync.episodes.get_episodesFiles_from_sonarr_api', return_value=sonarr_response['episodeFile'])
+    mocker.patch('sonarr.sync.episodes.get_episodes_files_from_sonarr_api', return_value=sonarr_response['episodeFile'])
     mocker.patch("sonarr.sync.episodes.get_sonarr_info.is_legacy", return_value=False)
     mocker.patch('sonarr.sync.episodes.event_stream')
     # Arrange
@@ -112,7 +112,7 @@ def test_sync_one_episode_update(mocker, db):
     assert result.episode == 1
     assert result.subtitles is None
     assert result.audio_codec == "AC3"
-    assert result.audio_language == "[]"
+    assert result.audio_language == "['English']"
     assert result.episode_file_id == 118111
     assert result.file_size == 416622404
     assert result.format == "SDTV"
@@ -122,8 +122,9 @@ def test_sync_one_episode_update(mocker, db):
 
 
 def test_sync_one_episode_remove(mocker, db):
-    mocker.patch('sonarr.sync.episodes.get_episodes_from_sonarr_api', return_value={})
-    mocker.patch('sonarr.sync.episodes.get_episodesFiles_from_sonarr_api', return_value=sonarr_response['episodeFile'])
+    sonarr_response['hasFile'] = False
+    mocker.patch('sonarr.sync.episodes.get_episodes_from_sonarr_api', return_value=sonarr_response)
+    mocker.patch('sonarr.sync.episodes.get_episodes_files_from_sonarr_api', return_value=sonarr_response['episodeFile'])
     mocker.patch("sonarr.sync.episodes.get_sonarr_info.is_legacy", return_value=False)
     mocker.patch('sonarr.sync.episodes.event_stream')
     # Arrange
