@@ -26,7 +26,7 @@ class GestdownSubtitle(Subtitle):
         self.page_link = _BASE_URL + data["downloadUri"]
         self._id = data["subtitleId"]
         self.release_info = data["version"]
-        self._matches = {"title", "series", "season", "episode"}
+        self._matches = {"title", "series", "season", "episode", "tvdb_id"}
 
     def get_matches(self, video):
         update_matches(self._matches, video, self.release_info)
@@ -106,9 +106,9 @@ class GestdownProvider(Provider):
 
     def _search_show(self, video):
         try:
-            response = self._session.get(f"{_BASE_URL}/shows/search/{video.series}")
+            response = self._session.get(f"{_BASE_URL}/shows/external/tvdb/{video.series_tvdb_id}")
             response.raise_for_status()
-            return response.json()["shows"][0]
+            return response.json()["shows"]
         except HTTPError as error:
             if error.response.status_code == 404:
                 return None
@@ -118,14 +118,18 @@ class GestdownProvider(Provider):
     @_retry_on_423
     def list_subtitles(self, video, languages):
         subtitles = []
-        show = self._search_show(video)
-        if show is None:
+        shows = self._search_show(video)
+        if shows is None:
             logger.debug("Couldn't find the show")
             return subtitles
 
         for language in languages:
             try:
-                subtitles += self._subtitles_search(video, language, show["id"])
+                for show in shows:
+                    subs = list(self._subtitles_search(video, language, show["id"]))
+                    if len(subs) > 0:
+                        subtitles += subs
+                        continue
             except HTTPError as error:
                 if error.response.status_code == 404:
                     logger.debug("Couldn't find the show or its season/episode")
