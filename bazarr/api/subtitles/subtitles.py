@@ -94,7 +94,8 @@ class Subtitles(Resource):
                                      radarr_id=id)
         else:
             use_original_format = True if args.get('original_format') == 'true' else False
-            subtitles_apply_mods(language, subtitles_path, [action], use_original_format)
+            subtitles_apply_mods(language=language, subtitle_path=subtitles_path, mods=[action],
+                                 use_original_format=use_original_format, video_path=video_path)
 
         # apply chmod if required
         chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
