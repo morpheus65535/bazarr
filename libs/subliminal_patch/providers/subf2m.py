@@ -5,15 +5,11 @@ import functools
 import logging
 import re
 import time
-import ssl
 import urllib.parse
-
-from urllib3 import poolmanager
 
 from guessit import guessit
 
 from requests import Session
-from requests.adapters import HTTPAdapter
 from bs4 import BeautifulSoup as bso
 from guessit import guessit
 from requests import Session
@@ -120,20 +116,6 @@ _LANGUAGE_MAP = {
 }
 
 
-class _Adapter(HTTPAdapter):
-    def init_poolmanager(self, connections, maxsize, block=False):
-        ctx = ssl.create_default_context()
-        ctx.set_ciphers("DEFAULT@SECLEVEL=0")
-        ctx.check_hostname = False
-        self.poolmanager = poolmanager.PoolManager(
-            num_pools=connections,
-            maxsize=maxsize,
-            block=block,
-            ssl_version=ssl.PROTOCOL_TLS,
-            ssl_context=ctx,
-        )
-
-
 class Subf2mProvider(Provider):
     provider_name = "subf2m"
 
@@ -162,8 +144,6 @@ class Subf2mProvider(Provider):
 
     def initialize(self):
         self._session = Session()
-        self._session.mount("https://", _Adapter())
-
         self._session.verify = self._verify_ssl
 
         self._session.headers.update({"user-agent": "Bazarr"})
