@@ -119,7 +119,7 @@ def sync_episodes(series_id=None, send_event=True):
                                           TableEpisodes.path,
                                           TableEpisodes.season,
                                           TableEpisodes.episode,
-                                          TableEpisodes.scene_name,
+                                          TableEpisodes.sceneName,
                                           TableEpisodes.monitored,
                                           TableEpisodes.format,
                                           TableEpisodes.resolution,
@@ -149,12 +149,12 @@ def sync_episodes(series_id=None, send_event=True):
     # Insert new episodes in DB
     for added_episode in episodes_to_add:
         try:
-            result = TableEpisodes.insert(added_episode).on_conflict(action='IGNORE').execute()
+            result = TableEpisodes.insert(added_episode).on_conflict_ignore().execute()
         except IntegrityError as e:
             logging.error(f"BAZARR cannot insert episode {added_episode['path']} because of {e}")
             continue
         else:
-            if result > 0:
+            if result and result > 0:
                 altered_episodes.append([added_episode['sonarrEpisodeId'],
                                          added_episode['path'],
                                          added_episode['monitored']])

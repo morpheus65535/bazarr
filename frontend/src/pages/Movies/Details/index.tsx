@@ -61,7 +61,7 @@ const MovieDetailView: FunctionComponent = () => {
         forced,
         provider,
         subtitle,
-        original_format,
+        original_format: originalFormat,
       } = result;
       const { radarrId } = item;
 
@@ -73,7 +73,8 @@ const MovieDetailView: FunctionComponent = () => {
           forced,
           provider,
           subtitle,
-          original_format,
+          // eslint-disable-next-line camelcase
+          original_format: originalFormat,
         },
       });
     },

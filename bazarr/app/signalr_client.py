@@ -20,7 +20,6 @@ from radarr.sync.movies import update_movies, update_one_movie
 from sonarr.info import get_sonarr_info, url_sonarr
 from radarr.info import url_radarr
 from .database import TableShows
-from .event_handler import event_stream
 
 from .config import settings
 from .scheduler import scheduler
@@ -285,10 +284,10 @@ def dispatcher(data):
 
         if topic == 'series':
             logging.debug(f'Event received from Sonarr for series: {series_title} ({series_year})')
-            update_one_series(series_id=media_id, action=action)
+            update_one_series(series_id=media_id, action=action, send_event=False)
             if episodesChanged:
                 # this will happen if a season monitored status is changed.
-                sync_episodes(series_id=media_id, send_event=True)
+                sync_episodes(series_id=media_id, send_event=False)
         elif topic == 'episode':
             logging.debug(f'Event received from Sonarr for episode: {series_title} ({series_year}) - '
                           f'S{season_number:0>2}E{episode_number:0>2} - {episode_title}')

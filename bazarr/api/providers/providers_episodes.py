@@ -13,7 +13,6 @@ from subtitles.indexer.series import store_subtitles
 
 from ..utils import authenticate
 
-
 api_ns_providers_episodes = Namespace('Providers Episodes', description='List and download episodes subtitles manually')
 
 
@@ -49,10 +48,10 @@ class ProviderEpisodes(Resource):
         args = self.get_request_parser.parse_args()
         sonarrEpisodeId = args.get('episodeid')
         episodeInfo = TableEpisodes.select(TableEpisodes.path,
-                                           TableEpisodes.scene_name,
+                                           TableEpisodes.sceneName,
                                            TableShows.title,
                                            TableShows.profileId) \
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
             .dicts() \
             .get_or_none()
@@ -62,7 +61,7 @@ class ProviderEpisodes(Resource):
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['scene_name'] or "None"
+        sceneName = episodeInfo['sceneName'] or "None"
         profileId = episodeInfo['profileId']
 
         providers_list = get_providers()
@@ -92,9 +91,11 @@ class ProviderEpisodes(Resource):
         args = self.post_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.path,
-                                           TableEpisodes.scene_name,
-                                           TableShows.title) \
+        episodeInfo = TableEpisodes.select(
+            TableEpisodes.audio_language,
+            TableEpisodes.path,
+            TableEpisodes.sceneName,
+            TableShows.title) \
             .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
             .dicts() \
@@ -105,7 +106,7 @@ class ProviderEpisodes(Resource):
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['scene_name'] or "None"
+        sceneName = episodeInfo['sceneName'] or "None"
 
         hi = args.get('hi').capitalize()
         forced = args.get('forced').capitalize()
@@ -113,7 +114,7 @@ class ProviderEpisodes(Resource):
         selected_provider = args.get('provider')
         subtitle = args.get('subtitle')
 
-        audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
+        audio_language_list = get_audio_profile_languages(episodeInfo["audio_language"])
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
         else:
@@ -123,26 +124,11 @@ class ProviderEpisodes(Resource):
             result = manual_download_subtitle(episodePath, audio_language, hi, forced, subtitle, selected_provider,
                                               sceneName, title, 'series', use_original_format,
                                               profile_id=get_profile_id(episode_id=sonarrEpisodeId))
-            if result is not None:
-                message = result[0]
-                path = result[1]
-                forced = result[5]
-                if result[8]:
-                    language_code = result[2] + ":hi"
-                elif forced:
-                    language_code = result[2] + ":forced"
-                else:
-                    language_code = result[2]
-                provider = result[3]
-                score = result[4]
-                subs_id = result[6]
-                subs_path = result[7]
-                history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id,
-                            subs_path)
+            if result:
+                history_log(2, sonarrSeriesId, sonarrEpisodeId, result)
                 if not settings.general.getboolean('dont_notify_manual_actions'):
-                    send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-                store_subtitles(path, episodePath)
-            return result, 201
+                    send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
+                store_subtitles(result.path, episodePath)
         except OSError:
             pass
 

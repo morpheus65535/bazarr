@@ -126,8 +126,8 @@ def fake_streams():
 
 
 @pytest.mark.parametrize("tags_", [{}, {"language": "und", "title": "Unknown"}])
-def test_list_subtitles_unknown_as_english(mocker, tags_):
-    with EmbeddedSubtitlesProvider(unknown_as_english=True):
+def test_list_subtitles_unknown_as_english(mocker, tags_, video_single_language):
+    with EmbeddedSubtitlesProvider(unknown_as_english=True) as provider:
         fake = FFprobeSubtitleStream(
             {"index": 3, "codec_name": "subrip", "tags": tags_}
         )
@@ -135,9 +135,32 @@ def test_list_subtitles_unknown_as_english(mocker, tags_):
             "subliminal_patch.providers.embeddedsubtitles._MemoizedFFprobeVideoContainer.get_subtitles",
             return_value=[fake],
         )
-        streams = _MemoizedFFprobeVideoContainer.get_subtitles("")
-        assert len(streams) == 1
-        assert streams[0].language == Language.fromietf("en")
+        result = provider.list_subtitles(
+            video_single_language, {Language.fromalpha2("en")}
+        )
+        assert len(result) == 1
+
+
+def test_list_subtitles_unknown_as_english_w_real_english_subtitles(
+    video_single_language, mocker
+):
+    with EmbeddedSubtitlesProvider(unknown_as_english=True) as provider:
+        fakes = [
+            FFprobeSubtitleStream(
+                {"index": 3, "codec_name": "subrip", "tags": {"language": "und"}}
+            ),
+            FFprobeSubtitleStream(
+                {"index": 2, "codec_name": "subrip", "tags": {"language": "eng"}}
+            ),
+        ]
+        mocker.patch(
+            "subliminal_patch.providers.embeddedsubtitles._MemoizedFFprobeVideoContainer.get_subtitles",
+            return_value=fakes,
+        )
+        result = provider.list_subtitles(
+            video_single_language, {Language.fromalpha2("en")}
+        )
+        assert len(result) == 1
 
 
 @pytest.mark.parametrize("tags_", [{}, {"language": "und", "title": "Unknown"}])

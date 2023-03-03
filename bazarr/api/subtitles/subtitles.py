@@ -7,6 +7,7 @@ import gc
 from flask_restx import Resource, Namespace, reqparse
 
 from app.database import TableEpisodes, TableMovies
+from languages.get_languages import alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
 from subtitles.tools.subsyncer import SubSyncer
 from subtitles.tools.translate import translate_subtitles_file
@@ -81,7 +82,7 @@ class Subtitles(Resource):
             del subsync
             gc.collect()
         elif action == 'translate':
-            from_language = os.path.splitext(subtitles_path)[0].rsplit(".", 1)[1].replace('_', '-')
+            from_language = subtitles_lang_from_filename(subtitles_path)
             dest_language = language
             forced = True if args.get('forced') == 'true' else False
             hi = True if args.get('hi') == 'true' else False
@@ -93,7 +94,8 @@ class Subtitles(Resource):
                                      radarr_id=id)
         else:
             use_original_format = True if args.get('original_format') == 'true' else False
-            subtitles_apply_mods(language, subtitles_path, [action], use_original_format)
+            subtitles_apply_mods(language=language, subtitle_path=subtitles_path, mods=[action],
+                                 use_original_format=use_original_format, video_path=video_path)
 
         # apply chmod if required
         chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
@@ -110,3 +112,25 @@ class Subtitles(Resource):
             event_stream(type='movie', payload=int(id))
 
         return '', 204
+
+
+def subtitles_lang_from_filename(path):
+    split_extensionless_path = os.path.splitext(path.lower())[0].rsplit(".", 2)
+
+    if len(split_extensionless_path) < 2:
+        return None
+    elif len(split_extensionless_path) == 2:
+        return_lang = split_extensionless_path[-1]
+    else:
+        first_ext = split_extensionless_path[-1]
+        second_ext = split_extensionless_path[-2]
+
+        if first_ext in ['hi', 'sdh', 'cc']:
+            if alpha3_from_alpha2(second_ext):
+                return_lang = second_ext
+            else:
+                return first_ext
+        else:
+            return_lang = first_ext
+
+    return return_lang.replace('_', '-')

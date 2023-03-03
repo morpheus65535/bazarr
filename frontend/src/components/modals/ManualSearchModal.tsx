@@ -154,8 +154,8 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       {
         accessor: "matches",
         Cell: (row) => {
-          const { matches, dont_matches } = row.row.original;
-          return <StateIcon matches={matches} dont={dont_matches}></StateIcon>;
+          const { matches, dont_matches: dont } = row.row.original;
+          return <StateIcon matches={matches} dont={dont}></StateIcon>;
         },
       },
       {

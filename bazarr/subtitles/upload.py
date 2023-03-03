@@ -10,24 +10,24 @@ from subliminal_patch.core import save_subtitles
 from subliminal_patch.subtitle import Subtitle
 from pysubs2.formats import get_format_identifier
 
-from languages.get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, \
-    alpha2_from_language, alpha3_from_language
+from languages.get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from app.config import settings, get_array_from
 from utilities.helper import get_target_folder, force_unicode
-from utilities.post_processing import pp_replace
+from utilities.post_processing import pp_replace, set_chmod
 from utilities.path_mappings import path_mappings
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
 from languages.custom_lang import CustomLanguage
 from app.database import TableEpisodes, TableMovies, TableShows, get_profiles_list
 from app.event_handler import event_stream
+from subtitles.processing import ProcessSubtitlesResult
 
 from .sync import sync_subtitles
 from .post_processing import postprocessing
 
 
-def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_type, subtitle, audio_language):
-    logging.debug('BAZARR Manually uploading subtitles for this file: ' + path)
+def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, audio_language):
+    logging.debug(f'BAZARR Manually uploading subtitles for this file: {path}')
 
     single = settings.general.getboolean('single_language')
 
@@ -120,7 +120,6 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
         modifier_string = " forced"
     else:
         modifier_string = ""
-    message = language_from_alpha3(language) + modifier_string + " Subtitles manually uploaded."
 
     if hi:
         modifier_code = ":hi"
@@ -131,8 +130,6 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
     uploaded_language_code3 = language + modifier_code
     uploaded_language = language_from_alpha3(language) + modifier_string
     uploaded_language_code2 = alpha2_from_alpha3(language) + modifier_code
-    audio_language_code2 = alpha2_from_language(audio_language)
-    audio_language_code3 = alpha3_from_language(audio_language)
 
     if media_type == 'series':
         if not episode_metadata:
@@ -152,9 +149,10 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
 
     if use_postprocessing:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,
-                             uploaded_language_code3, audio_language, audio_language_code2, audio_language_code3, 100,
-                             "1", "manual", series_id, episode_id)
+                             uploaded_language_code3, audio_language['name'], audio_language['code2'],
+                             audio_language['code3'], 100, "1", "manual", series_id, episode_id)
         postprocessing(command, path)
+        set_chmod(subtitles_path=subtitle_path)
 
     if media_type == 'series':
         reversed_path = path_mappings.path_replace_reverse(path)
@@ -169,4 +167,15 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
         event_stream(type='movie', action='update', payload=movie_metadata['radarrId'])
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata['radarrId'])
 
-    return message, reversed_path, reversed_subtitles_path
+    result = ProcessSubtitlesResult(message=language_from_alpha3(language) + modifier_string + " Subtitles manually "
+                                                                                               "uploaded.",
+                                    reversed_path=reversed_path,
+                                    downloaded_language_code2=uploaded_language_code2,
+                                    downloaded_provider=None,
+                                    score=None,
+                                    forced=None,
+                                    subtitle_id=None,
+                                    reversed_subtitles_path=reversed_subtitles_path,
+                                    hearing_impaired=None)
+
+    return result

@@ -74,4 +74,8 @@ declare namespace FormType {
     subtitle: unknown;
     original_format: PythonBoolean;
   }
+
+  interface AddAnnouncementsDismiss {
+    hash: number;
+  }
 }

@@ -1,8 +1,20 @@
 import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 import { useEnabledLanguages } from "@/utilities/languages";
 import { FunctionComponent } from "react";
-import { Check, CollapseBox, Layout, Message, Section } from "../components";
-import { enabledLanguageKey, languageProfileKey } from "../keys";
+import {
+  Check,
+  CollapseBox,
+  Layout,
+  Message,
+  Section,
+  Selector,
+} from "../components";
+import {
+  defaultUndAudioLang,
+  defaultUndEmbeddedSubtitlesLang,
+  enabledLanguageKey,
+  languageProfileKey,
+} from "../keys";
 import { useSettingValue } from "../utilities/hooks";
 import { LanguageSelector, ProfileSelector } from "./components";
 import Table from "./table";
@@ -31,6 +43,8 @@ export function useLatestProfiles() {
 
 const SettingsLanguagesView: FunctionComponent = () => {
   const { data: languages } = useLanguages();
+  const { data: undAudioLanguages } = useEnabledLanguages();
+  const { data: undEmbeddedSubtitlesLanguages } = useEnabledLanguages();
   return (
     <Layout name="Languages">
       <Section header="Subtitles Language">
@@ -53,6 +67,43 @@ const SettingsLanguagesView: FunctionComponent = () => {
           settingKey={enabledLanguageKey}
           options={languages ?? []}
         ></LanguageSelector>
+      </Section>
+
+      <Section header="Embedded Tracks Language">
+        <Check
+          label="Deep analyze media file to get audio tracks language."
+          settingKey="settings-general-parse_embedded_audio_track"
+        ></Check>
+        <CollapseBox
+          indent
+          settingKey="settings-general-parse_embedded_audio_track"
+        >
+          <Selector
+            clearable
+            settingKey={defaultUndAudioLang}
+            label="Treat unknown language audio track as (changing this will trigger missing subtitles calculation)"
+            placeholder="Select languages"
+            options={undAudioLanguages.map((v) => {
+              return { label: v.name, value: v.code2 };
+            })}
+            settingOptions={{
+              onSubmit: (v) => (v === null ? "" : v),
+            }}
+          ></Selector>
+        </CollapseBox>
+
+        <Selector
+          clearable
+          settingKey={defaultUndEmbeddedSubtitlesLang}
+          label="Treat unknown language embedded subtitles track as (changing this will trigger full subtitles indexation using cache)"
+          placeholder="Select languages"
+          options={undEmbeddedSubtitlesLanguages.map((v) => {
+            return { label: v.name, value: v.code2 };
+          })}
+          settingOptions={{
+            onSubmit: (v) => (v === null ? "" : v),
+          }}
+        ></Selector>
       </Section>
       <Section header="Languages Profiles">
         <Table></Table>

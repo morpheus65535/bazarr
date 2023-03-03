@@ -8,7 +8,7 @@ from functools import reduce
 from app.database import get_exclusion_clause, TableMovies
 from api.swaggerui import subtitles_language_model
 
-from ..utils import authenticate, postprocessMovie
+from api.utils import authenticate, postprocess
 
 
 api_ns_movies_wanted = Namespace('Movies Wanted', description='List movies wanted subtitles')
@@ -75,14 +75,14 @@ class MoviesWanted(Resource):
                                         TableMovies.tags,
                                         TableMovies.monitored)\
                 .where(wanted_condition)\
-                .order_by(TableMovies.rowid.desc())\
-                .limit(length)\
-                .offset(start)\
-                .dicts()
+                .order_by(TableMovies.rowid.desc())
+            if length > 0:
+                result = result.limit(length).offset(start)
+            result = result.dicts()
         result = list(result)
 
         for item in result:
-            postprocessMovie(item)
+            postprocess(item)
 
         count_conditions = [(TableMovies.missing_subtitles != '[]')]
         count_conditions += get_exclusion_clause('movie')

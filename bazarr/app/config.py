@@ -74,12 +74,15 @@ defaults = {
         'days_to_upgrade_subs': '7',
         'upgrade_manual': 'True',
         'anti_captcha_provider': 'None',
-        'wanted_search_frequency': '3',
-        'wanted_search_frequency_movie': '3',
+        'wanted_search_frequency': '6',
+        'wanted_search_frequency_movie': '6',
         'subzero_mods': '[]',
         'dont_notify_manual_actions': 'False',
         'hi_extension': 'hi',
-        'embedded_subtitles_parser': 'ffprobe'
+        'embedded_subtitles_parser': 'ffprobe',
+        'default_und_audio_lang': '',
+        'default_und_embedded_subtitles_lang': '',
+        'parse_embedded_audio_track': 'False'
     },
     'auth': {
         'type': 'None',
@@ -101,6 +104,7 @@ defaults = {
         'port': '8989',
         'base_url': '/',
         'ssl': 'False',
+        'http_timeout': '60',
         'apikey': '',
         'full_update': 'Daily',
         'full_update_day': '6',
@@ -119,6 +123,7 @@ defaults = {
         'port': '7878',
         'base_url': '/',
         'ssl': 'False',
+        'http_timeout': '60',
         'apikey': '',
         'full_update': 'Daily',
         'full_update_day': '6',
@@ -159,6 +164,9 @@ defaults = {
         'vip': 'False'
     },
     'podnapisi': {
+        'verify_ssl': 'True'
+    },
+    'subf2m': {
         'verify_ssl': 'True'
     },
     'legendasdivx': {
@@ -259,6 +267,14 @@ defaults = {
         "streaming_service": 1,
         "edition": 1,
         "hearing_impaired": 1,
+    },
+    'postgresql': {
+        'enabled': 'False',
+        'host': 'localhost',
+        'port': '5432',
+        'database': '',
+        'username': '',
+        'password': '',
     }
 }
 
@@ -301,6 +317,12 @@ settings.radarr.base_url = base_url_slash_cleaner(uri=settings.radarr.base_url)
 # fixing issue with improper page_size value
 if settings.general.page_size not in ['25', '50', '100', '250', '500', '1000']:
     settings.general.page_size = defaults['general']['page_size']
+
+# increase delay between searches to reduce impact on providers
+if settings.general.wanted_search_frequency == '3':
+    settings.general.wanted_search_frequency = '6'
+if settings.general.wanted_search_frequency_movie == '3':
+    settings.general.wanted_search_frequency_movie = '6'
 
 # save updated settings to file
 if os.path.exists(os.path.join(args.config_dir, 'config', 'config.ini')):
@@ -362,6 +384,9 @@ def save_settings(settings_items):
     sonarr_exclusion_updated = False
     radarr_exclusion_updated = False
     use_embedded_subs_changed = False
+    undefined_audio_track_default_changed = False
+    undefined_subtitles_track_default_changed = False
+    audio_tracks_parsing_changed = False
 
     # Subzero Mods
     update_subzero = False
@@ -396,6 +421,15 @@ def save_settings(settings_items):
         if key in ['settings-general-use_embedded_subs', 'settings-general-ignore_pgs_subs',
                    'settings-general-ignore_vobsub_subs', 'settings-general-ignore_ass_subs']:
             use_embedded_subs_changed = True
+
+        if key == 'settings-general-default_und_audio_lang':
+            undefined_audio_track_default_changed = True
+
+        if key == 'settings-general-parse_embedded_audio_track':
+            audio_tracks_parsing_changed = True
+
+        if key == 'settings-general-default_und_embedded_subtitles_lang':
+            undefined_subtitles_track_default_changed = True
 
         if key in ['settings-general-base_url', 'settings-sonarr-base_url', 'settings-radarr-base_url']:
             value = base_url_slash_cleaner(value)
@@ -518,7 +552,7 @@ def save_settings(settings_items):
 
             update_subzero = True
 
-    if use_embedded_subs_changed:
+    if use_embedded_subs_changed or undefined_audio_track_default_changed:
         from .scheduler import scheduler
         from subtitles.indexer.series import list_missing_subtitles
         from subtitles.indexer.movies import list_missing_subtitles_movies
@@ -526,6 +560,26 @@ def save_settings(settings_items):
             scheduler.add_job(list_missing_subtitles, kwargs={'send_event': True})
         if settings.general.getboolean('use_radarr'):
             scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': True})
+
+    if undefined_subtitles_track_default_changed:
+        from .scheduler import scheduler
+        from subtitles.indexer.series import series_full_scan_subtitles
+        from subtitles.indexer.movies import movies_full_scan_subtitles
+        if settings.general.getboolean('use_sonarr'):
+            scheduler.add_job(series_full_scan_subtitles, kwargs={'use_cache': True})
+        if settings.general.getboolean('use_radarr'):
+            scheduler.add_job(movies_full_scan_subtitles, kwargs={'use_cache': True})
+
+    if audio_tracks_parsing_changed:
+        from .scheduler import scheduler
+        if settings.general.getboolean('use_sonarr'):
+            from sonarr.sync.episodes import sync_episodes
+            from sonarr.sync.series import update_series
+            scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
+            scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
+        if settings.general.getboolean('use_radarr'):
+            from radarr.sync.movies import update_movies
+            scheduler.add_job(update_movies, kwargs={'send_event': True}, max_instances=1)
 
     if update_subzero:
         settings.set('general', 'subzero_mods', ','.join(subzero_mods))

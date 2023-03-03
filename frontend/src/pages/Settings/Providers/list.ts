@@ -286,7 +286,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "regielive",
     name: "RegieLive",
-    description: "Romanian Subtitles Provider. Broken, will not works.",
+    description: "Romanian Subtitles Provider.",
   },
   {
     key: "soustitreseu",
@@ -303,6 +303,14 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "subf2m",
     name: "subf2m.co",
     description: "Subscene Alternative Provider",
+    inputs: [
+      {
+        type: "switch",
+        key: "verify_ssl",
+        name: "Verify SSL",
+        defaultValue: true,
+      },
+    ],
   },
   {
     key: "subs4free",

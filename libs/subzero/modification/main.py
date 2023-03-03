@@ -184,22 +184,22 @@ class SubtitleModifications(object):
         entries_used = 0
         for entry in self.f:
             entry_used = False
-            for sub in entry.text.strip().split(r"\N"):
-                # skip HI bracket entries, those might actually be lowercase
-                sub = sub.strip()
-                for processor in registry.mods["remove_HI"].processors[:4]:
-                    sub = processor.process(sub)
+            sub = entry.text
+            # skip HI bracket entries, those might actually be lowercase
+            sub = sub.strip()
+            for processor in registry.mods["remove_HI"].processors[:4]:
+                sub = processor.process(sub)
 
-                if sub.strip():
-                    # only consider alphabetic characters to determine if uppercase
-                    alpha_sub = ''.join([i for i in sub if i.isalpha()])
-                    if alpha_sub and not alpha_sub.isupper():
-                        return False
+            if sub.strip():
+                # only consider alphabetic characters to determine if uppercase
+                alpha_sub = ''.join([i for i in sub if i.isalpha()])
+                if alpha_sub and not alpha_sub.isupper():
+                    return False
 
-                    entry_used = True
-                else:
-                    # skip full entry
-                    break
+                entry_used = True
+            else:
+                # skip full entry
+                break
 
             if entry_used:
                 entries_used += 1

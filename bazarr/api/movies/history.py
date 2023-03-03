@@ -1,21 +1,18 @@
 # coding=utf-8
 
-import datetime
 import os
 import operator
 import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
-from peewee import fn
-from datetime import timedelta
 
-from app.database import get_exclusion_clause, TableMovies, TableHistoryMovie, TableBlacklistMovie
-from app.config import settings
+from app.database import TableMovies, TableHistoryMovie, TableBlacklistMovie
+from subtitles.upgrade import get_upgradable_movies_subtitles
 from utilities.path_mappings import path_mappings
 from api.swaggerui import subtitles_language_model
 
-from ..utils import authenticate, postprocessMovie
+from api.utils import authenticate, postprocess
 
 api_ns_movies_history = Namespace('Movies History', description='List movies history events')
 
@@ -66,42 +63,14 @@ class MoviesHistory(Resource):
         length = args.get('length')
         radarrid = args.get('radarrid')
 
-        upgradable_movies = []
-        upgradable_movies_not_perfect = []
-        if settings.general.getboolean('upgrade_subs'):
-            days_to_upgrade_subs = settings.general.days_to_upgrade_subs
-            minimum_timestamp = ((datetime.datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
-                                 datetime.datetime(1970, 1, 1)).total_seconds()
-
-            if settings.general.getboolean('upgrade_manual'):
-                query_actions = [1, 2, 3, 6]
-            else:
-                query_actions = [1, 3]
-
-            upgradable_movies_conditions = [(TableHistoryMovie.action.in_(query_actions)),
-                                            (TableHistoryMovie.timestamp > minimum_timestamp),
-                                            (TableHistoryMovie.score.is_null(False))]
-            upgradable_movies_conditions += get_exclusion_clause('movie')
-            upgradable_movies = TableHistoryMovie.select(TableHistoryMovie.video_path,
-                                                         fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
-                                                         TableHistoryMovie.score,
-                                                         TableMovies.tags,
-                                                         TableMovies.monitored)\
-                .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
-                .where(reduce(operator.and_, upgradable_movies_conditions))\
-                .group_by(TableHistoryMovie.video_path)\
-                .dicts()
-            upgradable_movies = list(upgradable_movies)
-
-            for upgradable_movie in upgradable_movies:
-                if upgradable_movie['timestamp'] > minimum_timestamp:
-                    try:
-                        int(upgradable_movie['score'])
-                    except ValueError:
-                        pass
-                    else:
-                        if int(upgradable_movie['score']) < 120:
-                            upgradable_movies_not_perfect.append(upgradable_movie)
+        upgradable_movies_not_perfect = get_upgradable_movies_subtitles()
+        if len(upgradable_movies_not_perfect):
+            upgradable_movies_not_perfect = [{"video_path": x['video_path'],
+                                              "timestamp": x['timestamp'],
+                                              "score": x['score'],
+                                              "tags": x['tags'],
+                                              "monitored": x['monitored']}
+                                             for x in upgradable_movies_not_perfect]
 
         query_conditions = [(TableMovies.title.is_null(False))]
         if radarrid:
@@ -122,14 +91,13 @@ class MoviesHistory(Resource):
                                                  TableHistoryMovie.subs_id,
                                                  TableHistoryMovie.provider,
                                                  TableHistoryMovie.subtitles_path,
-                                                 TableHistoryMovie.video_path)\
-            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
-            .where(query_condition)\
-            .order_by(TableHistoryMovie.timestamp.desc())\
-            .limit(length)\
-            .offset(start)\
-            .dicts()
-        movie_history = list(movie_history)
+                                                 TableHistoryMovie.video_path) \
+            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId)) \
+            .where(query_condition) \
+            .order_by(TableHistoryMovie.timestamp.desc())
+        if length > 0:
+            movie_history = movie_history.limit(length).offset(start)
+        movie_history = list(movie_history.dicts())
 
         blacklist_db = TableBlacklistMovie.select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id).dicts()
         blacklist_db = list(blacklist_db)
@@ -137,24 +105,25 @@ class MoviesHistory(Resource):
         for item in movie_history:
             # Mark movies as upgradable or not
             item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
-                "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:  # noqa: E129
+            if {"video_path": str(item['path']), "timestamp": item['timestamp'], "score": item['score'],
+                "tags": str(item['tags']),
+                "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:  # noqa: E129
                 if os.path.exists(path_mappings.path_replace_movie(item['subtitles_path'])) and \
                         os.path.exists(path_mappings.path_replace_movie(item['video_path'])):
                     item.update({"upgradable": True})
 
             del item['path']
 
-            postprocessMovie(item)
+            postprocess(item)
 
             if item['score']:
                 item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + "%"
 
             # Make timestamp pretty
             if item['timestamp']:
-                item["raw_timestamp"] = int(item['timestamp'])
-                item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
-                item['timestamp'] = pretty.date(item["raw_timestamp"])
+                item["raw_timestamp"] = item['timestamp'].timestamp()
+                item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
+                item['timestamp'] = pretty.date(item["timestamp"])
 
             # Check if subtitles is blacklisted
             item.update({"blacklisted": False})
@@ -165,9 +134,9 @@ class MoviesHistory(Resource):
                         item.update({"blacklisted": True})
                         break
 
-        count = TableHistoryMovie.select()\
-            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
-            .where(TableMovies.title.is_null(False))\
+        count = TableHistoryMovie.select() \
+            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId)) \
+            .where(TableMovies.title.is_null(False)) \
             .count()
 
         return {'data': movie_history, 'total': count}

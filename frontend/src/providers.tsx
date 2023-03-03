@@ -3,29 +3,24 @@ import ThemeProvider from "@/App/theme";
 import { ModalsProvider } from "@/modules/modals";
 import "@fontsource/roboto/300.css";
 import { NotificationsProvider } from "@mantine/notifications";
+import { FunctionComponent } from "react";
 import { QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
-import { useRoutes } from "react-router-dom";
-import { Router, useRouteItems } from "./Router";
+import { Router } from "./Router";
 import { Environment } from "./utilities";
 
-const RouteApp = () => {
-  const items = useRouteItems();
-
-  return useRoutes(items);
-};
-
-export const Main = () => {
+export const AllProviders: FunctionComponent = ({ children }) => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <ModalsProvider>
           <NotificationsProvider limit={5}>
             <Router>
+              {/* c8 ignore next 3 */}
               {Environment.queryDev && (
                 <ReactQueryDevtools initialIsOpen={false} />
               )}
-              <RouteApp></RouteApp>
+              {children}
             </Router>
           </NotificationsProvider>
         </ModalsProvider>

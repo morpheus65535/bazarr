@@ -1,7 +1,7 @@
 import { debounce, forIn, remove, uniq } from "lodash";
 import { onlineManager } from "react-query";
 import { io, Socket } from "socket.io-client";
-import { Environment, isDevEnv } from "../../utilities";
+import { Environment, isDevEnv, isTestEnv } from "../../utilities";
 import { ENSURE, GROUP, LOG } from "../../utilities/console";
 import { createDefaultReducer } from "./reducer";
 
@@ -51,6 +51,10 @@ class SocketIOClient {
   }
 
   initialize() {
+    if (isTestEnv) {
+      return;
+    }
+
     LOG("info", "Initializing Socket.IO client...");
     this.reducers.push(...createDefaultReducer());
 

@@ -42,7 +42,7 @@ def movies_download_subtitles(no):
     else:
         count_movie = 0
 
-    audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
+    audio_language_list = get_audio_profile_languages(movie['audio_language'])
     if len(audio_language_list) > 0:
         audio_language = audio_language_list[0]['name']
     else:
@@ -77,21 +77,8 @@ def movies_download_subtitles(no):
                                      check_if_still_required=True):
 
         if result:
-            message = result[0]
-            path = result[1]
-            forced = result[5]
-            if result[8]:
-                language_code = result[2] + ":hi"
-            elif forced:
-                language_code = result[2] + ":forced"
-            else:
-                language_code = result[2]
-            provider = result[3]
-            score = result[4]
-            subs_id = result[6]
-            subs_path = result[7]
             store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-            history_log_movie(1, no, message, path, language_code, provider, score, subs_id, subs_path)
-            send_notifications_movie(no, message)
+            history_log_movie(1, no, result)
+            send_notifications_movie(no, result.message)
 
     hide_progress(id='movie_search_progress_{}'.format(no))

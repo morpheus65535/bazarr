@@ -1,4 +1,7 @@
 export const enabledLanguageKey = "languages-enabled";
+export const defaultUndAudioLang = "settings-general-default_und_audio_lang";
+export const defaultUndEmbeddedSubtitlesLang =
+  "settings-general-default_und_embedded_subtitles_lang";
 export const languageProfileKey = "languages-profiles";
 export const notificationsKey = "notifications-providers";
 

@@ -88,7 +88,7 @@ class ZimukuProvider(Provider):
     logger.info(str(supported_languages))
 
     server_url = "http://zimuku.org"
-    search_url = "/search?q={}&vertoken={}"
+    search_url = "/search?q={}&security_verify_data={}"
     download_url = "http://zimuku.org/"
 
     subtitle_class = ZimukuSubtitle
@@ -115,18 +115,12 @@ class ZimukuProvider(Provider):
                 self.session.cookies.set("srcurl", self.stringToHex(r.url))
                 if(tr):
                     verify_resp = self.session.get(
-                        self.server_url+tr[0]+self.stringToHex("1080,1920"), allow_redirects=False)
+                        self.server_url+tr[0]+self.stringToHex("1920,1080"), allow_redirects=False)
                     if(verify_resp.status_code == 302 and self.session.cookies.get("security_session_verify") != None):
                         pass
                     continue
             if len(self.location_re.findall(r.text)) == 0:
-                if(r.headers.get("Content-Type") == "text/html; charset=utf-8"):
-                    v = ParserBeautifulSoup(
-                        r.content.decode("utf-8", "ignore"), ["html.parser"]
-                    ).find(
-                        "input", attrs={'name': 'vertoken'})
-                    if(v):
-                        self.vertoken = v.get("value")
+                self.vertoken = self.stringToHex("1920,1080")
                 return r
 
     def initialize(self):

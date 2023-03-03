@@ -20,7 +20,7 @@ from ..download import generate_subtitles
 
 
 def _wanted_episode(episode):
-    audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+    audio_language_list = get_audio_profile_languages(episode['audio_language'])
     if len(audio_language_list) > 0:
         audio_language = audio_language_list[0]['name']
     else:
@@ -47,30 +47,16 @@ def _wanted_episode(episode):
     for result in generate_subtitles(path_mappings.path_replace(episode['path']),
                                      languages,
                                      audio_language,
-                                     str(episode['scene_name']),
+                                     str(episode['sceneName']),
                                      episode['title'],
                                      'series',
                                      check_if_still_required=True):
         if result:
-            message = result[0]
-            path = result[1]
-            forced = result[5]
-            if result[8]:
-                language_code = result[2] + ":hi"
-            elif forced:
-                language_code = result[2] + ":forced"
-            else:
-                language_code = result[2]
-            provider = result[3]
-            score = result[4]
-            subs_id = result[6]
-            subs_path = result[7]
             store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
-            history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
-                        language_code, provider, score, subs_id, subs_path)
+            history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result)
             event_stream(type='series', action='update', payload=episode['sonarrSeriesId'])
             event_stream(type='episode-wanted', action='delete', payload=episode['sonarrEpisodeId'])
-            send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
+            send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result.message)
 
 
 def wanted_download_subtitles(sonarr_episode_id):
@@ -79,7 +65,7 @@ def wanted_download_subtitles(sonarr_episode_id):
                                             TableEpisodes.sonarrEpisodeId,
                                             TableEpisodes.sonarrSeriesId,
                                             TableEpisodes.audio_language,
-                                            TableEpisodes.scene_name,
+                                            TableEpisodes.sceneName,
                                             TableEpisodes.failedAttempts,
                                             TableShows.title)\
         .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\

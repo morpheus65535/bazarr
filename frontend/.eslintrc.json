@@ -1,6 +1,7 @@
 {
   "rules": {
     "no-console": "error",
+    "camelcase": "warn",
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/no-empty-function": "warn",
     "@typescript-eslint/no-empty-interface": "off",
@@ -11,5 +12,15 @@
     "plugin:react-hooks/recommended",
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended"
+  ],
+  "plugins": ["testing-library"],
+  "overrides": [
+    {
+      "files": [
+        "**/__tests__/**/*.[jt]s?(x)",
+        "**/?(*.)+(spec|test).[jt]s?(x)"
+      ],
+      "extends": ["plugin:testing-library/react"]
+    }
   ]
 }

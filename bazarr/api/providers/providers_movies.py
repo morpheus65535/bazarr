@@ -110,7 +110,7 @@ class ProviderMovies(Resource):
         selected_provider = args.get('provider')
         subtitle = args.get('subtitle')
 
-        audio_language_list = get_audio_profile_languages(movie_id=radarrId)
+        audio_language_list = get_audio_profile_languages(movieInfo["audio_language"])
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
         else:
@@ -121,23 +121,10 @@ class ProviderMovies(Resource):
                                               sceneName, title, 'movie', use_original_format,
                                               profile_id=get_profile_id(movie_id=radarrId))
             if result is not None:
-                message = result[0]
-                path = result[1]
-                forced = result[5]
-                if result[8]:
-                    language_code = result[2] + ":hi"
-                elif forced:
-                    language_code = result[2] + ":forced"
-                else:
-                    language_code = result[2]
-                provider = result[3]
-                score = result[4]
-                subs_id = result[6]
-                subs_path = result[7]
-                history_log_movie(2, radarrId, message, path, language_code, provider, score, subs_id, subs_path)
+                history_log_movie(2, radarrId, result)
                 if not settings.general.getboolean('dont_notify_manual_actions'):
-                    send_notifications_movie(radarrId, message)
-                store_subtitles_movie(path, moviePath)
+                    send_notifications_movie(radarrId, result.message)
+                store_subtitles_movie(result.path, moviePath)
         except OSError:
             pass
 

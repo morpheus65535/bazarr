@@ -75,6 +75,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
                 all: false,
                 form: {
                   provider: row.original.provider,
+                  // eslint-disable-next-line camelcase
                   subs_id: value,
                 },
               })}

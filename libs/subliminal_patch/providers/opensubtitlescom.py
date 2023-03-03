@@ -274,15 +274,6 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 return []
 
         lang_strings = [str(lang.basename) for lang in languages]
-        only_foreign = all([lang.forced for lang in languages])
-        also_foreign = any([lang.forced for lang in languages])
-        if only_foreign:
-            forced = 'only'
-        elif also_foreign:
-            forced = 'include'
-        else:
-            forced = 'exclude'
-
         langs = ','.join(lang_strings)
         logging.debug(f'Searching for this languages: {lang_strings}')
 
@@ -292,7 +283,6 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 lambda: checked(
                     lambda: self.session.get(self.server_url + 'subtitles',
                                              params=(('episode_number', self.video.episode),
-                                                     ('foreign_parts_only', forced),
                                                      ('imdb_id', imdb_id if not title_id else None),
                                                      ('languages', langs.lower()),
                                                      ('moviehash', file_hash),
@@ -308,8 +298,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             res = self.retry(
                 lambda: checked(
                     lambda: self.session.get(self.server_url + 'subtitles',
-                                             params=(('foreign_parts_only', forced),
-                                                     ('id', title_id if title_id else None),
+                                             params=(('id', title_id if title_id else None),
                                                      ('imdb_id', imdb_id if not title_id else None),
                                                      ('languages', langs.lower()),
                                                      ('moviehash', file_hash)),
@@ -323,6 +312,14 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         subtitles = []
 
         result = res.json()
+
+        # filter out forced subtitles or not depending on the required languages
+        if all([lang.forced for lang in languages]):  # only forced
+            result['data'] = [x for x in result['data'] if x['attributes']['foreign_parts_only']]
+        elif any([lang.forced for lang in languages]):  # also forced
+            pass
+        else:  # not forced
+            result['data'] = [x for x in result['data'] if not x['attributes']['foreign_parts_only']]
 
         logging.debug(f"Query returned {len(result['data'])} subtitles")
 

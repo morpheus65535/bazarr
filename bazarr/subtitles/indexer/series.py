@@ -8,12 +8,12 @@ import ast
 from subliminal_patch import core, search_external_subtitles
 
 from languages.custom_lang import CustomLanguage
-from app.database import get_profiles_list, get_profile_cutoff, TableEpisodes, TableShows
-from languages.get_languages import alpha2_from_alpha3, language_from_alpha2, get_language_set
+from app.database import get_profiles_list, get_profile_cutoff, TableEpisodes, TableShows, get_audio_profile_languages
+from languages.get_languages import alpha2_from_alpha3, get_language_set
 from app.config import settings
 from utilities.helper import get_subtitle_destination_folder
 from utilities.path_mappings import path_mappings
-from subtitles.tools.embedded_subs_reader import embedded_subs_reader
+from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream, show_progress, hide_progress
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
 
@@ -176,8 +176,8 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
             if desired_subtitles_temp:
                 for language in desired_subtitles_temp['items']:
                     if language['audio_exclude'] == "True":
-                        if language_from_alpha2(language['language']) in ast.literal_eval(
-                                episode_subtitles['audio_language']):
+                        if any(x['code2'] == language['language'] for x in get_audio_profile_languages(
+                                episode_subtitles['audio_language'])):
                             continue
                     desired_subtitles_list.append([language['language'], language['forced'], language['hi']])
 
@@ -210,8 +210,9 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
             if cutoff_temp_list:
                 for cutoff_temp in cutoff_temp_list:
                     cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
-                    if cutoff_temp['audio_exclude'] == 'True' and language_from_alpha2(cutoff_temp['language']) in \
-                            ast.literal_eval(episode_subtitles['audio_language']):
+                    if cutoff_temp['audio_exclude'] == 'True' and \
+                            any(x['code2'] == cutoff_temp['language'] for x in
+                                get_audio_profile_languages(episode_subtitles['audio_language'])):
                         cutoff_met = True
                     elif cutoff_language in actual_subtitles_list:
                         cutoff_met = True
@@ -261,9 +262,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
         event_stream(type='badges')
 
 
-def series_full_scan_subtitles():
-    use_ffprobe_cache = settings.sonarr.getboolean('use_ffprobe_cache')
-
+def series_full_scan_subtitles(use_cache=settings.sonarr.getboolean('use_ffprobe_cache')):
     episodes = TableEpisodes.select(TableEpisodes.path).dicts()
 
     count_episodes = len(episodes)
@@ -273,7 +272,7 @@ def series_full_scan_subtitles():
                       name='Episodes subtitles',
                       value=i,
                       count=count_episodes)
-        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']), use_cache=use_ffprobe_cache)
+        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']), use_cache=use_cache)
 
     hide_progress(id='episodes_disk_scan')
 

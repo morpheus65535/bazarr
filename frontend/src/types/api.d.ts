@@ -5,6 +5,7 @@ interface Badge {
   status: number;
   sonarr_signalr: string;
   radarr_signalr: string;
+  announcements: number;
 }
 
 declare namespace Language {

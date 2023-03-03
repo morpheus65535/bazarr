@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import ast
 import os
 import datetime
 import pytz
@@ -143,6 +144,14 @@ def get_providers():
     return providers_list
 
 
+def get_enabled_providers():
+    # return enabled provider including those who can be throttled
+    try:
+        return ast.literal_eval(settings.general.enabled_providers)
+    except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+        return []
+
+
 _FFPROBE_BINARY = get_binary("ffprobe")
 _FFMPEG_BINARY = get_binary("ffmpeg")
 
@@ -239,6 +248,9 @@ def get_providers_auth():
             'password': settings.karagarga.password,
             'f_username': settings.karagarga.f_username,
             'f_password': settings.karagarga.f_password,
+        },
+        'subf2m': {
+            'verify_ssl': settings.subf2m.getboolean('verify_ssl')
         },
     }
 

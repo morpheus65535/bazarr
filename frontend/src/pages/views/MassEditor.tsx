@@ -1,10 +1,10 @@
 import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
 import { SimpleTable, Toolbox } from "@/components";
-import { Selector } from "@/components/inputs";
+import { Selector, SelectorOption } from "@/components/inputs";
 import { useCustomSelection } from "@/components/tables/plugins";
 import { GetItemId, useSelectorOptions } from "@/utilities";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
-import { Container } from "@mantine/core";
+import { Box, Container } from "@mantine/core";
 import { uniqBy } from "lodash";
 import { useCallback, useMemo, useState } from "react";
 import { UseMutationResult } from "react-query";
@@ -35,6 +35,24 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
   );
 
   const profileOptions = useSelectorOptions(profiles ?? [], (v) => v.name);
+
+  const profileOptionsWithAction = useMemo<
+    SelectorOption<Language.Profile | null>[]
+  >(
+    () => [
+      { label: "Clear", value: null, group: "Action" },
+      ...profileOptions.options,
+    ],
+    [profileOptions.options]
+  );
+
+  const getKey = useCallback((value: Language.Profile | null) => {
+    if (value) {
+      return value.name;
+    }
+
+    return "Clear";
+  }, []);
 
   const { mutateAsync } = mutation;
 
@@ -67,15 +85,17 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
   return (
     <Container fluid px={0}>
       <Toolbox>
-        <div>
+        <Box>
           <Selector
+            allowDeselect
             placeholder="Change Profile"
-            {...profileOptions}
+            options={profileOptionsWithAction}
+            getkey={getKey}
             disabled={selections.length === 0}
             onChange={setProfiles}
           ></Selector>
-        </div>
-        <div>
+        </Box>
+        <Box>
           <Toolbox.Button icon={faUndo} onClick={onEnded}>
             Cancel
           </Toolbox.Button>
@@ -87,7 +107,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
           >
             Save
           </Toolbox.MutateButton>
-        </div>
+        </Box>
       </Toolbox>
       <SimpleTable
         columns={columns}

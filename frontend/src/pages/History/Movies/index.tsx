@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { useMovieAddBlacklist, useMovieHistoryPagination } from "@/apis/hooks";
 import { MutateAction } from "@/components/async";
 import { HistoryIcon } from "@/components/bazarr";
