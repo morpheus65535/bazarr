@@ -5,8 +5,15 @@ import functools
 import logging
 import re
 import time
+import ssl
 import urllib.parse
 
+from urllib3 import poolmanager
+
+from guessit import guessit
+
+from requests import Session
+from requests.adapters import HTTPAdapter
 from bs4 import BeautifulSoup as bso
 from guessit import guessit
 from requests import Session
@@ -113,6 +120,20 @@ _LANGUAGE_MAP = {
 }
 
 
+class _Adapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False):
+        ctx = ssl.create_default_context()
+        ctx.set_ciphers("DEFAULT@SECLEVEL=0")
+        ctx.check_hostname = False
+        self.poolmanager = poolmanager.PoolManager(
+            num_pools=connections,
+            maxsize=maxsize,
+            block=block,
+            ssl_version=ssl.PROTOCOL_TLS,
+            ssl_context=ctx,
+        )
+
+
 class Subf2mProvider(Provider):
     provider_name = "subf2m"
 
@@ -141,6 +162,8 @@ class Subf2mProvider(Provider):
 
     def initialize(self):
         self._session = Session()
+        self._session.mount("https://", _Adapter())
+
         self._session.verify = self._verify_ssl
 
         self._session.headers.update({"user-agent": "Bazarr"})
@@ -283,8 +306,11 @@ class Subf2mProvider(Provider):
             if not clean_text:
                 continue
 
-            # It will return list values
-            guess = _memoized_episode_guess(clean_text)
+            # First try with the special episode matches for subf2m
+            guess = _get_episode_from_release(clean_text)
+
+            if guess is None:
+                guess = _memoized_episode_guess(clean_text)
 
             if "season" not in guess:
                 if "complete series" in clean_text.lower():
@@ -388,6 +414,24 @@ def _memoized_episode_guess(content):
             "enforce_list": True,
         },
     )
+
+
+_EPISODE_SPECIAL_RE = re.compile(
+    r"(season|s)\s*?(?P<x>\d{,2})\s?[-−]\s?(?P<y>\d{,2})", flags=re.IGNORECASE
+)
+
+
+def _get_episode_from_release(release: str):
+    match = _EPISODE_SPECIAL_RE.search(release)
+    if match is None:
+        return None
+
+    try:
+        season, episode = [int(item) for item in match.group("x", "y")]
+    except (IndexError, ValueError):
+        return None
+
+    return {"season": [season], "episode": [episode]}
 
 
 def _get_subtitle_from_item(item, language, episode_number=None):
