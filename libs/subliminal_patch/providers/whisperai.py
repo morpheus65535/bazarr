@@ -29,7 +29,12 @@ class WhisperAISubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
-        matches.update(["title", "series", "season", "episode"])
+
+        if isinstance(video, Episode):
+            matches.update(["series", "season", "episode"])
+        elif isinstance(video, Movie):
+            matches.update(["title"])
+
         return matches
 
 
