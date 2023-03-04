@@ -223,6 +223,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         defaultValue: 3600,
         name: "Transcription/translation timeout in seconds",
       },
+      {
+        type: "text",
+        key: "timeout",
+        defaultValue: 3600,
+        name: "Transcription/translation timeout in seconds",
+      },
     ],
   },
   {
