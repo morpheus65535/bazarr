@@ -25,7 +25,7 @@ from subliminal_patch.providers import Provider
 from subliminal.subtitle import (
     SUBTITLE_EXTENSIONS,
     fix_line_ending
-)
+    )
 from subliminal_patch.subtitle import (
     Subtitle,
     guess_matches
@@ -87,41 +87,14 @@ class ZimukuProvider(Provider):
     video_types = (Episode, Movie)
     logger.info(str(supported_languages))
 
-    server_url = "http://zimuku.org"
-    search_url = "/search?q={}&security_verify_data={}"
-    download_url = "http://zimuku.org/"
+    server_url = "https://so.zimuku.org"
+    search_url = "/search?q={}"
+    download_url = "https://zimuku.org/"
 
     subtitle_class = ZimukuSubtitle
 
     def __init__(self):
         self.session = None
-
-    def stringToHex(self, s):
-        val = ""
-        for i in s:
-            val += hex(ord(i))[2:]
-        return val
-    vertoken = ""
-    location_re = re.compile(
-        r'self\.location = "(.*)" \+ stringToHex\(screendate\)')
-
-    def yunsuo_bypass(self, url, *args, **kwargs):
-        i = -1
-        while True:
-            i += 1
-            r = self.session.get(url, *args, **kwargs)
-            if(r.status_code == 404):
-                tr = self.location_re.findall(r.text)
-                self.session.cookies.set("srcurl", self.stringToHex(r.url))
-                if(tr):
-                    verify_resp = self.session.get(
-                        self.server_url+tr[0]+self.stringToHex("1920,1080"), allow_redirects=False)
-                    if(verify_resp.status_code == 302 and self.session.cookies.get("security_session_verify") != None):
-                        pass
-                    continue
-            if len(self.location_re.findall(r.text)) == 0:
-                self.vertoken = self.stringToHex("1920,1080")
-                return r
 
     def initialize(self):
         self.session = Session()
@@ -131,7 +104,7 @@ class ZimukuProvider(Provider):
         self.session.close()
 
     def _parse_episode_page(self, link, year):
-        r = self.yunsuo_bypass(link)
+        r = self.session.get(link)
         bs_obj = ParserBeautifulSoup(
             r.content.decode("utf-8", "ignore"), ["html.parser"]
         )
@@ -149,16 +122,16 @@ class ZimukuProvider(Provider):
                 if (
                     "china" in img.attrs["src"]
                     and "hongkong" in img.attrs["src"]
-                ):
+                    ):
                     language = Language("zho").add(Language('zho', 'TW', None))
                     logger.debug("language:"+str(language))
-                elif (
+                elif (                    
                     "china" in img.attrs["src"]
                     or "jollyroger" in img.attrs["src"]
                 ):
                     language = Language("zho")
                 elif "hongkong" in img.attrs["src"]:
-                    language = Language('zho', 'TW', None)
+                    language =  Language('zho', 'TW', None)
                     break
             sub_page_link = urljoin(self.server_url, a.attrs["href"])
             backup_session = copy.deepcopy(self.session)
@@ -171,8 +144,6 @@ class ZimukuProvider(Provider):
         return subs
 
     def query(self, keyword, season=None, episode=None, year=None):
-        if self.vertoken == "":
-            self.yunsuo_bypass(self.server_url + '/')
         params = keyword
         if season:
             params += ".S{season:02d}".format(season=season)
@@ -181,9 +152,9 @@ class ZimukuProvider(Provider):
 
         logger.debug("Searching subtitles %r", params)
         subtitles = []
-        search_link = self.server_url + text_type(self.search_url).format(params, self.vertoken)
-        
-        r = self.yunsuo_bypass(search_link, timeout=30)
+        search_link = self.server_url + text_type(self.search_url).format(params)
+
+        r = self.session.get(search_link, timeout=30)
         r.raise_for_status()
 
         if not r.content:
@@ -198,7 +169,7 @@ class ZimukuProvider(Provider):
         while parts:
             parts.reverse()
             redirect_url = urljoin(self.server_url, "".join(parts))
-            r = self.query_resp(redirect_url, timeout=30)
+            r = self.session.get(redirect_url, timeout=30)
             html = r.content.decode("utf-8", "ignore")
             parts = re.findall(pattern, html)
         logger.debug("search url located: " + redirect_url)
@@ -267,14 +238,14 @@ class ZimukuProvider(Provider):
         return subtitles
 
     def download_subtitle(self, subtitle):
-        def _get_archive_dowload_link(yunsuopass, sub_page_link):
-            r = yunsuopass(sub_page_link)
+        def _get_archive_dowload_link(session, sub_page_link):
+            r = session.get(sub_page_link)
             bs_obj = ParserBeautifulSoup(
                 r.content.decode("utf-8", "ignore"), ["html.parser"]
             )
             down_page_link = bs_obj.find("a", {"id": "down1"}).attrs["href"]
             down_page_link = urljoin(sub_page_link, down_page_link)
-            r = yunsuopass(down_page_link)
+            r = session.get(down_page_link)
             bs_obj = ParserBeautifulSoup(
                 r.content.decode("utf-8", "ignore"), ["html.parser"]
             )
@@ -286,8 +257,8 @@ class ZimukuProvider(Provider):
         # download the subtitle
         logger.info("Downloading subtitle %r", subtitle)
         self.session = subtitle.session
-        download_link = _get_archive_dowload_link(self.yunsuo_bypass, subtitle.page_link)
-        r = self.yunsuo_bypass(download_link, headers={'Referer': subtitle.page_link}, timeout=30)
+        download_link = _get_archive_dowload_link(self.session, subtitle.page_link)
+        r = self.session.get(download_link, headers={'Referer': self.download_url}, timeout=30)
         r.raise_for_status()
         try:
             filename = r.headers["Content-Disposition"]
