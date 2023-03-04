@@ -253,7 +253,8 @@ def get_providers_auth():
             'verify_ssl': settings.subf2m.getboolean('verify_ssl')
         },
         'whisperai': {
-            'endpoint': settings.whisperai.endpoint
+            'endpoint': settings.whisperai.endpoint,
+            'timeout': settings.whisperai.timeout
         }
     }
 

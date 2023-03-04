@@ -53,11 +53,15 @@ class WhisperAIProvider(Provider):
 
     video_types = (Episode, Movie)
 
-    def __init__(self, endpoint=None):
+    def __init__(self, endpoint=None, timeout=None):
         if not endpoint:
             raise ConfigurationError('Whisper Web Service Endpoint must be provided')
 
+        if not timeout:
+            raise ConfigurationError('Whisper Web Service Timeout must be provided')
+
         self.endpoint = endpoint
+        self.timeout = int(timeout)
         self.session = None
 
     def initialize(self):
@@ -83,6 +87,6 @@ class WhisperAIProvider(Provider):
         r = self.session.post(f"{self.endpoint}/asr",
                               params={'task': 'transcribe', 'language': subtitle.language, 'output': 'srt'},
                               files={'audio_file': open(subtitle.video.original_path, 'rb')},
-                              timeout=600)
+                              timeout=self.timeout)
 
         subtitle.content = r.content
