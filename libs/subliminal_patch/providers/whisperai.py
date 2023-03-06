@@ -10,6 +10,9 @@ from subliminal.exceptions import ConfigurationError
 from subzero.language import Language
 from subliminal.video import Episode, Movie
 
+import ffmpeg
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -79,14 +82,27 @@ class WhisperAIProvider(Provider):
         return [s for s in subtitles if s is not None]
 
     def download_subtitle(self, subtitle: WhisperAISubtitle):
-        # For this POC, the full video file will be sent to the API.
-        # TODO: we should use ffmpeg to extract the audio stream and only send that
-
         # Invoke Whisper through the API. This may take a long time depending on the file.
         # TODO: This loads the entire file into memory, find a good way to stream the file in chunks
+
+        logger.debug("Encoding audio stream to WAV with ffmpeg")
+
+        try:
+            # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
+            # Requires the ffmpeg CLI and `ffmpeg-python` package to be installed.
+            out, _ = (
+                ffmpeg.input(subtitle.video.original_path, threads=0)
+                .output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000)
+                .run(cmd=["ffmpeg", "-nostdin"], capture_stdout=True, capture_stderr=True)
+            )
+        except ffmpeg.Error as e:
+            raise RuntimeError(f"Failed to load audio: {e.stderr.decode()}") from e
+
+        logger.debug(f"Finished encoding audio stream in {subtitle.video.original_path} with no errors")
+
         r = self.session.post(f"{self.endpoint}/asr",
-                              params={'task': 'transcribe', 'language': subtitle.language, 'output': 'srt'},
-                              files={'audio_file': open(subtitle.video.original_path, 'rb')},
+                              params={'task': 'transcribe', 'language': subtitle.language, 'output': 'srt', 'encode': 'false'},
+                              files={'audio_file': out},
                               timeout=self.timeout)
 
         subtitle.content = r.content
