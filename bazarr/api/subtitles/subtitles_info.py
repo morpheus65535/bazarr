@@ -33,31 +33,17 @@ class SubtitleNameInfo(Resource):
         args = self.get_request_parser.parse_args()
         names = args.get('filenames[]')
         results = []
+        opts = dict(type='episode')
         for name in names:
-            opts = dict()
-            opts['type'] = 'episode'
             guessit_result = guessit(name, options=opts)
             result = {}
             result['filename'] = name
-            if 'subtitle_language' in guessit_result:
-                result['subtitle_language'] = str(guessit_result['subtitle_language'])
+            result['subtitle_language'] = str(guessit_result.get('subtitle_language', ''))
 
-            result['episode'] = 0
-            if 'episode' in guessit_result:
-                if isinstance(guessit_result['episode'], list):
-                    # for multiple episodes file, choose the first episode number
-                    if len(guessit_result['episode']):
-                        # make sure that guessit returned a list of more than 0 items
-                        result['episode'] = guessit_result['episode'][0]
-                elif isinstance(guessit_result['episode'], int):
-                    # if single episode
-                    result['episode'] = guessit_result['episode']
+            episode = guessit_result.get('episode')
+            result['episode'] = (episode[0] if isinstance(episode, list) and episode else episode) or 0
 
-            if 'season' in guessit_result:
-                result['season'] = guessit_result['season']
-            else:
-                result['season'] = 0
-
+            result['season'] = guessit_result.get('season', 0)
             results.append(result)
 
         return results
