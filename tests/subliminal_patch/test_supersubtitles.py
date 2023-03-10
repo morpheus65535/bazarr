@@ -105,3 +105,28 @@ def test_download_movie_subtitle(movies):
     with SuperSubtitlesProvider() as provider:
         provider.download_subtitle(subtitle)
         assert subtitle.is_valid()
+
+
+def test_subtitle_reprs(movies):
+    subtitle = SuperSubtitlesSubtitle(
+        Language.fromalpha2("en"),
+        "https://www.feliratok.eu/index.php?action=letolt&felirat=1634579718",
+        1634579718,
+        "Dune",
+        0,
+        0,
+        "",
+        [
+            "NF.WEB-DL.1080p-TEPES",
+            "NF.WEBRip.1080p-TEPES",
+            "WEBRip-ION10",
+            "WEBRip-ION265",
+            "WEBRip.1080p-RARBG",
+        ],
+        "",
+        "",
+        "",
+        asked_for_episode=None,
+    )
+    assert isinstance(subtitle.__repr__(), str)
+    assert isinstance(subtitle.__str__(), str)

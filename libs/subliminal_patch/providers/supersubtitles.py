@@ -59,19 +59,6 @@ class SuperSubtitlesSubtitle(Subtitle):
     """SuperSubtitles Subtitle."""
     provider_name = 'supersubtitles'
 
-    def __str__(self):
-        subtit = "Subtitle id: " + str(self.subtitle_id) \
-                 + " Series: " + self.series \
-                 + " Season: " + str(self.season) \
-                 + " Episode: " + str(self.episode) \
-                 + " Version: " + str(self.version) \
-                 + " Releases: " + str(self.releases) \
-                 + " DownloadLink: " + str(self.page_link) \
-                 + " Matches: " + str(self.matches)
-        if self.year:
-            subtit = subtit + " Year: " + str(self.year)
-        return subtit.encode('utf-8')
-
     def __init__(self, language, page_link, subtitle_id, series, season, episode, version,
                  releases, year, imdb_id, uploader, asked_for_episode=None, asked_for_release_group=None):
         super(SuperSubtitlesSubtitle, self).__init__(language, page_link=page_link)
@@ -86,8 +73,7 @@ class SuperSubtitlesSubtitle(Subtitle):
         if year:
             self.year = int(year)
 
-        self.release_info = u" ,".join([u"%s (%s)" % (self.__get_name(), releases[0])] +
-                                       (releases[1:] if len(releases) > 1 else []))
+        self.release_info = "\n".join([self.__get_name(), *self.releases])
         self.page_link = page_link
         self.asked_for_release_group = asked_for_release_group
         self.asked_for_episode = asked_for_episode
@@ -98,17 +84,14 @@ class SuperSubtitlesSubtitle(Subtitle):
     def numeric_id(self):
         return self.subtitle_id
 
-    def __get_name(self):
-        ep_addon = (" S%02dE%02d" % (self.season, self.episode)) if self.episode else ""
-        return u"%s%s%s" % (self.series, " (%s)" % self.year if self.year else "", ep_addon)
-
-    def __repr__(self):
-        return '<%s %r [%s]>' % (
-            self.__class__.__name__, u"%s [%s]" % (self.__get_name(), self.version), self.language)
-
     @property
     def id(self):
         return str(self.subtitle_id)
+
+    def __get_name(self):
+        ep_addon = f"S{self.season:02}E{self.episode:02}" if self.episode else ""
+        year_str = f" ({self.year})"
+        return f"{self.series}{year_str or ''} {ep_addon}".strip()
 
     def get_matches(self, video):
         matches = set()
