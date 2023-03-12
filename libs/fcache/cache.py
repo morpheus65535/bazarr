@@ -40,7 +40,7 @@ class FileCache(MutableMapping):
 
     :param str appname: The app/script the cache should be associated with.
     :param str flag: How the cache should be opened. See below for details.
-    :param mode: The Unix mode for the cache files.
+    :param mode: The Unix mode for the cache files or False to prevent changing permissions.
     :param str keyencoding: The encoding the keys use, defaults to 'utf-8'.
         This is used if *serialize* is ``False``; the keys are treated as
         :class:`bytes` objects.
@@ -247,7 +247,8 @@ class FileCache(MutableMapping):
         with os.fdopen(fh, self._flag) as f:
             f.write(self._dumps(bytesvalue))
         rename(tmp, filename)
-        os.chmod(filename, self._mode)
+        if self._mode:
+            os.chmod(filename, self._mode)
 
     def _read_from_file(self, filename):
         """Read data from filename."""
@@ -256,7 +257,7 @@ class FileCache(MutableMapping):
                 return self._loads(f.read())
         except (IOError, OSError):
             logger.warning('Error opening file: {}'.format(filename))
-            raise
+            return None
 
     def __setitem__(self, key, value):
         ekey = self._encode_key(key)
