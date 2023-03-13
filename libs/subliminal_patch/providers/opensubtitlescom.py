@@ -282,9 +282,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             res = self.retry(
                 lambda: checked(
                     lambda: self.session.get(self.server_url + 'subtitles',
-                                             params=(('episode_number', self.video.episode),
+                                             params=(('ai_translated', 'exclude'),
+                                                     ('episode_number', self.video.episode),
                                                      ('imdb_id', imdb_id if not title_id else None),
                                                      ('languages', langs.lower()),
+                                                     ('machine_translated', 'exclude'),
                                                      ('moviehash', file_hash),
                                                      ('parent_feature_id', title_id if title_id else None),
                                                      ('season_number', self.video.season)),
@@ -298,9 +300,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             res = self.retry(
                 lambda: checked(
                     lambda: self.session.get(self.server_url + 'subtitles',
-                                             params=(('id', title_id if title_id else None),
+                                             params=(('ai_translated', 'exclude'),
+                                                     ('id', title_id if title_id else None),
                                                      ('imdb_id', imdb_id if not title_id else None),
                                                      ('languages', langs.lower()),
+                                                     ('machine_translated', 'exclude'),
                                                      ('moviehash', file_hash)),
                                              timeout=30),
                     validate_json=True,
