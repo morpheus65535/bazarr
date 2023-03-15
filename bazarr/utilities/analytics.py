@@ -1,17 +1,12 @@
 # coding=utf-8
 
-import pickle
-import random
 import platform
 import os
 import logging
-import codecs
 
-from pyga.requests import Event, Tracker, Session, Visitor, Config
-from pyga.entities import CustomVariable
+from ga4mp import GtagMP
 
 from app.get_args import args
-from app.config import settings
 from radarr.info import get_radarr_info
 from sonarr.info import get_sonarr_info
 
@@ -19,52 +14,42 @@ sonarr_version = get_sonarr_info.version()
 radarr_version = get_radarr_info.version()
 
 
-def track_event(category=None, action=None, label=None):
-    if not settings.analytics.getboolean('enabled'):
-        return
+class EventTracker:
+    def __init__(self):
+        self.tracker = GtagMP(api_secret="qHRaseheRsic6-h2I_rIAA", measurement_id="G-3820T18GE3", client_id="temp")
 
-    anonymousConfig = Config()
-    anonymousConfig.anonimize_ip_address = True
-
-    tracker = Tracker('UA-138214134-3', 'none', conf=anonymousConfig)
-
-    try:
-        if os.path.isfile(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics.dat'))):
-            with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics.dat')), 'r') as handle:
-                visitor_text = handle.read()
-            visitor = pickle.loads(codecs.decode(visitor_text.encode(), "base64"))
-            if visitor.user_agent is None:
-                visitor.user_agent = os.environ.get("SZ_USER_AGENT")
-            if visitor.unique_id > int(0x7fffffff):
-                visitor.unique_id = random.randint(0, 0x7fffffff)
+        if not os.path.isfile(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics_visitor_id.txt'))):
+            visitor_id = self.tracker.random_client_id()
+            with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics_visitor_id.txt')), 'w+') \
+                    as handle:
+                handle.write(str(visitor_id))
         else:
-            visitor = Visitor()
-            visitor.unique_id = random.randint(0, 0x7fffffff)
-    except Exception:
-        visitor = Visitor()
-        visitor.unique_id = random.randint(0, 0x7fffffff)
+            with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics_visitor_id.txt')), 'r') as \
+                    handle:
+                visitor_id = handle.read()
 
-    session = Session()
-    event = Event(category=category, action=action, label=label, value=1)
+        self.tracker.client_id = visitor_id
+        self.tracker.store.save()
 
-    tracker.add_custom_variable(CustomVariable(index=1, name='BazarrVersion',
-                                               value=os.environ["BAZARR_VERSION"].lstrip('v'), scope=1))
-    tracker.add_custom_variable(CustomVariable(index=2, name='PythonVersion', value=platform.python_version(), scope=1))
-    if settings.general.getboolean('use_sonarr'):
-        tracker.add_custom_variable(CustomVariable(index=3, name='SonarrVersion', value=sonarr_version, scope=1))
-    else:
-        tracker.add_custom_variable(CustomVariable(index=3, name='SonarrVersion', value='unused', scope=1))
-    if settings.general.getboolean('use_radarr'):
-        tracker.add_custom_variable(CustomVariable(index=4, name='RadarrVersion', value=radarr_version, scope=1))
-    else:
-        tracker.add_custom_variable(CustomVariable(index=4, name='RadarrVersion', value='unused', scope=1))
-    tracker.add_custom_variable(CustomVariable(index=5, name='OSVersion', value=platform.platform(), scope=1))
+    def track(self, provider, action, language):
+        subtitles_event = self.tracker.create_new_event(name="subtitles")
 
-    try:
-        tracker.track_event(event, session, visitor)
-    except Exception:
-        logging.debug("BAZARR unable to track event.")
-        pass
-    else:
-        with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics.dat')), 'w+') as handle:
-            handle.write(codecs.encode(pickle.dumps(visitor), "base64").decode())
+        subtitles_event.set_event_param(name="subtitles_provider", value=provider)
+        subtitles_event.set_event_param(name="subtitles_action", value=action)
+        subtitles_event.set_event_param(name="subtitles_language", value=language)
+
+        self.tracker.store.set_user_property(name="BazarrVersion", value=os.environ["BAZARR_VERSION"].lstrip('v'))
+        self.tracker.store.set_user_property(name="PythonVersion", value=platform.python_version())
+        self.tracker.store.set_user_property(name="SonarrVersion", value=sonarr_version)
+        self.tracker.store.set_user_property(name="RadarrVersion", value=radarr_version)
+        self.tracker.store.set_user_property(name="OSVersion", value=platform.platform())
+
+        try:
+            self.tracker.send(events=[subtitles_event])
+        except Exception:
+            logging.debug("BAZARR unable to track event.")
+        else:
+            self.tracker.store.save()
+
+
+event_tracker = EventTracker()

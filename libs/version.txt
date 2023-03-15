@@ -13,6 +13,7 @@ flask-cors==3.0.10
 flask-restx==1.0.3
 Flask-SocketIO==5.3.1
 Flask==2.2.2
+ga4mp==2.0.4
 guess_language-spirit==0.5.3
 guessit==3.5.0
 jsonschema==4.17.0
@@ -20,7 +21,6 @@ knowit==0.4.0
 peewee==3.15.3
 py-pretty==1
 pycountry==22.3.5
-pyga==2.6.2
 pyrsistent==0.19.2
 pysubs2==1.4.4
 python-engineio==4.3.4
