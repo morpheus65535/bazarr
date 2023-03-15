@@ -92,13 +92,13 @@ if os.name == 'nt':  # pragma: no cover
             return
         # Fall back to "move away and replace"
         try:
-            os.rename(src, dst)
+            shutil.move(src, dst)
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
             old = "%s-%08x" % (dst, random.randint(0, sys.maxint))
-            os.rename(dst, old)
-            os.rename(src, dst)
+            shutil.move(dst, old)
+            shutil.move(src, dst)
             try:
                 os.unlink(old)
             except Exception:
