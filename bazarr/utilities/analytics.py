@@ -10,8 +10,11 @@ from app.get_args import args
 from radarr.info import get_radarr_info
 from sonarr.info import get_sonarr_info
 
+bazarr_version = os.environ["BAZARR_VERSION"].lstrip('v')
+os_version = platform.python_version()
 sonarr_version = get_sonarr_info.version()
 radarr_version = get_radarr_info.version()
+python_version = platform.platform()
 
 
 class EventTracker:
@@ -29,6 +32,13 @@ class EventTracker:
                 visitor_id = handle.read()
 
         self.tracker.client_id = visitor_id
+
+        self.tracker.store.set_user_property(name="BazarrVersion", value=bazarr_version)
+        self.tracker.store.set_user_property(name="PythonVersion", value=os_version)
+        self.tracker.store.set_user_property(name="SonarrVersion", value=sonarr_version)
+        self.tracker.store.set_user_property(name="RadarrVersion", value=radarr_version)
+        self.tracker.store.set_user_property(name="OSVersion", value=python_version)
+
         self.tracker.store.save()
 
     def track(self, provider, action, language):
@@ -37,12 +47,6 @@ class EventTracker:
         subtitles_event.set_event_param(name="subtitles_provider", value=provider)
         subtitles_event.set_event_param(name="subtitles_action", value=action)
         subtitles_event.set_event_param(name="subtitles_language", value=language)
-
-        self.tracker.store.set_user_property(name="BazarrVersion", value=os.environ["BAZARR_VERSION"].lstrip('v'))
-        self.tracker.store.set_user_property(name="PythonVersion", value=platform.python_version())
-        self.tracker.store.set_user_property(name="SonarrVersion", value=sonarr_version)
-        self.tracker.store.set_user_property(name="RadarrVersion", value=radarr_version)
-        self.tracker.store.set_user_property(name="OSVersion", value=platform.platform())
 
         try:
             self.tracker.send(events=[subtitles_event])
