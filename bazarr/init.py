@@ -58,7 +58,7 @@ os.environ["SZ_HI_EXTENSION"] = settings.general.hi_extension
 configure_captcha_func()
 
 # import analytics module to make sure logging is properly configured afterwards
-from utilities.analytics import event_tracker  # noqa E402
+# from utilities.analytics import event_tracker  # noqa E402
 
 # configure logging
 configure_logging(settings.general.getboolean('debug') or args.debug)
