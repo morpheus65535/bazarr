@@ -10,15 +10,20 @@ from app.get_args import args
 from radarr.info import get_radarr_info
 from sonarr.info import get_sonarr_info
 
-bazarr_version = os.environ["BAZARR_VERSION"].lstrip('v')
-os_version = platform.python_version()
-sonarr_version = get_sonarr_info.version()
-radarr_version = get_radarr_info.version()
-python_version = platform.platform()
-
 
 class EventTracker:
     def __init__(self):
+        self.bazarr_version = os.environ["BAZARR_VERSION"].lstrip('v')
+        self.os_version = platform.python_version()
+        self.sonarr_version = get_sonarr_info.version()
+        self.radarr_version = get_radarr_info.version()
+        self.python_version = platform.platform()
+
+        self.tracker = None
+
+        self.start_tracker()
+
+    def start_tracker(self):
         self.tracker = GtagMP(api_secret="qHRaseheRsic6-h2I_rIAA", measurement_id="G-3820T18GE3", client_id="temp")
 
         if not os.path.isfile(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics_visitor_id.txt'))):
@@ -33,11 +38,11 @@ class EventTracker:
 
         self.tracker.client_id = visitor_id
 
-        self.tracker.store.set_user_property(name="BazarrVersion", value=bazarr_version)
-        self.tracker.store.set_user_property(name="PythonVersion", value=os_version)
-        self.tracker.store.set_user_property(name="SonarrVersion", value=sonarr_version)
-        self.tracker.store.set_user_property(name="RadarrVersion", value=radarr_version)
-        self.tracker.store.set_user_property(name="OSVersion", value=python_version)
+        self.tracker.store.set_user_property(name="BazarrVersion", value=self.bazarr_version)
+        self.tracker.store.set_user_property(name="PythonVersion", value=self.os_version)
+        self.tracker.store.set_user_property(name="SonarrVersion", value=self.sonarr_version)
+        self.tracker.store.set_user_property(name="RadarrVersion", value=self.radarr_version)
+        self.tracker.store.set_user_property(name="OSVersion", value=self.python_version)
 
         self.tracker.store.save()
 
