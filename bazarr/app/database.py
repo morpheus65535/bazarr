@@ -32,7 +32,6 @@ if postgresql:
             (OperationalError, 'server closed the connection unexpectedly'),
         )
 
-
     logger.debug(
         f"Connecting to PostgreSQL database: {settings.postgresql.host}:{settings.postgresql.port}/{settings.postgresql.database}")
     database = ReconnectPostgresqlDatabase(settings.postgresql.database,
