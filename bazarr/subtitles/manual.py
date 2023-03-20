@@ -83,8 +83,12 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
                         can_verify_series = False
 
                     if can_verify_series and not {"series", "season", "episode"}.issubset(matches):
-                        logging.debug(f"BAZARR Skipping {s}, because it doesn't match our series/episode")
-                        continue
+                        try:
+                            logging.debug(f"BAZARR Skipping {s}, because it doesn't match our series/episode")
+                        except TypeError:
+                            logging.debug("BAZARR Ignoring invalid subtitles")
+                        finally:
+                            continue
 
                 initial_hi = None
                 initial_hi_match = False
