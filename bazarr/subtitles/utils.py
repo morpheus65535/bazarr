@@ -7,6 +7,7 @@ import os
 from subzero.language import Language
 from subzero.video import parse_video
 
+from app.config import settings
 from languages.custom_lang import CustomLanguage
 from app.database import get_profiles_list
 from subtitles.tools.score import movie_score, series_score
@@ -36,7 +37,8 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
         hash_from = original_path
 
     try:
-        video = parse_video(path, hints=hints, providers=providers, dry_run=used_scene_name,
+        skip_hashing = settings.general.getboolean('skip_hashing')
+        video = parse_video(path, hints=hints, skip_hashing=skip_hashing, dry_run=used_scene_name, providers=providers,
                             hash_from=hash_from)
         video.used_scene_name = used_scene_name
         video.original_name = original_name

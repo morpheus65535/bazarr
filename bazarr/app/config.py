@@ -82,7 +82,8 @@ defaults = {
         'embedded_subtitles_parser': 'ffprobe',
         'default_und_audio_lang': '',
         'default_und_embedded_subtitles_lang': '',
-        'parse_embedded_audio_track': 'False'
+        'parse_embedded_audio_track': 'False',
+        'skip_hashing': 'False'
     },
     'auth': {
         'type': 'None',

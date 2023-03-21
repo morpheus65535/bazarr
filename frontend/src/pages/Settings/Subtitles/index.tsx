@@ -288,6 +288,15 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           ></Selector>
           <Message>Embedded subtitles video parser</Message>
         </CollapseBox>
+        <Check
+          label="Skip video file hash calculation"
+          settingKey="settings-general-skip_hashing"
+        ></Check>
+        <Message>
+          Skip video file hashing during search process to prevent sleeping hard
+          disk drive from waking-up. On the other hand, this may decrease your
+          search results scores.
+        </Message>
       </Section>
       <Section header="Post-Processing">
         <Check
