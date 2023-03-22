@@ -17,7 +17,7 @@ ga4mp==2.0.4
 guess_language-spirit==0.5.3
 guessit==3.5.0
 jsonschema==4.17.0
-knowit==0.4.0
+knowit==0.5.2
 peewee==3.15.3
 py-pretty==1
 pycountry==22.3.5
@@ -80,8 +80,9 @@ zipp==3.10.0
 markupsafe==2.1.1
 
 # Required-by: knowit
-pymediainfo==5.1.0
+pymediainfo==6.0.1
 pyyaml==6.0
+trakit==0.2.1
 
 # Required-by: python-socketio
 bidict==0.22.0

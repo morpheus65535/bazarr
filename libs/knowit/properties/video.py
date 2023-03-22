@@ -106,11 +106,12 @@ class Ratio(Property[Decimal]):
             if (width, height) == ('0', '1'):  # identity
                 return Decimal('1.0')
 
-            result = round_decimal(Decimal(width) / Decimal(height), min_digits=1, max_digits=3)
-            if self.unit:
-                result *= self.unit
+            if height:
+                result = round_decimal(Decimal(width) / Decimal(height), min_digits=1, max_digits=3)
+                if self.unit:
+                    result *= self.unit
 
-            return result
+                return result
 
         self.report(value, context)
         return None

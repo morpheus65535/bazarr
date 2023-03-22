@@ -1,10 +1,9 @@
 """Know your media files better."""
 __title__ = 'knowit'
-__version__ = '0.4.0'
-__short_version__ = '.'.join(__version__.split('.')[:2])
+__version__ = '0.5.2'
+__short_version__ = '0.5'
 __author__ = 'Rato AQ2'
 __license__ = 'MIT'
-__copyright__ = 'Copyright 2016-2021, Rato AQ2'
 __url__ = 'https://github.com/ratoaq2/knowit'
 
 #: Video extensions

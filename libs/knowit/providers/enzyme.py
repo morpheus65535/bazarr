@@ -26,6 +26,7 @@ from knowit.rules import (
     LanguageRule,
     ResolutionRule,
 )
+from knowit.rules.general import GuessTitleRule
 from knowit.serializer import get_json_encoder
 from knowit.units import units
 from knowit.utils import to_dict
@@ -83,17 +84,20 @@ class EnzymeProvider(Provider):
             },
         }, {
             'video': {
-                'language': LanguageRule('video language'),
+                'guessed': GuessTitleRule('guessed properties', private=True),
+                'language': LanguageRule('video language', override=True),
                 'resolution': ResolutionRule('video resolution'),
             },
             'audio': {
-                'language': LanguageRule('audio language'),
+                'guessed': GuessTitleRule('guessed properties', private=True),
+                'language': LanguageRule('audio language', override=True),
                 'channels': AudioChannelsRule('audio channels'),
             },
             'subtitle': {
-                'language': LanguageRule('subtitle language'),
-                'hearing_impaired': HearingImpairedRule('subtitle hearing impaired'),
-                'closed_caption': ClosedCaptionRule('closed caption'),
+                'guessed': GuessTitleRule('guessed properties', private=True),
+                'language': LanguageRule('subtitle language', override=True),
+                'hearing_impaired': HearingImpairedRule('subtitle hearing impaired', override=True),
+                'closed_caption': ClosedCaptionRule('closed caption', override=True),
             }
         })
 
@@ -130,7 +134,8 @@ class EnzymeProvider(Provider):
 
         if logger.level == logging.DEBUG:
             logger.debug('Video {video_path} scanned using Enzyme {version} has raw data:\n{data}',
-                         video_path=video_path, version=enzyme.__version__, data=json.dumps(data))
+                         video_path=video_path, version=enzyme.__version__,
+                         data=json.dumps(data, cls=get_json_encoder(context), indent=4, ensure_ascii=False))
 
         result = self._describe_tracks(video_path, data.get('info', {}), data.get('video_tracks'),
                                        data.get('audio_tracks'), data.get('subtitle_tracks'), context)
