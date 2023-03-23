@@ -1,13 +1,12 @@
 from __future__ import unicode_literals
+
 import argparse
+import sys
 from codecs import open as codecs_open
 from functools import lru_cache
-
-# codecs_open = open
 from os.path import isabs
-import sys
-from typing import Dict, Type, Union, Tuple, List, Optional
-from urllib.parse import urlsplit, SplitResult
+from typing import Dict, List, Optional, Tuple, Type, Union
+from urllib.parse import SplitResult, urlsplit
 
 from .base import BaseTLDSourceParser, Registry
 from .exceptions import (
@@ -17,11 +16,14 @@ from .exceptions import (
     TldIOError,
 )
 from .helpers import project_dir
-from .trie import Trie
 from .result import Result
+from .trie import Trie
+
+# codecs_open = open
+
 
 __author__ = "Artur Barseghyan"
-__copyright__ = "2013-2021 Artur Barseghyan"
+__copyright__ = "2013-2023 Artur Barseghyan"
 __license__ = "MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later"
 __all__ = (
     "BaseMozillaTLDSourceParser",
@@ -132,9 +134,7 @@ def update_tld_names_cli() -> int:
     parser_uid = args.parser_uid
     fail_silently = args.fail_silently
     return int(
-        not update_tld_names(
-            parser_uid=parser_uid, fail_silently=fail_silently
-        )
+        not update_tld_names(parser_uid=parser_uid, fail_silently=fail_silently)
     )
 
 
@@ -229,7 +229,7 @@ class BaseMozillaTLDSourceParser(BaseTLDSourceParser):
             update_tld_names_container(cls.local_path, trie)
 
             local_file.close()
-        except IOError as err:
+        except IOError:
             # Grab the file
             cls.update_tld_names(fail_silently=fail_silently)
             # Increment ``retry_count`` in order to avoid infinite loops
@@ -314,20 +314,14 @@ def process_url(
             parsed_url = urlsplit(url)
         except ValueError as e:
             if fail_silently:
-                parsed_url = url
+                return None, None, url
             else:
                 raise e
     else:
         parsed_url = url
 
     # Get (sub) domain name
-    try:
-        domain_name = parsed_url.hostname
-    except AttributeError as e:
-        if fail_silently:
-            domain_name = None
-        else:
-            raise e
+    domain_name = parsed_url.hostname
 
     if not domain_name:
         if fail_silently:

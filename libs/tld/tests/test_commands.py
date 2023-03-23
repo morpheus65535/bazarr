@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import subprocess
 import unittest
 
-import subprocess
-
-from .base import log_info, internet_available_only
+from .base import internet_available_only, log_info
 
 __author__ = "Artur Barseghyan"
-__copyright__ = "2013-2021 Artur Barseghyan"
+__copyright__ = "2013-2023 Artur Barseghyan"
 __license__ = "GPL 2.0/LGPL 2.1"
 __all__ = ("TestCommands",)
 

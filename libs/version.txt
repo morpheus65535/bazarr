@@ -129,9 +129,9 @@ webencodings==0.5.1
 
 # Required-by: subzero
 backports.functools-lru-cache==1.6.4
-fcache==0.4.7 # https://github.com/tsroten/fcache/pull/34 and 35
+fcache==0.5.0
 json_tricks==3.16.1
-tld==0.12.6 # https://github.com/barseghyanartur/tld/pull/119
+tld==0.13
 
 # Required-by: requests
 certifi==2022.9.24
