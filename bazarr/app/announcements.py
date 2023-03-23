@@ -13,6 +13,8 @@ from operator import itemgetter
 from app.get_providers import get_enabled_providers
 from app.database import TableAnnouncements
 from .get_args import args
+from sonarr.info import get_sonarr_info
+from radarr.info import get_radarr_info
 
 
 # Announcements as receive by browser must be in the form of a list of dicts converted to JSON
@@ -82,6 +84,24 @@ def get_local_announcements():
             'link': 'https://wiki.bazarr.media/Troubleshooting/OpenSubtitles-migration/',
             'dismissible': False,
             'timestamp': 1676236978,
+        })
+
+    # deprecated Sonarr and Radarr versions
+    if get_sonarr_info.is_deprecated():
+        announcements.append({
+            'text': f'Sonarr {get_sonarr_info.version()} is deprecated and unsupported. You should consider upgrading '
+                    f'as Bazarr will eventually drop support for deprecated Sonarr version.',
+            'link': 'https://forums.sonarr.tv/t/v3-is-now-officially-stable-v2-is-eol/27858',
+            'dismissible': False,
+            'timestamp': 1679606061,
+        })
+    if get_radarr_info.is_deprecated():
+        announcements.append({
+            'text': f'Radarr {get_radarr_info.version()} is deprecated and unsupported. You should consider upgrading '
+                    f'as Bazarr will eventually drop support for deprecated Radarr version.',
+            'link': 'https://discord.com/channels/264387956343570434/264388019585286144/1051567458697363547',
+            'dismissible': False,
+            'timestamp': 1679606309,
         })
 
     for announcement in announcements:

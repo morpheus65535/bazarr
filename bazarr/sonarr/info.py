@@ -59,6 +59,17 @@ class GetSonarrInfo:
         else:
             return False
 
+    def is_deprecated(self):
+        """
+                Call self.version() and parse the result to determine if it's a deprecated version of Sonarr
+                @return: bool
+                """
+        sonarr_version = self.version()
+        if sonarr_version.startswith(('0.', '2.')):
+            return True
+        else:
+            return False
+
 
 get_sonarr_info = GetSonarrInfo()
 
