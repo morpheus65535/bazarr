@@ -3,34 +3,32 @@
 import pycountry
 
 from subzero.language import Language
+from sqlalchemy import insert, update
 
 from .custom_lang import CustomLanguage
-from app.database import TableSettingsLanguages
+from app.database import TableSettingsLanguages, database
 
 
 def load_language_in_db():
     # Get languages list in langs tuple
-    langs = [[lang.alpha_3, lang.alpha_2, lang.name]
+    langs = [{'code3': lang.alpha_3, 'code2': lang.alpha_2, 'name': lang.name}
              for lang in pycountry.languages
              if hasattr(lang, 'alpha_2')]
 
     # Insert standard languages in database table
-    TableSettingsLanguages.insert_many(langs,
-                                       fields=[TableSettingsLanguages.code3, TableSettingsLanguages.code2,
-                                               TableSettingsLanguages.name]) \
-        .on_conflict(action='IGNORE') \
-        .execute()
+    stmt = insert(TableSettingsLanguages).values(langs)
+    stmt = stmt.on_conflict_do_nothing()
+    database.execute(stmt)
+    database.commit()
 
     # Update standard languages with code3b if available
-    langs = [[lang.bibliographic, lang.alpha_3]
+    langs = [{'code3b': lang.bibliographic, 'code3': lang.alpha_3}
              for lang in pycountry.languages
              if hasattr(lang, 'alpha_2') and hasattr(lang, 'bibliographic')]
 
     # Update languages in database table
-    for lang in langs:
-        TableSettingsLanguages.update({TableSettingsLanguages.code3b: lang[0]}) \
-            .where(TableSettingsLanguages.code3 == lang[1]) \
-            .execute()
+    database.execute(update(TableSettingsLanguages), langs)
+    database.commit()
 
     # Insert custom languages in database table
     CustomLanguage.register(TableSettingsLanguages)

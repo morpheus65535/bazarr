@@ -8,13 +8,10 @@ import time
 from datetime import datetime
 
 from dogpile.cache import make_region
-from peewee import Model, AutoField, TextField, IntegerField, ForeignKeyField, BlobField, BooleanField, BigIntegerField, \
-    DateTimeField, OperationalError, PostgresqlDatabase
-from playhouse.migrate import PostgresqlMigrator
-from playhouse.migrate import SqliteMigrator, migrate
-from playhouse.shortcuts import ThreadSafeDatabaseMetadata, ReconnectMixin
-from playhouse.sqlite_ext import RowIDField
-from playhouse.sqliteq import SqliteQueueDatabase
+from sqlalchemy import create_engine, Column, DateTime, ForeignKey, Integer, LargeBinary, Table, Text
+from sqlalchemy.orm import scoped_session, sessionmaker, relationship
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.pool import NullPool
 
 from utilities.path_mappings import path_mappings
 from .config import settings, get_array_from
@@ -27,497 +24,451 @@ postgresql = settings.postgresql.getboolean('enabled')
 region = make_region().configure('dogpile.cache.memory')
 
 if postgresql:
-    class ReconnectPostgresqlDatabase(ReconnectMixin, PostgresqlDatabase):
-        reconnect_errors = (
-            (OperationalError, 'server closed the connection unexpectedly'),
-        )
-
-    logger.debug(
-        f"Connecting to PostgreSQL database: {settings.postgresql.host}:{settings.postgresql.port}/{settings.postgresql.database}")
-    database = ReconnectPostgresqlDatabase(settings.postgresql.database,
-                                           user=settings.postgresql.username,
-                                           password=settings.postgresql.password,
-                                           host=settings.postgresql.host,
-                                           port=settings.postgresql.port,
-                                           autocommit=True,
-                                           autorollback=True,
-                                           autoconnect=True,
-                                           )
-    migrator = PostgresqlMigrator(database)
+    # class ReconnectPostgresqlDatabase(ReconnectMixin, PostgresqlDatabase):
+    #     reconnect_errors = (
+    #         (OperationalError, 'server closed the connection unexpectedly'),
+    #     )
+    #
+    # logger.debug(
+    #     f"Connecting to PostgreSQL database: {settings.postgresql.host}:{settings.postgresql.port}/{settings.postgresql.database}")
+    # database = ReconnectPostgresqlDatabase(settings.postgresql.database,
+    #                                        user=settings.postgresql.username,
+    #                                        password=settings.postgresql.password,
+    #                                        host=settings.postgresql.host,
+    #                                        port=settings.postgresql.port,
+    #                                        autocommit=True,
+    #                                        autorollback=True,
+    #                                        autoconnect=True,
+    #                                        )
+    # migrator = PostgresqlMigrator(database)
+    pass
 else:
     db_path = os.path.join(args.config_dir, 'db', 'bazarr.db')
     logger.debug(f"Connecting to SQLite database: {db_path}")
-    database = SqliteQueueDatabase(db_path,
-                                   use_gevent=False,
-                                   autostart=True,
-                                   queue_max_size=256)
-    migrator = SqliteMigrator(database)
+    engine = create_engine(f'sqlite:///{db_path}', poolclass=NullPool)
+    session_factory = sessionmaker(bind=engine)
+    database = scoped_session(session_factory)
 
 
 @atexit.register
 def _stop_worker_threads():
-    if not postgresql:
-        database.stop()
+    database.remove()
 
 
-class UnknownField(object):
-    def __init__(self, *_, **__): pass
+Base = declarative_base()
+metadata = Base.metadata
 
 
-class BaseModel(Model):
-    class Meta:
-        database = database
-        model_metadata_class = ThreadSafeDatabaseMetadata
+class System(Base):
+    __tablename__ = 'system'
+
+    configured = Column(Text, primary_key=True)
+    updated = Column(Text)
 
 
-class System(BaseModel):
-    configured = TextField(null=True)
-    updated = TextField(null=True)
+class TableAnnouncements(Base):
+    __tablename__ = 'table_announcements'
 
-    class Meta:
-        table_name = 'system'
-        primary_key = False
-
-
-class TableBlacklist(BaseModel):
-    language = TextField(null=True)
-    provider = TextField(null=True)
-    sonarr_episode_id = IntegerField(null=True)
-    sonarr_series_id = IntegerField(null=True)
-    subs_id = TextField(null=True)
-    timestamp = DateTimeField(null=True)
-
-    class Meta:
-        table_name = 'table_blacklist'
-        primary_key = False
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, nullable=False)
+    hash = Column(Text, unique=True)
+    text = Column(Text)
 
 
-class TableBlacklistMovie(BaseModel):
-    language = TextField(null=True)
-    provider = TextField(null=True)
-    radarr_id = IntegerField(null=True)
-    subs_id = TextField(null=True)
-    timestamp = DateTimeField(null=True)
-
-    class Meta:
-        table_name = 'table_blacklist_movie'
-        primary_key = False
-
-
-class TableEpisodes(BaseModel):
-    rowid = RowIDField()
-    audio_codec = TextField(null=True)
-    audio_language = TextField(null=True)
-    episode = IntegerField()
-    episode_file_id = IntegerField(null=True)
-    failedAttempts = TextField(null=True)
-    ffprobe_cache = BlobField(null=True)
-    file_size = BigIntegerField(default=0, null=True)
-    format = TextField(null=True)
-    missing_subtitles = TextField(null=True)
-    monitored = TextField(null=True)
-    path = TextField()
-    resolution = TextField(null=True)
-    sceneName = TextField(null=True)
-    season = IntegerField()
-    sonarrEpisodeId = IntegerField(unique=True)
-    sonarrSeriesId = IntegerField()
-    subtitles = TextField(null=True)
-    title = TextField()
-    video_codec = TextField(null=True)
-
-    class Meta:
-        table_name = 'table_episodes'
-        primary_key = False
+TableBlacklist = Table(
+    'table_blacklist', metadata,
+    Column('language', Text),
+    Column('provider', Text),
+    Column('sonarr_episode_id', Integer),
+    Column('sonarr_series_id', Integer),
+    Column('subs_id', Text),
+    Column('timestamp', DateTime)
+)
 
 
-class TableHistory(BaseModel):
-    action = IntegerField()
-    description = TextField()
-    id = AutoField()
-    language = TextField(null=True)
-    provider = TextField(null=True)
-    score = IntegerField(null=True)
-    sonarrEpisodeId = IntegerField()
-    sonarrSeriesId = IntegerField()
-    subs_id = TextField(null=True)
-    subtitles_path = TextField(null=True)
-    timestamp = DateTimeField()
-    video_path = TextField(null=True)
-
-    class Meta:
-        table_name = 'table_history'
+TableBlacklistMovie = Table(
+    'table_blacklist_movie', metadata,
+    Column('language', Text),
+    Column('provider', Text),
+    Column('radarr_id', Integer),
+    Column('subs_id', Text),
+    Column('timestamp', DateTime)
+)
 
 
-class TableHistoryMovie(BaseModel):
-    action = IntegerField()
-    description = TextField()
-    id = AutoField()
-    language = TextField(null=True)
-    provider = TextField(null=True)
-    radarrId = IntegerField()
-    score = IntegerField(null=True)
-    subs_id = TextField(null=True)
-    subtitles_path = TextField(null=True)
-    timestamp = DateTimeField()
-    video_path = TextField(null=True)
+class TableCustomScoreProfiles(Base):
+    __tablename__ = 'table_custom_score_profiles'
 
-    class Meta:
-        table_name = 'table_history_movie'
+    id = Column(Integer, primary_key=True)
+    name = Column(Text)
+    media = Column(Text)
+    score = Column(Integer)
 
 
-class TableLanguagesProfiles(BaseModel):
-    cutoff = IntegerField(null=True)
-    originalFormat = BooleanField(null=True)
-    items = TextField()
-    name = TextField()
-    profileId = AutoField()
-    mustContain = TextField(null=True)
-    mustNotContain = TextField(null=True)
+class TableEpisodes(Base):
+    __tablename__ = 'table_episodes'
 
-    class Meta:
-        table_name = 'table_languages_profiles'
-
-
-class TableMovies(BaseModel):
-    rowid = RowIDField()
-    alternativeTitles = TextField(null=True)
-    audio_codec = TextField(null=True)
-    audio_language = TextField(null=True)
-    failedAttempts = TextField(null=True)
-    fanart = TextField(null=True)
-    ffprobe_cache = BlobField(null=True)
-    file_size = BigIntegerField(default=0, null=True)
-    format = TextField(null=True)
-    imdbId = TextField(null=True)
-    missing_subtitles = TextField(null=True)
-    monitored = TextField(null=True)
-    movie_file_id = IntegerField(null=True)
-    overview = TextField(null=True)
-    path = TextField(unique=True)
-    poster = TextField(null=True)
-    profileId = IntegerField(null=True)
-    radarrId = IntegerField(unique=True)
-    resolution = TextField(null=True)
-    sceneName = TextField(null=True)
-    sortTitle = TextField(null=True)
-    subtitles = TextField(null=True)
-    tags = TextField(null=True)
-    title = TextField()
-    tmdbId = TextField(unique=True)
-    video_codec = TextField(null=True)
-    year = TextField(null=True)
-
-    class Meta:
-        table_name = 'table_movies'
+    rowid = Column(Integer, primary_key=True)
+    audio_codec = Column(Text)
+    audio_language = Column(Text)
+    episode = Column(Integer, nullable=False)
+    episode_file_id = Column(Integer)
+    failedAttempts = Column(Text)
+    ffprobe_cache = Column(LargeBinary)
+    file_size = Column(Integer)
+    format = Column(Text)
+    missing_subtitles = Column(Text)
+    monitored = Column(Text)
+    path = Column(Text, nullable=False)
+    resolution = Column(Text)
+    sceneName = Column(Text)
+    season = Column(Integer, nullable=False)
+    sonarrEpisodeId = Column(Integer, nullable=False, unique=True)
+    sonarrSeriesId = Column(Integer, nullable=False)
+    subtitles = Column(Text)
+    title = Column(Text, nullable=False)
+    video_codec = Column(Text)
 
 
-class TableMoviesRootfolder(BaseModel):
-    accessible = IntegerField(null=True)
-    error = TextField(null=True)
-    id = IntegerField(null=True)
-    path = TextField(null=True)
+class TableHistory(Base):
+    __tablename__ = 'table_history'
 
-    class Meta:
-        table_name = 'table_movies_rootfolder'
-        primary_key = False
-
-
-class TableSettingsLanguages(BaseModel):
-    code2 = TextField(null=True)
-    code3 = TextField(primary_key=True)
-    code3b = TextField(null=True)
-    enabled = IntegerField(null=True)
-    name = TextField()
-
-    class Meta:
-        table_name = 'table_settings_languages'
+    id = Column(Integer, primary_key=True)
+    action = Column(Integer, nullable=False)
+    description = Column(Text, nullable=False)
+    language = Column(Text)
+    provider = Column(Text)
+    score = Column(Integer)
+    sonarrEpisodeId = Column(Integer, nullable=False)
+    sonarrSeriesId = Column(Integer, nullable=False)
+    subs_id = Column(Text)
+    subtitles_path = Column(Text)
+    timestamp = Column(DateTime, nullable=False)
+    video_path = Column(Text)
 
 
-class TableSettingsNotifier(BaseModel):
-    enabled = IntegerField(null=True)
-    name = TextField(null=True, primary_key=True)
-    url = TextField(null=True)
+class TableHistoryMovie(Base):
+    __tablename__ = 'table_history_movie'
 
-    class Meta:
-        table_name = 'table_settings_notifier'
-
-
-class TableShows(BaseModel):
-    alternativeTitles = TextField(null=True)
-    audio_language = TextField(null=True)
-    fanart = TextField(null=True)
-    imdbId = TextField(default='""', null=True)
-    monitored = TextField(null=True)
-    overview = TextField(null=True)
-    path = TextField(unique=True)
-    poster = TextField(null=True)
-    profileId = IntegerField(null=True)
-    seriesType = TextField(null=True)
-    sonarrSeriesId = IntegerField(unique=True)
-    sortTitle = TextField(null=True)
-    tags = TextField(null=True)
-    title = TextField()
-    tvdbId = AutoField()
-    year = TextField(null=True)
-
-    class Meta:
-        table_name = 'table_shows'
+    id = Column(Integer, primary_key=True)
+    action = Column(Integer, nullable=False)
+    description = Column(Text, nullable=False)
+    language = Column(Text)
+    provider = Column(Text)
+    radarrId = Column(Integer, nullable=False)
+    score = Column(Integer)
+    subs_id = Column(Text)
+    subtitles_path = Column(Text)
+    timestamp = Column(DateTime, nullable=False)
+    video_path = Column(Text)
 
 
-class TableShowsRootfolder(BaseModel):
-    accessible = IntegerField(null=True)
-    error = TextField(null=True)
-    id = IntegerField(null=True)
-    path = TextField(null=True)
+class TableLanguagesProfiles(Base):
+    __tablename__ = 'table_languages_profiles'
 
-    class Meta:
-        table_name = 'table_shows_rootfolder'
-        primary_key = False
-
-
-class TableCustomScoreProfiles(BaseModel):
-    id = AutoField()
-    name = TextField(null=True)
-    media = TextField(null=True)
-    score = IntegerField(null=True)
-
-    class Meta:
-        table_name = 'table_custom_score_profiles'
+    profileId = Column(Integer, primary_key=True)
+    cutoff = Column(Integer)
+    originalFormat = Column(Integer)
+    items = Column(Text, nullable=False)
+    name = Column(Text, nullable=False)
+    mustContain = Column(Text)
+    mustNotContain = Column(Text)
 
 
-class TableCustomScoreProfileConditions(BaseModel):
-    profile_id = ForeignKeyField(TableCustomScoreProfiles, to_field="id")
-    type = TextField(null=True)  # provider, uploader, regex, etc
-    value = TextField(null=True)  # opensubtitles, jane_doe, [a-z], etc
-    required = BooleanField(default=False)
-    negate = BooleanField(default=False)
+class TableMovies(Base):
+    __tablename__ = 'table_movies'
 
-    class Meta:
-        table_name = 'table_custom_score_profile_conditions'
+    rowid = Column(Integer, primary_key=True)
+    alternativeTitles = Column(Text)
+    audio_codec = Column(Text)
+    audio_language = Column(Text)
+    failedAttempts = Column(Text)
+    fanart = Column(Text)
+    ffprobe_cache = Column(LargeBinary)
+    file_size = Column(Integer)
+    format = Column(Text)
+    imdbId = Column(Text)
+    missing_subtitles = Column(Text)
+    monitored = Column(Text)
+    movie_file_id = Column(Integer)
+    overview = Column(Text)
+    path = Column(Text, nullable=False, unique=True)
+    poster = Column(Text)
+    profileId = Column(Integer)
+    radarrId = Column(Integer, nullable=False, unique=True)
+    resolution = Column(Text)
+    sceneName = Column(Text)
+    sortTitle = Column(Text)
+    subtitles = Column(Text)
+    tags = Column(Text)
+    title = Column(Text, nullable=False)
+    tmdbId = Column(Text, nullable=False, unique=True)
+    video_codec = Column(Text)
+    year = Column(Text)
 
 
-class TableAnnouncements(BaseModel):
-    timestamp = DateTimeField()
-    hash = TextField(null=True, unique=True)
-    text = TextField(null=True)
+TableMoviesRootfolder = Table(
+    'table_movies_rootfolder', metadata,
+    Column('accessible', Integer),
+    Column('error', Text),
+    Column('id', Integer),
+    Column('path', Text)
+)
 
-    class Meta:
-        table_name = 'table_announcements'
+
+class TableSettingsLanguages(Base):
+    __tablename__ = 'table_settings_languages'
+
+    code3 = Column(Text, primary_key=True)
+    code2 = Column(Text)
+    code3b = Column(Text)
+    enabled = Column(Integer)
+    name = Column(Text, nullable=False)
+
+
+class TableSettingsNotifier(Base):
+    __tablename__ = 'table_settings_notifier'
+
+    name = Column(Text, primary_key=True)
+    enabled = Column(Integer)
+    url = Column(Text)
+
+
+class TableShows(Base):
+    __tablename__ = 'table_shows'
+
+    tvdbId = Column(Integer, primary_key=True)
+    alternativeTitles = Column(Text)
+    audio_language = Column(Text)
+    fanart = Column(Text)
+    imdbId = Column(Text)
+    monitored = Column(Text)
+    overview = Column(Text)
+    path = Column(Text, nullable=False, unique=True)
+    poster = Column(Text)
+    profileId = Column(Integer)
+    seriesType = Column(Text)
+    sonarrSeriesId = Column(Integer, nullable=False, unique=True)
+    sortTitle = Column(Text)
+    tags = Column(Text)
+    title = Column(Text, nullable=False)
+    year = Column(Text)
+    alternativeTitle = Column(Text)
+
+
+TableShowsRootfolder = Table(
+    'table_shows_rootfolder', metadata,
+    Column('accessible', Integer),
+    Column('error', Text),
+    Column('id', Integer),
+    Column('path', Text)
+)
+
+
+class TableCustomScoreProfileConditions(Base):
+    __tablename__ = 'table_custom_score_profile_conditions'
+
+    id = Column(Integer, primary_key=True)
+    profile_id = Column(ForeignKey('table_custom_score_profiles.id'), nullable=False, index=True)
+    type = Column(Text)
+    value = Column(Text)
+    required = Column(Integer, nullable=False)
+    negate = Column(Integer, nullable=False)
+
+    profile = relationship('TableCustomScoreProfiles')
 
 
 def init_db():
-    # Create tables if they don't exists.
-    database.create_tables([System,
-                            TableBlacklist,
-                            TableBlacklistMovie,
-                            TableEpisodes,
-                            TableHistory,
-                            TableHistoryMovie,
-                            TableLanguagesProfiles,
-                            TableMovies,
-                            TableMoviesRootfolder,
-                            TableSettingsLanguages,
-                            TableSettingsNotifier,
-                            TableShows,
-                            TableShowsRootfolder,
-                            TableCustomScoreProfiles,
-                            TableCustomScoreProfileConditions,
-                            TableAnnouncements])
+    database.begin()
+
+    # Create tables if they don't exist.
+    metadata.create_all(engine)
 
     # add the system table single row if it's not existing
-    # we must retry until the tables are created
-    tables_created = False
-    while not tables_created:
-        try:
-            if not System.select().count():
-                System.insert({System.configured: '0', System.updated: '0'}).execute()
-        except Exception:
-            time.sleep(0.1)
-        else:
-            tables_created = True
+    if not database.query(System).count():
+        database.add(System(configured='0', updated='0'))
 
 
-def migrate_db():
-    table_shows = [t.name for t in database.get_columns('table_shows')]
-    table_episodes = [t.name for t in database.get_columns('table_episodes')]
-    table_movies = [t.name for t in database.get_columns('table_movies')]
-    table_history = [t.name for t in database.get_columns('table_history')]
-    table_history_movie = [t.name for t in database.get_columns('table_history_movie')]
-    table_languages_profiles = [t.name for t in database.get_columns('table_languages_profiles')]
-    if "year" not in table_shows:
-        migrate(migrator.add_column('table_shows', 'year', TextField(null=True)))
-    if "alternativeTitle" not in table_shows:
-        migrate(migrator.add_column('table_shows', 'alternativeTitle', TextField(null=True)))
-    if "tags" not in table_shows:
-        migrate(migrator.add_column('table_shows', 'tags', TextField(default='[]', null=True)))
-    if "seriesType" not in table_shows:
-        migrate(migrator.add_column('table_shows', 'seriesType', TextField(default='""', null=True)))
-    if "imdbId" not in table_shows:
-        migrate(migrator.add_column('table_shows', 'imdbId', TextField(default='""', null=True)))
-    if "profileId" not in table_shows:
-        migrate(migrator.add_column('table_shows', 'profileId', IntegerField(null=True)))
-    if "profileId" not in table_shows:
-        migrate(migrator.add_column('table_shows', 'profileId', IntegerField(null=True)))
-    if "monitored" not in table_shows:
-        migrate(migrator.add_column('table_shows', 'monitored', TextField(null=True)))
-
-    if "format" not in table_episodes:
-        migrate(migrator.add_column('table_episodes', 'format', TextField(null=True)))
-    if "resolution" not in table_episodes:
-        migrate(migrator.add_column('table_episodes', 'resolution', TextField(null=True)))
-    if "video_codec" not in table_episodes:
-        migrate(migrator.add_column('table_episodes', 'video_codec', TextField(null=True)))
-    if "audio_codec" not in table_episodes:
-        migrate(migrator.add_column('table_episodes', 'audio_codec', TextField(null=True)))
-    if "episode_file_id" not in table_episodes:
-        migrate(migrator.add_column('table_episodes', 'episode_file_id', IntegerField(null=True)))
-    if "audio_language" not in table_episodes:
-        migrate(migrator.add_column('table_episodes', 'audio_language', TextField(null=True)))
-    if "file_size" not in table_episodes:
-        migrate(migrator.add_column('table_episodes', 'file_size', BigIntegerField(default=0, null=True)))
-    if "ffprobe_cache" not in table_episodes:
-        migrate(migrator.add_column('table_episodes', 'ffprobe_cache', BlobField(null=True)))
-
-    if "sortTitle" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'sortTitle', TextField(null=True)))
-    if "year" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'year', TextField(null=True)))
-    if "alternativeTitles" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'alternativeTitles', TextField(null=True)))
-    if "format" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'format', TextField(null=True)))
-    if "resolution" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'resolution', TextField(null=True)))
-    if "video_codec" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'video_codec', TextField(null=True)))
-    if "audio_codec" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'audio_codec', TextField(null=True)))
-    if "imdbId" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'imdbId', TextField(null=True)))
-    if "movie_file_id" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'movie_file_id', IntegerField(null=True)))
-    if "tags" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'tags', TextField(default='[]', null=True)))
-    if "profileId" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'profileId', IntegerField(null=True)))
-    if "file_size" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'file_size', BigIntegerField(default=0, null=True)))
-    if "ffprobe_cache" not in table_movies:
-        migrate(migrator.add_column('table_movies', 'ffprobe_cache', BlobField(null=True)))
-
-    if "video_path" not in table_history:
-        migrate(migrator.add_column('table_history', 'video_path', TextField(null=True)))
-    if "language" not in table_history:
-        migrate(migrator.add_column('table_history', 'language', TextField(null=True)))
-    if "provider" not in table_history:
-        migrate(migrator.add_column('table_history', 'provider', TextField(null=True)))
-    if "score" not in table_history:
-        migrate(migrator.add_column('table_history', 'score', TextField(null=True)))
-    if "subs_id" not in table_history:
-        migrate(migrator.add_column('table_history', 'subs_id', TextField(null=True)))
-    if "subtitles_path" not in table_history:
-        migrate(migrator.add_column('table_history', 'subtitles_path', TextField(null=True)))
-
-    if "video_path" not in table_history_movie:
-        migrate(migrator.add_column('table_history_movie', 'video_path', TextField(null=True)))
-    if "language" not in table_history_movie:
-        migrate(migrator.add_column('table_history_movie', 'language', TextField(null=True)))
-    if "provider" not in table_history_movie:
-        migrate(migrator.add_column('table_history_movie', 'provider', TextField(null=True)))
-    if "score" not in table_history_movie:
-        migrate(migrator.add_column('table_history_movie', 'score', TextField(null=True)))
-    if "subs_id" not in table_history_movie:
-        migrate(migrator.add_column('table_history_movie', 'subs_id', TextField(null=True)))
-    if "subtitles_path" not in table_history_movie:
-        migrate(migrator.add_column('table_history_movie', 'subtitles_path', TextField(null=True)))
-
-    if "mustContain" not in table_languages_profiles:
-        migrate(migrator.add_column('table_languages_profiles', 'mustContain', TextField(null=True)))
-    if "mustNotContain" not in table_languages_profiles:
-        migrate(migrator.add_column('table_languages_profiles', 'mustNotContain', TextField(null=True)))
-    if "originalFormat" not in table_languages_profiles:
-        migrate(migrator.add_column('table_languages_profiles', 'originalFormat', BooleanField(null=True)))
-
-    if "languages" in table_shows:
-        migrate(migrator.drop_column('table_shows', 'languages'))
-    if "hearing_impaired" in table_shows:
-        migrate(migrator.drop_column('table_shows', 'hearing_impaired'))
-
-    if "languages" in table_movies:
-        migrate(migrator.drop_column('table_movies', 'languages'))
-    if "hearing_impaired" in table_movies:
-        migrate(migrator.drop_column('table_movies', 'hearing_impaired'))
-    if not any(
-            x
-            for x in database.get_columns('table_blacklist')
-            if x.name == "timestamp" and x.data_type in ["DATETIME", "timestamp without time zone"]
-    ):
-        migrate(migrator.alter_column_type('table_blacklist', 'timestamp', DateTimeField(default=datetime.now)))
-        update = TableBlacklist.select()
-        for item in update:
-            item.update({"timestamp": datetime.fromtimestamp(int(item.timestamp))}).execute()
-
-    if not any(
-            x
-            for x in database.get_columns('table_blacklist_movie')
-            if x.name == "timestamp" and x.data_type in ["DATETIME", "timestamp without time zone"]
-    ):
-        migrate(migrator.alter_column_type('table_blacklist_movie', 'timestamp', DateTimeField(default=datetime.now)))
-        update = TableBlacklistMovie.select()
-        for item in update:
-            item.update({"timestamp": datetime.fromtimestamp(int(item.timestamp))}).execute()
-
-    if not any(
-            x for x in database.get_columns('table_history') if x.name == "score" and x.data_type.lower() == "integer"):
-        migrate(migrator.alter_column_type('table_history', 'score', IntegerField(null=True)))
-    if not any(
-            x
-            for x in database.get_columns('table_history')
-            if x.name == "timestamp" and x.data_type in ["DATETIME", "timestamp without time zone"]
-    ):
-        migrate(migrator.alter_column_type('table_history', 'timestamp', DateTimeField(default=datetime.now)))
-        update = TableHistory.select()
-        list_to_update = []
-        for i, item in enumerate(update):
-            item.timestamp = datetime.fromtimestamp(int(item.timestamp))
-            list_to_update.append(item)
-            if i % 100 == 0:
-                TableHistory.bulk_update(list_to_update, fields=[TableHistory.timestamp])
-                list_to_update = []
-        if list_to_update:
-            TableHistory.bulk_update(list_to_update, fields=[TableHistory.timestamp])
-
-    if not any(x for x in database.get_columns('table_history_movie') if
-               x.name == "score" and x.data_type.lower() == "integer"):
-        migrate(migrator.alter_column_type('table_history_movie', 'score', IntegerField(null=True)))
-    if not any(
-            x
-            for x in database.get_columns('table_history_movie')
-            if x.name == "timestamp" and x.data_type in ["DATETIME", "timestamp without time zone"]
-    ):
-        migrate(migrator.alter_column_type('table_history_movie', 'timestamp', DateTimeField(default=datetime.now)))
-        update = TableHistoryMovie.select()
-        list_to_update = []
-        for i, item in enumerate(update):
-            item.timestamp = datetime.fromtimestamp(int(item.timestamp))
-            list_to_update.append(item)
-            if i % 100 == 0:
-                TableHistoryMovie.bulk_update(list_to_update, fields=[TableHistoryMovie.timestamp])
-                list_to_update = []
-        if list_to_update:
-            TableHistoryMovie.bulk_update(list_to_update, fields=[TableHistoryMovie.timestamp])
-    # if not any(x for x in database.get_columns('table_movies') if x.name == "monitored" and x.data_type == "BOOLEAN"):
-    #     migrate(migrator.alter_column_type('table_movies', 'monitored', BooleanField(null=True)))
-
-    if database.get_columns('table_settings_providers'):
-        database.execute_sql('drop table if exists table_settings_providers;')
-
-    if "alternateTitles" in table_shows:
-        migrate(migrator.rename_column('table_shows', 'alternateTitles', "alternativeTitles"))
-
-    if "scene_name" in table_episodes:
-        migrate(migrator.rename_column('table_episodes', 'scene_name', "sceneName"))
+# def migrate_db():
+#     table_shows = [t.name for t in database.get_columns('table_shows')]
+#     table_episodes = [t.name for t in database.get_columns('table_episodes')]
+#     table_movies = [t.name for t in database.get_columns('table_movies')]
+#     table_history = [t.name for t in database.get_columns('table_history')]
+#     table_history_movie = [t.name for t in database.get_columns('table_history_movie')]
+#     table_languages_profiles = [t.name for t in database.get_columns('table_languages_profiles')]
+#     if "year" not in table_shows:
+#         migrate(migrator.add_column('table_shows', 'year', TextField(null=True)))
+#     if "alternativeTitle" not in table_shows:
+#         migrate(migrator.add_column('table_shows', 'alternativeTitle', TextField(null=True)))
+#     if "tags" not in table_shows:
+#         migrate(migrator.add_column('table_shows', 'tags', TextField(default='[]', null=True)))
+#     if "seriesType" not in table_shows:
+#         migrate(migrator.add_column('table_shows', 'seriesType', TextField(default='""', null=True)))
+#     if "imdbId" not in table_shows:
+#         migrate(migrator.add_column('table_shows', 'imdbId', TextField(default='""', null=True)))
+#     if "profileId" not in table_shows:
+#         migrate(migrator.add_column('table_shows', 'profileId', IntegerField(null=True)))
+#     if "profileId" not in table_shows:
+#         migrate(migrator.add_column('table_shows', 'profileId', IntegerField(null=True)))
+#     if "monitored" not in table_shows:
+#         migrate(migrator.add_column('table_shows', 'monitored', TextField(null=True)))
+#
+#     if "format" not in table_episodes:
+#         migrate(migrator.add_column('table_episodes', 'format', TextField(null=True)))
+#     if "resolution" not in table_episodes:
+#         migrate(migrator.add_column('table_episodes', 'resolution', TextField(null=True)))
+#     if "video_codec" not in table_episodes:
+#         migrate(migrator.add_column('table_episodes', 'video_codec', TextField(null=True)))
+#     if "audio_codec" not in table_episodes:
+#         migrate(migrator.add_column('table_episodes', 'audio_codec', TextField(null=True)))
+#     if "episode_file_id" not in table_episodes:
+#         migrate(migrator.add_column('table_episodes', 'episode_file_id', IntegerField(null=True)))
+#     if "audio_language" not in table_episodes:
+#         migrate(migrator.add_column('table_episodes', 'audio_language', TextField(null=True)))
+#     if "file_size" not in table_episodes:
+#         migrate(migrator.add_column('table_episodes', 'file_size', BigIntegerField(default=0, null=True)))
+#     if "ffprobe_cache" not in table_episodes:
+#         migrate(migrator.add_column('table_episodes', 'ffprobe_cache', BlobField(null=True)))
+#
+#     if "sortTitle" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'sortTitle', TextField(null=True)))
+#     if "year" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'year', TextField(null=True)))
+#     if "alternativeTitles" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'alternativeTitles', TextField(null=True)))
+#     if "format" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'format', TextField(null=True)))
+#     if "resolution" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'resolution', TextField(null=True)))
+#     if "video_codec" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'video_codec', TextField(null=True)))
+#     if "audio_codec" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'audio_codec', TextField(null=True)))
+#     if "imdbId" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'imdbId', TextField(null=True)))
+#     if "movie_file_id" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'movie_file_id', IntegerField(null=True)))
+#     if "tags" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'tags', TextField(default='[]', null=True)))
+#     if "profileId" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'profileId', IntegerField(null=True)))
+#     if "file_size" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'file_size', BigIntegerField(default=0, null=True)))
+#     if "ffprobe_cache" not in table_movies:
+#         migrate(migrator.add_column('table_movies', 'ffprobe_cache', BlobField(null=True)))
+#
+#     if "video_path" not in table_history:
+#         migrate(migrator.add_column('table_history', 'video_path', TextField(null=True)))
+#     if "language" not in table_history:
+#         migrate(migrator.add_column('table_history', 'language', TextField(null=True)))
+#     if "provider" not in table_history:
+#         migrate(migrator.add_column('table_history', 'provider', TextField(null=True)))
+#     if "score" not in table_history:
+#         migrate(migrator.add_column('table_history', 'score', TextField(null=True)))
+#     if "subs_id" not in table_history:
+#         migrate(migrator.add_column('table_history', 'subs_id', TextField(null=True)))
+#     if "subtitles_path" not in table_history:
+#         migrate(migrator.add_column('table_history', 'subtitles_path', TextField(null=True)))
+#
+#     if "video_path" not in table_history_movie:
+#         migrate(migrator.add_column('table_history_movie', 'video_path', TextField(null=True)))
+#     if "language" not in table_history_movie:
+#         migrate(migrator.add_column('table_history_movie', 'language', TextField(null=True)))
+#     if "provider" not in table_history_movie:
+#         migrate(migrator.add_column('table_history_movie', 'provider', TextField(null=True)))
+#     if "score" not in table_history_movie:
+#         migrate(migrator.add_column('table_history_movie', 'score', TextField(null=True)))
+#     if "subs_id" not in table_history_movie:
+#         migrate(migrator.add_column('table_history_movie', 'subs_id', TextField(null=True)))
+#     if "subtitles_path" not in table_history_movie:
+#         migrate(migrator.add_column('table_history_movie', 'subtitles_path', TextField(null=True)))
+#
+#     if "mustContain" not in table_languages_profiles:
+#         migrate(migrator.add_column('table_languages_profiles', 'mustContain', TextField(null=True)))
+#     if "mustNotContain" not in table_languages_profiles:
+#         migrate(migrator.add_column('table_languages_profiles', 'mustNotContain', TextField(null=True)))
+#     if "originalFormat" not in table_languages_profiles:
+#         migrate(migrator.add_column('table_languages_profiles', 'originalFormat', BooleanField(null=True)))
+#
+#     if "languages" in table_shows:
+#         migrate(migrator.drop_column('table_shows', 'languages'))
+#     if "hearing_impaired" in table_shows:
+#         migrate(migrator.drop_column('table_shows', 'hearing_impaired'))
+#
+#     if "languages" in table_movies:
+#         migrate(migrator.drop_column('table_movies', 'languages'))
+#     if "hearing_impaired" in table_movies:
+#         migrate(migrator.drop_column('table_movies', 'hearing_impaired'))
+#     if not any(
+#             x
+#             for x in database.get_columns('table_blacklist')
+#             if x.name == "timestamp" and x.data_type in ["DATETIME", "timestamp without time zone"]
+#     ):
+#         migrate(migrator.alter_column_type('table_blacklist', 'timestamp', DateTimeField(default=datetime.now)))
+#         update = TableBlacklist.select()
+#         for item in update:
+#             item.update({"timestamp": datetime.fromtimestamp(int(item.timestamp))}).execute()
+#
+#     if not any(
+#             x
+#             for x in database.get_columns('table_blacklist_movie')
+#             if x.name == "timestamp" and x.data_type in ["DATETIME", "timestamp without time zone"]
+#     ):
+#         migrate(migrator.alter_column_type('table_blacklist_movie', 'timestamp', DateTimeField(default=datetime.now)))
+#         update = TableBlacklistMovie.select()
+#         for item in update:
+#             item.update({"timestamp": datetime.fromtimestamp(int(item.timestamp))}).execute()
+#
+#     if not any(
+#             x for x in database.get_columns('table_history') if x.name == "score" and x.data_type.lower() == "integer"):
+#         migrate(migrator.alter_column_type('table_history', 'score', IntegerField(null=True)))
+#     if not any(
+#             x
+#             for x in database.get_columns('table_history')
+#             if x.name == "timestamp" and x.data_type in ["DATETIME", "timestamp without time zone"]
+#     ):
+#         migrate(migrator.alter_column_type('table_history', 'timestamp', DateTimeField(default=datetime.now)))
+#         update = TableHistory.select()
+#         list_to_update = []
+#         for i, item in enumerate(update):
+#             item.timestamp = datetime.fromtimestamp(int(item.timestamp))
+#             list_to_update.append(item)
+#             if i % 100 == 0:
+#                 TableHistory.bulk_update(list_to_update, fields=[TableHistory.timestamp])
+#                 list_to_update = []
+#         if list_to_update:
+#             TableHistory.bulk_update(list_to_update, fields=[TableHistory.timestamp])
+#
+#     if not any(x for x in database.get_columns('table_history_movie') if
+#                x.name == "score" and x.data_type.lower() == "integer"):
+#         migrate(migrator.alter_column_type('table_history_movie', 'score', IntegerField(null=True)))
+#     if not any(
+#             x
+#             for x in database.get_columns('table_history_movie')
+#             if x.name == "timestamp" and x.data_type in ["DATETIME", "timestamp without time zone"]
+#     ):
+#         migrate(migrator.alter_column_type('table_history_movie', 'timestamp', DateTimeField(default=datetime.now)))
+#         update = TableHistoryMovie.select()
+#         list_to_update = []
+#         for i, item in enumerate(update):
+#             item.timestamp = datetime.fromtimestamp(int(item.timestamp))
+#             list_to_update.append(item)
+#             if i % 100 == 0:
+#                 TableHistoryMovie.bulk_update(list_to_update, fields=[TableHistoryMovie.timestamp])
+#                 list_to_update = []
+#         if list_to_update:
+#             TableHistoryMovie.bulk_update(list_to_update, fields=[TableHistoryMovie.timestamp])
+#     # if not any(x for x in database.get_columns('table_movies') if x.name == "monitored" and x.data_type == "BOOLEAN"):
+#     #     migrate(migrator.alter_column_type('table_movies', 'monitored', BooleanField(null=True)))
+#
+#     if database.get_columns('table_settings_providers'):
+#         database.execute_sql('drop table if exists table_settings_providers;')
+#
+#     if "alternateTitles" in table_shows:
+#         migrate(migrator.rename_column('table_shows', 'alternateTitles', "alternativeTitles"))
+#
+#     if "scene_name" in table_episodes:
+#         migrate(migrator.rename_column('table_episodes', 'scene_name', "sceneName"))
 
 
 class SqliteDictPathMapper:

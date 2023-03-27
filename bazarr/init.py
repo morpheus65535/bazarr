@@ -234,8 +234,8 @@ def init_binaries():
 
 
 # keep this import at the end to prevent peewee.OperationalError: unable to open database file
-from app.database import init_db, migrate_db  # noqa E402
+from app.database import init_db  # noqa E402
 init_db()
-migrate_db()
+#migrate_db()
 init_binaries()
 path_mappings.update()

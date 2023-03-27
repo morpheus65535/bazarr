@@ -7,7 +7,7 @@ import re
 
 from app.config import get_settings
 from app.database import TableCustomScoreProfileConditions as conditions_table, TableCustomScoreProfiles as \
-    profiles_table
+    profiles_table, database
 
 logger = logging.getLogger(__name__)
 
@@ -164,15 +164,13 @@ class Score:
     def load_profiles(self):
         """Load the profiles associated with the class. This method must be called
         after every custom profile creation or update."""
-        try:
-            self._profiles = [
-                CustomScoreProfile(**item)
-                for item in self.profiles_table.select()
-                .where(self.profiles_table.media == self.media)
-                .dicts()
-            ]
+        self._profiles = [
+            CustomScoreProfile(**item)
+            for item in database.query(self.profiles_table).where(self.profiles_table.media == self.media)
+        ]
+        if self._profiles:
             logger.debug("Loaded profiles: %s", self._profiles)
-        except self.profiles_table.DoesNotExist:
+        else:
             logger.debug("No score profiles found")
             self._profiles = []
 

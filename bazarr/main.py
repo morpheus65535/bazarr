@@ -34,7 +34,7 @@ else:
     # there's missing embedded packages after a commit
     check_if_new_update()
 
-from app.database import System  # noqa E402
+from app.database import System, database  # noqa E402
 from app.notifier import update_notifier  # noqa E402
 from languages.get_languages import load_language_in_db  # noqa E402
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
@@ -46,7 +46,8 @@ configure_proxy_func()
 get_announcements_to_file()
 
 # Reset the updated once Bazarr have been restarted after an update
-System.update({System.updated: '0'}).execute()
+System.updated = '0'
+database.commit()
 
 # Load languages in database
 load_language_in_db()
