@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 
 from dogpile.cache import make_region
-from sqlalchemy import create_engine, Column, DateTime, ForeignKey, Integer, LargeBinary, Table, Text
+from sqlalchemy import create_engine, Column, DateTime, ForeignKey, Integer, LargeBinary, Table, Text, update, delete
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.pool import NullPool
@@ -24,6 +24,7 @@ postgresql = settings.postgresql.getboolean('enabled')
 region = make_region().configure('dogpile.cache.memory')
 
 if postgresql:
+    from sqlalchemy.dialects.postgresql import insert
     # class ReconnectPostgresqlDatabase(ReconnectMixin, PostgresqlDatabase):
     #     reconnect_errors = (
     #         (OperationalError, 'server closed the connection unexpectedly'),
@@ -43,6 +44,7 @@ if postgresql:
     # migrator = PostgresqlMigrator(database)
     pass
 else:
+    from sqlalchemy.dialects.sqlite import insert
     db_path = os.path.join(args.config_dir, 'db', 'bazarr.db')
     logger.debug(f"Connecting to SQLite database: {db_path}")
     engine = create_engine(f'sqlite:///{db_path}', poolclass=NullPool)
@@ -286,7 +288,8 @@ def init_db():
 
     # add the system table single row if it's not existing
     if not database.query(System).count():
-        database.add(System(configured='0', updated='0'))
+        database.execute(insert(System).values(configured='0', updated='0'))
+        database.commit()
 
 
 # def migrate_db():

@@ -3,7 +3,7 @@
 import apprise
 import logging
 
-from .database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies
+from .database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies, database, insert, delete
 
 
 def update_notifier():
@@ -16,11 +16,7 @@ def update_notifier():
     notifiers_new = []
     notifiers_old = []
 
-    notifiers_current_db = TableSettingsNotifier.select(TableSettingsNotifier.name).dicts()
-
-    notifiers_current = []
-    for notifier in notifiers_current_db:
-        notifiers_current.append([notifier['name']])
+    notifiers_current = [row.name for row in database.query(TableSettingsNotifier.name)]
 
     for x in results['schemas']:
         if [str(x['service_name'])] not in notifiers_current:
@@ -31,10 +27,12 @@ def update_notifier():
 
     notifiers_to_delete = [item for item in notifiers_current if item not in notifiers_old]
 
-    TableSettingsNotifier.insert_many(notifiers_new).execute()
+    database.execute(insert(TableSettingsNotifier).values(notifiers_new).on_conflict_do_nothing())
 
     for item in notifiers_to_delete:
-        TableSettingsNotifier.delete().where(TableSettingsNotifier.name == item).execute()
+        database.execute(delete(TableSettingsNotifier).where(TableSettingsNotifier.name == item))
+
+    database.commit()
 
 
 def get_notifier_providers():

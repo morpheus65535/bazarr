@@ -5,6 +5,8 @@ import os
 
 from subzero.language import Language
 
+from app.database import database, insert
+
 logger = logging.getLogger(__name__)
 
 
@@ -45,9 +47,9 @@ class CustomLanguage:
         "Register the custom language subclasses in the database."
 
         for sub in cls.__subclasses__():
-            table.insert(
-                {table.code3: sub.alpha3, table.code2: sub.alpha2, table.name: sub.name}
-            ).on_conflict(action="IGNORE").execute()
+            database.execute(insert(table).values({'code3': sub.alpha3, 'code2': sub.alpha2, 'name': sub.name,
+                                                   'enabled': 0}).on_conflict_do_nothing())
+            database.commit()
 
     @classmethod
     def found_external(cls, subtitle, subtitle_path):

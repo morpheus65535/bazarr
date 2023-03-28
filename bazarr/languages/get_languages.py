@@ -3,22 +3,19 @@
 import pycountry
 
 from subzero.language import Language
-from sqlalchemy import insert, update
 
 from .custom_lang import CustomLanguage
-from app.database import TableSettingsLanguages, database
+from app.database import TableSettingsLanguages, database, insert, update
 
 
 def load_language_in_db():
     # Get languages list in langs tuple
-    langs = [{'code3': lang.alpha_3, 'code2': lang.alpha_2, 'name': lang.name}
+    langs = [{'code3': lang.alpha_3, 'code2': lang.alpha_2, 'name': lang.name, 'enabled': 0}
              for lang in pycountry.languages
              if hasattr(lang, 'alpha_2')]
 
     # Insert standard languages in database table
-    stmt = insert(TableSettingsLanguages).values(langs)
-    stmt = stmt.on_conflict_do_nothing()
-    database.execute(stmt)
+    database.execute(insert(TableSettingsLanguages).values(langs).on_conflict_do_nothing())
     database.commit()
 
     # Update standard languages with code3b if available
@@ -40,14 +37,12 @@ def load_language_in_db():
 def create_languages_dict():
     global languages_dict
     # replace chinese by chinese simplified
-    TableSettingsLanguages.update({TableSettingsLanguages.name: 'Chinese Simplified'}) \
-        .where(TableSettingsLanguages.code3 == 'zho') \
-        .execute()
+    database.execute(update(TableSettingsLanguages).values(name='Chinese Simplified')
+                     .where(TableSettingsLanguages.code3 == 'zho'))
+    database.commit()
 
-    languages_dict = TableSettingsLanguages.select(TableSettingsLanguages.name,
-                                                   TableSettingsLanguages.code2,
-                                                   TableSettingsLanguages.code3,
-                                                   TableSettingsLanguages.code3b).dicts()
+    languages_dict = [{'code3': row.code3, 'code2': row.code2, 'name': row.name, 'code3b': row.code3b} for row in
+                      database.query(TableSettingsLanguages)]
 
 
 def language_from_alpha2(lang):
