@@ -280,7 +280,7 @@ defaults = {
         'database': '',
         'username': '',
         'password': '',
-    }
+    },
 }
 
 settings = SimpleConfigParser(defaults=defaults, interpolation=None)
