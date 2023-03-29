@@ -3,7 +3,8 @@
 import apprise
 import logging
 
-from .database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies, database, insert, delete
+from .database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies, database, rows_as_list_of_dicts, \
+    insert, delete
 
 
 def update_notifier():
@@ -13,71 +14,63 @@ def update_notifier():
     # Retrieve all of the details
     results = a.details()
 
-    notifiers_new = []
-    notifiers_old = []
+    notifiers_added = []
+    notifiers_kept = []
 
-    notifiers_current = [row.name for row in database.query(TableSettingsNotifier.name)]
+    notifiers_in_db = [row.name for row in database.query(TableSettingsNotifier.name)]
 
     for x in results['schemas']:
-        if [str(x['service_name'])] not in notifiers_current:
-            notifiers_new.append({'name': str(x['service_name']), 'enabled': 0})
+        if x['service_name'] not in notifiers_in_db:
+            notifiers_added.append({'name': str(x['service_name']), 'enabled': 0})
             logging.debug('Adding new notifier agent: ' + str(x['service_name']))
         else:
-            notifiers_old.append([str(x['service_name'])])
+            notifiers_kept.append(x['service_name'])
 
-    notifiers_to_delete = [item for item in notifiers_current if item not in notifiers_old]
-
-    database.execute(insert(TableSettingsNotifier).values(notifiers_new).on_conflict_do_nothing())
+    notifiers_to_delete = [item for item in notifiers_in_db if item not in notifiers_kept]
 
     for item in notifiers_to_delete:
         database.execute(delete(TableSettingsNotifier).where(TableSettingsNotifier.name == item))
+
+    database.execute(insert(TableSettingsNotifier).values(notifiers_added))
 
     database.commit()
 
 
 def get_notifier_providers():
-    providers = TableSettingsNotifier.select(TableSettingsNotifier.name,
-                                             TableSettingsNotifier.url)\
-        .where(TableSettingsNotifier.enabled == 1)\
-        .dicts()
+    providers = rows_as_list_of_dicts(database.query(TableSettingsNotifier.name,
+                                                     TableSettingsNotifier.url)
+                                      .where(TableSettingsNotifier.enabled == 1))
 
     return providers
 
 
 def get_series(sonarr_series_id):
-    data = TableShows.select(TableShows.title, TableShows.year)\
-        .where(TableShows.sonarrSeriesId == sonarr_series_id)\
-        .dicts()\
-        .get_or_none()
+    data = database.query(TableShows.title, TableShows.year)\
+        .where(TableShows.sonarrSeriesId == sonarr_series_id).first()
 
     if not data:
         return
 
-    return {'title': data['title'], 'year': data['year']}
+    return {'title': data.title, 'year': data.year}
 
 
 def get_episode_name(sonarr_episode_id):
-    data = TableEpisodes.select(TableEpisodes.title, TableEpisodes.season, TableEpisodes.episode)\
-        .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)\
-        .dicts()\
-        .get_or_none()
+    data = database.query(TableEpisodes.title, TableEpisodes.season, TableEpisodes.episode)\
+        .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id).first()
 
     if not data:
         return
 
-    return data['title'], data['season'], data['episode']
+    return data.title, data.season, data.episode
 
 
 def get_movie(radarr_id):
-    data = TableMovies.select(TableMovies.title, TableMovies.year)\
-        .where(TableMovies.radarrId == radarr_id)\
-        .dicts()\
-        .get_or_none()
+    data = database.query(TableMovies.title, TableMovies.year).where(TableMovies.radarrId == radarr_id).first()
 
     if not data:
         return
 
-    return {'title': data['title'], 'year': data['year']}
+    return {'title': data.title, 'year': data.year}
 
 
 def send_notifications(sonarr_series_id, sonarr_episode_id, message):

@@ -5,7 +5,7 @@ import pycountry
 from subzero.language import Language
 
 from .custom_lang import CustomLanguage
-from app.database import TableSettingsLanguages, database, insert, update
+from app.database import TableSettingsLanguages, database, rows_as_list_of_dicts, insert, update
 
 
 def load_language_in_db():
@@ -41,8 +41,8 @@ def create_languages_dict():
                      .where(TableSettingsLanguages.code3 == 'zho'))
     database.commit()
 
-    languages_dict = [{'code3': row.code3, 'code2': row.code2, 'name': row.name, 'code3b': row.code3b} for row in
-                      database.query(TableSettingsLanguages)]
+    languages_dict = rows_as_list_of_dicts(database.query(TableSettingsLanguages.code3, TableSettingsLanguages.code2,
+                                                          TableSettingsLanguages.name, TableSettingsLanguages.code3b))
 
 
 def language_from_alpha2(lang):
@@ -72,15 +72,14 @@ def alpha3_from_language(lang):
 
 
 def get_language_set():
-    languages = TableSettingsLanguages.select(TableSettingsLanguages.code3) \
-        .where(TableSettingsLanguages.enabled == 1).dicts()
+    languages = database.query(TableSettingsLanguages.code3).where(TableSettingsLanguages.enabled == 1)
 
     language_set = set()
 
     for lang in languages:
-        custom = CustomLanguage.from_value(lang["code3"], "alpha3")
+        custom = CustomLanguage.from_value(lang.code3, "alpha3")
         if custom is None:
-            language_set.add(Language(lang["code3"]))
+            language_set.add(Language(lang.code3))
         else:
             language_set.add(custom.subzero_language())
 

@@ -292,6 +292,10 @@ def init_db():
         database.commit()
 
 
+def rows_as_list_of_dicts(query):
+    return [dict(row._mapping) for row in query]
+
+
 # def migrate_db():
 #     table_shows = [t.name for t in database.get_columns('table_shows')]
 #     table_episodes = [t.name for t in database.get_columns('table_episodes')]
@@ -537,14 +541,13 @@ def get_exclusion_clause(exclusion_type):
 
 @region.cache_on_arguments()
 def update_profile_id_list():
-    profile_id_list = TableLanguagesProfiles.select(TableLanguagesProfiles.profileId,
-                                                    TableLanguagesProfiles.name,
-                                                    TableLanguagesProfiles.cutoff,
-                                                    TableLanguagesProfiles.items,
-                                                    TableLanguagesProfiles.mustContain,
-                                                    TableLanguagesProfiles.mustNotContain,
-                                                    TableLanguagesProfiles.originalFormat).dicts()
-    profile_id_list = list(profile_id_list)
+    profile_id_list = rows_as_list_of_dicts(database.query(TableLanguagesProfiles.profileId,
+                                                           TableLanguagesProfiles.name,
+                                                           TableLanguagesProfiles.cutoff,
+                                                           TableLanguagesProfiles.items,
+                                                           TableLanguagesProfiles.mustContain,
+                                                           TableLanguagesProfiles.mustNotContain,
+                                                           TableLanguagesProfiles.originalFormat))
     for profile in profile_id_list:
         profile['items'] = json.loads(profile['items'])
         profile['mustContain'] = ast.literal_eval(profile['mustContain']) if profile['mustContain'] else []
@@ -651,23 +654,19 @@ def get_audio_profile_languages(audio_languages_list_str):
 
 def get_profile_id(series_id=None, episode_id=None, movie_id=None):
     if series_id:
-        data = TableShows.select(TableShows.profileId) \
-            .where(TableShows.sonarrSeriesId == series_id) \
-            .get_or_none()
+        data = database.query(TableShows.profileId).where(TableShows.sonarrSeriesId == series_id).first()
         if data:
             return data.profileId
     elif episode_id:
-        data = TableShows.select(TableShows.profileId) \
-            .join(TableEpisodes, on=(TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId)) \
-            .where(TableEpisodes.sonarrEpisodeId == episode_id) \
-            .get_or_none()
+        data = database.query(TableShows.profileId)\
+            .join(TableEpisodes, TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId)\
+            .where(TableEpisodes.sonarrEpisodeId == episode_id)\
+            .first()
         if data:
             return data.profileId
 
     elif movie_id:
-        data = TableMovies.select(TableMovies.profileId) \
-            .where(TableMovies.radarrId == movie_id) \
-            .get_or_none()
+        data = database.query(TableMovies.profileId).where(TableMovies.radarrId == movie_id).first()
         if data:
             return data.profileId
 

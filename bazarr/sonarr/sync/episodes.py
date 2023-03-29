@@ -5,7 +5,7 @@ import logging
 
 from peewee import IntegrityError
 
-from app.database import TableEpisodes
+from app.database import database, TableEpisodes, delete, update, insert
 from app.config import settings
 from utilities.path_mappings import path_mappings
 from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
@@ -27,13 +27,17 @@ def sync_episodes(series_id=None, send_event=True):
     apikey_sonarr = settings.sonarr.apikey
 
     # Get current episodes id in DB
-    current_episodes_db = TableEpisodes.select(TableEpisodes.sonarrEpisodeId,
-                                               TableEpisodes.path,
-                                               TableEpisodes.sonarrSeriesId)\
-        .where((TableEpisodes.sonarrSeriesId == series_id) if series_id else None)\
-        .dicts()
-
-    current_episodes_db_list = [x['sonarrEpisodeId'] for x in current_episodes_db]
+    if series_id:
+        current_episodes_db_list = [row.sonarrEpisodeId for row in
+                                    database.query(TableEpisodes.sonarrEpisodeId,
+                                                   TableEpisodes.path,
+                                                   TableEpisodes.sonarrSeriesId)
+                                    .where(TableEpisodes.sonarrSeriesId == series_id).all()]
+    else:
+        current_episodes_db_list = [row.sonarrEpisodeId for row in
+                                    database.query(TableEpisodes.sonarrEpisodeId,
+                                                   TableEpisodes.path,
+                                                   TableEpisodes.sonarrSeriesId).all()]
 
     current_episodes_sonarr = []
     episodes_to_update = []
@@ -93,76 +97,63 @@ def sync_episodes(series_id=None, send_event=True):
     # Remove old episodes from DB
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
 
+    temp_episodes_list = database.query(TableEpisodes.path,
+                                        TableEpisodes.sonarrSeriesId,
+                                        TableEpisodes.sonarrEpisodeId).all()
     for removed_episode in removed_episodes:
-        episode_to_delete = TableEpisodes.select(TableEpisodes.path,
-                                                 TableEpisodes.sonarrSeriesId,
-                                                 TableEpisodes.sonarrEpisodeId)\
-            .where(TableEpisodes.sonarrEpisodeId == removed_episode)\
-            .dicts()\
-            .get_or_none()
+        episode_to_delete = temp_episodes_list.where(TableEpisodes.sonarrEpisodeId == removed_episode).first()
         if not episode_to_delete:
             continue
         try:
-            TableEpisodes.delete().where(TableEpisodes.sonarrEpisodeId == removed_episode).execute()
+            database.execute(delete().where(TableEpisodes.sonarrEpisodeId == removed_episode))
         except Exception as e:
-            logging.error(f"BAZARR cannot delete episode {episode_to_delete['path']} because of {e}")
+            logging.error(f"BAZARR cannot delete episode {episode_to_delete.path} because of {e}")
             continue
         else:
+            database.commit()
             if send_event:
-                event_stream(type='episode', action='delete', payload=episode_to_delete['sonarrEpisodeId'])
+                event_stream(type='episode', action='delete', payload=episode_to_delete.sonarrEpisodeId)
 
     # Update existing episodes in DB
-    episode_in_db_list = []
-    episodes_in_db = TableEpisodes.select(TableEpisodes.sonarrSeriesId,
-                                          TableEpisodes.sonarrEpisodeId,
-                                          TableEpisodes.title,
-                                          TableEpisodes.path,
-                                          TableEpisodes.season,
-                                          TableEpisodes.episode,
-                                          TableEpisodes.sceneName,
-                                          TableEpisodes.monitored,
-                                          TableEpisodes.format,
-                                          TableEpisodes.resolution,
-                                          TableEpisodes.video_codec,
-                                          TableEpisodes.audio_codec,
-                                          TableEpisodes.episode_file_id,
-                                          TableEpisodes.audio_language,
-                                          TableEpisodes.file_size).dicts()
+    episode_in_db_list = database.query(TableEpisodes.sonarrSeriesId,
+                                        TableEpisodes.sonarrEpisodeId,
+                                        TableEpisodes.title,
+                                        TableEpisodes.path,
+                                        TableEpisodes.season,
+                                        TableEpisodes.episode,
+                                        TableEpisodes.sceneName,
+                                        TableEpisodes.monitored,
+                                        TableEpisodes.format,
+                                        TableEpisodes.resolution,
+                                        TableEpisodes.video_codec,
+                                        TableEpisodes.audio_codec,
+                                        TableEpisodes.episode_file_id,
+                                        TableEpisodes.audio_language,
+                                        TableEpisodes.file_size)
 
-    for item in episodes_in_db:
-        episode_in_db_list.append(item)
-
-    episodes_to_update_list = [i for i in episodes_to_update if i not in episode_in_db_list]
-
-    for updated_episode in episodes_to_update_list:
-        try:
-            TableEpisodes.update(updated_episode).where(TableEpisodes.sonarrEpisodeId ==
-                                                        updated_episode['sonarrEpisodeId']).execute()
-        except IntegrityError as e:
-            logging.error(f"BAZARR cannot update episode {updated_episode['path']} because of {e}")
+    for updated_episode in episodes_to_update:
+        filtered_query = episode_in_db_list.filter_by(**updated_episode).count()
+        if filtered_query:
             continue
         else:
+            database.execute(update(TableEpisodes).values(updated_episode).where(TableEpisodes.sonarrEpisodeId ==
+                                                                                 updated_episode['sonarrEpisodeId']))
             altered_episodes.append([updated_episode['sonarrEpisodeId'],
                                      updated_episode['path'],
                                      updated_episode['sonarrSeriesId']])
+    database.commit()
 
     # Insert new episodes in DB
     for added_episode in episodes_to_add:
-        try:
-            result = TableEpisodes.insert(added_episode).on_conflict_ignore().execute()
-        except IntegrityError as e:
-            logging.error(f"BAZARR cannot insert episode {added_episode['path']} because of {e}")
-            continue
-        else:
-            if result and result > 0:
-                altered_episodes.append([added_episode['sonarrEpisodeId'],
-                                         added_episode['path'],
-                                         added_episode['monitored']])
-                if send_event:
-                    event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
-            else:
-                logging.debug('BAZARR unable to insert this episode into the database:{}'.format(
-                    path_mappings.path_replace(added_episode['path'])))
+        database.execute(insert(TableEpisodes).values(added_episode))
+
+        altered_episodes.append([added_episode['sonarrEpisodeId'],
+                                 added_episode['path'],
+                                 added_episode['monitored']])
+        if send_event:
+            event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
+
+    database.commit()
 
     # Store subtitles for added or modified episodes
     for i, altered_episode in enumerate(altered_episodes, 1):
