@@ -101,7 +101,7 @@ class WhisperAIProvider(Provider):
         logger.debug(f"Finished encoding audio stream in {subtitle.video.original_path} with no errors")
 
         r = self.session.post(f"{self.endpoint}/asr",
-                              params={'task': 'transcribe', 'language': subtitle.language, 'output': 'srt', 'encode': 'false'},
+                              params={'task': 'transcribe', 'output': 'srt', 'encode': 'false'},
                               files={'audio_file': out},
                               timeout=self.timeout)
 
