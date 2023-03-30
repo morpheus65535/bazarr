@@ -28,7 +28,8 @@ def get_health_issues():
         rootfolder = database.query(TableShowsRootfolder.path,
                                     TableShowsRootfolder.accessible,
                                     TableShowsRootfolder.error)\
-            .where(TableShowsRootfolder.accessible == 0)
+            .where(TableShowsRootfolder.accessible == 0)\
+            .all()
         for item in rootfolder:
             health_issues.append({'object': path_mappings.path_replace(item.path),
                                   'issue': item.error})
@@ -38,7 +39,8 @@ def get_health_issues():
         rootfolder = database.query(TableMoviesRootfolder.path,
                                     TableMoviesRootfolder.accessible,
                                     TableMoviesRootfolder.error)\
-            .where(TableMoviesRootfolder.accessible == 0)
+            .where(TableMoviesRootfolder.accessible == 0)\
+            .all()
         for item in rootfolder:
             health_issues.append({'object': path_mappings.path_replace_movie(item.path),
                                   'issue': item.error})

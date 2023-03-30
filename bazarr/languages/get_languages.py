@@ -42,7 +42,8 @@ def create_languages_dict():
     database.commit()
 
     languages_dict = rows_as_list_of_dicts(database.query(TableSettingsLanguages.code3, TableSettingsLanguages.code2,
-                                                          TableSettingsLanguages.name, TableSettingsLanguages.code3b))
+                                                          TableSettingsLanguages.name, TableSettingsLanguages.code3b)
+                                           .all())
 
 
 def language_from_alpha2(lang):
@@ -72,7 +73,7 @@ def alpha3_from_language(lang):
 
 
 def get_language_set():
-    languages = database.query(TableSettingsLanguages.code3).where(TableSettingsLanguages.enabled == 1)
+    languages = database.query(TableSettingsLanguages.code3).where(TableSettingsLanguages.enabled == 1).all()
 
     language_set = set()
 

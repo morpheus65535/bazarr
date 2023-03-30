@@ -547,7 +547,7 @@ def update_profile_id_list():
                                                            TableLanguagesProfiles.items,
                                                            TableLanguagesProfiles.mustContain,
                                                            TableLanguagesProfiles.mustNotContain,
-                                                           TableLanguagesProfiles.originalFormat))
+                                                           TableLanguagesProfiles.originalFormat).all())
     for profile in profile_id_list:
         profile['items'] = json.loads(profile['items'])
         profile['mustContain'] = ast.literal_eval(profile['mustContain']) if profile['mustContain'] else []

@@ -128,8 +128,8 @@ def mark_announcement_as_dismissed(hashed_announcement):
     text = [x['text'] for x in get_all_announcements() if x['hash'] == hashed_announcement]
     if text:
         database.execute(insert(TableAnnouncements)
-                         .values({TableAnnouncements.hash: hashed_announcement,
-                                  TableAnnouncements.timestamp: datetime.now(),
-                                  TableAnnouncements.text: text[0]})
+                         .values(hash=hashed_announcement,
+                                 timestamp=datetime.now(),
+                                 text=text[0])
                          .on_conflict_do_nothing())
         database.commit()

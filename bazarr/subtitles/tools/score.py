@@ -166,7 +166,7 @@ class Score:
         after every custom profile creation or update."""
         self._profiles = [
             CustomScoreProfile(**item)
-            for item in database.query(self.profiles_table).where(self.profiles_table.media == self.media)
+            for item in database.query(self.profiles_table).where(self.profiles_table.media == self.media).all()
         ]
         if self._profiles:
             logger.debug("Loaded profiles: %s", self._profiles)

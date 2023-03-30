@@ -105,7 +105,7 @@ def sync_episodes(series_id=None, send_event=True):
         if not episode_to_delete:
             continue
         try:
-            database.execute(delete().where(TableEpisodes.sonarrEpisodeId == removed_episode))
+            database.execute(delete(TableEpisodes).where(TableEpisodes.sonarrEpisodeId == removed_episode))
         except Exception as e:
             logging.error(f"BAZARR cannot delete episode {episode_to_delete.path} because of {e}")
             continue
@@ -115,25 +115,8 @@ def sync_episodes(series_id=None, send_event=True):
                 event_stream(type='episode', action='delete', payload=episode_to_delete.sonarrEpisodeId)
 
     # Update existing episodes in DB
-    episode_in_db_list = database.query(TableEpisodes.sonarrSeriesId,
-                                        TableEpisodes.sonarrEpisodeId,
-                                        TableEpisodes.title,
-                                        TableEpisodes.path,
-                                        TableEpisodes.season,
-                                        TableEpisodes.episode,
-                                        TableEpisodes.sceneName,
-                                        TableEpisodes.monitored,
-                                        TableEpisodes.format,
-                                        TableEpisodes.resolution,
-                                        TableEpisodes.video_codec,
-                                        TableEpisodes.audio_codec,
-                                        TableEpisodes.episode_file_id,
-                                        TableEpisodes.audio_language,
-                                        TableEpisodes.file_size)
-
     for updated_episode in episodes_to_update:
-        filtered_query = episode_in_db_list.filter_by(**updated_episode).count()
-        if filtered_query:
+        if database.query(TableEpisodes).filter_by(**updated_episode).count():
             continue
         else:
             database.execute(update(TableEpisodes).values(updated_episode).where(TableEpisodes.sonarrEpisodeId ==

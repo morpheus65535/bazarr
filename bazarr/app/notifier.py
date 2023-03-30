@@ -17,7 +17,7 @@ def update_notifier():
     notifiers_added = []
     notifiers_kept = []
 
-    notifiers_in_db = [row.name for row in database.query(TableSettingsNotifier.name)]
+    notifiers_in_db = [row.name for row in database.query(TableSettingsNotifier.name).all()]
 
     for x in results['schemas']:
         if x['service_name'] not in notifiers_in_db:
@@ -39,7 +39,7 @@ def update_notifier():
 def get_notifier_providers():
     providers = rows_as_list_of_dicts(database.query(TableSettingsNotifier.name,
                                                      TableSettingsNotifier.url)
-                                      .where(TableSettingsNotifier.enabled == 1))
+                                      .where(TableSettingsNotifier.enabled == 1).all())
 
     return providers
 

@@ -171,11 +171,11 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     # we write to db the result and return the newly cached ffprobe dict
     if episode_file_id:
         database.execute(update(TableEpisodes)
-                         .values({TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)})
+                         .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
                          .where(TableEpisodes.path == path_mappings.path_replace_reverse(file)))
     elif movie_file_id:
         database.execute(update(TableMovies)
-                         .values({TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)})
+                         .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
                          .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file)))
     database.commit()
     return data
