@@ -151,10 +151,9 @@ def sync_one_episode(episode_id, defer_search=False):
     apikey_sonarr = settings.sonarr.apikey
 
     # Check if there's a row in database for this episode ID
-    existing_episode = TableEpisodes.select(TableEpisodes.path, TableEpisodes.episode_file_id)\
+    existing_episode = database.query(TableEpisodes.path, TableEpisodes.episode_file_id)\
         .where(TableEpisodes.sonarrEpisodeId == episode_id)\
-        .dicts()\
-        .get_or_none()
+        .first()
 
     try:
         # Get episode data from sonarr api
@@ -181,37 +180,31 @@ def sync_one_episode(episode_id, defer_search=False):
 
     # Remove episode from DB
     if not episode and existing_episode:
-        try:
-            TableEpisodes.delete().where(TableEpisodes.sonarrEpisodeId == episode_id).execute()
-        except Exception as e:
-            logging.error(f"BAZARR cannot delete episode {existing_episode['path']} because of {e}")
-        else:
-            event_stream(type='episode', action='delete', payload=int(episode_id))
-            logging.debug('BAZARR deleted this episode from the database:{}'.format(path_mappings.path_replace(
-                existing_episode['path'])))
-            return
+        database.execute(delete(TableEpisodes).where(TableEpisodes.sonarrEpisodeId == episode_id))
+        database.commit()
+
+        event_stream(type='episode', action='delete', payload=int(episode_id))
+        logging.debug('BAZARR deleted this episode from the database:{}'.format(path_mappings.path_replace(
+            existing_episode['path'])))
+        return
 
     # Update existing episodes in DB
     elif episode and existing_episode:
-        try:
-            TableEpisodes.update(episode).where(TableEpisodes.sonarrEpisodeId == episode_id).execute()
-        except IntegrityError as e:
-            logging.error(f"BAZARR cannot update episode {episode['path']} because of {e}")
-        else:
-            event_stream(type='episode', action='update', payload=int(episode_id))
-            logging.debug('BAZARR updated this episode into the database:{}'.format(path_mappings.path_replace(
-                episode['path'])))
+        database.execute(update(TableEpisodes).values(episode).where(TableEpisodes.sonarrEpisodeId == episode_id))
+        database.commit()
+
+        event_stream(type='episode', action='update', payload=int(episode_id))
+        logging.debug('BAZARR updated this episode into the database:{}'.format(path_mappings.path_replace(
+            episode['path'])))
 
     # Insert new episodes in DB
     elif episode and not existing_episode:
-        try:
-            TableEpisodes.insert(episode).on_conflict(action='IGNORE').execute()
-        except IntegrityError as e:
-            logging.error(f"BAZARR cannot insert episode {episode['path']} because of {e}")
-        else:
-            event_stream(type='episode', action='update', payload=int(episode_id))
-            logging.debug('BAZARR inserted this episode into the database:{}'.format(path_mappings.path_replace(
-                episode['path'])))
+        database.execute(insert(TableEpisodes).values(episode))
+        database.commit()
+
+        event_stream(type='episode', action='update', payload=int(episode_id))
+        logging.debug('BAZARR inserted this episode into the database:{}'.format(path_mappings.path_replace(
+            episode['path'])))
 
     # Storing existing subtitles
     logging.debug('BAZARR storing subtitles for this episode: {}'.format(path_mappings.path_replace(

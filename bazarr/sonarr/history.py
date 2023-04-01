@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from app.database import TableHistory
+from app.database import TableHistory, database, insert
 from app.event_handler import event_stream
 
 
@@ -15,17 +15,18 @@ def history_log(action, sonarr_series_id, sonarr_episode_id, result, fake_provid
     subs_id = result.subs_id
     subtitles_path = result.subs_path
 
-    TableHistory.insert({
-        TableHistory.action: action,
-        TableHistory.sonarrSeriesId: sonarr_series_id,
-        TableHistory.sonarrEpisodeId: sonarr_episode_id,
-        TableHistory.timestamp: datetime.now(),
-        TableHistory.description: description,
-        TableHistory.video_path: video_path,
-        TableHistory.language: language,
-        TableHistory.provider: provider,
-        TableHistory.score: score,
-        TableHistory.subs_id: subs_id,
-        TableHistory.subtitles_path: subtitles_path
-    }).execute()
+    database.execute(insert(TableHistory).values(
+        action=action,
+        sonarrSeriesId=sonarr_series_id,
+        sonarrEpisodeId=sonarr_episode_id,
+        timestamp=datetime.now(),
+        description=description,
+        video_path=video_path,
+        language=language,
+        provider=provider,
+        score=score,
+        subs_id=subs_id,
+        subtitles_path=subtitles_path
+    ))
+    database.coomit()
     event_stream(type='episode-history')
