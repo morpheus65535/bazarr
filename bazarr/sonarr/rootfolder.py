@@ -5,7 +5,7 @@ import requests
 import logging
 
 from app.config import settings
-from app.database import TableShowsRootfolder, TableShows
+from app.database import TableShowsRootfolder, TableShows, database, insert, update, delete, rows_as_list_of_dicts
 from utilities.path_mappings import path_mappings
 from sonarr.info import get_sonarr_info, url_sonarr
 from constants import headers
@@ -33,11 +33,11 @@ def get_sonarr_rootfolder():
         logging.exception("BAZARR Error trying to get rootfolder from Sonarr.")
         return []
     else:
-        sonarr_movies_paths = list(TableShows.select(TableShows.path).dicts())
+        sonarr_movies_paths = rows_as_list_of_dicts(database.query(TableShows.path).all())
         for folder in rootfolder.json():
             if any(item['path'].startswith(folder['path']) for item in sonarr_movies_paths):
                 sonarr_rootfolder.append({'id': folder['id'], 'path': folder['path']})
-        db_rootfolder = TableShowsRootfolder.select(TableShowsRootfolder.id, TableShowsRootfolder.path).dicts()
+        db_rootfolder = rows_as_list_of_dicts(database.query(TableShowsRootfolder.id, TableShowsRootfolder.path).all())
         rootfolder_to_remove = [x for x in db_rootfolder if not
                                 next((item for item in sonarr_rootfolder if item['id'] == x['id']), False)]
         rootfolder_to_update = [x for x in sonarr_rootfolder if
@@ -46,40 +46,40 @@ def get_sonarr_rootfolder():
                                 next((item for item in db_rootfolder if item['id'] == x['id']), False)]
 
         for item in rootfolder_to_remove:
-            TableShowsRootfolder.delete().where(TableShowsRootfolder.id == item['id']).execute()
+            database.execute(delete(TableShowsRootfolder).where(TableShowsRootfolder.id == item.id))
         for item in rootfolder_to_update:
-            TableShowsRootfolder.update({TableShowsRootfolder.path: item['path']})\
-                .where(TableShowsRootfolder.id == item['id'])\
-                .execute()
+            database.execute(update(TableShowsRootfolder)
+                             .values(path=item['path'])
+                             .where(TableShowsRootfolder.id == item['id']))
         for item in rootfolder_to_insert:
-            TableShowsRootfolder.insert({TableShowsRootfolder.id: item['id'], TableShowsRootfolder.path: item['path']})\
-                .execute()
+            database.execute(insert(TableShowsRootfolder).values(id=item['id'], path=item['path']))
+        database.commit()
 
 
 def check_sonarr_rootfolder():
     get_sonarr_rootfolder()
-    rootfolder = TableShowsRootfolder.select(TableShowsRootfolder.id, TableShowsRootfolder.path).dicts()
+    rootfolder = database.query(TableShowsRootfolder.id, TableShowsRootfolder.path).all()
     for item in rootfolder:
-        root_path = item['path']
+        root_path = item.path
         if not root_path.endswith(('/', '\\')):
             if root_path.startswith('/'):
                 root_path += '/'
             else:
                 root_path += '\\'
         if not os.path.isdir(path_mappings.path_replace(root_path)):
-            TableShowsRootfolder.update({TableShowsRootfolder.accessible: 0,
-                                         TableShowsRootfolder.error: 'This Sonarr root directory does not seems to '
-                                                                     'be accessible by  Please check path '
-                                                                     'mapping.'})\
-                .where(TableShowsRootfolder.id == item['id'])\
-                .execute()
+            database.execute(update(TableShowsRootfolder)
+                             .values(accessible=0,
+                                     error='This Sonarr root directory does not seems to be accessible by  Please '
+                                           'check path mapping.')
+                             .where(TableShowsRootfolder.id == item.id))
         elif not os.access(path_mappings.path_replace(root_path), os.W_OK):
-            TableShowsRootfolder.update({TableShowsRootfolder.accessible: 0,
-                                         TableShowsRootfolder.error: 'Bazarr cannot write to this directory.'}) \
-                .where(TableShowsRootfolder.id == item['id']) \
-                .execute()
+            database.execute(update(TableShowsRootfolder)
+                             .values(accessible=0,
+                                     error='Bazarr cannot write to this directory.')
+                             .where(TableShowsRootfolder.id == item.id))
         else:
-            TableShowsRootfolder.update({TableShowsRootfolder.accessible: 1,
-                                         TableShowsRootfolder.error: ''}) \
-                .where(TableShowsRootfolder.id == item['id']) \
-                .execute()
+            database.execute(update(TableShowsRootfolder)
+                             .values(accessible=1,
+                                     error='')
+                             .where(TableShowsRootfolder.id == item.id))
+        database.commit()
