@@ -13,7 +13,7 @@ from subliminal_patch.core_persistent import download_best_subtitles
 from subliminal_patch.score import ComputeScore
 
 from app.config import settings, get_array_from, get_scores
-from app.database import TableEpisodes, TableMovies
+from app.database import TableEpisodes, TableMovies, database
 from utilities.path_mappings import path_mappings
 from utilities.helper import get_target_folder, force_unicode
 from languages.get_languages import alpha3_from_alpha2
@@ -163,15 +163,13 @@ def parse_language_object(language):
 def check_missing_languages(path, media_type):
     # confirm if language is still missing or if cutoff has been reached
     if media_type == 'series':
-        confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)) \
-            .dicts() \
-            .get_or_none()
+        confirmed_missing_subs = database.query(TableEpisodes.missing_subtitles)\
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))\
+            .first()
     else:
-        confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles) \
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)) \
-            .dicts() \
-            .get_or_none()
+        confirmed_missing_subs = database.query(TableMovies.missing_subtitles)\
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))\
+            .first()
 
     if not confirmed_missing_subs:
         reversed_path = path_mappings.path_replace_reverse(path) if media_type == 'series' else \
@@ -180,7 +178,7 @@ def check_missing_languages(path, media_type):
         return []
 
     languages = []
-    for language in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
+    for language in ast.literal_eval(confirmed_missing_subs.missing_subtitles):
         if language is not None:
             hi_ = "True" if language.endswith(':hi') else "False"
             forced_ = "True" if language.endswith(':forced') else "False"
