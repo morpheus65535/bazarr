@@ -133,7 +133,7 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
         for movie in matching_movies:
             if movie:
                 logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
-                list_missing_subtitles_movies(no=movie['radarrId'])
+                list_missing_subtitles_movies(no=movie.radarrId)
             else:
                 logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:

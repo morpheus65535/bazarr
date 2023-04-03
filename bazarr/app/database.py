@@ -77,25 +77,25 @@ class TableAnnouncements(Base):
     text = Column(Text)
 
 
-TableBlacklist = Table(
-    'table_blacklist', metadata,
-    Column('language', Text),
-    Column('provider', Text),
-    Column('sonarr_episode_id', Integer),
-    Column('sonarr_series_id', Integer),
-    Column('subs_id', Text),
-    Column('timestamp', DateTime)
-)
+class TableBlacklist(Base):
+    __tablename__ = 'table_blacklist'
+
+    language = Column(Text)
+    provider = Column(Text)
+    sonarr_episode_id = Column(Integer)
+    sonarr_series_id = Column(Integer)
+    subs_id = Column(Text)
+    timestamp = Column(DateTime, primary_key=True)
 
 
-TableBlacklistMovie = Table(
-    'table_blacklist_movie', metadata,
-    Column('language', Text),
-    Column('provider', Text),
-    Column('radarr_id', Integer),
-    Column('subs_id', Text),
-    Column('timestamp', DateTime)
-)
+class TableBlacklistMovie(Base):
+    __tablename__ = 'table_blacklist_movie'
+
+    language = Column(Text)
+    provider = Column(Text)
+    radarr_id = Column(Integer)
+    subs_id = Column(Text)
+    timestamp = Column(DateTime, primary_key=True)
 
 
 class TableCustomScoreProfiles(Base):
@@ -209,13 +209,13 @@ class TableMovies(Base):
     year = Column(Text)
 
 
-TableMoviesRootfolder = Table(
-    'table_movies_rootfolder', metadata,
-    Column('accessible', Integer),
-    Column('error', Text),
-    Column('id', Integer),
-    Column('path', Text)
-)
+class TableMoviesRootfolder(Base):
+    __tablename__ = 'table_movies_rootfolder'
+
+    accessible = Column(Integer)
+    error = Column(Text)
+    id = Column(Integer, primary_key=True)
+    path = Column(Text)
 
 
 class TableSettingsLanguages(Base):
@@ -258,13 +258,13 @@ class TableShows(Base):
     alternativeTitle = Column(Text)
 
 
-TableShowsRootfolder = Table(
-    'table_shows_rootfolder', metadata,
-    Column('accessible', Integer),
-    Column('error', Text),
-    Column('id', Integer),
-    Column('path', Text)
-)
+class TableShowsRootfolder(Base):
+    __tablename__ = 'table_shows_rootfolder'
+
+    accessible = Column(Integer)
+    error = Column(Text)
+    id = Column(Integer, primary_key=True)
+    path = Column(Text)
 
 
 class TableCustomScoreProfileConditions(Base):
