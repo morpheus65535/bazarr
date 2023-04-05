@@ -124,20 +124,19 @@ logger = logging.getLogger(__name__)
 
 
 @functools.lru_cache(2)
-def encode_audio_stream(path):
-    # Returns the first audio stream
-    # TODO: pick the best audio stream
-
+def encode_audio_stream(path, audio_stream_language=None):
     logger.debug("Encoding audio stream to WAV with ffmpeg")
 
     try:
         # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
-        # Requires the ffmpeg CLI and `ffmpeg-python` package to be installed.
-        out, _ = (
-            ffmpeg.input(path, threads=0)
-            .output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000)
-            .run(cmd=["ffmpeg", "-nostdin"], capture_stdout=True, capture_stderr=True)
-        )
+        inp = ffmpeg.input(path, threads=0)
+        if audio_stream_language:
+            logger.debug(f"Whisper will only use the {audio_stream_language} audio stream for {path}")
+            inp = inp[f'a:m:language:{audio_stream_language}']
+
+        out, _ = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000) \
+                    .run(cmd=["ffmpeg", "-nostdin"], capture_stdout=True, capture_stderr=True)
+
     except ffmpeg.Error as e:
         raise RuntimeError(f"Failed to load audio: {e.stderr.decode()}") from e
 
@@ -174,6 +173,7 @@ class WhisperAISubtitle(Subtitle):
         self.video = video
         self.task = None
         self.audio_language = None
+        self.force_audio_stream = None
 
     @property
     def id(self):
@@ -245,7 +245,8 @@ class WhisperAIProvider(Provider):
         if video.audio_languages:
             if language.alpha3 in video.audio_languages:
                 sub.audio_language = language.alpha3
-                # TODO: we should tell ffmpeg to only grab this audio stream... for now, let's hope ;)
+                if len(list(video.audio_languages)) > 1:
+                    sub.force_audio_stream = language.alpha3
             else:
                 sub.task = "translate"
                 sub.audio_language = list(video.audio_languages)[0]
@@ -275,7 +276,7 @@ class WhisperAIProvider(Provider):
         # Invoke Whisper through the API. This may take a long time depending on the file.
         # TODO: This loads the entire file into memory, find a good way to stream the file in chunks
 
-        out = encode_audio_stream(subtitle.video.original_path)
+        out = encode_audio_stream(subtitle.video.original_path, subtitle.force_audio_stream)
 
         r = self.session.post(f"{self.endpoint}/asr",
                               params={'task': subtitle.task, 'language': whisper_get_language_reverse(subtitle.audio_language), 'output': 'srt', 'encode': 'false'},
