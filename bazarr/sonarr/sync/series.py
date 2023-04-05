@@ -109,7 +109,7 @@ def update_one_series(series_id, action):
     logging.debug('BAZARR syncing this specific series from Sonarr: {}'.format(series_id))
 
     # Check if there's a row in database for this series ID
-    existing_series = database.query().where(TableShows.sonarrSeriesId == series_id).count()
+    existing_series = database.query(TableShows).where(TableShows.sonarrSeriesId == series_id).count()
 
     # Delete series from DB
     if action == 'deleted' and existing_series:
