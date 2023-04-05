@@ -137,15 +137,15 @@ def parse_upgradable_list(upgradable_list, perfect_score, media_type):
 
     for item in upgradable_list:
         logging.debug(f"Trying to validate eligibility to upgrade for this subtitles: "
-                      f"{item['subtitles_path']}")
-        if (item['video_path'], item['language']) in \
-                [(x['video_path'], x['language']) for x in items_to_upgrade]:
+                      f"{item.subtitles_path}")
+        if (item.video_path, item.language) in \
+                [(x.video_path, x.language) for x in items_to_upgrade]:
             logging.debug("Newer video path and subtitles language combination already in list of subtitles to "
                           "upgrade, we skip this one.")
             continue
 
-        if os.path.exists(path_replace_method(item['subtitles_path'])) and \
-                os.path.exists(path_replace_method(item['video_path'])):
+        if os.path.exists(path_replace_method(item.subtitles_path)) and \
+                os.path.exists(path_replace_method(item.video_path)):
             logging.debug("Video and subtitles file are still there, we continue the eligibility validation.")
             pass
 
@@ -153,10 +153,10 @@ def parse_upgradable_list(upgradable_list, perfect_score, media_type):
 
     if not settings.general.getboolean('upgrade_manual'):
         logging.debug("Removing history items for manually downloaded or translated subtitles.")
-        items_to_upgrade = [x for x in items_to_upgrade if x['action'] in [2, 4, 6]]
+        items_to_upgrade = [x for x in items_to_upgrade if x.action in [2, 4, 6]]
 
     logging.debug("Removing history items for already perfectly scored subtitles.")
-    items_to_upgrade = [x for x in items_to_upgrade if x['score'] < perfect_score]
+    items_to_upgrade = [x for x in items_to_upgrade if x.score < perfect_score]
 
     logging.debug(f"Bazarr will try to upgrade {len(items_to_upgrade)} subtitles.")
 

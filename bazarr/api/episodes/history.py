@@ -69,12 +69,12 @@ class EpisodesHistory(Resource):
 
         upgradable_episodes_not_perfect = get_upgradable_episode_subtitles()
         if len(upgradable_episodes_not_perfect):
-            upgradable_episodes_not_perfect = [{"video_path": x['video_path'],
-                                                "timestamp": x['timestamp'],
-                                                "score": x['score'],
-                                                "tags": x['tags'],
-                                                "monitored": x['monitored'],
-                                                "seriesType": x['seriesType']}
+            upgradable_episodes_not_perfect = [{"video_path": x.video_path,
+                                                "timestamp": x.timestamp,
+                                                "score": x.score,
+                                                "tags": x.tags,
+                                                "monitored": x.monitored,
+                                                "seriesType": x.seriesType}
                                                for x in upgradable_episodes_not_perfect]
 
         query_conditions = [(TableEpisodes.title.is_not(None))]
@@ -117,9 +117,10 @@ class EpisodesHistory(Resource):
 
             # Mark episode as upgradable or not
             item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": item['timestamp'], "score": item['score'],
-                "tags": str(item['tags']), "monitored": str(item['monitored']),
-                "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:  # noqa: E129
+            current_item_dict = {"video_path": str(item['video_path']), "timestamp": item['timestamp'],
+                                 "score": item['score'], "tags": str(item['tags']), "monitored": str(item['monitored']),
+                                 "seriesType": str(item['seriesType'])}
+            if current_item_dict in upgradable_episodes_not_perfect:
                 if os.path.exists(path_mappings.path_replace(item['subtitles_path'])) and \
                         os.path.exists(path_mappings.path_replace(item['video_path'])):
                     item.update({"upgradable": True})

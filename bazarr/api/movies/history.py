@@ -65,11 +65,11 @@ class MoviesHistory(Resource):
 
         upgradable_movies_not_perfect = get_upgradable_movies_subtitles()
         if len(upgradable_movies_not_perfect):
-            upgradable_movies_not_perfect = [{"video_path": x['video_path'],
-                                              "timestamp": x['timestamp'],
-                                              "score": x['score'],
-                                              "tags": x['tags'],
-                                              "monitored": x['monitored']}
+            upgradable_movies_not_perfect = [{"video_path": x.video_path,
+                                              "timestamp": x.timestamp,
+                                              "score": x.score,
+                                              "tags": x.tags,
+                                              "monitored": x.monitored}
                                              for x in upgradable_movies_not_perfect]
 
         query_conditions = [(TableMovies.title.is_not(None))]
@@ -107,9 +107,9 @@ class MoviesHistory(Resource):
 
             # Mark movies as upgradable or not
             item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": item['timestamp'], "score": item['score'],
-                "tags": str(item['tags']),
-                "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:  # noqa: E129
+            current_item_dict = {"video_path": str(item['video_path']), "timestamp": item['timestamp'],
+                                 "score": item['score'], "tags": str(item['tags']), "monitored": str(item['monitored'])}
+            if current_item_dict in upgradable_movies_not_perfect:
                 if os.path.exists(path_mappings.path_replace_movie(item['subtitles_path'])) and \
                         os.path.exists(path_mappings.path_replace_movie(item['video_path'])):
                     item.update({"upgradable": True})

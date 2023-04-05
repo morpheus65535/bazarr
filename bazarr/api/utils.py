@@ -148,10 +148,6 @@ def postprocess(item):
                 "hi": bool(item_dict['language'].endswith(':hi')),
             }
 
-    # Parse seriesType
-    if item_dict.get('seriesType'):
-        item_dict['seriesType'] = item_dict['seriesType'].capitalize()
-
     if item_dict.get('path'):
         item_dict['path'] = path_replace(item_dict['path'])
 
