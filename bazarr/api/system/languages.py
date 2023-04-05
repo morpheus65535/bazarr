@@ -3,7 +3,7 @@
 from flask_restx import Resource, Namespace, reqparse
 from operator import itemgetter
 
-from app.database import TableHistory, TableHistoryMovie, TableSettingsLanguages
+from app.database import TableHistory, TableHistoryMovie, TableSettingsLanguages, database, rows_as_list_of_dicts
 from languages.get_languages import alpha2_from_alpha3, language_from_alpha2
 
 from ..utils import authenticate, False_Keys
@@ -25,13 +25,11 @@ class Languages(Resource):
         args = self.get_request_parser.parse_args()
         history = args.get('history')
         if history and history not in False_Keys:
-            languages = list(TableHistory.select(TableHistory.language)
-                             .where(TableHistory.language.is_null(False))
-                             .dicts())
-            languages += list(TableHistoryMovie.select(TableHistoryMovie.language)
-                              .where(TableHistoryMovie.language.is_null(False))
-                              .dicts())
-            languages_list = list(set([lang['language'].split(':')[0] for lang in languages]))
+            languages = list(database.query(TableHistory.language)
+                             .where(TableHistory.language.is_not(None)))
+            languages += list(database.query(TableHistoryMovie.language)
+                              .where(TableHistoryMovie.language.is_not(None)))
+            languages_list = [lang.language.split(':')[0] for lang in languages]
             languages_dicts = []
             for language in languages_list:
                 code2 = None
@@ -53,11 +51,11 @@ class Languages(Resource):
                     except Exception:
                         continue
         else:
-            languages_dicts = TableSettingsLanguages.select(TableSettingsLanguages.name,
-                                                            TableSettingsLanguages.code2,
-                                                            TableSettingsLanguages.enabled)\
-                .order_by(TableSettingsLanguages.name).dicts()
-            languages_dicts = list(languages_dicts)
+            languages_dicts = rows_as_list_of_dicts(database.query(TableSettingsLanguages.name,
+                                                                   TableSettingsLanguages.code2,
+                                                                   TableSettingsLanguages.enabled)
+                                                    .order_by(TableSettingsLanguages.name)
+                                                    .all())
             for item in languages_dicts:
                 item['enabled'] = item['enabled'] == 1
 

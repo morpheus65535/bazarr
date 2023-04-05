@@ -91,14 +91,12 @@ class CustomScoreProfile:
         self._conditions_loaded = False
 
     def load_conditions(self):
-        try:
-            self._conditions = [
-                Condition.from_dict(item)
-                for item in self.conditions_table.select()
-                .where(self.conditions_table.profile_id == self.id)
-                .dicts()
-            ]
-        except self.conditions_table.DoesNotExist:
+        self._conditions = [
+            Condition.from_dict(item)
+            for item in database.query(self.conditions_table)
+            .where(self.conditions_table.profile_id == self.id)
+        ]
+        if not self._conditions:
             logger.debug("Conditions not found for %s", self)
             self._conditions = []
 

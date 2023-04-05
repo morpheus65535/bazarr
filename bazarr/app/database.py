@@ -4,11 +4,10 @@ import atexit
 import json
 import logging
 import os
-import time
-from datetime import datetime
 
 from dogpile.cache import make_region
-from sqlalchemy import create_engine, Column, DateTime, ForeignKey, Integer, LargeBinary, Table, Text, update, delete
+from sqlalchemy import create_engine, Column, DateTime, ForeignKey, Integer, LargeBinary, Table, Text, update, delete, \
+    select, func
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.pool import NullPool
@@ -293,7 +292,10 @@ def init_db():
 
 
 def rows_as_list_of_dicts(query):
-    return [dict(row._mapping) for row in query]
+    try:
+        return [dict(row._mapping) for row in query]
+    except Exception as e:
+        return False
 
 
 # def migrate_db():

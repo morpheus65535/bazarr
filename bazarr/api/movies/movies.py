@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableMovies
+from app.database import TableMovies, database, update
 from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
 from app.event_handler import event_stream
 from subtitles.wanted import wanted_search_missing_subtitles_movies
@@ -73,23 +73,22 @@ class Movies(Resource):
         length = args.get('length')
         radarrId = args.get('radarrid[]')
 
-        count = TableMovies.select().count()
+        count = database.query(TableMovies).count()
 
         if len(radarrId) != 0:
-            result = TableMovies.select()\
+            result = database.query(TableMovies)\
                 .where(TableMovies.radarrId.in_(radarrId))\
-                .order_by(TableMovies.sortTitle)\
-                .dicts()
+                .order_by(TableMovies.sortTitle)
         else:
-            result = TableMovies.select().order_by(TableMovies.sortTitle)
+            result = database.query(TableMovies).order_by(TableMovies.sortTitle)
             if length > 0:
                 result = result.limit(length).offset(start)
-            result = result.dicts()
-        result = list(result)
-        for item in result:
-            postprocess(item)
 
-        return {'data': result, 'total': count}
+        results = []
+        for item in result:
+            results.append(postprocess(item))
+
+        return {'data': results, 'total': count}
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, action='append', required=False, default=[],
@@ -120,11 +119,8 @@ class Movies(Resource):
                 except Exception:
                     return 'Languages profile not found', 404
 
-            TableMovies.update({
-                TableMovies.profileId: profileId
-            })\
-                .where(TableMovies.radarrId == radarrId)\
-                .execute()
+            database.execute(update(TableMovies).values(profileId=profileId).where(TableMovies.radarrId == radarrId))
+            database.commit()
 
             list_missing_subtitles_movies(no=radarrId, send_event=False)
 

@@ -3,7 +3,7 @@
 from flask_restx import Resource, Namespace, reqparse
 
 from app.config import settings
-from app.database import TableShows, TableMovies
+from app.database import TableShows, TableMovies, database, rows_as_list_of_dicts
 
 from ..utils import authenticate
 
@@ -28,24 +28,20 @@ class Searches(Resource):
         if query:
             if settings.general.getboolean('use_sonarr'):
                 # Get matching series
-                series = TableShows.select(TableShows.title,
-                                           TableShows.sonarrSeriesId,
-                                           TableShows.year)\
-                    .where(TableShows.title.contains(query))\
-                    .order_by(TableShows.title)\
-                    .dicts()
-                series = list(series)
-                search_list += series
+                series = database.query(TableShows.title,
+                                        TableShows.sonarrSeriesId,
+                                        TableShows.year) \
+                    .where(TableShows.title.contains(query)) \
+                    .order_by(TableShows.title)
+                search_list += rows_as_list_of_dicts(series)
 
             if settings.general.getboolean('use_radarr'):
                 # Get matching movies
-                movies = TableMovies.select(TableMovies.title,
-                                            TableMovies.radarrId,
-                                            TableMovies.year) \
+                movies = database.query(TableMovies.title,
+                                        TableMovies.radarrId,
+                                        TableMovies.year) \
                     .where(TableMovies.title.contains(query)) \
-                    .order_by(TableMovies.title) \
-                    .dicts()
-                movies = list(movies)
-                search_list += movies
+                    .order_by(TableMovies.title)
+                search_list += rows_as_list_of_dicts(movies)
 
         return search_list

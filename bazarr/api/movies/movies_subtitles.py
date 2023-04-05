@@ -8,7 +8,7 @@ from flask_restx import Resource, Namespace, reqparse
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from werkzeug.datastructures import FileStorage
 
-from app.database import TableMovies, get_audio_profile_languages, get_profile_id
+from app.database import TableMovies, get_audio_profile_languages, get_profile_id, database
 from utilities.path_mappings import path_mappings
 from subtitles.upload import manual_upload_subtitle
 from subtitles.download import generate_subtitles
@@ -42,28 +42,27 @@ class MoviesSubtitles(Resource):
         args = self.patch_request_parser.parse_args()
         radarrId = args.get('radarrid')
 
-        movieInfo = TableMovies.select(
+        movieInfo = database.query(
             TableMovies.title,
             TableMovies.path,
             TableMovies.sceneName,
             TableMovies.audio_language) \
             .where(TableMovies.radarrId == radarrId) \
-            .dicts() \
-            .get_or_none()
+            .first()
 
         if not movieInfo:
             return 'Movie not found', 404
 
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName'] or 'None'
+        moviePath = path_mappings.path_replace_movie(movieInfo.path)
+        sceneName = movieInfo.sceneName or 'None'
 
-        title = movieInfo['title']
+        title = movieInfo.title
 
         language = args.get('language')
         hi = args.get('hi').capitalize()
         forced = args.get('forced').capitalize()
 
-        audio_language_list = get_audio_profile_languages(movieInfo["audio_language"])
+        audio_language_list = get_audio_profile_languages(movieInfo.audio_language)
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
         else:
@@ -99,18 +98,17 @@ class MoviesSubtitles(Resource):
         # TODO: Support Multiply Upload
         args = self.post_request_parser.parse_args()
         radarrId = args.get('radarrid')
-        movieInfo = TableMovies.select(TableMovies.path,
+        movieInfo = database.query(TableMovies.path,
                                        TableMovies.audio_language) \
             .where(TableMovies.radarrId == radarrId) \
-            .dicts() \
-            .get_or_none()
+            .first()
 
         if not movieInfo:
             return 'Movie not found', 404
 
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
+        moviePath = path_mappings.path_replace_movie(movieInfo.path)
 
-        audio_language = get_audio_profile_languages(movieInfo['audio_language'])
+        audio_language = get_audio_profile_languages(movieInfo.audio_language)
         if len(audio_language) and isinstance(audio_language[0], dict):
             audio_language = audio_language[0]
         else:
@@ -163,15 +161,14 @@ class MoviesSubtitles(Resource):
         """Delete a movie subtitles"""
         args = self.delete_request_parser.parse_args()
         radarrId = args.get('radarrid')
-        movieInfo = TableMovies.select(TableMovies.path) \
+        movieInfo = database.query(TableMovies.path) \
             .where(TableMovies.radarrId == radarrId) \
-            .dicts() \
-            .get_or_none()
+            .first()
 
         if not movieInfo:
             return 'Movie not found', 404
 
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
+        moviePath = path_mappings.path_replace_movie(movieInfo.path)
 
         language = args.get('language')
         forced = args.get('forced')

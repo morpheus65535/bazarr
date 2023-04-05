@@ -47,7 +47,7 @@ def get_radarr_rootfolder():
                                 next((item for item in db_rootfolder if item['id'] == x['id']), False)]
 
         for item in rootfolder_to_remove:
-            database.execute(delete(TableMoviesRootfolder).where(TableMoviesRootfolder.id == item.id))
+            database.execute(delete(TableMoviesRootfolder).where(TableMoviesRootfolder.id == item['id']))
         for item in rootfolder_to_update:
             database.execute(update(TableMoviesRootfolder)
                              .values(path=item['path'])

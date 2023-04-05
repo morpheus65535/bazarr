@@ -17,10 +17,10 @@ _TITLE_RE = re.compile(r'\s(\(\d{4}\))')
 
 def refine_from_db(path, video):
     if isinstance(video, Episode):
-        data = database.query(TableShows.title.alias('seriesTitle'),
+        data = database.query(TableShows.title.label('seriesTitle'),
                               TableEpisodes.season,
                               TableEpisodes.episode,
-                              TableEpisodes.title.alias('episodeTitle'),
+                              TableEpisodes.title.label('episodeTitle'),
                               TableShows.year,
                               TableShows.tvdbId,
                               TableShows.alternativeTitles,

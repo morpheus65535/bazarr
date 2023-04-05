@@ -8,7 +8,7 @@ import logging
 from flask_restx import Resource, Namespace, reqparse
 from bs4 import BeautifulSoup as bso
 
-from app.database import TableEpisodes, TableShows, TableMovies
+from app.database import TableEpisodes, TableShows, TableMovies, database
 from subtitles.mass_download import episode_download_subtitles, movies_download_subtitles
 
 from ..utils import authenticate
@@ -73,16 +73,15 @@ class WebHooksPlex(Resource):
                 logging.debug('BAZARR is unable to get series IMDB id.')
                 return 'IMDB series ID not found', 404
             else:
-                sonarrEpisodeId = TableEpisodes.select(TableEpisodes.sonarrEpisodeId) \
-                    .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
+                sonarrEpisodeId = database.query(TableEpisodes.sonarrEpisodeId) \
+                    .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
                     .where(TableShows.imdbId == series_imdb_id,
                            TableEpisodes.season == season,
                            TableEpisodes.episode == episode) \
-                    .dicts() \
-                    .get_or_none()
+                    .first()
 
                 if sonarrEpisodeId:
-                    episode_download_subtitles(no=sonarrEpisodeId['sonarrEpisodeId'], send_progress=True)
+                    episode_download_subtitles(no=sonarrEpisodeId.sonarrEpisodeId, send_progress=True)
         else:
             try:
                 movie_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]
@@ -90,12 +89,11 @@ class WebHooksPlex(Resource):
                 logging.debug('BAZARR is unable to get movie IMDB id.')
                 return 'IMDB movie ID not found', 404
             else:
-                radarrId = TableMovies.select(TableMovies.radarrId)\
+                radarrId = database.query(TableMovies.radarrId)\
                     .where(TableMovies.imdbId == movie_imdb_id)\
-                    .dicts()\
-                    .get_or_none()
+                    .first()
 
                 if radarrId:
-                    movies_download_subtitles(no=radarrId['radarrId'])
+                    movies_download_subtitles(no=radarrId.radarrId)
 
         return '', 200

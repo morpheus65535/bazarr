@@ -93,7 +93,7 @@ def wanted_search_missing_subtitles_series():
                               TableShows.title,
                               TableEpisodes.season,
                               TableEpisodes.episode,
-                              TableEpisodes.title.alias('episodeTitle'),
+                              TableEpisodes.title.label('episodeTitle'),
                               TableShows.seriesType)\
         .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)\
         .where(reduce(operator.and_, conditions))\

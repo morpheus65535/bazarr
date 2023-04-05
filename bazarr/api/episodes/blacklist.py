@@ -4,7 +4,7 @@ import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableEpisodes, TableShows, TableBlacklist
+from app.database import TableEpisodes, TableShows, TableBlacklist, database, rows_as_list_of_dicts
 from subtitles.tools.delete import delete_subtitles
 from sonarr.blacklist import blacklist_log, blacklist_delete_all, blacklist_delete
 from utilities.path_mappings import path_mappings
@@ -48,29 +48,31 @@ class EpisodesBlacklist(Resource):
         start = args.get('start')
         length = args.get('length')
 
-        data = TableBlacklist.select(TableShows.title.alias('seriesTitle'),
-                                     TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
-                                     TableEpisodes.title.alias('episodeTitle'),
-                                     TableEpisodes.sonarrSeriesId,
-                                     TableBlacklist.provider,
-                                     TableBlacklist.subs_id,
-                                     TableBlacklist.language,
-                                     TableBlacklist.timestamp)\
-            .join(TableEpisodes, on=(TableBlacklist.sonarr_episode_id == TableEpisodes.sonarrEpisodeId))\
-            .join(TableShows, on=(TableBlacklist.sonarr_series_id == TableShows.sonarrSeriesId))\
+        data = database.query(TableShows.title.label('seriesTitle'),
+                              TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label('episode_number'),
+                              TableEpisodes.title.label('episodeTitle'),
+                              TableEpisodes.sonarrSeriesId,
+                              TableBlacklist.provider,
+                              TableBlacklist.subs_id,
+                              TableBlacklist.language,
+                              TableBlacklist.timestamp)\
+            .join(TableEpisodes, TableBlacklist.sonarr_episode_id == TableEpisodes.sonarrEpisodeId)\
+            .join(TableShows, TableBlacklist.sonarr_series_id == TableShows.sonarrSeriesId)\
             .order_by(TableBlacklist.timestamp.desc())
         if length > 0:
             data = data.limit(length).offset(start)
-        data = list(data.dicts())
 
-        for item in data:
+        results = []
+        for item in rows_as_list_of_dicts(data):
+            processed_item = postprocess(item)
+
             # Make timestamp pretty
-            item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
-            item.update({'timestamp': pretty.date(item['timestamp'])})
+            processed_item["parsed_timestamp"] = processed_item['timestamp'].strftime('%x %X')
+            processed_item.update({'timestamp': pretty.date(processed_item['timestamp'])})
 
-            postprocess(item)
+            results.append(processed_item)
 
-        return data
+        return results
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
@@ -94,15 +96,14 @@ class EpisodesBlacklist(Resource):
         subs_id = args.get('subs_id')
         language = args.get('language')
 
-        episodeInfo = TableEpisodes.select(TableEpisodes.path)\
+        episodeInfo = database.query(TableEpisodes.path)\
             .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)\
-            .dicts()\
-            .get_or_none()
+            .first()
 
         if not episodeInfo:
             return 'Episode not found', 404
 
-        media_path = episodeInfo['path']
+        media_path = episodeInfo.path
         subtitles_path = args.get('subtitles_path')
 
         blacklist_log(sonarr_series_id=sonarr_series_id,

@@ -185,7 +185,7 @@ def get_upgradable_episode_subtitles():
 
     upgradable_episodes_conditions = [(TableHistory.action.in_(query_actions)),
                                       (TableHistory.timestamp > minimum_timestamp),
-                                      (TableHistory.score.is_not(None))]
+                                      TableHistory.score]
     upgradable_episodes_conditions += get_exclusion_clause('series')
     upgradable_episodes = database.query(TableHistory.video_path,
                                          TableHistory.language,
@@ -199,11 +199,11 @@ def get_upgradable_episode_subtitles():
                                          TableHistory.action,
                                          TableHistory.subtitles_path,
                                          TableEpisodes.sonarrEpisodeId,
-                                         TableHistory.timestamp.alias('timestamp'),
+                                         TableHistory.timestamp.label('timestamp'),
                                          TableEpisodes.monitored,
                                          TableEpisodes.season,
                                          TableEpisodes.episode,
-                                         TableShows.title.alias('seriesTitle'),
+                                         TableShows.title.label('seriesTitle'),
                                          TableShows.seriesType)\
         .join(TableShows, TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId) \
         .join(TableEpisodes, TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
@@ -225,7 +225,7 @@ def get_upgradable_movies_subtitles():
 
     upgradable_movies_conditions = [(TableHistoryMovie.action.in_(query_actions)),
                                     (TableHistoryMovie.timestamp > minimum_timestamp),
-                                    (TableHistoryMovie.score.is_not(None))]
+                                    TableHistoryMovie.score]
     upgradable_movies_conditions += get_exclusion_clause('movie')
     upgradable_movies = database.query(TableHistoryMovie.video_path,
                                        TableHistoryMovie.language,
@@ -235,7 +235,7 @@ def get_upgradable_movies_subtitles():
                                        TableHistoryMovie.subtitles_path,
                                        TableMovies.audio_language,
                                        TableMovies.sceneName,
-                                       TableHistoryMovie.timestamp.alias('timestamp'),
+                                       TableHistoryMovie.timestamp.label('timestamp'),
                                        TableMovies.monitored,
                                        TableMovies.tags,
                                        TableMovies.radarrId,

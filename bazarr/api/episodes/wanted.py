@@ -5,7 +5,7 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, rows_as_list_of_dicts
 from api.swaggerui import subtitles_language_model
 
 from ..utils import authenticate, postprocess
@@ -58,52 +58,48 @@ class EpisodesWanted(Resource):
         wanted_condition = reduce(operator.and_, wanted_conditions)
 
         if len(episodeid) > 0:
-            data = TableEpisodes.select(TableShows.title.alias('seriesTitle'),
-                                        TableEpisodes.monitored,
-                                        TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
-                                        TableEpisodes.title.alias('episodeTitle'),
-                                        TableEpisodes.missing_subtitles,
-                                        TableEpisodes.sonarrSeriesId,
-                                        TableEpisodes.sonarrEpisodeId,
-                                        TableEpisodes.sceneName,
-                                        TableShows.tags,
-                                        TableEpisodes.failedAttempts,
-                                        TableShows.seriesType)\
-                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
-                .where(wanted_condition)\
-                .dicts()
+            result = database.query(TableShows.title.label('seriesTitle'),
+                                    TableEpisodes.monitored,
+                                    TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label('episode_number'),
+                                    TableEpisodes.title.label('episodeTitle'),
+                                    TableEpisodes.missing_subtitles,
+                                    TableEpisodes.sonarrSeriesId,
+                                    TableEpisodes.sonarrEpisodeId,
+                                    TableEpisodes.sceneName,
+                                    TableShows.tags,
+                                    TableEpisodes.failedAttempts,
+                                    TableShows.seriesType)\
+                .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)\
+                .where(wanted_condition)
         else:
             start = args.get('start')
             length = args.get('length')
-            data = TableEpisodes.select(TableShows.title.alias('seriesTitle'),
-                                        TableEpisodes.monitored,
-                                        TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
-                                        TableEpisodes.title.alias('episodeTitle'),
-                                        TableEpisodes.missing_subtitles,
-                                        TableEpisodes.sonarrSeriesId,
-                                        TableEpisodes.sonarrEpisodeId,
-                                        TableEpisodes.sceneName,
-                                        TableShows.tags,
-                                        TableEpisodes.failedAttempts,
-                                        TableShows.seriesType)\
-                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+            result = database.query(TableShows.title.label('seriesTitle'),
+                                    TableEpisodes.monitored,
+                                    TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label('episode_number'),
+                                    TableEpisodes.title.label('episodeTitle'),
+                                    TableEpisodes.missing_subtitles,
+                                    TableEpisodes.sonarrSeriesId,
+                                    TableEpisodes.sonarrEpisodeId,
+                                    TableEpisodes.sceneName,
+                                    TableShows.tags,
+                                    TableEpisodes.failedAttempts,
+                                    TableShows.seriesType)\
+                .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)\
                 .where(wanted_condition)\
                 .order_by(TableEpisodes.rowid.desc())
             if length > 0:
-                data = data.limit(length).offset(start)
-            data = data.dicts()
-        data = list(data)
+                result = result.limit(length).offset(start)
 
-        for item in data:
-            postprocess(item)
+        results = []
+        for item in rows_as_list_of_dicts(result):
+            results.append(postprocess(item))
 
         count_conditions = [(TableEpisodes.missing_subtitles != '[]')]
         count_conditions += get_exclusion_clause('series')
-        count = TableEpisodes.select(TableShows.tags,
-                                     TableShows.seriesType,
-                                     TableEpisodes.monitored)\
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+        count = database.query(TableShows.tags, TableShows.seriesType, TableEpisodes.monitored)\
+            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)\
             .where(reduce(operator.and_, count_conditions))\
             .count()
 
-        return {'data': data, 'total': count}
+        return {'data': results, 'total': count}

@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableEpisodes
+from app.database import TableEpisodes, database, rows_as_list_of_dicts, select
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
 from ..utils import authenticate, postprocess
@@ -57,17 +57,17 @@ class Episodes(Resource):
         episodeId = args.get('episodeid[]')
 
         if len(episodeId) > 0:
-            result = TableEpisodes.select().where(TableEpisodes.sonarrEpisodeId.in_(episodeId)).dicts()
+            result = database.query(TableEpisodes)\
+                .where(TableEpisodes.sonarrEpisodeId.in_(episodeId))
         elif len(seriesId) > 0:
-            result = TableEpisodes.select()\
-                .where(TableEpisodes.sonarrSeriesId.in_(seriesId))\
-                .order_by(TableEpisodes.season.desc(), TableEpisodes.episode.desc())\
-                .dicts()
+            result = database.query(TableEpisodes) \
+                .where(TableEpisodes.sonarrSeriesId.in_(seriesId)) \
+                .order_by(TableEpisodes.season.desc(), TableEpisodes.episode.desc())
         else:
             return "Series or Episode ID not provided", 404
 
-        result = list(result)
+        results = []
         for item in result:
-            postprocess(item)
+            results.append(postprocess(item))
 
-        return result
+        return results

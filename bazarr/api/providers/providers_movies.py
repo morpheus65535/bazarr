@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableMovies, get_audio_profile_languages, get_profile_id
+from app.database import TableMovies, get_audio_profile_languages, get_profile_id, database
 from utilities.path_mappings import path_mappings
 from app.get_providers import get_providers
 from subtitles.manual import manual_search, manual_download_subtitle
@@ -48,21 +48,20 @@ class ProviderMovies(Resource):
         """Search manually for a movie subtitles"""
         args = self.get_request_parser.parse_args()
         radarrId = args.get('radarrid')
-        movieInfo = TableMovies.select(TableMovies.title,
-                                       TableMovies.path,
-                                       TableMovies.sceneName,
-                                       TableMovies.profileId) \
+        movieInfo = database.query(TableMovies.title,
+                                   TableMovies.path,
+                                   TableMovies.sceneName,
+                                   TableMovies.profileId) \
             .where(TableMovies.radarrId == radarrId) \
-            .dicts() \
-            .get_or_none()
+            .first()
 
         if not movieInfo:
             return 'Movie not found', 404
 
-        title = movieInfo['title']
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName'] or "None"
-        profileId = movieInfo['profileId']
+        title = movieInfo.title
+        moviePath = path_mappings.path_replace_movie(movieInfo.path)
+        sceneName = movieInfo.sceneName or "None"
+        profileId = movieInfo.profileId
 
         providers_list = get_providers()
 
@@ -89,20 +88,19 @@ class ProviderMovies(Resource):
         """Manually download a movie subtitles"""
         args = self.post_request_parser.parse_args()
         radarrId = args.get('radarrid')
-        movieInfo = TableMovies.select(TableMovies.title,
-                                       TableMovies.path,
-                                       TableMovies.sceneName,
-                                       TableMovies.audio_language) \
+        movieInfo = database.query(TableMovies.title,
+                                   TableMovies.path,
+                                   TableMovies.sceneName,
+                                   TableMovies.audio_language) \
             .where(TableMovies.radarrId == radarrId) \
-            .dicts() \
-            .get_or_none()
+            .first()
 
         if not movieInfo:
             return 'Movie not found', 404
 
-        title = movieInfo['title']
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName'] or "None"
+        title = movieInfo.title
+        moviePath = path_mappings.path_replace_movie(movieInfo.path)
+        sceneName = movieInfo.sceneName or "None"
 
         hi = args.get('hi').capitalize()
         forced = args.get('forced').capitalize()
@@ -110,7 +108,7 @@ class ProviderMovies(Resource):
         selected_provider = args.get('provider')
         subtitle = args.get('subtitle')
 
-        audio_language_list = get_audio_profile_languages(movieInfo["audio_language"])
+        audio_language_list = get_audio_profile_languages(movieInfo.audio_language)
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
         else:

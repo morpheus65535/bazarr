@@ -5,7 +5,7 @@ import operator
 from functools import reduce
 from flask_restx import Resource, Namespace, fields
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies, database
 from app.get_providers import get_throttled_providers
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client
 from app.announcements import get_all_announcements
@@ -35,22 +35,22 @@ class Badges(Resource):
     @api_ns_badges.doc(parser=None)
     def get(self):
         """Get badges count to update the UI"""
-        episodes_conditions = [(TableEpisodes.missing_subtitles.is_null(False)),
+        episodes_conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
                                (TableEpisodes.missing_subtitles != '[]')]
         episodes_conditions += get_exclusion_clause('series')
-        missing_episodes = TableEpisodes.select(TableShows.tags,
-                                                TableShows.seriesType,
-                                                TableEpisodes.monitored)\
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+        missing_episodes = database.query(TableShows.tags,
+                                          TableShows.seriesType,
+                                          TableEpisodes.monitored)\
+            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)\
             .where(reduce(operator.and_, episodes_conditions))\
             .count()
 
-        movies_conditions = [(TableMovies.missing_subtitles.is_null(False)),
+        movies_conditions = [(TableMovies.missing_subtitles.is_not(None)),
                              (TableMovies.missing_subtitles != '[]')]
         movies_conditions += get_exclusion_clause('movie')
-        missing_movies = TableMovies.select(TableMovies.tags,
-                                            TableMovies.monitored)\
-            .where(reduce(operator.and_, movies_conditions))\
+        missing_movies = database.query(TableMovies.tags,
+                                        TableMovies.monitored) \
+            .where(reduce(operator.and_, movies_conditions)) \
             .count()
 
         throttled_providers = len(get_throttled_providers())

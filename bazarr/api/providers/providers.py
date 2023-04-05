@@ -3,7 +3,7 @@
 from flask_restx import Resource, Namespace, reqparse, fields
 from operator import itemgetter
 
-from app.database import TableHistory, TableHistoryMovie
+from app.database import TableHistory, TableHistoryMovie, database
 from app.get_providers import list_throttled_providers, reset_throttled_providers
 
 from ..utils import authenticate, False_Keys
@@ -32,20 +32,23 @@ class Providers(Resource):
         args = self.get_request_parser.parse_args()
         history = args.get('history')
         if history and history not in False_Keys:
-            providers = list(TableHistory.select(TableHistory.provider)
-                             .where(TableHistory.provider is not None and TableHistory.provider != "manual")
-                             .dicts())
-            providers += list(TableHistoryMovie.select(TableHistoryMovie.provider)
-                              .where(TableHistoryMovie.provider is not None and TableHistoryMovie.provider != "manual")
-                              .dicts())
-            providers_list = list(set([x['provider'] for x in providers]))
+            providers = list(database.query(TableHistory.provider)
+                             .where(TableHistory.provider and
+                                    TableHistory.provider != "manual")
+                             .distinct())
+            providers += list(database.query(TableHistoryMovie.provider)
+                              .where(TableHistoryMovie.provider and
+                                     TableHistoryMovie.provider != "manual")
+                              .distinct())
+            providers_list = [x.provider for x in providers]
             providers_dicts = []
             for provider in providers_list:
-                providers_dicts.append({
-                    'name': provider,
-                    'status': 'History',
-                    'retry': '-'
-                })
+                if provider not in [x['name'] for x in providers_dicts]:
+                    providers_dicts.append({
+                        'name': provider,
+                        'status': 'History',
+                        'retry': '-'
+                    })
         else:
             throttled_providers = list_throttled_providers()
 

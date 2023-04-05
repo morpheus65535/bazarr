@@ -28,5 +28,5 @@ def history_log(action, sonarr_series_id, sonarr_episode_id, result, fake_provid
         subs_id=subs_id,
         subtitles_path=subtitles_path
     ))
-    database.coomit()
+    database.commit()
     event_stream(type='episode-history')

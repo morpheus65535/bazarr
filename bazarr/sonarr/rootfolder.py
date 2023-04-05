@@ -46,7 +46,7 @@ def get_sonarr_rootfolder():
                                 next((item for item in db_rootfolder if item['id'] == x['id']), False)]
 
         for item in rootfolder_to_remove:
-            database.execute(delete(TableShowsRootfolder).where(TableShowsRootfolder.id == item.id))
+            database.execute(delete(TableShowsRootfolder).where(TableShowsRootfolder.id == item['id']))
         for item in rootfolder_to_update:
             database.execute(update(TableShowsRootfolder)
                              .values(path=item['path'])
