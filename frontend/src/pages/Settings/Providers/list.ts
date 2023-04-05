@@ -208,11 +208,14 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   { key: "napiprojekt", description: "Polish Subtitles Provider" },
   {
     key: "whisperai",
+    name: "Whisper",
     description: "AI Generated Subtitles powered by Whisper",
     inputs: [
       {
         type: "text",
         key: "endpoint",
+        defaultValue: "http://127.0.0.1:9000",
+        name: "Whisper ASR Docker Endpoint",
       },
       {
         type: "text",
