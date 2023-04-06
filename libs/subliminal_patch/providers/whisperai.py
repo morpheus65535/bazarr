@@ -242,14 +242,19 @@ class WhisperAIProvider(Provider):
         sub = WhisperAISubtitle(language, video)
         sub.task = "transcribe"
 
-        if video.audio_languages:
+        if video.audio_languages and not (list(video.audio_languages)[0] == "und" and len(video.audio_languages) == 1):
             if language.alpha3 in video.audio_languages:
                 sub.audio_language = language.alpha3
                 if len(list(video.audio_languages)) > 1:
                     sub.force_audio_stream = language.alpha3
             else:
                 sub.task = "translate"
-                sub.audio_language = list(video.audio_languages)[0]
+
+                eligible_languages = list(video.audio_languages)
+                if len(eligible_languages) > 1:
+                    if "und" in eligible_languages:
+                        eligible_languages.remove("und")
+                sub.audio_language = eligible_languages[0]
         else:
             # We must detect the language manually
             detected_lang = self.detect_language(video.original_path)
