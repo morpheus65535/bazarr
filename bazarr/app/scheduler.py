@@ -165,10 +165,6 @@ class Scheduler:
                 update_series, IntervalTrigger(minutes=int(settings.sonarr.series_sync)), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='update_series', name='Update Series list from Sonarr',
                 replace_existing=True)
-            self.aps_scheduler.add_job(
-                sync_episodes, IntervalTrigger(minutes=int(settings.sonarr.episodes_sync)), max_instances=1,
-                coalesce=True, misfire_grace_time=15, id='sync_episodes', name='Sync episodes with Sonarr',
-                replace_existing=True)
 
     def __radarr_update_task(self):
         if settings.general.getboolean('use_radarr'):

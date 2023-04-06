@@ -73,7 +73,6 @@ class SonarrSignalrClientLegacy:
                     logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
                     if not args.dev:
                         scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
-                        scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
 
     def stop(self, log=True):
         try:
@@ -150,7 +149,6 @@ class SonarrSignalrClient:
         logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
         if not args.dev:
             scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
-            scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
 
     def on_reconnect_handler(self):
         self.connected = False

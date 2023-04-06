@@ -23,7 +23,7 @@ postgresql = settings.postgresql.getboolean('enabled')
 region = make_region().configure('dogpile.cache.memory')
 
 if postgresql:
-    from sqlalchemy.dialects.postgresql import insert
+    from sqlalchemy.dialects.postgresql import insert  # insert is different between database types
     # class ReconnectPostgresqlDatabase(ReconnectMixin, PostgresqlDatabase):
     #     reconnect_errors = (
     #         (OperationalError, 'server closed the connection unexpectedly'),
@@ -43,7 +43,7 @@ if postgresql:
     # migrator = PostgresqlMigrator(database)
     pass
 else:
-    from sqlalchemy.dialects.sqlite import insert
+    from sqlalchemy.dialects.sqlite import insert  # insert is different between database types
     db_path = os.path.join(args.config_dir, 'db', 'bazarr.db')
     logger.debug(f"Connecting to SQLite database: {db_path}")
     engine = create_engine(f'sqlite:///{db_path}', poolclass=NullPool)

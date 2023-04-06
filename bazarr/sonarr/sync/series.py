@@ -59,16 +59,33 @@ def update_series(send_event=True):
             current_shows_sonarr.append(show['id'])
 
             if show['id'] in current_shows_db:
-                series_to_update.append(seriesParser(show, action='update', tags_dict=tagsDict,
-                                                     serie_default_profile=serie_default_profile,
-                                                     audio_profiles=audio_profiles))
-            else:
-                series_to_add.append(seriesParser(show, action='insert', tags_dict=tagsDict,
-                                                  serie_default_profile=serie_default_profile,
-                                                  audio_profiles=audio_profiles))
+                updated_series = seriesParser(show, action='update', tags_dict=tagsDict,
+                                              serie_default_profile=serie_default_profile,
+                                              audio_profiles=audio_profiles)
 
-        if send_event:
-            hide_progress(id='series_progress')
+                if database.query(TableShows).filter_by(**updated_series).count():
+                    continue
+                else:
+                    database.execute(update(TableShows)
+                                     .where(TableShows.sonarrSeriesId == show['id']))
+                    database.commit()
+
+                if send_event:
+                    event_stream(type='series', payload=show['id'])
+            else:
+                added_series = seriesParser(show, action='insert', tags_dict=tagsDict,
+                                            serie_default_profile=serie_default_profile,
+                                            audio_profiles=audio_profiles)
+
+                database.execute(insert(TableShows).values(added_series))
+                database.commit()
+
+                list_missing_subtitles(no=show['id'])
+
+                if send_event:
+                    event_stream(type='series', action='update', payload=show['id'])
+
+            sync_episodes(series_id=show['id'], send_event=send_event)
 
         # Remove old series from DB
         removed_series = list(set(current_shows_db) - set(current_shows_sonarr))
@@ -80,27 +97,8 @@ def update_series(send_event=True):
             if send_event:
                 event_stream(type='series', action='delete', payload=series)
 
-        # Update existing series in DB
-        for updated_series in series_to_update:
-            if database.query(TableShows).filter_by(**updated_series).count():
-                continue
-            else:
-                database.execute(update(TableShows)
-                                 .where(TableShows.sonarrSeriesId == updated_series['sonarrSeriesId']))
-                database.commit()
-
-            if send_event:
-                event_stream(type='series', payload=updated_series['sonarrSeriesId'])
-
-        # Insert new series in DB
-        for added_series in series_to_add:
-            database.execute(insert(TableShows).values(added_series))
-            database.commit()
-
-            list_missing_subtitles(no=added_series['sonarrSeriesId'])
-
-            if send_event:
-                event_stream(type='series', action='update', payload=added_series['sonarrSeriesId'])
+        if send_event:
+            hide_progress(id='series_progress')
 
         logging.debug('BAZARR All series synced from Sonarr into database.')
 
