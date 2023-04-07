@@ -10,18 +10,19 @@ class ClosedCaptionRule(Rule):
 
     def execute(self, props, pv_props, context):
         """Execute closed caption rule."""
-        for name in (pv_props.get('_closed_caption'), props.get('name')):
-            if name and self.cc_re.search(name):
-                return True
+        if '_closed_caption' in pv_props and self.cc_re.search(pv_props['_closed_caption']):
+            return True
+
+        if 'guessed' in pv_props:
+            guessed = pv_props['guessed']
+            return guessed.get('closed_caption')
 
 
 class HearingImpairedRule(Rule):
     """Hearing Impaired rule."""
 
-    hi_re = re.compile(r'(\bsdh\b)', re.IGNORECASE)
-
     def execute(self, props, pv_props, context):
         """Hearing Impaired."""
-        name = props.get('name')
-        if name and self.hi_re.search(name):
-            return True
+        if 'guessed' in pv_props:
+            guessed = pv_props['guessed']
+            return guessed.get('hearing_impaired')

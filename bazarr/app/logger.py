@@ -125,6 +125,7 @@ def configure_logging(debug=False):
         logging.getLogger("srt").setLevel(logging.ERROR)
         logging.getLogger("SignalRCoreClient").setLevel(logging.CRITICAL)
         logging.getLogger("websocket").setLevel(logging.CRITICAL)
+        logging.getLogger("ga4mp.ga4mp").setLevel(logging.ERROR)
 
     logging.getLogger("waitress").setLevel(logging.ERROR)
     logging.getLogger("knowit").setLevel(logging.CRITICAL)

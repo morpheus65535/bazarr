@@ -59,6 +59,17 @@ class GetRadarrInfo:
         else:
             return False
 
+    def is_deprecated(self):
+        """
+                Call self.version() and parse the result to determine if it's a deprecated version of Radarr
+                @return: bool
+                """
+        radarr_version = self.version()
+        if radarr_version.startswith(('0.', '3.')):
+            return True
+        else:
+            return False
+
 
 get_radarr_info = GetRadarrInfo()
 

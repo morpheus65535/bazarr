@@ -105,3 +105,70 @@ def test_download_movie_subtitle(movies):
     with SuperSubtitlesProvider() as provider:
         provider.download_subtitle(subtitle)
         assert subtitle.is_valid()
+
+
+def test_subtitle_reprs(movies):
+    subtitle = SuperSubtitlesSubtitle(
+        Language.fromalpha2("en"),
+        "https://www.feliratok.eu/index.php?action=letolt&felirat=1634579718",
+        1634579718,
+        "Dune",
+        0,
+        0,
+        "",
+        [
+            "NF.WEB-DL.1080p-TEPES",
+            "NF.WEBRip.1080p-TEPES",
+            "WEBRip-ION10",
+            "WEBRip-ION265",
+            "WEBRip.1080p-RARBG",
+        ],
+        "",
+        "",
+        "",
+        asked_for_episode=None,
+    )
+    assert isinstance(subtitle.__repr__(), str)
+    assert isinstance(subtitle.__str__(), str)
+
+
+@pytest.fixture
+def video_2():
+    return Episode(
+        **{
+            "name": "/tv/La.Brea/Season.02/La.Brea.S02E13.720p.WEB.H264-CAKES.mkv",
+            "source": "Web",
+            "release_group": "CAKES",
+            "resolution": "720p",
+            "video_codec": "H.264",
+            "audio_codec": "Dolby Digital Plus",
+            "imdb_id": None,
+            "size": 1598748631,
+            "original_name": "la.brea.s02e13.720p.web.h264-cakes.mkv",
+            "hints": {"title": "La Brea", "type": "episode", "single_value": True},
+            "streaming_service": None,
+            "edition": None,
+            "original_path": "/tv/La.Brea/Season.02/la.brea.s02e13.720p.web.h264-cakes.mkv",
+            "other": None,
+            "series": "La Brea",
+            "season": 2,
+            "episode": 13,
+            "title": "The Journey (1)",
+            "year": 2021,
+            "tvdb_id": None,
+            "series_tvdb_id": 395029,
+            "series_imdb_id": "tt11640018",
+            "alternative_series": [],
+            "used_scene_name": True,
+        }
+    )
+
+
+def test_list_video_2(video_2):
+    lang = Language.fromalpha2("hu")
+
+    with SuperSubtitlesProvider() as provider:
+        subs = provider.list_subtitles(video_2, {lang})
+        for sub in subs:
+            matches = sub.get_matches(video_2)
+            assert {"season", "episode", "series"}.issubset(matches)

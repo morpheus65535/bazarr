@@ -1,16 +1,13 @@
-from codecs import open as codecs_open
 import logging
+from codecs import open as codecs_open
+from typing import Dict, ItemsView, Optional, Union
 from urllib.request import urlopen
-from typing import Optional, Dict, Union, ItemsView
 
-from .exceptions import (
-    TldIOError,
-    TldImproperlyConfigured,
-)
+from .exceptions import TldImproperlyConfigured, TldIOError
 from .helpers import project_dir
 
 __author__ = "Artur Barseghyan"
-__copyright__ = "2013-2021 Artur Barseghyan"
+__copyright__ = "2013-2023 Artur Barseghyan"
 __license__ = "MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later"
 __all__ = (
     "BaseTLDSourceParser",
@@ -98,17 +95,15 @@ class BaseTLDSourceParser(metaclass=Registry):
         try:
             remote_file = urlopen(cls.source_url)
             local_file_abs_path = project_dir(cls.local_path)
-            local_file = codecs_open(
-                local_file_abs_path, "wb", encoding="utf8"
-            )
+            local_file = codecs_open(local_file_abs_path, "wb", encoding="utf8")
             local_file.write(remote_file.read().decode("utf8"))
             local_file.close()
             remote_file.close()
-            LOGGER.debug(
+            LOGGER.info(
                 f"Fetched '{cls.source_url}' as '{local_file_abs_path}'"
             )
         except Exception as err:
-            LOGGER.debug(
+            LOGGER.error(
                 f"Failed fetching '{cls.source_url}'. Reason: {str(err)}"
             )
             if fail_silently:

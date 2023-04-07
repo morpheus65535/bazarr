@@ -249,7 +249,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         <Message>
           Use embedded subtitles in media files when determining missing ones.
         </Message>
-        <CollapseBox settingKey="settings-general-use_embedded_subs">
+        <CollapseBox indent settingKey="settings-general-use_embedded_subs">
           <Check
             label="Ignore Embedded PGS Subtitles"
             settingKey="settings-general-ignore_pgs_subs"
@@ -288,6 +288,15 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           ></Selector>
           <Message>Embedded subtitles video parser</Message>
         </CollapseBox>
+        <Check
+          label="Skip video file hash calculation"
+          settingKey="settings-general-skip_hashing"
+        ></Check>
+        <Message>
+          Skip video file hashing during search process to prevent sleeping hard
+          disk drive from waking-up. On the other hand, this may decrease your
+          search results scores.
+        </Message>
       </Section>
       <Section header="Post-Processing">
         <Check
@@ -369,7 +378,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           label="Permission (chmod)"
           settingKey="settings-general-chmod_enabled"
         ></Check>
-        <CollapseBox settingKey="settings-general-chmod_enabled">
+        <CollapseBox indent settingKey="settings-general-chmod_enabled">
           <Text placeholder="0777" settingKey="settings-general-chmod"></Text>
           <Message>Must be 4 digit octal</Message>
         </CollapseBox>
@@ -389,7 +398,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           Enable the automatic subtitles synchronization after downloading a
           subtitles.
         </Message>
-        <CollapseBox settingKey="settings-subsync-use_subsync">
+        <CollapseBox indent settingKey="settings-subsync-use_subsync">
           <Check label="Debug" settingKey="settings-subsync-debug"></Check>
           <Message>
             Do not actually sync the subtitles but generate a .tar.gz file to be
@@ -418,7 +427,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         <Message>
           Enable the post-processing execution after downloading a subtitles.
         </Message>
-        <CollapseBox settingKey="settings-general-use_postprocessing">
+        <CollapseBox indent settingKey="settings-general-use_postprocessing">
           <Check
             settingKey="settings-general-use_postprocessing_threshold"
             label="Series Score Threshold"

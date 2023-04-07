@@ -8,7 +8,7 @@ from utilities.path_mappings import path_mappings
 from utilities.post_processing import pp_replace, set_chmod
 from languages.get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
 from app.database import TableEpisodes, TableMovies
-from utilities.analytics import track_event
+from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
 from app.event_handler import event_stream
@@ -135,7 +135,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         notify_radarr(movie_metadata['radarrId'])
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata['radarrId'])
 
-    track_event(category=downloaded_provider, action=action, label=downloaded_language)
+    event_tracker.track(provider=downloaded_provider, action=action, language=downloaded_language)
 
     return ProcessSubtitlesResult(message=message,
                                   reversed_path=reversed_path,

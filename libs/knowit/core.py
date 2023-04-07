@@ -63,6 +63,17 @@ class Property(Reportable[T]):
         # Used to detect duplicated values. e.g.: en / en or High@L4.0 / High@L4.0 or Progressive / Progressive
         self.delimiter = delimiter
 
+    @classmethod
+    def _extract_value(cls,
+                       track: typing.Mapping,
+                       name: str,
+                       names: typing.List[str]):
+        if len(names) == 2:
+            parent_value = track.get(names[0], track.get(names[0].upper(), {}))
+            return parent_value.get(names[1], parent_value.get(names[1].upper()))
+
+        return track.get(name, track.get(name.upper()))
+
     def extract_value(
             self,
             track: typing.Mapping,
@@ -71,7 +82,7 @@ class Property(Reportable[T]):
         """Extract the property value from a given track."""
         for name in self.names:
             names = name.split('.')
-            value = track.get(names[0], {}).get(names[1]) if len(names) == 2 else track.get(name)
+            value = self._extract_value(track, name, names)
             if value is None:
                 if self.default is None:
                     continue
@@ -216,9 +227,10 @@ class MultiValue(Property):
 class Rule(Reportable[T]):
     """Rule abstract class."""
 
-    def __init__(self, name: str, override=False, **kwargs):
+    def __init__(self, name: str, private=False, override=False, **kwargs):
         """Initialize the object."""
         super().__init__(name, **kwargs)
+        self.private = private
         self.override = override
 
     def execute(self, props, pv_props, context: typing.Mapping):

@@ -57,6 +57,9 @@ os.environ["SZ_HI_EXTENSION"] = settings.general.hi_extension
 # set anti-captcha provider and key
 configure_captcha_func()
 
+# import Google Analytics module to make sure logging is properly configured afterwards
+from ga4mp import GtagMP  # noqa E402
+
 # configure logging
 configure_logging(settings.general.getboolean('debug') or args.debug)
 import logging  # noqa E402

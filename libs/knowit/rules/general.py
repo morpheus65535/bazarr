@@ -1,8 +1,6 @@
-
-import re
 from logging import NullHandler, getLogger
 
-import babelfish
+from trakit.api import trakit
 
 from knowit.core import Rule
 
@@ -10,22 +8,27 @@ logger = getLogger(__name__)
 logger.addHandler(NullHandler())
 
 
-class LanguageRule(Rule):
-    """Language rules."""
-
-    name_re = re.compile(r'(?P<name>\w+)\b', re.IGNORECASE)
+class GuessTitleRule(Rule):
+    """Guess properties from track title."""
 
     def execute(self, props, pv_props, context):
         """Language detection using name."""
-        if 'language' in props:
+        if 'name' in props:
+            language = props.get('language')
+            options = {'expected_language': language} if language else {}
+            guessed = trakit(props['name'], options)
+            if guessed:
+                return guessed
+
+
+class LanguageRule(Rule):
+    """Language rules."""
+
+    def execute(self, props, pv_props, context):
+        """Language detection using name."""
+        if 'guessed' not in pv_props:
             return
 
-        if 'name' in props:
-            name = props.get('name', '')
-            match = self.name_re.match(name)
-            if match:
-                try:
-                    return babelfish.Language.fromname(match.group('name'))
-                except babelfish.Error:
-                    pass
-            logger.info('Invalid %s: %r', self.description, name)
+        guess = pv_props['guessed']
+        if 'language' in guess:
+            return guess['language']

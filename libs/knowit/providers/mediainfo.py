@@ -1,5 +1,6 @@
-
+import ctypes
 import json
+import os
 import re
 from ctypes import c_void_p, c_wchar_p
 from decimal import Decimal
@@ -43,6 +44,7 @@ from knowit.rules import (
     LanguageRule,
     ResolutionRule,
 )
+from knowit.rules.general import GuessTitleRule
 from knowit.units import units
 from knowit.utils import (
     define_candidate,
@@ -77,7 +79,7 @@ class MediaInfoExecutor:
 
     locations = {
         'unix': ('/usr/local/mediainfo/lib', '/usr/local/mediainfo/bin', '__PATH__'),
-        'windows': ('__PATH__', ),
+        'windows': ('C:\\Program Files\\MediaInfo', 'C:\\Program Files (x86)\\MediaInfo', '__PATH__'),
         'macos': ('__PATH__', ),
     }
 
@@ -121,12 +123,28 @@ class MediaInfoCliExecutor(MediaInfoExecutor):
     }
 
     def _execute(self, filename):
-        return json.loads(check_output([self.location, '--Output=JSON', '--Full', filename]).decode())
+        data = check_output([self.location, '--Output=JSON', '--Full', filename]).decode()
+
+        return json.loads(data) if data else {}
+
+    @classmethod
+    def _is_gui_exe(cls, candidate: str):
+        if not candidate.endswith('MediaInfo.exe') or not os.path.isfile(candidate):
+            return False
+
+        try:
+            shell32 = ctypes.WinDLL('shell32', use_last_error=True)  # type: ignore
+            return bool(shell32.ExtractIconExW(candidate, 0, None, None, 1))
+        except Exception:
+            return False
 
     @classmethod
     def create(cls, os_family=None, suggested_path=None):
         """Create the executor instance."""
         for candidate in define_candidate(cls.locations, cls.names, os_family, suggested_path):
+            if cls._is_gui_exe(candidate):
+                continue
+
             try:
                 output = check_output([candidate, '--version']).decode()
                 version = cls._get_version(output)
@@ -154,7 +172,9 @@ class MediaInfoCTypesExecutor(MediaInfoExecutor):
 
     def _execute(self, filename):
         # Create a MediaInfo handle
-        return json.loads(MediaInfo.parse(filename, library_file=self.location, output='JSON'))
+        data = MediaInfo.parse(filename, library_file=self.location, output='JSON')
+
+        return json.loads(data) if data else {}
 
     @classmethod
     def create(cls, os_family=None, suggested_path=None):
@@ -254,19 +274,22 @@ class MediaInfoProvider(Provider):
             },
         }, {
             'video': {
-                'language': LanguageRule('video language'),
+                'guessed': GuessTitleRule('guessed properties', private=True),
+                'language': LanguageRule('video language', override=True),
                 'resolution': ResolutionRule('video resolution'),
             },
             'audio': {
-                'language': LanguageRule('audio language'),
+                'guessed': GuessTitleRule('guessed properties', private=True),
+                'language': LanguageRule('audio language', override=True),
                 'channels': AudioChannelsRule('audio channels'),
-                '_atmosrule': AtmosRule(config, 'atmos rule'),
-                '_dtshdrule': DtsHdRule(config, 'dts-hd rule'),
+                'atmos': AtmosRule(config, 'atmos rule', private=True),
+                'dtshd': DtsHdRule(config, 'dts-hd rule', private=True),
             },
             'subtitle': {
-                'language': LanguageRule('subtitle language'),
-                'hearing_impaired': HearingImpairedRule('subtitle hearing impaired'),
-                'closed_caption': ClosedCaptionRule('closed caption'),
+                'guessed': GuessTitleRule('guessed properties', private=True),
+                'language': LanguageRule('subtitle language', override=True),
+                'hearing_impaired': HearingImpairedRule('subtitle hearing impaired', override=True),
+                'closed_caption': ClosedCaptionRule('closed caption', override=True),
             }
         })
         self.executor = MediaInfoExecutor.get_executor_instance(suggested_path)
