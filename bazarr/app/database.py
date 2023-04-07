@@ -292,10 +292,7 @@ def init_db():
 
 
 def rows_as_list_of_dicts(query):
-    try:
-        return [dict(row._mapping) for row in query]
-    except Exception as e:
-        return False
+    return [dict(row._mapping) for row in query]
 
 
 # def migrate_db():
