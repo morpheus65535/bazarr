@@ -6,8 +6,10 @@ import logging
 import os
 
 from dogpile.cache import make_region
-from sqlalchemy import create_engine, Column, DateTime, ForeignKey, Integer, LargeBinary, Table, Text, update, delete, \
-    select, func
+
+from sqlalchemy import create_engine, Column, DateTime, ForeignKey, Integer, LargeBinary, Text
+# importing here to be indirectly imported in other modules later
+from sqlalchemy import update, delete, select, func  # noqa W0611
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.pool import NullPool
@@ -23,32 +25,30 @@ postgresql = settings.postgresql.getboolean('enabled')
 region = make_region().configure('dogpile.cache.memory')
 
 if postgresql:
-    from sqlalchemy.dialects.postgresql import insert  # insert is different between database types
-    # class ReconnectPostgresqlDatabase(ReconnectMixin, PostgresqlDatabase):
-    #     reconnect_errors = (
-    #         (OperationalError, 'server closed the connection unexpectedly'),
-    #     )
-    #
-    # logger.debug(
-    #     f"Connecting to PostgreSQL database: {settings.postgresql.host}:{settings.postgresql.port}/{settings.postgresql.database}")
-    # database = ReconnectPostgresqlDatabase(settings.postgresql.database,
-    #                                        user=settings.postgresql.username,
-    #                                        password=settings.postgresql.password,
-    #                                        host=settings.postgresql.host,
-    #                                        port=settings.postgresql.port,
-    #                                        autocommit=True,
-    #                                        autorollback=True,
-    #                                        autoconnect=True,
-    #                                        )
-    # migrator = PostgresqlMigrator(database)
-    pass
+    # insert is different between database types
+    from sqlalchemy.dialects.postgresql import insert  # noqa E402
+    from sqlalchemy.engine import URL  # noqa E402
+
+    logger.debug(f"Connecting to PostgreSQL database: {settings.postgresql.host}:{settings.postgresql.port}/"
+                 f"{settings.postgresql.database}")
+    url = URL.create(
+        drivername="postgresql",
+        username=settings.postgresql.username,
+        password=settings.postgresql.password,
+        host=settings.postgresql.host,
+        port=settings.postgresql.port,
+        database=settings.postgresql.database
+    )
+    engine = create_engine(url, poolclass=NullPool)
 else:
-    from sqlalchemy.dialects.sqlite import insert  # insert is different between database types
+    # insert is different between database types
+    from sqlalchemy.dialects.sqlite import insert  # noqa E402
     db_path = os.path.join(args.config_dir, 'db', 'bazarr.db')
     logger.debug(f"Connecting to SQLite database: {db_path}")
     engine = create_engine(f'sqlite:///{db_path}', poolclass=NullPool)
-    session_factory = sessionmaker(bind=engine)
-    database = scoped_session(session_factory)
+
+session_factory = sessionmaker(bind=engine)
+database = scoped_session(session_factory)
 
 
 @atexit.register
