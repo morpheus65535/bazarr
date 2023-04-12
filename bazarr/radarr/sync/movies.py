@@ -3,8 +3,6 @@
 import os
 import logging
 
-from peewee import IntegrityError
-
 from app.config import settings
 from radarr.info import url_radarr
 from utilities.path_mappings import path_mappings

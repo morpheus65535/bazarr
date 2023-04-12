@@ -3,8 +3,6 @@
 import os
 import logging
 
-from peewee import IntegrityError
-
 from app.database import database, TableEpisodes, delete, update, insert
 from app.config import settings
 from utilities.path_mappings import path_mappings

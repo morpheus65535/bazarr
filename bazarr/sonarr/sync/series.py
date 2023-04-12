@@ -2,8 +2,6 @@
 
 import logging
 
-from peewee import IntegrityError
-
 from app.config import settings
 from sonarr.info import url_sonarr
 from subtitles.indexer.series import list_missing_subtitles
