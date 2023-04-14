@@ -121,7 +121,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
         # check if we have a value for that cache key
         try:
             # Unpickle ffprobe cache
-            cached_value = pickle.loads(cache_key['ffprobe_cache'])
+            cached_value = pickle.loads(cache_key.ffprobe_cache)
         except Exception:
             pass
         else:
@@ -134,7 +134,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
                     # no valid cache
                     pass
             else:
-                # cache mut be renewed
+                # cache must be renewed
                 pass
 
     # if not, we retrieve the metadata from the file

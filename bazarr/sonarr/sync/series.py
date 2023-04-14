@@ -41,8 +41,6 @@ def update_series(send_event=True):
         # Get current shows in DB
         current_shows_db = [x.sonarrSeriesId for x in database.query(TableShows.sonarrSeriesId).all()]
         current_shows_sonarr = []
-        series_to_update = []
-        series_to_add = []
 
         series_count = len(series)
         for i, show in enumerate(series):
@@ -61,9 +59,7 @@ def update_series(send_event=True):
                                               serie_default_profile=serie_default_profile,
                                               audio_profiles=audio_profiles)
 
-                if database.query(TableShows).filter_by(**updated_series).count():
-                    continue
-                else:
+                if not database.query(TableShows).filter_by(**updated_series).count():
                     database.execute(update(TableShows)
                                      .values(updated_series)
                                      .where(TableShows.sonarrSeriesId == show['id']))

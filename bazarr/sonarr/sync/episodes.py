@@ -3,12 +3,12 @@
 import os
 import logging
 
-from app.database import database, TableEpisodes, delete, update, insert
+from app.database import database, TableEpisodes, TableShows, delete, update, insert
 from app.config import settings
 from utilities.path_mappings import path_mappings
 from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
 from subtitles.mass_download import episode_download_subtitles
-from app.event_handler import event_stream, show_progress, hide_progress
+from app.event_handler import event_stream
 from sonarr.info import get_sonarr_info, url_sonarr
 
 from .parser import episodeParser
@@ -20,7 +20,7 @@ def update_all_episodes():
     logging.info('BAZARR All existing episode subtitles indexed from disk.')
 
 
-def sync_episodes(series_id=None, send_event=True):
+def sync_episodes(series_id, send_event=True):
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
 
@@ -31,73 +31,55 @@ def sync_episodes(series_id=None, send_event=True):
                                                    TableEpisodes.path,
                                                    TableEpisodes.sonarrSeriesId)
                                     .where(TableEpisodes.sonarrSeriesId == series_id).all()]
+        series = database.query(TableShows.title).where(TableShows.seriesType == series_id).first()
+        series_title = series.title if series else ''
     else:
-        current_episodes_db_list = [row.sonarrEpisodeId for row in
-                                    database.query(TableEpisodes.sonarrEpisodeId,
-                                                   TableEpisodes.path,
-                                                   TableEpisodes.sonarrSeriesId).all()]
+        return
 
     current_episodes_sonarr = []
     episodes_to_update = []
     episodes_to_add = []
     altered_episodes = []
 
-    # Get sonarrId for each series from database
-    seriesIdList = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr, sonarr_series_id=series_id)
-
-    series_count = len(seriesIdList)
-    for i, seriesId in enumerate(seriesIdList):
-        if send_event:
-            show_progress(id='episodes_progress',
-                          header='Syncing episodes...',
-                          name=seriesId['title'],
-                          value=i,
-                          count=series_count)
-
-        # Get episodes data for a series from Sonarr
-        episodes = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
-                                                series_id=seriesId['id'])
-        if not episodes:
-            continue
-        else:
-            # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
-            if not get_sonarr_info.is_legacy():
-                episodeFiles = get_episodesFiles_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
-                                                                 series_id=seriesId['id'])
-                for episode in episodes:
-                    if episode['hasFile']:
-                        item = [x for x in episodeFiles if x['id'] == episode['episodeFileId']]
-                        if item:
-                            episode['episodeFile'] = item[0]
-
+    # Get episodes data for a series from Sonarr
+    episodes = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
+                                            series_id=series_id)
+    if episodes:
+        # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
+        if not get_sonarr_info.is_legacy():
+            episodeFiles = get_episodesFiles_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
+                                                             series_id=series_id)
             for episode in episodes:
-                if 'hasFile' in episode:
-                    if episode['hasFile'] is True:
-                        if 'episodeFile' in episode:
-                            try:
-                                bazarr_file_size = \
-                                    os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
-                            except OSError:
-                                bazarr_file_size = 0
-                            if episode['episodeFile']['size'] > 20480 or bazarr_file_size > 20480:
-                                # Add episodes in sonarr to current episode list
-                                current_episodes_sonarr.append(episode['id'])
+                if episode['hasFile']:
+                    item = [x for x in episodeFiles if x['id'] == episode['episodeFileId']]
+                    if item:
+                        episode['episodeFile'] = item[0]
 
-                                # Parse episode data
-                                if episode['id'] in current_episodes_db_list:
-                                    episodes_to_update.append(episodeParser(episode))
-                                else:
-                                    episodes_to_add.append(episodeParser(episode))
+        for episode in episodes:
+            if 'hasFile' in episode:
+                if episode['hasFile'] is True:
+                    if 'episodeFile' in episode:
+                        try:
+                            bazarr_file_size = \
+                                os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
+                        except OSError:
+                            bazarr_file_size = 0
+                        if episode['episodeFile']['size'] > 20480 or bazarr_file_size > 20480:
+                            # Add episodes in sonarr to current episode list
+                            current_episodes_sonarr.append(episode['id'])
 
-    if send_event:
-        hide_progress(id='episodes_progress')
+                            # Parse episode data
+                            if episode['id'] in current_episodes_db_list:
+                                episodes_to_update.append(episodeParser(episode))
+                            else:
+                                episodes_to_add.append(episodeParser(episode))
 
     # Remove old episodes from DB
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
 
     temp_episodes_list = database.query(TableEpisodes.path,
                                         TableEpisodes.sonarrSeriesId,
-                                        TableEpisodes.sonarrEpisodeId).all()
+                                        TableEpisodes.sonarrEpisodeId)
     for removed_episode in removed_episodes:
         episode_to_delete = temp_episodes_list.where(TableEpisodes.sonarrEpisodeId == removed_episode).first()
         if not episode_to_delete:
@@ -122,6 +104,8 @@ def sync_episodes(series_id=None, send_event=True):
             altered_episodes.append([updated_episode['sonarrEpisodeId'],
                                      updated_episode['path'],
                                      updated_episode['sonarrSeriesId']])
+            if send_event:
+                event_stream(type='episode', action='update', payload=updated_episode['sonarrEpisodeId'])
     database.commit()
 
     # Insert new episodes in DB
