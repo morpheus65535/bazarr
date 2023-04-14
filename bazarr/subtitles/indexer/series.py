@@ -110,7 +110,7 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                 if custom is not None:
                     actual_subtitles.append([custom, path_mappings.path_replace_reverse(subtitle_path)])
 
-                elif str(language) != 'und':
+                elif str(language.basename) != 'und':
                     if language.forced:
                         language_str = str(language)
                     elif language.hi:
@@ -259,7 +259,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
 def series_full_scan_subtitles(use_cache=settings.sonarr.getboolean('use_ffprobe_cache')):
     episodes = database.query(TableEpisodes.path).all()
 
-    count_episodes = episodes.count()
+    count_episodes = len(episodes)
     for i, episode in enumerate(episodes):
         show_progress(id='episodes_disk_scan',
                       header='Full disk scan...',

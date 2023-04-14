@@ -1,4 +1,5 @@
 # Bazarr dependencies
+alembic==1.10.3
 aniso8601==9.0.1
 argparse==1.4.0
 apprise==1.1.0
@@ -10,15 +11,17 @@ dogpile.cache==1.1.8
 fese==0.1.2
 ffsubsync==0.4.20
 flask-cors==3.0.10
+flask-migrate==4.0.4
 flask-restx==1.0.3
 Flask-SocketIO==5.3.1
+flask_sqlalchemy==3.0.3
 Flask==2.2.2
 ga4mp==2.0.4
 guess_language-spirit==0.5.3
 guessit==3.5.0
 jsonschema==4.17.0
 knowit==0.5.2
-peewee==3.15.3
+Mako==1.2.4
 py-pretty==1
 pycountry==22.3.5
 pyrsistent==0.19.2
@@ -31,6 +34,7 @@ rarfile==4.0
 requests==2.28.1
 semver==2.13.0
 signalrcore==0.9.5
+sqlalchemy==2.0.7
 waitress==2.1.2
 whichcraft==0.6.1
 

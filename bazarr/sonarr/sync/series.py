@@ -65,6 +65,7 @@ def update_series(send_event=True):
                     continue
                 else:
                     database.execute(update(TableShows)
+                                     .values(updated_series)
                                      .where(TableShows.sonarrSeriesId == show['id']))
                     database.commit()
 
