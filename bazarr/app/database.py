@@ -32,15 +32,12 @@ if postgresql:
             (OperationalError, 'server closed the connection unexpectedly'),
         )
 
-<<<<<<< HEAD
-=======
     postgres_database = os.getenv("POSTGRES_DATABASE", settings.postgresql.username)
     postgres_user = os.getenv("POSTGRES_USER", settings.postgresql.username)
     postgres_password = os.getenv("POSTGRES_PASSWORD", settings.postgresql.password)
     postgres_host = os.getenv("POSTGRES_HOST", settings.postgresql.host)
     postgres_port = os.getenv("POSTGRES_PORT", settings.postgresql.port)
 
->>>>>>> 8cfed778 (feat: Allow setting postgres settings via env vars)
     logger.debug(
         f"Connecting to PostgreSQL database: {postgres_host}:{postgres_port}/{postgres_database}")
     database = ReconnectPostgresqlDatabase(postgres_database,
