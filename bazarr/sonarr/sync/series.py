@@ -87,6 +87,7 @@ def update_series(send_event=True):
 
         for series in removed_series:
             database.execute(delete(TableShows).where(TableShows.sonarrSeriesId == series))
+            database.execute(delete(TableEpisodes).where(TableEpisodes.sonarrSeriesId == series))
             database.commit()
 
             if send_event:

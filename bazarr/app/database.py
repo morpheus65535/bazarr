@@ -51,6 +51,16 @@ else:
     logger.debug(f"Connecting to SQLite database: {url}")
     engine = create_engine(url, poolclass=NullPool)
 
+    from sqlalchemy.engine import Engine
+    from sqlalchemy import event
+
+
+    @event.listens_for(Engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
 session_factory = sessionmaker(bind=engine)
 database = scoped_session(session_factory)
 
@@ -67,7 +77,8 @@ metadata = Base.metadata
 class System(Base):
     __tablename__ = 'system'
 
-    configured = Column(Text, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    configured = Column(Text)
     updated = Column(Text)
 
 
@@ -83,22 +94,24 @@ class TableAnnouncements(Base):
 class TableBlacklist(Base):
     __tablename__ = 'table_blacklist'
 
+    id = Column(Integer, primary_key=True)
     language = Column(Text)
     provider = Column(Text)
     sonarr_episode_id = Column(Integer)
     sonarr_series_id = Column(Integer)
     subs_id = Column(Text)
-    timestamp = Column(DateTime, primary_key=True, default=datetime.now)
+    timestamp = Column(DateTime, default=datetime.now)
 
 
 class TableBlacklistMovie(Base):
     __tablename__ = 'table_blacklist_movie'
 
+    id = Column(Integer, primary_key=True)
     language = Column(Text)
     provider = Column(Text)
     radarr_id = Column(Integer)
     subs_id = Column(Text)
-    timestamp = Column(DateTime, primary_key=True, default=datetime.now)
+    timestamp = Column(DateTime, default=datetime.now)
 
 
 class TableCustomScoreProfiles(Base):
@@ -113,7 +126,7 @@ class TableCustomScoreProfiles(Base):
 class TableEpisodes(Base):
     __tablename__ = 'table_episodes'
 
-    rowid = Column(Integer, primary_key=True)
+    rowid = Column(Integer)
     audio_codec = Column(Text)
     audio_language = Column(Text)
     episode = Column(Integer, nullable=False)
@@ -128,7 +141,7 @@ class TableEpisodes(Base):
     resolution = Column(Text)
     sceneName = Column(Text)
     season = Column(Integer, nullable=False)
-    sonarrEpisodeId = Column(Integer, nullable=False, unique=True)
+    sonarrEpisodeId = Column(Integer, primary_key=True)
     sonarrSeriesId = Column(Integer, nullable=False)
     subtitles = Column(Text)
     title = Column(Text, nullable=False)
@@ -242,7 +255,7 @@ class TableSettingsNotifier(Base):
 class TableShows(Base):
     __tablename__ = 'table_shows'
 
-    tvdbId = Column(Integer, primary_key=True)
+    tvdbId = Column(Integer)
     alternativeTitles = Column(Text)
     audio_language = Column(Text)
     fanart = Column(Text)
@@ -253,7 +266,7 @@ class TableShows(Base):
     poster = Column(Text)
     profileId = Column(Integer)
     seriesType = Column(Text)
-    sonarrSeriesId = Column(Integer, nullable=False, unique=True)
+    sonarrSeriesId = Column(Integer, primary_key=True)
     sortTitle = Column(Text)
     tags = Column(Text)
     title = Column(Text, nullable=False)
@@ -288,11 +301,6 @@ def init_db():
     # Create tables if they don't exist.
     metadata.create_all(engine)
 
-    # add the system table single row if it's not existing
-    if not database.query(System).count():
-        database.execute(insert(System).values(configured='0', updated='0'))
-        database.commit()
-
 
 def rows_as_list_of_dicts(query):
     return [dict(row._mapping) for row in query]
@@ -305,6 +313,11 @@ def migrate_db(app):
         flask_migrate.Migrate(app, db, render_as_batch=True)
         flask_migrate.upgrade()
         db.engine.dispose()
+
+    # add the system table single row if it's not existing
+    if not database.query(System).count():
+        database.execute(insert(System).values(configured='0', updated='0'))
+        database.commit()
 
 
 class SqliteDictPathMapper:

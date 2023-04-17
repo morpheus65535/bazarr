@@ -9,6 +9,7 @@ import warnings
 
 from logging.handlers import TimedRotatingFileHandler
 from pytz_deprecation_shim import PytzUsageWarning
+from sqlalchemy.exc import SAWarning
 
 from .get_args import args
 from .config import settings
@@ -59,6 +60,7 @@ class NoExceptionFormatter(logging.Formatter):
 def configure_logging(debug=False):
     warnings.simplefilter('ignore', category=ResourceWarning)
     warnings.simplefilter('ignore', category=PytzUsageWarning)
+    warnings.simplefilter('ignore', category=SAWarning)
 
     if not debug:
         log_level = "INFO"
