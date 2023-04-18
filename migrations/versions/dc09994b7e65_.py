@@ -9,7 +9,8 @@ from alembic import op
 import sqlalchemy as sa
 from datetime import datetime
 
-from bazarr.app.database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, update
+from bazarr.app.database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableEpisodes, \
+    TableShows, TableMovies, TableLanguagesProfiles
 
 # revision identifiers, used by Alembic.
 revision = 'dc09994b7e65'
@@ -47,14 +48,29 @@ def upgrade():
 
     # Update series table
     with op.batch_alter_table('table_shows') as batch_op:
+        batch_op.execute(sa.update(TableShows)
+                         .values({TableShows.profileId: None})
+                         .where(TableShows.profileId.not_in(sa.select(TableLanguagesProfiles.profileId))))
         batch_op.create_primary_key(constraint_name='pk_table_shows', columns=['sonarrSeriesId'])
+        batch_op.create_foreign_key(constraint_name='fk_series_profileId_languages_profiles',
+                                    referent_table='table_languages_profiles',
+                                    local_cols=['profileId'],
+                                    remote_cols=['profileId'],
+                                    ondelete='SET NULL')
         batch_op.alter_column(column_name='imdbId', server_default=None)
         if column_exists('table_shows', 'alternateTitles'):
             batch_op.alter_column(column_name='alternateTitles', new_column_name='alternativeTitles')
 
     # Update episodes table
     with op.batch_alter_table('table_episodes') as batch_op:
+        batch_op.execute(sa.delete(TableEpisodes).where(TableEpisodes.sonarrSeriesId.not_in(
+            sa.select(TableShows.sonarrSeriesId))))
         batch_op.create_primary_key(constraint_name='pk_table_episodes', columns=['sonarrEpisodeId'])
+        batch_op.create_foreign_key(constraint_name='fk_sonarrSeriesId_episodes',
+                                    referent_table='table_shows',
+                                    local_cols=['sonarrSeriesId'],
+                                    remote_cols=['sonarrSeriesId'],
+                                    ondelete='CASCADE')
         batch_op.alter_column(column_name='file_size', server_default='0')
         if column_exists('table_episodes', 'scene_name'):
             batch_op.alter_column(column_name='scene_name', new_column_name='sceneName')
@@ -62,6 +78,20 @@ def upgrade():
     # Update series history table
     table_history_timestamp_altered = False
     with op.batch_alter_table('table_history', recreate='always') as batch_op:
+        batch_op.execute(sa.delete(TableHistory).where(TableHistory.sonarrEpisodeId.not_in(
+            sa.select(TableEpisodes.sonarrEpisodeId))))
+        batch_op.create_foreign_key(constraint_name='fk_sonarrEpisodeId_history',
+                                    referent_table='table_episodes',
+                                    local_cols=['sonarrEpisodeId'],
+                                    remote_cols=['sonarrEpisodeId'],
+                                    ondelete='CASCADE')
+        batch_op.execute(sa.delete(TableHistory).where(TableHistory.sonarrSeriesId.not_in(
+            sa.select(TableShows.sonarrSeriesId))))
+        batch_op.create_foreign_key(constraint_name='fk_sonarrSeriesId_history',
+                                    referent_table='table_shows',
+                                    local_cols=['sonarrSeriesId'],
+                                    remote_cols=['sonarrSeriesId'],
+                                    ondelete='CASCADE')
         if not column_exists('table_history', 'id'):
             batch_op.add_column(sa.Column('id', sa.Integer, primary_key=True))
         if column_type('table_history', 'score') == str:
@@ -77,6 +107,20 @@ def upgrade():
     # Update series blacklist table
     table_blacklist_timestamp_altered = False
     with op.batch_alter_table('table_blacklist', recreate="always") as batch_op:
+        batch_op.execute(sa.delete(TableBlacklist).where(TableBlacklist.sonarr_episode_id.not_in(
+            sa.select(TableEpisodes.sonarrEpisodeId))))
+        batch_op.create_foreign_key(constraint_name='fk_sonarrEpisodeId_blacklist',
+                                    referent_table='table_episodes',
+                                    local_cols=['sonarr_episode_id'],
+                                    remote_cols=['sonarrEpisodeId'],
+                                    ondelete='CASCADE')
+        batch_op.execute(sa.delete(TableBlacklist).where(TableBlacklist.sonarr_series_id.not_in(
+            sa.select(TableShows.sonarrSeriesId))))
+        batch_op.create_foreign_key(constraint_name='fk_sonarrSeriesId_blacklist',
+                                    referent_table='table_shows',
+                                    local_cols=['sonarr_series_id'],
+                                    remote_cols=['sonarrSeriesId'],
+                                    ondelete='CASCADE')
         if not column_exists('table_blacklist', 'id'):
             batch_op.add_column(sa.Column('id', sa.Integer, primary_key=True))
         if column_type('table_blacklist', 'timestamp') == int:
@@ -93,12 +137,27 @@ def upgrade():
 
     # Update movies table
     with op.batch_alter_table('table_movies') as batch_op:
+        batch_op.execute(sa.update(TableMovies)
+                         .values({TableMovies.profileId: None})
+                         .where(TableMovies.profileId.not_in(sa.select(TableLanguagesProfiles.profileId))))
         batch_op.create_primary_key(constraint_name='pk_table_movies', columns=['radarrId'])
+        batch_op.create_foreign_key(constraint_name='fk_movies_profileId_languages_profiles',
+                                    referent_table='table_languages_profiles',
+                                    local_cols=['profileId'],
+                                    remote_cols=['profileId'],
+                                    ondelete='SET NULL')
         batch_op.alter_column(column_name='file_size', server_default='0')
 
     # Update movies history table
     table_history_movie_timestamp_altered = False
     with op.batch_alter_table('table_history_movie', recreate='always') as batch_op:
+        batch_op.execute(sa.delete(TableHistoryMovie).where(TableHistoryMovie.radarrId.not_in(
+            sa.select(TableMovies.radarrId))))
+        batch_op.create_foreign_key(constraint_name='fk_radarrId_history_movie',
+                                    referent_table='table_movies',
+                                    local_cols=['radarrId'],
+                                    remote_cols=['radarrId'],
+                                    ondelete='CASCADE')
         if not column_exists('table_history_movie', 'id'):
             batch_op.add_column(sa.Column('id', sa.Integer, primary_key=True))
         if column_type('table_history_movie', 'score') == str:
@@ -114,6 +173,13 @@ def upgrade():
     # Update movies blacklist table
     table_blacklist_movie_timestamp_altered = False
     with op.batch_alter_table('table_blacklist_movie', recreate='always') as batch_op:
+        batch_op.execute(sa.delete(TableBlacklistMovie).where(TableBlacklistMovie.radarr_id.not_in(
+            sa.select(TableMovies.radarrId))))
+        batch_op.create_foreign_key(constraint_name='fk_radarrId_blacklist_movie',
+                                    referent_table='table_movies',
+                                    local_cols=['radarr_id'],
+                                    remote_cols=['radarrId'],
+                                    ondelete='CASCADE')
         if not column_exists('table_blacklist_movie', 'id'):
             batch_op.add_column(sa.Column('id', sa.Integer, primary_key=True))
         if column_type('table_blacklist_movie', 'timestamp') == int:

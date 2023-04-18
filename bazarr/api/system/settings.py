@@ -78,10 +78,6 @@ class SystemSettings(Resource):
                         originalFormat=item.originalFormat if item.originalFormat != 'null' else None,
                     ))
             for profileId in existing:
-                # Unassign this profileId from series and movies
-                database.execute(update(TableShows).values(profileId=None)).where(TableShows.profileId == profileId)
-                database.execute(update(TableMovies).values(profileId=None)).where(TableMovies.profileId == profileId)
-
                 # Remove deleted profiles
                 database.execute(delete(TableLanguagesProfiles).where(TableLanguagesProfiles.profileId == profileId))
 

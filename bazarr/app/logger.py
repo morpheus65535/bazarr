@@ -60,7 +60,7 @@ class NoExceptionFormatter(logging.Formatter):
 def configure_logging(debug=False):
     warnings.simplefilter('ignore', category=ResourceWarning)
     warnings.simplefilter('ignore', category=PytzUsageWarning)
-    warnings.simplefilter('ignore', category=SAWarning)
+    # warnings.simplefilter('ignore', category=SAWarning)
 
     if not debug:
         log_level = "INFO"
