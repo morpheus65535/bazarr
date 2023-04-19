@@ -17,4 +17,5 @@ class SubtitlesApi extends BaseApi {
   }
 }
 
-export default new SubtitlesApi();
+const subtitlesApi = new SubtitlesApi();
+export default subtitlesApi;

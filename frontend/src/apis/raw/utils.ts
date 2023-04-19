@@ -33,4 +33,5 @@ class RequestUtils {
   }
 }
 
-export default new RequestUtils();
+const requestUtils = new RequestUtils();
+export default requestUtils;

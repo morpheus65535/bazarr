@@ -11,4 +11,6 @@ class BadgesApi extends BaseApi {
   }
 }
 
-export default new BadgesApi();
+const badgesApi = new BadgesApi();
+
+export default badgesApi;

@@ -90,4 +90,5 @@ class MovieApi extends BaseApi {
   }
 }
 
-export default new MovieApi();
+const movieApi = new MovieApi();
+export default movieApi;
