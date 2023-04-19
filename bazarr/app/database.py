@@ -362,12 +362,12 @@ def get_exclusion_clause(exclusion_type):
     if exclusion_type == 'series':
         monitoredOnly = settings.sonarr.getboolean('only_monitored')
         if monitoredOnly:
-            where_clause.append((TableEpisodes.monitored == True))  # noqa E712
-            where_clause.append((TableShows.monitored == True))  # noqa E712
+            where_clause.append((TableEpisodes.monitored == 'True'))  # noqa E712
+            where_clause.append((TableShows.monitored == 'True'))  # noqa E712
     else:
         monitoredOnly = settings.radarr.getboolean('only_monitored')
         if monitoredOnly:
-            where_clause.append((TableMovies.monitored == True))  # noqa E712
+            where_clause.append((TableMovies.monitored == 'True'))  # noqa E712
 
     if exclusion_type == 'series':
         typesList = get_array_from(settings.sonarr.excluded_series_types)

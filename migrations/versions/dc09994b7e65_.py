@@ -7,7 +7,11 @@ Create Date: 2023-04-12 14:50:25.281288
 """
 from alembic import op
 import sqlalchemy as sa
-from datetime import datetime
+
+try:
+    from psycopg2.errors import UndefinedObject
+except ImportError:
+    pass
 
 from bazarr.app.database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableEpisodes, \
     TableShows, TableMovies, TableLanguagesProfiles
@@ -20,7 +24,6 @@ depends_on = None
 
 bind = op.get_context().bind
 insp = sa.inspect(bind)
-session = sa.orm.Session(bind=bind)
 
 
 def column_exists(table_name, column_name):
@@ -48,6 +51,8 @@ def upgrade():
 
     # Update series table
     with op.batch_alter_table('table_shows') as batch_op:
+        if bind.engine.name == 'postgresql':
+            batch_op.execute('ALTER TABLE table_shows DROP CONSTRAINT IF EXISTS table_shows_pkey')
         batch_op.execute(sa.update(TableShows)
                          .values({TableShows.profileId: None})
                          .where(TableShows.profileId.not_in(sa.select(TableLanguagesProfiles.profileId))))
@@ -63,6 +68,8 @@ def upgrade():
 
     # Update episodes table
     with op.batch_alter_table('table_episodes') as batch_op:
+        if bind.engine.name == 'postgresql':
+            batch_op.execute('ALTER TABLE table_episodes DROP CONSTRAINT IF EXISTS table_episodes_pkey')
         batch_op.execute(sa.delete(TableEpisodes).where(TableEpisodes.sonarrSeriesId.not_in(
             sa.select(TableShows.sonarrSeriesId))))
         batch_op.create_primary_key(constraint_name='pk_table_episodes', columns=['sonarrEpisodeId'])
@@ -133,10 +140,14 @@ def upgrade():
 
     # Update series rootfolder table
     with op.batch_alter_table('table_shows_rootfolder') as batch_op:
+        if bind.engine.name == 'postgresql':
+            batch_op.execute('ALTER TABLE table_shows_rootfolder DROP CONSTRAINT IF EXISTS table_shows_rootfolder_pkey')
         batch_op.create_primary_key(constraint_name='pk_table_shows_rootfolder', columns=['id'])
 
     # Update movies table
     with op.batch_alter_table('table_movies') as batch_op:
+        if bind.engine.name == 'postgresql':
+            batch_op.execute('ALTER TABLE table_movies DROP CONSTRAINT IF EXISTS table_movies_pkey')
         batch_op.execute(sa.update(TableMovies)
                          .values({TableMovies.profileId: None})
                          .where(TableMovies.profileId.not_in(sa.select(TableLanguagesProfiles.profileId))))
@@ -192,6 +203,9 @@ def upgrade():
 
     # Update movies rootfolder table
     with op.batch_alter_table('table_movies_rootfolder') as batch_op:
+        if bind.engine.name == 'postgresql':
+            batch_op.execute('ALTER TABLE table_movies_rootfolder DROP CONSTRAINT IF EXISTS '
+                             'table_movies_rootfolder_pkey')
         batch_op.create_primary_key(constraint_name='pk_table_movies_rootfolder', columns=['id'])
     # ### end Alembic commands ###
 

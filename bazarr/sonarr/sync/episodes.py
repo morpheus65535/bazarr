@@ -31,7 +31,7 @@ def sync_episodes(series_id, send_event=True):
                                                    TableEpisodes.path,
                                                    TableEpisodes.sonarrSeriesId)
                                     .where(TableEpisodes.sonarrSeriesId == series_id).all()]
-        series = database.query(TableShows.title).where(TableShows.seriesType == series_id).first()
+        series = database.query(TableShows.title).where(TableShows.sonarrSeriesId == series_id).first()
         series_title = series.title if series else ''
     else:
         return

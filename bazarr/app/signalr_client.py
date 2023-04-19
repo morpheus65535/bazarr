@@ -281,10 +281,10 @@ def dispatcher(data):
 
         if topic == 'series':
             logging.debug(f'Event received from Sonarr for series: {series_title} ({series_year})')
-            update_one_series(series_id=media_id, action=action, send_event=False)
+            update_one_series(series_id=media_id, action=action)
             if episodesChanged:
                 # this will happen if a season monitored status is changed.
-                sync_episodes(series_id=media_id, send_event=False)
+                sync_episodes(series_id=media_id, send_event=True)
         elif topic == 'episode':
             logging.debug(f'Event received from Sonarr for episode: {series_title} ({series_year}) - '
                           f'S{season_number:0>2}E{episode_number:0>2} - {episode_title}')

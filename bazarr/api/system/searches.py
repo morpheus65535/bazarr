@@ -22,7 +22,7 @@ class Searches(Resource):
     def get(self):
         """List results from query"""
         args = self.get_request_parser.parse_args()
-        query = args.get('query')
+        query = f"%{args.get('query')}%"
         search_list = []
 
         if query:
@@ -31,7 +31,7 @@ class Searches(Resource):
                 series = database.query(TableShows.title,
                                         TableShows.sonarrSeriesId,
                                         TableShows.year) \
-                    .where(TableShows.title.contains(query)) \
+                    .where(TableShows.title.ilike(query)) \
                     .order_by(TableShows.title)
                 search_list += rows_as_list_of_dicts(series)
 
@@ -40,7 +40,7 @@ class Searches(Resource):
                 movies = database.query(TableMovies.title,
                                         TableMovies.radarrId,
                                         TableMovies.year) \
-                    .where(TableMovies.title.contains(query)) \
+                    .where(TableMovies.title.ilike(query)) \
                     .order_by(TableMovies.title)
                 search_list += rows_as_list_of_dicts(movies)
 
