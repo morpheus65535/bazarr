@@ -448,5 +448,9 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Bulgarian Subtitles Provider",
   },
   { key: "yifysubtitles", name: "YIFY Subtitles" },
-  { key: "zimuku", description: "Chinese Subtitles Provider. Anti-captcha required" },
+  {
+    key: "zimuku",
+    name: "Zimuku",
+    description: "Chinese Subtitles Provider. Anti-captcha required",
+  },
 ];

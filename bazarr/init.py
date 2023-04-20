@@ -76,7 +76,7 @@ def is_virtualenv():
 # deploy requirements.txt
 if not args.no_update:
     try:
-        import lxml, numpy, webrtcvad, setuptools  # noqa E401
+        import lxml, numpy, webrtcvad, setuptools, PIL  # noqa E401
     except ImportError:
         try:
             import pip  # noqa W0611
