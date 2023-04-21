@@ -87,13 +87,13 @@ def upgrade():
     with op.batch_alter_table('table_history', recreate='always') as batch_op:
         batch_op.execute(sa.delete(TableHistory).where(TableHistory.sonarrEpisodeId.not_in(
             sa.select(TableEpisodes.sonarrEpisodeId))))
+        batch_op.execute(sa.delete(TableHistory).where(TableHistory.sonarrSeriesId.not_in(
+            sa.select(TableShows.sonarrSeriesId))))
         batch_op.create_foreign_key(constraint_name='fk_sonarrEpisodeId_history',
                                     referent_table='table_episodes',
                                     local_cols=['sonarrEpisodeId'],
                                     remote_cols=['sonarrEpisodeId'],
                                     ondelete='CASCADE')
-        batch_op.execute(sa.delete(TableHistory).where(TableHistory.sonarrSeriesId.not_in(
-            sa.select(TableShows.sonarrSeriesId))))
         batch_op.create_foreign_key(constraint_name='fk_sonarrSeriesId_history',
                                     referent_table='table_shows',
                                     local_cols=['sonarrSeriesId'],
@@ -116,13 +116,13 @@ def upgrade():
     with op.batch_alter_table('table_blacklist', recreate="always") as batch_op:
         batch_op.execute(sa.delete(TableBlacklist).where(TableBlacklist.sonarr_episode_id.not_in(
             sa.select(TableEpisodes.sonarrEpisodeId))))
+        batch_op.execute(sa.delete(TableBlacklist).where(TableBlacklist.sonarr_series_id.not_in(
+            sa.select(TableShows.sonarrSeriesId))))
         batch_op.create_foreign_key(constraint_name='fk_sonarrEpisodeId_blacklist',
                                     referent_table='table_episodes',
                                     local_cols=['sonarr_episode_id'],
                                     remote_cols=['sonarrEpisodeId'],
                                     ondelete='CASCADE')
-        batch_op.execute(sa.delete(TableBlacklist).where(TableBlacklist.sonarr_series_id.not_in(
-            sa.select(TableShows.sonarrSeriesId))))
         batch_op.create_foreign_key(constraint_name='fk_sonarrSeriesId_blacklist',
                                     referent_table='table_shows',
                                     local_cols=['sonarr_series_id'],

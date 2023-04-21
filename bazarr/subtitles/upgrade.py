@@ -9,7 +9,7 @@ from functools import reduce
 
 from app.config import settings
 from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies, \
-    TableHistory, TableHistoryMovie, database
+    TableHistory, TableHistoryMovie, database, rows_as_list_of_dicts
 from app.event_handler import show_progress, hide_progress
 from app.get_providers import get_providers
 from app.notifier import send_notifications, send_notifications_movie
@@ -34,10 +34,10 @@ def upgrade_subtitles():
 
             show_progress(id='upgrade_episodes_progress',
                           header='Upgrading episodes subtitles...',
-                          name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode['seriesTitle'],
-                                                                     episode['season'],
-                                                                     episode['episode'],
-                                                                     episode['title']),
+                          name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode.seriesTitle,
+                                                                     episode.season,
+                                                                     episode.episode,
+                                                                     episode.title),
                           value=i,
                           count=count_episode_to_upgrade)
 
@@ -45,28 +45,28 @@ def upgrade_subtitles():
                 logging.info("BAZARR All providers are throttled")
                 return
 
-            language, is_forced, is_hi = parse_language_string(episode['language'])
+            language, is_forced, is_hi = parse_language_string(episode.language)
 
-            audio_language_list = get_audio_profile_languages(episode['audio_language'])
+            audio_language_list = get_audio_profile_languages(episode.audio_language)
             if len(audio_language_list) > 0:
                 audio_language = audio_language_list[0]['name']
             else:
                 audio_language = 'None'
 
-            result = list(generate_subtitles(path_mappings.path_replace(episode['video_path']),
+            result = list(generate_subtitles(path_mappings.path_replace(episode.video_path),
                                              [(language, is_hi, is_forced)],
                                              audio_language,
-                                             str(episode['sceneName']),
-                                             episode['seriesTitle'],
+                                             str(episode.sceneName),
+                                             episode.seriesTitle,
                                              'series',
-                                             forced_minimum_score=int(episode['score']),
+                                             forced_minimum_score=int(episode.score),
                                              is_upgrade=True))
 
             if result:
                 result = result[0]
-                store_subtitles(episode['video_path'], path_mappings.path_replace(episode['video_path']))
-                history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result)
-                send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result.message)
+                store_subtitles(episode.video_path, path_mappings.path_replace(episode.video_path))
+                history_log(3, episode.sonarrSeriesId, episode.sonarrEpisodeId, result)
+                send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)
 
         hide_progress(id='upgrade_episodes_progress')
 
@@ -79,7 +79,7 @@ def upgrade_subtitles():
 
             show_progress(id='upgrade_movies_progress',
                           header='Upgrading movies subtitles...',
-                          name=movie['title'],
+                          name=movie.title,
                           value=i,
                           count=count_movie_to_upgrade)
 
@@ -87,28 +87,28 @@ def upgrade_subtitles():
                 logging.info("BAZARR All providers are throttled")
                 return
 
-            language, is_forced, is_hi = parse_language_string(movie['language'])
+            language, is_forced, is_hi = parse_language_string(movie.language)
 
-            audio_language_list = get_audio_profile_languages(movie['audio_language'])
+            audio_language_list = get_audio_profile_languages(movie.audio_language)
             if len(audio_language_list) > 0:
                 audio_language = audio_language_list[0]['name']
             else:
                 audio_language = 'None'
 
-            result = list(generate_subtitles(path_mappings.path_replace_movie(movie['video_path']),
+            result = list(generate_subtitles(path_mappings.path_replace_movie(movie.video_path),
                                              [(language, is_hi, is_forced)],
                                              audio_language,
-                                             str(movie['sceneName']),
-                                             movie['title'],
+                                             str(movie.sceneName),
+                                             movie.title,
                                              'movie',
-                                             forced_minimum_score=int(movie['score']),
+                                             forced_minimum_score=int(movie.score),
                                              is_upgrade=True))
             if result:
                 result = result[0]
-                store_subtitles_movie(movie['video_path'],
-                                      path_mappings.path_replace_movie(movie['video_path']))
-                history_log_movie(3, movie['radarrId'], result)
-                send_notifications_movie(movie['radarrId'], result.message)
+                store_subtitles_movie(movie.video_path,
+                                      path_mappings.path_replace_movie(movie.video_path))
+                history_log_movie(3, movie.radarrId, result)
+                send_notifications_movie(movie.radarrId, result.message)
 
         hide_progress(id='upgrade_movies_progress')
 
@@ -138,6 +138,9 @@ def parse_upgradable_list(upgradable_list, perfect_score, media_type):
     for item in upgradable_list:
         logging.debug(f"Trying to validate eligibility to upgrade for this subtitles: "
                       f"{item.subtitles_path}")
+        if not os.path.exists(path_replace_method(item.subtitles_path)):
+            logging.debug("Subtitles file doesn't exists anymore, we skip this one.")
+            continue
         if (item.video_path, item.language) in \
                 [(x.video_path, x.language) for x in items_to_upgrade]:
             logging.debug("Newer video path and subtitles language combination already in list of subtitles to "
@@ -208,13 +211,12 @@ def get_upgradable_episode_subtitles():
         .join(TableShows, TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId) \
         .join(TableEpisodes, TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
         .where(reduce(operator.and_, upgradable_episodes_conditions)) \
-        .order_by(TableHistory.timestamp.desc())\
-        .all()
+        .order_by(TableHistory.timestamp.desc())
 
     if not upgradable_episodes:
         return []
     else:
-        logging.debug(f"{len(upgradable_episodes)} potentially upgradable episode subtitles have been found, let's "
+        logging.debug(f"{upgradable_episodes.count()} potentially upgradable episode subtitles have been found, let's "
                       f"filter them...")
 
         return parse_upgradable_list(upgradable_list=upgradable_episodes, perfect_score=357, media_type='series')
@@ -242,13 +244,12 @@ def get_upgradable_movies_subtitles():
                                        TableMovies.title)\
         .join(TableMovies, TableHistoryMovie.radarrId == TableMovies.radarrId) \
         .where(reduce(operator.and_, upgradable_movies_conditions)) \
-        .order_by(TableHistoryMovie.timestamp.desc()) \
-        .all()
+        .order_by(TableHistoryMovie.timestamp.desc())
 
     if not upgradable_movies:
         return []
     else:
-        logging.debug(f"{len(upgradable_movies)} potentially upgradable movie subtitles have been found, let's filter "
-                      f"them...")
+        logging.debug(f"{upgradable_movies.count()} potentially upgradable movie subtitles have been found, let's "
+                      f"filter them...")
 
         return parse_upgradable_list(upgradable_list=upgradable_movies, perfect_score=117, media_type='movie')

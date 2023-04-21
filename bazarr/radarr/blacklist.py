@@ -19,7 +19,7 @@ def blacklist_log_movie(radarr_id, provider, subs_id, language):
         subs_id=subs_id,
         language=language
     ))
-    database.execute()
+    database.commit()
     event_stream(type='movie-blacklist')
 
 
