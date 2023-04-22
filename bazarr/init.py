@@ -10,7 +10,6 @@ import time
 import rarfile
 
 from dogpile.cache.region import register_backend as register_cache_backend
-from subliminal_patch.extensions import provider_registry
 
 from app.config import settings, configure_captcha_func, get_array_from
 from app.get_args import args
@@ -203,6 +202,7 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
 
 
 # Remove deprecated providers from enabled providers in config.ini
+from subliminal_patch.extensions import provider_registry  # noqa E401
 existing_providers = provider_registry.names()
 enabled_providers = get_array_from(settings.general.enabled_providers)
 settings.general.enabled_providers = str([x for x in enabled_providers if x in existing_providers])
