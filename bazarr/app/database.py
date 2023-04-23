@@ -383,19 +383,21 @@ def get_exclusion_clause(exclusion_type):
 
 @region.cache_on_arguments()
 def update_profile_id_list():
-    profile_id_list = rows_as_list_of_dicts(database.query(TableLanguagesProfiles.profileId,
-                                                           TableLanguagesProfiles.name,
-                                                           TableLanguagesProfiles.cutoff,
-                                                           TableLanguagesProfiles.items,
-                                                           TableLanguagesProfiles.mustContain,
-                                                           TableLanguagesProfiles.mustNotContain,
-                                                           TableLanguagesProfiles.originalFormat).all())
-    for profile in profile_id_list:
-        profile['items'] = json.loads(profile['items'])
-        profile['mustContain'] = ast.literal_eval(profile['mustContain']) if profile['mustContain'] else []
-        profile['mustNotContain'] = ast.literal_eval(profile['mustNotContain']) if profile['mustNotContain'] else []
-
-    return profile_id_list
+    return [{
+        'profileId': x.profileId,
+        'name': x.name,
+        'cutoff': x.cutoff,
+        'items': json.loads(x.items),
+        'mustContain': ast.literal_eval(x.mustContain) if x.mustContain else [],
+        'mustNotContain': ast.literal_eval(x.mustNotContain) if x.mustNotContain else [],
+    } for x in database.query(TableLanguagesProfiles.profileId,
+                              TableLanguagesProfiles.name,
+                              TableLanguagesProfiles.cutoff,
+                              TableLanguagesProfiles.items,
+                              TableLanguagesProfiles.mustContain,
+                              TableLanguagesProfiles.mustNotContain,
+                              TableLanguagesProfiles.originalFormat).all()
+    ]
 
 
 def get_profiles_list(profile_id=None):

@@ -33,21 +33,19 @@ def get_radarr_rootfolder():
         logging.exception("BAZARR Error trying to get rootfolder from Radarr.")
         return []
     else:
-        radarr_movies_paths = rows_as_list_of_dicts(database.query(TableMovies.path).all())
         for folder in rootfolder.json():
-            if any(item['path'].startswith(folder['path']) for item in radarr_movies_paths):
+            if any(item.path.startswith(folder['path']) for item in database.query(TableMovies.path).all()):
                 radarr_rootfolder.append({'id': folder['id'], 'path': folder['path']})
-        db_rootfolder = rows_as_list_of_dicts(database.query(TableMoviesRootfolder.id,
-                                                             TableMoviesRootfolder.path).all())
+        db_rootfolder = database.query(TableMoviesRootfolder.id, TableMoviesRootfolder.path).all()
         rootfolder_to_remove = [x for x in db_rootfolder if not
-                                next((item for item in radarr_rootfolder if item['id'] == x['id']), False)]
+                                next((item for item in radarr_rootfolder if item['id'] == x.id), False)]
         rootfolder_to_update = [x for x in radarr_rootfolder if
-                                next((item for item in db_rootfolder if item['id'] == x['id']), False)]
+                                next((item for item in db_rootfolder if item.id == x['id']), False)]
         rootfolder_to_insert = [x for x in radarr_rootfolder if not
-                                next((item for item in db_rootfolder if item['id'] == x['id']), False)]
+                                next((item for item in db_rootfolder if item.id == x['id']), False)]
 
         for item in rootfolder_to_remove:
-            database.execute(delete(TableMoviesRootfolder).where(TableMoviesRootfolder.id == item['id']))
+            database.execute(delete(TableMoviesRootfolder).where(TableMoviesRootfolder.id == item.id))
         for item in rootfolder_to_update:
             database.execute(update(TableMoviesRootfolder)
                              .values(path=item['path'])

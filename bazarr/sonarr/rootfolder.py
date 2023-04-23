@@ -33,20 +33,19 @@ def get_sonarr_rootfolder():
         logging.exception("BAZARR Error trying to get rootfolder from Sonarr.")
         return []
     else:
-        sonarr_movies_paths = rows_as_list_of_dicts(database.query(TableShows.path).all())
         for folder in rootfolder.json():
-            if any(item['path'].startswith(folder['path']) for item in sonarr_movies_paths):
+            if any(item.path.startswith(folder['path']) for item in database.query(TableShows.path).all()):
                 sonarr_rootfolder.append({'id': folder['id'], 'path': folder['path']})
-        db_rootfolder = rows_as_list_of_dicts(database.query(TableShowsRootfolder.id, TableShowsRootfolder.path).all())
+        db_rootfolder = database.query(TableShowsRootfolder.id, TableShowsRootfolder.path).all()
         rootfolder_to_remove = [x for x in db_rootfolder if not
-                                next((item for item in sonarr_rootfolder if item['id'] == x['id']), False)]
+                                next((item for item in sonarr_rootfolder if item['id'] == x.id), False)]
         rootfolder_to_update = [x for x in sonarr_rootfolder if
-                                next((item for item in db_rootfolder if item['id'] == x['id']), False)]
+                                next((item for item in db_rootfolder if item.id == x['id']), False)]
         rootfolder_to_insert = [x for x in sonarr_rootfolder if not
-                                next((item for item in db_rootfolder if item['id'] == x['id']), False)]
+                                next((item for item in db_rootfolder if item.id == x['id']), False)]
 
         for item in rootfolder_to_remove:
-            database.execute(delete(TableShowsRootfolder).where(TableShowsRootfolder.id == item['id']))
+            database.execute(delete(TableShowsRootfolder).where(TableShowsRootfolder.id == item.id))
         for item in rootfolder_to_update:
             database.execute(update(TableShowsRootfolder)
                              .values(path=item['path'])

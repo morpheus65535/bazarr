@@ -31,45 +31,44 @@ def load_language_in_db():
     CustomLanguage.register(TableSettingsLanguages)
 
     # Create languages dictionary for faster conversion than calling database
-    create_languages_dict()
+    create_languages_object()
 
 
-def create_languages_dict():
-    global languages_dict
+def create_languages_object():
+    global languages_obj
     # replace chinese by chinese simplified
     database.execute(update(TableSettingsLanguages).values(name='Chinese Simplified')
                      .where(TableSettingsLanguages.code3 == 'zho'))
     database.commit()
 
-    languages_dict = rows_as_list_of_dicts(database.query(TableSettingsLanguages.code3, TableSettingsLanguages.code2,
-                                                          TableSettingsLanguages.name, TableSettingsLanguages.code3b)
-                                           .all())
+    languages_obj = database.query(TableSettingsLanguages.code3, TableSettingsLanguages.code2,
+                                   TableSettingsLanguages.name, TableSettingsLanguages.code3b).all()
 
 
 def language_from_alpha2(lang):
-    return next((item["name"] for item in languages_dict if item["code2"] == lang[:2]), None)
+    return next((item.name for item in languages_obj if item.code2 == lang[:2]), None)
 
 
 def language_from_alpha3(lang):
-    return next((item["name"] for item in languages_dict if item["code3"] == lang[:3] or item["code3b"] == lang[:3]),
+    return next((item.name for item in languages_obj if item.code3 == lang[:3] or item.code3b == lang[:3]),
                 None)
 
 
 def alpha2_from_alpha3(lang):
-    return next((item["code2"] for item in languages_dict if item["code3"] == lang[:3] or item["code3b"] == lang[:3]),
+    return next((item.code2 for item in languages_obj if item.code3 == lang[:3] or item.code3b == lang[:3]),
                 None)
 
 
 def alpha2_from_language(lang):
-    return next((item["code2"] for item in languages_dict if item["name"] == lang), None)
+    return next((item.code2 for item in languages_obj if item.name == lang), None)
 
 
 def alpha3_from_alpha2(lang):
-    return next((item["code3"] for item in languages_dict if item["code2"] == lang[:2]), None)
+    return next((item.code3 for item in languages_obj if item.code2 == lang[:2]), None)
 
 
 def alpha3_from_language(lang):
-    return next((item["code3"] for item in languages_dict if item["name"] == lang), None)
+    return next((item.code3 for item in languages_obj if item.name == lang), None)
 
 
 def get_language_set():
