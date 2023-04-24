@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableEpisodes, database, rows_as_list_of_dicts, select
+from app.database import TableEpisodes, database, select
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
 from ..utils import authenticate, postprocess

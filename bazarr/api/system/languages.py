@@ -3,7 +3,7 @@
 from flask_restx import Resource, Namespace, reqparse
 from operator import itemgetter
 
-from app.database import TableHistory, TableHistoryMovie, TableSettingsLanguages, database, rows_as_list_of_dicts
+from app.database import TableHistory, TableHistoryMovie, TableSettingsLanguages, database
 from languages.get_languages import alpha2_from_alpha3, language_from_alpha2
 
 from ..utils import authenticate, False_Keys
@@ -51,12 +51,13 @@ class Languages(Resource):
                     except Exception:
                         continue
         else:
-            languages_dicts = rows_as_list_of_dicts(database.query(TableSettingsLanguages.name,
-                                                                   TableSettingsLanguages.code2,
-                                                                   TableSettingsLanguages.enabled)
-                                                    .order_by(TableSettingsLanguages.name)
-                                                    .all())
-            for item in languages_dicts:
-                item['enabled'] = item['enabled'] == 1
+            languages_dicts = [{
+                'name': x.name,
+                'code2': x.code2,
+                'enabled': x.enabled == 1
+            } for x in database.query(TableSettingsLanguages.name,
+                                      TableSettingsLanguages.code2,
+                                      TableSettingsLanguages.enabled)
+                               .order_by(TableSettingsLanguages.name)]
 
         return sorted(languages_dicts, key=itemgetter('name'))

@@ -3,7 +3,7 @@
 from flask_restx import Resource, Namespace, reqparse
 
 from app.config import settings
-from app.database import TableShows, TableMovies, database, rows_as_list_of_dicts
+from app.database import TableShows, TableMovies, database
 
 from ..utils import authenticate
 
@@ -28,20 +28,26 @@ class Searches(Resource):
         if query:
             if settings.general.getboolean('use_sonarr'):
                 # Get matching series
-                series = database.query(TableShows.title,
-                                        TableShows.sonarrSeriesId,
-                                        TableShows.year) \
-                    .where(TableShows.title.ilike(query)) \
-                    .order_by(TableShows.title)
-                search_list += rows_as_list_of_dicts(series)
+                search_list += [{
+                    'title': x.title,
+                    'sonarrSeriesId': x.sonarrSeriesId,
+                    'year': x.year,
+                } for x in database.query(TableShows.title,
+                                          TableShows.sonarrSeriesId,
+                                          TableShows.year)
+                                   .where(TableShows.title.ilike(query))
+                                   .order_by(TableShows.title)]
 
             if settings.general.getboolean('use_radarr'):
                 # Get matching movies
-                movies = database.query(TableMovies.title,
-                                        TableMovies.radarrId,
-                                        TableMovies.year) \
-                    .where(TableMovies.title.ilike(query)) \
-                    .order_by(TableMovies.title)
-                search_list += rows_as_list_of_dicts(movies)
+                search_list += [{
+                    'title': x.title,
+                    'radarrId': x.radarrId,
+                    'year': x.year,
+                } for x in database.query(TableMovies.title,
+                                          TableMovies.radarrId,
+                                          TableMovies.year)
+                                   .where(TableMovies.title.ilike(query))
+                                   .order_by(TableMovies.title)]
 
         return search_list

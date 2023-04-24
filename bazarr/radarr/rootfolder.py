@@ -6,7 +6,7 @@ import logging
 
 from app.config import settings
 from utilities.path_mappings import path_mappings
-from app.database import TableMoviesRootfolder, TableMovies, database, rows_as_list_of_dicts, delete, update, insert
+from app.database import TableMoviesRootfolder, TableMovies, database, delete, update, insert
 from radarr.info import get_radarr_info, url_radarr
 from constants import headers
 

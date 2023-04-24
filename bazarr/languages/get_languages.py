@@ -5,7 +5,7 @@ import pycountry
 from subzero.language import Language
 
 from .custom_lang import CustomLanguage
-from app.database import TableSettingsLanguages, database, rows_as_list_of_dicts, insert, update
+from app.database import TableSettingsLanguages, database, insert, update
 
 
 def load_language_in_db():

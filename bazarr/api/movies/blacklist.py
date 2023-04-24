@@ -4,7 +4,7 @@ import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableMovies, TableBlacklistMovie, database, rows_as_list_of_dicts
+from app.database import TableMovies, TableBlacklistMovie, database
 from subtitles.tools.delete import delete_subtitles
 from radarr.blacklist import blacklist_log_movie, blacklist_delete_all_movie, blacklist_delete_movie
 from utilities.path_mappings import path_mappings
@@ -58,7 +58,14 @@ class MoviesBlacklist(Resource):
             data = data.limit(length).offset(start)
 
         results = []
-        for item in rows_as_list_of_dicts(data):
+        for item in [{
+            'title': x.title,
+            'radarrId': x.radarrId,
+            'provider': x.provider,
+            'subs_id': x.subs_id,
+            'language': x.language,
+            'timestamp': x.timestamp,
+        } for x in data]:
             processed_item = postprocess(item)
 
             # Make timestamp pretty

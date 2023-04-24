@@ -5,7 +5,7 @@ import requests
 import logging
 
 from app.config import settings
-from app.database import TableShowsRootfolder, TableShows, database, insert, update, delete, rows_as_list_of_dicts
+from app.database import TableShowsRootfolder, TableShows, database, insert, update, delete
 from utilities.path_mappings import path_mappings
 from sonarr.info import get_sonarr_info, url_sonarr
 from constants import headers

@@ -302,10 +302,6 @@ def init_db():
     metadata.create_all(engine)
 
 
-def rows_as_list_of_dicts(query):
-    return [dict(row._mapping) for row in query]
-
-
 def migrate_db(app):
     app.config["SQLALCHEMY_DATABASE_URI"] = url
     db = SQLAlchemy(app)
@@ -390,6 +386,7 @@ def update_profile_id_list():
         'items': json.loads(x.items),
         'mustContain': ast.literal_eval(x.mustContain) if x.mustContain else [],
         'mustNotContain': ast.literal_eval(x.mustNotContain) if x.mustNotContain else [],
+        'originalFormat': x.originalFormat,
     } for x in database.query(TableLanguagesProfiles.profileId,
                               TableLanguagesProfiles.name,
                               TableLanguagesProfiles.cutoff,

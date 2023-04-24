@@ -3,8 +3,7 @@
 import apprise
 import logging
 
-from .database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies, database, rows_as_list_of_dicts, \
-    insert, delete
+from .database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies, database, insert, delete
 
 
 def update_notifier():

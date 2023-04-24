@@ -7,7 +7,7 @@ import pretty
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import TableEpisodes, TableShows, TableHistory, TableBlacklist, database, rows_as_list_of_dicts
+from app.database import TableEpisodes, TableShows, TableHistory, TableBlacklist, database
 from subtitles.upgrade import get_upgradable_episode_subtitles
 from utilities.path_mappings import path_mappings
 from api.swaggerui import subtitles_language_model
@@ -107,10 +107,27 @@ class EpisodesHistory(Resource):
             .order_by(TableHistory.timestamp.desc())
         if length > 0:
             episode_history = episode_history.limit(length).offset(start)
-        episode_history = rows_as_list_of_dicts(episode_history)
-
-        blacklist_db = database.query(TableBlacklist.provider, TableBlacklist.subs_id)
-        blacklist_db = rows_as_list_of_dicts(blacklist_db)
+        episode_history = [{
+            'id': x.id,
+            'seriesTitle': x.seriesTitle,
+            'monitored': x.monitored,
+            'episode_number': x.episode_number,
+            'episodeTitle': x.episodeTitle,
+            'timestamp': x.timestamp,
+            'subs_id': x.subs_id,
+            'description': x.description,
+            'sonarrSeriesId': x.sonarrSeriesId,
+            'path': x.path,
+            'language': x.language,
+            'score': x.score,
+            'tags': x.tags,
+            'action': x.action,
+            'video_path': x.video_path,
+            'subtitles_path': x.subtitles_path,
+            'sonarrEpisodeId': x.sonarrEpisodeId,
+            'provider': x.provider,
+            'seriesType': x.seriesType,
+        } for x in episode_history]
 
         for item in episode_history:
             item.update(postprocess(item))
@@ -139,9 +156,8 @@ class EpisodesHistory(Resource):
             # Check if subtitles is blacklisted
             item.update({"blacklisted": False})
             if item['action'] not in [0, 4, 5]:
-                for blacklisted_item in blacklist_db:
-                    if blacklisted_item['provider'] == item['provider'] and \
-                            blacklisted_item['subs_id'] == item['subs_id']:
+                for blacklisted_item in database.query(TableBlacklist.provider, TableBlacklist.subs_id):
+                    if blacklisted_item.provider == item['provider'] and blacklisted_item.subs_id == item['subs_id']:
                         item.update({"blacklisted": True})
                         break
 

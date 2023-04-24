@@ -5,8 +5,7 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select, update, func, \
-    rows_as_list_of_dicts
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select, update, func
 from subtitles.indexer.series import list_missing_subtitles, series_scan_subtitles
 from subtitles.mass_download import series_download_subtitles
 from subtitles.wanted import wanted_search_missing_subtitles_series
@@ -84,7 +83,22 @@ class Series(Resource):
             .where(reduce(operator.and_, episodes_missing_conditions))\
             .group_by(TableShows.sonarrSeriesId).subquery()
 
-        result = database.query(TableShows,
+        result = database.query(TableShows.tvdbId,
+                                TableShows.alternativeTitles,
+                                TableShows.audio_language,
+                                TableShows.fanart,
+                                TableShows.imdbId,
+                                TableShows.monitored,
+                                TableShows.overview,
+                                TableShows.path,
+                                TableShows.poster,
+                                TableShows.profileId,
+                                TableShows.seriesType,
+                                TableShows.sonarrSeriesId,
+                                TableShows.sortTitle,
+                                TableShows.tags,
+                                TableShows.title,
+                                TableShows.year,
                                 episodeFileCount.c.episodeFileCount,
                                 episodeMissingCount.c.episodeMissingCount)\
             .join(episodeFileCount, TableShows.sonarrSeriesId == episodeFileCount.c.sonarrSeriesId, isouter=True) \
@@ -96,9 +110,26 @@ class Series(Resource):
         elif length > 0:
             result = result.limit(length).offset(start)
 
-        results = []
-        for item in rows_as_list_of_dicts(result.all()):
-            results.append(postprocess(item))
+        results = [postprocess({
+            'tvdbId': x.tvdbId,
+            'alternativeTitles': x.alternativeTitles,
+            'audio_language': x.audio_language,
+            'fanart': x.fanart,
+            'imdbId': x.imdbId,
+            'monitored': x.monitored,
+            'overview': x.overview,
+            'path': x.path,
+            'poster': x.poster,
+            'profileId': x.profileId,
+            'seriesType': x.seriesType,
+            'sonarrSeriesId': x.sonarrSeriesId,
+            'sortTitle': x.sortTitle,
+            'tags': x.tags,
+            'title': x.title,
+            'year': x.year,
+            'episodeFileCount': x.episodeFileCount,
+            'episodeMissingCount': x.episodeMissingCount,
+        }) for x in result]
 
         return {'data': results, 'total': count}
 

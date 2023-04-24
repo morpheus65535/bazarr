@@ -7,7 +7,7 @@ import pretty
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import TableMovies, TableHistoryMovie, TableBlacklistMovie, database, rows_as_list_of_dicts
+from app.database import TableMovies, TableHistoryMovie, TableBlacklistMovie, database
 from subtitles.upgrade import get_upgradable_movies_subtitles
 from utilities.path_mappings import path_mappings
 from api.swaggerui import subtitles_language_model
@@ -97,10 +97,23 @@ class MoviesHistory(Resource):
             .order_by(TableHistoryMovie.timestamp.desc())
         if length > 0:
             movie_history = movie_history.limit(length).offset(start)
-        movie_history = rows_as_list_of_dicts(movie_history)
-
-        blacklist_db = database.query(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id)
-        blacklist_db = rows_as_list_of_dicts(blacklist_db)
+        movie_history = [{
+            'id': x.id,
+            'action': x.action,
+            'title': x.title,
+            'timestamp': x.timestamp,
+            'description': x.description,
+            'radarrId': x.radarrId,
+            'monitored': x.monitored,
+            'path': x.path,
+            'language': x.language,
+            'tags': x.tags,
+            'score': x.score,
+            'subs_id': x.subs_id,
+            'provider': x.provider,
+            'subtitles_path': x.subtitles_path,
+            'video_path': x.video_path,
+        } for x in movie_history]
 
         for item in movie_history:
             item.update(postprocess(item))
@@ -128,9 +141,8 @@ class MoviesHistory(Resource):
             # Check if subtitles is blacklisted
             item.update({"blacklisted": False})
             if item['action'] not in [0, 4, 5]:
-                for blacklisted_item in blacklist_db:
-                    if blacklisted_item['provider'] == item['provider'] and blacklisted_item['subs_id'] == item[
-                        'subs_id']:  # noqa: E125
+                for blacklisted_item in database.query(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id):
+                    if blacklisted_item.provider == item['provider'] and blacklisted_item.subs_id == item['subs_id']:
                         item.update({"blacklisted": True})
                         break
 

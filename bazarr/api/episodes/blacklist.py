@@ -4,7 +4,7 @@ import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableEpisodes, TableShows, TableBlacklist, database, rows_as_list_of_dicts
+from app.database import TableEpisodes, TableShows, TableBlacklist, database
 from subtitles.tools.delete import delete_subtitles
 from sonarr.blacklist import blacklist_log, blacklist_delete_all, blacklist_delete
 from utilities.path_mappings import path_mappings
@@ -62,17 +62,17 @@ class EpisodesBlacklist(Resource):
         if length > 0:
             data = data.limit(length).offset(start)
 
-        results = []
-        for item in rows_as_list_of_dicts(data):
-            processed_item = postprocess(item)
-
-            # Make timestamp pretty
-            processed_item["parsed_timestamp"] = processed_item['timestamp'].strftime('%x %X')
-            processed_item.update({'timestamp': pretty.date(processed_item['timestamp'])})
-
-            results.append(processed_item)
-
-        return results
+        return [postprocess({
+            'seriesTitle': x.seriesTitle,
+            'episode_number': x.episode_number,
+            'episodeTitle': x.episodeTitle,
+            'sonarrSeriesId': x.sonarrSeriesId,
+            'provider': x.provider,
+            'subs_id': x.subs_id,
+            'language': x.language,
+            'timestamp': pretty.date(x.timestamp),
+            'parsed_timestamp': x.timestamp.strftime('%x %X')
+        }) for x in data]
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')

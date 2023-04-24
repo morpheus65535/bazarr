@@ -6,7 +6,7 @@ from flask import request, jsonify
 from flask_restx import Resource, Namespace
 
 from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableShows, TableMovies, \
-    TableSettingsNotifier, update_profile_id_list, database, rows_as_list_of_dicts, insert, update, delete
+    TableSettingsNotifier, update_profile_id_list, database, insert, update, delete
 from app.event_handler import event_stream
 from app.config import settings, save_settings, get_settings
 from app.scheduler import scheduler
@@ -24,17 +24,15 @@ class SystemSettings(Resource):
     @authenticate
     def get(self):
         data = get_settings()
-
-        notifications = rows_as_list_of_dicts(database.query(TableSettingsNotifier.name,
-                                                             TableSettingsNotifier.enabled,
-                                                             TableSettingsNotifier.url)
-                                              .order_by(TableSettingsNotifier.name).all())
-        for i, item in enumerate(notifications):
-            item["enabled"] = item["enabled"] == 1
-            notifications[i] = item
-
         data['notifications'] = dict()
-        data['notifications']['providers'] = notifications
+        data['notifications']['providers'] = [{
+            'name': x.name,
+            'enabled': x.enabled == 1,
+            'url': x.url
+        } for x in database.query(TableSettingsNotifier.name,
+                                  TableSettingsNotifier.enabled,
+                                  TableSettingsNotifier.url)
+                           .order_by(TableSettingsNotifier.name)]
 
         return jsonify(data)
 

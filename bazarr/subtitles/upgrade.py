@@ -9,7 +9,7 @@ from functools import reduce
 
 from app.config import settings
 from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies, \
-    TableHistory, TableHistoryMovie, database, rows_as_list_of_dicts
+    TableHistory, TableHistoryMovie, database
 from app.event_handler import show_progress, hide_progress
 from app.get_providers import get_providers
 from app.notifier import send_notifications, send_notifications_movie
