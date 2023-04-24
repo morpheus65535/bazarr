@@ -51,7 +51,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-testing-library": "^5.9.0",
     "husky": "^8.0.2",
-    "jsdom": "^20.0.1",
+    "jsdom": "^21.1.1",
     "lodash": "^4.17.0",
     "moment": "^2.29",
     "prettier": "^2.7.0",
