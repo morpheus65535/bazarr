@@ -9,7 +9,7 @@ from subliminal_patch import core, search_external_subtitles
 
 from languages.custom_lang import CustomLanguage
 from app.database import get_profiles_list, get_profile_cutoff, TableEpisodes, TableShows, \
-    get_audio_profile_languages, database, update
+    get_audio_profile_languages, database, update, select
 from languages.get_languages import alpha2_from_alpha3, get_language_set
 from app.config import settings
 from utilities.helper import get_subtitle_destination_folder
@@ -27,8 +27,10 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
     if os.path.exists(reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
-            item = database.query(TableEpisodes.episode_file_id, TableEpisodes.file_size)\
-                .where(TableEpisodes.path == original_path).first()
+            item = database.execute(
+                select(TableEpisodes.episode_file_id, TableEpisodes.file_size)
+                .where(TableEpisodes.path == original_path))\
+                .first()
             if not item:
                 logging.exception(f"BAZARR error when trying to select this episode from database: {reversed_path}")
             else:
@@ -67,7 +69,10 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
 
             # get previously indexed subtitles that haven't changed:
-            item = database.query(TableEpisodes.subtitles).where(TableEpisodes.path == original_path).first()
+            item = database.execute(
+                select(TableEpisodes.subtitles)
+                .where(TableEpisodes.path == original_path)) \
+                .first()
             if not item:
                 previously_indexed_subtitles_to_exclude = []
             else:
@@ -121,12 +126,15 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                     actual_subtitles.append([language_str, path_mappings.path_replace_reverse(subtitle_path),
                                              os.stat(subtitle_path).st_size])
 
-        database.execute(update(TableEpisodes)
-                         .values(subtitles=str(actual_subtitles))
-                         .where(TableEpisodes.path == original_path))
+        database.execute(
+            update(TableEpisodes)
+            .values(subtitles=str(actual_subtitles))
+            .where(TableEpisodes.path == original_path))
         database.commit()
-        matching_episodes = database.query(TableEpisodes.sonarrEpisodeId, TableEpisodes.sonarrSeriesId)\
-            .where(TableEpisodes.path == original_path).all()
+        matching_episodes = database.execute(
+            select(TableEpisodes.sonarrEpisodeId, TableEpisodes.sonarrSeriesId)
+            .where(TableEpisodes.path == original_path))\
+            .all()
 
         for episode in matching_episodes:
             if episode:
@@ -149,13 +157,14 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
         episodes_subtitles_clause = (TableEpisodes.sonarrSeriesId == no)
     else:
         episodes_subtitles_clause = None
-    episodes_subtitles = database.query(TableShows.sonarrSeriesId,
-                                        TableEpisodes.sonarrEpisodeId,
-                                        TableEpisodes.subtitles,
-                                        TableShows.profileId,
-                                        TableEpisodes.audio_language)\
-        .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)\
-        .where(episodes_subtitles_clause)\
+    episodes_subtitles = database.execute(
+        select(TableShows.sonarrSeriesId,
+               TableEpisodes.sonarrEpisodeId,
+               TableEpisodes.subtitles,
+               TableShows.profileId,
+               TableEpisodes.audio_language)
+        .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+        .where(episodes_subtitles_clause))\
         .all()
 
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
@@ -244,9 +253,10 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
 
                 missing_subtitles_text = str(missing_subtitles_output_list)
 
-        database.execute(update(TableEpisodes)
-                         .values(missing_subtitles=missing_subtitles_text)
-                         .where(TableEpisodes.sonarrEpisodeId == episode_subtitles.sonarrEpisodeId))
+        database.execute(
+            update(TableEpisodes)
+            .values(missing_subtitles=missing_subtitles_text)
+            .where(TableEpisodes.sonarrEpisodeId == episode_subtitles.sonarrEpisodeId))
         database.commit()
 
         if send_event:
@@ -257,7 +267,9 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
 
 
 def series_full_scan_subtitles(use_cache=settings.sonarr.getboolean('use_ffprobe_cache')):
-    episodes = database.query(TableEpisodes.path).all()
+    episodes = database.execute(
+        select(TableEpisodes.path))\
+        .all()
 
     count_episodes = len(episodes)
     for i, episode in enumerate(episodes):
@@ -274,9 +286,10 @@ def series_full_scan_subtitles(use_cache=settings.sonarr.getboolean('use_ffprobe
 
 
 def series_scan_subtitles(no):
-    episodes = database.query(TableEpisodes.path)\
-        .where(TableEpisodes.sonarrSeriesId == no)\
-        .order_by(TableEpisodes.sonarrEpisodeId)\
+    episodes = database.execute(
+        select(TableEpisodes.path)
+        .where(TableEpisodes.sonarrSeriesId == no)
+        .order_by(TableEpisodes.sonarrEpisodeId))\
         .all()
 
     for episode in episodes:

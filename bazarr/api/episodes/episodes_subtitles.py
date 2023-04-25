@@ -7,7 +7,7 @@ from flask_restx import Resource, Namespace, reqparse
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from werkzeug.datastructures import FileStorage
 
-from app.database import TableShows, TableEpisodes, get_audio_profile_languages, get_profile_id, database
+from app.database import TableShows, TableEpisodes, get_audio_profile_languages, get_profile_id, database, select
 from utilities.path_mappings import path_mappings
 from subtitles.upload import manual_upload_subtitle
 from subtitles.download import generate_subtitles
@@ -42,12 +42,13 @@ class EpisodesSubtitles(Resource):
         args = self.patch_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = database.query(TableEpisodes.path,
-                                     TableEpisodes.sceneName,
-                                     TableEpisodes.audio_language,
-                                     TableShows.title) \
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)\
+        episodeInfo = database.execute(
+            select(TableEpisodes.path,
+                   TableEpisodes.sceneName,
+                   TableEpisodes.audio_language,
+                   TableShows.title)
+            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
             .first()
 
         if not episodeInfo:
@@ -102,9 +103,10 @@ class EpisodesSubtitles(Resource):
         args = self.post_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = database.query(TableEpisodes.path,
-                                     TableEpisodes.audio_language) \
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
+        episodeInfo = database.execute(
+            select(TableEpisodes.path,
+                   TableEpisodes.audio_language)
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
             .first()
 
         if not episodeInfo:
@@ -170,8 +172,9 @@ class EpisodesSubtitles(Resource):
         args = self.delete_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = database.query(TableEpisodes.path) \
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
+        episodeInfo = database.execute(
+            select(TableEpisodes.path)
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
             .first()
 
         if not episodeInfo:

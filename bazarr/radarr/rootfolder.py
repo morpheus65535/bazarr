@@ -6,7 +6,7 @@ import logging
 
 from app.config import settings
 from utilities.path_mappings import path_mappings
-from app.database import TableMoviesRootfolder, TableMovies, database, delete, update, insert
+from app.database import TableMoviesRootfolder, TableMovies, database, delete, update, insert, select
 from radarr.info import get_radarr_info, url_radarr
 from constants import headers
 
@@ -34,9 +34,13 @@ def get_radarr_rootfolder():
         return []
     else:
         for folder in rootfolder.json():
-            if any(item.path.startswith(folder['path']) for item in database.query(TableMovies.path).all()):
+            if any(item.path.startswith(folder['path']) for item in database.execute(
+                    select(TableMovies.path))
+                    .all()):
                 radarr_rootfolder.append({'id': folder['id'], 'path': folder['path']})
-        db_rootfolder = database.query(TableMoviesRootfolder.id, TableMoviesRootfolder.path).all()
+        db_rootfolder = database.execute(
+            select(TableMoviesRootfolder.id, TableMoviesRootfolder.path))\
+            .all()
         rootfolder_to_remove = [x for x in db_rootfolder if not
                                 next((item for item in radarr_rootfolder if item['id'] == x.id), False)]
         rootfolder_to_update = [x for x in radarr_rootfolder if
@@ -45,20 +49,26 @@ def get_radarr_rootfolder():
                                 next((item for item in db_rootfolder if item.id == x['id']), False)]
 
         for item in rootfolder_to_remove:
-            database.execute(delete(TableMoviesRootfolder).where(TableMoviesRootfolder.id == item.id))
+            database.execute(
+                delete(TableMoviesRootfolder)
+                .where(TableMoviesRootfolder.id == item.id))
         for item in rootfolder_to_update:
-            database.execute(update(TableMoviesRootfolder)
-                             .values(path=item['path'])
-                             .where(TableMoviesRootfolder.id == item['id']))
+            database.execute(
+                update(TableMoviesRootfolder)
+                .values(path=item['path'])
+                .where(TableMoviesRootfolder.id == item['id']))
         for item in rootfolder_to_insert:
-            database.execute(insert(TableMoviesRootfolder)
-                             .values(id=item['id'], path=item['path']))
+            database.execute(
+                insert(TableMoviesRootfolder)
+                .values(id=item['id'], path=item['path']))
         database.commit()
 
 
 def check_radarr_rootfolder():
     get_radarr_rootfolder()
-    rootfolder = database.query(TableMoviesRootfolder.id, TableMoviesRootfolder.path).all()
+    rootfolder = database.execute(
+        select(TableMoviesRootfolder.id, TableMoviesRootfolder.path))\
+        .all()
     for item in rootfolder:
         root_path = item.path
         if not root_path.endswith(('/', '\\')):
@@ -67,16 +77,19 @@ def check_radarr_rootfolder():
             else:
                 root_path += '\\'
         if not os.path.isdir(path_mappings.path_replace_movie(root_path)):
-            database.execute(update(TableMoviesRootfolder)
-                             .values(accessible=0, error='This Radarr root directory does not seems to be accessible '
-                                                         'by  Please check path mapping.')
-                             .where(TableMoviesRootfolder.id == item.id))
+            database.execute(
+                update(TableMoviesRootfolder)
+                .values(accessible=0, error='This Radarr root directory does not seems to be accessible by  Please '
+                                            'check path mapping.')
+                .where(TableMoviesRootfolder.id == item.id))
         elif not os.access(path_mappings.path_replace_movie(root_path), os.W_OK):
-            database.execute(update(TableMoviesRootfolder)
-                             .values(accessible=0, error='Bazarr cannot write to this directory')
-                             .where(TableMoviesRootfolder.id == item.id))
+            database.execute(
+                update(TableMoviesRootfolder)
+                .values(accessible=0, error='Bazarr cannot write to this directory')
+                .where(TableMoviesRootfolder.id == item.id))
         else:
-            database.execute(update(TableMoviesRootfolder)
-                             .values(accessible=1, error='')
-                             .where(TableMoviesRootfolder.id == item.id))
+            database.execute(
+                update(TableMoviesRootfolder)
+                .values(accessible=1, error='')
+                .where(TableMoviesRootfolder.id == item.id))
         database.commit()

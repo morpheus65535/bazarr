@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableMovies, get_audio_profile_languages, get_profile_id, database
+from app.database import TableMovies, get_audio_profile_languages, get_profile_id, database, select
 from utilities.path_mappings import path_mappings
 from app.get_providers import get_providers
 from subtitles.manual import manual_search, manual_download_subtitle
@@ -48,11 +48,12 @@ class ProviderMovies(Resource):
         """Search manually for a movie subtitles"""
         args = self.get_request_parser.parse_args()
         radarrId = args.get('radarrid')
-        movieInfo = database.query(TableMovies.title,
-                                   TableMovies.path,
-                                   TableMovies.sceneName,
-                                   TableMovies.profileId) \
-            .where(TableMovies.radarrId == radarrId) \
+        movieInfo = database.execute(
+            select(TableMovies.title,
+                   TableMovies.path,
+                   TableMovies.sceneName,
+                   TableMovies.profileId)
+            .where(TableMovies.radarrId == radarrId)) \
             .first()
 
         if not movieInfo:
@@ -88,11 +89,12 @@ class ProviderMovies(Resource):
         """Manually download a movie subtitles"""
         args = self.post_request_parser.parse_args()
         radarrId = args.get('radarrid')
-        movieInfo = database.query(TableMovies.title,
-                                   TableMovies.path,
-                                   TableMovies.sceneName,
-                                   TableMovies.audio_language) \
-            .where(TableMovies.radarrId == radarrId) \
+        movieInfo = database.execute(
+            select(TableMovies.title,
+                   TableMovies.path,
+                   TableMovies.sceneName,
+                   TableMovies.audio_language)
+            .where(TableMovies.radarrId == radarrId)) \
             .first()
 
         if not movieInfo:

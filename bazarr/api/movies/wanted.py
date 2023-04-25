@@ -5,7 +5,7 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableMovies, database
+from app.database import get_exclusion_clause, TableMovies, database, select
 from api.swaggerui import subtitles_language_model
 
 from api.utils import authenticate, postprocess
@@ -51,32 +51,25 @@ class MoviesWanted(Resource):
         wanted_conditions = [(TableMovies.missing_subtitles != '[]')]
         if len(radarrid) > 0:
             wanted_conditions.append((TableMovies.radarrId.in_(radarrid)))
-        wanted_conditions += get_exclusion_clause('movie')
-        wanted_condition = reduce(operator.and_, wanted_conditions)
-
-        if len(radarrid) > 0:
-            data = database.query(TableMovies.title,
-                                  TableMovies.missing_subtitles,
-                                  TableMovies.radarrId,
-                                  TableMovies.sceneName,
-                                  TableMovies.failedAttempts,
-                                  TableMovies.tags,
-                                  TableMovies.monitored)\
-                .where(wanted_condition)
+            start = 0
+            length = 0
         else:
             start = args.get('start')
             length = args.get('length')
-            data = database.query(TableMovies.title,
-                                  TableMovies.missing_subtitles,
-                                  TableMovies.radarrId,
-                                  TableMovies.sceneName,
-                                  TableMovies.failedAttempts,
-                                  TableMovies.tags,
-                                  TableMovies.monitored)\
-                .where(wanted_condition)\
-                .order_by(TableMovies.rowid.desc())
-            if length > 0:
-                data = data.limit(length).offset(start)
+
+        wanted_conditions += get_exclusion_clause('movie')
+        wanted_condition = reduce(operator.and_, wanted_conditions)
+
+        stmt = select(TableMovies.title,
+                      TableMovies.missing_subtitles,
+                      TableMovies.radarrId,
+                      TableMovies.sceneName,
+                      TableMovies.failedAttempts,
+                      TableMovies.tags,
+                      TableMovies.monitored) \
+            .where(wanted_condition)
+        if length > 0:
+            stmt = stmt.order_by(TableMovies.rowid.desc()).limit(length).offset(start)
 
         results = [postprocess({
             'title': x.title,
@@ -86,12 +79,6 @@ class MoviesWanted(Resource):
             'failedAttempts': x.failedAttempts,
             'tags': x.tags,
             'monitored': x.monitored,
-        }) for x in data]
+        }) for x in database.execute(stmt).all()]
 
-        count_conditions = [(TableMovies.missing_subtitles != '[]')]
-        count_conditions += get_exclusion_clause('movie')
-        count = database.query(TableMovies.monitored, TableMovies.tags)\
-            .where(reduce(operator.and_, count_conditions))\
-            .count()
-
-        return {'data': results, 'total': count}
+        return {'data': results, 'total': len(results)}

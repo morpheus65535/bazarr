@@ -7,7 +7,7 @@ import pretty
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import TableEpisodes, TableShows, TableHistory, TableBlacklist, database
+from app.database import TableEpisodes, TableShows, TableHistory, TableBlacklist, database, select
 from subtitles.upgrade import get_upgradable_episode_subtitles
 from utilities.path_mappings import path_mappings
 from api.swaggerui import subtitles_language_model
@@ -81,32 +81,32 @@ class EpisodesHistory(Resource):
         if episodeid:
             query_conditions.append((TableEpisodes.sonarrEpisodeId == episodeid))
         query_condition = reduce(operator.and_, query_conditions)
-        episode_history = database.query(TableHistory.id,
-                                         TableShows.title.label('seriesTitle'),
-                                         TableEpisodes.monitored,
-                                         TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label(
-                                             'episode_number'),
-                                         TableEpisodes.title.label('episodeTitle'),
-                                         TableHistory.timestamp,
-                                         TableHistory.subs_id,
-                                         TableHistory.description,
-                                         TableHistory.sonarrSeriesId,
-                                         TableEpisodes.path,
-                                         TableHistory.language,
-                                         TableHistory.score,
-                                         TableShows.tags,
-                                         TableHistory.action,
-                                         TableHistory.video_path,
-                                         TableHistory.subtitles_path,
-                                         TableHistory.sonarrEpisodeId,
-                                         TableHistory.provider,
-                                         TableShows.seriesType) \
+        stmt = select(TableHistory.id,
+                      TableShows.title.label('seriesTitle'),
+                      TableEpisodes.monitored,
+                      TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label(
+                          'episode_number'),
+                      TableEpisodes.title.label('episodeTitle'),
+                      TableHistory.timestamp,
+                      TableHistory.subs_id,
+                      TableHistory.description,
+                      TableHistory.sonarrSeriesId,
+                      TableEpisodes.path,
+                      TableHistory.language,
+                      TableHistory.score,
+                      TableShows.tags,
+                      TableHistory.action,
+                      TableHistory.video_path,
+                      TableHistory.subtitles_path,
+                      TableHistory.sonarrEpisodeId,
+                      TableHistory.provider,
+                      TableShows.seriesType) \
             .join(TableShows, TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId) \
             .join(TableEpisodes, TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
             .where(query_condition) \
             .order_by(TableHistory.timestamp.desc())
         if length > 0:
-            episode_history = episode_history.limit(length).offset(start)
+            stmt = stmt.limit(length).offset(start)
         episode_history = [{
             'id': x.id,
             'seriesTitle': x.seriesTitle,
@@ -127,7 +127,7 @@ class EpisodesHistory(Resource):
             'sonarrEpisodeId': x.sonarrEpisodeId,
             'provider': x.provider,
             'seriesType': x.seriesType,
-        } for x in episode_history]
+        } for x in database.execute(stmt).all()]
 
         for item in episode_history:
             item.update(postprocess(item))
@@ -156,14 +156,17 @@ class EpisodesHistory(Resource):
             # Check if subtitles is blacklisted
             item.update({"blacklisted": False})
             if item['action'] not in [0, 4, 5]:
-                for blacklisted_item in database.query(TableBlacklist.provider, TableBlacklist.subs_id):
+                for blacklisted_item in database.execute(
+                        select(TableBlacklist.provider, TableBlacklist.subs_id))\
+                        .all():
                     if blacklisted_item.provider == item['provider'] and blacklisted_item.subs_id == item['subs_id']:
                         item.update({"blacklisted": True})
                         break
 
-        count = database.query(TableHistory) \
-            .join(TableEpisodes, TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
-            .where(TableEpisodes.title.is_not(None))\
-            .count()
+        count = len(database.execute(
+            select(TableHistory)
+            .join(TableEpisodes, TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)
+            .where(TableEpisodes.title.is_not(None)))
+                    .all())
 
         return {'data': episode_history, 'total': count}

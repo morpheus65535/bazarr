@@ -12,7 +12,7 @@ from subtitles.indexer.movies import store_subtitles_movie
 from radarr.history import history_log_movie
 from app.notifier import send_notifications_movie
 from app.get_providers import get_providers
-from app.database import get_exclusion_clause, get_audio_profile_languages, TableMovies, database, update
+from app.database import get_exclusion_clause, get_audio_profile_languages, TableMovies, database, update, select
 from app.event_handler import event_stream, show_progress, hide_progress
 
 from ..adaptive_searching import is_search_active, updateFailedAttempts
@@ -30,9 +30,10 @@ def _wanted_movie(movie):
 
     for language in ast.literal_eval(movie.missing_subtitles):
         if is_search_active(desired_language=language, attempt_string=movie.failedAttempts):
-            database.execute(update(TableMovies)
-                             .values(failedAttempts=updateFailedAttempts(desired_language=language,
-                                                                         attempt_string=movie.failedAttempts)))\
+            database.execute(
+                update(TableMovies)
+                .values(failedAttempts=updateFailedAttempts(desired_language=language,
+                                                            attempt_string=movie.failedAttempts)))\
                 .where(TableMovies.radarrId == movie.radarrId)
             database.commit()
 
@@ -60,14 +61,15 @@ def _wanted_movie(movie):
 
 
 def wanted_download_subtitles_movie(radarr_id):
-    movies_details = database.query(TableMovies.path,
-                                    TableMovies.missing_subtitles,
-                                    TableMovies.radarrId,
-                                    TableMovies.audio_language,
-                                    TableMovies.sceneName,
-                                    TableMovies.failedAttempts,
-                                    TableMovies.title)\
-        .where(TableMovies.radarrId == radarr_id)\
+    movies_details = database.execute(
+        select(TableMovies.path,
+               TableMovies.missing_subtitles,
+               TableMovies.radarrId,
+               TableMovies.audio_language,
+               TableMovies.sceneName,
+               TableMovies.failedAttempts,
+               TableMovies.title)
+        .where(TableMovies.radarrId == radarr_id)) \
         .all()
 
     for movie in movies_details:
@@ -83,11 +85,12 @@ def wanted_download_subtitles_movie(radarr_id):
 def wanted_search_missing_subtitles_movies():
     conditions = [(TableMovies.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('movie')
-    movies = database.query(TableMovies.radarrId,
-                            TableMovies.tags,
-                            TableMovies.monitored,
-                            TableMovies.title)\
-        .where(reduce(operator.and_, conditions))\
+    movies = database.execute(
+        select(TableMovies.radarrId,
+               TableMovies.tags,
+               TableMovies.monitored,
+               TableMovies.title)
+        .where(reduce(operator.and_, conditions))) \
         .all()
 
     count_movies = len(movies)

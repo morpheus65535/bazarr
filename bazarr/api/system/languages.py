@@ -3,7 +3,7 @@
 from flask_restx import Resource, Namespace, reqparse
 from operator import itemgetter
 
-from app.database import TableHistory, TableHistoryMovie, TableSettingsLanguages, database
+from app.database import TableHistory, TableHistoryMovie, TableSettingsLanguages, database, select
 from languages.get_languages import alpha2_from_alpha3, language_from_alpha2
 
 from ..utils import authenticate, False_Keys
@@ -25,10 +25,14 @@ class Languages(Resource):
         args = self.get_request_parser.parse_args()
         history = args.get('history')
         if history and history not in False_Keys:
-            languages = list(database.query(TableHistory.language)
-                             .where(TableHistory.language.is_not(None)))
-            languages += list(database.query(TableHistoryMovie.language)
-                              .where(TableHistoryMovie.language.is_not(None)))
+            languages = database.execute(
+                select(TableHistory.language)
+                .where(TableHistory.language.is_not(None)))\
+                .all()
+            languages += database.execute(
+                select(TableHistoryMovie.language)
+                .where(TableHistoryMovie.language.is_not(None)))\
+                .all()
             languages_list = [lang.language.split(':')[0] for lang in languages]
             languages_dicts = []
             for language in languages_list:
@@ -55,9 +59,11 @@ class Languages(Resource):
                 'name': x.name,
                 'code2': x.code2,
                 'enabled': x.enabled == 1
-            } for x in database.query(TableSettingsLanguages.name,
-                                      TableSettingsLanguages.code2,
-                                      TableSettingsLanguages.enabled)
-                               .order_by(TableSettingsLanguages.name)]
+            } for x in database.execute(
+                select(TableSettingsLanguages.name,
+                       TableSettingsLanguages.code2,
+                       TableSettingsLanguages.enabled)
+                .order_by(TableSettingsLanguages.name))
+                .all()]
 
         return sorted(languages_dicts, key=itemgetter('name'))

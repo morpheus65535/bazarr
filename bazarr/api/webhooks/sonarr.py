@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse
 
-from app.database import TableEpisodes, TableShows, database
+from app.database import TableEpisodes, TableShows, database, select
 from subtitles.mass_download import episode_download_subtitles
 from subtitles.indexer.series import store_subtitles
 from utilities.path_mappings import path_mappings
@@ -28,9 +28,10 @@ class WebHooksSonarr(Resource):
         args = self.post_request_parser.parse_args()
         episode_file_id = args.get('sonarr_episodefile_id')
 
-        sonarrEpisodeId = database.query(TableEpisodes.sonarrEpisodeId, TableEpisodes.path) \
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
-            .where(TableEpisodes.episode_file_id == episode_file_id) \
+        sonarrEpisodeId = database.execute(
+            select(TableEpisodes.sonarrEpisodeId, TableEpisodes.path)
+            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .where(TableEpisodes.episode_file_id == episode_file_id)) \
             .first()
 
         if sonarrEpisodeId:

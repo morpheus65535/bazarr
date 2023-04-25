@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id, database
+from app.database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id, database, select
 from utilities.path_mappings import path_mappings
 from app.get_providers import get_providers
 from subtitles.manual import manual_search, manual_download_subtitle
@@ -47,12 +47,13 @@ class ProviderEpisodes(Resource):
         """Search manually for an episode subtitles"""
         args = self.get_request_parser.parse_args()
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = database.query(TableEpisodes.path,
-                                     TableEpisodes.sceneName,
-                                     TableShows.title,
-                                     TableShows.profileId) \
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
+        episodeInfo = database.execute(
+            select(TableEpisodes.path,
+                   TableEpisodes.sceneName,
+                   TableShows.title,
+                   TableShows.profileId)
+            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
             .first()
 
         if not episodeInfo:
@@ -90,13 +91,14 @@ class ProviderEpisodes(Resource):
         args = self.post_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = database.query(
-            TableEpisodes.audio_language,
-            TableEpisodes.path,
-            TableEpisodes.sceneName,
-            TableShows.title) \
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
+        episodeInfo = database.execute(
+            select(
+                TableEpisodes.audio_language,
+                TableEpisodes.path,
+                TableEpisodes.sceneName,
+                TableShows.title)
+            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
             .first()
 
         if not episodeInfo:

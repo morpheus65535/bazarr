@@ -18,7 +18,7 @@ from utilities.path_mappings import path_mappings
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
 from languages.custom_lang import CustomLanguage
-from app.database import TableEpisodes, TableMovies, TableShows, get_profiles_list, database
+from app.database import TableEpisodes, TableMovies, TableShows, get_profiles_list, database, select
 from app.event_handler import event_stream
 from subtitles.processing import ProcessSubtitlesResult
 
@@ -52,11 +52,12 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
         lang_obj = Language.rebuild(lang_obj, forced=True)
 
     if media_type == 'series':
-        episode_metadata = database.query(TableEpisodes.sonarrSeriesId,
-                                          TableEpisodes.sonarrEpisodeId,
-                                          TableShows.profileId)\
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)) \
+        episode_metadata = database.execute(
+            select(TableEpisodes.sonarrSeriesId,
+                   TableEpisodes.sonarrEpisodeId,
+                   TableShows.profileId)
+            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))) \
             .first()
 
         if episode_metadata:
@@ -64,8 +65,9 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
         else:
             use_original_format = False
     else:
-        movie_metadata = database.query(TableMovies.radarrId, TableMovies.profileId)\
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)) \
+        movie_metadata = database.execute(
+            select(TableMovies.radarrId, TableMovies.profileId)
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))) \
             .first()
 
         if movie_metadata:

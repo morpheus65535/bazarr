@@ -15,17 +15,19 @@ def history_log_movie(action, radarr_id, result, fake_provider=None, fake_score=
     subs_id = result.subs_id
     subtitles_path = result.subs_path
 
-    database.execute(insert(TableHistoryMovie).values(
-        action=action,
-        radarrId=radarr_id,
-        timestamp=datetime.now(),
-        description=description,
-        video_path=video_path,
-        language=language,
-        provider=provider,
-        score=score,
-        subs_id=subs_id,
-        subtitles_path=subtitles_path
-    ))
+    database.execute(
+        insert(TableHistoryMovie)
+        .values(
+            action=action,
+            radarrId=radarr_id,
+            timestamp=datetime.now(),
+            description=description,
+            video_path=video_path,
+            language=language,
+            provider=provider,
+            score=score,
+            subs_id=subs_id,
+            subtitles_path=subtitles_path
+        ))
     database.commit()
     event_stream(type='movie-history')

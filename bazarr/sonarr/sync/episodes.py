@@ -3,7 +3,7 @@
 import os
 import logging
 
-from app.database import database, TableEpisodes, TableShows, delete, update, insert
+from app.database import database, TableEpisodes, TableShows, delete, update, insert, select
 from app.config import settings
 from utilities.path_mappings import path_mappings
 from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
@@ -27,12 +27,11 @@ def sync_episodes(series_id, send_event=True):
     # Get current episodes id in DB
     if series_id:
         current_episodes_db_list = [row.sonarrEpisodeId for row in
-                                    database.query(TableEpisodes.sonarrEpisodeId,
-                                                   TableEpisodes.path,
-                                                   TableEpisodes.sonarrSeriesId)
-                                    .where(TableEpisodes.sonarrSeriesId == series_id).all()]
-        series = database.query(TableShows.title).where(TableShows.sonarrSeriesId == series_id).first()
-        series_title = series.title if series else ''
+                                    database.execute(
+                                        select(TableEpisodes.sonarrEpisodeId,
+                                               TableEpisodes.path,
+                                               TableEpisodes.sonarrSeriesId)
+                                        .where(TableEpisodes.sonarrSeriesId == series_id)).all()]
     else:
         return
 
@@ -77,15 +76,19 @@ def sync_episodes(series_id, send_event=True):
     # Remove old episodes from DB
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
 
-    temp_episodes_list = database.query(TableEpisodes.path,
-                                        TableEpisodes.sonarrSeriesId,
-                                        TableEpisodes.sonarrEpisodeId)
+    temp_episodes_list = database.execute(
+        select(TableEpisodes.path,
+               TableEpisodes.sonarrSeriesId,
+               TableEpisodes.sonarrEpisodeId)) \
+        .all()
     for removed_episode in removed_episodes:
         episode_to_delete = temp_episodes_list.where(TableEpisodes.sonarrEpisodeId == removed_episode).first()
         if not episode_to_delete:
             continue
         try:
-            database.execute(delete(TableEpisodes).where(TableEpisodes.sonarrEpisodeId == removed_episode))
+            database.execute(
+                delete(TableEpisodes)
+                .where(TableEpisodes.sonarrEpisodeId == removed_episode))
         except Exception as e:
             logging.error(f"BAZARR cannot delete episode {episode_to_delete.path} because of {e}")
             continue
@@ -96,11 +99,16 @@ def sync_episodes(series_id, send_event=True):
 
     # Update existing episodes in DB
     for updated_episode in episodes_to_update:
-        if database.query(TableEpisodes).filter_by(**updated_episode).count():
+        if database.execute(
+                select(TableEpisodes)
+                .filter_by(**updated_episode))\
+                .first():
             continue
         else:
-            database.execute(update(TableEpisodes).values(updated_episode).where(TableEpisodes.sonarrEpisodeId ==
-                                                                                 updated_episode['sonarrEpisodeId']))
+            database.execute(
+                update(TableEpisodes)
+                .values(updated_episode)
+                .where(TableEpisodes.sonarrEpisodeId == updated_episode['sonarrEpisodeId']))
             altered_episodes.append([updated_episode['sonarrEpisodeId'],
                                      updated_episode['path'],
                                      updated_episode['sonarrSeriesId']])
@@ -110,7 +118,9 @@ def sync_episodes(series_id, send_event=True):
 
     # Insert new episodes in DB
     for added_episode in episodes_to_add:
-        database.execute(insert(TableEpisodes).values(added_episode))
+        database.execute(
+            insert(TableEpisodes)
+            .values(added_episode))
 
         altered_episodes.append([added_episode['sonarrEpisodeId'],
                                  added_episode['path'],
@@ -133,8 +143,9 @@ def sync_one_episode(episode_id, defer_search=False):
     apikey_sonarr = settings.sonarr.apikey
 
     # Check if there's a row in database for this episode ID
-    existing_episode = database.query(TableEpisodes.path, TableEpisodes.episode_file_id)\
-        .where(TableEpisodes.sonarrEpisodeId == episode_id)\
+    existing_episode = database.execute(
+        select(TableEpisodes.path, TableEpisodes.episode_file_id)
+        .where(TableEpisodes.sonarrEpisodeId == episode_id)) \
         .first()
 
     try:
@@ -162,7 +173,9 @@ def sync_one_episode(episode_id, defer_search=False):
 
     # Remove episode from DB
     if not episode and existing_episode:
-        database.execute(delete(TableEpisodes).where(TableEpisodes.sonarrEpisodeId == episode_id))
+        database.execute(
+            delete(TableEpisodes)
+            .where(TableEpisodes.sonarrEpisodeId == episode_id))
         database.commit()
 
         event_stream(type='episode', action='delete', payload=int(episode_id))
@@ -172,7 +185,10 @@ def sync_one_episode(episode_id, defer_search=False):
 
     # Update existing episodes in DB
     elif episode and existing_episode:
-        database.execute(update(TableEpisodes).values(episode).where(TableEpisodes.sonarrEpisodeId == episode_id))
+        database.execute(
+            update(TableEpisodes)
+            .values(episode)
+            .where(TableEpisodes.sonarrEpisodeId == episode_id))
         database.commit()
 
         event_stream(type='episode', action='update', payload=int(episode_id))
@@ -181,7 +197,9 @@ def sync_one_episode(episode_id, defer_search=False):
 
     # Insert new episodes in DB
     elif episode and not existing_episode:
-        database.execute(insert(TableEpisodes).values(episode))
+        database.execute(
+            insert(TableEpisodes)
+            .values(episode))
         database.commit()
 
         event_stream(type='episode', action='update', payload=int(episode_id))

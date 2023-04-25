@@ -12,7 +12,7 @@ from subtitles.indexer.series import store_subtitles
 from sonarr.history import history_log
 from app.notifier import send_notifications
 from app.get_providers import get_providers
-from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, database
+from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, database, select
 from app.event_handler import show_progress, hide_progress
 
 from ..download import generate_subtitles
@@ -22,20 +22,21 @@ def series_download_subtitles(no):
     conditions = [(TableEpisodes.sonarrSeriesId == no),
                   (TableEpisodes.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('series')
-    episodes_details = database.query(TableEpisodes.path,
-                                      TableEpisodes.missing_subtitles,
-                                      TableEpisodes.monitored,
-                                      TableEpisodes.sonarrEpisodeId,
-                                      TableEpisodes.sceneName,
-                                      TableShows.tags,
-                                      TableShows.seriesType,
-                                      TableEpisodes.audio_language,
-                                      TableShows.title,
-                                      TableEpisodes.season,
-                                      TableEpisodes.episode,
-                                      TableEpisodes.title.label('episodeTitle'))\
-        .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
-        .where(reduce(operator.and_, conditions)) \
+    episodes_details = database.execute(
+        select(TableEpisodes.path,
+               TableEpisodes.missing_subtitles,
+               TableEpisodes.monitored,
+               TableEpisodes.sonarrEpisodeId,
+               TableEpisodes.sceneName,
+               TableShows.tags,
+               TableShows.seriesType,
+               TableEpisodes.audio_language,
+               TableShows.title,
+               TableEpisodes.season,
+               TableEpisodes.episode,
+               TableEpisodes.title.label('episodeTitle'))
+        .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+        .where(reduce(operator.and_, conditions))) \
         .all()
     if not episodes_details:
         logging.debug("BAZARR no episode for that sonarrSeriesId have been found in database or they have all been "
@@ -94,21 +95,22 @@ def series_download_subtitles(no):
 def episode_download_subtitles(no, send_progress=False):
     conditions = [(TableEpisodes.sonarrEpisodeId == no)]
     conditions += get_exclusion_clause('series')
-    episodes_details = database.query(TableEpisodes.path,
-                                      TableEpisodes.missing_subtitles,
-                                      TableEpisodes.monitored,
-                                      TableEpisodes.sonarrEpisodeId,
-                                      TableEpisodes.sceneName,
-                                      TableShows.tags,
-                                      TableShows.title,
-                                      TableShows.sonarrSeriesId,
-                                      TableEpisodes.audio_language,
-                                      TableShows.seriesType,
-                                      TableEpisodes.title.label('episodeTitle'),
-                                      TableEpisodes.season,
-                                      TableEpisodes.episode) \
-        .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
-        .where(reduce(operator.and_, conditions)) \
+    episodes_details = database.execute(
+        select(TableEpisodes.path,
+               TableEpisodes.missing_subtitles,
+               TableEpisodes.monitored,
+               TableEpisodes.sonarrEpisodeId,
+               TableEpisodes.sceneName,
+               TableShows.tags,
+               TableShows.title,
+               TableShows.sonarrSeriesId,
+               TableEpisodes.audio_language,
+               TableShows.seriesType,
+               TableEpisodes.title.label('episodeTitle'),
+               TableEpisodes.season,
+               TableEpisodes.episode)
+        .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+        .where(reduce(operator.and_, conditions))) \
         .all()
     if not episodes_details:
         logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database:", str(no))

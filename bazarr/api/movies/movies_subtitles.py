@@ -8,7 +8,7 @@ from flask_restx import Resource, Namespace, reqparse
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from werkzeug.datastructures import FileStorage
 
-from app.database import TableMovies, get_audio_profile_languages, get_profile_id, database
+from app.database import TableMovies, get_audio_profile_languages, get_profile_id, database, select
 from utilities.path_mappings import path_mappings
 from subtitles.upload import manual_upload_subtitle
 from subtitles.download import generate_subtitles
@@ -42,12 +42,13 @@ class MoviesSubtitles(Resource):
         args = self.patch_request_parser.parse_args()
         radarrId = args.get('radarrid')
 
-        movieInfo = database.query(
-            TableMovies.title,
-            TableMovies.path,
-            TableMovies.sceneName,
-            TableMovies.audio_language) \
-            .where(TableMovies.radarrId == radarrId) \
+        movieInfo = database.execute(
+            select(
+                TableMovies.title,
+                TableMovies.path,
+                TableMovies.sceneName,
+                TableMovies.audio_language)
+            .where(TableMovies.radarrId == radarrId)) \
             .first()
 
         if not movieInfo:
@@ -98,9 +99,9 @@ class MoviesSubtitles(Resource):
         # TODO: Support Multiply Upload
         args = self.post_request_parser.parse_args()
         radarrId = args.get('radarrid')
-        movieInfo = database.query(TableMovies.path,
-                                       TableMovies.audio_language) \
-            .where(TableMovies.radarrId == radarrId) \
+        movieInfo = database.execute(
+            select(TableMovies.path, TableMovies.audio_language)
+            .where(TableMovies.radarrId == radarrId)) \
             .first()
 
         if not movieInfo:
@@ -161,8 +162,9 @@ class MoviesSubtitles(Resource):
         """Delete a movie subtitles"""
         args = self.delete_request_parser.parse_args()
         radarrId = args.get('radarrid')
-        movieInfo = database.query(TableMovies.path) \
-            .where(TableMovies.radarrId == radarrId) \
+        movieInfo = database.execute(
+            select(TableMovies.path)
+            .where(TableMovies.radarrId == radarrId)) \
             .first()
 
         if not movieInfo:

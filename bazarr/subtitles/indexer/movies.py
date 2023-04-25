@@ -9,7 +9,7 @@ from subliminal_patch import core, search_external_subtitles
 
 from languages.custom_lang import CustomLanguage
 from app.database import get_profiles_list, get_profile_cutoff, TableMovies, get_audio_profile_languages, database, \
-    update
+    update, select
 from languages.get_languages import alpha2_from_alpha3, get_language_set
 from app.config import settings
 from utilities.helper import get_subtitle_destination_folder
@@ -27,8 +27,9 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
     if os.path.exists(reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
-            item = database.query(TableMovies.movie_file_id, TableMovies.file_size)\
-                .where(TableMovies.path == original_path)\
+            item = database.execute(
+                select(TableMovies.movie_file_id, TableMovies.file_size)
+                .where(TableMovies.path == original_path)) \
                 .first()
             if not item:
                 logging.exception(f"BAZARR error when trying to select this movie from database: {reversed_path}")
@@ -69,7 +70,10 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
 
             # get previously indexed subtitles that haven't changed:
-            item = database.query(TableMovies.subtitles).where(TableMovies.path == original_path).first()
+            item = database.execute(
+                select(TableMovies.subtitles)
+                .where(TableMovies.path == original_path))\
+                .first()
             if not item:
                 previously_indexed_subtitles_to_exclude = []
             else:
@@ -123,11 +127,15 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                     actual_subtitles.append([language_str, path_mappings.path_replace_reverse_movie(subtitle_path),
                                              os.stat(subtitle_path).st_size])
 
-        database.execute(update(TableMovies)
-                         .values(subtitles=str(actual_subtitles))
-                         .where(TableMovies.path == original_path))
+        database.execute(
+            update(TableMovies)
+            .values(subtitles=str(actual_subtitles))
+            .where(TableMovies.path == original_path))
         database.commit()
-        matching_movies = database.query(TableMovies.radarrId).where(TableMovies.path == original_path).all()
+        matching_movies = database.execute(
+            select(TableMovies.radarrId)
+            .where(TableMovies.path == original_path))\
+            .all()
 
         for movie in matching_movies:
             if movie:
@@ -145,17 +153,19 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
 
 def list_missing_subtitles_movies(no=None, send_event=True):
     if no:
-        movies_subtitles = database.query(TableMovies.radarrId,
-                                          TableMovies.subtitles,
-                                          TableMovies.profileId,
-                                          TableMovies.audio_language) \
-            .where(TableMovies.radarrId == no)\
+        movies_subtitles = database.execute(
+            select(TableMovies.radarrId,
+                   TableMovies.subtitles,
+                   TableMovies.profileId,
+                   TableMovies.audio_language)
+            .where(TableMovies.radarrId == no)) \
             .all()
     else:
-        movies_subtitles = database.query(TableMovies.radarrId,
-                                          TableMovies.subtitles,
-                                          TableMovies.profileId,
-                                          TableMovies.audio_language) \
+        movies_subtitles = database.execute(
+            select(TableMovies.radarrId,
+                   TableMovies.subtitles,
+                   TableMovies.profileId,
+                   TableMovies.audio_language)) \
             .all()
 
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
@@ -242,9 +252,10 @@ def list_missing_subtitles_movies(no=None, send_event=True):
 
                 missing_subtitles_text = str(missing_subtitles_output_list)
 
-        database.execute(update(TableMovies)
-                         .values(missing_subtitles=missing_subtitles_text)
-                         .where(TableMovies.radarrId == movie_subtitles.radarrId))
+        database.execute(
+            update(TableMovies)
+            .values(missing_subtitles=missing_subtitles_text)
+            .where(TableMovies.radarrId == movie_subtitles.radarrId))
         database.commit()
 
         if send_event:
@@ -255,7 +266,9 @@ def list_missing_subtitles_movies(no=None, send_event=True):
 
 
 def movies_full_scan_subtitles(use_cache=settings.radarr.getboolean('use_ffprobe_cache')):
-    movies = database.query(TableMovies.path).all()
+    movies = database.execute(
+        select(TableMovies.path))\
+        .all()
 
     count_movies = len(movies)
     for i, movie in enumerate(movies):
@@ -272,9 +285,10 @@ def movies_full_scan_subtitles(use_cache=settings.radarr.getboolean('use_ffprobe
 
 
 def movies_scan_subtitles(no):
-    movies = database.query(TableMovies.path)\
-        .where(TableMovies.radarrId == no)\
-        .order_by(TableMovies.radarrId)\
+    movies = database.execute(
+        select(TableMovies.path)
+        .where(TableMovies.radarrId == no)
+        .order_by(TableMovies.radarrId)) \
         .all()
 
     for movie in movies:

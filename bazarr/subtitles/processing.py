@@ -7,7 +7,7 @@ from app.config import settings
 from utilities.path_mappings import path_mappings
 from utilities.post_processing import pp_replace, set_chmod
 from languages.get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
-from app.database import TableEpisodes, TableMovies, database
+from app.database import TableEpisodes, TableMovies, database, select
 from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
@@ -67,9 +67,9 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         downloaded_provider + " with a score of " + str(percent_score) + "%."
 
     if media_type == 'series':
-        episode_metadata = database.query(TableEpisodes.sonarrSeriesId,
-                                          TableEpisodes.sonarrEpisodeId)\
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))\
+        episode_metadata = database.execute(
+            select(TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId)
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
             .first()
         if not episode_metadata:
             return
@@ -84,8 +84,9 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                        sonarr_series_id=episode_metadata.sonarrSeriesId,
                        sonarr_episode_id=episode_metadata.sonarrEpisodeId)
     else:
-        movie_metadata = database.query(TableMovies.radarrId)\
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))\
+        movie_metadata = database.execute(
+            select(TableMovies.radarrId)
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)))\
             .first()
         if not movie_metadata:
             return

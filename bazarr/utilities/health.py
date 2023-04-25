@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from app.config import settings
-from app.database import TableShowsRootfolder, TableMoviesRootfolder, database
+from app.database import TableShowsRootfolder, TableMoviesRootfolder, database, select
 from app.event_handler import event_stream
 from .path_mappings import path_mappings
 from sonarr.rootfolder import check_sonarr_rootfolder
@@ -25,10 +25,11 @@ def get_health_issues():
 
     # get Sonarr rootfolder issues
     if settings.general.getboolean('use_sonarr'):
-        rootfolder = database.query(TableShowsRootfolder.path,
-                                    TableShowsRootfolder.accessible,
-                                    TableShowsRootfolder.error)\
-            .where(TableShowsRootfolder.accessible == 0)\
+        rootfolder = database.execute(
+            select(TableShowsRootfolder.path,
+                   TableShowsRootfolder.accessible,
+                   TableShowsRootfolder.error)
+            .where(TableShowsRootfolder.accessible == 0)) \
             .all()
         for item in rootfolder:
             health_issues.append({'object': path_mappings.path_replace(item.path),
@@ -36,10 +37,11 @@ def get_health_issues():
 
     # get Radarr rootfolder issues
     if settings.general.getboolean('use_radarr'):
-        rootfolder = database.query(TableMoviesRootfolder.path,
-                                    TableMoviesRootfolder.accessible,
-                                    TableMoviesRootfolder.error)\
-            .where(TableMoviesRootfolder.accessible == 0)\
+        rootfolder = database.execute(
+            select(TableMoviesRootfolder.path,
+                   TableMoviesRootfolder.accessible,
+                   TableMoviesRootfolder.error)
+            .where(TableMoviesRootfolder.accessible == 0)) \
             .all()
         for item in rootfolder:
             health_issues.append({'object': path_mappings.path_replace_movie(item.path),

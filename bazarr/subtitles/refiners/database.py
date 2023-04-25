@@ -7,7 +7,7 @@ import re
 from subliminal import Episode, Movie
 
 from utilities.path_mappings import path_mappings
-from app.database import TableShows, TableEpisodes, TableMovies, database
+from app.database import TableShows, TableEpisodes, TableMovies, database, select
 
 from .utils import convert_to_guessit
 
@@ -17,21 +17,22 @@ _TITLE_RE = re.compile(r'\s(\(\d{4}\))')
 
 def refine_from_db(path, video):
     if isinstance(video, Episode):
-        data = database.query(TableShows.title.label('seriesTitle'),
-                              TableEpisodes.season,
-                              TableEpisodes.episode,
-                              TableEpisodes.title.label('episodeTitle'),
-                              TableShows.year,
-                              TableShows.tvdbId,
-                              TableShows.alternativeTitles,
-                              TableEpisodes.format,
-                              TableEpisodes.resolution,
-                              TableEpisodes.video_codec,
-                              TableEpisodes.audio_codec,
-                              TableEpisodes.path,
-                              TableShows.imdbId)\
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)\
-            .where((TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
+        data = database.execute(
+            select(TableShows.title.label('seriesTitle'),
+                   TableEpisodes.season,
+                   TableEpisodes.episode,
+                   TableEpisodes.title.label('episodeTitle'),
+                   TableShows.year,
+                   TableShows.tvdbId,
+                   TableShows.alternativeTitles,
+                   TableEpisodes.format,
+                   TableEpisodes.resolution,
+                   TableEpisodes.video_codec,
+                   TableEpisodes.audio_codec,
+                   TableEpisodes.path,
+                   TableShows.imdbId)
+            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .where((TableEpisodes.path == path_mappings.path_replace_reverse(path)))) \
             .first()
 
         if data:
@@ -60,15 +61,16 @@ def refine_from_db(path, video):
                 if data.audio_codec:
                     video.audio_codec = convert_to_guessit('audio_codec', data.audio_codec)
     elif isinstance(video, Movie):
-        data = database.query(TableMovies.title,
-                              TableMovies.year,
-                              TableMovies.alternativeTitles,
-                              TableMovies.format,
-                              TableMovies.resolution,
-                              TableMovies.video_codec,
-                              TableMovies.audio_codec,
-                              TableMovies.imdbId)\
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))\
+        data = database.execute(
+            select(TableMovies.title,
+                   TableMovies.year,
+                   TableMovies.alternativeTitles,
+                   TableMovies.format,
+                   TableMovies.resolution,
+                   TableMovies.video_codec,
+                   TableMovies.audio_codec,
+                   TableMovies.imdbId)
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))) \
             .first()
 
         if data:

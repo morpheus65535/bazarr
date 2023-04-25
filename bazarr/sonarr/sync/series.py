@@ -6,7 +6,7 @@ from app.config import settings
 from sonarr.info import url_sonarr
 from subtitles.indexer.series import list_missing_subtitles
 from sonarr.rootfolder import check_sonarr_rootfolder
-from app.database import TableShows, TableEpisodes, database, insert, update, delete
+from app.database import TableShows, TableEpisodes, database, insert, update, delete, select
 from utilities.path_mappings import path_mappings
 from app.event_handler import event_stream, show_progress, hide_progress
 
@@ -39,7 +39,10 @@ def update_series(send_event=True):
         return
     else:
         # Get current shows in DB
-        current_shows_db = [x.sonarrSeriesId for x in database.query(TableShows.sonarrSeriesId).all()]
+        current_shows_db = [x.sonarrSeriesId for x in
+                            database.execute(
+                                select(TableShows.sonarrSeriesId))
+                            .all()]
         current_shows_sonarr = []
 
         series_count = len(series)
@@ -59,10 +62,14 @@ def update_series(send_event=True):
                                               serie_default_profile=serie_default_profile,
                                               audio_profiles=audio_profiles)
 
-                if not database.query(TableShows).filter_by(**updated_series).count():
-                    database.execute(update(TableShows)
-                                     .values(updated_series)
-                                     .where(TableShows.sonarrSeriesId == show['id']))
+                if not database.execute(
+                        select(TableShows)
+                        .filter_by(**updated_series))\
+                        .first():
+                    database.execute(
+                        update(TableShows)
+                        .values(updated_series)
+                        .where(TableShows.sonarrSeriesId == show['id']))
                     database.commit()
 
                 if send_event:
@@ -72,7 +79,9 @@ def update_series(send_event=True):
                                             serie_default_profile=serie_default_profile,
                                             audio_profiles=audio_profiles)
 
-                database.execute(insert(TableShows).values(added_series))
+                database.execute(
+                    insert(TableShows)
+                    .values(added_series))
                 database.commit()
 
                 list_missing_subtitles(no=show['id'])
@@ -86,8 +95,9 @@ def update_series(send_event=True):
         removed_series = list(set(current_shows_db) - set(current_shows_sonarr))
 
         for series in removed_series:
-            database.execute(delete(TableShows).where(TableShows.sonarrSeriesId == series))
-            database.execute(delete(TableEpisodes).where(TableEpisodes.sonarrSeriesId == series))
+            database.execute(
+                delete(TableShows)
+                .where(TableShows.sonarrSeriesId == series))
             database.commit()
 
             if send_event:
@@ -103,12 +113,16 @@ def update_one_series(series_id, action):
     logging.debug('BAZARR syncing this specific series from Sonarr: {}'.format(series_id))
 
     # Check if there's a row in database for this series ID
-    existing_series = database.query(TableShows).where(TableShows.sonarrSeriesId == series_id).count()
+    existing_series = database.execute(
+        select(TableShows)
+        .where(TableShows.sonarrSeriesId == series_id))\
+        .first()
 
     # Delete series from DB
     if action == 'deleted' and existing_series:
-        database.execute(delete(TableShows).where(TableShows.sonarrSeriesId == int(series_id)))
-        database.execute(delete(TableEpisodes).where(TableEpisodes.sonarrSeriesId == int(series_id)))
+        database.execute(
+            delete(TableShows)
+            .where(TableShows.sonarrSeriesId == int(series_id)))
         database.commit()
 
         event_stream(type='series', action='delete', payload=int(series_id))
@@ -150,7 +164,10 @@ def update_one_series(series_id, action):
 
     # Update existing series in DB
     if action == 'updated' and existing_series:
-        database.execute(update(TableShows).values(series).where(TableShows.sonarrSeriesId == series['sonarrSeriesId']))
+        database.execute(
+            update(TableShows)
+            .values(series)
+            .where(TableShows.sonarrSeriesId == series['sonarrSeriesId']))
         database.commit()
         sync_episodes(series_id=int(series_id), send_event=False)
         event_stream(type='series', action='update', payload=int(series_id))
@@ -159,7 +176,9 @@ def update_one_series(series_id, action):
 
     # Insert new series in DB
     elif action == 'updated' and not existing_series:
-        database.execute(insert(TableShows).values(series))
+        database.execute(
+            insert(TableShows)
+            .values(series))
         database.commit()
         event_stream(type='series', action='update', payload=int(series_id))
         logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(

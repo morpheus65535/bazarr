@@ -4,7 +4,7 @@ import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableEpisodes, TableShows, TableBlacklist, database
+from app.database import TableEpisodes, TableShows, TableBlacklist, database, select
 from subtitles.tools.delete import delete_subtitles
 from sonarr.blacklist import blacklist_log, blacklist_delete_all, blacklist_delete
 from utilities.path_mappings import path_mappings
@@ -48,19 +48,19 @@ class EpisodesBlacklist(Resource):
         start = args.get('start')
         length = args.get('length')
 
-        data = database.query(TableShows.title.label('seriesTitle'),
-                              TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label('episode_number'),
-                              TableEpisodes.title.label('episodeTitle'),
-                              TableEpisodes.sonarrSeriesId,
-                              TableBlacklist.provider,
-                              TableBlacklist.subs_id,
-                              TableBlacklist.language,
-                              TableBlacklist.timestamp)\
-            .join(TableEpisodes, TableBlacklist.sonarr_episode_id == TableEpisodes.sonarrEpisodeId)\
+        stmt = select(TableShows.title.label('seriesTitle'),
+                      TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label('episode_number'),
+                      TableEpisodes.title.label('episodeTitle'),
+                      TableEpisodes.sonarrSeriesId,
+                      TableBlacklist.provider,
+                      TableBlacklist.subs_id,
+                      TableBlacklist.language,
+                      TableBlacklist.timestamp) \
+            .join(TableEpisodes, TableBlacklist.sonarr_episode_id == TableEpisodes.sonarrEpisodeId) \
             .join(TableShows, TableBlacklist.sonarr_series_id == TableShows.sonarrSeriesId)\
             .order_by(TableBlacklist.timestamp.desc())
         if length > 0:
-            data = data.limit(length).offset(start)
+            stmt = stmt.limit(length).offset(start)
 
         return [postprocess({
             'seriesTitle': x.seriesTitle,
@@ -72,7 +72,7 @@ class EpisodesBlacklist(Resource):
             'language': x.language,
             'timestamp': pretty.date(x.timestamp),
             'parsed_timestamp': x.timestamp.strftime('%x %X')
-        }) for x in data]
+        }) for x in database.execute(stmt).all()]
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
@@ -96,8 +96,9 @@ class EpisodesBlacklist(Resource):
         subs_id = args.get('subs_id')
         language = args.get('language')
 
-        episodeInfo = database.query(TableEpisodes.path)\
-            .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)\
+        episodeInfo = database.execute(
+            select(TableEpisodes.path)
+            .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)) \
             .first()
 
         if not episodeInfo:

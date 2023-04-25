@@ -5,7 +5,7 @@ import pycountry
 from subzero.language import Language
 
 from .custom_lang import CustomLanguage
-from app.database import TableSettingsLanguages, database, insert, update
+from app.database import TableSettingsLanguages, database, insert, update, select
 
 
 def load_language_in_db():
@@ -15,7 +15,10 @@ def load_language_in_db():
              if hasattr(lang, 'alpha_2')]
 
     # Insert standard languages in database table
-    database.execute(insert(TableSettingsLanguages).values(langs).on_conflict_do_nothing())
+    database.execute(
+        insert(TableSettingsLanguages)
+        .values(langs)
+        .on_conflict_do_nothing())
     database.commit()
 
     # Update standard languages with code3b if available
@@ -24,7 +27,8 @@ def load_language_in_db():
              if hasattr(lang, 'alpha_2') and hasattr(lang, 'bibliographic')]
 
     # Update languages in database table
-    database.execute(update(TableSettingsLanguages), langs)
+    database.execute(
+        update(TableSettingsLanguages), langs)
     database.commit()
 
     # Insert custom languages in database table
@@ -37,12 +41,16 @@ def load_language_in_db():
 def create_languages_object():
     global languages_obj
     # replace chinese by chinese simplified
-    database.execute(update(TableSettingsLanguages).values(name='Chinese Simplified')
-                     .where(TableSettingsLanguages.code3 == 'zho'))
+    database.execute(
+        update(TableSettingsLanguages)
+        .values(name='Chinese Simplified')
+        .where(TableSettingsLanguages.code3 == 'zho'))
     database.commit()
 
-    languages_obj = database.query(TableSettingsLanguages.code3, TableSettingsLanguages.code2,
-                                   TableSettingsLanguages.name, TableSettingsLanguages.code3b).all()
+    languages_obj = database.execute(
+        select(TableSettingsLanguages.code3, TableSettingsLanguages.code2, TableSettingsLanguages.name,
+               TableSettingsLanguages.code3b))\
+        .all()
 
 
 def language_from_alpha2(lang):
@@ -72,7 +80,10 @@ def alpha3_from_language(lang):
 
 
 def get_language_set():
-    languages = database.query(TableSettingsLanguages.code3).where(TableSettingsLanguages.enabled == 1).all()
+    languages = database.execute(
+        select(TableSettingsLanguages.code3)
+        .where(TableSettingsLanguages.enabled == 1))\
+        .all()
 
     language_set = set()
 

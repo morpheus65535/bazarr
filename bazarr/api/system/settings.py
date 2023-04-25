@@ -6,7 +6,7 @@ from flask import request, jsonify
 from flask_restx import Resource, Namespace
 
 from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableShows, TableMovies, \
-    TableSettingsNotifier, update_profile_id_list, database, insert, update, delete
+    TableSettingsNotifier, update_profile_id_list, database, insert, update, delete, select
 from app.event_handler import event_stream
 from app.config import settings, save_settings, get_settings
 from app.scheduler import scheduler
@@ -29,10 +29,12 @@ class SystemSettings(Resource):
             'name': x.name,
             'enabled': x.enabled == 1,
             'url': x.url
-        } for x in database.query(TableSettingsNotifier.name,
-                                  TableSettingsNotifier.enabled,
-                                  TableSettingsNotifier.url)
-                           .order_by(TableSettingsNotifier.name)]
+        } for x in database.execute(
+            select(TableSettingsNotifier.name,
+                   TableSettingsNotifier.enabled,
+                   TableSettingsNotifier.url)
+            .order_by(TableSettingsNotifier.name))
+            .all()]
 
         return jsonify(data)
 
@@ -40,44 +42,56 @@ class SystemSettings(Resource):
     def post(self):
         enabled_languages = request.form.getlist('languages-enabled')
         if len(enabled_languages) != 0:
-            database.execute(update(TableSettingsLanguages).vaues(enabled=0))
+            database.execute(
+                update(TableSettingsLanguages)
+                .values(enabled=0))
             for code in enabled_languages:
-                database.execute(update(TableSettingsLanguages).values(enabled=1))\
-                    .where(TableSettingsLanguages.code2 == code)
+                database.execute(
+                    update(TableSettingsLanguages)
+                    .values(enabled=1)
+                    .where(TableSettingsLanguages.code2 == code))
             event_stream("languages")
         database.commit()
 
         languages_profiles = request.form.get('languages-profiles')
         if languages_profiles:
-            existing_ids = database.query(TableLanguagesProfiles.profileId).all()
+            existing_ids = database.execute(
+                select(TableLanguagesProfiles.profileId))\
+                .all()
             existing = [x.profileId for x in existing_ids]
             for item in json.loads(languages_profiles):
                 if item.profileId in existing:
                     # Update existing profiles
-                    database.execute(update(TableLanguagesProfiles).values(
-                        name=item.name,
-                        cutoff=item.cutoff if item.cutoff != 'null' else None,
-                        items=json.dumps(item.items),
-                        mustContain=item.mustContain,
-                        mustNotContain=item.mustNotContain,
-                        originalFormat=item.originalFormat if item.originalFormat != 'null' else None,
-                    )
-                                     .where(TableLanguagesProfiles.profileId == item.profileId))
+                    database.execute(
+                        update(TableLanguagesProfiles)
+                        .values(
+                            name=item.name,
+                            cutoff=item.cutoff if item.cutoff != 'null' else None,
+                            items=json.dumps(item.items),
+                            mustContain=item.mustContain,
+                            mustNotContain=item.mustNotContain,
+                            originalFormat=item.originalFormat if item.originalFormat != 'null' else None,
+                        )
+                        .where(TableLanguagesProfiles.profileId == item.profileId))
                     existing.remove(item.profileId)
                 else:
                     # Add new profiles
-                    database.execute(insert(TableLanguagesProfiles).values(
-                        profileId=item.profileId,
-                        name=item.name,
-                        cutoff=item.cutoff if item.cutoff != 'null' else None,
-                        items=json.dumps(item.items),
-                        mustContain=item.mustContain,
-                        mustNotContain=item.mustNotContain,
-                        originalFormat=item.originalFormat if item.originalFormat != 'null' else None,
-                    ))
+                    database.execute(
+                        insert(TableLanguagesProfiles)
+                        .values(
+                            profileId=item.profileId,
+                            name=item.name,
+                            cutoff=item.cutoff if item.cutoff != 'null' else None,
+                            items=json.dumps(item.items),
+                            mustContain=item.mustContain,
+                            mustNotContain=item.mustNotContain,
+                            originalFormat=item.originalFormat if item.originalFormat != 'null' else None,
+                        ))
             for profileId in existing:
                 # Remove deleted profiles
-                database.execute(delete(TableLanguagesProfiles).where(TableLanguagesProfiles.profileId == profileId))
+                database.execute(
+                    delete(TableLanguagesProfiles)
+                    .where(TableLanguagesProfiles.profileId == profileId))
 
             database.commit()
 
@@ -95,10 +109,11 @@ class SystemSettings(Resource):
         notifications = request.form.getlist('notifications-providers')
         for item in notifications:
             item = json.loads(item)
-            database.execute(update(TableSettingsNotifier).values(
-                enabled=item['enabled'],
-                url=item['url'])
-                             .where(TableSettingsNotifier.name == item['name']))
+            database.execute(
+                update(TableSettingsNotifier).values(
+                    enabled=item['enabled'],
+                    url=item['url'])
+                .where(TableSettingsNotifier.name == item['name']))
         database.commit()
 
         save_settings(zip(request.form.keys(), request.form.listvalues()))

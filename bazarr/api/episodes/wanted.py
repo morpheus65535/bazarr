@@ -5,7 +5,7 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, database
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select
 from api.swaggerui import subtitles_language_model
 
 from ..utils import authenticate, postprocess
@@ -63,22 +63,22 @@ class EpisodesWanted(Resource):
         wanted_conditions += get_exclusion_clause('series')
         wanted_condition = reduce(operator.and_, wanted_conditions)
 
-        data = database.query(TableShows.title.label('seriesTitle'),
-                              TableEpisodes.monitored,
-                              TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label('episode_number'),
-                              TableEpisodes.title.label('episodeTitle'),
-                              TableEpisodes.missing_subtitles,
-                              TableEpisodes.sonarrSeriesId,
-                              TableEpisodes.sonarrEpisodeId,
-                              TableEpisodes.sceneName,
-                              TableShows.tags,
-                              TableEpisodes.failedAttempts,
-                              TableShows.seriesType)\
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)\
+        stmt = select(TableShows.title.label('seriesTitle'),
+                      TableEpisodes.monitored,
+                      TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label('episode_number'),
+                      TableEpisodes.title.label('episodeTitle'),
+                      TableEpisodes.missing_subtitles,
+                      TableEpisodes.sonarrSeriesId,
+                      TableEpisodes.sonarrEpisodeId,
+                      TableEpisodes.sceneName,
+                      TableShows.tags,
+                      TableEpisodes.failedAttempts,
+                      TableShows.seriesType) \
+            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
             .where(wanted_condition)
 
         if length > 0:
-            data = data.order_by(TableEpisodes.rowid.desc()).limit(length).offset(start)
+            stmt = stmt.order_by(TableEpisodes.rowid.desc()).limit(length).offset(start)
 
         results = [postprocess({
             'seriesTitle': x.seriesTitle,
@@ -92,13 +92,6 @@ class EpisodesWanted(Resource):
             'tags': x.tags,
             'failedAttempts': x.failedAttempts,
             'seriesType': x.seriesType,
-        }) for x in data]
+        }) for x in database.execute(stmt).all()]
 
-        count_conditions = [(TableEpisodes.missing_subtitles != '[]')]
-        count_conditions += get_exclusion_clause('series')
-        count = database.query(TableShows.tags, TableShows.seriesType, TableEpisodes.monitored)\
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)\
-            .where(reduce(operator.and_, count_conditions))\
-            .count()
-
-        return {'data': results, 'total': count}
+        return {'data': results, 'total': len(results)}

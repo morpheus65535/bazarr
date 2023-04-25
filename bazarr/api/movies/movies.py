@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableMovies, database, update
+from app.database import TableMovies, database, update, select
 from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
 from app.event_handler import event_stream
 from subtitles.wanted import wanted_search_missing_subtitles_movies
@@ -73,20 +73,73 @@ class Movies(Resource):
         length = args.get('length')
         radarrId = args.get('radarrid[]')
 
-        count = database.query(TableMovies).count()
+        stmt = select(TableMovies.alternativeTitles,
+                      TableMovies.audio_codec,
+                      TableMovies.audio_language,
+                      TableMovies.failedAttempts,
+                      TableMovies.fanart,
+                      TableMovies.file_size,
+                      TableMovies.format,
+                      TableMovies.imdbId,
+                      TableMovies.missing_subtitles,
+                      TableMovies.monitored,
+                      TableMovies.movie_file_id,
+                      TableMovies.overview,
+                      TableMovies.path,
+                      TableMovies.poster,
+                      TableMovies.profileId,
+                      TableMovies.radarrId,
+                      TableMovies.resolution,
+                      TableMovies.rowid,
+                      TableMovies.sortTitle,
+                      TableMovies.sceneName,
+                      TableMovies.subtitles,
+                      TableMovies.tags,
+                      TableMovies.title,
+                      TableMovies.tmdbId,
+                      TableMovies.video_codec,
+                      TableMovies.year,
+                      )\
+            .order_by(TableMovies.sortTitle)
 
         if len(radarrId) != 0:
-            result = database.query(TableMovies)\
-                .where(TableMovies.radarrId.in_(radarrId))\
-                .order_by(TableMovies.sortTitle)
-        else:
-            result = database.query(TableMovies).order_by(TableMovies.sortTitle)
-            if length > 0:
-                result = result.limit(length).offset(start)
+            stmt = stmt.where(TableMovies.radarrId.in_(radarrId))
 
-        results = []
-        for item in result:
-            results.append(postprocess(item))
+        if length > 0:
+            stmt = stmt.limit(length).offset(start)
+
+        results = [postprocess({
+            'alternativeTitles': x.alternativeTitles,
+            'audio_codec': x.audio_codec,
+            'audio_language': x.audio_language,
+            'failedAttempts': x.failedAttempts,
+            'fanart': x.fanart,
+            'file_size': x.file_size,
+            'format': x.format,
+            'imdbId': x.imdbId,
+            'missing_subtitles': x.missing_subtitles,
+            'monitored': x.monitored,
+            'movie_file_id': x.movie_file_id,
+            'overview': x.overview,
+            'path': x.path,
+            'poster': x.poster,
+            'profileId': x.profileId,
+            'radarrId': x.radarrId,
+            'resolution': x.resolution,
+            'rowid': x.rowid,
+            'sceneName': x.sceneName,
+            'sortTitle': x.sortTitle,
+            'subtitles': x.subtitles,
+            'tags': x.tags,
+            'title': x.title,
+            'tmdbId': x.tmdbId,
+            'video_codec': x.video_codec,
+            'year': x.year,
+        }) for x in database.execute(stmt).all()]
+
+        count = len(database.execute(
+            select(TableMovies))
+            .all())
 
         return {'data': results, 'total': count}
 
@@ -119,7 +172,10 @@ class Movies(Resource):
                 except Exception:
                     return 'Languages profile not found', 404
 
-            database.execute(update(TableMovies).values(profileId=profileId).where(TableMovies.radarrId == radarrId))
+            database.execute(
+                update(TableMovies)
+                .values(profileId=profileId)
+                .where(TableMovies.radarrId == radarrId))
             database.commit()
 
             list_missing_subtitles_movies(no=radarrId, send_event=False)

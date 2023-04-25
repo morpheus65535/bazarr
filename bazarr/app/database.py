@@ -311,8 +311,12 @@ def migrate_db(app):
         db.engine.dispose()
 
     # add the system table single row if it's not existing
-    if not database.query(System).count():
-        database.execute(insert(System).values(configured='0', updated='0'))
+    if not database.execute(
+            select(System)) \
+            .first():
+        database.execute(
+            insert(System)
+            .values(configured='0', updated='0'))
         database.commit()
 
 
@@ -387,13 +391,15 @@ def update_profile_id_list():
         'mustContain': ast.literal_eval(x.mustContain) if x.mustContain else [],
         'mustNotContain': ast.literal_eval(x.mustNotContain) if x.mustNotContain else [],
         'originalFormat': x.originalFormat,
-    } for x in database.query(TableLanguagesProfiles.profileId,
-                              TableLanguagesProfiles.name,
-                              TableLanguagesProfiles.cutoff,
-                              TableLanguagesProfiles.items,
-                              TableLanguagesProfiles.mustContain,
-                              TableLanguagesProfiles.mustNotContain,
-                              TableLanguagesProfiles.originalFormat).all()
+    } for x in database.execute(
+        select(TableLanguagesProfiles.profileId,
+               TableLanguagesProfiles.name,
+               TableLanguagesProfiles.cutoff,
+               TableLanguagesProfiles.items,
+               TableLanguagesProfiles.mustContain,
+               TableLanguagesProfiles.mustNotContain,
+               TableLanguagesProfiles.originalFormat)) \
+        .all()
     ]
 
 
@@ -495,19 +501,26 @@ def get_audio_profile_languages(audio_languages_list_str):
 
 def get_profile_id(series_id=None, episode_id=None, movie_id=None):
     if series_id:
-        data = database.query(TableShows.profileId).where(TableShows.sonarrSeriesId == series_id).first()
+        data = database.execute(
+            select(TableShows.profileId)
+            .where(TableShows.sonarrSeriesId == series_id))\
+            .first()
         if data:
             return data.profileId
     elif episode_id:
-        data = database.query(TableShows.profileId)\
-            .join(TableEpisodes, TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId)\
-            .where(TableEpisodes.sonarrEpisodeId == episode_id)\
+        data = database.execute(
+            select(TableShows.profileId)
+            .join(TableEpisodes, TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId)
+            .where(TableEpisodes.sonarrEpisodeId == episode_id)) \
             .first()
         if data:
             return data.profileId
 
     elif movie_id:
-        data = database.query(TableMovies.profileId).where(TableMovies.radarrId == movie_id).first()
+        data = database.execute(
+            select(TableMovies.profileId)
+            .where(TableMovies.radarrId == movie_id))\
+            .first()
         if data:
             return data.profileId
 

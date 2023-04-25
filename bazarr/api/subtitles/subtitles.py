@@ -6,7 +6,7 @@ import gc
 
 from flask_restx import Resource, Namespace, reqparse
 
-from app.database import TableEpisodes, TableMovies, database
+from app.database import TableEpisodes, TableMovies, database, select
 from languages.get_languages import alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
 from subtitles.tools.subsyncer import SubSyncer
@@ -53,8 +53,9 @@ class Subtitles(Resource):
         id = args.get('id')
 
         if media_type == 'episode':
-            metadata = database.query(TableEpisodes.path, TableEpisodes.sonarrSeriesId) \
-                .where(TableEpisodes.sonarrEpisodeId == id) \
+            metadata = database.execute(
+                select(TableEpisodes.path, TableEpisodes.sonarrSeriesId)
+                .where(TableEpisodes.sonarrEpisodeId == id)) \
                 .first()
 
             if not metadata:
@@ -62,7 +63,10 @@ class Subtitles(Resource):
 
             video_path = path_mappings.path_replace(metadata.path)
         else:
-            metadata = database.query(TableMovies.path).where(TableMovies.radarrId == id).first()
+            metadata = database.execute(
+                select(TableMovies.path)
+                .where(TableMovies.radarrId == id))\
+                .first()
 
             if not metadata:
                 return 'Movie not found', 404

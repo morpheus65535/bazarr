@@ -48,7 +48,9 @@ configure_proxy_func()
 get_announcements_to_file()
 
 # Reset the updated once Bazarr have been restarted after an update
-database.execute(update(System).values(updated='0'))
+database.execute(
+    update(System)
+    .values(updated='0'))
 database.commit()
 
 # Load languages in database

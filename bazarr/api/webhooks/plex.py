@@ -8,7 +8,7 @@ import logging
 from flask_restx import Resource, Namespace, reqparse
 from bs4 import BeautifulSoup as bso
 
-from app.database import TableEpisodes, TableShows, TableMovies, database
+from app.database import TableEpisodes, TableShows, TableMovies, database, select
 from subtitles.mass_download import episode_download_subtitles, movies_download_subtitles
 
 from ..utils import authenticate
@@ -73,11 +73,12 @@ class WebHooksPlex(Resource):
                 logging.debug('BAZARR is unable to get series IMDB id.')
                 return 'IMDB series ID not found', 404
             else:
-                sonarrEpisodeId = database.query(TableEpisodes.sonarrEpisodeId) \
-                    .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
+                sonarrEpisodeId = database.execute(
+                    select(TableEpisodes.sonarrEpisodeId)
+                    .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
                     .where(TableShows.imdbId == series_imdb_id,
                            TableEpisodes.season == season,
-                           TableEpisodes.episode == episode) \
+                           TableEpisodes.episode == episode)) \
                     .first()
 
                 if sonarrEpisodeId:
@@ -89,8 +90,9 @@ class WebHooksPlex(Resource):
                 logging.debug('BAZARR is unable to get movie IMDB id.')
                 return 'IMDB movie ID not found', 404
             else:
-                radarrId = database.query(TableMovies.radarrId)\
-                    .where(TableMovies.imdbId == movie_imdb_id)\
+                radarrId = database.execute(
+                    select(TableMovies.radarrId)
+                    .where(TableMovies.imdbId == movie_imdb_id)) \
                     .first()
 
                 if radarrId:

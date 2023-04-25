@@ -47,12 +47,13 @@ class CustomLanguage:
         "Register the custom language subclasses in the database."
 
         for sub in cls.__subclasses__():
-            database.execute(insert(table)
-                             .values(code3=sub.alpha3,
-                                     code2=sub.alpha2,
-                                     name=sub.name,
-                                     enabled=0)
-                             .on_conflict_do_nothing())
+            database.execute(
+                insert(table)
+                .values(code3=sub.alpha3,
+                        code2=sub.alpha2,
+                        name=sub.name,
+                        enabled=0)
+                .on_conflict_do_nothing())
             database.commit()
 
     @classmethod

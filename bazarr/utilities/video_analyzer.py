@@ -7,7 +7,7 @@ from knowit.api import know, KnowitException
 
 from languages.custom_lang import CustomLanguage
 from languages.get_languages import language_from_alpha3, alpha3_from_alpha2
-from app.database import TableEpisodes, TableMovies, database, update
+from app.database import TableEpisodes, TableMovies, database, update, select
 from utilities.path_mappings import path_mappings
 from app.config import settings
 
@@ -108,12 +108,14 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     if use_cache:
         # Get the actual cache value form database
         if episode_file_id:
-            cache_key = database.query(TableEpisodes.ffprobe_cache)\
-                .where(TableEpisodes.path == path_mappings.path_replace_reverse(file))\
+            cache_key = database.execute(
+                select(TableEpisodes.ffprobe_cache)
+                .where(TableEpisodes.path == path_mappings.path_replace_reverse(file))) \
                 .first()
         elif movie_file_id:
-            cache_key = database.query(TableMovies.ffprobe_cache)\
-                .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file))\
+            cache_key = database.execute(
+                select(TableMovies.ffprobe_cache)
+                .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file))) \
                 .first()
         else:
             cache_key = None
@@ -170,12 +172,14 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
 
     # we write to db the result and return the newly cached ffprobe dict
     if episode_file_id:
-        database.execute(update(TableEpisodes)
-                         .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
-                         .where(TableEpisodes.path == path_mappings.path_replace_reverse(file)))
+        database.execute(
+            update(TableEpisodes)
+            .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(file)))
     elif movie_file_id:
-        database.execute(update(TableMovies)
-                         .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
-                         .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file)))
+        database.execute(
+            update(TableMovies)
+            .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file)))
     database.commit()
     return data

@@ -19,7 +19,7 @@ from sonarr.sync.series import update_series, update_one_series
 from radarr.sync.movies import update_movies, update_one_movie
 from sonarr.info import get_sonarr_info, url_sonarr
 from radarr.info import url_radarr
-from .database import TableShows, database
+from .database import TableShows, database, select
 
 from .config import settings
 from .scheduler import scheduler
@@ -264,8 +264,9 @@ def dispatcher(data):
                     series_title = data['body']['resource']['series']['title']
                     series_year = data['body']['resource']['series']['year']
                 else:
-                    series_metadata = database.query(TableShows.title, TableShows.year)\
-                        .where(TableShows.sonarrSeriesId == data['body']['resource']['seriesId'])\
+                    series_metadata = database.execute(
+                        select(TableShows.title, TableShows.year)
+                        .where(TableShows.sonarrSeriesId == data['body']['resource']['seriesId']))\
                         .first()
                     if series_metadata:
                         series_title = series_metadata['title']

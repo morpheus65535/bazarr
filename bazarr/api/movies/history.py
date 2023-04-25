@@ -7,7 +7,7 @@ import pretty
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import TableMovies, TableHistoryMovie, TableBlacklistMovie, database
+from app.database import TableMovies, TableHistoryMovie, TableBlacklistMovie, database, select
 from subtitles.upgrade import get_upgradable_movies_subtitles
 from utilities.path_mappings import path_mappings
 from api.swaggerui import subtitles_language_model
@@ -77,26 +77,26 @@ class MoviesHistory(Resource):
             query_conditions.append((TableMovies.radarrId == radarrid))
         query_condition = reduce(operator.and_, query_conditions)
 
-        movie_history = database.query(TableHistoryMovie.id,
-                                       TableHistoryMovie.action,
-                                       TableMovies.title,
-                                       TableHistoryMovie.timestamp,
-                                       TableHistoryMovie.description,
-                                       TableHistoryMovie.radarrId,
-                                       TableMovies.monitored,
-                                       TableHistoryMovie.video_path.label('path'),
-                                       TableHistoryMovie.language,
-                                       TableMovies.tags,
-                                       TableHistoryMovie.score,
-                                       TableHistoryMovie.subs_id,
-                                       TableHistoryMovie.provider,
-                                       TableHistoryMovie.subtitles_path,
-                                       TableHistoryMovie.video_path) \
+        stmt = select(TableHistoryMovie.id,
+                      TableHistoryMovie.action,
+                      TableMovies.title,
+                      TableHistoryMovie.timestamp,
+                      TableHistoryMovie.description,
+                      TableHistoryMovie.radarrId,
+                      TableMovies.monitored,
+                      TableHistoryMovie.video_path.label('path'),
+                      TableHistoryMovie.language,
+                      TableMovies.tags,
+                      TableHistoryMovie.score,
+                      TableHistoryMovie.subs_id,
+                      TableHistoryMovie.provider,
+                      TableHistoryMovie.subtitles_path,
+                      TableHistoryMovie.video_path) \
             .join(TableMovies, TableHistoryMovie.radarrId == TableMovies.radarrId) \
             .where(query_condition) \
             .order_by(TableHistoryMovie.timestamp.desc())
         if length > 0:
-            movie_history = movie_history.limit(length).offset(start)
+            stmt = stmt.limit(length).offset(start)
         movie_history = [{
             'id': x.id,
             'action': x.action,
@@ -113,7 +113,7 @@ class MoviesHistory(Resource):
             'provider': x.provider,
             'subtitles_path': x.subtitles_path,
             'video_path': x.video_path,
-        } for x in movie_history]
+        } for x in database.execute(stmt).all()]
 
         for item in movie_history:
             item.update(postprocess(item))
@@ -141,14 +141,17 @@ class MoviesHistory(Resource):
             # Check if subtitles is blacklisted
             item.update({"blacklisted": False})
             if item['action'] not in [0, 4, 5]:
-                for blacklisted_item in database.query(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id):
+                for blacklisted_item in database.execute(
+                        select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id))\
+                        .all():
                     if blacklisted_item.provider == item['provider'] and blacklisted_item.subs_id == item['subs_id']:
                         item.update({"blacklisted": True})
                         break
 
-        count = database.query(TableHistoryMovie) \
-            .join(TableMovies, TableHistoryMovie.radarrId == TableMovies.radarrId) \
-            .where(TableMovies.title.is_not(None)) \
-            .count()
+        count = len(database.execute(
+            select(TableHistoryMovie)
+            .join(TableMovies, TableHistoryMovie.radarrId == TableMovies.radarrId)
+            .where(TableMovies.title.is_not(None)))
+                    .all())
 
         return {'data': movie_history, 'total': count}

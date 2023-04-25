@@ -3,7 +3,7 @@
 from flask_restx import Resource, Namespace, reqparse
 
 from app.config import settings
-from app.database import TableShows, TableMovies, database
+from app.database import TableShows, TableMovies, database, select
 
 from ..utils import authenticate
 
@@ -32,11 +32,13 @@ class Searches(Resource):
                     'title': x.title,
                     'sonarrSeriesId': x.sonarrSeriesId,
                     'year': x.year,
-                } for x in database.query(TableShows.title,
-                                          TableShows.sonarrSeriesId,
-                                          TableShows.year)
-                                   .where(TableShows.title.ilike(query))
-                                   .order_by(TableShows.title)]
+                } for x in database.execute(
+                    select(TableShows.title,
+                           TableShows.sonarrSeriesId,
+                           TableShows.year)
+                    .where(TableShows.title.ilike(query))
+                    .order_by(TableShows.title))
+                    .all()]
 
             if settings.general.getboolean('use_radarr'):
                 # Get matching movies
@@ -44,10 +46,12 @@ class Searches(Resource):
                     'title': x.title,
                     'radarrId': x.radarrId,
                     'year': x.year,
-                } for x in database.query(TableMovies.title,
-                                          TableMovies.radarrId,
-                                          TableMovies.year)
-                                   .where(TableMovies.title.ilike(query))
-                                   .order_by(TableMovies.title)]
+                } for x in database.execute(
+                    select(TableMovies.title,
+                           TableMovies.radarrId,
+                           TableMovies.year)
+                    .where(TableMovies.title.ilike(query))
+                    .order_by(TableMovies.title))
+                    .all()]
 
         return search_list

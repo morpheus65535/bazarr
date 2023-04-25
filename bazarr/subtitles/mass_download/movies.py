@@ -12,7 +12,7 @@ from subtitles.indexer.movies import store_subtitles_movie
 from radarr.history import history_log_movie
 from app.notifier import send_notifications_movie
 from app.get_providers import get_providers
-from app.database import get_exclusion_clause, get_audio_profile_languages, TableMovies, database
+from app.database import get_exclusion_clause, get_audio_profile_languages, TableMovies, database, select
 from app.event_handler import show_progress, hide_progress
 
 from ..download import generate_subtitles
@@ -21,15 +21,16 @@ from ..download import generate_subtitles
 def movies_download_subtitles(no):
     conditions = [(TableMovies.radarrId == no)]
     conditions += get_exclusion_clause('movie')
-    movie = database.query(TableMovies.path,
-                           TableMovies.missing_subtitles,
-                           TableMovies.audio_language,
-                           TableMovies.radarrId,
-                           TableMovies.sceneName,
-                           TableMovies.title,
-                           TableMovies.tags,
-                           TableMovies.monitored)\
-        .where(reduce(operator.and_, conditions))\
+    movie = database.execute(
+        select(TableMovies.path,
+               TableMovies.missing_subtitles,
+               TableMovies.audio_language,
+               TableMovies.radarrId,
+               TableMovies.sceneName,
+               TableMovies.title,
+               TableMovies.tags,
+               TableMovies.monitored)
+        .where(reduce(operator.and_, conditions))) \
         .first()
     if not len(movie):
         logging.debug("BAZARR no movie with that radarrId can be found in database:", str(no))

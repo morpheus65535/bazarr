@@ -15,18 +15,20 @@ def history_log(action, sonarr_series_id, sonarr_episode_id, result, fake_provid
     subs_id = result.subs_id
     subtitles_path = result.subs_path
 
-    database.execute(insert(TableHistory).values(
-        action=action,
-        sonarrSeriesId=sonarr_series_id,
-        sonarrEpisodeId=sonarr_episode_id,
-        timestamp=datetime.now(),
-        description=description,
-        video_path=video_path,
-        language=language,
-        provider=provider,
-        score=score,
-        subs_id=subs_id,
-        subtitles_path=subtitles_path
-    ))
+    database.execute(
+        insert(TableHistory)
+        .values(
+            action=action,
+            sonarrSeriesId=sonarr_series_id,
+            sonarrEpisodeId=sonarr_episode_id,
+            timestamp=datetime.now(),
+            description=description,
+            video_path=video_path,
+            language=language,
+            provider=provider,
+            score=score,
+            subs_id=subs_id,
+            subtitles_path=subtitles_path
+        ))
     database.commit()
     event_stream(type='episode-history')

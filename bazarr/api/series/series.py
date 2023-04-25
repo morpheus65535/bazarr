@@ -68,47 +68,46 @@ class Series(Resource):
         length = args.get('length')
         seriesId = args.get('seriesid[]')
 
-        count = database.query(TableShows).count()
-        episodeFileCount = database.query(TableShows.sonarrSeriesId,
-                                          func.count(TableEpisodes.sonarrSeriesId).label('episodeFileCount'))\
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)\
+        episodeFileCount = select(TableShows.sonarrSeriesId,
+                                  func.count(TableEpisodes.sonarrSeriesId).label('episodeFileCount')) \
+            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
             .group_by(TableShows.sonarrSeriesId).subquery()
 
         episodes_missing_conditions = [(TableEpisodes.missing_subtitles != '[]')]
         episodes_missing_conditions += get_exclusion_clause('series')
 
-        episodeMissingCount = database.query(TableShows.sonarrSeriesId,
-                                             func.count(TableEpisodes.sonarrSeriesId).label('episodeMissingCount'))\
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)\
-            .where(reduce(operator.and_, episodes_missing_conditions))\
+        episodeMissingCount = select(TableShows.sonarrSeriesId,
+                                     func.count(TableEpisodes.sonarrSeriesId).label('episodeMissingCount')) \
+            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
+            .where(reduce(operator.and_, episodes_missing_conditions)) \
             .group_by(TableShows.sonarrSeriesId).subquery()
 
-        result = database.query(TableShows.tvdbId,
-                                TableShows.alternativeTitles,
-                                TableShows.audio_language,
-                                TableShows.fanart,
-                                TableShows.imdbId,
-                                TableShows.monitored,
-                                TableShows.overview,
-                                TableShows.path,
-                                TableShows.poster,
-                                TableShows.profileId,
-                                TableShows.seriesType,
-                                TableShows.sonarrSeriesId,
-                                TableShows.sortTitle,
-                                TableShows.tags,
-                                TableShows.title,
-                                TableShows.year,
-                                episodeFileCount.c.episodeFileCount,
-                                episodeMissingCount.c.episodeMissingCount)\
+        stmt = select(TableShows.tvdbId,
+                      TableShows.alternativeTitles,
+                      TableShows.audio_language,
+                      TableShows.fanart,
+                      TableShows.imdbId,
+                      TableShows.monitored,
+                      TableShows.overview,
+                      TableShows.path,
+                      TableShows.poster,
+                      TableShows.profileId,
+                      TableShows.seriesType,
+                      TableShows.sonarrSeriesId,
+                      TableShows.sortTitle,
+                      TableShows.tags,
+                      TableShows.title,
+                      TableShows.year,
+                      episodeFileCount.c.episodeFileCount,
+                      episodeMissingCount.c.episodeMissingCount) \
             .join(episodeFileCount, TableShows.sonarrSeriesId == episodeFileCount.c.sonarrSeriesId, isouter=True) \
-            .join(episodeMissingCount, TableShows.sonarrSeriesId == episodeMissingCount.c.sonarrSeriesId, isouter=True) \
+            .join(episodeMissingCount, TableShows.sonarrSeriesId == episodeMissingCount.c.sonarrSeriesId, isouter=True)\
             .order_by(TableShows.sortTitle)
 
         if len(seriesId) != 0:
-            result = result.where(TableShows.sonarrSeriesId.in_(seriesId))
+            stmt = stmt.where(TableShows.sonarrSeriesId.in_(seriesId))
         elif length > 0:
-            result = result.limit(length).offset(start)
+            stmt = stmt.limit(length).offset(start)
 
         results = [postprocess({
             'tvdbId': x.tvdbId,
@@ -129,7 +128,11 @@ class Series(Resource):
             'year': x.year,
             'episodeFileCount': x.episodeFileCount,
             'episodeMissingCount': x.episodeMissingCount,
-        }) for x in result]
+        }) for x in database.execute(stmt).all()]
+
+        count = len(database.execute(
+            select(TableShows))
+            .all())
 
         return {'data': results, 'total': count}
 
@@ -162,17 +165,20 @@ class Series(Resource):
                 except Exception:
                     return 'Languages profile not found', 404
 
-            database.execute(update(TableShows)
-                             .values(profileId=profileId)
-                             .where(TableShows.sonarrSeriesId == seriesId))
+            database.execute(
+                update(TableShows)
+                .values(profileId=profileId)
+                .where(TableShows.sonarrSeriesId == seriesId))
             database.commit()
 
             list_missing_subtitles(no=seriesId, send_event=False)
 
             event_stream(type='series', payload=seriesId)
 
-            episode_id_list = database.query(TableEpisodes.sonarrEpisodeId) \
-                .where(TableEpisodes.sonarrSeriesId == seriesId)
+            episode_id_list = database.execute(
+                select(TableEpisodes.sonarrEpisodeId)
+                .where(TableEpisodes.sonarrSeriesId == seriesId))\
+                .all()
 
             for item in episode_id_list:
                 event_stream(type='episode-wanted', payload=item.sonarrEpisodeId)

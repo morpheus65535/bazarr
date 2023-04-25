@@ -7,7 +7,7 @@ import re
 
 from app.config import get_settings
 from app.database import TableCustomScoreProfileConditions as conditions_table, TableCustomScoreProfiles as \
-    profiles_table, database
+    profiles_table, database, select
 
 logger = logging.getLogger(__name__)
 
@@ -93,8 +93,10 @@ class CustomScoreProfile:
     def load_conditions(self):
         self._conditions = [
             Condition.from_dict(item)
-            for item in database.query(self.conditions_table)
-            .where(self.conditions_table.profile_id == self.id)
+            for item in database.execute(
+                select(self.conditions_table)
+                .where(self.conditions_table.profile_id == self.id))
+            .all()
         ]
         if not self._conditions:
             logger.debug("Conditions not found for %s", self)
@@ -164,7 +166,10 @@ class Score:
         after every custom profile creation or update."""
         self._profiles = [
             CustomScoreProfile(**item)
-            for item in database.query(self.profiles_table).where(self.profiles_table.media == self.media).all()
+            for item in database.execute(
+                select(self.profiles_table)
+                .where(self.profiles_table.media == self.media))
+            .all()
         ]
         if self._profiles:
             logger.debug("Loaded profiles: %s", self._profiles)

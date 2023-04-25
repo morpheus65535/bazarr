@@ -11,7 +11,7 @@ from datetime import datetime
 from operator import itemgetter
 
 from app.get_providers import get_enabled_providers
-from app.database import TableAnnouncements, database, insert
+from app.database import TableAnnouncements, database, insert, select
 from .get_args import args
 from sonarr.info import get_sonarr_info
 from radarr.info import get_radarr_info
@@ -117,9 +117,11 @@ def get_all_announcements():
     # get announcements that haven't been dismissed yet
     announcements = [parse_announcement_dict(x) for x in get_online_announcements() + get_local_announcements() if
                      x['enabled'] and (not x['dismissible'] or not
-                     database.query(TableAnnouncements)
-                                       .where(TableAnnouncements.hash ==
-                                              hashlib.sha256(x['text'].encode('UTF8')).hexdigest()).first())]
+                     database.execute(
+                         select(TableAnnouncements)
+                         .where(TableAnnouncements.hash ==
+                                hashlib.sha256(x['text'].encode('UTF8')).hexdigest()))
+                                       .first())]
 
     return sorted(announcements, key=itemgetter('timestamp'), reverse=True)
 
@@ -127,9 +129,10 @@ def get_all_announcements():
 def mark_announcement_as_dismissed(hashed_announcement):
     text = [x['text'] for x in get_all_announcements() if x['hash'] == hashed_announcement]
     if text:
-        database.execute(insert(TableAnnouncements)
-                         .values(hash=hashed_announcement,
-                                 timestamp=datetime.now(),
-                                 text=text[0])
-                         .on_conflict_do_nothing())
+        database.execute(
+            insert(TableAnnouncements)
+            .values(hash=hashed_announcement,
+                    timestamp=datetime.now(),
+                    text=text[0])
+            .on_conflict_do_nothing())
         database.commit()

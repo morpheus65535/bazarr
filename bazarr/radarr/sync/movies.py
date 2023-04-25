@@ -9,7 +9,7 @@ from utilities.path_mappings import path_mappings
 from subtitles.indexer.movies import store_subtitles_movie, movies_full_scan_subtitles
 from radarr.rootfolder import check_radarr_rootfolder
 from subtitles.mass_download import movies_download_subtitles
-from app.database import TableMovies, database, insert, update, delete
+from app.database import TableMovies, database, insert, update, delete, select
 from app.event_handler import event_stream, show_progress, hide_progress
 
 from .utils import get_profile_list, get_tags, get_movies_from_radarr_api
@@ -47,7 +47,10 @@ def update_movies(send_event=True):
             return
         else:
             # Get current movies in DB
-            current_movies_db = [x.tmdbId for x in database.query(TableMovies.tmdbId).all()]
+            current_movies_db = [x.tmdbId for x in
+                                 database.execute(
+                                     select(TableMovies.tmdbId))
+                                 .all()]
 
             current_movies_radarr = []
             movies_to_update = []
@@ -93,16 +96,22 @@ def update_movies(send_event=True):
             removed_movies = list(set(current_movies_db) - set(current_movies_radarr))
 
             for removed_movie in removed_movies:
-                database.execute(delete(TableMovies).where(TableMovies.tmdbId == removed_movie))
+                database.execute(
+                    delete(TableMovies)
+                    .where(TableMovies.tmdbId == removed_movie))
             database.commit()
 
             # Update movies in DB
             for updated_movie in movies_to_update:
-                if database.query(TableMovies).filter_by(**updated_movie).count():
+                if database.execute(
+                        select(TableMovies)
+                        .filter_by(**updated_movie))\
+                        .first():
                     continue
                 else:
-                    database.execute(update(TableMovies).values(updated_movie)
-                                     .where(TableMovies.tmdbId == updated_movie['tmdbId']))
+                    database.execute(
+                        update(TableMovies).values(updated_movie)
+                        .where(TableMovies.tmdbId == updated_movie['tmdbId']))
 
                     altered_movies.append([updated_movie['tmdbId'],
                                            updated_movie['path'],
@@ -112,7 +121,9 @@ def update_movies(send_event=True):
 
             # Insert new movies in DB
             for added_movie in movies_to_add:
-                database.execute(insert(TableMovies).values(added_movie))
+                database.execute(
+                    insert(TableMovies)
+                    .values(added_movie))
 
                 altered_movies.append([added_movie['tmdbId'],
                                        added_movie['path'],
@@ -132,12 +143,17 @@ def update_one_movie(movie_id, action, defer_search=False):
     logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movie_id))
 
     # Check if there's a row in database for this movie ID
-    existing_movie = database.query(TableMovies.path).where(TableMovies.radarrId == movie_id).first()
+    existing_movie = database.execute(
+        select(TableMovies.path)
+        .where(TableMovies.radarrId == movie_id))\
+        .first()
 
     # Remove movie from DB
     if action == 'deleted':
         if existing_movie:
-            database.execute(delete(TableMovies).where(TableMovies.radarrId == movie_id))
+            database.execute(
+                delete(TableMovies)
+                .where(TableMovies.radarrId == movie_id))
             database.commit()
 
             event_stream(type='movie', action='delete', payload=int(movie_id))
@@ -181,7 +197,9 @@ def update_one_movie(movie_id, action, defer_search=False):
 
     # Remove movie from DB
     if not movie and existing_movie:
-        database.execute(delete(TableMovies).where(TableMovies.radarrId == movie_id))
+        database.execute(
+            delete(TableMovies)
+            .where(TableMovies.radarrId == movie_id))
         database.commit()
 
         event_stream(type='movie', action='delete', payload=int(movie_id))
@@ -191,7 +209,10 @@ def update_one_movie(movie_id, action, defer_search=False):
 
     # Update existing movie in DB
     elif movie and existing_movie:
-        database.execute(update(TableMovies).values(movie).where(TableMovies.radarrId == movie['radarrId']))
+        database.execute(
+            update(TableMovies)
+            .values(movie)
+            .where(TableMovies.radarrId == movie['radarrId']))
         database.commit()
 
         event_stream(type='movie', action='update', payload=int(movie_id))
@@ -200,7 +221,9 @@ def update_one_movie(movie_id, action, defer_search=False):
 
     # Insert new movie in DB
     elif movie and not existing_movie:
-        database.execute(insert(TableMovies).values(movie))
+        database.execute(
+            insert(TableMovies)
+            .values(movie))
         database.commit()
 
         event_stream(type='movie', action='update', payload=int(movie_id))

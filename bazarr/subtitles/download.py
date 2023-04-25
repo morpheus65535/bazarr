@@ -13,7 +13,7 @@ from subliminal_patch.core_persistent import download_best_subtitles
 from subliminal_patch.score import ComputeScore
 
 from app.config import settings, get_array_from, get_scores
-from app.database import TableEpisodes, TableMovies, database
+from app.database import TableEpisodes, TableMovies, database, select
 from utilities.path_mappings import path_mappings
 from utilities.helper import get_target_folder, force_unicode
 from languages.get_languages import alpha3_from_alpha2
@@ -163,12 +163,14 @@ def parse_language_object(language):
 def check_missing_languages(path, media_type):
     # confirm if language is still missing or if cutoff has been reached
     if media_type == 'series':
-        confirmed_missing_subs = database.query(TableEpisodes.missing_subtitles)\
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))\
+        confirmed_missing_subs = database.execute(
+            select(TableEpisodes.missing_subtitles)
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
             .first()
     else:
-        confirmed_missing_subs = database.query(TableMovies.missing_subtitles)\
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))\
+        confirmed_missing_subs = database.execute(
+            select(TableMovies.missing_subtitles)
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)))\
             .first()
 
     if not confirmed_missing_subs:

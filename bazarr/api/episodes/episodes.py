@@ -56,18 +56,60 @@ class Episodes(Resource):
         seriesId = args.get('seriesid[]')
         episodeId = args.get('episodeid[]')
 
+        stmt = select(
+                TableEpisodes.rowid,
+                TableEpisodes.audio_codec,
+                TableEpisodes.audio_language,
+                TableEpisodes.episode,
+                TableEpisodes.episode_file_id,
+                TableEpisodes.failedAttempts,
+                TableEpisodes.file_size,
+                TableEpisodes.format,
+                TableEpisodes.missing_subtitles,
+                TableEpisodes.monitored,
+                TableEpisodes.path,
+                TableEpisodes.resolution,
+                TableEpisodes.season,
+                TableEpisodes.sonarrEpisodeId,
+                TableEpisodes.sonarrSeriesId,
+                TableEpisodes.subtitles,
+                TableEpisodes.title,
+                TableEpisodes.video_codec,
+                TableEpisodes.sceneName,
+            )
+
         if len(episodeId) > 0:
-            result = database.query(TableEpisodes)\
-                .where(TableEpisodes.sonarrEpisodeId.in_(episodeId))
+            stmt_query = database.execute(
+                stmt
+                .where(TableEpisodes.sonarrEpisodeId.in_(episodeId)))\
+                .all()
         elif len(seriesId) > 0:
-            result = database.query(TableEpisodes) \
-                .where(TableEpisodes.sonarrSeriesId.in_(seriesId)) \
-                .order_by(TableEpisodes.season.desc(), TableEpisodes.episode.desc())
+            stmt_query = database.execute(
+                stmt
+                .where(TableEpisodes.sonarrSeriesId.in_(seriesId))
+                .order_by(TableEpisodes.season.desc(), TableEpisodes.episode.desc()))\
+                .all()
         else:
             return "Series or Episode ID not provided", 404
 
-        results = []
-        for item in result:
-            results.append(postprocess(item))
-
-        return results
+        return [postprocess({
+                'rowid': x.rowid,
+                'audio_codec': x.audio_codec,
+                'audio_language': x.audio_language,
+                'episode': x.episode,
+                'episode_file_id': x.episode_file_id,
+                'failedAttempts': x.failedAttempts,
+                'file_size': x.file_size,
+                'format': x.format,
+                'missing_subtitles': x.missing_subtitles,
+                'monitored': x.monitored,
+                'path': x.path,
+                'resolution': x.resolution,
+                'season': x.season,
+                'sonarrEpisodeId': x.sonarrEpisodeId,
+                'sonarrSeriesId': x.sonarrSeriesId,
+                'subtitles': x.subtitles,
+                'title': x.title,
+                'video_codec': x.video_codec,
+                'sceneName': x.sceneName,
+                }) for x in stmt_query]
