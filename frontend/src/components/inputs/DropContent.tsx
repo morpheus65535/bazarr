@@ -4,7 +4,7 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { createStyles, Group, Stack, Text } from "@mantine/core";
+import { Group, Stack, Text, createStyles } from "@mantine/core";
 import { Dropzone } from "@mantine/dropzone";
 import { FunctionComponent } from "react";
 

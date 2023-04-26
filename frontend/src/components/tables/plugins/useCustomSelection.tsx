@@ -4,12 +4,12 @@ import {
   CellProps,
   Column,
   ColumnInstance,
-  ensurePluginOrder,
   HeaderProps,
   Hooks,
   MetaBase,
   TableInstance,
   TableToggleCommonProps,
+  ensurePluginOrder,
 } from "react-table";
 
 const pluginName = "useCustomSelection";

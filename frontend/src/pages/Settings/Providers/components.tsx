@@ -6,15 +6,15 @@ import {
   Button,
   Divider,
   Group,
+  Text as MantineText,
   SimpleGrid,
   Stack,
-  Text as MantineText,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { capitalize } from "lodash";
 import {
-  forwardRef,
   FunctionComponent,
+  forwardRef,
   useCallback,
   useMemo,
   useRef,
@@ -28,8 +28,8 @@ import {
   useFormActions,
   useStagedValues,
 } from "../utilities/FormValues";
-import { useSettingValue } from "../utilities/hooks";
 import { SettingsProvider, useSettings } from "../utilities/SettingsProvider";
+import { useSettingValue } from "../utilities/hooks";
 import { ProviderInfo, ProviderList } from "./list";
 
 const ProviderKey = "settings-general-enabled_providers";

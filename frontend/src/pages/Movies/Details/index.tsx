@@ -1,3 +1,4 @@
+import { RouterNames } from "@/Router/RouterNames";
 import {
   useDownloadMovieSubtitles,
   useIsMovieActionRunning,
@@ -15,9 +16,8 @@ import { MovieUploadModal } from "@/components/forms/MovieUploadForm";
 import { MovieHistoryModal, SubtitleToolsModal } from "@/components/modals";
 import { MovieSearchModal } from "@/components/modals/ManualSearchModal";
 import { useModals } from "@/modules/modals";
-import { notification, task, TaskGroup } from "@/modules/task";
+import { TaskGroup, notification, task } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
-import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
   faCloudUploadAlt,
