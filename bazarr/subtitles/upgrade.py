@@ -184,7 +184,7 @@ def get_upgradable_episode_subtitles():
 
     upgradable_episodes_conditions = [(TableHistory.action.in_(query_actions)),
                                       (TableHistory.timestamp > minimum_timestamp),
-                                      TableHistory.score]
+                                      TableHistory.score.is_not(None)]
     upgradable_episodes_conditions += get_exclusion_clause('series')
     upgradable_episodes = database.execute(
         select(TableHistory.video_path,
@@ -225,7 +225,7 @@ def get_upgradable_movies_subtitles():
 
     upgradable_movies_conditions = [(TableHistoryMovie.action.in_(query_actions)),
                                     (TableHistoryMovie.timestamp > minimum_timestamp),
-                                    TableHistoryMovie.score]
+                                    TableHistoryMovie.score.is_not(None)]
     upgradable_movies_conditions += get_exclusion_clause('movie')
     upgradable_movies = database.execute(
         select(TableHistoryMovie.video_path,
