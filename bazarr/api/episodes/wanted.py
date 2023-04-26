@@ -78,7 +78,7 @@ class EpisodesWanted(Resource):
             .where(wanted_condition)
 
         if length > 0:
-            stmt = stmt.order_by(TableEpisodes.rowid.desc()).limit(length).offset(start)
+            stmt = stmt.order_by(TableEpisodes.sonarrEpisodeId.desc()).limit(length).offset(start)
 
         results = [postprocess({
             'seriesTitle': x.seriesTitle,

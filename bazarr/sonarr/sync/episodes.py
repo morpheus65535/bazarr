@@ -76,13 +76,11 @@ def sync_episodes(series_id, send_event=True):
     # Remove old episodes from DB
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
 
-    temp_episodes_list = database.execute(
-        select(TableEpisodes.path,
-               TableEpisodes.sonarrSeriesId,
-               TableEpisodes.sonarrEpisodeId)) \
-        .all()
+    stmt = select(TableEpisodes.path,
+                  TableEpisodes.sonarrSeriesId,
+                  TableEpisodes.sonarrEpisodeId)
     for removed_episode in removed_episodes:
-        episode_to_delete = temp_episodes_list.where(TableEpisodes.sonarrEpisodeId == removed_episode).first()
+        episode_to_delete = database.execute(stmt.where(TableEpisodes.sonarrEpisodeId == removed_episode)).first()
         if not episode_to_delete:
             continue
         try:

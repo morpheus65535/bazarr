@@ -34,14 +34,26 @@ else:
     # there's missing embedded packages after a commit
     check_if_new_update()
 
-from app.database import System, database, update, migrate_db  # noqa E402
+from app.database import System, database, update, migrate_db, create_db_revision  # noqa E402
 from app.notifier import update_notifier  # noqa E402
 from languages.get_languages import load_language_in_db  # noqa E402
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
 from app.server import webserver, app  # noqa E402
 from app.announcements import get_announcements_to_file  # noqa E402
 
-migrate_db(app)
+if args.create_db_revision:
+    try:
+        stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
+    except Exception as e:
+        logging.error('BAZARR Cannot create stop file: ' + repr(e))
+    else:
+        create_db_revision(app)
+        logging.info('Bazarr is being shutdown...')
+        stop_file.write(str(''))
+        stop_file.close()
+        os._exit(0)
+else:
+    migrate_db(app)
 
 configure_proxy_func()
 

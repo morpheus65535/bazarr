@@ -87,7 +87,7 @@ class TableAnnouncements(Base):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, nullable=False, default=datetime.now)
-    hash = Column(Text, unique=True)
+    hash = Column(Text)
     text = Column(Text)
 
 
@@ -126,7 +126,6 @@ class TableCustomScoreProfiles(Base):
 class TableEpisodes(Base):
     __tablename__ = 'table_episodes'
 
-    rowid = Column(Integer)
     audio_codec = Column(Text)
     audio_language = Column(Text)
     episode = Column(Integer, nullable=False)
@@ -196,7 +195,6 @@ class TableLanguagesProfiles(Base):
 class TableMovies(Base):
     __tablename__ = 'table_movies'
 
-    rowid = Column(Integer, primary_key=True)
     alternativeTitles = Column(Text)
     audio_codec = Column(Text)
     audio_language = Column(Text)
@@ -213,7 +211,7 @@ class TableMovies(Base):
     path = Column(Text, nullable=False, unique=True)
     poster = Column(Text)
     profileId = Column(ForeignKey('table_languages_profiles.profileId', ondelete='SET NULL'))
-    radarrId = Column(Integer, nullable=False, unique=True)
+    radarrId = Column(Integer, primary_key=True)
     resolution = Column(Text)
     sceneName = Column(Text)
     sortTitle = Column(Text)
@@ -286,7 +284,7 @@ class TableCustomScoreProfileConditions(Base):
     __tablename__ = 'table_custom_score_profile_conditions'
 
     id = Column(Integer, primary_key=True)
-    profile_id = Column(ForeignKey('table_custom_score_profiles.id'), nullable=False, index=True)
+    profile_id = Column(ForeignKey('table_custom_score_profiles.id'), nullable=False)
     type = Column(Text)
     value = Column(Text)
     required = Column(Integer, nullable=False)
@@ -302,9 +300,20 @@ def init_db():
     metadata.create_all(engine)
 
 
-def migrate_db(app):
+def create_db_revision(app):
+    logging.info("Creating a new database revision for future migration")
     app.config["SQLALCHEMY_DATABASE_URI"] = url
-    db = SQLAlchemy(app)
+    db = SQLAlchemy(app, metadata=metadata)
+    with app.app_context():
+        flask_migrate.Migrate(app, db, render_as_batch=True)
+        flask_migrate.migrate()
+        db.engine.dispose()
+
+
+def migrate_db(app):
+    logging.debug("Upgrading database schema")
+    app.config["SQLALCHEMY_DATABASE_URI"] = url
+    db = SQLAlchemy(app, metadata=metadata)
     with app.app_context():
         flask_migrate.Migrate(app, db, render_as_batch=True)
         flask_migrate.upgrade()
@@ -318,34 +327,6 @@ def migrate_db(app):
             insert(System)
             .values(configured='0', updated='0'))
         database.commit()
-
-
-class SqliteDictPathMapper:
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def path_replace(values_dict):
-        if type(values_dict) is list:
-            for item in values_dict:
-                item['path'] = path_mappings.path_replace(item['path'])
-        elif type(values_dict) is dict:
-            values_dict['path'] = path_mappings.path_replace(values_dict['path'])
-        else:
-            return path_mappings.path_replace(values_dict)
-
-    @staticmethod
-    def path_replace_movie(values_dict):
-        if type(values_dict) is list:
-            for item in values_dict:
-                item['path'] = path_mappings.path_replace_movie(item['path'])
-        elif type(values_dict) is dict:
-            values_dict['path'] = path_mappings.path_replace_movie(values_dict['path'])
-        else:
-            return path_mappings.path_replace_movie(values_dict)
-
-
-dict_mapper = SqliteDictPathMapper()
 
 
 def get_exclusion_clause(exclusion_type):

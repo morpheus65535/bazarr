@@ -41,6 +41,7 @@ def upgrade():
 
     # Update announcements table
     with op.batch_alter_table('table_announcements', recreate='always') as batch_op:
+        batch_op.execute('DROP INDEX IF EXISTS tableannouncements_hash')
         if not column_exists('table_announcements', 'id'):
             batch_op.add_column(sa.Column('id', sa.Integer, primary_key=True))
 
@@ -49,10 +50,20 @@ def upgrade():
         if not column_exists('system', 'id'):
             batch_op.add_column(sa.Column('id', sa.Integer, primary_key=True))
 
+    # Update custom_score_profile_conditions table
+    with op.batch_alter_table('table_custom_score_profile_conditions') as batch_op:
+        batch_op.execute('DROP INDEX IF EXISTS tablecustomscoreprofileconditions_profile_id')
+        batch_op.alter_column('profile_id', index=False)
+        batch_op.execute('DROP INDEX IF EXISTS ix_table_custom_score_profile_conditions_profile_id;')
+
+    # Update notifier table
+    with op.batch_alter_table('table_settings_notifier') as batch_op:
+        batch_op.alter_column('name', existing_type=sa.TEXT(), nullable=False)
+
     # Update series table
     with op.batch_alter_table('table_shows') as batch_op:
         if bind.engine.name == 'postgresql':
-            batch_op.execute('ALTER TABLE table_shows DROP CONSTRAINT IF EXISTS table_shows_pkey')
+            batch_op.execute('ALTER TABLE table_shows DROP CONSTRAINT IF EXISTS table_shows_pkey;')
         batch_op.execute(sa.update(TableShows)
                          .values({TableShows.profileId: None})
                          .where(TableShows.profileId.not_in(sa.select(TableLanguagesProfiles.profileId))))
@@ -63,13 +74,18 @@ def upgrade():
                                     remote_cols=['profileId'],
                                     ondelete='SET NULL')
         batch_op.alter_column(column_name='imdbId', server_default=None)
+        batch_op.alter_column(column_name='tvdbId', existing_type=sa.INTEGER(), nullable=True)
         if column_exists('table_shows', 'alternateTitles'):
             batch_op.alter_column(column_name='alternateTitles', new_column_name='alternativeTitles')
+        batch_op.execute('DROP INDEX IF EXISTS tableshows_path')
+        batch_op.execute('DROP INDEX IF EXISTS tableshows_profileId')
+        batch_op.execute('DROP INDEX IF EXISTS tableshows_sonarrSeriesId')
+        batch_op.create_unique_constraint(constraint_name='unique_table_shows_path', columns=['path'])
 
     # Update episodes table
     with op.batch_alter_table('table_episodes') as batch_op:
         if bind.engine.name == 'postgresql':
-            batch_op.execute('ALTER TABLE table_episodes DROP CONSTRAINT IF EXISTS table_episodes_pkey')
+            batch_op.execute('ALTER TABLE table_episodes DROP CONSTRAINT IF EXISTS table_episodes_pkey;')
         batch_op.execute(sa.delete(TableEpisodes).where(TableEpisodes.sonarrSeriesId.not_in(
             sa.select(TableShows.sonarrSeriesId))))
         batch_op.create_primary_key(constraint_name='pk_table_episodes', columns=['sonarrEpisodeId'])
@@ -81,6 +97,8 @@ def upgrade():
         batch_op.alter_column(column_name='file_size', server_default='0')
         if column_exists('table_episodes', 'scene_name'):
             batch_op.alter_column(column_name='scene_name', new_column_name='sceneName')
+        batch_op.alter_column(column_name='sonarrSeriesId', existing_type=sa.INTEGER(), nullable=True)
+        batch_op.execute('DROP INDEX IF EXISTS tableepisodes_sonarrEpisodeId')
 
     # Update series history table
     table_history_timestamp_altered = False
@@ -89,6 +107,8 @@ def upgrade():
             sa.select(TableEpisodes.sonarrEpisodeId))))
         batch_op.execute(sa.delete(TableHistory).where(TableHistory.sonarrSeriesId.not_in(
             sa.select(TableShows.sonarrSeriesId))))
+        batch_op.alter_column(column_name='sonarrEpisodeId', existing_type=sa.INTEGER(), nullable=True)
+        batch_op.alter_column(column_name='sonarrSeriesId', existing_type=sa.INTEGER(), nullable=True)
         batch_op.create_foreign_key(constraint_name='fk_sonarrEpisodeId_history',
                                     referent_table='table_episodes',
                                     local_cols=['sonarrEpisodeId'],
@@ -132,7 +152,9 @@ def upgrade():
             batch_op.add_column(sa.Column('id', sa.Integer, primary_key=True))
         if column_type('table_blacklist', 'timestamp') == int:
             table_blacklist_timestamp_altered = True
-            batch_op.alter_column(column_name='timestamp', existing_type=sa.Integer, type_=sa.DateTime)
+            batch_op.alter_column(column_name='timestamp', existing_type=sa.Integer, type_=sa.DateTime, nullable=True)
+        else:
+            batch_op.alter_column('timestamp', existing_type=sa.DATETIME(), nullable=True)
     with op.batch_alter_table('table_blacklist') as batch_op:
         # must be run after alter_column as been committed
         if table_blacklist_timestamp_altered:
@@ -141,13 +163,14 @@ def upgrade():
     # Update series rootfolder table
     with op.batch_alter_table('table_shows_rootfolder') as batch_op:
         if bind.engine.name == 'postgresql':
-            batch_op.execute('ALTER TABLE table_shows_rootfolder DROP CONSTRAINT IF EXISTS table_shows_rootfolder_pkey')
+            batch_op.execute('ALTER TABLE table_shows_rootfolder DROP CONSTRAINT IF EXISTS table_shows_rootfolder_pkey;')
+        batch_op.alter_column(column_name='id', existing_type=sa.INTEGER(), nullable=False, autoincrement=True)
         batch_op.create_primary_key(constraint_name='pk_table_shows_rootfolder', columns=['id'])
 
     # Update movies table
     with op.batch_alter_table('table_movies') as batch_op:
         if bind.engine.name == 'postgresql':
-            batch_op.execute('ALTER TABLE table_movies DROP CONSTRAINT IF EXISTS table_movies_pkey')
+            batch_op.execute('ALTER TABLE table_movies DROP CONSTRAINT IF EXISTS table_movies_pkey;')
         batch_op.execute(sa.update(TableMovies)
                          .values({TableMovies.profileId: None})
                          .where(TableMovies.profileId.not_in(sa.select(TableLanguagesProfiles.profileId))))
@@ -158,12 +181,19 @@ def upgrade():
                                     remote_cols=['profileId'],
                                     ondelete='SET NULL')
         batch_op.alter_column(column_name='file_size', server_default='0')
+        batch_op.execute('DROP INDEX IF EXISTS tablemovies_path')
+        batch_op.execute('DROP INDEX IF EXISTS tablemovies_profileId')
+        batch_op.execute('DROP INDEX IF EXISTS tablemovies_radarrId')
+        batch_op.execute('DROP INDEX IF EXISTS tablemovies_tmdbId')
+        batch_op.create_unique_constraint(constraint_name='unique_table_movies_path', columns=['path'])
+        batch_op.create_unique_constraint(constraint_name='unique_table_movies_tmdbId', columns=['tmdbId'])
 
     # Update movies history table
     table_history_movie_timestamp_altered = False
     with op.batch_alter_table('table_history_movie', recreate='always') as batch_op:
         batch_op.execute(sa.delete(TableHistoryMovie).where(TableHistoryMovie.radarrId.not_in(
             sa.select(TableMovies.radarrId))))
+        batch_op.alter_column(column_name='radarrId', existing_type=sa.INTEGER(), nullable=True)
         batch_op.create_foreign_key(constraint_name='fk_radarrId_history_movie',
                                     referent_table='table_movies',
                                     local_cols=['radarrId'],
@@ -195,7 +225,9 @@ def upgrade():
             batch_op.add_column(sa.Column('id', sa.Integer, primary_key=True))
         if column_type('table_blacklist_movie', 'timestamp') == int:
             table_blacklist_movie_timestamp_altered = True
-            batch_op.alter_column(column_name='timestamp', existing_type=sa.Integer, type_=sa.DateTime)
+            batch_op.alter_column(column_name='timestamp', existing_type=sa.Integer, type_=sa.DateTime, nullable=True)
+        else:
+            batch_op.alter_column('timestamp', existing_type=sa.DATETIME(), nullable=True)
     with op.batch_alter_table('table_blacklist_movie') as batch_op:
         # must be run after alter_column as been committed
         if table_blacklist_movie_timestamp_altered:
@@ -204,8 +236,8 @@ def upgrade():
     # Update movies rootfolder table
     with op.batch_alter_table('table_movies_rootfolder') as batch_op:
         if bind.engine.name == 'postgresql':
-            batch_op.execute('ALTER TABLE table_movies_rootfolder DROP CONSTRAINT IF EXISTS '
-                             'table_movies_rootfolder_pkey')
+            batch_op.execute('ALTER TABLE table_movies_rootfolder DROP CONSTRAINT IF EXISTS table_movies_rootfolder_pkey;')
+        batch_op.alter_column(column_name='id', existing_type=sa.INTEGER(), nullable=False, autoincrement=True)
         batch_op.create_primary_key(constraint_name='pk_table_movies_rootfolder', columns=['id'])
     # ### end Alembic commands ###
 

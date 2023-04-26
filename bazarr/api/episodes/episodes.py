@@ -23,7 +23,6 @@ class Episodes(Resource):
     get_audio_language_model = api_ns_episodes.model('audio_language_model', audio_language_model)
 
     get_response_model = api_ns_episodes.model('EpisodeGetResponse', {
-        'rowid': fields.Integer(),
         'audio_codec': fields.String(),
         'audio_language': fields.Nested(get_audio_language_model),
         'episode': fields.Integer(),
@@ -57,7 +56,6 @@ class Episodes(Resource):
         episodeId = args.get('episodeid[]')
 
         stmt = select(
-                TableEpisodes.rowid,
                 TableEpisodes.audio_codec,
                 TableEpisodes.audio_language,
                 TableEpisodes.episode,
@@ -93,7 +91,6 @@ class Episodes(Resource):
             return "Series or Episode ID not provided", 404
 
         return [postprocess({
-                'rowid': x.rowid,
                 'audio_codec': x.audio_codec,
                 'audio_language': x.audio_language,
                 'episode': x.episode,

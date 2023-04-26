@@ -69,7 +69,7 @@ class MoviesWanted(Resource):
                       TableMovies.monitored) \
             .where(wanted_condition)
         if length > 0:
-            stmt = stmt.order_by(TableMovies.rowid.desc()).limit(length).offset(start)
+            stmt = stmt.order_by(TableMovies.radarrId.desc()).limit(length).offset(start)
 
         results = [postprocess({
             'title': x.title,
