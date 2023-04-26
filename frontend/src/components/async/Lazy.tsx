@@ -1,7 +1,7 @@
 import { LoadingOverlay } from "@mantine/core";
-import { FunctionComponent, Suspense } from "react";
+import { FunctionComponent, PropsWithChildren, Suspense } from "react";
 
-const Lazy: FunctionComponent = ({ children }) => {
+const Lazy: FunctionComponent<PropsWithChildren> = ({ children }) => {
   return <Suspense fallback={<LoadingOverlay visible />}>{children}</Suspense>;
 };
 

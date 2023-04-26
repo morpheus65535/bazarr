@@ -1,7 +1,7 @@
 import { Action, SimpleTable } from "@/components";
 import {
-  anyCutoff,
   ProfileEditModal,
+  anyCutoff,
 } from "@/components/forms/ProfileEditForm";
 import { useModals } from "@/modules/modals";
 import { BuildKey, useArrayAction } from "@/utilities";
@@ -87,15 +87,19 @@ const Table: FunctionComponent = () => {
         Cell: (row) => {
           const items = row.value;
           if (!items) {
-            return false;
+            return null;
           }
-          return items.map((v, idx) => {
-            return (
-              <Badge key={BuildKey(idx, v)} color="gray">
-                {v}
-              </Badge>
-            );
-          });
+          return (
+            <>
+              {items.map((v, idx) => {
+                return (
+                  <Badge key={BuildKey(idx, v)} color="gray">
+                    {v}
+                  </Badge>
+                );
+              })}
+            </>
+          );
         },
       },
       {
@@ -104,15 +108,19 @@ const Table: FunctionComponent = () => {
         Cell: (row) => {
           const items = row.value;
           if (!items) {
-            return false;
+            return null;
           }
-          return items.map((v, idx) => {
-            return (
-              <Badge key={BuildKey(idx, v)} color="gray">
-                {v}
-              </Badge>
-            );
-          });
+          return (
+            <>
+              {items.map((v, idx) => {
+                return (
+                  <Badge key={BuildKey(idx, v)} color="gray">
+                    {v}
+                  </Badge>
+                );
+              })}
+            </>
+          );
         },
       },
       {

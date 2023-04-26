@@ -1,28 +1,29 @@
-import queryClient from "@/apis/queries";
 import ThemeProvider from "@/App/theme";
+import queryClient from "@/apis/queries";
 import { ModalsProvider } from "@/modules/modals";
 import "@fontsource/roboto/300.css";
-import { NotificationsProvider } from "@mantine/notifications";
-import { FunctionComponent } from "react";
+import { Notifications } from "@mantine/notifications";
+import { FunctionComponent, PropsWithChildren } from "react";
 import { QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
 import { Router } from "./Router";
 import { Environment } from "./utilities";
 
-export const AllProviders: FunctionComponent = ({ children }) => {
+export const AllProviders: FunctionComponent<PropsWithChildren> = ({
+  children,
+}) => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <ModalsProvider>
-          <NotificationsProvider limit={5}>
-            <Router>
-              {/* c8 ignore next 3 */}
-              {Environment.queryDev && (
-                <ReactQueryDevtools initialIsOpen={false} />
-              )}
-              {children}
-            </Router>
-          </NotificationsProvider>
+          <Notifications limit={5} />
+          <Router>
+            {/* c8 ignore next 3 */}
+            {Environment.queryDev && (
+              <ReactQueryDevtools initialIsOpen={false} />
+            )}
+            {children}
+          </Router>
         </ModalsProvider>
       </ThemeProvider>
     </QueryClientProvider>

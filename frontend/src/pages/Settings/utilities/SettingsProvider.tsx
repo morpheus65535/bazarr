@@ -1,4 +1,9 @@
-import { createContext, FunctionComponent, useContext } from "react";
+import {
+  createContext,
+  FunctionComponent,
+  PropsWithChildren,
+  useContext,
+} from "react";
 
 const SettingsContext = createContext<Settings | null>(null);
 
@@ -12,7 +17,9 @@ type SettingsProviderProps = {
   value: Settings | null;
 };
 
-export const SettingsProvider: FunctionComponent<SettingsProviderProps> = ({
+type Props = PropsWithChildren<SettingsProviderProps>;
+
+export const SettingsProvider: FunctionComponent<Props> = ({
   value,
   children,
 }) => {

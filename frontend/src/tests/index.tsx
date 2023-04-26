@@ -1,8 +1,15 @@
 import { AllProviders } from "@/providers";
 import { render, RenderOptions } from "@testing-library/react";
-import { FunctionComponent, ReactElement, StrictMode } from "react";
+import {
+  FunctionComponent,
+  PropsWithChildren,
+  ReactElement,
+  StrictMode,
+} from "react";
 
-const AllProvidersWithStrictMode: FunctionComponent = ({ children }) => {
+const AllProvidersWithStrictMode: FunctionComponent<PropsWithChildren> = ({
+  children,
+}) => {
   return (
     <StrictMode>
       <AllProviders>{children}</AllProviders>

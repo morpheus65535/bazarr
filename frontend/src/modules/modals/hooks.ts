@@ -5,8 +5,11 @@ import { useCallback, useContext, useMemo } from "react";
 import { ModalComponent, ModalIdContext } from "./WithModal";
 
 export function useModals() {
-  const { openContextModal: openMantineContextModal, ...rest } =
-    useMantineModals();
+  const {
+    openContextModal: openMantineContextModal,
+    closeContextModal: closeContextModalRaw,
+    ...rest
+  } = useMantineModals();
 
   const openContextModal = useCallback(
     <ARGS extends {}>(

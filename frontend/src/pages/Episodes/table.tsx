@@ -1,10 +1,10 @@
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
 import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action, GroupTable } from "@/components";
+import TextPopover from "@/components/TextPopover";
 import { AudioList } from "@/components/bazarr";
 import { EpisodeHistoryModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
-import TextPopover from "@/components/TextPopover";
 import { useModals } from "@/modules/modals";
 import { useTableStyles } from "@/styles";
 import { BuildKey, filterSubtitleBy } from "@/utilities";
@@ -84,7 +84,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
       {
         accessor: "season",
         Cell: (row) => {
-          return `Season ${row.value}`;
+          return <Text>Season {row.value}</Text>;
         },
       },
       {
