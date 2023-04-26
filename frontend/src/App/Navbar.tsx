@@ -357,9 +357,11 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
           ></FontAwesomeIcon>
         )}
         {name}
-        <Badge className={classes.badge} radius="xs" hidden={shouldHideBadge}>
-          {badge}
-        </Badge>
+        {shouldHideBadge === false && (
+          <Badge className={classes.badge} radius="xs">
+            {badge}
+          </Badge>
+        )}
       </Text>
     </NavLink>
   );
