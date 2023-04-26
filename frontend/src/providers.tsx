@@ -6,7 +6,6 @@ import { Notifications } from "@mantine/notifications";
 import { FunctionComponent, PropsWithChildren } from "react";
 import { QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
-import { Router } from "./Router";
 import { Environment } from "./utilities";
 
 export const AllProviders: FunctionComponent<PropsWithChildren> = ({
@@ -17,13 +16,9 @@ export const AllProviders: FunctionComponent<PropsWithChildren> = ({
       <ThemeProvider>
         <ModalsProvider>
           <Notifications limit={5} />
-          <Router>
-            {/* c8 ignore next 3 */}
-            {Environment.queryDev && (
-              <ReactQueryDevtools initialIsOpen={false} />
-            )}
-            {children}
-          </Router>
+          {/* c8 ignore next 3 */}
+          {Environment.queryDev && <ReactQueryDevtools initialIsOpen={false} />}
+          {children}
         </ModalsProvider>
       </ThemeProvider>
     </QueryClientProvider>

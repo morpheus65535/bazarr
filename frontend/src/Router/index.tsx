@@ -43,13 +43,12 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import {
   FunctionComponent,
-  PropsWithChildren,
   createContext,
   lazy,
   useContext,
   useMemo,
 } from "react";
-import { BrowserRouter } from "react-router-dom";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import Redirector from "./Redirector";
 import { RouterNames } from "./RouterNames";
 import { CustomRouteObject } from "./type";
@@ -316,12 +315,18 @@ function useRoutes(): CustomRouteObject[] {
 
 const RouterItemContext = createContext<CustomRouteObject[]>([]);
 
-export const Router: FunctionComponent<PropsWithChildren> = ({ children }) => {
+export const Router: FunctionComponent = () => {
   const routes = useRoutes();
+
+  // TODO: Move this outside the function component scope
+  const router = useMemo(
+    () => createBrowserRouter(routes, { basename: Environment.baseUrl }),
+    [routes]
+  );
 
   return (
     <RouterItemContext.Provider value={routes}>
-      <BrowserRouter basename={Environment.baseUrl}>{children}</BrowserRouter>
+      <RouterProvider router={router}></RouterProvider>
     </RouterItemContext.Provider>
   );
 };
