@@ -135,4 +135,3 @@ def mark_announcement_as_dismissed(hashed_announcement):
                     timestamp=datetime.now(),
                     text=text[0])
             .on_conflict_do_nothing())
-        database.commit()

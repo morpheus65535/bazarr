@@ -39,7 +39,6 @@ def update_notifier():
         insert(TableSettingsNotifier)
         .values(notifiers_added))
 
-    database.commit()
 
 
 def get_notifier_providers():

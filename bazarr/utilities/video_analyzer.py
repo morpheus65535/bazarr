@@ -181,5 +181,4 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
             update(TableMovies)
             .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
             .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file)))
-    database.commit()
     return data

@@ -24,7 +24,6 @@ def blacklist_log(sonarr_series_id, sonarr_episode_id, provider, subs_id, langua
             subs_id=subs_id,
             language=language
         ))
-    database.commit()
     event_stream(type='episode-blacklist')
 
 
@@ -32,11 +31,9 @@ def blacklist_delete(provider, subs_id):
     database.execute(
         delete(TableBlacklist)
         .where((TableBlacklist.provider == provider) and (TableBlacklist.subs_id == subs_id)))
-    database.commit()
     event_stream(type='episode-blacklist', action='delete')
 
 
 def blacklist_delete_all():
     database.execute(delete(TableBlacklist))
-    database.commit()
     event_stream(type='episode-blacklist', action='delete')

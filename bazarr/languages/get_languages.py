@@ -19,7 +19,6 @@ def load_language_in_db():
         insert(TableSettingsLanguages)
         .values(langs)
         .on_conflict_do_nothing())
-    database.commit()
 
     # Update standard languages with code3b if available
     langs = [{'code3b': lang.bibliographic, 'code3': lang.alpha_3}
@@ -29,7 +28,6 @@ def load_language_in_db():
     # Update languages in database table
     database.execute(
         update(TableSettingsLanguages), langs)
-    database.commit()
 
     # Insert custom languages in database table
     CustomLanguage.register(TableSettingsLanguages)
@@ -45,7 +43,6 @@ def create_languages_object():
         update(TableSettingsLanguages)
         .values(name='Chinese Simplified')
         .where(TableSettingsLanguages.code3 == 'zho'))
-    database.commit()
 
     languages_obj = database.execute(
         select(TableSettingsLanguages.code3, TableSettingsLanguages.code2, TableSettingsLanguages.name,

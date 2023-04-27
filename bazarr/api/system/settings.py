@@ -51,7 +51,6 @@ class SystemSettings(Resource):
                     .values(enabled=1)
                     .where(TableSettingsLanguages.code2 == code))
             event_stream("languages")
-        database.commit()
 
         languages_profiles = request.form.get('languages-profiles')
         if languages_profiles:
@@ -93,7 +92,6 @@ class SystemSettings(Resource):
                     delete(TableLanguagesProfiles)
                     .where(TableLanguagesProfiles.profileId == profileId))
 
-            database.commit()
 
             # invalidate cache
             update_profile_id_list.invalidate()
@@ -114,7 +112,6 @@ class SystemSettings(Resource):
                     enabled=item['enabled'],
                     url=item['url'])
                 .where(TableSettingsNotifier.name == item['name']))
-        database.commit()
 
         save_settings(zip(request.form.keys(), request.form.listvalues()))
         event_stream("settings")

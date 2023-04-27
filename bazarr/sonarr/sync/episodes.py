@@ -91,7 +91,6 @@ def sync_episodes(series_id, send_event=True):
             logging.error(f"BAZARR cannot delete episode {episode_to_delete.path} because of {e}")
             continue
         else:
-            database.commit()
             if send_event:
                 event_stream(type='episode', action='delete', payload=episode_to_delete.sonarrEpisodeId)
 
@@ -112,7 +111,6 @@ def sync_episodes(series_id, send_event=True):
                                      updated_episode['sonarrSeriesId']])
             if send_event:
                 event_stream(type='episode', action='update', payload=updated_episode['sonarrEpisodeId'])
-    database.commit()
 
     # Insert new episodes in DB
     for added_episode in episodes_to_add:
@@ -126,7 +124,6 @@ def sync_episodes(series_id, send_event=True):
         if send_event:
             event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
 
-    database.commit()
 
     # Store subtitles for added or modified episodes
     for i, altered_episode in enumerate(altered_episodes, 1):
@@ -174,7 +171,6 @@ def sync_one_episode(episode_id, defer_search=False):
         database.execute(
             delete(TableEpisodes)
             .where(TableEpisodes.sonarrEpisodeId == episode_id))
-        database.commit()
 
         event_stream(type='episode', action='delete', payload=int(episode_id))
         logging.debug('BAZARR deleted this episode from the database:{}'.format(path_mappings.path_replace(
@@ -187,7 +183,6 @@ def sync_one_episode(episode_id, defer_search=False):
             update(TableEpisodes)
             .values(episode)
             .where(TableEpisodes.sonarrEpisodeId == episode_id))
-        database.commit()
 
         event_stream(type='episode', action='update', payload=int(episode_id))
         logging.debug('BAZARR updated this episode into the database:{}'.format(path_mappings.path_replace(
@@ -198,7 +193,6 @@ def sync_one_episode(episode_id, defer_search=False):
         database.execute(
             insert(TableEpisodes)
             .values(episode))
-        database.commit()
 
         event_stream(type='episode', action='update', payload=int(episode_id))
         logging.debug('BAZARR inserted this episode into the database:{}'.format(path_mappings.path_replace(

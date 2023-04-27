@@ -61,7 +61,6 @@ def get_sonarr_rootfolder():
             database.execute(
                 insert(TableShowsRootfolder)
                 .values(id=item['id'], path=item['path']))
-        database.commit()
 
 
 def check_sonarr_rootfolder():
@@ -92,4 +91,3 @@ def check_sonarr_rootfolder():
                 update(TableShowsRootfolder)
                 .values(accessible=1, error='')
                 .where(TableShowsRootfolder.id == item.id))
-        database.commit()

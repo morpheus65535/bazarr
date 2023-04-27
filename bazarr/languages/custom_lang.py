@@ -54,7 +54,6 @@ class CustomLanguage:
                         name=sub.name,
                         enabled=0)
                 .on_conflict_do_nothing())
-            database.commit()
 
     @classmethod
     def found_external(cls, subtitle, subtitle_path):

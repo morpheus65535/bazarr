@@ -99,7 +99,6 @@ def update_movies(send_event=True):
                 database.execute(
                     delete(TableMovies)
                     .where(TableMovies.tmdbId == removed_movie))
-            database.commit()
 
             # Update movies in DB
             for updated_movie in movies_to_update:
@@ -117,7 +116,6 @@ def update_movies(send_event=True):
                                            updated_movie['path'],
                                            updated_movie['radarrId'],
                                            updated_movie['monitored']])
-            database.commit()
 
             # Insert new movies in DB
             for added_movie in movies_to_add:
@@ -154,7 +152,6 @@ def update_one_movie(movie_id, action, defer_search=False):
             database.execute(
                 delete(TableMovies)
                 .where(TableMovies.radarrId == movie_id))
-            database.commit()
 
             event_stream(type='movie', action='delete', payload=int(movie_id))
             logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
@@ -200,7 +197,6 @@ def update_one_movie(movie_id, action, defer_search=False):
         database.execute(
             delete(TableMovies)
             .where(TableMovies.radarrId == movie_id))
-        database.commit()
 
         event_stream(type='movie', action='delete', payload=int(movie_id))
         logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
@@ -213,7 +209,6 @@ def update_one_movie(movie_id, action, defer_search=False):
             update(TableMovies)
             .values(movie)
             .where(TableMovies.radarrId == movie['radarrId']))
-        database.commit()
 
         event_stream(type='movie', action='update', payload=int(movie_id))
         logging.debug('BAZARR updated this movie into the database:{}'.format(path_mappings.path_replace_movie(
@@ -224,7 +219,6 @@ def update_one_movie(movie_id, action, defer_search=False):
         database.execute(
             insert(TableMovies)
             .values(movie))
-        database.commit()
 
         event_stream(type='movie', action='update', payload=int(movie_id))
         logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(

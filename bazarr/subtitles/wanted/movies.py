@@ -35,7 +35,6 @@ def _wanted_movie(movie):
                 .values(failedAttempts=updateFailedAttempts(desired_language=language,
                                                             attempt_string=movie.failedAttempts)))\
                 .where(TableMovies.radarrId == movie.radarrId)
-            database.commit()
 
             hi_ = "True" if language.endswith(':hi') else "False"
             forced_ = "True" if language.endswith(':forced') else "False"

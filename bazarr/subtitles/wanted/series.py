@@ -36,7 +36,6 @@ def _wanted_episode(episode):
                                                             attempt_string=episode.failedAttempts))) \
                 .where(TableEpisodes.sonarrEpisodeId == episode.sonarrEpisodeId) \
                 .execute()
-            database.commit()
 
             hi_ = "True" if language.endswith(':hi') else "False"
             forced_ = "True" if language.endswith(':forced') else "False"

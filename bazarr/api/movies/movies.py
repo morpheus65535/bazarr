@@ -173,7 +173,6 @@ class Movies(Resource):
                 update(TableMovies)
                 .values(profileId=profileId)
                 .where(TableMovies.radarrId == radarrId))
-            database.commit()
 
             list_missing_subtitles_movies(no=radarrId, send_event=False)
 

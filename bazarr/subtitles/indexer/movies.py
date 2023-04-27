@@ -131,7 +131,6 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
             update(TableMovies)
             .values(subtitles=str(actual_subtitles))
             .where(TableMovies.path == original_path))
-        database.commit()
         matching_movies = database.execute(
             select(TableMovies.radarrId)
             .where(TableMovies.path == original_path))\
@@ -256,7 +255,6 @@ def list_missing_subtitles_movies(no=None, send_event=True):
             update(TableMovies)
             .values(missing_subtitles=missing_subtitles_text)
             .where(TableMovies.radarrId == movie_subtitles.radarrId))
-        database.commit()
 
         if send_event:
             event_stream(type='movie', payload=movie_subtitles.radarrId)

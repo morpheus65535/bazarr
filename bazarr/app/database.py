@@ -43,13 +43,13 @@ if postgresql:
         port=settings.postgresql.port,
         database=settings.postgresql.database
     )
-    engine = create_engine(url, poolclass=NullPool)
+    engine = create_engine(url, poolclass=NullPool, isolation_level="AUTOCOMMIT")
 else:
     # insert is different between database types
     from sqlalchemy.dialects.sqlite import insert  # noqa E402
     url = f'sqlite:///{os.path.join(args.config_dir, "db", "bazarr.db")}'
     logger.debug(f"Connecting to SQLite database: {url}")
-    engine = create_engine(url, poolclass=NullPool)
+    engine = create_engine(url, poolclass=NullPool, isolation_level="AUTOCOMMIT")
 
     from sqlalchemy.engine import Engine
     from sqlalchemy import event
@@ -326,7 +326,6 @@ def migrate_db(app):
         database.execute(
             insert(System)
             .values(configured='0', updated='0'))
-        database.commit()
 
 
 def get_exclusion_clause(exclusion_type):

@@ -29,5 +29,4 @@ def history_log_movie(action, radarr_id, result, fake_provider=None, fake_score=
             subs_id=subs_id,
             subtitles_path=subtitles_path
         ))
-    database.commit()
     event_stream(type='movie-history')

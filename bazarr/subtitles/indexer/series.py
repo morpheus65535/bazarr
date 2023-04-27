@@ -130,7 +130,6 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
             update(TableEpisodes)
             .values(subtitles=str(actual_subtitles))
             .where(TableEpisodes.path == original_path))
-        database.commit()
         matching_episodes = database.execute(
             select(TableEpisodes.sonarrEpisodeId, TableEpisodes.sonarrSeriesId)
             .where(TableEpisodes.path == original_path))\
@@ -257,7 +256,6 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
             update(TableEpisodes)
             .values(missing_subtitles=missing_subtitles_text)
             .where(TableEpisodes.sonarrEpisodeId == episode_subtitles.sonarrEpisodeId))
-        database.commit()
 
         if send_event:
             event_stream(type='episode', payload=episode_subtitles.sonarrEpisodeId)

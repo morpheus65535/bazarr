@@ -70,7 +70,6 @@ def update_series(send_event=True):
                         update(TableShows)
                         .values(updated_series)
                         .where(TableShows.sonarrSeriesId == show['id']))
-                    database.commit()
 
                 if send_event:
                     event_stream(type='series', payload=show['id'])
@@ -82,7 +81,6 @@ def update_series(send_event=True):
                 database.execute(
                     insert(TableShows)
                     .values(added_series))
-                database.commit()
 
                 list_missing_subtitles(no=show['id'])
 
@@ -98,7 +96,6 @@ def update_series(send_event=True):
             database.execute(
                 delete(TableShows)
                 .where(TableShows.sonarrSeriesId == series))
-            database.commit()
 
             if send_event:
                 event_stream(type='series', action='delete', payload=series)
@@ -123,7 +120,6 @@ def update_one_series(series_id, action):
         database.execute(
             delete(TableShows)
             .where(TableShows.sonarrSeriesId == int(series_id)))
-        database.commit()
 
         event_stream(type='series', action='delete', payload=int(series_id))
         return
@@ -168,7 +164,6 @@ def update_one_series(series_id, action):
             update(TableShows)
             .values(series)
             .where(TableShows.sonarrSeriesId == series['sonarrSeriesId']))
-        database.commit()
         sync_episodes(series_id=int(series_id), send_event=False)
         event_stream(type='series', action='update', payload=int(series_id))
         logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
@@ -179,7 +174,6 @@ def update_one_series(series_id, action):
         database.execute(
             insert(TableShows)
             .values(series))
-        database.commit()
         event_stream(type='series', action='update', payload=int(series_id))
         logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(
             series['path'])))

@@ -23,7 +23,6 @@ def blacklist_log_movie(radarr_id, provider, subs_id, language):
             subs_id=subs_id,
             language=language
         ))
-    database.commit()
     event_stream(type='movie-blacklist')
 
 
@@ -31,12 +30,10 @@ def blacklist_delete_movie(provider, subs_id):
     database.execute(
         delete(TableBlacklistMovie)
         .where((TableBlacklistMovie.provider == provider) and (TableBlacklistMovie.subs_id == subs_id)))
-    database.commit()
     event_stream(type='movie-blacklist', action='delete')
 
 
 def blacklist_delete_all_movie():
     database.execute(
         delete(TableBlacklistMovie))
-    database.commit()
     event_stream(type='movie-blacklist', action='delete')

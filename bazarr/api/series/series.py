@@ -169,7 +169,6 @@ class Series(Resource):
                 update(TableShows)
                 .values(profileId=profileId)
                 .where(TableShows.sonarrSeriesId == seriesId))
-            database.commit()
 
             list_missing_subtitles(no=seriesId, send_event=False)
 

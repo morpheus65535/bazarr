@@ -61,7 +61,6 @@ def get_radarr_rootfolder():
             database.execute(
                 insert(TableMoviesRootfolder)
                 .values(id=item['id'], path=item['path']))
-        database.commit()
 
 
 def check_radarr_rootfolder():
@@ -92,4 +91,3 @@ def check_radarr_rootfolder():
                 update(TableMoviesRootfolder)
                 .values(accessible=1, error='')
                 .where(TableMoviesRootfolder.id == item.id))
-        database.commit()
