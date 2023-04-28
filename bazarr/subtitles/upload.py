@@ -56,7 +56,8 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
             select(TableEpisodes.sonarrSeriesId,
                    TableEpisodes.sonarrEpisodeId,
                    TableShows.profileId)
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .select_from(TableEpisodes)
+            .join(TableShows)
             .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))) \
             .first()
 

@@ -101,8 +101,9 @@ class EpisodesHistory(Resource):
                       TableHistory.sonarrEpisodeId,
                       TableHistory.provider,
                       TableShows.seriesType) \
-            .join(TableShows, TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId) \
-            .join(TableEpisodes, TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
+            .select_from(TableHistory) \
+            .join(TableShows) \
+            .join(TableEpisodes) \
             .where(query_condition) \
             .order_by(TableHistory.timestamp.desc())
         if length > 0:
@@ -165,7 +166,8 @@ class EpisodesHistory(Resource):
 
         count = len(database.execute(
             select(TableHistory)
-            .join(TableEpisodes, TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)
+            .select_from(TableHistory)
+            .join(TableEpisodes)
             .where(TableEpisodes.title.is_not(None)))
                     .all())
 

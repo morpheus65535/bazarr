@@ -33,6 +33,11 @@ def column_exists(table_name, column_name):
     return any(c["name"] == column_name for c in columns)
 
 
+def constraint_exists(table_name, constraint_name):
+    constraints = insp.get_unique_constraints(table_name)
+    return any(c["name"] == constraint_name for c in constraints)
+
+
 def column_type(table_name, column_name):
     _type = [x['type'].python_type for x in insp.get_columns(table_name) if x['name'] == column_name]
     return _type[0] if _type else None
@@ -77,12 +82,13 @@ def upgrade():
                                     ondelete='SET NULL')
         batch_op.alter_column(column_name='imdbId', server_default=None)
         batch_op.alter_column(column_name='tvdbId', existing_type=sa.INTEGER(), nullable=True)
-        if column_exists('table_shows', 'alternateTitles'):
+        if column_exists('table_shows', 'alternateTitles') and not column_exists('table_shows', 'alternativeTitles'):
             batch_op.alter_column(column_name='alternateTitles', new_column_name='alternativeTitles')
         batch_op.execute('DROP INDEX IF EXISTS tableshows_path')
         batch_op.execute('DROP INDEX IF EXISTS tableshows_profileId')
         batch_op.execute('DROP INDEX IF EXISTS tableshows_sonarrSeriesId')
-        batch_op.create_unique_constraint(constraint_name='unique_table_shows_path', columns=['path'])
+        if not constraint_exists('table_shows', 'unique_table_shows_path'):
+            batch_op.create_unique_constraint(constraint_name='unique_table_shows_path', columns=['path'])
 
     # Update episodes table
     with op.batch_alter_table('table_episodes') as batch_op:
@@ -90,6 +96,7 @@ def upgrade():
             batch_op.execute('ALTER TABLE table_episodes DROP CONSTRAINT IF EXISTS table_episodes_pkey;')
         batch_op.execute(sa.delete(TableEpisodes).where(TableEpisodes.sonarrSeriesId.not_in(
             sa.select(TableShows.sonarrSeriesId))))
+        batch_op.alter_column(column_name='sonarrSeriesId', existing_type=sa.INTEGER(), nullable=True)
         batch_op.create_primary_key(constraint_name='pk_table_episodes', columns=['sonarrEpisodeId'])
         batch_op.create_foreign_key(constraint_name='fk_sonarrSeriesId_episodes',
                                     referent_table='table_shows',
@@ -99,7 +106,6 @@ def upgrade():
         batch_op.alter_column(column_name='file_size', server_default='0')
         if column_exists('table_episodes', 'scene_name'):
             batch_op.alter_column(column_name='scene_name', new_column_name='sceneName')
-        batch_op.alter_column(column_name='sonarrSeriesId', existing_type=sa.INTEGER(), nullable=True)
         batch_op.execute('DROP INDEX IF EXISTS tableepisodes_sonarrEpisodeId')
 
     # Update series history table
@@ -156,7 +162,7 @@ def upgrade():
             table_blacklist_timestamp_altered = True
             batch_op.alter_column(column_name='timestamp', existing_type=sa.Integer, type_=sa.DateTime, nullable=True)
         else:
-            batch_op.alter_column('timestamp', existing_type=sa.DATETIME(), nullable=True)
+            batch_op.alter_column(column_name='timestamp', existing_type=sa.DATETIME(), nullable=True)
     with op.batch_alter_table('table_blacklist') as batch_op:
         # must be run after alter_column as been committed
         if table_blacklist_timestamp_altered:
@@ -188,8 +194,10 @@ def upgrade():
         batch_op.execute('DROP INDEX IF EXISTS tablemovies_profileId')
         batch_op.execute('DROP INDEX IF EXISTS tablemovies_radarrId')
         batch_op.execute('DROP INDEX IF EXISTS tablemovies_tmdbId')
-        batch_op.create_unique_constraint(constraint_name='unique_table_movies_path', columns=['path'])
-        batch_op.create_unique_constraint(constraint_name='unique_table_movies_tmdbId', columns=['tmdbId'])
+        if not constraint_exists('table_movies', 'unique_table_movies_path'):
+            batch_op.create_unique_constraint(constraint_name='unique_table_movies_path', columns=['path'])
+        if not constraint_exists('table_movies', 'unique_table_movies_tmdbId'):
+            batch_op.create_unique_constraint(constraint_name='unique_table_movies_tmdbId', columns=['tmdbId'])
 
     # Update movies history table
     table_history_movie_timestamp_altered = False
@@ -230,7 +238,7 @@ def upgrade():
             table_blacklist_movie_timestamp_altered = True
             batch_op.alter_column(column_name='timestamp', existing_type=sa.Integer, type_=sa.DateTime, nullable=True)
         else:
-            batch_op.alter_column('timestamp', existing_type=sa.DATETIME(), nullable=True)
+            batch_op.alter_column(column_name='timestamp', existing_type=sa.DATETIME(), nullable=True)
     with op.batch_alter_table('table_blacklist_movie') as batch_op:
         # must be run after alter_column as been committed
         if table_blacklist_movie_timestamp_altered:

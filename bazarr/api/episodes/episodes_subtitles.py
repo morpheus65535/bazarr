@@ -47,7 +47,8 @@ class EpisodesSubtitles(Resource):
                    TableEpisodes.sceneName,
                    TableEpisodes.audio_language,
                    TableShows.title)
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .select_from(TableEpisodes)
+            .join(TableShows)
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
             .first()
 

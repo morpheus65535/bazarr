@@ -52,7 +52,8 @@ class ProviderEpisodes(Resource):
                    TableEpisodes.sceneName,
                    TableShows.title,
                    TableShows.profileId)
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .select_from(TableEpisodes)
+            .join(TableShows)
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
             .first()
 
@@ -97,7 +98,8 @@ class ProviderEpisodes(Resource):
                 TableEpisodes.path,
                 TableEpisodes.sceneName,
                 TableShows.title)
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .select_from(TableEpisodes)
+            .join(TableShows)
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
             .first()
 

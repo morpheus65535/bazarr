@@ -162,7 +162,8 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                TableEpisodes.subtitles,
                TableShows.profileId,
                TableEpisodes.audio_language)
-        .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+        .select_from(TableEpisodes)
+        .join(TableShows)
         .where(episodes_subtitles_clause))\
         .all()
 

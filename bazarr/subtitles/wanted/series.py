@@ -71,7 +71,8 @@ def wanted_download_subtitles(sonarr_episode_id):
                TableEpisodes.sceneName,
                TableEpisodes.failedAttempts,
                TableShows.title)
-        .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+        .select_from(TableEpisodes)
+        .join(TableShows)
         .where((TableEpisodes.sonarrEpisodeId == sonarr_episode_id))) \
         .all()
 
@@ -98,7 +99,8 @@ def wanted_search_missing_subtitles_series():
                TableEpisodes.episode,
                TableEpisodes.title.label('episodeTitle'),
                TableShows.seriesType)
-        .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+        .select_from(TableEpisodes)
+        .join(TableShows)
         .where(reduce(operator.and_, conditions))) \
         .all()
 

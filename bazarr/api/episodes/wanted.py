@@ -74,7 +74,8 @@ class EpisodesWanted(Resource):
                       TableShows.tags,
                       TableEpisodes.failedAttempts,
                       TableShows.seriesType) \
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
+            .select_from(TableEpisodes) \
+            .join(TableShows) \
             .where(wanted_condition)
 
         if length > 0:

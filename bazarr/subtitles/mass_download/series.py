@@ -35,7 +35,8 @@ def series_download_subtitles(no):
                TableEpisodes.season,
                TableEpisodes.episode,
                TableEpisodes.title.label('episodeTitle'))
-        .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+        .select_from(TableEpisodes)
+        .join(TableShows)
         .where(reduce(operator.and_, conditions))) \
         .all()
     if not episodes_details:
@@ -109,7 +110,8 @@ def episode_download_subtitles(no, send_progress=False):
                TableEpisodes.title.label('episodeTitle'),
                TableEpisodes.season,
                TableEpisodes.episode)
-        .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+        .select_from(TableEpisodes)
+        .join(TableShows)
         .where(reduce(operator.and_, conditions))) \
         .all()
     if not episodes_details:

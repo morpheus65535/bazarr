@@ -56,8 +56,9 @@ class EpisodesBlacklist(Resource):
                       TableBlacklist.subs_id,
                       TableBlacklist.language,
                       TableBlacklist.timestamp) \
-            .join(TableEpisodes, TableBlacklist.sonarr_episode_id == TableEpisodes.sonarrEpisodeId) \
-            .join(TableShows, TableBlacklist.sonarr_series_id == TableShows.sonarrSeriesId)\
+            .select_from(TableBlacklist) \
+            .join(TableEpisodes) \
+            .join(TableShows)\
             .order_by(TableBlacklist.timestamp.desc())
         if length > 0:
             stmt = stmt.limit(length).offset(start)

@@ -53,7 +53,8 @@ class MoviesBlacklist(Resource):
                    TableBlacklistMovie.subs_id,
                    TableBlacklistMovie.language,
                    TableBlacklistMovie.timestamp)
-            .join(TableMovies, TableBlacklistMovie.radarr_id == TableMovies.radarrId)
+            .select_from(TableBlacklistMovie)
+            .join(TableMovies)
             .order_by(TableBlacklistMovie.timestamp.desc()))
         if length > 0:
             data = data.limit(length).offset(start)

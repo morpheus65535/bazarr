@@ -70,7 +70,8 @@ class Series(Resource):
 
         episodeFileCount = select(TableShows.sonarrSeriesId,
                                   func.count(TableEpisodes.sonarrSeriesId).label('episodeFileCount')) \
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
+            .select_from(TableEpisodes) \
+            .join(TableShows) \
             .group_by(TableShows.sonarrSeriesId).subquery()
 
         episodes_missing_conditions = [(TableEpisodes.missing_subtitles != '[]')]
@@ -78,7 +79,8 @@ class Series(Resource):
 
         episodeMissingCount = select(TableShows.sonarrSeriesId,
                                      func.count(TableEpisodes.sonarrSeriesId).label('episodeMissingCount')) \
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId) \
+            .select_from(TableEpisodes) \
+            .join(TableShows) \
             .where(reduce(operator.and_, episodes_missing_conditions)) \
             .group_by(TableShows.sonarrSeriesId).subquery()
 
@@ -100,6 +102,7 @@ class Series(Resource):
                       TableShows.year,
                       episodeFileCount.c.episodeFileCount,
                       episodeMissingCount.c.episodeMissingCount) \
+            .select_from(TableShows) \
             .join(episodeFileCount, TableShows.sonarrSeriesId == episodeFileCount.c.sonarrSeriesId, isouter=True) \
             .join(episodeMissingCount, TableShows.sonarrSeriesId == episodeMissingCount.c.sonarrSeriesId, isouter=True)\
             .order_by(TableShows.sortTitle)

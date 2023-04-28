@@ -195,7 +195,7 @@ def get_upgradable_episode_subtitles():
                TableEpisodes.audio_language,
                TableEpisodes.sceneName,
                TableEpisodes.title,
-               TableEpisodes.sonarrSeriesId,
+               TableShows.sonarrSeriesId,
                TableHistory.action,
                TableHistory.subtitles_path,
                TableEpisodes.sonarrEpisodeId,
@@ -205,8 +205,9 @@ def get_upgradable_episode_subtitles():
                TableEpisodes.episode,
                TableShows.title.label('seriesTitle'),
                TableShows.seriesType)
-        .join(TableShows, TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId)
-        .join(TableEpisodes, TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)
+        .select_from(TableHistory)
+        .join(TableShows)
+        .join(TableEpisodes)
         .where(reduce(operator.and_, upgradable_episodes_conditions))
         .order_by(TableHistory.timestamp.desc()))\
         .all()
@@ -241,7 +242,8 @@ def get_upgradable_movies_subtitles():
                TableMovies.tags,
                TableMovies.radarrId,
                TableMovies.title)
-        .join(TableMovies, TableHistoryMovie.radarrId == TableMovies.radarrId)
+        .select_from(TableHistoryMovie)
+        .join(TableMovies)
         .where(reduce(operator.and_, upgradable_movies_conditions))
         .order_by(TableHistoryMovie.timestamp.desc()))\
         .all()

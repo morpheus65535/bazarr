@@ -30,7 +30,8 @@ class WebHooksSonarr(Resource):
 
         sonarrEpisodeId = database.execute(
             select(TableEpisodes.sonarrEpisodeId, TableEpisodes.path)
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .select_from(TableEpisodes)
+            .join(TableShows)
             .where(TableEpisodes.episode_file_id == episode_file_id)) \
             .first()
 

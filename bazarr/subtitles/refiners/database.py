@@ -31,7 +31,8 @@ def refine_from_db(path, video):
                    TableEpisodes.audio_codec,
                    TableEpisodes.path,
                    TableShows.imdbId)
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .select_from(TableEpisodes)
+            .join(TableShows)
             .where((TableEpisodes.path == path_mappings.path_replace_reverse(path)))) \
             .first()
 

@@ -92,7 +92,8 @@ class MoviesHistory(Resource):
                       TableHistoryMovie.provider,
                       TableHistoryMovie.subtitles_path,
                       TableHistoryMovie.video_path) \
-            .join(TableMovies, TableHistoryMovie.radarrId == TableMovies.radarrId) \
+            .select_from(TableHistoryMovie) \
+            .join(TableMovies) \
             .where(query_condition) \
             .order_by(TableHistoryMovie.timestamp.desc())
         if length > 0:
@@ -150,7 +151,8 @@ class MoviesHistory(Resource):
 
         count = len(database.execute(
             select(TableHistoryMovie)
-            .join(TableMovies, TableHistoryMovie.radarrId == TableMovies.radarrId)
+            .select_from(TableHistoryMovie)
+            .join(TableMovies)
             .where(TableMovies.title.is_not(None)))
                     .all())
 

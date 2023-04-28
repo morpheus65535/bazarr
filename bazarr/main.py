@@ -63,7 +63,6 @@ get_announcements_to_file()
 database.execute(
     update(System)
     .values(updated='0'))
-database.commit()
 
 # Load languages in database
 load_language_in_db()

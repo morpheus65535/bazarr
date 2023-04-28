@@ -42,7 +42,8 @@ class Badges(Resource):
             select(TableShows.tags,
                    TableShows.seriesType,
                    TableEpisodes.monitored)
-            .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .select_from(TableEpisodes)
+            .join(TableShows)
             .where(reduce(operator.and_, episodes_conditions))) \
             .all()
 

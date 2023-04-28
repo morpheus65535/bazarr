@@ -9,10 +9,10 @@ import flask_migrate
 from dogpile.cache import make_region
 from datetime import datetime
 
-from sqlalchemy import create_engine, Column, DateTime, ForeignKey, Integer, LargeBinary, Text
+from sqlalchemy import create_engine, DateTime, ForeignKey, Integer, LargeBinary, Text
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func  # noqa W0611
-from sqlalchemy.orm import scoped_session, sessionmaker, relationship
+from sqlalchemy.orm import scoped_session, sessionmaker, relationship, mapped_column
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.pool import NullPool
 
@@ -77,218 +77,218 @@ metadata = Base.metadata
 class System(Base):
     __tablename__ = 'system'
 
-    id = Column(Integer, primary_key=True)
-    configured = Column(Text)
-    updated = Column(Text)
+    id = mapped_column(Integer, primary_key=True)
+    configured = mapped_column(Text)
+    updated = mapped_column(Text)
 
 
 class TableAnnouncements(Base):
     __tablename__ = 'table_announcements'
 
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime, nullable=False, default=datetime.now)
-    hash = Column(Text)
-    text = Column(Text)
+    id = mapped_column(Integer, primary_key=True)
+    timestamp = mapped_column(DateTime, nullable=False, default=datetime.now)
+    hash = mapped_column(Text)
+    text = mapped_column(Text)
 
 
 class TableBlacklist(Base):
     __tablename__ = 'table_blacklist'
 
-    id = Column(Integer, primary_key=True)
-    language = Column(Text)
-    provider = Column(Text)
-    sonarr_episode_id = Column(ForeignKey('table_episodes.sonarrEpisodeId', ondelete='CASCADE'))
-    sonarr_series_id = Column(ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'))
-    subs_id = Column(Text)
-    timestamp = Column(DateTime, default=datetime.now)
+    id = mapped_column(Integer, primary_key=True)
+    language = mapped_column(Text)
+    provider = mapped_column(Text)
+    sonarr_episode_id = mapped_column(Integer, ForeignKey('table_episodes.sonarrEpisodeId', ondelete='CASCADE'))
+    sonarr_series_id = mapped_column(Integer, ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'))
+    subs_id = mapped_column(Text)
+    timestamp = mapped_column(DateTime, default=datetime.now)
 
 
 class TableBlacklistMovie(Base):
     __tablename__ = 'table_blacklist_movie'
 
-    id = Column(Integer, primary_key=True)
-    language = Column(Text)
-    provider = Column(Text)
-    radarr_id = Column(ForeignKey('table_movies.radarrId', ondelete='CASCADE'))
-    subs_id = Column(Text)
-    timestamp = Column(DateTime, default=datetime.now)
+    id = mapped_column(Integer, primary_key=True)
+    language = mapped_column(Text)
+    provider = mapped_column(Text)
+    radarr_id = mapped_column(Integer, ForeignKey('table_movies.radarrId', ondelete='CASCADE'))
+    subs_id = mapped_column(Text)
+    timestamp = mapped_column(DateTime, default=datetime.now)
 
 
 class TableCustomScoreProfiles(Base):
     __tablename__ = 'table_custom_score_profiles'
 
-    id = Column(Integer, primary_key=True)
-    name = Column(Text)
-    media = Column(Text)
-    score = Column(Integer)
+    id = mapped_column(Integer, primary_key=True)
+    name = mapped_column(Text)
+    media = mapped_column(Text)
+    score = mapped_column(Integer)
 
 
 class TableEpisodes(Base):
     __tablename__ = 'table_episodes'
 
-    audio_codec = Column(Text)
-    audio_language = Column(Text)
-    episode = Column(Integer, nullable=False)
-    episode_file_id = Column(Integer)
-    failedAttempts = Column(Text)
-    ffprobe_cache = Column(LargeBinary)
-    file_size = Column(Integer)
-    format = Column(Text)
-    missing_subtitles = Column(Text)
-    monitored = Column(Text)
-    path = Column(Text, nullable=False)
-    resolution = Column(Text)
-    sceneName = Column(Text)
-    season = Column(Integer, nullable=False)
-    sonarrEpisodeId = Column(Integer, primary_key=True)
-    sonarrSeriesId = Column(ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'))
-    subtitles = Column(Text)
-    title = Column(Text, nullable=False)
-    video_codec = Column(Text)
+    audio_codec = mapped_column(Text)
+    audio_language = mapped_column(Text)
+    episode = mapped_column(Integer, nullable=False)
+    episode_file_id = mapped_column(Integer)
+    failedAttempts = mapped_column(Text)
+    ffprobe_cache = mapped_column(LargeBinary)
+    file_size = mapped_column(Integer)
+    format = mapped_column(Text)
+    missing_subtitles = mapped_column(Text)
+    monitored = mapped_column(Text)
+    path = mapped_column(Text, nullable=False)
+    resolution = mapped_column(Text)
+    sceneName = mapped_column(Text)
+    season = mapped_column(Integer, nullable=False)
+    sonarrEpisodeId = mapped_column(Integer, primary_key=True)
+    sonarrSeriesId = mapped_column(Integer, ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'))
+    subtitles = mapped_column(Text)
+    title = mapped_column(Text, nullable=False)
+    video_codec = mapped_column(Text)
 
 
 class TableHistory(Base):
     __tablename__ = 'table_history'
 
-    id = Column(Integer, primary_key=True)
-    action = Column(Integer, nullable=False)
-    description = Column(Text, nullable=False)
-    language = Column(Text)
-    provider = Column(Text)
-    score = Column(Integer)
-    sonarrEpisodeId = Column(ForeignKey('table_episodes.sonarrEpisodeId', ondelete='CASCADE'))
-    sonarrSeriesId = Column(ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'))
-    subs_id = Column(Text)
-    subtitles_path = Column(Text)
-    timestamp = Column(DateTime, nullable=False, default=datetime.now)
-    video_path = Column(Text)
+    id = mapped_column(Integer, primary_key=True)
+    action = mapped_column(Integer, nullable=False)
+    description = mapped_column(Text, nullable=False)
+    language = mapped_column(Text)
+    provider = mapped_column(Text)
+    score = mapped_column(Integer)
+    sonarrEpisodeId = mapped_column(Integer, ForeignKey('table_episodes.sonarrEpisodeId', ondelete='CASCADE'))
+    sonarrSeriesId = mapped_column(Integer, ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'))
+    subs_id = mapped_column(Text)
+    subtitles_path = mapped_column(Text)
+    timestamp = mapped_column(DateTime, nullable=False, default=datetime.now)
+    video_path = mapped_column(Text)
 
 
 class TableHistoryMovie(Base):
     __tablename__ = 'table_history_movie'
 
-    id = Column(Integer, primary_key=True)
-    action = Column(Integer, nullable=False)
-    description = Column(Text, nullable=False)
-    language = Column(Text)
-    provider = Column(Text)
-    radarrId = Column(ForeignKey('table_movies.radarrId', ondelete='CASCADE'))
-    score = Column(Integer)
-    subs_id = Column(Text)
-    subtitles_path = Column(Text)
-    timestamp = Column(DateTime, nullable=False, default=datetime.now)
-    video_path = Column(Text)
+    id = mapped_column(Integer, primary_key=True)
+    action = mapped_column(Integer, nullable=False)
+    description = mapped_column(Text, nullable=False)
+    language = mapped_column(Text)
+    provider = mapped_column(Text)
+    radarrId = mapped_column(Integer, ForeignKey('table_movies.radarrId', ondelete='CASCADE'))
+    score = mapped_column(Integer)
+    subs_id = mapped_column(Text)
+    subtitles_path = mapped_column(Text)
+    timestamp = mapped_column(DateTime, nullable=False, default=datetime.now)
+    video_path = mapped_column(Text)
 
 
 class TableLanguagesProfiles(Base):
     __tablename__ = 'table_languages_profiles'
 
-    profileId = Column(Integer, primary_key=True)
-    cutoff = Column(Integer)
-    originalFormat = Column(Integer)
-    items = Column(Text, nullable=False)
-    name = Column(Text, nullable=False)
-    mustContain = Column(Text)
-    mustNotContain = Column(Text)
+    profileId = mapped_column(Integer, primary_key=True)
+    cutoff = mapped_column(Integer)
+    originalFormat = mapped_column(Integer)
+    items = mapped_column(Text, nullable=False)
+    name = mapped_column(Text, nullable=False)
+    mustContain = mapped_column(Text)
+    mustNotContain = mapped_column(Text)
 
 
 class TableMovies(Base):
     __tablename__ = 'table_movies'
 
-    alternativeTitles = Column(Text)
-    audio_codec = Column(Text)
-    audio_language = Column(Text)
-    failedAttempts = Column(Text)
-    fanart = Column(Text)
-    ffprobe_cache = Column(LargeBinary)
-    file_size = Column(Integer)
-    format = Column(Text)
-    imdbId = Column(Text)
-    missing_subtitles = Column(Text)
-    monitored = Column(Text)
-    movie_file_id = Column(Integer)
-    overview = Column(Text)
-    path = Column(Text, nullable=False, unique=True)
-    poster = Column(Text)
-    profileId = Column(ForeignKey('table_languages_profiles.profileId', ondelete='SET NULL'))
-    radarrId = Column(Integer, primary_key=True)
-    resolution = Column(Text)
-    sceneName = Column(Text)
-    sortTitle = Column(Text)
-    subtitles = Column(Text)
-    tags = Column(Text)
-    title = Column(Text, nullable=False)
-    tmdbId = Column(Text, nullable=False, unique=True)
-    video_codec = Column(Text)
-    year = Column(Text)
+    alternativeTitles = mapped_column(Text)
+    audio_codec = mapped_column(Text)
+    audio_language = mapped_column(Text)
+    failedAttempts = mapped_column(Text)
+    fanart = mapped_column(Text)
+    ffprobe_cache = mapped_column(LargeBinary)
+    file_size = mapped_column(Integer)
+    format = mapped_column(Text)
+    imdbId = mapped_column(Text)
+    missing_subtitles = mapped_column(Text)
+    monitored = mapped_column(Text)
+    movie_file_id = mapped_column(Integer)
+    overview = mapped_column(Text)
+    path = mapped_column(Text, nullable=False, unique=True)
+    poster = mapped_column(Text)
+    profileId = mapped_column(Integer, ForeignKey('table_languages_profiles.profileId', ondelete='SET NULL'))
+    radarrId = mapped_column(Integer, primary_key=True)
+    resolution = mapped_column(Text)
+    sceneName = mapped_column(Text)
+    sortTitle = mapped_column(Text)
+    subtitles = mapped_column(Text)
+    tags = mapped_column(Text)
+    title = mapped_column(Text, nullable=False)
+    tmdbId = mapped_column(Text, nullable=False, unique=True)
+    video_codec = mapped_column(Text)
+    year = mapped_column(Text)
 
 
 class TableMoviesRootfolder(Base):
     __tablename__ = 'table_movies_rootfolder'
 
-    accessible = Column(Integer)
-    error = Column(Text)
-    id = Column(Integer, primary_key=True)
-    path = Column(Text)
+    accessible = mapped_column(Integer)
+    error = mapped_column(Text)
+    id = mapped_column(Integer, primary_key=True)
+    path = mapped_column(Text)
 
 
 class TableSettingsLanguages(Base):
     __tablename__ = 'table_settings_languages'
 
-    code3 = Column(Text, primary_key=True)
-    code2 = Column(Text)
-    code3b = Column(Text)
-    enabled = Column(Integer)
-    name = Column(Text, nullable=False)
+    code3 = mapped_column(Text, primary_key=True)
+    code2 = mapped_column(Text)
+    code3b = mapped_column(Text)
+    enabled = mapped_column(Integer)
+    name = mapped_column(Text, nullable=False)
 
 
 class TableSettingsNotifier(Base):
     __tablename__ = 'table_settings_notifier'
 
-    name = Column(Text, primary_key=True)
-    enabled = Column(Integer)
-    url = Column(Text)
+    name = mapped_column(Text, primary_key=True)
+    enabled = mapped_column(Integer)
+    url = mapped_column(Text)
 
 
 class TableShows(Base):
     __tablename__ = 'table_shows'
 
-    tvdbId = Column(Integer)
-    alternativeTitles = Column(Text)
-    audio_language = Column(Text)
-    fanart = Column(Text)
-    imdbId = Column(Text)
-    monitored = Column(Text)
-    overview = Column(Text)
-    path = Column(Text, nullable=False, unique=True)
-    poster = Column(Text)
-    profileId = Column(ForeignKey('table_languages_profiles.profileId', ondelete='SET NULL'))
-    seriesType = Column(Text)
-    sonarrSeriesId = Column(Integer, primary_key=True)
-    sortTitle = Column(Text)
-    tags = Column(Text)
-    title = Column(Text, nullable=False)
-    year = Column(Text)
+    tvdbId = mapped_column(Integer)
+    alternativeTitles = mapped_column(Text)
+    audio_language = mapped_column(Text)
+    fanart = mapped_column(Text)
+    imdbId = mapped_column(Text)
+    monitored = mapped_column(Text)
+    overview = mapped_column(Text)
+    path = mapped_column(Text, nullable=False, unique=True)
+    poster = mapped_column(Text)
+    profileId = mapped_column(Integer, ForeignKey('table_languages_profiles.profileId', ondelete='SET NULL'))
+    seriesType = mapped_column(Text)
+    sonarrSeriesId = mapped_column(Integer, primary_key=True)
+    sortTitle = mapped_column(Text)
+    tags = mapped_column(Text)
+    title = mapped_column(Text, nullable=False)
+    year = mapped_column(Text)
 
 
 class TableShowsRootfolder(Base):
     __tablename__ = 'table_shows_rootfolder'
 
-    accessible = Column(Integer)
-    error = Column(Text)
-    id = Column(Integer, primary_key=True)
-    path = Column(Text)
+    accessible = mapped_column(Integer)
+    error = mapped_column(Text)
+    id = mapped_column(Integer, primary_key=True)
+    path = mapped_column(Text)
 
 
 class TableCustomScoreProfileConditions(Base):
     __tablename__ = 'table_custom_score_profile_conditions'
 
-    id = Column(Integer, primary_key=True)
-    profile_id = Column(ForeignKey('table_custom_score_profiles.id'), nullable=False)
-    type = Column(Text)
-    value = Column(Text)
-    required = Column(Integer, nullable=False)
-    negate = Column(Integer, nullable=False)
+    id = mapped_column(Integer, primary_key=True)
+    profile_id = mapped_column(Integer, ForeignKey('table_custom_score_profiles.id'), nullable=False)
+    type = mapped_column(Text)
+    value = mapped_column(Text)
+    required = mapped_column(Integer, nullable=False)
+    negate = mapped_column(Integer, nullable=False)
 
     profile = relationship('TableCustomScoreProfiles')
 
@@ -490,7 +490,8 @@ def get_profile_id(series_id=None, episode_id=None, movie_id=None):
     elif episode_id:
         data = database.execute(
             select(TableShows.profileId)
-            .join(TableEpisodes, TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId)
+            .select_from(TableShows)
+            .join(TableEpisodes)
             .where(TableEpisodes.sonarrEpisodeId == episode_id)) \
             .first()
         if data:

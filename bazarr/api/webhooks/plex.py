@@ -75,7 +75,8 @@ class WebHooksPlex(Resource):
             else:
                 sonarrEpisodeId = database.execute(
                     select(TableEpisodes.sonarrEpisodeId)
-                    .join(TableShows, TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)
+                    .select_from(TableEpisodes)
+                    .join(TableShows)
                     .where(TableShows.imdbId == series_imdb_id,
                            TableEpisodes.season == season,
                            TableEpisodes.episode == episode)) \
