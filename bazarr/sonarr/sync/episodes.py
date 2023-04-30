@@ -3,7 +3,7 @@
 import os
 import logging
 
-from app.database import database, TableEpisodes, TableShows, delete, update, insert, select
+from app.database import database, TableEpisodes, delete, update, insert, select
 from app.config import settings
 from utilities.path_mappings import path_mappings
 from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
@@ -12,7 +12,7 @@ from app.event_handler import event_stream
 from sonarr.info import get_sonarr_info, url_sonarr
 
 from .parser import episodeParser
-from .utils import get_series_from_sonarr_api, get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
+from .utils import get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
 
 
 def update_all_episodes():
@@ -123,7 +123,6 @@ def sync_episodes(series_id, send_event=True):
                                  added_episode['monitored']])
         if send_event:
             event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
-
 
     # Store subtitles for added or modified episodes
     for i, altered_episode in enumerate(altered_episodes, 1):

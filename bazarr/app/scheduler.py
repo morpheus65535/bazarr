@@ -19,7 +19,7 @@ import logging
 
 from app.announcements import get_announcements_to_file
 from sonarr.sync.series import update_series
-from sonarr.sync.episodes import sync_episodes, update_all_episodes
+from sonarr.sync.episodes import update_all_episodes
 from radarr.sync.movies import update_movies, update_all_movies
 from subtitles.wanted import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies
 from subtitles.upgrade import upgrade_subtitles

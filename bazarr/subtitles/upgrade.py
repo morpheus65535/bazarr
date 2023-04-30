@@ -206,8 +206,8 @@ def get_upgradable_episode_subtitles():
                TableShows.title.label('seriesTitle'),
                TableShows.seriesType)
         .select_from(TableHistory)
-        .join(TableShows)
-        .join(TableEpisodes)
+        .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId)
+        .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)
         .where(reduce(operator.and_, upgradable_episodes_conditions))
         .order_by(TableHistory.timestamp.desc()))\
         .all()

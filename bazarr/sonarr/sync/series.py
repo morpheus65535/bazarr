@@ -6,7 +6,7 @@ from app.config import settings
 from sonarr.info import url_sonarr
 from subtitles.indexer.series import list_missing_subtitles
 from sonarr.rootfolder import check_sonarr_rootfolder
-from app.database import TableShows, TableEpisodes, database, insert, update, delete, select
+from app.database import TableShows, database, insert, update, delete, select
 from utilities.path_mappings import path_mappings
 from app.event_handler import event_stream, show_progress, hide_progress
 

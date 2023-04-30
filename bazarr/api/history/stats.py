@@ -92,7 +92,7 @@ class HistoryStats(Resource):
         } for x in database.execute(
             select(TableHistory.timestamp, TableHistory.id)
             .where(history_where_clause))
-        .all()]
+            .all()]
         data_series = [{'date': date[0], 'count': sum(1 for item in date[1])} for date in
                        itertools.groupby(list(data_series),
                                          key=lambda x: x['timestamp'].strftime(

@@ -58,7 +58,6 @@ else:
     from sqlalchemy.engine import Engine
     from sqlalchemy import event
 
-
     @event.listens_for(Engine, "connect")
     def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
@@ -382,7 +381,7 @@ def update_profile_id_list():
                TableLanguagesProfiles.items,
                TableLanguagesProfiles.mustContain,
                TableLanguagesProfiles.mustNotContain,
-               TableLanguagesProfiles.originalFormat)) \
+               TableLanguagesProfiles.originalFormat))
         .all()
     ]
 

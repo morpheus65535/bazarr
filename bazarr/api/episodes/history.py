@@ -102,8 +102,8 @@ class EpisodesHistory(Resource):
                       TableHistory.provider,
                       TableShows.seriesType) \
             .select_from(TableHistory) \
-            .join(TableShows) \
-            .join(TableEpisodes) \
+            .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId) \
+            .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
             .where(query_condition) \
             .order_by(TableHistory.timestamp.desc())
         if length > 0:

@@ -5,8 +5,8 @@ import json
 from flask import request, jsonify
 from flask_restx import Resource, Namespace
 
-from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableShows, TableMovies, \
-    TableSettingsNotifier, update_profile_id_list, database, insert, update, delete, select
+from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableSettingsNotifier, \
+    update_profile_id_list, database, insert, update, delete, select
 from app.event_handler import event_stream
 from app.config import settings, save_settings, get_settings
 from app.scheduler import scheduler
@@ -91,7 +91,6 @@ class SystemSettings(Resource):
                 database.execute(
                     delete(TableLanguagesProfiles)
                     .where(TableLanguagesProfiles.profileId == profileId))
-
 
             # invalidate cache
             update_profile_id_list.invalidate()

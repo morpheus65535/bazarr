@@ -9,7 +9,6 @@ import warnings
 
 from logging.handlers import TimedRotatingFileHandler
 from pytz_deprecation_shim import PytzUsageWarning
-from sqlalchemy.exc import SAWarning
 
 from .get_args import args
 from .config import settings

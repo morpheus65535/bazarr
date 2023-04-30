@@ -40,7 +40,6 @@ def update_notifier():
         .values(notifiers_added))
 
 
-
 def get_notifier_providers():
     return database.execute(
         select(TableSettingsNotifier.name, TableSettingsNotifier.url)
