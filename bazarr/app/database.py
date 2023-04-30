@@ -18,7 +18,6 @@ from sqlalchemy.pool import NullPool
 
 from flask_sqlalchemy import SQLAlchemy
 
-from utilities.path_mappings import path_mappings
 from .config import settings, get_array_from
 from .get_args import args
 
@@ -33,15 +32,20 @@ if postgresql:
     from sqlalchemy.dialects.postgresql import insert  # noqa E402
     from sqlalchemy.engine import URL  # noqa E402
 
-    logger.debug(f"Connecting to PostgreSQL database: {settings.postgresql.host}:{settings.postgresql.port}/"
-                 f"{settings.postgresql.database}")
+    postgres_database = os.getenv("POSTGRES_DATABASE", settings.postgresql.database)
+    postgres_username = os.getenv("POSTGRES_USERNAME", settings.postgresql.username)
+    postgres_password = os.getenv("POSTGRES_PASSWORD", settings.postgresql.password)
+    postgres_host = os.getenv("POSTGRES_HOST", settings.postgresql.host)
+    postgres_port = os.getenv("POSTGRES_PORT", settings.postgresql.port)
+
+    logger.debug(f"Connecting to PostgreSQL database: {postgres_host}:{postgres_port}/{postgres_database}")
     url = URL.create(
         drivername="postgresql",
-        username=settings.postgresql.username,
-        password=settings.postgresql.password,
-        host=settings.postgresql.host,
-        port=settings.postgresql.port,
-        database=settings.postgresql.database
+        username=postgres_username,
+        password=postgres_password,
+        host=postgres_host,
+        port=postgres_port,
+        database=postgres_database
     )
     engine = create_engine(url, poolclass=NullPool, isolation_level="AUTOCOMMIT")
 else:
