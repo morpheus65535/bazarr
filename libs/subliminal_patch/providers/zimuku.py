@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+import base64
 import io
 import logging
 import os
 import zipfile
 import re
 import copy
+from PIL import Image
 
 try:
     from urlparse import urljoin
@@ -20,6 +22,7 @@ from requests import Session
 from six import text_type
 from random import randint
 
+from python_anticaptcha import AnticaptchaClient, ImageToTextTask
 from subliminal.providers import ParserBeautifulSoup
 from subliminal_patch.providers import Provider
 from subliminal.subtitle import (
@@ -38,6 +41,7 @@ logger = logging.getLogger(__name__)
 language_converters.register('zimuku = subliminal_patch.converters.zimuku:zimukuConverter')
 
 supported_languages = list(language_converters['zimuku'].to_zimuku.keys())
+
 
 class ZimukuSubtitle(Subtitle):
     """Zimuku Subtitle."""
@@ -80,6 +84,13 @@ class ZimukuSubtitle(Subtitle):
         return matches
 
 
+def string_to_hex(s):
+    val = ""
+    for i in s:
+        val += hex(ord(i))[2:]
+    return val
+
+
 class ZimukuProvider(Provider):
     """Zimuku Provider."""
 
@@ -87,40 +98,58 @@ class ZimukuProvider(Provider):
     video_types = (Episode, Movie)
     logger.info(str(supported_languages))
 
-    server_url = "http://zimuku.org"
-    search_url = "/search?q={}&security_verify_data={}"
-    download_url = "http://zimuku.org/"
+    server_url = "https://so.zimuku.org"
+    search_url = "/search?q={}"
 
     subtitle_class = ZimukuSubtitle
 
     def __init__(self):
         self.session = None
 
-    def stringToHex(self, s):
-        val = ""
-        for i in s:
-            val += hex(ord(i))[2:]
-        return val
-    vertoken = ""
+    verify_token = ""
+    code = ""
     location_re = re.compile(
-        r'self\.location = "(.*)" \+ stringToHex\(screendate\)')
+        r'self\.location = "(.*)" \+ stringToHex\(text\)')
+    verification_image_re = re.compile(r'<img.*?src="data:image/bmp;base64,(.*?)".*?>')
 
     def yunsuo_bypass(self, url, *args, **kwargs):
+        def parse_verification_image(image_content: str):
+
+            def bmp_to_image(base64_str, img_type='png'):
+                img_data = base64.b64decode(base64_str)
+                img = Image.open(io.BytesIO(img_data))
+                img = img.convert("RGB")
+                img_fp = io.BytesIO()
+                img.save(img_fp, img_type)
+                img_fp.seek(0)
+                return img_fp
+
+            fp = bmp_to_image(image_content)
+            task = ImageToTextTask(fp)
+            client = AnticaptchaClient(os.environ.get('ANTICAPTCHA_ACCOUNT_KEY'))
+            job = client.createTask(task)
+            job.join()
+            return job.get_captcha_text()
+
         i = -1
         while True:
             i += 1
             r = self.session.get(url, *args, **kwargs)
-            if(r.status_code == 404):
+            if r.status_code == 404:
+                # mock js script logic
                 tr = self.location_re.findall(r.text)
-                self.session.cookies.set("srcurl", self.stringToHex(r.url))
-                if(tr):
+                verification_image = self.verification_image_re.findall(r.text)
+                self.code = parse_verification_image(verification_image[0])
+                self.session.cookies.set("srcurl", string_to_hex(r.url))
+                if tr:
                     verify_resp = self.session.get(
-                        self.server_url+tr[0]+self.stringToHex("1920,1080"), allow_redirects=False)
-                    if(verify_resp.status_code == 302 and self.session.cookies.get("security_session_verify") != None):
+                        self.server_url + tr[0] + string_to_hex(self.code), allow_redirects=False)
+                    if verify_resp.status_code == 302 \
+                            and self.session.cookies.get("security_session_verify") is not None:
                         pass
                     continue
             if len(self.location_re.findall(r.text)) == 0:
-                self.vertoken = self.stringToHex("1920,1080")
+                self.verify_token = string_to_hex(self.code)
                 return r
 
     def initialize(self):
@@ -147,14 +176,14 @@ class ZimukuProvider(Provider):
             language = Language("eng")
             for img in sub.find("td", class_="tac lang").find_all("img"):
                 if (
-                    "china" in img.attrs["src"]
-                    and "hongkong" in img.attrs["src"]
+                        "china" in img.attrs["src"]
+                        and "hongkong" in img.attrs["src"]
                 ):
                     language = Language("zho").add(Language('zho', 'TW', None))
-                    logger.debug("language:"+str(language))
+                    logger.debug("language:" + str(language))
                 elif (
-                    "china" in img.attrs["src"]
-                    or "jollyroger" in img.attrs["src"]
+                        "china" in img.attrs["src"]
+                        or "jollyroger" in img.attrs["src"]
                 ):
                     language = Language("zho")
                 elif "hongkong" in img.attrs["src"]:
@@ -171,8 +200,6 @@ class ZimukuProvider(Provider):
         return subs
 
     def query(self, keyword, season=None, episode=None, year=None):
-        if self.vertoken == "":
-            self.yunsuo_bypass(self.server_url + '/')
         params = keyword
         if season:
             params += ".S{season:02d}".format(season=season)
@@ -181,8 +208,8 @@ class ZimukuProvider(Provider):
 
         logger.debug("Searching subtitles %r", params)
         subtitles = []
-        search_link = self.server_url + text_type(self.search_url).format(params, self.vertoken)
-        
+        search_link = self.server_url + text_type(self.search_url).format(params)
+
         r = self.yunsuo_bypass(search_link, timeout=30)
         r.raise_for_status()
 
@@ -198,7 +225,7 @@ class ZimukuProvider(Provider):
         while parts:
             parts.reverse()
             redirect_url = urljoin(self.server_url, "".join(parts))
-            r = self.query_resp(redirect_url, timeout=30)
+            r = self.session.get(redirect_url, timeout=30)
             html = r.content.decode("utf-8", "ignore")
             parts = re.findall(pattern, html)
         logger.debug("search url located: " + redirect_url)
@@ -267,26 +294,22 @@ class ZimukuProvider(Provider):
         return subtitles
 
     def download_subtitle(self, subtitle):
-        def _get_archive_dowload_link(yunsuopass, sub_page_link):
-            r = yunsuopass(sub_page_link)
+        def _get_archive_download_link(yunsuopass, sub_page_link):
+            res = yunsuopass(sub_page_link)
             bs_obj = ParserBeautifulSoup(
-                r.content.decode("utf-8", "ignore"), ["html.parser"]
+                res.content.decode("utf-8", "ignore"), ["html.parser"]
             )
             down_page_link = bs_obj.find("a", {"id": "down1"}).attrs["href"]
             down_page_link = urljoin(sub_page_link, down_page_link)
-            r = yunsuopass(down_page_link)
+            res = yunsuopass(down_page_link)
             bs_obj = ParserBeautifulSoup(
-                r.content.decode("utf-8", "ignore"), ["html.parser"]
+                res.content.decode("utf-8", "ignore"), ["html.parser"]
             )
-            download_link = bs_obj.find("a", {"rel": "nofollow"})
-            download_link = download_link.attrs["href"]
-            download_link = urljoin(sub_page_link, download_link)
-            return download_link
+            return urljoin(sub_page_link, bs_obj.find("a", {"rel": "nofollow"}).attrs["href"])
 
         # download the subtitle
         logger.info("Downloading subtitle %r", subtitle)
-        self.session = subtitle.session
-        download_link = _get_archive_dowload_link(self.yunsuo_bypass, subtitle.page_link)
+        download_link = _get_archive_download_link(self.yunsuo_bypass, subtitle.page_link)
         r = self.yunsuo_bypass(download_link, headers={'Referer': subtitle.page_link}, timeout=30)
         r.raise_for_status()
         try:
@@ -404,7 +427,7 @@ def _extract_name(name):
                 result = [start, end]
             start = end
             end += 1
-        new_name = name[result[0] : result[1]]
+        new_name = name[result[0]: result[1]]
     new_name = new_name.strip() + suffix
     return new_name
 
@@ -413,7 +436,7 @@ def num_to_cn(number):
     """ convert numbers(1-99) to Chinese """
     assert number.isdigit() and 1 <= int(number) <= 99
 
-    trans_map = {n: c for n, c in zip(("123456789"), ("一二三四五六七八九"))}
+    trans_map = {n: c for n, c in zip("123456789", "一二三四五六七八九")}
 
     if len(number) == 1:
         return trans_map[number]

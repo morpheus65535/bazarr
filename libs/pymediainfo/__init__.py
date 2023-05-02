@@ -386,7 +386,7 @@ class MediaInfo:
             A higher value will yield more precise results in some cases
             but will also increase parsing time.
         :param bool full: display additional tags, including computer-readable values
-            for sizes and durations.
+            for sizes and durations, corresponds to the CLI's ``--Full``/``-f`` parameter.
         :param bool legacy_stream_display: display additional information about streams.
         :param dict mediainfo_options: additional options that will be passed to the
             `MediaInfo_Option` function, for example: ``{"Language": "raw"}``.

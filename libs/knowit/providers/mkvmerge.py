@@ -28,6 +28,7 @@ from knowit.rules import (
     LanguageRule,
     ResolutionRule,
 )
+from knowit.rules.general import GuessTitleRule
 from knowit.serializer import get_json_encoder
 from knowit.units import units
 from knowit.utils import define_candidate, detect_os
@@ -67,7 +68,7 @@ class MkvMergeExecutor:
     def extract_info(self, filename):
         """Extract media info."""
         json_dump = self._execute(filename)
-        return json.loads(json_dump)
+        return json.loads(json_dump) if json_dump else {}
 
     def _execute(self, filename):
         raise NotImplementedError
@@ -166,17 +167,20 @@ class MkvMergeProvider(Provider):
             },
         }, {
             'video': {
+                'guessed': GuessTitleRule('guessed properties', private=True),
                 'language': LanguageRule('video language', override=True),
                 'resolution': ResolutionRule('video resolution'),
             },
             'audio': {
+                'guessed': GuessTitleRule('guessed properties', private=True),
                 'language': LanguageRule('audio language', override=True),
                 'channels': AudioChannelsRule('audio channels'),
             },
             'subtitle': {
+                'guessed': GuessTitleRule('guessed properties', private=True),
                 'language': LanguageRule('subtitle language', override=True),
-                'hearing_impaired': HearingImpairedRule('subtitle hearing impaired'),
-                'closed_caption': ClosedCaptionRule('closed caption'),
+                'hearing_impaired': HearingImpairedRule('subtitle hearing impaired', override=True),
+                'closed_caption': ClosedCaptionRule('closed caption', override=True),
             }
         })
         self.executor = MkvMergeExecutor.get_executor_instance(suggested_path)

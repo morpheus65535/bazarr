@@ -119,4 +119,5 @@ class SystemApi extends BaseApi {
   }
 }
 
-export default new SystemApi();
+const systemApi = new SystemApi();
+export default systemApi;

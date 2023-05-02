@@ -169,7 +169,7 @@ def dumps(
     return convert(info, context)
 
 
-def main(args: typing.List[str] = None) -> None:
+def main(args: typing.Optional[typing.List[str]] = None) -> None:
     """Execute main function for entry point."""
     argument_parser = build_argument_parser()
     args = args or sys.argv[1:]

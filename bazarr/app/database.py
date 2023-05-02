@@ -22,7 +22,7 @@ from .get_args import args
 
 logger = logging.getLogger(__name__)
 
-postgresql = settings.postgresql.getboolean('enabled')
+postgresql = (os.getenv("POSTGRES_ENABLED", settings.postgresql.enabled).lower() == 'true')
 
 region = make_region().configure('dogpile.cache.memory')
 
@@ -32,14 +32,19 @@ if postgresql:
             (OperationalError, 'server closed the connection unexpectedly'),
         )
 
+    postgres_database = os.getenv("POSTGRES_DATABASE", settings.postgresql.database)
+    postgres_username = os.getenv("POSTGRES_USERNAME", settings.postgresql.username)
+    postgres_password = os.getenv("POSTGRES_PASSWORD", settings.postgresql.password)
+    postgres_host = os.getenv("POSTGRES_HOST", settings.postgresql.host)
+    postgres_port = os.getenv("POSTGRES_PORT", settings.postgresql.port)
 
     logger.debug(
-        f"Connecting to PostgreSQL database: {settings.postgresql.host}:{settings.postgresql.port}/{settings.postgresql.database}")
-    database = ReconnectPostgresqlDatabase(settings.postgresql.database,
-                                           user=settings.postgresql.username,
-                                           password=settings.postgresql.password,
-                                           host=settings.postgresql.host,
-                                           port=settings.postgresql.port,
+        f"Connecting to PostgreSQL database: {postgres_host}:{postgres_port}/{postgres_database}")
+    database = ReconnectPostgresqlDatabase(postgres_database,
+                                           user=postgres_username,
+                                           password=postgres_password,
+                                           host=postgres_host,
+                                           port=postgres_port,
                                            autocommit=True,
                                            autorollback=True,
                                            autoconnect=True,

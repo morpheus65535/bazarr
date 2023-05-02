@@ -82,7 +82,8 @@ defaults = {
         'embedded_subtitles_parser': 'ffprobe',
         'default_und_audio_lang': '',
         'default_und_embedded_subtitles_lang': '',
-        'parse_embedded_audio_track': 'False'
+        'parse_embedded_audio_track': 'False',
+        'skip_hashing': 'False'
     },
     'auth': {
         'type': 'None',
@@ -168,6 +169,10 @@ defaults = {
     },
     'subf2m': {
         'verify_ssl': 'True'
+    },
+    'whisperai': {
+        'endpoint': 'http://127.0.0.1:9000',
+        'timeout': '3600'
     },
     'legendasdivx': {
         'username': '',
@@ -275,7 +280,7 @@ defaults = {
         'database': '',
         'username': '',
         'password': '',
-    }
+    },
 }
 
 settings = SimpleConfigParser(defaults=defaults, interpolation=None)

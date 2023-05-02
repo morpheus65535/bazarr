@@ -95,4 +95,5 @@ class EpisodeApi extends BaseApi {
   }
 }
 
-export default new EpisodeApi();
+const episodeApi = new EpisodeApi();
+export default episodeApi;

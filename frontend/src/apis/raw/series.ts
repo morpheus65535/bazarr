@@ -29,4 +29,5 @@ class SeriesApi extends BaseApi {
   }
 }
 
-export default new SeriesApi();
+const seriesApi = new SeriesApi();
+export default seriesApi;

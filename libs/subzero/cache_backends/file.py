@@ -8,7 +8,8 @@ class SZFileBackend(CacheBackend):
     def __init__(self, arguments):
         self._cache = FileCache(arguments.pop("appname", None), flag=arguments.pop("flag", "c"),
                                 serialize=arguments.pop("serialize", True),
-                                app_cache_dir=arguments.pop("app_cache_dir", None))
+                                app_cache_dir=arguments.pop("app_cache_dir", None),
+                                mode=False)
 
     def get(self, key):
         value = self._cache.get(key, NO_VALUE)

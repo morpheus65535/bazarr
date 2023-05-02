@@ -1,5 +1,5 @@
 import pytest
-
+from subliminal_patch.providers import subf2m
 from subliminal_patch.providers.subf2m import Subf2mProvider
 from subliminal_patch.providers.subf2m import Subf2mSubtitle
 from subzero.language import Language
@@ -188,3 +188,17 @@ def test_download_subtitle_episode_with_title():
     with Subf2mProvider() as provider:
         provider.download_subtitle(sub)
         assert sub.is_valid()
+
+
+def test_get_episode_from_release():
+    assert subf2m._get_episode_from_release(
+        "Vinland Saga Season 2 - 05 [Crunchyroll][Crunchyroll] Vinland Saga Season 2 - 05"
+    ) == {"season": [2], "episode": [5]}
+
+
+def test_get_episode_from_release_return_none():
+    assert subf2m._get_episode_from_release("Vinland Saga Season 2 - Foo") is None
+
+
+def test_get_episode_from_release_w_empty_match_return_none():
+    assert subf2m._get_episode_from_release("Vinland Saga - 02") is None

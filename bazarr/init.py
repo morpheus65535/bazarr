@@ -10,7 +10,6 @@ import time
 import rarfile
 
 from dogpile.cache.region import register_backend as register_cache_backend
-from subliminal_patch.extensions import provider_registry
 
 from app.config import settings, configure_captcha_func, get_array_from
 from app.get_args import args
@@ -57,6 +56,9 @@ os.environ["SZ_HI_EXTENSION"] = settings.general.hi_extension
 # set anti-captcha provider and key
 configure_captcha_func()
 
+# import Google Analytics module to make sure logging is properly configured afterwards
+from ga4mp import GtagMP  # noqa E402
+
 # configure logging
 configure_logging(settings.general.getboolean('debug') or args.debug)
 import logging  # noqa E402
@@ -73,7 +75,7 @@ def is_virtualenv():
 # deploy requirements.txt
 if not args.no_update:
     try:
-        import lxml, numpy, webrtcvad, setuptools  # noqa E401
+        import lxml, numpy, webrtcvad, setuptools, PIL  # noqa E401
     except ImportError:
         try:
             import pip  # noqa W0611
@@ -200,6 +202,7 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
 
 
 # Remove deprecated providers from enabled providers in config.ini
+from subliminal_patch.extensions import provider_registry  # noqa E401
 existing_providers = provider_registry.names()
 enabled_providers = get_array_from(settings.general.enabled_providers)
 settings.general.enabled_providers = str([x for x in enabled_providers if x in existing_providers])

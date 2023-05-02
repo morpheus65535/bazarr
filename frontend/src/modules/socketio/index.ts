@@ -168,4 +168,6 @@ class SocketIOClient {
   }
 }
 
-export default new SocketIOClient();
+const socketIOClient = new SocketIOClient();
+
+export default socketIOClient;

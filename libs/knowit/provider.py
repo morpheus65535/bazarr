@@ -103,10 +103,7 @@ class Provider:
 
             value = prop.extract_value(track, context)
             if value is not None:
-                if not prop.private:
-                    which = props
-                else:
-                    which = pv_props
+                which = props if not prop.private else pv_props
                 which[name] = value
 
         for name, rule in self.rules.get(track_type, {}).items():
@@ -116,8 +113,9 @@ class Provider:
 
             value = rule.execute(props, pv_props, context)
             if value is not None:
-                props[name] = value
-            elif name in props and not rule.override:
+                which = props if not rule.private else pv_props
+                which[name] = value
+            elif name in props and (not rule.override or props[name] is None):
                 del props[name]
 
         return props

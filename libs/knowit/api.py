@@ -65,7 +65,7 @@ def know(
         raise KnowitException(debug_info(context=context, exc_info=True))
 
 
-def dependencies(context: typing.Mapping = None) -> typing.Mapping:
+def dependencies(context: typing.Optional[typing.Mapping] = None) -> typing.Mapping:
     """Return all dependencies detected by knowit."""
     deps = {}
     try:

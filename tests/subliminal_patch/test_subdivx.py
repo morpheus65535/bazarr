@@ -153,3 +153,21 @@ def test_subtitle_matches(video):
     assert "resolution" in matches
     assert "video_codec" in matches
     assert "release_group" in matches
+
+
+def test_latin_1_subtitles():
+    item = Episode.fromname(
+        "/tv/Grey's Anatomy/Season 19/Greys.Anatomy.S19E13.1080p.WEB.h264-ELEANOR[rarbg].mkv"
+    )
+
+    item.series = "Grey's Anatomy"
+    item.season = 19
+    item.episode = 13
+
+    with SubdivxSubtitlesProvider() as provider:
+        subtitles = provider.list_subtitles(item, {Language.fromietf("es")})
+        subtitle = subtitles[0]
+
+        provider.download_subtitle(subtitle)
+
+        assert subtitle.is_valid()

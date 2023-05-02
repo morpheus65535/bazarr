@@ -77,7 +77,11 @@ export function useEpisodeAddBlacklist() {
     },
     {
       onSuccess: (_, { seriesId, episodeId }) => {
-        client.invalidateQueries([QueryKeys.Series, QueryKeys.Blacklist]);
+        client.invalidateQueries([
+          QueryKeys.Series,
+          QueryKeys.Episodes,
+          QueryKeys.Blacklist,
+        ]);
         client.invalidateQueries([QueryKeys.Series, seriesId]);
       },
     }
@@ -92,7 +96,11 @@ export function useEpisodeDeleteBlacklist() {
       api.episodes.deleteBlacklist(param.all, param.form),
     {
       onSuccess: (_, param) => {
-        client.invalidateQueries([QueryKeys.Series, QueryKeys.Blacklist]);
+        client.invalidateQueries([
+          QueryKeys.Series,
+          QueryKeys.Episodes,
+          QueryKeys.Blacklist,
+        ]);
       },
     }
   );

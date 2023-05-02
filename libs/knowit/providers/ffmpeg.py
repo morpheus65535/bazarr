@@ -34,6 +34,7 @@ from knowit.rules import (
     LanguageRule,
     ResolutionRule,
 )
+from knowit.rules.general import GuessTitleRule
 from knowit.serializer import get_json_encoder
 from knowit.units import units
 from knowit.utils import (
@@ -77,7 +78,7 @@ class FFmpegExecutor:
     def extract_info(self, filename):
         """Extract media info."""
         json_dump = self._execute(filename)
-        return json.loads(json_dump)
+        return json.loads(json_dump) if json_dump else {}
 
     def _execute(self, filename):
         raise NotImplementedError
@@ -144,7 +145,7 @@ class FFmpegProvider(Provider):
                 'id': Basic('index', data_type=int, allow_fallback=True, description='video track number'),
                 'name': Property('tags.title', description='video track name'),
                 'language': Language('tags.language', description='video language'),
-                'duration': Duration('duration', description='video duration'),
+                'duration': Duration('duration', 'tags.duration', description='video duration'),
                 'width': Quantity('width', unit=units.pixel),
                 'height': Quantity('height', unit=units.pixel),
                 'scan_type': ScanType(config, 'field_order', default='Progressive', description='video scan type'),
@@ -153,7 +154,7 @@ class FFmpegProvider(Provider):
                 'resolution': None,  # populated with ResolutionRule
                 'frame_rate': Ratio('r_frame_rate', unit=units.FPS, description='video frame rate'),
                 # frame_rate_mode
-                'bit_rate': Quantity('bit_rate', unit=units.bps, description='video bit rate'),
+                'bit_rate': Quantity('bit_rate', 'tags.bps', unit=units.bps, description='video bit rate'),
                 'bit_depth': Quantity('bits_per_raw_sample', unit=units.bit, description='video bit depth'),
                 'codec': VideoCodec(config, 'codec_name', description='video codec'),
                 'profile': VideoProfile(config, 'profile', description='video codec profile'),
@@ -166,13 +167,13 @@ class FFmpegProvider(Provider):
                 'id': Basic('index', data_type=int, allow_fallback=True, description='audio track number'),
                 'name': Property('tags.title', description='audio track name'),
                 'language': Language('tags.language', description='audio language'),
-                'duration': Duration('duration', description='audio duration'),
+                'duration': Duration('duration', 'tags.duration', description='audio duration'),
                 'codec': AudioCodec(config, 'profile', 'codec_name', description='audio codec'),
                 'profile': AudioProfile(config, 'profile', description='audio codec profile'),
                 'channels_count': AudioChannels('channels', description='audio channels count'),
                 'channels': None,  # populated with AudioChannelsRule
                 'bit_depth': Quantity('bits_per_raw_sample', unit=units.bit, description='audio bit depth'),
-                'bit_rate': Quantity('bit_rate', unit=units.bps, description='audio bit rate'),
+                'bit_rate': Quantity('bit_rate', 'tags.bps', unit=units.bps, description='audio bit rate'),
                 'sampling_rate': Quantity('sample_rate', unit=units.Hz, description='audio sampling rate'),
                 'forced': YesNo('disposition.forced', hide_value=False, description='audio track forced'),
                 'default': YesNo('disposition.default', hide_value=False, description='audio track default'),
@@ -190,17 +191,20 @@ class FFmpegProvider(Provider):
             },
         }, {
             'video': {
-                'language': LanguageRule('video language'),
+                'guessed': GuessTitleRule('guessed properties', private=True),
+                'language': LanguageRule('video language', override=True),
                 'resolution': ResolutionRule('video resolution'),
             },
             'audio': {
-                'language': LanguageRule('audio language'),
+                'guessed': GuessTitleRule('guessed properties', private=True),
+                'language': LanguageRule('audio language', override=True),
                 'channels': AudioChannelsRule('audio channels'),
             },
             'subtitle': {
-                'language': LanguageRule('subtitle language'),
-                'hearing_impaired': HearingImpairedRule('subtitle hearing impaired'),
-                'closed_caption': ClosedCaptionRule('closed caption'),
+                'guessed': GuessTitleRule('guessed properties', private=True),
+                'language': LanguageRule('subtitle language', override=True),
+                'hearing_impaired': HearingImpairedRule('subtitle hearing impaired', override=True),
+                'closed_caption': ClosedCaptionRule('closed caption', override=True),
             },
         })
         self.executor = FFmpegExecutor.get_executor_instance(suggested_path)

@@ -138,6 +138,9 @@ def parse_upgradable_list(upgradable_list, perfect_score, media_type):
     for item in upgradable_list:
         logging.debug(f"Trying to validate eligibility to upgrade for this subtitles: "
                       f"{item['subtitles_path']}")
+        if not os.path.exists(path_replace_method(item['subtitles_path'])):
+            logging.debug("Subtitles file doesn't exists anymore, we skip this one.")
+            continue
         if (item['video_path'], item['language']) in \
                 [(x['video_path'], x['language']) for x in items_to_upgrade]:
             logging.debug("Newer video path and subtitles language combination already in list of subtitles to "
