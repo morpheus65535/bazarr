@@ -55,7 +55,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
     hash_verifiable = False
 
     def __init__(self, language, forced, hearing_impaired, page_link, file_id, releases, uploader, title, year,
-                 hash_matched, file_hash=None, season=None, episode=None):
+                 hash_matched, file_hash=None, season=None, episode=None, imdb_match=False):
         language = Language.rebuild(language, hi=hearing_impaired, forced=forced)
 
         self.title = title
@@ -75,6 +75,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
         self.hash = file_hash
         self.encoding = 'utf-8'
         self.hash_matched = hash_matched
+        self.imdb_match = imdb_match
 
     @property
     def id(self):
@@ -88,23 +89,27 @@ class OpenSubtitlesComSubtitle(Subtitle):
         if type_ == "episode":
             # series
             matches.add('series')
-            # year
-            if video.year == self.year:
-                matches.add('year')
             # season
             if video.season == self.season:
                 matches.add('season')
             # episode
             if video.episode == self.episode:
                 matches.add('episode')
+            # imdb
+            if self.imdb_match:
+                matches.add('series_imdb_id')
         else:
             # title
             matches.add('title')
-            # year
-            if video.year == self.year:
-                matches.add('year')
+            # imdb
+            if self.imdb_match:
+                matches.add('imdb_id')
 
         # rest is same for both groups
+
+        # year
+        if video.year == self.year:
+            matches.add('year')
 
         # release_group
         if (video.release_group and self.releases and
@@ -344,6 +349,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 else:
                     moviehash_match = False
 
+                try:
+                    year = int(item['attributes']['feature_details']['year'])
+                except TypeError:
+                    year = item['attributes']['feature_details']['year']
+
                 if len(item['attributes']['files']):
                     subtitle = OpenSubtitlesComSubtitle(
                         language=Language.fromietf(item['attributes']['language']),
@@ -354,10 +364,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                         releases=item['attributes']['release'],
                         uploader=item['attributes']['uploader']['name'],
                         title=item['attributes']['feature_details']['movie_name'],
-                        year=item['attributes']['feature_details']['year'],
+                        year=year,
                         season=season_number,
                         episode=episode_number,
-                        hash_matched=moviehash_match
+                        hash_matched=moviehash_match,
+                        imdb_match=True if imdb_id else False
                     )
                     subtitle.get_matches(self.video)
                     subtitles.append(subtitle)

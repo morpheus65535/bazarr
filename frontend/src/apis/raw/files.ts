@@ -23,4 +23,5 @@ class FilesApi extends BaseApi {
   }
 }
 
-export default new FilesApi();
+const filesApi = new FilesApi();
+export default filesApi;

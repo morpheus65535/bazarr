@@ -170,6 +170,10 @@ defaults = {
     'subf2m': {
         'verify_ssl': 'True'
     },
+    'whisperai': {
+        'endpoint': 'http://127.0.0.1:9000',
+        'timeout': '3600'
+    },
     'legendasdivx': {
         'username': '',
         'password': '',
@@ -276,7 +280,7 @@ defaults = {
         'database': '',
         'username': '',
         'password': '',
-    }
+    },
 }
 
 settings = SimpleConfigParser(defaults=defaults, interpolation=None)

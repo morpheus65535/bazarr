@@ -21,4 +21,5 @@ class HistoryApi extends BaseApi {
   }
 }
 
-export default new HistoryApi();
+const historyApi = new HistoryApi();
+export default historyApi;

@@ -200,10 +200,9 @@ class SubdivxSubtitlesProvider(Provider):
         # download the subtitle
         logger.debug("Downloading subtitle %r", subtitle)
 
-        # download zip / rar file with the subtitle
         response = self.session.get(
             subtitle.download_url,
-            headers={"Referer": subtitle.page_link},
+            headers={"Referer": _SERVER_URL},
             timeout=30,
         )
         response.raise_for_status()

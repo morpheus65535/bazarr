@@ -207,6 +207,25 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   { key: "napiprojekt", description: "Polish Subtitles Provider" },
   {
+    key: "whisperai",
+    name: "Whisper",
+    description: "AI Generated Subtitles powered by Whisper",
+    inputs: [
+      {
+        type: "text",
+        key: "endpoint",
+        defaultValue: "http://127.0.0.1:9000",
+        name: "Whisper ASR Docker Endpoint",
+      },
+      {
+        type: "text",
+        key: "timeout",
+        defaultValue: 3600,
+        name: "Transcription/translation timeout in seconds",
+      },
+    ],
+  },
+  {
     key: "napisy24",
     description: "Polish Subtitles Provider",
     message:
@@ -429,5 +448,9 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Bulgarian Subtitles Provider",
   },
   { key: "yifysubtitles", name: "YIFY Subtitles" },
-  { key: "zimuku", description: "Chinese Subtitles Provider" },
+  {
+    key: "zimuku",
+    name: "Zimuku",
+    description: "Chinese Subtitles Provider. Anti-captcha required",
+  },
 ];

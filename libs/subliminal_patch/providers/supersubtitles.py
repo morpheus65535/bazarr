@@ -95,7 +95,7 @@ class SuperSubtitlesSubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
-        update_matches(matches, video, self.releases)
+        update_matches(matches, video, self.release_info)
 
         # episode
         if isinstance(video, Episode):

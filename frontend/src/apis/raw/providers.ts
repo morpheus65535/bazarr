@@ -47,4 +47,5 @@ class ProviderApi extends BaseApi {
   }
 }
 
-export default new ProviderApi();
+const providerApi = new ProviderApi();
+export default providerApi;

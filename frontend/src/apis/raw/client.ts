@@ -94,4 +94,5 @@ class BazarrClient {
   }
 }
 
-export default new BazarrClient();
+const client = new BazarrClient();
+export default client;

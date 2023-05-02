@@ -23,7 +23,7 @@ from .get_args import args
 
 logger = logging.getLogger(__name__)
 
-postgresql = settings.postgresql.getboolean('enabled')
+postgresql = (os.getenv("POSTGRES_ENABLED", settings.postgresql.enabled).lower() == 'true')
 
 region = make_region().configure('dogpile.cache.memory')
 
