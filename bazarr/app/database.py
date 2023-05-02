@@ -9,7 +9,7 @@ import flask_migrate
 from dogpile.cache import make_region
 from datetime import datetime
 
-from sqlalchemy import create_engine, DateTime, ForeignKey, Integer, LargeBinary, Text
+from sqlalchemy import create_engine, DateTime, ForeignKey, Integer, LargeBinary, Text, text
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func  # noqa W0611
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship, mapped_column
@@ -219,7 +219,7 @@ class TableMovies(Base):
     sceneName = mapped_column(Text)
     sortTitle = mapped_column(Text)
     subtitles = mapped_column(Text)
-    tags = mapped_column(Text, default='[]')
+    tags = mapped_column(Text, default=text('[]'))
     title = mapped_column(Text, nullable=False)
     tmdbId = mapped_column(Text, nullable=False, unique=True)
     video_codec = mapped_column(Text)
@@ -269,7 +269,7 @@ class TableShows(Base):
     seriesType = mapped_column(Text)
     sonarrSeriesId = mapped_column(Integer, primary_key=True)
     sortTitle = mapped_column(Text)
-    tags = mapped_column(Text, default='[]')
+    tags = mapped_column(Text, default=text('[]'))
     title = mapped_column(Text, nullable=False)
     year = mapped_column(Text)
 
