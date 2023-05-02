@@ -81,6 +81,8 @@ def upgrade():
                                     remote_cols=['profileId'],
                                     ondelete='SET NULL')
         batch_op.alter_column(column_name='imdbId', server_default=None)
+        batch_op.alter_column(column_name='tags', server_default=None)
+        batch_op.alter_column(column_name='seriesType', server_default=None)
         batch_op.alter_column(column_name='tvdbId', existing_type=sa.INTEGER(), nullable=True)
         if column_exists('table_shows', 'alternateTitles') and not column_exists('table_shows', 'alternativeTitles'):
             batch_op.alter_column(column_name='alternateTitles', new_column_name='alternativeTitles')
@@ -190,6 +192,7 @@ def upgrade():
                                     remote_cols=['profileId'],
                                     ondelete='SET NULL')
         batch_op.alter_column(column_name='file_size', server_default='0')
+        batch_op.alter_column(column_name='tags', server_default=None)
         batch_op.execute('DROP INDEX IF EXISTS tablemovies_path')
         batch_op.execute('DROP INDEX IF EXISTS tablemovies_profileId')
         batch_op.execute('DROP INDEX IF EXISTS tablemovies_radarrId')

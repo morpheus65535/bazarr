@@ -219,7 +219,7 @@ class TableMovies(Base):
     sceneName = mapped_column(Text)
     sortTitle = mapped_column(Text)
     subtitles = mapped_column(Text)
-    tags = mapped_column(Text, default=text('[]'))
+    tags = mapped_column(Text)
     title = mapped_column(Text, nullable=False)
     tmdbId = mapped_column(Text, nullable=False, unique=True)
     video_codec = mapped_column(Text)
@@ -269,7 +269,7 @@ class TableShows(Base):
     seriesType = mapped_column(Text)
     sonarrSeriesId = mapped_column(Integer, primary_key=True)
     sortTitle = mapped_column(Text)
-    tags = mapped_column(Text, default=text('[]'))
+    tags = mapped_column(Text)
     title = mapped_column(Text, nullable=False)
     year = mapped_column(Text)
 
