@@ -87,8 +87,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
                             logging.debug(f"BAZARR Skipping {s}, because it doesn't match our series/episode")
                         except TypeError:
                             logging.debug("BAZARR Ignoring invalid subtitles")
-                        finally:
-                            continue
+                        continue
 
                 initial_hi = None
                 initial_hi_match = False
