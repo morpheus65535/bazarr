@@ -115,6 +115,35 @@ def provider_pool():
     return subliminal_patch.core.SZProviderPool
 
 
+def _lang_from_str(content: str):
+    try:
+        code, country = content.split("-")
+    except ValueError:
+        code, country = content, None
+
+    return subliminal_patch.core.Language(code, country)
+
+
+def get_language_equals(settings_=None):
+    settings_ = settings_ or settings
+
+    equals = get_array_from(settings_.general.language_equals)
+    if not equals:
+        return []
+
+    items = []
+    for equal in equals:
+        try:
+            from_, to_ = equal.split(":")
+            from_, to_ = _lang_from_str(from_), _lang_from_str(to_)
+        except Exception as error:
+            logging.error("Invalid equal value: %s [%s]", equal, error)
+        else:
+            items.append((from_, to_))
+
+    return items
+
+
 def get_providers():
     providers_list = []
     existing_providers = provider_registry.names()

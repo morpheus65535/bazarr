@@ -1,6 +1,6 @@
-import pytest
-
 import inspect
+
+from subliminal_patch.core import Language
 
 from bazarr.app import get_providers
 
@@ -43,3 +43,32 @@ def test_get_providers_auth_karagarga():
     assert item["password"] is not None
     assert item["f_username"] is not None
     assert item["f_password"] is not None
+
+
+def test_get_language_equals_default_settings():
+    assert isinstance(get_providers.get_language_equals(), list)
+
+
+def test_get_language_equals_injected_settings_invalid():
+    config = get_providers.settings
+    config.set("general", "language_equals", '["invalid"]')
+    assert not get_providers.get_language_equals(config)
+
+
+def test_get_language_equals_injected_settings_valid():
+    config = get_providers.settings
+    config.set("general", "language_equals", '["spa:spa-MX"]')
+
+    result = get_providers.get_language_equals(config)
+    assert result == [(Language("spa"), Language("spa", "MX"))]
+
+
+def test_get_language_equals_injected_settings_valid_multiple():
+    config = get_providers.settings
+    config.set("general", "language_equals", '["spa:spa-MX", "spa-MX:spa"]')
+
+    result = get_providers.get_language_equals(config)
+    assert result == [
+        (Language("spa"), Language("spa", "MX")),
+        (Language("spa", "MX"), Language("spa")),
+    ]

@@ -83,7 +83,8 @@ defaults = {
         'default_und_audio_lang': '',
         'default_und_embedded_subtitles_lang': '',
         'parse_embedded_audio_track': 'False',
-        'skip_hashing': 'False'
+        'skip_hashing': 'False',
+        'language_equals': '[]',
     },
     'auth': {
         'type': 'None',
@@ -300,7 +301,8 @@ array_keys = ['excluded_tags',
               'excluded_series_types',
               'enabled_providers',
               'path_mappings',
-              'path_mappings_movie']
+              'path_mappings_movie',
+              'language_equals']
 
 str_keys = ['chmod']
 
