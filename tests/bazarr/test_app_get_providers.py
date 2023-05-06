@@ -72,3 +72,11 @@ def test_get_language_equals_injected_settings_valid_multiple():
         (Language("spa"), Language("spa", "MX")),
         (Language("spa", "MX"), Language("spa")),
     ]
+
+
+def test_get_language_equals_injected_settings_hi():
+    config = get_providers.settings
+    config.set("general", "language_equals", '["eng@hi:eng"]')
+
+    result = get_providers.get_language_equals(config)
+    assert result == [(Language("eng", hi=True), Language("eng"))]

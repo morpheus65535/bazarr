@@ -116,12 +116,21 @@ def provider_pool():
 
 
 def _lang_from_str(content: str):
+    " Formats: es-MX en@hi es-MX@forced "
+    extra_info = content.split("@")
+    if len(extra_info) > 1:
+        kwargs = {extra_info[-1]: True}
+    else:
+        kwargs = {}
+
+    content = extra_info[0]
+
     try:
         code, country = content.split("-")
     except ValueError:
         code, country = content, None
 
-    return subliminal_patch.core.Language(code, country)
+    return subliminal_patch.core.Language(code, country, **kwargs)
 
 
 def get_language_equals(settings_=None):
