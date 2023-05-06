@@ -85,13 +85,18 @@ def test_language_equals_init_empty_list_gracefully():
     assert core._LanguageEquals([]) == []
 
 
-def test_language_equals_check_set():
-    equals = core._LanguageEquals([(core.Language("spa"), core.Language("spa", "MX"))])
-    lang_set = {core.Language("spa")}
-    assert equals.check_set(lang_set) == {
-        core.Language("spa"),
-        core.Language("spa", "MX"),
-    }
+@pytest.mark.parametrize(
+    "langs",
+    [
+        [(core.Language("spa"), core.Language("spa", "MX"))],
+        [(core.Language("por"), core.Language("por", "BR"))],
+        [(core.Language("zho"), core.Language("zho", "TW"))],
+    ],
+)
+def test_language_equals_check_set(langs):
+    equals = core._LanguageEquals(langs)
+    lang_set = {langs[0]}
+    assert equals.check_set(lang_set) == set(langs)
 
 
 def test_language_equals_check_set_do_nothing():
