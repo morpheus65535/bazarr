@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableMovies, database, update, select
+from app.database import TableMovies, database, update, select, func
 from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
 from app.event_handler import event_stream
 from subtitles.wanted import wanted_search_missing_subtitles_movies
@@ -134,9 +134,10 @@ class Movies(Resource):
             'year': x.year,
         }) for x in database.execute(stmt).all()]
 
-        count = len(database.execute(
-            select(TableMovies))
-            .all())
+        count = database.execute(
+            select(func.count())
+            .select_from(TableMovies)) \
+            .scalar()
 
         return {'data': results, 'total': count}
 

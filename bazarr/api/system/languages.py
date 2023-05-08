@@ -4,7 +4,7 @@ from flask_restx import Resource, Namespace, reqparse
 from operator import itemgetter
 
 from app.database import TableHistory, TableHistoryMovie, TableSettingsLanguages, database, select
-from languages.get_languages import alpha2_from_alpha3, language_from_alpha2
+from languages.get_languages import alpha2_from_alpha3, language_from_alpha2, alpha3_from_alpha2
 
 from ..utils import authenticate, False_Keys
 
@@ -48,6 +48,7 @@ class Languages(Resource):
                     try:
                         languages_dicts.append({
                             'code2': code2,
+                            'code3': alpha3_from_alpha2(code2),
                             'name': language_from_alpha2(code2),
                             # Compatibility: Use false temporarily
                             'enabled': False
@@ -58,10 +59,12 @@ class Languages(Resource):
             languages_dicts = [{
                 'name': x.name,
                 'code2': x.code2,
+                'code3': x.code3,
                 'enabled': x.enabled == 1
             } for x in database.execute(
                 select(TableSettingsLanguages.name,
                        TableSettingsLanguages.code2,
+                       TableSettingsLanguages.code3,
                        TableSettingsLanguages.enabled)
                 .order_by(TableSettingsLanguages.name))
                 .all()]

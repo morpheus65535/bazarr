@@ -1,15 +1,14 @@
 # coding=utf-8
 
-import os
 import operator
 import pretty
+import ast
 
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import TableMovies, TableHistoryMovie, TableBlacklistMovie, database, select
+from app.database import TableMovies, TableHistoryMovie, TableBlacklistMovie, database, select, func
 from subtitles.upgrade import get_upgradable_movies_subtitles
-from utilities.path_mappings import path_mappings
 from api.swaggerui import subtitles_language_model
 
 from api.utils import authenticate, postprocess
@@ -64,18 +63,14 @@ class MoviesHistory(Resource):
         radarrid = args.get('radarrid')
 
         upgradable_movies_not_perfect = get_upgradable_movies_subtitles()
-        if len(upgradable_movies_not_perfect):
-            upgradable_movies_not_perfect = [{"video_path": x.video_path,
-                                              "timestamp": x.timestamp,
-                                              "score": x.score,
-                                              "tags": x.tags,
-                                              "monitored": x.monitored}
-                                             for x in upgradable_movies_not_perfect]
+
+        blacklisted_subtitles = select(TableBlacklistMovie.provider,
+                                       TableBlacklistMovie.subs_id) \
+            .subquery()
 
         query_conditions = [(TableMovies.title.is_not(None))]
         if radarrid:
             query_conditions.append((TableMovies.radarrId == radarrid))
-        query_condition = reduce(operator.and_, query_conditions)
 
         stmt = select(TableHistoryMovie.id,
                       TableHistoryMovie.action,
@@ -91,10 +86,17 @@ class MoviesHistory(Resource):
                       TableHistoryMovie.subs_id,
                       TableHistoryMovie.provider,
                       TableHistoryMovie.subtitles_path,
-                      TableHistoryMovie.video_path) \
+                      TableHistoryMovie.video_path,
+                      TableMovies.subtitles.label('external_subtitles'),
+                      upgradable_movies_not_perfect.c.id.label('upgradable'),
+                      blacklisted_subtitles.c.subs_id.label('blacklisted')) \
             .select_from(TableHistoryMovie) \
             .join(TableMovies) \
-            .where(query_condition) \
+            .join(upgradable_movies_not_perfect, onclause=TableHistoryMovie.id == upgradable_movies_not_perfect.c.id,
+                  isouter=True) \
+            .join(blacklisted_subtitles, onclause=TableHistoryMovie.subs_id == blacklisted_subtitles.c.subs_id,
+                  isouter=True) \
+            .where(reduce(operator.and_, query_conditions)) \
             .order_by(TableHistoryMovie.timestamp.desc())
         if length > 0:
             stmt = stmt.limit(length).offset(start)
@@ -114,21 +116,24 @@ class MoviesHistory(Resource):
             'provider': x.provider,
             'subtitles_path': x.subtitles_path,
             'video_path': x.video_path,
+            'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
+            'upgradable': bool(x.upgradable),
+            'blacklisted': bool(x.blacklisted),
         } for x in database.execute(stmt).all()]
 
         for item in movie_history:
+            original_video_path = item['path']
+            original_subtitle_path = item['subtitles_path']
             item.update(postprocess(item))
 
-            # Mark movies as upgradable or not
-            item.update({"upgradable": False})
-            current_item_dict = {"video_path": str(item['video_path']), "timestamp": item['timestamp'],
-                                 "score": item['score'], "tags": str(item['tags']), "monitored": str(item['monitored'])}
-            if current_item_dict in upgradable_movies_not_perfect:
-                if os.path.exists(path_mappings.path_replace_movie(item['subtitles_path'])) and \
-                        os.path.exists(path_mappings.path_replace_movie(item['video_path'])):
-                    item.update({"upgradable": True})
+            # Mark not upgradable if score or if video/subtitles file doesn't exist anymore
+            if item['upgradable']:
+                if original_subtitle_path not in item['external_subtitles'] or \
+                        not item['video_path'] == original_video_path:
+                    item.update({"upgradable": False})
 
             del item['path']
+            del item['external_subtitles']
 
             if item['score']:
                 item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + "%"
@@ -139,21 +144,11 @@ class MoviesHistory(Resource):
                 item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
                 item['timestamp'] = pretty.date(item["timestamp"])
 
-            # Check if subtitles is blacklisted
-            item.update({"blacklisted": False})
-            if item['action'] not in [0, 4, 5]:
-                for blacklisted_item in database.execute(
-                        select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id))\
-                        .all():
-                    if blacklisted_item.provider == item['provider'] and blacklisted_item.subs_id == item['subs_id']:
-                        item.update({"blacklisted": True})
-                        break
-
-        count = len(database.execute(
-            select(TableHistoryMovie)
+        count = database.execute(
+            select(func.count())
             .select_from(TableHistoryMovie)
             .join(TableMovies)
-            .where(TableMovies.title.is_not(None)))
-                    .all())
+            .where(TableMovies.title.is_not(None))) \
+            .scalar()
 
         return {'data': movie_history, 'total': count}

@@ -72,7 +72,8 @@ class Series(Resource):
                                   func.count(TableEpisodes.sonarrSeriesId).label('episodeFileCount')) \
             .select_from(TableEpisodes) \
             .join(TableShows) \
-            .group_by(TableShows.sonarrSeriesId).subquery()
+            .group_by(TableShows.sonarrSeriesId)\
+            .subquery()
 
         episodes_missing_conditions = [(TableEpisodes.missing_subtitles != '[]')]
         episodes_missing_conditions += get_exclusion_clause('series')
@@ -82,7 +83,8 @@ class Series(Resource):
             .select_from(TableEpisodes) \
             .join(TableShows) \
             .where(reduce(operator.and_, episodes_missing_conditions)) \
-            .group_by(TableShows.sonarrSeriesId).subquery()
+            .group_by(TableShows.sonarrSeriesId)\
+            .subquery()
 
         stmt = select(TableShows.tvdbId,
                       TableShows.alternativeTitles,
@@ -133,9 +135,10 @@ class Series(Resource):
             'episodeMissingCount': x.episodeMissingCount,
         }) for x in database.execute(stmt).all()]
 
-        count = len(database.execute(
-            select(TableShows))
-            .all())
+        count = database.execute(
+            select(func.count())
+            .select_from(TableShows)) \
+            .scalar()
 
         return {'data': results, 'total': count}
 

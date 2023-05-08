@@ -9,7 +9,7 @@ import flask_migrate
 from dogpile.cache import make_region
 from datetime import datetime
 
-from sqlalchemy import create_engine, DateTime, ForeignKey, Integer, LargeBinary, Text, text
+from sqlalchemy import create_engine, DateTime, ForeignKey, Integer, LargeBinary, Text, func
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func  # noqa W0611
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship, mapped_column
