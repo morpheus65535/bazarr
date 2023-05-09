@@ -107,6 +107,30 @@ def test_download_movie_subtitle(movies):
         assert subtitle.is_valid()
 
 
+def test_download_movie_subtitle_hungarian(movies):
+    movie = movies["dune"]
+
+    subtitle = SuperSubtitlesSubtitle(
+        Language.fromalpha2("hu"),
+        "https://www.feliratok.eu//index.php?action=letolt&felirat=1681841063",
+        1634579718,
+        "Foo",
+        0,
+        0,
+        "",
+        ["Foo"],
+        "",
+        "",
+        "",
+        asked_for_episode=None,
+    )
+    assert subtitle.get_matches(movie)
+
+    with SuperSubtitlesProvider() as provider:
+        provider.download_subtitle(subtitle)
+        assert subtitle.is_valid()
+
+
 def test_subtitle_reprs(movies):
     subtitle = SuperSubtitlesSubtitle(
         Language.fromalpha2("en"),

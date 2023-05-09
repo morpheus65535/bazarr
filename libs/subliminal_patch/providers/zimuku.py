@@ -143,7 +143,7 @@ class ZimukuProvider(Provider):
                 self.session.cookies.set("srcurl", string_to_hex(r.url))
                 if tr:
                     verify_resp = self.session.get(
-                        self.server_url + tr[0] + string_to_hex(self.code), allow_redirects=False)
+                        urljoin(self.server_url, tr[0] + string_to_hex(self.code)), allow_redirects=False)
                     if verify_resp.status_code == 302 \
                             and self.session.cookies.get("security_session_verify") is not None:
                         pass
@@ -164,7 +164,7 @@ class ZimukuProvider(Provider):
         bs_obj = ParserBeautifulSoup(
             r.content.decode("utf-8", "ignore"), ["html.parser"]
         )
-        subs_body = bs_obj.find("div", class_="subs box clearfix").find("tbody")
+        subs_body = bs_obj.find("tbody")
         subs = []
         for sub in subs_body.find_all("tr"):
             a = sub.find("a")
@@ -208,7 +208,7 @@ class ZimukuProvider(Provider):
 
         logger.debug("Searching subtitles %r", params)
         subtitles = []
-        search_link = self.server_url + text_type(self.search_url).format(params)
+        search_link = urljoin(self.server_url, text_type(self.search_url).format(params))
 
         r = self.yunsuo_bypass(search_link, timeout=30)
         r.raise_for_status()
@@ -254,7 +254,7 @@ class ZimukuProvider(Provider):
                     season_cn2 = num_to_cn(str(season))
                     if season_cn1 != season_cn2:
                         continue
-                episode_link = self.server_url + title_a.attrs["href"]
+                episode_link = urljoin(self.server_url, title_a.attrs["href"])
                 new_subs = self._parse_episode_page(episode_link, subs_year)
                 subtitles += new_subs
 
