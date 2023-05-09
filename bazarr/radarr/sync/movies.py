@@ -3,6 +3,8 @@
 import os
 import logging
 
+from sqlalchemy.exc import IntegrityError
+
 from app.config import settings
 from radarr.info import url_radarr
 from utilities.path_mappings import path_mappings
@@ -119,9 +121,13 @@ def update_movies(send_event=True):
 
             # Insert new movies in DB
             for added_movie in movies_to_add:
-                database.execute(
-                    insert(TableMovies)
-                    .values(added_movie))
+                try:
+                    database.execute(
+                        insert(TableMovies)
+                        .values(added_movie))
+                except IntegrityError as e:
+                    logging.error(f"BAZARR cannot update movie {added_movie['path']} because of {e}")
+                    continue
 
                 altered_movies.append([added_movie['tmdbId'],
                                        added_movie['path'],
@@ -216,13 +222,16 @@ def update_one_movie(movie_id, action, defer_search=False):
 
     # Insert new movie in DB
     elif movie and not existing_movie:
-        database.execute(
-            insert(TableMovies)
-            .values(movie))
-
-        event_stream(type='movie', action='update', payload=int(movie_id))
-        logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(
-            movie['path'])))
+        try:
+            database.execute(
+                insert(TableMovies)
+                .values(movie))
+        except IntegrityError as e:
+            logging.error(f"BAZARR cannot update movie {movie['path']} because of {e}")
+        else:
+            event_stream(type='movie', action='update', payload=int(movie_id))
+            logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(
+                movie['path'])))
 
     # Storing existing subtitles
     logging.debug('BAZARR storing subtitles for this movie: {}'.format(path_mappings.path_replace_movie(

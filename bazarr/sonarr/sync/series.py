@@ -2,6 +2,8 @@
 
 import logging
 
+from sqlalchemy.exc import IntegrityError
+
 from app.config import settings
 from sonarr.info import url_sonarr
 from subtitles.indexer.series import list_missing_subtitles
@@ -66,10 +68,14 @@ def update_series(send_event=True):
                         select(TableShows)
                         .filter_by(**updated_series))\
                         .first():
-                    database.execute(
-                        update(TableShows)
-                        .values(updated_series)
-                        .where(TableShows.sonarrSeriesId == show['id']))
+                    try:
+                        database.execute(
+                            update(TableShows)
+                            .values(updated_series)
+                            .where(TableShows.sonarrSeriesId == show['id']))
+                    except IntegrityError as e:
+                        logging.error(f"BAZARR cannot update series {updated_series['path']} because of {e}")
+                        continue
 
                 if send_event:
                     event_stream(type='series', payload=show['id'])
@@ -78,14 +84,18 @@ def update_series(send_event=True):
                                             serie_default_profile=serie_default_profile,
                                             audio_profiles=audio_profiles)
 
-                database.execute(
-                    insert(TableShows)
-                    .values(added_series))
+                try:
+                    database.execute(
+                        insert(TableShows)
+                        .values(added_series))
+                except IntegrityError as e:
+                    logging.error(f"BAZARR cannot insert series {added_series['path']} because of {e}")
+                    continue
+                else:
+                    list_missing_subtitles(no=show['id'])
 
-                list_missing_subtitles(no=show['id'])
-
-                if send_event:
-                    event_stream(type='series', action='update', payload=show['id'])
+                    if send_event:
+                        event_stream(type='series', action='update', payload=show['id'])
 
             sync_episodes(series_id=show['id'], send_event=send_event)
 
@@ -160,20 +170,28 @@ def update_one_series(series_id, action):
 
     # Update existing series in DB
     if action == 'updated' and existing_series:
-        database.execute(
-            update(TableShows)
-            .values(series)
-            .where(TableShows.sonarrSeriesId == series['sonarrSeriesId']))
-        sync_episodes(series_id=int(series_id), send_event=False)
-        event_stream(type='series', action='update', payload=int(series_id))
-        logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
-            series['path'])))
+        try:
+            database.execute(
+                update(TableShows)
+                .values(series)
+                .where(TableShows.sonarrSeriesId == series['sonarrSeriesId']))
+        except IntegrityError as e:
+            logging.error(f"BAZARR cannot update series {series['path']} because of {e}")
+        else:
+            sync_episodes(series_id=int(series_id), send_event=False)
+            event_stream(type='series', action='update', payload=int(series_id))
+            logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
+                series['path'])))
 
     # Insert new series in DB
     elif action == 'updated' and not existing_series:
-        database.execute(
-            insert(TableShows)
-            .values(series))
-        event_stream(type='series', action='update', payload=int(series_id))
-        logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(
-            series['path'])))
+        try:
+            database.execute(
+                insert(TableShows)
+                .values(series))
+        except IntegrityError as e:
+            logging.error(f"BAZARR cannot insert series {series['path']} because of {e}")
+        else:
+            event_stream(type='series', action='update', payload=int(series_id))
+            logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(
+                series['path'])))

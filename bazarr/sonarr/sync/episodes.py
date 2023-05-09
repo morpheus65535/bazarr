@@ -3,6 +3,8 @@
 import os
 import logging
 
+from sqlalchemy.exc import IntegrityError
+
 from app.database import database, TableEpisodes, delete, update, insert, select
 from app.config import settings
 from utilities.path_mappings import path_mappings
@@ -102,27 +104,36 @@ def sync_episodes(series_id, send_event=True):
                 .first():
             continue
         else:
-            database.execute(
-                update(TableEpisodes)
-                .values(updated_episode)
-                .where(TableEpisodes.sonarrEpisodeId == updated_episode['sonarrEpisodeId']))
-            altered_episodes.append([updated_episode['sonarrEpisodeId'],
-                                     updated_episode['path'],
-                                     updated_episode['sonarrSeriesId']])
-            if send_event:
-                event_stream(type='episode', action='update', payload=updated_episode['sonarrEpisodeId'])
+            try:
+                database.execute(
+                    update(TableEpisodes)
+                    .values(updated_episode)
+                    .where(TableEpisodes.sonarrEpisodeId == updated_episode['sonarrEpisodeId']))
+            except IntegrityError as e:
+                logging.error(f"BAZARR cannot update episode {updated_episode['path']} because of {e}")
+                continue
+            else:
+                altered_episodes.append([updated_episode['sonarrEpisodeId'],
+                                         updated_episode['path'],
+                                         updated_episode['sonarrSeriesId']])
+                if send_event:
+                    event_stream(type='episode', action='update', payload=updated_episode['sonarrEpisodeId'])
 
     # Insert new episodes in DB
     for added_episode in episodes_to_add:
-        database.execute(
-            insert(TableEpisodes)
-            .values(added_episode))
-
-        altered_episodes.append([added_episode['sonarrEpisodeId'],
-                                 added_episode['path'],
-                                 added_episode['monitored']])
-        if send_event:
-            event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
+        try:
+            database.execute(
+                insert(TableEpisodes)
+                .values(added_episode))
+        except IntegrityError as e:
+            logging.error(f"BAZARR cannot insert episode {added_episode['path']} because of {e}")
+            continue
+        else:
+            altered_episodes.append([added_episode['sonarrEpisodeId'],
+                                     added_episode['path'],
+                                     added_episode['monitored']])
+            if send_event:
+                event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
 
     # Store subtitles for added or modified episodes
     for i, altered_episode in enumerate(altered_episodes, 1):
@@ -178,24 +189,30 @@ def sync_one_episode(episode_id, defer_search=False):
 
     # Update existing episodes in DB
     elif episode and existing_episode:
-        database.execute(
-            update(TableEpisodes)
-            .values(episode)
-            .where(TableEpisodes.sonarrEpisodeId == episode_id))
-
-        event_stream(type='episode', action='update', payload=int(episode_id))
-        logging.debug('BAZARR updated this episode into the database:{}'.format(path_mappings.path_replace(
-            episode['path'])))
+        try:
+            database.execute(
+                update(TableEpisodes)
+                .values(episode)
+                .where(TableEpisodes.sonarrEpisodeId == episode_id))
+        except IntegrityError as e:
+            logging.error(f"BAZARR cannot update episode {episode['path']} because of {e}")
+        else:
+            event_stream(type='episode', action='update', payload=int(episode_id))
+            logging.debug('BAZARR updated this episode into the database:{}'.format(path_mappings.path_replace(
+                episode['path'])))
 
     # Insert new episodes in DB
     elif episode and not existing_episode:
-        database.execute(
-            insert(TableEpisodes)
-            .values(episode))
-
-        event_stream(type='episode', action='update', payload=int(episode_id))
-        logging.debug('BAZARR inserted this episode into the database:{}'.format(path_mappings.path_replace(
-            episode['path'])))
+        try:
+            database.execute(
+                insert(TableEpisodes)
+                .values(episode))
+        except IntegrityError as e:
+            logging.error(f"BAZARR cannot insert episode {episode['path']} because of {e}")
+        else:
+            event_stream(type='episode', action='update', payload=int(episode_id))
+            logging.debug('BAZARR inserted this episode into the database:{}'.format(path_mappings.path_replace(
+                episode['path'])))
 
     # Storing existing subtitles
     logging.debug('BAZARR storing subtitles for this episode: {}'.format(path_mappings.path_replace(
