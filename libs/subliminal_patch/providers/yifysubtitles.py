@@ -18,6 +18,11 @@ from subliminal_patch.subtitle import Subtitle, guess_matches
 from subzero.language import Language
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
+try:
+    from urlparse import urljoin
+except ImportError:
+    from urllib.parse import urljoin
+
 logger = logging.getLogger(__name__)
 
 
@@ -137,7 +142,7 @@ class YifySubtitlesProvider(Provider):
         subtitles = []
 
         logger.info('Searching subtitle %r', imdb_id)
-        response = self.session.get(self.server_url + '/movie-imdb/' + imdb_id,
+        response = self.session.get(urljoin(self.server_url, f'/movie-imdb/{imdb_id}'),
                                     allow_redirects=False, timeout=10,
                                     headers={'Referer': self.server_url})
 
@@ -171,7 +176,7 @@ class YifySubtitlesProvider(Provider):
         cache_key = sha1(subtitle.page_link.encode("utf-8")).digest()
         request = region.get(cache_key)
         if request is NO_VALUE:
-            request = self.session.get(subtitle.page_link, headers={
+            request = self.session.get(urljoin(self.server_url, subtitle.page_link), headers={
                 'Referer': subtitle.page_link
                 })
             request.raise_for_status()
@@ -182,9 +187,7 @@ class YifySubtitlesProvider(Provider):
         soup = BeautifulSoup(request.content, 'lxml')
         download_button = soup.find('a', {'class': 'download-subtitle'})
         if download_button:
-            download_link = self.server_url + download_button['href']
-
-            request = self.session.get(download_link, headers={
+            request = self.session.get(urljoin(self.server_url, download_button['href']), headers={
                 'Referer': subtitle.page_link
             })
             request.raise_for_status()
