@@ -9,7 +9,7 @@ import flask_migrate
 from dogpile.cache import make_region
 from datetime import datetime
 
-from sqlalchemy import create_engine, DateTime, ForeignKey, Integer, LargeBinary, Text, func
+from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func  # noqa W0611
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship, mapped_column
@@ -317,6 +317,12 @@ def migrate_db(app):
     logging.debug("Upgrading database schema")
     app.config["SQLALCHEMY_DATABASE_URI"] = url
     db = SQLAlchemy(app, metadata=metadata)
+
+    insp = inspect(engine)
+    alembic_temp_tables_list = [x for x in insp.get_table_names() if x.startswith('_alembic_tmp_')]
+    for table in alembic_temp_tables_list:
+        database.execute(text(f"DROP TABLE IF EXISTS {table}"))
+
     with app.app_context():
         flask_migrate.Migrate(app, db, render_as_batch=True)
         flask_migrate.upgrade()
