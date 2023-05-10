@@ -26,12 +26,10 @@ class MoviesWanted(Resource):
 
     data_model = api_ns_movies_wanted.model('wanted_movies_data_model', {
         'title': fields.String(),
-        'monitored': fields.Boolean(),
         'missing_subtitles': fields.Nested(get_subtitles_language_model),
         'radarrId': fields.Integer(),
         'sceneName': fields.String(),
         'tags': fields.List(fields.String),
-        'failedAttempts': fields.String(),
     })
 
     get_response_model = api_ns_movies_wanted.model('MovieWantedGetResponse', {
@@ -64,9 +62,7 @@ class MoviesWanted(Resource):
                       TableMovies.missing_subtitles,
                       TableMovies.radarrId,
                       TableMovies.sceneName,
-                      TableMovies.failedAttempts,
-                      TableMovies.tags,
-                      TableMovies.monitored) \
+                      TableMovies.tags) \
             .where(wanted_condition)
         if length > 0:
             stmt = stmt.order_by(TableMovies.radarrId.desc()).limit(length).offset(start)
@@ -76,9 +72,7 @@ class MoviesWanted(Resource):
             'missing_subtitles': x.missing_subtitles,
             'radarrId': x.radarrId,
             'sceneName': x.sceneName,
-            'failedAttempts': x.failedAttempts,
             'tags': x.tags,
-            'monitored': x.monitored,
         }) for x in database.execute(stmt).all()]
 
         return {'data': results, 'total': len(results)}

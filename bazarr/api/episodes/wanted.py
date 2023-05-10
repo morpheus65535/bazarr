@@ -25,7 +25,6 @@ class EpisodesWanted(Resource):
 
     data_model = api_ns_episodes_wanted.model('wanted_episodes_data_model', {
         'seriesTitle': fields.String(),
-        'monitored': fields.Boolean(),
         'episode_number': fields.String(),
         'episodeTitle': fields.String(),
         'missing_subtitles': fields.Nested(get_subtitles_language_model),
@@ -33,7 +32,6 @@ class EpisodesWanted(Resource):
         'sonarrEpisodeId': fields.Integer(),
         'sceneName': fields.String(),
         'tags': fields.List(fields.String),
-        'failedAttempts': fields.String(),
         'seriesType': fields.String(),
     })
 
@@ -64,7 +62,6 @@ class EpisodesWanted(Resource):
         wanted_condition = reduce(operator.and_, wanted_conditions)
 
         stmt = select(TableShows.title.label('seriesTitle'),
-                      TableEpisodes.monitored,
                       TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label('episode_number'),
                       TableEpisodes.title.label('episodeTitle'),
                       TableEpisodes.missing_subtitles,
@@ -72,7 +69,6 @@ class EpisodesWanted(Resource):
                       TableEpisodes.sonarrEpisodeId,
                       TableEpisodes.sceneName,
                       TableShows.tags,
-                      TableEpisodes.failedAttempts,
                       TableShows.seriesType) \
             .select_from(TableEpisodes) \
             .join(TableShows) \
@@ -83,7 +79,6 @@ class EpisodesWanted(Resource):
 
         results = [postprocess({
             'seriesTitle': x.seriesTitle,
-            'monitored': x.monitored,
             'episode_number': x.episode_number,
             'episodeTitle': x.episodeTitle,
             'missing_subtitles': x.missing_subtitles,
@@ -91,7 +86,6 @@ class EpisodesWanted(Resource):
             'sonarrEpisodeId': x.sonarrEpisodeId,
             'sceneName': x.sceneName,
             'tags': x.tags,
-            'failedAttempts': x.failedAttempts,
             'seriesType': x.seriesType,
         }) for x in database.execute(stmt).all()]
 
