@@ -35,133 +35,114 @@ def authenticate(actual_method):
 
 
 def postprocess(item):
-    # flatten Table object as a single level dictionary
-    item_dict = {}
-    if not isinstance(item, dict):
-        item = item.__dict__
-    for key, value in item.items():
-        if isinstance(value, Base):
-            for child_key, child_value in value.__dict__.items():
-                if child_key not in ['_sa_instance_state']:
-                    item_dict[child_key] = child_value
-        else:
-            if key not in ['_sa_instance_state']:
-                item_dict[key] = value
-
     # Remove ffprobe_cache
-    if item_dict.get('movie_file_id'):
+    if item.get('radarrId'):
         path_replace = path_mappings.path_replace_movie
     else:
         path_replace = path_mappings.path_replace
-    if item_dict.get('ffprobe_cache'):
-        del item_dict['ffprobe_cache']
+    if item.get('ffprobe_cache'):
+        del item['ffprobe_cache']
 
     # Parse audio language
-    if item_dict.get('audio_language'):
-        item_dict['audio_language'] = get_audio_profile_languages(item_dict['audio_language'])
+    if item.get('audio_language'):
+        item['audio_language'] = get_audio_profile_languages(item['audio_language'])
 
     # Make sure profileId is a valid None value
-    if item_dict.get('profileId') in None_Keys:
-        item_dict['profileId'] = None
+    if item.get('profileId') in None_Keys:
+        item['profileId'] = None
 
     # Parse alternate titles
-    if item_dict.get('alternativeTitles'):
-        item_dict['alternativeTitles'] = ast.literal_eval(item_dict['alternativeTitles'])
+    if item.get('alternativeTitles'):
+        item['alternativeTitles'] = ast.literal_eval(item['alternativeTitles'])
     else:
-        item_dict['alternativeTitles'] = []
-
-    # Parse failed attempts
-    if item_dict.get('failedAttempts'):
-        item_dict['failedAttempts'] = ast.literal_eval(item_dict['failedAttempts'])
-    else:
-        item_dict['failedAttempts'] = []
+        item['alternativeTitles'] = []
 
     # Parse subtitles
-    if item_dict.get('subtitles'):
-        item_dict['subtitles'] = ast.literal_eval(item_dict['subtitles'])
-        for i, subs in enumerate(item_dict['subtitles']):
+    if item.get('subtitles'):
+        item['subtitles'] = ast.literal_eval(item['subtitles'])
+        for i, subs in enumerate(item['subtitles']):
             language = subs[0].split(':')
-            item_dict['subtitles'][i] = {"path": path_replace(subs[1]),
-                                         "name": language_from_alpha2(language[0]),
-                                         "code2": language[0],
-                                         "code3": alpha3_from_alpha2(language[0]),
-                                         "forced": False,
-                                         "hi": False}
+            item['subtitles'][i] = {"path": path_replace(subs[1]),
+                                    "name": language_from_alpha2(language[0]),
+                                    "code2": language[0],
+                                    "code3": alpha3_from_alpha2(language[0]),
+                                    "forced": False,
+                                    "hi": False}
             if len(language) > 1:
-                item_dict['subtitles'][i].update(
+                item['subtitles'][i].update(
                     {
                         "forced": language[1] == 'forced',
                         "hi": language[1] == 'hi',
                     }
                 )
-        if settings.general.getboolean('embedded_subs_show_desired') and item_dict.get('profileId'):
-            desired_lang_list = get_desired_languages(item_dict['profileId'])
-            item_dict['subtitles'] = [x for x in item_dict['subtitles'] if x['code2'] in desired_lang_list or x['path']]
-        item_dict['subtitles'] = sorted(item_dict['subtitles'], key=itemgetter('name', 'forced'))
+        if settings.general.getboolean('embedded_subs_show_desired') and item.get('profileId'):
+            desired_lang_list = get_desired_languages(item['profileId'])
+            item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
+        item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
     else:
-        item_dict['subtitles'] = []
+        item['subtitles'] = []
 
     # Parse missing subtitles
-    if item_dict.get('missing_subtitles'):
-        item_dict['missing_subtitles'] = ast.literal_eval(item_dict['missing_subtitles'])
-        for i, subs in enumerate(item_dict['missing_subtitles']):
+    if item.get('missing_subtitles'):
+        item['missing_subtitles'] = ast.literal_eval(item['missing_subtitles'])
+        for i, subs in enumerate(item['missing_subtitles']):
             language = subs.split(':')
-            item_dict['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),
+            item['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),
                                                  "code2": language[0],
                                                  "code3": alpha3_from_alpha2(language[0]),
                                                  "forced": False,
                                                  "hi": False}
             if len(language) > 1:
-                item_dict['missing_subtitles'][i].update(
+                item['missing_subtitles'][i].update(
                     {
                         "forced": language[1] == 'forced',
                         "hi": language[1] == 'hi',
                     }
                 )
     else:
-        item_dict['missing_subtitles'] = []
+        item['missing_subtitles'] = []
 
     # Parse tags
-    if item_dict.get('tags') is not None:
-        item_dict['tags'] = ast.literal_eval(item_dict.get('tags', '[]'))
+    if item.get('tags') is not None:
+        item['tags'] = ast.literal_eval(item.get('tags', '[]'))
     else:
-        item_dict['tags'] = []
-    if item_dict.get('monitored'):
-        item_dict['monitored'] = item_dict.get('monitored') == 'True'
+        item['tags'] = []
+    if item.get('monitored'):
+        item['monitored'] = item.get('monitored') == 'True'
     else:
-        item_dict['monitored'] = False
-    if item_dict.get('hearing_impaired'):
-        item_dict['hearing_impaired'] = item_dict.get('hearing_impaired') == 'True'
+        item['monitored'] = False
+    if item.get('hearing_impaired'):
+        item['hearing_impaired'] = item.get('hearing_impaired') == 'True'
     else:
-        item_dict['hearing_impaired'] = False
+        item['hearing_impaired'] = False
 
-    if item_dict.get('language'):
-        if item_dict['language'] == 'None':
-            item_dict['language'] = None
-        if item_dict['language'] is not None:
-            splitted_language = item_dict['language'].split(':')
-            item_dict['language'] = {
+    if item.get('language'):
+        if item['language'] == 'None':
+            item['language'] = None
+        if item['language'] is not None:
+            splitted_language = item['language'].split(':')
+            item['language'] = {
                 "name": language_from_alpha2(splitted_language[0]),
                 "code2": splitted_language[0],
                 "code3": alpha3_from_alpha2(splitted_language[0]),
-                "forced": bool(item_dict['language'].endswith(':forced')),
-                "hi": bool(item_dict['language'].endswith(':hi')),
+                "forced": bool(item['language'].endswith(':forced')),
+                "hi": bool(item['language'].endswith(':hi')),
             }
 
-    if item_dict.get('path'):
-        item_dict['path'] = path_replace(item_dict['path'])
+    if item.get('path'):
+        item['path'] = path_replace(item['path'])
 
-    if item_dict.get('subtitles_path'):
+    if item.get('subtitles_path'):
         # Provide mapped subtitles path
-        item_dict['subtitles_path'] = path_replace(item_dict['subtitles_path'])
+        item['subtitles_path'] = path_replace(item['subtitles_path'])
 
     # map poster and fanart to server proxy
-    if item_dict.get('poster') is not None:
-        poster = item_dict['poster']
-        item_dict['poster'] = f"{base_url}/images/{'movies' if item_dict.get('movie_file_id') else 'series'}{poster}" if poster else None
+    if item.get('poster') is not None:
+        poster = item['poster']
+        item['poster'] = f"{base_url}/images/{'movies' if item.get('radarrId') else 'series'}{poster}" if poster else None
 
-    if item_dict.get('fanart') is not None:
-        fanart = item_dict['fanart']
-        item_dict['fanart'] = f"{base_url}/images/{'movies' if item_dict.get('movie_file_id') else 'series'}{fanart}" if fanart else None
+    if item.get('fanart') is not None:
+        fanart = item['fanart']
+        item['fanart'] = f"{base_url}/images/{'movies' if item.get('radarrId') else 'series'}{fanart}" if fanart else None
 
-    return item_dict
+    return item

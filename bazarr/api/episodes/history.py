@@ -25,7 +25,6 @@ class EpisodesHistory(Resource):
     get_language_model = api_ns_episodes_history.model('subtitles_language_model', subtitles_language_model)
 
     data_model = api_ns_episodes_history.model('history_episodes_data_model', {
-        'id': fields.Integer(),
         'seriesTitle': fields.String(),
         'monitored': fields.Boolean(),
         'episode_number': fields.String(),
@@ -38,13 +37,10 @@ class EpisodesHistory(Resource):
         'score': fields.String(),
         'tags': fields.List(fields.String),
         'action': fields.Integer(),
-        'video_path': fields.String(),
         'subtitles_path': fields.String(),
         'sonarrEpisodeId': fields.Integer(),
         'provider': fields.String(),
-        'seriesType': fields.String(),
         'upgradable': fields.Boolean(),
-        'raw_timestamp': fields.Integer(),
         'parsed_timestamp': fields.String(),
         'blacklisted': fields.Boolean(),
     })
@@ -127,7 +123,6 @@ class EpisodesHistory(Resource):
             'subtitles_path': x.subtitles_path,
             'sonarrEpisodeId': x.sonarrEpisodeId,
             'provider': x.provider,
-            'seriesType': x.seriesType,
             'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
             'upgradable': bool(x.upgradable),
             'blacklisted': bool(x.blacklisted),
@@ -145,6 +140,7 @@ class EpisodesHistory(Resource):
                     item.update({"upgradable": False})
 
             del item['path']
+            del item['video_path']
             del item['external_subtitles']
 
             if item['score']:
@@ -152,7 +148,6 @@ class EpisodesHistory(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
-                item["raw_timestamp"] = item['timestamp'].timestamp()
                 item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
                 item['timestamp'] = pretty.date(item["timestamp"])
 

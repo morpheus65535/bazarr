@@ -26,7 +26,6 @@ class MoviesHistory(Resource):
     get_language_model = api_ns_movies_history.model('subtitles_language_model', subtitles_language_model)
 
     data_model = api_ns_movies_history.model('history_movies_data_model', {
-        'id': fields.Integer(),
         'action': fields.Integer(),
         'title': fields.String(),
         'timestamp': fields.String(),
@@ -41,7 +40,6 @@ class MoviesHistory(Resource):
         'provider': fields.String(),
         'subtitles_path': fields.String(),
         'upgradable': fields.Boolean(),
-        'raw_timestamp': fields.Integer(),
         'parsed_timestamp': fields.String(),
         'blacklisted': fields.Boolean(),
     })
@@ -79,7 +77,7 @@ class MoviesHistory(Resource):
                       TableHistoryMovie.description,
                       TableHistoryMovie.radarrId,
                       TableMovies.monitored,
-                      TableHistoryMovie.video_path.label('path'),
+                      TableMovies.path,
                       TableHistoryMovie.language,
                       TableMovies.tags,
                       TableHistoryMovie.score,
@@ -133,6 +131,7 @@ class MoviesHistory(Resource):
                     item.update({"upgradable": False})
 
             del item['path']
+            del item['video_path']
             del item['external_subtitles']
 
             if item['score']:
@@ -140,7 +139,6 @@ class MoviesHistory(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
-                item["raw_timestamp"] = item['timestamp'].timestamp()
                 item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
                 item['timestamp'] = pretty.date(item["timestamp"])
 

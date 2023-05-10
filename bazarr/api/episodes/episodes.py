@@ -23,23 +23,16 @@ class Episodes(Resource):
     get_audio_language_model = api_ns_episodes.model('audio_language_model', audio_language_model)
 
     get_response_model = api_ns_episodes.model('EpisodeGetResponse', {
-        'audio_codec': fields.String(),
         'audio_language': fields.Nested(get_audio_language_model),
         'episode': fields.Integer(),
-        'episode_file_id': fields.Integer(),
-        'failedAttempts': fields.String(),
-        'file_size': fields.Integer(),
-        'format': fields.String(),
         'missing_subtitles': fields.Nested(get_subtitles_language_model),
         'monitored': fields.Boolean(),
         'path': fields.String(),
-        'resolution': fields.String(),
         'season': fields.Integer(),
         'sonarrEpisodeId': fields.Integer(),
         'sonarrSeriesId': fields.Integer(),
         'subtitles': fields.Nested(get_subtitles_model),
         'title': fields.String(),
-        'video_codec': fields.String(),
         'sceneName': fields.String(),
     })
 
@@ -56,23 +49,16 @@ class Episodes(Resource):
         episodeId = args.get('episodeid[]')
 
         stmt = select(
-                TableEpisodes.audio_codec,
                 TableEpisodes.audio_language,
                 TableEpisodes.episode,
-                TableEpisodes.episode_file_id,
-                TableEpisodes.failedAttempts,
-                TableEpisodes.file_size,
-                TableEpisodes.format,
                 TableEpisodes.missing_subtitles,
                 TableEpisodes.monitored,
                 TableEpisodes.path,
-                TableEpisodes.resolution,
                 TableEpisodes.season,
                 TableEpisodes.sonarrEpisodeId,
                 TableEpisodes.sonarrSeriesId,
                 TableEpisodes.subtitles,
                 TableEpisodes.title,
-                TableEpisodes.video_codec,
                 TableEpisodes.sceneName,
             )
 
@@ -91,22 +77,15 @@ class Episodes(Resource):
             return "Series or Episode ID not provided", 404
 
         return [postprocess({
-                'audio_codec': x.audio_codec,
                 'audio_language': x.audio_language,
                 'episode': x.episode,
-                'episode_file_id': x.episode_file_id,
-                'failedAttempts': x.failedAttempts,
-                'file_size': x.file_size,
-                'format': x.format,
                 'missing_subtitles': x.missing_subtitles,
                 'monitored': x.monitored,
                 'path': x.path,
-                'resolution': x.resolution,
                 'season': x.season,
                 'sonarrEpisodeId': x.sonarrEpisodeId,
                 'sonarrSeriesId': x.sonarrSeriesId,
                 'subtitles': x.subtitles,
                 'title': x.title,
-                'video_codec': x.video_codec,
                 'sceneName': x.sceneName,
                 }) for x in stmt_query]

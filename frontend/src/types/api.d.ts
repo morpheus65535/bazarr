@@ -125,7 +125,6 @@ declare namespace Item {
 
   type Series = Base &
     SeriesIdType & {
-      hearing_impaired: boolean;
       episodeFileCount: number;
       episodeMissingCount: number;
       seriesType: SonarrSeriesType;
@@ -136,12 +135,7 @@ declare namespace Item {
     MovieIdType &
     SubtitleType &
     MissingSubtitleType &
-    SceneNameType & {
-      hearing_impaired: boolean;
-      audio_codec: string;
-      // movie_file_id: number;
-      tmdbId: number;
-    };
+    SceneNameType;
 
   type Episode = PathType &
     TitleType &
@@ -151,13 +145,8 @@ declare namespace Item {
     MissingSubtitleType &
     SceneNameType &
     AudioLanguageType & {
-      audio_codec: string;
-      video_codec: string;
       season: number;
       episode: number;
-      resolution: string;
-      format: string;
-      // episode_file_id: number;
     };
 }
 
@@ -165,7 +154,6 @@ declare namespace Wanted {
   type Base = MonitoredType &
     TagType &
     SceneNameType & {
-      // failedAttempts?: any;
       hearing_impaired: boolean;
       missing_subtitles: Subtitle[];
     };
@@ -201,12 +189,10 @@ declare namespace History {
     TagType &
     MonitoredType &
     Partial<ItemHistoryType> & {
-      id: number;
       action: number;
       blacklisted: boolean;
       score?: string;
       subs_id?: string;
-      raw_timestamp: number;
       parsed_timestamp: string;
       timestamp: string;
       description: string;
