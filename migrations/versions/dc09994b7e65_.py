@@ -80,6 +80,10 @@ def upgrade():
                                     local_cols=['profileId'],
                                     remote_cols=['profileId'],
                                     ondelete='SET NULL')
+        if column_exists(table_name='table_shows', column_name='hearing_impaired'):
+            batch_op.drop_column(column_name='hearing_impaired')
+        if column_exists(table_name='table_shows', column_name='forced'):
+            batch_op.drop_column(column_name='forced')
         batch_op.alter_column(column_name='imdbId', server_default=None)
         batch_op.alter_column(column_name='tags', server_default=None)
         batch_op.alter_column(column_name='seriesType', server_default=None)
@@ -191,6 +195,10 @@ def upgrade():
                                     local_cols=['profileId'],
                                     remote_cols=['profileId'],
                                     ondelete='SET NULL')
+        if column_exists(table_name='table_shows', column_name='hearing_impaired'):
+            batch_op.drop_column(column_name='hearing_impaired')
+        if column_exists(table_name='table_shows', column_name='forced'):
+            batch_op.drop_column(column_name='forced')
         batch_op.alter_column(column_name='file_size', server_default='0')
         batch_op.alter_column(column_name='tags', server_default=None)
         batch_op.execute('DROP INDEX IF EXISTS tablemovies_path')

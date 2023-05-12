@@ -404,36 +404,15 @@ def get_profiles_list(profile_id=None):
 
 
 def get_desired_languages(profile_id):
-    languages = []
-    profile_id_list = update_profile_id_list()
-
-    if profile_id and profile_id != 'null':
-        for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat = profile.values()
-            try:
-                profile_id_int = int(profile_id)
-            except ValueError:
-                continue
-            else:
-                if profileId == profile_id_int:
-                    languages = [x['language'] for x in items]
-                    break
-
-    return languages
+    for profile in update_profile_id_list():
+        if profile['profileId'] == profile_id:
+            return [x['language'] for x in profile['items']]
 
 
 def get_profile_id_name(profile_id):
-    name_from_id = None
-    profile_id_list = update_profile_id_list()
-
-    if profile_id and profile_id != 'null':
-        for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat = profile.values()
-            if profileId == int(profile_id):
-                name_from_id = name
-                break
-
-    return name_from_id
+    for profile in update_profile_id_list():
+        if profile['profileId'] == profile_id:
+            return profile['name']
 
 
 def get_profile_cutoff(profile_id):
