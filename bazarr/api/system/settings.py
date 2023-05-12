@@ -59,32 +59,32 @@ class SystemSettings(Resource):
                 .all()
             existing = [x.profileId for x in existing_ids]
             for item in json.loads(languages_profiles):
-                if item.profileId in existing:
+                if item['profileId'] in existing:
                     # Update existing profiles
                     database.execute(
                         update(TableLanguagesProfiles)
                         .values(
-                            name=item.name,
-                            cutoff=item.cutoff if item.cutoff != 'null' else None,
-                            items=json.dumps(item.items),
-                            mustContain=item.mustContain,
-                            mustNotContain=item.mustNotContain,
-                            originalFormat=item.originalFormat if item.originalFormat != 'null' else None,
+                            name=item['name'],
+                            cutoff=item['cutoff'] if item['cutoff'] != 'null' else None,
+                            items=json.dumps(item['items']),
+                            mustContain=str(item['mustContain']),
+                            mustNotContain=str(item['mustNotContain']),
+                            originalFormat=item['originalFormat'] if item['originalFormat'] != 'null' else None,
                         )
-                        .where(TableLanguagesProfiles.profileId == item.profileId))
-                    existing.remove(item.profileId)
+                        .where(TableLanguagesProfiles.profileId == item['profileId']))
+                    existing.remove(item['profileId'])
                 else:
                     # Add new profiles
                     database.execute(
                         insert(TableLanguagesProfiles)
                         .values(
-                            profileId=item.profileId,
-                            name=item.name,
-                            cutoff=item.cutoff if item.cutoff != 'null' else None,
-                            items=json.dumps(item.items),
-                            mustContain=item.mustContain,
-                            mustNotContain=item.mustNotContain,
-                            originalFormat=item.originalFormat if item.originalFormat != 'null' else None,
+                            profileId=item['profileId'],
+                            name=item['name'],
+                            cutoff=item['cutoff'] if item['cutoff'] != 'null' else None,
+                            items=json.dumps(item['items']),
+                            mustContain=str(item['mustContain']),
+                            mustNotContain=str(item['mustNotContain']),
+                            originalFormat=item['originalFormat'] if item['originalFormat'] != 'null' else None,
                         ))
             for profileId in existing:
                 # Remove deleted profiles

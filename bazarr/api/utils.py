@@ -88,10 +88,10 @@ def postprocess(item):
         for i, subs in enumerate(item['missing_subtitles']):
             language = subs.split(':')
             item['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),
-                                                 "code2": language[0],
-                                                 "code3": alpha3_from_alpha2(language[0]),
-                                                 "forced": False,
-                                                 "hi": False}
+                                            "code2": language[0],
+                                            "code3": alpha3_from_alpha2(language[0]),
+                                            "forced": False,
+                                            "hi": False}
             if len(language) > 1:
                 item['missing_subtitles'][i].update(
                     {
