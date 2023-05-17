@@ -4,6 +4,7 @@ import logging
 import os
 
 from subzero.language import Language
+from babelfish.script import Script
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ class CustomLanguage:
     official_alpha3 = "por"
     name = "Brazilian Portuguese"
     iso = "BR"
+    _scripts = []
     _possible_matches = ("pt-br", "pob", "pb", "brazilian", "brasil", "brazil")
     _extensions = (".pt-br", ".pob", ".pb")
     _extensions_forced = (".pt-br.forced", ".pob.forced", ".pb.forced")
@@ -86,6 +88,15 @@ class CustomLanguage:
 
         return any(ext in name for ext in self._possible_matches)
 
+    def language_found(self, language: Language):
+        if str(language.country) == self.iso:
+            return True
+
+        if language.script and language.script in self._scripts:
+            return True
+
+        return False
+
 
 class BrazilianPortuguese(CustomLanguage):
     # Same attributes as base class
@@ -100,6 +111,7 @@ class ChineseTraditional(CustomLanguage):
     official_alpha3 = "zho"
     name = "Chinese Traditional"
     iso = "TW"
+    _scripts = (Script("Hant"),)
     _extensions = (
         ".cht",
         ".tc",
@@ -211,6 +223,7 @@ class LatinAmericanSpanish(CustomLanguage):
     official_alpha3 = "spa"
     name = "Latin American Spanish"
     iso = "MX"  # Not fair, but ok
+    _scripts = (Script("419"),)
     _possible_matches = (
         "es-la",
         "spa-la",
