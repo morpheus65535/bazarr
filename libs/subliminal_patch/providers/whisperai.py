@@ -203,7 +203,7 @@ class WhisperAIProvider(Provider):
 
     video_types = (Episode, Movie)
 
-    def __init__(self, endpoint=None, timeout=None):
+    def __init__(self, endpoint=None, timeout=None, faster_whisper=False):
         if not endpoint:
             raise ConfigurationError('Whisper Web Service Endpoint must be provided')
 
@@ -212,6 +212,12 @@ class WhisperAIProvider(Provider):
 
         self.endpoint = endpoint
         self.timeout = int(timeout)
+
+        if faster_whisper:
+            self.method = "faster-whisper"
+        else:
+            self.method = "openai-whisper"
+
         self.session = None
 
     def initialize(self):
@@ -227,7 +233,7 @@ class WhisperAIProvider(Provider):
         out = encode_audio_stream(path)
 
         r = self.session.post(f"{self.endpoint}/detect-language",
-                              params={'encode': 'false'},
+                              params={'encode': 'false', 'method': self.method},
                               files={'audio_file': out},
                               timeout=self.timeout)
 
@@ -284,7 +290,7 @@ class WhisperAIProvider(Provider):
         out = encode_audio_stream(subtitle.video.original_path, subtitle.force_audio_stream)
 
         r = self.session.post(f"{self.endpoint}/asr",
-                              params={'task': subtitle.task, 'language': whisper_get_language_reverse(subtitle.audio_language), 'output': 'srt', 'encode': 'false'},
+                              params={'task': subtitle.task, 'language': whisper_get_language_reverse(subtitle.audio_language), 'output': 'srt', 'encode': 'false', 'method': self.method},
                               files={'audio_file': out},
                               timeout=self.timeout)
 

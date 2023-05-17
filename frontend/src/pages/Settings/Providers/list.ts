@@ -223,6 +223,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         defaultValue: 3600,
         name: "Transcription/translation timeout in seconds",
       },
+      {
+        type: "switch",
+        key: "faster_whisper",
+        defaultValue: false,
+        name: "Use faster-whisper",
+      },
     ],
   },
   {

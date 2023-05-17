@@ -172,7 +172,8 @@ defaults = {
     },
     'whisperai': {
         'endpoint': 'http://127.0.0.1:9000',
-        'timeout': '3600'
+        'timeout': '3600',
+        'faster_whisper': 'False'
     },
     'legendasdivx': {
         'username': '',
