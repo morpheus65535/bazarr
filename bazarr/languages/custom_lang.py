@@ -223,7 +223,7 @@ class LatinAmericanSpanish(CustomLanguage):
     official_alpha3 = "spa"
     name = "Latin American Spanish"
     iso = "MX"  # Not fair, but ok
-    _scripts = (Script("419"),)
+    #_scripts = (Script("419"),)
     _possible_matches = (
         "es-la",
         "spa-la",
