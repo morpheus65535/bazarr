@@ -4,7 +4,6 @@ import logging
 import os
 
 from subzero.language import Language
-from babelfish.script import Script
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +91,7 @@ class CustomLanguage:
         if str(language.country) == self.iso:
             return True
 
-        if language.script and language.script in self._scripts:
+        if language.script and str(language.script) in self._scripts:
             return True
 
         return False
@@ -111,7 +110,9 @@ class ChineseTraditional(CustomLanguage):
     official_alpha3 = "zho"
     name = "Chinese Traditional"
     iso = "TW"
-    _scripts = (Script("Hant"),)
+    # _scripts = (Script("Hant"),)
+    # We'll use literals for now
+    _scripts = ("Hant",)
     _extensions = (
         ".cht",
         ".tc",
@@ -223,7 +224,7 @@ class LatinAmericanSpanish(CustomLanguage):
     official_alpha3 = "spa"
     name = "Latin American Spanish"
     iso = "MX"  # Not fair, but ok
-    #_scripts = (Script("419"),)
+    _scripts = ("419",)
     _possible_matches = (
         "es-la",
         "spa-la",
