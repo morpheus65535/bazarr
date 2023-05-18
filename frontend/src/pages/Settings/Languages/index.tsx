@@ -17,6 +17,7 @@ import {
 } from "../keys";
 import { useSettingValue } from "../utilities/hooks";
 import { LanguageSelector, ProfileSelector } from "./components";
+import EqualsTable from "./equals";
 import Table from "./table";
 
 export function useLatestEnabledLanguages() {
@@ -69,6 +70,10 @@ const SettingsLanguagesView: FunctionComponent = () => {
         ></LanguageSelector>
       </Section>
 
+      <Section header="Language Equals">
+        <EqualsTable></EqualsTable>
+      </Section>
+
       <Section header="Embedded Tracks Language">
         <Check
           label="Deep analyze media file to get audio tracks language."
@@ -91,7 +96,6 @@ const SettingsLanguagesView: FunctionComponent = () => {
             }}
           ></Selector>
         </CollapseBox>
-
         <Selector
           clearable
           settingKey={defaultUndEmbeddedSubtitlesLang}
