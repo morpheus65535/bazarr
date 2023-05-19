@@ -55,34 +55,40 @@ M_INFO = {
                 "BitRate_Maximum": "12749952",
                 "Width": "1920",
                 "Height": "1080",
-                "Stored_Height": "1088",
-                "Sampled_Width": "1920",
-                "Sampled_Height": "1080",
-                "PixelAspectRatio": "1.000",
-                "DisplayAspectRatio": "1.778",
-                "FrameRate_Mode": "CFR",
-                "FrameRate": "23.976",
-                "FrameCount": "138251",
-                "ColorSpace": "YUV",
-                "ChromaSubsampling": "4:2:0",
-                "BitDepth": "8",
-                "ScanType": "Progressive",
-                "Delay": "0.000",
-                "Delay_Source": "Container",
-                "StreamSize": "6096863666",
-                "Default": "Yes",
+            },
+            {
+                "@type": "Audio",
+                "@typeorder": "1",
+                "StreamOrder": "1",
+                "ID": "2",
+                "UniqueID": "12329215851643269509",
+                "Format": "E-AC-3",
+                "Format_Commercial_IfAny": "Dolby Digital Plus",
+                "Format_Settings_Endianness": "Big",
+                "CodecID": "A_EAC3",
+                "Duration": "5766.112000000",
+                "BitRate_Mode": "CBR",
+                "BitRate": "256000",
+                "Language": "pt-BR",
+                "Default": "No",
                 "Forced": "No",
-                "BufferSize": "17000000",
-                "colour_description_present": "Yes",
-                "colour_description_present_Source": "Container / Stream",
-                "colour_range": "Limited",
-                "colour_range_Source": "Stream",
-                "colour_primaries": "BT.709",
-                "colour_primaries_Source": "Container / Stream",
-                "transfer_characteristics": "BT.709",
-                "transfer_characteristics_Source": "Container / Stream",
-                "matrix_coefficients": "BT.709",
-                "matrix_coefficients_Source": "Container / Stream",
+            },
+            {
+                "@type": "Audio",
+                "@typeorder": "2",
+                "StreamOrder": "2",
+                "ID": "3",
+                "UniqueID": "1232921585164326950923",
+                "Format": "E-AC-3",
+                "Format_Commercial_IfAny": "Dolby Digital Plus",
+                "Format_Settings_Endianness": "Big",
+                "CodecID": "A_EAC3",
+                "Duration": "5766.112000000",
+                "BitRate_Mode": "CBR",
+                "BitRate": "256000",
+                "Language": "pt",
+                "Default": "No",
+                "Forced": "No",
             },
             {
                 "@type": "Text",
@@ -227,3 +233,15 @@ def test_embedded_subs_reader(mocker, mediainfo_data, video_file):
     assert ["spl", False, False, "SubRip"] in result
     assert ["pob", False, False, "SubRip"] in result
     assert ["zht", False, False, "SubRip"] in result
+
+
+def test_embedded_audio_reader(mocker, mediainfo_data, video_file):
+    mocker.patch(
+        "bazarr.utilities.video_analyzer.parse_video_metadata",
+        return_value={"mediainfo": mediainfo_data},
+    )
+    mocker.patch(
+        "bazarr.utilities.video_analyzer.language_from_alpha3", lambda alpha3: alpha3
+    )
+    result = video_analyzer.embedded_audio_reader(1e6, video_file)
+    assert {"pob", "por"} == set(result)

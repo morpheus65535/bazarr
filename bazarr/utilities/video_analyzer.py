@@ -81,7 +81,7 @@ def embedded_audio_reader(file, file_size, episode_file_id=None, movie_file_id=N
         return audio_list
 
     cache_provider = None
-    if data["ffprobe"] and "audio" in data["ffprobe"]:
+    if "ffprobe" in data and data["ffprobe"] and "audio" in data["ffprobe"]:
         cache_provider = 'ffprobe'
     elif 'mediainfo' in data and data["mediainfo"] and "audio" in data["mediainfo"]:
         cache_provider = 'mediainfo'
@@ -92,7 +92,8 @@ def embedded_audio_reader(file, file_size, episode_file_id=None, movie_file_id=N
                 audio_list.append(None)
                 continue
 
-            language = language_from_alpha3(detected_language["language"].alpha3)
+            alpha3 = _handle_alpha3(detected_language)
+            language = language_from_alpha3(alpha3)
 
             if language not in audio_list:
                 audio_list.append(language)
