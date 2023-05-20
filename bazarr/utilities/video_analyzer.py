@@ -16,12 +16,18 @@ def _handle_alpha3(detected_language: dict):
     alpha3 = detected_language["language"].alpha3
     custom = CustomLanguage.from_value(alpha3, "official_alpha3")
 
-    if custom and custom.ffprobe_found(detected_language):
+    if not custom:
+        return alpha3
+
+    found = custom.language_found(detected_language["language"])
+    if not found:
+        found = custom.ffprobe_found(detected_language)
+
+    if found:
         logging.debug("Custom embedded language found: %s", custom.name)
         return custom.alpha3
 
     return alpha3
-
 
 def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
     data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, use_cache=use_cache)
@@ -33,7 +39,7 @@ def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=No
         return subtitles_list
 
     cache_provider = None
-    if data["ffprobe"] and "subtitle" in data["ffprobe"]:
+    if "ffprobe" in data and data["ffprobe"] and "subtitle" in data["ffprobe"]:
         cache_provider = 'ffprobe'
     elif 'mediainfo' in data and data["mediainfo"] and "subtitle" in data["mediainfo"]:
         cache_provider = 'mediainfo'
@@ -75,7 +81,7 @@ def embedded_audio_reader(file, file_size, episode_file_id=None, movie_file_id=N
         return audio_list
 
     cache_provider = None
-    if data["ffprobe"] and "audio" in data["ffprobe"]:
+    if "ffprobe" in data and data["ffprobe"] and "audio" in data["ffprobe"]:
         cache_provider = 'ffprobe'
     elif 'mediainfo' in data and data["mediainfo"] and "audio" in data["mediainfo"]:
         cache_provider = 'mediainfo'
@@ -86,7 +92,8 @@ def embedded_audio_reader(file, file_size, episode_file_id=None, movie_file_id=N
                 audio_list.append(None)
                 continue
 
-            language = language_from_alpha3(detected_language["language"].alpha3)
+            alpha3 = _handle_alpha3(detected_language)
+            language = language_from_alpha3(alpha3)
 
             if language not in audio_list:
                 audio_list.append(language)

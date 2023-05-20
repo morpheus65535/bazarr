@@ -121,6 +121,33 @@ def is_episode(content):
     return "episode" in guessit(content, {"type": "episode"})
 
 
+_ENCS = ("utf-8", "ascii", "iso-8859-1", "iso-8859-2", "iso-8859-5", "cp1252")
+
+
+def _zip_from_subtitle_file(content):
+    with tempfile.NamedTemporaryFile(prefix="spsub", suffix=".srt") as tmp_f:
+        tmp_f.write(content)
+        sub = None
+        for enc in _ENCS:
+            try:
+                logger.debug("Trying %s encoding", enc)
+                sub = pysubs2.load(tmp_f.name, encoding=enc)
+            except Exception as error:
+                logger.debug("%s: %s", type(error).__name__, error)
+                continue
+            else:
+                break
+
+        if sub is not None:
+            logger.debug("Identified subtitle file: %s", sub)
+            zip_obj = zipfile.ZipFile(io.BytesIO(), mode="x")
+            zip_obj.write(tmp_f.name, os.path.basename(tmp_f.name))
+            return zip_obj
+
+        logger.debug("Couldn't load subtitle file")
+        return None
+
+
 def get_archive_from_bytes(content: bytes):
     """Get RarFile/ZipFile object from bytes. A ZipFile instance will be returned
     if a subtitle-like stream is found. Return None if something else is found."""
@@ -134,23 +161,7 @@ def get_archive_from_bytes(content: bytes):
         return zipfile.ZipFile(archive_stream)
 
     logger.debug("No compression format found. Trying with subtitle-like files")
-
-    # If the file is a subtitle-like file
-    with tempfile.NamedTemporaryFile(prefix="spsub", suffix=".srt") as tmp_f:
-        try:
-            tmp_f.write(content)
-            sub = pysubs2.load(tmp_f.name)
-        except Exception as error:
-            logger.debug("Couldn't load file: '%s'", error)
-        else:
-            if sub is not None:
-                logger.debug("Identified subtitle file: %s", sub)
-                zip_obj = zipfile.ZipFile(io.BytesIO(), mode="x")
-                zip_obj.write(tmp_f.name, os.path.basename(tmp_f.name))
-                return zip_obj
-
-    logger.debug("Nothing found")
-    return None
+    return _zip_from_subtitle_file(content)
 
 
 def update_matches(

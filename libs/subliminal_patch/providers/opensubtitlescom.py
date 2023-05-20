@@ -56,6 +56,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
 
     def __init__(self, language, forced, hearing_impaired, page_link, file_id, releases, uploader, title, year,
                  hash_matched, file_hash=None, season=None, episode=None, imdb_match=False):
+        super().__init__(language, hearing_impaired, page_link)
         language = Language.rebuild(language, hi=hearing_impaired, forced=forced)
 
         self.title = title
@@ -334,6 +335,16 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
         if len(result['data']):
             for item in result['data']:
+                # ignore AI translated subtitles
+                if 'ai_translated' in item['attributes'] and item['attributes']['ai_translated']:
+                    logging.debug("Skipping AI translated subtitles")
+                    continue
+
+                # ignore machine translated subtitles
+                if 'machine_translated' in item['attributes'] and item['attributes']['machine_translated']:
+                    logging.debug("Skipping machine translated subtitles")
+                    continue
+
                 if 'season_number' in item['attributes']['feature_details']:
                     season_number = item['attributes']['feature_details']['season_number']
                 else:

@@ -7,3 +7,4 @@ pytest-cov
 pytest-vcr
 pytest-mock
 requests-mock
+setuptools
