@@ -24,15 +24,14 @@ ui_bp = Blueprint('ui', __name__,
                                              'build', 'assets'),
                   static_url_path='/assets')
 
-if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),'frontend', 'build',
+if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build',
                                'images')):
     static_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build',
                                     'images')
 else:
     static_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'public',
                                     'images')
-static_bp = Blueprint('images', __name__,
-                      static_folder=static_directory, static_url_path='/images')
+static_bp = Blueprint('images', __name__, static_folder=static_directory, static_url_path='/images')
 
 ui_bp.register_blueprint(static_bp)
 
