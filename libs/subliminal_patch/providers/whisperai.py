@@ -124,7 +124,7 @@ logger = logging.getLogger(__name__)
 
 
 @functools.lru_cache(2)
-def encode_audio_stream(path, audio_stream_language=None):
+def encode_audio_stream(path, ffmpeg_path, audio_stream_language=None):
     logger.debug("Encoding audio stream to WAV with ffmpeg")
 
     try:
@@ -135,7 +135,7 @@ def encode_audio_stream(path, audio_stream_language=None):
             inp = inp[f'a:m:language:{audio_stream_language}']
 
         out, _ = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000) \
-                    .run(cmd=["ffmpeg", "-nostdin"], capture_stdout=True, capture_stderr=True)
+                    .run(cmd=[ffmpeg_path, "-nostdin"], capture_stdout=True, capture_stderr=True)
 
     except ffmpeg.Error as e:
         raise RuntimeError(f"Failed to load audio: {e.stderr.decode()}") from e
@@ -203,16 +203,20 @@ class WhisperAIProvider(Provider):
 
     video_types = (Episode, Movie)
 
-    def __init__(self, endpoint=None, timeout=None):
+    def __init__(self, endpoint=None, timeout=None, ffmpeg_path=None):
         if not endpoint:
             raise ConfigurationError('Whisper Web Service Endpoint must be provided')
 
         if not timeout:
             raise ConfigurationError('Whisper Web Service Timeout must be provided')
 
+        if not ffmpeg_path:
+            raise ConfigurationError("ffmpeg path must be provided")
+
         self.endpoint = endpoint
         self.timeout = int(timeout)
         self.session = None
+        self.ffmpeg_path = ffmpeg_path
 
     def initialize(self):
         self.session = Session()
@@ -224,7 +228,7 @@ class WhisperAIProvider(Provider):
 
     @functools.lru_cache(2048)
     def detect_language(self, path) -> Language:
-        out = encode_audio_stream(path)
+        out = encode_audio_stream(path, self.ffmpeg_path)
 
         r = self.session.post(f"{self.endpoint}/detect-language",
                               params={'encode': 'false'},
@@ -281,7 +285,7 @@ class WhisperAIProvider(Provider):
         # Invoke Whisper through the API. This may take a long time depending on the file.
         # TODO: This loads the entire file into memory, find a good way to stream the file in chunks
 
-        out = encode_audio_stream(subtitle.video.original_path, subtitle.force_audio_stream)
+        out = encode_audio_stream(subtitle.video.original_path, self.ffmpeg_path, subtitle.force_audio_stream)
 
         r = self.session.post(f"{self.endpoint}/asr",
                               params={'task': subtitle.task, 'language': whisper_get_language_reverse(subtitle.audio_language), 'output': 'srt', 'encode': 'false'},
