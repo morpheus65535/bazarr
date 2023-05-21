@@ -254,7 +254,8 @@ def get_providers_auth():
         },
         'whisperai': {
             'endpoint': settings.whisperai.endpoint,
-            'timeout': settings.whisperai.timeout
+            'timeout': settings.whisperai.timeout,
+            'ffmpeg_path': _FFMPEG_BINARY,
         }
     }
 
