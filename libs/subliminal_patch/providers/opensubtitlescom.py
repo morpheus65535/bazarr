@@ -400,7 +400,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         logger.info('Downloading subtitle %r', subtitle)
 
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json',
-                   'Authorization': 'Beaker ' + self.token}
+                   'Authorization': 'Bearer ' + self.token}
         res = self.retry(
             lambda: checked(
                 lambda: self.session.post(self.server_url + 'download',
