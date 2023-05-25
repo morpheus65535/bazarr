@@ -1,10 +1,10 @@
 import { useLanguages } from "@/apis/hooks";
-import { Selector, SelectorOption } from "@/components/inputs";
+import { Selector, SelectorProps } from "@/components/inputs";
 import { useSelectorOptions } from "@/utilities";
 import { FunctionComponent, useMemo } from "react";
 
 interface LanguageSelectorProps
-  extends Omit<SelectorOption<Language.Server>, "options" | "getkey"> {
+  extends Omit<SelectorProps<Language.Server>, "options" | "getkey"> {
   enabled?: boolean;
 }
 
