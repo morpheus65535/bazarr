@@ -1,6 +1,6 @@
 import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 import { useEnabledLanguages } from "@/utilities/languages";
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent } from "react";
 import {
   Check,
   CollapseBox,
@@ -13,7 +13,6 @@ import {
   defaultUndAudioLang,
   defaultUndEmbeddedSubtitlesLang,
   enabledLanguageKey,
-  languageEqualsKey,
   languageProfileKey,
 } from "../keys";
 import { useSettingValue } from "../utilities/hooks";
@@ -30,71 +29,6 @@ export function useLatestEnabledLanguages() {
   } else {
     return data;
   }
-}
-
-// TODO: Move to somewhere else
-export interface LanguageEqualImmediateData {
-  source: Language.CodeType;
-  hi: boolean;
-  forced: boolean;
-  target: Language.CodeType;
-}
-
-export interface LanguageEqualData {
-  source: Language.Server;
-  hi: boolean;
-  forced: boolean;
-  target: Language.Server;
-}
-
-export function parseEqualData(
-  text: string
-): LanguageEqualImmediateData | undefined {
-  const [first, second] = text.split(":");
-
-  if (first.length === 0 || second.length === 0) {
-    return undefined;
-  }
-
-  const [source, decoration] = first.split("@");
-
-  if (source.length === 0) {
-    return undefined;
-  }
-
-  const forced = decoration === "forced";
-  const hi = decoration === "hi";
-
-  return {
-    source,
-    forced,
-    hi,
-    target: second,
-  };
-}
-
-export function useLatestLanguageEquals(): LanguageEqualData[] {
-  const { data } = useLanguages();
-
-  const latest = useSettingValue<string[]>(languageEqualsKey);
-
-  return useMemo(
-    () =>
-      latest
-        ?.map(parseEqualData)
-        .map((parsed) => {
-          if (parsed === undefined) {
-            return undefined;
-          }
-
-          const source = data?.find((value) => value.code3 === parsed.source);
-          const target = data?.find((value) => value.code3 === parsed.target);
-
-          return { ...parsed, source, target };
-        })
-        .filter((v): v is LanguageEqualData => v !== undefined) ?? [],
-    [data, latest]
-  );
 }
 
 export function useLatestProfiles() {
