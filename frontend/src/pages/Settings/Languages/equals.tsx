@@ -1,23 +1,23 @@
 import { SimpleTable } from "@/components";
+import LanguageSelector from "@/components/bazarr/LanguageSelector";
 import { faEquals } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Checkbox } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
-import { useLatestEnabledLanguages } from ".";
-
-interface LanguageEqualData {
-  source: Language.Server;
-  hi: boolean;
-  forced: boolean;
-  target: Language.Server;
-}
+import {
+  LanguageEqualData,
+  useLatestEnabledLanguages,
+  useLatestLanguageEquals,
+} from ".";
 
 interface EqualsTableProps {}
 
 const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
   const languages = useLatestEnabledLanguages();
   const canAdd = languages.length !== 0;
+
+  const equals = useLatestLanguageEquals();
 
   const columns = useMemo<Column<LanguageEqualData>[]>(
     () => [
@@ -26,7 +26,7 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
         id: "source-lang",
         accessor: "source",
         Cell: ({ value }) => {
-          return value.name;
+          return <LanguageSelector enabled value={value}></LanguageSelector>;
         },
       },
       {
@@ -54,7 +54,7 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
         id: "target-lang",
         accessor: "target",
         Cell: ({ value }) => {
-          return value.name;
+          return <LanguageSelector enabled value={value}></LanguageSelector>;
         },
       },
     ],
@@ -63,27 +63,7 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
 
   return (
     <>
-      <SimpleTable
-        data={[
-          {
-            source: {
-              name: "Chinese",
-              code2: "zh",
-              code3: "zhs",
-              enabled: true,
-            },
-            hi: false,
-            forced: false,
-            target: {
-              name: "Chinese",
-              code2: "zh",
-              code3: "zht",
-              enabled: true,
-            },
-          },
-        ]}
-        columns={columns}
-      ></SimpleTable>
+      <SimpleTable data={equals} columns={columns}></SimpleTable>
       <Button fullWidth disabled={!canAdd} color="light">
         {canAdd ? "Add Equal" : "No Enabled Languages"}
       </Button>

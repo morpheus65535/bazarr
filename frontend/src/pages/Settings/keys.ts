@@ -5,6 +5,8 @@ export const defaultUndEmbeddedSubtitlesLang =
 export const languageProfileKey = "languages-profiles";
 export const notificationsKey = "notifications-providers";
 
+export const languageEqualsKey = "settings-general-language_equals";
+
 export const pathMappingsKey = "settings-general-path_mappings";
 export const pathMappingsMovieKey = "settings-general-path_mappings_movie";
 
