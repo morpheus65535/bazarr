@@ -11,32 +11,28 @@ import { Button, Checkbox } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 
-export interface LanguageEqualImmediateData {
-  source: Language.CodeType;
+interface GenericEqualTarget<T> {
+  content: T;
   hi: boolean;
   forced: boolean;
-  target: Language.CodeType;
 }
 
-export interface LanguageEqualData {
-  source: Language.Server;
-  hi: boolean;
-  forced: boolean;
-  target: Language.Server;
+interface LanguageEqualGenericData<T> {
+  source: GenericEqualTarget<T>;
+  target: GenericEqualTarget<T>;
 }
 
-export function parseEqualData(
+export type LanguageEqualImmediateData =
+  LanguageEqualGenericData<Language.CodeType>;
+
+export type LanguageEqualData = LanguageEqualGenericData<Language.Server>;
+
+function decodeEqualTarget(
   text: string
-): LanguageEqualImmediateData | undefined {
-  const [first, second] = text.split(":");
+): GenericEqualTarget<Language.CodeType> | undefined {
+  const [code, decoration] = text.split("@");
 
-  if (first.length === 0 || second.length === 0) {
-    return undefined;
-  }
-
-  const [source, decoration] = first.split("@");
-
-  if (source.length === 0) {
+  if (code.length === 0) {
     return undefined;
   }
 
@@ -44,22 +40,46 @@ export function parseEqualData(
   const hi = decoration === "hi";
 
   return {
-    source,
+    content: code,
     forced,
     hi,
-    target: second,
   };
 }
 
-export function encodeEqualData(data: LanguageEqualData): string {
-  let source = data.source.code3;
-  if (data.hi) {
-    source += "@hi";
-  } else if (data.forced) {
-    source += "@forced";
+export function decodeEqualData(
+  text: string
+): LanguageEqualImmediateData | undefined {
+  const [first, second] = text.split(":");
+
+  const source = decodeEqualTarget(first);
+  const target = decodeEqualTarget(second);
+
+  if (source === undefined || target === undefined) {
+    return undefined;
   }
 
-  return `${source}:${data.target.code3}`;
+  return {
+    source,
+    target,
+  };
+}
+
+function encodeEqualTarget(data: GenericEqualTarget<Language.Server>): string {
+  let text = data.content.code3;
+  if (data.hi) {
+    text += "@hi";
+  } else if (data.forced) {
+    text += "@forced";
+  }
+
+  return text;
+}
+
+export function encodeEqualData(data: LanguageEqualData): string {
+  const source = encodeEqualTarget(data.source);
+  const target = encodeEqualTarget(data.target);
+
+  return `${source}:${target}`;
 }
 
 export function useLatestLanguageEquals(): LanguageEqualData[] {
@@ -70,20 +90,27 @@ export function useLatestLanguageEquals(): LanguageEqualData[] {
   return useMemo(
     () =>
       latest
-        ?.map(parseEqualData)
+        ?.map(decodeEqualData)
         .map((parsed) => {
           if (parsed === undefined) {
             return undefined;
           }
 
-          const source = data?.find((value) => value.code3 === parsed.source);
-          const target = data?.find((value) => value.code3 === parsed.target);
+          const source = data?.find(
+            (value) => value.code3 === parsed.source.content
+          );
+          const target = data?.find(
+            (value) => value.code3 === parsed.target.content
+          );
 
           if (source === undefined || target === undefined) {
             return undefined;
           }
 
-          return { ...parsed, source, target };
+          return {
+            source: { ...parsed.source, content: source },
+            target: { ...parsed.target, content: target },
+          };
         })
         .filter((v): v is LanguageEqualData => v !== undefined) ?? [],
     [data, latest]
@@ -124,10 +151,16 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
     const newValue: LanguageEqualData[] = [
       ...equals,
       {
-        source: enabled,
-        hi: false,
-        forced: false,
-        target: enabled,
+        source: {
+          content: enabled,
+          hi: false,
+          forced: false,
+        },
+        target: {
+          content: enabled,
+          hi: false,
+          forced: false,
+        },
       },
     ];
 
@@ -169,14 +202,17 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
         Header: "Source",
         id: "source-lang",
         accessor: "source",
-        Cell: ({ value, row }) => {
+        Cell: ({ value: { content }, row }) => {
           return (
             <LanguageSelector
               enabled
-              value={value}
+              value={content}
               onChange={(result) => {
                 if (result !== null) {
-                  update(row.index, { ...row.original, source: result });
+                  update(row.index, {
+                    ...row.original,
+                    source: { ...row.original.source, content: result },
+                  });
                 }
               }}
             ></LanguageSelector>
@@ -184,18 +220,21 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
         },
       },
       {
-        id: "hi",
-        accessor: "hi",
-        Cell: ({ value, row }) => {
+        id: "source-hi",
+        accessor: "source",
+        Cell: ({ value: { hi }, row }) => {
           return (
             <Checkbox
               label="HI"
-              checked={value}
+              checked={hi}
               onChange={({ currentTarget: { checked } }) => {
                 update(row.index, {
                   ...row.original,
-                  hi: checked,
-                  forced: checked ? false : row.original.forced,
+                  source: {
+                    ...row.original.source,
+                    hi: checked,
+                    forced: checked ? false : row.original.source.forced,
+                  },
                 });
               }}
             ></Checkbox>
@@ -203,18 +242,21 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
         },
       },
       {
-        id: "Forced",
-        accessor: "forced",
-        Cell: ({ value, row }) => {
+        id: "source-forced",
+        accessor: "source",
+        Cell: ({ value: { forced }, row }) => {
           return (
             <Checkbox
               label="Forced"
-              checked={value}
+              checked={forced}
               onChange={({ currentTarget: { checked } }) => {
                 update(row.index, {
                   ...row.original,
-                  forced: checked,
-                  hi: checked ? false : row.original.hi,
+                  source: {
+                    ...row.original.source,
+                    forced: checked,
+                    hi: checked ? false : row.original.source.hi,
+                  },
                 });
               }}
             ></Checkbox>
@@ -231,17 +273,64 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
         Header: "Target",
         id: "target-lang",
         accessor: "target",
-        Cell: ({ value, row }) => {
+        Cell: ({ value: { content }, row }) => {
           return (
             <LanguageSelector
               enabled
-              value={value}
+              value={content}
               onChange={(result) => {
                 if (result !== null) {
-                  update(row.index, { ...row.original, target: result });
+                  update(row.index, {
+                    ...row.original,
+                    target: { ...row.original.target, content: result },
+                  });
                 }
               }}
             ></LanguageSelector>
+          );
+        },
+      },
+      {
+        id: "target-hi",
+        accessor: "target",
+        Cell: ({ value: { hi }, row }) => {
+          return (
+            <Checkbox
+              label="HI"
+              checked={hi}
+              onChange={({ currentTarget: { checked } }) => {
+                update(row.index, {
+                  ...row.original,
+                  target: {
+                    ...row.original.target,
+                    hi: checked,
+                    forced: checked ? false : row.original.target.forced,
+                  },
+                });
+              }}
+            ></Checkbox>
+          );
+        },
+      },
+      {
+        id: "target-forced",
+        accessor: "target",
+        Cell: ({ value: { forced }, row }) => {
+          return (
+            <Checkbox
+              label="Forced"
+              checked={forced}
+              onChange={({ currentTarget: { checked } }) => {
+                update(row.index, {
+                  ...row.original,
+                  target: {
+                    ...row.original.target,
+                    forced: checked,
+                    hi: checked ? false : row.original.target.hi,
+                  },
+                });
+              }}
+            ></Checkbox>
           );
         },
       },

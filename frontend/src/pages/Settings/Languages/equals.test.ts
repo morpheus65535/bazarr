@@ -1,8 +1,8 @@
 import {
+  decodeEqualData,
   encodeEqualData,
   LanguageEqualData,
   LanguageEqualImmediateData,
-  parseEqualData,
 } from "@/pages/Settings/Languages/equals";
 import { describe, expect, it } from "vitest";
 
@@ -17,7 +17,7 @@ describe("Equals Parser", () => {
       text: string,
       expected: LanguageEqualImmediateData
     ) {
-      const result = parseEqualData(text);
+      const result = decodeEqualData(text);
 
       if (result === undefined) {
         expect(false, `Cannot parse '${text}' as language equal data`);
@@ -34,37 +34,61 @@ describe("Equals Parser", () => {
       {
         text: "spa-MX:spa",
         expected: {
-          source: "spa-MX",
-          hi: false,
-          forced: false,
-          target: "spa",
+          source: {
+            content: "spa-MX",
+            hi: false,
+            forced: false,
+          },
+          target: {
+            content: "spa",
+            hi: false,
+            forced: false,
+          },
         },
       },
       {
         text: "zho@hi:zht",
         expected: {
-          source: "zho",
-          hi: true,
-          forced: false,
-          target: "zht",
+          source: {
+            content: "zho",
+            hi: true,
+            forced: false,
+          },
+          target: {
+            content: "zht",
+            hi: false,
+            forced: false,
+          },
         },
       },
       {
         text: "es-MX@forced:es-MX",
         expected: {
-          source: "es-MX",
-          hi: false,
-          forced: true,
-          target: "es-MX",
+          source: {
+            content: "es-MX",
+            hi: false,
+            forced: true,
+          },
+          target: {
+            content: "es-MX",
+            hi: false,
+            forced: false,
+          },
         },
       },
       {
-        text: "en@hi:en",
+        text: "en:en@hi",
         expected: {
-          source: "en",
-          hi: true,
-          forced: false,
-          target: "en",
+          source: {
+            content: "en",
+            hi: false,
+            forced: false,
+          },
+          target: {
+            content: "en",
+            hi: true,
+            forced: false,
+          },
         },
       },
     ];
@@ -84,18 +108,24 @@ describe("Equals Parser", () => {
       {
         source: {
           source: {
-            name: "Abkhazian",
-            code2: "ab",
-            code3: "abk",
-            enabled: false,
+            content: {
+              name: "Abkhazian",
+              code2: "ab",
+              code3: "abk",
+              enabled: false,
+            },
+            hi: false,
+            forced: false,
           },
-          hi: false,
-          forced: false,
           target: {
-            name: "Aragonese",
-            code2: "an",
-            code3: "arg",
-            enabled: false,
+            content: {
+              name: "Aragonese",
+              code2: "an",
+              code3: "arg",
+              enabled: false,
+            },
+            hi: false,
+            forced: false,
           },
         },
         expected: "abk:arg",
@@ -103,18 +133,24 @@ describe("Equals Parser", () => {
       {
         source: {
           source: {
-            name: "Abkhazian",
-            code2: "ab",
-            code3: "abk",
-            enabled: false,
+            content: {
+              name: "Abkhazian",
+              code2: "ab",
+              code3: "abk",
+              enabled: false,
+            },
+            hi: true,
+            forced: false,
           },
-          hi: true,
-          forced: false,
           target: {
-            name: "Aragonese",
-            code2: "an",
-            code3: "arg",
-            enabled: false,
+            content: {
+              name: "Aragonese",
+              code2: "an",
+              code3: "arg",
+              enabled: false,
+            },
+            hi: false,
+            forced: false,
           },
         },
         expected: "abk@hi:arg",
@@ -122,18 +158,24 @@ describe("Equals Parser", () => {
       {
         source: {
           source: {
-            name: "Abkhazian",
-            code2: "ab",
-            code3: "abk",
-            enabled: false,
+            content: {
+              name: "Abkhazian",
+              code2: "ab",
+              code3: "abk",
+              enabled: false,
+            },
+            hi: false,
+            forced: true,
           },
-          hi: false,
-          forced: true,
           target: {
-            name: "Aragonese",
-            code2: "an",
-            code3: "arg",
-            enabled: false,
+            content: {
+              name: "Aragonese",
+              code2: "an",
+              code3: "arg",
+              enabled: false,
+            },
+            hi: false,
+            forced: false,
           },
         },
         expected: "abk@forced:arg",
