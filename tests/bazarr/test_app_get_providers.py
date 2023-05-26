@@ -83,6 +83,19 @@ def test_get_language_equals_injected_settings_custom_lang_alpha3(
     assert result == [expected]
 
 
+def test_get_language_equals_injected_settings_multiple():
+    config = get_providers.settings
+
+    config.set(
+        "general",
+        "language_equals",
+        "['eng@hi:eng', 'spa:spl', 'spa@hi:spl', 'spl@hi:spl']",
+    )
+
+    result = get_providers.get_language_equals(config)
+    assert len(result) == 4
+
+
 def test_get_language_equals_injected_settings_valid_multiple():
     config = get_providers.settings
     config.set("general", "language_equals", '["spa:spa-MX", "spa-MX:spa"]')
