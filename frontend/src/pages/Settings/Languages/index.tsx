@@ -71,7 +71,9 @@ const SettingsLanguagesView: FunctionComponent = () => {
       </Section>
 
       <Section header="Language Equals">
-        <Message>TODO: Description</Message>
+        <Message>
+          Treat the following languages as equal across all providers.
+        </Message>
         <EqualsTable></EqualsTable>
       </Section>
 
