@@ -20,6 +20,7 @@ from subliminal_patch.extensions import provider_registry
 
 from app.get_args import args
 from app.config import settings, get_array_from
+from languages.get_languages import CustomLanguage
 from app.event_handler import event_stream
 from utilities.binaries import get_binary
 from radarr.blacklist import blacklist_log_movie
@@ -128,6 +129,11 @@ def _lang_from_str(content: str):
     try:
         code, country = content.split("-")
     except ValueError:
+        lang = CustomLanguage.from_value(content)
+        if lang is not None:
+            lang = lang.subzero_language()
+            return lang.rebuild(lang, **kwargs)
+
         code, country = content, None
 
     return subliminal_patch.core.Language(code, country, **kwargs)
@@ -146,7 +152,7 @@ def get_language_equals(settings_=None):
             from_, to_ = equal.split(":")
             from_, to_ = _lang_from_str(from_), _lang_from_str(to_)
         except Exception as error:
-            logging.error("Invalid equal value: %s [%s]", equal, error)
+            logging.info("Invalid equal value: '%s' [%s]", equal, error)
         else:
             items.append((from_, to_))
 

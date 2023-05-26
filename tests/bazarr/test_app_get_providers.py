@@ -1,5 +1,6 @@
 import inspect
 
+import pytest
 from subliminal_patch.core import Language
 
 from bazarr.app import get_providers
@@ -61,6 +62,25 @@ def test_get_language_equals_injected_settings_valid():
 
     result = get_providers.get_language_equals(config)
     assert result == [(Language("spa"), Language("spa", "MX"))]
+
+
+@pytest.mark.parametrize(
+    "config_value,expected",
+    [
+        ('["spa:spl"]', (Language("spa"), Language("spa", "MX"))),
+        ('["por:pob"]', (Language("por"), Language("por", "BR"))),
+        ('["zho:zht"]', (Language("zho"), Language("zho", "TW"))),
+    ],
+)
+def test_get_language_equals_injected_settings_custom_lang_alpha3(
+    config_value, expected
+):
+    config = get_providers.settings
+
+    config.set("general", "language_equals", config_value)
+
+    result = get_providers.get_language_equals(config)
+    assert result == [expected]
 
 
 def test_get_language_equals_injected_settings_valid_multiple():
