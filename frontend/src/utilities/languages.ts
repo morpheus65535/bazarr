@@ -42,3 +42,12 @@ export function useProfileItemsToLanguages(profile?: Language.Profile) {
     [data, profile?.items]
   );
 }
+
+export function useLanguageFromCode3(code3: string) {
+  const { data } = useLanguages();
+
+  return useMemo(
+    () => data?.find((value) => value.code3 === code3),
+    [data, code3]
+  );
+}
