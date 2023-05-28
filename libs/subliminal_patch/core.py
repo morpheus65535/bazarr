@@ -1,6 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
-import codecs
+import six
 import json
 import re
 import os
@@ -11,37 +10,27 @@ import traceback
 import time
 import operator
 import unicodedata
-
 import itertools
-from six.moves.http_client import ResponseNotReady
-
 import rarfile
 import requests
 
+from os import scandir
 from collections import defaultdict
 from bs4 import UnicodeDammit
 from babelfish import LanguageReverseError
 from guessit.jsonutils import GuessitEncoder
-from subliminal import ProviderError, refiner_manager
+from subliminal import refiner_manager
 from concurrent.futures import as_completed
 
 from .extensions import provider_registry
 from .exceptions import MustGetBlacklisted
 from .score import compute_score as default_compute_score
-from subliminal.exceptions import ServiceUnavailable, DownloadLimitExceeded
 from subliminal.utils import hash_napiprojekt, hash_opensubtitles, hash_shooter, hash_thesubdb
 from subliminal.video import VIDEO_EXTENSIONS, Video, Episode, Movie
 from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, \
     ThreadPoolExecutor, check_video
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled
 
 from subzero.language import Language, ENDSWITH_LANGUAGECODE_RE, FULL_LANGUAGE_LIST
-try:
-    from os import scandir
-    _scandir_generic = scandir
-except ImportError:
-    from scandir import scandir, scandir_generic as _scandir_generic
-import six
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +95,7 @@ class _ProviderConfigs(dict):
 
             logger.debug("Config changed. Restarting provider: %s", key)
             try:
-                provider = provider_registry[key](**registered_val) # type: ignore
+                provider = provider_registry[key](**registered_val)  # type: ignore
                 provider.initialize()
             except Exception as error:
                 self._pool.throttle_callback(key, error)
@@ -269,7 +258,7 @@ class SZProviderPool(ProviderPool):
         """List subtitles with a single provider.
 
         The video and languages are checked against the provider.
-        
+
         patch: add traceback info
 
         :param str provider: name of the provider.
@@ -333,7 +322,7 @@ class SZProviderPool(ProviderPool):
 
     def list_subtitles(self, video, languages):
         """List subtitles.
-        
+
         patch: handle LanguageReverseError
 
         :param video: video to list subtitles for.
@@ -372,9 +361,9 @@ class SZProviderPool(ProviderPool):
 
     def download_subtitle(self, subtitle):
         """Download `subtitle`'s :attr:`~subliminal.subtitle.Subtitle.content`.
-        
+
         patch: add retry functionality
-        
+
         :param subtitle: subtitle to download.
         :type subtitle: :class:`~subliminal.subtitle.Subtitle`
         :return: `True` if the subtitle has been successfully downloaded, `False` otherwise.
@@ -442,8 +431,8 @@ class SZProviderPool(ProviderPool):
     def download_best_subtitles(self, subtitles, video, languages, min_score=0, hearing_impaired=False, only_one=False,
                                 compute_score=None):
         """Download the best matching subtitles.
-        
-        patch: 
+
+        patch:
             - hearing_impaired is now string
             - add .score to subtitle
             - move all languages check further to the top (still necessary?)
@@ -513,7 +502,7 @@ class SZProviderPool(ProviderPool):
 
             # bail out if hearing_impaired was wrong
             if subtitle.hearing_impaired_verifiable and "hearing_impaired" not in matches and \
-                            hearing_impaired in ("force HI", "force non-HI"):
+                    hearing_impaired in ("force HI", "force non-HI"):
                 logger.debug('%r: Skipping subtitle with score %d because hearing-impaired set to %s', subtitle,
                              score, hearing_impaired)
                 continue
@@ -525,7 +514,7 @@ class SZProviderPool(ProviderPool):
 
                 matches_series = False
                 if {"season", "episode"}.issubset(orig_matches) and \
-                                ("series" in orig_matches or "imdb_id" in orig_matches):
+                        ("series" in orig_matches or "imdb_id" in orig_matches):
                     matches_series = True
 
                 if can_verify_series and not matches_series:
@@ -534,8 +523,8 @@ class SZProviderPool(ProviderPool):
                     continue
 
             # download
-            logger.debug("%r: Trying to download subtitle with matches %s, score: %s; release(s): %s", subtitle, matches,
-                         score, subtitle.release_info)
+            logger.debug("%r: Trying to download subtitle with matches %s, score: %s; release(s): %s", subtitle,
+                         matches, score, subtitle.release_info)
             if self.download_subtitle(subtitle):
                 subtitle.score = score
                 downloaded_subtitles.append(subtitle)
@@ -613,6 +602,7 @@ class SZAsyncProviderPool(SZProviderPool):
         to the number of :attr:`~ProviderPool.providers`.
 
     """
+
     def __init__(self, max_workers=None, *args, **kwargs):
         super(SZAsyncProviderPool, self).__init__(*args, **kwargs)
 
@@ -761,7 +751,7 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
 
     logger.debug('GuessIt found: %s', json.dumps(guessed_result, cls=GuessitEncoder, indent=4, ensure_ascii=False))
     video = Video.fromguess(path, guessed_result)
-    video.hints = hints # ?
+    video.hints = hints  # ?
 
     if dont_use_actual_file and not hash_from:
         return video
@@ -810,18 +800,14 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
     return video
 
 
-def _search_external_subtitles(path, languages=None, only_one=False, scandir_generic=False, match_strictness="strict"):
+def _search_external_subtitles(path, languages=None, only_one=False, match_strictness="strict"):
     dirpath, filename = os.path.split(path)
     dirpath = dirpath or '.'
     fn_no_ext, fileext = os.path.splitext(filename)
-    fn_no_ext_lower = fn_no_ext.lower()
+    fn_no_ext_lower = unicodedata.normalize('NFC', fn_no_ext.lower())
     subtitles = {}
-    _scandir = _scandir_generic if scandir_generic else scandir
 
-    for entry in _scandir(dirpath):
-        if (not entry.name or entry.name in ('\x0c', '$', ',', '\x7f')) and not scandir_generic:
-            logger.debug('Could not determine the name of the file, retrying with scandir_generic')
-            return _search_external_subtitles(path, languages, only_one, True)
+    for entry in scandir(dirpath):
         if not entry.is_file(follow_symlinks=False):
             continue
 
@@ -860,9 +846,11 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
             hi_tag = ["hi", "cc", "sdh"]
             hi = any(i for i in hi_tag if i in adv_tag)
 
-        #add simplified/traditional chinese detection
-        simplified_chinese = ["chs", "sc", "zhs", "hans","zh-hans", "gb", "简", "简中", "简体", "简体中文", "中英双语", "中日双语","中法双语","简体&英文"]
-        traditional_chinese = ["cht", "tc", "zht", "hant","zh-hant", "big5", "繁", "繁中", "繁体", "繁體","繁体中文", "繁體中文", "正體中文", "中英雙語", "中日雙語","中法雙語","繁体&英文"]
+        # add simplified/traditional chinese detection
+        simplified_chinese = ["chs", "sc", "zhs", "hans", "zh-hans", "gb", "简", "简中", "简体", "简体中文", "中英双语",
+                              "中日双语", "中法双语", "简体&英文"]
+        traditional_chinese = ["cht", "tc", "zht", "hant", "zh-hant", "big5", "繁", "繁中", "繁体", "繁體", "繁体中文",
+                               "繁體中文", "正體中文", "中英雙語", "中日雙語", "中法雙語", "繁体&英文"]
         p_root = p_root.replace('zh-TW', 'zht')
 
         # remove possible language code for matching
@@ -884,11 +872,11 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
         try:
             language_code = p_root.rsplit(".", 1)[1].replace('_', '-')
             try:
-                language = Language.fromietf(language_code)      
+                language = Language.fromietf(language_code)
                 language.forced = forced
                 language.hi = hi
             except (ValueError, LanguageReverseError):
-                #add simplified/traditional chinese detection
+                # add simplified/traditional chinese detection
                 if any(ext in str(language_code) for ext in simplified_chinese):
                     language = Language.fromietf('zh')
                     language.forced = forced
@@ -901,7 +889,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
                     logger.error('Cannot parse language code %r', language_code)
                     language_code = None
         except IndexError:
-                language_code = None
+            language_code = None
 
         if not language and not language_code and only_one:
             language = Language.rebuild(list(languages)[0], forced=forced, hi=hi)
@@ -932,20 +920,15 @@ def search_external_subtitles(path, languages=None, only_one=False, match_strict
         logger.debug("external subs: scanning path %s", abspath)
 
         if os.path.isdir(os.path.dirname(abspath)):
-            try:
-                subtitles.update(_search_external_subtitles(abspath, languages=languages,
-                                                            only_one=only_one, match_strictness=match_strictness))
-            except OSError:
-                subtitles.update(_search_external_subtitles(abspath, languages=languages,
-                                                            only_one=only_one, match_strictness=match_strictness,
-                                                            scandir_generic=True))
+            subtitles.update(_search_external_subtitles(abspath, languages=languages, only_one=only_one,
+                                                        match_strictness=match_strictness))
     logger.debug("external subs: found %s", subtitles)
     return subtitles
 
 
 def list_all_subtitles(videos, languages, **kwargs):
     """List all available subtitles.
-    
+
     patch: remove video check, it has been done before
 
     The `videos` must pass the `languages` check of :func:`check_video`.
@@ -1177,7 +1160,7 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
 
 def refine(video, episode_refiners=None, movie_refiners=None, **kwargs):
     """Refine a video using :ref:`refiners`.
-    
+
     patch: add traceback logging
 
     .. note::
