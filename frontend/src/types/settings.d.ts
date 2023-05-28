@@ -25,6 +25,7 @@ interface Settings {
   titlovi: Settings.Titlovi;
   ktuvit: Settings.Ktuvit;
   notifications: Settings.Notifications;
+  language_equals: string[][];
 }
 
 declare namespace Settings {
