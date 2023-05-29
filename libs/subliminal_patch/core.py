@@ -155,6 +155,19 @@ class _LanguageEquals(list):
             if len(item) != 2 or not any(isinstance(i, Language) for i in item):
                 raise ValueError(f"Not a valid equal tuple: {item}")
 
+    def translate(self, items: set):
+        translated = set()
+
+        for equals in self:
+            from_, to_ = equals
+            if to_ in items:
+                logger.debug("Translating %s -> %s", to_, from_)
+                translated.add(from_)
+            else:
+                translated.add(to_)
+
+        return translated or items
+
     def check_set(self, items: set):
         """ Check a set of languages. For example, if the set is {Language('es')} and one of the
         equals of the instance is (Language('es'), Language('es', 'MX')), the set will now have
@@ -343,7 +356,7 @@ class SZProviderPool(ProviderPool):
         logger.info('Listing subtitles with provider %r and languages %r', provider, provider_languages)
         results = []
         try:
-            results = self[provider].list_subtitles(video, provider_languages)
+            results = self[provider].list_subtitles(video, self.lang_equals.translate(provider_languages))
             seen = []
             out = []
             for s in results:
