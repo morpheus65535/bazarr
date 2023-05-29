@@ -168,12 +168,12 @@ class _LanguageEquals(list):
         for equals in self:
             from_, to_ = equals
             if from_ in items:
-                logger.debug("Adding %s to %s", to_, items)
+                logger.debug("Adding %s to %s item(s) set", to_, len(items))
                 to_add.append(to_)
 
         new_items = items.copy()
         new_items.update(to_add)
-        logger.debug("New set: %s", new_items)
+        logger.debug("New set: %s items", len(new_items))
         return new_items
 
     def update_subtitle(self, subtitle):
