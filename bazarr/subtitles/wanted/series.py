@@ -33,9 +33,8 @@ def _wanted_episode(episode):
             database.execute(
                 update(TableEpisodes)
                 .values(failedAttempts=updateFailedAttempts(desired_language=language,
-                                                            attempt_string=episode.failedAttempts))) \
-                .where(TableEpisodes.sonarrEpisodeId == episode.sonarrEpisodeId) \
-                .execute()
+                                                            attempt_string=episode.failedAttempts))
+                .where(TableEpisodes.sonarrEpisodeId == episode.sonarrEpisodeId))
 
             hi_ = "True" if language.endswith(':hi') else "False"
             forced_ = "True" if language.endswith(':forced') else "False"

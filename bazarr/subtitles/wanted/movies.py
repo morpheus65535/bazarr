@@ -33,8 +33,8 @@ def _wanted_movie(movie):
             database.execute(
                 update(TableMovies)
                 .values(failedAttempts=updateFailedAttempts(desired_language=language,
-                                                            attempt_string=movie.failedAttempts)))\
-                .where(TableMovies.radarrId == movie.radarrId)
+                                                            attempt_string=movie.failedAttempts))
+                .where(TableMovies.radarrId == movie.radarrId))
 
             hi_ = "True" if language.endswith(':hi') else "False"
             forced_ = "True" if language.endswith(':forced') else "False"
@@ -44,7 +44,7 @@ def _wanted_movie(movie):
             logging.info(f"BAZARR Search is throttled by adaptive search for this movie {movie.path} and "
                          f"language: {language}")
 
-    for result in generate_subtitles(path_mappings.path_replace_movie(movie['path']),
+    for result in generate_subtitles(path_mappings.path_replace_movie(movie.path),
                                      languages,
                                      audio_language,
                                      str(movie.sceneName),
