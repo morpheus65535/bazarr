@@ -5,7 +5,7 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select, func
 from api.swaggerui import subtitles_language_model
 
 from ..utils import authenticate, postprocess
@@ -89,4 +89,11 @@ class EpisodesWanted(Resource):
             'seriesType': x.seriesType,
         }) for x in database.execute(stmt).all()]
 
-        return {'data': results, 'total': len(results)}
+        count = database.execute(
+            select(func.count())
+            .select_from(TableEpisodes)
+            .join(TableShows)
+            .where(wanted_condition)) \
+            .scalar()
+
+        return {'data': results, 'total': count}

@@ -5,7 +5,7 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableMovies, database, select
+from app.database import get_exclusion_clause, TableMovies, database, select, func
 from api.swaggerui import subtitles_language_model
 
 from api.utils import authenticate, postprocess
@@ -75,4 +75,10 @@ class MoviesWanted(Resource):
             'tags': x.tags,
         }) for x in database.execute(stmt).all()]
 
-        return {'data': results, 'total': len(results)}
+        count = database.execute(
+            select(func.count())
+            .select_from(TableMovies)
+            .where(wanted_condition)) \
+            .scalar()
+
+        return {'data': results, 'total': count}

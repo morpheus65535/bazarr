@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import operator
+import ast
 
 from functools import reduce
 from flask_restx import Resource, Namespace, fields
@@ -39,28 +40,34 @@ class Badges(Resource):
                                (TableEpisodes.missing_subtitles != '[]')]
         episodes_conditions += get_exclusion_clause('series')
         missing_episodes = database.execute(
-            select(func.count())
+            select(TableEpisodes.missing_subtitles)
             .select_from(TableEpisodes)
             .join(TableShows)
             .where(reduce(operator.and_, episodes_conditions))) \
-            .scalar()
+            .all()
+        missing_episodes_count = 0
+        for episode in missing_episodes:
+            missing_episodes_count += len(ast.literal_eval(episode.missing_subtitles))
 
         movies_conditions = [(TableMovies.missing_subtitles.is_not(None)),
                              (TableMovies.missing_subtitles != '[]')]
         movies_conditions += get_exclusion_clause('movie')
         missing_movies = database.execute(
-            select(func.count())
+            select(TableMovies.missing_subtitles)
             .select_from(TableMovies)
             .where(reduce(operator.and_, movies_conditions))) \
-            .scalar()
+            .all()
+        missing_movies_count = 0
+        for movie in missing_movies:
+            missing_movies_count += len(ast.literal_eval(movie.missing_subtitles))
 
         throttled_providers = len(get_throttled_providers())
 
         health_issues = len(get_health_issues())
 
         result = {
-            "episodes": missing_episodes,
-            "movies": missing_movies,
+            "episodes": missing_episodes_count,
+            "movies": missing_movies_count,
             "providers": throttled_providers,
             "status": health_issues,
             'sonarr_signalr': "LIVE" if sonarr_signalr_client.connected else "",
