@@ -42,6 +42,8 @@ class MoviesHistory(Resource):
         'upgradable': fields.Boolean(),
         'parsed_timestamp': fields.String(),
         'blacklisted': fields.Boolean(),
+        'matches': fields.List(fields.String),
+        'dont_matches': fields.List(fields.String),
     })
 
     get_response_model = api_ns_movies_history.model('MovieHistoryGetResponse', {
@@ -85,6 +87,8 @@ class MoviesHistory(Resource):
                       TableHistoryMovie.provider,
                       TableHistoryMovie.subtitles_path,
                       TableHistoryMovie.video_path,
+                      TableHistoryMovie.matched,
+                      TableHistoryMovie.not_matched,
                       TableMovies.subtitles.label('external_subtitles'),
                       upgradable_movies_not_perfect.c.id.label('upgradable'),
                       blacklisted_subtitles.c.subs_id.label('blacklisted')) \
@@ -114,6 +118,8 @@ class MoviesHistory(Resource):
             'provider': x.provider,
             'subtitles_path': x.subtitles_path,
             'video_path': x.video_path,
+            'matches': x.matched,
+            'dont_matches': x.not_matched,
             'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
             'upgradable': bool(x.upgradable),
             'blacklisted': bool(x.blacklisted),
@@ -141,6 +147,17 @@ class MoviesHistory(Resource):
             if item['timestamp']:
                 item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
                 item['timestamp'] = pretty.date(item["timestamp"])
+
+            # Parse matches and dont_matches
+            if item['matches']:
+                item.update({'matches': ast.literal_eval(item['matches'])})
+            else:
+                item.update({'matches': []})
+
+            if item['dont_matches']:
+                item.update({'dont_matches': ast.literal_eval(item['dont_matches'])})
+            else:
+                item.update({'dont_matches': []})
 
         count = database.execute(
             select(func.count())

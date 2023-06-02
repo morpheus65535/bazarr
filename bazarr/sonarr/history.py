@@ -14,6 +14,8 @@ def history_log(action, sonarr_series_id, sonarr_episode_id, result, fake_provid
     score = fake_score or result.score
     subs_id = result.subs_id
     subtitles_path = result.subs_path
+    matched = result.matched
+    not_matched = result.not_matched
 
     database.execute(
         insert(TableHistory)
@@ -28,6 +30,8 @@ def history_log(action, sonarr_series_id, sonarr_episode_id, result, fake_provid
             provider=provider,
             score=score,
             subs_id=subs_id,
-            subtitles_path=subtitles_path
+            subtitles_path=subtitles_path,
+            matched=str(matched),
+            not_matched=str(not_matched)
         ))
     event_stream(type='episode-history')

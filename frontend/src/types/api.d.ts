@@ -198,6 +198,8 @@ declare namespace History {
       timestamp: string;
       description: string;
       upgradable: boolean;
+      matches: string[];
+      dont_matches: string[];
     };
 
   type Movie = History.Base & MovieIdType & TitleType;

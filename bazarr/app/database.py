@@ -165,6 +165,8 @@ class TableHistory(Base):
     subtitles_path = mapped_column(Text)
     timestamp = mapped_column(DateTime, nullable=False, default=datetime.now)
     video_path = mapped_column(Text)
+    matched = mapped_column(Text)
+    not_matched = mapped_column(Text)
 
 
 class TableHistoryMovie(Base):
@@ -181,6 +183,8 @@ class TableHistoryMovie(Base):
     subtitles_path = mapped_column(Text)
     timestamp = mapped_column(DateTime, nullable=False, default=datetime.now)
     video_path = mapped_column(Text)
+    matched = mapped_column(Text)
+    not_matched = mapped_column(Text)
 
 
 class TableLanguagesProfiles(Base):

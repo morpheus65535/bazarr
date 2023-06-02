@@ -15,17 +15,20 @@ from app.event_handler import event_stream
 
 from .utils import _get_download_code3
 from .post_processing import postprocessing
+from .utils import _get_scores
 
 
 class ProcessSubtitlesResult:
     def __init__(self, message, reversed_path, downloaded_language_code2, downloaded_provider, score, forced,
-                 subtitle_id, reversed_subtitles_path, hearing_impaired):
+                 subtitle_id, reversed_subtitles_path, hearing_impaired, matched=None, not_matched=None):
         self.message = message
         self.path = reversed_path
         self.provider = downloaded_provider
         self.score = score
         self.subs_id = subtitle_id
         self.subs_path = reversed_subtitles_path
+        self.matched = matched
+        self.not_matched = not_matched
 
         if hearing_impaired:
             self.language_code = downloaded_language_code2 + ":hi"
@@ -144,4 +147,15 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                                   forced=subtitle.language.forced,
                                   subtitle_id=subtitle.id,
                                   reversed_subtitles_path=reversed_subtitles_path,
-                                  hearing_impaired=subtitle.language.hi)
+                                  hearing_impaired=subtitle.language.hi,
+                                  matched=list(subtitle.matches),
+                                  not_matched=_get_not_matched(subtitle, media_type))
+
+
+def _get_not_matched(subtitle, media_type):
+    _, _, scores = _get_scores(media_type)
+
+    if 'hash' not in subtitle.matches:
+        return list(scores - subtitle.matches)
+    else:
+        return []

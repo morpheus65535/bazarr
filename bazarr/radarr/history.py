@@ -14,6 +14,8 @@ def history_log_movie(action, radarr_id, result, fake_provider=None, fake_score=
     score = fake_score or result.score
     subs_id = result.subs_id
     subtitles_path = result.subs_path
+    matched = result.matched
+    not_matched = result.not_matched
 
     database.execute(
         insert(TableHistoryMovie)
@@ -27,6 +29,8 @@ def history_log_movie(action, radarr_id, result, fake_provider=None, fake_score=
             provider=provider,
             score=score,
             subs_id=subs_id,
-            subtitles_path=subtitles_path
+            subtitles_path=subtitles_path,
+            matched=str(matched),
+            not_matched=str(not_matched)
         ))
     event_stream(type='movie-history')
