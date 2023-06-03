@@ -156,15 +156,16 @@ class _LanguageEquals(list):
                 raise ValueError(f"Not a valid equal tuple: {item}")
 
     def translate(self, items: set):
-        translated = set()
+        translated = items.copy()
 
         for equals in self:
             from_, to_ = equals
             if to_ in items:
                 logger.debug("Translating %s -> %s", to_, from_)
                 translated.add(from_)
-            else:
-                translated.add(to_)
+
+        if translated == items:
+            logger.debug("Nothing to translate found")
 
         return translated or items
 
