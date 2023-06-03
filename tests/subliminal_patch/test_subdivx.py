@@ -74,6 +74,19 @@ def test_list_subtitles_episode_with_title_only_fallback(episodes):
         subtitles = provider.list_subtitles(item, {Language("spa", "MX")})
         assert len(subtitles) > 2
 
+def test_list_subtitles_episode_with_episode_title_fallback(episodes):
+    item = list(episodes.values())[0]
+    item.series = "30 for 30"
+    item.title = "The Two Escobars"
+    item.season = 1
+    item.episode = 16
+
+    with SubdivxSubtitlesProvider() as provider:
+        sub = provider.list_subtitles(item, {Language("spa", "MX")})[0]
+        assert sub.get_matches(item)
+        provider.download_subtitle(sub)
+        assert sub.is_valid()
+
 
 def test_download_subtitle(movies):
     subtitle = SubdivxSubtitle(

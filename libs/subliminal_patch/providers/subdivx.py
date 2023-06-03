@@ -136,6 +136,9 @@ class SubdivxSubtitlesProvider(Provider):
             if len(subtitles) <= 5:
                 subtitles += self._handle_multi_page_search(video.series, video, 1)
 
+            # Try with episode title as last resort
+            if not subtitles and video.title != video.series:
+                subtitles += self._handle_multi_page_search(video.title, video, 1)
         else:
             for query in (video.title, f"{video.title} ({video.year})"):
                 subtitles += self._handle_multi_page_search(query, video)
@@ -308,6 +311,14 @@ def _check_episode(video, title):
         if abs(year - (video.year or 0)) > 1:
             logger.debug("Series year doesn't match: %s", title)
             return False
+
+    # Include matches where the episode title is present
+    if (
+        video.series.lower() in title.lower()
+        and (video.title or "").lower() in title.lower()
+    ):
+        logger.debug("Episode title found in title: %s ~ %s", video.title, title)
+        return True
 
     if season_num is None:
         logger.debug("Not a season/episode: %s", title)

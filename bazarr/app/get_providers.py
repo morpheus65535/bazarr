@@ -20,6 +20,7 @@ from subliminal_patch.extensions import provider_registry
 
 from app.get_args import args
 from app.config import settings, get_array_from
+from languages.get_languages import CustomLanguage
 from app.event_handler import event_stream
 from utilities.binaries import get_binary
 from radarr.blacklist import blacklist_log_movie
@@ -113,6 +114,49 @@ def provider_pool():
     if settings.general.getboolean('multithreading'):
         return subliminal_patch.core.SZAsyncProviderPool
     return subliminal_patch.core.SZProviderPool
+
+
+def _lang_from_str(content: str):
+    " Formats: es-MX en@hi es-MX@forced "
+    extra_info = content.split("@")
+    if len(extra_info) > 1:
+        kwargs = {extra_info[-1]: True}
+    else:
+        kwargs = {}
+
+    content = extra_info[0]
+
+    try:
+        code, country = content.split("-")
+    except ValueError:
+        lang = CustomLanguage.from_value(content)
+        if lang is not None:
+            lang = lang.subzero_language()
+            return lang.rebuild(lang, **kwargs)
+
+        code, country = content, None
+
+    return subliminal_patch.core.Language(code, country, **kwargs)
+
+
+def get_language_equals(settings_=None):
+    settings_ = settings_ or settings
+
+    equals = get_array_from(settings_.general.language_equals)
+    if not equals:
+        return []
+
+    items = []
+    for equal in equals:
+        try:
+            from_, to_ = equal.split(":")
+            from_, to_ = _lang_from_str(from_), _lang_from_str(to_)
+        except Exception as error:
+            logging.info("Invalid equal value: '%s' [%s]", equal, error)
+        else:
+            items.append((from_, to_))
+
+    return items
 
 
 def get_providers():
@@ -254,7 +298,8 @@ def get_providers_auth():
         },
         'whisperai': {
             'endpoint': settings.whisperai.endpoint,
-            'timeout': settings.whisperai.timeout
+            'timeout': settings.whisperai.timeout,
+            'ffmpeg_path': _FFMPEG_BINARY,
         }
     }
 

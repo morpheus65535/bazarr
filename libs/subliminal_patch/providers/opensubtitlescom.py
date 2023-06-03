@@ -50,12 +50,34 @@ def fix_movie_naming(title):
     }, True)
 
 
+custom_languages = {
+    'pt': 'pt-PT',
+    'zh': 'zh-CN',
+}
+
+
+def to_opensubtitlescom(lang):
+    if lang in custom_languages.keys():
+        return custom_languages[lang]
+    else:
+        return lang
+
+
+def from_opensubtitlescom(lang):
+    from_custom_languages = {v: k for k, v in custom_languages.items()}
+    if lang in from_custom_languages.keys():
+        return from_custom_languages[lang]
+    else:
+        return lang
+
+
 class OpenSubtitlesComSubtitle(Subtitle):
     provider_name = 'opensubtitlescom'
     hash_verifiable = False
 
     def __init__(self, language, forced, hearing_impaired, page_link, file_id, releases, uploader, title, year,
                  hash_matched, file_hash=None, season=None, episode=None, imdb_match=False):
+        super().__init__(language, hearing_impaired, page_link)
         language = Language.rebuild(language, hi=hearing_impaired, forced=forced)
 
         self.title = title
@@ -278,7 +300,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             if not title_id:
                 return []
 
-        lang_strings = [str(lang.basename) for lang in languages]
+        lang_strings = [to_opensubtitlescom(lang.basename) for lang in languages]
         langs = ','.join(lang_strings)
         logging.debug(f'Searching for this languages: {lang_strings}')
 
@@ -334,6 +356,16 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
         if len(result['data']):
             for item in result['data']:
+                # ignore AI translated subtitles
+                if 'ai_translated' in item['attributes'] and item['attributes']['ai_translated']:
+                    logging.debug("Skipping AI translated subtitles")
+                    continue
+
+                # ignore machine translated subtitles
+                if 'machine_translated' in item['attributes'] and item['attributes']['machine_translated']:
+                    logging.debug("Skipping machine translated subtitles")
+                    continue
+
                 if 'season_number' in item['attributes']['feature_details']:
                     season_number = item['attributes']['feature_details']['season_number']
                 else:
@@ -356,7 +388,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
                 if len(item['attributes']['files']):
                     subtitle = OpenSubtitlesComSubtitle(
-                        language=Language.fromietf(item['attributes']['language']),
+                        language=Language.fromietf(from_opensubtitlescom(item['attributes']['language'])),
                         forced=item['attributes']['foreign_parts_only'],
                         hearing_impaired=item['attributes']['hearing_impaired'],
                         page_link=item['attributes']['url'],
@@ -389,7 +421,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         logger.info('Downloading subtitle %r', subtitle)
 
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json',
-                   'Authorization': 'Beaker ' + self.token}
+                   'Authorization': 'Bearer ' + self.token}
         res = self.retry(
             lambda: checked(
                 lambda: self.session.post(self.server_url + 'download',
