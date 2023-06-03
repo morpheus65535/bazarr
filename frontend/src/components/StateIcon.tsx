@@ -19,13 +19,13 @@ const StateIcon: FunctionComponent<{
 }> = ({ matches, dont, hasIssues, isHistory }) => {
   const { ref, hovered } = useHover();
 
-  interface popoverTargetProps {
+  interface PopoverTargetProps {
     ref: React.MutableRefObject<HTMLDivElement>;
     hasIssues: boolean;
     isHistory: boolean;
   }
 
-  function popoverTarget({ ...props }: popoverTargetProps) {
+  function PopoverTarget({ ...props }: PopoverTargetProps) {
     if (isHistory) {
       return (
         <Text ref={ref}>
@@ -45,7 +45,7 @@ const StateIcon: FunctionComponent<{
   return (
     <Popover opened={hovered} position="top" width={360} withArrow>
       <Popover.Target>
-        {popoverTarget({ ref, hasIssues, isHistory })}
+        <PopoverTarget ref={ref} hasIssues={hasIssues} isHistory={isHistory} />
       </Popover.Target>
       <Popover.Dropdown>
         <Group position="left" spacing="xl" noWrap grow>
