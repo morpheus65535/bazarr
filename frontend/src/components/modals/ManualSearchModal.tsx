@@ -105,7 +105,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
               </Anchor>
             );
           } else {
-            return value;
+            return <Text>{value}</Text>;
           }
         },
       },

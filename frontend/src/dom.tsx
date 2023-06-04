@@ -1,20 +1,19 @@
 import { StrictMode } from "react";
-import ReactDOM from "react-dom";
-import { useRoutes } from "react-router-dom";
+import { createRoot } from "react-dom/client";
+import { Router } from "./Router";
 import { AllProviders } from "./providers";
-import { useRouteItems } from "./Router";
 
-const RouteApp = () => {
-  const items = useRouteItems();
+const container = document.getElementById("root");
 
-  return useRoutes(items);
-};
-
-ReactDOM.render(
-  <StrictMode>
-    <AllProviders>
-      <RouteApp />
-    </AllProviders>
-  </StrictMode>,
-  document.getElementById("root")
-);
+if (container === null) {
+  Error("Cannot initialize app, root not found");
+} else {
+  const root = createRoot(container);
+  root.render(
+    <StrictMode>
+      <AllProviders>
+        <Router />
+      </AllProviders>
+    </StrictMode>
+  );
+}

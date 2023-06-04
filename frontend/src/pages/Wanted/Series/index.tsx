@@ -4,7 +4,7 @@ import {
   useSeriesAction,
 } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
-import { task, TaskGroup } from "@/modules/task";
+import { TaskGroup, task } from "@/modules/task";
 import WantedView from "@/pages/views/WantedView";
 import { useTableStyles } from "@/styles";
 import { BuildKey } from "@/utilities";

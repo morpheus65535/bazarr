@@ -1,12 +1,14 @@
 import { Divider, Stack, Title } from "@mantine/core";
-import { FunctionComponent } from "react";
+import { FunctionComponent, PropsWithChildren } from "react";
 
 interface SectionProps {
   header: string;
   hidden?: boolean;
 }
 
-export const Section: FunctionComponent<SectionProps> = ({
+type Props = PropsWithChildren<SectionProps>;
+
+export const Section: FunctionComponent<Props> = ({
   header,
   hidden,
   children,

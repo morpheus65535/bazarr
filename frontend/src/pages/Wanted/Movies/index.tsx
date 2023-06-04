@@ -4,7 +4,7 @@ import {
   useMovieWantedPagination,
 } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
-import { task, TaskGroup } from "@/modules/task";
+import { TaskGroup, task } from "@/modules/task";
 import WantedView from "@/pages/views/WantedView";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
