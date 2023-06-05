@@ -50,6 +50,27 @@ def fix_movie_naming(title):
     }, True)
 
 
+custom_languages = {
+    'pt': 'pt-PT',
+    'zh': 'zh-CN',
+}
+
+
+def to_opensubtitlescom(lang):
+    if lang in custom_languages.keys():
+        return custom_languages[lang]
+    else:
+        return lang
+
+
+def from_opensubtitlescom(lang):
+    from_custom_languages = {v: k for k, v in custom_languages.items()}
+    if lang in from_custom_languages.keys():
+        return from_custom_languages[lang]
+    else:
+        return lang
+
+
 class OpenSubtitlesComSubtitle(Subtitle):
     provider_name = 'opensubtitlescom'
     hash_verifiable = False
@@ -279,7 +300,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             if not title_id:
                 return []
 
-        lang_strings = [str(lang.basename) for lang in languages]
+        lang_strings = [to_opensubtitlescom(lang.basename) for lang in languages]
         langs = ','.join(lang_strings)
         logging.debug(f'Searching for this languages: {lang_strings}')
 
@@ -367,7 +388,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
                 if len(item['attributes']['files']):
                     subtitle = OpenSubtitlesComSubtitle(
-                        language=Language.fromietf(item['attributes']['language']),
+                        language=Language.fromietf(from_opensubtitlescom(item['attributes']['language'])),
                         forced=item['attributes']['foreign_parts_only'],
                         hearing_impaired=item['attributes']['hearing_impaired'],
                         page_link=item['attributes']['url'],

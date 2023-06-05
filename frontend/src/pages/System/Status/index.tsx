@@ -13,7 +13,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Anchor, Container, Divider, Grid, Stack, Text } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import moment from "moment";
-import { FunctionComponent, ReactNode, useCallback, useState } from "react";
+import {
+  FunctionComponent,
+  PropsWithChildren,
+  ReactNode,
+  useCallback,
+  useState,
+} from "react";
 import Table from "./table";
 
 interface InfoProps {
@@ -53,10 +59,13 @@ function Label(props: IconProps): JSX.Element {
   );
 }
 
-const InfoContainer: FunctionComponent<{ title: string }> = ({
-  title,
-  children,
-}) => {
+interface InfoContainerProps {
+  title: string;
+}
+
+const InfoContainer: FunctionComponent<
+  PropsWithChildren<InfoContainerProps>
+> = ({ title, children }) => {
   return (
     <Stack>
       <h4>{title}</h4>

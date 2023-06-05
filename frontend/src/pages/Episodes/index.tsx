@@ -1,3 +1,4 @@
+import { RouterNames } from "@/Router/RouterNames";
 import {
   useEpisodesBySeriesId,
   useIsAnyActionRunning,
@@ -11,9 +12,8 @@ import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { SeriesUploadModal } from "@/components/forms/SeriesUploadForm";
 import { SubtitleToolsModal } from "@/components/modals";
 import { useModals } from "@/modules/modals";
-import { notification, task, TaskGroup } from "@/modules/task";
+import { TaskGroup, notification, task } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
-import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
   faAdjust,

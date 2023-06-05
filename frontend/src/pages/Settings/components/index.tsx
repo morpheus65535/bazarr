@@ -63,11 +63,11 @@ export const URLTestButton: FunctionComponent<{
 };
 
 export * from "./Card";
-export * from "./collapse";
-export { default as CollapseBox } from "./collapse";
-export * from "./forms";
 export * from "./Layout";
 export { default as Layout } from "./Layout";
 export * from "./Message";
-export * from "./pathMapper";
 export * from "./Section";
+export * from "./collapse";
+export { default as CollapseBox } from "./collapse";
+export * from "./forms";
+export * from "./pathMapper";

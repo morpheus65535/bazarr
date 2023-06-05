@@ -3,8 +3,8 @@ import { useEffect } from "react";
 import { usePagination, useTable } from "react-table";
 import BaseTable from "./BaseTable";
 import PageControl from "./PageControl";
-import { useDefaultSettings } from "./plugins";
 import { SimpleTableProps } from "./SimpleTable";
+import { useDefaultSettings } from "./plugins";
 
 type Props<T extends object> = SimpleTableProps<T> & {
   autoScroll?: boolean;

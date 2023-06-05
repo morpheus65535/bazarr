@@ -1,9 +1,16 @@
 import { Text } from "@mantine/core";
-import { FunctionComponent } from "react";
+import { FunctionComponent, PropsWithChildren } from "react";
 
-export const Message: FunctionComponent<{
+interface MessageProps {
   type?: "warning" | "info";
-}> = ({ type = "info", children }) => {
+}
+
+type Props = PropsWithChildren<MessageProps>;
+
+export const Message: FunctionComponent<Props> = ({
+  type = "info",
+  children,
+}) => {
   return (
     <Text size="sm" color={type === "info" ? "dimmed" : "yellow"} my={0}>
       {children}

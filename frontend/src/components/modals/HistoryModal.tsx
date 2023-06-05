@@ -12,11 +12,11 @@ import { Badge, Center, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { PageTable } from "..";
+import TextPopover from "../TextPopover";
 import MutateAction from "../async/MutateAction";
 import QueryOverlay from "../async/QueryOverlay";
 import { HistoryIcon } from "../bazarr";
 import Language from "../bazarr/Language";
-import TextPopover from "../TextPopover";
 
 interface MovieHistoryViewProps {
   movie: Item.Movie;

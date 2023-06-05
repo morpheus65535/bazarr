@@ -65,15 +65,19 @@ const MovieView: FunctionComponent = () => {
         accessor: "missing_subtitles",
         Cell: (row) => {
           const missing = row.value;
-          return missing.map((v) => (
-            <Badge
-              mr="xs"
-              color="yellow"
-              key={BuildKey(v.code2, v.hi, v.forced)}
-            >
-              <Language.Text value={v}></Language.Text>
-            </Badge>
-          ));
+          return (
+            <>
+              {missing.map((v) => (
+                <Badge
+                  mr="xs"
+                  color="yellow"
+                  key={BuildKey(v.code2, v.hi, v.forced)}
+                >
+                  <Language.Text value={v}></Language.Text>
+                </Badge>
+              ))}
+            </>
+          );
         },
       },
       {

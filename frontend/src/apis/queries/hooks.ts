@@ -3,9 +3,9 @@ import { usePageSize } from "@/utilities/storage";
 import { useCallback, useEffect, useState } from "react";
 import {
   QueryKey,
+  UseQueryResult,
   useQuery,
   useQueryClient,
-  UseQueryResult,
 } from "react-query";
 import { QueryKeys } from "./keys";
 

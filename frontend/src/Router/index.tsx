@@ -1,12 +1,11 @@
+import App from "@/App";
 import { useBadges } from "@/apis/hooks";
 import { useEnabledStatus } from "@/apis/hooks/site";
-import App from "@/App";
 import { Lazy } from "@/components/async";
 import Authentication from "@/pages/Authentication";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
 import Episodes from "@/pages/Episodes";
-import NotFound from "@/pages/errors/NotFound";
 import MoviesHistoryView from "@/pages/History/Movies";
 import SeriesHistoryView from "@/pages/History/Series";
 import MovieView from "@/pages/Movies";
@@ -31,6 +30,7 @@ import SystemReleasesView from "@/pages/System/Releases";
 import SystemTasksView from "@/pages/System/Tasks";
 import WantedMoviesView from "@/pages/Wanted/Movies";
 import WantedSeriesView from "@/pages/Wanted/Series";
+import NotFound from "@/pages/errors/NotFound";
 import { Environment } from "@/utilities";
 import {
   faClock,
@@ -42,13 +42,13 @@ import {
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import {
-  createContext,
   FunctionComponent,
+  createContext,
   lazy,
   useContext,
   useMemo,
 } from "react";
-import { BrowserRouter } from "react-router-dom";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import Redirector from "./Redirector";
 import { RouterNames } from "./RouterNames";
 import { CustomRouteObject } from "./type";
@@ -315,12 +315,18 @@ function useRoutes(): CustomRouteObject[] {
 
 const RouterItemContext = createContext<CustomRouteObject[]>([]);
 
-export const Router: FunctionComponent = ({ children }) => {
+export const Router: FunctionComponent = () => {
   const routes = useRoutes();
+
+  // TODO: Move this outside the function component scope
+  const router = useMemo(
+    () => createBrowserRouter(routes, { basename: Environment.baseUrl }),
+    [routes]
+  );
 
   return (
     <RouterItemContext.Provider value={routes}>
-      <BrowserRouter basename={Environment.baseUrl}>{children}</BrowserRouter>
+      <RouterProvider router={router}></RouterProvider>
     </RouterItemContext.Provider>
   );
 };
