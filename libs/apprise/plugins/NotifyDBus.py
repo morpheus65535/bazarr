@@ -1,31 +1,39 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import absolute_import
 from __future__ import print_function
 
+import sys
 from .NotifyBase import NotifyBase
 from ..common import NotifyImageSize
 from ..common import NotifyType
@@ -76,6 +84,13 @@ try:
     # We're good as long as at least one
     NOTIFY_DBUS_SUPPORT_ENABLED = (
         LOOP_GLIB is not None or LOOP_QT is not None)
+
+    # ImportError: When using gi.repository you must not import static modules
+    # like "gobject". Please change all occurrences of "import gobject" to
+    # "from gi.repository import GObject".
+    # See: https://bugzilla.gnome.org/show_bug.cgi?id=709183
+    if "gobject" in sys.modules:  # pragma: no cover
+        del sys.modules["gobject"]
 
     try:
         # The following is required for Image/Icon loading only
@@ -233,7 +248,7 @@ class NotifyDBus(NotifyBase):
         Initialize DBus Object
         """
 
-        super(NotifyDBus, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # Track our notifications
         self.registry = {}
@@ -272,11 +287,8 @@ class NotifyDBus(NotifyBase):
             self.x_axis = None
             self.y_axis = None
 
-        # Track whether or not we want to send an image with our notification
-        # or not.
+        # Track whether we want to add an image to the notification.
         self.include_image = include_image
-
-        return
 
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
@@ -286,10 +298,10 @@ class NotifyDBus(NotifyBase):
         try:
             session = SessionBus(mainloop=MAINLOOP_MAP[self.schema])
 
-        except DBusException:
+        except DBusException as e:
             # Handle exception
             self.logger.warning('Failed to send DBus notification.')
-            self.logger.exception('DBus Exception')
+            self.logger.debug(f'DBus Exception: {e}')
             return False
 
         # If there is no title, but there is a body, swap the two to get rid
@@ -342,8 +354,8 @@ class NotifyDBus(NotifyBase):
 
             except Exception as e:
                 self.logger.warning(
-                    "Could not load Gnome notification icon ({}): {}"
-                    .format(icon_path, e))
+                    "Could not load notification icon (%s).", icon_path)
+                self.logger.debug(f'DBus Exception: {e}')
 
         try:
             # Always call throttle() before any remote execution is made
@@ -370,9 +382,9 @@ class NotifyDBus(NotifyBase):
 
             self.logger.info('Sent DBus notification.')
 
-        except Exception:
+        except Exception as e:
             self.logger.warning('Failed to send DBus notification.')
-            self.logger.exception('DBus Exception')
+            self.logger.debug(f'DBus Exception: {e}')
             return False
 
         return True

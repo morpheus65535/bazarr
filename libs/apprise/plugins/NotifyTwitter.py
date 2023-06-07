@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 # See https://developer.twitter.com/en/docs/direct-messages/\
 #           sending-and-receiving/api-reference/new-event.html
@@ -75,7 +82,7 @@ class NotifyTwitter(NotifyBase):
     service_url = 'https://twitter.com/'
 
     # The default secure protocol is twitter.
-    secure_protocol = 'twitter'
+    secure_protocol = ('twitter', 'tweet')
 
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_twitter'
@@ -194,7 +201,7 @@ class NotifyTwitter(NotifyBase):
         Initialize Twitter Object
 
         """
-        super(NotifyTwitter, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.ckey = validate_regex(ckey)
         if not self.ckey:
@@ -221,20 +228,20 @@ class NotifyTwitter(NotifyBase):
             raise TypeError(msg)
 
         # Store our webhook mode
-        self.mode = None \
+        self.mode = self.template_args['mode']['default'] \
             if not isinstance(mode, str) else mode.lower()
-
-        # Set Cache Flag
-        self.cache = cache
-
-        # Prepare Image Batch Mode Flag
-        self.batch = batch
 
         if self.mode not in TWITTER_MESSAGE_MODES:
             msg = 'The Twitter message mode specified ({}) is invalid.' \
                 .format(mode)
             self.logger.warning(msg)
             raise TypeError(msg)
+
+        # Set Cache Flag
+        self.cache = cache
+
+        # Prepare Image Batch Mode Flag
+        self.batch = batch
 
         # Track any errors
         has_error = False
@@ -249,7 +256,7 @@ class NotifyTwitter(NotifyBase):
 
             has_error = True
             self.logger.warning(
-                'Dropped invalid user ({}) specified.'.format(target),
+                'Dropped invalid Twitter user ({}) specified.'.format(target),
             )
 
         if has_error and not self.targets:
@@ -260,6 +267,10 @@ class NotifyTwitter(NotifyBase):
             msg = 'No Twitter targets to notify.'
             self.logger.warning(msg)
             raise TypeError(msg)
+
+        # Initialize our cache values
+        self._whoami_cache = None
+        self._user_cache = {}
 
         return
 
@@ -293,7 +304,7 @@ class NotifyTwitter(NotifyBase):
                     continue
 
                 self.logger.debug(
-                    'Preparing Twiter attachment {}'.format(
+                    'Preparing Twitter attachment {}'.format(
                         attachment.url(privacy=True)))
 
                 # Upload our image and get our id associated with it
@@ -536,16 +547,9 @@ class NotifyTwitter(NotifyBase):
 
         """
 
-        # Prepare a whoami key; this is to prevent conflict with other
-        # NotifyTwitter declarations that may or may not use a different
-        # set of authentication keys
-        whoami_key = '{}{}{}{}'.format(
-            self.ckey, self.csecret, self.akey, self.asecret)
-
-        if lazy and hasattr(NotifyTwitter, '_whoami_cache') \
-                and whoami_key in getattr(NotifyTwitter, '_whoami_cache'):
+        if lazy and self._whoami_cache is not None:
             # Use cached response
-            return getattr(NotifyTwitter, '_whoami_cache')[whoami_key]
+            return self._whoami_cache
 
         # Contains a mapping of screen_name to id
         results = {}
@@ -560,22 +564,11 @@ class NotifyTwitter(NotifyBase):
         if postokay:
             try:
                 results[response['screen_name']] = response['id']
+                self._whoami_cache = {
+                    response['screen_name']: response['id'],
+                }
 
-                if lazy:
-                    # Cache our response for future references
-                    if not hasattr(NotifyTwitter, '_whoami_cache'):
-                        setattr(
-                            NotifyTwitter, '_whoami_cache',
-                            {whoami_key: results})
-                    else:
-                        getattr(NotifyTwitter, '_whoami_cache')\
-                            .update({whoami_key: results})
-
-                    # Update our user cache as well
-                    if not hasattr(NotifyTwitter, '_user_cache'):
-                        setattr(NotifyTwitter, '_user_cache', results)
-                    else:
-                        getattr(NotifyTwitter, '_user_cache').update(results)
+                self._user_cache.update(results)
 
             except (TypeError, KeyError):
                 pass
@@ -595,10 +588,10 @@ class NotifyTwitter(NotifyBase):
         # Build a unique set of names
         names = parse_list(screen_name)
 
-        if lazy and hasattr(NotifyTwitter, '_user_cache'):
+        if lazy and self._user_cache:
             # Use cached response
-            results = {k: v for k, v in getattr(
-                NotifyTwitter, '_user_cache').items() if k in names}
+            results = {
+                k: v for k, v in self._user_cache.items() if k in names}
 
             # limit our names if they already exist in our cache
             names = [name for name in names if name not in results]
@@ -612,7 +605,7 @@ class NotifyTwitter(NotifyBase):
         # https://developer.twitter.com/en/docs/accounts-and-users/\
         #     follow-search-get-users/api-reference/get-users-lookup
         for i in range(0, len(names), 100):
-            # Send Twitter DM
+            # Look up our names by their screen_name
             postokay, response = self._fetch(
                 self.twitter_lookup,
                 payload={
@@ -635,11 +628,7 @@ class NotifyTwitter(NotifyBase):
 
         # Cache our response for future use; this saves on un-nessisary extra
         # hits against the Twitter API when we already know the answer
-        if lazy:
-            if not hasattr(NotifyTwitter, '_user_cache'):
-                setattr(NotifyTwitter, '_user_cache', results)
-            else:
-                getattr(NotifyTwitter, '_user_cache').update(results)
+        self._user_cache.update(results)
 
         return results
 
@@ -686,7 +675,7 @@ class NotifyTwitter(NotifyBase):
             # Determine how long we should wait for or if we should wait at
             # all. This isn't fool-proof because we can't be sure the client
             # time (calling this script) is completely synced up with the
-            # Gitter server.  One would hope we're on NTP and our clocks are
+            # Twitter server.  One would hope we're on NTP and our clocks are
             # the same allowing this to role smoothly:
 
             now = datetime.utcnow()
@@ -804,13 +793,9 @@ class NotifyTwitter(NotifyBase):
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
-        if len(self.targets) > 0:
-            params['to'] = ','.join(
-                [NotifyTwitter.quote(x, safe='') for x in self.targets])
-
         return '{schema}://{ckey}/{csecret}/{akey}/{asecret}' \
             '/{targets}/?{params}'.format(
-                schema=self.secure_protocol,
+                schema=self.secure_protocol[0],
                 ckey=self.pprint(self.ckey, privacy, safe=''),
                 csecret=self.pprint(
                     self.csecret, privacy, mode=PrivacyMode.Secret, safe=''),
@@ -818,9 +803,16 @@ class NotifyTwitter(NotifyBase):
                 asecret=self.pprint(
                     self.asecret, privacy, mode=PrivacyMode.Secret, safe=''),
                 targets='/'.join(
-                    [NotifyTwitter.quote('@{}'.format(target), safe='')
+                    [NotifyTwitter.quote('@{}'.format(target), safe='@')
                      for target in self.targets]),
                 params=NotifyTwitter.urlencode(params))
+
+    def __len__(self):
+        """
+        Returns the number of targets associated with this notification
+        """
+        targets = len(self.targets)
+        return targets if targets > 0 else 1
 
     @staticmethod
     def parse_url(url):
@@ -834,33 +826,30 @@ class NotifyTwitter(NotifyBase):
             # We're done early as we couldn't load the results
             return results
 
-        # The first token is stored in the hostname
-        consumer_key = NotifyTwitter.unquote(results['host'])
-
         # Acquire remaining tokens
         tokens = NotifyTwitter.split_path(results['fullpath'])
 
+        # The consumer token is stored in the hostname
+        results['ckey'] = NotifyTwitter.unquote(results['host'])
+
+        #
         # Now fetch the remaining tokens
-        try:
-            consumer_secret, access_token_key, access_token_secret = \
-                tokens[0:3]
+        #
 
-        except (ValueError, AttributeError, IndexError):
-            # Force some bad values that will get caught
-            # in parsing later
-            consumer_secret = None
-            access_token_key = None
-            access_token_secret = None
-
-        results['ckey'] = consumer_key
-        results['csecret'] = consumer_secret
-        results['akey'] = access_token_key
-        results['asecret'] = access_token_secret
+        # Consumer Secret
+        results['csecret'] = tokens.pop(0) if tokens else None
+        # Access Token Key
+        results['akey'] = tokens.pop(0) if tokens else None
+        # Access Token Secret
+        results['asecret'] = tokens.pop(0) if tokens else None
 
         # The defined twitter mode
         if 'mode' in results['qsd'] and len(results['qsd']['mode']):
             results['mode'] = \
                 NotifyTwitter.unquote(results['qsd']['mode'])
+
+        elif results['schema'].startswith('tweet'):
+            results['mode'] = TwitterMessageMode.TWEET
 
         results['targets'] = []
 
@@ -869,7 +858,7 @@ class NotifyTwitter(NotifyBase):
             results['targets'].append(results.get('user'))
 
         # Store any remaining items as potential targets
-        results['targets'].extend(tokens[3:])
+        results['targets'].extend(tokens)
 
         # Get Cache Flag (reduces lookup hits)
         if 'cache' in results['qsd'] and len(results['qsd']['cache']):

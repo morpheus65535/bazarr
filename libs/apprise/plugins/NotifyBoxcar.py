@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 import re
 import requests
@@ -39,6 +46,7 @@ except ImportError:
 from .NotifyBase import NotifyBase
 from ..URLBase import PrivacyMode
 from ..utils import parse_bool
+from ..utils import parse_list
 from ..utils import validate_regex
 from ..common import NotifyType
 from ..common import NotifyImageSize
@@ -51,7 +59,7 @@ DEFAULT_TAG = '@all'
 # list of tagged devices that the notification need to be send to, and a
 # boolean operator (‘and’ / ‘or’) that defines the criteria to match devices
 # against those tags.
-IS_TAG = re.compile(r'^[@](?P<name>[A-Z0-9]{1,63})$', re.I)
+IS_TAG = re.compile(r'^[@]?(?P<name>[A-Z0-9]{1,63})$', re.I)
 
 # Device tokens are only referenced when developing.
 # It's not likely you'll send a message directly to a device, but if you do;
@@ -150,10 +158,10 @@ class NotifyBoxcar(NotifyBase):
         """
         Initialize Boxcar Object
         """
-        super(NotifyBoxcar, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # Initialize tag list
-        self.tags = list()
+        self._tags = list()
 
         # Initialize device_token list
         self.device_tokens = list()
@@ -177,29 +185,27 @@ class NotifyBoxcar(NotifyBase):
             raise TypeError(msg)
 
         if not targets:
-            self.tags.append(DEFAULT_TAG)
+            self._tags.append(DEFAULT_TAG)
             targets = []
 
-        elif isinstance(targets, str):
-            targets = [x for x in filter(bool, TAGS_LIST_DELIM.split(
-                targets,
-            ))]
-
         # Validate targets and drop bad ones:
-        for target in targets:
-            if IS_TAG.match(target):
+        for target in parse_list(targets):
+            result = IS_TAG.match(target)
+            if result:
                 # store valid tag/alias
-                self.tags.append(IS_TAG.match(target).group('name'))
+                self._tags.append(result.group('name'))
+                continue
 
-            elif IS_DEVICETOKEN.match(target):
+            result = IS_DEVICETOKEN.match(target)
+            if result:
                 # store valid device
                 self.device_tokens.append(target)
+                continue
 
-            else:
-                self.logger.warning(
-                    'Dropped invalid tag/alias/device_token '
-                    '({}) specified.'.format(target),
-                )
+            self.logger.warning(
+                'Dropped invalid tag/alias/device_token '
+                '({}) specified.'.format(target),
+            )
 
         # Track whether or not we want to send an image with our notification
         # or not.
@@ -231,8 +237,8 @@ class NotifyBoxcar(NotifyBase):
         if body:
             payload['aps']['alert'] = body
 
-        if self.tags:
-            payload['tags'] = {'or': self.tags}
+        if self._tags:
+            payload['tags'] = {'or': self._tags}
 
         if self.device_tokens:
             payload['device_tokens'] = self.device_tokens
@@ -334,9 +340,17 @@ class NotifyBoxcar(NotifyBase):
                 self.secret, privacy, mode=PrivacyMode.Secret, safe=''),
             targets='/'.join([
                 NotifyBoxcar.quote(x, safe='') for x in chain(
-                    self.tags, self.device_tokens) if x != DEFAULT_TAG]),
+                    self._tags, self.device_tokens) if x != DEFAULT_TAG]),
             params=NotifyBoxcar.urlencode(params),
         )
+
+    def __len__(self):
+        """
+        Returns the number of targets associated with this notification
+        """
+        targets = len(self._tags) + len(self.device_tokens)
+        # DEFAULT_TAG is set if no tokens/tags are otherwise set
+        return targets if targets > 0 else 1
 
     @staticmethod
     def parse_url(url):

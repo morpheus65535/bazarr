@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2020 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 # One Signal requires that you've signed up with the service and
 # generated yourself an API Key and APP ID.
@@ -44,7 +51,7 @@ from ..utils import is_email
 from ..AppriseLocale import gettext_lazy as _
 
 
-class OneSignalCategory(NotifyBase):
+class OneSignalCategory:
     """
     We define the different category types that we can notify via OneSignal
     """
@@ -85,7 +92,7 @@ class NotifyOneSignal(NotifyBase):
     image_size = NotifyImageSize.XY_72
 
     # The maximum allowable batch sizes per message
-    maximum_batch_size = 2000
+    default_batch_size = 2000
 
     # Define object templates
     templates = (
@@ -114,7 +121,7 @@ class NotifyOneSignal(NotifyBase):
             'private': True,
             'required': True,
         },
-        'target_device': {
+        'target_player': {
             'name': _('Target Player ID'),
             'type': 'string',
             'map_to': 'targets',
@@ -178,7 +185,7 @@ class NotifyOneSignal(NotifyBase):
         Initialize OneSignal
 
         """
-        super(NotifyOneSignal, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # The apikey associated with the account
         self.apikey = validate_regex(apikey)
@@ -197,7 +204,7 @@ class NotifyOneSignal(NotifyBase):
             raise TypeError(msg)
 
         # Prepare Batch Mode Flag
-        self.batch_size = self.maximum_batch_size if batch else 1
+        self.batch_size = self.default_batch_size if batch else 1
 
         # Place a thumbnail image inline with the message body
         self.include_image = include_image
@@ -424,6 +431,26 @@ class NotifyOneSignal(NotifyBase):
                     for x in self.targets[OneSignalCategory.SEGMENT]])),
             params=NotifyOneSignal.urlencode(params),
         )
+
+    def __len__(self):
+        """
+        Returns the number of targets associated with this notification
+        """
+        #
+        # Factor batch into calculation
+        #
+        if self.batch_size > 1:
+            # Batches can only be sent by group (you can't combine groups into
+            # a single batch)
+            total_targets = 0
+            for k, m in self.targets.items():
+                targets = len(m)
+                total_targets += int(targets / self.batch_size) + \
+                    (1 if targets % self.batch_size else 0)
+            return total_targets
+
+        # Normal batch count; just count the targets
+        return sum([len(m) for _, m in self.targets.items()])
 
     @staticmethod
     def parse_url(url):

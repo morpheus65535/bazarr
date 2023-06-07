@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2022 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 # Great sources
 # - https://github.com/matrix-org/matrix-python-sdk
@@ -40,8 +47,10 @@ from os.path import basename
 
 from .NotifyBase import NotifyBase
 from ..common import NotifyType
+from ..common import NotifyImageSize
 from ..AppriseLocale import gettext_lazy as _
 from ..utils import parse_list
+from ..utils import parse_bool
 from ..utils import is_hostname
 from ..utils import is_ipaddr
 from ..utils import validate_regex
@@ -63,6 +72,27 @@ class NtfyMode:
 NTFY_MODES = (
     NtfyMode.CLOUD,
     NtfyMode.PRIVATE,
+)
+
+# A Simple regular expression used to auto detect Auth mode if it isn't
+# otherwise specified:
+NTFY_AUTH_DETECT_RE = re.compile('tk_[^ \t]+', re.IGNORECASE)
+
+
+class NtfyAuth:
+    """
+    Define ntfy Authentication Modes
+    """
+    # Basic auth (user and password provided)
+    BASIC = "basic"
+
+    # Auth Token based
+    TOKEN = "token"
+
+
+NTFY_AUTH = (
+    NtfyAuth.BASIC,
+    NtfyAuth.TOKEN,
 )
 
 
@@ -142,6 +172,9 @@ class NotifyNtfy(NotifyBase):
     # Default upstream/cloud host if none is defined
     cloud_notify_url = 'https://ntfy.sh'
 
+    # Allows the user to specify the NotifyImageSize object
+    image_size = NotifyImageSize.XY_256
+
     # Message time to live (if remote client isn't around to receive it)
     time_to_live = 2419200
 
@@ -158,6 +191,8 @@ class NotifyNtfy(NotifyBase):
         '{schema}://{user}@{host}:{port}/{targets}',
         '{schema}://{user}:{password}@{host}/{targets}',
         '{schema}://{user}:{password}@{host}:{port}/{targets}',
+        '{schema}://{token}@{host}/{targets}',
+        '{schema}://{token}@{host}:{port}/{targets}',
     )
 
     # Define our template tokens
@@ -181,6 +216,11 @@ class NotifyNtfy(NotifyBase):
             'type': 'string',
             'private': True,
         },
+        'token': {
+            'name': _('Token'),
+            'type': 'string',
+            'private': True,
+        },
         'topic': {
             'name': _('Topic'),
             'type': 'string',
@@ -197,6 +237,16 @@ class NotifyNtfy(NotifyBase):
     template_args = dict(NotifyBase.template_args, **{
         'attach': {
             'name': _('Attach'),
+            'type': 'string',
+        },
+        'image': {
+            'name': _('Include Image'),
+            'type': 'bool',
+            'default': True,
+            'map_to': 'include_image',
+        },
+        'avatar_url': {
+            'name': _('Avatar URL'),
             'type': 'string',
         },
         'filename': {
@@ -231,6 +281,15 @@ class NotifyNtfy(NotifyBase):
             'values': NTFY_MODES,
             'default': NtfyMode.PRIVATE,
         },
+        'token': {
+            'alias_of': 'token',
+        },
+        'auth': {
+            'name': _('Authentication Type'),
+            'type': 'choice:string',
+            'values': NTFY_AUTH,
+            'default': NtfyAuth.BASIC,
+        },
         'to': {
             'alias_of': 'targets',
         },
@@ -238,11 +297,12 @@ class NotifyNtfy(NotifyBase):
 
     def __init__(self, targets=None, attach=None, filename=None, click=None,
                  delay=None, email=None, priority=None, tags=None, mode=None,
+                 include_image=True, avatar_url=None, auth=None, token=None,
                  **kwargs):
         """
         Initialize ntfy Object
         """
-        super(NotifyNtfy, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # Prepare our mode
         self.mode = mode.strip().lower() \
@@ -251,6 +311,20 @@ class NotifyNtfy(NotifyBase):
 
         if self.mode not in NTFY_MODES:
             msg = 'An invalid ntfy Mode ({}) was specified.'.format(mode)
+            self.logger.warning(msg)
+            raise TypeError(msg)
+
+        # Show image associated with notification
+        self.include_image = include_image
+
+        # Prepare our authentication type
+        self.auth = auth.strip().lower() \
+            if isinstance(auth, str) \
+            else self.template_args['auth']['default']
+
+        if self.auth not in NTFY_AUTH:
+            msg = 'An invalid ntfy Authentication type ({}) was specified.' \
+                .format(auth)
             self.logger.warning(msg)
             raise TypeError(msg)
 
@@ -269,6 +343,9 @@ class NotifyNtfy(NotifyBase):
         # An email to forward notifications to
         self.email = email
 
+        # Save our token
+        self.token = token
+
         # The Priority of the message
         self.priority = NotifyNtfy.template_args['priority']['default'] \
             if not priority else \
@@ -279,6 +356,11 @@ class NotifyNtfy(NotifyBase):
 
         # Any optional tags to attach to the notification
         self.__tags = parse_list(tags)
+
+        # Avatar URL
+        # This allows a user to provide an over-ride to the otherwise
+        # dynamically generated avatar url images
+        self.avatar_url = avatar_url
 
         # Build list of topics
         topics = parse_list(targets)
@@ -308,6 +390,15 @@ class NotifyNtfy(NotifyBase):
             self.logger.warning('There are no ntfy topics to notify')
             return False
 
+        # Acquire image_url
+        image_url = self.image_url(notify_type)
+
+        if self.include_image and (image_url or self.avatar_url):
+            image_url = \
+                self.avatar_url if self.avatar_url else image_url
+        else:
+            image_url = None
+
         # Create a copy of the topics
         topics = list(self.topics)
         while len(topics) > 0:
@@ -336,20 +427,23 @@ class NotifyNtfy(NotifyBase):
                             attachment.url(privacy=True)))
 
                     okay, response = self._send(
-                        topic, body=_body, title=_title, attach=attachment)
+                        topic, body=_body, title=_title, image_url=image_url,
+                        attach=attachment)
                     if not okay:
                         # We can't post our attachment; abort immediately
                         return False
             else:
                 # Send our Notification Message
-                okay, response = self._send(topic, body=body, title=title)
+                okay, response = self._send(
+                    topic, body=body, title=title, image_url=image_url)
                 if not okay:
                     # Mark our failure, but contiue to move on
                     has_error = True
 
         return not has_error
 
-    def _send(self, topic, body=None, title=None, attach=None, **kwargs):
+    def _send(self, topic, body=None, title=None, attach=None, image_url=None,
+              **kwargs):
         """
         Wrapper to the requests (post) object
         """
@@ -376,8 +470,16 @@ class NotifyNtfy(NotifyBase):
 
         else:  # NotifyNtfy.PRVATE
             # Allow more settings to be applied now
-            if self.user:
+            if self.auth == NtfyAuth.BASIC and self.user:
                 auth = (self.user, self.password)
+
+            elif self.auth == NtfyAuth.TOKEN:
+                if not self.token:
+                    self.logger.warning('No Ntfy Token was specified')
+                    return False, None
+
+                # Set Token
+                headers['Authorization'] = f'Bearer {self.token}'
 
             # Prepare our ntfy Template URL
             schema = 'https' if self.secure else 'http'
@@ -396,6 +498,9 @@ class NotifyNtfy(NotifyBase):
             # Point our payload to our parameters
             virt_payload = params
             notify_url += '/{topic}'.format(topic=topic)
+
+        if image_url:
+            headers['X-Icon'] = image_url
 
         if title:
             virt_payload['title'] = title
@@ -529,7 +634,12 @@ class NotifyNtfy(NotifyBase):
         params = {
             'priority': self.priority,
             'mode': self.mode,
+            'image': 'yes' if self.include_image else 'no',
+            'auth': self.auth,
         }
+
+        if self.avatar_url:
+            params['avatar_url'] = self.avatar_url
 
         if self.attach is not None:
             params['attach'] = self.attach
@@ -550,15 +660,22 @@ class NotifyNtfy(NotifyBase):
 
         # Determine Authentication
         auth = ''
-        if self.user and self.password:
-            auth = '{user}:{password}@'.format(
-                user=NotifyNtfy.quote(self.user, safe=''),
-                password=self.pprint(
-                    self.password, privacy, mode=PrivacyMode.Secret, safe=''),
-            )
-        elif self.user:
-            auth = '{user}@'.format(
-                user=NotifyNtfy.quote(self.user, safe=''),
+        if self.auth == NtfyAuth.BASIC:
+            if self.user and self.password:
+                auth = '{user}:{password}@'.format(
+                    user=NotifyNtfy.quote(self.user, safe=''),
+                    password=self.pprint(
+                        self.password, privacy, mode=PrivacyMode.Secret,
+                        safe=''),
+                )
+            elif self.user:
+                auth = '{user}@'.format(
+                    user=NotifyNtfy.quote(self.user, safe=''),
+                )
+
+        elif self.token:  # NtfyAuth.TOKEN also
+            auth = '{token}@'.format(
+                token=self.pprint(self.token, privacy, safe=''),
             )
 
         if self.mode == NtfyMode.PRIVATE:
@@ -580,6 +697,12 @@ class NotifyNtfy(NotifyBase):
                     [NotifyNtfy.quote(x, safe='') for x in self.topics]),
                 params=NotifyNtfy.urlencode(params)
             )
+
+    def __len__(self):
+        """
+        Returns the number of targets associated with this notification
+        """
+        return len(self.topics)
 
     @staticmethod
     def parse_url(url):
@@ -623,6 +746,15 @@ class NotifyNtfy(NotifyBase):
             results['tags'] = \
                 parse_list(NotifyNtfy.unquote(results['qsd']['tags']))
 
+        # Boolean to include an image or not
+        results['include_image'] = parse_bool(results['qsd'].get(
+            'image', NotifyNtfy.template_args['image']['default']))
+
+        # Extract avatar url if it was specified
+        if 'avatar_url' in results['qsd']:
+            results['avatar_url'] = \
+                NotifyNtfy.unquote(results['qsd']['avatar_url'])
+
         # Acquire our targets/topics
         results['targets'] = NotifyNtfy.split_path(results['fullpath'])
 
@@ -630,6 +762,37 @@ class NotifyNtfy(NotifyBase):
         if 'to' in results['qsd'] and len(results['qsd']['to']):
             results['targets'] += \
                 NotifyNtfy.parse_list(results['qsd']['to'])
+
+        # Token Specified
+        if 'token' in results['qsd'] and len(results['qsd']['token']):
+            # Token presumed to be the one in use
+            results['auth'] = NtfyAuth.TOKEN
+            results['token'] = NotifyNtfy.unquote(results['qsd']['token'])
+
+        # Auth override
+        if 'auth' in results['qsd'] and results['qsd']['auth']:
+            results['auth'] = NotifyNtfy.unquote(
+                results['qsd']['auth'].strip().lower())
+
+        if not results.get('auth') and results['user'] \
+                and not results['password']:
+            # We can try to detect the authentication type on the formatting of
+            # the username. Look for tk_.*
+            #
+            # This isn't a surfire way to do things though; it's best to
+            # specify the auth= flag
+            results['auth'] = NtfyAuth.TOKEN \
+                if NTFY_AUTH_DETECT_RE.match(results['user']) \
+                else NtfyAuth.BASIC
+
+        if results.get('auth') == NtfyAuth.TOKEN and not results.get('token'):
+            if results['user'] and not results['password']:
+                # Make sure we properly set our token
+                results['token'] = NotifyNtfy.unquote(results['user'])
+
+            elif results['password']:
+                # Make sure we properly set our token
+                results['token'] = NotifyNtfy.unquote(results['password'])
 
         # Mode override
         if 'mode' in results['qsd'] and results['qsd']['mode']:

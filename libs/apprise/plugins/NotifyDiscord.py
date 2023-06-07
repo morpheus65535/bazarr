@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 # For this to work correctly you need to create a webhook. To do this just
 # click on the little gear icon next to the channel you're part of. From
@@ -164,7 +171,7 @@ class NotifyDiscord(NotifyBase):
         Initialize Discord Object
 
         """
-        super(NotifyDiscord, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # Webhook ID (associated with project)
         self.webhook_id = validate_regex(webhook_id)
@@ -283,9 +290,6 @@ class NotifyDiscord(NotifyBase):
             payload['content'] = \
                 body if not title else "{}\r\n{}".format(title, body)
 
-        if self.thread_id:
-            payload['thread_id'] = self.thread_id
-
         if self.avatar and (image_url or self.avatar_url):
             payload['avatar_url'] = \
                 self.avatar_url if self.avatar_url else image_url
@@ -294,7 +298,8 @@ class NotifyDiscord(NotifyBase):
             # Optionally override the default username of the webhook
             payload['username'] = self.user
 
-        if not self._send(payload):
+        params = {'thread_id': self.thread_id} if self.thread_id else None
+        if not self._send(payload, params=params):
             # We failed to post our message
             return False
 
@@ -338,7 +343,7 @@ class NotifyDiscord(NotifyBase):
         # Otherwise return
         return True
 
-    def _send(self, payload, attach=None, **kwargs):
+    def _send(self, payload, attach=None, params=None, **kwargs):
         """
         Wrapper to the requests (post) object
         """
@@ -389,6 +394,7 @@ class NotifyDiscord(NotifyBase):
 
             r = requests.post(
                 notify_url,
+                params=params,
                 data=payload if files else dumps(payload),
                 headers=headers,
                 files=files,
@@ -580,7 +586,7 @@ class NotifyDiscord(NotifyBase):
         if description:
             # Strip description from our string since it has been handled
             # now.
-            markdown = re.sub(description, '', markdown, count=1)
+            markdown = re.sub(re.escape(description), '', markdown, count=1)
 
         regex = re.compile(
             r'\s*#[# \t\v]*(?P<name>[^\n]+)(\n|\s*$)'

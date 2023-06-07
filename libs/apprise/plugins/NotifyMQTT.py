@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2021 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 # PAHO MQTT Documentation:
 #  https://www.eclipse.org/paho/index.php?page=clients/python/docs/index.php
@@ -132,20 +139,6 @@ class NotifyMQTT(NotifyBase):
     # through their network flow at once.
     mqtt_inflight_messages = 200
 
-    # Taken from https://golang.org/src/crypto/x509/root_linux.go
-    CA_CERTIFICATE_FILE_LOCATIONS = [
-        # Debian/Ubuntu/Gentoo etc.
-        "/etc/ssl/certs/ca-certificates.crt",
-        # Fedora/RHEL 6
-        "/etc/pki/tls/certs/ca-bundle.crt",
-        # OpenSUSE
-        "/etc/ssl/ca-bundle.pem",
-        # OpenELEC
-        "/etc/pki/tls/cacert.pem",
-        # CentOS/RHEL 7
-        "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
-    ]
-
     # Define object templates
     templates = (
         '{schema}://{user}@{host}/{topic}',
@@ -223,7 +216,7 @@ class NotifyMQTT(NotifyBase):
         Initialize MQTT Object
         """
 
-        super(NotifyMQTT, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # Initialize topics
         self.topics = parse_list(targets)
@@ -264,6 +257,9 @@ class NotifyMQTT(NotifyBase):
         self.ca_certs = None
         if self.secure:
             # verify SSL key or abort
+            # TODO: There is no error reporting or aborting here?
+            #       It could be useful to inform the user _where_ Apprise
+            #       tried to find the root CA certificates file.
             self.ca_certs = next(
                 (cert for cert in self.CA_CERTIFICATE_FILE_LOCATIONS
                  if isfile(cert)), None)
@@ -316,9 +312,9 @@ class NotifyMQTT(NotifyBase):
 
                 if self.secure:
                     if self.ca_certs is None:
-                        self.logger.warning(
-                            'MQTT Secure comunication can not be verified; '
-                            'no local CA certificate file')
+                        self.logger.error(
+                            'MQTT secure communication can not be verified, '
+                            'CA certificates file missing')
                         return False
 
                     self.client.tls_set(
@@ -328,7 +324,7 @@ class NotifyMQTT(NotifyBase):
                         ciphers=None)
 
                     # Set our TLS Verify Flag
-                    self.client.tls_insecure_set(self.verify_certificate)
+                    self.client.tls_insecure_set(not self.verify_certificate)
 
                 # Establish our connection
                 if self.client.connect(
@@ -480,6 +476,12 @@ class NotifyMQTT(NotifyBase):
             params=NotifyMQTT.urlencode(params),
         )
 
+    def __len__(self):
+        """
+        Returns the number of targets associated with this notification
+        """
+        return len(self.topics)
+
     @staticmethod
     def parse_url(url):
         """
@@ -528,3 +530,38 @@ class NotifyMQTT(NotifyBase):
 
         # return results
         return results
+
+    @property
+    def CA_CERTIFICATE_FILE_LOCATIONS(self):
+        """
+        Return possible locations to root certificate authority (CA) bundles.
+
+        Taken from https://golang.org/src/crypto/x509/root_linux.go
+        TODO: Maybe refactor to a general utility function?
+        """
+        candidates = [
+            # Debian/Ubuntu/Gentoo etc.
+            "/etc/ssl/certs/ca-certificates.crt",
+            # Fedora/RHEL 6
+            "/etc/pki/tls/certs/ca-bundle.crt",
+            # OpenSUSE
+            "/etc/ssl/ca-bundle.pem",
+            # OpenELEC
+            "/etc/pki/tls/cacert.pem",
+            # CentOS/RHEL 7
+            "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+            # macOS Homebrew; brew install ca-certificates
+            "/usr/local/etc/ca-certificates/cert.pem",
+        ]
+
+        # Certifi provides Mozilla’s carefully curated collection of Root
+        # Certificates for validating the trustworthiness of SSL certificates
+        # while verifying the identity of TLS hosts. It has been extracted from
+        # the Requests project.
+        try:
+            import certifi
+            candidates.append(certifi.where())
+        except ImportError:  # pragma: no cover
+            pass
+
+        return candidates
