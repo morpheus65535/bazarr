@@ -494,8 +494,10 @@ def checked(fn, raise_api_limit=False, validate_token=False, validate_json=False
             if validate_token:
                 return 401
             else:
+                log_request_response(response)
                 raise AuthenticationError(f'Login failed: {response.reason}')
         elif status_code == 403:
+            log_request_response(response)
             raise ProviderError("Bazarr API key seems to be in problem")
         elif status_code == 406:
             try:
@@ -506,12 +508,15 @@ def checked(fn, raise_api_limit=False, validate_token=False, validate_json=False
             except JSONDecodeError:
                 raise ProviderError('Invalid JSON returned by provider')
             else:
+                log_request_response(response)
                 raise DownloadLimitExceeded(f"Daily download limit reached. {download_count} subtitles have been "
                                             f"downloaded and {remaining_download} remaining subtitles can be "
                                             f"downloaded. Quota will be reset in {quota_reset_time}.")
         elif status_code == 410:
+            log_request_response(response)
             raise ProviderError("Download as expired")
         elif status_code == 429:
+            log_request_response(response)
             raise TooManyRequests()
         elif status_code == 502:
             # this one should deal with Bad Gateway issue on their side.
@@ -520,6 +525,7 @@ def checked(fn, raise_api_limit=False, validate_token=False, validate_json=False
             raise ProviderError(response.reason)
 
         if status_code != 200:
+            log_request_response(response)
             raise ProviderError(f'Bad status code: {response.status_code}')
 
         if validate_json:
@@ -540,3 +546,13 @@ def checked(fn, raise_api_limit=False, validate_token=False, validate_json=False
                 return False
 
     return response
+
+
+def log_request_response(response):
+    logging.debug("opensubtitlescom returned a non standard response. Logging request/response for debugging purpose.")
+    logging.debug(f"Request URL: {response.request.url}")
+    logging.debug(f"Request Headers: {response.request.headers}")
+    logging.debug(f"Request Body: {response.request.body}")
+    logging.debug(f"Response Status Code: {response.status_code}")
+    logging.debug(f"Response Headers: {response.headers}")
+    logging.debug(f"Response Body: {response.text}")
