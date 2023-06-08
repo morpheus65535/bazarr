@@ -18,8 +18,8 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
                              sonarr_episode_id, radarr_id):
     language_code_convert_dict = {
         'he': 'iw',
-        'zt': 'zh-CN',
-        'zh': 'zh-TW',
+        'zh': 'zh-CN',
+        'zt': 'zh-TW',
     }
 
     to_lang = alpha3_from_alpha2(to_lang)
