@@ -1,28 +1,37 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
+import asyncio
+import concurrent.futures as cf
 import os
 from itertools import chain
 from . import common
@@ -42,11 +51,6 @@ from .plugins.NotifyBase import NotifyBase
 
 from . import plugins
 from . import __version__
-
-# Python v3+ support code made importable, so it can remain backwards
-# compatible with Python v2
-# TODO: Review after dropping support for Python 2.
-from . import py3compat
 
 
 class Apprise:
@@ -369,91 +373,83 @@ class Apprise:
         such as turning a \n into an actual new line, etc.
         """
 
-        return py3compat.asyncio.tosync(
-            self.async_notify(
+        try:
+            # Process arguments and build synchronous and asynchronous calls
+            # (this step can throw internal errors).
+            sequential_calls, parallel_calls = self._create_notify_calls(
                 body, title,
                 notify_type=notify_type, body_format=body_format,
                 tag=tag, match_always=match_always, attach=attach,
-                interpret_escapes=interpret_escapes,
-            ),
-            debug=self.debug
-        )
+                interpret_escapes=interpret_escapes
+            )
 
-    def async_notify(self, *args, **kwargs):
+        except TypeError:
+            # No notifications sent, and there was an internal error.
+            return False
+
+        if not sequential_calls and not parallel_calls:
+            # Nothing to send
+            return None
+
+        sequential_result = Apprise._notify_sequential(*sequential_calls)
+        parallel_result = Apprise._notify_parallel_threadpool(*parallel_calls)
+        return sequential_result and parallel_result
+
+    async def async_notify(self, *args, **kwargs):
         """
         Send a notification to all the plugins previously loaded, for
-        asynchronous callers. This method is an async method that should be
-        awaited on, even if it is missing the async keyword in its signature.
-        (This is omitted to preserve syntax compatibility with Python 2.)
+        asynchronous callers.
 
         The arguments are identical to those of Apprise.notify().
 
         """
         try:
-            coroutines = list(
-                self._notifyall(
-                    Apprise._notifyhandlerasync, *args, **kwargs))
+            # Process arguments and build synchronous and asynchronous calls
+            # (this step can throw internal errors).
+            sequential_calls, parallel_calls = self._create_notify_calls(
+                *args, **kwargs)
 
         except TypeError:
             # No notifications sent, and there was an internal error.
-            return py3compat.asyncio.toasyncwrapvalue(False)
-
-        else:
-            if len(coroutines) > 0:
-                # All notifications sent, return False if any failed.
-                return py3compat.asyncio.notify(coroutines)
-
-            else:
-                # No notifications sent.
-                return py3compat.asyncio.toasyncwrapvalue(None)
-
-    @staticmethod
-    def _notifyhandler(server, **kwargs):
-        """
-        The synchronous notification sender. Returns True if the notification
-        sent successfully.
-        """
-
-        try:
-            # Send notification
-            return server.notify(**kwargs)
-
-        except TypeError:
-            # These our our internally thrown notifications
             return False
 
-        except Exception:
-            # A catch all so we don't have to abort early
-            # just because one of our plugins has a bug in it.
-            logger.exception("Unhandled Notification Exception")
-            return False
+        if not sequential_calls and not parallel_calls:
+            # Nothing to send
+            return None
 
-    @staticmethod
-    def _notifyhandlerasync(server, **kwargs):
-        """
-        The asynchronous notification sender. Returns a coroutine that yields
-        True if the notification sent successfully.
-        """
+        sequential_result = Apprise._notify_sequential(*sequential_calls)
+        parallel_result = \
+            await Apprise._notify_parallel_asyncio(*parallel_calls)
+        return sequential_result and parallel_result
 
-        if server.asset.async_mode:
-            return server.async_notify(**kwargs)
-
-        else:
-            # Send the notification immediately, and wrap the result in a
-            # coroutine.
-            status = Apprise._notifyhandler(server, **kwargs)
-            return py3compat.asyncio.toasyncwrapvalue(status)
-
-    def _notifyall(self, handler, body, title='',
-                   notify_type=common.NotifyType.INFO, body_format=None,
-                   tag=common.MATCH_ALL_TAG, match_always=True, attach=None,
-                   interpret_escapes=None):
+    def _create_notify_calls(self, *args, **kwargs):
         """
         Creates notifications for all the plugins loaded.
 
-        Returns a generator that calls handler for each notification. The first
-        and only argument supplied to handler is the server, and the keyword
-        arguments are exactly as they would be passed to server.notify().
+        Returns a list of (server, notify() kwargs) tuples for plugins with
+        parallelism disabled and another list for plugins with parallelism
+        enabled.
+        """
+
+        all_calls = list(self._create_notify_gen(*args, **kwargs))
+
+        # Split into sequential and parallel notify() calls.
+        sequential, parallel = [], []
+        for (server, notify_kwargs) in all_calls:
+            if server.asset.async_mode:
+                parallel.append((server, notify_kwargs))
+            else:
+                sequential.append((server, notify_kwargs))
+
+        return sequential, parallel
+
+    def _create_notify_gen(self, body, title='',
+                           notify_type=common.NotifyType.INFO,
+                           body_format=None, tag=common.MATCH_ALL_TAG,
+                           match_always=True, attach=None,
+                           interpret_escapes=None):
+        """
+        Internal generator function for _create_notify_calls().
         """
 
         if len(self) == 0:
@@ -546,14 +542,121 @@ class Apprise:
                         logger.error(msg)
                         raise TypeError(msg)
 
-            yield handler(
-                server,
+            kwargs = dict(
                 body=conversion_body_map[server.notify_format],
                 title=conversion_title_map[server.notify_format],
                 notify_type=notify_type,
                 attach=attach,
-                body_format=body_format,
+                body_format=body_format
             )
+            yield (server, kwargs)
+
+    @staticmethod
+    def _notify_sequential(*servers_kwargs):
+        """
+        Process a list of notify() calls sequentially and synchronously.
+        """
+
+        success = True
+
+        for (server, kwargs) in servers_kwargs:
+            try:
+                # Send notification
+                result = server.notify(**kwargs)
+                success = success and result
+
+            except TypeError:
+                # These are our internally thrown notifications.
+                success = False
+
+            except Exception:
+                # A catch all so we don't have to abort early
+                # just because one of our plugins has a bug in it.
+                logger.exception("Unhandled Notification Exception")
+                success = False
+
+        return success
+
+    @staticmethod
+    def _notify_parallel_threadpool(*servers_kwargs):
+        """
+        Process a list of notify() calls in parallel and synchronously.
+        """
+
+        n_calls = len(servers_kwargs)
+
+        # 0-length case
+        if n_calls == 0:
+            return True
+
+        # There's no need to use a thread pool for just a single notification
+        if n_calls == 1:
+            return Apprise._notify_sequential(servers_kwargs[0])
+
+        # Create log entry
+        logger.info(
+            'Notifying %d service(s) with threads.', len(servers_kwargs))
+
+        with cf.ThreadPoolExecutor() as executor:
+            success = True
+            futures = [executor.submit(server.notify, **kwargs)
+                       for (server, kwargs) in servers_kwargs]
+
+            for future in cf.as_completed(futures):
+                try:
+                    result = future.result()
+                    success = success and result
+
+                except TypeError:
+                    # These are our internally thrown notifications.
+                    success = False
+
+                except Exception:
+                    # A catch all so we don't have to abort early
+                    # just because one of our plugins has a bug in it.
+                    logger.exception("Unhandled Notification Exception")
+                    success = False
+
+            return success
+
+    @staticmethod
+    async def _notify_parallel_asyncio(*servers_kwargs):
+        """
+        Process a list of async_notify() calls in parallel and asynchronously.
+        """
+
+        n_calls = len(servers_kwargs)
+
+        # 0-length case
+        if n_calls == 0:
+            return True
+
+        # (Unlike with the thread pool, we don't optimize for the single-
+        # notification case because asyncio can do useful work while waiting
+        # for that thread to complete)
+
+        # Create log entry
+        logger.info(
+            'Notifying %d service(s) asynchronously.', len(servers_kwargs))
+
+        async def do_call(server, kwargs):
+            return await server.async_notify(**kwargs)
+
+        cors = (do_call(server, kwargs) for (server, kwargs) in servers_kwargs)
+        results = await asyncio.gather(*cors, return_exceptions=True)
+
+        if any(isinstance(status, Exception)
+               and not isinstance(status, TypeError) for status in results):
+            # A catch all so we don't have to abort early just because
+            # one of our plugins has a bug in it.
+            logger.exception("Unhandled Notification Exception")
+            return False
+
+        if any(isinstance(status, TypeError) for status in results):
+            # These are our internally thrown notifications.
+            return False
+
+        return all(results)
 
     def details(self, lang=None, show_requirements=False, show_disabled=False):
         """
@@ -581,6 +684,7 @@ class Apprise:
                 'setup_url': getattr(plugin, 'setup_url', None),
                 # Placeholder - populated below
                 'details': None,
+
                 # Differentiat between what is a custom loaded plugin and
                 # which is native.
                 'category': getattr(plugin, 'category', None)

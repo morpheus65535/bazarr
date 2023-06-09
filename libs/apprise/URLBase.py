@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 import re
 from .logger import logger
@@ -194,7 +201,7 @@ class URLBase:
             asset if isinstance(asset, AppriseAsset) else AppriseAsset()
 
         # Certificate Verification (for SSL calls); default to being enabled
-        self.verify_certificate = kwargs.get('verify', True)
+        self.verify_certificate = parse_bool(kwargs.get('verify', True))
 
         # Secure Mode
         self.secure = kwargs.get('secure', False)
@@ -222,24 +229,22 @@ class URLBase:
             self.password = URLBase.unquote(self.password)
 
         # Store our Timeout Variables
-        if 'socket_read_timeout' in kwargs:
+        if 'rto' in kwargs:
             try:
-                self.socket_read_timeout = \
-                    float(kwargs.get('socket_read_timeout'))
+                self.socket_read_timeout = float(kwargs.get('rto'))
             except (TypeError, ValueError):
                 self.logger.warning(
                     'Invalid socket read timeout (rto) was specified {}'
-                    .format(kwargs.get('socket_read_timeout')))
+                    .format(kwargs.get('rto')))
 
-        if 'socket_connect_timeout' in kwargs:
+        if 'cto' in kwargs:
             try:
-                self.socket_connect_timeout = \
-                    float(kwargs.get('socket_connect_timeout'))
+                self.socket_connect_timeout = float(kwargs.get('cto'))
 
             except (TypeError, ValueError):
                 self.logger.warning(
                     'Invalid socket connect timeout (cto) was specified {}'
-                    .format(kwargs.get('socket_connect_timeout')))
+                    .format(kwargs.get('cto')))
 
         if 'tag' in kwargs:
             # We want to associate some tags with our notification service.
@@ -598,7 +603,7 @@ class URLBase:
         }
 
     @staticmethod
-    def parse_url(url, verify_host=True):
+    def parse_url(url, verify_host=True, plus_to_space=False):
         """Parses the URL and returns it broken apart into a dictionary.
 
         This is very specific and customized for Apprise.
@@ -618,7 +623,8 @@ class URLBase:
         """
 
         results = parse_url(
-            url, default_schema='unknown', verify_host=verify_host)
+            url, default_schema='unknown', verify_host=verify_host,
+            plus_to_space=plus_to_space)
 
         if not results:
             # We're done; we failed to parse our url
@@ -646,11 +652,11 @@ class URLBase:
 
         # Store our socket read timeout if specified
         if 'rto' in results['qsd']:
-            results['socket_read_timeout'] = results['qsd']['rto']
+            results['rto'] = results['qsd']['rto']
 
         # Store our socket connect timeout if specified
         if 'cto' in results['qsd']:
-            results['socket_connect_timeout'] = results['qsd']['cto']
+            results['cto'] = results['qsd']['cto']
 
         if 'port' in results['qsd']:
             results['port'] = results['qsd']['port']
@@ -678,6 +684,15 @@ class URLBase:
             response = ''
 
         return response
+
+    def __len__(self):
+        """
+        Should be over-ridden and allows the tracking of how many targets
+        are associated with each URLBase object.
+
+        Default is always 1
+        """
+        return 1
 
     def schemas(self):
         """A simple function that returns a set of all schemas associated

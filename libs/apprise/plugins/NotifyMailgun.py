@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 # Signup @ https://www.mailgun.com/
 #
@@ -60,6 +67,7 @@ from ..utils import parse_emails
 from ..utils import parse_bool
 from ..utils import is_email
 from ..utils import validate_regex
+from ..logger import logger
 from ..AppriseLocale import gettext_lazy as _
 
 # Provide some known codes Mailgun uses and what they translate to:
@@ -116,9 +124,6 @@ class NotifyMailgun(NotifyBase):
     # Default Notify Format
     notify_format = NotifyFormat.HTML
 
-    # The default region to use if one isn't otherwise specified
-    mailgun_default_region = MailgunRegion.US
-
     # The maximum amount of emails that can reside within a single
     # batch transfer
     default_batch_size = 2000
@@ -158,7 +163,10 @@ class NotifyMailgun(NotifyBase):
         'name': {
             'name': _('From Name'),
             'type': 'string',
-            'map_to': 'from_name',
+            'map_to': 'from_addr',
+        },
+        'from': {
+            'alias_of': 'name',
         },
         'region': {
             'name': _('Region Name'),
@@ -197,13 +205,13 @@ class NotifyMailgun(NotifyBase):
         },
     }
 
-    def __init__(self, apikey, targets, cc=None, bcc=None, from_name=None,
+    def __init__(self, apikey, targets, cc=None, bcc=None, from_addr=None,
                  region_name=None, headers=None, tokens=None, batch=False,
                  **kwargs):
         """
         Initialize Mailgun Object
         """
-        super(NotifyMailgun, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # API Key (associated with project)
         self.apikey = validate_regex(apikey)
@@ -246,7 +254,8 @@ class NotifyMailgun(NotifyBase):
 
         # Store our region
         try:
-            self.region_name = self.mailgun_default_region \
+            self.region_name = \
+                NotifyMailgun.template_args['region']['default'] \
                 if region_name is None else region_name.lower()
 
             if self.region_name not in MAILGUN_REGIONS:
@@ -260,12 +269,20 @@ class NotifyMailgun(NotifyBase):
             raise TypeError(msg)
 
         # Get our From username (if specified)
-        self.from_name = from_name
+        self.from_addr = [
+            self.app_id, '{user}@{host}'.format(
+                user=self.user, host=self.host)]
 
-        # Get our from email address
-        self.from_addr = '{user}@{host}'.format(user=self.user, host=self.host)
+        if from_addr:
+            result = is_email(from_addr)
+            if result:
+                self.from_addr = (
+                    result['name'] if result['name'] else False,
+                    result['full_email'])
+            else:
+                self.from_addr[0] = from_addr
 
-        if not is_email(self.from_addr):
+        if not is_email(self.from_addr[1]):
             # Parse Source domain based on from_addr
             msg = 'Invalid ~From~ email format: {}'.format(self.from_addr)
             self.logger.warning(msg)
@@ -288,8 +305,7 @@ class NotifyMailgun(NotifyBase):
 
         else:
             # If our target email list is empty we want to add ourselves to it
-            self.targets.append(
-                (self.from_name if self.from_name else False, self.from_addr))
+            self.targets.append((False, self.from_addr[1]))
 
         # Validate recipients (cc:) and drop bad ones:
         for recipient in parse_emails(cc):
@@ -383,9 +399,7 @@ class NotifyMailgun(NotifyBase):
 
                     return False
 
-        reply_to = formataddr(
-            (self.from_name if self.from_name else False,
-             self.from_addr), charset='utf-8')
+        reply_to = formataddr(self.from_addr, charset='utf-8')
 
         # Prepare our payload
         payload = {
@@ -581,9 +595,9 @@ class NotifyMailgun(NotifyBase):
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
-        if self.from_name is not None:
-            # from_name specified; pass it back on the url
-            params['name'] = self.from_name
+        if self.from_addr[0]:
+            # from_addr specified; pass it back on the url
+            params['name'] = self.from_addr[0]
 
         if self.cc:
             # Handle our Carbon Copy Addresses
@@ -613,6 +627,20 @@ class NotifyMailgun(NotifyBase):
                     safe='') for e in self.targets]),
             params=NotifyMailgun.urlencode(params))
 
+    def __len__(self):
+        """
+        Returns the number of targets associated with this notification
+        """
+        #
+        # Factor batch into calculation
+        #
+        batch_size = 1 if not self.batch else self.default_batch_size
+        targets = len(self.targets)
+        if batch_size > 1:
+            targets = int(targets / batch_size) + \
+                (1 if targets % batch_size else 0)
+        return targets if targets > 0 else 1
+
     @staticmethod
     def parse_url(url):
         """
@@ -637,13 +665,28 @@ class NotifyMailgun(NotifyBase):
             # We're done - no API Key found
             results['apikey'] = None
 
-        if 'name' in results['qsd'] and len(results['qsd']['name']):
+        # Attempt to detect 'from' email address
+        if 'from' in results['qsd'] and len(results['qsd']['from']):
+            results['from_addr'] = \
+                NotifyMailgun.unquote(results['qsd']['from'])
+
+            if 'name' in results['qsd'] and len(results['qsd']['name']):
+                # Depricate use of both `from=` and `name=` in the same url as
+                # they will be synomomus of one another in the future.
+                results['from_addr'] = formataddr(
+                    (NotifyMailgun.unquote(results['qsd']['name']),
+                     results['from_addr']), charset='utf-8')
+                logger.warning(
+                    'Mailgun name= and from= are synonymous; '
+                    'use one or the other.')
+
+        elif 'name' in results['qsd'] and len(results['qsd']['name']):
             # Extract from name to associate with from address
-            results['from_name'] = \
+            results['from_addr'] = \
                 NotifyMailgun.unquote(results['qsd']['name'])
 
         if 'region' in results['qsd'] and len(results['qsd']['region']):
-            # Extract from name to associate with from address
+            # Acquire region if defined
             results['region_name'] = \
                 NotifyMailgun.unquote(results['qsd']['region'])
 

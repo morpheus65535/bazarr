@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 # To use this plugin, you need to first access https://api.telegram.org
 # You need to create a bot and acquire it's Token Identifier (bot_token)
@@ -305,17 +312,22 @@ class NotifyTelegram(NotifyBase):
             'type': 'bool',
             'default': False,
         },
+        'topic': {
+            'name': _('Topic Thread ID'),
+            'type': 'int',
+        },
         'to': {
             'alias_of': 'targets',
         },
     })
 
     def __init__(self, bot_token, targets, detect_owner=True,
-                 include_image=False, silent=None, preview=None, **kwargs):
+                 include_image=False, silent=None, preview=None, topic=None,
+                 **kwargs):
         """
         Initialize Telegram Object
         """
-        super(NotifyTelegram, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.bot_token = validate_regex(
             bot_token, *self.template_tokens['bot_token']['regex'],
@@ -336,6 +348,20 @@ class NotifyTelegram(NotifyBase):
         # Define whether or not we should display a web page preview
         self.preview = self.template_args['preview']['default'] \
             if preview is None else bool(preview)
+
+        if topic:
+            try:
+                self.topic = int(topic)
+
+            except (TypeError, ValueError):
+                # Not a valid integer; ignore entry
+                err = 'The Telegram Topic ID specified ({}) is invalid.'\
+                    .format(topic)
+                self.logger.warning(err)
+                raise TypeError(err)
+        else:
+            # No Topic Thread
+            self.topic = None
 
         # if detect_owner is set to True, we will attempt to determine who
         # the bot owner is based on the first person who messaged it.  This
@@ -628,6 +654,9 @@ class NotifyTelegram(NotifyBase):
             'disable_web_page_preview': not self.preview,
         }
 
+        if self.topic:
+            payload['message_thread_id'] = self.topic
+
         # Prepare Message Body
         if self.notify_format == NotifyFormat.MARKDOWN:
             payload['parse_mode'] = 'MARKDOWN'
@@ -775,6 +804,9 @@ class NotifyTelegram(NotifyBase):
             'preview': 'yes' if self.preview else 'no',
         }
 
+        if self.topic:
+            params['topic'] = self.topic
+
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
@@ -786,6 +818,12 @@ class NotifyTelegram(NotifyBase):
             targets='/'.join(
                 [NotifyTelegram.quote('@{}'.format(x)) for x in self.targets]),
             params=NotifyTelegram.urlencode(params))
+
+    def __len__(self):
+        """
+        Returns the number of targets associated with this notification
+        """
+        return len(self.targets)
 
     @staticmethod
     def parse_url(url):
@@ -855,6 +893,10 @@ class NotifyTelegram(NotifyBase):
 
         # Store our bot token
         results['bot_token'] = bot_token
+
+        # Support Thread Topic
+        if 'topic' in results['qsd'] and len(results['qsd']['topic']):
+            results['topic'] = results['qsd']['topic']
 
         # Silent (Sends the message Silently); users will receive
         # notification with no sound.

@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2022 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 # API Refererence:
 #   - https://developer.pagerduty.com/api-reference/\
@@ -60,6 +67,13 @@ PAGERDUTY_SEVERITY_MAP = {
     NotifyType.WARNING: PagerDutySeverity.WARNING,
     NotifyType.FAILURE: PagerDutySeverity.CRITICAL,
 }
+
+PAGERDUTY_SEVERITIES = (
+    PagerDutySeverity.INFO,
+    PagerDutySeverity.WARNING,
+    PagerDutySeverity.CRITICAL,
+    PagerDutySeverity.ERROR,
+)
 
 
 # Priorities
@@ -169,6 +183,14 @@ class NotifyPagerDuty(NotifyBase):
             'default': PagerDutyRegion.US,
             'map_to': 'region_name',
         },
+        # The severity is automatically determined, however you can optionally
+        # over-ride its value and force it to be what you want
+        'severity': {
+            'name': _('Severity'),
+            'type': 'choice:string',
+            'values': PAGERDUTY_SEVERITIES,
+            'map_to': 'severity',
+        },
         'image': {
             'name': _('Include Image'),
             'type': 'bool',
@@ -188,11 +210,11 @@ class NotifyPagerDuty(NotifyBase):
     def __init__(self, apikey, integrationkey=None, source=None,
                  component=None, group=None, class_id=None,
                  include_image=True, click=None, details=None,
-                 region_name=None, **kwargs):
+                 region_name=None, severity=None, **kwargs):
         """
         Initialize Pager Duty Object
         """
-        super(NotifyPagerDuty, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # Long-Lived Access token (generated from User Profile)
         self.apikey = validate_regex(apikey)
@@ -248,6 +270,19 @@ class NotifyPagerDuty(NotifyBase):
             self.logger.warning(msg)
             raise TypeError(msg)
 
+        # The severity (if specified)
+        self.severity = \
+            None if severity is None else next((
+                s for s in PAGERDUTY_SEVERITIES
+                if str(s).lower().startswith(severity)), False)
+
+        if self.severity is False:
+            # Invalid severity specified
+            msg = 'The PagerDuty severity specified ({}) is invalid.' \
+                  .format(severity)
+            self.logger.warning(msg)
+            raise TypeError(msg)
+
         # A clickthrough option for notifications
         self.click = click
 
@@ -289,8 +324,8 @@ class NotifyPagerDuty(NotifyBase):
                 'summary': body,
 
                 # Set our severity
-                'severity': PAGERDUTY_SEVERITY_MAP[notify_type],
-
+                'severity': PAGERDUTY_SEVERITY_MAP[notify_type]
+                if not self.severity else self.severity,
 
                 # Our Alerting Source/Component
                 'source': self.source,
@@ -400,6 +435,9 @@ class NotifyPagerDuty(NotifyBase):
         if self.click is not None:
             params['click'] = self.click
 
+        if self.severity:
+            params['severity'] = self.severity
+
         # Append our custom entries our parameters
         params.update({'+{}'.format(k): v for k, v in self.details.items()})
 
@@ -463,6 +501,10 @@ class NotifyPagerDuty(NotifyBase):
         if 'class' in results['qsd'] and len(results['qsd']['class']):
             results['class_id'] = \
                 NotifyPagerDuty.unquote(results['qsd']['class'])
+
+        if 'severity' in results['qsd'] and len(results['qsd']['severity']):
+            results['severity'] = \
+                NotifyPagerDuty.unquote(results['qsd']['severity'])
 
         # Acquire our full path
         fullpath = NotifyPagerDuty.split_path(results['fullpath'])

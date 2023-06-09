@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2021 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 # For this to work correctly you need to create a webhook. You'll also
 # need a GSuite account (there are free trials if you don't have one)
@@ -80,8 +87,7 @@ class NotifyGoogleChat(NotifyBase):
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_googlechat'
 
     # Google Chat Webhook
-    notify_url = 'https://chat.googleapis.com/v1/spaces/{workspace}/messages' \
-                 '?key={key}&token={token}'
+    notify_url = 'https://chat.googleapis.com/v1/spaces/{workspace}/messages'
 
     # Default Notify Format
     notify_format = NotifyFormat.MARKDOWN
@@ -96,6 +102,7 @@ class NotifyGoogleChat(NotifyBase):
     # Define object templates
     templates = (
         '{schema}://{workspace}/{webhook_key}/{webhook_token}',
+        '{schema}://{workspace}/{webhook_key}/{webhook_token}/{thread_key}',
     )
 
     # Define our template tokens
@@ -118,6 +125,11 @@ class NotifyGoogleChat(NotifyBase):
             'private': True,
             'required': True,
         },
+        'thread_key': {
+            'name': _('Thread Key'),
+            'type': 'string',
+            'private': True,
+        },
     })
 
     # Define our template arguments
@@ -131,14 +143,18 @@ class NotifyGoogleChat(NotifyBase):
         'token': {
             'alias_of': 'webhook_token',
         },
+        'thread': {
+            'alias_of': 'thread_key',
+        },
     })
 
-    def __init__(self, workspace, webhook_key, webhook_token, **kwargs):
+    def __init__(self, workspace, webhook_key, webhook_token,
+                 thread_key=None, **kwargs):
         """
         Initialize Google Chat Object
 
         """
-        super(NotifyGoogleChat, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # Workspace (associated with project)
         self.workspace = validate_regex(workspace)
@@ -164,6 +180,16 @@ class NotifyGoogleChat(NotifyBase):
             self.logger.warning(msg)
             raise TypeError(msg)
 
+        if thread_key:
+            self.thread_key = validate_regex(thread_key)
+            if not self.thread_key:
+                msg = 'An invalid Google Chat Thread Key ' \
+                      '({}) was specified.'.format(thread_key)
+                self.logger.warning(msg)
+                raise TypeError(msg)
+        else:
+            self.thread_key = None
+
         return
 
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
@@ -185,13 +211,21 @@ class NotifyGoogleChat(NotifyBase):
         # Construct Notify URL
         notify_url = self.notify_url.format(
             workspace=self.workspace,
-            key=self.webhook_key,
-            token=self.webhook_token,
         )
+
+        params = {
+            # Prepare our URL Parameters
+            'token': self.webhook_token,
+            'key': self.webhook_key,
+        }
+
+        if self.thread_key:
+            params['threadKey'] = self.thread_key
 
         self.logger.debug('Google Chat POST URL: %s (cert_verify=%r)' % (
             notify_url, self.verify_certificate,
         ))
+        self.logger.debug('Google Chat Parameters: %s' % str(params))
         self.logger.debug('Google Chat Payload: %s' % str(payload))
 
         # Always call throttle before any remote server i/o is made
@@ -199,6 +233,7 @@ class NotifyGoogleChat(NotifyBase):
         try:
             r = requests.post(
                 notify_url,
+                params=params,
                 data=dumps(payload),
                 headers=headers,
                 verify=self.verify_certificate,
@@ -242,11 +277,13 @@ class NotifyGoogleChat(NotifyBase):
         # Set our parameters
         params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
-        return '{schema}://{workspace}/{key}/{token}/?{params}'.format(
+        return '{schema}://{workspace}/{key}/{token}/{thread}?{params}'.format(
             schema=self.secure_protocol,
             workspace=self.pprint(self.workspace, privacy, safe=''),
             key=self.pprint(self.webhook_key, privacy, safe=''),
             token=self.pprint(self.webhook_token, privacy, safe=''),
+            thread='' if not self.thread_key
+            else self.pprint(self.thread_key, privacy, safe=''),
             params=NotifyGoogleChat.urlencode(params),
         )
 
@@ -258,6 +295,7 @@ class NotifyGoogleChat(NotifyBase):
 
         Syntax:
           gchat://workspace/webhook_key/webhook_token
+          gchat://workspace/webhook_key/webhook_token/thread_key
 
         """
         results = NotifyBase.parse_url(url, verify_host=False)
@@ -277,6 +315,9 @@ class NotifyGoogleChat(NotifyBase):
         # Store our Webhook Token
         results['webhook_token'] = tokens.pop(0) if tokens else None
 
+        # Store our Thread Key
+        results['thread_key'] = tokens.pop(0) if tokens else None
+
         # Support arguments as overrides (if specified)
         if 'workspace' in results['qsd']:
             results['workspace'] = \
@@ -290,6 +331,17 @@ class NotifyGoogleChat(NotifyBase):
             results['webhook_token'] = \
                 NotifyGoogleChat.unquote(results['qsd']['token'])
 
+        if 'thread' in results['qsd']:
+            results['thread_key'] = \
+                NotifyGoogleChat.unquote(results['qsd']['thread'])
+
+        elif 'threadkey' in results['qsd']:
+            # Support Google Chat's Thread Key (if set)
+            # keys are always made lowercase; so check above is attually
+            # testing threadKey successfully as well
+            results['thread_key'] = \
+                NotifyGoogleChat.unquote(results['qsd']['threadkey'])
+
         return results
 
     @staticmethod
@@ -298,6 +350,8 @@ class NotifyGoogleChat(NotifyBase):
         Support
            https://chat.googleapis.com/v1/spaces/{workspace}/messages
                  '?key={key}&token={token}
+           https://chat.googleapis.com/v1/spaces/{workspace}/messages
+                 '?key={key}&token={token}&threadKey={thread}
         """
 
         result = re.match(
