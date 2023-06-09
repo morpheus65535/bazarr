@@ -152,7 +152,6 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
             <StateIcon
               matches={matches}
               dont={dont}
-              hasIssues={dont.length > 0}
               isHistory={false}
             ></StateIcon>
           );

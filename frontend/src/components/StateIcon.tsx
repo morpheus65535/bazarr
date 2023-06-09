@@ -9,43 +9,43 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Group, List, Popover, Stack, Text } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 
-const StateIcon: FunctionComponent<{
+interface StateIconProps {
   matches: string[];
   dont: string[];
-  hasIssues: boolean;
   isHistory: boolean;
-}> = ({ matches, dont, hasIssues, isHistory }) => {
-  const { ref, hovered } = useHover();
+}
 
-  interface PopoverTargetProps {
-    ref: React.MutableRefObject<HTMLDivElement>;
-    hasIssues: boolean;
-    isHistory: boolean;
-  }
+const StateIcon: FunctionComponent<StateIconProps> = ({
+  matches,
+  dont,
+  isHistory,
+}) => {
+  const hasIssues = dont.length > 0;
 
-  function PopoverTarget({ ...props }: PopoverTargetProps) {
+  const { hovered, ref } = useHover();
+
+  const PopoverTarget: FunctionComponent = () => {
     if (isHistory) {
+      return <FontAwesomeIcon icon={faListCheck} />;
+    } else {
       return (
-        <Text ref={ref}>
-          <FontAwesomeIcon icon={faListCheck}></FontAwesomeIcon>
+        <Text color={hasIssues ? "yellow" : "green"}>
+          <FontAwesomeIcon
+            icon={hasIssues ? faExclamationCircle : faCheckCircle}
+          />
         </Text>
       );
     }
-    return (
-      <Text color={hasIssues ? "yellow" : "green"} ref={ref}>
-        <FontAwesomeIcon
-          icon={hasIssues ? faExclamationCircle : faCheckCircle}
-        ></FontAwesomeIcon>
-      </Text>
-    );
-  }
+  };
 
   return (
     <Popover opened={hovered} position="top" width={360} withArrow>
       <Popover.Target>
-        <PopoverTarget ref={ref} hasIssues={hasIssues} isHistory={isHistory} />
+        <Text ref={ref}>
+          <PopoverTarget />
+        </Text>
       </Popover.Target>
       <Popover.Dropdown>
         <Group position="left" spacing="xl" noWrap grow>

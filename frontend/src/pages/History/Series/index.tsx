@@ -82,7 +82,6 @@ const SeriesHistoryView: FunctionComponent = () => {
               <StateIcon
                 matches={matches}
                 dont={dont}
-                hasIssues={false}
                 isHistory={true}
               ></StateIcon>
             );
