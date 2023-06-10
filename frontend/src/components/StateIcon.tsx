@@ -41,7 +41,7 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
   };
 
   return (
-    <Popover opened={hovered} position="top" width={360} withArrow>
+    <Popover opened={hovered} position="top" width={360} withArrow withinPortal>
       <Popover.Target>
         <Text ref={ref}>
           <PopoverTarget />
