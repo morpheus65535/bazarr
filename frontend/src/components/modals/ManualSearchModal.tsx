@@ -237,7 +237,7 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
   const { ref, hovered } = useHover();
 
   return (
-    <Popover opened={hovered} position="top" width={360} withArrow>
+    <Popover opened={hovered} position="top" width={360} withArrow withinPortal>
       <Popover.Target>
         <Text color={hasIssues ? "yellow" : "green"} ref={ref}>
           <FontAwesomeIcon
