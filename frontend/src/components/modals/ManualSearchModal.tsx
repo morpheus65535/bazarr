@@ -219,10 +219,10 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
 export const MovieSearchModal = withModal<Props<Item.Movie>>(
   ManualSearchView,
   "movie-manual-search",
-  { title: "Search Subtitles", size: "xl" }
+  { title: "Search Subtitles", size: "calc(100vw - 4rem)" }
 );
 export const EpisodeSearchModal = withModal<Props<Item.Episode>>(
   ManualSearchView,
   "episode-manual-search",
-  { title: "Search Subtitles", size: "xl" }
+  { title: "Search Subtitles", size: "calc(100vw - 4rem)" }
 );
