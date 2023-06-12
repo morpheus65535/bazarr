@@ -156,6 +156,6 @@ def _get_not_matched(subtitle, media_type):
     _, _, scores = _get_scores(media_type)
 
     if 'hash' not in subtitle.matches:
-        return list(scores - subtitle.matches)
+        return list(set(scores) - set(subtitle.matches))
     else:
         return []
