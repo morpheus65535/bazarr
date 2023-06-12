@@ -115,6 +115,21 @@ _LANGUAGE_MAP = {
     "turkish": "tur",
 }
 
+_DEFAULT_HEADERS = {
+    "authority": "subf2m.co",
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "accept-language": "en-US,en;q=0.9",
+    "referer": "https://subf2m.co",
+    "sec-ch-ua": '"Chromium";v="111", "Not(A:Brand";v="8"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Unknown"',
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-site": "same-origin",
+    "sec-fetch-user": "?1",
+    "upgrade-insecure-requests": "1",
+}
+
 
 class Subf2mProvider(Provider):
     provider_name = "subf2m"
@@ -138,15 +153,25 @@ class Subf2mProvider(Provider):
     video_types = (Episode, Movie)
     subtitle_class = Subf2mSubtitle
 
-    def __init__(self, verify_ssl=True):
+    def __init__(self, verify_ssl=True, user_agent=None, session_factory=None):
         super().__init__()
+        if not user_agent:
+            raise ValueError("User-agent config missing")
+
+        self._user_agent = user_agent
         self._verify_ssl = verify_ssl
+        self._session_factory = session_factory
 
     def initialize(self):
-        self._session = Session()
-        self._session.verify = self._verify_ssl
+        if self._session_factory is not None:
+            self._session = self._session_factory()
+        else:
+            logger.debug("No session factory set. Using default requests.Session.")
+            self._session = Session()
 
-        self._session.headers.update({"user-agent": "Bazarr"})
+        self._session.verify = self._verify_ssl
+        self._session.headers.update(_DEFAULT_HEADERS)
+        self._session.headers.update({"user-agent": self._user_agent})
 
     def terminate(self):
         self._session.close()

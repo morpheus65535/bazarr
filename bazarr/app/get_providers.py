@@ -294,7 +294,8 @@ def get_providers_auth():
             'f_password': settings.karagarga.f_password,
         },
         'subf2m': {
-            'verify_ssl': settings.subf2m.getboolean('verify_ssl')
+            'verify_ssl': settings.subf2m.getboolean('verify_ssl'),
+            'user_agent': settings.subf2m.user_agent,
         },
         'whisperai': {
             'endpoint': settings.whisperai.endpoint,

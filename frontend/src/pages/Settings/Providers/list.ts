@@ -329,7 +329,13 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         name: "Verify SSL",
         defaultValue: true,
       },
+      {
+        type: "text",
+        key: "user_agent",
+        name: "User-agent header",
+      },
     ],
+    message: "Make sure to use a unique and credible user agent.",
   },
   {
     key: "subs4free",

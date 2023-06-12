@@ -169,7 +169,8 @@ defaults = {
         'verify_ssl': 'True'
     },
     'subf2m': {
-        'verify_ssl': 'True'
+        'verify_ssl': 'True',
+        'user_agent': ''
     },
     'whisperai': {
         'endpoint': 'http://127.0.0.1:9000',
