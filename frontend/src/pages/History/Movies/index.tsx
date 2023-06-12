@@ -61,7 +61,7 @@ const MoviesHistoryView: FunctionComponent = () => {
         accessor: "matches",
         Cell: (row) => {
           const { matches, dont_matches: dont } = row.row.original;
-          if (matches.length) {
+          if (matches.length || dont.length) {
             return (
               <StateIcon
                 matches={matches}
