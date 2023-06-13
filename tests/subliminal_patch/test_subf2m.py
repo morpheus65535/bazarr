@@ -1,9 +1,9 @@
 import pytest
 from subliminal_patch.providers import subf2m
+from subliminal_patch.providers.subf2m import ConfigurationError
 from subliminal_patch.providers.subf2m import Subf2mProvider
 from subliminal_patch.providers.subf2m import Subf2mSubtitle
 from subzero.language import Language
-
 
 _U_A = "Mozilla/5.0 (Linux; Android 10; SM-G996U Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Mobile Safari/537.36"
 
@@ -26,13 +26,15 @@ def provider():
         ("Cure", 1997, "/subtitles/cure-kyua"),
     ],
 )
-def test_search_movie(provider, movies, title, year, expected_url):
-    movie = list(movies.values())[0]
-    movie.title = title
-    movie.year = year
+def test_search_movie(provider, title, year, expected_url):
+    result = provider._search_movie(title, year)
+    assert expected_url in result
 
-    result = provider._search_movie(movie.title, movie.year)
-    assert result == expected_url
+
+def test_init_empty_user_agent_raises_configurationerror():
+    with pytest.raises(ConfigurationError):
+        with Subf2mProvider(user_agent=" ") as provider:
+            assert provider
 
 
 @pytest.mark.parametrize(
@@ -52,27 +54,37 @@ def test_search_movie(provider, movies, title, year, expected_url):
 )
 def test_search_tv_show_season(provider, series_title, season, year, expected_url):
     result = provider._search_tv_show_season(series_title, season, year)
-    assert result == expected_url
+    assert expected_url in result
 
 
 @pytest.mark.parametrize("language", [Language.fromalpha2("en"), Language("por", "BR")])
-def test_find_movie_subtitles(provider, language):
+def test_find_movie_subtitles(provider, language, movies):
     path = "/subtitles/dune-2021"
-    for sub in provider._find_movie_subtitles(path, language):
+    for sub in provider._find_movie_subtitles(path, language, movies["dune"].imdb_id):
         assert sub.language == language
 
 
 @pytest.mark.parametrize("language", [Language.fromalpha2("en"), Language("por", "BR")])
-def test_find_episode_subtitles(provider, language):
+def test_find_episode_subtitles(provider, language, episodes):
     path = "/subtitles/breaking-bad-first-season"
-    for sub in provider._find_episode_subtitles(path, 1, 1, language):
+    subs = provider._find_episode_subtitles(
+        path, 1, 1, language, imdb_id=episodes["breaking_bad_s01e01"].series_imdb_id
+    )
+    assert subs
+
+    for sub in subs:
         assert sub.language == language
 
 
 def test_find_episode_subtitles_from_complete_series_path(provider):
     path = "/subtitles/courage-the-cowardly-dog"
 
-    for sub in provider._find_episode_subtitles(path, 1, 1, Language.fromalpha2("en")):
+    subs = provider._find_episode_subtitles(
+        path, 1, 1, Language.fromalpha2("en"), imdb_id="tt0220880"
+    )
+    assert subs
+
+    for sub in subs:
         assert sub.language == Language.fromalpha2("en")
 
 
@@ -82,6 +94,7 @@ def test_list_and_download_subtitles_complete_series_pack(provider, episodes):
     episode.series = "Sam & Max: Freelance Police"
     episode.name = "The Glazed McGuffin Affair"
     episode.title = "The Glazed McGuffin Affair"
+    episode.series_imdb_id = "tt0125646"
     episode.season = 1
     episode.episode = 21
 
