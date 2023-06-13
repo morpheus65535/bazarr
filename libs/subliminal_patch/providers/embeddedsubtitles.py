@@ -45,10 +45,9 @@ class EmbeddedSubtitle(Subtitle):
         self._matches: set = matches
 
     def get_matches(self, video):
-        if self.hearing_impaired:
-            self._matches.add("hearing_impaired")
-
+        self._matches.add("hearing_impaired")
         self._matches.add("hash")
+
         return self._matches
 
     @property
