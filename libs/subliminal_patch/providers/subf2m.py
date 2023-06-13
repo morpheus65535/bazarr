@@ -377,6 +377,8 @@ class Subf2mProvider(Provider):
             logger.debug("No results")
             return []
 
+        languages = set([lang for lang in languages if lang in self.languages])
+
         subs = []
         for path in paths:
             must_break = False
