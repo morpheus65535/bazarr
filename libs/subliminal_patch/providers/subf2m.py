@@ -185,9 +185,9 @@ class Subf2mProvider(Provider):
                 logger.debug("Access to this resource is forbidden: %s", url)
                 break
 
-            # Sometimes subf2m will return a 503 code. This error usually disappears
+            # Sometimes subf2m will return 404 or 503. This error usually disappears
             # retrying the query
-            if req.status_code == 503:
+            if req.status_code in (404, 503):
                 logger.debug("503 returned. Trying again [%d] in 3 seconds", n + 1)
                 time.sleep(3)
                 continue
