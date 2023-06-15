@@ -8,7 +8,7 @@ from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
 from app.database import TableMovies, TableHistoryMovie, TableBlacklistMovie, database, select, func
-from subtitles.upgrade import get_upgradable_movies_subtitles
+from subtitles.upgrade import get_upgradable_movies_subtitles, _language_still_desired
 from api.swaggerui import subtitles_language_model
 
 from api.utils import authenticate, postprocess
@@ -89,6 +89,7 @@ class MoviesHistory(Resource):
                       TableHistoryMovie.video_path,
                       TableHistoryMovie.matched,
                       TableHistoryMovie.not_matched,
+                      TableMovies.profileId,
                       TableMovies.subtitles.label('external_subtitles'),
                       upgradable_movies_not_perfect.c.id.label('upgradable'),
                       blacklisted_subtitles.c.subs_id.label('blacklisted')) \
@@ -121,7 +122,7 @@ class MoviesHistory(Resource):
             'matches': x.matched,
             'dont_matches': x.not_matched,
             'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
-            'upgradable': bool(x.upgradable),
+            'upgradable': bool(x.upgradable) if _language_still_desired(x.language, x.profileId) else False,
             'blacklisted': bool(x.blacklisted),
         } for x in database.execute(stmt).all()]
 

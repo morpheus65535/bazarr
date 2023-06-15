@@ -61,6 +61,7 @@ def upgrade_subtitles():
                    TableHistory.sonarrSeriesId,
                    TableHistory.subtitles_path,
                    TableEpisodes.path,
+                   TableShows.profileId,
                    TableEpisodes.subtitles.label('external_subtitles'),
                    episodes_to_upgrade.c.id.label('upgradable'))
             .select_from(TableHistory)
@@ -68,7 +69,7 @@ def upgrade_subtitles():
             .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)
             .join(episodes_to_upgrade, onclause=TableHistory.id == episodes_to_upgrade.c.id, isouter=True)
             .where(episodes_to_upgrade.c.id.is_not(None)))
-            .all()]
+            .all() if _language_still_desired(x.language, x.profileId)]
 
         for item in episodes_data:
             if item['upgradable']:
@@ -146,13 +147,14 @@ def upgrade_subtitles():
                    TableHistoryMovie.radarrId,
                    TableHistoryMovie.subtitles_path,
                    TableMovies.path,
+                   TableMovies.profileId,
                    TableMovies.subtitles.label('external_subtitles'),
                    movies_to_upgrade.c.id.label('upgradable'))
             .select_from(TableHistoryMovie)
             .join(TableMovies, onclause=TableHistoryMovie.radarrId == TableMovies.radarrId)
             .join(movies_to_upgrade, onclause=TableHistoryMovie.id == movies_to_upgrade.c.id, isouter=True)
             .where(movies_to_upgrade.c.id.is_not(None)))
-            .all()]
+            .all() if _language_still_desired(x.language, x.profileId)]
 
         for item in movies_data:
             if item['upgradable']:

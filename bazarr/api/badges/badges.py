@@ -6,7 +6,7 @@ import ast
 from functools import reduce
 from flask_restx import Resource, Namespace, fields
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies, database, select, func
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies, database, select
 from app.get_providers import get_throttled_providers
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client
 from app.announcements import get_all_announcements

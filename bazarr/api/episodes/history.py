@@ -6,7 +6,7 @@ from functools import reduce
 
 from api.swaggerui import subtitles_language_model
 from app.database import TableEpisodes, TableShows, TableHistory, TableBlacklist, database, select, func
-from subtitles.upgrade import get_upgradable_episode_subtitles
+from subtitles.upgrade import get_upgradable_episode_subtitles,  _language_still_desired
 
 import pretty
 from flask_restx import Resource, Namespace, reqparse, fields
@@ -92,6 +92,7 @@ class EpisodesHistory(Resource):
                       TableHistory.sonarrEpisodeId,
                       TableHistory.provider,
                       TableShows.seriesType,
+                      TableShows.profileId,
                       TableHistory.matched,
                       TableHistory.not_matched,
                       TableEpisodes.subtitles.label('external_subtitles'),
@@ -130,7 +131,7 @@ class EpisodesHistory(Resource):
             'matches': x.matched,
             'dont_matches': x.not_matched,
             'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
-            'upgradable': bool(x.upgradable),
+            'upgradable': bool(x.upgradable) if _language_still_desired(x.language, x.profileId) else False,
             'blacklisted': bool(x.blacklisted),
         } for x in database.execute(stmt).all()]
 
