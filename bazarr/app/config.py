@@ -186,11 +186,6 @@ defaults = {
         'email': '',
         'hashed_password': ''
     },
-    'legendastv': {
-        'username': '',
-        'password': '',
-        'featured_only': 'False'
-    },
     'xsubs': {
         'username': '',
         'password': ''

@@ -16,7 +16,6 @@ interface Settings {
   opensubtitlescom: Settings.OpenSubtitlesCom;
   addic7ed: Settings.Addic7ed;
   legendasdivx: Settings.Legandasdivx;
-  legendastv: Settings.Legendastv;
   xsubs: Settings.XSubs;
   assrt: Settings.Assrt;
   napisy24: Settings.Napisy24;
@@ -196,10 +195,6 @@ declare namespace Settings {
 
   interface Legandasdivx extends BaseProvider {
     skip_wrong_fps: boolean;
-  }
-
-  interface Legendastv extends BaseProvider {
-    featured_only: boolean;
   }
 
   interface XSubs extends BaseProvider {}

@@ -185,26 +185,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
   },
-  {
-    key: "legendastv",
-    name: "LegendasTV",
-    description: "Brazilian / Portuguese Subtitles Provider",
-    inputs: [
-      {
-        type: "text",
-        key: "username",
-      },
-      {
-        type: "password",
-        key: "password",
-      },
-      {
-        type: "switch",
-        key: "featured_only",
-        name: "Only Download Featured",
-      },
-    ],
-  },
   { key: "napiprojekt", description: "Polish Subtitles Provider" },
   {
     key: "whisperai",

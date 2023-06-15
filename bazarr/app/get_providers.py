@@ -104,7 +104,7 @@ def provider_throttle_map():
     }
 
 
-PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendasdivx", "legendastv", "napiprojekt", "shooter",
+PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendasdivx", "napiprojekt", "shooter",
                         "hosszupuska", "supersubtitles", "titlovi", "argenteam", "assrt", "subscene"]
 
 throttle_count = {}
@@ -244,13 +244,6 @@ def get_providers_auth():
             'password': settings.legendasdivx.password,
             'skip_wrong_fps': settings.legendasdivx.getboolean(
                     'skip_wrong_fps'
-            ),
-        },
-        'legendastv': {
-            'username': settings.legendastv.username,
-            'password': settings.legendastv.password,
-            'featured_only': settings.legendastv.getboolean(
-                    'featured_only'
             ),
         },
         'xsubs': {
