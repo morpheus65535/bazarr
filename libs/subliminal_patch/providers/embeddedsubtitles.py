@@ -14,7 +14,6 @@ from fese import FFprobeSubtitleStream
 from fese import FFprobeVideoContainer
 from fese import tags
 from fese.exceptions import InvalidSource
-from subliminal.subtitle import fix_line_ending
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
 from subliminal_patch.providers import Provider
@@ -46,10 +45,9 @@ class EmbeddedSubtitle(Subtitle):
         self._matches: set = matches
 
     def get_matches(self, video):
-        if self.hearing_impaired:
-            self._matches.add("hearing_impaired")
-
+        self._matches.add("hearing_impaired")
         self._matches.add("hash")
+
         return self._matches
 
     @property
@@ -187,19 +185,18 @@ class EmbeddedSubtitlesProvider(Provider):
     def download_subtitle(self, subtitle: EmbeddedSubtitle):
         path = self._get_subtitle_path(subtitle)
 
-        modifiers = _type_modifiers.get(subtitle.stream.codec_name)
-        logger.debug(
-            "Found modifiers for %s type: %s", subtitle.stream.codec_name, modifiers
-        )
+        modifiers = _type_modifiers.get(subtitle.stream.codec_name) or set()
+        logger.debug("Found modifiers for %s type: %s", subtitle.stream, modifiers)
 
-        if modifiers is not None:
-            for mod in modifiers:
-                logger.debug("Running %s modifier for %s", mod, path)
+        for mod in modifiers:
+            logger.debug("Running %s modifier for %s", mod, path)
+            try:
                 mod(path, path)
+            except Exception as error:
+                logger.debug("'%s' raised running modifier", error)
 
         with open(path, "rb") as sub:
-            content = sub.read()
-            subtitle.content = fix_line_ending(content)
+            subtitle.content = sub.read()
 
     def _get_subtitle_path(self, subtitle: EmbeddedSubtitle):
         container = subtitle.container
@@ -341,7 +338,7 @@ def _clean_ass_subtitles(path, output_path):
 
     clean_lines = []
 
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
         lines = f.readlines()
         for line in lines:
             if _SIGNS_LINE_RE.search(line) is None:

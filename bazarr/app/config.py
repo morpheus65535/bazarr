@@ -52,6 +52,7 @@ defaults = {
         'movie_default_enabled': 'False',
         'movie_default_profile': '',
         'page_size': '25',
+        'theme': 'auto',
         'page_size_manual_search': '10',
         'minimum_score_movie': '70',
         'use_embedded_subs': 'True',
@@ -169,7 +170,8 @@ defaults = {
         'verify_ssl': 'True'
     },
     'subf2m': {
-        'verify_ssl': 'True'
+        'verify_ssl': 'True',
+        'user_agent': ''
     },
     'whisperai': {
         'endpoint': 'http://127.0.0.1:9000',
@@ -183,11 +185,6 @@ defaults = {
     'ktuvit': {
         'email': '',
         'hashed_password': ''
-    },
-    'legendastv': {
-        'username': '',
-        'password': '',
-        'featured_only': 'False'
     },
     'xsubs': {
         'username': '',

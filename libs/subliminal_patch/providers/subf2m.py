@@ -7,12 +7,10 @@ import re
 import time
 import urllib.parse
 
-from guessit import guessit
-
-from requests import Session
 from bs4 import BeautifulSoup as bso
 from guessit import guessit
 from requests import Session
+from subliminal.exceptions import ConfigurationError
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
 from subliminal_patch.exceptions import APIThrottled
@@ -38,9 +36,9 @@ class Subf2mSubtitle(Subtitle):
         self.episode_title = None
 
         self._matches = set(
-            ("title", "year")
+            ("title", "year", "imdb_id")
             if episode_number is None
-            else ("title", "series", "year", "season", "episode")
+            else ("title", "series", "year", "season", "episode", "imdb_id")
         )
 
     def get_matches(self, video):
@@ -115,6 +113,21 @@ _LANGUAGE_MAP = {
     "turkish": "tur",
 }
 
+_DEFAULT_HEADERS = {
+    "authority": "subf2m.co",
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "accept-language": "en-US,en;q=0.9",
+    "referer": "https://subf2m.co",
+    "sec-ch-ua": '"Chromium";v="111", "Not(A:Brand";v="8"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Unknown"',
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-site": "same-origin",
+    "sec-fetch-user": "?1",
+    "upgrade-insecure-requests": "1",
+}
+
 
 class Subf2mProvider(Provider):
     provider_name = "subf2m"
@@ -138,15 +151,26 @@ class Subf2mProvider(Provider):
     video_types = (Episode, Movie)
     subtitle_class = Subf2mSubtitle
 
-    def __init__(self, verify_ssl=True):
+    def __init__(self, user_agent, verify_ssl=True, session_factory=None):
         super().__init__()
+
+        if not (user_agent or "").strip():
+            raise ConfigurationError("User-agent config missing")
+
+        self._user_agent = user_agent
         self._verify_ssl = verify_ssl
+        self._session_factory = session_factory
 
     def initialize(self):
-        self._session = Session()
-        self._session.verify = self._verify_ssl
+        if self._session_factory is not None:
+            self._session = self._session_factory()
+        else:
+            logger.debug("No session factory set. Using default requests.Session.")
+            self._session = Session()
 
-        self._session.headers.update({"user-agent": "Bazarr"})
+        self._session.verify = self._verify_ssl
+        self._session.headers.update(_DEFAULT_HEADERS)
+        self._session.headers.update({"user-agent": self._user_agent})
 
     def terminate(self):
         self._session.close()
@@ -161,9 +185,9 @@ class Subf2mProvider(Provider):
                 logger.debug("Access to this resource is forbidden: %s", url)
                 break
 
-            # Sometimes subf2m will return a 503 code. This error usually disappears
+            # Sometimes subf2m will return 404 or 503. This error usually disappears
             # retrying the query
-            if req.status_code == 503:
+            if req.status_code in (404, 503):
                 logger.debug("503 returned. Trying again [%d] in 3 seconds", n + 1)
                 time.sleep(3)
                 continue
@@ -189,11 +213,9 @@ class Subf2mProvider(Provider):
         for title in soup.select("li div[class='title'] a"):
             yield title
 
-    def _search_movie(self, title, year):
+    def _search_movie(self, title, year, return_len=3):
         title = title.lower()
         year = str(year)
-
-        found_movie = None
 
         results = []
         for result in self._gen_results(title):
@@ -201,6 +223,7 @@ class Subf2mProvider(Provider):
             match = self._movie_title_regex.match(text)
             if not match:
                 continue
+
             match_title = match.group(1)
             match_year = match.group(3)
             if year == match_year:
@@ -213,18 +236,20 @@ class Subf2mProvider(Provider):
 
         if results:
             results.sort(key=lambda x: x["similarity"], reverse=True)
-            found_movie = results[0]["href"]
-            logger.debug("Movie found: %s", results[0])
-        return found_movie
+            results = [result["href"] for result in results]
+            if results:
+                results = set(results[:return_len])
+                logger.debug("Results: %s", results)
+                return results
 
-    def _search_tv_show_season(self, title, season, year=None):
+        return []
+
+    def _search_tv_show_season(self, title, season, year=None, return_len=3):
         try:
             season_str = _SEASONS[season - 1].lower()
         except IndexError:
             logger.debug("Season number not supported: %s", season)
             return None
-
-        found_tv_show_season = None
 
         results = []
         for result in self._gen_results(title):
@@ -253,13 +278,20 @@ class Subf2mProvider(Provider):
 
         if results:
             results.sort(key=lambda x: x["similarity"], reverse=True)
-            found_tv_show_season = results[0]["href"]
-            logger.debug("TV Show season found: %s", results[0])
+            results = [result["href"] for result in results]
+            if results:
+                results = set(results[:return_len])
+                logger.debug("Results: %s", results)
+                return results
 
-        return found_tv_show_season
+        return []
 
-    def _find_movie_subtitles(self, path, language):
+    def _find_movie_subtitles(self, path, language, imdb_id):
         soup = self._get_subtitle_page_soup(path, language)
+        imdb_matched = _match_imdb(soup, imdb_id)
+        if not imdb_matched:
+            return []
+
         subtitles = []
 
         for item in soup.select("li.item"):
@@ -273,9 +305,12 @@ class Subf2mProvider(Provider):
         return subtitles
 
     def _find_episode_subtitles(
-        self, path, season, episode, language, episode_title=None
+        self, path, season, episode, language, episode_title=None, imdb_id=None
     ):
         soup = self._get_subtitle_page_soup(path, language)
+        imdb_matched = _match_imdb(soup, imdb_id)
+        if not imdb_matched:
+            return []
 
         subtitles = []
 
@@ -334,27 +369,47 @@ class Subf2mProvider(Provider):
         is_episode = isinstance(video, Episode)
 
         if is_episode:
-            result = self._search_tv_show_season(video.series, video.season, video.year)
+            paths = self._search_tv_show_season(video.series, video.season, video.year)
         else:
-            result = self._search_movie(video.title, video.year)
+            paths = self._search_movie(video.title, video.year)
 
-        if result is None:
+        if not paths:
             logger.debug("No results")
             return []
 
-        subtitles = []
+        languages = set([lang for lang in languages if lang in self.languages])
 
-        for language in languages:
-            if is_episode:
-                subtitles.extend(
-                    self._find_episode_subtitles(
-                        result, video.season, video.episode, language, video.title
+        subs = []
+        for path in paths:
+            must_break = False
+
+            logger.debug("Looking for subs from %s", path)
+
+            for language in languages:
+                if is_episode:
+                    subs.extend(
+                        self._find_episode_subtitles(
+                            path,
+                            video.season,
+                            video.episode,
+                            language,
+                            video.title,
+                            video.series_imdb_id,
+                        )
                     )
-                )
-            else:
-                subtitles.extend(self._find_movie_subtitles(result, language))
 
-        return subtitles
+                else:
+                    subs.extend(
+                        self._find_movie_subtitles(path, language, video.imdb_id)
+                    )
+
+                must_break = subs != []
+
+            if must_break:
+                logger.debug("Good path found: %s. Not running over others.", path)
+                break
+
+        return subs
 
     def download_subtitle(self, subtitle):
         # TODO: add MustGetBlacklisted support
@@ -399,6 +454,32 @@ def _memoized_episode_guess(content):
 _EPISODE_SPECIAL_RE = re.compile(
     r"(season|s)\s*?(?P<x>\d{,2})\s?[-−]\s?(?P<y>\d{,2})", flags=re.IGNORECASE
 )
+
+
+def _match_imdb(soup, imdb_id):
+    try:
+        parsed_imdb_id = (
+            soup.select_one(
+                "#content > div.subtitles.byFilm > div.box.clearfix > div.top.left > div.header > h2 > a"
+            )
+            .get("href")  # type: ignore
+            .split("/")[-1]  # type: ignore
+            .strip()
+        )
+    except AttributeError:
+        logger.debug("Couldn't get IMDB ID")
+        parsed_imdb_id = None
+
+    if parsed_imdb_id is not None and parsed_imdb_id != imdb_id:
+        logger.debug("Wrong IMDB ID: '%s' != '%s'", parsed_imdb_id, imdb_id)
+        return False
+
+    if parsed_imdb_id is None:
+        logger.debug("Matching subtitles as IMDB ID was not parsed.")
+    else:
+        logger.debug("Good IMDB ID: '%s' == '%s'", parsed_imdb_id, imdb_id)
+
+    return True
 
 
 def _get_episode_from_release(release: str):

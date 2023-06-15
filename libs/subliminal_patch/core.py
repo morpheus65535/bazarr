@@ -330,6 +330,8 @@ class SZProviderPool(ProviderPool):
         :rtype: list of :class:`~subliminal.subtitle.Subtitle` or None
 
         """
+        logger.debug("Languages requested: %s", languages)
+
         if self.language_hook:
             languages_search_base = self.language_hook(provider)
         else:
@@ -354,10 +356,14 @@ class SZProviderPool(ProviderPool):
             return []
 
         # list subtitles
-        logger.info('Listing subtitles with provider %r and languages %r', provider, provider_languages)
         results = []
+
+        to_request = self.lang_equals.translate(provider_languages) & set(provider_registry[provider].languages)
+
+        logger.info('Listing subtitles with provider %r and languages %r', provider, to_request)
+
         try:
-            results = self[provider].list_subtitles(video, self.lang_equals.translate(provider_languages))
+            results = self[provider].list_subtitles(video, to_request)
             seen = []
             out = []
             for s in results:

@@ -11,7 +11,7 @@ from sqlalchemy import and_
 
 from app.config import settings
 from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies, \
-    TableHistory, TableHistoryMovie, database, select, func
+    TableHistory, TableHistoryMovie, database, select, func, get_profiles_list
 from app.event_handler import show_progress, hide_progress
 from app.get_providers import get_providers
 from app.notifier import send_notifications, send_notifications_movie
@@ -286,3 +286,27 @@ def get_upgradable_movies_subtitles():
         .where(reduce(operator.and_, upgradable_movies_conditions)) \
         .order_by(TableHistoryMovie.timestamp.desc()) \
         .subquery()
+
+
+def _language_still_desired(language, profile_id):
+    if not profile_id:
+        return False
+
+    profile = get_profiles_list(profile_id)
+    if profile and language in _language_from_items(profile['items']):
+        return True
+    else:
+        return False
+
+
+def _language_from_items(items):
+    results = []
+    for item in items:
+        if item['forced'] == 'True':
+            results.append(item['language'] + ':forced')
+        elif item['hi'] == 'True':
+            results.append(item['language'] + ':hi')
+        else:
+            results.append(item['language'])
+            results.append(item['language'] + ':hi')
+    return results

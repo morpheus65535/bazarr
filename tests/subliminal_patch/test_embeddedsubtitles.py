@@ -184,7 +184,7 @@ def test_list_subtitles_hi_fallback_one_stream(
         fake = _MemoizedFFprobeVideoContainer.get_subtitles("")[0]
         assert fake.disposition.hearing_impaired == True
         subs = provider.list_subtitles(video_single_language, {language})
-        assert subs
+        assert subs[0].language == Language("eng", hi=False)
         assert subs[0].hearing_impaired == False
 
 
@@ -200,8 +200,8 @@ def test_list_subtitles_hi_fallback_multiple_streams(
         )
         subs = provider.list_subtitles(video_single_language, {language})
         assert len(subs) == 2
-        assert subs[0].hearing_impaired == True
-        assert subs[1].hearing_impaired == False
+        assert subs[0].language == Language("eng", hi=True)
+        assert subs[1].language == Language("eng", hi=False)
 
 
 def test_list_subtitles_hi_fallback_multiple_language_streams(
