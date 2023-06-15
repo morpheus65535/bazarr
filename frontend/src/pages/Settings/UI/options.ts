@@ -26,3 +26,18 @@ export const pageSizeOptions: SelectorOption<number>[] = [
     value: 1000,
   },
 ];
+
+export const colorSchemeOptions: SelectorOption<string>[] = [
+  {
+    label: "Auto",
+    value: "auto",
+  },
+  {
+    label: "Light",
+    value: "light",
+  },
+  {
+    label: "Dark",
+    value: "dark",
+  },
+];

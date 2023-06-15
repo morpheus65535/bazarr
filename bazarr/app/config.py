@@ -52,6 +52,7 @@ defaults = {
         'movie_default_enabled': 'False',
         'movie_default_profile': '',
         'page_size': '25',
+        'theme': 'auto',
         'page_size_manual_search': '10',
         'minimum_score_movie': '70',
         'use_embedded_subs': 'True',

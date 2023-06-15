@@ -57,6 +57,7 @@ declare namespace Settings {
     path_mappings: [string, string][];
     path_mappings_movie: [string, string][];
     page_size: number;
+    theme: string;
     port: number;
     upgrade_subs: boolean;
     postprocessing_cmd?: string;
