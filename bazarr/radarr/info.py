@@ -26,7 +26,7 @@ class GetRadarrInfo:
             return radarr_version
         else:
             radarr_version = ''
-        if settings.general.getboolean('use_radarr'):
+        if settings.general.use_radarr:
             try:
                 rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
                 radarr_json = requests.get(rv, timeout=int(settings.radarr.http_timeout), verify=False, headers=headers).json()
@@ -75,7 +75,7 @@ get_radarr_info = GetRadarrInfo()
 
 
 def url_radarr():
-    if settings.radarr.getboolean('ssl'):
+    if settings.radarr.ssl:
         protocol_radarr = "https"
     else:
         protocol_radarr = "http"

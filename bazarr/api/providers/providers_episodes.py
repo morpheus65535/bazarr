@@ -128,7 +128,7 @@ class ProviderEpisodes(Resource):
                                               profile_id=get_profile_id(episode_id=sonarrEpisodeId))
             if result:
                 history_log(2, sonarrSeriesId, sonarrEpisodeId, result)
-                if not settings.general.getboolean('dont_notify_manual_actions'):
+                if not settings.general.dont_notify_manual_actions:
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
                 store_subtitles(result.path, episodePath)
         except OSError:

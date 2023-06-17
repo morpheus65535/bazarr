@@ -97,9 +97,9 @@ class SystemSettings(Resource):
 
             event_stream("languages")
 
-            if settings.general.getboolean('use_sonarr'):
+            if settings.general.use_sonarr:
                 scheduler.add_job(list_missing_subtitles, kwargs={'send_event': True})
-            if settings.general.getboolean('use_radarr'):
+            if settings.general.use_radarr:
                 scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': True})
 
         # Update Notification

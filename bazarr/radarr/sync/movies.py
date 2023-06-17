@@ -28,7 +28,7 @@ def update_movies(send_event=True):
     logging.debug('BAZARR Starting movie sync from Radarr.')
     apikey_radarr = settings.radarr.apikey
 
-    movie_default_enabled = settings.general.getboolean('movie_default_enabled')
+    movie_default_enabled = settings.general.movie_default_enabled
 
     if movie_default_enabled is True:
         movie_default_profile = settings.general.movie_default_profile
@@ -164,7 +164,7 @@ def update_one_movie(movie_id, action, defer_search=False):
                 existing_movie.path)))
         return
 
-    movie_default_enabled = settings.general.getboolean('movie_default_enabled')
+    movie_default_enabled = settings.general.movie_default_enabled
 
     if movie_default_enabled is True:
         movie_default_profile = settings.general.movie_default_profile

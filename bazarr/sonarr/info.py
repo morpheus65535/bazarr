@@ -26,7 +26,7 @@ class GetSonarrInfo:
             return sonarr_version
         else:
             sonarr_version = ''
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             try:
                 sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
                 sonarr_json = requests.get(sv, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers).json()
@@ -75,7 +75,7 @@ get_sonarr_info = GetSonarrInfo()
 
 
 def url_sonarr():
-    if settings.sonarr.getboolean('ssl'):
+    if settings.sonarr.ssl:
         protocol_sonarr = "https"
     else:
         protocol_sonarr = "http"

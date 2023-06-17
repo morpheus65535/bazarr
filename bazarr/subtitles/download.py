@@ -12,7 +12,7 @@ from subliminal_patch.core import save_subtitles
 from subliminal_patch.core_persistent import download_best_subtitles
 from subliminal_patch.score import ComputeScore
 
-from app.config import settings, get_array_from, get_scores
+from app.config import settings, get_scores
 from app.database import TableEpisodes, TableMovies, database, select
 from utilities.path_mappings import path_mappings
 from utilities.helper import get_target_folder, force_unicode
@@ -31,7 +31,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
 
     logging.debug('BAZARR Searching subtitles for this file: ' + path)
 
-    if settings.general.getboolean('utf8_encode'):
+    if settings.general.utf8_encode:
         os.environ["SZ_KEEP_ENCODING"] = ""
     else:
         os.environ["SZ_KEEP_ENCODING"] = "True"
@@ -52,7 +52,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
         minimum_score_movie = settings.general.minimum_score_movie
         min_score, max_score, scores = _get_scores(media_type, minimum_score_movie, minimum_score)
 
-        subz_mods = get_array_from(settings.general.subzero_mods)
+        subz_mods = settings.general.subzero_mods
         saved_any = False
 
         if providers:
@@ -86,9 +86,9 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                         try:
                             fld = get_target_folder(path)
                             chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
-                                'win') and settings.general.getboolean('chmod_enabled') else None
+                                'win') and settings.general.chmod_enabled else None
                             saved_subtitles = save_subtitles(video.original_path, subtitles,
-                                                             single=settings.general.getboolean('single_language'),
+                                                             single=settings.general.single_language,
                                                              tags=None,  # fixme
                                                              directory=fld,
                                                              chmod=chmod,

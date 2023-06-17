@@ -6,18 +6,10 @@ import ast
 
 from urllib.parse import quote_plus
 from subliminal.cache import region
-from simpleconfigparser import simpleconfigparser, configparser, NoOptionError
+from dynaconf import Dynaconf
+from dynaconf.loaders.yaml_loader import write
 
 from .get_args import args
-
-
-class SimpleConfigParser(simpleconfigparser):
-
-    def get(self, section, option, raw=False, vars=None):
-        try:
-            return configparser.get(self, section, option, raw=raw, vars=vars)
-        except NoOptionError:
-            return None
 
 
 def base_url_slash_cleaner(uri):
@@ -29,158 +21,158 @@ def base_url_slash_cleaner(uri):
 defaults = {
     'general': {
         'ip': '0.0.0.0',
-        'port': '6767',
+        'port': 6767,
         'base_url': '',
-        'path_mappings': '[]',
-        'debug': 'False',
+        'path_mappings': [],
+        'debug': False,
         'branch': 'master',
-        'auto_update': 'True',
-        'single_language': 'False',
-        'minimum_score': '90',
-        'use_scenename': 'True',
-        'use_postprocessing': 'False',
+        'auto_update': True,
+        'single_language': False,
+        'minimum_score': 90,
+        'use_scenename': True,
+        'use_postprocessing': False,
         'postprocessing_cmd': '',
-        'postprocessing_threshold': '90',
-        'use_postprocessing_threshold': 'False',
-        'postprocessing_threshold_movie': '70',
-        'use_postprocessing_threshold_movie': 'False',
-        'use_sonarr': 'False',
-        'use_radarr': 'False',
-        'path_mappings_movie': '[]',
-        'serie_default_enabled': 'False',
+        'postprocessing_threshold': 90,
+        'use_postprocessing_threshold': False,
+        'postprocessing_threshold_movie': 70,
+        'use_postprocessing_threshold_movie': False,
+        'use_sonarr': False,
+        'use_radarr': False,
+        'path_mappings_movie': [],
+        'serie_default_enabled': False,
         'serie_default_profile': '',
-        'movie_default_enabled': 'False',
+        'movie_default_enabled': False,
         'movie_default_profile': '',
-        'page_size': '25',
+        'page_size': 25,
         'theme': 'auto',
-        'page_size_manual_search': '10',
-        'minimum_score_movie': '70',
-        'use_embedded_subs': 'True',
-        'embedded_subs_show_desired': 'True',
-        'utf8_encode': 'True',
-        'ignore_pgs_subs': 'False',
-        'ignore_vobsub_subs': 'False',
-        'ignore_ass_subs': 'False',
-        'adaptive_searching': 'False',
+        'page_size_manual_search': 10,
+        'minimum_score_movie': 70,
+        'use_embedded_subs': True,
+        'embedded_subs_show_desired': True,
+        'utf8_encode': True,
+        'ignore_pgs_subs': False,
+        'ignore_vobsub_subs': False,
+        'ignore_ass_subs': False,
+        'adaptive_searching': False,
         'adaptive_searching_delay': '3w',
         'adaptive_searching_delta': '1w',
-        'enabled_providers': '[]',
-        'multithreading': 'True',
-        'chmod_enabled': 'False',
+        'enabled_providers': [],
+        'multithreading': True,
+        'chmod_enabled': False,
         'chmod': '0640',
         'subfolder': 'current',
         'subfolder_custom': '',
-        'upgrade_subs': 'True',
-        'upgrade_frequency': '12',
-        'days_to_upgrade_subs': '7',
-        'upgrade_manual': 'True',
-        'anti_captcha_provider': 'None',
-        'wanted_search_frequency': '6',
-        'wanted_search_frequency_movie': '6',
-        'subzero_mods': '[]',
-        'dont_notify_manual_actions': 'False',
+        'upgrade_subs': True,
+        'upgrade_frequency': 12,
+        'days_to_upgrade_subs': 7,
+        'upgrade_manual': True,
+        'anti_captcha_provider': None,
+        'wanted_search_frequency': 6,
+        'wanted_search_frequency_movie': 6,
+        'subzero_mods': '',
+        'dont_notify_manual_actions': False,
         'hi_extension': 'hi',
         'embedded_subtitles_parser': 'ffprobe',
         'default_und_audio_lang': '',
         'default_und_embedded_subtitles_lang': '',
-        'parse_embedded_audio_track': 'False',
-        'skip_hashing': 'False',
-        'language_equals': '[]',
+        'parse_embedded_audio_track': False,
+        'skip_hashing': False,
+        'language_equals': [],
     },
     'auth': {
-        'type': 'None',
+        'type': None,
         'username': '',
         'password': ''
     },
     'cors': {
-        'enabled': 'False'
+        'enabled': False
     },
     'backup': {
         'folder': os.path.join(args.config_dir, 'backup'),
-        'retention': '31',
+        'retention': 31,
         'frequency': 'Weekly',
-        'day': '6',
-        'hour': '3'
+        'day': 6,
+        'hour': 3
     },
     'sonarr': {
         'ip': '127.0.0.1',
-        'port': '8989',
+        'port': 8989,
         'base_url': '/',
-        'ssl': 'False',
-        'http_timeout': '60',
+        'ssl': False,
+        'http_timeout': 60,
         'apikey': '',
         'full_update': 'Daily',
-        'full_update_day': '6',
-        'full_update_hour': '4',
-        'only_monitored': 'False',
-        'series_sync': '60',
-        'episodes_sync': '60',
-        'excluded_tags': '[]',
-        'excluded_series_types': '[]',
-        'use_ffprobe_cache': 'True',
-        'exclude_season_zero': 'False',
-        'defer_search_signalr': 'False'
+        'full_update_day': 6,
+        'full_update_hour': 4,
+        'only_monitored': False,
+        'series_sync': 60,
+        'episodes_sync': 60,
+        'excluded_tags': [],
+        'excluded_series_types': [],
+        'use_ffprobe_cache': True,
+        'exclude_season_zero': False,
+        'defer_search_signalr': False
     },
     'radarr': {
         'ip': '127.0.0.1',
-        'port': '7878',
+        'port': 7878,
         'base_url': '/',
-        'ssl': 'False',
-        'http_timeout': '60',
+        'ssl': False,
+        'http_timeout': 60,
         'apikey': '',
         'full_update': 'Daily',
-        'full_update_day': '6',
-        'full_update_hour': '5',
-        'only_monitored': 'False',
-        'movies_sync': '60',
-        'excluded_tags': '[]',
-        'use_ffprobe_cache': 'True',
-        'defer_search_signalr': 'False'
+        'full_update_day': 6,
+        'full_update_hour': 5,
+        'only_monitored': False,
+        'movies_sync': 60,
+        'excluded_tags': [],
+        'use_ffprobe_cache': True,
+        'defer_search_signalr': False
     },
     'proxy': {
-        'type': 'None',
+        'type': None,
         'url': '',
         'port': '',
         'username': '',
         'password': '',
-        'exclude': '["localhost","127.0.0.1"]'
+        'exclude': ["localhost", "127.0.0.1"]
     },
     'opensubtitles': {
         'username': '',
         'password': '',
-        'use_tag_search': 'False',
-        'vip': 'False',
-        'ssl': 'False',
-        'timeout': '15',
-        'skip_wrong_fps': 'False'
+        'use_tag_search': False,
+        'vip': False,
+        'ssl': False,
+        'timeout': 15,
+        'skip_wrong_fps': False
     },
     'opensubtitlescom': {
         'username': '',
         'password': '',
-        'use_hash': 'True'
+        'use_hash': True
     },
     'addic7ed': {
         'username': '',
         'password': '',
         'cookies': '',
         'user_agent': '',
-        'vip': 'False'
+        'vip': False
     },
     'podnapisi': {
-        'verify_ssl': 'True'
+        'verify_ssl': True
     },
     'subf2m': {
-        'verify_ssl': 'True',
+        'verify_ssl': True,
         'user_agent': ''
     },
     'whisperai': {
         'endpoint': 'http://127.0.0.1:9000',
-        'timeout': '3600'
+        'timeout': 3600
     },
     'legendasdivx': {
         'username': '',
         'password': '',
-        'skip_wrong_fps': 'False'
+        'skip_wrong_fps': False
     },
     'ktuvit': {
         'email': '',
@@ -212,7 +204,7 @@ defaults = {
         'token': ''
     },
     'analytics': {
-        'enabled': 'True'
+        'enabled': True
     },
     'titlovi': {
         'username': '',
@@ -221,13 +213,13 @@ defaults = {
     'titulky': {
         'username': '',
         'password': '',
-        'approved_only': 'False'
+        'approved_only': False
     },
     'embeddedsubtitles': {
-        'included_codecs': '[]',
-        'hi_fallback': 'False',
-        'timeout': '600',
-        'unknown_as_english': 'False',
+        'included_codecs': [],
+        'hi_fallback': False,
+        'timeout': 600,
+        'unknown_as_english': False,
     },
     'karagarga': {
         'username': '',
@@ -236,13 +228,13 @@ defaults = {
         'f_password': '',
     },
     'subsync': {
-        'use_subsync': 'False',
-        'use_subsync_threshold': 'False',
-        'subsync_threshold': '90',
-        'use_subsync_movie_threshold': 'False',
-        'subsync_movie_threshold': '70',
-        'debug': 'False',
-        'force_audio': 'False'
+        'use_subsync': False,
+        'use_subsync_threshold': False,
+        'subsync_threshold': 90,
+        'use_subsync_movie_threshold': False,
+        'subsync_movie_threshold': 70,
+        'debug': False,
+        'force_audio': False
     },
     'series_scores': {
         "hash": 359,
@@ -272,24 +264,54 @@ defaults = {
         "hearing_impaired": 1,
     },
     'postgresql': {
-        'enabled': 'False',
+        'enabled': False,
         'host': 'localhost',
-        'port': '5432',
+        'port': 5432,
         'database': '',
         'username': '',
         'password': '',
     },
 }
 
-settings = SimpleConfigParser(defaults=defaults, interpolation=None)
-settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
+
+def convert_ini_to_yaml(config_file):
+    import configparser
+    import yaml
+    config_object = configparser.ConfigParser()
+    file = open(config_file, "r")
+    config_object.read_file(file)
+    output_dict = dict()
+    sections = config_object.sections()
+    for section in sections:
+        items = config_object.items(section)
+        output_dict[section] = dict()
+        for item in items:
+            try:
+                output_dict[section].update({item[0]: ast.literal_eval(item[1])})
+            except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+                output_dict[section].update({item[0]: item[1]})
+    with open(os.path.join(os.path.dirname(config_file), 'config.yaml'), 'w') as file:
+        yaml.dump(output_dict, file)
+
+
+config_yaml_file = os.path.join(args.config_dir, 'config', 'config.yaml')
+config_ini_file = os.path.join(args.config_dir, 'config', 'config.ini')
+if not os.path.exists(config_yaml_file):
+    convert_ini_to_yaml(config_ini_file)
+
+settings = Dynaconf(
+    settings_files=config_yaml_file,
+)
+
+
+def write_config():
+    write(settings_path=config_yaml_file,
+          settings_data={k.lower(): v for k, v in settings.as_dict().items()},
+          merge=False)
+
 
 settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
 base_url = settings.general.base_url.rstrip('/')
-
-ignore_keys = ['flask_secret_key']
-
-raw_keys = ['movie_default_forced', 'serie_default_forced']
 
 array_keys = ['excluded_tags',
               'exclude',
@@ -300,8 +322,6 @@ array_keys = ['excluded_tags',
               'path_mappings',
               'path_mappings_movie',
               'language_equals']
-
-str_keys = ['chmod']
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
@@ -323,57 +343,29 @@ if settings.general.page_size not in ['25', '50', '100', '250', '500', '1000']:
     settings.general.page_size = defaults['general']['page_size']
 
 # increase delay between searches to reduce impact on providers
-if settings.general.wanted_search_frequency == '3':
-    settings.general.wanted_search_frequency = '6'
-if settings.general.wanted_search_frequency_movie == '3':
-    settings.general.wanted_search_frequency_movie = '6'
+if settings.general.wanted_search_frequency == 3:
+    settings.general.wanted_search_frequency = 6
+if settings.general.wanted_search_frequency_movie == 3:
+    settings.general.wanted_search_frequency_movie = 6
 
 # save updated settings to file
-if os.path.exists(os.path.join(args.config_dir, 'config', 'config.ini')):
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-        settings.write(handle)
+write_config()
 
 
 def get_settings():
-    result = dict()
-    sections = settings.sections()
-
-    for sec in sections:
-        sec_values = settings.items(sec, False)
-        values_dict = dict()
-
-        for sec_val in sec_values:
-            key = sec_val[0]
-            value = sec_val[1]
-
-            if key in ignore_keys:
-                continue
-
-            if key not in raw_keys:
-                # Do some postprocessings
-                if value in empty_values:
-                    if key in array_keys:
-                        value = []
-                    else:
-                        continue
-                elif key in array_keys:
-                    value = get_array_from(value)
-                elif value == 'True':
-                    value = True
-                elif value == 'False':
-                    value = False
-                else:
-                    if key not in str_keys:
-                        try:
-                            value = int(value)
-                        except ValueError:
-                            pass
-
-            values_dict[key] = value
-
-        result[sec] = values_dict
-
-    return result
+    # return {k.lower(): v for k, v in settings.as_dict().items()}
+    settings_to_return = {}
+    for k, v in settings.as_dict().items():
+        k = k.lower()
+        settings_to_return[k] = dict({k: v})
+        for subk, subv in v.items():
+            if subv in empty_values and subk.lower() in array_keys:
+                settings_to_return[k].update({subk: []})
+            elif subk == 'subzero_mods':
+                settings_to_return[k].update({subk: get_array_from(subv)})
+            else:
+                settings_to_return[k].update({subk: subv})
+    return settings_to_return
 
 
 def save_settings(settings_items):
@@ -413,14 +405,10 @@ def save_settings(settings_items):
         if settings_keys[-1] in array_keys and value[0] in empty_values:
             value = []
 
-        # Handle path mappings settings since they are array in array
-        if settings_keys[-1] in ['path_mappings', 'path_mappings_movie']:
-            value = [v.split(',') for v in value]
-
         if value == 'true':
-            value = 'True'
+            value = True
         elif value == 'false':
-            value = 'False'
+            value = False
 
         if key in ['settings-general-use_embedded_subs', 'settings-general-ignore_pgs_subs',
                    'settings-general-ignore_vobsub_subs', 'settings-general-ignore_ass_subs']:
@@ -532,14 +520,13 @@ def save_settings(settings_items):
                 region.delete('titlovi_token')
 
         if settings_keys[0] == 'settings':
-            settings[settings_keys[1]][settings_keys[2]] = str(value)
+            settings[settings_keys[1]][settings_keys[2]] = value
 
         if settings_keys[0] == 'subzero':
             mod = settings_keys[1]
-            enabled = value == 'True'
-            if mod in subzero_mods and not enabled:
+            if mod in subzero_mods and not value:
                 subzero_mods.remove(mod)
-            elif enabled:
+            elif value:
                 subzero_mods.append(mod)
 
             # Handle color
@@ -560,39 +547,38 @@ def save_settings(settings_items):
         from .scheduler import scheduler
         from subtitles.indexer.series import list_missing_subtitles
         from subtitles.indexer.movies import list_missing_subtitles_movies
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             scheduler.add_job(list_missing_subtitles, kwargs={'send_event': True})
-        if settings.general.getboolean('use_radarr'):
+        if settings.general.use_radarr:
             scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': True})
 
     if undefined_subtitles_track_default_changed:
         from .scheduler import scheduler
         from subtitles.indexer.series import series_full_scan_subtitles
         from subtitles.indexer.movies import movies_full_scan_subtitles
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             scheduler.add_job(series_full_scan_subtitles, kwargs={'use_cache': True})
-        if settings.general.getboolean('use_radarr'):
+        if settings.general.use_radarr:
             scheduler.add_job(movies_full_scan_subtitles, kwargs={'use_cache': True})
 
     if audio_tracks_parsing_changed:
         from .scheduler import scheduler
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             from sonarr.sync.series import update_series
             scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
-        if settings.general.getboolean('use_radarr'):
+        if settings.general.use_radarr:
             from radarr.sync.movies import update_movies
             scheduler.add_job(update_movies, kwargs={'send_event': True}, max_instances=1)
 
     if update_subzero:
-        settings.set('general', 'subzero_mods', ','.join(subzero_mods))
+        settings.general.subzero_mods = ','.join(subzero_mods)
 
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-        settings.write(handle)
+    write_config()
 
     # Reconfigure Bazarr to reflect changes
     if configure_debug:
         from .logger import configure_logging
-        configure_logging(settings.general.getboolean('debug') or args.debug)
+        configure_logging(settings.general.debug or args.debug)
 
     if configure_captcha:
         configure_captcha_func()
@@ -660,7 +646,7 @@ def configure_captcha_func():
 
 
 def configure_proxy_func():
-    if settings.proxy.type != 'None':
+    if settings.proxy.type:
         if settings.proxy.username != '' and settings.proxy.password != '':
             proxy = settings.proxy.type + '://' + quote_plus(settings.proxy.username) + ':' + \
                     quote_plus(settings.proxy.password) + '@' + settings.proxy.url + ':' + settings.proxy.port
@@ -668,7 +654,7 @@ def configure_proxy_func():
             proxy = settings.proxy.type + '://' + settings.proxy.url + ':' + settings.proxy.port
         os.environ['HTTP_PROXY'] = str(proxy)
         os.environ['HTTPS_PROXY'] = str(proxy)
-        exclude = ','.join(get_array_from(settings.proxy.exclude))
+        exclude = ','.join(settings.proxy.exclude)
         os.environ['NO_PROXY'] = exclude
 
 

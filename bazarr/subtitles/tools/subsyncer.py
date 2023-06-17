@@ -55,11 +55,11 @@ class SubSyncer:
         try:
             unparsed_args = [self.reference, '-i', self.srtin, '-o', self.srtout, '--ffmpegpath', self.ffmpeg_path,
                              '--vad', self.vad, '--log-dir-path', self.log_dir_path]
-            if settings.subsync.getboolean('force_audio'):
+            if settings.subsync.force_audio:
                 unparsed_args.append('--no-fix-framerate')
                 unparsed_args.append('--reference-stream')
                 unparsed_args.append('a:0')
-            if settings.subsync.getboolean('debug'):
+            if settings.subsync.debug:
                 unparsed_args.append('--make-test-case')
             parser = make_parser()
             self.args = parser.parse_args(args=unparsed_args)
@@ -71,10 +71,10 @@ class SubSyncer:
             logging.exception('BAZARR an exception occurs during the synchronization process for this subtitles: '
                               '{0}'.format(self.srtin))
         else:
-            if settings.subsync.getboolean('debug'):
+            if settings.subsync.debug:
                 return result
             if os.path.isfile(self.srtout):
-                if not settings.subsync.getboolean('debug'):
+                if not settings.subsync.debug:
                     os.remove(self.srtin)
                     os.rename(self.srtout, self.srtin)
 

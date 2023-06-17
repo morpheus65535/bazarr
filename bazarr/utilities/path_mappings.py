@@ -2,7 +2,7 @@
 
 import re
 
-from app.config import settings, get_array_from
+from app.config import settings
 
 
 class PathMappings:
@@ -11,8 +11,8 @@ class PathMappings:
         self.path_mapping_movies = []
 
     def update(self):
-        self.path_mapping_series = [x for x in get_array_from(settings.general.path_mappings) if x[0] != x[1]]
-        self.path_mapping_movies = [x for x in get_array_from(settings.general.path_mappings_movie) if x[0] != x[1]]
+        self.path_mapping_series = [x for x in settings.general.path_mappings if x[0] != x[1]]
+        self.path_mapping_movies = [x for x in settings.general.path_mappings_movie if x[0] != x[1]]
 
     def path_replace(self, path):
         if path is None:

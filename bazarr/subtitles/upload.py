@@ -11,7 +11,7 @@ from subliminal_patch.subtitle import Subtitle
 from pysubs2.formats import get_format_identifier
 
 from languages.get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
-from app.config import settings, get_array_from
+from app.config import settings
 from utilities.helper import get_target_folder, force_unicode
 from utilities.post_processing import pp_replace, set_chmod
 from utilities.path_mappings import path_mappings
@@ -29,13 +29,13 @@ from .post_processing import postprocessing
 def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, audio_language):
     logging.debug(f'BAZARR Manually uploading subtitles for this file: {path}')
 
-    single = settings.general.getboolean('single_language')
+    single = settings.general.single_language
 
-    use_postprocessing = settings.general.getboolean('use_postprocessing')
+    use_postprocessing = settings.general.use_postprocessing
     postprocessing_cmd = settings.general.postprocessing_cmd
 
     chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
-        'win') and settings.general.getboolean('chmod_enabled') else None
+        'win') and settings.general.chmod_enabled else None
 
     language = alpha3_from_alpha2(language)
 
@@ -78,7 +78,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
 
     sub = Subtitle(
         lang_obj,
-        mods=get_array_from(settings.general.subzero_mods),
+        mods=settings.general.subzero_mods,
         original_format=use_original_format
     )
 
@@ -87,7 +87,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
         logging.exception('BAZARR Invalid subtitle file: ' + subtitle.filename)
         sub.mods = None
 
-    if settings.general.getboolean('utf8_encode'):
+    if settings.general.utf8_encode:
         sub.set_encoding("utf-8")
 
     try:

@@ -14,7 +14,7 @@ from subliminal_patch.core_persistent import list_all_subtitles, download_subtit
 from subliminal_patch.score import ComputeScore
 
 from languages.get_languages import alpha3_from_alpha2
-from app.config import get_scores, settings, get_array_from
+from app.config import get_scores, settings
 from utilities.helper import get_target_folder, force_unicode
 from app.database import get_profiles_list
 
@@ -158,7 +158,7 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
                              use_original_format, profile_id):
     logging.debug('BAZARR Manually downloading Subtitles for this file: ' + path)
 
-    if settings.general.getboolean('utf8_encode'):
+    if settings.general.utf8_encode:
         os.environ["SZ_KEEP_ENCODING"] = ""
     else:
         os.environ["SZ_KEEP_ENCODING"] = "True"
@@ -174,7 +174,7 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
         subtitle.language.forced = False
     if use_original_format == 'True':
         subtitle.use_original_format = use_original_format
-    subtitle.mods = get_array_from(settings.general.subzero_mods)
+    subtitle.mods = settings.general.subzero_mods
     video = get_video(force_unicode(path), title, sceneName, providers={provider}, media_type=media_type)
     if video:
         try:
@@ -193,9 +193,9 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
                 return
             try:
                 chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
-                    'win') and settings.general.getboolean('chmod_enabled') else None
+                    'win') and settings.general.chmod_enabled else None
                 saved_subtitles = save_subtitles(video.original_path, [subtitle],
-                                                 single=settings.general.getboolean('single_language'),
+                                                 single=settings.general.single_language,
                                                  tags=None,  # fixme
                                                  directory=get_target_folder(path),
                                                  chmod=chmod,

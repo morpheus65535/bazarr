@@ -24,8 +24,8 @@ from .download import generate_subtitles
 
 
 def upgrade_subtitles():
-    use_sonarr = settings.general.getboolean('use_sonarr')
-    use_radarr = settings.general.getboolean('use_radarr')
+    use_sonarr = settings.general.use_sonarr
+    use_radarr = settings.general.use_radarr
 
     if use_sonarr:
         episodes_to_upgrade = get_upgradable_episode_subtitles()
@@ -212,7 +212,7 @@ def get_queries_condition_parameters():
     days_to_upgrade_subs = settings.general.days_to_upgrade_subs
     minimum_timestamp = (datetime.now() - timedelta(days=int(days_to_upgrade_subs)))
 
-    if settings.general.getboolean('upgrade_manual'):
+    if settings.general.upgrade_manual:
         query_actions = [1, 2, 3, 4, 6]
     else:
         query_actions = [1, 3]

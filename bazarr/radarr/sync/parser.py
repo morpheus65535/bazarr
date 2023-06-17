@@ -92,7 +92,7 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
             videoCodec = None
             audioCodec = None
 
-        if settings.general.getboolean('parse_embedded_audio_track'):
+        if settings.general.parse_embedded_audio_track:
             audio_language = embedded_audio_reader(path_mappings.path_replace_movie(movie['movieFile']['path']),
                                                    file_size=movie['movieFile']['size'],
                                                    movie_file_id=movie['movieFile']['id'],

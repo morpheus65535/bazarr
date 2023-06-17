@@ -102,7 +102,7 @@ class Subtitles(Resource):
 
         # apply chmod if required
         chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
-            'win') and settings.general.getboolean('chmod_enabled') else None
+            'win') and settings.general.chmod_enabled else None
         if chmod:
             os.chmod(subtitles_path, chmod)
 

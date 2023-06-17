@@ -39,7 +39,7 @@ class ProcessSubtitlesResult:
 
 
 def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_upgrade=False, is_manual=False):
-    use_postprocessing = settings.general.getboolean('use_postprocessing')
+    use_postprocessing = settings.general.use_postprocessing
     postprocessing_cmd = settings.general.postprocessing_cmd
 
     downloaded_provider = subtitle.provider_name
@@ -109,10 +109,10 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                              percent_score, subtitle_id, downloaded_provider, series_id, episode_id)
 
         if media_type == 'series':
-            use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
+            use_pp_threshold = settings.general.use_postprocessing_threshold
             pp_threshold = int(settings.general.postprocessing_threshold)
         else:
-            use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold_movie')
+            use_pp_threshold = settings.general.use_postprocessing_threshold_movie
             pp_threshold = int(settings.general.postprocessing_threshold_movie)
 
         if not use_pp_threshold or (use_pp_threshold and percent_score < pp_threshold):

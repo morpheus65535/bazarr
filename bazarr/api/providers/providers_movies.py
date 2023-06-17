@@ -122,7 +122,7 @@ class ProviderMovies(Resource):
                                               profile_id=get_profile_id(movie_id=radarrId))
             if result is not None:
                 history_log_movie(2, radarrId, result)
-                if not settings.general.getboolean('dont_notify_manual_actions'):
+                if not settings.general.dont_notify_manual_actions:
                     send_notifications_movie(radarrId, result.message)
                 store_subtitles_movie(result.path, moviePath)
         except OSError:

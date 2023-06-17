@@ -8,6 +8,7 @@ attrs==22.1.0
 charamel==1.0.0
 deep-translator==1.9.1
 dogpile.cache==1.1.8
+dynaconf==3.1.12
 fese==0.1.2
 ffsubsync==0.4.20
 Flask-Compress==1.13  # modified to import brotli only if required
@@ -42,7 +43,6 @@ whichcraft==0.6.1
 
 # Bazarr modified dependencies
 #signalr-client-threads==0.0.12 # Modified to work with Sonarr v3. Not used anymore with v4
-#SimpleConfigParser==0.1.0 # modified version: do not update!!!
 #subliminal_patch # Modified version from Sub-Zero.bundle
 #subzero # Modified version from Sub-Zero.bundle
 

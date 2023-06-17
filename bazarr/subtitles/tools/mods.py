@@ -19,7 +19,7 @@ def subtitles_apply_mods(language, subtitle_path, mods, use_original_format, vid
         lang_obj = Language(language)
     else:
         lang_obj = custom.subzero_language()
-    single = settings.general.getboolean('single_language')
+    single = settings.general.single_language
 
     sub = Subtitle(lang_obj, mods=mods, original_format=use_original_format)
     with open(subtitle_path, 'rb') as f:

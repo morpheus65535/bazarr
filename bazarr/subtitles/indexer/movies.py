@@ -25,7 +25,7 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
     logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
     actual_subtitles = []
     if os.path.exists(reversed_path):
-        if settings.general.getboolean('use_embedded_subs'):
+        if settings.general.use_embedded_subs:
             logging.debug("BAZARR is trying to index embedded subtitles.")
             item = database.execute(
                 select(TableMovies.movie_file_id, TableMovies.file_size)
@@ -41,10 +41,10 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                                                               use_cache=use_cache)
                     for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                         try:
-                            if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
-                                    (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
+                            if (settings.general.ignore_pgs_subs and subtitle_codec.lower() == "pgs") or \
+                                    (settings.general.ignore_vobsub_subs and subtitle_codec.lower() ==
                                      "vobsub") or \
-                                    (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
+                                    (settings.general.ignore_ass_subs and subtitle_codec.lower() ==
                                      "ass"):
                                 logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
                                 continue
@@ -85,7 +85,7 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                                                            os.stat(path_mappings.path_replace(x[1])).st_size == x[2]]
 
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set(),
-                                                  only_one=settings.general.getboolean('single_language'))
+                                                  only_one=settings.general.single_language)
             full_dest_folder_path = os.path.dirname(reversed_path)
             if dest_folder:
                 if settings.general.subfolder == "absolute":
@@ -167,7 +167,7 @@ def list_missing_subtitles_movies(no=None, send_event=True):
                    TableMovies.audio_language)) \
             .all()
 
-    use_embedded_subs = settings.general.getboolean('use_embedded_subs')
+    use_embedded_subs = settings.general.use_embedded_subs
 
     for movie_subtitles in movies_subtitles:
         missing_subtitles_text = '[]'
@@ -263,7 +263,7 @@ def list_missing_subtitles_movies(no=None, send_event=True):
         event_stream(type='badges')
 
 
-def movies_full_scan_subtitles(use_cache=settings.radarr.getboolean('use_ffprobe_cache')):
+def movies_full_scan_subtitles(use_cache=settings.radarr.use_ffprobe_cache):
     movies = database.execute(
         select(TableMovies.path))\
         .all()

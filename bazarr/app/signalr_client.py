@@ -86,7 +86,7 @@ class SonarrSignalrClientLegacy:
         if self.connection:
             if self.connection.started:
                 self.stop(log=False)
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             self.start()
 
     def exception_handler(self):
@@ -133,7 +133,7 @@ class SonarrSignalrClient:
         if self.connection:
             if self.connection.transport.state.value in [0, 1, 2]:
                 self.stop()
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             self.start()
 
     def exception_handler(self):
@@ -200,7 +200,7 @@ class RadarrSignalrClient:
         if self.connection:
             if self.connection.transport.state.value in [0, 1, 2]:
                 self.stop()
-        if settings.general.getboolean('use_radarr'):
+        if settings.general.use_radarr:
             self.start()
 
     def exception_handler(self):
@@ -289,11 +289,11 @@ def dispatcher(data):
         elif topic == 'episode':
             logging.debug(f'Event received from Sonarr for episode: {series_title} ({series_year}) - '
                           f'S{season_number:0>2}E{episode_number:0>2} - {episode_title}')
-            sync_one_episode(episode_id=media_id, defer_search=settings.sonarr.getboolean('defer_search_signalr'))
+            sync_one_episode(episode_id=media_id, defer_search=settings.sonarr.defer_search_signalr)
         elif topic == 'movie':
             logging.debug(f'Event received from Radarr for movie: {movie_title} ({movie_year})')
             update_one_movie(movie_id=media_id, action=action,
-                             defer_search=settings.radarr.getboolean('defer_search_signalr'))
+                             defer_search=settings.radarr.defer_search_signalr)
     except Exception as e:
         logging.debug('BAZARR an exception occurred while parsing SignalR feed: {}'.format(repr(e)))
     finally:

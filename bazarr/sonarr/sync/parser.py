@@ -32,7 +32,7 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
     imdbId = show['imdbId'] if 'imdbId' in show else None
 
     audio_language = []
-    if not settings.general.getboolean('parse_embedded_audio_track'):
+    if not settings.general.parse_embedded_audio_track:
         if get_sonarr_info.is_legacy():
             audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
         else:
@@ -98,7 +98,7 @@ def episodeParser(episode):
                     else:
                         sceneName = None
 
-                    if settings.general.getboolean('parse_embedded_audio_track'):
+                    if settings.general.parse_embedded_audio_track:
                         audio_language = embedded_audio_reader(path_mappings.path_replace(episode['episodeFile']
                                                                                           ['path']),
                                                                file_size=episode['episodeFile']['size'],
