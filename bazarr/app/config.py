@@ -313,6 +313,8 @@ def write_config():
 settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
 base_url = settings.general.base_url.rstrip('/')
 
+ignore_keys = ['flask_secret_key']
+
 array_keys = ['excluded_tags',
               'exclude',
               'included_codecs',
@@ -357,8 +359,10 @@ def get_settings():
     settings_to_return = {}
     for k, v in settings.as_dict().items():
         k = k.lower()
-        settings_to_return[k] = dict({k: v})
+        settings_to_return[k] = dict()
         for subk, subv in v.items():
+            if subk.lower() in ignore_keys:
+                continue
             if subv in empty_values and subk.lower() in array_keys:
                 settings_to_return[k].update({subk: []})
             elif subk == 'subzero_mods':
