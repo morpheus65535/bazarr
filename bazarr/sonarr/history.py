@@ -31,7 +31,7 @@ def history_log(action, sonarr_series_id, sonarr_episode_id, result, fake_provid
             score=score,
             subs_id=subs_id,
             subtitles_path=subtitles_path,
-            matched=str(matched),
-            not_matched=str(not_matched)
+            matched=str(matched) if matched else None,
+            not_matched=str(not_matched) if not_matched else None
         ))
     event_stream(type='episode-history')
