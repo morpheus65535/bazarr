@@ -123,6 +123,7 @@ export const NotificationView: FunctionComponent = () => {
 
   const update = useUpdateArray<Settings.NotificationInfo>(
     notificationsKey,
+    notifications ?? [],
     "name"
   );
 
