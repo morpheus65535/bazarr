@@ -136,6 +136,7 @@ class Subf2mProvider(Provider):
     _tv_show_title_regex = re.compile(
         r"^(.+?) [-\(]\s?(.*?) (season|series)\)?( \((\d{4})\))?$"
     )
+    _tv_show_title_alt_regex = re.compile(r"(.+)\s(\d{1,2})(?:\s|$)")
     _supported_languages = {}
     _supported_languages["brazillian-portuguese"] = Language("por", "BR")
 
@@ -188,7 +189,7 @@ class Subf2mProvider(Provider):
             # Sometimes subf2m will return 404 or 503. This error usually disappears
             # retrying the query
             if req.status_code in (404, 503):
-                logger.debug("503 returned. Trying again [%d] in 3 seconds", n + 1)
+                logger.debug("503/404 returned. Trying again [%d] in 3 seconds", n + 1)
                 time.sleep(3)
                 continue
             else:
@@ -246,7 +247,7 @@ class Subf2mProvider(Provider):
 
     def _search_tv_show_season(self, title, season, year=None, return_len=3):
         try:
-            season_str = _SEASONS[season - 1].lower()
+            season_strs = (_SEASONS[season - 1].lower(), str(season))
         except IndexError:
             logger.debug("Season number not supported: %s", season)
             return None
@@ -257,16 +258,17 @@ class Subf2mProvider(Provider):
 
             match = self._tv_show_title_regex.match(text)
             if not match:
+                match = self._tv_show_title_alt_regex.match(text)
+
+            if not match:
                 logger.debug("Series title not matched: %s", text)
                 continue
-            else:
-                logger.debug("Series title matched: %s", text)
 
-            match_title = match.group(1)
-            match_season = match.group(2)
+            match_title = match.group(1).strip()
+            match_season = match.group(2).strip().lower()
 
-            # Match "complete series" titles as they usually contain season packs
-            if season_str == match_season or "complete" in match_season:
+            if match_season in season_strs or "complete" in match_season:
+                logger.debug("OK: '%s' IN %s|complete", match_season, season_strs)
                 plus = 0.1 if year and str(year) in text else 0
                 results.append(
                     {
@@ -275,6 +277,8 @@ class Subf2mProvider(Provider):
                         + plus,
                     }
                 )
+            else:
+                logger.debug("Invalid: '%s' IN %s|complete", match_season, season_strs)
 
         if results:
             results.sort(key=lambda x: x["similarity"], reverse=True)
