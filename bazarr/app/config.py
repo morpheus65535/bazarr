@@ -7,6 +7,7 @@ import ast
 from urllib.parse import quote_plus
 from subliminal.cache import region
 from dynaconf import Dynaconf
+from dynaconf.validator import Validator
 from dynaconf.loaders.yaml_loader import write
 
 from .get_args import args
@@ -18,67 +19,67 @@ def base_url_slash_cleaner(uri):
     return uri
 
 
-defaults = {
-    'general': {
-        'ip': '0.0.0.0',
-        'port': 6767,
-        'base_url': '',
-        'path_mappings': [],
-        'debug': False,
-        'branch': 'master',
-        'auto_update': True,
-        'single_language': False,
-        'minimum_score': 90,
-        'use_scenename': True,
-        'use_postprocessing': False,
-        'postprocessing_cmd': '',
-        'postprocessing_threshold': 90,
-        'use_postprocessing_threshold': False,
-        'postprocessing_threshold_movie': 70,
-        'use_postprocessing_threshold_movie': False,
-        'use_sonarr': False,
-        'use_radarr': False,
-        'path_mappings_movie': [],
-        'serie_default_enabled': False,
-        'serie_default_profile': '',
-        'movie_default_enabled': False,
-        'movie_default_profile': '',
-        'page_size': 25,
-        'theme': 'auto',
-        'page_size_manual_search': 10,
-        'minimum_score_movie': 70,
-        'use_embedded_subs': True,
-        'embedded_subs_show_desired': True,
-        'utf8_encode': True,
-        'ignore_pgs_subs': False,
-        'ignore_vobsub_subs': False,
-        'ignore_ass_subs': False,
-        'adaptive_searching': False,
-        'adaptive_searching_delay': '3w',
-        'adaptive_searching_delta': '1w',
-        'enabled_providers': [],
-        'multithreading': True,
-        'chmod_enabled': False,
-        'chmod': '0640',
-        'subfolder': 'current',
-        'subfolder_custom': '',
-        'upgrade_subs': True,
-        'upgrade_frequency': 12,
-        'days_to_upgrade_subs': 7,
-        'upgrade_manual': True,
-        'anti_captcha_provider': None,
-        'wanted_search_frequency': 6,
-        'wanted_search_frequency_movie': 6,
-        'subzero_mods': '',
-        'dont_notify_manual_actions': False,
-        'hi_extension': 'hi',
-        'embedded_subtitles_parser': 'ffprobe',
-        'default_und_audio_lang': '',
-        'default_und_embedded_subtitles_lang': '',
-        'parse_embedded_audio_track': False,
-        'skip_hashing': False,
-        'language_equals': [],
-    },
+validators = [
+    # general section
+    Validator('general.ip', must_exist=True, default='0.0.0.0'),
+    Validator('general.port', must_exist=True, default=6767, gte=1, lte=65535),
+    Validator('general.base_url', must_exist=True, default=''),
+    Validator('general.path_mappings', must_exist=True, default=[]),
+    Validator('general.debug', must_exist=True, default=False),
+    Validator('general.branch', must_exist=True, default='master', is_in=['master', 'development']),
+    Validator('general.auto_update', must_exist=True, default=True),
+    Validator('general.single_language', must_exist=True, default=False),
+    Validator('general.minimum_score', must_exist=True, default=90, gte=0, lte=100),
+    Validator('general.use_scenename', must_exist=True, default=True),
+    Validator('general.use_postprocessing', must_exist=True, default=False),
+    Validator('general.postprocessing_cmd', must_exist=True, default=''),
+    Validator('general.postprocessing_threshold', must_exist=True, default=90, gte=0, lte=100),
+    Validator('general.use_postprocessing_threshold', must_exist=True, default=False),
+    Validator('general.postprocessing_threshold_movie', must_exist=True, default=70, gte=0, lte=100),
+    Validator('general.use_postprocessing_threshold_movie', must_exist=True, default=False),
+    Validator('general.use_sonarr', must_exist=True, default=False),
+    Validator('general.use_radarr', must_exist=True, default=False),
+    Validator('general.path_mappings_movie', must_exist=True, default=[]),
+    Validator('general.serie_default_enabled', must_exist=True, default=False),
+    Validator('general.serie_default_profile', must_exist=True, default=''),
+    Validator('general.movie_default_enabled', must_exist=True, default=False),
+    Validator('general.movie_default_profile', must_exist=True, default=''),
+    Validator('general.page_size', must_exist=True, default=25, is_in=[25, 50, 100, 250, 500, 1000]),
+    Validator('general.theme', must_exist=True, default='auto', is_in=['auto', 'light', 'dark']),
+    Validator('general.minimum_score_movie', must_exist=True, default=70, gte=0, lte=100),
+    Validator('general.use_embedded_subs', must_exist=True, default=True),
+    Validator('general.embedded_subs_show_desired', must_exist=True, default=True),
+    Validator('general.utf8_encode', must_exist=True, default=True),
+    Validator('general.ignore_pgs_subs', must_exist=True, default=False),
+    Validator('general.ignore_vobsub_subs', must_exist=True, default=False),
+    Validator('general.ignore_ass_subs', must_exist=True, default=False),
+    Validator('general.adaptive_searching', must_exist=True, default=False),
+    Validator('general.adaptive_searching_delay', must_exist=True, default='3w', is_in=['1w', '2w', '3w', '4']),
+    Validator('general.adaptive_searching_delta', must_exist=True, default='1w', is_in=['3d', '1w', '2w', '3w', '4']),
+    Validator('general.enabled_providers', must_exist=True, default=[]),
+    Validator('general.multithreading', must_exist=True, default=True),
+    Validator('general.chmod_enabled', must_exist=True, default=False),
+    Validator('general.chmod', must_exist=True, default='0640'),
+    Validator('general.subfolder', must_exist=True, default='current'),
+    Validator('general.subfolder_custom', must_exist=True, default=''),
+    Validator('general.upgrade_subs', must_exist=True, default=True),
+    Validator('general.upgrade_frequency', must_exist=True, default=12, is_in=[6, 12, 24]),
+    Validator('general.days_to_upgrade_subs', must_exist=True, default=7, get=0, lte=30),
+    Validator('general.upgrade_manual', must_exist=True, default=True),
+    Validator('general.anti_captcha_provider', must_exist=True, default=None),
+    Validator('general.wanted_search_frequency', must_exist=True, default=6, is_in=[6, 12, 24]),
+    Validator('general.wanted_search_frequency_movie', must_exist=True, default=6, is_in=[6, 12, 24]),
+    Validator('general.subzero_mods', must_exist=True, default=''),
+    Validator('general.dont_notify_manual_actions', must_exist=True, default=False),
+    Validator('general.hi_extension', must_exist=True, default='hi', is_in=['hi', 'cc', 'sdh']),
+    Validator('general.embedded_subtitles_parser', must_exist=True, default='ffprobe', is_in=['ffprobe', 'mediainfo']),
+    Validator('general.default_und_audio_lang', must_exist=True, default=''),
+    Validator('general.default_und_embedded_subtitles_lang', must_exist=True, default=''),
+    Validator('general.parse_embedded_audio_track', must_exist=True, default=False),
+    Validator('general.skip_hashing', must_exist=True, default=False),
+    Validator('general.language_equals', must_exist=True, default=[]),
+
+    # auth section
     'auth': {
         'type': None,
         'username': '',
@@ -271,7 +272,7 @@ defaults = {
         'username': '',
         'password': '',
     },
-}
+]
 
 
 def convert_ini_to_yaml(config_file):
@@ -301,6 +302,8 @@ if not os.path.exists(config_yaml_file):
 
 settings = Dynaconf(
     settings_files=config_yaml_file,
+    validate_on_update='all',
+    validators=validators
 )
 
 
