@@ -4,6 +4,7 @@ import json
 
 from flask import request, jsonify
 from flask_restx import Resource, Namespace
+from dynaconf.validator import ValidationError
 
 from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableSettingsNotifier, \
     update_profile_id_list, database, insert, update, delete, select
@@ -112,6 +113,11 @@ class SystemSettings(Resource):
                     url=item['url'])
                 .where(TableSettingsNotifier.name == item['name']))
 
-        save_settings(zip(request.form.keys(), request.form.listvalues()))
-        event_stream("settings")
-        return '', 204
+        try:
+            save_settings(zip(request.form.keys(), request.form.listvalues()))
+        except ValidationError as e:
+            event_stream("settings")
+            return e.message, 406
+        else:
+            event_stream("settings")
+            return '', 204

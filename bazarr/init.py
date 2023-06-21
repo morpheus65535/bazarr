@@ -111,18 +111,6 @@ if not args.no_update:
                     restart_file.close()
                     os._exit(0)
 
-# create random api_key if there's none in config
-if not settings.auth.apikey or settings.auth.apikey.startswith("b'"):
-    from binascii import hexlify
-    settings.auth.apikey = hexlify(os.urandom(16)).decode()
-    write_config()
-
-# create random Flask secret_key if there's none in config
-if not settings.general.flask_secret_key:
-    from binascii import hexlify
-    settings.general.flask_secret_key = hexlify(os.urandom(16)).decode()
-    write_config()
-
 # change default base_url to ''
 settings.general.base_url = settings.general.base_url.rstrip('/')
 write_config()
