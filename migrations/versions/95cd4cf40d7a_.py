@@ -15,15 +15,27 @@ down_revision = 'dc09994b7e65'
 branch_labels = None
 depends_on = None
 
+bind = op.get_context().bind
+insp = sa.inspect(bind)
+
+
+def column_exists(table_name, column_name):
+    columns = insp.get_columns(table_name)
+    return any(c["name"] == column_name for c in columns)
+
 
 def upgrade():
     with op.batch_alter_table('table_history') as batch_op:
-        batch_op.add_column(sa.Column('matched', sa.Text))
-        batch_op.add_column(sa.Column('not_matched', sa.Text))
+        if not column_exists('table_history', 'matched'):
+            batch_op.add_column(sa.Column('matched', sa.Text))
+        if not column_exists('table_history', 'not_matched'):
+            batch_op.add_column(sa.Column('not_matched', sa.Text))
 
     with op.batch_alter_table('table_history_movie') as batch_op:
-        batch_op.add_column(sa.Column('matched', sa.Text))
-        batch_op.add_column(sa.Column('not_matched', sa.Text))
+        if not column_exists('table_history_movie', 'matched'):
+            batch_op.add_column(sa.Column('matched', sa.Text))
+        if not column_exists('table_history_movie', 'not_matched'):
+            batch_op.add_column(sa.Column('not_matched', sa.Text))
 
 
 def downgrade():
