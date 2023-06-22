@@ -13,7 +13,7 @@ try:
 except ImportError:
     pass
 
-from bazarr.app.database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableEpisodes, \
+from app.database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableEpisodes, \
     TableShows, TableMovies, TableLanguagesProfiles
 
 # revision identifiers, used by Alembic.
