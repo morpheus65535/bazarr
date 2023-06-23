@@ -76,7 +76,8 @@ class Subtitle(Subtitle_):
         self.use_original_format = original_format
 
     def __repr__(self):
-        return '<%s %r [%s:%s]>' % (self.__class__.__name__, self.page_link, self.language, self._guessed_encoding)
+        r_info = str(self.release_info or "").replace("\n", " | ").strip()
+        return f"<{self.__class__.__name__}: {r_info} [{repr(self.language)}]>"
 
     @property
     def text(self):
