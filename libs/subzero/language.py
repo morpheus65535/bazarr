@@ -112,8 +112,7 @@ class Language(Language_):
                 bool(self.hi) == bool(other.hi))
 
     def __str__(self):
-        info = ";".join(f"{k}={v}" for k, v in vars(self).items() if v)
-        return f"<{self.__class__.__name__}: {info}>"
+        return super(Language, self).__str__() + (":forced" if self.forced else "")
 
     @property
     def basename(self):
