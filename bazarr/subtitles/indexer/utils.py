@@ -7,7 +7,7 @@ import re
 from guess_language import guess_language
 from subliminal_patch import core
 from subzero.language import Language
-from charamel import Detector
+from chardet import detect
 
 from app.config import settings
 from constants import hi_regex
@@ -76,7 +76,12 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                 with open(subtitle_path, 'rb') as f:
                     text = f.read()
 
-                try:
+                encoding = detect(text)['encoding']
+                if not encoding:
+                    logging.debug("BAZARR skipping this subtitles because we can't guess the encoding. "
+                                  "It's probably a binary file: " + subtitle_path)
+                    continue
+                if 'UTF' in encoding:
                     text = text.decode('utf-8')
                     detected_language = guess_language(text)
                     # add simplified and traditional chinese detection
@@ -86,35 +91,18 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                                                ".hant", ".big5", ".traditional"]
                         if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(traditional_chinese)) or (str(subtitle_path).lower())[:-5] in traditional_chinese_fuzzy:
                             detected_language == 'zt'
-                except UnicodeDecodeError:
-                    detector = Detector()
+                else:
+                    text = text.decode(encoding)
+
+                detected_language = guess_language(text)
+                if detected_language:
+                    logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
+                        detected_language))
                     try:
-                        guess = detector.detect(text)
+                        subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language), forced=forced,
+                                                               hi=False)
                     except Exception:
-                        logging.debug("BAZARR skipping this subtitles because we can't guess the encoding. "
-                                      "It's probably a binary file: " + subtitle_path)
-                        continue
-                    else:
-                        logging.debug('BAZARR detected encoding %r', guess)
-                        try:
-                            text = text.decode(guess)
-                        except Exception:
-                            logging.debug(
-                                "BAZARR skipping this subtitles because we can't decode the file using the "
-                                "guessed encoding. It's probably a binary file: " + subtitle_path)
-                            continue
-                    detected_language = guess_language(text)
-                except Exception:
-                    logging.debug('BAZARR was unable to detect encoding for this subtitles file: %r', subtitle_path)
-                finally:
-                    if detected_language:
-                        logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
-                            detected_language))
-                        try:
-                            subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language), forced=forced,
-                                                                   hi=False)
-                        except Exception:
-                            pass
+                        pass
 
         # If language is still None (undetected), skip it
         if hasattr(subtitles[subtitle], 'basename') and not subtitles[subtitle].basename:
@@ -139,24 +127,15 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                 with open(subtitle_path, 'rb') as f:
                     text = f.read()
 
-                try:
+                encoding = detect(text)['encoding']
+                if not encoding:
+                    logging.debug("BAZARR skipping this subtitles because we can't guess the encoding. "
+                                  "It's probably a binary file: " + subtitle_path)
+                    continue
+                if 'UTF' in encoding:
                     text = text.decode('utf-8')
-                except UnicodeDecodeError:
-                    detector = Detector()
-                    try:
-                        guess = detector.detect(text)
-                    except Exception:
-                        logging.debug("BAZARR skipping this subtitles because we can't guess the encoding. "
-                                      "It's probably a binary file: " + subtitle_path)
-                        continue
-                    else:
-                        logging.debug('BAZARR detected encoding %r', guess)
-                        try:
-                            text = text.decode(guess)
-                        except Exception:
-                            logging.debug("BAZARR skipping this subtitles because we can't decode the file using the "
-                                          "guessed encoding. It's probably a binary file: " + subtitle_path)
-                            continue
+                else:
+                    text = text.decode(encoding)
 
                 if bool(re.search(hi_regex, text)):
                     subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)

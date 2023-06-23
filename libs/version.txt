@@ -4,7 +4,7 @@ argparse==1.4.0
 apprise==1.4.0
 apscheduler==3.9.1
 attrs==22.1.0
-charamel==1.0.0
+chardet==5.1.0
 deep-translator==1.9.1
 dogpile.cache==1.1.8
 fese==0.1.2
@@ -102,7 +102,6 @@ msgpack==1.0.4
 appdirs==1.4.4
 babelfish==0.6.0
 beautifulsoup4==4.11.1
-chardet==5.0.0
 pysrt==1.1.2
 #stevedore==3.5.2 # Do not upgrade. Version newer than that have issues with importlib on Python 3.7
 
