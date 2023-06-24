@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2022 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 import re
 import requests
@@ -64,6 +71,22 @@ SMSEAGLE_PRIORITY_MAP = {
     '+': SMSEaglePriority.HIGH,
     'high': SMSEaglePriority.HIGH,
 }
+
+
+class SMSEagleCategory:
+    """
+    We define the different category types that we can notify via SMS Eagle
+    """
+    PHONE = 'phone'
+    GROUP = 'group'
+    CONTACT = 'contact'
+
+
+SMSEAGLE_CATEGORIES = (
+    SMSEagleCategory.PHONE,
+    SMSEagleCategory.GROUP,
+    SMSEagleCategory.CONTACT,
+)
 
 
 class NotifySMSEagle(NotifyBase):
@@ -191,7 +214,7 @@ class NotifySMSEagle(NotifyBase):
         """
         Initialize SMSEagle Object
         """
-        super(NotifySMSEagle, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # Prepare Flash Mode Flag
         self.flash = flash
@@ -396,15 +419,15 @@ class NotifySMSEagle(NotifyBase):
         batch_size = 1 if not self.batch else self.default_batch_size
 
         notify_by = {
-            'phone': {
+            SMSEagleCategory.PHONE: {
                 "method": "sms.send_sms",
                 'target': 'to',
             },
-            'group': {
+            SMSEagleCategory.GROUP: {
                 "method": "sms.send_togroup",
                 'target': 'groupname',
             },
-            'contact': {
+            SMSEagleCategory.CONTACT: {
                 "method": "sms.send_tocontact",
                 'target': 'contactname',
             },
@@ -413,7 +436,7 @@ class NotifySMSEagle(NotifyBase):
         # categories separated into a tuple since notify_by.keys()
         # returns an unpredicable list in Python 2.7 which causes
         # tests to fail every so often
-        for category in ('phone', 'group', 'contact'):
+        for category in SMSEAGLE_CATEGORIES:
             # Create a copy of our template
             payload = {
                 'method': notify_by[category]['method'],
@@ -583,9 +606,33 @@ class NotifySMSEagle(NotifyBase):
                     ['@{}'.format(x) for x in self.target_contacts],
                     # Groups
                     ['#{}'.format(x) for x in self.target_groups],
+                    # Pass along the same invalid entries as were provided
+                    self.invalid_targets,
                 )]),
             params=NotifySMSEagle.urlencode(params),
         )
+
+    def __len__(self):
+        """
+        Returns the number of targets associated with this notification
+        """
+        #
+        # Factor batch into calculation
+        #
+        batch_size = 1 if not self.batch else self.default_batch_size
+        if batch_size > 1:
+            # Batches can only be sent by group (you can't combine groups into
+            # a single batch)
+            total_targets = 0
+            for c in SMSEAGLE_CATEGORIES:
+                targets = len(getattr(self, f'target_{c}s'))
+                total_targets += int(targets / batch_size) + \
+                    (1 if targets % batch_size else 0)
+            return total_targets
+
+        # Normal batch count; just count the targets
+        return len(self.target_phones) + len(self.target_contacts) + \
+            len(self.target_groups)
 
     @staticmethod
     def parse_url(url):
@@ -633,6 +680,7 @@ class NotifySMSEagle(NotifyBase):
         results['status'] = \
             parse_bool(results['qsd'].get('status', False))
 
+        # Get priority
         if 'priority' in results['qsd'] and len(results['qsd']['priority']):
             results['priority'] = \
                 NotifySMSEagle.unquote(results['qsd']['priority'])

@@ -5,17 +5,17 @@ import {
   useProfileItemsToLanguages,
 } from "@/utilities/languages";
 import {
-  faBookmark as farBookmark,
   faFolder,
+  faBookmark as farBookmark,
 } from "@fortawesome/free-regular-svg-icons";
 import {
+  IconDefinition,
   faBookmark,
   faClone,
   faLanguage,
   faMusic,
   faStream,
   faTags,
-  IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -23,7 +23,6 @@ import {
   Badge,
   BadgeProps,
   Box,
-  createStyles,
   Grid,
   Group,
   HoverCard,
@@ -33,6 +32,7 @@ import {
   Stack,
   Text,
   Title,
+  createStyles,
 } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 

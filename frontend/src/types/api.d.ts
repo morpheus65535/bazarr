@@ -12,6 +12,7 @@ declare namespace Language {
   type CodeType = string;
   interface Server {
     code2: CodeType;
+    code3: CodeType;
     name: string;
     enabled: boolean;
   }

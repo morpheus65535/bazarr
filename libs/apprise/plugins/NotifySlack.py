@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 # There are 2 ways to use this plugin...
 # Method 1: Via Webhook:
@@ -278,7 +285,7 @@ class NotifySlack(NotifyBase):
         """
         Initialize Slack Object
         """
-        super(NotifySlack, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # Setup our mode
         self.mode = SlackMode.BOT if access_token else SlackMode.WEBHOOK
@@ -346,6 +353,22 @@ class NotifySlack(NotifyBase):
             r'<': '&lt;',
             r'>': '&gt;',
         }
+
+        # To notify a channel, one uses <!channel|channel>
+        self._re_channel_support = re.compile(
+            r'(?P<match>(?:<|\&lt;)?[ \t]*'
+            r'!(?P<channel>[^| \n]+)'
+            r'(?:[ \t]*\|[ \t]*(?:(?P<val>[^\n]+?)[ \t]*)?(?:>|\&gt;)'
+            r'|(?:>|\&gt;)))', re.IGNORECASE)
+
+        # The markdown in slack isn't [desc](url), it's <url|desc>
+        #
+        # To accomodate this, we need to ensure we don't escape URLs that match
+        self._re_url_support = re.compile(
+            r'(?P<match>(?:<|\&lt;)?[ \t]*'
+            r'(?P<url>(?:https?|mailto)://[^| \n]+)'
+            r'(?:[ \t]*\|[ \t]*(?:(?P<val>[^\n]+?)[ \t]*)?(?:>|\&gt;)'
+            r'|(?:>|\&gt;)))', re.IGNORECASE)
 
         # Iterate over above list and store content accordingly
         self._re_formatting_rules = re.compile(
@@ -438,6 +461,35 @@ class NotifySlack(NotifyBase):
                 body = self._re_formatting_rules.sub(  # pragma: no branch
                     lambda x: self._re_formatting_map[x.group()], body,
                 )
+
+                # Support <!channel|desc>, <!channel> entries
+                for match in self._re_channel_support.findall(body):
+                    # Swap back any ampersands previously updaated
+                    channel = match[1].strip()
+                    desc = match[2].strip()
+
+                    # Update our string
+                    body = re.sub(
+                        re.escape(match[0]),
+                        '<!{channel}|{desc}>'.format(
+                            channel=channel, desc=desc)
+                        if desc else '<!{channel}>'.format(channel=channel),
+                        body,
+                        re.IGNORECASE)
+
+                # Support <url|desc>, <url> entries
+                for match in self._re_url_support.findall(body):
+                    # Swap back any ampersands previously updaated
+                    url = match[1].replace('&amp;', '&')
+                    desc = match[2].strip()
+
+                    # Update our string
+                    body = re.sub(
+                        re.escape(match[0]),
+                        '<{url}|{desc}>'.format(url=url, desc=desc)
+                        if desc else '<{url}>'.format(url=url),
+                        body,
+                        re.IGNORECASE)
 
             # Perform Formatting on title here; this is not needed for block
             # mode above
@@ -803,7 +855,7 @@ class NotifySlack(NotifyBase):
             # The text 'ok' is returned if this is a Webhook request
             # So the below captures that as well.
             status_okay = (response and response.get('ok', False)) \
-                if self.mode is SlackMode.BOT else r.text == 'ok'
+                if self.mode is SlackMode.BOT else r.content == b'ok'
 
             if r.status_code != requests.codes.ok or not status_okay:
                 # We had a problem
@@ -962,6 +1014,12 @@ class NotifySlack(NotifyBase):
                     [NotifySlack.quote(x, safe='') for x in self.channels]),
                 params=NotifySlack.urlencode(params),
             )
+
+    def __len__(self):
+        """
+        Returns the number of targets associated with this notification
+        """
+        return len(self.channels)
 
     @staticmethod
     def parse_url(url):

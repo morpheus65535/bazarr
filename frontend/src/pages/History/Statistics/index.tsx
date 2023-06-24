@@ -11,8 +11,8 @@ import { useSelectorOptions } from "@/utilities";
 import {
   Box,
   Container,
-  createStyles,
   SimpleGrid,
+  createStyles,
   useMantineTheme,
 } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";

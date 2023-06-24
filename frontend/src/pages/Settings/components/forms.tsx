@@ -1,7 +1,7 @@
 import {
-  Action as GlobalAction,
   FileBrowser,
   FileBrowserProps,
+  Action as GlobalAction,
   MultiSelector as GlobalMultiSelector,
   MultiSelectorProps as GlobalMultiSelectorProps,
   Selector as GlobalSelector,
@@ -12,17 +12,17 @@ import ChipInput, { ChipInputProps } from "@/components/inputs/ChipInput";
 import { useSliderMarks } from "@/utilities";
 import {
   Input,
+  Slider as MantineSlider,
+  SliderProps as MantineSliderProps,
   NumberInput,
   NumberInputProps,
   PasswordInput,
   PasswordInputProps,
-  Slider as MantineSlider,
-  SliderProps as MantineSliderProps,
   Switch,
   TextInput,
   TextInputProps,
 } from "@mantine/core";
-import { FunctionComponent, ReactText } from "react";
+import { FunctionComponent, ReactNode, ReactText } from "react";
 import { BaseInput, useBaseInput } from "../utilities/hooks";
 
 export type NumberProps = BaseInput<number> & NumberInputProps;
@@ -34,7 +34,10 @@ export const Number: FunctionComponent<NumberProps> = (props) => {
     <NumberInput
       {...rest}
       value={value ?? 0}
-      onChange={(val = 0) => {
+      onChange={(val) => {
+        if (val === "") {
+          val = 0;
+        }
         update(val);
       }}
     ></NumberInput>
@@ -126,7 +129,9 @@ export function MultiSelector<T extends string | number>(
 }
 
 type SliderProps = BaseInput<number> &
-  Omit<MantineSliderProps, "onChange" | "onChangeEnd" | "marks">;
+  Omit<MantineSliderProps, "onChange" | "onChangeEnd" | "marks" | "label"> & {
+    label?: ReactNode;
+  };
 
 export const Slider: FunctionComponent<SliderProps> = (props) => {
   const { value, update, rest } = useBaseInput(props);

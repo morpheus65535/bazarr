@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 # To use this service you will need a D7 Networks account from their website
 # at https://d7networks.com/
@@ -29,17 +36,18 @@
 # After you've established your account you can get your api login credentials
 # (both user and password) from the API Details section from within your
 # account profile area:  https://d7networks.com/accounts/profile/
+#
+# API Reference: https://d7networks.com/docs/Messages/Send_Message/
 
 import requests
-import base64
 from json import dumps
 from json import loads
 
 from .NotifyBase import NotifyBase
-from ..URLBase import PrivacyMode
 from ..common import NotifyType
 from ..utils import is_phone_no
 from ..utils import parse_phone_no
+from ..utils import validate_regex
 from ..utils import parse_bool
 from ..AppriseLocale import gettext_lazy as _
 
@@ -50,25 +58,6 @@ D7NETWORKS_HTTP_ERROR_MAP = {
     412: 'A Routing Error Occured',
     500: 'A Serverside Error Occured Handling the Request.',
 }
-
-
-# Priorities
-class D7SMSPriority:
-    """
-    D7 Networks SMS Message Priority
-    """
-    LOW = 0
-    MODERATE = 1
-    NORMAL = 2
-    HIGH = 3
-
-
-D7NETWORK_SMS_PRIORITIES = (
-    D7SMSPriority.LOW,
-    D7SMSPriority.MODERATE,
-    D7SMSPriority.NORMAL,
-    D7SMSPriority.HIGH,
-)
 
 
 class NotifyD7Networks(NotifyBase):
@@ -92,11 +81,8 @@ class NotifyD7Networks(NotifyBase):
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_d7networks'
 
-    # D7 Networks batch notification URL
-    notify_batch_url = 'http://rest-api.d7networks.com/secure/sendbatch'
-
     # D7 Networks single notification URL
-    notify_url = 'http://rest-api.d7networks.com/secure/send'
+    notify_url = 'https://api.d7networks.com/messages/v1/send'
 
     # The maximum length of the body
     body_maxlen = 160
@@ -107,21 +93,16 @@ class NotifyD7Networks(NotifyBase):
 
     # Define object templates
     templates = (
-        '{schema}://{user}:{password}@{targets}',
+        '{schema}://{token}@{targets}',
     )
 
     # Define our template tokens
     template_tokens = dict(NotifyBase.template_tokens, **{
-        'user': {
-            'name': _('Username'),
+        'token': {
+            'name': _('API Access Token'),
             'type': 'string',
             'required': True,
-        },
-        'password': {
-            'name': _('Password'),
-            'type': 'string',
             'private': True,
-            'required': True,
         },
         'target_phone': {
             'name': _('Target Phone No'),
@@ -138,16 +119,11 @@ class NotifyD7Networks(NotifyBase):
 
     # Define our template arguments
     template_args = dict(NotifyBase.template_args, **{
-        'priority': {
-            'name': _('Priority'),
-            'type': 'choice:int',
-            'min': D7SMSPriority.LOW,
-            'max': D7SMSPriority.HIGH,
-            'values': D7NETWORK_SMS_PRIORITIES,
-
-            # The website identifies that the default priority is low; so
-            # this plugin will honor that same default
-            'default': D7SMSPriority.LOW,
+        'unicode': {
+            # Unicode characters (default is 'auto')
+            'name': _('Unicode Characters'),
+            'type': 'bool',
+            'default': False,
         },
         'batch': {
             'name': _('Batch Mode'),
@@ -172,19 +148,12 @@ class NotifyD7Networks(NotifyBase):
         },
     })
 
-    def __init__(self, targets=None, priority=None, source=None, batch=False,
-                 **kwargs):
+    def __init__(self, token=None, targets=None, source=None,
+                 batch=False, unicode=None, **kwargs):
         """
         Initialize D7 Networks Object
         """
-        super(NotifyD7Networks, self).__init__(**kwargs)
-
-        # The Priority of the message
-        if priority not in D7NETWORK_SMS_PRIORITIES:
-            self.priority = self.template_args['priority']['default']
-
-        else:
-            self.priority = priority
+        super().__init__(**kwargs)
 
         # Prepare Batch Mode Flag
         self.batch = batch
@@ -193,8 +162,15 @@ class NotifyD7Networks(NotifyBase):
         self.source = None \
             if not isinstance(source, str) else source.strip()
 
-        if not (self.user and self.password):
-            msg = 'A D7 Networks user/pass was not provided.'
+        # Define whether or not we should set the unicode flag
+        self.unicode = self.template_args['unicode']['default'] \
+            if unicode is None else bool(unicode)
+
+        # The token associated with the account
+        self.token = validate_regex(token)
+        if not self.token:
+            msg = 'The D7 Networks token specified ({}) is invalid.'\
+                .format(token)
             self.logger.warning(msg)
             raise TypeError(msg)
 
@@ -229,40 +205,41 @@ class NotifyD7Networks(NotifyBase):
         # error tracking (used for function return)
         has_error = False
 
-        auth = '{user}:{password}'.format(
-            user=self.user, password=self.password)
-
-        # Python 3's versio of b64encode() expects a byte array and not
-        # a string.  To accommodate this, we encode the content here
-        auth = auth.encode('utf-8')
-
         # Prepare our headers
         headers = {
             'User-Agent': self.app_id,
+            'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'Authorization': 'Basic {}'.format(base64.b64encode(auth))
+            'Authorization': f'Bearer {self.token}',
         }
 
-        # Our URL varies depending if we're doing a batch mode or not
-        url = self.notify_batch_url if self.batch else self.notify_url
+        payload = {
+            'message_globals': {
+                'channel': 'sms',
+            },
+            'messages': [{
+                # Populated later on
+                'recipients': None,
+                'content': body,
+                'data_coding':
+                # auto is a better substitute over 'text' as text is easier to
+                # detect from a post than `unicode` is.
+                'auto' if not self.unicode else 'unicode',
+            }],
+        }
 
         # use the list directly
         targets = list(self.targets)
 
+        if self.source:
+            payload['message_globals']['originator'] = self.source
+
+        target = None
         while len(targets):
 
             if self.batch:
                 # Prepare our payload
-                payload = {
-                    'globals': {
-                        'priority': self.priority,
-                        'from': self.source if self.source else self.app_id,
-                    },
-                    'messages': [{
-                        'to': self.targets,
-                        'content': body,
-                    }],
-                }
+                payload['messages'][0]['recipients'] = self.targets
 
                 # Reset our targets so we don't keep going. This is required
                 # because we're in batch mode; we only need to loop once.
@@ -274,24 +251,19 @@ class NotifyD7Networks(NotifyBase):
                 target = targets.pop(0)
 
                 # Prepare our payload
-                payload = {
-                    'priority': self.priority,
-                    'content': body,
-                    'to': target,
-                    'from': self.source if self.source else self.app_id,
-                }
+                payload['messages'][0]['recipients'] = [target]
 
             # Some Debug Logging
             self.logger.debug(
                 'D7 Networks POST URL: {} (cert_verify={})'.format(
-                    url, self.verify_certificate))
+                    self.notify_url, self.verify_certificate))
             self.logger.debug('D7 Networks Payload: {}' .format(payload))
 
             # Always call throttle before any remote server i/o is made
             self.throttle()
             try:
                 r = requests.post(
-                    url,
+                    self.notify_url,
                     data=dumps(payload),
                     headers=headers,
                     verify=self.verify_certificate,
@@ -337,29 +309,9 @@ class NotifyD7Networks(NotifyBase):
                 else:
 
                     if self.batch:
-                        count = len(self.targets)
-                        try:
-                            # Get our message delivery count if we can
-                            json_response = loads(r.content)
-                            count = int(json_response.get(
-                                'data', {}).get('messageCount', -1))
-
-                        except (AttributeError, TypeError, ValueError):
-                            # ValueError = r.content is Unparsable
-                            # TypeError = r.content is None
-                            # AttributeError = r is None
-
-                            # We could not parse JSON response. Assume that
-                            # our delivery is okay for now.
-                            pass
-
-                        if count != len(self.targets):
-                            has_error = True
-
                         self.logger.info(
                             'Sent D7 Networks batch SMS notification to '
-                            '{} of {} target(s).'.format(
-                                count, len(self.targets)))
+                            '{} target(s).'.format(len(self.targets)))
 
                     else:
                         self.logger.info(
@@ -389,25 +341,30 @@ class NotifyD7Networks(NotifyBase):
         # Define any URL parameters
         params = {
             'batch': 'yes' if self.batch else 'no',
+            'unicode': 'yes' if self.unicode else 'no',
         }
-
-        # Extend our parameters
-        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
-
-        if self.priority != self.template_args['priority']['default']:
-            params['priority'] = str(self.priority)
 
         if self.source:
             params['from'] = self.source
 
-        return '{schema}://{user}:{password}@{targets}/?{params}'.format(
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
+        return '{schema}://{token}@{targets}/?{params}'.format(
             schema=self.secure_protocol,
-            user=NotifyD7Networks.quote(self.user, safe=''),
-            password=self.pprint(
-                self.password, privacy, mode=PrivacyMode.Secret, safe=''),
+            token=self.pprint(self.token, privacy, safe=''),
             targets='/'.join(
                 [NotifyD7Networks.quote(x, safe='') for x in self.targets]),
             params=NotifyD7Networks.urlencode(params))
+
+    def __len__(self):
+        """
+        Returns the number of targets associated with this notification
+        """
+        #
+        # Factor batch into calculation
+        #
+        return len(self.targets) if not self.batch else 1
 
     @staticmethod
     def parse_url(url):
@@ -421,6 +378,23 @@ class NotifyD7Networks(NotifyBase):
             # We're done early as we couldn't load the results
             return results
 
+        if 'token' in results['qsd'] and len(results['qsd']['token']):
+            results['token'] = \
+                NotifyD7Networks.unquote(results['qsd']['token'])
+
+        elif results['user']:
+            results['token'] = NotifyD7Networks.unquote(results['user'])
+
+            if results['password']:
+                # Support token containing a colon (:)
+                results['token'] += \
+                    ':' + NotifyD7Networks.unquote(results['password'])
+
+        elif results['password']:
+            # Support token starting with a colon (:)
+            results['token'] = \
+                ':' + NotifyD7Networks.unquote(results['password'])
+
         # Initialize our targets
         results['targets'] = list()
 
@@ -432,44 +406,27 @@ class NotifyD7Networks(NotifyBase):
         results['targets'].extend(
             NotifyD7Networks.split_path(results['fullpath']))
 
-        # Set our priority
-        if 'priority' in results['qsd'] and len(results['qsd']['priority']):
-            _map = {
-                'l': D7SMSPriority.LOW,
-                '0': D7SMSPriority.LOW,
-                'm': D7SMSPriority.MODERATE,
-                '1': D7SMSPriority.MODERATE,
-                'n': D7SMSPriority.NORMAL,
-                '2': D7SMSPriority.NORMAL,
-                'h': D7SMSPriority.HIGH,
-                '3': D7SMSPriority.HIGH,
-            }
-            try:
-                results['priority'] = \
-                    _map[results['qsd']['priority'][0].lower()]
-
-            except KeyError:
-                # No priority was set
-                pass
-
-        # Support the 'from'  and 'source' variable so that we can support
-        # targets this way too.
-        # The 'from' makes it easier to use yaml configuration
-        if 'from' in results['qsd'] and len(results['qsd']['from']):
-            results['source'] = \
-                NotifyD7Networks.unquote(results['qsd']['from'])
-        if 'source' in results['qsd'] and len(results['qsd']['source']):
-            results['source'] = \
-                NotifyD7Networks.unquote(results['qsd']['source'])
-
         # Get Batch Mode Flag
         results['batch'] = \
             parse_bool(results['qsd'].get('batch', False))
+
+        # Get Unicode Flag
+        results['unicode'] = \
+            parse_bool(results['qsd'].get('unicode', False))
 
         # Support the 'to' variable so that we can support targets this way too
         # The 'to' makes it easier to use yaml configuration
         if 'to' in results['qsd'] and len(results['qsd']['to']):
             results['targets'] += \
                 NotifyD7Networks.parse_phone_no(results['qsd']['to'])
+
+        # Support the 'from' and source variable
+        if 'from' in results['qsd'] and len(results['qsd']['from']):
+            results['source'] = \
+                NotifyD7Networks.unquote(results['qsd']['from'])
+
+        elif 'source' in results['qsd'] and len(results['qsd']['source']):
+            results['source'] = \
+                NotifyD7Networks.unquote(results['qsd']['source'])
 
         return results

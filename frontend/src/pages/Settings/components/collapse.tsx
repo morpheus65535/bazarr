@@ -1,5 +1,5 @@
 import { Collapse, Stack } from "@mantine/core";
-import { FunctionComponent, useMemo, useRef } from "react";
+import { FunctionComponent, PropsWithChildren, useMemo, useRef } from "react";
 import { useSettingValue } from "../utilities/hooks";
 
 interface ContentProps {
@@ -8,7 +8,9 @@ interface ContentProps {
   indent?: boolean;
 }
 
-const CollapseBox: FunctionComponent<ContentProps> = ({
+type Props = PropsWithChildren<ContentProps>;
+
+const CollapseBox: FunctionComponent<Props> = ({
   on,
   indent,
   children,

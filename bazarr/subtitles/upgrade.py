@@ -9,7 +9,7 @@ from functools import reduce
 
 from app.config import settings
 from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies, \
-    TableHistory, TableHistoryMovie
+    TableHistory, TableHistoryMovie, get_profiles_list
 from app.event_handler import show_progress, hide_progress
 from app.get_providers import get_providers
 from app.notifier import send_notifications, send_notifications_movie
@@ -217,7 +217,7 @@ def get_upgradable_episode_subtitles():
     if not upgradable_episodes:
         return []
     else:
-        upgradable_episodes = list(upgradable_episodes)
+        upgradable_episodes = [x for x in upgradable_episodes if _language_still_desired(x['language'], x['profileId'])]
         logging.debug(f"{len(upgradable_episodes)} potentially upgradable episode subtitles have been found, let's "
                       f"filter them...")
 
@@ -252,8 +252,32 @@ def get_upgradable_movies_subtitles():
     if not upgradable_movies:
         return []
     else:
-        upgradable_movies = list(upgradable_movies)
+        upgradable_movies = [x for x in upgradable_movies if _language_still_desired(x['language'], x['profileId'])]
         logging.debug(f"{len(upgradable_movies)} potentially upgradable movie subtitles have been found, let's filter "
                       f"them...")
 
         return parse_upgradable_list(upgradable_list=upgradable_movies, perfect_score=117, media_type='movie')
+
+
+def _language_still_desired(language, profile_id):
+    if not profile_id:
+        return False
+
+    profile = get_profiles_list(profile_id)
+    if profile and language in _language_from_items(profile['items']):
+        return True
+    else:
+        return False
+
+
+def _language_from_items(items):
+    results = []
+    for item in items:
+        if item['forced'] == 'True':
+            results.append(item['language'] + ':forced')
+        elif item['hi'] == 'True':
+            results.append(item['language'] + ':hi')
+        else:
+            results.append(item['language'])
+            results.append(item['language'] + ':hi')
+    return results

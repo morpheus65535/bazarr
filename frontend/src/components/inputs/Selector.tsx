@@ -93,6 +93,7 @@ export function Selector<T>({
 
   return (
     <Select
+      withinPortal={true}
       data={data}
       defaultValue={wrappedDefaultValue}
       value={wrappedValue}

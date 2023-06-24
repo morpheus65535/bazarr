@@ -1,6 +1,6 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
-import { task, TaskGroup } from "@/modules/task";
+import { TaskGroup, task } from "@/modules/task";
 import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import FormUtils from "@/utilities/form";
@@ -28,9 +28,9 @@ import { useForm } from "@mantine/form";
 import { isString } from "lodash";
 import { FunctionComponent, useEffect, useMemo } from "react";
 import { Column } from "react-table";
+import TextPopover from "../TextPopover";
 import { Action, Selector } from "../inputs";
 import { SimpleTable } from "../tables";
-import TextPopover from "../TextPopover";
 
 type SubtitleFile = {
   file: File;

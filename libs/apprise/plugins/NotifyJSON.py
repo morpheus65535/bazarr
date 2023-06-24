@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 import requests
 import base64
@@ -34,13 +41,25 @@ from ..common import NotifyType
 from ..AppriseLocale import gettext_lazy as _
 
 
+class JSONPayloadField:
+    """
+    Identifies the fields available in the JSON Payload
+    """
+    VERSION = 'version'
+    TITLE = 'title'
+    MESSAGE = 'message'
+    ATTACHMENTS = 'attachments'
+    MESSAGETYPE = 'type'
+
+
 # Defines the method to send the notification
 METHODS = (
     'POST',
     'GET',
     'DELETE',
     'PUT',
-    'HEAD'
+    'HEAD',
+    'PATCH'
 )
 
 
@@ -67,6 +86,12 @@ class NotifyJSON(NotifyBase):
     # Disable throttle rate for JSON requests since they are normally
     # local anyway
     request_rate_per_sec = 0
+
+    # Define the JSON version to place in all payloads
+    # Version: Major.Minor,  Major is only updated if the entire schema is
+    # changed. If just adding new items (or removing old ones, only increment
+    # the Minor!
+    json_version = '1.0'
 
     # Define object templates
     templates = (
@@ -125,9 +150,14 @@ class NotifyJSON(NotifyBase):
             'name': _('Payload Extras'),
             'prefix': ':',
         },
+        'params': {
+            'name': _('GET Params'),
+            'prefix': '-',
+        },
     }
 
-    def __init__(self, headers=None, method=None, payload=None, **kwargs):
+    def __init__(self, headers=None, method=None, payload=None, params=None,
+                 **kwargs):
         """
         Initialize JSON Object
 
@@ -135,7 +165,7 @@ class NotifyJSON(NotifyBase):
         additionally include as part of the server headers to post with
 
         """
-        super(NotifyJSON, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.fullpath = kwargs.get('fullpath')
         if not isinstance(self.fullpath, str):
@@ -149,15 +179,44 @@ class NotifyJSON(NotifyBase):
             self.logger.warning(msg)
             raise TypeError(msg)
 
+        # A payload map allows users to over-ride the default mapping if
+        # they're detected with the :overide=value.  Normally this would
+        # create a new key and assign it the value specified.  However
+        # if the key you specify is actually an internally mapped one,
+        # then a re-mapping takes place using the value
+        self.payload_map = {
+            JSONPayloadField.VERSION: JSONPayloadField.VERSION,
+            JSONPayloadField.TITLE: JSONPayloadField.TITLE,
+            JSONPayloadField.MESSAGE: JSONPayloadField.MESSAGE,
+            JSONPayloadField.ATTACHMENTS: JSONPayloadField.ATTACHMENTS,
+            JSONPayloadField.MESSAGETYPE: JSONPayloadField.MESSAGETYPE,
+        }
+
+        self.params = {}
+        if params:
+            # Store our extra headers
+            self.params.update(params)
+
         self.headers = {}
         if headers:
             # Store our extra headers
             self.headers.update(headers)
 
+        self.payload_overrides = {}
         self.payload_extras = {}
         if payload:
             # Store our extra payload entries
             self.payload_extras.update(payload)
+            for key in list(self.payload_extras.keys()):
+                # Any values set in the payload to alter a system related one
+                # alters the system key.  Hence :message=msg maps the 'message'
+                # variable that otherwise already contains the payload to be
+                # 'msg' instead (containing the payload)
+                if key in self.payload_map:
+                    self.payload_map[key] = self.payload_extras[key].strip()
+                    self.payload_overrides[key] = \
+                        self.payload_extras[key].strip()
+                    del self.payload_extras[key]
 
         return
 
@@ -177,9 +236,14 @@ class NotifyJSON(NotifyBase):
         # Append our headers into our parameters
         params.update({'+{}'.format(k): v for k, v in self.headers.items()})
 
+        # Append our GET params into our parameters
+        params.update({'-{}'.format(k): v for k, v in self.params.items()})
+
         # Append our payload extra's into our parameters
         params.update(
             {':{}'.format(k): v for k, v in self.payload_extras.items()})
+        params.update(
+            {':{}'.format(k): v for k, v in self.payload_overrides.items()})
 
         # Determine Authentication
         auth = ''
@@ -214,6 +278,7 @@ class NotifyJSON(NotifyBase):
         Perform JSON Notification
         """
 
+        # Prepare HTTP Headers
         headers = {
             'User-Agent': self.app_id,
             'Content-Type': 'application/json'
@@ -253,16 +318,18 @@ class NotifyJSON(NotifyBase):
                     return False
 
         # prepare JSON Object
-        payload = {
-            # Version: Major.Minor,  Major is only updated if the entire
-            # schema is changed. If just adding new items (or removing
-            # old ones, only increment the Minor!
-            'version': '1.0',
-            'title': title,
-            'message': body,
-            'attachments': attachments,
-            'type': notify_type,
-        }
+        payload = {}
+        for key, value in (
+                (JSONPayloadField.VERSION, self.json_version),
+                (JSONPayloadField.TITLE, title),
+                (JSONPayloadField.MESSAGE, body),
+                (JSONPayloadField.ATTACHMENTS, attachments),
+                (JSONPayloadField.MESSAGETYPE, notify_type)):
+
+            if not self.payload_map[key]:
+                # Do not store element in payload response
+                continue
+            payload[self.payload_map[key]] = value
 
         # Apply any/all payload over-rides defined
         payload.update(self.payload_extras)
@@ -294,6 +361,9 @@ class NotifyJSON(NotifyBase):
         elif self.method == 'PUT':
             method = requests.put
 
+        elif self.method == 'PATCH':
+            method = requests.patch
+
         elif self.method == 'DELETE':
             method = requests.delete
 
@@ -307,6 +377,7 @@ class NotifyJSON(NotifyBase):
             r = method(
                 url,
                 data=dumps(payload),
+                params=self.params,
                 headers=headers,
                 auth=auth,
                 verify=self.verify_certificate,
@@ -363,6 +434,10 @@ class NotifyJSON(NotifyBase):
         # to to our returned result set and tidy entries by unquoting them
         results['headers'] = {NotifyJSON.unquote(x): NotifyJSON.unquote(y)
                               for x, y in results['qsd+'].items()}
+
+        # Add our GET paramters in the event the user wants to pass these along
+        results['params'] = {NotifyJSON.unquote(x): NotifyJSON.unquote(y)
+                             for x, y in results['qsd-'].items()}
 
         # Set method if not otherwise set
         if 'method' in results['qsd'] and len(results['qsd']['method']):

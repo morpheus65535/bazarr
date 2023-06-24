@@ -1,30 +1,39 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
+import dataclasses
 import re
 import smtplib
+import typing as t
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
@@ -41,6 +50,7 @@ from ..common import NotifyFormat, NotifyType
 from ..conversion import convert_between
 from ..utils import is_email, parse_emails
 from ..AppriseLocale import gettext_lazy as _
+from ..logger import logger
 
 # Globally Default encoding mode set to Quoted Printable.
 charset.add_charset('utf-8', charset.QP, charset.QP, 'utf-8')
@@ -60,15 +70,23 @@ class WebBaseLogin:
 
 # Secure Email Modes
 class SecureMailMode:
+    INSECURE = "insecure"
     SSL = "ssl"
     STARTTLS = "starttls"
 
 
 # Define all of the secure modes (used during validation)
-SECURE_MODES = (
-    SecureMailMode.SSL,
-    SecureMailMode.STARTTLS,
-)
+SECURE_MODES = {
+    SecureMailMode.STARTTLS: {
+        'default_port': 587,
+    },
+    SecureMailMode.SSL: {
+        'default_port': 465,
+    },
+    SecureMailMode.INSECURE: {
+        'default_port': 25,
+    },
+}
 
 # To attempt to make this script stupid proof, if we detect an email address
 # that is part of the this table, we can pre-use a lot more defaults if they
@@ -109,10 +127,25 @@ EMAIL_TEMPLATES = (
         'Microsoft Hotmail',
         re.compile(
             r'^((?P<label>[^+]+)\+)?(?P<id>[^@]+)@'
-            r'(?P<domain>(outlook|hotmail|live)\.com(\.au)?)$', re.I),
+            r'(?P<domain>(hotmail|live)\.com(\.au)?)$', re.I),
         {
             'port': 587,
             'smtp_host': 'smtp-mail.outlook.com',
+            'secure': True,
+            'secure_mode': SecureMailMode.STARTTLS,
+            'login_type': (WebBaseLogin.EMAIL, )
+        },
+    ),
+
+    # Microsoft Outlook
+    (
+        'Microsoft Outlook',
+        re.compile(
+            r'^((?P<label>[^+]+)\+)?(?P<id>[^@]+)@'
+            r'(?P<domain>(smtp\.)?outlook\.com(\.au)?)$', re.I),
+        {
+            'port': 587,
+            'smtp_host': 'smtp.outlook.com',
             'secure': True,
             'secure_mode': SecureMailMode.STARTTLS,
             'login_type': (WebBaseLogin.EMAIL, )
@@ -282,6 +315,13 @@ EMAIL_TEMPLATES = (
 )
 
 
+@dataclasses.dataclass
+class EmailMessage:
+    recipient: str
+    to_addrs: t.List[str]
+    body: str
+
+
 class NotifyEmail(NotifyBase):
     """
     A wrapper to Email Notifications
@@ -302,15 +342,6 @@ class NotifyEmail(NotifyBase):
 
     # Default Notify Format
     notify_format = NotifyFormat.HTML
-
-    # Default Non-Encryption Port
-    default_port = 25
-
-    # Default Secure Port
-    default_secure_port = 587
-
-    # Default Secure Mode
-    default_secure_mode = SecureMailMode.STARTTLS
 
     # Default SMTP Timeout (in seconds)
     socket_connect_timeout = 15
@@ -373,7 +404,7 @@ class NotifyEmail(NotifyBase):
         'name': {
             'name': _('From Name'),
             'type': 'string',
-            'map_to': 'from_name',
+            'map_to': 'from_addr',
         },
         'cc': {
             'name': _('Carbon Copy'),
@@ -410,24 +441,16 @@ class NotifyEmail(NotifyBase):
         },
     }
 
-    def __init__(self, smtp_host=None, from_name=None,
-                 from_addr=None, secure_mode=None, targets=None, cc=None,
-                 bcc=None, reply_to=None, headers=None, **kwargs):
+    def __init__(self, smtp_host=None, from_addr=None, secure_mode=None,
+                 targets=None, cc=None, bcc=None, reply_to=None, headers=None,
+                 **kwargs):
         """
         Initialize Email Object
 
         The smtp_host and secure_mode can be automatically detected depending
         on how the URL was built
         """
-        super(NotifyEmail, self).__init__(**kwargs)
-
-        # Handle SMTP vs SMTPS (Secure vs UnSecure)
-        if not self.port:
-            if self.secure:
-                self.port = self.default_secure_port
-
-            else:
-                self.port = self.default_port
+        super().__init__(**kwargs)
 
         # Acquire Email 'To'
         self.targets = list()
@@ -451,40 +474,49 @@ class NotifyEmail(NotifyBase):
 
         # Now we want to construct the To and From email
         # addresses from the URL provided
-        self.from_addr = from_addr
+        self.from_addr = [False, '']
 
-        if self.user and not self.from_addr:
-            # detect our email address
-            self.from_addr = '{}@{}'.format(
+        if self.user and self.host:
+            # Prepare the bases of our email
+            self.from_addr = [self.app_id, '{}@{}'.format(
                 re.split(r'[\s@]+', self.user)[0],
                 self.host,
-            )
+            )]
 
-        result = is_email(self.from_addr)
+        if from_addr:
+            result = is_email(from_addr)
+            if result:
+                self.from_addr = (
+                    result['name'] if result['name'] else False,
+                    result['full_email'])
+            else:
+                self.from_addr[0] = from_addr
+
+        result = is_email(self.from_addr[1])
         if not result:
             # Parse Source domain based on from_addr
-            msg = 'Invalid ~From~ email specified: {}'.format(self.from_addr)
+            msg = 'Invalid ~From~ email specified: {}'.format(
+                '{} <{}>'.format(self.from_addr[0], self.from_addr[1])
+                if self.from_addr[0] else '{}'.format(self.from_addr[1]))
             self.logger.warning(msg)
             raise TypeError(msg)
 
-        # Store our email address
-        self.from_addr = result['full_email']
-
-        # Set our from name
-        self.from_name = from_name if from_name else result['name']
-
         # Store our lookup
-        self.names[self.from_addr] = \
-            self.from_name if self.from_name else False
+        self.names[self.from_addr[1]] = self.from_addr[0]
 
         # Now detect the SMTP Server
         self.smtp_host = \
             smtp_host if isinstance(smtp_host, str) else ''
 
         # Now detect secure mode
-        self.secure_mode = self.default_secure_mode \
-            if not isinstance(secure_mode, str) \
-            else secure_mode.lower()
+        if secure_mode:
+            self.secure_mode = None \
+                if not isinstance(secure_mode, str) \
+                else secure_mode.lower()
+        else:
+            self.secure_mode = SecureMailMode.INSECURE \
+                if not self.secure else self.template_args['mode']['default']
+
         if self.secure_mode not in SECURE_MODES:
             msg = 'The secure mode specified ({}) is invalid.'\
                   .format(secure_mode)
@@ -508,8 +540,7 @@ class NotifyEmail(NotifyBase):
 
         else:
             # If our target email list is empty we want to add ourselves to it
-            self.targets.append(
-                (self.from_name if self.from_name else False, self.from_addr))
+            self.targets.append((False, self.from_addr[1]))
 
         # Validate recipients (cc:) and drop bad ones:
         for recipient in parse_emails(cc):
@@ -561,6 +592,15 @@ class NotifyEmail(NotifyBase):
 
         # Apply any defaults based on certain known configurations
         self.NotifyEmailDefaults(secure_mode=secure_mode, **kwargs)
+
+        if not self.secure and self.secure_mode != SecureMailMode.INSECURE:
+            # Enable Secure mode if not otherwise set
+            self.secure = True
+
+        if not self.port:
+            # Assign our port based on our secure_mode if not otherwise
+            # detected
+            self.port = SECURE_MODES[self.secure_mode]['default_port']
 
         # if there is still no smtp_host then we fall back to the hostname
         if not self.smtp_host:
@@ -625,11 +665,11 @@ class NotifyEmail(NotifyBase):
                 if login_type:
                     # only apply additional logic to our user if a login_type
                     # was specified.
-                    if is_email(self.user) and \
-                       WebBaseLogin.EMAIL not in login_type:
-                        # Email specified but login type
-                        # not supported; switch it to user id
-                        self.user = match.group('id')
+                    if is_email(self.user):
+                        if WebBaseLogin.EMAIL not in login_type:
+                            # Email specified but login type
+                            # not supported; switch it to user id
+                            self.user = match.group('id')
 
                     elif WebBaseLogin.USERID not in login_type:
                         # user specified but login type
@@ -656,17 +696,13 @@ class NotifyEmail(NotifyBase):
         Perform Email Notification
         """
 
-        # Initialize our default from name
-        from_name = self.from_name if self.from_name else self.app_desc
-
-        # error tracking (used for function return)
-        has_error = False
-
         if not self.targets:
             # There is no one to email; we're done
             self.logger.warning(
                 'There are no Email recipients to notify')
             return False
+
+        messages: t.List[EmailMessage] = []
 
         # Create a copy of the targets list
         emails = list(self.targets)
@@ -700,7 +736,9 @@ class NotifyEmail(NotifyBase):
                     for addr in reply_to]
 
             self.logger.debug(
-                'Email From: {} <{}>'.format(from_name, self.from_addr))
+                'Email From: {}'.format(
+                    formataddr(self.from_addr, charset='utf-8')))
+
             self.logger.debug('Email To: {}'.format(to_addr))
             if cc:
                 self.logger.debug('Email Cc: {}'.format(', '.join(cc)))
@@ -763,9 +801,7 @@ class NotifyEmail(NotifyBase):
                 base[k] = Header(v, self._get_charset(v))
 
             base['Subject'] = Header(title, self._get_charset(title))
-            base['From'] = formataddr(
-                (from_name if from_name else False, self.from_addr),
-                charset='utf-8')
+            base['From'] = formataddr(self.from_addr, charset='utf-8')
             base['To'] = formataddr((to_name, to_addr), charset='utf-8')
             base['Message-ID'] = make_msgid(domain=self.smtp_host)
             base['Date'] = \
@@ -778,58 +814,79 @@ class NotifyEmail(NotifyBase):
             if reply_to:
                 base['Reply-To'] = ','.join(reply_to)
 
-            # bind the socket variable to the current namespace
-            socket = None
+            message = EmailMessage(
+                recipient=to_addr,
+                to_addrs=[to_addr] + list(cc) + list(bcc),
+                body=base.as_string())
+            messages.append(message)
 
-            # Always call throttle before any remote server i/o is made
-            self.throttle()
+        return self.submit(messages)
 
-            try:
-                self.logger.debug('Connecting to remote SMTP server...')
-                socket_func = smtplib.SMTP
-                if self.secure and self.secure_mode == SecureMailMode.SSL:
-                    self.logger.debug('Securing connection with SSL...')
-                    socket_func = smtplib.SMTP_SSL
+    def submit(self, messages: t.List[EmailMessage]):
 
-                socket = socket_func(
-                    self.smtp_host,
-                    self.port,
-                    None,
-                    timeout=self.socket_connect_timeout,
-                )
+        # error tracking (used for function return)
+        has_error = False
 
-                if self.secure and self.secure_mode == SecureMailMode.STARTTLS:
-                    # Handle Secure Connections
-                    self.logger.debug('Securing connection with STARTTLS...')
-                    socket.starttls()
+        # bind the socket variable to the current namespace
+        socket = None
 
-                if self.user and self.password:
-                    # Apply Login credetials
-                    self.logger.debug('Applying user credentials...')
-                    socket.login(self.user, self.password)
+        # Always call throttle before any remote server i/o is made
+        self.throttle()
 
-                # Send the email
-                socket.sendmail(
-                    self.from_addr,
-                    [to_addr] + list(cc) + list(bcc),
-                    base.as_string())
+        try:
+            self.logger.debug('Connecting to remote SMTP server...')
+            socket_func = smtplib.SMTP
+            if self.secure_mode == SecureMailMode.SSL:
+                self.logger.debug('Securing connection with SSL...')
+                socket_func = smtplib.SMTP_SSL
 
-                self.logger.info(
-                    'Sent Email notification to "{}".'.format(to_addr))
+            socket = socket_func(
+                self.smtp_host,
+                self.port,
+                None,
+                timeout=self.socket_connect_timeout,
+            )
 
-            except (SocketError, smtplib.SMTPException, RuntimeError) as e:
-                self.logger.warning(
-                    'A Connection error occurred sending Email '
-                    'notification to {}.'.format(self.smtp_host))
-                self.logger.debug('Socket Exception: %s' % str(e))
+            if self.secure_mode == SecureMailMode.STARTTLS:
+                # Handle Secure Connections
+                self.logger.debug('Securing connection with STARTTLS...')
+                socket.starttls()
 
-                # Mark our failure
-                has_error = True
+            if self.user and self.password:
+                # Apply Login credetials
+                self.logger.debug('Applying user credentials...')
+                socket.login(self.user, self.password)
 
-            finally:
-                # Gracefully terminate the connection with the server
-                if socket is not None:  # pragma: no branch
-                    socket.quit()
+            # Send the emails
+            for message in messages:
+                try:
+                    socket.sendmail(
+                        self.from_addr[1],
+                        message.to_addrs,
+                        message.body)
+
+                    self.logger.info(
+                        f'Sent Email notification to "{message.recipient}".')
+                except (SocketError, smtplib.SMTPException, RuntimeError) as e:
+                    self.logger.warning(
+                        f'Sending email to "{message.recipient}" failed. '
+                        f'Reason: {e}')
+
+                    # Mark as failure
+                    has_error = True
+
+        except (SocketError, smtplib.SMTPException, RuntimeError) as e:
+            self.logger.warning(
+                f'Connection error while submitting email to {self.smtp_host}.'
+                f' Reason: {e}')
+
+            # Mark as failure
+            has_error = True
+
+        finally:
+            # Gracefully terminate the connection with the server
+            if socket is not None:  # pragma: no branch
+                socket.quit()
 
         return not has_error
 
@@ -839,12 +896,7 @@ class NotifyEmail(NotifyBase):
         """
 
         # Define an URL parameters
-        params = {
-            'from': self.from_addr,
-            'mode': self.secure_mode,
-            'smtp': self.smtp_host,
-            'user': self.user,
-        }
+        params = {}
 
         # Append our headers into our parameters
         params.update({'+{}'.format(k): v for k, v in self.headers.items()})
@@ -852,30 +904,60 @@ class NotifyEmail(NotifyBase):
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
-        if self.from_name:
-            params['name'] = self.from_name
+        from_addr = None
+        if len(self.targets) == 1 and self.targets[0][1] != self.from_addr[1]:
+            # A custom email was provided
+            from_addr = self.from_addr[1]
+
+        if self.smtp_host != self.host:
+            # Apply our SMTP Host only if it differs from the provided hostname
+            params['smtp'] = self.smtp_host
+
+        if self.secure:
+            # Mode is only requried if we're dealing with a secure connection
+            params['mode'] = self.secure_mode
+
+        if self.from_addr[0] and self.from_addr[0] != self.app_id:
+            # A custom name was provided
+            params['from'] = self.from_addr[0] if not from_addr else \
+                formataddr((self.from_addr[0], from_addr), charset='utf-8')
+
+        elif from_addr:
+            params['from'] = formataddr((False, from_addr), charset='utf-8')
+
+        elif not self.user:
+            params['from'] = \
+                formataddr((False, self.from_addr[1]), charset='utf-8')
 
         if len(self.cc) > 0:
             # Handle our Carbon Copy Addresses
-            params['cc'] = ','.join(
-                ['{}{}'.format(
-                    '' if not e not in self.names
-                    else '{}:'.format(self.names[e]), e) for e in self.cc])
+            params['cc'] = ','.join([
+                formataddr(
+                    (self.names[e] if e in self.names else False, e),
+                    # Swap comma for it's escaped url code (if detected) since
+                    # we're using that as a delimiter
+                    charset='utf-8').replace(',', '%2C')
+                for e in self.cc])
 
         if len(self.bcc) > 0:
             # Handle our Blind Carbon Copy Addresses
-            params['bcc'] = ','.join(
-                ['{}{}'.format(
-                    '' if not e not in self.names
-                    else '{}:'.format(self.names[e]), e) for e in self.bcc])
+            params['bcc'] = ','.join([
+                formataddr(
+                    (self.names[e] if e in self.names else False, e),
+                    # Swap comma for it's escaped url code (if detected) since
+                    # we're using that as a delimiter
+                    charset='utf-8').replace(',', '%2C')
+                for e in self.bcc])
 
         if self.reply_to:
             # Handle our Reply-To Addresses
-            params['reply'] = ','.join(
-                ['{}{}'.format(
-                    '' if not e not in self.names
-                    else '{}:'.format(self.names[e]), e)
-                    for e in self.reply_to])
+            params['reply'] = ','.join([
+                formataddr(
+                    (self.names[e] if e in self.names else False, e),
+                    # Swap comma for it's escaped url code (if detected) since
+                    # we're using that as a delimiter
+                    charset='utf-8').replace(',', '%2C')
+                for e in self.reply_to])
 
         # pull email suffix from username (if present)
         user = None if not self.user else self.user.split('@')[0]
@@ -895,14 +977,13 @@ class NotifyEmail(NotifyBase):
             )
 
         # Default Port setup
-        default_port = \
-            self.default_secure_port if self.secure else self.default_port
+        default_port = SECURE_MODES[self.secure_mode]['default_port']
 
         # a simple boolean check as to whether we display our target emails
         # or not
         has_targets = \
             not (len(self.targets) == 1
-                 and self.targets[0][1] == self.from_addr)
+                 and self.targets[0][1] == self.from_addr[1])
 
         return '{schema}://{auth}{hostname}{port}/{targets}?{params}'.format(
             schema=self.secure_protocol if self.secure else self.protocol,
@@ -917,6 +998,13 @@ class NotifyEmail(NotifyBase):
                     safe='') for e in self.targets]),
             params=NotifyEmail.urlencode(params),
         )
+
+    def __len__(self):
+        """
+        Returns the number of targets associated with this notification
+        """
+        targets = len(self.targets)
+        return targets if targets > 0 else 1
 
     @staticmethod
     def parse_url(url):
@@ -946,13 +1034,23 @@ class NotifyEmail(NotifyBase):
         if 'from' in results['qsd'] and len(results['qsd']['from']):
             from_addr = NotifyEmail.unquote(results['qsd']['from'])
 
+            if 'name' in results['qsd'] and len(results['qsd']['name']):
+                # Depricate use of both `from=` and `name=` in the same url as
+                # they will be synomomus of one another in the future.
+                from_addr = formataddr(
+                    (NotifyEmail.unquote(results['qsd']['name']), from_addr),
+                    charset='utf-8')
+                logger.warning(
+                    'Email name= and from= are synonymous; '
+                    'use one or the other.')
+
+        elif 'name' in results['qsd'] and len(results['qsd']['name']):
+            # Extract from name to associate with from address
+            from_addr = NotifyEmail.unquote(results['qsd']['name'])
+
         # Attempt to detect 'to' email address
         if 'to' in results['qsd'] and len(results['qsd']['to']):
             results['targets'].append(results['qsd']['to'])
-
-        if 'name' in results['qsd'] and len(results['qsd']['name']):
-            # Extract from name to associate with from address
-            results['from_name'] = NotifyEmail.unquote(results['qsd']['name'])
 
         # Store SMTP Host if specified
         if 'smtp' in results['qsd'] and len(results['qsd']['smtp']):

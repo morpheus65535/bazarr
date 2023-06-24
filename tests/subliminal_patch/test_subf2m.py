@@ -1,8 +1,18 @@
 import pytest
+from subliminal_patch.core import Episode
 from subliminal_patch.providers import subf2m
+from subliminal_patch.providers.subf2m import ConfigurationError
 from subliminal_patch.providers.subf2m import Subf2mProvider
 from subliminal_patch.providers.subf2m import Subf2mSubtitle
 from subzero.language import Language
+
+_U_A = "Mozilla/5.0 (Linux; Android 10; SM-G996U Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Mobile Safari/537.36"
+
+
+@pytest.fixture
+def provider():
+    with Subf2mProvider(user_agent=_U_A) as provider:
+        yield provider
 
 
 @pytest.mark.parametrize(
@@ -17,14 +27,15 @@ from subzero.language import Language
         ("Cure", 1997, "/subtitles/cure-kyua"),
     ],
 )
-def test_search_movie(movies, title, year, expected_url):
-    movie = list(movies.values())[0]
-    movie.title = title
-    movie.year = year
+def test_search_movie(provider, title, year, expected_url):
+    result = provider._search_movie(title, year)
+    assert expected_url in result
 
-    with Subf2mProvider() as provider:
-        result = provider._search_movie(movie.title, movie.year)
-        assert result == expected_url
+
+def test_init_empty_user_agent_raises_configurationerror():
+    with pytest.raises(ConfigurationError):
+        with Subf2mProvider(user_agent=" ") as provider:
+            assert provider
 
 
 @pytest.mark.parametrize(
@@ -42,55 +53,59 @@ def test_search_movie(movies, title, year, expected_url):
         ),
     ],
 )
-def test_search_tv_show_season(series_title, season, year, expected_url):
-    with Subf2mProvider() as provider:
-        result = provider._search_tv_show_season(series_title, season, year)
-        assert result == expected_url
+def test_search_tv_show_season(provider, series_title, season, year, expected_url):
+    result = provider._search_tv_show_season(series_title, season, year)
+    assert expected_url in result
 
 
 @pytest.mark.parametrize("language", [Language.fromalpha2("en"), Language("por", "BR")])
-def test_find_movie_subtitles(language):
+def test_find_movie_subtitles(provider, language, movies):
     path = "/subtitles/dune-2021"
-    with Subf2mProvider() as provider:
-        for sub in provider._find_movie_subtitles(path, language):
-            assert sub.language == language
+    for sub in provider._find_movie_subtitles(path, language, movies["dune"].imdb_id):
+        assert sub.language == language
 
 
 @pytest.mark.parametrize("language", [Language.fromalpha2("en"), Language("por", "BR")])
-def test_find_episode_subtitles(language):
+def test_find_episode_subtitles(provider, language, episodes):
     path = "/subtitles/breaking-bad-first-season"
-    with Subf2mProvider() as provider:
-        for sub in provider._find_episode_subtitles(path, 1, 1, language):
-            assert sub.language == language
+    subs = provider._find_episode_subtitles(
+        path, 1, 1, language, imdb_id=episodes["breaking_bad_s01e01"].series_imdb_id
+    )
+    assert subs
+
+    for sub in subs:
+        assert sub.language == language
 
 
-def test_find_episode_subtitles_from_complete_series_path():
+def test_find_episode_subtitles_from_complete_series_path(provider):
     path = "/subtitles/courage-the-cowardly-dog"
 
-    with Subf2mProvider() as provider:
-        for sub in provider._find_episode_subtitles(
-            path, 1, 1, Language.fromalpha2("en")
-        ):
-            assert sub.language == Language.fromalpha2("en")
+    subs = provider._find_episode_subtitles(
+        path, 1, 1, Language.fromalpha2("en"), imdb_id="tt0220880"
+    )
+    assert subs
+
+    for sub in subs:
+        assert sub.language == Language.fromalpha2("en")
 
 
-def test_list_and_download_subtitles_complete_series_pack(episodes):
+def test_list_and_download_subtitles_complete_series_pack(provider, episodes):
     episode = list(episodes.values())[0]
 
     episode.series = "Sam & Max: Freelance Police"
     episode.name = "The Glazed McGuffin Affair"
     episode.title = "The Glazed McGuffin Affair"
+    episode.series_imdb_id = "tt0125646"
     episode.season = 1
     episode.episode = 21
 
-    with Subf2mProvider() as provider:
-        subtitles = provider.list_subtitles(episode, {Language.fromalpha2("en")})
-        assert subtitles
+    subtitles = provider.list_subtitles(episode, {Language.fromalpha2("en")})
+    assert subtitles
 
-        subtitle = subtitles[0]
-        provider.download_subtitle(subtitle)
+    subtitle = subtitles[0]
+    provider.download_subtitle(subtitle)
 
-        assert subtitle.is_valid()
+    assert subtitle.is_valid()
 
 
 @pytest.fixture
@@ -136,47 +151,40 @@ def test_subtitle_get_matches_episode(subtitle_episode, episodes):
     assert "source" not in matches
 
 
-def test_list_subtitles_movie(movies):
-    with Subf2mProvider() as provider:
-        assert provider.list_subtitles(movies["dune"], {Language.fromalpha2("en")})
+def test_list_subtitles_movie(provider, movies):
+    assert provider.list_subtitles(movies["dune"], {Language.fromalpha2("en")})
 
 
-def test_list_subtitles_inexistent_movie(movies):
-    with Subf2mProvider() as provider:
-        assert (
-            provider.list_subtitles(movies["inexistent"], {Language.fromalpha2("en")})
-            == []
-        )
+def test_list_subtitles_inexistent_movie(provider, movies):
+    assert (
+        provider.list_subtitles(movies["inexistent"], {Language.fromalpha2("en")}) == []
+    )
 
 
-def test_list_subtitles_episode(episodes):
-    with Subf2mProvider() as provider:
-        assert provider.list_subtitles(
-            episodes["breaking_bad_s01e01"], {Language.fromalpha2("en")}
-        )
+def test_list_subtitles_episode(provider, episodes):
+    assert provider.list_subtitles(
+        episodes["breaking_bad_s01e01"], {Language.fromalpha2("en")}
+    )
 
 
-def test_list_subtitles_inexistent_episode(episodes):
-    with Subf2mProvider() as provider:
-        assert (
-            provider.list_subtitles(episodes["inexistent"], {Language.fromalpha2("en")})
-            == []
-        )
+def test_list_subtitles_inexistent_episode(provider, episodes):
+    assert (
+        provider.list_subtitles(episodes["inexistent"], {Language.fromalpha2("en")})
+        == []
+    )
 
 
-def test_download_subtitle(subtitle):
-    with Subf2mProvider() as provider:
-        provider.download_subtitle(subtitle)
-        assert subtitle.is_valid()
+def test_download_subtitle(provider, subtitle):
+    provider.download_subtitle(subtitle)
+    assert subtitle.is_valid()
 
 
-def test_download_subtitle_episode(subtitle_episode):
-    with Subf2mProvider() as provider:
-        provider.download_subtitle(subtitle_episode)
-        assert subtitle_episode.is_valid()
+def test_download_subtitle_episode(provider, subtitle_episode):
+    provider.download_subtitle(subtitle_episode)
+    assert subtitle_episode.is_valid()
 
 
-def test_download_subtitle_episode_with_title():
+def test_download_subtitle_episode_with_title(provider):
     sub = Subf2mSubtitle(
         Language.fromalpha2("en"),
         "https://subf2m.co/subtitles/courage-the-cowardly-dog/english/2232402",
@@ -185,9 +193,8 @@ def test_download_subtitle_episode_with_title():
     )
 
     sub.episode_title = "Feast of the Bullfrogs"
-    with Subf2mProvider() as provider:
-        provider.download_subtitle(sub)
-        assert sub.is_valid()
+    provider.download_subtitle(sub)
+    assert sub.is_valid()
 
 
 def test_get_episode_from_release():
@@ -202,3 +209,27 @@ def test_get_episode_from_release_return_none():
 
 def test_get_episode_from_release_w_empty_match_return_none():
     assert subf2m._get_episode_from_release("Vinland Saga - 02") is None
+
+
+def test_complex_episode_name(provider):
+    episode = Episode(
+        **{
+            "name": "Dr.Romantic.S03E16.SBS.x265.1080p-thon.mkv",
+            "source": "HDTV",
+            "release_group": "thon",
+            "resolution": "1080p",
+            "video_codec": "H.265",
+            "audio_codec": "AAC",
+            "subtitle_languages": set(),
+            "original_name": "Dr. Romantic - S03E16.mkv",
+            "other": None,
+            "series": "Dr. Romantic",
+            "season": 3,
+            "episode": 16,
+            "title": "Dreamers",
+            "year": 2016,
+            "series_imdb_id": "tt6157190",
+            "alternative_series": ["Romantic Doctor Teacher Kim"],
+        }
+    )
+    assert provider.list_subtitles(episode, {Language.fromietf("en")})

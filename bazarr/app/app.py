@@ -2,6 +2,7 @@
 
 from flask import Flask, redirect
 
+from flask_compress import Compress
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
@@ -15,6 +16,8 @@ socketio = SocketIO()
 def create_app():
     # Flask Setup
     app = Flask(__name__)
+    app.config['COMPRESS_ALGORITHM'] = 'gzip'
+    Compress(app)
     app.wsgi_app = ReverseProxied(app.wsgi_app)
 
     app.config["SECRET_KEY"] = settings.general.flask_secret_key

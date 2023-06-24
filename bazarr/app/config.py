@@ -52,6 +52,7 @@ defaults = {
         'movie_default_enabled': 'False',
         'movie_default_profile': '',
         'page_size': '25',
+        'theme': 'auto',
         'page_size_manual_search': '10',
         'minimum_score_movie': '70',
         'use_embedded_subs': 'True',
@@ -83,7 +84,8 @@ defaults = {
         'default_und_audio_lang': '',
         'default_und_embedded_subtitles_lang': '',
         'parse_embedded_audio_track': 'False',
-        'skip_hashing': 'False'
+        'skip_hashing': 'False',
+        'language_equals': '[]',
     },
     'auth': {
         'type': 'None',
@@ -168,7 +170,8 @@ defaults = {
         'verify_ssl': 'True'
     },
     'subf2m': {
-        'verify_ssl': 'True'
+        'verify_ssl': 'True',
+        'user_agent': ''
     },
     'whisperai': {
         'endpoint': 'http://127.0.0.1:9000',
@@ -182,11 +185,6 @@ defaults = {
     'ktuvit': {
         'email': '',
         'hashed_password': ''
-    },
-    'legendastv': {
-        'username': '',
-        'password': '',
-        'featured_only': 'False'
     },
     'xsubs': {
         'username': '',
@@ -300,7 +298,8 @@ array_keys = ['excluded_tags',
               'excluded_series_types',
               'enabled_providers',
               'path_mappings',
-              'path_mappings_movie']
+              'path_mappings_movie',
+              'language_equals']
 
 str_keys = ['chmod']
 

@@ -185,26 +185,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
   },
-  {
-    key: "legendastv",
-    name: "LegendasTV",
-    description: "Brazilian / Portuguese Subtitles Provider",
-    inputs: [
-      {
-        type: "text",
-        key: "username",
-      },
-      {
-        type: "password",
-        key: "password",
-      },
-      {
-        type: "switch",
-        key: "featured_only",
-        name: "Only Download Featured",
-      },
-    ],
-  },
   { key: "napiprojekt", description: "Polish Subtitles Provider" },
   {
     key: "whisperai",
@@ -329,7 +309,13 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         name: "Verify SSL",
         defaultValue: true,
       },
+      {
+        type: "text",
+        key: "user_agent",
+        name: "User-agent header",
+      },
     ],
+    message: "Make sure to use a unique and credible user agent.",
   },
   {
     key: "subs4free",

@@ -20,6 +20,7 @@ from subliminal_patch.extensions import provider_registry
 
 from app.get_args import args
 from app.config import settings, get_array_from
+from languages.get_languages import CustomLanguage
 from app.event_handler import event_stream
 from utilities.binaries import get_binary
 from radarr.blacklist import blacklist_log_movie
@@ -103,7 +104,7 @@ def provider_throttle_map():
     }
 
 
-PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendasdivx", "legendastv", "napiprojekt", "shooter",
+PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendasdivx", "napiprojekt", "shooter",
                         "hosszupuska", "supersubtitles", "titlovi", "argenteam", "assrt", "subscene"]
 
 throttle_count = {}
@@ -113,6 +114,49 @@ def provider_pool():
     if settings.general.getboolean('multithreading'):
         return subliminal_patch.core.SZAsyncProviderPool
     return subliminal_patch.core.SZProviderPool
+
+
+def _lang_from_str(content: str):
+    " Formats: es-MX en@hi es-MX@forced "
+    extra_info = content.split("@")
+    if len(extra_info) > 1:
+        kwargs = {extra_info[-1]: True}
+    else:
+        kwargs = {}
+
+    content = extra_info[0]
+
+    try:
+        code, country = content.split("-")
+    except ValueError:
+        lang = CustomLanguage.from_value(content)
+        if lang is not None:
+            lang = lang.subzero_language()
+            return lang.rebuild(lang, **kwargs)
+
+        code, country = content, None
+
+    return subliminal_patch.core.Language(code, country, **kwargs)
+
+
+def get_language_equals(settings_=None):
+    settings_ = settings_ or settings
+
+    equals = get_array_from(settings_.general.language_equals)
+    if not equals:
+        return []
+
+    items = []
+    for equal in equals:
+        try:
+            from_, to_ = equal.split(":")
+            from_, to_ = _lang_from_str(from_), _lang_from_str(to_)
+        except Exception as error:
+            logging.info("Invalid equal value: '%s' [%s]", equal, error)
+        else:
+            items.append((from_, to_))
+
+    return items
 
 
 def get_providers():
@@ -202,13 +246,6 @@ def get_providers_auth():
                     'skip_wrong_fps'
             ),
         },
-        'legendastv': {
-            'username': settings.legendastv.username,
-            'password': settings.legendastv.password,
-            'featured_only': settings.legendastv.getboolean(
-                    'featured_only'
-            ),
-        },
         'xsubs': {
             'username': settings.xsubs.username,
             'password': settings.xsubs.password,
@@ -250,11 +287,13 @@ def get_providers_auth():
             'f_password': settings.karagarga.f_password,
         },
         'subf2m': {
-            'verify_ssl': settings.subf2m.getboolean('verify_ssl')
+            'verify_ssl': settings.subf2m.getboolean('verify_ssl'),
+            'user_agent': settings.subf2m.user_agent,
         },
         'whisperai': {
             'endpoint': settings.whisperai.endpoint,
-            'timeout': settings.whisperai.timeout
+            'timeout': settings.whisperai.timeout,
+            'ffmpeg_path': _FFMPEG_BINARY,
         }
     }
 

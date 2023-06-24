@@ -10,8 +10,7 @@ import os
 from six.moves.http_client import ResponseNotReady
 
 from guessit import guessit
-from subliminal import ProviderError
-from subliminal.exceptions import ServiceUnavailable, DownloadLimitExceeded
+from subliminal.exceptions import ServiceUnavailable, DownloadLimitExceeded, ConfigurationError, AuthenticationError
 from subliminal.providers.opensubtitles import Unauthorized
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.exceptions import TooManyRequests
@@ -45,7 +44,8 @@ class ProviderRetryMixin(object):
         while i <= amount:
             try:
                 return f()
-            except (Unauthorized, ServiceUnavailable, TooManyRequests, DownloadLimitExceeded, ResponseNotReady):
+            except (Unauthorized, ServiceUnavailable, TooManyRequests, DownloadLimitExceeded, ResponseNotReady,
+                    ConfigurationError, AuthenticationError):
                 raise
             except exc:
                 formatted_exc = traceback.format_exc()

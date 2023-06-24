@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 import re
 import sys
@@ -47,10 +54,6 @@ def import_module(path, name):
     """
     Load our module based on path
     """
-    # if path.endswith('test_module_detection0/a/hook.py'):
-    #     import pdb
-    #     pdb.set_trace()
-
     spec = importlib.util.spec_from_file_location(name, path)
     try:
         module = importlib.util.module_from_spec(spec)
@@ -60,7 +63,13 @@ def import_module(path, name):
 
     except Exception as e:
         # module isn't loadable
-        del sys.modules[name]
+        try:
+            del sys.modules[name]
+
+        except KeyError:
+            # nothing to clean up
+            pass
+
         module = None
 
         logger.debug(
@@ -153,10 +162,10 @@ URL_DETAILS_RE = re.compile(
 #   - user@example.com
 #   - label+user@example.com
 GET_EMAIL_RE = re.compile(
-    r'(([\s"\']+)?(?P<name>[^:<"\']+)?[:<\s"\']+)?'
+    r'(([\s"\']+)?(?P<name>[^:<\'"]+)?[:<\s\'"]+)?'
     r'(?P<full_email>((?P<label>[^+]+)\+)?'
-    r'(?P<email>(?P<userid>[a-z0-9$%=_~-]+'
-    r'(?:\.[a-z0-9$%+=_~-]+)'
+    r'(?P<email>(?P<userid>[a-z0-9_!#$%&*/=?%`{|}~^-]+'
+    r'(?:\.[a-z0-9_!#$%&\'*/=?%`{|}~^-]+)'
     r'*)@(?P<domain>('
     r'(?:[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?\.)+'
     r'[a-z0-9](?:[a-z0-9_-]*[a-z0-9]))|'
@@ -188,7 +197,7 @@ URL_DETECTION_RE = re.compile(
 
 EMAIL_DETECTION_RE = re.compile(
     r'[\s,]*([^@]+@.*?)(?=$|[\s,]+'
-    + r'(?:[^:<]+?[:<\s]+?)?'
+    r'(?:[^:<]+?[:<\s]+?)?'
     r'[^@\s,]+@[^\s,]+)',
     re.IGNORECASE)
 
@@ -196,6 +205,9 @@ EMAIL_DETECTION_RE = re.compile(
 UUID4_RE = re.compile(
     r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}',
     re.IGNORECASE)
+
+# Validate if we're a loadable Python file or not
+VALID_PYTHON_FILE_RE = re.compile(r'.+\.py(o|c)?$', re.IGNORECASE)
 
 # validate_regex() utilizes this mapping to track and re-use pre-complied
 # regular expressions
@@ -519,7 +531,7 @@ def tidy_path(path):
     return path
 
 
-def parse_qsd(qs, simple=False):
+def parse_qsd(qs, simple=False, plus_to_space=False):
     """
     Query String Dictionary Builder
 
@@ -541,6 +553,11 @@ def parse_qsd(qs, simple=False):
 
     if simple is set to true, then a ONE dictionary is returned and is not
     sub-parsed for additional elements
+
+    plus_to_space will cause all `+` references to become a space as
+    per normal URL Encoded defininition. Normal URL parsing applies
+    this, but `+` is very actively used character with passwords,
+    api keys, tokens, etc.  So Apprise does not do this by default.
     """
 
     # Our return result set:
@@ -575,7 +592,7 @@ def parse_qsd(qs, simple=False):
         key = unquote(key)
         key = '' if not key else key
 
-        val = nv[1].replace('+', ' ')
+        val = nv[1].replace('+', ' ') if plus_to_space else nv[1]
         val = unquote(val)
         val = '' if not val else val.strip()
 
@@ -609,7 +626,7 @@ def parse_qsd(qs, simple=False):
 
 
 def parse_url(url, default_schema='http', verify_host=True, strict_port=False,
-              simple=False):
+              simple=False, plus_to_space=False):
     """A function that greatly simplifies the parsing of a url
     specified by the end user.
 
@@ -722,7 +739,8 @@ def parse_url(url, default_schema='http', verify_host=True, strict_port=False,
     # Parse Query Arugments ?val=key&key=val
     # while ensuring that all keys are lowercase
     if qsdata:
-        result.update(parse_qsd(qsdata, simple=simple))
+        result.update(parse_qsd(
+            qsdata, simple=simple, plus_to_space=plus_to_space))
 
     # Now do a proper extraction of data; http:// is just substitued in place
     # to allow urlparse() to function as expected, we'll swap this back to the
@@ -1556,6 +1574,11 @@ def module_detection(paths, cache=True):
         # Since our plugin name can conflict (as a module) with another
         # we want to generate random strings to avoid steping on
         # another's namespace
+        if not (path and VALID_PYTHON_FILE_RE.match(path)):
+            # Ignore file/module type
+            logger.trace('Plugin Scan: Skipping %s', path)
+            return None
+
         module_name = hashlib.sha1(path.encode('utf-8')).hexdigest()
         module_pyname = "{prefix}.{name}".format(
             prefix='apprise.custom.module', name=module_name)

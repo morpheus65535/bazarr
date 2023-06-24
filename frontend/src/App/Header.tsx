@@ -15,12 +15,12 @@ import {
   Avatar,
   Badge,
   Burger,
-  createStyles,
   Divider,
   Group,
   Header,
   MediaQuery,
   Menu,
+  createStyles,
 } from "@mantine/core";
 import { FunctionComponent } from "react";
 

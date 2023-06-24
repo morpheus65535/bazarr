@@ -1,11 +1,11 @@
 import { rawRender, RenderOptions, screen } from "@/tests";
 import { useForm } from "@mantine/form";
-import { FunctionComponent, ReactElement } from "react";
+import { FunctionComponent, PropsWithChildren, ReactElement } from "react";
 import { describe, it } from "vitest";
 import { FormContext, FormValues } from "../utilities/FormValues";
 import { Number, Text } from "./forms";
 
-const FormSupport: FunctionComponent = ({ children }) => {
+const FormSupport: FunctionComponent<PropsWithChildren> = ({ children }) => {
   const form = useForm<FormValues>({
     initialValues: {
       settings: {},

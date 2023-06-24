@@ -1,29 +1,38 @@
 # -*- coding: utf-8 -*-
+# BSD 3-Clause License
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Apprise - Push Notification Library.
+# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
 #
-# This code is licensed under the MIT License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
+import asyncio
 import re
+from functools import partial
 
 from ..URLBase import URLBase
 from ..common import NotifyType
@@ -36,12 +45,7 @@ from ..AppriseLocale import gettext_lazy as _
 from ..AppriseAttachment import AppriseAttachment
 
 
-# Wrap our base with the asyncio wrapper
-from ..py3compat.asyncio import AsyncNotifyBase
-BASE_OBJECT = AsyncNotifyBase
-
-
-class NotifyBase(BASE_OBJECT):
+class NotifyBase(URLBase):
     """
     This is the base class for all notification services
     """
@@ -180,7 +184,7 @@ class NotifyBase(BASE_OBJECT):
 
         """
 
-        super(NotifyBase, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         if 'format' in kwargs:
             # Store the specified format if specified
@@ -267,19 +271,64 @@ class NotifyBase(BASE_OBJECT):
             color_type=color_type,
         )
 
-    def notify(self, body, title=None, notify_type=NotifyType.INFO,
-               overflow=None, attach=None, body_format=None, **kwargs):
+    def notify(self, *args, **kwargs):
         """
         Performs notification
+        """
+        try:
+            # Build a list of dictionaries that can be used to call send().
+            send_calls = list(self._build_send_calls(*args, **kwargs))
 
+        except TypeError:
+            # Internal error
+            return False
+
+        else:
+            # Loop through each call, one at a time. (Use a list rather than a
+            # generator to call all the partials, even in case of a failure.)
+            the_calls = [self.send(**kwargs2) for kwargs2 in send_calls]
+            return all(the_calls)
+
+    async def async_notify(self, *args, **kwargs):
+        """
+        Performs notification for asynchronous callers
+        """
+        try:
+            # Build a list of dictionaries that can be used to call send().
+            send_calls = list(self._build_send_calls(*args, **kwargs))
+
+        except TypeError:
+            # Internal error
+            return False
+
+        else:
+            loop = asyncio.get_event_loop()
+
+            # Wrap each call in a coroutine that uses the default executor.
+            # TODO: In the future, allow plugins to supply a native
+            # async_send() method.
+            async def do_send(**kwargs2):
+                send = partial(self.send, **kwargs2)
+                result = await loop.run_in_executor(None, send)
+                return result
+
+            # gather() all calls in parallel.
+            the_cors = (do_send(**kwargs2) for kwargs2 in send_calls)
+            return all(await asyncio.gather(*the_cors))
+
+    def _build_send_calls(self, body, title=None,
+                          notify_type=NotifyType.INFO, overflow=None,
+                          attach=None, body_format=None, **kwargs):
+        """
+        Get a list of dictionaries that can be used to call send() or
+        (in the future) async_send().
         """
 
         if not self.enabled:
             # Deny notifications issued to services that are disabled
-            self.logger.warning(
-                "{} is currently disabled on this system.".format(
-                    self.service_name))
-            return False
+            msg = f"{self.service_name} is currently disabled on this system."
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         # Prepare attachments if required
         if attach is not None and not isinstance(attach, AppriseAttachment):
@@ -288,7 +337,7 @@ class NotifyBase(BASE_OBJECT):
 
             except TypeError:
                 # bad attachments
-                return False
+                raise
 
         # Handle situations where the title is None
         title = '' if not title else title
@@ -299,14 +348,11 @@ class NotifyBase(BASE_OBJECT):
                 body_format=body_format):
 
             # Send notification
-            if not self.send(body=chunk['body'], title=chunk['title'],
-                             notify_type=notify_type, attach=attach,
-                             body_format=body_format):
-
-                # Toggle our return status flag
-                return False
-
-        return True
+            yield dict(
+                body=chunk['body'], title=chunk['title'],
+                notify_type=notify_type, attach=attach,
+                body_format=body_format
+            )
 
     def _apply_overflow(self, body, title=None, overflow=None,
                         body_format=None):
@@ -423,13 +469,13 @@ class NotifyBase(BASE_OBJECT):
             'overflow': self.overflow_mode,
         }
 
-        params.update(super(NotifyBase, self).url_parameters(*args, **kwargs))
+        params.update(super().url_parameters(*args, **kwargs))
 
         # return default parameters
         return params
 
     @staticmethod
-    def parse_url(url, verify_host=True):
+    def parse_url(url, verify_host=True, plus_to_space=False):
         """Parses the URL and returns it broken apart into a dictionary.
 
         This is very specific and customized for Apprise.
@@ -447,7 +493,8 @@ class NotifyBase(BASE_OBJECT):
             A dictionary is returned containing the URL fully parsed if
             successful, otherwise None is returned.
         """
-        results = URLBase.parse_url(url, verify_host=verify_host)
+        results = URLBase.parse_url(
+            url, verify_host=verify_host, plus_to_space=plus_to_space)
 
         if not results:
             # We're done; we failed to parse our url

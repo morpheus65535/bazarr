@@ -105,7 +105,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
               </Anchor>
             );
           } else {
-            return value;
+            return <Text>{value}</Text>;
           }
         },
       },
@@ -220,12 +220,12 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
 export const MovieSearchModal = withModal<Props<Item.Movie>>(
   ManualSearchView,
   "movie-manual-search",
-  { title: "Search Subtitles", size: "xl" }
+  { title: "Search Subtitles", size: "calc(100vw - 4rem)" }
 );
 export const EpisodeSearchModal = withModal<Props<Item.Episode>>(
   ManualSearchView,
   "episode-manual-search",
-  { title: "Search Subtitles", size: "xl" }
+  { title: "Search Subtitles", size: "calc(100vw - 4rem)" }
 );
 
 const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
@@ -237,7 +237,7 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
   const { ref, hovered } = useHover();
 
   return (
-    <Popover opened={hovered} position="top" width={360} withArrow>
+    <Popover opened={hovered} position="top" width={360} withArrow withinPortal>
       <Popover.Target>
         <Text color={hasIssues ? "yellow" : "green"} ref={ref}>
           <FontAwesomeIcon

@@ -114,6 +114,10 @@ class Language(Language_):
     def __str__(self):
         return super(Language, self).__str__() + (":forced" if self.forced else "")
 
+    def __repr__(self):
+        info = ";".join(f"{k}={v}" for k, v in vars(self).items() if v)
+        return f"<{self.__class__.__name__}: {info}>"
+
     @property
     def basename(self):
         return super(Language, self).__str__()

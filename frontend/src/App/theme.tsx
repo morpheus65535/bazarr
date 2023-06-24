@@ -1,3 +1,4 @@
+import { useSystemSettings } from "@/apis/hooks";
 import {
   ColorScheme,
   ColorSchemeProvider,
@@ -6,7 +7,13 @@ import {
   MantineThemeOverride,
 } from "@mantine/core";
 import { useColorScheme } from "@mantine/hooks";
-import { FunctionComponent, useCallback, useEffect, useState } from "react";
+import {
+  FunctionComponent,
+  PropsWithChildren,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
 const theme: MantineThemeOverride = {
   fontFamily: "Roboto, open sans, Helvetica Neue, Helvetica, Arial, sans-serif",
@@ -28,7 +35,19 @@ const theme: MantineThemeOverride = {
 };
 
 function useAutoColorScheme() {
-  const preferredColorScheme = useColorScheme();
+  const settings = useSystemSettings();
+  const settingsColorScheme = settings.data?.general.theme;
+
+  let preferredColorScheme: ColorScheme = useColorScheme();
+  switch (settingsColorScheme) {
+    case "light":
+      preferredColorScheme = "light" as ColorScheme;
+      break;
+    case "dark":
+      preferredColorScheme = "dark" as ColorScheme;
+      break;
+  }
+
   const [colorScheme, setColorScheme] = useState(preferredColorScheme);
 
   // automatically switch dark/light theme
@@ -45,7 +64,7 @@ function useAutoColorScheme() {
 
 const emotionCache = createEmotionCache({ key: "bazarr" });
 
-const ThemeProvider: FunctionComponent = ({ children }) => {
+const ThemeProvider: FunctionComponent<PropsWithChildren> = ({ children }) => {
   const { colorScheme, toggleColorScheme } = useAutoColorScheme();
 
   return (
