@@ -82,7 +82,11 @@ export function useSettingValue<T>(
   }
 }
 
-export function useUpdateArray<T>(key: string, compare: keyof T) {
+export function useUpdateArray<T>(
+  key: string,
+  current: Readonly<T[]>,
+  compare: keyof T
+) {
   const { setValue } = useFormActions();
   const stagedValue = useStagedValues();
 
@@ -93,9 +97,9 @@ export function useUpdateArray<T>(key: string, compare: keyof T) {
     if (key in stagedValue) {
       return stagedValue[key];
     } else {
-      return [];
+      return current;
     }
-  }, [key, stagedValue]);
+  }, [key, stagedValue, current]);
 
   return useCallback(
     (v: T, hook?: HookType) => {

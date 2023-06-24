@@ -1,4 +1,5 @@
 import pytest
+from subliminal_patch.core import Episode
 from subliminal_patch.providers import subf2m
 from subliminal_patch.providers.subf2m import ConfigurationError
 from subliminal_patch.providers.subf2m import Subf2mProvider
@@ -208,3 +209,27 @@ def test_get_episode_from_release_return_none():
 
 def test_get_episode_from_release_w_empty_match_return_none():
     assert subf2m._get_episode_from_release("Vinland Saga - 02") is None
+
+
+def test_complex_episode_name(provider):
+    episode = Episode(
+        **{
+            "name": "Dr.Romantic.S03E16.SBS.x265.1080p-thon.mkv",
+            "source": "HDTV",
+            "release_group": "thon",
+            "resolution": "1080p",
+            "video_codec": "H.265",
+            "audio_codec": "AAC",
+            "subtitle_languages": set(),
+            "original_name": "Dr. Romantic - S03E16.mkv",
+            "other": None,
+            "series": "Dr. Romantic",
+            "season": 3,
+            "episode": 16,
+            "title": "Dreamers",
+            "year": 2016,
+            "series_imdb_id": "tt6157190",
+            "alternative_series": ["Romantic Doctor Teacher Kim"],
+        }
+    )
+    assert provider.list_subtitles(episode, {Language.fromietf("en")})

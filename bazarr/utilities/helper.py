@@ -4,7 +4,7 @@ import os
 import logging
 import hashlib
 
-from charamel import Detector
+from chardet import detect
 from bs4 import UnicodeDammit
 
 from app.config import settings
@@ -64,8 +64,7 @@ def force_unicode(s):
         try:
             s = s.decode("utf-8")
         except UnicodeDecodeError:
-            detector = Detector()
-            t = detector.detect(s)
+            t = detect(s)['encoding']
             try:
                 s = s.decode(t)
             except UnicodeDecodeError:
