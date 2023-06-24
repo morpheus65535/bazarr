@@ -83,6 +83,9 @@ export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
       placeholder="Click to start"
       data={data}
       value={value}
+      // Temporary solution of infinite dropdown items, fix later
+      limit={NaN}
+      maxDropdownHeight={240}
       filter={(value, item) => {
         if (item.value === backKey) {
           return true;

@@ -161,7 +161,7 @@ class _LanguageEquals(list):
         for equals in self:
             from_, to_ = equals
             if to_ in items:
-                logger.debug("Translating %s -> %s", to_, from_)
+                logger.debug("Translating %r -> %r", to_, from_)
                 translated.add(from_)
 
         if translated == items:
@@ -182,7 +182,7 @@ class _LanguageEquals(list):
         for equals in self:
             from_, to_ = equals
             if from_ in items:
-                logger.debug("Adding %s to %s item(s) set", to_, len(items))
+                logger.debug("Adding %r to %s item(s) set", to_, len(items))
                 to_add.append(to_)
 
         new_items = items.copy()
@@ -194,7 +194,7 @@ class _LanguageEquals(list):
         for equals in self:
             from_, to_ = equals
             if from_ == subtitle.language:
-                logger.debug("Updating language for %s (to %s)", subtitle, to_)
+                logger.debug("Updating language for %r (to %r)", subtitle, to_)
                 subtitle.language = to_
                 break
 
@@ -330,7 +330,7 @@ class SZProviderPool(ProviderPool):
         :rtype: list of :class:`~subliminal.subtitle.Subtitle` or None
 
         """
-        logger.debug("Languages requested: %s", languages)
+        logger.debug("Languages requested: %r", languages)
 
         if self.language_hook:
             languages_search_base = self.language_hook(provider)
