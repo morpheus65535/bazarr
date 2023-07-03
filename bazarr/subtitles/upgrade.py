@@ -184,6 +184,9 @@ def parse_language_string(language_string):
 
 
 def get_upgradable_episode_subtitles():
+    if not settings.general.getboolean('upgrade_subs'):
+        return []
+
     minimum_timestamp, query_actions = get_queries_condition_parameters()
 
     upgradable_episodes_conditions = [(TableHistory.action << query_actions),
@@ -225,6 +228,9 @@ def get_upgradable_episode_subtitles():
 
 
 def get_upgradable_movies_subtitles():
+    if not settings.general.getboolean('upgrade_subs'):
+        return []
+
     minimum_timestamp, query_actions = get_queries_condition_parameters()
 
     upgradable_movies_conditions = [(TableHistoryMovie.action << query_actions),
