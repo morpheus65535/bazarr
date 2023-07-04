@@ -63,7 +63,7 @@ def sync_episodes(series_id=None, send_event=True):
                 episodeFiles = get_episodesFiles_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
                                                                  series_id=seriesId['id'])
                 for episode in episodes:
-                    if episode['hasFile']:
+                    if episodeFiles and episode['hasFile']:
                         item = [x for x in episodeFiles if x['id'] == episode['episodeFileId']]
                         if item:
                             episode['episodeFile'] = item[0]
