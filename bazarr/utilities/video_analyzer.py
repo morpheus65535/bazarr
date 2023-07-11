@@ -29,6 +29,7 @@ def _handle_alpha3(detected_language: dict):
 
     return alpha3
 
+
 def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
     data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, use_cache=use_cache)
     und_default_language = alpha3_from_alpha2(settings.general.default_und_embedded_subtitles_lang)

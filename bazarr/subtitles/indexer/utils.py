@@ -7,7 +7,7 @@ import re
 from guess_language import guess_language
 from subliminal_patch import core
 from subzero.language import Language
-from chardet import detect
+from charset_normalizer import detect
 
 from app.config import settings
 from constants import hi_regex

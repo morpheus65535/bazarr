@@ -4,7 +4,7 @@ import os
 import logging
 import hashlib
 
-from chardet import detect
+from charset_normalizer import detect
 from bs4 import UnicodeDammit
 
 from app.config import settings
