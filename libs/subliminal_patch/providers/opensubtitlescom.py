@@ -183,7 +183,12 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
     def initialize(self):
         self._started = time.time()
-        self.login()
+
+        if region.get("oscom_token", expiration_time=TOKEN_EXPIRATION_TIME) is NO_VALUE:
+            logger.debug("No cached token, we'll try to login again.")
+            self.login()
+        else:
+            self.token = region.get("oscom_token", expiration_time=TOKEN_EXPIRATION_TIME)
 
     def terminate(self):
         self.session.close()
@@ -192,25 +197,25 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         return self._started and (time.time() - self._started) < TOKEN_EXPIRATION_TIME
 
     def login(self):
-        r = self.retry(
-            lambda: self.checked(
-                lambda: self.session.post(self.server_url + 'login',
-                                          json={"username": self.username, "password": self.password},
-                                          allow_redirects=False,
-                                          timeout=30),
-                validate_json=True,
-                json_key_name='token'
-            ),
-            amount=retry_amount
-        )
+        r = self.session.post(self.server_url + 'login',
+                              json={"username": self.username, "password": self.password},
+                              allow_redirects=False,
+                              timeout=30)
+
+        if r.status_code == 400:
+            raise ConfigurationError('Do not use email but username')
+        elif r.status_code == 401:
+            raise AuthenticationError('Login failed')
+
+        r.raise_for_status()
 
         try:
             self.token = r.json()['token']
         except (ValueError, JSONDecodeError):
-            return False
+            log_request_response(r)
+            raise ProviderError("Cannot get token from provider login response")
         else:
             region.set("oscom_token", self.token)
-            return True
 
     @staticmethod
     def sanitize_external_ids(external_id):
@@ -289,9 +294,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             if not title_id:
                 return []
 
-        lang_strings = [to_opensubtitlescom(lang.basename) for lang in languages]
+        # be sure to remove duplicates
+        lang_strings = list(set([to_opensubtitlescom(lang.basename) for lang in languages]))
+
         langs = ','.join(lang_strings)
-        logging.debug(f'Searching for this languages: {lang_strings}')
+        logging.debug(f'Searching for those languages: {lang_strings}')
 
         # query the server
         if isinstance(self.video, Episode):
@@ -400,13 +407,6 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         return self.query(languages, video)
 
     def download_subtitle(self, subtitle):
-        if region.get("oscom_token", expiration_time=TOKEN_EXPIRATION_TIME) is NO_VALUE:
-            logger.debug("No cached token, we'll try to login again.")
-            self.login()
-        if self.token is NO_VALUE:
-            logger.debug("Unable to obtain an authentication token right now, we'll try again later.")
-            raise ProviderError("Unable to obtain an authentication token")
-
         logger.info('Downloading subtitle %r', subtitle)
 
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json',
@@ -442,10 +442,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             subtitle_content = r.content
             subtitle.content = fix_line_ending(subtitle_content)
 
-    def reset_token(self):
+    @staticmethod
+    def reset_token():
         logging.debug('Authentication failed: clearing cache and attempting to login.')
         region.delete("oscom_token")
-        return self.login()
+        return
 
     def checked(self, fn, raise_api_limit=False, validate_json=False, json_key_name=None, validate_content=False):
         """Run :fn: and check the response status before returning it.
@@ -478,17 +479,13 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         except Exception:
             status_code = None
         else:
-            if status_code == 400:
-                raise ConfigurationError('Do not use email but username')
-            elif status_code == 401:
+            if status_code == 401:
                 time.sleep(1)
                 log_request_response(response)
-                logged_in = self.reset_token()
-                if logged_in:
-                    return self.checked(fn, raise_api_limit=raise_api_limit, validate_json=validate_json,
-                                        json_key_name=json_key_name, validate_content=validate_content)
-                else:
-                    raise AuthenticationError('Login failed')
+                self.reset_token()
+                self.login()
+                self.checked(fn, raise_api_limit=raise_api_limit, validate_json=validate_json,
+                             json_key_name=json_key_name, validate_content=validate_content)
             elif status_code == 403:
                 log_request_response(response)
                 raise ProviderError("Bazarr API key seems to be in problem")
