@@ -401,6 +401,7 @@ def save_settings(settings_items):
     undefined_audio_track_default_changed = False
     undefined_subtitles_track_default_changed = False
     audio_tracks_parsing_changed = False
+    reset_providers = False
 
     # Subzero Mods
     update_subzero = False
@@ -504,45 +505,61 @@ def save_settings(settings_items):
 
         if key == 'settings-addic7ed-username':
             if key != settings.addic7ed.username:
+                reset_providers = True
                 region.delete('addic7ed_data')
         elif key == 'settings-addic7ed-password':
             if key != settings.addic7ed.password:
+                reset_providers = True
                 region.delete('addic7ed_data')
 
         if key == 'settings-legendasdivx-username':
             if key != settings.legendasdivx.username:
+                reset_providers = True
                 region.delete('legendasdivx_cookies2')
         elif key == 'settings-legendasdivx-password':
             if key != settings.legendasdivx.password:
+                reset_providers = True
                 region.delete('legendasdivx_cookies2')
 
         if key == 'settings-opensubtitles-username':
             if key != settings.opensubtitles.username:
+                reset_providers = True
                 region.delete('os_token')
         elif key == 'settings-opensubtitles-password':
             if key != settings.opensubtitles.password:
+                reset_providers = True
                 region.delete('os_token')
 
         if key == 'settings-opensubtitlescom-username':
             if key != settings.opensubtitlescom.username:
+                reset_providers = True
                 region.delete('oscom_token')
         elif key == 'settings-opensubtitlescom-password':
             if key != settings.opensubtitlescom.password:
+                reset_providers = True
                 region.delete('oscom_token')
 
         if key == 'settings-subscene-username':
             if key != settings.subscene.username:
+                reset_providers = True
                 region.delete('subscene_cookies2')
         elif key == 'settings-subscene-password':
             if key != settings.subscene.password:
+                reset_providers = True
                 region.delete('subscene_cookies2')
 
         if key == 'settings-titlovi-username':
             if key != settings.titlovi.username:
+                reset_providers = True
                 region.delete('titlovi_token')
         elif key == 'settings-titlovi-password':
             if key != settings.titlovi.password:
+                reset_providers = True
                 region.delete('titlovi_token')
+
+        if reset_providers:
+            from .get_providers import reset_throttled_providers
+            reset_throttled_providers(only_auth_or_conf_error=True)
 
         if settings_keys[0] == 'settings':
             settings[settings_keys[1]][settings_keys[2]] = value
