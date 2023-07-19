@@ -238,6 +238,9 @@ def parse_language_string(language_string):
 
 
 def get_upgradable_episode_subtitles():
+    if not settings.general.getboolean('upgrade_subs'):
+        return []
+
     max_id_timestamp = select(TableHistory.video_path,
                               TableHistory.language,
                               func.max(TableHistory.timestamp).label('timestamp')) \
@@ -265,6 +268,9 @@ def get_upgradable_episode_subtitles():
 
 
 def get_upgradable_movies_subtitles():
+    if not settings.general.getboolean('upgrade_subs'):
+        return []
+
     max_id_timestamp = select(TableHistoryMovie.video_path,
                               TableHistoryMovie.language,
                               func.max(TableHistoryMovie.timestamp).label('timestamp')) \

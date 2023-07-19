@@ -167,7 +167,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
                 <Text inherit color="white">
                   <Box component="span" mr={12}>
                     <FontAwesomeIcon
-                      title={item?.monitored ? "unmonitored" : "monitored"}
+                      title={item?.monitored ? "monitored" : "unmonitored"}
                       icon={item?.monitored ? faBookmark : farBookmark}
                     ></FontAwesomeIcon>
                   </Box>

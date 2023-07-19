@@ -14,7 +14,7 @@ import requests
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
     MustGetBlacklisted, SearchLimitReached
 from subliminal.providers.opensubtitles import DownloadLimitReached
-from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
+from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable, AuthenticationError, ConfigurationError
 from subliminal import region as subliminal_cache_region
 from subliminal_patch.extensions import provider_registry
 
@@ -76,6 +76,8 @@ def provider_throttle_map():
             APIThrottled: (datetime.timedelta(seconds=15), "15 seconds"),
         },
         "opensubtitlescom": {
+            AuthenticationError: (datetime.timedelta(hours=12), "12 hours"),
+            ConfigurationError: (datetime.timedelta(hours=12), "12 hours"),
             TooManyRequests: (datetime.timedelta(minutes=1), "1 minute"),
             DownloadLimitExceeded: (datetime.timedelta(hours=24), "24 hours"),
         },
@@ -413,12 +415,17 @@ def list_throttled_providers():
     return throttled_providers
 
 
-def reset_throttled_providers():
+def reset_throttled_providers(only_auth_or_conf_error=False):
     for provider in list(tp):
+        if only_auth_or_conf_error and tp[provider][0] not in ['AuthenticationError', 'ConfigurationError']:
+            continue
         del tp[provider]
     set_throttled_providers(str(tp))
     update_throttled_provider()
-    logging.info('BAZARR throttled providers have been reset.')
+    if only_auth_or_conf_error:
+        logging.info('BAZARR throttled providers have been reset (only AuthenticationError and ConfigurationError).')
+    else:
+        logging.info('BAZARR throttled providers have been reset.')
 
 
 def get_throttled_providers():
