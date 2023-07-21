@@ -414,7 +414,11 @@ def save_settings(settings_items):
 
         settings_keys = key.split('-')
 
-        # Make sure that text based form values aren't pass as list
+        # Make sure list of lists based form values are stored as list
+        if isinstance(value, list) and settings_keys[-1] in array_keys:
+            value = [x.split(',') for x in value if isinstance(x, str)]
+
+        # Make sure that text based form values aren't passed as list
         if isinstance(value, list) and len(value) == 1 and settings_keys[-1] not in array_keys:
             value = value[0]
             if value in empty_values and value != '':
