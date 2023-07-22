@@ -90,9 +90,11 @@ def restore_from_backup():
     if os.path.isfile(os.path.join(get_restore_path(), 'config.yaml')):
         restore_config_path = os.path.join(get_restore_path(), 'config.yaml')
         dest_config_path = os.path.join(args.config_dir, 'config', 'config.yaml')
+        new_config = True
     else:
         restore_config_path = os.path.join(get_restore_path(), 'config.ini')
         dest_config_path = os.path.join(args.config_dir, 'config', 'config.ini')
+        new_config = False
 
     restore_database_path = os.path.join(get_restore_path(), 'bazarr.db')
     dest_database_path = os.path.join(args.config_dir, 'db', 'bazarr.db')
@@ -103,6 +105,13 @@ def restore_from_backup():
             os.remove(restore_config_path)
         except OSError:
             logging.exception(f'Unable to restore or delete config file to {dest_config_path}')
+        else:
+            if new_config:
+                if os.path.isfile(os.path.join(get_restore_path(), 'config.ini')):
+                    os.remove(os.path.join(get_restore_path(), 'config.ini'))
+            else:
+                if os.path.isfile(os.path.join(get_restore_path(), 'config.yaml')):
+                    os.remove(os.path.join(get_restore_path(), 'config.yaml'))
         if not settings.postgresql.enabled:
             try:
                 shutil.copy(restore_database_path, dest_database_path)

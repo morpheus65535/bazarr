@@ -311,7 +311,8 @@ config_ini_file = os.path.join(args.config_dir, 'config', 'config.ini')
 if os.path.exists(config_ini_file) and not os.path.exists(config_yaml_file):
     convert_ini_to_yaml(config_ini_file)
 elif not os.path.exists(config_yaml_file):
-    os.makedirs(os.path.dirname(config_yaml_file))
+    if not os.path.isdir(os.path.dirname(config_yaml_file)):
+        os.makedirs(os.path.dirname(config_yaml_file))
     open(config_yaml_file, mode='w').close()
 
 settings = Dynaconf(
