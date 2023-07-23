@@ -54,6 +54,7 @@ jobs:
         working-directory: ${{ env.UI_DIRECTORY }}
 
       - name: Create Release
+        uses: fregante/setup-git-user@v2
         run: |
           export RELEASE_MASTER=1
           release-it --ci --increment ${{ github.event.inputs.increment }}

@@ -61,6 +61,7 @@ jobs:
           branch: development
 
       - name: Create Release (Conditional)
+        uses: fregante/setup-git-user@v2
         if: ${{ steps.check-ci.outputs.conclusion == 'success' }}
         run: |
           revision_count=$(git rev-list --invert-grep --regexp-ignore-case --extended-regexp --grep="^(Release|no log:|Merge.remote-tracking).*" $(git describe --tags --abbrev=0)..HEAD --count)
