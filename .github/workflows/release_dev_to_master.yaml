@@ -54,8 +54,9 @@ jobs:
         working-directory: ${{ env.UI_DIRECTORY }}
 
       - name: Create Release
-        uses: fregante/setup-git-user@v2
         run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           export RELEASE_MASTER=1
           release-it --ci --increment ${{ github.event.inputs.increment }}
   Merge:
