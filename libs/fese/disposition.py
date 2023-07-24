@@ -57,8 +57,8 @@ class FFprobeSubtitleDisposition:
 
     def language_kwargs(self):
         return {
-            "hi": self._content_type == "hearing_impaired",
-            "forced": self._content_type == "forced",
+            "hi": self._content_type == "hearing_impaired" or self.hearing_impaired,
+            "forced": self._content_type == "forced" or self.forced,
         }
 
     def __str__(self):
