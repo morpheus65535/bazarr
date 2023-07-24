@@ -45,7 +45,9 @@ class EmbeddedSubtitle(Subtitle):
         self._matches: set = matches
 
     def get_matches(self, video):
-        self._matches.add("hearing_impaired")
+        if self.language.hi:
+            self._matches.add("hearing_impaired")
+
         self._matches.add("hash")
 
         return self._matches
@@ -121,13 +123,19 @@ class EmbeddedSubtitlesProvider(Provider):
             streams = list(_filter_subtitles(video.get_subtitles()))
         except InvalidSource as error:
             logger.error("Error trying to get subtitles for %s: %s", video, error)
+
             self._blacklist.add(path)
             streams = []
+
+        _rebuild_langs(streams)
 
         streams = _discard_possible_incomplete_subtitles(streams)
 
         if not streams:
             logger.debug("No subtitles found for container: %s", video)
+
+        if self._hi_fallback:
+            _check_hi_fallback(streams, languages)
 
         only_forced = all(lang.forced for lang in languages)
         also_forced = any(lang.forced for lang in languages)
@@ -136,14 +144,11 @@ class EmbeddedSubtitlesProvider(Provider):
 
         for stream in streams:
             if stream.codec_name not in self._included_codecs:
-                logger.debug(
-                    "Ignoring %s (codec not included in %s)",
-                    stream,
-                    self._included_codecs,
-                )
+                logger.debug("Ignoring codec %s [%s]", stream, self._included_codecs)
                 continue
 
             if stream.language not in languages:
+                logger.debug("%r not in %r", stream.language, languages)
                 continue
 
             disposition = stream.disposition
@@ -160,9 +165,6 @@ class EmbeddedSubtitlesProvider(Provider):
                 allowed_streams.append(stream)
             else:
                 logger.debug("Ignoring unwanted subtitle: %s", stream)
-
-        if self._hi_fallback:
-            _check_hi_fallback(allowed_streams, languages)
 
         logger.debug("Cache info: %s", _get_memoized_video_container.cache_info())
 
@@ -262,16 +264,20 @@ def _filter_subtitles(subtitles: List[FFprobeSubtitleStream]):
 
 def _check_hi_fallback(streams, languages):
     for language in languages:
-        logger.debug("Checking HI fallback for '%s' language", language)
+        logger.debug("Checking HI fallback for '%r' language", language)
 
-        streams_ = [stream for stream in streams if stream.language == language]
+        streams_ = [
+            stream for stream in streams if stream.language.alpha3 == language.alpha3
+        ]
         if len(streams_) == 1 and streams_[0].disposition.hearing_impaired:
+            stream_ = streams_[0]
             logger.debug(
                 "HI fallback: updating %s HI to False (only subtitle found is HI)",
-                streams_[0],
+                stream_,
             )
-            streams_[0].disposition.hearing_impaired = False
-            streams_[0].disposition.generic = True
+            stream_.disposition.hearing_impaired = False
+            stream_.disposition.generic = True
+            stream_.language.hi = False
 
         elif all(stream.disposition.hearing_impaired for stream in streams_):
             for stream in streams_:
@@ -281,9 +287,23 @@ def _check_hi_fallback(streams, languages):
                 )
                 stream.disposition.hearing_impaired = False
                 stream.disposition.generic = True
+                stream.language.hi = False
 
+        elif any(stream.disposition.hearing_impaired for stream in streams_):
+            logger.debug(
+                "HI fallback not needed: %r (There's already one non-hi stream)",
+                streams_,
+            )
         else:
-            logger.debug("HI fallback not needed: %s", streams_)
+            logger.debug("Unknown use-case: %r. Not doing anything.", streams_)
+
+
+def _rebuild_langs(streams):
+    for stream in streams:
+        kwargs = stream.disposition.language_kwargs()
+        stream.language = Language.rebuild(stream.language, **kwargs)
+
+        logger.debug("Rebuild language: %r", stream.language)
 
 
 def _discard_possible_incomplete_subtitles(streams):
@@ -297,6 +317,7 @@ def _discard_possible_incomplete_subtitles(streams):
     # Blatantly assume there's nothing to discard as some ffprobe streams don't
     # have number_of_frames tags
     if not max_frames:
+        logger.debug("No max frames. Assuming good subtitles.")
         return streams
 
     logger.debug("Checking possible incomplete subtitles (max frames: %d)", max_frames)
@@ -304,11 +325,6 @@ def _discard_possible_incomplete_subtitles(streams):
     valid_streams = []
 
     for stream in streams:
-        # Make sure to update stream's language to reflect disposition
-        stream.language = Language.rebuild(
-            stream.language, **stream.disposition.language_kwargs()
-        )
-
         # 500 < 1200
         if not stream.language.forced and stream.tags.frames < max_frames // 2:
             logger.debug(
