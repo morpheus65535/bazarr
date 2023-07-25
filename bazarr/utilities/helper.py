@@ -10,10 +10,17 @@ from bs4 import UnicodeDammit
 from app.config import settings
 
 
-def check_credentials(user, pw):
+def check_credentials(user, pw, request, log_success=True):
+    ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
     username = settings.auth.username
     password = settings.auth.password
-    return hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username
+    if hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username:
+        if log_success:
+            logging.info(f'Successful authentication from {ip_addr} for user {user}')
+        return True
+    else:
+        logging.info(f'Failed authentication from {ip_addr} for user {user}')
+        return False
 
 
 def get_subtitle_destination_folder():
