@@ -30,6 +30,8 @@ parser.add_argument('--no-tasks', default=False, type=bool, const=True, metavar=
                     help="Disable all tasks (default: False)")
 parser.add_argument('--no-signalr', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
                     help="Disable SignalR connections to Sonarr and/or Radarr (default: False)")
+parser.add_argument('--create-db-revision', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
+                    help="Create a new database revision that will be used to migrate database")
 
 
 if not no_cli:

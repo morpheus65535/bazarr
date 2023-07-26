@@ -1,15 +1,11 @@
 import { withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
 import { useTableStyles } from "@/styles";
-import { BuildKey, GetItemId } from "@/utilities";
+import { GetItemId } from "@/utilities";
 import {
   faCaretDown,
-  faCheck,
-  faCheckCircle,
   faDownload,
-  faExclamationCircle,
   faInfoCircle,
-  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -20,19 +16,16 @@ import {
   Code,
   Collapse,
   Divider,
-  Group,
-  List,
-  Popover,
   Stack,
   Text,
 } from "@mantine/core";
-import { useHover } from "@mantine/hooks";
 import { isString } from "lodash";
-import { FunctionComponent, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { UseQueryResult } from "react-query";
 import { Column } from "react-table";
 import { Action, PageTable } from "..";
 import Language from "../bazarr/Language";
+import StateIcon from "../StateIcon";
 
 type SupportType = Item.Movie | Item.Episode;
 
@@ -155,7 +148,13 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         accessor: "matches",
         Cell: (row) => {
           const { matches, dont_matches: dont } = row.row.original;
-          return <StateIcon matches={matches} dont={dont}></StateIcon>;
+          return (
+            <StateIcon
+              matches={matches}
+              dont={dont}
+              isHistory={false}
+            ></StateIcon>
+          );
         },
       },
       {
@@ -227,48 +226,3 @@ export const EpisodeSearchModal = withModal<Props<Item.Episode>>(
   "episode-manual-search",
   { title: "Search Subtitles", size: "calc(100vw - 4rem)" }
 );
-
-const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
-  matches,
-  dont,
-}) => {
-  const hasIssues = dont.length > 0;
-
-  const { ref, hovered } = useHover();
-
-  return (
-    <Popover opened={hovered} position="top" width={360} withArrow withinPortal>
-      <Popover.Target>
-        <Text color={hasIssues ? "yellow" : "green"} ref={ref}>
-          <FontAwesomeIcon
-            icon={hasIssues ? faExclamationCircle : faCheckCircle}
-          ></FontAwesomeIcon>
-        </Text>
-      </Popover.Target>
-      <Popover.Dropdown>
-        <Group position="left" spacing="xl" noWrap grow>
-          <Stack align="flex-start" justify="flex-start" spacing="xs" mb="auto">
-            <Text color="green">
-              <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>
-            </Text>
-            <List>
-              {matches.map((v, idx) => (
-                <List.Item key={BuildKey(idx, v, "match")}>{v}</List.Item>
-              ))}
-            </List>
-          </Stack>
-          <Stack align="flex-start" justify="flex-start" spacing="xs" mb="auto">
-            <Text color="yellow">
-              <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>
-            </Text>
-            <List>
-              {dont.map((v, idx) => (
-                <List.Item key={BuildKey(idx, v, "miss")}>{v}</List.Item>
-              ))}
-            </List>
-          </Stack>
-        </Group>
-      </Popover.Dropdown>
-    </Popover>
-  );
-};

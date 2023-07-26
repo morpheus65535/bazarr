@@ -18,7 +18,7 @@ from utilities.path_mappings import path_mappings
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
 from languages.custom_lang import CustomLanguage
-from app.database import TableEpisodes, TableMovies, TableShows, get_profiles_list
+from app.database import TableEpisodes, TableMovies, TableShows, get_profiles_list, database, select
 from app.event_handler import event_stream
 from subtitles.processing import ProcessSubtitlesResult
 
@@ -52,26 +52,27 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
         lang_obj = Language.rebuild(lang_obj, forced=True)
 
     if media_type == 'series':
-        episode_metadata = TableEpisodes.select(TableEpisodes.sonarrSeriesId,
-                                                TableEpisodes.sonarrEpisodeId,
-                                                TableShows.profileId) \
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)) \
-            .dicts() \
-            .get_or_none()
+        episode_metadata = database.execute(
+            select(TableEpisodes.sonarrSeriesId,
+                   TableEpisodes.sonarrEpisodeId,
+                   TableShows.profileId)
+            .select_from(TableEpisodes)
+            .join(TableShows)
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))) \
+            .first()
 
         if episode_metadata:
-            use_original_format = bool(get_profiles_list(episode_metadata["profileId"])["originalFormat"])
+            use_original_format = bool(get_profiles_list(episode_metadata.profileId)["originalFormat"])
         else:
             use_original_format = False
     else:
-        movie_metadata = TableMovies.select(TableMovies.radarrId, TableMovies.profileId) \
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)) \
-            .dicts() \
-            .get_or_none()
+        movie_metadata = database.execute(
+            select(TableMovies.radarrId, TableMovies.profileId)
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))) \
+            .first()
 
         if movie_metadata:
-            use_original_format = bool(get_profiles_list(movie_metadata["profileId"])["originalFormat"])
+            use_original_format = bool(get_profiles_list(movie_metadata.profileId)["originalFormat"])
         else:
             use_original_format = False
 
@@ -134,18 +135,18 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
     if media_type == 'series':
         if not episode_metadata:
             return
-        series_id = episode_metadata['sonarrSeriesId']
-        episode_id = episode_metadata['sonarrEpisodeId']
+        series_id = episode_metadata.sonarrSeriesId
+        episode_id = episode_metadata.sonarrEpisodeId
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
-                       percent_score=100, sonarr_series_id=episode_metadata['sonarrSeriesId'], forced=forced,
-                       sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
+                       percent_score=100, sonarr_series_id=episode_metadata.sonarrSeriesId, forced=forced,
+                       sonarr_episode_id=episode_metadata.sonarrEpisodeId)
     else:
         if not movie_metadata:
             return
         series_id = ""
-        episode_id = movie_metadata['radarrId']
+        episode_id = movie_metadata.radarrId
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
-                       percent_score=100, radarr_id=movie_metadata['radarrId'], forced=forced)
+                       percent_score=100, radarr_id=movie_metadata.radarrId, forced=forced)
 
     if use_postprocessing:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,
@@ -157,15 +158,15 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
     if media_type == 'series':
         reversed_path = path_mappings.path_replace_reverse(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse(subtitle_path)
-        notify_sonarr(episode_metadata['sonarrSeriesId'])
-        event_stream(type='series', action='update', payload=episode_metadata['sonarrSeriesId'])
-        event_stream(type='episode-wanted', action='delete', payload=episode_metadata['sonarrEpisodeId'])
+        notify_sonarr(episode_metadata.sonarrSeriesId)
+        event_stream(type='series', action='update', payload=episode_metadata.sonarrSeriesId)
+        event_stream(type='episode-wanted', action='delete', payload=episode_metadata.sonarrEpisodeId)
     else:
         reversed_path = path_mappings.path_replace_reverse_movie(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(subtitle_path)
-        notify_radarr(movie_metadata['radarrId'])
-        event_stream(type='movie', action='update', payload=movie_metadata['radarrId'])
-        event_stream(type='movie-wanted', action='delete', payload=movie_metadata['radarrId'])
+        notify_radarr(movie_metadata.radarrId)
+        event_stream(type='movie', action='update', payload=movie_metadata.radarrId)
+        event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
 
     result = ProcessSubtitlesResult(message=language_from_alpha3(language) + modifier_string + " Subtitles manually "
                                                                                                "uploaded.",

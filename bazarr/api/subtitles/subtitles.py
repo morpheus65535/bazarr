@@ -6,7 +6,7 @@ import gc
 
 from flask_restx import Resource, Namespace, reqparse
 
-from app.database import TableEpisodes, TableMovies
+from app.database import TableEpisodes, TableMovies, database, select
 from languages.get_languages import alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
 from subtitles.tools.subsyncer import SubSyncer
@@ -53,28 +53,31 @@ class Subtitles(Resource):
         id = args.get('id')
 
         if media_type == 'episode':
-            metadata = TableEpisodes.select(TableEpisodes.path, TableEpisodes.sonarrSeriesId)\
-                .where(TableEpisodes.sonarrEpisodeId == id)\
-                .dicts()\
-                .get_or_none()
+            metadata = database.execute(
+                select(TableEpisodes.path, TableEpisodes.sonarrSeriesId)
+                .where(TableEpisodes.sonarrEpisodeId == id)) \
+                .first()
 
             if not metadata:
                 return 'Episode not found', 404
 
-            video_path = path_mappings.path_replace(metadata['path'])
+            video_path = path_mappings.path_replace(metadata.path)
         else:
-            metadata = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == id).dicts().get_or_none()
+            metadata = database.execute(
+                select(TableMovies.path)
+                .where(TableMovies.radarrId == id))\
+                .first()
 
             if not metadata:
                 return 'Movie not found', 404
 
-            video_path = path_mappings.path_replace_movie(metadata['path'])
+            video_path = path_mappings.path_replace_movie(metadata.path)
 
         if action == 'sync':
             subsync = SubSyncer()
             if media_type == 'episode':
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
-                             srt_lang=language, media_type='series', sonarr_series_id=metadata['sonarrSeriesId'],
+                             srt_lang=language, media_type='series', sonarr_series_id=metadata.sonarrSeriesId,
                              sonarr_episode_id=int(id))
             else:
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
@@ -89,7 +92,7 @@ class Subtitles(Resource):
             translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
                                      from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
                                      media_type="series" if media_type == "episode" else "movies",
-                                     sonarr_series_id=metadata.get('sonarrSeriesId'),
+                                     sonarr_series_id=metadata.sonarrSeriesId,
                                      sonarr_episode_id=int(id),
                                      radarr_id=id)
         else:
@@ -105,7 +108,7 @@ class Subtitles(Resource):
 
         if media_type == 'episode':
             store_subtitles(path_mappings.path_replace_reverse(video_path), video_path)
-            event_stream(type='series', payload=metadata['sonarrSeriesId'])
+            event_stream(type='series', payload=metadata.sonarrSeriesId)
             event_stream(type='episode', payload=int(id))
         else:
             store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)

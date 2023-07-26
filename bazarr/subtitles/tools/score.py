@@ -7,7 +7,7 @@ import re
 
 from app.config import get_settings
 from app.database import TableCustomScoreProfileConditions as conditions_table, TableCustomScoreProfiles as \
-    profiles_table
+    profiles_table, database, select
 
 logger = logging.getLogger(__name__)
 
@@ -91,14 +91,14 @@ class CustomScoreProfile:
         self._conditions_loaded = False
 
     def load_conditions(self):
-        try:
-            self._conditions = [
-                Condition.from_dict(item)
-                for item in self.conditions_table.select()
-                .where(self.conditions_table.profile_id == self.id)
-                .dicts()
-            ]
-        except self.conditions_table.DoesNotExist:
+        self._conditions = [
+            Condition.from_dict(item)
+            for item in database.execute(
+                select(self.conditions_table)
+                .where(self.conditions_table.profile_id == self.id))
+            .all()
+        ]
+        if not self._conditions:
             logger.debug("Conditions not found for %s", self)
             self._conditions = []
 
@@ -164,15 +164,16 @@ class Score:
     def load_profiles(self):
         """Load the profiles associated with the class. This method must be called
         after every custom profile creation or update."""
-        try:
-            self._profiles = [
-                CustomScoreProfile(**item)
-                for item in self.profiles_table.select()
-                .where(self.profiles_table.media == self.media)
-                .dicts()
-            ]
+        self._profiles = [
+            CustomScoreProfile(**item)
+            for item in database.execute(
+                select(self.profiles_table)
+                .where(self.profiles_table.media == self.media))
+            .all()
+        ]
+        if self._profiles:
             logger.debug("Loaded profiles: %s", self._profiles)
-        except self.profiles_table.DoesNotExist:
+        else:
             logger.debug("No score profiles found")
             self._profiles = []
 

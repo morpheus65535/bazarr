@@ -7,7 +7,7 @@ from app.config import settings
 from utilities.path_mappings import path_mappings
 from utilities.post_processing import pp_replace, set_chmod
 from languages.get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
-from app.database import TableEpisodes, TableMovies
+from app.database import TableEpisodes, TableMovies, database, select
 from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
@@ -15,17 +15,20 @@ from app.event_handler import event_stream
 
 from .utils import _get_download_code3
 from .post_processing import postprocessing
+from .utils import _get_scores
 
 
 class ProcessSubtitlesResult:
     def __init__(self, message, reversed_path, downloaded_language_code2, downloaded_provider, score, forced,
-                 subtitle_id, reversed_subtitles_path, hearing_impaired):
+                 subtitle_id, reversed_subtitles_path, hearing_impaired, matched=None, not_matched=None):
         self.message = message
         self.path = reversed_path
         self.provider = downloaded_provider
         self.score = score
         self.subs_id = subtitle_id
         self.subs_path = reversed_subtitles_path
+        self.matched = matched
+        self.not_matched = not_matched
 
         if hearing_impaired:
             self.language_code = downloaded_language_code2 + ":hi"
@@ -67,39 +70,38 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         downloaded_provider + " with a score of " + str(percent_score) + "%."
 
     if media_type == 'series':
-        episode_metadata = TableEpisodes.select(TableEpisodes.sonarrSeriesId,
-                                                TableEpisodes.sonarrEpisodeId) \
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)) \
-            .dicts() \
-            .get_or_none()
+        episode_metadata = database.execute(
+            select(TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId)
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
+            .first()
         if not episode_metadata:
             return
-        series_id = episode_metadata['sonarrSeriesId']
-        episode_id = episode_metadata['sonarrEpisodeId']
+        series_id = episode_metadata.sonarrSeriesId
+        episode_id = episode_metadata.sonarrEpisodeId
 
         from .sync import sync_subtitles
         sync_subtitles(video_path=path, srt_path=downloaded_path,
                        forced=subtitle.language.forced,
                        srt_lang=downloaded_language_code2, media_type=media_type,
                        percent_score=percent_score,
-                       sonarr_series_id=episode_metadata['sonarrSeriesId'],
-                       sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
+                       sonarr_series_id=episode_metadata.sonarrSeriesId,
+                       sonarr_episode_id=episode_metadata.sonarrEpisodeId)
     else:
-        movie_metadata = TableMovies.select(TableMovies.radarrId) \
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)) \
-            .dicts() \
-            .get_or_none()
+        movie_metadata = database.execute(
+            select(TableMovies.radarrId)
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)))\
+            .first()
         if not movie_metadata:
             return
         series_id = ""
-        episode_id = movie_metadata['radarrId']
+        episode_id = movie_metadata.radarrId
 
         from .sync import sync_subtitles
         sync_subtitles(video_path=path, srt_path=downloaded_path,
                        forced=subtitle.language.forced,
                        srt_lang=downloaded_language_code2, media_type=media_type,
                        percent_score=percent_score,
-                       radarr_id=movie_metadata['radarrId'])
+                       radarr_id=movie_metadata.radarrId)
 
     if use_postprocessing is True:
         command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
@@ -124,16 +126,16 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     if media_type == 'series':
         reversed_path = path_mappings.path_replace_reverse(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse(downloaded_path)
-        notify_sonarr(episode_metadata['sonarrSeriesId'])
-        event_stream(type='series', action='update', payload=episode_metadata['sonarrSeriesId'])
+        notify_sonarr(episode_metadata.sonarrSeriesId)
+        event_stream(type='series', action='update', payload=episode_metadata.sonarrSeriesId)
         event_stream(type='episode-wanted', action='delete',
-                     payload=episode_metadata['sonarrEpisodeId'])
+                     payload=episode_metadata.sonarrEpisodeId)
 
     else:
         reversed_path = path_mappings.path_replace_reverse_movie(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(downloaded_path)
-        notify_radarr(movie_metadata['radarrId'])
-        event_stream(type='movie-wanted', action='delete', payload=movie_metadata['radarrId'])
+        notify_radarr(movie_metadata.radarrId)
+        event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
 
     event_tracker.track(provider=downloaded_provider, action=action, language=downloaded_language)
 
@@ -145,4 +147,15 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                                   forced=subtitle.language.forced,
                                   subtitle_id=subtitle.id,
                                   reversed_subtitles_path=reversed_subtitles_path,
-                                  hearing_impaired=subtitle.language.hi)
+                                  hearing_impaired=subtitle.language.hi,
+                                  matched=list(subtitle.matches),
+                                  not_matched=_get_not_matched(subtitle, media_type))
+
+
+def _get_not_matched(subtitle, media_type):
+    _, _, scores = _get_scores(media_type)
+
+    if 'hash' not in subtitle.matches:
+        return list(set(scores) - set(subtitle.matches))
+    else:
+        return []

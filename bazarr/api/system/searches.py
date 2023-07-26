@@ -1,9 +1,10 @@
 # coding=utf-8
 
 from flask_restx import Resource, Namespace, reqparse
+from unidecode import unidecode
 
 from app.config import settings
-from app.database import TableShows, TableMovies
+from app.database import TableShows, TableMovies, database, select
 
 from ..utils import authenticate
 
@@ -22,30 +23,42 @@ class Searches(Resource):
     def get(self):
         """List results from query"""
         args = self.get_request_parser.parse_args()
-        query = args.get('query')
+        query = unidecode(args.get('query')).lower()
         search_list = []
 
         if query:
             if settings.general.getboolean('use_sonarr'):
                 # Get matching series
-                series = TableShows.select(TableShows.title,
-                                           TableShows.sonarrSeriesId,
-                                           TableShows.year)\
-                    .where(TableShows.title.contains(query))\
-                    .order_by(TableShows.title)\
-                    .dicts()
-                series = list(series)
-                search_list += series
+                search_list += database.execute(
+                    select(TableShows.title,
+                           TableShows.sonarrSeriesId,
+                           TableShows.year)
+                    .order_by(TableShows.title)) \
+                    .all()
 
             if settings.general.getboolean('use_radarr'):
                 # Get matching movies
-                movies = TableMovies.select(TableMovies.title,
-                                            TableMovies.radarrId,
-                                            TableMovies.year) \
-                    .where(TableMovies.title.contains(query)) \
-                    .order_by(TableMovies.title) \
-                    .dicts()
-                movies = list(movies)
-                search_list += movies
+                search_list += database.execute(
+                    select(TableMovies.title,
+                           TableMovies.radarrId,
+                           TableMovies.year)
+                    .order_by(TableMovies.title)) \
+                    .all()
 
-        return search_list
+        results = []
+
+        for x in search_list:
+            if query in unidecode(x.title).lower():
+                result = {
+                    'title': x.title,
+                    'year': x.year,
+                }
+
+                if hasattr(x, 'sonarrSeriesId'):
+                    result['sonarrSeriesId'] = x.sonarrSeriesId
+                else:
+                    result['radarrId'] = x.radarrId
+
+                results.append(result)
+
+        return results

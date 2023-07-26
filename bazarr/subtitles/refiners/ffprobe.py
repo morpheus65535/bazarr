@@ -6,31 +6,31 @@ import logging
 from subliminal import Movie
 
 from utilities.path_mappings import path_mappings
-from app.database import TableEpisodes, TableMovies
+from app.database import TableEpisodes, TableMovies, database, select
 from utilities.video_analyzer import parse_video_metadata
 
 
 def refine_from_ffprobe(path, video):
     if isinstance(video, Movie):
-        file_id = TableMovies.select(TableMovies.movie_file_id, TableMovies.file_size)\
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))\
-            .dicts()\
-            .get_or_none()
+        file_id = database.execute(
+            select(TableMovies.movie_file_id, TableMovies.file_size)
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))) \
+            .first()
     else:
-        file_id = TableEpisodes.select(TableEpisodes.episode_file_id, TableEpisodes.file_size)\
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))\
-            .dicts()\
-            .get_or_none()
+        file_id = database.execute(
+            select(TableEpisodes.episode_file_id, TableEpisodes.file_size)
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
+            .first()
 
     if not file_id:
         return video
 
     if isinstance(video, Movie):
-        data = parse_video_metadata(file=path, file_size=file_id['file_size'],
-                                    movie_file_id=file_id['movie_file_id'])
+        data = parse_video_metadata(file=path, file_size=file_id.file_size,
+                                    movie_file_id=file_id.movie_file_id)
     else:
-        data = parse_video_metadata(file=path, file_size=file_id['file_size'],
-                                    episode_file_id=file_id['episode_file_id'])
+        data = parse_video_metadata(file=path, file_size=file_id.file_size,
+                                    episode_file_id=file_id.episode_file_id)
 
     if not data or ('ffprobe' not in data and 'mediainfo' not in data):
         logging.debug("No cache available for this file: {}".format(path))

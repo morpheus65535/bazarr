@@ -59,6 +59,7 @@ class NoExceptionFormatter(logging.Formatter):
 def configure_logging(debug=False):
     warnings.simplefilter('ignore', category=ResourceWarning)
     warnings.simplefilter('ignore', category=PytzUsageWarning)
+    # warnings.simplefilter('ignore', category=SAWarning)
 
     if not debug:
         log_level = "INFO"
@@ -93,7 +94,7 @@ def configure_logging(debug=False):
     logger.addHandler(fh)
 
     if debug:
-        logging.getLogger("peewee").setLevel(logging.DEBUG)
+        logging.getLogger("alembic.runtime.migration").setLevel(logging.DEBUG)
         logging.getLogger("apscheduler").setLevel(logging.DEBUG)
         logging.getLogger("subliminal").setLevel(logging.DEBUG)
         logging.getLogger("subliminal_patch").setLevel(logging.DEBUG)
@@ -111,7 +112,7 @@ def configure_logging(debug=False):
         logging.debug('Operating system: %s', platform.platform())
         logging.debug('Python version: %s', platform.python_version())
     else:
-        logging.getLogger("peewee").setLevel(logging.CRITICAL)
+        logging.getLogger("alembic.runtime.migration").setLevel(logging.CRITICAL)
         logging.getLogger("apscheduler").setLevel(logging.WARNING)
         logging.getLogger("apprise").setLevel(logging.WARNING)
         logging.getLogger("subliminal").setLevel(logging.CRITICAL)

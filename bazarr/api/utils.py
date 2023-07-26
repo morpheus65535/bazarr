@@ -36,7 +36,7 @@ def authenticate(actual_method):
 
 def postprocess(item):
     # Remove ffprobe_cache
-    if item.get('movie_file_id'):
+    if item.get('radarrId'):
         path_replace = path_mappings.path_replace_movie
     else:
         path_replace = path_mappings.path_replace
@@ -56,12 +56,6 @@ def postprocess(item):
         item['alternativeTitles'] = ast.literal_eval(item['alternativeTitles'])
     else:
         item['alternativeTitles'] = []
-
-    # Parse failed attempts
-    if item.get('failedAttempts'):
-        item['failedAttempts'] = ast.literal_eval(item['failedAttempts'])
-    else:
-        item['failedAttempts'] = []
 
     # Parse subtitles
     if item.get('subtitles'):
@@ -135,10 +129,6 @@ def postprocess(item):
                 "hi": bool(item['language'].endswith(':hi')),
             }
 
-    # Parse seriesType
-    if item.get('seriesType'):
-        item['seriesType'] = item['seriesType'].capitalize()
-
     if item.get('path'):
         item['path'] = path_replace(item['path'])
 
@@ -149,8 +139,10 @@ def postprocess(item):
     # map poster and fanart to server proxy
     if item.get('poster') is not None:
         poster = item['poster']
-        item['poster'] = f"{base_url}/images/{'movies' if item.get('movie_file_id') else 'series'}{poster}" if poster else None
+        item['poster'] = f"{base_url}/images/{'movies' if item.get('radarrId') else 'series'}{poster}" if poster else None
 
     if item.get('fanart') is not None:
         fanart = item['fanart']
-        item['fanart'] = f"{base_url}/images/{'movies' if item.get('movie_file_id') else 'series'}{fanart}" if fanart else None
+        item['fanart'] = f"{base_url}/images/{'movies' if item.get('radarrId') else 'series'}{fanart}" if fanart else None
+
+    return item

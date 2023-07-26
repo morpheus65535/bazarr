@@ -4,7 +4,7 @@ import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableMovies, TableBlacklistMovie
+from app.database import TableMovies, TableBlacklistMovie, database, select
 from subtitles.tools.delete import delete_subtitles
 from radarr.blacklist import blacklist_log_movie, blacklist_delete_all_movie, blacklist_delete_movie
 from utilities.path_mappings import path_mappings
@@ -46,26 +46,28 @@ class MoviesBlacklist(Resource):
         start = args.get('start')
         length = args.get('length')
 
-        data = TableBlacklistMovie.select(TableMovies.title,
-                                          TableMovies.radarrId,
-                                          TableBlacklistMovie.provider,
-                                          TableBlacklistMovie.subs_id,
-                                          TableBlacklistMovie.language,
-                                          TableBlacklistMovie.timestamp)\
-            .join(TableMovies, on=(TableBlacklistMovie.radarr_id == TableMovies.radarrId))\
-            .order_by(TableBlacklistMovie.timestamp.desc())
+        data = database.execute(
+            select(TableMovies.title,
+                   TableMovies.radarrId,
+                   TableBlacklistMovie.provider,
+                   TableBlacklistMovie.subs_id,
+                   TableBlacklistMovie.language,
+                   TableBlacklistMovie.timestamp)
+            .select_from(TableBlacklistMovie)
+            .join(TableMovies)
+            .order_by(TableBlacklistMovie.timestamp.desc()))
         if length > 0:
             data = data.limit(length).offset(start)
-        data = list(data.dicts())
 
-        for item in data:
-            postprocess(item)
-
-            # Make timestamp pretty
-            item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
-            item.update({'timestamp': pretty.date(item['timestamp'])})
-
-        return data
+        return [postprocess({
+            'title': x.title,
+            'radarrId': x.radarrId,
+            'provider': x.provider,
+            'subs_id': x.subs_id,
+            'language': x.language,
+            'timestamp': pretty.date(x.timestamp),
+            'parsed_timestamp': x.timestamp.strftime('%x %X'),
+        }) for x in data.all()]
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, required=True, help='Radarr ID')
@@ -90,12 +92,15 @@ class MoviesBlacklist(Resource):
         forced = False
         hi = False
 
-        data = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == radarr_id).dicts().get_or_none()
+        data = database.execute(
+            select(TableMovies.path)
+            .where(TableMovies.radarrId == radarr_id))\
+            .first()
 
         if not data:
             return 'Movie not found', 404
 
-        media_path = data['path']
+        media_path = data.path
         subtitles_path = args.get('subtitles_path')
 
         blacklist_log_movie(radarr_id=radarr_id,

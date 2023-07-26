@@ -5,7 +5,7 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableMovies
+from app.database import get_exclusion_clause, TableMovies, database, select, func
 from api.swaggerui import subtitles_language_model
 
 from api.utils import authenticate, postprocess
@@ -26,12 +26,10 @@ class MoviesWanted(Resource):
 
     data_model = api_ns_movies_wanted.model('wanted_movies_data_model', {
         'title': fields.String(),
-        'monitored': fields.Boolean(),
         'missing_subtitles': fields.Nested(get_subtitles_language_model),
         'radarrId': fields.Integer(),
         'sceneName': fields.String(),
         'tags': fields.List(fields.String),
-        'failedAttempts': fields.String(),
     })
 
     get_response_model = api_ns_movies_wanted.model('MovieWantedGetResponse', {
@@ -51,44 +49,36 @@ class MoviesWanted(Resource):
         wanted_conditions = [(TableMovies.missing_subtitles != '[]')]
         if len(radarrid) > 0:
             wanted_conditions.append((TableMovies.radarrId.in_(radarrid)))
-        wanted_conditions += get_exclusion_clause('movie')
-        wanted_condition = reduce(operator.and_, wanted_conditions)
-
-        if len(radarrid) > 0:
-            result = TableMovies.select(TableMovies.title,
-                                        TableMovies.missing_subtitles,
-                                        TableMovies.radarrId,
-                                        TableMovies.sceneName,
-                                        TableMovies.failedAttempts,
-                                        TableMovies.tags,
-                                        TableMovies.monitored)\
-                .where(wanted_condition)\
-                .dicts()
+            start = 0
+            length = 0
         else:
             start = args.get('start')
             length = args.get('length')
-            result = TableMovies.select(TableMovies.title,
-                                        TableMovies.missing_subtitles,
-                                        TableMovies.radarrId,
-                                        TableMovies.sceneName,
-                                        TableMovies.failedAttempts,
-                                        TableMovies.tags,
-                                        TableMovies.monitored)\
-                .where(wanted_condition)\
-                .order_by(TableMovies.rowid.desc())
-            if length > 0:
-                result = result.limit(length).offset(start)
-            result = result.dicts()
-        result = list(result)
 
-        for item in result:
-            postprocess(item)
+        wanted_conditions += get_exclusion_clause('movie')
+        wanted_condition = reduce(operator.and_, wanted_conditions)
 
-        count_conditions = [(TableMovies.missing_subtitles != '[]')]
-        count_conditions += get_exclusion_clause('movie')
-        count = TableMovies.select(TableMovies.monitored,
-                                   TableMovies.tags)\
-            .where(reduce(operator.and_, count_conditions))\
-            .count()
+        stmt = select(TableMovies.title,
+                      TableMovies.missing_subtitles,
+                      TableMovies.radarrId,
+                      TableMovies.sceneName,
+                      TableMovies.tags) \
+            .where(wanted_condition)
+        if length > 0:
+            stmt = stmt.order_by(TableMovies.radarrId.desc()).limit(length).offset(start)
 
-        return {'data': result, 'total': count}
+        results = [postprocess({
+            'title': x.title,
+            'missing_subtitles': x.missing_subtitles,
+            'radarrId': x.radarrId,
+            'sceneName': x.sceneName,
+            'tags': x.tags,
+        }) for x in database.execute(stmt).all()]
+
+        count = database.execute(
+            select(func.count())
+            .select_from(TableMovies)
+            .where(wanted_condition)) \
+            .scalar()
+
+        return {'data': results, 'total': count}

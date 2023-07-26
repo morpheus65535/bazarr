@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse, fields
 
-from app.database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id
+from app.database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id, database, select
 from utilities.path_mappings import path_mappings
 from app.get_providers import get_providers
 from subtitles.manual import manual_search, manual_download_subtitle
@@ -47,22 +47,23 @@ class ProviderEpisodes(Resource):
         """Search manually for an episode subtitles"""
         args = self.get_request_parser.parse_args()
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.path,
-                                           TableEpisodes.sceneName,
-                                           TableShows.title,
-                                           TableShows.profileId) \
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
-            .dicts() \
-            .get_or_none()
+        episodeInfo = database.execute(
+            select(TableEpisodes.path,
+                   TableEpisodes.sceneName,
+                   TableShows.title,
+                   TableShows.profileId)
+            .select_from(TableEpisodes)
+            .join(TableShows)
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
+            .first()
 
         if not episodeInfo:
             return 'Episode not found', 404
 
-        title = episodeInfo['title']
-        episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['sceneName'] or "None"
-        profileId = episodeInfo['profileId']
+        title = episodeInfo.title
+        episodePath = path_mappings.path_replace(episodeInfo.path)
+        sceneName = episodeInfo.sceneName or "None"
+        profileId = episodeInfo.profileId
 
         providers_list = get_providers()
 
@@ -91,22 +92,23 @@ class ProviderEpisodes(Resource):
         args = self.post_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = TableEpisodes.select(
-            TableEpisodes.audio_language,
-            TableEpisodes.path,
-            TableEpisodes.sceneName,
-            TableShows.title) \
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
-            .dicts() \
-            .get_or_none()
+        episodeInfo = database.execute(
+            select(
+                TableEpisodes.audio_language,
+                TableEpisodes.path,
+                TableEpisodes.sceneName,
+                TableShows.title)
+            .select_from(TableEpisodes)
+            .join(TableShows)
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
+            .first()
 
         if not episodeInfo:
             return 'Episode not found', 404
 
-        title = episodeInfo['title']
-        episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['sceneName'] or "None"
+        title = episodeInfo.title
+        episodePath = path_mappings.path_replace(episodeInfo.path)
+        sceneName = episodeInfo.sceneName or "None"
 
         hi = args.get('hi').capitalize()
         forced = args.get('forced').capitalize()
@@ -114,7 +116,7 @@ class ProviderEpisodes(Resource):
         selected_provider = args.get('provider')
         subtitle = args.get('subtitle')
 
-        audio_language_list = get_audio_profile_languages(episodeInfo["audio_language"])
+        audio_language_list = get_audio_profile_languages(episodeInfo.audio_language)
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
         else:

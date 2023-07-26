@@ -8,7 +8,7 @@ from dateutil import rrule
 from flask_restx import Resource, Namespace, reqparse, fields
 from functools import reduce
 
-from app.database import TableHistory, TableHistoryMovie
+from app.database import TableHistory, TableHistoryMovie, database, select
 
 from ..utils import authenticate
 
@@ -86,17 +86,25 @@ class HistoryStats(Resource):
         history_where_clause = reduce(operator.and_, history_where_clauses)
         history_where_clause_movie = reduce(operator.and_, history_where_clauses_movie)
 
-        data_series = TableHistory.select(TableHistory.timestamp, TableHistory.id)\
-            .where(history_where_clause) \
-            .dicts()
+        data_series = [{
+            'timestamp': x.timestamp,
+            'id': x.id,
+        } for x in database.execute(
+            select(TableHistory.timestamp, TableHistory.id)
+            .where(history_where_clause))
+            .all()]
         data_series = [{'date': date[0], 'count': sum(1 for item in date[1])} for date in
                        itertools.groupby(list(data_series),
                                          key=lambda x: x['timestamp'].strftime(
                                              '%Y-%m-%d'))]
 
-        data_movies = TableHistoryMovie.select(TableHistoryMovie.timestamp, TableHistoryMovie.id) \
-            .where(history_where_clause_movie) \
-            .dicts()
+        data_movies = [{
+            'timestamp': x.timestamp,
+            'id': x.id,
+        } for x in database.execute(
+            select(TableHistoryMovie.timestamp, TableHistoryMovie.id)
+            .where(history_where_clause_movie))
+            .all()]
         data_movies = [{'date': date[0], 'count': sum(1 for item in date[1])} for date in
                        itertools.groupby(list(data_movies),
                                          key=lambda x: x['timestamp'].strftime(

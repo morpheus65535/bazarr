@@ -1,17 +1,15 @@
 # coding=utf-8
 
-import os
 import operator
-import pretty
-
-from flask_restx import Resource, Namespace, reqparse, fields
+import ast
 from functools import reduce
 
-from app.database import TableEpisodes, TableShows, TableHistory, TableBlacklist
-from subtitles.upgrade import get_upgradable_episode_subtitles
-from utilities.path_mappings import path_mappings
 from api.swaggerui import subtitles_language_model
+from app.database import TableEpisodes, TableShows, TableHistory, TableBlacklist, database, select, func
+from subtitles.upgrade import get_upgradable_episode_subtitles,  _language_still_desired
 
+import pretty
+from flask_restx import Resource, Namespace, reqparse, fields
 from ..utils import authenticate, postprocess
 
 api_ns_episodes_history = Namespace('Episodes History', description='List episodes history events')
@@ -27,7 +25,6 @@ class EpisodesHistory(Resource):
     get_language_model = api_ns_episodes_history.model('subtitles_language_model', subtitles_language_model)
 
     data_model = api_ns_episodes_history.model('history_episodes_data_model', {
-        'id': fields.Integer(),
         'seriesTitle': fields.String(),
         'monitored': fields.Boolean(),
         'episode_number': fields.String(),
@@ -40,15 +37,14 @@ class EpisodesHistory(Resource):
         'score': fields.String(),
         'tags': fields.List(fields.String),
         'action': fields.Integer(),
-        'video_path': fields.String(),
         'subtitles_path': fields.String(),
         'sonarrEpisodeId': fields.Integer(),
         'provider': fields.String(),
-        'seriesType': fields.String(),
         'upgradable': fields.Boolean(),
-        'raw_timestamp': fields.Integer(),
         'parsed_timestamp': fields.String(),
         'blacklisted': fields.Boolean(),
+        'matches': fields.List(fields.String),
+        'dont_matches': fields.List(fields.String),
     })
 
     get_response_model = api_ns_episodes_history.model('EpisodeHistoryGetResponse', {
@@ -68,84 +64,116 @@ class EpisodesHistory(Resource):
         episodeid = args.get('episodeid')
 
         upgradable_episodes_not_perfect = get_upgradable_episode_subtitles()
-        if len(upgradable_episodes_not_perfect):
-            upgradable_episodes_not_perfect = [{"video_path": x['video_path'],
-                                                "timestamp": x['timestamp'],
-                                                "score": x['score'],
-                                                "tags": x['tags'],
-                                                "monitored": x['monitored'],
-                                                "seriesType": x['seriesType']}
-                                               for x in upgradable_episodes_not_perfect]
 
-        query_conditions = [(TableEpisodes.title.is_null(False))]
+        blacklisted_subtitles = select(TableBlacklist.provider,
+                                       TableBlacklist.subs_id) \
+            .subquery()
+
+        query_conditions = [(TableEpisodes.title.is_not(None))]
         if episodeid:
             query_conditions.append((TableEpisodes.sonarrEpisodeId == episodeid))
-        query_condition = reduce(operator.and_, query_conditions)
-        episode_history = TableHistory.select(TableHistory.id,
-                                              TableShows.title.alias('seriesTitle'),
-                                              TableEpisodes.monitored,
-                                              TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias(
-                                                  'episode_number'),
-                                              TableEpisodes.title.alias('episodeTitle'),
-                                              TableHistory.timestamp,
-                                              TableHistory.subs_id,
-                                              TableHistory.description,
-                                              TableHistory.sonarrSeriesId,
-                                              TableEpisodes.path,
-                                              TableHistory.language,
-                                              TableHistory.score,
-                                              TableShows.tags,
-                                              TableHistory.action,
-                                              TableHistory.video_path,
-                                              TableHistory.subtitles_path,
-                                              TableHistory.sonarrEpisodeId,
-                                              TableHistory.provider,
-                                              TableShows.seriesType) \
-            .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)) \
-            .where(query_condition) \
+
+        stmt = select(TableHistory.id,
+                      TableShows.title.label('seriesTitle'),
+                      TableEpisodes.monitored,
+                      TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label('episode_number'),
+                      TableEpisodes.title.label('episodeTitle'),
+                      TableHistory.timestamp,
+                      TableHistory.subs_id,
+                      TableHistory.description,
+                      TableHistory.sonarrSeriesId,
+                      TableEpisodes.path,
+                      TableHistory.language,
+                      TableHistory.score,
+                      TableShows.tags,
+                      TableHistory.action,
+                      TableHistory.video_path,
+                      TableHistory.subtitles_path,
+                      TableHistory.sonarrEpisodeId,
+                      TableHistory.provider,
+                      TableShows.seriesType,
+                      TableShows.profileId,
+                      TableHistory.matched,
+                      TableHistory.not_matched,
+                      TableEpisodes.subtitles.label('external_subtitles'),
+                      upgradable_episodes_not_perfect.c.id.label('upgradable'),
+                      blacklisted_subtitles.c.subs_id.label('blacklisted')) \
+            .select_from(TableHistory) \
+            .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId) \
+            .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
+            .join(upgradable_episodes_not_perfect, onclause=TableHistory.id == upgradable_episodes_not_perfect.c.id,
+                  isouter=True) \
+            .join(blacklisted_subtitles, onclause=TableHistory.subs_id == blacklisted_subtitles.c.subs_id,
+                  isouter=True) \
+            .where(reduce(operator.and_, query_conditions)) \
             .order_by(TableHistory.timestamp.desc())
         if length > 0:
-            episode_history = episode_history.limit(length).offset(start)
-        episode_history = list(episode_history.dicts())
-
-        blacklist_db = TableBlacklist.select(TableBlacklist.provider, TableBlacklist.subs_id).dicts()
-        blacklist_db = list(blacklist_db)
+            stmt = stmt.limit(length).offset(start)
+        episode_history = [{
+            'id': x.id,
+            'seriesTitle': x.seriesTitle,
+            'monitored': x.monitored,
+            'episode_number': x.episode_number,
+            'episodeTitle': x.episodeTitle,
+            'timestamp': x.timestamp,
+            'subs_id': x.subs_id,
+            'description': x.description,
+            'sonarrSeriesId': x.sonarrSeriesId,
+            'path': x.path,
+            'language': x.language,
+            'score': x.score,
+            'tags': x.tags,
+            'action': x.action,
+            'video_path': x.video_path,
+            'subtitles_path': x.subtitles_path,
+            'sonarrEpisodeId': x.sonarrEpisodeId,
+            'provider': x.provider,
+            'matches': x.matched,
+            'dont_matches': x.not_matched,
+            'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
+            'upgradable': bool(x.upgradable) if _language_still_desired(x.language, x.profileId) else False,
+            'blacklisted': bool(x.blacklisted),
+        } for x in database.execute(stmt).all()]
 
         for item in episode_history:
-            # Mark episode as upgradable or not
-            item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": item['timestamp'], "score": item['score'],
-                "tags": str(item['tags']), "monitored": str(item['monitored']),
-                "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:  # noqa: E129
-                if os.path.exists(path_mappings.path_replace(item['subtitles_path'])) and \
-                        os.path.exists(path_mappings.path_replace(item['video_path'])):
-                    item.update({"upgradable": True})
+            original_video_path = item['path']
+            original_subtitle_path = item['subtitles_path']
+            item.update(postprocess(item))
+
+            # Mark not upgradable if score is perfect or if video/subtitles file doesn't exist anymore
+            if item['upgradable']:
+                if original_subtitle_path not in item['external_subtitles'] or \
+                        not item['video_path'] == original_video_path:
+                    item.update({"upgradable": False})
 
             del item['path']
-
-            postprocess(item)
+            del item['video_path']
+            del item['external_subtitles']
 
             if item['score']:
                 item['score'] = str(round((int(item['score']) * 100 / 360), 2)) + "%"
 
             # Make timestamp pretty
             if item['timestamp']:
-                item["raw_timestamp"] = item['timestamp'].timestamp()
                 item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
                 item['timestamp'] = pretty.date(item["timestamp"])
 
-            # Check if subtitles is blacklisted
-            item.update({"blacklisted": False})
-            if item['action'] not in [0, 4, 5]:
-                for blacklisted_item in blacklist_db:
-                    if blacklisted_item['provider'] == item['provider'] and \
-                            blacklisted_item['subs_id'] == item['subs_id']:
-                        item.update({"blacklisted": True})
-                        break
+            # Parse matches and dont_matches
+            if item['matches']:
+                item.update({'matches': ast.literal_eval(item['matches'])})
+            else:
+                item.update({'matches': []})
 
-        count = TableHistory.select() \
-            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)) \
-            .where(TableEpisodes.title.is_null(False)).count()
+            if item['dont_matches']:
+                item.update({'dont_matches': ast.literal_eval(item['dont_matches'])})
+            else:
+                item.update({'dont_matches': []})
+
+        count = database.execute(
+            select(func.count())
+            .select_from(TableHistory)
+            .join(TableEpisodes)
+            .where(TableEpisodes.title.is_not(None))) \
+            .scalar()
 
         return {'data': episode_history, 'total': count}

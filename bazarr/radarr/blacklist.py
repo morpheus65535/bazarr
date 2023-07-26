@@ -2,38 +2,38 @@
 
 from datetime import datetime
 
-from app.database import TableBlacklistMovie
+from app.database import TableBlacklistMovie, database, insert, delete, select
 from app.event_handler import event_stream
 
 
 def get_blacklist_movie():
-    blacklist_db = TableBlacklistMovie.select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id).dicts()
-
-    blacklist_list = []
-    for item in blacklist_db:
-        blacklist_list.append((item['provider'], item['subs_id']))
-
-    return blacklist_list
+    return [(item.provider, item.subs_id) for item in
+            database.execute(
+                select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id))
+            .all()]
 
 
 def blacklist_log_movie(radarr_id, provider, subs_id, language):
-    TableBlacklistMovie.insert({
-        TableBlacklistMovie.radarr_id: radarr_id,
-        TableBlacklistMovie.timestamp: datetime.now(),
-        TableBlacklistMovie.provider: provider,
-        TableBlacklistMovie.subs_id: subs_id,
-        TableBlacklistMovie.language: language
-    }).execute()
+    database.execute(
+        insert(TableBlacklistMovie)
+        .values(
+            radarr_id=radarr_id,
+            timestamp=datetime.now(),
+            provider=provider,
+            subs_id=subs_id,
+            language=language
+        ))
     event_stream(type='movie-blacklist')
 
 
 def blacklist_delete_movie(provider, subs_id):
-    TableBlacklistMovie.delete().where((TableBlacklistMovie.provider == provider) and
-                                       (TableBlacklistMovie.subs_id == subs_id))\
-        .execute()
+    database.execute(
+        delete(TableBlacklistMovie)
+        .where((TableBlacklistMovie.provider == provider) and (TableBlacklistMovie.subs_id == subs_id)))
     event_stream(type='movie-blacklist', action='delete')
 
 
 def blacklist_delete_all_movie():
-    TableBlacklistMovie.delete().execute()
+    database.execute(
+        delete(TableBlacklistMovie))
     event_stream(type='movie-blacklist', action='delete')

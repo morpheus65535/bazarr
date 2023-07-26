@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse
 
-from app.database import TableEpisodes, TableShows
+from app.database import TableEpisodes, TableShows, database, select
 from subtitles.mass_download import episode_download_subtitles
 from subtitles.indexer.series import store_subtitles
 from utilities.path_mappings import path_mappings
@@ -28,15 +28,15 @@ class WebHooksSonarr(Resource):
         args = self.post_request_parser.parse_args()
         episode_file_id = args.get('sonarr_episodefile_id')
 
-        sonarrEpisodeId = TableEpisodes.select(TableEpisodes.sonarrEpisodeId,
-                                               TableEpisodes.path) \
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-            .where(TableEpisodes.episode_file_id == episode_file_id) \
-            .dicts() \
-            .get_or_none()
+        sonarrEpisodeId = database.execute(
+            select(TableEpisodes.sonarrEpisodeId, TableEpisodes.path)
+            .select_from(TableEpisodes)
+            .join(TableShows)
+            .where(TableEpisodes.episode_file_id == episode_file_id)) \
+            .first()
 
         if sonarrEpisodeId:
-            store_subtitles(sonarrEpisodeId['path'], path_mappings.path_replace(sonarrEpisodeId['path']))
-            episode_download_subtitles(no=sonarrEpisodeId['sonarrEpisodeId'], send_progress=True)
+            store_subtitles(sonarrEpisodeId.path, path_mappings.path_replace(sonarrEpisodeId.path))
+            episode_download_subtitles(no=sonarrEpisodeId.sonarrEpisodeId, send_progress=True)
 
         return '', 200
