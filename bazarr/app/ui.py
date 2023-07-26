@@ -49,7 +49,8 @@ def check_login(actual_method):
     def wrapper(*args, **kwargs):
         if settings.auth.type == 'basic':
             auth = request.authorization
-            if not (auth and check_credentials(request.authorization.username, request.authorization.password)):
+            if not (auth and
+                    check_credentials(request.authorization.username, request.authorization.password, request)):
                 return ('Unauthorized', 401, {
                     'WWW-Authenticate': 'Basic realm="Login Required"'
                 })
@@ -65,12 +66,13 @@ def catch_all(path):
     auth = True
     if settings.auth.type == 'basic':
         auth = request.authorization
-        if not (auth and check_credentials(request.authorization.username, request.authorization.password)):
+        if not (auth and check_credentials(request.authorization.username, request.authorization.password, request,
+                                           log_success=False)):
             return ('Unauthorized', 401, {
                 'WWW-Authenticate': 'Basic realm="Login Required"'
             })
     elif settings.auth.type == 'form':
-        if 'logged_in' not in session:
+        if 'logged_in' not in session or not session['logged_in']:
             auth = False
 
     try:

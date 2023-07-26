@@ -196,18 +196,13 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     def ping(self):
         return self._started and (time.time() - self._started) < TOKEN_EXPIRATION_TIME
 
-    def login(self):
-        r = self.session.post(self.server_url + 'login',
-                              json={"username": self.username, "password": self.password},
-                              allow_redirects=False,
-                              timeout=30)
-
-        if r.status_code == 400:
-            raise ConfigurationError('Do not use email but username')
-        elif r.status_code == 401:
-            raise AuthenticationError('Login failed')
-
-        r.raise_for_status()
+    def login(self, is_retry=False):
+        r = self.checked(
+            lambda: self.session.post(self.server_url + 'login',
+                                      json={"username": self.username, "password": self.password},
+                                      allow_redirects=False,
+                                      timeout=30),
+            is_retry=is_retry)
 
         try:
             self.token = r.json()['token']
@@ -267,9 +262,6 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             logger.debug(f'No match found for {title}')
 
     def query(self, languages, video):
-        if region.get("oscom_token", expiration_time=TOKEN_EXPIRATION_TIME) is NO_VALUE:
-            logger.debug("No cached token, we'll try to login again.")
-            self.login()
         self.video = video
         if self.use_hash:
             file_hash = self.video.hashes.get('opensubtitlescom')
@@ -448,7 +440,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         region.delete("oscom_token")
         return
 
-    def checked(self, fn, raise_api_limit=False, validate_json=False, json_key_name=None, validate_content=False):
+    def checked(self, fn, raise_api_limit=False, validate_json=False, json_key_name=None, validate_content=False,
+                is_retry=False):
         """Run :fn: and check the response status before returning it.
 
         :param fn: the function to make an API call to OpenSubtitles.com.
@@ -456,6 +449,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         :param validate_json: test if response is valid json.
         :param json_key_name: test if returned json contain a specific key.
         :param validate_content: test if response have a content (used with download).
+        :param is_retry: prevent additional retries with login endpoint.
         :return: the response.
 
         """
@@ -466,7 +460,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             except APIThrottled:
                 if not raise_api_limit:
                     logger.info("API request limit hit, waiting and trying again once.")
-                    time.sleep(2)
+                    time.sleep(15)
                     return self.checked(fn, raise_api_limit=True)
                 raise
             except (ConnectionError, Timeout, ReadTimeout):
@@ -480,12 +474,15 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             status_code = None
         else:
             if status_code == 401:
-                time.sleep(1)
                 log_request_response(response)
                 self.reset_token()
-                self.login()
-                self.checked(fn, raise_api_limit=raise_api_limit, validate_json=validate_json,
-                             json_key_name=json_key_name, validate_content=validate_content)
+                if is_retry:
+                    raise AuthenticationError('Login failed')
+                else:
+                    time.sleep(1)
+                    self.login(is_retry=True)
+                    self.checked(fn, raise_api_limit=raise_api_limit, validate_json=validate_json,
+                                 json_key_name=json_key_name, validate_content=validate_content, is_retry=True)
             elif status_code == 403:
                 log_request_response(response)
                 raise ProviderError("Bazarr API key seems to be in problem")
