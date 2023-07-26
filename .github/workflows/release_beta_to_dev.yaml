@@ -63,6 +63,8 @@ jobs:
       - name: Create Release (Conditional)
         if: ${{ steps.check-ci.outputs.conclusion == 'success' }}
         run: |
+          git config user.name "${{github.actor}}"
+          git config user.email "${{github.actor}}@users.noreply.github.com"
           revision_count=$(git rev-list --invert-grep --regexp-ignore-case --extended-regexp --grep="^(Release|no log:|Merge.remote-tracking).*" $(git describe --tags --abbrev=0)..HEAD --count)
           if [[ $revision_count != 0 ]]; then
             echo "**** Found $revision_count changes! Releasing... ****"

@@ -55,6 +55,8 @@ jobs:
 
       - name: Create Release
         run: |
+          git config user.name "${{github.actor}}"
+          git config user.email "${{github.actor}}@users.noreply.github.com"
           export RELEASE_MASTER=1
           release-it --ci --increment ${{ github.event.inputs.increment }}
   Merge:
