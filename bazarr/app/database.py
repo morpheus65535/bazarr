@@ -27,6 +27,8 @@ postgresql = (os.getenv("POSTGRES_ENABLED", settings.postgresql.enabled).lower()
 
 region = make_region().configure('dogpile.cache.memory')
 
+migrations_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'migrations')
+
 if postgresql:
     # insert is different between database types
     from sqlalchemy.dialects.postgresql import insert  # noqa E402
@@ -313,7 +315,7 @@ def create_db_revision(app):
     db = SQLAlchemy(app, metadata=metadata)
     with app.app_context():
         flask_migrate.Migrate(app, db, render_as_batch=True)
-        flask_migrate.migrate()
+        flask_migrate.migrate(directory=migrations_directory)
         db.engine.dispose()
 
 
@@ -329,7 +331,7 @@ def migrate_db(app):
 
     with app.app_context():
         flask_migrate.Migrate(app, db, render_as_batch=True)
-        flask_migrate.upgrade()
+        flask_migrate.upgrade(directory=migrations_directory)
         db.engine.dispose()
 
     # add the system table single row if it's not existing
