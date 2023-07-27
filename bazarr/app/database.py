@@ -119,15 +119,6 @@ class TableBlacklistMovie(Base):
     timestamp = mapped_column(DateTime, default=datetime.now)
 
 
-class TableCustomScoreProfiles(Base):
-    __tablename__ = 'table_custom_score_profiles'
-
-    id = mapped_column(Integer, primary_key=True)
-    name = mapped_column(Text)
-    media = mapped_column(Text)
-    score = mapped_column(Integer)
-
-
 class TableEpisodes(Base):
     __tablename__ = 'table_episodes'
 
@@ -287,19 +278,6 @@ class TableShowsRootfolder(Base):
     error = mapped_column(Text)
     id = mapped_column(Integer, primary_key=True)
     path = mapped_column(Text)
-
-
-class TableCustomScoreProfileConditions(Base):
-    __tablename__ = 'table_custom_score_profile_conditions'
-
-    id = mapped_column(Integer, primary_key=True)
-    profile_id = mapped_column(Integer, ForeignKey('table_custom_score_profiles.id'), nullable=False)
-    type = mapped_column(Text)
-    value = mapped_column(Text)
-    required = mapped_column(Integer, nullable=False)
-    negate = mapped_column(Integer, nullable=False)
-
-    profile = relationship('TableCustomScoreProfiles')
 
 
 def init_db():
