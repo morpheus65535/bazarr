@@ -34,11 +34,11 @@ def upgrade():
         if column_exists('table_movies', 'rowid'):
             batch_op.drop_column(column_name='rowid')
 
-    if 'table_custom_score_profiles' in tables:
-        op.drop_table('table_custom_score_profiles')
-
     if 'table_custom_score_profile_conditions' in tables:
         op.drop_table('table_custom_score_profile_conditions')
+
+    if 'table_custom_score_profiles' in tables:
+        op.drop_table('table_custom_score_profiles')
 
 
 def downgrade():
