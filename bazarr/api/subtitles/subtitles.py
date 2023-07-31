@@ -31,7 +31,7 @@ class Subtitles(Resource):
     patch_request_parser.add_argument('language', type=str, required=True, help='Language code2')
     patch_request_parser.add_argument('path', type=str, required=True, help='Subtitles file path')
     patch_request_parser.add_argument('type', type=str, required=True, help='Media type from ["episode", "movie"]')
-    patch_request_parser.add_argument('id', type=int, required=True, help='Episode ID')
+    patch_request_parser.add_argument('id', type=int, required=True, help='Media ID (episodeId, radarrId)')
     patch_request_parser.add_argument('forced', type=str, required=False, help='Forced subtitles from ["True", "False"]')
     patch_request_parser.add_argument('hi', type=str, required=False, help='HI subtitles from ["True", "False"]')
     patch_request_parser.add_argument('original_format', type=str, required=False,

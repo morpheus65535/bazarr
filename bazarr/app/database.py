@@ -31,6 +31,8 @@ else:
 
 region = make_region().configure('dogpile.cache.memory')
 
+migrations_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'migrations')
+
 if postgresql:
     # insert is different between database types
     from sqlalchemy.dialects.postgresql import insert  # noqa E402
@@ -119,15 +121,6 @@ class TableBlacklistMovie(Base):
     radarr_id = mapped_column(Integer, ForeignKey('table_movies.radarrId', ondelete='CASCADE'))
     subs_id = mapped_column(Text)
     timestamp = mapped_column(DateTime, default=datetime.now)
-
-
-class TableCustomScoreProfiles(Base):
-    __tablename__ = 'table_custom_score_profiles'
-
-    id = mapped_column(Integer, primary_key=True)
-    name = mapped_column(Text)
-    media = mapped_column(Text)
-    score = mapped_column(Integer)
 
 
 class TableEpisodes(Base):
@@ -291,19 +284,6 @@ class TableShowsRootfolder(Base):
     path = mapped_column(Text)
 
 
-class TableCustomScoreProfileConditions(Base):
-    __tablename__ = 'table_custom_score_profile_conditions'
-
-    id = mapped_column(Integer, primary_key=True)
-    profile_id = mapped_column(Integer, ForeignKey('table_custom_score_profiles.id'), nullable=False)
-    type = mapped_column(Text)
-    value = mapped_column(Text)
-    required = mapped_column(Integer, nullable=False)
-    negate = mapped_column(Integer, nullable=False)
-
-    profile = relationship('TableCustomScoreProfiles')
-
-
 def init_db():
     database.begin()
 
@@ -317,7 +297,7 @@ def create_db_revision(app):
     db = SQLAlchemy(app, metadata=metadata)
     with app.app_context():
         flask_migrate.Migrate(app, db, render_as_batch=True)
-        flask_migrate.migrate()
+        flask_migrate.migrate(directory=migrations_directory)
         db.engine.dispose()
 
 
@@ -333,7 +313,7 @@ def migrate_db(app):
 
     with app.app_context():
         flask_migrate.Migrate(app, db, render_as_batch=True)
-        flask_migrate.upgrade()
+        flask_migrate.upgrade(directory=migrations_directory)
         db.engine.dispose()
 
     # add the system table single row if it's not existing

@@ -24,6 +24,7 @@ depends_on = None
 
 bind = op.get_context().bind
 insp = sa.inspect(bind)
+tables = insp.get_table_names()
 
 should_recreate = 'always' if bind.engine.name == 'sqlite' else 'auto'
 
@@ -58,10 +59,11 @@ def upgrade():
             batch_op.add_column(sa.Column('id', sa.Integer, primary_key=True))
 
     # Update custom_score_profile_conditions table
-    with op.batch_alter_table('table_custom_score_profile_conditions') as batch_op:
-        batch_op.execute('DROP INDEX IF EXISTS tablecustomscoreprofileconditions_profile_id')
-        batch_op.alter_column('profile_id', index=False)
-        batch_op.execute('DROP INDEX IF EXISTS ix_table_custom_score_profile_conditions_profile_id;')
+    if 'table_custom_score_profile_conditions' in tables:
+        with op.batch_alter_table('table_custom_score_profile_conditions') as batch_op:
+            batch_op.execute('DROP INDEX IF EXISTS tablecustomscoreprofileconditions_profile_id')
+            batch_op.alter_column('profile_id', index=False)
+            batch_op.execute('DROP INDEX IF EXISTS ix_table_custom_score_profile_conditions_profile_id;')
 
     # Update notifier table
     with op.batch_alter_table('table_settings_notifier') as batch_op:

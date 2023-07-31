@@ -4,3 +4,4 @@ libs
 bazarr.py
 requirements.txt
 postgres-requirements.txt
+migrations
