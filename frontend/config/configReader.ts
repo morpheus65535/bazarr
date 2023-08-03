@@ -2,48 +2,34 @@
 /// <reference types="node" />
 
 import { readFile } from "fs/promises";
+import { get } from "lodash";
+import YAML from "yaml";
 
 class ConfigReader {
-  config?: string;
+  config: object;
 
   constructor() {
-    this.config = undefined;
+    this.config = {};
   }
 
   async open(path: string) {
     try {
-      this.config = await readFile(path, "utf8");
+      const rawConfig = await readFile(path, "utf8");
+      this.config = YAML.parse(rawConfig);
     } catch (err) {
       // We don't want to catch the error here, handle it on getValue method
     }
   }
 
   getValue(sectionName: string, fieldName: string) {
-    if (!this.config) {
-      throw new Error("Cannot find config to read");
-    }
-    const targetSection = this.config
-      .split("\n\n")
-      .filter((section) => section.includes(`[${sectionName}]`));
+    const path = `${sectionName}.${fieldName}`;
+    const result = get(this.config, path);
 
-    if (targetSection.length === 0) {
-      throw new Error(`Cannot find [${sectionName}] section in config`);
+    if (result === undefined) {
+      throw new Error(`Failed to find ${path} in the local config file`);
     }
 
-    const section = targetSection[0];
-
-    for (const line of section.split("\n")) {
-      const matched = line.startsWith(fieldName);
-      if (matched) {
-        const results = line.split("=");
-        if (results.length === 2) {
-          const key = results[1].trim();
-          return key;
-        }
-      }
-    }
-
-    throw new Error(`Cannot find ${fieldName} in config`);
+    return result;
   }
 }
 
