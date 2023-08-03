@@ -11,7 +11,7 @@ from dynaconf.loaders.yaml_loader import write
 from dynaconf.validator import ValidationError
 from ipaddress import ip_address
 from binascii import hexlify
-from types import MappingProxyType
+from types import MappingProxyType, NoneType
 
 from .get_args import args
 
@@ -69,9 +69,9 @@ validators = [
     Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.path_mappings_movie', must_exist=True, default=[], is_type_of=list),
     Validator('general.serie_default_enabled', must_exist=True, default=False, is_type_of=bool),
-    Validator('general.serie_default_profile', must_exist=True, default='', is_type_of=int | str),
+    Validator('general.serie_default_profile', must_exist=True, default='', is_type_of=(int, str)),
     Validator('general.movie_default_enabled', must_exist=True, default=False, is_type_of=bool),
-    Validator('general.movie_default_profile', must_exist=True, default='', is_type_of=int | str),
+    Validator('general.movie_default_profile', must_exist=True, default='', is_type_of=(int, str)),
     Validator('general.page_size', must_exist=True, default=25, is_type_of=int,
               is_in=[25, 50, 100, 250, 500, 1000]),
     Validator('general.theme', must_exist=True, default='auto', is_type_of=str,
@@ -98,7 +98,7 @@ validators = [
     Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int, is_in=[6, 12, 24]),
     Validator('general.days_to_upgrade_subs', must_exist=True, default=7, is_type_of=int, gte=0, lte=30),
     Validator('general.upgrade_manual', must_exist=True, default=True, is_type_of=bool),
-    Validator('general.anti_captcha_provider', must_exist=True, default=None, is_type_of=None | str,
+    Validator('general.anti_captcha_provider', must_exist=True, default=None, is_type_of=(NoneType, str),
               is_in=[None, 'anti-captcha', 'death-by-captcha']),
     Validator('general.wanted_search_frequency', must_exist=True, default=6, is_type_of=int, is_in=[6, 12, 24]),
     Validator('general.wanted_search_frequency_movie', must_exist=True, default=6, is_type_of=int,
@@ -116,7 +116,8 @@ validators = [
 
     # auth section
     Validator('auth.apikey', must_exist=True, default=hexlify(os.urandom(16)).decode(), is_type_of=str),
-    Validator('auth.type', must_exist=True, default=None, is_type_of=None | str, is_in=[None, 'basic', 'form']),
+    Validator('auth.type', must_exist=True, default=None, is_type_of=(NoneType, str),
+              is_in=[None, 'basic', 'form']),
     Validator('auth.username', must_exist=True, default='', is_type_of=str),
     Validator('auth.password', must_exist=True, default='', is_type_of=str),
 
@@ -175,10 +176,10 @@ validators = [
     Validator('radarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
 
     # proxy section
-    Validator('proxy.type', must_exist=True, default=None, is_type_of=None | str,
+    Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
               is_in=[None, 'socks5', 'http']),
     Validator('proxy.url', must_exist=True, default='', is_type_of=str),
-    Validator('proxy.port', must_exist=True, default='', is_type_of=str | int),
+    Validator('proxy.port', must_exist=True, default='', is_type_of=(str, int)),
     Validator('proxy.username', must_exist=True, default='', is_type_of=str),
     Validator('proxy.password', must_exist=True, default='', is_type_of=str),
     Validator('proxy.exclude', must_exist=True, default=["localhost", "127.0.0.1"], is_type_of=list),
