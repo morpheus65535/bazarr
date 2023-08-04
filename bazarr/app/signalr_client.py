@@ -269,8 +269,8 @@ def dispatcher(data):
                         .where(TableShows.sonarrSeriesId == data['body']['resource']['seriesId']))\
                         .first()
                     if series_metadata:
-                        series_title = series_metadata['title']
-                        series_year = series_metadata['year']
+                        series_title = series_metadata.title
+                        series_year = series_metadata.year
                 episode_title = data['body']['resource']['title']
                 season_number = data['body']['resource']['seasonNumber']
                 episode_number = data['body']['resource']['episodeNumber']
