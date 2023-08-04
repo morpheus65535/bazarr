@@ -239,7 +239,10 @@ def parse_language_string(language_string):
 
 def get_upgradable_episode_subtitles():
     if not settings.general.upgrade_subs:
-        return []
+        # return an empty set of rows
+        return select(TableHistory.id) \
+            .where(TableHistory.id.is_(None)) \
+            .subquery()
 
     max_id_timestamp = select(TableHistory.video_path,
                               TableHistory.language,
@@ -269,7 +272,10 @@ def get_upgradable_episode_subtitles():
 
 def get_upgradable_movies_subtitles():
     if not settings.general.upgrade_subs:
-        return []
+        # return an empty set of rows
+        return select(TableHistoryMovie.id) \
+            .where(TableHistoryMovie.id.is_(None)) \
+            .subquery()
 
     max_id_timestamp = select(TableHistoryMovie.video_path,
                               TableHistoryMovie.language,

@@ -29,7 +29,7 @@ jobs:
         with:
           cond: ${{ github.event_name == 'pull_request' }}
           if_true: ${{ github.head_ref }}
-          if_false: ${{ github.ref }}
+          if_false: ${{ github.ref_name }}
 
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -89,7 +89,7 @@ jobs:
         with:
           cond: ${{ github.event_name == 'pull_request' }}
           if_true: ${{ github.head_ref }}
-          if_false: ${{ github.ref }}
+          if_false: ${{ github.ref_name }}
 
       - name: Checkout repository
         uses: actions/checkout@v3

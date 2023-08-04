@@ -6,12 +6,18 @@ import logging
 import json
 import requests
 import semver
+import sys
 
 from shutil import rmtree
 from zipfile import ZipFile
 
 from .get_args import args
 from .config import settings
+
+
+def deprecated_python_version():
+    # return True if Python version is deprecated
+    return sys.version_info.major == 2 or (sys.version_info.major == 3 and sys.version_info.minor < 8)
 
 
 def check_releases():
@@ -62,13 +68,26 @@ def check_if_new_update():
     with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
         data = json.load(f)
     if not args.no_update:
+        release = None
         if use_prerelease:
-            release = next((item for item in data), None)
+            if deprecated_python_version:
+                release = next((item['name'].lstrip('v') for item in data if
+                                semver.VersionInfo.parse('1.3.1') > semver.VersionInfo.parse(item['name'].lstrip('v'))))
+            else:
+                release = next((item for item in data), None)
         else:
-            release = next((item for item in data if not item["prerelease"]), None)
+            if deprecated_python_version:
+                next((item['name'].lstrip('v') for item in data if
+                      not item['prerelease'] and semver.VersionInfo.parse('1.3.1') > semver.VersionInfo.parse(
+                          item['name'].lstrip('v'))))
+            else:
+                release = next((item for item in data if not item["prerelease"]), None)
 
-        if release:
+        if release and 'name' in release:
             logging.debug('BAZARR last release available is {}'.format(release['name']))
+            if deprecated_python_version:
+                logging.warning('BAZARR is using a deprecated Python version, you must update Python to get latest '
+                                'version available.')
 
             current_version = None
             try:
