@@ -11,9 +11,11 @@ from dynaconf.loaders.yaml_loader import write
 from dynaconf.validator import ValidationError
 from ipaddress import ip_address
 from binascii import hexlify
-from types import MappingProxyType, NoneType
+from types import MappingProxyType
 
 from .get_args import args
+
+NoneType = type(None)
 
 
 def base_url_slash_cleaner(uri):
