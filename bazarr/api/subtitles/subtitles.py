@@ -78,7 +78,7 @@ class Subtitles(Resource):
             if media_type == 'episode':
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
                              srt_lang=language, media_type='series', sonarr_series_id=metadata.sonarrSeriesId,
-                             sonarr_episode_id=int(id))
+                             sonarr_episode_id=id)
             else:
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
                              srt_lang=language, media_type='movies', radarr_id=id)
@@ -92,8 +92,8 @@ class Subtitles(Resource):
             translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
                                      from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
                                      media_type="series" if media_type == "episode" else "movies",
-                                     sonarr_series_id=metadata.sonarrSeriesId,
-                                     sonarr_episode_id=int(id),
+                                     sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
+                                     sonarr_episode_id=id,
                                      radarr_id=id)
         else:
             use_original_format = True if args.get('original_format') == 'true' else False
@@ -109,10 +109,10 @@ class Subtitles(Resource):
         if media_type == 'episode':
             store_subtitles(path_mappings.path_replace_reverse(video_path), video_path)
             event_stream(type='series', payload=metadata.sonarrSeriesId)
-            event_stream(type='episode', payload=int(id))
+            event_stream(type='episode', payload=id)
         else:
             store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)
-            event_stream(type='movie', payload=int(id))
+            event_stream(type='movie', payload=id)
 
         return '', 204
 
