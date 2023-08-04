@@ -15,6 +15,7 @@ from app.database import TableAnnouncements, database, insert, select
 from .get_args import args
 from sonarr.info import get_sonarr_info
 from radarr.info import get_radarr_info
+from app.check_update import deprecated_python_version
 
 
 # Announcements as receive by browser must be in the form of a list of dicts converted to JSON
@@ -102,6 +103,15 @@ def get_local_announcements():
             'link': 'https://discord.com/channels/264387956343570434/264388019585286144/1051567458697363547',
             'dismissible': False,
             'timestamp': 1679606309,
+        })
+
+    # deprecated Python versions
+    if deprecated_python_version:
+        announcements.append({
+            'text': 'Starting with Bazarr 1.4, support for Python 3.7 will get dropped. Upgrade your current version of'
+                    ' Python ASAP to get further updates.',
+            'dismissible': False,
+            'timestamp': 1691162383,
         })
 
     for announcement in announcements:
