@@ -106,7 +106,7 @@ def get_local_announcements():
         })
 
     # deprecated Python versions
-    if deprecated_python_version:
+    if deprecated_python_version():
         announcements.append({
             'text': 'Starting with Bazarr 1.4, support for Python 3.7 will get dropped. Upgrade your current version of'
                     ' Python ASAP to get further updates.',
