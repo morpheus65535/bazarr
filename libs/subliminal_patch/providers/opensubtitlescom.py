@@ -3,6 +3,7 @@ import logging
 import os
 import time
 import datetime
+import json
 
 from requests import Session, ConnectionError, Timeout, ReadTimeout, RequestException
 from requests.exceptions import JSONDecodeError
@@ -540,10 +541,18 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
 
 def log_request_response(response):
+    redacted_request_headers = response.request.headers
+    if 'Authorization' in redacted_request_headers:
+        redacted_request_headers['Authorization'] = 'redacted'
+
+    redacted_request_body = json.loads(response.request.body)
+    if 'password' in redacted_request_body:
+        redacted_request_body['password'] = 'redacted'
+
     logging.debug("opensubtitlescom returned a non standard response. Logging request/response for debugging purpose.")
     logging.debug(f"Request URL: {response.request.url}")
-    logging.debug(f"Request Headers: {response.request.headers}")
-    logging.debug(f"Request Body: {response.request.body}")
+    logging.debug(f"Request Headers: {redacted_request_headers}")
+    logging.debug(f"Request Body: {json.dumps(redacted_request_body)}")
     logging.debug(f"Response Status Code: {response.status_code}")
     logging.debug(f"Response Headers: {response.headers}")
     logging.debug(f"Response Body: {response.text}")
