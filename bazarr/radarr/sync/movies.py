@@ -227,7 +227,7 @@ def update_one_movie(movie_id, action, defer_search=False):
                 insert(TableMovies)
                 .values(movie))
         except IntegrityError as e:
-            logging.error(f"BAZARR cannot update movie {movie['path']} because of {e}")
+            logging.error(f"BAZARR cannot insert movie {movie['path']} because of {e}")
         else:
             event_stream(type='movie', action='update', payload=int(movie_id))
             logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(
