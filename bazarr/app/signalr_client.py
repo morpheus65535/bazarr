@@ -19,7 +19,7 @@ from sonarr.sync.series import update_series, update_one_series
 from radarr.sync.movies import update_movies, update_one_movie
 from sonarr.info import get_sonarr_info, url_sonarr
 from radarr.info import url_radarr
-from .database import TableShows, database, select
+from .database import TableShows, TableMovies, database, select
 
 from .config import settings
 from .scheduler import scheduler
@@ -275,8 +275,19 @@ def dispatcher(data):
                 season_number = data['body']['resource']['seasonNumber']
                 episode_number = data['body']['resource']['episodeNumber']
             elif topic == 'movie':
-                movie_title = data['body']['resource']['title']
-                movie_year = data['body']['resource']['year']
+                if action == 'deleted':
+                    existing_movie_details = database.execute(
+                        select(TableMovies.title, TableMovies.year)
+                        .where(TableMovies.radarrId == media_id)) \
+                        .first()
+                    if existing_movie_details:
+                        movie_title = existing_movie_details.title
+                        movie_year = existing_movie_details.year
+                    else:
+                        return
+                else:
+                    movie_title = data['body']['resource']['title']
+                    movie_year = data['body']['resource']['year']
         except KeyError:
             return
 
