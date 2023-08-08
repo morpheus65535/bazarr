@@ -287,11 +287,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             if not title_id:
                 return []
 
-        # be sure to remove duplicates
-        lang_strings = list(set([to_opensubtitlescom(lang.basename) for lang in languages]))
+        # be sure to remove duplicates using list(set())
+        langs_list = sorted(list(set([to_opensubtitlescom(lang.basename).lower() for lang in languages])))
 
-        langs = ','.join(lang_strings)
-        logging.debug(f'Searching for those languages: {lang_strings}')
+        langs = ','.join(langs_list)
+        logging.debug(f'Searching for those languages: {langs}')
 
         # query the server
         if isinstance(self.video, Episode):
@@ -301,8 +301,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                              params=(('ai_translated', 'exclude'),
                                                      ('episode_number', self.video.episode),
                                                      ('imdb_id', imdb_id if not title_id else None),
-                                                     ('languages', langs.lower()),
-                                                     ('machine_translated', 'exclude'),
+                                                     ('languages', langs),
                                                      ('moviehash', file_hash),
                                                      ('parent_feature_id', title_id if title_id else None),
                                                      ('season_number', self.video.season)),
@@ -319,8 +318,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                              params=(('ai_translated', 'exclude'),
                                                      ('id', title_id if title_id else None),
                                                      ('imdb_id', imdb_id if not title_id else None),
-                                                     ('languages', langs.lower()),
-                                                     ('machine_translated', 'exclude'),
+                                                     ('languages', langs),
                                                      ('moviehash', file_hash)),
                                              timeout=30),
                     validate_json=True,
