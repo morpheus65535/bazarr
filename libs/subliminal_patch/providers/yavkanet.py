@@ -122,32 +122,15 @@ class YavkaNetProvider(Provider):
     def query(self, language, video):
         subtitles = []
         isEpisode = isinstance(video, Episode)
-        params = {
-            's': '',
-            'y': '',
-            'u': '',
-            'l': 'BG',
-            'i': ''
-        }
 
         if isEpisode:
-            params['s'] = "%s s%02de%02d" % (sanitize(fix_tv_naming(video.series), {'\''}), video.season, video.episode)
+            imdb_id = video.series_imdb_id
         else:
-            params['y'] = video.year
-            params['s'] = sanitize(fix_movie_naming(video.title), {'\''})
+            imdb_id = video.imdb_id
 
-        if language == 'en' or language == 'eng':
-            params['l'] = 'EN'
-        elif language == 'ru' or language == 'rus':
-            params['l'] = 'RU'
-        elif language == 'es' or language == 'spa':
-            params['l'] = 'ES'
-        elif language == 'it' or language == 'ita':
-            params['l'] = 'IT'
-
-        logger.info('Searching subtitle %r', params)
-        response = self.retry(self.session.get('https://yavka.net/subtitles.php', params=params, allow_redirects=False,
-                                               timeout=10, headers={'Referer': 'https://yavka.net/'}))
+        logger.info(f'Searching subtitle for {imdb_id}')
+        response = self.retry(self.session.get(f'https://yavka.net/imdb/{imdb_id}', timeout=10,
+                                               headers={'Referer': 'https://yavka.net/'}))
         if not response:
             return subtitles
         response.raise_for_status()

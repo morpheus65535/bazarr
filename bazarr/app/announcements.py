@@ -43,7 +43,8 @@ def parse_announcement_dict(announcement_dict):
 
 def get_announcements_to_file():
     try:
-        r = requests.get("https://raw.githubusercontent.com/morpheus65535/bazarr-binaries/master/announcements.json")
+        r = requests.get("https://raw.githubusercontent.com/morpheus65535/bazarr-binaries/master/announcements.json",
+                         timeout=10)
     except requests.exceptions.HTTPError:
         logging.exception("Error trying to get announcements from Github. Http error.")
     except requests.exceptions.ConnectionError:
@@ -106,7 +107,7 @@ def get_local_announcements():
         })
 
     # deprecated Python versions
-    if deprecated_python_version:
+    if deprecated_python_version():
         announcements.append({
             'text': 'Starting with Bazarr 1.4, support for Python 3.7 will get dropped. Upgrade your current version of'
                     ' Python ASAP to get further updates.',

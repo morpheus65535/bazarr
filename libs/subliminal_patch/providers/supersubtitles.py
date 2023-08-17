@@ -152,6 +152,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
     languages = {Language('hun', 'HU')} | {Language(lang) for lang in [
         'hun', 'eng'
     ]}
+    languages.update(set(Language.rebuild(language, forced=True) for language in languages))
     video_types = (Episode, Movie)
     # https://www.feliratok.eu/?search=&soriSorszam=&nyelv=&sorozatnev=The+Flash+%282014%29&sid=3212&complexsearch=true&knyelv=0&evad=4&epizod1=1&cimke=0&minoseg=0&rlsr=0&tab=all
     server_url = 'https://www.feliratok.eu/'
@@ -480,6 +481,14 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                 sub_downloadlink = sub_downloadlink.group() if sub_downloadlink else ''
                 sub_downloadlink = self.server_url + sub_downloadlink
 
+                # detect forced subtitles
+                szinkronoshoz_sub = table.find("div", {"class": "magyar"})
+                sub_forced = False
+                if szinkronoshoz_sub:
+                    sub_forced = 'szinkronoshoz' in szinkronoshoz_sub.text
+                if sub_forced or 'forced' in sub_downloadlink:
+                    sub_language = Language.rebuild(sub_language, forced=True)
+
                 sub_id = re.search(r"(?<=felirat=).*(?=\">)", link)
                 sub_id = sub_id.group() if sub_id else ''
                 sub_year = video.year
@@ -534,6 +543,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         archive = get_archive_from_bytes(r.content)
 
         if archive is None:
-            raise APIThrottled(f"Invalid archive from {subtitle.page_link}")
+            subtitle.content = r.content
+            return
 
         subtitle.content = get_subtitle_from_archive(archive, episode=subtitle.episode or None)

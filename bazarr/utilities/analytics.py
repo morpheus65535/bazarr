@@ -7,6 +7,7 @@ import logging
 from ga4mp import GtagMP
 
 from app.get_args import args
+from app.config import settings
 from radarr.info import get_radarr_info
 from sonarr.info import get_sonarr_info
 
@@ -47,6 +48,9 @@ class EventTracker:
         self.tracker.store.save()
 
     def track(self, provider, action, language):
+        if not settings.analytics.getboolean('enabled'):
+            return
+
         subtitles_event = self.tracker.create_new_event(name="subtitles")
 
         subtitles_event.set_event_param(name="subtitles_provider", value=provider)

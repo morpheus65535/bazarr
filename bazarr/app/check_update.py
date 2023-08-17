@@ -70,13 +70,13 @@ def check_if_new_update():
     if not args.no_update:
         release = None
         if use_prerelease:
-            if deprecated_python_version:
+            if deprecated_python_version():
                 release = next((item['name'].lstrip('v') for item in data if
                                 semver.VersionInfo.parse('1.3.1') > semver.VersionInfo.parse(item['name'].lstrip('v'))))
             else:
                 release = next((item for item in data), None)
         else:
-            if deprecated_python_version:
+            if deprecated_python_version():
                 next((item['name'].lstrip('v') for item in data if
                       not item['prerelease'] and semver.VersionInfo.parse('1.3.1') > semver.VersionInfo.parse(
                           item['name'].lstrip('v'))))
@@ -85,7 +85,7 @@ def check_if_new_update():
 
         if release and 'name' in release:
             logging.debug('BAZARR last release available is {}'.format(release['name']))
-            if deprecated_python_version:
+            if deprecated_python_version():
                 logging.warning('BAZARR is using a deprecated Python version, you must update Python to get latest '
                                 'version available.')
 
