@@ -48,7 +48,7 @@ class EventTracker:
         self.tracker.store.save()
 
     def track(self, provider, action, language):
-        if not settings.analytics.getboolean('enabled'):
+        if not settings.analyticsenabled:
             return
 
         subtitles_event = self.tracker.create_new_event(name="subtitles")
