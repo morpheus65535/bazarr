@@ -61,7 +61,6 @@ class CustomLanguage:
 
     @classmethod
     def get_alpha_type(cls, subtitle: str, subtitle_path=None):
-        assert subtitle_path is not None
 
         extension = str(os.path.splitext(subtitle)[0]).lower()
         to_return = None
