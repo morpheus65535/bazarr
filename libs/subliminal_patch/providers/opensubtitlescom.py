@@ -211,6 +211,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             log_request_response(r)
             raise ProviderError("Cannot get token from provider login response")
         else:
+            log_request_response(r, non_standard=False)
             region.set("oscom_token", self.token)
 
     @staticmethod
@@ -538,16 +539,20 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         return response
 
 
-def log_request_response(response):
+def log_request_response(response, non_standard=True):
     redacted_request_headers = response.request.headers
-    if 'Authorization' in redacted_request_headers:
-        redacted_request_headers['Authorization'] = 'redacted'
+    if 'Authorization' in redacted_request_headers and isinstance(redacted_request_headers['Authorization'], str):
+        redacted_request_headers['Authorization'] = redacted_request_headers['Authorization'][:-8]+8*'x'
 
     redacted_request_body = json.loads(response.request.body)
     if 'password' in redacted_request_body:
         redacted_request_body['password'] = 'redacted'
 
-    logging.debug("opensubtitlescom returned a non standard response. Logging request/response for debugging purpose.")
+    if non_standard:
+        logging.debug("opensubtitlescom returned a non standard response. Logging request/response for debugging "
+                      "purpose.")
+    else:
+        logging.debug("opensubtitlescom returned a standard response. Logging request/response for debugging purpose.")
     logging.debug(f"Request URL: {response.request.url}")
     logging.debug(f"Request Headers: {redacted_request_headers}")
     logging.debug(f"Request Body: {json.dumps(redacted_request_body)}")
