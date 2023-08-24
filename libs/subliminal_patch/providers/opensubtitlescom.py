@@ -548,6 +548,10 @@ def log_request_response(response, non_standard=True):
     if 'password' in redacted_request_body:
         redacted_request_body['password'] = 'redacted'
 
+    redacted_response_body = json.loads(response.text)
+    if 'token' in redacted_response_body and isinstance(redacted_response_body['token'], str):
+        redacted_response_body['token'] = redacted_response_body['token'][:-8] + 8 * 'x'
+
     if non_standard:
         logging.debug("opensubtitlescom returned a non standard response. Logging request/response for debugging "
                       "purpose.")
@@ -558,4 +562,4 @@ def log_request_response(response, non_standard=True):
     logging.debug(f"Request Body: {json.dumps(redacted_request_body)}")
     logging.debug(f"Response Status Code: {response.status_code}")
     logging.debug(f"Response Headers: {response.headers}")
-    logging.debug(f"Response Body: {response.text}")
+    logging.debug(f"Response Body: {json.dumps(redacted_response_body)}")
