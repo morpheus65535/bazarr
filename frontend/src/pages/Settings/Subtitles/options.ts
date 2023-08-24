@@ -165,3 +165,22 @@ export const colorOptions: SelectorOption<string>[] = [
     value: buildColor("dark-grey"),
   },
 ];
+
+export const syncMaxOffsetSecondsOptions: SelectorOption<number>[] = [
+  {
+    label: "60",
+    value: 60,
+  },
+  {
+    label: "120",
+    value: 120,
+  },
+  {
+    label: "300",
+    value: 300,
+  },
+  {
+    label: "600",
+    value: 600,
+  },
+];

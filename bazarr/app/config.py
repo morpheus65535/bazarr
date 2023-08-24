@@ -284,6 +284,10 @@ validators = [
     Validator('subsync.subsync_movie_threshold', must_exist=True, default=70, is_type_of=int, gte=0, lte=100),
     Validator('subsync.debug', must_exist=True, default=False, is_type_of=bool),
     Validator('subsync.force_audio', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.no_fix_framerate', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.gss', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.max_offset_seconds', must_exist=True, default=60, is_type_of=int,
+              is_in=[60, 120, 300, 600]),
 
     # series_scores section
     Validator('series_scores.hash', must_exist=True, default=359, is_type_of=int),

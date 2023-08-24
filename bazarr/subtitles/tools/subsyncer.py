@@ -54,9 +54,16 @@ class SubSyncer:
         self.ffmpeg_path = os.path.dirname(ffmpeg_exe)
         try:
             unparsed_args = [self.reference, '-i', self.srtin, '-o', self.srtout, '--ffmpegpath', self.ffmpeg_path,
-                             '--vad', self.vad, '--log-dir-path', self.log_dir_path]
-            if settings.subsync.force_audio:
+                             '--vad', self.vad, '--log-dir-path', self.log_dir_path, '--max-offset-seconds',
+                             str(settings.subsync.max_offset_seconds)]
+            if not settings.general.utf8_encode:
+                unparsed_args.append('--output-encoding')
+                unparsed_args.append('same')
+            if settings.subsync.no_fix_framerate:
                 unparsed_args.append('--no-fix-framerate')
+            if settings.subsync.gss:
+                unparsed_args.append('--gss')
+            if settings.subsync.force_audio:
                 unparsed_args.append('--reference-stream')
                 unparsed_args.append('a:0')
             if settings.subsync.debug:

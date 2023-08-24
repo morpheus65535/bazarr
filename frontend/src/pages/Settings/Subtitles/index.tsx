@@ -23,6 +23,7 @@ import {
   embeddedSubtitlesParserOption,
   folderOptions,
   hiExtensionOptions,
+  syncMaxOffsetSecondsOptions,
 } from "./options";
 
 interface CommandOption {
@@ -393,6 +394,31 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         <Message>
           Use the audio track as reference for syncing, instead of using the
           embedded subtitle.
+        </Message>
+        <Check
+          label="No Fix Framerate"
+          settingKey="settings-subsync-no_fix_framerate"
+        ></Check>
+        <Message>
+          If specified, subsync will not attempt to correct a framerate mismatch
+          between reference and subtitles.
+        </Message>
+        <Check
+          label="Gold-Section Search"
+          settingKey="settings-subsync-gss"
+        ></Check>
+        <Message>
+          If specified, use golden-section search to try to find the optimal
+          framerate ratio between video and subtitles.
+        </Message>
+        <Selector
+          label="Max offset seconds"
+          options={syncMaxOffsetSecondsOptions}
+          settingKey="settings-subsync-max_offset_seconds"
+          defaultValue={60}
+        ></Selector>
+        <Message>
+          The max allowed offset seconds for any subtitle segment.
         </Message>
         <Check
           label="Automatic Subtitles Synchronization"
