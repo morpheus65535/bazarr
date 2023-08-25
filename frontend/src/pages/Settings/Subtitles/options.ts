@@ -30,17 +30,6 @@ export const folderOptions: SelectorOption<string>[] = [
   },
 ];
 
-export const antiCaptchaOption: SelectorOption<string>[] = [
-  {
-    label: "Anti-Captcha",
-    value: "anti-captcha",
-  },
-  {
-    label: "Death by Captcha",
-    value: "death-by-captcha",
-  },
-];
-
 export const embeddedSubtitlesParserOption: SelectorOption<string>[] = [
   {
     label: "ffprobe (faster)",
