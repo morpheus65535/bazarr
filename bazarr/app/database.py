@@ -12,7 +12,7 @@ from datetime import datetime
 from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func  # noqa W0611
-from sqlalchemy.orm import scoped_session, sessionmaker, relationship, mapped_column
+from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.pool import NullPool
 

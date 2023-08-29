@@ -1,5 +1,7 @@
 # coding=utf-8
 
+import os
+
 from flask_restx import Resource, Namespace, reqparse, fields
 
 from app.database import TableMovies, get_audio_profile_languages, get_profile_id, database, select
@@ -43,6 +45,7 @@ class ProviderMovies(Resource):
     @api_ns_providers_movies.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_providers_movies.response(401, 'Not Authenticated')
     @api_ns_providers_movies.response(404, 'Movie not found')
+    @api_ns_providers_movies.response(410, 'Movie file not found. Path mapping issue?')
     @api_ns_providers_movies.doc(parser=get_request_parser)
     def get(self):
         """Search manually for a movie subtitles"""
@@ -61,6 +64,10 @@ class ProviderMovies(Resource):
 
         title = movieInfo.title
         moviePath = path_mappings.path_replace_movie(movieInfo.path)
+
+        if not os.path.exists(moviePath):
+            return 'Movie file not found. Path mapping issue?', 410
+
         sceneName = movieInfo.sceneName or "None"
         profileId = movieInfo.profileId
 

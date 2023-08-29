@@ -199,6 +199,7 @@ class Series(Resource):
     @api_ns_series.response(204, 'Success')
     @api_ns_series.response(400, 'Unknown action')
     @api_ns_series.response(401, 'Not Authenticated')
+    @api_ns_series.response(410, 'Series directory not found. Path mapping issue?')
     def patch(self):
         """Run actions on specific series"""
         args = self.patch_request_parser.parse_args()
@@ -208,8 +209,12 @@ class Series(Resource):
             series_scan_subtitles(seriesid)
             return '', 204
         elif action == "search-missing":
-            series_download_subtitles(seriesid)
-            return '', 204
+            try:
+                series_download_subtitles(seriesid)
+            except OSError:
+                return 'Series directory not found. Path mapping issue?', 410
+            else:
+                return '', 204
         elif action == "search-wanted":
             wanted_search_missing_subtitles_series()
             return '', 204

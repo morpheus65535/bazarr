@@ -81,6 +81,7 @@ class MoviesBlacklist(Resource):
     @api_ns_movies_blacklist.response(200, 'Success')
     @api_ns_movies_blacklist.response(401, 'Not Authenticated')
     @api_ns_movies_blacklist.response(404, 'Movie not found')
+    @api_ns_movies_blacklist.response(410, 'Subtitles file not found or permission issue.')
     def post(self):
         """Add a movies subtitles to blacklist"""
         args = self.post_request_parser.parse_args()
@@ -107,16 +108,18 @@ class MoviesBlacklist(Resource):
                             provider=provider,
                             subs_id=subs_id,
                             language=language)
-        delete_subtitles(media_type='movie',
-                         language=language,
-                         forced=forced,
-                         hi=hi,
-                         media_path=path_mappings.path_replace_movie(media_path),
-                         subtitles_path=subtitles_path,
-                         radarr_id=radarr_id)
-        movies_download_subtitles(radarr_id)
-        event_stream(type='movie-history')
-        return '', 200
+        if delete_subtitles(media_type='movie',
+                            language=language,
+                            forced=forced,
+                            hi=hi,
+                            media_path=path_mappings.path_replace_movie(media_path),
+                            subtitles_path=subtitles_path,
+                            radarr_id=radarr_id):
+            movies_download_subtitles(radarr_id)
+            event_stream(type='movie-history')
+            return '', 200
+        else:
+            return 'Subtitles file not found or permission issue.', 410
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('all', type=str, required=False, help='Empty movies subtitles blacklist')

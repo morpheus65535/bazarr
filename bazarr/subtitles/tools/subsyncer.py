@@ -52,24 +52,25 @@ class SubSyncer:
             logging.debug('BAZARR FFmpeg used is %s', ffmpeg_exe)
 
         self.ffmpeg_path = os.path.dirname(ffmpeg_exe)
+        unparsed_args = [self.reference, '-i', self.srtin, '-o', self.srtout, '--ffmpegpath', self.ffmpeg_path, '--vad',
+                         self.vad, '--log-dir-path', self.log_dir_path]
+        if settings.subsync.getboolean('force_audio'):
+            unparsed_args.append('--no-fix-framerate')
+            unparsed_args.append('--reference-stream')
+            unparsed_args.append('a:0')
+        if settings.subsync.getboolean('debug'):
+            unparsed_args.append('--make-test-case')
+        parser = make_parser()
+        self.args = parser.parse_args(args=unparsed_args)
+        if os.path.isfile(self.srtout):
+            os.remove(self.srtout)
+            logging.debug('BAZARR deleted the previous subtitles synchronization attempt file.')
         try:
-            unparsed_args = [self.reference, '-i', self.srtin, '-o', self.srtout, '--ffmpegpath', self.ffmpeg_path,
-                             '--vad', self.vad, '--log-dir-path', self.log_dir_path]
-            if settings.subsync.getboolean('force_audio'):
-                unparsed_args.append('--no-fix-framerate')
-                unparsed_args.append('--reference-stream')
-                unparsed_args.append('a:0')
-            if settings.subsync.getboolean('debug'):
-                unparsed_args.append('--make-test-case')
-            parser = make_parser()
-            self.args = parser.parse_args(args=unparsed_args)
-            if os.path.isfile(self.srtout):
-                os.remove(self.srtout)
-                logging.debug('BAZARR deleted the previous subtitles synchronization attempt file.')
             result = run(self.args)
         except Exception:
             logging.exception('BAZARR an exception occurs during the synchronization process for this subtitles: '
                               '{0}'.format(self.srtin))
+            raise OSError
         else:
             if settings.subsync.getboolean('debug'):
                 return result
