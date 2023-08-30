@@ -36,7 +36,7 @@ class MoviesSubtitles(Resource):
     @api_ns_movies_subtitles.response(204, 'Success')
     @api_ns_movies_subtitles.response(401, 'Not Authenticated')
     @api_ns_movies_subtitles.response(404, 'Movie not found')
-    @api_ns_movies_subtitles.response(409, 'Unable to save subtitles file. Permission of path mapping issue?')
+    @api_ns_movies_subtitles.response(409, 'Unable to save subtitles file. Permission or path mapping issue?')
     @api_ns_movies_subtitles.response(410, 'Movie file not found. Path mapping issue?')
     def patch(self):
         """Download a movie subtitles"""
@@ -84,7 +84,7 @@ class MoviesSubtitles(Resource):
             else:
                 event_stream(type='movie', payload=radarrId)
         except OSError:
-            return 'Unable to save subtitles file. Permission of path mapping issue?', 409
+            return 'Unable to save subtitles file. Permission or path mapping issue?', 409
         else:
             return '', 204
 
@@ -102,7 +102,7 @@ class MoviesSubtitles(Resource):
     @api_ns_movies_subtitles.response(204, 'Success')
     @api_ns_movies_subtitles.response(401, 'Not Authenticated')
     @api_ns_movies_subtitles.response(404, 'Movie not found')
-    @api_ns_movies_subtitles.response(409, 'Unable to save subtitles file. Permission of path mapping issue?')
+    @api_ns_movies_subtitles.response(409, 'Unable to save subtitles file. Permission or path mapping issue?')
     @api_ns_movies_subtitles.response(410, 'Movie file not found. Path mapping issue?')
     def post(self):
         """Upload a movie subtitles"""
@@ -157,7 +157,7 @@ class MoviesSubtitles(Resource):
                     send_notifications_movie(radarrId, result.message)
                 store_subtitles_movie(result.path, moviePath)
         except OSError:
-            return 'Unable to save subtitles file. Permission of path mapping issue?', 409
+            return 'Unable to save subtitles file. Permission or path mapping issue?', 409
         else:
             return '', 204
 

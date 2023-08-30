@@ -37,7 +37,7 @@ class EpisodesSubtitles(Resource):
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
-    @api_ns_episodes_subtitles.response(409, 'Unable to save subtitles file. Permission of path mapping issue?')
+    @api_ns_episodes_subtitles.response(409, 'Unable to save subtitles file. Permission or path mapping issue?')
     @api_ns_episodes_subtitles.response(410, 'Episode file not found. Path mapping issue?')
     def patch(self):
         """Download an episode subtitles"""
@@ -87,7 +87,7 @@ class EpisodesSubtitles(Resource):
             else:
                 event_stream(type='episode', payload=sonarrEpisodeId)
         except OSError:
-            return 'Unable to save subtitles file. Permission of path mapping issue?', 409
+            return 'Unable to save subtitles file. Permission or path mapping issue?', 409
         else:
             return '', 204
 
@@ -105,7 +105,7 @@ class EpisodesSubtitles(Resource):
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
-    @api_ns_episodes_subtitles.response(409, 'Unable to save subtitles file. Permission of path mapping issue?')
+    @api_ns_episodes_subtitles.response(409, 'Unable to save subtitles file. Permission or path mapping issue?')
     @api_ns_episodes_subtitles.response(410, 'Episode file not found. Path mapping issue?')
     def post(self):
         """Upload an episode subtitles"""
@@ -161,7 +161,7 @@ class EpisodesSubtitles(Resource):
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
                 store_subtitles(result.path, episodePath)
         except OSError:
-            return 'Unable to save subtitles file. Permission of path mapping issue?', 409
+            return 'Unable to save subtitles file. Permission or path mapping issue?', 409
         else:
             return '', 204
 
