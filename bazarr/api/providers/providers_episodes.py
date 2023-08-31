@@ -1,5 +1,7 @@
 # coding=utf-8
 
+import os
+
 from flask_restx import Resource, Namespace, reqparse, fields
 
 from app.database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id, database, select
@@ -42,6 +44,7 @@ class ProviderEpisodes(Resource):
     @api_ns_providers_episodes.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_providers_episodes.response(401, 'Not Authenticated')
     @api_ns_providers_episodes.response(404, 'Episode not found')
+    @api_ns_providers_episodes.response(410, 'Episode file not found. Path mapping issue?')
     @api_ns_providers_episodes.doc(parser=get_request_parser)
     def get(self):
         """Search manually for an episode subtitles"""
@@ -62,6 +65,10 @@ class ProviderEpisodes(Resource):
 
         title = episodeInfo.title
         episodePath = path_mappings.path_replace(episodeInfo.path)
+
+        if not os.path.exists(episodePath):
+            return 'Episode file not found. Path mapping issue?', 410
+
         sceneName = episodeInfo.sceneName or "None"
         profileId = episodeInfo.profileId
 

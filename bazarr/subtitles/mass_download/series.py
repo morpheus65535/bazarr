@@ -4,6 +4,7 @@
 import ast
 import logging
 import operator
+import os
 
 from functools import reduce
 
@@ -19,6 +20,14 @@ from ..download import generate_subtitles
 
 
 def series_download_subtitles(no):
+    series_row = database.execute(
+        select(TableShows.path)
+        .where(TableShows.sonarrSeriesId == no))\
+        .first()
+
+    if series_row and not os.path.exists(path_mappings.path_replace(series_row.path)):
+        raise OSError
+
     conditions = [(TableEpisodes.sonarrSeriesId == no),
                   (TableEpisodes.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('series')

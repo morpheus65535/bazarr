@@ -109,7 +109,7 @@ class SystemSettings(Resource):
             item = json.loads(item)
             database.execute(
                 update(TableSettingsNotifier).values(
-                    enabled=int(item['enabled'] == True),
+                    enabled=int(item['enabled'] is True),
                     url=item['url'])
                 .where(TableSettingsNotifier.name == item['name']))
 

@@ -37,6 +37,8 @@ class EpisodesSubtitles(Resource):
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
+    @api_ns_episodes_subtitles.response(409, 'Unable to save subtitles file. Permission or path mapping issue?')
+    @api_ns_episodes_subtitles.response(410, 'Episode file not found. Path mapping issue?')
     def patch(self):
         """Download an episode subtitles"""
         args = self.patch_request_parser.parse_args()
@@ -55,9 +57,14 @@ class EpisodesSubtitles(Resource):
         if not episodeInfo:
             return 'Episode not found', 404
 
-        title = episodeInfo.title
         episodePath = path_mappings.path_replace(episodeInfo.path)
+
+        if not os.path.exists(episodePath):
+            return 'Episode file not found. Path mapping issue?', 410
+
         sceneName = episodeInfo.sceneName or "None"
+
+        title = episodeInfo.title
 
         language = args.get('language')
         hi = args.get('hi').capitalize()
@@ -79,11 +86,10 @@ class EpisodesSubtitles(Resource):
                 store_subtitles(result.path, episodePath)
             else:
                 event_stream(type='episode', payload=sonarrEpisodeId)
-
         except OSError:
-            pass
-
-        return '', 204
+            return 'Unable to save subtitles file. Permission or path mapping issue?', 409
+        else:
+            return '', 204
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
@@ -99,6 +105,8 @@ class EpisodesSubtitles(Resource):
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
+    @api_ns_episodes_subtitles.response(409, 'Unable to save subtitles file. Permission or path mapping issue?')
+    @api_ns_episodes_subtitles.response(410, 'Episode file not found. Path mapping issue?')
     def post(self):
         """Upload an episode subtitles"""
         args = self.post_request_parser.parse_args()
@@ -114,6 +122,9 @@ class EpisodesSubtitles(Resource):
             return 'Episode not found', 404
 
         episodePath = path_mappings.path_replace(episodeInfo.path)
+
+        if not os.path.exists(episodePath):
+            return 'Episode file not found. Path mapping issue?', 410
 
         audio_language = get_audio_profile_languages(episodeInfo.audio_language)
         if len(audio_language) and isinstance(audio_language[0], dict):
@@ -149,11 +160,10 @@ class EpisodesSubtitles(Resource):
                 if not settings.general.dont_notify_manual_actions:
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
                 store_subtitles(result.path, episodePath)
-
         except OSError:
-            pass
-
-        return '', 204
+            return 'Unable to save subtitles file. Permission or path mapping issue?', 409
+        else:
+            return '', 204
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
@@ -168,6 +178,7 @@ class EpisodesSubtitles(Resource):
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
+    @api_ns_episodes_subtitles.response(410, 'Subtitles file not found or permission issue.')
     def delete(self):
         """Delete an episode subtitles"""
         args = self.delete_request_parser.parse_args()
@@ -190,13 +201,14 @@ class EpisodesSubtitles(Resource):
 
         subtitlesPath = path_mappings.path_replace_reverse(subtitlesPath)
 
-        delete_subtitles(media_type='series',
-                         language=language,
-                         forced=forced,
-                         hi=hi,
-                         media_path=episodePath,
-                         subtitles_path=subtitlesPath,
-                         sonarr_series_id=sonarrSeriesId,
-                         sonarr_episode_id=sonarrEpisodeId)
-
-        return '', 204
+        if delete_subtitles(media_type='series',
+                            language=language,
+                            forced=forced,
+                            hi=hi,
+                            media_path=episodePath,
+                            subtitles_path=subtitlesPath,
+                            sonarr_series_id=sonarrSeriesId,
+                            sonarr_episode_id=sonarrEpisodeId):
+            return '', 204
+        else:
+            return 'Subtitles file not found or permission issue.', 410
