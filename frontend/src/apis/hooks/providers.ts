@@ -18,7 +18,7 @@ export function useMoviesProvider(radarrId?: number) {
       }
     },
     {
-      staleTime: Infinity,
+      staleTime: 0,
     }
   );
 }
@@ -32,7 +32,7 @@ export function useEpisodesProvider(episodeId?: number) {
       }
     },
     {
-      staleTime: Infinity,
+      staleTime: 0,
     }
   );
 }
