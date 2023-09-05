@@ -61,7 +61,7 @@ defaults = {
         'ignore_pgs_subs': 'False',
         'ignore_vobsub_subs': 'False',
         'ignore_ass_subs': 'False',
-        'adaptive_searching': 'False',
+        'adaptive_searching': 'True',
         'adaptive_searching_delay': '3w',
         'adaptive_searching_delta': '1w',
         'enabled_providers': '[]',
