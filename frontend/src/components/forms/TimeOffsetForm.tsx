@@ -83,12 +83,25 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
             ></FontAwesomeIcon>
           </Button>
           <NumberInput
+            min={0}
             label="hour"
             {...form.getInputProps("hour")}
           ></NumberInput>
-          <NumberInput label="min" {...form.getInputProps("min")}></NumberInput>
-          <NumberInput label="sec" {...form.getInputProps("sec")}></NumberInput>
-          <NumberInput label="ms" {...form.getInputProps("ms")}></NumberInput>
+          <NumberInput
+            min={0}
+            label="min"
+            {...form.getInputProps("min")}
+          ></NumberInput>
+          <NumberInput
+            min={0}
+            label="sec"
+            {...form.getInputProps("sec")}
+          ></NumberInput>
+          <NumberInput
+            min={0}
+            label="ms"
+            {...form.getInputProps("ms")}
+          ></NumberInput>
         </Group>
         <Divider></Divider>
         <Button disabled={!enabled} type="submit">
