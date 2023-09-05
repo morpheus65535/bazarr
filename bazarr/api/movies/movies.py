@@ -165,7 +165,7 @@ class Movies(Resource):
     @api_ns_movies.response(204, 'Success')
     @api_ns_movies.response(400, 'Unknown action')
     @api_ns_movies.response(401, 'Not Authenticated')
-    @api_ns_movies.response(410, 'Movie file not found. Path mapping issue?')
+    @api_ns_movies.response(500, 'Movie file not found. Path mapping issue?')
     def patch(self):
         """Run actions on specific movies"""
         args = self.patch_request_parser.parse_args()
@@ -178,7 +178,7 @@ class Movies(Resource):
             try:
                 movies_download_subtitles(radarrid)
             except OSError:
-                return 'Movie file not found. Path mapping issue?', 410
+                return 'Movie file not found. Path mapping issue?', 500
             else:
                 return '', 204
         elif action == "search-wanted":

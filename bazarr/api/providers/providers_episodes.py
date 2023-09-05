@@ -43,7 +43,7 @@ class ProviderEpisodes(Resource):
     @authenticate
     @api_ns_providers_episodes.response(401, 'Not Authenticated')
     @api_ns_providers_episodes.response(404, 'Episode not found')
-    @api_ns_providers_episodes.response(410, 'Episode file not found. Path mapping issue?')
+    @api_ns_providers_episodes.response(500, 'Episode file not found. Path mapping issue?')
     @api_ns_providers_episodes.doc(parser=get_request_parser)
     def get(self):
         """Search manually for an episode subtitles"""
@@ -66,7 +66,7 @@ class ProviderEpisodes(Resource):
         episodePath = path_mappings.path_replace(episodeInfo.path)
 
         if not os.path.exists(episodePath):
-            return 'Episode file not found. Path mapping issue?', 410
+            return 'Episode file not found. Path mapping issue?', 500
 
         sceneName = episodeInfo.sceneName or "None"
         profileId = episodeInfo.profileId

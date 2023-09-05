@@ -44,7 +44,7 @@ class ProviderMovies(Resource):
     @authenticate
     @api_ns_providers_movies.response(401, 'Not Authenticated')
     @api_ns_providers_movies.response(404, 'Movie not found')
-    @api_ns_providers_movies.response(410, 'Movie file not found. Path mapping issue?')
+    @api_ns_providers_movies.response(500, 'Movie file not found. Path mapping issue?')
     @api_ns_providers_movies.doc(parser=get_request_parser)
     def get(self):
         """Search manually for a movie subtitles"""
@@ -65,7 +65,7 @@ class ProviderMovies(Resource):
         moviePath = path_mappings.path_replace_movie(movieInfo.path)
 
         if not os.path.exists(moviePath):
-            return 'Movie file not found. Path mapping issue?', 410
+            return 'Movie file not found. Path mapping issue?', 500
 
         sceneName = movieInfo.sceneName or "None"
         profileId = movieInfo.profileId

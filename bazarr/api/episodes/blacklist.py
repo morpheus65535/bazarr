@@ -87,7 +87,7 @@ class EpisodesBlacklist(Resource):
     @api_ns_episodes_blacklist.response(200, 'Success')
     @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
     @api_ns_episodes_blacklist.response(404, 'Episode not found')
-    @api_ns_episodes_blacklist.response(410, 'Subtitles file not found or permission issue.')
+    @api_ns_episodes_blacklist.response(500, 'Subtitles file not found or permission issue.')
     def post(self):
         """Add an episodes subtitles to blacklist"""
         args = self.post_request_parser.parse_args()
@@ -125,7 +125,7 @@ class EpisodesBlacklist(Resource):
             event_stream(type='episode-history')
             return '', 200
         else:
-            return 'Subtitles file not found or permission issue.', 410
+            return 'Subtitles file not found or permission issue.', 500
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('all', type=str, required=False, help='Empty episodes subtitles blacklist')
