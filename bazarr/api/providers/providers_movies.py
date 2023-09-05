@@ -2,7 +2,7 @@
 
 import os
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from app.database import TableMovies, get_audio_profile_languages, get_profile_id, database, select
 from utilities.path_mappings import path_mappings
@@ -42,7 +42,6 @@ class ProviderMovies(Resource):
     })
 
     @authenticate
-    @api_ns_providers_movies.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_providers_movies.response(401, 'Not Authenticated')
     @api_ns_providers_movies.response(404, 'Movie not found')
     @api_ns_providers_movies.response(410, 'Movie file not found. Path mapping issue?')
@@ -76,7 +75,7 @@ class ProviderMovies(Resource):
         data = manual_search(moviePath, profileId, providers_list, sceneName, title, 'movie')
         if not data:
             data = []
-        return data
+        return marshal(data, self.get_response_model, envelope='data')
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, required=True, help='Movie ID')

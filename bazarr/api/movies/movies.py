@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from app.database import TableMovies, database, update, select, func
 from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
@@ -52,7 +52,6 @@ class Movies(Resource):
     })
 
     @authenticate
-    @api_ns_movies.marshal_with(get_response_model, code=200)
     @api_ns_movies.doc(parser=get_request_parser)
     @api_ns_movies.response(200, 'Success')
     @api_ns_movies.response(401, 'Not Authenticated')
@@ -112,7 +111,7 @@ class Movies(Resource):
             .select_from(TableMovies)) \
             .scalar()
 
-        return {'data': results, 'total': count}
+        return marshal({'data': results, 'total': count}, self.get_response_model)
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, action='append', required=False, default=[],

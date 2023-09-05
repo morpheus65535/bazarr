@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from app.scheduler import scheduler
 
@@ -24,7 +24,6 @@ class SystemTasks(Resource):
     get_request_parser.add_argument('taskid', type=str, required=False, help='List tasks or a single task properties')
 
     @authenticate
-    @api_ns_system_tasks.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_system_tasks.doc(parser=None)
     @api_ns_system_tasks.response(200, 'Success')
     @api_ns_system_tasks.response(401, 'Not Authenticated')
@@ -41,7 +40,7 @@ class SystemTasks(Resource):
                     task_list = [item]
                     continue
 
-        return task_list
+        return marshal(task_list, self.get_response_model, envelope='data')
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('taskid', type=str, required=True, help='Task id of the task to run')

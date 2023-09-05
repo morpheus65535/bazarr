@@ -2,7 +2,7 @@
 
 import operator
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select, update, func
@@ -56,7 +56,6 @@ class Series(Resource):
     })
 
     @authenticate
-    @api_ns_series.marshal_with(get_response_model, code=200)
     @api_ns_series.doc(parser=get_request_parser)
     @api_ns_series.response(200, 'Success')
     @api_ns_series.response(401, 'Not Authenticated')
@@ -137,7 +136,7 @@ class Series(Resource):
             .select_from(TableShows)) \
             .scalar()
 
-        return {'data': results, 'total': count}
+        return marshal({'data': results, 'total': count}, self.get_response_model)
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, action='append', required=False, default=[],

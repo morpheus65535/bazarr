@@ -2,7 +2,7 @@
 
 import pretty
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from app.database import TableEpisodes, TableShows, TableBlacklist, database, select
 from subtitles.tools.delete import delete_subtitles
@@ -39,7 +39,6 @@ class EpisodesBlacklist(Resource):
     })
 
     @authenticate
-    @api_ns_episodes_blacklist.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
     @api_ns_episodes_blacklist.doc(parser=get_request_parser)
     def get(self):
@@ -63,7 +62,7 @@ class EpisodesBlacklist(Resource):
         if length > 0:
             stmt = stmt.limit(length).offset(start)
 
-        return [postprocess({
+        return marshal([postprocess({
             'seriesTitle': x.seriesTitle,
             'episode_number': x.episode_number,
             'episodeTitle': x.episodeTitle,
@@ -73,7 +72,7 @@ class EpisodesBlacklist(Resource):
             'language': x.language,
             'timestamp': pretty.date(x.timestamp),
             'parsed_timestamp': x.timestamp.strftime('%x %X')
-        }) for x in database.execute(stmt).all()]
+        }) for x in database.execute(stmt).all()], self.get_response_model, envelope='data')
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')

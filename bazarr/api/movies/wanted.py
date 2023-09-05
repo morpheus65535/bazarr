@@ -2,7 +2,7 @@
 
 import operator
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
 from app.database import get_exclusion_clause, TableMovies, database, select, func
@@ -38,7 +38,6 @@ class MoviesWanted(Resource):
     })
 
     @authenticate
-    @api_ns_movies_wanted.marshal_with(get_response_model, code=200)
     @api_ns_movies_wanted.response(401, 'Not Authenticated')
     @api_ns_movies_wanted.doc(parser=get_request_parser)
     def get(self):
@@ -81,4 +80,4 @@ class MoviesWanted(Resource):
             .where(wanted_condition)) \
             .scalar()
 
-        return {'data': results, 'total': count}
+        return marshal({'data': results, 'total': count}, self.get_response_model)

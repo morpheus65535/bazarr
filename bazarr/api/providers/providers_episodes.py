@@ -2,7 +2,7 @@
 
 import os
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from app.database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id, database, select
 from utilities.path_mappings import path_mappings
@@ -41,7 +41,6 @@ class ProviderEpisodes(Resource):
     })
 
     @authenticate
-    @api_ns_providers_episodes.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_providers_episodes.response(401, 'Not Authenticated')
     @api_ns_providers_episodes.response(404, 'Episode not found')
     @api_ns_providers_episodes.response(410, 'Episode file not found. Path mapping issue?')
@@ -77,7 +76,7 @@ class ProviderEpisodes(Resource):
         data = manual_search(episodePath, profileId, providers_list, sceneName, title, 'series')
         if not data:
             data = []
-        return data
+        return marshal(data, self.get_response_model, envelope='data')
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
