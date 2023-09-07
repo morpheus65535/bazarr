@@ -38,7 +38,7 @@ class EpisodesSubtitles(Resource):
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
     @api_ns_episodes_subtitles.response(409, 'Unable to save subtitles file. Permission or path mapping issue?')
-    @api_ns_episodes_subtitles.response(500, 'Episode file not found. Path mapping issue?')
+    @api_ns_episodes_subtitles.response(500, 'Custom error messages')
     def patch(self):
         """Download an episode subtitles"""
         args = self.patch_request_parser.parse_args()
@@ -79,13 +79,14 @@ class EpisodesSubtitles(Resource):
         try:
             result = list(generate_subtitles(episodePath, [(language, hi, forced)], audio_language, sceneName,
                                              title, 'series', profile_id=get_profile_id(episode_id=sonarrEpisodeId)))
-            if result:
+            if isinstance(result, list) and len(result):
                 result = result[0]
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
                 store_subtitles(result.path, episodePath)
             else:
                 event_stream(type='episode', payload=sonarrEpisodeId)
+                return 'No subtitles found', 500
         except OSError:
             return 'Unable to save subtitles file. Permission or path mapping issue?', 409
         else:

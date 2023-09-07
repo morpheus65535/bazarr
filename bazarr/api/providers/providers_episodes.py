@@ -12,6 +12,7 @@ from sonarr.history import history_log
 from app.config import settings
 from app.notifier import send_notifications
 from subtitles.indexer.series import store_subtitles
+from subtitles.processing import ProcessSubtitlesResult
 
 from ..utils import authenticate
 
@@ -43,7 +44,7 @@ class ProviderEpisodes(Resource):
     @authenticate
     @api_ns_providers_episodes.response(401, 'Not Authenticated')
     @api_ns_providers_episodes.response(404, 'Episode not found')
-    @api_ns_providers_episodes.response(500, 'Episode file not found. Path mapping issue?')
+    @api_ns_providers_episodes.response(500, 'Custom error messages')
     @api_ns_providers_episodes.doc(parser=get_request_parser)
     def get(self):
         """Search manually for an episode subtitles"""
@@ -74,8 +75,8 @@ class ProviderEpisodes(Resource):
         providers_list = get_providers()
 
         data = manual_search(episodePath, profileId, providers_list, sceneName, title, 'series')
-        if not data:
-            data = []
+        if isinstance(data, str):
+            return data, 500
         return marshal(data, self.get_response_model, envelope='data')
 
     post_request_parser = reqparse.RequestParser()
@@ -93,6 +94,7 @@ class ProviderEpisodes(Resource):
     @api_ns_providers_episodes.response(204, 'Success')
     @api_ns_providers_episodes.response(401, 'Not Authenticated')
     @api_ns_providers_episodes.response(404, 'Episode not found')
+    @api_ns_providers_episodes.response(500, 'Custom error messages')
     def post(self):
         """Manually download an episode subtitles"""
         args = self.post_request_parser.parse_args()
@@ -132,12 +134,15 @@ class ProviderEpisodes(Resource):
             result = manual_download_subtitle(episodePath, audio_language, hi, forced, subtitle, selected_provider,
                                               sceneName, title, 'series', use_original_format,
                                               profile_id=get_profile_id(episode_id=sonarrEpisodeId))
-            if result:
+        except OSError:
+            return 'Unable to save subtitles file', 500
+        else:
+            if isinstance(result, ProcessSubtitlesResult):
                 history_log(2, sonarrSeriesId, sonarrEpisodeId, result)
                 if not settings.general.getboolean('dont_notify_manual_actions'):
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
                 store_subtitles(result.path, episodePath)
-        except OSError:
-            pass
-
-        return '', 204
+            elif isinstance(result, str):
+                return result, 500
+            else:
+                return '', 204

@@ -37,7 +37,7 @@ class MoviesSubtitles(Resource):
     @api_ns_movies_subtitles.response(401, 'Not Authenticated')
     @api_ns_movies_subtitles.response(404, 'Movie not found')
     @api_ns_movies_subtitles.response(409, 'Unable to save subtitles file. Permission or path mapping issue?')
-    @api_ns_movies_subtitles.response(500, 'Movie file not found. Path mapping issue?')
+    @api_ns_movies_subtitles.response(500, 'Custom error messages')
     def patch(self):
         """Download a movie subtitles"""
         args = self.patch_request_parser.parse_args()
@@ -77,12 +77,13 @@ class MoviesSubtitles(Resource):
         try:
             result = list(generate_subtitles(moviePath, [(language, hi, forced)], audio_language,
                                              sceneName, title, 'movie', profile_id=get_profile_id(movie_id=radarrId)))
-            if result:
+            if isinstance(result, list) and len(result):
                 result = result[0]
                 history_log_movie(1, radarrId, result)
                 store_subtitles_movie(result.path, moviePath)
             else:
                 event_stream(type='movie', payload=radarrId)
+                return 'No subtitles found', 500
         except OSError:
             return 'Unable to save subtitles file. Permission or path mapping issue?', 409
         else:
