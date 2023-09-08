@@ -148,7 +148,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                                   subtitle_id=subtitle.id,
                                   reversed_subtitles_path=reversed_subtitles_path,
                                   hearing_impaired=subtitle.language.hi,
-                                  matched=list(subtitle.matches),
+                                  matched=list(subtitle.matches or []),
                                   not_matched=_get_not_matched(subtitle, media_type))
 
 
