@@ -25,6 +25,7 @@ from app.event_handler import event_stream
 from utilities.binaries import get_binary
 from radarr.blacklist import blacklist_log_movie
 from sonarr.blacklist import blacklist_log
+from utilities.analytics import event_tracker
 
 
 def time_until_midnight(timezone):
@@ -344,6 +345,8 @@ def provider_throttle(name, exception):
             logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name,
                          throttle_description, throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.args[0]
                          if exception.args else None)
+            event_tracker.track_throttling(provider=name, exception_name=cls_name, exception_info=exception.args[0]
+                                          if exception.args else None)
 
     update_throttled_provider()
 
