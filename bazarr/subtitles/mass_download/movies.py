@@ -4,6 +4,7 @@
 import ast
 import logging
 import operator
+import os
 
 from functools import reduce
 
@@ -36,6 +37,11 @@ def movies_download_subtitles(no):
         logging.debug("BAZARR no movie with that radarrId can be found in database:", str(no))
         return
 
+    moviePath = path_mappings.path_replace_movie(movie.path)
+
+    if not os.path.exists(moviePath):
+        raise OSError
+
     if ast.literal_eval(movie.missing_subtitles):
         count_movie = len(ast.literal_eval(movie.missing_subtitles))
     else:
@@ -67,7 +73,7 @@ def movies_download_subtitles(no):
                   value=0,
                   count=count_movie)
 
-    for result in generate_subtitles(path_mappings.path_replace_movie(movie.path),
+    for result in generate_subtitles(moviePath,
                                      languages,
                                      audio_language,
                                      str(movie.sceneName),
@@ -76,7 +82,7 @@ def movies_download_subtitles(no):
                                      check_if_still_required=True):
 
         if result:
-            store_subtitles_movie(movie.path, path_mappings.path_replace_movie(movie.path))
+            store_subtitles_movie(movie.path, moviePath)
             history_log_movie(1, no, result)
             send_notifications_movie(no, result.message)
 

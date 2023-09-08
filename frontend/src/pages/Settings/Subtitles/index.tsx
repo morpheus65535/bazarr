@@ -246,8 +246,8 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           settingKey="settings-general-adaptive_searching"
         ></Check>
         <Message>
-          When searching for subtitles, Bazarr will reduce search frequency to
-          limit call to providers.
+          When enabled, Bazarr will skip searching providers for subtitles which
+          have been searched recently.
         </Message>
         <CollapseBox settingKey="settings-general-adaptive_searching">
           <Selector
@@ -256,8 +256,9 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             options={adaptiveSearchingDelayOption}
           ></Selector>
           <Message>
-            In order to reduce search frequency, how many weeks must Bazarr wait
-            after initial search.
+            The delay from the first search to adaptive searching applying.
+            During this window Bazarr will continue to search for subtitles,
+            even if they have been searched for recently.
           </Message>
           <Selector
             settingKey="settings-general-adaptive_searching_delta"
@@ -265,8 +266,9 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             options={adaptiveSearchingDeltaOption}
           ></Selector>
           <Message>
-            How often should Bazarr search for subtitles when in adaptive search
-            mode.
+            The delay between Bazarr searching for subtitles in adaptive search
+            mode. If the media has been searched for more recently than this
+            value, Bazarr will skip searching for subtitles.
           </Message>
         </CollapseBox>
         <Check

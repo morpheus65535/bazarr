@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from app.database import TableEpisodes, database, select
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
@@ -37,7 +37,6 @@ class Episodes(Resource):
     })
 
     @authenticate
-    @api_ns_episodes.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_episodes.doc(parser=get_request_parser)
     @api_ns_episodes.response(200, 'Success')
     @api_ns_episodes.response(401, 'Not Authenticated')
@@ -76,7 +75,7 @@ class Episodes(Resource):
         else:
             return "Series or Episode ID not provided", 404
 
-        return [postprocess({
+        return marshal([postprocess({
                 'audio_language': x.audio_language,
                 'episode': x.episode,
                 'missing_subtitles': x.missing_subtitles,
@@ -88,4 +87,4 @@ class Episodes(Resource):
                 'subtitles': x.subtitles,
                 'title': x.title,
                 'sceneName': x.sceneName,
-                }) for x in stmt_query]
+                }) for x in stmt_query], self.get_response_model, envelope='data')

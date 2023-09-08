@@ -3,12 +3,14 @@
 import hashlib
 import os
 import ast
+import logging
 
 from urllib.parse import quote_plus
 from subliminal.cache import region
 from dynaconf import Dynaconf, Validator as OriginalValidator
 from dynaconf.loaders.yaml_loader import write
 from dynaconf.validator import ValidationError
+from dynaconf.utils.functional import empty
 from ipaddress import ip_address
 from binascii import hexlify
 from types import MappingProxyType
@@ -85,7 +87,7 @@ validators = [
     Validator('general.ignore_pgs_subs', must_exist=True, default=False, is_type_of=bool),
     Validator('general.ignore_vobsub_subs', must_exist=True, default=False, is_type_of=bool),
     Validator('general.ignore_ass_subs', must_exist=True, default=False, is_type_of=bool),
-    Validator('general.adaptive_searching', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.adaptive_searching', must_exist=True, default=True, is_type_of=bool),
     Validator('general.adaptive_searching_delay', must_exist=True, default='3w', is_type_of=str,
               is_in=['1w', '2w', '3w', '4w']),
     Validator('general.adaptive_searching_delta', must_exist=True, default='1w', is_type_of=str,
@@ -359,10 +361,24 @@ elif not os.path.exists(config_yaml_file):
 settings = Dynaconf(
     settings_file=config_yaml_file,
     core_loaders=['YAML'],
-    validators=validators,
-    validate_on_update=True,
     apply_default_on_none=True,
 )
+
+settings.validators.register(*validators)
+
+failed_validator = True
+while failed_validator:
+    try:
+        settings.validators.validate_all()
+        failed_validator = False
+    except ValidationError as e:
+        current_validator_details = e.details[0][0]
+        if hasattr(current_validator_details, 'default') and current_validator_details.default is not empty:
+            settings[current_validator_details.names[0]] = current_validator_details.default
+        else:
+            logging.critical(f"Value for {current_validator_details.names[0]} doesn't pass validation and there's no "
+                             f"default value. This issue must be reported. Bazarr won't works until it's been fixed.")
+            os._exit(0)
 
 
 def write_config():

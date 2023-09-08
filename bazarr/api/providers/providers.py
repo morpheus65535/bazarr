@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from operator import itemgetter
 
 from app.database import TableHistory, TableHistoryMovie, database, select
@@ -23,7 +23,6 @@ class Providers(Resource):
     })
 
     @authenticate
-    @api_ns_providers.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_providers.response(200, 'Success')
     @api_ns_providers.response(401, 'Not Authenticated')
     @api_ns_providers.doc(parser=get_request_parser)
@@ -61,7 +60,7 @@ class Providers(Resource):
                     "status": provider[1] if provider[1] is not None else "Good",
                     "retry": provider[2] if provider[2] != "now" else "-"
                 })
-        return sorted(providers_dicts, key=itemgetter('name'))
+        return marshal(sorted(providers_dicts, key=itemgetter('name')), self.get_response_model, envelope='data')
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('action', type=str, required=True, help='Action to perform from ["reset"]')

@@ -1,6 +1,8 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields
+import os
+
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from app.database import TableMovies, get_audio_profile_languages, get_profile_id, database, select
 from utilities.path_mappings import path_mappings
@@ -10,6 +12,7 @@ from radarr.history import history_log_movie
 from app.config import settings
 from app.notifier import send_notifications_movie
 from subtitles.indexer.movies import store_subtitles_movie
+from subtitles.processing import ProcessSubtitlesResult
 
 from ..utils import authenticate
 
@@ -40,9 +43,9 @@ class ProviderMovies(Resource):
     })
 
     @authenticate
-    @api_ns_providers_movies.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_providers_movies.response(401, 'Not Authenticated')
     @api_ns_providers_movies.response(404, 'Movie not found')
+    @api_ns_providers_movies.response(500, 'Custom error messages')
     @api_ns_providers_movies.doc(parser=get_request_parser)
     def get(self):
         """Search manually for a movie subtitles"""
@@ -61,15 +64,19 @@ class ProviderMovies(Resource):
 
         title = movieInfo.title
         moviePath = path_mappings.path_replace_movie(movieInfo.path)
+
+        if not os.path.exists(moviePath):
+            return 'Movie file not found. Path mapping issue?', 500
+
         sceneName = movieInfo.sceneName or "None"
         profileId = movieInfo.profileId
 
         providers_list = get_providers()
 
         data = manual_search(moviePath, profileId, providers_list, sceneName, title, 'movie')
-        if not data:
-            data = []
-        return data
+        if isinstance(data, str):
+            return data, 500
+        return marshal(data, self.get_response_model, envelope='data')
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, required=True, help='Movie ID')
@@ -85,6 +92,7 @@ class ProviderMovies(Resource):
     @api_ns_providers_movies.response(204, 'Success')
     @api_ns_providers_movies.response(401, 'Not Authenticated')
     @api_ns_providers_movies.response(404, 'Movie not found')
+    @api_ns_providers_movies.response(500, 'Custom error messages')
     def post(self):
         """Manually download a movie subtitles"""
         args = self.post_request_parser.parse_args()
@@ -120,12 +128,15 @@ class ProviderMovies(Resource):
             result = manual_download_subtitle(moviePath, audio_language, hi, forced, subtitle, selected_provider,
                                               sceneName, title, 'movie', use_original_format,
                                               profile_id=get_profile_id(movie_id=radarrId))
-            if result is not None:
+        except OSError:
+            return 'Unable to save subtitles file', 500
+        else:
+            if isinstance(result, ProcessSubtitlesResult):
                 history_log_movie(2, radarrId, result)
                 if not settings.general.dont_notify_manual_actions:
                     send_notifications_movie(radarrId, result.message)
                 store_subtitles_movie(result.path, moviePath)
-        except OSError:
-            pass
-
-        return '', 204
+            elif isinstance(result, str):
+                return result, 500
+            else:
+                return '', 204

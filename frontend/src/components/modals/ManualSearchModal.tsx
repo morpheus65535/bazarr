@@ -40,18 +40,18 @@ interface Props<T extends SupportType> {
 function ManualSearchView<T extends SupportType>(props: Props<T>) {
   const { download, query: useSearch, item } = props;
 
-  const itemId = useMemo(() => GetItemId(item ?? {}), [item]);
+  const [searchStarted, setSearchStarted] = useState(false);
 
-  const [id, setId] = useState<number | undefined>(undefined);
+  const itemId = useMemo(() => GetItemId(item), [item]);
 
-  const results = useSearch(id);
+  const results = useSearch(searchStarted ? itemId : undefined);
 
-  const isStale = results.data === undefined;
+  const haveResult = results.data !== undefined;
 
   const search = useCallback(() => {
-    setId(itemId);
+    setSearchStarted(true);
     results.refetch();
-  }, [itemId, results]);
+  }, [results]);
 
   const columns = useMemo<Column<SearchResultType>[]>(
     () => [
@@ -190,6 +190,14 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
   const bSceneNameAvailable =
     isString(item.sceneName) && item.sceneName.length !== 0;
 
+  const searchButtonText = useMemo(() => {
+    if (results.isFetching) {
+      return "Searching";
+    }
+
+    return searchStarted ? "Search Again" : "Search";
+  }, [results.isFetching, searchStarted]);
+
   return (
     <Stack>
       <Alert
@@ -201,7 +209,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         <Divider hidden={!bSceneNameAvailable} my="xs"></Divider>
         <Code hidden={!bSceneNameAvailable}>{item?.sceneName}</Code>
       </Alert>
-      <Collapse in={!isStale && !results.isFetching}>
+      <Collapse in={haveResult && !results.isFetching}>
         <PageTable
           tableStyles={{ emptyText: "No result", placeholder: 10 }}
           columns={columns}
@@ -210,7 +218,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       </Collapse>
       <Divider></Divider>
       <Button loading={results.isFetching} fullWidth onClick={search}>
-        {isStale ? "Search" : "Search Again"}
+        {searchButtonText}
       </Button>
     </Stack>
   );

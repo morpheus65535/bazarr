@@ -42,6 +42,8 @@ class Subtitles(Resource):
     @api_ns_subtitles.response(204, 'Success')
     @api_ns_subtitles.response(401, 'Not Authenticated')
     @api_ns_subtitles.response(404, 'Episode/movie not found')
+    @api_ns_subtitles.response(409, 'Unable to edit subtitles file. Check logs.')
+    @api_ns_subtitles.response(500, 'Subtitles file not found. Path mapping issue?')
     def patch(self):
         """Apply mods/tools on external subtitles"""
         args = self.patch_request_parser.parse_args()
@@ -51,6 +53,9 @@ class Subtitles(Resource):
         subtitles_path = args.get('path')
         media_type = args.get('type')
         id = args.get('id')
+
+        if not os.path.exists(subtitles_path):
+            return 'Subtitles file not found. Path mapping issue?', 500
 
         if media_type == 'episode':
             metadata = database.execute(
@@ -80,8 +85,11 @@ class Subtitles(Resource):
                              srt_lang=language, media_type='series', sonarr_series_id=metadata.sonarrSeriesId,
                              sonarr_episode_id=id)
             else:
-                subsync.sync(video_path=video_path, srt_path=subtitles_path,
-                             srt_lang=language, media_type='movies', radarr_id=id)
+                try:
+                    subsync.sync(video_path=video_path, srt_path=subtitles_path,
+                                 srt_lang=language, media_type='movies', radarr_id=id)
+                except OSError:
+                    return 'Unable to edit subtitles file. Check logs.', 409
             del subsync
             gc.collect()
         elif action == 'translate':
@@ -89,16 +97,22 @@ class Subtitles(Resource):
             dest_language = language
             forced = True if args.get('forced') == 'true' else False
             hi = True if args.get('hi') == 'true' else False
-            translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
-                                     from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
-                                     media_type="series" if media_type == "episode" else "movies",
-                                     sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
-                                     sonarr_episode_id=id,
-                                     radarr_id=id)
+            try:
+                translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
+                                         from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
+                                         media_type="series" if media_type == "episode" else "movies",
+                                         sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
+                                         sonarr_episode_id=id,
+                                         radarr_id=id)
+            except OSError:
+                return 'Unable to edit subtitles file. Check logs.', 409
         else:
             use_original_format = True if args.get('original_format') == 'true' else False
-            subtitles_apply_mods(language=language, subtitle_path=subtitles_path, mods=[action],
-                                 use_original_format=use_original_format, video_path=video_path)
+            try:
+                subtitles_apply_mods(language=language, subtitle_path=subtitles_path, mods=[action],
+                                     use_original_format=use_original_format, video_path=video_path)
+            except OSError:
+                return 'Unable to edit subtitles file. Check logs.', 409
 
         # apply chmod if required
         chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
