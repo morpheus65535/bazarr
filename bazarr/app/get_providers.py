@@ -346,7 +346,7 @@ def provider_throttle(name, exception):
                          throttle_description, throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.args[0]
                          if exception.args else None)
             event_tracker.track_throttling(provider=name, exception_name=cls_name, exception_info=exception.args[0]
-                                          if exception.args else None)
+                                           if exception.args else None)
 
     update_throttled_provider()
 
