@@ -37,7 +37,7 @@ class MoviesSubtitles(Resource):
     @api_ns_movies_subtitles.response(401, 'Not Authenticated')
     @api_ns_movies_subtitles.response(404, 'Movie not found')
     @api_ns_movies_subtitles.response(409, 'Unable to save subtitles file. Permission or path mapping issue?')
-    @api_ns_movies_subtitles.response(410, 'Movie file not found. Path mapping issue?')
+    @api_ns_movies_subtitles.response(500, 'Custom error messages')
     def patch(self):
         """Download a movie subtitles"""
         args = self.patch_request_parser.parse_args()
@@ -58,7 +58,7 @@ class MoviesSubtitles(Resource):
         moviePath = path_mappings.path_replace_movie(movieInfo.path)
 
         if not os.path.exists(moviePath):
-            return 'Movie file not found. Path mapping issue?', 410
+            return 'Movie file not found. Path mapping issue?', 500
 
         sceneName = movieInfo.sceneName or 'None'
 
@@ -77,12 +77,13 @@ class MoviesSubtitles(Resource):
         try:
             result = list(generate_subtitles(moviePath, [(language, hi, forced)], audio_language,
                                              sceneName, title, 'movie', profile_id=get_profile_id(movie_id=radarrId)))
-            if result:
+            if isinstance(result, list) and len(result):
                 result = result[0]
                 history_log_movie(1, radarrId, result)
                 store_subtitles_movie(result.path, moviePath)
             else:
                 event_stream(type='movie', payload=radarrId)
+                return 'No subtitles found', 500
         except OSError:
             return 'Unable to save subtitles file. Permission or path mapping issue?', 409
         else:
@@ -103,7 +104,7 @@ class MoviesSubtitles(Resource):
     @api_ns_movies_subtitles.response(401, 'Not Authenticated')
     @api_ns_movies_subtitles.response(404, 'Movie not found')
     @api_ns_movies_subtitles.response(409, 'Unable to save subtitles file. Permission or path mapping issue?')
-    @api_ns_movies_subtitles.response(410, 'Movie file not found. Path mapping issue?')
+    @api_ns_movies_subtitles.response(500, 'Movie file not found. Path mapping issue?')
     def post(self):
         """Upload a movie subtitles"""
         # TODO: Support Multiply Upload
@@ -120,7 +121,7 @@ class MoviesSubtitles(Resource):
         moviePath = path_mappings.path_replace_movie(movieInfo.path)
 
         if not os.path.exists(moviePath):
-            return 'Movie file not found. Path mapping issue?', 410
+            return 'Movie file not found. Path mapping issue?', 500
 
         audio_language = get_audio_profile_languages(movieInfo.audio_language)
         if len(audio_language) and isinstance(audio_language[0], dict):
@@ -174,7 +175,7 @@ class MoviesSubtitles(Resource):
     @api_ns_movies_subtitles.response(204, 'Success')
     @api_ns_movies_subtitles.response(401, 'Not Authenticated')
     @api_ns_movies_subtitles.response(404, 'Movie not found')
-    @api_ns_movies_subtitles.response(410, 'Subtitles file not found or permission issue.')
+    @api_ns_movies_subtitles.response(500, 'Subtitles file not found or permission issue.')
     def delete(self):
         """Delete a movie subtitles"""
         args = self.delete_request_parser.parse_args()
@@ -205,4 +206,4 @@ class MoviesSubtitles(Resource):
                             radarr_id=radarrId):
             return '', 204
         else:
-            return 'Subtitles file not found or permission issue.', 410
+            return 'Subtitles file not found or permission issue.', 500

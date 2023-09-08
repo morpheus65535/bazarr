@@ -87,7 +87,7 @@ validators = [
     Validator('general.ignore_pgs_subs', must_exist=True, default=False, is_type_of=bool),
     Validator('general.ignore_vobsub_subs', must_exist=True, default=False, is_type_of=bool),
     Validator('general.ignore_ass_subs', must_exist=True, default=False, is_type_of=bool),
-    Validator('general.adaptive_searching', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.adaptive_searching', must_exist=True, default=True, is_type_of=bool),
     Validator('general.adaptive_searching_delay', must_exist=True, default='3w', is_type_of=str,
               is_in=['1w', '2w', '3w', '4w']),
     Validator('general.adaptive_searching_delta', must_exist=True, default='1w', is_type_of=str,

@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from utilities.backup import get_backup_files, prepare_restore, delete_backup_file, backup_to_zip
 
@@ -19,14 +19,13 @@ class SystemBackups(Resource):
     })
 
     @authenticate
-    @api_ns_system_backups.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_system_backups.doc(parser=None)
     @api_ns_system_backups.response(204, 'Success')
     @api_ns_system_backups.response(401, 'Not Authenticated')
     def get(self):
         """List backup files"""
         backups = get_backup_files(fullpath=False)
-        return backups
+        return marshal(backups, self.get_response_model, envelope='data')
 
     @authenticate
     @api_ns_system_backups.doc(parser=None)

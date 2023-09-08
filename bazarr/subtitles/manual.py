@@ -41,7 +41,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
         video = get_video(force_unicode(path), title, sceneName, providers=providers, media_type=media_type)
     else:
         logging.info("BAZARR All providers are throttled")
-        return None
+        return 'All providers are throttled'
     if video:
         try:
             if providers:
@@ -62,7 +62,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
             else:
                 subtitles = []
                 logging.info("BAZARR All providers are throttled")
-                return None
+                return 'All providers are throttled'
         except Exception:
             logging.exception("BAZARR Error trying to get Subtitle list from provider for this file: " + path)
         else:
@@ -183,14 +183,14 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
                 logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
             else:
                 logging.info("BAZARR All providers are throttled")
-                return None
+                return 'All providers are throttled'
         except Exception:
             logging.exception('BAZARR Error downloading Subtitles for this file ' + path)
-            return None
+            return 'Error downloading Subtitles'
         else:
             if not subtitle.is_valid():
                 logging.exception('BAZARR No valid Subtitles file found for this file: ' + path)
-                return
+                return 'No valid Subtitles file found'
             try:
                 chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
                     'win') and settings.general.chmod_enabled else None
@@ -203,7 +203,7 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
                                                  path_decoder=force_unicode)
             except Exception:
                 logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
-                return
+                return 'Error saving Subtitles file to disk'
             else:
                 if saved_subtitles:
                     _, max_score, _ = _get_scores(media_type)
@@ -221,7 +221,7 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
                         "BAZARR Tried to manually download a Subtitles for file: " + path
                         + " but we weren't able to do (probably throttled by " + str(subtitle.provider_name)
                         + ". Please retry later or select a Subtitles from another provider.")
-                    return None
+                    return 'Something went wrong, check the logs for error'
 
     subliminal.region.backend.sync()
 

@@ -47,8 +47,8 @@ class EventTracker:
 
         self.tracker.store.save()
 
-    def track(self, provider, action, language):
-        if not settings.analyticsenabled:
+    def track_subtitles(self, provider, action, language):
+        if not settings.analytics.enabled:
             return
 
         subtitles_event = self.tracker.create_new_event(name="subtitles")
@@ -59,6 +59,23 @@ class EventTracker:
 
         try:
             self.tracker.send(events=[subtitles_event])
+        except Exception:
+            logging.debug("BAZARR unable to track event.")
+        else:
+            self.tracker.store.save()
+
+    def track_throttling(self, provider, exception_name, exception_info):
+        if not settings.analytics.getboolean('enabled'):
+            return
+
+        throttling_event = self.tracker.create_new_event(name="throttling")
+
+        throttling_event.set_event_param(name="provider", value=provider)
+        throttling_event.set_event_param(name="exception_name", value=exception_name)
+        throttling_event.set_event_param(name="exception_info", value=exception_info)
+
+        try:
+            self.tracker.send(events=[throttling_event])
         except Exception:
             logging.debug("BAZARR unable to track event.")
         else:

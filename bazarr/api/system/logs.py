@@ -3,7 +3,7 @@
 import io
 import os
 
-from flask_restx import Resource, Namespace, fields
+from flask_restx import Resource, Namespace, fields, marshal
 
 from app.logger import empty_log
 from app.get_args import args
@@ -23,7 +23,6 @@ class SystemLogs(Resource):
     })
 
     @authenticate
-    @api_ns_system_logs.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_system_logs.doc(parser=None)
     @api_ns_system_logs.response(200, 'Success')
     @api_ns_system_logs.response(401, 'Not Authenticated')
@@ -50,7 +49,7 @@ class SystemLogs(Resource):
                 logs.append(log)
 
             logs.reverse()
-        return logs
+        return marshal(logs, self.get_response_model, envelope='data')
 
     @authenticate
     @api_ns_system_logs.doc(parser=None)

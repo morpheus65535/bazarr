@@ -2,7 +2,7 @@
 
 import pretty
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from app.database import TableMovies, TableBlacklistMovie, database, select
 from subtitles.tools.delete import delete_subtitles
@@ -37,7 +37,6 @@ class MoviesBlacklist(Resource):
     })
 
     @authenticate
-    @api_ns_movies_blacklist.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_movies_blacklist.response(401, 'Not Authenticated')
     @api_ns_movies_blacklist.doc(parser=get_request_parser)
     def get(self):
@@ -59,7 +58,7 @@ class MoviesBlacklist(Resource):
         if length > 0:
             data = data.limit(length).offset(start)
 
-        return [postprocess({
+        return marshal([postprocess({
             'title': x.title,
             'radarrId': x.radarrId,
             'provider': x.provider,
@@ -67,7 +66,7 @@ class MoviesBlacklist(Resource):
             'language': x.language,
             'timestamp': pretty.date(x.timestamp),
             'parsed_timestamp': x.timestamp.strftime('%x %X'),
-        }) for x in data.all()]
+        }) for x in data.all()], self.get_response_model, envelope='data')
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, required=True, help='Radarr ID')
@@ -81,7 +80,7 @@ class MoviesBlacklist(Resource):
     @api_ns_movies_blacklist.response(200, 'Success')
     @api_ns_movies_blacklist.response(401, 'Not Authenticated')
     @api_ns_movies_blacklist.response(404, 'Movie not found')
-    @api_ns_movies_blacklist.response(410, 'Subtitles file not found or permission issue.')
+    @api_ns_movies_blacklist.response(500, 'Subtitles file not found or permission issue.')
     def post(self):
         """Add a movies subtitles to blacklist"""
         args = self.post_request_parser.parse_args()
@@ -119,7 +118,7 @@ class MoviesBlacklist(Resource):
             event_stream(type='movie-history')
             return '', 200
         else:
-            return 'Subtitles file not found or permission issue.', 410
+            return 'Subtitles file not found or permission issue.', 500
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('all', type=str, required=False, help='Empty movies subtitles blacklist')

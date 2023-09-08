@@ -5,7 +5,7 @@ import operator
 import itertools
 
 from dateutil import rrule
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
 from app.database import TableHistory, TableHistoryMovie, database, select
@@ -41,7 +41,6 @@ class HistoryStats(Resource):
     })
 
     @authenticate
-    @api_ns_history_stats.marshal_with(get_response_model, code=200)
     @api_ns_history_stats.response(401, 'Not Authenticated')
     @api_ns_history_stats.doc(parser=get_request_parser)
     def get(self):
@@ -121,4 +120,4 @@ class HistoryStats(Resource):
         sorted_data_series = sorted(data_series, key=lambda i: i['date'])
         sorted_data_movies = sorted(data_movies, key=lambda i: i['date'])
 
-        return {'series': sorted_data_series, 'movies': sorted_data_movies}
+        return marshal({'series': sorted_data_series, 'movies': sorted_data_movies}, self.get_response_model)

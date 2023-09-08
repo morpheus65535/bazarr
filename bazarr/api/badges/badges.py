@@ -4,7 +4,7 @@ import operator
 import ast
 
 from functools import reduce
-from flask_restx import Resource, Namespace, fields
+from flask_restx import Resource, Namespace, fields, marshal
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies, database, select
 from app.get_providers import get_throttled_providers
@@ -31,7 +31,6 @@ class Badges(Resource):
     })
 
     @authenticate
-    @api_ns_badges.marshal_with(get_model, code=200)
     @api_ns_badges.response(401, 'Not Authenticated')
     @api_ns_badges.doc(parser=None)
     def get(self):
@@ -74,4 +73,4 @@ class Badges(Resource):
             'radarr_signalr': "LIVE" if radarr_signalr_client.connected else "",
             'announcements': len(get_all_announcements()),
         }
-        return result
+        return marshal(result, self.get_model)
