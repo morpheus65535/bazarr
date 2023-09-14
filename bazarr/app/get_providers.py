@@ -10,6 +10,8 @@ import pretty
 import time
 import socket
 import requests
+import traceback
+import re
 
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
     MustGetBlacklisted, SearchLimitReached
@@ -26,6 +28,9 @@ from utilities.binaries import get_binary
 from radarr.blacklist import blacklist_log_movie
 from sonarr.blacklist import blacklist_log
 from utilities.analytics import event_tracker
+
+
+_TRACEBACK_RE = re.compile(r'File "(.*?)", line (\d+)')
 
 
 def time_until_midnight(timezone):
@@ -342,13 +347,33 @@ def provider_throttle(name, exception):
             tp[name] = (cls_name, throttle_until, throttle_description)
             set_throttled_providers(str(tp))
 
+            trac_info = _get_traceback_info(exception)
+
             logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name,
-                         throttle_description, throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.args[0]
-                         if exception.args else None)
-            event_tracker.track_throttling(provider=name, exception_name=cls_name, exception_info=exception.args[0]
-                                           if exception.args else None)
+                         throttle_description, throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, trac_info)
+            event_tracker.track_throttling(provider=name, exception_name=cls_name, exception_info=trac_info)
 
     update_throttled_provider()
+
+
+def _get_traceback_info(exc: Exception):
+    traceback_str = " ".join(traceback.format_tb(exc.__traceback__))
+
+    clean_msg = str(exc).replace("\n", " ").strip()
+
+    line_info = _TRACEBACK_RE.search(traceback_str)
+
+    # Value info char len is 100
+
+    if line_info is None:
+        return clean_msg[:100]
+
+    file_, line = line_info.groups()
+
+    extra = f"' ~ {file_}@{line}"[:90]
+    message = f"'{clean_msg}"[:100 - len(extra)]
+
+    return message + extra
 
 
 def throttled_count(name):
