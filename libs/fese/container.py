@@ -81,6 +81,7 @@ class FFprobeVideoContainer:
         overwrite=True,
         timeout=600,
         convert_format=None,
+        basename_callback=None,
     ):
         """Extracts a list of subtitles converting them. Returns a dictionary of the
         extracted filenames by index.
@@ -95,6 +96,8 @@ class FFprobeVideoContainer:
         :param timeout: subprocess timeout in seconds (default: 600)
         :param convert_format: format to convert selected subtitles. Defaults to
         srt
+        :param basename_callback: a callback that takes the filename path. Only used if
+        custom_dir is set. Defaults to `os.path.basename`
         :raises: ExtractionError, UnsupportedCodec, OSError
         """
         extract_command = [FFMPEG_PATH, "-v", FF_LOG_LEVEL]
@@ -116,7 +119,8 @@ class FFprobeVideoContainer:
                 f"{os.path.splitext(self.path)[0]}.{subtitle.suffix}.{extension_to_use}"
             )
             if custom_dir is not None:
-                sub_path = os.path.join(custom_dir, os.path.basename(sub_path))
+                basename_callback = basename_callback or os.path.basename
+                sub_path = os.path.join(custom_dir, basename_callback(sub_path))
 
             if not overwrite and sub_path in collected_paths:
                 sub_path = f"{os.path.splitext(sub_path)[0]}.{len(collected_paths):02}.{extension_to_use}"
@@ -156,6 +160,7 @@ class FFprobeVideoContainer:
         overwrite=True,
         timeout=600,
         fallback_to_convert=True,
+        basename_callback=None,
     ):
         """Extracts a list of subtitles with ffmpeg's copy method. Returns a dictionary
         of the extracted filenames by index.
@@ -167,6 +172,8 @@ class FFprobeVideoContainer:
         :param timeout: subprocess timeout in seconds (default: 600)
         :param fallback_to_convert: fallback to stream's default convert format if it is
         incompatible with copy
+        :param basename_callback: a callback that takes the filename path. Only used if
+        custom_dir is set. Defaults to `os.path.basename`
         :raises: ExtractionError, UnsupportedCodec, OSError
         """
         extract_command = [FFMPEG_PATH, "-v", FF_LOG_LEVEL]
@@ -184,7 +191,8 @@ class FFprobeVideoContainer:
         for subtitle in subtitles:
             sub_path = f"{os.path.splitext(self.path)[0]}.{subtitle.suffix}.{subtitle.extension}"
             if custom_dir is not None:
-                sub_path = os.path.join(custom_dir, os.path.basename(sub_path))
+                basename_callback = basename_callback or os.path.basename
+                sub_path = os.path.join(custom_dir, basename_callback(sub_path))
 
             if not overwrite and sub_path in collected_paths:
                 sub_path = f"{os.path.splitext(sub_path)[0]}.{len(collected_paths):02}.{subtitle.extension}"
