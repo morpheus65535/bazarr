@@ -30,7 +30,7 @@ from sonarr.blacklist import blacklist_log
 from utilities.analytics import event_tracker
 
 
-_TRACEBACK_RE = re.compile(r'File "(.*?)", line (\d+)')
+_TRACEBACK_RE = re.compile(r'File "(.*?providers/.*?)", line (\d+)')
 
 
 def time_until_midnight(timezone):
@@ -357,20 +357,21 @@ def provider_throttle(name, exception):
 
 
 def _get_traceback_info(exc: Exception):
-    traceback_str = " ".join(traceback.format_tb(exc.__traceback__))
+    traceback_str = " ".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
 
     clean_msg = str(exc).replace("\n", " ").strip()
 
-    line_info = _TRACEBACK_RE.search(traceback_str)
+    line_info = _TRACEBACK_RE.findall(traceback_str)
 
-    # Value info char len is 100
+    # Value info max chars len is 100
 
-    if line_info is None:
+    if not line_info:
         return clean_msg[:100]
 
-    file_, line = line_info.groups()
+    line_info = line_info[-1]
+    file_, line = line_info
 
-    extra = f"' ~ {file_}@{line}"[:90]
+    extra = f"' ~ {os.path.basename(file_)}@{line}"[:90]
     message = f"'{clean_msg}"[:100 - len(extra)]
 
     return message + extra
