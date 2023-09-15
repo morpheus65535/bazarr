@@ -30,9 +30,10 @@ class SubSyncer:
             self.vad = 'subs_then_webrtc'
         self.log_dir_path = os.path.join(args.config_dir, 'log')
 
-    def sync(self, video_path, srt_path, srt_lang, media_type, sonarr_series_id=None, sonarr_episode_id=None,
-             radarr_id=None):
-        self.reference = video_path
+    def sync(self, video_path, srt_path, srt_lang, sonarr_series_id=None, sonarr_episode_id=None, radarr_id=None,
+             reference=None, reference_stream=None, max_offset_seconds=str(settings.subsync.max_offset_seconds),
+             no_fix_framerate=settings.subsync.no_fix_framerate, gss=settings.subsync.gss):
+        self.reference = reference or video_path
         self.srtin = srt_path
         self.srtout = '{}.synced.srt'.format(os.path.splitext(self.srtin)[0])
         self.args = None
@@ -55,21 +56,30 @@ class SubSyncer:
         try:
             unparsed_args = [self.reference, '-i', self.srtin, '-o', self.srtout, '--ffmpegpath', self.ffmpeg_path,
                              '--vad', self.vad, '--log-dir-path', self.log_dir_path, '--max-offset-seconds',
-                             str(settings.subsync.max_offset_seconds)]
+                             max_offset_seconds]
             if not settings.general.utf8_encode:
                 unparsed_args.append('--output-encoding')
                 unparsed_args.append('same')
-            if settings.subsync.no_fix_framerate:
+
+            if no_fix_framerate:
                 unparsed_args.append('--no-fix-framerate')
-            if settings.subsync.gss:
+
+            if gss:
                 unparsed_args.append('--gss')
-            if settings.subsync.force_audio:
+
+            if reference_stream:
+                unparsed_args.append('--reference-stream')
+                unparsed_args.append(reference_stream)
+            elif settings.subsync.force_audio:
                 unparsed_args.append('--reference-stream')
                 unparsed_args.append('a:0')
+
             if settings.subsync.debug:
                 unparsed_args.append('--make-test-case')
+
             parser = make_parser()
             self.args = parser.parse_args(args=unparsed_args)
+
             if os.path.isfile(self.srtout):
                 os.remove(self.srtout)
                 logging.debug('BAZARR deleted the previous subtitles synchronization attempt file.')
@@ -102,7 +112,7 @@ class SubSyncer:
                                                     reversed_subtitles_path=srt_path,
                                                     hearing_impaired=None)
 
-                    if media_type == 'series':
+                    if sonarr_episode_id:
                         history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
                                     result=result)
                     else:
