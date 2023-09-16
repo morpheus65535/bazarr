@@ -2,11 +2,10 @@
 
 import operator
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
-from peewee import fn, JOIN
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select, update, func
 from subtitles.indexer.series import list_missing_subtitles, series_scan_subtitles
 from subtitles.mass_download import series_download_subtitles
 from subtitles.wanted import wanted_search_missing_subtitles_series
@@ -45,7 +44,6 @@ class Series(Resource):
         'profileId': fields.Integer(),
         'seriesType': fields.String(),
         'sonarrSeriesId': fields.Integer(),
-        'sortTitle': fields.String(),
         'tags': fields.List(fields.String),
         'title': fields.String(),
         'tvdbId': fields.Integer(),
@@ -58,7 +56,6 @@ class Series(Resource):
     })
 
     @authenticate
-    @api_ns_series.marshal_with(get_response_model, code=200)
     @api_ns_series.doc(parser=get_request_parser)
     @api_ns_series.response(200, 'Success')
     @api_ns_series.response(401, 'Not Authenticated')
@@ -69,40 +66,77 @@ class Series(Resource):
         length = args.get('length')
         seriesId = args.get('seriesid[]')
 
-        count = TableShows.select().count()
-        episodeFileCount = TableEpisodes.select(TableShows.sonarrSeriesId,
-                                                fn.COUNT(TableEpisodes.sonarrSeriesId).coerce(False).alias('episodeFileCount')) \
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-            .group_by(TableShows.sonarrSeriesId).alias('episodeFileCount')
+        episodeFileCount = select(TableShows.sonarrSeriesId,
+                                  func.count(TableEpisodes.sonarrSeriesId).label('episodeFileCount')) \
+            .select_from(TableEpisodes) \
+            .join(TableShows) \
+            .group_by(TableShows.sonarrSeriesId)\
+            .subquery()
 
         episodes_missing_conditions = [(TableEpisodes.missing_subtitles != '[]')]
         episodes_missing_conditions += get_exclusion_clause('series')
 
-        episodeMissingCount = (TableEpisodes.select(TableShows.sonarrSeriesId,
-                                                    fn.COUNT(TableEpisodes.sonarrSeriesId).coerce(False).alias('episodeMissingCount'))
-                               .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))
-                               .where(reduce(operator.and_, episodes_missing_conditions)).group_by(
-            TableShows.sonarrSeriesId).alias('episodeMissingCount'))
+        episodeMissingCount = select(TableShows.sonarrSeriesId,
+                                     func.count(TableEpisodes.sonarrSeriesId).label('episodeMissingCount')) \
+            .select_from(TableEpisodes) \
+            .join(TableShows) \
+            .where(reduce(operator.and_, episodes_missing_conditions)) \
+            .group_by(TableShows.sonarrSeriesId)\
+            .subquery()
 
-        result = TableShows.select(TableShows, episodeFileCount.c.episodeFileCount,
-                                   episodeMissingCount.c.episodeMissingCount).join(episodeFileCount,
-                                                                                   join_type=JOIN.LEFT_OUTER, on=(
-                                                                                    TableShows.sonarrSeriesId ==
-                                                                                    episodeFileCount.c.sonarrSeriesId)
-                                                                                   ) \
-            .join(episodeMissingCount, join_type=JOIN.LEFT_OUTER,
-                  on=(TableShows.sonarrSeriesId == episodeMissingCount.c.sonarrSeriesId)).order_by(TableShows.sortTitle)
+        stmt = select(TableShows.tvdbId,
+                      TableShows.alternativeTitles,
+                      TableShows.audio_language,
+                      TableShows.fanart,
+                      TableShows.imdbId,
+                      TableShows.monitored,
+                      TableShows.overview,
+                      TableShows.path,
+                      TableShows.poster,
+                      TableShows.profileId,
+                      TableShows.seriesType,
+                      TableShows.sonarrSeriesId,
+                      TableShows.tags,
+                      TableShows.title,
+                      TableShows.year,
+                      episodeFileCount.c.episodeFileCount,
+                      episodeMissingCount.c.episodeMissingCount) \
+            .select_from(TableShows) \
+            .join(episodeFileCount, TableShows.sonarrSeriesId == episodeFileCount.c.sonarrSeriesId, isouter=True) \
+            .join(episodeMissingCount, TableShows.sonarrSeriesId == episodeMissingCount.c.sonarrSeriesId, isouter=True)\
+            .order_by(TableShows.sortTitle)
 
         if len(seriesId) != 0:
-            result = result.where(TableShows.sonarrSeriesId.in_(seriesId))
+            stmt = stmt.where(TableShows.sonarrSeriesId.in_(seriesId))
         elif length > 0:
-            result = result.limit(length).offset(start)
-        result = list(result.dicts())
+            stmt = stmt.limit(length).offset(start)
 
-        for item in result:
-            postprocess(item)
+        results = [postprocess({
+            'tvdbId': x.tvdbId,
+            'alternativeTitles': x.alternativeTitles,
+            'audio_language': x.audio_language,
+            'fanart': x.fanart,
+            'imdbId': x.imdbId,
+            'monitored': x.monitored,
+            'overview': x.overview,
+            'path': x.path,
+            'poster': x.poster,
+            'profileId': x.profileId,
+            'seriesType': x.seriesType,
+            'sonarrSeriesId': x.sonarrSeriesId,
+            'tags': x.tags,
+            'title': x.title,
+            'year': x.year,
+            'episodeFileCount': x.episodeFileCount,
+            'episodeMissingCount': x.episodeMissingCount,
+        }) for x in database.execute(stmt).all()]
 
-        return {'data': result, 'total': count}
+        count = database.execute(
+            select(func.count())
+            .select_from(TableShows)) \
+            .scalar()
+
+        return marshal({'data': results, 'total': count}, self.get_response_model)
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, action='append', required=False, default=[],
@@ -133,23 +167,22 @@ class Series(Resource):
                 except Exception:
                     return 'Languages profile not found', 404
 
-            TableShows.update({
-                TableShows.profileId: profileId
-            }) \
-                .where(TableShows.sonarrSeriesId == seriesId) \
-                .execute()
+            database.execute(
+                update(TableShows)
+                .values(profileId=profileId)
+                .where(TableShows.sonarrSeriesId == seriesId))
 
             list_missing_subtitles(no=seriesId, send_event=False)
 
             event_stream(type='series', payload=seriesId)
 
-            episode_id_list = TableEpisodes \
-                .select(TableEpisodes.sonarrEpisodeId) \
-                .where(TableEpisodes.sonarrSeriesId == seriesId) \
-                .dicts()
+            episode_id_list = database.execute(
+                select(TableEpisodes.sonarrEpisodeId)
+                .where(TableEpisodes.sonarrSeriesId == seriesId))\
+                .all()
 
             for item in episode_id_list:
-                event_stream(type='episode-wanted', payload=item['sonarrEpisodeId'])
+                event_stream(type='episode-wanted', payload=item.sonarrEpisodeId)
 
         event_stream(type='badges')
 
@@ -165,6 +198,7 @@ class Series(Resource):
     @api_ns_series.response(204, 'Success')
     @api_ns_series.response(400, 'Unknown action')
     @api_ns_series.response(401, 'Not Authenticated')
+    @api_ns_series.response(500, 'Series directory not found. Path mapping issue?')
     def patch(self):
         """Run actions on specific series"""
         args = self.patch_request_parser.parse_args()
@@ -174,8 +208,12 @@ class Series(Resource):
             series_scan_subtitles(seriesid)
             return '', 204
         elif action == "search-missing":
-            series_download_subtitles(seriesid)
-            return '', 204
+            try:
+                series_download_subtitles(seriesid)
+            except OSError:
+                return 'Series directory not found. Path mapping issue?', 500
+            else:
+                return '', 204
         elif action == "search-wanted":
             wanted_search_missing_subtitles_series()
             return '', 204

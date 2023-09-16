@@ -5,6 +5,7 @@ import {
   useMovieAddBlacklist,
   useMovieHistory,
 } from "@/apis/hooks";
+import StateIcon from "@/components/StateIcon";
 import { withModal } from "@/modules/modals";
 import { faFileExcel, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -61,6 +62,23 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
       {
         Header: "Score",
         accessor: "score",
+      },
+      {
+        accessor: "matches",
+        Cell: (row) => {
+          const { matches, dont_matches: dont } = row.row.original;
+          if (matches.length || dont.length) {
+            return (
+              <StateIcon
+                matches={matches}
+                dont={dont}
+                isHistory={true}
+              ></StateIcon>
+            );
+          } else {
+            return null;
+          }
+        },
       },
       {
         Header: "Date",
@@ -167,6 +185,23 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
       {
         Header: "Score",
         accessor: "score",
+      },
+      {
+        accessor: "matches",
+        Cell: (row) => {
+          const { matches, dont_matches: dont } = row.row.original;
+          if (matches.length || dont.length) {
+            return (
+              <StateIcon
+                matches={matches}
+                dont={dont}
+                isHistory={true}
+              ></StateIcon>
+            );
+          } else {
+            return null;
+          }
+        },
       },
       {
         Header: "Date",

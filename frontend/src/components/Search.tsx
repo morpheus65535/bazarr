@@ -87,6 +87,14 @@ const Search: FunctionComponent = () => {
       value={query}
       onChange={setQuery}
       onBlur={() => setQuery("")}
+      filter={(value, item) =>
+        item.value.toLowerCase().includes(value.toLowerCase().trim()) ||
+        item.value
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .includes(value.trim())
+      }
     ></Autocomplete>
   );
 };

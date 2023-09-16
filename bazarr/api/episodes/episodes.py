@@ -1,8 +1,8 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableEpisodes
+from app.database import TableEpisodes, database, select
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
 from ..utils import authenticate, postprocess
@@ -23,29 +23,20 @@ class Episodes(Resource):
     get_audio_language_model = api_ns_episodes.model('audio_language_model', audio_language_model)
 
     get_response_model = api_ns_episodes.model('EpisodeGetResponse', {
-        'rowid': fields.Integer(),
-        'audio_codec': fields.String(),
         'audio_language': fields.Nested(get_audio_language_model),
         'episode': fields.Integer(),
-        'episode_file_id': fields.Integer(),
-        'failedAttempts': fields.String(),
-        'file_size': fields.Integer(),
-        'format': fields.String(),
         'missing_subtitles': fields.Nested(get_subtitles_language_model),
         'monitored': fields.Boolean(),
         'path': fields.String(),
-        'resolution': fields.String(),
         'season': fields.Integer(),
         'sonarrEpisodeId': fields.Integer(),
         'sonarrSeriesId': fields.Integer(),
         'subtitles': fields.Nested(get_subtitles_model),
         'title': fields.String(),
-        'video_codec': fields.String(),
         'sceneName': fields.String(),
     })
 
     @authenticate
-    @api_ns_episodes.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_episodes.doc(parser=get_request_parser)
     @api_ns_episodes.response(200, 'Success')
     @api_ns_episodes.response(401, 'Not Authenticated')
@@ -56,18 +47,44 @@ class Episodes(Resource):
         seriesId = args.get('seriesid[]')
         episodeId = args.get('episodeid[]')
 
+        stmt = select(
+                TableEpisodes.audio_language,
+                TableEpisodes.episode,
+                TableEpisodes.missing_subtitles,
+                TableEpisodes.monitored,
+                TableEpisodes.path,
+                TableEpisodes.season,
+                TableEpisodes.sonarrEpisodeId,
+                TableEpisodes.sonarrSeriesId,
+                TableEpisodes.subtitles,
+                TableEpisodes.title,
+                TableEpisodes.sceneName,
+            )
+
         if len(episodeId) > 0:
-            result = TableEpisodes.select().where(TableEpisodes.sonarrEpisodeId.in_(episodeId)).dicts()
+            stmt_query = database.execute(
+                stmt
+                .where(TableEpisodes.sonarrEpisodeId.in_(episodeId)))\
+                .all()
         elif len(seriesId) > 0:
-            result = TableEpisodes.select()\
-                .where(TableEpisodes.sonarrSeriesId.in_(seriesId))\
-                .order_by(TableEpisodes.season.desc(), TableEpisodes.episode.desc())\
-                .dicts()
+            stmt_query = database.execute(
+                stmt
+                .where(TableEpisodes.sonarrSeriesId.in_(seriesId))
+                .order_by(TableEpisodes.season.desc(), TableEpisodes.episode.desc()))\
+                .all()
         else:
             return "Series or Episode ID not provided", 404
 
-        result = list(result)
-        for item in result:
-            postprocess(item)
-
-        return result
+        return marshal([postprocess({
+                'audio_language': x.audio_language,
+                'episode': x.episode,
+                'missing_subtitles': x.missing_subtitles,
+                'monitored': x.monitored,
+                'path': x.path,
+                'season': x.season,
+                'sonarrEpisodeId': x.sonarrEpisodeId,
+                'sonarrSeriesId': x.sonarrSeriesId,
+                'subtitles': x.subtitles,
+                'title': x.title,
+                'sceneName': x.sceneName,
+                }) for x in stmt_query], self.get_response_model, envelope='data')

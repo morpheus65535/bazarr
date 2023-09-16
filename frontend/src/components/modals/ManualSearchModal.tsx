@@ -1,15 +1,11 @@
 import { withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
 import { useTableStyles } from "@/styles";
-import { BuildKey, GetItemId } from "@/utilities";
+import { GetItemId } from "@/utilities";
 import {
   faCaretDown,
-  faCheck,
-  faCheckCircle,
   faDownload,
-  faExclamationCircle,
   faInfoCircle,
-  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -20,19 +16,16 @@ import {
   Code,
   Collapse,
   Divider,
-  Group,
-  List,
-  Popover,
   Stack,
   Text,
 } from "@mantine/core";
-import { useHover } from "@mantine/hooks";
 import { isString } from "lodash";
-import { FunctionComponent, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { UseQueryResult } from "react-query";
 import { Column } from "react-table";
 import { Action, PageTable } from "..";
 import Language from "../bazarr/Language";
+import StateIcon from "../StateIcon";
 
 type SupportType = Item.Movie | Item.Episode;
 
@@ -47,18 +40,18 @@ interface Props<T extends SupportType> {
 function ManualSearchView<T extends SupportType>(props: Props<T>) {
   const { download, query: useSearch, item } = props;
 
-  const itemId = useMemo(() => GetItemId(item ?? {}), [item]);
+  const [searchStarted, setSearchStarted] = useState(false);
 
-  const [id, setId] = useState<number | undefined>(undefined);
+  const itemId = useMemo(() => GetItemId(item), [item]);
 
-  const results = useSearch(id);
+  const results = useSearch(searchStarted ? itemId : undefined);
 
-  const isStale = results.data === undefined;
+  const haveResult = results.data !== undefined;
 
   const search = useCallback(() => {
-    setId(itemId);
+    setSearchStarted(true);
     results.refetch();
-  }, [itemId, results]);
+  }, [results]);
 
   const columns = useMemo<Column<SearchResultType>[]>(
     () => [
@@ -155,7 +148,13 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         accessor: "matches",
         Cell: (row) => {
           const { matches, dont_matches: dont } = row.row.original;
-          return <StateIcon matches={matches} dont={dont}></StateIcon>;
+          return (
+            <StateIcon
+              matches={matches}
+              dont={dont}
+              isHistory={false}
+            ></StateIcon>
+          );
         },
       },
       {
@@ -191,6 +190,14 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
   const bSceneNameAvailable =
     isString(item.sceneName) && item.sceneName.length !== 0;
 
+  const searchButtonText = useMemo(() => {
+    if (results.isFetching) {
+      return "Searching";
+    }
+
+    return searchStarted ? "Search Again" : "Search";
+  }, [results.isFetching, searchStarted]);
+
   return (
     <Stack>
       <Alert
@@ -202,7 +209,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         <Divider hidden={!bSceneNameAvailable} my="xs"></Divider>
         <Code hidden={!bSceneNameAvailable}>{item?.sceneName}</Code>
       </Alert>
-      <Collapse in={!isStale && !results.isFetching}>
+      <Collapse in={haveResult && !results.isFetching}>
         <PageTable
           tableStyles={{ emptyText: "No result", placeholder: 10 }}
           columns={columns}
@@ -211,7 +218,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       </Collapse>
       <Divider></Divider>
       <Button loading={results.isFetching} fullWidth onClick={search}>
-        {isStale ? "Search" : "Search Again"}
+        {searchButtonText}
       </Button>
     </Stack>
   );
@@ -227,48 +234,3 @@ export const EpisodeSearchModal = withModal<Props<Item.Episode>>(
   "episode-manual-search",
   { title: "Search Subtitles", size: "calc(100vw - 4rem)" }
 );
-
-const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
-  matches,
-  dont,
-}) => {
-  const hasIssues = dont.length > 0;
-
-  const { ref, hovered } = useHover();
-
-  return (
-    <Popover opened={hovered} position="top" width={360} withArrow withinPortal>
-      <Popover.Target>
-        <Text color={hasIssues ? "yellow" : "green"} ref={ref}>
-          <FontAwesomeIcon
-            icon={hasIssues ? faExclamationCircle : faCheckCircle}
-          ></FontAwesomeIcon>
-        </Text>
-      </Popover.Target>
-      <Popover.Dropdown>
-        <Group position="left" spacing="xl" noWrap grow>
-          <Stack align="flex-start" justify="flex-start" spacing="xs" mb="auto">
-            <Text color="green">
-              <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>
-            </Text>
-            <List>
-              {matches.map((v, idx) => (
-                <List.Item key={BuildKey(idx, v, "match")}>{v}</List.Item>
-              ))}
-            </List>
-          </Stack>
-          <Stack align="flex-start" justify="flex-start" spacing="xs" mb="auto">
-            <Text color="yellow">
-              <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>
-            </Text>
-            <List>
-              {dont.map((v, idx) => (
-                <List.Item key={BuildKey(idx, v, "miss")}>{v}</List.Item>
-              ))}
-            </List>
-          </Stack>
-        </Group>
-      </Popover.Dropdown>
-    </Popover>
-  );
-};

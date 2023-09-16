@@ -81,7 +81,11 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
         except IndexError:
             logging.error(f'BAZARR is unable to translate malformed subtitles: {source_srt_file}')
             return False
-    subs.save(dest_srt_file)
+    try:
+        subs.save(dest_srt_file)
+    except OSError:
+        logging.error(f'BAZARR is unable to save translated subtitles to {dest_srt_file}')
+        raise OSError
 
     message = f"{language_from_alpha2(from_lang)} subtitles translated to {language_from_alpha3(to_lang)}."
 

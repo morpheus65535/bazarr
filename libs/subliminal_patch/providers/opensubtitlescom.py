@@ -3,6 +3,7 @@ import logging
 import os
 import time
 import datetime
+import json
 
 from requests import Session, ConnectionError, Timeout, ReadTimeout, RequestException
 from requests.exceptions import JSONDecodeError
@@ -210,6 +211,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             log_request_response(r)
             raise ProviderError("Cannot get token from provider login response")
         else:
+            log_request_response(r, non_standard=False)
             region.set("oscom_token", self.token)
 
     @staticmethod
@@ -286,11 +288,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             if not title_id:
                 return []
 
-        # be sure to remove duplicates
-        lang_strings = list(set([to_opensubtitlescom(lang.basename) for lang in languages]))
+        # be sure to remove duplicates using list(set())
+        langs_list = sorted(list(set([to_opensubtitlescom(lang.basename).lower() for lang in languages])))
 
-        langs = ','.join(lang_strings)
-        logging.debug(f'Searching for those languages: {lang_strings}')
+        langs = ','.join(langs_list)
+        logging.debug(f'Searching for those languages: {langs}')
 
         # query the server
         if isinstance(self.video, Episode):
@@ -300,8 +302,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                              params=(('ai_translated', 'exclude'),
                                                      ('episode_number', self.video.episode),
                                                      ('imdb_id', imdb_id if not title_id else None),
-                                                     ('languages', langs.lower()),
-                                                     ('machine_translated', 'exclude'),
+                                                     ('languages', langs),
                                                      ('moviehash', file_hash),
                                                      ('parent_feature_id', title_id if title_id else None),
                                                      ('season_number', self.video.season)),
@@ -318,8 +319,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                              params=(('ai_translated', 'exclude'),
                                                      ('id', title_id if title_id else None),
                                                      ('imdb_id', imdb_id if not title_id else None),
-                                                     ('languages', langs.lower()),
-                                                     ('machine_translated', 'exclude'),
+                                                     ('languages', langs),
                                                      ('moviehash', file_hash)),
                                              timeout=30),
                     validate_json=True,
@@ -539,11 +539,27 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         return response
 
 
-def log_request_response(response):
-    logging.debug("opensubtitlescom returned a non standard response. Logging request/response for debugging purpose.")
+def log_request_response(response, non_standard=True):
+    redacted_request_headers = response.request.headers
+    if 'Authorization' in redacted_request_headers and isinstance(redacted_request_headers['Authorization'], str):
+        redacted_request_headers['Authorization'] = redacted_request_headers['Authorization'][:-8]+8*'x'
+
+    redacted_request_body = json.loads(response.request.body)
+    if 'password' in redacted_request_body:
+        redacted_request_body['password'] = 'redacted'
+
+    redacted_response_body = json.loads(response.text)
+    if 'token' in redacted_response_body and isinstance(redacted_response_body['token'], str):
+        redacted_response_body['token'] = redacted_response_body['token'][:-8] + 8 * 'x'
+
+    if non_standard:
+        logging.debug("opensubtitlescom returned a non standard response. Logging request/response for debugging "
+                      "purpose.")
+    else:
+        logging.debug("opensubtitlescom returned a standard response. Logging request/response for debugging purpose.")
     logging.debug(f"Request URL: {response.request.url}")
-    logging.debug(f"Request Headers: {response.request.headers}")
-    logging.debug(f"Request Body: {response.request.body}")
+    logging.debug(f"Request Headers: {redacted_request_headers}")
+    logging.debug(f"Request Body: {json.dumps(redacted_request_body)}")
     logging.debug(f"Response Status Code: {response.status_code}")
     logging.debug(f"Response Headers: {response.headers}")
-    logging.debug(f"Response Body: {response.text}")
+    logging.debug(f"Response Body: {json.dumps(redacted_response_body)}")

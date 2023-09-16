@@ -7,7 +7,7 @@ from flask_restx import Resource, Namespace, reqparse
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from werkzeug.datastructures import FileStorage
 
-from app.database import TableShows, TableEpisodes, get_audio_profile_languages, get_profile_id
+from app.database import TableShows, TableEpisodes, get_audio_profile_languages, get_profile_id, database, select
 from utilities.path_mappings import path_mappings
 from subtitles.upload import manual_upload_subtitle
 from subtitles.download import generate_subtitles
@@ -37,33 +37,40 @@ class EpisodesSubtitles(Resource):
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
+    @api_ns_episodes_subtitles.response(409, 'Unable to save subtitles file. Permission or path mapping issue?')
+    @api_ns_episodes_subtitles.response(500, 'Custom error messages')
     def patch(self):
         """Download an episode subtitles"""
         args = self.patch_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = TableEpisodes.select(
-            TableEpisodes.path,
-            TableEpisodes.sceneName,
-            TableEpisodes.audio_language,
-            TableShows.title) \
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
-            .dicts() \
-            .get_or_none()
+        episodeInfo = database.execute(
+            select(TableEpisodes.path,
+                   TableEpisodes.sceneName,
+                   TableEpisodes.audio_language,
+                   TableShows.title)
+            .select_from(TableEpisodes)
+            .join(TableShows)
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
+            .first()
 
         if not episodeInfo:
             return 'Episode not found', 404
 
-        title = episodeInfo['title']
-        episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['sceneName'] or "None"
+        episodePath = path_mappings.path_replace(episodeInfo.path)
+
+        if not os.path.exists(episodePath):
+            return 'Episode file not found. Path mapping issue?', 500
+
+        sceneName = episodeInfo.sceneName or "None"
+
+        title = episodeInfo.title
 
         language = args.get('language')
         hi = args.get('hi').capitalize()
         forced = args.get('forced').capitalize()
 
-        audio_language_list = get_audio_profile_languages(episodeInfo["audio_language"])
+        audio_language_list = get_audio_profile_languages(episodeInfo.audio_language)
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
         else:
@@ -72,18 +79,18 @@ class EpisodesSubtitles(Resource):
         try:
             result = list(generate_subtitles(episodePath, [(language, hi, forced)], audio_language, sceneName,
                                              title, 'series', profile_id=get_profile_id(episode_id=sonarrEpisodeId)))
-            if result:
+            if isinstance(result, list) and len(result):
                 result = result[0]
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
                 store_subtitles(result.path, episodePath)
             else:
                 event_stream(type='episode', payload=sonarrEpisodeId)
-
+                return 'No subtitles found', 500
         except OSError:
-            pass
-
-        return '', 204
+            return 'Unable to save subtitles file. Permission or path mapping issue?', 409
+        else:
+            return '', 204
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
@@ -99,23 +106,28 @@ class EpisodesSubtitles(Resource):
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
+    @api_ns_episodes_subtitles.response(409, 'Unable to save subtitles file. Permission or path mapping issue?')
+    @api_ns_episodes_subtitles.response(500, 'Episode file not found. Path mapping issue?')
     def post(self):
         """Upload an episode subtitles"""
         args = self.post_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.path,
-                                           TableEpisodes.audio_language) \
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
-            .dicts() \
-            .get_or_none()
+        episodeInfo = database.execute(
+            select(TableEpisodes.path,
+                   TableEpisodes.audio_language)
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
+            .first()
 
         if not episodeInfo:
             return 'Episode not found', 404
 
-        episodePath = path_mappings.path_replace(episodeInfo['path'])
+        episodePath = path_mappings.path_replace(episodeInfo.path)
 
-        audio_language = get_audio_profile_languages(episodeInfo['audio_language'])
+        if not os.path.exists(episodePath):
+            return 'Episode file not found. Path mapping issue?', 500
+
+        audio_language = get_audio_profile_languages(episodeInfo.audio_language)
         if len(audio_language) and isinstance(audio_language[0], dict):
             audio_language = audio_language[0]
         else:
@@ -149,11 +161,10 @@ class EpisodesSubtitles(Resource):
                 if not settings.general.getboolean('dont_notify_manual_actions'):
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
                 store_subtitles(result.path, episodePath)
-
         except OSError:
-            pass
-
-        return '', 204
+            return 'Unable to save subtitles file. Permission or path mapping issue?', 409
+        else:
+            return '', 204
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
@@ -168,23 +179,21 @@ class EpisodesSubtitles(Resource):
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
+    @api_ns_episodes_subtitles.response(500, 'Subtitles file not found or permission issue.')
     def delete(self):
         """Delete an episode subtitles"""
         args = self.delete_request_parser.parse_args()
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.title,
-                                           TableEpisodes.path,
-                                           TableEpisodes.sceneName,
-                                           TableEpisodes.audio_language) \
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
-            .dicts() \
-            .get_or_none()
+        episodeInfo = database.execute(
+            select(TableEpisodes.path)
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
+            .first()
 
         if not episodeInfo:
             return 'Episode not found', 404
 
-        episodePath = path_mappings.path_replace(episodeInfo['path'])
+        episodePath = path_mappings.path_replace(episodeInfo.path)
 
         language = args.get('language')
         forced = args.get('forced')
@@ -193,13 +202,14 @@ class EpisodesSubtitles(Resource):
 
         subtitlesPath = path_mappings.path_replace_reverse(subtitlesPath)
 
-        delete_subtitles(media_type='series',
-                         language=language,
-                         forced=forced,
-                         hi=hi,
-                         media_path=episodePath,
-                         subtitles_path=subtitlesPath,
-                         sonarr_series_id=sonarrSeriesId,
-                         sonarr_episode_id=sonarrEpisodeId)
-
-        return '', 204
+        if delete_subtitles(media_type='series',
+                            language=language,
+                            forced=forced,
+                            hi=hi,
+                            media_path=episodePath,
+                            subtitles_path=subtitlesPath,
+                            sonarr_series_id=sonarrSeriesId,
+                            sonarr_episode_id=sonarrEpisodeId):
+            return '', 204
+        else:
+            return 'Subtitles file not found or permission issue.', 500

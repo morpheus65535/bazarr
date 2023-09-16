@@ -2,10 +2,10 @@
 
 import operator
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select, func
 from api.swaggerui import subtitles_language_model
 
 from ..utils import authenticate, postprocess
@@ -25,7 +25,6 @@ class EpisodesWanted(Resource):
 
     data_model = api_ns_episodes_wanted.model('wanted_episodes_data_model', {
         'seriesTitle': fields.String(),
-        'monitored': fields.Boolean(),
         'episode_number': fields.String(),
         'episodeTitle': fields.String(),
         'missing_subtitles': fields.Nested(get_subtitles_language_model),
@@ -33,7 +32,6 @@ class EpisodesWanted(Resource):
         'sonarrEpisodeId': fields.Integer(),
         'sceneName': fields.String(),
         'tags': fields.List(fields.String),
-        'failedAttempts': fields.String(),
         'seriesType': fields.String(),
     })
 
@@ -43,7 +41,6 @@ class EpisodesWanted(Resource):
     })
 
     @authenticate
-    @api_ns_episodes_wanted.marshal_with(get_response_model, code=200)
     @api_ns_episodes_wanted.response(401, 'Not Authenticated')
     @api_ns_episodes_wanted.doc(parser=get_request_parser)
     def get(self):
@@ -54,56 +51,48 @@ class EpisodesWanted(Resource):
         wanted_conditions = [(TableEpisodes.missing_subtitles != '[]')]
         if len(episodeid) > 0:
             wanted_conditions.append((TableEpisodes.sonarrEpisodeId in episodeid))
-        wanted_conditions += get_exclusion_clause('series')
-        wanted_condition = reduce(operator.and_, wanted_conditions)
-
-        if len(episodeid) > 0:
-            data = TableEpisodes.select(TableShows.title.alias('seriesTitle'),
-                                        TableEpisodes.monitored,
-                                        TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
-                                        TableEpisodes.title.alias('episodeTitle'),
-                                        TableEpisodes.missing_subtitles,
-                                        TableEpisodes.sonarrSeriesId,
-                                        TableEpisodes.sonarrEpisodeId,
-                                        TableEpisodes.sceneName,
-                                        TableShows.tags,
-                                        TableEpisodes.failedAttempts,
-                                        TableShows.seriesType)\
-                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
-                .where(wanted_condition)\
-                .dicts()
+            start = 0
+            length = 0
         else:
             start = args.get('start')
             length = args.get('length')
-            data = TableEpisodes.select(TableShows.title.alias('seriesTitle'),
-                                        TableEpisodes.monitored,
-                                        TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
-                                        TableEpisodes.title.alias('episodeTitle'),
-                                        TableEpisodes.missing_subtitles,
-                                        TableEpisodes.sonarrSeriesId,
-                                        TableEpisodes.sonarrEpisodeId,
-                                        TableEpisodes.sceneName,
-                                        TableShows.tags,
-                                        TableEpisodes.failedAttempts,
-                                        TableShows.seriesType)\
-                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
-                .where(wanted_condition)\
-                .order_by(TableEpisodes.rowid.desc())
-            if length > 0:
-                data = data.limit(length).offset(start)
-            data = data.dicts()
-        data = list(data)
 
-        for item in data:
-            postprocess(item)
+        wanted_conditions += get_exclusion_clause('series')
+        wanted_condition = reduce(operator.and_, wanted_conditions)
 
-        count_conditions = [(TableEpisodes.missing_subtitles != '[]')]
-        count_conditions += get_exclusion_clause('series')
-        count = TableEpisodes.select(TableShows.tags,
-                                     TableShows.seriesType,
-                                     TableEpisodes.monitored)\
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
-            .where(reduce(operator.and_, count_conditions))\
-            .count()
+        stmt = select(TableShows.title.label('seriesTitle'),
+                      TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label('episode_number'),
+                      TableEpisodes.title.label('episodeTitle'),
+                      TableEpisodes.missing_subtitles,
+                      TableEpisodes.sonarrSeriesId,
+                      TableEpisodes.sonarrEpisodeId,
+                      TableEpisodes.sceneName,
+                      TableShows.tags,
+                      TableShows.seriesType) \
+            .select_from(TableEpisodes) \
+            .join(TableShows) \
+            .where(wanted_condition)
 
-        return {'data': data, 'total': count}
+        if length > 0:
+            stmt = stmt.order_by(TableEpisodes.sonarrEpisodeId.desc()).limit(length).offset(start)
+
+        results = [postprocess({
+            'seriesTitle': x.seriesTitle,
+            'episode_number': x.episode_number,
+            'episodeTitle': x.episodeTitle,
+            'missing_subtitles': x.missing_subtitles,
+            'sonarrSeriesId': x.sonarrSeriesId,
+            'sonarrEpisodeId': x.sonarrEpisodeId,
+            'sceneName': x.sceneName,
+            'tags': x.tags,
+            'seriesType': x.seriesType,
+        }) for x in database.execute(stmt).all()]
+
+        count = database.execute(
+            select(func.count())
+            .select_from(TableEpisodes)
+            .join(TableShows)
+            .where(wanted_condition)) \
+            .scalar()
+
+        return marshal({'data': results, 'total': count}, self.get_response_model)

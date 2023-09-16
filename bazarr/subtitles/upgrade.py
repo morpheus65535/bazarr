@@ -3,13 +3,15 @@
 
 import logging
 import operator
-import os
+import ast
+
 from datetime import datetime, timedelta
 from functools import reduce
+from sqlalchemy import and_
 
 from app.config import settings
 from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies, \
-    TableHistory, TableHistoryMovie, get_profiles_list
+    TableHistory, TableHistoryMovie, database, select, func, get_profiles_list
 from app.event_handler import show_progress, hide_progress
 from app.get_providers import get_providers
 from app.notifier import send_notifications, send_notifications_movie
@@ -27,9 +29,60 @@ def upgrade_subtitles():
 
     if use_sonarr:
         episodes_to_upgrade = get_upgradable_episode_subtitles()
-        count_episode_to_upgrade = len(episodes_to_upgrade)
+        episodes_data = [{
+            'id': x.id,
+            'seriesTitle': x.seriesTitle,
+            'season': x.season,
+            'episode': x.episode,
+            'title': x.title,
+            'language': x.language,
+            'audio_language': x.audio_language,
+            'video_path': x.video_path,
+            'sceneName': x.sceneName,
+            'score': x.score,
+            'sonarrEpisodeId': x.sonarrEpisodeId,
+            'sonarrSeriesId': x.sonarrSeriesId,
+            'subtitles_path': x.subtitles_path,
+            'path': x.path,
+            'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
+            'upgradable': bool(x.upgradable),
+        } for x in database.execute(
+            select(TableHistory.id,
+                   TableShows.title.label('seriesTitle'),
+                   TableEpisodes.season,
+                   TableEpisodes.episode,
+                   TableEpisodes.title,
+                   TableHistory.language,
+                   TableEpisodes.audio_language,
+                   TableHistory.video_path,
+                   TableEpisodes.sceneName,
+                   TableHistory.score,
+                   TableHistory.sonarrEpisodeId,
+                   TableHistory.sonarrSeriesId,
+                   TableHistory.subtitles_path,
+                   TableEpisodes.path,
+                   TableShows.profileId,
+                   TableEpisodes.subtitles.label('external_subtitles'),
+                   episodes_to_upgrade.c.id.label('upgradable'))
+            .select_from(TableHistory)
+            .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId)
+            .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)
+            .join(episodes_to_upgrade, onclause=TableHistory.id == episodes_to_upgrade.c.id, isouter=True)
+            .where(episodes_to_upgrade.c.id.is_not(None)))
+            .all() if _language_still_desired(x.language, x.profileId)]
 
-        for i, episode in enumerate(episodes_to_upgrade):
+        for item in episodes_data:
+            if item['upgradable']:
+                if item['subtitles_path'] not in item['external_subtitles'] or \
+                        not item['video_path'] == item['path']:
+                    item.update({"upgradable": False})
+
+            del item['path']
+            del item['external_subtitles']
+
+        count_episode_to_upgrade = len(episodes_data)
+
+        for i, episode in enumerate(episodes_data):
             providers_list = get_providers()
 
             show_progress(id='upgrade_episodes_progress',
@@ -72,9 +125,49 @@ def upgrade_subtitles():
 
     if use_radarr:
         movies_to_upgrade = get_upgradable_movies_subtitles()
-        count_movie_to_upgrade = len(movies_to_upgrade)
+        movies_data = [{
+            'title': x.title,
+            'language': x.language,
+            'audio_language': x.audio_language,
+            'video_path': x.video_path,
+            'sceneName': x.sceneName,
+            'score': x.score,
+            'radarrId': x.radarrId,
+            'path': x.path,
+            'subtitles_path': x.subtitles_path,
+            'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
+            'upgradable': bool(x.upgradable),
+        } for x in database.execute(
+            select(TableMovies.title,
+                   TableHistoryMovie.language,
+                   TableMovies.audio_language,
+                   TableHistoryMovie.video_path,
+                   TableMovies.sceneName,
+                   TableHistoryMovie.score,
+                   TableHistoryMovie.radarrId,
+                   TableHistoryMovie.subtitles_path,
+                   TableMovies.path,
+                   TableMovies.profileId,
+                   TableMovies.subtitles.label('external_subtitles'),
+                   movies_to_upgrade.c.id.label('upgradable'))
+            .select_from(TableHistoryMovie)
+            .join(TableMovies, onclause=TableHistoryMovie.radarrId == TableMovies.radarrId)
+            .join(movies_to_upgrade, onclause=TableHistoryMovie.id == movies_to_upgrade.c.id, isouter=True)
+            .where(movies_to_upgrade.c.id.is_not(None)))
+            .all() if _language_still_desired(x.language, x.profileId)]
 
-        for i, movie in enumerate(movies_to_upgrade):
+        for item in movies_data:
+            if item['upgradable']:
+                if item['subtitles_path'] not in item['external_subtitles'] or \
+                        not item['video_path'] == item['path']:
+                    item.update({"upgradable": False})
+
+            del item['path']
+            del item['external_subtitles']
+
+        count_movie_to_upgrade = len(movies_data)
+
+        for i, movie in enumerate(movies_data):
             providers_list = get_providers()
 
             show_progress(id='upgrade_movies_progress',
@@ -127,45 +220,6 @@ def get_queries_condition_parameters():
     return [minimum_timestamp, query_actions]
 
 
-def parse_upgradable_list(upgradable_list, perfect_score, media_type):
-    if media_type == 'series':
-        path_replace_method = path_mappings.path_replace
-    else:
-        path_replace_method = path_mappings.path_replace_movie
-
-    items_to_upgrade = []
-
-    for item in upgradable_list:
-        logging.debug(f"Trying to validate eligibility to upgrade for this subtitles: "
-                      f"{item['subtitles_path']}")
-        if not os.path.exists(path_replace_method(item['subtitles_path'])):
-            logging.debug("Subtitles file doesn't exists anymore, we skip this one.")
-            continue
-        if (item['video_path'], item['language']) in \
-                [(x['video_path'], x['language']) for x in items_to_upgrade]:
-            logging.debug("Newer video path and subtitles language combination already in list of subtitles to "
-                          "upgrade, we skip this one.")
-            continue
-
-        if os.path.exists(path_replace_method(item['subtitles_path'])) and \
-                os.path.exists(path_replace_method(item['video_path'])):
-            logging.debug("Video and subtitles file are still there, we continue the eligibility validation.")
-            pass
-
-        items_to_upgrade.append(item)
-
-    if not settings.general.getboolean('upgrade_manual'):
-        logging.debug("Removing history items for manually downloaded or translated subtitles.")
-        items_to_upgrade = [x for x in items_to_upgrade if x['action'] in [2, 4, 6]]
-
-    logging.debug("Removing history items for already perfectly scored subtitles.")
-    items_to_upgrade = [x for x in items_to_upgrade if x['score'] < perfect_score]
-
-    logging.debug(f"Bazarr will try to upgrade {len(items_to_upgrade)} subtitles.")
-
-    return items_to_upgrade
-
-
 def parse_language_string(language_string):
     if language_string.endswith('forced'):
         language = language_string.split(':')[0]
@@ -185,84 +239,67 @@ def parse_language_string(language_string):
 
 def get_upgradable_episode_subtitles():
     if not settings.general.getboolean('upgrade_subs'):
-        return []
+        # return an empty set of rows
+        return select(TableHistory.id) \
+            .where(TableHistory.id.is_(None)) \
+            .subquery()
+
+    max_id_timestamp = select(TableHistory.video_path,
+                              TableHistory.language,
+                              func.max(TableHistory.timestamp).label('timestamp')) \
+        .group_by(TableHistory.video_path, TableHistory.language) \
+        .distinct() \
+        .subquery()
 
     minimum_timestamp, query_actions = get_queries_condition_parameters()
 
-    upgradable_episodes_conditions = [(TableHistory.action << query_actions),
+    upgradable_episodes_conditions = [(TableHistory.action.in_(query_actions)),
                                       (TableHistory.timestamp > minimum_timestamp),
-                                      (TableHistory.score.is_null(False))]
+                                      TableHistory.score.is_not(None),
+                                      (TableHistory.score < 357)]
     upgradable_episodes_conditions += get_exclusion_clause('series')
-    upgradable_episodes = TableHistory.select(TableHistory.video_path,
-                                              TableHistory.language,
-                                              TableHistory.score,
-                                              TableShows.tags,
-                                              TableShows.profileId,
-                                              TableEpisodes.audio_language,
-                                              TableEpisodes.sceneName,
-                                              TableEpisodes.title,
-                                              TableEpisodes.sonarrSeriesId,
-                                              TableHistory.action,
-                                              TableHistory.subtitles_path,
-                                              TableEpisodes.sonarrEpisodeId,
-                                              TableHistory.timestamp.alias('timestamp'),
-                                              TableEpisodes.monitored,
-                                              TableEpisodes.season,
-                                              TableEpisodes.episode,
-                                              TableShows.title.alias('seriesTitle'),
-                                              TableShows.seriesType) \
-        .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-        .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)) \
+    return select(TableHistory.id)\
+        .select_from(TableHistory) \
+        .join(max_id_timestamp, onclause=and_(TableHistory.video_path == max_id_timestamp.c.video_path,
+                                              TableHistory.language == max_id_timestamp.c.language,
+                                              max_id_timestamp.c.timestamp == TableHistory.timestamp)) \
+        .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId) \
+        .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
         .where(reduce(operator.and_, upgradable_episodes_conditions)) \
-        .order_by(TableHistory.timestamp.desc()) \
-        .dicts()
-
-    if not upgradable_episodes:
-        return []
-    else:
-        upgradable_episodes = [x for x in upgradable_episodes if _language_still_desired(x['language'], x['profileId'])]
-        logging.debug(f"{len(upgradable_episodes)} potentially upgradable episode subtitles have been found, let's "
-                      f"filter them...")
-
-        return parse_upgradable_list(upgradable_list=upgradable_episodes, perfect_score=357, media_type='series')
+        .order_by(TableHistory.timestamp.desc())\
+        .subquery()
 
 
 def get_upgradable_movies_subtitles():
     if not settings.general.getboolean('upgrade_subs'):
-        return []
+        # return an empty set of rows
+        return select(TableHistoryMovie.id) \
+            .where(TableHistoryMovie.id.is_(None)) \
+            .subquery()
+
+    max_id_timestamp = select(TableHistoryMovie.video_path,
+                              TableHistoryMovie.language,
+                              func.max(TableHistoryMovie.timestamp).label('timestamp')) \
+        .group_by(TableHistoryMovie.video_path, TableHistoryMovie.language) \
+        .distinct() \
+        .subquery()
 
     minimum_timestamp, query_actions = get_queries_condition_parameters()
 
-    upgradable_movies_conditions = [(TableHistoryMovie.action << query_actions),
+    upgradable_movies_conditions = [(TableHistoryMovie.action.in_(query_actions)),
                                     (TableHistoryMovie.timestamp > minimum_timestamp),
-                                    (TableHistoryMovie.score.is_null(False))]
+                                    TableHistoryMovie.score.is_not(None),
+                                    (TableHistoryMovie.score < 117)]
     upgradable_movies_conditions += get_exclusion_clause('movie')
-    upgradable_movies = TableHistoryMovie.select(TableHistoryMovie.video_path,
-                                                 TableHistoryMovie.language,
-                                                 TableHistoryMovie.score,
-                                                 TableMovies.profileId,
-                                                 TableHistoryMovie.action,
-                                                 TableHistoryMovie.subtitles_path,
-                                                 TableMovies.audio_language,
-                                                 TableMovies.sceneName,
-                                                 TableHistoryMovie.timestamp.alias('timestamp'),
-                                                 TableMovies.monitored,
-                                                 TableMovies.tags,
-                                                 TableMovies.radarrId,
-                                                 TableMovies.title) \
-        .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId)) \
+    return select(TableHistoryMovie.id) \
+        .select_from(TableHistoryMovie) \
+        .join(max_id_timestamp, onclause=and_(TableHistoryMovie.video_path == max_id_timestamp.c.video_path,
+                                              TableHistoryMovie.language == max_id_timestamp.c.language,
+                                              max_id_timestamp.c.timestamp == TableHistoryMovie.timestamp)) \
+        .join(TableMovies, onclause=TableHistoryMovie.radarrId == TableMovies.radarrId) \
         .where(reduce(operator.and_, upgradable_movies_conditions)) \
         .order_by(TableHistoryMovie.timestamp.desc()) \
-        .dicts()
-
-    if not upgradable_movies:
-        return []
-    else:
-        upgradable_movies = [x for x in upgradable_movies if _language_still_desired(x['language'], x['profileId'])]
-        logging.debug(f"{len(upgradable_movies)} potentially upgradable movie subtitles have been found, let's filter "
-                      f"them...")
-
-        return parse_upgradable_list(upgradable_list=upgradable_movies, perfect_score=117, media_type='movie')
+        .subquery()
 
 
 def _language_still_desired(language, profile_id):

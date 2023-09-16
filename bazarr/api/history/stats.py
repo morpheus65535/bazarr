@@ -5,10 +5,10 @@ import operator
 import itertools
 
 from dateutil import rrule
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
-from app.database import TableHistory, TableHistoryMovie
+from app.database import TableHistory, TableHistoryMovie, database, select
 
 from ..utils import authenticate
 
@@ -41,7 +41,6 @@ class HistoryStats(Resource):
     })
 
     @authenticate
-    @api_ns_history_stats.marshal_with(get_response_model, code=200)
     @api_ns_history_stats.response(401, 'Not Authenticated')
     @api_ns_history_stats.doc(parser=get_request_parser)
     def get(self):
@@ -86,17 +85,25 @@ class HistoryStats(Resource):
         history_where_clause = reduce(operator.and_, history_where_clauses)
         history_where_clause_movie = reduce(operator.and_, history_where_clauses_movie)
 
-        data_series = TableHistory.select(TableHistory.timestamp, TableHistory.id)\
-            .where(history_where_clause) \
-            .dicts()
+        data_series = [{
+            'timestamp': x.timestamp,
+            'id': x.id,
+        } for x in database.execute(
+            select(TableHistory.timestamp, TableHistory.id)
+            .where(history_where_clause))
+            .all()]
         data_series = [{'date': date[0], 'count': sum(1 for item in date[1])} for date in
                        itertools.groupby(list(data_series),
                                          key=lambda x: x['timestamp'].strftime(
                                              '%Y-%m-%d'))]
 
-        data_movies = TableHistoryMovie.select(TableHistoryMovie.timestamp, TableHistoryMovie.id) \
-            .where(history_where_clause_movie) \
-            .dicts()
+        data_movies = [{
+            'timestamp': x.timestamp,
+            'id': x.id,
+        } for x in database.execute(
+            select(TableHistoryMovie.timestamp, TableHistoryMovie.id)
+            .where(history_where_clause_movie))
+            .all()]
         data_movies = [{'date': date[0], 'count': sum(1 for item in date[1])} for date in
                        itertools.groupby(list(data_movies),
                                          key=lambda x: x['timestamp'].strftime(
@@ -113,4 +120,4 @@ class HistoryStats(Resource):
         sorted_data_series = sorted(data_series, key=lambda i: i['date'])
         sorted_data_movies = sorted(data_movies, key=lambda i: i['date'])
 
-        return {'series': sorted_data_series, 'movies': sorted_data_movies}
+        return marshal({'series': sorted_data_series, 'movies': sorted_data_movies}, self.get_response_model)

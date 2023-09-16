@@ -11,10 +11,11 @@ from datetime import datetime
 from operator import itemgetter
 
 from app.get_providers import get_enabled_providers
-from app.database import TableAnnouncements
+from app.database import TableAnnouncements, database, insert, select
 from .get_args import args
 from sonarr.info import get_sonarr_info
 from radarr.info import get_radarr_info
+from app.check_update import deprecated_python_version
 
 
 # Announcements as receive by browser must be in the form of a list of dicts converted to JSON
@@ -42,7 +43,8 @@ def parse_announcement_dict(announcement_dict):
 
 def get_announcements_to_file():
     try:
-        r = requests.get("https://raw.githubusercontent.com/morpheus65535/bazarr-binaries/master/announcements.json")
+        r = requests.get("https://raw.githubusercontent.com/morpheus65535/bazarr-binaries/master/announcements.json",
+                         timeout=10)
     except requests.exceptions.HTTPError:
         logging.exception("Error trying to get announcements from Github. Http error.")
     except requests.exceptions.ConnectionError:
@@ -104,6 +106,15 @@ def get_local_announcements():
             'timestamp': 1679606309,
         })
 
+    # deprecated Python versions
+    if deprecated_python_version():
+        announcements.append({
+            'text': 'Starting with Bazarr 1.4, support for Python 3.7 will get dropped. Upgrade your current version of'
+                    ' Python ASAP to get further updates.',
+            'dismissible': False,
+            'timestamp': 1691162383,
+        })
+
     for announcement in announcements:
         if 'enabled' not in announcement:
             announcement['enabled'] = True
@@ -116,9 +127,12 @@ def get_local_announcements():
 def get_all_announcements():
     # get announcements that haven't been dismissed yet
     announcements = [parse_announcement_dict(x) for x in get_online_announcements() + get_local_announcements() if
-                     x['enabled'] and (not x['dismissible'] or not TableAnnouncements.select()
-                                       .where(TableAnnouncements.hash ==
-                                              hashlib.sha256(x['text'].encode('UTF8')).hexdigest()).get_or_none())]
+                     x['enabled'] and (not x['dismissible'] or not
+                     database.execute(
+                         select(TableAnnouncements)
+                         .where(TableAnnouncements.hash ==
+                                hashlib.sha256(x['text'].encode('UTF8')).hexdigest()))
+                                       .first())]
 
     return sorted(announcements, key=itemgetter('timestamp'), reverse=True)
 
@@ -126,8 +140,9 @@ def get_all_announcements():
 def mark_announcement_as_dismissed(hashed_announcement):
     text = [x['text'] for x in get_all_announcements() if x['hash'] == hashed_announcement]
     if text:
-        TableAnnouncements.insert({TableAnnouncements.hash: hashed_announcement,
-                                   TableAnnouncements.timestamp: datetime.now(),
-                                   TableAnnouncements.text: text[0]})\
-            .on_conflict_ignore(ignore=True)\
-            .execute()
+        database.execute(
+            insert(TableAnnouncements)
+            .values(hash=hashed_announcement,
+                    timestamp=datetime.now(),
+                    text=text[0])
+            .on_conflict_do_nothing())

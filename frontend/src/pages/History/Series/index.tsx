@@ -6,6 +6,7 @@ import {
 import { MutateAction } from "@/components/async";
 import { HistoryIcon } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
+import StateIcon from "@/components/StateIcon";
 import TextPopover from "@/components/TextPopover";
 import HistoryView from "@/pages/views/HistoryView";
 import { useTableStyles } from "@/styles";
@@ -71,6 +72,23 @@ const SeriesHistoryView: FunctionComponent = () => {
       {
         Header: "Score",
         accessor: "score",
+      },
+      {
+        accessor: "matches",
+        Cell: (row) => {
+          const { matches, dont_matches: dont } = row.row.original;
+          if (matches.length || dont.length) {
+            return (
+              <StateIcon
+                matches={matches}
+                dont={dont}
+                isHistory={true}
+              ></StateIcon>
+            );
+          } else {
+            return null;
+          }
+        },
       },
       {
         Header: "Date",

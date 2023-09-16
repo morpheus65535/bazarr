@@ -2,9 +2,9 @@
 
 import pretty
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableEpisodes, TableShows, TableBlacklist
+from app.database import TableEpisodes, TableShows, TableBlacklist, database, select
 from subtitles.tools.delete import delete_subtitles
 from sonarr.blacklist import blacklist_log, blacklist_delete_all, blacklist_delete
 from utilities.path_mappings import path_mappings
@@ -39,7 +39,6 @@ class EpisodesBlacklist(Resource):
     })
 
     @authenticate
-    @api_ns_episodes_blacklist.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
     @api_ns_episodes_blacklist.doc(parser=get_request_parser)
     def get(self):
@@ -48,29 +47,32 @@ class EpisodesBlacklist(Resource):
         start = args.get('start')
         length = args.get('length')
 
-        data = TableBlacklist.select(TableShows.title.alias('seriesTitle'),
-                                     TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
-                                     TableEpisodes.title.alias('episodeTitle'),
-                                     TableEpisodes.sonarrSeriesId,
-                                     TableBlacklist.provider,
-                                     TableBlacklist.subs_id,
-                                     TableBlacklist.language,
-                                     TableBlacklist.timestamp)\
-            .join(TableEpisodes, on=(TableBlacklist.sonarr_episode_id == TableEpisodes.sonarrEpisodeId))\
-            .join(TableShows, on=(TableBlacklist.sonarr_series_id == TableShows.sonarrSeriesId))\
+        stmt = select(TableShows.title.label('seriesTitle'),
+                      TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label('episode_number'),
+                      TableEpisodes.title.label('episodeTitle'),
+                      TableEpisodes.sonarrSeriesId,
+                      TableBlacklist.provider,
+                      TableBlacklist.subs_id,
+                      TableBlacklist.language,
+                      TableBlacklist.timestamp) \
+            .select_from(TableBlacklist) \
+            .join(TableShows, onclause=TableBlacklist.sonarr_series_id == TableShows.sonarrSeriesId) \
+            .join(TableEpisodes, onclause=TableBlacklist.sonarr_episode_id == TableEpisodes.sonarrEpisodeId) \
             .order_by(TableBlacklist.timestamp.desc())
         if length > 0:
-            data = data.limit(length).offset(start)
-        data = list(data.dicts())
+            stmt = stmt.limit(length).offset(start)
 
-        for item in data:
-            # Make timestamp pretty
-            item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
-            item.update({'timestamp': pretty.date(item['timestamp'])})
-
-            postprocess(item)
-
-        return data
+        return marshal([postprocess({
+            'seriesTitle': x.seriesTitle,
+            'episode_number': x.episode_number,
+            'episodeTitle': x.episodeTitle,
+            'sonarrSeriesId': x.sonarrSeriesId,
+            'provider': x.provider,
+            'subs_id': x.subs_id,
+            'language': x.language,
+            'timestamp': pretty.date(x.timestamp),
+            'parsed_timestamp': x.timestamp.strftime('%x %X')
+        }) for x in database.execute(stmt).all()], self.get_response_model, envelope='data')
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
@@ -85,6 +87,7 @@ class EpisodesBlacklist(Resource):
     @api_ns_episodes_blacklist.response(200, 'Success')
     @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
     @api_ns_episodes_blacklist.response(404, 'Episode not found')
+    @api_ns_episodes_blacklist.response(500, 'Subtitles file not found or permission issue.')
     def post(self):
         """Add an episodes subtitles to blacklist"""
         args = self.post_request_parser.parse_args()
@@ -94,15 +97,15 @@ class EpisodesBlacklist(Resource):
         subs_id = args.get('subs_id')
         language = args.get('language')
 
-        episodeInfo = TableEpisodes.select(TableEpisodes.path)\
-            .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)\
-            .dicts()\
-            .get_or_none()
+        episodeInfo = database.execute(
+            select(TableEpisodes.path)
+            .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)) \
+            .first()
 
         if not episodeInfo:
             return 'Episode not found', 404
 
-        media_path = episodeInfo['path']
+        media_path = episodeInfo.path
         subtitles_path = args.get('subtitles_path')
 
         blacklist_log(sonarr_series_id=sonarr_series_id,
@@ -110,17 +113,19 @@ class EpisodesBlacklist(Resource):
                       provider=provider,
                       subs_id=subs_id,
                       language=language)
-        delete_subtitles(media_type='series',
-                         language=language,
-                         forced=False,
-                         hi=False,
-                         media_path=path_mappings.path_replace(media_path),
-                         subtitles_path=subtitles_path,
-                         sonarr_series_id=sonarr_series_id,
-                         sonarr_episode_id=sonarr_episode_id)
-        episode_download_subtitles(sonarr_episode_id)
-        event_stream(type='episode-history')
-        return '', 200
+        if delete_subtitles(media_type='series',
+                            language=language,
+                            forced=False,
+                            hi=False,
+                            media_path=path_mappings.path_replace(media_path),
+                            subtitles_path=subtitles_path,
+                            sonarr_series_id=sonarr_series_id,
+                            sonarr_episode_id=sonarr_episode_id):
+            episode_download_subtitles(sonarr_episode_id)
+            event_stream(type='episode-history')
+            return '', 200
+        else:
+            return 'Subtitles file not found or permission issue.', 500
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('all', type=str, required=False, help='Empty episodes subtitles blacklist')

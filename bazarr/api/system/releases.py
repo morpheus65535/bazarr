@@ -5,7 +5,7 @@ import json
 import os
 import logging
 
-from flask_restx import Resource, Namespace, fields
+from flask_restx import Resource, Namespace, fields, marshal
 
 from app.config import settings
 from app.get_args import args
@@ -26,7 +26,6 @@ class SystemReleases(Resource):
     })
 
     @authenticate
-    @api_ns_system_releases.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_system_releases.doc(parser=None)
     @api_ns_system_releases.response(200, 'Success')
     @api_ns_system_releases.response(401, 'Not Authenticated')
@@ -60,4 +59,4 @@ class SystemReleases(Resource):
         except Exception:
             logging.exception(
                 'BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
-        return filtered_releases
+        return marshal(filtered_releases, self.get_response_model, envelope='data')

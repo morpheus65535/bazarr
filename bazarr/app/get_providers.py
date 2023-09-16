@@ -10,6 +10,8 @@ import pretty
 import time
 import socket
 import requests
+import traceback
+import re
 
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
     MustGetBlacklisted, SearchLimitReached
@@ -25,6 +27,10 @@ from app.event_handler import event_stream
 from utilities.binaries import get_binary
 from radarr.blacklist import blacklist_log_movie
 from sonarr.blacklist import blacklist_log
+from utilities.analytics import event_tracker
+
+
+_TRACEBACK_RE = re.compile(r'File "(.*?providers/.*?)", line (\d+)')
 
 
 def time_until_midnight(timezone):
@@ -331,7 +337,7 @@ def provider_throttle(name, exception):
     throttle_until = datetime.datetime.now() + throttle_delta
 
     if cls_name not in VALID_COUNT_EXCEPTIONS or throttled_count(name):
-        if cls_name == 'ValueError' and exception.args[0].startswith('unsupported pickle protocol'):
+        if cls_name == 'ValueError' and isinstance(exception.args, tuple) and len(exception.args) and exception.args[0].startswith('unsupported pickle protocol'):
             for fn in subliminal_cache_region.backend.all_filenames:
                 try:
                     os.remove(fn)
@@ -341,11 +347,34 @@ def provider_throttle(name, exception):
             tp[name] = (cls_name, throttle_until, throttle_description)
             set_throttled_providers(str(tp))
 
+            trac_info = _get_traceback_info(exception)
+
             logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name,
-                         throttle_description, throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.args[0]
-                         if exception.args else None)
+                         throttle_description, throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, trac_info)
+            event_tracker.track_throttling(provider=name, exception_name=cls_name, exception_info=trac_info)
 
     update_throttled_provider()
+
+
+def _get_traceback_info(exc: Exception):
+    traceback_str = " ".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+
+    clean_msg = str(exc).replace("\n", " ").strip()
+
+    line_info = _TRACEBACK_RE.findall(traceback_str)
+
+    # Value info max chars len is 100
+
+    if not line_info:
+        return clean_msg[:100]
+
+    line_info = line_info[-1]
+    file_, line = line_info
+
+    extra = f"' ~ {os.path.basename(file_)}@{line}"[:90]
+    message = f"'{clean_msg}"[:100 - len(extra)]
+
+    return message + extra
 
 
 def throttled_count(name):

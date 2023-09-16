@@ -19,7 +19,7 @@ from sonarr.sync.series import update_series, update_one_series
 from radarr.sync.movies import update_movies, update_one_movie
 from sonarr.info import get_sonarr_info, url_sonarr
 from radarr.info import url_radarr
-from .database import TableShows
+from .database import TableShows, TableMovies, database, select
 
 from .config import settings
 from .scheduler import scheduler
@@ -73,7 +73,6 @@ class SonarrSignalrClientLegacy:
                     logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
                     if not args.dev:
                         scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
-                        scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
 
     def stop(self, log=True):
         try:
@@ -150,7 +149,6 @@ class SonarrSignalrClient:
         logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
         if not args.dev:
             scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
-            scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
 
     def on_reconnect_handler(self):
         self.connected = False
@@ -266,28 +264,39 @@ def dispatcher(data):
                     series_title = data['body']['resource']['series']['title']
                     series_year = data['body']['resource']['series']['year']
                 else:
-                    series_metadata = TableShows.select(TableShows.title, TableShows.year)\
-                        .where(TableShows.sonarrSeriesId == data['body']['resource']['seriesId'])\
-                        .dicts()\
-                        .get_or_none()
+                    series_metadata = database.execute(
+                        select(TableShows.title, TableShows.year)
+                        .where(TableShows.sonarrSeriesId == data['body']['resource']['seriesId']))\
+                        .first()
                     if series_metadata:
-                        series_title = series_metadata['title']
-                        series_year = series_metadata['year']
+                        series_title = series_metadata.title
+                        series_year = series_metadata.year
                 episode_title = data['body']['resource']['title']
                 season_number = data['body']['resource']['seasonNumber']
                 episode_number = data['body']['resource']['episodeNumber']
             elif topic == 'movie':
-                movie_title = data['body']['resource']['title']
-                movie_year = data['body']['resource']['year']
+                if action == 'deleted':
+                    existing_movie_details = database.execute(
+                        select(TableMovies.title, TableMovies.year)
+                        .where(TableMovies.radarrId == media_id)) \
+                        .first()
+                    if existing_movie_details:
+                        movie_title = existing_movie_details.title
+                        movie_year = existing_movie_details.year
+                    else:
+                        return
+                else:
+                    movie_title = data['body']['resource']['title']
+                    movie_year = data['body']['resource']['year']
         except KeyError:
             return
 
         if topic == 'series':
             logging.debug(f'Event received from Sonarr for series: {series_title} ({series_year})')
-            update_one_series(series_id=media_id, action=action, send_event=False)
+            update_one_series(series_id=media_id, action=action)
             if episodesChanged:
                 # this will happen if a season monitored status is changed.
-                sync_episodes(series_id=media_id, send_event=False)
+                sync_episodes(series_id=media_id, send_event=True)
         elif topic == 'episode':
             logging.debug(f'Event received from Sonarr for episode: {series_title} ({series_year}) - '
                           f'S{season_number:0>2}E{episode_number:0>2} - {episode_title}')

@@ -2,9 +2,9 @@
 
 import pretty
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableMovies, TableBlacklistMovie
+from app.database import TableMovies, TableBlacklistMovie, database, select
 from subtitles.tools.delete import delete_subtitles
 from radarr.blacklist import blacklist_log_movie, blacklist_delete_all_movie, blacklist_delete_movie
 from utilities.path_mappings import path_mappings
@@ -37,7 +37,6 @@ class MoviesBlacklist(Resource):
     })
 
     @authenticate
-    @api_ns_movies_blacklist.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_movies_blacklist.response(401, 'Not Authenticated')
     @api_ns_movies_blacklist.doc(parser=get_request_parser)
     def get(self):
@@ -46,26 +45,28 @@ class MoviesBlacklist(Resource):
         start = args.get('start')
         length = args.get('length')
 
-        data = TableBlacklistMovie.select(TableMovies.title,
-                                          TableMovies.radarrId,
-                                          TableBlacklistMovie.provider,
-                                          TableBlacklistMovie.subs_id,
-                                          TableBlacklistMovie.language,
-                                          TableBlacklistMovie.timestamp)\
-            .join(TableMovies, on=(TableBlacklistMovie.radarr_id == TableMovies.radarrId))\
-            .order_by(TableBlacklistMovie.timestamp.desc())
+        data = database.execute(
+            select(TableMovies.title,
+                   TableMovies.radarrId,
+                   TableBlacklistMovie.provider,
+                   TableBlacklistMovie.subs_id,
+                   TableBlacklistMovie.language,
+                   TableBlacklistMovie.timestamp)
+            .select_from(TableBlacklistMovie)
+            .join(TableMovies)
+            .order_by(TableBlacklistMovie.timestamp.desc()))
         if length > 0:
             data = data.limit(length).offset(start)
-        data = list(data.dicts())
 
-        for item in data:
-            postprocess(item)
-
-            # Make timestamp pretty
-            item["parsed_timestamp"] = item['timestamp'].strftime('%x %X')
-            item.update({'timestamp': pretty.date(item['timestamp'])})
-
-        return data
+        return marshal([postprocess({
+            'title': x.title,
+            'radarrId': x.radarrId,
+            'provider': x.provider,
+            'subs_id': x.subs_id,
+            'language': x.language,
+            'timestamp': pretty.date(x.timestamp),
+            'parsed_timestamp': x.timestamp.strftime('%x %X'),
+        }) for x in data.all()], self.get_response_model, envelope='data')
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, required=True, help='Radarr ID')
@@ -79,6 +80,7 @@ class MoviesBlacklist(Resource):
     @api_ns_movies_blacklist.response(200, 'Success')
     @api_ns_movies_blacklist.response(401, 'Not Authenticated')
     @api_ns_movies_blacklist.response(404, 'Movie not found')
+    @api_ns_movies_blacklist.response(500, 'Subtitles file not found or permission issue.')
     def post(self):
         """Add a movies subtitles to blacklist"""
         args = self.post_request_parser.parse_args()
@@ -90,28 +92,33 @@ class MoviesBlacklist(Resource):
         forced = False
         hi = False
 
-        data = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == radarr_id).dicts().get_or_none()
+        data = database.execute(
+            select(TableMovies.path)
+            .where(TableMovies.radarrId == radarr_id))\
+            .first()
 
         if not data:
             return 'Movie not found', 404
 
-        media_path = data['path']
+        media_path = data.path
         subtitles_path = args.get('subtitles_path')
 
         blacklist_log_movie(radarr_id=radarr_id,
                             provider=provider,
                             subs_id=subs_id,
                             language=language)
-        delete_subtitles(media_type='movie',
-                         language=language,
-                         forced=forced,
-                         hi=hi,
-                         media_path=path_mappings.path_replace_movie(media_path),
-                         subtitles_path=subtitles_path,
-                         radarr_id=radarr_id)
-        movies_download_subtitles(radarr_id)
-        event_stream(type='movie-history')
-        return '', 200
+        if delete_subtitles(media_type='movie',
+                            language=language,
+                            forced=forced,
+                            hi=hi,
+                            media_path=path_mappings.path_replace_movie(media_path),
+                            subtitles_path=subtitles_path,
+                            radarr_id=radarr_id):
+            movies_download_subtitles(radarr_id)
+            event_stream(type='movie-history')
+            return '', 200
+        else:
+            return 'Subtitles file not found or permission issue.', 500
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('all', type=str, required=False, help='Empty movies subtitles blacklist')

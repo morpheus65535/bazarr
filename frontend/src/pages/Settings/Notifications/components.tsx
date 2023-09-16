@@ -73,9 +73,14 @@ const NotificationForm: FunctionComponent<Props> = ({
     >
       <Stack>
         <Selector
+          searchable
           disabled={payload !== null}
           {...options}
           {...form.getInputProps("selection")}
+          // We also to update the url, so override the default event from getInputProps
+          onChange={(value) => {
+            form.setValues({ selection: value, url: value?.url ?? undefined });
+          }}
         ></Selector>
         <div hidden={form.values.selection === null}>
           <Textarea

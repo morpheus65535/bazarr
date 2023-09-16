@@ -77,7 +77,7 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                     text = f.read()
 
                 encoding = detect(text)
-                if encoding and 'encoding' in encoding:
+                if encoding and 'encoding' in encoding and encoding['encoding']:
                     encoding = detect(text)['encoding']
                 else:
                     logging.debug("BAZARR skipping this subtitles because we can't guess the encoding. "
@@ -129,7 +129,7 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                     text = f.read()
 
                 encoding = detect(text)
-                if encoding and 'encoding' in encoding:
+                if encoding and 'encoding' in encoding and encoding['encoding']:
                     encoding = detect(text)['encoding']
                 else:
                     logging.debug("BAZARR skipping this subtitles because we can't guess the encoding. "

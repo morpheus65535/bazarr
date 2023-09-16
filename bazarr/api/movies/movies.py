@@ -1,8 +1,8 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableMovies
+from app.database import TableMovies, database, update, select, func
 from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
 from app.event_handler import event_stream
 from subtitles.wanted import wanted_search_missing_subtitles_movies
@@ -29,30 +29,20 @@ class Movies(Resource):
 
     data_model = api_ns_movies.model('movies_data_model', {
         'alternativeTitles': fields.List(fields.String),
-        'audio_codec': fields.String(),
         'audio_language': fields.Nested(get_audio_language_model),
-        'failedAttempts': fields.String(),
         'fanart': fields.String(),
-        'file_size': fields.Integer(),
-        'format': fields.String(),
         'imdbId': fields.String(),
         'missing_subtitles': fields.Nested(get_subtitles_language_model),
         'monitored': fields.Boolean(),
-        'movie_file_id': fields.Integer(),
         'overview': fields.String(),
         'path': fields.String(),
         'poster': fields.String(),
         'profileId': fields.Integer(),
         'radarrId': fields.Integer(),
-        'resolution': fields.String(),
-        'rowid': fields.Integer(),
         'sceneName': fields.String(),
-        'sortTitle': fields.String(),
         'subtitles': fields.Nested(get_subtitles_model),
         'tags': fields.List(fields.String),
         'title': fields.String(),
-        'tmdbId': fields.String(),
-        'video_codec': fields.String(),
         'year': fields.String(),
     })
 
@@ -62,7 +52,6 @@ class Movies(Resource):
     })
 
     @authenticate
-    @api_ns_movies.marshal_with(get_response_model, code=200)
     @api_ns_movies.doc(parser=get_request_parser)
     @api_ns_movies.response(200, 'Success')
     @api_ns_movies.response(401, 'Not Authenticated')
@@ -73,23 +62,56 @@ class Movies(Resource):
         length = args.get('length')
         radarrId = args.get('radarrid[]')
 
-        count = TableMovies.select().count()
+        stmt = select(TableMovies.alternativeTitles,
+                      TableMovies.audio_language,
+                      TableMovies.fanart,
+                      TableMovies.imdbId,
+                      TableMovies.missing_subtitles,
+                      TableMovies.monitored,
+                      TableMovies.overview,
+                      TableMovies.path,
+                      TableMovies.poster,
+                      TableMovies.profileId,
+                      TableMovies.radarrId,
+                      TableMovies.sceneName,
+                      TableMovies.subtitles,
+                      TableMovies.tags,
+                      TableMovies.title,
+                      TableMovies.year,
+                      )\
+            .order_by(TableMovies.sortTitle)
 
         if len(radarrId) != 0:
-            result = TableMovies.select()\
-                .where(TableMovies.radarrId.in_(radarrId))\
-                .order_by(TableMovies.sortTitle)\
-                .dicts()
-        else:
-            result = TableMovies.select().order_by(TableMovies.sortTitle)
-            if length > 0:
-                result = result.limit(length).offset(start)
-            result = result.dicts()
-        result = list(result)
-        for item in result:
-            postprocess(item)
+            stmt = stmt.where(TableMovies.radarrId.in_(radarrId))
 
-        return {'data': result, 'total': count}
+        if length > 0:
+            stmt = stmt.limit(length).offset(start)
+
+        results = [postprocess({
+            'alternativeTitles': x.alternativeTitles,
+            'audio_language': x.audio_language,
+            'fanart': x.fanart,
+            'imdbId': x.imdbId,
+            'missing_subtitles': x.missing_subtitles,
+            'monitored': x.monitored,
+            'overview': x.overview,
+            'path': x.path,
+            'poster': x.poster,
+            'profileId': x.profileId,
+            'radarrId': x.radarrId,
+            'sceneName': x.sceneName,
+            'subtitles': x.subtitles,
+            'tags': x.tags,
+            'title': x.title,
+            'year': x.year,
+        }) for x in database.execute(stmt).all()]
+
+        count = database.execute(
+            select(func.count())
+            .select_from(TableMovies)) \
+            .scalar()
+
+        return marshal({'data': results, 'total': count}, self.get_response_model)
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, action='append', required=False, default=[],
@@ -120,11 +142,10 @@ class Movies(Resource):
                 except Exception:
                     return 'Languages profile not found', 404
 
-            TableMovies.update({
-                TableMovies.profileId: profileId
-            })\
-                .where(TableMovies.radarrId == radarrId)\
-                .execute()
+            database.execute(
+                update(TableMovies)
+                .values(profileId=profileId)
+                .where(TableMovies.radarrId == radarrId))
 
             list_missing_subtitles_movies(no=radarrId, send_event=False)
 
@@ -144,6 +165,7 @@ class Movies(Resource):
     @api_ns_movies.response(204, 'Success')
     @api_ns_movies.response(400, 'Unknown action')
     @api_ns_movies.response(401, 'Not Authenticated')
+    @api_ns_movies.response(500, 'Movie file not found. Path mapping issue?')
     def patch(self):
         """Run actions on specific movies"""
         args = self.patch_request_parser.parse_args()
@@ -153,8 +175,12 @@ class Movies(Resource):
             movies_scan_subtitles(radarrid)
             return '', 204
         elif action == "search-missing":
-            movies_download_subtitles(radarrid)
-            return '', 204
+            try:
+                movies_download_subtitles(radarrid)
+            except OSError:
+                return 'Movie file not found. Path mapping issue?', 500
+            else:
+                return '', 204
         elif action == "search-wanted":
             wanted_search_missing_subtitles_movies()
             return '', 204

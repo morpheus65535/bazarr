@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from subliminal_patch.core import guessit
 
 from ..utils import authenticate
@@ -24,7 +24,6 @@ class SubtitleNameInfo(Resource):
     })
 
     @authenticate
-    @api_ns_subtitles_info.marshal_with(get_response_model, envelope='data', code=200)
     @api_ns_subtitles_info.response(200, 'Success')
     @api_ns_subtitles_info.response(401, 'Not Authenticated')
     @api_ns_subtitles_info.doc(parser=get_request_parser)
@@ -60,4 +59,4 @@ class SubtitleNameInfo(Resource):
 
             results.append(result)
 
-        return results
+        return marshal(results, self.get_response_model, envelope='data')

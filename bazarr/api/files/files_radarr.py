@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from radarr.filesystem import browse_radarr_filesystem
 
@@ -22,7 +22,6 @@ class BrowseRadarrFS(Resource):
     })
 
     @authenticate
-    @api_ns_files_radarr.marshal_with(get_response_model, code=200)
     @api_ns_files_radarr.response(401, 'Not Authenticated')
     @api_ns_files_radarr.doc(parser=get_request_parser)
     def get(self):
@@ -38,4 +37,4 @@ class BrowseRadarrFS(Resource):
             return []
         for item in result['directories']:
             data.append({'name': item['name'], 'children': True, 'path': item['path']})
-        return data
+        return marshal(data, self.get_response_model)

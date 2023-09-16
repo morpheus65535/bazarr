@@ -12,7 +12,7 @@ from subtitles.indexer.movies import store_subtitles_movie
 from radarr.history import history_log_movie
 from app.notifier import send_notifications_movie
 from app.get_providers import get_providers
-from app.database import get_exclusion_clause, get_audio_profile_languages, TableMovies
+from app.database import get_exclusion_clause, get_audio_profile_languages, TableMovies, database, update, select
 from app.event_handler import event_stream, show_progress, hide_progress
 
 from ..adaptive_searching import is_search_active, updateFailedAttempts
@@ -20,7 +20,7 @@ from ..download import generate_subtitles
 
 
 def _wanted_movie(movie):
-    audio_language_list = get_audio_profile_languages(movie['audio_language'])
+    audio_language_list = get_audio_profile_languages(movie.audio_language)
     if len(audio_language_list) > 0:
         audio_language = audio_language_list[0]['name']
     else:
@@ -28,48 +28,48 @@ def _wanted_movie(movie):
 
     languages = []
 
-    for language in ast.literal_eval(movie['missing_subtitles']):
-        if is_search_active(desired_language=language, attempt_string=movie['failedAttempts']):
-            TableMovies.update({TableMovies.failedAttempts:
-                                updateFailedAttempts(desired_language=language,
-                                                     attempt_string=movie['failedAttempts'])}) \
-                .where(TableMovies.radarrId == movie['radarrId']) \
-                .execute()
+    for language in ast.literal_eval(movie.missing_subtitles):
+        if is_search_active(desired_language=language, attempt_string=movie.failedAttempts):
+            database.execute(
+                update(TableMovies)
+                .values(failedAttempts=updateFailedAttempts(desired_language=language,
+                                                            attempt_string=movie.failedAttempts))
+                .where(TableMovies.radarrId == movie.radarrId))
 
             hi_ = "True" if language.endswith(':hi') else "False"
             forced_ = "True" if language.endswith(':forced') else "False"
             languages.append((language.split(":")[0], hi_, forced_))
 
         else:
-            logging.info(f"BAZARR Search is throttled by adaptive search for this movie {movie['path']} and "
+            logging.info(f"BAZARR Search is throttled by adaptive search for this movie {movie.path} and "
                          f"language: {language}")
 
-    for result in generate_subtitles(path_mappings.path_replace_movie(movie['path']),
+    for result in generate_subtitles(path_mappings.path_replace_movie(movie.path),
                                      languages,
                                      audio_language,
-                                     str(movie['sceneName']),
-                                     movie['title'],
+                                     str(movie.sceneName),
+                                     movie.title,
                                      'movie',
                                      check_if_still_required=True):
 
         if result:
-            store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-            history_log_movie(1, movie['radarrId'], result)
-            event_stream(type='movie-wanted', action='delete', payload=movie['radarrId'])
-            send_notifications_movie(movie['radarrId'], result.message)
+            store_subtitles_movie(movie.path, path_mappings.path_replace_movie(movie.path))
+            history_log_movie(1, movie.radarrId, result)
+            event_stream(type='movie-wanted', action='delete', payload=movie.radarrId)
+            send_notifications_movie(movie.radarrId, result.message)
 
 
 def wanted_download_subtitles_movie(radarr_id):
-    movies_details = TableMovies.select(TableMovies.path,
-                                        TableMovies.missing_subtitles,
-                                        TableMovies.radarrId,
-                                        TableMovies.audio_language,
-                                        TableMovies.sceneName,
-                                        TableMovies.failedAttempts,
-                                        TableMovies.title)\
-        .where((TableMovies.radarrId == radarr_id))\
-        .dicts()
-    movies_details = list(movies_details)
+    movies_details = database.execute(
+        select(TableMovies.path,
+               TableMovies.missing_subtitles,
+               TableMovies.radarrId,
+               TableMovies.audio_language,
+               TableMovies.sceneName,
+               TableMovies.failedAttempts,
+               TableMovies.title)
+        .where(TableMovies.radarrId == radarr_id)) \
+        .all()
 
     for movie in movies_details:
         providers_list = get_providers()
@@ -84,25 +84,25 @@ def wanted_download_subtitles_movie(radarr_id):
 def wanted_search_missing_subtitles_movies():
     conditions = [(TableMovies.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('movie')
-    movies = TableMovies.select(TableMovies.radarrId,
-                                TableMovies.tags,
-                                TableMovies.monitored,
-                                TableMovies.title) \
-        .where(reduce(operator.and_, conditions)) \
-        .dicts()
-    movies = list(movies)
+    movies = database.execute(
+        select(TableMovies.radarrId,
+               TableMovies.tags,
+               TableMovies.monitored,
+               TableMovies.title)
+        .where(reduce(operator.and_, conditions))) \
+        .all()
 
     count_movies = len(movies)
     for i, movie in enumerate(movies):
         show_progress(id='wanted_movies_progress',
                       header='Searching subtitles...',
-                      name=movie['title'],
+                      name=movie.title,
                       value=i,
                       count=count_movies)
 
         providers = get_providers()
         if providers:
-            wanted_download_subtitles_movie(movie['radarrId'])
+            wanted_download_subtitles_movie(movie.radarrId)
         else:
             logging.info("BAZARR All providers are throttled")
             break

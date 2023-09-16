@@ -3,7 +3,7 @@
 import os
 
 from app.config import settings
-from app.database import TableShows
+from app.database import TableShows, database, select
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import embedded_audio_reader
 from sonarr.info import get_sonarr_info
@@ -118,8 +118,10 @@ def episodeParser(episode):
                                     if 'name' in item:
                                         audio_language.append(item['name'])
                         else:
-                            audio_language = TableShows.get(
-                                TableShows.sonarrSeriesId == episode['seriesId']).audio_language
+                            audio_language = database.execute(
+                                select(TableShows.audio_language)
+                                .where(TableShows.sonarrSeriesId == episode['seriesId']))\
+                                .first().audio_language
 
                     if 'mediaInfo' in episode['episodeFile']:
                         if 'videoCodec' in episode['episodeFile']['mediaInfo']:
