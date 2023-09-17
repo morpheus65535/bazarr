@@ -25,6 +25,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Divider, List, Menu, MenuProps, ScrollArea } from "@mantine/core";
 import { FunctionComponent, ReactElement, useCallback, useMemo } from "react";
+import { SyncSubtitleModal } from "./forms/SyncSubtitleForm";
 
 export interface ToolOptions {
   key: string;
@@ -41,7 +42,8 @@ export function useTools() {
       {
         key: "sync",
         icon: faPlay,
-        name: "Sync",
+        name: "Sync...",
+        modal: SyncSubtitleModal,
       },
       {
         key: "remove_HI",
