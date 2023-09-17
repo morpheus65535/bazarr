@@ -89,11 +89,11 @@ class Subtitles(Resource):
                                       help='Use original subtitles format from ["True", "False"]')
     patch_request_parser.add_argument('reference', type=str, required=False,
                                       help='Reference to use for sync from video file path or some subtitles file path')
-    patch_request_parser.add_argument('reference-stream', type=str, required=False,
+    patch_request_parser.add_argument('reference_stream', type=str, required=False,
                                       help='Reference track from video file')
-    patch_request_parser.add_argument('max-offset-seconds', type=str, required=False,
+    patch_request_parser.add_argument('max_offset_seconds', type=str, required=False,
                                       help='Maximum offset seconds to allow')
-    patch_request_parser.add_argument('no-fix-framerate', type=str, required=False,
+    patch_request_parser.add_argument('no_fix_framerate', type=str, required=False,
                                       help='Don\'t try to fix framerate from ["True", "False"]')
     patch_request_parser.add_argument('gss', type=str, required=False,
                                       help='Use Golden-Section Search from ["True", "False"]')
@@ -145,9 +145,9 @@ class Subtitles(Resource):
                 'srt_path': subtitles_path,
                 'srt_lang': language,
                 'reference': args.get('reference') or video_path,
-                'reference_stream': args.get('reference-stream'),
-                'max_offset_seconds': args.get('max-offset-seconds') or str(settings.subsync.max_offset_seconds),
-                'no_fix_framerate': args.get('no-fix-framerate') or settings.subsync.no_fix_framerate,
+                'reference_stream': args.get('reference_stream'),
+                'max_offset_seconds': args.get('max_offset_seconds') or str(settings.subsync.max_offset_seconds),
+                'no_fix_framerate': args.get('no_fix_framerate') or settings.subsync.no_fix_framerate,
                 'gss': args.get('gss') or settings.subsync.gss,
             }
 
