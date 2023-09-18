@@ -30,7 +30,7 @@ from sonarr.blacklist import blacklist_log
 from utilities.analytics import event_tracker
 
 
-_TRACEBACK_RE = re.compile(r'File "(.*?providers/.*?)", line (\d+)')
+_TRACEBACK_RE = re.compile(r'File "(.*?providers[\\/].*?)", line (\d+)')
 
 
 def time_until_midnight(timezone):
