@@ -93,6 +93,11 @@ def embedded_audio_reader(file, file_size, episode_file_id=None, movie_file_id=N
                 audio_list.append(None)
                 continue
 
+            if isinstance(detected_language['language'], str):
+                logging.error(f"Cannot identify audio track language for this file: {file}. Value detected is "
+                              f"{detected_language['language']}.")
+                continue
+
             alpha3 = _handle_alpha3(detected_language)
             language = language_from_alpha3(alpha3)
 
