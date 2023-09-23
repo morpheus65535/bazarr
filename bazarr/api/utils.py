@@ -67,7 +67,8 @@ def postprocess(item):
                                     "code2": language[0],
                                     "code3": alpha3_from_alpha2(language[0]),
                                     "forced": False,
-                                    "hi": False}
+                                    "hi": False,
+                                    "file_size": subs[2]}
             if len(language) > 1:
                 item['subtitles'][i].update(
                     {
