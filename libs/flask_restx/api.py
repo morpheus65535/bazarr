@@ -873,9 +873,13 @@ class Api(object):
             setup_state.add_url_rule = MethodType(
                 Api._blueprint_setup_add_url_rule_patch, setup_state
             )
-        if not setup_state.first_registration:
-            raise ValueError("flask-restx blueprints can only be registered once.")
-        self._init_app(setup_state.app)
+            
+        # https://github.com/flask-restful/flask-restful/issues/509
+        # if not setup_state.first_registration:
+        #     raise ValueError("flask-restx blueprints can only be registered once.")
+        # self._init_app(setup_state.app)
+        if setup_state.first_registration:
+           self._init_app(setup_state.app)
 
     def mediatypes_method(self):
         """Return a method that returns a list of mediatypes"""
