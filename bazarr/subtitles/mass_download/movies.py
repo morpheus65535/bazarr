@@ -33,7 +33,7 @@ def movies_download_subtitles(no):
                TableMovies.monitored)
         .where(reduce(operator.and_, conditions))) \
         .first()
-    if not len(movie):
+    if not movie:
         logging.debug("BAZARR no movie with that radarrId can be found in database:", str(no))
         return
 
