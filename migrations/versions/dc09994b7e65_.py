@@ -14,7 +14,7 @@ except ImportError:
     pass
 
 from app.database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableEpisodes, \
-    TableShows, TableMovies, TableLanguagesProfiles
+    TableShows, TableMovies, TableLanguagesProfiles, TableShowsRootfolder, TableMoviesRootfolder
 
 # revision identifiers, used by Alembic.
 revision = 'dc09994b7e65'
@@ -178,6 +178,7 @@ def upgrade():
 
     # Update series rootfolder table
     with op.batch_alter_table('table_shows_rootfolder') as batch_op:
+        batch_op.execute(sa.delete(TableShowsRootfolder))
         if bind.engine.name == 'postgresql':
             batch_op.execute('ALTER TABLE table_shows_rootfolder DROP CONSTRAINT IF EXISTS '
                              'table_shows_rootfolder_pkey CASCADE;')
@@ -259,6 +260,7 @@ def upgrade():
 
     # Update movies rootfolder table
     with op.batch_alter_table('table_movies_rootfolder') as batch_op:
+        batch_op.execute(sa.delete(TableMoviesRootfolder))
         if bind.engine.name == 'postgresql':
             batch_op.execute('ALTER TABLE table_movies_rootfolder DROP CONSTRAINT IF EXISTS '
                              'table_movies_rootfolder_pkey CASCADE;')
