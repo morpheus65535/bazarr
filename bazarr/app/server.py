@@ -18,7 +18,6 @@ from .app import create_app
 
 app = create_app()
 ui_bp.register_blueprint(api_bp, url_prefix='/api')
-ui_bp.register_blueprint(api_bp, url_prefix='/api/v1', name="api_alias")
 # Mute UserWarning with flask-restx and Flask >= 2.2.0. Will be raised as an exception in 2.3.0
 # https://github.com/python-restx/flask-restx/issues/485
 warnings.filterwarnings('ignore', message='The setup method ')
