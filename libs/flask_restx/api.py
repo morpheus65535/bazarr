@@ -873,7 +873,6 @@ class Api(object):
             setup_state.add_url_rule = MethodType(
                 Api._blueprint_setup_add_url_rule_patch, setup_state
             )
-            
         if not setup_state.first_registration:
             raise ValueError("flask-restx blueprints can only be registered once.")
         self._init_app(setup_state.app)
