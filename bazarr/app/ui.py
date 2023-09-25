@@ -169,7 +169,7 @@ def configured():
 @ui_bp.route('/test', methods=['GET'])
 @ui_bp.route('/test/<protocol>/<path:url>', methods=['GET'])
 def proxy(protocol, url):
-    if protocol.lower not in ['http', 'https']:
+    if protocol.lower() not in ['http', 'https']:
         return dict(status=False, error='Unsupported protocol')
     url = protocol + '://' + unquote(url)
     params = request.args
