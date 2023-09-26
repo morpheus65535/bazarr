@@ -294,6 +294,10 @@ def get_providers_auth():
             'f_username': settings.karagarga.f_username,
             'f_password': settings.karagarga.f_password,
         },
+        'hdbits': {
+            'username': settings.hdbits.username,
+            'passkey': settings.hdbits.passkey,
+        },
         'subf2m': {
             'verify_ssl': settings.subf2m.getboolean('verify_ssl'),
             'user_agent': settings.subf2m.user_agent,

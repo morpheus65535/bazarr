@@ -229,6 +229,10 @@ defaults = {
         'timeout': '600',
         'unknown_as_english': 'False',
     },
+    'hdbits': {
+        'username': '',
+        'passkey': '',
+    },
     'karagarga': {
         'username': '',
         'password': '',
