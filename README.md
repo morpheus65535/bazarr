@@ -86,6 +86,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 - Titulky.com
 - TuSubtitulo
 - TVSubtitles
+- Whisper (requires [ahmetoner/whisper-asr-webservice](https://github.com/ahmetoner/whisper-asr-webservice))
 - Wizdom
 - XSubs
 - Yavka.net
