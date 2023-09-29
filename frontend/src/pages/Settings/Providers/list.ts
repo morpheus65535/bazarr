@@ -127,6 +127,24 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "GreekSubtitles",
     description: "Greek Subtitles Provider",
   },
+  {
+    key: "hdbits",
+    name: "HDBits.org",
+    description: "Private Tracker Subtitles Provider",
+    message:
+      "You must have 2FA enabled and whitelist your IP if you are running from a server.",
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "passkey",
+        name: "Your profile's passkey",
+      },
+    ],
+  },
   { key: "hosszupuska", description: "Hungarian Subtitles Provider" },
   {
     key: "legendasdivx",
