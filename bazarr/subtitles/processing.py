@@ -149,13 +149,13 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                                   reversed_subtitles_path=reversed_subtitles_path,
                                   hearing_impaired=subtitle.language.hi,
                                   matched=list(subtitle.matches or []),
-                                  not_matched=_get_not_matched(subtitle, media_type)) or [],
+                                  not_matched=_get_not_matched(subtitle, media_type)),
 
 
 def _get_not_matched(subtitle, media_type):
     _, _, scores = _get_scores(media_type)
 
-    if 'hash' not in subtitle.matches:
+    if subtitle.matches and isinstance(subtitle.matches, set) and 'hash' not in subtitle.matches:
         return list(set(scores) - set(subtitle.matches))
     else:
         return []
