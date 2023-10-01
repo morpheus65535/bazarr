@@ -124,11 +124,9 @@ class HDBitsProvider(Provider):
                 continue
 
             if episode is not None:
-                guessed = _memoized_episode_guess(subtitle["title"])
-                if guessed.get("episode") is not None and episode != guessed["episode"]:
-                    logger.debug(
-                        "Episode not matched: %s != %s", subtitle["title"], episode
-                    )
+                eps = _memoized_episode_guess(subtitle["title"]).get("episode")
+                if eps is not None and episode not in eps:
+                    logger.debug("Not matched: %s != %s", subtitle["title"], episode)
                     continue
 
             parsed = HDBitsSubtitle(
