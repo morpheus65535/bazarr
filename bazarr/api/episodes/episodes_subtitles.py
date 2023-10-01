@@ -81,6 +81,8 @@ class EpisodesSubtitles(Resource):
                                              title, 'series', profile_id=get_profile_id(episode_id=sonarrEpisodeId)))
             if isinstance(result, list) and len(result):
                 result = result[0]
+                if isinstance(result, tuple) and len(result):
+                    result = result[0]
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
                 store_subtitles(result.path, episodePath)

@@ -79,6 +79,8 @@ class MoviesSubtitles(Resource):
                                              sceneName, title, 'movie', profile_id=get_profile_id(movie_id=radarrId)))
             if isinstance(result, list) and len(result):
                 result = result[0]
+                if isinstance(result, tuple) and len(result):
+                    result = result[0]
                 history_log_movie(1, radarrId, result)
                 store_subtitles_movie(result.path, moviePath)
             else:
