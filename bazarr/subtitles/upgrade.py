@@ -116,7 +116,10 @@ def upgrade_subtitles():
                                              is_upgrade=True))
 
             if result:
-                result = result[0]
+                if isinstance(result, list) and len(result):
+                    result = result[0]
+                if isinstance(result, tuple) and len(result):
+                    result = result[0]
                 store_subtitles(episode['video_path'], path_mappings.path_replace(episode['video_path']))
                 history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result)
                 send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result.message)
@@ -197,7 +200,10 @@ def upgrade_subtitles():
                                              forced_minimum_score=int(movie['score']),
                                              is_upgrade=True))
             if result:
-                result = result[0]
+                if isinstance(result, list) and len(result):
+                    result = result[0]
+                if isinstance(result, tuple) and len(result):
+                    result = result[0]
                 store_subtitles_movie(movie['video_path'],
                                       path_mappings.path_replace_movie(movie['video_path']))
                 history_log_movie(3, movie['radarrId'], result)

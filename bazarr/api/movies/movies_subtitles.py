@@ -153,6 +153,8 @@ class MoviesSubtitles(Resource):
             if not result:
                 logging.debug(f"BAZARR unable to process subtitles for this movie: {moviePath}")
             else:
+                if isinstance(result, tuple) and len(result):
+                    result = result[0]
                 provider = "manual"
                 score = 120
                 history_log_movie(4, radarrId, result, fake_provider=provider, fake_score=score)

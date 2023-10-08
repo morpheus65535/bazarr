@@ -82,6 +82,8 @@ def movies_download_subtitles(no):
                                      check_if_still_required=True):
 
         if result:
+            if isinstance(result, tuple) and len(result):
+                result = result[0]
             store_subtitles_movie(movie.path, moviePath)
             history_log_movie(1, no, result)
             send_notifications_movie(no, result.message)
