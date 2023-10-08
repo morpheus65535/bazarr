@@ -59,6 +59,10 @@ export function filterSubtitleBy(
   }
 }
 
+export function toPython(value: boolean): PythonBoolean {
+  return value ? "True" : "False";
+}
+
 export * from "./env";
 export * from "./hooks";
 export * from "./validate";
