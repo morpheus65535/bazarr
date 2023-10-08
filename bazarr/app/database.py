@@ -9,7 +9,7 @@ import flask_migrate
 from dogpile.cache import make_region
 from datetime import datetime
 
-from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text
+from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text, BigInteger
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func  # noqa W0611
 from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column
@@ -132,7 +132,7 @@ class TableEpisodes(Base):
     episode_file_id = mapped_column(Integer)
     failedAttempts = mapped_column(Text)
     ffprobe_cache = mapped_column(LargeBinary)
-    file_size = mapped_column(Integer)
+    file_size = mapped_column(BigInteger)
     format = mapped_column(Text)
     missing_subtitles = mapped_column(Text)
     monitored = mapped_column(Text)
@@ -205,7 +205,7 @@ class TableMovies(Base):
     failedAttempts = mapped_column(Text)
     fanart = mapped_column(Text)
     ffprobe_cache = mapped_column(LargeBinary)
-    file_size = mapped_column(Integer)
+    file_size = mapped_column(BigInteger)
     format = mapped_column(Text)
     imdbId = mapped_column(Text)
     missing_subtitles = mapped_column(Text)

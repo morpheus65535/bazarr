@@ -216,6 +216,10 @@ validators = [
     Validator('subf2m.verify_ssl', must_exist=True, default=True, is_type_of=bool),
     Validator('subf2m.user_agent', must_exist=True, default='', is_type_of=str),
 
+    # hdbits section
+    Validator('hdbits.username', must_exist=True, default='', is_type_of=str),
+    Validator('hdbits.passkey', must_exist=True, default='', is_type_of=str),
+
     # whisperai section
     Validator('whisperai.endpoint', must_exist=True, default='http://127.0.0.1:9000', is_type_of=str),
     Validator('whisperai.timeout', must_exist=True, default=3600, is_type_of=int, gte=1),

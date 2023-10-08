@@ -53,6 +53,8 @@ def _wanted_episode(episode):
                                      'series',
                                      check_if_still_required=True):
         if result:
+            if isinstance(result, tuple) and len(result):
+                result = result[0]
             store_subtitles(episode.path, path_mappings.path_replace(episode.path))
             history_log(1, episode.sonarrSeriesId, episode.sonarrEpisodeId, result)
             event_stream(type='series', action='update', payload=episode.sonarrSeriesId)

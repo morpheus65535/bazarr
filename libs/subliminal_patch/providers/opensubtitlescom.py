@@ -473,7 +473,16 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         except Exception:
             status_code = None
         else:
-            if status_code == 401:
+            if status_code == 400:
+                try:
+                    json_response = response.json()
+                    message = json_response['message']
+                except JSONDecodeError:
+                    raise ProviderError('Invalid JSON returned by provider')
+                else:
+                    log_request_response(response)
+                    raise ConfigurationError(message)
+            elif status_code == 401:
                 log_request_response(response)
                 self.reset_token()
                 if is_retry:

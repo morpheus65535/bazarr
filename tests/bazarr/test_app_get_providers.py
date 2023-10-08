@@ -113,3 +113,18 @@ def test_get_language_equals_injected_settings_hi():
 
     result = get_providers.get_language_equals(config)
     assert result == [(Language("eng", hi=True), Language("eng"))]
+
+
+def _get_error():
+    try:
+        raise ValueError("Some error" * 100)
+    except ValueError as error:
+        return error
+
+
+def test_get_traceback_info():
+    error_ = _get_error()
+
+    if error_ is not None:
+        msg = get_providers._get_traceback_info(error_)
+        assert len(msg) == 100

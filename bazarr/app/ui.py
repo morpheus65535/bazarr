@@ -143,13 +143,22 @@ def movies_images(url):
 @check_login
 @ui_bp.route('/system/backup/download/<path:filename>', methods=['GET'])
 def backup_download(filename):
-    return send_file(os.path.join(settings.backup.folder, filename), max_age=0, as_attachment=True)
+    fullpath = os.path.normpath(os.path.join(settings.backup.folder, filename))
+    if not fullpath.startswith(settings.backup.folder):
+        return '', 404
+    else:
+        return send_file(fullpath, max_age=0, as_attachment=True)
 
 
 @ui_bp.route('/api/swaggerui/static/<path:filename>', methods=['GET'])
 def swaggerui_static(filename):
-    return send_file(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'libs', 'flask_restx',
-                     'static', filename))
+    basepath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'libs', 'flask_restx',
+                            'static')
+    fullpath = os.path.join(basepath, filename)
+    if not fullpath.startswith(basepath):
+        return '', 404
+    else:
+        return send_file(fullpath)
 
 
 def configured():
@@ -160,6 +169,8 @@ def configured():
 @ui_bp.route('/test', methods=['GET'])
 @ui_bp.route('/test/<protocol>/<path:url>', methods=['GET'])
 def proxy(protocol, url):
+    if protocol.lower() not in ['http', 'https']:
+        return dict(status=False, error='Unsupported protocol')
     url = protocol + '://' + unquote(url)
     params = request.args
     try:

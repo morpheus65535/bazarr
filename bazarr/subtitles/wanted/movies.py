@@ -53,6 +53,8 @@ def _wanted_movie(movie):
                                      check_if_still_required=True):
 
         if result:
+            if isinstance(result, tuple) and len(result):
+                result = result[0]
             store_subtitles_movie(movie.path, path_mappings.path_replace_movie(movie.path))
             history_log_movie(1, movie.radarrId, result)
             event_stream(type='movie-wanted', action='delete', payload=movie.radarrId)
