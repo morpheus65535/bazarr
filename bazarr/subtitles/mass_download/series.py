@@ -92,6 +92,8 @@ def series_download_subtitles(no):
                                              'series',
                                              check_if_still_required=True):
                 if result:
+                    if isinstance(result, tuple) and len(result):
+                        result = result[0]
                     store_subtitles(episode.path, path_mappings.path_replace(episode.path))
                     history_log(1, no, episode.sonarrEpisodeId, result)
                     send_notifications(no, episode.sonarrEpisodeId, result.message)
@@ -165,6 +167,8 @@ def episode_download_subtitles(no, send_progress=False):
                                              'series',
                                              check_if_still_required=True):
                 if result:
+                    if isinstance(result, tuple) and len(result):
+                        result = result[0]
                     store_subtitles(episode.path, path_mappings.path_replace(episode.path))
                     history_log(1, episode.sonarrSeriesId, episode.sonarrEpisodeId, result)
                     send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)

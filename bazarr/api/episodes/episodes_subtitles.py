@@ -81,6 +81,8 @@ class EpisodesSubtitles(Resource):
                                              title, 'series', profile_id=get_profile_id(episode_id=sonarrEpisodeId)))
             if isinstance(result, list) and len(result):
                 result = result[0]
+                if isinstance(result, tuple) and len(result):
+                    result = result[0]
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
                 store_subtitles(result.path, episodePath)
@@ -155,6 +157,8 @@ class EpisodesSubtitles(Resource):
             if not result:
                 logging.debug(f"BAZARR unable to process subtitles for this episode: {episodePath}")
             else:
+                if isinstance(result, tuple) and len(result):
+                    result = result[0]
                 provider = "manual"
                 score = 360
                 history_log(4, sonarrSeriesId, sonarrEpisodeId, result, fake_provider=provider, fake_score=score)

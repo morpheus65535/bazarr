@@ -26,6 +26,15 @@ def test_list_subtitles_movie_with_year_fallback(movies):
         assert provider.list_subtitles(item, {Language("spa", "MX")})
 
 
+def test_list_subtitles_movie_with_one_difference_year(movies):
+    item = list(movies.values())[0]
+    item.title = "Sisu"
+    item.year = 2023
+
+    with SubdivxSubtitlesProvider() as provider:
+        assert provider.list_subtitles(item, {Language("spa", "MX")})
+
+
 def test_handle_multi_page_search(episodes):
     with SubdivxSubtitlesProvider() as provider:
         for _ in provider._handle_multi_page_search(
@@ -73,6 +82,7 @@ def test_list_subtitles_episode_with_title_only_fallback(episodes):
     with SubdivxSubtitlesProvider() as provider:
         subtitles = provider.list_subtitles(item, {Language("spa", "MX")})
         assert len(subtitles) > 2
+
 
 def test_list_subtitles_episode_with_episode_title_fallback(episodes):
     item = list(episodes.values())[0]

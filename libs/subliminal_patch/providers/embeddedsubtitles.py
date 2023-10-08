@@ -2,6 +2,7 @@
 
 import functools
 import logging
+import hashlib
 import os
 import re
 import shutil
@@ -214,6 +215,7 @@ class EmbeddedSubtitlesProvider(Provider):
                 self._cache_dir,
                 timeout=self._timeout,
                 fallback_to_convert=True,
+                basename_callback=_basename_callback,
             )
             # Add the extracted paths to the containter path key
             self._cached_paths[container.path] = extracted
@@ -326,7 +328,7 @@ def _discard_possible_incomplete_subtitles(streams):
 
     for stream in streams:
         # 500 < 1200
-        if not stream.language.forced and stream.tags.frames < max_frames // 2:
+        if not stream.language.forced and stream.tags.frames < max_frames // 3:
             logger.debug(
                 "Possible bad subtitle found: %s (%s frames - %s frames)",
                 stream,
@@ -343,6 +345,11 @@ def _discard_possible_incomplete_subtitles(streams):
 def _get_pretty_release_name(stream, container):
     bname = os.path.basename(container.path)
     return f"{os.path.splitext(bname)[0]}.{stream.suffix}"
+
+
+def _basename_callback(path: str):
+    path, ext = os.path.splitext(path)
+    return hashlib.md5(path.encode()).hexdigest() + ext
 
 
 # TODO: improve this

@@ -33,7 +33,7 @@ def movies_download_subtitles(no):
                TableMovies.monitored)
         .where(reduce(operator.and_, conditions))) \
         .first()
-    if not len(movie):
+    if not movie:
         logging.debug("BAZARR no movie with that radarrId can be found in database:", str(no))
         return
 
@@ -82,6 +82,8 @@ def movies_download_subtitles(no):
                                      check_if_still_required=True):
 
         if result:
+            if isinstance(result, tuple) and len(result):
+                result = result[0]
             store_subtitles_movie(movie.path, moviePath)
             history_log_movie(1, no, result)
             send_notifications_movie(no, result.message)
