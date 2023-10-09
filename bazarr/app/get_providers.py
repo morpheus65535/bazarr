@@ -80,6 +80,7 @@ def provider_throttle_map():
             DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
             DownloadLimitReached: (datetime.timedelta(hours=6), "6 hours"),
             APIThrottled: (datetime.timedelta(seconds=15), "15 seconds"),
+            ServiceUnavailable: (datetime.timedelta(hours=1), "1 hour"),
         },
         "opensubtitlescom": {
             AuthenticationError: (datetime.timedelta(hours=12), "12 hours"),
@@ -108,7 +109,13 @@ def provider_throttle_map():
             SearchLimitReached: (
                 legendasdivx_limit_reset_timedelta(),
                 f"{legendasdivx_limit_reset_timedelta().seconds // 3600 + 1} hours"),
-        }
+        },
+        "subf2m": {
+            ConfigurationError: (datetime.timedelta(hours=24), "24 hours"),
+        },
+        "whisperai": {
+            ConnectionError: (datetime.timedelta(hours=24), "24 hours"),
+        },
     }
 
 
