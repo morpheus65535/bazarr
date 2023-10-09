@@ -184,13 +184,14 @@ class HosszupuskaProvider(Provider, ProviderSubtitleArchiveMixin):
                 # sub_date = datas[4].getText()
 
                 sub_year = sub_english_name = sub_version = None
+
                 # Handle the case when '(' in subtitle
-
-
                 if datas[1].getText().count('(') == 1:
                     sub_english_name = _SUB_ENGLISH_NAME_RE.split(datas[1].getText())[3]
                 if datas[1].getText().count('(') == 2:
-                    sub_year = _SUB_YEAR_RE.findall(datas[1].getText().strip())[0]
+                    sub_year_search = _SUB_YEAR_RE.findall(datas[1].getText().strip())
+                    if sub_year_search and len(sub_year_search):
+                        sub_year = sub_year_search[0]
                     sub_english_name = _SUB_ENGLISH_NAME_RE.split(datas[1].getText().split('(')[0])[0]
 
                 if not sub_english_name:
@@ -203,7 +204,7 @@ class HosszupuskaProvider(Provider, ProviderSubtitleArchiveMixin):
 
                 if sub_season == season and sub_episode == episode:
                     sub_language = self.get_language(datas[2].find_all('img')[0]['src'].split('/')[1])
-                    sub_downloadlink = datas[6].find_all('a')[1]['href']
+                    sub_downloadlink = datas[6].find_all('a')[0]['href']
                     sub_id = sub_downloadlink.split('=')[1].split('.')[0]
 
                     if datas[1].getText().count('(') == 1:
