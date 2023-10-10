@@ -62,12 +62,14 @@ def postprocess(item):
         item['subtitles'] = ast.literal_eval(item['subtitles'])
         for i, subs in enumerate(item['subtitles']):
             language = subs[0].split(':')
+            file_size = subs[2] if len(subs) > 2 else 0
             item['subtitles'][i] = {"path": path_replace(subs[1]),
                                     "name": language_from_alpha2(language[0]),
                                     "code2": language[0],
                                     "code3": alpha3_from_alpha2(language[0]),
                                     "forced": False,
-                                    "hi": False}
+                                    "hi": False,
+                                    "file_size": file_size}
             if len(language) > 1:
                 item['subtitles'][i].update(
                     {

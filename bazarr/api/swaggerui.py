@@ -15,7 +15,8 @@ subtitles_model = {
         "code3": fields.String(),
         "path": fields.String(),
         "forced": fields.Boolean(),
-        "hi": fields.Boolean()
+        "hi": fields.Boolean(),
+        "file_size": fields.Integer()
     }
 
 subtitles_language_model = {
