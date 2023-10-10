@@ -2,7 +2,7 @@
 
 ## Tools required
 
-- Python 3.7.x to 3.10.x (3.9.x is highly recommended and 3.11 or greater is proscribed).
+- Python 3.7.x to 3.11.x (3.9.x is highly recommended and 3.12 or greater is proscribed).
 - Pycharm or Visual Studio code IDE are recommended but if you're happy with VIM, enjoy it!
 - Git.
 - UI testing must be done using Chrome latest version.
