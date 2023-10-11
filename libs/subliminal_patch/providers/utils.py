@@ -12,6 +12,7 @@ from guessit import guessit
 import pysubs2
 import rarfile
 from subliminal.subtitle import fix_line_ending
+from subliminal_patch.exceptions import MustGetBlacklisted
 from subliminal_patch.core import Episode
 from subliminal_patch.subtitle import guess_matches
 
@@ -21,6 +22,22 @@ logger = logging.getLogger(__name__)
 
 
 _MatchingSub = namedtuple("_MatchingSub", ("file", "priority", "context"))
+
+
+def blacklist_on(*exc_types):
+    "Raise MustGetBlacklisted if any of the exc_types are raised."
+
+    def decorator(method):
+        def wrapper(self, subtitle):
+            try:
+                return method(self, subtitle)
+            except exc_types:
+                logger.error("Sending blacklist exception", exc_info=True)
+                raise MustGetBlacklisted(subtitle.id, subtitle.media_type)
+
+        return wrapper
+
+    return decorator
 
 
 def _get_matching_sub(
@@ -169,11 +186,12 @@ def update_matches(
     video,
     release_info: Union[str, Iterable[str]],
     split="\n",
-    **guessit_options
+    **guessit_options,
 ):
     """Update matches set from release info string or Iterable.
 
-    Use the split parameter to iterate over the set delimiter; set None to avoid split."""
+    Use the split parameter to iterate over the set delimiter; set None to avoid split.
+    """
 
     guessit_options["type"] = "episode" if isinstance(video, Episode) else "movie"
 

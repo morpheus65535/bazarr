@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
+from json import JSONDecodeError
 import logging
 import time
 
@@ -108,7 +109,12 @@ class HDBitsProvider(Provider):
             "https://hdbits.org/api/subtitles",
             json={**self._def_params, **{"torrent_id": torrent_id}},
         )
-        subtitles = response.json()["data"]
+        try:
+            subtitles = response.json()["data"]
+        except JSONDecodeError:
+            logger.debug("Couldn't get reponse for %s", torrent_id)
+            return []
+
         parsed_subs = []
         for subtitle in subtitles:
             if not subtitle["filename"].endswith(_ALLOWED_EXTENSIONS):
