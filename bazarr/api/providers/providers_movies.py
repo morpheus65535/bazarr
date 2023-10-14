@@ -131,6 +131,8 @@ class ProviderMovies(Resource):
         except OSError:
             return 'Unable to save subtitles file', 500
         else:
+            if isinstance(result, tuple) and len(result):
+                result = result[0]
             if isinstance(result, ProcessSubtitlesResult):
                 history_log_movie(2, radarrId, result)
                 if not settings.general.getboolean('dont_notify_manual_actions'):

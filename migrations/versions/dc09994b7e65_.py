@@ -14,7 +14,7 @@ except ImportError:
     pass
 
 from app.database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableEpisodes, \
-    TableShows, TableMovies, TableLanguagesProfiles
+    TableShows, TableMovies, TableLanguagesProfiles, TableShowsRootfolder, TableMoviesRootfolder
 
 # revision identifiers, used by Alembic.
 revision = 'dc09994b7e65'
@@ -72,7 +72,7 @@ def upgrade():
     # Update series table
     with op.batch_alter_table('table_shows', recreate=should_recreate) as batch_op:
         if bind.engine.name == 'postgresql':
-            batch_op.execute('ALTER TABLE table_shows DROP CONSTRAINT IF EXISTS table_shows_pkey;')
+            batch_op.execute('ALTER TABLE table_shows DROP CONSTRAINT IF EXISTS table_shows_pkey CASCADE;')
         batch_op.execute(sa.update(TableShows)
                          .values({TableShows.profileId: None})
                          .where(TableShows.profileId.not_in(sa.select(TableLanguagesProfiles.profileId))))
@@ -101,7 +101,7 @@ def upgrade():
     # Update episodes table
     with op.batch_alter_table('table_episodes') as batch_op:
         if bind.engine.name == 'postgresql':
-            batch_op.execute('ALTER TABLE table_episodes DROP CONSTRAINT IF EXISTS table_episodes_pkey;')
+            batch_op.execute('ALTER TABLE table_episodes DROP CONSTRAINT IF EXISTS table_episodes_pkey CASCADE;')
         batch_op.execute(sa.delete(TableEpisodes).where(TableEpisodes.sonarrSeriesId.not_in(
             sa.select(TableShows.sonarrSeriesId))))
         batch_op.alter_column(column_name='sonarrSeriesId', existing_type=sa.INTEGER(), nullable=True)
@@ -178,16 +178,17 @@ def upgrade():
 
     # Update series rootfolder table
     with op.batch_alter_table('table_shows_rootfolder') as batch_op:
+        batch_op.execute(sa.delete(TableShowsRootfolder))
         if bind.engine.name == 'postgresql':
             batch_op.execute('ALTER TABLE table_shows_rootfolder DROP CONSTRAINT IF EXISTS '
-                             'table_shows_rootfolder_pkey;')
+                             'table_shows_rootfolder_pkey CASCADE;')
         batch_op.alter_column(column_name='id', existing_type=sa.INTEGER(), nullable=False, autoincrement=True)
         batch_op.create_primary_key(constraint_name='pk_table_shows_rootfolder', columns=['id'])
 
     # Update movies table
     with op.batch_alter_table('table_movies', recreate=should_recreate) as batch_op:
         if bind.engine.name == 'postgresql':
-            batch_op.execute('ALTER TABLE table_movies DROP CONSTRAINT IF EXISTS table_movies_pkey;')
+            batch_op.execute('ALTER TABLE table_movies DROP CONSTRAINT IF EXISTS table_movies_pkey CASCADE;')
         batch_op.execute(sa.update(TableMovies)
                          .values({TableMovies.profileId: None})
                          .where(TableMovies.profileId.not_in(sa.select(TableLanguagesProfiles.profileId))))
@@ -259,9 +260,10 @@ def upgrade():
 
     # Update movies rootfolder table
     with op.batch_alter_table('table_movies_rootfolder') as batch_op:
+        batch_op.execute(sa.delete(TableMoviesRootfolder))
         if bind.engine.name == 'postgresql':
             batch_op.execute('ALTER TABLE table_movies_rootfolder DROP CONSTRAINT IF EXISTS '
-                             'table_movies_rootfolder_pkey;')
+                             'table_movies_rootfolder_pkey CASCADE;')
         batch_op.alter_column(column_name='id', existing_type=sa.INTEGER(), nullable=False, autoincrement=True)
         batch_op.create_primary_key(constraint_name='pk_table_movies_rootfolder', columns=['id'])
     # ### end Alembic commands ###

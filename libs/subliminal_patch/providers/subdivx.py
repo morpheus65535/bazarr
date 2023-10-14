@@ -29,6 +29,7 @@ _CLEAN_TITLE_RES = [
 
 _SPANISH_RE = re.compile(r"españa|ib[eé]rico|castellano|gallego|castilla")
 _YEAR_RE = re.compile(r"(\(\d{4}\))")
+_YEAR_RE_INT = re.compile(r"\((\d{4})\)")
 
 
 _SERIES_RE = re.compile(
@@ -351,7 +352,14 @@ def _check_episode(video, title):
 
 
 def _check_movie(video, title):
-    if str(video.year) not in title:
+    try:
+        year = int(_YEAR_RE_INT.search(title).group(1))  # type: ignore
+    except (AttributeError, ValueError):
+        logger.debug("Year not found in title (%s). Discarding movie", title)
+        return False
+
+    if video.year and abs(year - video.year) > 1:
+        logger.debug("Year not matching: %s -> %s", year, video.year)
         return False
 
     aka_split = re.split("aka", title, flags=re.IGNORECASE)

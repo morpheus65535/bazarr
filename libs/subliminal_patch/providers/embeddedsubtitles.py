@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import functools
-import logging
 import hashlib
+import logging
 import os
 import re
 import shutil
@@ -14,10 +14,12 @@ from fese import container
 from fese import FFprobeSubtitleStream
 from fese import FFprobeVideoContainer
 from fese import tags
+from fese.exceptions import ExtractionError
 from fese.exceptions import InvalidSource
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
 from subliminal_patch.providers import Provider
+from subliminal_patch.providers.utils import blacklist_on
 from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
 
@@ -185,6 +187,7 @@ class EmbeddedSubtitlesProvider(Provider):
             "series" if isinstance(video, Episode) else "movie",
         )
 
+    @blacklist_on(ExtractionError)
     def download_subtitle(self, subtitle: EmbeddedSubtitle):
         path = self._get_subtitle_path(subtitle)
 
@@ -328,7 +331,7 @@ def _discard_possible_incomplete_subtitles(streams):
 
     for stream in streams:
         # 500 < 1200
-        if not stream.language.forced and stream.tags.frames < max_frames // 2:
+        if not stream.language.forced and stream.tags.frames < max_frames // 3:
             logger.debug(
                 "Possible bad subtitle found: %s (%s frames - %s frames)",
                 stream,
