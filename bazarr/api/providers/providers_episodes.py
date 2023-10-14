@@ -141,7 +141,7 @@ class ProviderEpisodes(Resource):
                 result = result[0]
             if isinstance(result, ProcessSubtitlesResult):
                 history_log(2, sonarrSeriesId, sonarrEpisodeId, result)
-                if not settings.general.getboolean('dont_notify_manual_actions'):
+                if not settings.general.dont_notify_manual_actions:
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
                 store_subtitles(result.path, episodePath)
             elif isinstance(result, str):

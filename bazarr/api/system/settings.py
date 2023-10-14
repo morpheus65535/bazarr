@@ -4,6 +4,7 @@ import json
 
 from flask import request, jsonify
 from flask_restx import Resource, Namespace
+from dynaconf.validator import ValidationError
 
 from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableSettingsNotifier, \
     update_profile_id_list, database, insert, update, delete, select
@@ -97,9 +98,9 @@ class SystemSettings(Resource):
 
             event_stream("languages")
 
-            if settings.general.getboolean('use_sonarr'):
+            if settings.general.use_sonarr:
                 scheduler.add_job(list_missing_subtitles, kwargs={'send_event': True})
-            if settings.general.getboolean('use_radarr'):
+            if settings.general.use_radarr:
                 scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': True})
 
         # Update Notification
@@ -112,6 +113,11 @@ class SystemSettings(Resource):
                     url=item['url'])
                 .where(TableSettingsNotifier.name == item['name']))
 
-        save_settings(zip(request.form.keys(), request.form.listvalues()))
-        event_stream("settings")
-        return '', 204
+        try:
+            save_settings(zip(request.form.keys(), request.form.listvalues()))
+        except ValidationError as e:
+            event_stream("settings")
+            return e.message, 406
+        else:
+            event_stream("settings")
+            return '', 204

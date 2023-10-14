@@ -135,7 +135,7 @@ class ProviderMovies(Resource):
                 result = result[0]
             if isinstance(result, ProcessSubtitlesResult):
                 history_log_movie(2, radarrId, result)
-                if not settings.general.getboolean('dont_notify_manual_actions'):
+                if not settings.general.dont_notify_manual_actions:
                     send_notifications_movie(radarrId, result.message)
                 store_subtitles_movie(result.path, moviePath)
             elif isinstance(result, str):

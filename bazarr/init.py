@@ -11,7 +11,7 @@ import rarfile
 
 from dogpile.cache.region import register_backend as register_cache_backend
 
-from app.config import settings, configure_captcha_func, get_array_from
+from app.config import settings, configure_captcha_func, write_config
 from app.get_args import args
 from app.logger import configure_logging
 from utilities.binaries import get_binary, BinaryNotFound
@@ -62,7 +62,7 @@ configure_captcha_func()
 from ga4mp import GtagMP  # noqa E402
 
 # configure logging
-configure_logging(settings.general.getboolean('debug') or args.debug)
+configure_logging(settings.general.debug or args.debug)
 import logging  # noqa E402
 
 
@@ -111,30 +111,14 @@ if not args.no_update:
                     restart_file.close()
                     os._exit(0)
 
-# create random api_key if there's none in config.ini
-if not settings.auth.apikey or settings.auth.apikey.startswith("b'"):
-    from binascii import hexlify
-    settings.auth.apikey = hexlify(os.urandom(16)).decode()
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-        settings.write(handle)
-
-# create random Flask secret_key if there's none in config.ini
-if not settings.general.flask_secret_key:
-    from binascii import hexlify
-    settings.general.flask_secret_key = hexlify(os.urandom(16)).decode()
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-        settings.write(handle)
-
 # change default base_url to ''
 settings.general.base_url = settings.general.base_url.rstrip('/')
-with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-    settings.write(handle)
+write_config()
 
 # migrate enabled_providers from comma separated string to list
 if isinstance(settings.general.enabled_providers, str) and not settings.general.enabled_providers.startswith('['):
     settings.general.enabled_providers = str(settings.general.enabled_providers.split(","))
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-        settings.write(handle)
+    write_config()
 
 # Read package_info (if exists) to override some settings by package maintainers
 # This file can also provide some info about the package version and author
@@ -166,8 +150,7 @@ if os.path.isfile(package_info_file):
     except Exception:
         pass
     else:
-        with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-            settings.write(handle)
+        write_config()
 
 # Configure dogpile file caching for Subliminal request
 register_cache_backend("subzero.cache.file", "subzero.cache_backends.file", "SZFileBackend")
@@ -186,30 +169,24 @@ if not os.path.exists(os.path.join(args.config_dir, 'config', 'announcements.txt
     get_announcements_to_file()
     logging.debug("BAZARR Created announcements file")
 
-config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
-
-# Move GA visitor from config.ini to dedicated file
-if settings.analytics.visitor:
+# Move GA visitor from config to dedicated file
+if 'visitor' in settings.analytics:
     with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics.dat')), 'w+') as handle:
         handle.write(settings.analytics.visitor)
-    with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')), 'w+') as handle:
-        settings.remove_option('analytics', 'visitor')
-        settings.write(handle)
+    settings['analytics'].pop('visitor', None)
 
-# Clean unused settings from config.ini
-with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')), 'w+') as handle:
-    settings.remove_option('general', 'throtteled_providers')
-    settings.remove_option('general', 'update_restart')
-    settings.write(handle)
+# Clean unused settings from config
+settings['general'].pop('throtteled_providers', None)
+settings['general'].pop('update_restart', None)
+write_config()
 
 
-# Remove deprecated providers from enabled providers in config.ini
+# Remove deprecated providers from enabled providers in config
 from subliminal_patch.extensions import provider_registry  # noqa E401
 existing_providers = provider_registry.names()
-enabled_providers = get_array_from(settings.general.enabled_providers)
-settings.general.enabled_providers = str([x for x in enabled_providers if x in existing_providers])
-with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-    settings.write(handle)
+enabled_providers = settings.general.enabled_providers
+settings.general.enabled_providers = [x for x in enabled_providers if x in existing_providers]
+write_config()
 
 
 def init_binaries():

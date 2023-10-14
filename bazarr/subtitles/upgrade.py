@@ -24,8 +24,8 @@ from .download import generate_subtitles
 
 
 def upgrade_subtitles():
-    use_sonarr = settings.general.getboolean('use_sonarr')
-    use_radarr = settings.general.getboolean('use_radarr')
+    use_sonarr = settings.general.use_sonarr
+    use_radarr = settings.general.use_radarr
 
     if use_sonarr:
         episodes_to_upgrade = get_upgradable_episode_subtitles()
@@ -218,7 +218,7 @@ def get_queries_condition_parameters():
     days_to_upgrade_subs = settings.general.days_to_upgrade_subs
     minimum_timestamp = (datetime.now() - timedelta(days=int(days_to_upgrade_subs)))
 
-    if settings.general.getboolean('upgrade_manual'):
+    if settings.general.upgrade_manual:
         query_actions = [1, 2, 3, 4, 6]
     else:
         query_actions = [1, 3]
@@ -244,7 +244,7 @@ def parse_language_string(language_string):
 
 
 def get_upgradable_episode_subtitles():
-    if not settings.general.getboolean('upgrade_subs'):
+    if not settings.general.upgrade_subs:
         # return an empty set of rows
         return select(TableHistory.id) \
             .where(TableHistory.id.is_(None)) \
@@ -277,7 +277,7 @@ def get_upgradable_episode_subtitles():
 
 
 def get_upgradable_movies_subtitles():
-    if not settings.general.getboolean('upgrade_subs'):
+    if not settings.general.upgrade_subs:
         # return an empty set of rows
         return select(TableHistoryMovie.id) \
             .where(TableHistoryMovie.id.is_(None)) \

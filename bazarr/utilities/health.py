@@ -9,9 +9,9 @@ from radarr.rootfolder import check_radarr_rootfolder
 
 
 def check_health():
-    if settings.general.getboolean('use_sonarr'):
+    if settings.general.use_sonarr:
         check_sonarr_rootfolder()
-    if settings.general.getboolean('use_radarr'):
+    if settings.general.use_radarr:
         check_radarr_rootfolder()
     event_stream(type='badges')
 
@@ -24,7 +24,7 @@ def get_health_issues():
     health_issues = []
 
     # get Sonarr rootfolder issues
-    if settings.general.getboolean('use_sonarr'):
+    if settings.general.use_sonarr:
         rootfolder = database.execute(
             select(TableShowsRootfolder.path,
                    TableShowsRootfolder.accessible,
@@ -36,7 +36,7 @@ def get_health_issues():
                                   'issue': item.error})
 
     # get Radarr rootfolder issues
-    if settings.general.getboolean('use_radarr'):
+    if settings.general.use_radarr:
         rootfolder = database.execute(
             select(TableMoviesRootfolder.path,
                    TableMoviesRootfolder.accessible,

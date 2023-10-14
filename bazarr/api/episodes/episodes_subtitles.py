@@ -162,7 +162,7 @@ class EpisodesSubtitles(Resource):
                 provider = "manual"
                 score = 360
                 history_log(4, sonarrSeriesId, sonarrEpisodeId, result, fake_provider=provider, fake_score=score)
-                if not settings.general.getboolean('dont_notify_manual_actions'):
+                if not settings.general.dont_notify_manual_actions:
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
                 store_subtitles(result.path, episodePath)
         except OSError:

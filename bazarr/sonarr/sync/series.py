@@ -23,7 +23,7 @@ def update_series(send_event=True):
     if apikey_sonarr is None:
         return
 
-    serie_default_enabled = settings.general.getboolean('serie_default_enabled')
+    serie_default_enabled = settings.general.serie_default_enabled
 
     if serie_default_enabled is True:
         serie_default_profile = settings.general.serie_default_profile
@@ -134,7 +134,7 @@ def update_one_series(series_id, action):
         event_stream(type='series', action='delete', payload=int(series_id))
         return
 
-    serie_default_enabled = settings.general.getboolean('serie_default_enabled')
+    serie_default_enabled = settings.general.serie_default_enabled
 
     if serie_default_enabled is True:
         serie_default_profile = settings.general.serie_default_profile

@@ -77,7 +77,7 @@ def postprocess(item):
                         "hi": language[1] == 'hi',
                     }
                 )
-        if settings.general.getboolean('embedded_subs_show_desired') and item.get('profileId'):
+        if settings.general.embedded_subs_show_desired and item.get('profileId'):
             desired_lang_list = get_desired_languages(item['profileId'])
             item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
         item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
