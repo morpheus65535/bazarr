@@ -2,6 +2,7 @@
 import functools
 from json import JSONDecodeError
 import logging
+import re
 import time
 
 from babelfish import language_converters
@@ -42,6 +43,7 @@ class HDBitsSubtitle(Subtitle):
 
 _SPECIAL_LANG_MAP = {"uk": ("eng",), "br": ("por", "BR"), "gr": ("ell",)}
 _ALLOWED_EXTENSIONS = (".ass", ".srt", ".zip", ".rar")
+_FILTER = re.compile("extra|commentary|lyrics|forced")
 
 
 def _get_language(code):
@@ -125,6 +127,9 @@ class HDBitsProvider(Provider):
             if language is None:
                 continue
 
+            if not _is_allowed(subtitle):
+                continue
+
             if language not in languages:
                 logger.debug("Ignoring language: %r !~ %r", language, languages)
                 continue
@@ -159,6 +164,15 @@ class HDBitsProvider(Provider):
             )
         else:
             subtitle.content = response.content
+
+
+def _is_allowed(subtitle):
+    for val in (subtitle["title"], subtitle["filename"]):
+        if _FILTER.search(val.lower()):
+            logger.debug("Not allowed subtitle: %s", subtitle)
+            return False
+
+    return True
 
 
 @functools.lru_cache(2048)
