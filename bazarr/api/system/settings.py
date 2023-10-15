@@ -70,7 +70,7 @@ class SystemSettings(Resource):
                             items=json.dumps(item['items']),
                             mustContain=str(item['mustContain']),
                             mustNotContain=str(item['mustNotContain']),
-                            originalFormat=item['originalFormat'] if item['originalFormat'] != 'null' else None,
+                            originalFormat=int(item['originalFormat']) if item['originalFormat'] != 'null' else None,
                         )
                         .where(TableLanguagesProfiles.profileId == item['profileId']))
                     existing.remove(item['profileId'])
@@ -85,7 +85,7 @@ class SystemSettings(Resource):
                             items=json.dumps(item['items']),
                             mustContain=str(item['mustContain']),
                             mustNotContain=str(item['mustNotContain']),
-                            originalFormat=item['originalFormat'] if item['originalFormat'] != 'null' else None,
+                            originalFormat=int(item['originalFormat']) if item['originalFormat'] != 'null' else None,
                         ))
             for profileId in existing:
                 # Remove deleted profiles
