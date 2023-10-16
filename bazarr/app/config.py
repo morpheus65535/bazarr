@@ -331,7 +331,7 @@ validators = [
 def convert_ini_to_yaml(config_file):
     import configparser
     import yaml
-    config_object = configparser.ConfigParser()
+    config_object = configparser.RawConfigParser()
     file = open(config_file, "r")
     config_object.read_file(file)
     output_dict = dict()
