@@ -65,7 +65,7 @@ class EventTracker:
             self.tracker.store.save()
 
     def track_throttling(self, provider, exception_name, exception_info):
-        if not settings.analytics.getboolean('enabled'):
+        if not settings.analytics.enabled:
             return
 
         throttling_event = self.tracker.create_new_event(name="throttling")
