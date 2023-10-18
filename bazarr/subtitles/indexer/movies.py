@@ -22,7 +22,7 @@ gc.enable()
 
 
 def store_subtitles_movie(original_path, reversed_path, use_cache=True):
-    logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
+    logging.debug(f'BAZARR started subtitles indexing for this file: {reversed_path}')
     actual_subtitles = []
     if os.path.exists(reversed_path):
         if settings.general.use_embedded_subs:
@@ -52,18 +52,18 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                             if alpha2_from_alpha3(subtitle_language) is not None:
                                 lang = str(alpha2_from_alpha3(subtitle_language))
                                 if subtitle_forced:
-                                    lang = lang + ':forced'
+                                    lang = f'{lang}:forced'
                                 if subtitle_hi:
-                                    lang = lang + ':hi'
-                                logging.debug("BAZARR embedded subtitles detected: " + lang)
+                                    lang = f'{lang}:hi'
+                                logging.debug(f"BAZARR embedded subtitles detected: {lang}")
                                 actual_subtitles.append([lang, None, None])
                         except Exception as error:
-                            logging.debug("BAZARR unable to index this unrecognized language: %s (%s)",
-                                          subtitle_language, error)
+                            logging.debug(f"BAZARR unable to index this unrecognized language: {subtitle_language} "
+                                          f"({error})")
                 except Exception:
                     logging.exception(
-                        "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1],
-                                                                                  reversed_path))
+                        f"BAZARR error when trying to analyze this {os.path.splitext(reversed_path)[1]} file: "
+                        f"{reversed_path}")
 
         try:
             dest_folder = get_subtitle_destination_folder()
@@ -119,12 +119,12 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
 
                 elif str(language.basename) != 'und':
                     if language.forced:
-                        language_str = str(language)
+                        language_str = f'{language}:forced'
                     elif language.hi:
-                        language_str = str(language) + ':hi'
+                        language_str = f'{language}:hi'
                     else:
                         language_str = str(language)
-                    logging.debug("BAZARR external subtitles detected: " + language_str)
+                    logging.debug(f"BAZARR external subtitles detected: {language_str}")
                     actual_subtitles.append([language_str, path_mappings.path_replace_reverse_movie(subtitle_path),
                                              os.stat(subtitle_path).st_size])
 
@@ -139,14 +139,14 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
 
         for movie in matching_movies:
             if movie:
-                logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+                logging.debug(f"BAZARR storing those languages to DB: {actual_subtitles}")
                 list_missing_subtitles_movies(no=movie.radarrId)
             else:
-                logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
+                logging.debug(f"BAZARR haven't been able to update existing subtitles to DB: {actual_subtitles}")
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
 
-    logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
+    logging.debug(f'BAZARR ended subtitles indexing for this file: {reversed_path}')
 
     return actual_subtitles
 

@@ -155,7 +155,7 @@ def update_movies(send_event=True):
 
 
 def update_one_movie(movie_id, action, defer_search=False):
-    logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movie_id))
+    logging.debug(f'BAZARR syncing this specific movie from Radarr: {movie_id}')
 
     # Check if there's a row in database for this movie ID
     existing_movie = database.execute(
@@ -175,8 +175,9 @@ def update_one_movie(movie_id, action, defer_search=False):
                               f"because of {e}")
             else:
                 event_stream(type='movie', action='delete', payload=int(movie_id))
-                logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
-                    existing_movie.path)))
+                logging.debug(
+                    f'BAZARR deleted this movie from the database: '
+                    f'{path_mappings.path_replace_movie(existing_movie.path)}')
         return
 
     movie_default_enabled = settings.general.movie_default_enabled
@@ -224,8 +225,8 @@ def update_one_movie(movie_id, action, defer_search=False):
                           f"of {e}")
         else:
             event_stream(type='movie', action='delete', payload=int(movie_id))
-            logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
-                existing_movie.path)))
+            logging.debug(
+                f'BAZARR deleted this movie from the database:{path_mappings.path_replace_movie(existing_movie.path)}')
         return
 
     # Update existing movie in DB
@@ -240,8 +241,8 @@ def update_one_movie(movie_id, action, defer_search=False):
                           f"of {e}")
         else:
             event_stream(type='movie', action='update', payload=int(movie_id))
-            logging.debug('BAZARR updated this movie into the database:{}'.format(path_mappings.path_replace_movie(
-                movie['path'])))
+            logging.debug(
+                f'BAZARR updated this movie into the database:{path_mappings.path_replace_movie(movie["path"])}')
 
     # Insert new movie in DB
     elif movie and not existing_movie:
@@ -254,19 +255,19 @@ def update_one_movie(movie_id, action, defer_search=False):
                           f"of {e}")
         else:
             event_stream(type='movie', action='update', payload=int(movie_id))
-            logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(
-                movie['path'])))
+            logging.debug(
+                f'BAZARR inserted this movie into the database:{path_mappings.path_replace_movie(movie["path"])}')
 
     # Storing existing subtitles
-    logging.debug('BAZARR storing subtitles for this movie: {}'.format(path_mappings.path_replace_movie(
-            movie['path'])))
+    logging.debug(f'BAZARR storing subtitles for this movie: {path_mappings.path_replace_movie(movie["path"])}')
     store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
 
     # Downloading missing subtitles
     if defer_search:
-        logging.debug('BAZARR searching for missing subtitles is deferred until scheduled task execution for this '
-                      'movie: {}'.format(path_mappings.path_replace_movie(movie['path'])))
+        logging.debug(
+            f'BAZARR searching for missing subtitles is deferred until scheduled task execution for this movie: '
+            f'{path_mappings.path_replace_movie(movie["path"])}')
     else:
-        logging.debug('BAZARR downloading missing subtitles for this movie: {}'.format(path_mappings.path_replace_movie(
-            movie['path'])))
+        logging.debug(
+            f'BAZARR downloading missing subtitles for this movie: {path_mappings.path_replace_movie(movie["path"])}')
         movies_download_subtitles(movie_id)

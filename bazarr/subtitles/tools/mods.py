@@ -26,7 +26,7 @@ def subtitles_apply_mods(language, subtitle_path, mods, use_original_format, vid
         sub.content = f.read()
 
     if not sub.is_valid():
-        logging.exception('BAZARR Invalid subtitle file: ' + subtitle_path)
+        logging.exception(f'BAZARR Invalid subtitle file: {subtitle_path}')
         return
 
     if use_original_format:

@@ -31,9 +31,9 @@ class ProcessSubtitlesResult:
         self.not_matched = not_matched
 
         if hearing_impaired:
-            self.language_code = downloaded_language_code2 + ":hi"
+            self.language_code = f"{downloaded_language_code2}:hi"
         elif forced:
-            self.language_code = downloaded_language_code2 + ":forced"
+            self.language_code = f"{downloaded_language_code2}:forced"
         else:
             self.language_code = downloaded_language_code2
 
@@ -57,7 +57,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         modifier_string = " forced"
     else:
         modifier_string = ""
-    logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
+    logging.debug(f'BAZARR Subtitles file saved to disk: {downloaded_path}')
     if is_upgrade:
         action = "upgraded"
     elif is_manual:
@@ -66,8 +66,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         action = "downloaded"
 
     percent_score = round(subtitle.score * 100 / max_score, 2)
-    message = downloaded_language + modifier_string + " subtitles " + action + " from " + \
-        downloaded_provider + " with a score of " + str(percent_score) + "%."
+    message = (f"{downloaded_language}{modifier_string} subtitles {action} from {downloaded_provider} with a score of "
+               f"{percent_score}%.")
 
     if media_type == 'series':
         episode_metadata = database.execute(
@@ -116,12 +116,12 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             pp_threshold = int(settings.general.postprocessing_threshold_movie)
 
         if not use_pp_threshold or (use_pp_threshold and percent_score < pp_threshold):
-            logging.debug("BAZARR Using post-processing command: {}".format(command))
+            logging.debug(f"BAZARR Using post-processing command: {command}")
             postprocessing(command, path)
             set_chmod(subtitles_path=downloaded_path)
         else:
-            logging.debug("BAZARR post-processing skipped because subtitles score isn't below this "
-                          "threshold value: " + str(pp_threshold) + "%")
+            logging.debug(f"BAZARR post-processing skipped because subtitles score isn't below this "
+                          f"threshold value: {pp_threshold}%")
 
     if media_type == 'series':
         reversed_path = path_mappings.path_replace_reverse(path)

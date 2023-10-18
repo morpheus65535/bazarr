@@ -117,7 +117,7 @@ def update_series(send_event=True):
 
 
 def update_one_series(series_id, action):
-    logging.debug('BAZARR syncing this specific series from Sonarr: {}'.format(series_id))
+    logging.debug(f'BAZARR syncing this specific series from Sonarr: {series_id}')
 
     # Check if there's a row in database for this series ID
     existing_series = database.execute(
@@ -180,8 +180,7 @@ def update_one_series(series_id, action):
         else:
             sync_episodes(series_id=int(series_id), send_event=False)
             event_stream(type='series', action='update', payload=int(series_id))
-            logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
-                series['path'])))
+            logging.debug(f'BAZARR updated this series into the database:{path_mappings.path_replace(series["path"])}')
 
     # Insert new series in DB
     elif action == 'updated' and not existing_series:
@@ -193,5 +192,4 @@ def update_one_series(series_id, action):
             logging.error(f"BAZARR cannot insert series {series['path']} because of {e}")
         else:
             event_stream(type='series', action='update', payload=int(series_id))
-            logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(
-                series['path'])))
+            logging.debug(f'BAZARR inserted this series into the database:{path_mappings.path_replace(series["path"])}')

@@ -13,9 +13,9 @@ def get_profile_list():
     profiles_list = []
     # Get profiles data from radarr
     if get_radarr_info.is_legacy():
-        url_radarr_api_movies = url_radarr() + "/api/profile?apikey=" + apikey_radarr
+        url_radarr_api_movies = f"{url_radarr()}/api/profile?apikey={apikey_radarr}"
     else:
-        url_radarr_api_movies = url_radarr() + "/api/v3/qualityprofile?apikey=" + apikey_radarr
+        url_radarr_api_movies = f"{url_radarr()}/api/v3/qualityprofile?apikey={apikey_radarr}"
 
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=int(settings.radarr.http_timeout), verify=False, headers=headers)
@@ -45,9 +45,9 @@ def get_tags():
 
     # Get tags data from Radarr
     if get_radarr_info.is_legacy():
-        url_radarr_api_series = url_radarr() + "/api/tag?apikey=" + apikey_radarr
+        url_radarr_api_series = f"{url_radarr()}/api/tag?apikey={apikey_radarr}"
     else:
-        url_radarr_api_series = url_radarr() + "/api/v3/tag?apikey=" + apikey_radarr
+        url_radarr_api_series = f"{url_radarr()}/api/v3/tag?apikey={apikey_radarr}"
 
     try:
         tagsDict = requests.get(url_radarr_api_series, timeout=int(settings.radarr.http_timeout), verify=False, headers=headers)
@@ -72,11 +72,9 @@ def get_tags():
 
 def get_movies_from_radarr_api(url, apikey_radarr, radarr_id=None):
     if get_radarr_info.is_legacy():
-        url_radarr_api_movies = url + "/api/movie" + ("/{}".format(radarr_id) if radarr_id else "") + "?apikey=" + \
-                                apikey_radarr
+        url_radarr_api_movies = f'{url}/api/movie{f"/{radarr_id}" if radarr_id else ""}?apikey={apikey_radarr}'
     else:
-        url_radarr_api_movies = url + "/api/v3/movie" + ("/{}".format(radarr_id) if radarr_id else "") + "?apikey=" + \
-                                apikey_radarr
+        url_radarr_api_movies = f'{url}/api/v3/movie{f"/{radarr_id}" if radarr_id else ""}?apikey={apikey_radarr}'
 
     try:
         r = requests.get(url_radarr_api_movies, timeout=int(settings.radarr.http_timeout), verify=False, headers=headers)

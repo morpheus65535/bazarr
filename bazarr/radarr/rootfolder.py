@@ -17,9 +17,9 @@ def get_radarr_rootfolder():
 
     # Get root folder data from Radarr
     if get_radarr_info.is_legacy():
-        url_radarr_api_rootfolder = url_radarr() + "/api/rootfolder?apikey=" + apikey_radarr
+        url_radarr_api_rootfolder = f"{url_radarr()}/api/rootfolder?apikey={apikey_radarr}"
     else:
-        url_radarr_api_rootfolder = url_radarr() + "/api/v3/rootfolder?apikey=" + apikey_radarr
+        url_radarr_api_rootfolder = f"{url_radarr()}/api/v3/rootfolder?apikey={apikey_radarr}"
 
     try:
         rootfolder = requests.get(url_radarr_api_rootfolder, timeout=int(settings.radarr.http_timeout), verify=False, headers=headers)

@@ -32,6 +32,6 @@ def sync_subtitles(video_path, srt_path, srt_lang, forced, media_type, percent_s
             gc.collect()
             return True
         else:
-            logging.debug("BAZARR subsync skipped because subtitles score isn't below this "
-                          "threshold value: " + subsync_threshold + "%")
+            logging.debug(f"BAZARR subsync skipped because subtitles score isn't below this "
+                          f"threshold value: {subsync_threshold}%")
     return False

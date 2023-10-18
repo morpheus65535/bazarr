@@ -24,7 +24,7 @@ def update_notifier():
     for x in results['schemas']:
         if x['service_name'] not in notifiers_in_db:
             notifiers_added.append({'name': str(x['service_name']), 'enabled': 0})
-            logging.debug('Adding new notifier agent: ' + str(x['service_name']))
+            logging.debug(f'Adding new notifier agent: {x["service_name"]}')
         else:
             notifiers_kept.append(x['service_name'])
 
@@ -60,7 +60,7 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     series_title = series.title
     series_year = series.year
     if series_year not in [None, '', '0']:
-        series_year = ' ({})'.format(series_year)
+        series_year = f' ({series_year})'
     else:
         series_year = ''
     episode = database.execute(
@@ -80,8 +80,7 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
 
     apobj.notify(
         title='Bazarr notification',
-        body="{}{} - S{:02d}E{:02d} - {} : {}".format(series_title, series_year, episode.season, episode.episode,
-                                                      episode.title, message),
+        body=f"{series_title}{series_year} - S{episode.season:02d}E{episode.episode:02d} - {episode.title} : {message}",
     )
 
 
@@ -98,7 +97,7 @@ def send_notifications_movie(radarr_id, message):
     movie_title = movie.title
     movie_year = movie.year
     if movie_year not in [None, '', '0']:
-        movie_year = ' ({})'.format(movie_year)
+        movie_year = f' ({movie_year})'
     else:
         movie_year = ''
 
@@ -112,5 +111,5 @@ def send_notifications_movie(radarr_id, message):
 
     apobj.notify(
         title='Bazarr notification',
-        body="{}{} : {}".format(movie_title, movie_year, message),
+        body=f"{movie_title}{movie_year} : {message}",
     )

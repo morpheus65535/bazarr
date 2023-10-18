@@ -87,10 +87,7 @@ def upgrade_subtitles():
 
             show_progress(id='upgrade_episodes_progress',
                           header='Upgrading episodes subtitles...',
-                          name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode['seriesTitle'],
-                                                                     episode['season'],
-                                                                     episode['episode'],
-                                                                     episode['title']),
+                          name=f'{episode["seriesTitle"]} - S{episode["season"]:02d}E{episode["episode"]:02d} - {episode["title"]}',
                           value=i,
                           count=count_episode_to_upgrade)
 
@@ -323,10 +320,10 @@ def _language_from_items(items):
     results = []
     for item in items:
         if item['forced'] == 'True':
-            results.append(item['language'] + ':forced')
+            results.append(f'{item["language"]}:forced')
         elif item['hi'] == 'True':
-            results.append(item['language'] + ':hi')
+            results.append(f'{item["language"]}:hi')
         else:
             results.append(item['language'])
-            results.append(item['language'] + ':hi')
+            results.append(f'{item["language"]}:hi')
     return results

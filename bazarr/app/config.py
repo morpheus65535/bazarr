@@ -346,7 +346,7 @@ def convert_ini_to_yaml(config_file):
                 output_dict[section].update({item[0]: item[1]})
     with open(os.path.join(os.path.dirname(config_file), 'config.yaml'), 'w') as file:
         yaml.dump(output_dict, file)
-    os.rename(config_file, config_file + '.old')
+    os.rename(config_file, f'{config_file}.old')
 
 
 config_yaml_file = os.path.join(args.config_dir, 'config', 'config.yaml')
@@ -761,10 +761,10 @@ def configure_captcha_func():
 def configure_proxy_func():
     if settings.proxy.type:
         if settings.proxy.username != '' and settings.proxy.password != '':
-            proxy = settings.proxy.type + '://' + quote_plus(settings.proxy.username) + ':' + \
-                    quote_plus(settings.proxy.password) + '@' + settings.proxy.url + ':' + str(settings.proxy.port)
+            proxy = (f'{settings.proxy.type}://{quote_plus(settings.proxy.username)}:'
+                     f'{quote_plus(settings.proxy.password)}@{settings.proxy.url}:{settings.proxy.port}')
         else:
-            proxy = settings.proxy.type + '://' + settings.proxy.url + ':' + str(settings.proxy.port)
+            proxy = f'{settings.proxy.type}://{settings.proxy.url}:{settings.proxy.port}'
         os.environ['HTTP_PROXY'] = str(proxy)
         os.environ['HTTPS_PROXY'] = str(proxy)
         exclude = ','.join(settings.proxy.exclude)

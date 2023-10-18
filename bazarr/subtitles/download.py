@@ -29,7 +29,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     if not languages:
         return None
 
-    logging.debug('BAZARR Searching subtitles for this file: ' + path)
+    logging.debug(f'BAZARR Searching subtitles for this file: {path}')
 
     if settings.general.utf8_encode:
         os.environ["SZ_KEEP_ENCODING"] = ""
@@ -97,7 +97,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                              )
                         except Exception as e:
                             logging.exception(
-                                'BAZARR Error saving Subtitles file to disk for this file:' + path + ': ' + repr(e))
+                                f'BAZARR Error saving Subtitles file to disk for this file {path}: {repr(e)}')
                             pass
                         else:
                             saved_any = True
@@ -115,12 +115,12 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
             return None
 
         if not saved_any:
-            logging.debug('BAZARR No Subtitles were found for this file: ' + path)
+            logging.debug(f'BAZARR No Subtitles were found for this file: {path}')
             return None
 
     subliminal.region.backend.sync()
 
-    logging.debug('BAZARR Ended searching Subtitles for file: ' + path)
+    logging.debug(f'BAZARR Ended searching Subtitles for file: {path}')
 
 
 def _get_language_obj(languages):

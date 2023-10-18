@@ -127,10 +127,10 @@ class Scheduler:
             if day == "*":
                 text = "everyday"
             else:
-                text = "every " + day_name[int(day)]
+                text = f"every {day_name[int(day)]}"
 
             if hour != "*":
-                text += " at " + hour + ":00"
+                text += f" at {hour}:00"
 
             return text
 
@@ -149,7 +149,7 @@ class Scheduler:
                 running = False
 
             if isinstance(job.trigger, IntervalTrigger):
-                interval = "every " + get_time_from_interval(job.trigger.__getstate__()['interval'])
+                interval = f"every {get_time_from_interval(job.trigger.__getstate__()['interval'])}"
                 task_list.append({'name': job.name, 'interval': interval, 'next_run_in': next_run,
                                   'next_run_time': next_run, 'job_id': job.id, 'job_running': running})
             elif isinstance(job.trigger, CronTrigger):

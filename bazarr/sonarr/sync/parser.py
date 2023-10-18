@@ -18,7 +18,7 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
     for image in show['images']:
         if image['coverType'] == 'poster':
             poster_big = image['url'].split('?')[0]
-            poster = os.path.splitext(poster_big)[0] + '-250' + os.path.splitext(poster_big)[1]
+            poster = f'{os.path.splitext(poster_big)[0]}-250{os.path.splitext(poster_big)[1]}'
 
         if image['coverType'] == 'fanart':
             fanart = image['url'].split('?')[0]
@@ -144,7 +144,7 @@ def episodeParser(episode):
                     except Exception:
                         video_format = episode['episodeFile']['quality']['quality']['name']
                         try:
-                            video_resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
+                            video_resolution = f'{episode["episodeFile"]["quality"]["quality"]["resolution"]}p'
                         except Exception:
                             video_resolution = None
 

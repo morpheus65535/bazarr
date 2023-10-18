@@ -28,23 +28,25 @@ class GetSonarrInfo:
             sonarr_version = ''
         if settings.general.use_sonarr:
             try:
-                sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
-                sonarr_json = requests.get(sv, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers).json()
+                sv = f"{url_sonarr()}/api/system/status?apikey={settings.sonarr.apikey}"
+                sonarr_json = requests.get(sv, timeout=int(settings.sonarr.http_timeout), verify=False,
+                                           headers=headers).json()
                 if 'version' in sonarr_json:
                     sonarr_version = sonarr_json['version']
                 else:
                     raise json.decoder.JSONDecodeError
             except json.decoder.JSONDecodeError:
                 try:
-                    sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
-                    sonarr_version = requests.get(sv, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers).json()['version']
+                    sv = f"{url_sonarr()}/api/v3/system/status?apikey={settings.sonarr.apikey}"
+                    sonarr_version = requests.get(sv, timeout=int(settings.sonarr.http_timeout), verify=False,
+                                                  headers=headers).json()['version']
                 except json.decoder.JSONDecodeError:
                     logging.debug('BAZARR cannot get Sonarr version')
                     sonarr_version = 'unknown'
             except Exception:
                 logging.debug('BAZARR cannot get Sonarr version')
                 sonarr_version = 'unknown'
-        logging.debug('BAZARR got this Sonarr version from its API: {}'.format(sonarr_version))
+        logging.debug(f'BAZARR got this Sonarr version from its API: {sonarr_version}')
         region.set("sonarr_version", sonarr_version)
         return sonarr_version
 
@@ -83,7 +85,7 @@ def url_sonarr():
     if settings.sonarr.base_url == '':
         settings.sonarr.base_url = "/"
     if not settings.sonarr.base_url.startswith("/"):
-        settings.sonarr.base_url = "/" + settings.sonarr.base_url
+        settings.sonarr.base_url = f"/{settings.sonarr.base_url}"
     if settings.sonarr.base_url.endswith("/"):
         settings.sonarr.base_url = settings.sonarr.base_url[:-1]
 

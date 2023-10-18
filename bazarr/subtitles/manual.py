@@ -25,7 +25,7 @@ from .processing import process_subtitle
 
 @update_pools
 def manual_search(path, profile_id, providers, sceneName, title, media_type):
-    logging.debug('BAZARR Manually searching subtitles for this file: ' + path)
+    logging.debug(f'BAZARR Manually searching subtitles for this file: {path}')
 
     final_subtitles = []
 
@@ -64,7 +64,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
                 logging.info("BAZARR All providers are throttled")
                 return 'All providers are throttled'
         except Exception:
-            logging.exception("BAZARR Error trying to get Subtitle list from provider for this file: " + path)
+            logging.exception(f"BAZARR Error trying to get Subtitle list from provider for this file: {path}")
         else:
             subtitles_list = []
             minimum_score = settings.general.minimum_score
@@ -145,8 +145,8 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
 
             final_subtitles = sorted(subtitles_list, key=lambda x: (x['orig_score'], x['score_without_hash']),
                                      reverse=True)
-            logging.debug('BAZARR ' + str(len(final_subtitles)) + " Subtitles have been found for this file: " + path)
-            logging.debug('BAZARR Ended searching Subtitles for this file: ' + path)
+            logging.debug(f'BAZARR {len(final_subtitles)} Subtitles have been found for this file: {path}')
+            logging.debug(f'BAZARR Ended searching Subtitles for this file: {path}')
 
     subliminal.region.backend.sync()
 
@@ -156,7 +156,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
 @update_pools
 def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provider, sceneName, title, media_type,
                              use_original_format, profile_id):
-    logging.debug('BAZARR Manually downloading Subtitles for this file: ' + path)
+    logging.debug(f'BAZARR Manually downloading Subtitles for this file: {path}')
 
     if settings.general.utf8_encode:
         os.environ["SZ_KEEP_ENCODING"] = ""
@@ -180,16 +180,16 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
         try:
             if provider:
                 download_subtitles([subtitle], _get_pool(media_type, profile_id))
-                logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
+                logging.debug(f'BAZARR Subtitles file downloaded for this file: {path}')
             else:
                 logging.info("BAZARR All providers are throttled")
                 return 'All providers are throttled'
         except Exception:
-            logging.exception('BAZARR Error downloading Subtitles for this file ' + path)
+            logging.exception(f'BAZARR Error downloading Subtitles for this file {path}')
             return 'Error downloading Subtitles'
         else:
             if not subtitle.is_valid():
-                logging.exception('BAZARR No valid Subtitles file found for this file: ' + path)
+                logging.exception(f'BAZARR No valid Subtitles file found for this file: {path}')
                 return 'No valid Subtitles file found'
             try:
                 chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
@@ -202,7 +202,7 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
                                                  formats=(subtitle.format,),
                                                  path_decoder=force_unicode)
             except Exception:
-                logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
+                logging.exception(f'BAZARR Error saving Subtitles file to disk for this file: {path}')
                 return 'Error saving Subtitles file to disk'
             else:
                 if saved_subtitles:
@@ -218,14 +218,14 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
                             continue
                 else:
                     logging.error(
-                        "BAZARR Tried to manually download a Subtitles for file: " + path
-                        + " but we weren't able to do (probably throttled by " + str(subtitle.provider_name)
-                        + ". Please retry later or select a Subtitles from another provider.")
+                        f"BAZARR Tried to manually download a Subtitles for file: {path} but we weren't able to do "
+                        f"(probably throttled by {subtitle.provider_name}. Please retry later or select a Subtitles "
+                        f"from another provider.")
                     return 'Something went wrong, check the logs for error'
 
     subliminal.region.backend.sync()
 
-    logging.debug('BAZARR Ended manually downloading Subtitles for file: ' + path)
+    logging.debug(f'BAZARR Ended manually downloading Subtitles for file: {path}')
 
 
 def _get_language_obj(profile_id):

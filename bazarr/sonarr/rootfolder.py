@@ -17,9 +17,9 @@ def get_sonarr_rootfolder():
 
     # Get root folder data from Sonarr
     if get_sonarr_info.is_legacy():
-        url_sonarr_api_rootfolder = url_sonarr() + "/api/rootfolder?apikey=" + apikey_sonarr
+        url_sonarr_api_rootfolder = f"{url_sonarr()}/api/rootfolder?apikey={apikey_sonarr}"
     else:
-        url_sonarr_api_rootfolder = url_sonarr() + "/api/v3/rootfolder?apikey=" + apikey_sonarr
+        url_sonarr_api_rootfolder = f"{url_sonarr()}/api/v3/rootfolder?apikey={apikey_sonarr}"
 
     try:
         rootfolder = requests.get(url_sonarr_api_rootfolder, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
