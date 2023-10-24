@@ -872,14 +872,14 @@ def _search_external_subtitles(path, languages=None, only_one=False, match_stric
     dirpath, filename = os.path.split(path)
     dirpath = dirpath or '.'
     fn_no_ext, fileext = os.path.splitext(filename)
-    fn_no_ext_lower = unicodedata.normalize('NFC', fn_no_ext.lower())
+    fn_no_ext_lower = fn_no_ext.lower() # unicodedata.normalize('NFC', fn_no_ext.lower())
     subtitles = {}
 
     for entry in scandir(dirpath):
         if not entry.is_file(follow_symlinks=False):
             continue
 
-        p = unicodedata.normalize('NFC', entry.name)
+        p = entry.name # unicodedata.normalize('NFC', entry.name)
 
         # keep only valid subtitle filenames
         if not p.lower().endswith(SUBTITLE_EXTENSIONS):
