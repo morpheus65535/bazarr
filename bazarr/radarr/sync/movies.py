@@ -40,8 +40,7 @@ def update_movie(updated_movie, send_event):
     except IntegrityError as e:
         logging.error(f"BAZARR cannot update movie {updated_movie['path']} because of {e}")
     else:
-        store_subtitles_movie(updated_movie['path'],
-                              path_mappings.path_replace_movie(updated_movie['path']))
+        store_subtitles_movie(updated_movie['path'], path_mappings.path_replace_movie(updated_movie['path']))
 
         if send_event:
             event_stream(type='movie', action='update', payload=updated_movie['radarrId'])
@@ -56,8 +55,7 @@ def add_movie(added_movie, send_event):
     except IntegrityError as e:
         logging.error(f"BAZARR cannot insert movie {added_movie['path']} because of {e}")
     else:
-        store_subtitles_movie(added_movie['path'],
-                              path_mappings.path_replace_movie(added_movie['path']))
+        store_subtitles_movie(added_movie['path'], path_mappings.path_replace_movie(added_movie['path']))
 
         if send_event:
             event_stream(type='movie', action='update', payload=int(added_movie['radarrId']))
@@ -109,15 +107,13 @@ def update_movies(send_event=True):
 
             if len(movies_to_delete):
                 try:
-                    removed_movies = database.execute(delete(TableMovies)
-                                                      .where(TableMovies.tmdbId.in_(movies_to_delete))
-                                                      .returning(TableMovies.radarrId))
+                    database.execute(delete(TableMovies).where(TableMovies.tmdbId.in_(movies_to_delete)))
                 except IntegrityError as e:
                     logging.error(f"BAZARR cannot delete movies because of {e}")
                 else:
-                    for removed_movie in removed_movies:
+                    for removed_movie in movies_to_delete:
                         if send_event:
-                            event_stream(type='movie', action='delete', payload=removed_movie.radarrId)
+                            event_stream(type='movie', action='delete', payload=removed_movie)
 
             # Build new and updated movies
             movies_count = len(movies)
@@ -240,6 +236,7 @@ def update_one_movie(movie_id, action, defer_search=False):
             logging.error(f"BAZARR cannot update movie {path_mappings.path_replace_movie(movie['path'])} because "
                           f"of {e}")
         else:
+            store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
             event_stream(type='movie', action='update', payload=int(movie_id))
             logging.debug(
                 f'BAZARR updated this movie into the database:{path_mappings.path_replace_movie(movie["path"])}')
@@ -254,6 +251,7 @@ def update_one_movie(movie_id, action, defer_search=False):
             logging.error(f"BAZARR cannot insert movie {path_mappings.path_replace_movie(movie['path'])} because "
                           f"of {e}")
         else:
+            store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
             event_stream(type='movie', action='update', payload=int(movie_id))
             logging.debug(
                 f'BAZARR inserted this movie into the database:{path_mappings.path_replace_movie(movie["path"])}')
