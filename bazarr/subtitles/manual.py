@@ -14,7 +14,7 @@ from subliminal_patch.core_persistent import list_all_subtitles, download_subtit
 from subliminal_patch.score import ComputeScore
 
 from languages.get_languages import alpha3_from_alpha2
-from app.config import get_scores, settings
+from app.config import get_scores, settings, get_array_from
 from utilities.helper import get_target_folder, force_unicode
 from app.database import get_profiles_list
 
@@ -174,7 +174,7 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
         subtitle.language.forced = False
     if use_original_format == 'True':
         subtitle.use_original_format = use_original_format
-    subtitle.mods = settings.general.subzero_mods
+    subtitle.mods = get_array_from(settings.general.subzero_mods)
     video = get_video(force_unicode(path), title, sceneName, providers={provider}, media_type=media_type)
     if video:
         try:
