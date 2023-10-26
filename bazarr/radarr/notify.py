@@ -4,16 +4,13 @@ import logging
 import requests
 
 from app.config import settings
-from radarr.info import get_radarr_info, url_radarr
+from radarr.info import url_api_radarr
 from constants import headers
 
 
 def notify_radarr(radarr_id):
     try:
-        if get_radarr_info.is_legacy():
-            url = f"{url_radarr()}/api/command?apikey={settings.radarr.apikey}"
-        else:
-            url = f"{url_radarr()}/api/v3/command?apikey={settings.radarr.apikey}"
+        url = f"{url_api_radarr()}command?apikey={settings.radarr.apikey}"
         data = {
             'name': 'RescanMovie',
             'movieId': int(radarr_id)

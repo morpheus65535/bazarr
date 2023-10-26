@@ -4,21 +4,15 @@ import requests
 import logging
 
 from app.config import settings
-from sonarr.info import get_sonarr_info, url_sonarr
+from sonarr.info import url_api_sonarr
 from constants import headers
 
 
 def browse_sonarr_filesystem(path='#'):
     if path == '#':
         path = ''
-    if get_sonarr_info.is_legacy():
-        url_sonarr_api_filesystem = (f"{url_sonarr()}/api/filesystem?path={path}&"
-                                     f"allowFoldersWithoutTrailingSlashes=true&includeFiles=false&"
-                                     f"apikey={settings.sonarr.apikey}")
-    else:
-        url_sonarr_api_filesystem = (f"{url_sonarr()}/api/v3/filesystem?path={path}&"
-                                     f"allowFoldersWithoutTrailingSlashes=true&includeFiles=false&"
-                                     f"apikey={settings.sonarr.apikey}")
+    url_sonarr_api_filesystem = (f"{url_api_sonarr()}filesystem?path={path}&allowFoldersWithoutTrailingSlashes=true&"
+                                 f"includeFiles=false&apikey={settings.sonarr.apikey}")
     try:
         r = requests.get(url_sonarr_api_filesystem, timeout=int(settings.sonarr.http_timeout), verify=False,
                          headers=headers)

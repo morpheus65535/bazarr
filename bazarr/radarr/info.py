@@ -95,3 +95,7 @@ def url_radarr():
         port = f":{settings.radarr.port}"
 
     return f"{protocol_radarr}://{settings.radarr.ip}{port}{settings.radarr.base_url}"
+
+
+def url_api_radarr():
+    return url_radarr() + f'/api{"/v3" if not get_radarr_info.is_legacy() else ""}/'

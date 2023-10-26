@@ -6,7 +6,6 @@ import logging
 from sqlalchemy.exc import IntegrityError
 
 from app.config import settings
-from radarr.info import url_radarr
 from utilities.path_mappings import path_mappings
 from subtitles.indexer.movies import store_subtitles_movie, movies_full_scan_subtitles
 from radarr.rootfolder import check_radarr_rootfolder
@@ -82,7 +81,7 @@ def update_movies(send_event=True):
         tagsDict = get_tags()
 
         # Get movies data from radarr
-        movies = get_movies_from_radarr_api(url=url_radarr(), apikey_radarr=apikey_radarr)
+        movies = get_movies_from_radarr_api(apikey_radarr=apikey_radarr)
         if not isinstance(movies, list):
             return
         else:
@@ -100,7 +99,6 @@ def update_movies(send_event=True):
                                      'movieFile' in movie and
                                      (movie['movieFile']['size'] > 20480 or
                                       get_movie_file_size_from_db(movie['movieFile']['path']) > 20480)]
-            movies_to_add = []
 
             # Remove old movies from DB
             movies_to_delete = list(set(current_movies_id_db) - set(current_movies_radarr))
@@ -191,8 +189,7 @@ def update_one_movie(movie_id, action, defer_search=False):
     try:
         # Get movie data from radarr api
         movie = None
-        movie_data = get_movies_from_radarr_api(url=url_radarr(), apikey_radarr=settings.radarr.apikey,
-                                                radarr_id=movie_id)
+        movie_data = get_movies_from_radarr_api(apikey_radarr=settings.radarr.apikey, radarr_id=movie_id)
         if not movie_data:
             return
         else:

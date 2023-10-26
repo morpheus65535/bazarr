@@ -4,7 +4,7 @@ import requests
 import logging
 
 from app.config import settings
-from radarr.info import get_radarr_info, url_radarr
+from radarr.info import get_radarr_info, url_api_radarr
 from constants import headers
 
 
@@ -12,10 +12,8 @@ def get_profile_list():
     apikey_radarr = settings.radarr.apikey
     profiles_list = []
     # Get profiles data from radarr
-    if get_radarr_info.is_legacy():
-        url_radarr_api_movies = f"{url_radarr()}/api/profile?apikey={apikey_radarr}"
-    else:
-        url_radarr_api_movies = f"{url_radarr()}/api/v3/qualityprofile?apikey={apikey_radarr}"
+    url_radarr_api_movies = (f"{url_api_radarr()}{'quality' if url_api_radarr().endswith('v3/') else ''}profile?"
+                             f"apikey={apikey_radarr}")
 
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=int(settings.radarr.http_timeout), verify=False, headers=headers)
@@ -44,10 +42,7 @@ def get_tags():
     tagsDict = []
 
     # Get tags data from Radarr
-    if get_radarr_info.is_legacy():
-        url_radarr_api_series = f"{url_radarr()}/api/tag?apikey={apikey_radarr}"
-    else:
-        url_radarr_api_series = f"{url_radarr()}/api/v3/tag?apikey={apikey_radarr}"
+    url_radarr_api_series = f"{url_api_radarr()}tag?apikey={apikey_radarr}"
 
     try:
         tagsDict = requests.get(url_radarr_api_series, timeout=int(settings.radarr.http_timeout), verify=False, headers=headers)
@@ -70,11 +65,8 @@ def get_tags():
             return []
 
 
-def get_movies_from_radarr_api(url, apikey_radarr, radarr_id=None):
-    if get_radarr_info.is_legacy():
-        url_radarr_api_movies = f'{url}/api/movie{f"/{radarr_id}" if radarr_id else ""}?apikey={apikey_radarr}'
-    else:
-        url_radarr_api_movies = f'{url}/api/v3/movie{f"/{radarr_id}" if radarr_id else ""}?apikey={apikey_radarr}'
+def get_movies_from_radarr_api(apikey_radarr, radarr_id=None):
+    url_radarr_api_movies = f'{url_api_radarr()}movie{f"/{radarr_id}" if radarr_id else ""}?apikey={apikey_radarr}'
 
     try:
         r = requests.get(url_radarr_api_movies, timeout=int(settings.radarr.http_timeout), verify=False, headers=headers)

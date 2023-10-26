@@ -95,3 +95,7 @@ def url_sonarr():
         port = f":{settings.sonarr.port}"
 
     return f"{protocol_sonarr}://{settings.sonarr.ip}{port}{settings.sonarr.base_url}"
+
+
+def url_api_sonarr():
+    return url_sonarr() + f'/api{"/v3" if not get_sonarr_info.is_legacy() else ""}/'

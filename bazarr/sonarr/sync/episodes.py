@@ -47,13 +47,11 @@ def sync_episodes(series_id, send_event=True):
     episodes_to_add = []
 
     # Get episodes data for a series from Sonarr
-    episodes = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
-                                            series_id=series_id)
+    episodes = get_episodes_from_sonarr_api(apikey_sonarr=apikey_sonarr, series_id=series_id)
     if episodes:
         # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
         if not get_sonarr_info.is_legacy():
-            episodeFiles = get_episodesFiles_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
-                                                             series_id=series_id)
+            episodeFiles = get_episodesFiles_from_sonarr_api(apikey_sonarr=apikey_sonarr, series_id=series_id)
             for episode in episodes:
                 if episodeFiles and episode['hasFile']:
                     item = [x for x in episodeFiles if x['id'] == episode['episodeFileId']]
@@ -137,8 +135,7 @@ def sync_one_episode(episode_id, defer_search=False):
     try:
         # Get episode data from sonarr api
         episode = None
-        episode_data = get_episodes_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
-                                                    episode_id=episode_id)
+        episode_data = get_episodes_from_sonarr_api(apikey_sonarr=apikey_sonarr, episode_id=episode_id)
         if not episode_data:
             return
 
@@ -146,7 +143,7 @@ def sync_one_episode(episode_id, defer_search=False):
             # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
             if not get_sonarr_info.is_legacy() and existing_episode and episode_data['hasFile']:
                 episode_data['episodeFile'] = \
-                    get_episodesFiles_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
+                    get_episodesFiles_from_sonarr_api(apikey_sonarr=apikey_sonarr,
                                                       episode_file_id=episode_data['episodeFileId'])
             episode = episodeParser(episode_data)
     except Exception:
