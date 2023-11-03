@@ -31,7 +31,7 @@ python-engineio==4.3.4
 python-socketio==5.7.2
 pytz==2023.3
 pytz_deprecation_shim==0.1.0.post0
-rarfile==4.0
+rarfile==4.1
 requests==2.28.1
 semver==2.13.0
 signalrcore==0.9.5
