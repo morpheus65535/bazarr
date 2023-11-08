@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -117,6 +113,9 @@ class NotifySparkPost(NotifyBase):
 
     # The services URL
     service_url = 'https://sparkpost.com/'
+
+    # Support attachments
+    attachment_support = True
 
     # All notification requests are secure
     secure_protocol = 'sparkpost'
@@ -225,7 +224,7 @@ class NotifySparkPost(NotifyBase):
     }
 
     def __init__(self, apikey, targets, cc=None, bcc=None, from_name=None,
-                 region_name=None, headers=None, tokens=None, batch=False,
+                 region_name=None, headers=None, tokens=None, batch=None,
                  **kwargs):
         """
         Initialize SparkPost Object
@@ -296,7 +295,8 @@ class NotifySparkPost(NotifyBase):
             self.tokens.update(tokens)
 
         # Prepare Batch Mode Flag
-        self.batch = batch
+        self.batch = self.template_args['batch']['default'] \
+            if batch is None else batch
 
         if targets:
             # Validate recipients (to:) and drop bad ones:
@@ -542,7 +542,7 @@ class NotifySparkPost(NotifyBase):
         else:
             payload['content']['text'] = body
 
-        if attach:
+        if attach and self.attachment_support:
             # Prepare ourselves an attachment object
             payload['content']['attachments'] = []
 

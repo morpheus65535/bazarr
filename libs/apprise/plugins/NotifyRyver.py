@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -91,7 +87,7 @@ class NotifyRyver(NotifyBase):
     # Define object templates
     templates = (
         '{schema}://{organization}/{token}',
-        '{schema}://{user}@{organization}/{token}',
+        '{schema}://{botname}@{organization}/{token}',
     )
 
     # Define our template tokens
@@ -109,9 +105,10 @@ class NotifyRyver(NotifyBase):
             'private': True,
             'regex': (r'^[A-Z0-9]{15}$', 'i'),
         },
-        'user': {
+        'botname': {
             'name': _('Bot Name'),
             'type': 'string',
+            'map_to': 'user',
         },
     })
 

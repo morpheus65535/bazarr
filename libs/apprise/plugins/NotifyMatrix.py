@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -53,8 +49,11 @@ from ..utils import validate_regex
 from ..AppriseLocale import gettext_lazy as _
 
 # Define default path
-MATRIX_V2_API_PATH = '/_matrix/client/r0'
 MATRIX_V1_WEBHOOK_PATH = '/api/v1/matrix/hook'
+MATRIX_V2_API_PATH = '/_matrix/client/r0'
+MATRIX_V3_API_PATH = '/_matrix/client/v3'
+MATRIX_V3_MEDIA_PATH = '/_matrix/media/v3'
+MATRIX_V2_MEDIA_PATH = '/_matrix/media/r0'
 
 # Extend HTTP Error Messages
 MATRIX_HTTP_ERROR_MAP = {
@@ -85,6 +84,21 @@ class MatrixMessageType:
 MATRIX_MESSAGE_TYPES = (
     MatrixMessageType.TEXT,
     MatrixMessageType.NOTICE,
+)
+
+
+class MatrixVersion:
+    # Version 2
+    V2 = "2"
+
+    # Version 3
+    V3 = "3"
+
+
+# webhook modes are placed into this list for validation purposes
+MATRIX_VERSIONS = (
+    MatrixVersion.V2,
+    MatrixVersion.V3,
 )
 
 
@@ -128,6 +142,9 @@ class NotifyMatrix(NotifyBase):
     # The default secure protocol
     secure_protocol = 'matrixs'
 
+    # Support Attachments
+    attachment_support = True
+
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_matrix'
 
@@ -146,6 +163,9 @@ class NotifyMatrix(NotifyBase):
 
     # Throttle a wee-bit to avoid thrashing
     request_rate_per_sec = 0.5
+
+    # Our Matrix API Version
+    matrix_api_version = '3'
 
     # How many retry attempts we'll make in the event the server asks us to
     # throttle back.
@@ -175,7 +195,6 @@ class NotifyMatrix(NotifyBase):
         'host': {
             'name': _('Hostname'),
             'type': 'string',
-            'required': True,
         },
         'port': {
             'name': _('Port'),
@@ -194,6 +213,7 @@ class NotifyMatrix(NotifyBase):
         },
         'token': {
             'name': _('Access Token'),
+            'private': True,
             'map_to': 'password',
         },
         'target_user': {
@@ -234,6 +254,12 @@ class NotifyMatrix(NotifyBase):
             'values': MATRIX_WEBHOOK_MODES,
             'default': MatrixWebhookMode.DISABLED,
         },
+        'version': {
+            'name': _('Matrix API Verion'),
+            'type': 'choice:string',
+            'values': MATRIX_VERSIONS,
+            'default': MatrixVersion.V3,
+        },
         'msgtype': {
             'name': _('Message Type'),
             'type': 'choice:string',
@@ -248,7 +274,7 @@ class NotifyMatrix(NotifyBase):
         },
     })
 
-    def __init__(self, targets=None, mode=None, msgtype=None,
+    def __init__(self, targets=None, mode=None, msgtype=None, version=None,
                  include_image=False, **kwargs):
         """
         Initialize Matrix Object
@@ -279,6 +305,14 @@ class NotifyMatrix(NotifyBase):
             if not isinstance(mode, str) else mode.lower()
         if self.mode and self.mode not in MATRIX_WEBHOOK_MODES:
             msg = 'The mode specified ({}) is invalid.'.format(mode)
+            self.logger.warning(msg)
+            raise TypeError(msg)
+
+        # Setup our version
+        self.version = self.template_args['version']['default'] \
+            if not isinstance(version, str) else version
+        if self.version not in MATRIX_VERSIONS:
+            msg = 'The version specified ({}) is invalid.'.format(version)
             self.logger.warning(msg)
             raise TypeError(msg)
 
@@ -521,7 +555,8 @@ class NotifyMatrix(NotifyBase):
         return payload
 
     def _send_server_notification(self, body, title='',
-                                  notify_type=NotifyType.INFO, **kwargs):
+                                  notify_type=NotifyType.INFO, attach=None,
+                                  **kwargs):
         """
         Perform Direct Matrix Server Notification (no webhook)
         """
@@ -548,6 +583,13 @@ class NotifyMatrix(NotifyBase):
         # Initiaize our error tracking
         has_error = False
 
+        attachments = None
+        if attach and self.attachment_support:
+            attachments = self._send_attachments(attach)
+            if attachments is False:
+                # take an early exit
+                return False
+
         while len(rooms) > 0:
 
             # Get our room
@@ -568,23 +610,47 @@ class NotifyMatrix(NotifyBase):
             image_url = None if not self.include_image else \
                 self.image_url(notify_type)
 
-            if image_url:
-                # Define our payload
-                image_payload = {
-                    'msgtype': 'm.image',
-                    'url': image_url,
-                    'body': '{}'.format(notify_type if not title else title),
-                }
-                # Build our path
+            # Build our path
+            if self.version == MatrixVersion.V3:
+                path = '/rooms/{}/send/m.room.message/0'.format(
+                    NotifyMatrix.quote(room_id))
+
+            else:
                 path = '/rooms/{}/send/m.room.message'.format(
                     NotifyMatrix.quote(room_id))
 
-                # Post our content
-                postokay, response = self._fetch(path, payload=image_payload)
-                if not postokay:
-                    # Mark our failure
-                    has_error = True
-                    continue
+            if self.version == MatrixVersion.V2:
+                #
+                # Attachments don't work beyond V2 at this time
+                #
+                if image_url:
+                    # Define our payload
+                    image_payload = {
+                        'msgtype': 'm.image',
+                        'url': image_url,
+                        'body': '{}'.format(
+                            notify_type if not title else title),
+                    }
+
+                    # Post our content
+                    postokay, response = self._fetch(
+                        path, payload=image_payload)
+                    if not postokay:
+                        # Mark our failure
+                        has_error = True
+                        continue
+
+                if attachments:
+                    for attachment in attachments:
+                        attachment['room_id'] = room_id
+                        attachment['type'] = 'm.room.message'
+
+                        postokay, response = self._fetch(
+                            path, payload=attachment)
+                        if not postokay:
+                            # Mark our failure
+                            has_error = True
+                            continue
 
             # Define our payload
             payload = {
@@ -615,12 +681,10 @@ class NotifyMatrix(NotifyBase):
                     )
                 })
 
-            # Build our path
-            path = '/rooms/{}/send/m.room.message'.format(
-                NotifyMatrix.quote(room_id))
-
             # Post our content
-            postokay, response = self._fetch(path, payload=payload)
+            method = 'PUT' if self.version == MatrixVersion.V3 else 'POST'
+            postokay, response = self._fetch(
+                path, payload=payload, method=method)
             if not postokay:
                 # Notify our user
                 self.logger.warning(
@@ -631,6 +695,62 @@ class NotifyMatrix(NotifyBase):
                 continue
 
         return not has_error
+
+    def _send_attachments(self, attach):
+        """
+        Posts all of the provided attachments
+        """
+
+        payloads = []
+        if self.version != MatrixVersion.V2:
+            self.logger.warning(
+                'Add ?v=2 to Apprise URL to support Attachments')
+            return next((False for a in attach if not a), [])
+
+        for attachment in attach:
+            if not attachment:
+                # invalid attachment (bad file)
+                return False
+
+            if not re.match(r'^image/', attachment.mimetype, re.I):
+                # unsuppored at this time
+                continue
+
+            postokay, response = \
+                self._fetch('/upload', attachment=attachment)
+            if not (postokay and isinstance(response, dict)):
+                # Failed to perform upload
+                return False
+
+            # If we get here, we'll have a response that looks like:
+            # {
+            #     "content_uri": "mxc://example.com/a-unique-key"
+            # }
+
+            if self.version == MatrixVersion.V3:
+                # Prepare our payload
+                payloads.append({
+                    "body": attachment.name,
+                    "info": {
+                        "mimetype": attachment.mimetype,
+                        "size": len(attachment),
+                    },
+                    "msgtype": "m.image",
+                    "url": response.get('content_uri'),
+                })
+
+            else:
+                # Prepare our payload
+                payloads.append({
+                    "info": {
+                        "mimetype": attachment.mimetype,
+                    },
+                    "msgtype": "m.image",
+                    "body": "tta.webp",
+                    "url": response.get('content_uri'),
+                })
+
+        return payloads
 
     def _register(self):
         """
@@ -695,12 +815,23 @@ class NotifyMatrix(NotifyBase):
                 'user/pass combo is missing.')
             return False
 
-        # Prepare our Registration Payload
-        payload = {
-            'type': 'm.login.password',
-            'user': self.user,
-            'password': self.password,
-        }
+        # Prepare our Authentication Payload
+        if self.version == MatrixVersion.V3:
+            payload = {
+                'type': 'm.login.password',
+                'identifier': {
+                    'type': 'm.id.user',
+                    'user': self.user,
+                },
+                'password': self.password,
+            }
+
+        else:
+            payload = {
+                'type': 'm.login.password',
+                'user': self.user,
+                'password': self.password,
+            }
 
         # Build our URL
         postokay, response = self._fetch('/login', payload=payload)
@@ -970,7 +1101,8 @@ class NotifyMatrix(NotifyBase):
 
         return None
 
-    def _fetch(self, path, payload=None, params=None, method='POST'):
+    def _fetch(self, path, payload=None, params=None, attachment=None,
+               method='POST'):
         """
         Wrapper to request.post() to manage it's response better and make
         the send() function cleaner and easier to maintain.
@@ -983,6 +1115,7 @@ class NotifyMatrix(NotifyBase):
         headers = {
             'User-Agent': self.app_id,
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
         }
 
         if self.access_token is not None:
@@ -991,19 +1124,39 @@ class NotifyMatrix(NotifyBase):
         default_port = 443 if self.secure else 80
 
         url = \
-            '{schema}://{hostname}:{port}{matrix_api}{path}'.format(
+            '{schema}://{hostname}{port}'.format(
                 schema='https' if self.secure else 'http',
                 hostname=self.host,
                 port='' if self.port is None
-                or self.port == default_port else self.port,
-                matrix_api=MATRIX_V2_API_PATH,
-                path=path)
+                or self.port == default_port else f':{self.port}')
+
+        if path == '/upload':
+            if self.version == MatrixVersion.V3:
+                url += MATRIX_V3_MEDIA_PATH + path
+
+            else:
+                url += MATRIX_V2_MEDIA_PATH + path
+
+            params = {'filename': attachment.name}
+            with open(attachment.path, 'rb') as fp:
+                payload = fp.read()
+
+            # Update our content type
+            headers['Content-Type'] = attachment.mimetype
+
+        else:
+            if self.version == MatrixVersion.V3:
+                url += MATRIX_V3_API_PATH + path
+
+            else:
+                url += MATRIX_V2_API_PATH + path
 
         # Our response object
         response = {}
 
         # fetch function
-        fn = requests.post if method == 'POST' else requests.get
+        fn = requests.post if method == 'POST' else (
+            requests.put if method == 'PUT' else requests.get)
 
         # Define how many attempts we'll make if we get caught in a throttle
         # event
@@ -1024,13 +1177,16 @@ class NotifyMatrix(NotifyBase):
             try:
                 r = fn(
                     url,
-                    data=dumps(payload),
+                    data=dumps(payload) if not attachment else payload,
                     params=params,
                     headers=headers,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
                 )
 
+                self.logger.debug(
+                    'Matrix Response: code=%d, %s' % (
+                        r.status_code, str(r.content)))
                 response = loads(r.content)
 
                 if r.status_code == 429:
@@ -1093,6 +1249,13 @@ class NotifyMatrix(NotifyBase):
                 self.logger.debug('Socket Exception: %s' % str(e))
                 # Return; we're done
                 return (False, response)
+
+            except (OSError, IOError) as e:
+                self.logger.warning(
+                    'An I/O error occurred while reading {}.'.format(
+                        attachment.name if attachment else 'unknown file'))
+                self.logger.debug('I/O Exception: %s' % str(e))
+                return (False, {})
 
             return (True, response)
 
@@ -1160,6 +1323,7 @@ class NotifyMatrix(NotifyBase):
         params = {
             'image': 'yes' if self.include_image else 'no',
             'mode': self.mode,
+            'version': self.version,
             'msgtype': self.msgtype,
         }
 
@@ -1257,6 +1421,14 @@ class NotifyMatrix(NotifyBase):
         if 'token' in results['qsd'] and len(results['qsd']['token']):
             results['password'] = NotifyMatrix.unquote(results['qsd']['token'])
 
+        # Support the use of the version= or v= keyword
+        if 'version' in results['qsd'] and len(results['qsd']['version']):
+            results['version'] = \
+                NotifyMatrix.unquote(results['qsd']['version'])
+
+        elif 'v' in results['qsd'] and len(results['qsd']['v']):
+            results['version'] = NotifyMatrix.unquote(results['qsd']['v'])
+
         return results
 
     @staticmethod
@@ -1266,7 +1438,7 @@ class NotifyMatrix(NotifyBase):
         """
 
         result = re.match(
-            r'^https?://webhooks\.t2bot\.io/api/v1/matrix/hook/'
+            r'^https?://webhooks\.t2bot\.io/api/v[0-9]+/matrix/hook/'
             r'(?P<webhook_token>[A-Z0-9_-]+)/?'
             r'(?P<params>\?.+)?$', url, re.I)
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -121,6 +117,9 @@ class NotifyMailgun(NotifyBase):
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_mailgun'
 
+    # Support attachments
+    attachment_support = True
+
     # Default Notify Format
     notify_format = NotifyFormat.HTML
 
@@ -152,8 +151,13 @@ class NotifyMailgun(NotifyBase):
             'private': True,
             'required': True,
         },
+        'target_email': {
+            'name': _('Target Email'),
+            'type': 'string',
+            'map_to': 'targets',
+        },
         'targets': {
-            'name': _('Target Emails'),
+            'name': _('Targets'),
             'type': 'list:string',
         },
     })
@@ -366,7 +370,7 @@ class NotifyMailgun(NotifyBase):
         # Track our potential files
         files = {}
 
-        if attach:
+        if attach and self.attachment_support:
             for idx, attachment in enumerate(attach):
                 # Perform some simple error checking
                 if not attachment:

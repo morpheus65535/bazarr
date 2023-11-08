@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -204,7 +200,14 @@ class URLBase:
         self.verify_certificate = parse_bool(kwargs.get('verify', True))
 
         # Secure Mode
-        self.secure = kwargs.get('secure', False)
+        self.secure = kwargs.get('secure', None)
+        try:
+            if not isinstance(self.secure, bool):
+                # Attempt to detect
+                self.secure = kwargs.get('schema', '')[-1].lower() == 's'
+
+        except (TypeError, IndexError):
+            self.secure = False
 
         self.host = URLBase.unquote(kwargs.get('host'))
         self.port = kwargs.get('port')
@@ -227,6 +230,11 @@ class URLBase:
         if self.password:
             # Always unquote the password if it exists
             self.password = URLBase.unquote(self.password)
+
+        # Store our full path consistently ensuring it ends with a `/'
+        self.fullpath = URLBase.unquote(kwargs.get('fullpath'))
+        if not isinstance(self.fullpath, str) or not self.fullpath:
+            self.fullpath = '/'
 
         # Store our Timeout Variables
         if 'rto' in kwargs:
@@ -307,7 +315,36 @@ class URLBase:
         arguments provied.
 
         """
-        raise NotImplementedError("url() is implimented by the child class.")
+
+        # Our default parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
+
+        # Determine Authentication
+        auth = ''
+        if self.user and self.password:
+            auth = '{user}:{password}@'.format(
+                user=URLBase.quote(self.user, safe=''),
+                password=self.pprint(
+                    self.password, privacy, mode=PrivacyMode.Secret, safe=''),
+            )
+        elif self.user:
+            auth = '{user}@'.format(
+                user=URLBase.quote(self.user, safe=''),
+            )
+
+        default_port = 443 if self.secure else 80
+
+        return '{schema}://{auth}{hostname}{port}{fullpath}?{params}'.format(
+            schema='https' if self.secure else 'http',
+            auth=auth,
+            # never encode hostname since we're expecting it to be a valid one
+            hostname=self.host,
+            port='' if self.port is None or self.port == default_port
+                 else ':{}'.format(self.port),
+            fullpath=URLBase.quote(self.fullpath, safe='/')
+            if self.fullpath else '/',
+            params=URLBase.urlencode(params),
+        )
 
     def __contains__(self, tags):
         """
@@ -583,6 +620,33 @@ class URLBase:
         """
         return (self.socket_connect_timeout, self.socket_read_timeout)
 
+    @property
+    def request_auth(self):
+        """This is primarily used to fullfill the `auth` keyword argument
+        that is used by requests.get() and requests.put() calls.
+        """
+        return (self.user, self.password) if self.user else None
+
+    @property
+    def request_url(self):
+        """
+        Assemble a simple URL that can be used by the requests library
+
+        """
+
+        # Acquire our schema
+        schema = 'https' if self.secure else 'http'
+
+        # Prepare our URL
+        url = '%s://%s' % (schema, self.host)
+
+        # Apply Port information if present
+        if isinstance(self.port, int):
+            url += ':%d' % self.port
+
+        # Append our full path
+        return url + self.fullpath
+
     def url_parameters(self, *args, **kwargs):
         """
         Provides a default set of args to work with. This can greatly
@@ -603,7 +667,8 @@ class URLBase:
         }
 
     @staticmethod
-    def parse_url(url, verify_host=True, plus_to_space=False):
+    def parse_url(url, verify_host=True, plus_to_space=False,
+                  strict_port=False):
         """Parses the URL and returns it broken apart into a dictionary.
 
         This is very specific and customized for Apprise.
@@ -624,13 +689,13 @@ class URLBase:
 
         results = parse_url(
             url, default_schema='unknown', verify_host=verify_host,
-            plus_to_space=plus_to_space)
+            plus_to_space=plus_to_space, strict_port=strict_port)
 
         if not results:
             # We're done; we failed to parse our url
             return results
 
-        # if our URL ends with an 's', then assueme our secure flag is set.
+        # if our URL ends with an 's', then assume our secure flag is set.
         results['secure'] = (results['schema'][-1] == 's')
 
         # Support SSL Certificate 'verify' keyword. Default to being enabled
@@ -649,6 +714,21 @@ class URLBase:
         # User overrides
         if 'user' in results['qsd']:
             results['user'] = results['qsd']['user']
+
+        # parse_url() always creates a 'password' and 'user' entry in the
+        # results returned.  Entries are set to None if they weren't specified
+        if results['password'] is None and 'user' in results['qsd']:
+            # Handle cases where the user= provided in 2 locations, we want
+            # the original to fall back as a being a password (if one wasn't
+            # otherwise defined)
+            # e.g.
+            # mailtos://PASSWORD@hostname?user=admin@mail-domain.com
+            #  - the PASSWORD gets lost in the parse url() since a user=
+            #    over-ride is specified.
+            presults = parse_url(results['url'])
+            if presults:
+                # Store our Password
+                results['password'] = presults['user']
 
         # Store our socket read timeout if specified
         if 'rto' in results['qsd']:

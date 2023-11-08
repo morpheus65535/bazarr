@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -67,6 +63,9 @@ class NotifySignalAPI(NotifyBase):
 
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_signal'
+
+    # Support attachments
+    attachment_support = True
 
     # The maximum targets to include when doing batch transfers
     default_batch_size = 10
@@ -234,7 +233,7 @@ class NotifySignalAPI(NotifyBase):
         has_error = False
 
         attachments = []
-        if attach:
+        if attach and self.attachment_support:
             for attachment in attach:
                 # Perform some simple error checking
                 if not attachment:
@@ -281,7 +280,7 @@ class NotifySignalAPI(NotifyBase):
         payload = {
             'message': "{}{}".format(
                 '' if not self.status else '{} '.format(
-                    self.asset.ascii(notify_type)), body),
+                    self.asset.ascii(notify_type)), body).rstrip(),
             "number": self.source,
             "recipients": []
         }
