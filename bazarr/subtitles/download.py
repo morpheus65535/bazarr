@@ -40,7 +40,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     providers = pool.providers
 
     language_set = _get_language_obj(languages=languages)
-    hi_required = any([x.hi for x in language_set])
+    hi_required = "force HI" if any([x.hi for x in language_set]) else False
     also_forced = any([x.forced for x in language_set])
     forced_required = all([x.forced for x in language_set])
     _set_forced_providers(pool=pool, also_forced=also_forced, forced_required=forced_required)
