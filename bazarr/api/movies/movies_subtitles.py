@@ -15,7 +15,7 @@ from subtitles.tools.delete import delete_subtitles
 from radarr.history import history_log_movie
 from app.notifier import send_notifications_movie
 from subtitles.indexer.movies import store_subtitles_movie
-from app.event_handler import event_stream
+from app.event_handler import event_stream, show_message
 from app.config import settings
 
 from ..utils import authenticate
@@ -67,6 +67,12 @@ class MoviesSubtitles(Resource):
         language = args.get('language')
         hi = args.get('hi').capitalize()
         forced = args.get('forced').capitalize()
+        if hi == 'True':
+            language_str = f'{language}:hi'
+        elif forced == 'True':
+            language_str = f'{language}:forced'
+        else:
+            language_str = language
 
         audio_language_list = get_audio_profile_languages(movieInfo.audio_language)
         if len(audio_language_list) > 0:
@@ -85,7 +91,8 @@ class MoviesSubtitles(Resource):
                 store_subtitles_movie(result.path, moviePath)
             else:
                 event_stream(type='movie', payload=radarrId)
-                return 'No subtitles found', 500
+                show_message(f'No {language_str.upper()} subtitles found')
+                return '', 204
         except OSError:
             return 'Unable to save subtitles file. Permission or path mapping issue?', 409
         else:
