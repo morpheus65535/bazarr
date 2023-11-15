@@ -10,7 +10,7 @@ from utilities.path_mappings import path_mappings
 from subtitles.indexer.movies import store_subtitles_movie, movies_full_scan_subtitles
 from radarr.rootfolder import check_radarr_rootfolder
 from subtitles.mass_download import movies_download_subtitles
-from app.database import TableMovies, database, insert, update, delete, select
+from app.database import TableMovies, TableLanguagesProfiles, database, insert, update, delete, select
 from app.event_handler import event_stream, show_progress, hide_progress
 
 from .utils import get_profile_list, get_tags, get_movies_from_radarr_api
@@ -72,6 +72,13 @@ def update_movies(send_event=True):
         if movie_default_profile == '':
             movie_default_profile = None
     else:
+        movie_default_profile = None
+
+    # Prevent trying to insert a movie with a non-existing languages profileId
+    if (movie_default_profile and not database.execute(
+            select(TableLanguagesProfiles)
+            .where(TableLanguagesProfiles.profileId == movie_default_profile))
+            .first()):
         movie_default_profile = None
 
     if apikey_radarr is None:

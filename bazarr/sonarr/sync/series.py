@@ -8,7 +8,7 @@ from app.config import settings
 from sonarr.info import url_sonarr
 from subtitles.indexer.series import list_missing_subtitles
 from sonarr.rootfolder import check_sonarr_rootfolder
-from app.database import TableShows, database, insert, update, delete, select
+from app.database import TableShows, TableLanguagesProfiles, database, insert, update, delete, select
 from utilities.path_mappings import path_mappings
 from app.event_handler import event_stream, show_progress, hide_progress
 
@@ -30,6 +30,13 @@ def update_series(send_event=True):
         if serie_default_profile == '':
             serie_default_profile = None
     else:
+        serie_default_profile = None
+
+    # Prevent trying to insert a series with a non-existing languages profileId
+    if (serie_default_profile and not database.execute(
+            select(TableLanguagesProfiles)
+            .where(TableLanguagesProfiles.profileId == serie_default_profile))
+            .first()):
         serie_default_profile = None
 
     audio_profiles = get_profile_list()
