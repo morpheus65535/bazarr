@@ -94,12 +94,14 @@ def sync_episodes(series_id, send_event=True):
 
     # Update existing episodes in DB
     if len(episodes_to_update):
-        try:
-            database.execute(update(TableEpisodes), episodes_to_update)
-        except IntegrityError as e:
-            logging.error(f"BAZARR cannot update episodes because of {e}")
-        else:
-            for updated_episode in episodes_to_update:
+        for updated_episode in episodes_to_update:
+            try:
+                database.execute(update(TableEpisodes)
+                                 .values(updated_episode)
+                                 .where(TableEpisodes.sonarrEpisodeId == updated_episode['sonarrEpisodeId']))
+            except IntegrityError as e:
+                logging.error(f"BAZARR cannot update episodes because of {e}")
+            else:
                 store_subtitles(updated_episode['path'], path_mappings.path_replace(updated_episode['path']))
 
                 if send_event:
@@ -107,12 +109,12 @@ def sync_episodes(series_id, send_event=True):
 
     # Insert new episodes in DB
     if len(episodes_to_add):
-        try:
-            database.execute(insert(TableEpisodes).values(episodes_to_add))
-        except IntegrityError as e:
-            logging.error(f"BAZARR cannot insert episodes because of {e}")
-        else:
-            for added_episode in episodes_to_add:
+        for added_episode in episodes_to_add:
+            try:
+                database.execute(insert(TableEpisodes).values(added_episode))
+            except IntegrityError as e:
+                logging.error(f"BAZARR cannot insert episodes because of {e}")
+            else:
                 store_subtitles(added_episode['path'], path_mappings.path_replace(added_episode['path']))
 
                 if send_event:
