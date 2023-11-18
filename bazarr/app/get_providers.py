@@ -12,6 +12,7 @@ import requests
 import traceback
 import re
 
+from subzero.language import Language
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
     MustGetBlacklisted, SearchLimitReached
 from subliminal.providers.opensubtitles import DownloadLimitReached
@@ -310,18 +311,25 @@ def get_providers_auth():
     }
 
 
-def _handle_mgb(name, exception):
-    # There's no way to get Radarr/Sonarr IDs from subliminal_patch. Blacklisted subtitles
-    # will not appear on fronted but they will work with get_blacklist
-    if exception.media_type == "series":
-        blacklist_log("", "", name, exception.id, "")
+def _handle_mgb(name, exception, ids, language):
+    if language.forced:
+        language_str = f'{language.basename}:forced'
+    elif language.hi:
+        language_str = f'{language.basename}:hi'
     else:
-        blacklist_log_movie("", name, exception.id, "")
+        language_str = language.basename
+
+    if ids:
+        if exception.media_type == "series":
+            if 'sonarrSeriesId' in ids and 'sonarrEpsiodeId' in ids:
+                blacklist_log(ids['sonarrSeriesId'], ids['sonarrEpisodeId'], name, exception.id, language_str)
+        else:
+            blacklist_log_movie(ids['radarrId'], name, exception.id, language_str)
 
 
-def provider_throttle(name, exception):
-    if isinstance(exception, MustGetBlacklisted):
-        return _handle_mgb(name, exception)
+def provider_throttle(name, exception, ids=None, language=None):
+    if isinstance(exception, MustGetBlacklisted) and isinstance(ids, dict) and isinstance(language, Language):
+        return _handle_mgb(name, exception, ids, language)
 
     cls = getattr(exception, "__class__")
     cls_name = getattr(cls, "__name__")

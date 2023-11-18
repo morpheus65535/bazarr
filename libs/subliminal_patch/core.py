@@ -227,7 +227,7 @@ class SZProviderPool(ProviderPool):
         self._born = time.time()
 
         if not self.throttle_callback:
-            self.throttle_callback = lambda x, y: x
+            self.throttle_callback = lambda x, y, ids=None, language=None: x
 
         #: Provider configuration
         self.provider_configs = _ProviderConfigs(self)
@@ -378,6 +378,10 @@ class SZProviderPool(ProviderPool):
                 if s.id in seen:
                     continue
 
+                s.radarrId = video.radarrId if hasattr(video, 'radarrId') else None
+                s.sonarrSeriesId = video.sonarrSeriesId if hasattr(video, 'sonarrSeriesId') else None
+                s.sonarrEpisodeId = video.sonarrEpisodeId if hasattr(video, 'sonarrEpisodeId') else None
+
                 s.plex_media_fps = float(video.fps) if video.fps else None
                 out.append(s)
                 seen.append(s.id)
@@ -385,8 +389,13 @@ class SZProviderPool(ProviderPool):
             return out
 
         except Exception as e:
+            ids = {
+                'radarrId': video.radarrId if hasattr(video, 'radarrId') else None,
+                'sonarrSeriesId': video.sonarrSeriesId if hasattr(video, 'sonarrSeriesId') else None,
+                'sonarrEpisodeId': video.sonarrEpisodeId if hasattr(video, 'sonarrEpisodeId') else None,
+            }
             logger.exception('Unexpected error in provider %r: %s', provider, traceback.format_exc())
-            self.throttle_callback(provider, e)
+            self.throttle_callback(provider, e, ids=ids, language=list(languages)[0] if len(languages) else None)
 
     def list_subtitles(self, video, languages):
         """List subtitles.
@@ -445,6 +454,12 @@ class SZProviderPool(ProviderPool):
         logger.info('Downloading subtitle %r', subtitle)
         tries = 0
 
+        ids = {
+            'radarrId': subtitle.radarrId if hasattr(subtitle, 'radarrId') else None,
+            'sonarrSeriesId': subtitle.sonarrSeriesId if hasattr(subtitle, 'sonarrSeriesId') else None,
+            'sonarrEpisodeId': subtitle.sonarrEpisodeId if hasattr(subtitle, 'sonarrEpisodeId') else None,
+        }
+
         # retry downloading on failure until settings' download retry limit hit
         while True:
             tries += 1
@@ -463,16 +478,16 @@ class SZProviderPool(ProviderPool):
                     requests.Timeout,
                     socket.timeout) as e:
                 logger.error('Provider %r connection error', subtitle.provider_name)
-                self.throttle_callback(subtitle.provider_name, e)
+                self.throttle_callback(subtitle.provider_name, e, ids=ids, language=subtitle.language)
 
             except (rarfile.BadRarFile, MustGetBlacklisted) as e:
-                self.throttle_callback(subtitle.provider_name, e)
+                self.throttle_callback(subtitle.provider_name, e, ids=ids, language=subtitle.language)
                 return False
 
             except Exception as e:
                 logger.exception('Unexpected error in provider %r, Traceback: %s', subtitle.provider_name,
                                  traceback.format_exc())
-                self.throttle_callback(subtitle.provider_name, e)
+                self.throttle_callback(subtitle.provider_name, e, ids=ids, language=subtitle.language)
                 self.discarded_providers.add(subtitle.provider_name)
                 return False
 

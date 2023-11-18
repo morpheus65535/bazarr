@@ -30,7 +30,9 @@ def refine_from_db(path, video):
                    TableEpisodes.video_codec,
                    TableEpisodes.audio_codec,
                    TableEpisodes.path,
-                   TableShows.imdbId)
+                   TableShows.imdbId,
+                   TableEpisodes.sonarrSeriesId,
+                   TableEpisodes.sonarrEpisodeId)
             .select_from(TableEpisodes)
             .join(TableShows)
             .where((TableEpisodes.path == path_mappings.path_replace_reverse(path)))) \
@@ -63,6 +65,9 @@ def refine_from_db(path, video):
             if not video.audio_codec:
                 if data.audio_codec:
                     video.audio_codec = convert_to_guessit('audio_codec', data.audio_codec)
+
+            video.sonarrSeriesId = data.sonarrSeriesId
+            video.sonarrEpisodeId = data.sonarrEpisodeId
     elif isinstance(video, Movie):
         data = database.execute(
             select(TableMovies.title,
@@ -72,7 +77,8 @@ def refine_from_db(path, video):
                    TableMovies.resolution,
                    TableMovies.video_codec,
                    TableMovies.audio_codec,
-                   TableMovies.imdbId)
+                   TableMovies.imdbId,
+                   TableMovies.radarrId)
             .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))) \
             .first()
 
@@ -99,5 +105,7 @@ def refine_from_db(path, video):
             if not video.audio_codec:
                 if data.audio_codec:
                     video.audio_codec = convert_to_guessit('audio_codec', data.audio_codec)
+
+            video.radarrId = data.radarrId
 
     return video
