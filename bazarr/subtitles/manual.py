@@ -189,8 +189,8 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
             return 'Error downloading Subtitles'
         else:
             if not subtitle.is_valid():
-                logging.exception(f'BAZARR No valid Subtitles file found for this file: {path}')
-                return 'No valid Subtitles file found'
+                logging.error(f"BAZARR Downloaded subtitles isn't valid for this file: {path}")
+                return "Downloaded subtitles isn't valid. Check log."
             try:
                 chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
                     'win') and settings.general.chmod_enabled else None
