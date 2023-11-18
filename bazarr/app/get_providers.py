@@ -15,7 +15,7 @@ import re
 from subzero.language import Language
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
     MustGetBlacklisted, SearchLimitReached
-from subliminal.providers.opensubtitles import DownloadLimitReached
+from subliminal.providers.opensubtitles import DownloadLimitReached, PaymentRequired
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable, AuthenticationError, ConfigurationError
 from subliminal import region as subliminal_cache_region
 from subliminal_patch.extensions import provider_registry
@@ -79,6 +79,7 @@ def provider_throttle_map():
             TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
             DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
             DownloadLimitReached: (datetime.timedelta(hours=6), "6 hours"),
+            PaymentRequired: (datetime.timedelta(hours=12), "12 hours"),
             APIThrottled: (datetime.timedelta(seconds=15), "15 seconds"),
             ServiceUnavailable: (datetime.timedelta(hours=1), "1 hour"),
         },
@@ -458,13 +459,15 @@ def list_throttled_providers():
 
 def reset_throttled_providers(only_auth_or_conf_error=False):
     for provider in list(tp):
-        if only_auth_or_conf_error and tp[provider][0] not in ['AuthenticationError', 'ConfigurationError']:
+        if only_auth_or_conf_error and tp[provider][0] not in ['AuthenticationError', 'ConfigurationError',
+                                                               'PaymentRequired']:
             continue
         del tp[provider]
     set_throttled_providers(str(tp))
     update_throttled_provider()
     if only_auth_or_conf_error:
-        logging.info('BAZARR throttled providers have been reset (only AuthenticationError and ConfigurationError).')
+        logging.info('BAZARR throttled providers have been reset (only AuthenticationError, ConfigurationError and '
+                     'PaymentRequired).')
     else:
         logging.info('BAZARR throttled providers have been reset.')
 
