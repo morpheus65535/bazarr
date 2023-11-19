@@ -346,7 +346,7 @@ def convert_ini_to_yaml(config_file):
                 output_dict[section].update({item[0]: item[1]})
     with open(os.path.join(os.path.dirname(config_file), 'config.yaml'), 'w') as file:
         yaml.dump(output_dict, file)
-    os.rename(config_file, f'{config_file}.old')
+    os.replace(config_file, f'{config_file}.old')
 
 
 config_yaml_file = os.path.join(args.config_dir, 'config', 'config.yaml')
