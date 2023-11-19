@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 CUSTOM_PATHS = []
 INCLUDE_EXOTIC_SUBS = True
 
-DOWNLOAD_TRIES = 0
+DOWNLOAD_TRIES = 3
 DOWNLOAD_RETRY_SLEEP = 6
 
 # fixme: this may be overkill

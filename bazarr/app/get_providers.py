@@ -12,6 +12,7 @@ import requests
 import traceback
 import re
 
+from requests import ConnectionError
 from subzero.language import Language
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
     MustGetBlacklisted, SearchLimitReached
