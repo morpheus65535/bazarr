@@ -16,7 +16,7 @@ from requests import ConnectionError
 from subzero.language import Language
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
     MustGetBlacklisted, SearchLimitReached
-from subliminal.providers.opensubtitles import DownloadLimitReached, PaymentRequired
+from subliminal.providers.opensubtitles import DownloadLimitReached, PaymentRequired, Unauthorized
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable, AuthenticationError, ConfigurationError
 from subliminal import region as subliminal_cache_region
 from subliminal_patch.extensions import provider_registry
@@ -75,18 +75,21 @@ def provider_throttle_map():
             socket.timeout: (datetime.timedelta(hours=1), "1 hour"),
             requests.exceptions.ConnectTimeout: (datetime.timedelta(hours=1), "1 hour"),
             requests.exceptions.ReadTimeout: (datetime.timedelta(hours=1), "1 hour"),
+            ConfigurationError: (datetime.timedelta(hours=12), "12 hours"),
+            PermissionError: (datetime.timedelta(hours=12), "12 hours"),
+            requests.exceptions.ProxyError: (datetime.timedelta(hours=1), "1 hour"),
+            AuthenticationError: (datetime.timedelta(hours=12), "12 hours"),
         },
         "opensubtitles": {
             TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
             DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
             DownloadLimitReached: (datetime.timedelta(hours=6), "6 hours"),
             PaymentRequired: (datetime.timedelta(hours=12), "12 hours"),
+            Unauthorized: (datetime.timedelta(hours=12), "12 hours"),
             APIThrottled: (datetime.timedelta(seconds=15), "15 seconds"),
             ServiceUnavailable: (datetime.timedelta(hours=1), "1 hour"),
         },
         "opensubtitlescom": {
-            AuthenticationError: (datetime.timedelta(hours=12), "12 hours"),
-            ConfigurationError: (datetime.timedelta(hours=12), "12 hours"),
             TooManyRequests: (datetime.timedelta(minutes=1), "1 minute"),
             DownloadLimitExceeded: (datetime.timedelta(hours=24), "24 hours"),
         },
@@ -111,9 +114,6 @@ def provider_throttle_map():
             SearchLimitReached: (
                 legendasdivx_limit_reset_timedelta(),
                 f"{legendasdivx_limit_reset_timedelta().seconds // 3600 + 1} hours"),
-        },
-        "subf2m": {
-            ConfigurationError: (datetime.timedelta(hours=24), "24 hours"),
         },
         "whisperai": {
             ConnectionError: (datetime.timedelta(hours=24), "24 hours"),
