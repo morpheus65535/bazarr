@@ -8,7 +8,7 @@ from app.config import settings
 from sonarr.info import url_sonarr
 from subtitles.indexer.series import list_missing_subtitles
 from sonarr.rootfolder import check_sonarr_rootfolder
-from app.database import TableShows, database, insert, update, delete, select
+from app.database import TableShows, TableLanguagesProfiles, database, insert, update, delete, select
 from utilities.path_mappings import path_mappings
 from app.event_handler import event_stream, show_progress, hide_progress
 
@@ -23,13 +23,20 @@ def update_series(send_event=True):
     if apikey_sonarr is None:
         return
 
-    serie_default_enabled = settings.general.getboolean('serie_default_enabled')
+    serie_default_enabled = settings.general.serie_default_enabled
 
     if serie_default_enabled is True:
         serie_default_profile = settings.general.serie_default_profile
         if serie_default_profile == '':
             serie_default_profile = None
     else:
+        serie_default_profile = None
+
+    # Prevent trying to insert a series with a non-existing languages profileId
+    if (serie_default_profile and not database.execute(
+            select(TableLanguagesProfiles)
+            .where(TableLanguagesProfiles.profileId == serie_default_profile))
+            .first()):
         serie_default_profile = None
 
     audio_profiles = get_profile_list()
@@ -117,7 +124,7 @@ def update_series(send_event=True):
 
 
 def update_one_series(series_id, action):
-    logging.debug('BAZARR syncing this specific series from Sonarr: {}'.format(series_id))
+    logging.debug(f'BAZARR syncing this specific series from Sonarr: {series_id}')
 
     # Check if there's a row in database for this series ID
     existing_series = database.execute(
@@ -134,7 +141,7 @@ def update_one_series(series_id, action):
         event_stream(type='series', action='delete', payload=int(series_id))
         return
 
-    serie_default_enabled = settings.general.getboolean('serie_default_enabled')
+    serie_default_enabled = settings.general.serie_default_enabled
 
     if serie_default_enabled is True:
         serie_default_profile = settings.general.serie_default_profile
@@ -180,8 +187,7 @@ def update_one_series(series_id, action):
         else:
             sync_episodes(series_id=int(series_id), send_event=False)
             event_stream(type='series', action='update', payload=int(series_id))
-            logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
-                series['path'])))
+            logging.debug(f'BAZARR updated this series into the database:{path_mappings.path_replace(series["path"])}')
 
     # Insert new series in DB
     elif action == 'updated' and not existing_series:
@@ -193,5 +199,4 @@ def update_one_series(series_id, action):
             logging.error(f"BAZARR cannot insert series {series['path']} because of {e}")
         else:
             event_stream(type='series', action='update', payload=int(series_id))
-            logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(
-                series['path'])))
+            logging.debug(f'BAZARR inserted this series into the database:{path_mappings.path_replace(series["path"])}')

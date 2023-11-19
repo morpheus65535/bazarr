@@ -53,6 +53,8 @@ def _wanted_episode(episode):
                                      'series',
                                      check_if_still_required=True):
         if result:
+            if isinstance(result, tuple) and len(result):
+                result = result[0]
             store_subtitles(episode.path, path_mappings.path_replace(episode.path))
             history_log(1, episode.sonarrSeriesId, episode.sonarrEpisodeId, result)
             event_stream(type='series', action='update', payload=episode.sonarrSeriesId)
@@ -107,10 +109,7 @@ def wanted_search_missing_subtitles_series():
     for i, episode in enumerate(episodes):
         show_progress(id='wanted_episodes_progress',
                       header='Searching subtitles...',
-                      name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode.title,
-                                                                 episode.season,
-                                                                 episode.episode,
-                                                                 episode.episodeTitle),
+                      name=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d} - {episode.episodeTitle}',
                       value=i,
                       count=count_episodes)
 

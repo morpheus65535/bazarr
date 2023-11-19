@@ -4,7 +4,7 @@ import requests
 import logging
 
 from app.config import settings
-from sonarr.info import get_sonarr_info, url_sonarr
+from sonarr.info import get_sonarr_info, url_api_sonarr
 from constants import headers
 
 
@@ -14,15 +14,16 @@ def get_profile_list():
 
     # Get profiles data from Sonarr
     if get_sonarr_info.is_legacy():
-        url_sonarr_api_series = url_sonarr() + "/api/profile?apikey=" + apikey_sonarr
+        url_sonarr_api_series = f"{url_api_sonarr()}profile?apikey={apikey_sonarr}"
     else:
         if not get_sonarr_info.version().startswith('3.'):
             # return an empty list when using Sonarr >= v4 that does not support series languages profiles anymore
             return profiles_list
-        url_sonarr_api_series = url_sonarr() + "/api/v3/languageprofile?apikey=" + apikey_sonarr
+        url_sonarr_api_series = f"{url_api_sonarr()}languageprofile?apikey={apikey_sonarr}"
 
     try:
-        profiles_json = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
+        profiles_json = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False,
+                                     headers=headers)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
         return None
@@ -49,10 +50,7 @@ def get_tags():
     tagsDict = []
 
     # Get tags data from Sonarr
-    if get_sonarr_info.is_legacy():
-        url_sonarr_api_series = url_sonarr() + "/api/tag?apikey=" + apikey_sonarr
-    else:
-        url_sonarr_api_series = url_sonarr() + "/api/v3/tag?apikey=" + apikey_sonarr
+    url_sonarr_api_series = f"{url_api_sonarr()}tag?apikey={apikey_sonarr}"
 
     try:
         tagsDict = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
@@ -70,8 +68,8 @@ def get_tags():
 
 
 def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
-    url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format(
-        '' if get_sonarr_info.is_legacy() else 'v3/', sonarr_series_id if sonarr_series_id else "", apikey_sonarr)
+    url_sonarr_api_series = (f"{url_api_sonarr()}series/{sonarr_series_id if sonarr_series_id else ''}?"
+                             f"apikey={apikey_sonarr}")
     try:
         r = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
         r.raise_for_status()
@@ -97,13 +95,11 @@ def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
             return r.json()
 
 
-def get_episodes_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_id=None):
+def get_episodes_from_sonarr_api(apikey_sonarr, series_id=None, episode_id=None):
     if series_id:
-        url_sonarr_api_episode = url + "/api/{0}episode?seriesId={1}&apikey={2}".format(
-            '' if get_sonarr_info.is_legacy() else 'v3/', series_id, apikey_sonarr)
+        url_sonarr_api_episode = f"{url_api_sonarr()}episode?seriesId={series_id}&apikey={apikey_sonarr}"
     elif episode_id:
-        url_sonarr_api_episode = url + "/api/{0}episode/{1}?apikey={2}".format(
-            '' if get_sonarr_info.is_legacy() else 'v3/', episode_id, apikey_sonarr)
+        url_sonarr_api_episode = f"{url_api_sonarr()}episode/{episode_id}?apikey={apikey_sonarr}"
     else:
         return
 
@@ -126,17 +122,17 @@ def get_episodes_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_id=
         return r.json()
 
 
-def get_episodesFiles_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_file_id=None):
+def get_episodesFiles_from_sonarr_api(apikey_sonarr, series_id=None, episode_file_id=None):
     if series_id:
-        url_sonarr_api_episodeFiles = url + "/api/v3/episodeFile?seriesId={0}&apikey={1}".format(series_id,
-                                                                                                 apikey_sonarr)
+        url_sonarr_api_episodeFiles = f"{url_api_sonarr()}episodeFile?seriesId={series_id}&apikey={apikey_sonarr}"
     elif episode_file_id:
-        url_sonarr_api_episodeFiles = url + "/api/v3/episodeFile/{0}?apikey={1}".format(episode_file_id, apikey_sonarr)
+        url_sonarr_api_episodeFiles = f"{url_api_sonarr()}episodeFile/{episode_file_id}?apikey={apikey_sonarr}"
     else:
         return
 
     try:
-        r = requests.get(url_sonarr_api_episodeFiles, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
+        r = requests.get(url_sonarr_api_episodeFiles, timeout=int(settings.sonarr.http_timeout), verify=False,
+                         headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get episodeFiles from Sonarr. Http error.")

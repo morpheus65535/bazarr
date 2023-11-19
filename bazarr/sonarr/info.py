@@ -26,25 +26,27 @@ class GetSonarrInfo:
             return sonarr_version
         else:
             sonarr_version = ''
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             try:
-                sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
-                sonarr_json = requests.get(sv, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers).json()
+                sv = f"{url_sonarr()}/api/system/status?apikey={settings.sonarr.apikey}"
+                sonarr_json = requests.get(sv, timeout=int(settings.sonarr.http_timeout), verify=False,
+                                           headers=headers).json()
                 if 'version' in sonarr_json:
                     sonarr_version = sonarr_json['version']
                 else:
                     raise json.decoder.JSONDecodeError
             except json.decoder.JSONDecodeError:
                 try:
-                    sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
-                    sonarr_version = requests.get(sv, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers).json()['version']
+                    sv = f"{url_sonarr()}/api/v3/system/status?apikey={settings.sonarr.apikey}"
+                    sonarr_version = requests.get(sv, timeout=int(settings.sonarr.http_timeout), verify=False,
+                                                  headers=headers).json()['version']
                 except json.decoder.JSONDecodeError:
                     logging.debug('BAZARR cannot get Sonarr version')
                     sonarr_version = 'unknown'
             except Exception:
                 logging.debug('BAZARR cannot get Sonarr version')
                 sonarr_version = 'unknown'
-        logging.debug('BAZARR got this Sonarr version from its API: {}'.format(sonarr_version))
+        logging.debug(f'BAZARR got this Sonarr version from its API: {sonarr_version}')
         region.set("sonarr_version", sonarr_version)
         return sonarr_version
 
@@ -75,7 +77,7 @@ get_sonarr_info = GetSonarrInfo()
 
 
 def url_sonarr():
-    if settings.sonarr.getboolean('ssl'):
+    if settings.sonarr.ssl:
         protocol_sonarr = "https"
     else:
         protocol_sonarr = "http"
@@ -83,7 +85,7 @@ def url_sonarr():
     if settings.sonarr.base_url == '':
         settings.sonarr.base_url = "/"
     if not settings.sonarr.base_url.startswith("/"):
-        settings.sonarr.base_url = "/" + settings.sonarr.base_url
+        settings.sonarr.base_url = f"/{settings.sonarr.base_url}"
     if settings.sonarr.base_url.endswith("/"):
         settings.sonarr.base_url = settings.sonarr.base_url[:-1]
 
@@ -93,3 +95,7 @@ def url_sonarr():
         port = f":{settings.sonarr.port}"
 
     return f"{protocol_sonarr}://{settings.sonarr.ip}{port}{settings.sonarr.base_url}"
+
+
+def url_api_sonarr():
+    return url_sonarr() + f'/api{"/v3" if not get_sonarr_info.is_legacy() else ""}/'

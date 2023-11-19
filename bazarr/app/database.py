@@ -18,12 +18,16 @@ from sqlalchemy.pool import NullPool
 
 from flask_sqlalchemy import SQLAlchemy
 
-from .config import settings, get_array_from
+from .config import settings
 from .get_args import args
 
 logger = logging.getLogger(__name__)
 
-postgresql = (os.getenv("POSTGRES_ENABLED", settings.postgresql.enabled).lower() == 'true')
+POSTGRES_ENABLED_ENV = os.getenv("POSTGRES_ENABLED")
+if POSTGRES_ENABLED_ENV:
+    postgresql = POSTGRES_ENABLED_ENV.lower() == 'true'
+else:
+    postgresql = settings.postgresql.enabled
 
 region = make_region().configure('dogpile.cache.memory')
 
@@ -324,30 +328,30 @@ def migrate_db(app):
 def get_exclusion_clause(exclusion_type):
     where_clause = []
     if exclusion_type == 'series':
-        tagsList = ast.literal_eval(settings.sonarr.excluded_tags)
+        tagsList = settings.sonarr.excluded_tags
         for tag in tagsList:
-            where_clause.append(~(TableShows.tags.contains("\'" + tag + "\'")))
+            where_clause.append(~(TableShows.tags.contains(f"\'{tag}\'")))
     else:
-        tagsList = ast.literal_eval(settings.radarr.excluded_tags)
+        tagsList = settings.radarr.excluded_tags
         for tag in tagsList:
-            where_clause.append(~(TableMovies.tags.contains("\'" + tag + "\'")))
+            where_clause.append(~(TableMovies.tags.contains(f"\'{tag}\'")))
 
     if exclusion_type == 'series':
-        monitoredOnly = settings.sonarr.getboolean('only_monitored')
+        monitoredOnly = settings.sonarr.only_monitored
         if monitoredOnly:
             where_clause.append((TableEpisodes.monitored == 'True'))  # noqa E712
             where_clause.append((TableShows.monitored == 'True'))  # noqa E712
     else:
-        monitoredOnly = settings.radarr.getboolean('only_monitored')
+        monitoredOnly = settings.radarr.only_monitored
         if monitoredOnly:
             where_clause.append((TableMovies.monitored == 'True'))  # noqa E712
 
     if exclusion_type == 'series':
-        typesList = get_array_from(settings.sonarr.excluded_series_types)
+        typesList = settings.sonarr.excluded_series_types
         for item in typesList:
             where_clause.append((TableShows.seriesType != item))
 
-        exclude_season_zero = settings.sonarr.getboolean('exclude_season_zero')
+        exclude_season_zero = settings.sonarr.exclude_season_zero
         if exclude_season_zero:
             where_clause.append((TableEpisodes.season != 0))
 

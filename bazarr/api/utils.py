@@ -62,12 +62,14 @@ def postprocess(item):
         item['subtitles'] = ast.literal_eval(item['subtitles'])
         for i, subs in enumerate(item['subtitles']):
             language = subs[0].split(':')
+            file_size = subs[2] if len(subs) > 2 else 0
             item['subtitles'][i] = {"path": path_replace(subs[1]),
                                     "name": language_from_alpha2(language[0]),
                                     "code2": language[0],
                                     "code3": alpha3_from_alpha2(language[0]),
                                     "forced": False,
-                                    "hi": False}
+                                    "hi": False,
+                                    "file_size": file_size}
             if len(language) > 1:
                 item['subtitles'][i].update(
                     {
@@ -75,7 +77,7 @@ def postprocess(item):
                         "hi": language[1] == 'hi',
                     }
                 )
-        if settings.general.getboolean('embedded_subs_show_desired') and item.get('profileId'):
+        if settings.general.embedded_subs_show_desired and item.get('profileId'):
             desired_lang_list = get_desired_languages(item['profileId'])
             item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
         item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))

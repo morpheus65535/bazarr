@@ -7,7 +7,7 @@ import logging
 from app.config import settings
 from app.database import TableShowsRootfolder, TableShows, database, insert, update, delete, select
 from utilities.path_mappings import path_mappings
-from sonarr.info import get_sonarr_info, url_sonarr
+from sonarr.info import url_api_sonarr
 from constants import headers
 
 
@@ -16,10 +16,7 @@ def get_sonarr_rootfolder():
     sonarr_rootfolder = []
 
     # Get root folder data from Sonarr
-    if get_sonarr_info.is_legacy():
-        url_sonarr_api_rootfolder = url_sonarr() + "/api/rootfolder?apikey=" + apikey_sonarr
-    else:
-        url_sonarr_api_rootfolder = url_sonarr() + "/api/v3/rootfolder?apikey=" + apikey_sonarr
+    url_sonarr_api_rootfolder = f"{url_api_sonarr()}rootfolder?apikey={apikey_sonarr}"
 
     try:
         rootfolder = requests.get(url_sonarr_api_rootfolder, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)

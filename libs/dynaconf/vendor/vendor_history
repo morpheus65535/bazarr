@@ -1,0 +1,26 @@
+## TOMLLIB
+
+- Sept 4, 2022 
+
+Added tomli as a vendored library to replace uiri/toml
+this lib also has MIT license.
+PAckage renamed to `tomllib` to be compatible with std lib on python 3.11
+Added tomli-w._write to the tomllib.
+
+## TOML
+
+- Sept 4, 2022 
+
+uiri/toml is kept as a backwards compatibility but tomllib has been 
+introduces as the default TOML parser.
+
+`toml` is a fallback if tomllib fails to parse the file.
+that was made because `toml` allows unicode characters while tomllib 
+follows the spec strictly.
+
+## BOX
+
+- Mar 2, 2021
+
+Fix #462 make DynaBox nested List to use DynaBox as default class
+https://github.com/dynaconf/dynaconf/pull/533/files

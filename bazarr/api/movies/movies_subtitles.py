@@ -15,7 +15,7 @@ from subtitles.tools.delete import delete_subtitles
 from radarr.history import history_log_movie
 from app.notifier import send_notifications_movie
 from subtitles.indexer.movies import store_subtitles_movie
-from app.event_handler import event_stream
+from app.event_handler import event_stream, show_message
 from app.config import settings
 
 from ..utils import authenticate
@@ -67,6 +67,12 @@ class MoviesSubtitles(Resource):
         language = args.get('language')
         hi = args.get('hi').capitalize()
         forced = args.get('forced').capitalize()
+        if hi == 'True':
+            language_str = f'{language}:hi'
+        elif forced == 'True':
+            language_str = f'{language}:forced'
+        else:
+            language_str = language
 
         audio_language_list = get_audio_profile_languages(movieInfo.audio_language)
         if len(audio_language_list) > 0:
@@ -79,11 +85,14 @@ class MoviesSubtitles(Resource):
                                              sceneName, title, 'movie', profile_id=get_profile_id(movie_id=radarrId)))
             if isinstance(result, list) and len(result):
                 result = result[0]
+                if isinstance(result, tuple) and len(result):
+                    result = result[0]
                 history_log_movie(1, radarrId, result)
                 store_subtitles_movie(result.path, moviePath)
             else:
                 event_stream(type='movie', payload=radarrId)
-                return 'No subtitles found', 500
+                show_message(f'No {language_str.upper()} subtitles found')
+                return '', 204
         except OSError:
             return 'Unable to save subtitles file. Permission or path mapping issue?', 409
         else:
@@ -151,10 +160,12 @@ class MoviesSubtitles(Resource):
             if not result:
                 logging.debug(f"BAZARR unable to process subtitles for this movie: {moviePath}")
             else:
+                if isinstance(result, tuple) and len(result):
+                    result = result[0]
                 provider = "manual"
                 score = 120
                 history_log_movie(4, radarrId, result, fake_provider=provider, fake_score=score)
-                if not settings.general.getboolean('dont_notify_manual_actions'):
+                if not settings.general.dont_notify_manual_actions:
                     send_notifications_movie(radarrId, result.message)
                 store_subtitles_movie(result.path, moviePath)
         except OSError:

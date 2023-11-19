@@ -237,6 +237,11 @@ class Unauthorized(OpenSubtitlesError, AuthenticationError):
     pass
 
 
+class PaymentRequired(OpenSubtitlesError):
+    """Exception raised when status is '402 Payment Required'."""
+    pass
+
+
 class NoSession(OpenSubtitlesError, AuthenticationError):
     """Exception raised when status is '406 No session'."""
     pass

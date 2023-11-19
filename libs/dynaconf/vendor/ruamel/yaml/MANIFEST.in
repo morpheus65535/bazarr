@@ -1,0 +1,3 @@
+include README.rst LICENSE CHANGES setup.py
+prune ext*
+prune clib*

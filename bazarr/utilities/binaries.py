@@ -44,7 +44,7 @@ def get_binary(name):
     installed_exe = which(name)
 
     if installed_exe and os.path.isfile(installed_exe):
-        logging.debug('BAZARR returning this binary: {}'.format(installed_exe))
+        logging.debug(f'BAZARR returning this binary: {installed_exe}')
         return installed_exe
     else:
         logging.debug('BAZARR binary not found in path, searching for it...')
@@ -72,27 +72,27 @@ def get_binary(name):
             logging.debug('BAZARR binary not found in binaries.json')
             raise BinaryNotFound
         else:
-            logging.debug('BAZARR found this in binaries.json: {}'.format(binary))
+            logging.debug(f'BAZARR found this in binaries.json: {binary}')
 
         if os.path.isfile(exe) and md5(exe) == binary['checksum']:
-            logging.debug('BAZARR returning this existing and up-to-date binary: {}'.format(exe))
+            logging.debug(f'BAZARR returning this existing and up-to-date binary: {exe}')
             return exe
         else:
             try:
-                logging.debug('BAZARR creating directory tree for {}'.format(exe_dir))
+                logging.debug(f'BAZARR creating directory tree for {exe_dir}')
                 os.makedirs(exe_dir, exist_ok=True)
-                logging.debug('BAZARR downloading {0} from {1}'.format(name, binary['url']))
+                logging.debug(f'BAZARR downloading {name} from {binary["url"]}')
                 r = requests.get(binary['url'])
-                logging.debug('BAZARR saving {0} to {1}'.format(name, exe_dir))
+                logging.debug(f'BAZARR saving {name} to {exe_dir}')
                 with open(exe, 'wb') as f:
                     f.write(r.content)
                 if system != 'Windows':
-                    logging.debug('BAZARR adding execute permission on {}'.format(exe))
+                    logging.debug(f'BAZARR adding execute permission on {exe}')
                     st = os.stat(exe)
                     os.chmod(exe, st.st_mode | stat.S_IEXEC)
             except Exception:
-                logging.exception('BAZARR unable to download {0} to {1}'.format(name, exe_dir))
+                logging.exception(f'BAZARR unable to download {name} to {exe_dir}')
                 raise BinaryNotFound
             else:
-                logging.debug('BAZARR returning this new binary: {}'.format(exe))
+                logging.debug(f'BAZARR returning this new binary: {exe}')
                 return exe

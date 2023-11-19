@@ -58,5 +58,6 @@ class SystemReleases(Resource):
 
         except Exception:
             logging.exception(
-                'BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
+                f'BAZARR cannot parse releases caching file: '
+                f'{os.path.join(args.config_dir, "config", "releases.txt")}')
         return marshal(filtered_releases, self.get_response_model, envelope='data')

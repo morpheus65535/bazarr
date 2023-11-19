@@ -13,6 +13,7 @@ from tld import get_tld
 
 
 ENGLISH = Language("eng")
+SPANISH = (Language("spa"), Language("spa", "MX"))
 
 
 class CommonFixes(SubtitleTextModification):
@@ -105,12 +106,16 @@ class CommonFixes(SubtitleTextModification):
 
         # uppercase after dot
         NReProcessor(re.compile(r'(?u)((?<!(?=\s*[A-ZÀ-Ž-_0-9.]\s*))(?:[^.\s])+\.\s+)([a-zà-ž])'),
-                     lambda match: r'%s%s' % (match.group(1), match.group(2).upper()), name="CM_uppercase_after_dot"),
+                     lambda match: r'%s%s' % (match.group(1), match.group(2).upper()) if len(match.group(1)) > 4 else r"%s%s" % (match.group(1), match.group(2)),
+                     name="CM_uppercase_after_dot"),
 
         # remove double interpunction
         NReProcessor(re.compile(r'(?u)(\s*[,!?])\s*([,.!?][,.!?\s]*)'),
                      lambda match: match.group(1).strip() + (" " if match.group(2).endswith(" ") else ""),
-                     name="CM_double_interpunct"),
+                     name="CM_double_interpunct",
+                     # Double interpunction is valid for spanish
+                     # https://www.rae.es/duda-linguistica/es-correcto-combinar-los-signos-de-interrogacion-y-exclamacion
+                     supported=lambda p: p.language not in SPANISH),
 
         # remove spaces before punctuation; don't break spaced ellipses
         NReProcessor(re.compile(r'(?u)(?:(?<=^)|(?<=\w)) +([!?.,](?![!?.,]| \.))'), r"\1", name="CM_punctuation_space"),

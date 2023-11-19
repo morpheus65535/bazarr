@@ -160,7 +160,7 @@ class PatchedTimedRotatingFileHandler(TimedRotatingFileHandler):
         result = []
         # See bpo-44753: Don't use the extension when computing the prefix.
         n, e = os.path.splitext(baseName)
-        prefix = n + '.'
+        prefix = f'{n}.'
         plen = len(prefix)
         for fileName in fileNames:
             if self.namer is None:

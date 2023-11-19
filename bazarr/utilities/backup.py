@@ -7,7 +7,7 @@ import shutil
 import logging
 
 from datetime import datetime, timedelta
-from zipfile import ZipFile, BadZipFile
+from zipfile import ZipFile, BadZipFile, ZIP_DEFLATED
 from glob import glob
 
 from app.get_args import args
@@ -52,7 +52,7 @@ def backup_to_zip():
     backup_filename = f"bazarr_backup_v{os.environ['BAZARR_VERSION']}_{now_string}.zip"
     logging.debug(f'Backup filename will be: {backup_filename}')
 
-    if not settings.postgresql.getboolean('enabled'):
+    if not settings.postgresql.enabled:
         database_src_file = os.path.join(args.config_dir, 'db', 'bazarr.db')
         logging.debug(f'Database file path to backup is: {database_src_file}')
 
@@ -71,10 +71,11 @@ def backup_to_zip():
             database_backup_file = None
             logging.exception('Unable to backup database file.')
 
-    config_file = os.path.join(args.config_dir, 'config', 'config.ini')
+    config_file = os.path.join(args.config_dir, 'config', 'config.yaml')
     logging.debug(f'Config file path to backup is: {config_file}')
 
-    with ZipFile(os.path.join(get_backup_path(), backup_filename), 'w') as backupZip:
+    with ZipFile(os.path.join(get_backup_path(), backup_filename), 'w', compression=ZIP_DEFLATED,
+                 compresslevel=9) as backupZip:
         if database_backup_file:
             backupZip.write(database_backup_file, 'bazarr.db')
             try:
@@ -83,12 +84,19 @@ def backup_to_zip():
                 logging.exception(f'Unable to delete temporary database backup file: {database_backup_file}')
         else:
             logging.debug('Database file is not included in backup. See previous exception')
-        backupZip.write(config_file, 'config.ini')
+        backupZip.write(config_file, 'config.yaml')
 
 
 def restore_from_backup():
-    restore_config_path = os.path.join(get_restore_path(), 'config.ini')
-    dest_config_path = os.path.join(args.config_dir, 'config', 'config.ini')
+    if os.path.isfile(os.path.join(get_restore_path(), 'config.yaml')):
+        restore_config_path = os.path.join(get_restore_path(), 'config.yaml')
+        dest_config_path = os.path.join(args.config_dir, 'config', 'config.yaml')
+        new_config = True
+    else:
+        restore_config_path = os.path.join(get_restore_path(), 'config.ini')
+        dest_config_path = os.path.join(args.config_dir, 'config', 'config.ini')
+        new_config = False
+
     restore_database_path = os.path.join(get_restore_path(), 'bazarr.db')
     dest_database_path = os.path.join(args.config_dir, 'db', 'bazarr.db')
 
@@ -97,8 +105,15 @@ def restore_from_backup():
             shutil.copy(restore_config_path, dest_config_path)
             os.remove(restore_config_path)
         except OSError:
-            logging.exception(f'Unable to restore or delete config.ini to {dest_config_path}')
-        if not settings.postgresql.getboolean('enabled'):
+            logging.exception(f'Unable to restore or delete config file to {dest_config_path}')
+        else:
+            if new_config:
+                if os.path.isfile(os.path.join(get_restore_path(), 'config.ini')):
+                    os.remove(os.path.join(get_restore_path(), 'config.ini'))
+            else:
+                if os.path.isfile(os.path.join(get_restore_path(), 'config.yaml')):
+                    os.remove(os.path.join(get_restore_path(), 'config.yaml'))
+        if not settings.postgresql.enabled:
             try:
                 shutil.copy(restore_database_path, dest_database_path)
                 os.remove(restore_database_path)

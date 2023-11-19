@@ -43,7 +43,7 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
 def set_chmod(subtitles_path):
     # apply chmod if required
     chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
-        'win') and settings.general.getboolean('chmod_enabled') else None
+        'win') and settings.general.chmod_enabled else None
     if chmod:
         logging.debug(f"BAZARR setting permission to {chmod} on {subtitles_path} after custom post-processing.")
         os.chmod(subtitles_path, chmod)
