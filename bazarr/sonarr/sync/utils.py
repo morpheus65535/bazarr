@@ -67,7 +67,7 @@ def get_tags():
         return tagsDict.json()
 
 
-def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
+def get_series_from_sonarr_api(apikey_sonarr, sonarr_series_id=None):
     url_sonarr_api_series = (f"{url_api_sonarr()}series/{sonarr_series_id if sonarr_series_id else ''}?"
                              f"apikey={apikey_sonarr}")
     try:
@@ -87,12 +87,18 @@ def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get series from Sonarr.")
         return
+    except Exception as e:
+        logging.exception(f"Exception raised while getting series from Sonarr API: {e}")
+        return
     else:
-        result = r.json()
-        if isinstance(result, dict):
-            return [result]
+        if r.status_code == 200:
+            result = r.json()
+            if isinstance(result, dict):
+                return [result]
+            else:
+                return r.json()
         else:
-            return r.json()
+            return
 
 
 def get_episodes_from_sonarr_api(apikey_sonarr, series_id=None, episode_id=None):
@@ -118,8 +124,14 @@ def get_episodes_from_sonarr_api(apikey_sonarr, series_id=None, episode_id=None)
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get episodes from Sonarr.")
         return
+    except Exception as e:
+        logging.exception(f"Exception raised while getting episodes from Sonarr API: {e}")
+        return
     else:
-        return r.json()
+        if r.status_code == 200:
+            return r.json()
+        else:
+            return
 
 
 def get_episodesFiles_from_sonarr_api(apikey_sonarr, series_id=None, episode_file_id=None):
@@ -146,5 +158,11 @@ def get_episodesFiles_from_sonarr_api(apikey_sonarr, series_id=None, episode_fil
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get episodeFiles from Sonarr.")
         return
+    except Exception as e:
+        logging.exception(f"Exception raised while getting episodes from Sonarr API: {e}")
+        return
     else:
-        return r.json()
+        if r.status_code == 200:
+            return r.json()
+        else:
+            return

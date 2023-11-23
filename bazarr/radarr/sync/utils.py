@@ -85,5 +85,11 @@ def get_movies_from_radarr_api(apikey_radarr, radarr_id=None):
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get movies from Radarr.")
         return
+    except Exception as e:
+        logging.exception(f"Exception raised while getting movies from Radarr API: {e}")
+        return
     else:
-        return r.json()
+        if r.status_code == 200:
+            return r.json()
+        else:
+            return
