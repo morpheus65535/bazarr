@@ -43,7 +43,7 @@ def update_series(send_event=True):
     tagsDict = get_tags()
 
     # Get shows data from Sonarr
-    series = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr)
+    series = get_series_from_sonarr_api(apikey_sonarr=apikey_sonarr)
     if not isinstance(series, list):
         return
     else:
@@ -157,8 +157,7 @@ def update_one_series(series_id, action):
         # Get series data from sonarr api
         series = None
 
-        series_data = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=settings.sonarr.apikey,
-                                                 sonarr_series_id=int(series_id))
+        series_data = get_series_from_sonarr_api(apikey_sonarr=settings.sonarr.apikey, sonarr_series_id=int(series_id))
 
         if not series_data:
             return

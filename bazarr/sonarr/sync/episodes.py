@@ -78,6 +78,8 @@ def sync_episodes(series_id, send_event=True):
                                     episodes_to_update.append(parsed_episode)
                             else:
                                 episodes_to_add.append(episodeParser(episode))
+    else:
+        return
 
     # Remove old episodes from DB
     episodes_to_delete = list(set(current_episodes_id_db_list) - set(current_episodes_sonarr))
