@@ -207,7 +207,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "whisperai",
     name: "Whisper",
-    description: "AI Generated Subtitles powered by Whisper (requires external service)",
+    description: "AI Generated Subtitles powered by Whisper",
     inputs: [
       {
         type: "text",
