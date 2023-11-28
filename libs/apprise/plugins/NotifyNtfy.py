@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -171,6 +167,9 @@ class NotifyNtfy(NotifyBase):
 
     # Default upstream/cloud host if none is defined
     cloud_notify_url = 'https://ntfy.sh'
+
+    # Support attachments
+    attachment_support = True
 
     # Allows the user to specify the NotifyImageSize object
     image_size = NotifyImageSize.XY_256
@@ -405,14 +404,14 @@ class NotifyNtfy(NotifyBase):
             # Retrieve our topic
             topic = topics.pop()
 
-            if attach:
+            if attach and self.attachment_support:
                 # We need to upload our payload first so that we can source it
                 # in remaining messages
                 for no, attachment in enumerate(attach):
 
-                    # First message only includes the text
-                    _body = body if not no else None
-                    _title = title if not no else None
+                    # First message only includes the text (if defined)
+                    _body = body if not no and body else None
+                    _title = title if not no and title else None
 
                     # Perform some simple error checking
                     if not attachment:
@@ -453,10 +452,6 @@ class NotifyNtfy(NotifyBase):
             'User-Agent': self.app_id,
         }
 
-        # Some default values for our request object to which we'll update
-        # depending on what our payload is
-        files = None
-
         # See https://ntfy.sh/docs/publish/#publish-as-json
         data = {}
 
@@ -494,10 +489,22 @@ class NotifyNtfy(NotifyBase):
             data['topic'] = topic
             virt_payload = data
 
+            if self.attach:
+                virt_payload['attach'] = self.attach
+
+                if self.filename:
+                    virt_payload['filename'] = self.filename
+
         else:
             # Point our payload to our parameters
             virt_payload = params
             notify_url += '/{topic}'.format(topic=topic)
+
+            # Prepare our Header
+            virt_payload['filename'] = attach.name
+
+            with open(attach.path, 'rb') as fp:
+                data = fp.read()
 
         if image_url:
             headers['X-Icon'] = image_url
@@ -523,18 +530,6 @@ class NotifyNtfy(NotifyBase):
         if self.__tags:
             headers['X-Tags'] = ",".join(self.__tags)
 
-        if isinstance(attach, AttachBase):
-            # Prepare our Header
-            params['filename'] = attach.name
-
-            # prepare our files object
-            files = {'file': (attach.name, open(attach.path, 'rb'))}
-
-        elif self.attach is not None:
-            data['attach'] = self.attach
-            if self.filename is not None:
-                data['filename'] = self.filename
-
         self.logger.debug('ntfy POST URL: %s (cert_verify=%r)' % (
             notify_url, self.verify_certificate,
         ))
@@ -547,13 +542,15 @@ class NotifyNtfy(NotifyBase):
         # Default response type
         response = None
 
+        if not attach:
+            data = dumps(data)
+
         try:
             r = requests.post(
                 notify_url,
                 params=params if params else None,
-                data=dumps(data) if data else None,
+                data=data,
                 headers=headers,
-                files=files,
                 auth=auth,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
@@ -608,7 +605,6 @@ class NotifyNtfy(NotifyBase):
                     notify_url) + 'notification.'
             )
             self.logger.debug('Socket Exception: %s' % str(e))
-            return False, response
 
         except (OSError, IOError) as e:
             self.logger.warning(
@@ -616,13 +612,8 @@ class NotifyNtfy(NotifyBase):
                     attach.name if isinstance(attach, AttachBase)
                     else virt_payload))
             self.logger.debug('I/O Exception: %s' % str(e))
-            return False, response
 
-        finally:
-            # Close our file (if it's open) stored in the second element
-            # of our files tuple (index 1)
-            if files:
-                files['file'][1].close()
+        return False, response
 
     def url(self, privacy=False, *args, **kwargs):
         """

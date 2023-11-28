@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -78,6 +74,9 @@ class NotifyXML(NotifyBase):
 
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_Custom_XML'
+
+    # Support attachments
+    attachment_support = True
 
     # Allows the user to specify the NotifyImageSize object
     image_size = NotifyImageSize.XY_128
@@ -213,9 +212,6 @@ class NotifyXML(NotifyBase):
             # Store our extra headers
             self.headers.update(headers)
 
-        # Set our xsd url
-        self.xsd_url = self.xsd_default_url.format(version=self.xsd_ver)
-
         self.payload_overrides = {}
         self.payload_extras = {}
         if payload:
@@ -237,11 +233,13 @@ class NotifyXML(NotifyBase):
                     self.payload_map[key] = v
                     self.payload_overrides[key] = v
 
-                    # Over-ride XSD URL as data is no longer known
-                    self.xsd_url = None
-
                 else:
                     self.payload_extras[key] = v
+
+        # Set our xsd url
+        self.xsd_url = None if self.payload_overrides or self.payload_extras \
+            else self.xsd_default_url.format(version=self.xsd_ver)
+
         return
 
     def url(self, privacy=False, *args, **kwargs):
@@ -340,7 +338,7 @@ class NotifyXML(NotifyBase):
             ['<{}>{}</{}>'.format(k, v, k) for k, v in payload_base.items()])
 
         attachments = []
-        if attach:
+        if attach and self.attachment_support:
             for attachment in attach:
                 # Perform some simple error checking
                 if not attachment:
