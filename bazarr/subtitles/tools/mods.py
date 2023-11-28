@@ -19,14 +19,14 @@ def subtitles_apply_mods(language, subtitle_path, mods, use_original_format, vid
         lang_obj = Language(language)
     else:
         lang_obj = custom.subzero_language()
-    single = settings.general.getboolean('single_language')
+    single = settings.general.single_language
 
     sub = Subtitle(lang_obj, mods=mods, original_format=use_original_format)
     with open(subtitle_path, 'rb') as f:
         sub.content = f.read()
 
     if not sub.is_valid():
-        logging.exception('BAZARR Invalid subtitle file: ' + subtitle_path)
+        logging.exception(f'BAZARR Invalid subtitle file: {subtitle_path}')
         return
 
     if use_original_format:

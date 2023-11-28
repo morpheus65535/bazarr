@@ -24,12 +24,12 @@ class SystemAccount(Resource):
     @api_ns_system_account.response(400, 'Unknown action')
     @api_ns_system_account.response(403, 'Authentication failed')
     @api_ns_system_account.response(406, 'Browser must be closed to invalidate basic authentication')
-    @api_ns_system_account.response(500, 'Unknown authentication type define in config.ini')
+    @api_ns_system_account.response(500, 'Unknown authentication type define in config')
     def post(self):
         """Login or logout from Bazarr UI when using form login"""
         args = self.post_request_parser.parse_args()
         if settings.auth.type != 'form':
-            return 'Unknown authentication type define in config.ini', 500
+            return 'Unknown authentication type define in config', 500
 
         action = args.get('action')
         if action == 'login':

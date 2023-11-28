@@ -49,8 +49,8 @@ def series_download_subtitles(no):
         .where(reduce(operator.and_, conditions))) \
         .all()
     if not episodes_details:
-        logging.debug("BAZARR no episode for that sonarrSeriesId have been found in database or they have all been "
-                      "ignored because of monitored status, series type or series tags: {}".format(no))
+        logging.debug(f"BAZARR no episode for that sonarrSeriesId have been found in database or they have all been "
+                      f"ignored because of monitored status, series type or series tags: {no}")
         return
 
     count_episodes_details = len(episodes_details)
@@ -59,12 +59,9 @@ def series_download_subtitles(no):
         providers_list = get_providers()
 
         if providers_list:
-            show_progress(id='series_search_progress_{}'.format(no),
+            show_progress(id=f'series_search_progress_{no}',
                           header='Searching missing subtitles...',
-                          name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode.title,
-                                                                     episode.season,
-                                                                     episode.episode,
-                                                                     episode.episodeTitle),
+                          name=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d} - {episode.episodeTitle}',
                           value=i,
                           count=count_episodes_details)
 
@@ -101,7 +98,7 @@ def series_download_subtitles(no):
             logging.info("BAZARR All providers are throttled")
             break
 
-    hide_progress(id='series_search_progress_{}'.format(no))
+    hide_progress(id=f'series_search_progress_{no}')
 
 
 def episode_download_subtitles(no, send_progress=False):
@@ -134,12 +131,9 @@ def episode_download_subtitles(no, send_progress=False):
 
         if providers_list:
             if send_progress:
-                show_progress(id='episode_search_progress_{}'.format(no),
+                show_progress(id=f'episode_search_progress_{no}',
                               header='Searching missing subtitles...',
-                              name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode.title,
-                                                                         episode.season,
-                                                                         episode.episode,
-                                                                         episode.episodeTitle),
+                              name=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d} - {episode.episodeTitle}',
                               value=0,
                               count=1)
 
@@ -174,7 +168,7 @@ def episode_download_subtitles(no, send_progress=False):
                     send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)
 
             if send_progress:
-                hide_progress(id='episode_search_progress_{}'.format(no))
+                hide_progress(id=f'episode_search_progress_{no}')
         else:
             logging.info("BAZARR All providers are throttled")
             break

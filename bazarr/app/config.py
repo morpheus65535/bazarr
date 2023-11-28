@@ -3,21 +3,21 @@
 import hashlib
 import os
 import ast
+import logging
 
 from urllib.parse import quote_plus
 from subliminal.cache import region
-from simpleconfigparser import simpleconfigparser, configparser, NoOptionError
+from dynaconf import Dynaconf, Validator as OriginalValidator
+from dynaconf.loaders.yaml_loader import write
+from dynaconf.validator import ValidationError
+from dynaconf.utils.functional import empty
+from ipaddress import ip_address
+from binascii import hexlify
+from types import MappingProxyType
 
 from .get_args import args
 
-
-class SimpleConfigParser(simpleconfigparser):
-
-    def get(self, section, option, raw=False, vars=None):
-        try:
-            return configparser.get(self, section, option, raw=raw, vars=vars)
-        except NoOptionError:
-            return None
+NoneType = type(None)
 
 
 def base_url_slash_cleaner(uri):
@@ -26,274 +26,370 @@ def base_url_slash_cleaner(uri):
     return uri
 
 
-defaults = {
-    'general': {
-        'ip': '0.0.0.0',
-        'port': '6767',
-        'base_url': '',
-        'path_mappings': '[]',
-        'debug': 'False',
-        'branch': 'master',
-        'auto_update': 'True',
-        'single_language': 'False',
-        'minimum_score': '90',
-        'use_scenename': 'True',
-        'use_postprocessing': 'False',
-        'postprocessing_cmd': '',
-        'postprocessing_threshold': '90',
-        'use_postprocessing_threshold': 'False',
-        'postprocessing_threshold_movie': '70',
-        'use_postprocessing_threshold_movie': 'False',
-        'use_sonarr': 'False',
-        'use_radarr': 'False',
-        'path_mappings_movie': '[]',
-        'serie_default_enabled': 'False',
-        'serie_default_profile': '',
-        'movie_default_enabled': 'False',
-        'movie_default_profile': '',
-        'page_size': '25',
-        'theme': 'auto',
-        'page_size_manual_search': '10',
-        'minimum_score_movie': '70',
-        'use_embedded_subs': 'True',
-        'embedded_subs_show_desired': 'True',
-        'utf8_encode': 'True',
-        'ignore_pgs_subs': 'False',
-        'ignore_vobsub_subs': 'False',
-        'ignore_ass_subs': 'False',
-        'adaptive_searching': 'True',
-        'adaptive_searching_delay': '3w',
-        'adaptive_searching_delta': '1w',
-        'enabled_providers': '[]',
-        'multithreading': 'True',
-        'chmod_enabled': 'False',
-        'chmod': '0640',
-        'subfolder': 'current',
-        'subfolder_custom': '',
-        'upgrade_subs': 'True',
-        'upgrade_frequency': '12',
-        'days_to_upgrade_subs': '7',
-        'upgrade_manual': 'True',
-        'anti_captcha_provider': 'None',
-        'wanted_search_frequency': '6',
-        'wanted_search_frequency_movie': '6',
-        'subzero_mods': '[]',
-        'dont_notify_manual_actions': 'False',
-        'hi_extension': 'hi',
-        'embedded_subtitles_parser': 'ffprobe',
-        'default_und_audio_lang': '',
-        'default_und_embedded_subtitles_lang': '',
-        'parse_embedded_audio_track': 'False',
-        'skip_hashing': 'False',
-        'language_equals': '[]',
-    },
-    'auth': {
-        'type': 'None',
-        'username': '',
-        'password': ''
-    },
-    'cors': {
-        'enabled': 'False'
-    },
-    'backup': {
-        'folder': os.path.join(args.config_dir, 'backup'),
-        'retention': '31',
-        'frequency': 'Weekly',
-        'day': '6',
-        'hour': '3'
-    },
-    'sonarr': {
-        'ip': '127.0.0.1',
-        'port': '8989',
-        'base_url': '/',
-        'ssl': 'False',
-        'http_timeout': '60',
-        'apikey': '',
-        'full_update': 'Daily',
-        'full_update_day': '6',
-        'full_update_hour': '4',
-        'only_monitored': 'False',
-        'series_sync': '60',
-        'episodes_sync': '60',
-        'excluded_tags': '[]',
-        'excluded_series_types': '[]',
-        'use_ffprobe_cache': 'True',
-        'exclude_season_zero': 'False',
-        'defer_search_signalr': 'False'
-    },
-    'radarr': {
-        'ip': '127.0.0.1',
-        'port': '7878',
-        'base_url': '/',
-        'ssl': 'False',
-        'http_timeout': '60',
-        'apikey': '',
-        'full_update': 'Daily',
-        'full_update_day': '6',
-        'full_update_hour': '5',
-        'only_monitored': 'False',
-        'movies_sync': '60',
-        'excluded_tags': '[]',
-        'use_ffprobe_cache': 'True',
-        'defer_search_signalr': 'False'
-    },
-    'proxy': {
-        'type': 'None',
-        'url': '',
-        'port': '',
-        'username': '',
-        'password': '',
-        'exclude': '["localhost","127.0.0.1"]'
-    },
-    'opensubtitles': {
-        'username': '',
-        'password': '',
-        'use_tag_search': 'False',
-        'vip': 'False',
-        'ssl': 'False',
-        'timeout': '15',
-        'skip_wrong_fps': 'False'
-    },
-    'opensubtitlescom': {
-        'username': '',
-        'password': '',
-        'use_hash': 'True'
-    },
-    'addic7ed': {
-        'username': '',
-        'password': '',
-        'cookies': '',
-        'user_agent': '',
-        'vip': 'False'
-    },
-    'podnapisi': {
-        'verify_ssl': 'True'
-    },
-    'subf2m': {
-        'verify_ssl': 'True',
-        'user_agent': ''
-    },
-    'whisperai': {
-        'endpoint': 'http://127.0.0.1:9000',
-        'timeout': '3600'
-    },
-    'legendasdivx': {
-        'username': '',
-        'password': '',
-        'skip_wrong_fps': 'False'
-    },
-    'ktuvit': {
-        'email': '',
-        'hashed_password': ''
-    },
-    'xsubs': {
-        'username': '',
-        'password': ''
-    },
-    'assrt': {
-        'token': ''
-    },
-    'anticaptcha': {
-        'anti_captcha_key': ''
-    },
-    'deathbycaptcha': {
-        'username': '',
-        'password': ''
-    },
-    'napisy24': {
-        'username': '',
-        'password': ''
-    },
-    'subscene': {
-        'username': '',
-        'password': ''
-    },
-    'betaseries': {
-        'token': ''
-    },
-    'analytics': {
-        'enabled': 'True'
-    },
-    'titlovi': {
-        'username': '',
-        'password': ''
-    },
-    'titulky': {
-        'username': '',
-        'password': '',
-        'approved_only': 'False'
-    },
-    'embeddedsubtitles': {
-        'included_codecs': '[]',
-        'hi_fallback': 'False',
-        'timeout': '600',
-        'unknown_as_english': 'False',
-    },
-    'hdbits': {
-        'username': '',
-        'passkey': '',
-    },
-    'karagarga': {
-        'username': '',
-        'password': '',
-        'f_username': '',
-        'f_password': '',
-    },
-    'subsync': {
-        'use_subsync': 'False',
-        'use_subsync_threshold': 'False',
-        'subsync_threshold': '90',
-        'use_subsync_movie_threshold': 'False',
-        'subsync_movie_threshold': '70',
-        'debug': 'False',
-        'force_audio': 'False'
-    },
-    'series_scores': {
-        "hash": 359,
-        "series": 180,
-        "year": 90,
-        "season": 30,
-        "episode": 30,
-        "release_group": 14,
-        "source": 7,
-        "audio_codec": 3,
-        "resolution": 2,
-        "video_codec": 2,
-        "streaming_service": 1,
-        "hearing_impaired": 1,
-    },
-    'movie_scores': {
-        "hash": 119,
-        "title": 60,
-        "year": 30,
-        "release_group": 13,
-        "source": 7,
-        "audio_codec": 3,
-        "resolution": 2,
-        "video_codec": 2,
-        "streaming_service": 1,
-        "edition": 1,
-        "hearing_impaired": 1,
-    },
-    'postgresql': {
-        'enabled': 'False',
-        'host': 'localhost',
-        'port': '5432',
-        'database': '',
-        'username': '',
-        'password': '',
-    },
-}
+def validate_ip_address(ip_string):
+    try:
+        ip_address(ip_string)
+        return True
+    except ValueError:
+        return False
 
-settings = SimpleConfigParser(defaults=defaults, interpolation=None)
-settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 
-settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
+class Validator(OriginalValidator):
+    # Give the ability to personalize messages sent by the original dynasync Validator class.
+    default_messages = MappingProxyType(
+        {
+            "must_exist_true": "{name} is required",
+            "must_exist_false": "{name} cannot exists",
+            "condition": "{name} invalid for {function}({value})",
+            "operations": "{name} must {operation} {op_value} but it is {value}",
+            "combined": "combined validators failed {errors}",
+        }
+    )
+
+
+validators = [
+    # general section
+    Validator('general.flask_secret_key', must_exist=True, default=hexlify(os.urandom(16)).decode(),
+              is_type_of=str),
+    Validator('general.ip', must_exist=True, default='0.0.0.0', is_type_of=str, condition=validate_ip_address),
+    Validator('general.port', must_exist=True, default=6767, is_type_of=int, gte=1, lte=65535),
+    Validator('general.base_url', must_exist=True, default='', is_type_of=str),
+    Validator('general.path_mappings', must_exist=True, default=[], is_type_of=list),
+    Validator('general.debug', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.branch', must_exist=True, default='master', is_type_of=str,
+              is_in=['master', 'development']),
+    Validator('general.auto_update', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.single_language', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.minimum_score', must_exist=True, default=90, is_type_of=int, gte=0, lte=100),
+    Validator('general.use_scenename', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.use_postprocessing', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.postprocessing_cmd', must_exist=True, default='', is_type_of=str),
+    Validator('general.postprocessing_threshold', must_exist=True, default=90, is_type_of=int, gte=0, lte=100),
+    Validator('general.use_postprocessing_threshold', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.postprocessing_threshold_movie', must_exist=True, default=70, is_type_of=int, gte=0,
+              lte=100),
+    Validator('general.use_postprocessing_threshold_movie', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.use_sonarr', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.path_mappings_movie', must_exist=True, default=[], is_type_of=list),
+    Validator('general.serie_default_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.serie_default_profile', must_exist=True, default='', is_type_of=(int, str)),
+    Validator('general.movie_default_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.movie_default_profile', must_exist=True, default='', is_type_of=(int, str)),
+    Validator('general.page_size', must_exist=True, default=25, is_type_of=int,
+              is_in=[25, 50, 100, 250, 500, 1000]),
+    Validator('general.theme', must_exist=True, default='auto', is_type_of=str,
+              is_in=['auto', 'light', 'dark']),
+    Validator('general.minimum_score_movie', must_exist=True, default=70, is_type_of=int, gte=0, lte=100),
+    Validator('general.use_embedded_subs', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.embedded_subs_show_desired', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.utf8_encode', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.ignore_pgs_subs', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.ignore_vobsub_subs', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.ignore_ass_subs', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.adaptive_searching', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.adaptive_searching_delay', must_exist=True, default='3w', is_type_of=str,
+              is_in=['1w', '2w', '3w', '4w']),
+    Validator('general.adaptive_searching_delta', must_exist=True, default='1w', is_type_of=str,
+              is_in=['3d', '1w', '2w', '3w', '4w']),
+    Validator('general.enabled_providers', must_exist=True, default=[], is_type_of=list),
+    Validator('general.multithreading', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.chmod_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.chmod', must_exist=True, default='0640', is_type_of=str),
+    Validator('general.subfolder', must_exist=True, default='current', is_type_of=str),
+    Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),
+    Validator('general.upgrade_subs', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int, is_in=[6, 12, 24]),
+    Validator('general.days_to_upgrade_subs', must_exist=True, default=7, is_type_of=int, gte=0, lte=30),
+    Validator('general.upgrade_manual', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.anti_captcha_provider', must_exist=True, default=None, is_type_of=(NoneType, str),
+              is_in=[None, 'anti-captcha', 'death-by-captcha']),
+    Validator('general.wanted_search_frequency', must_exist=True, default=6, is_type_of=int, is_in=[6, 12, 24]),
+    Validator('general.wanted_search_frequency_movie', must_exist=True, default=6, is_type_of=int,
+              is_in=[6, 12, 24]),
+    Validator('general.subzero_mods', must_exist=True, default='', is_type_of=str),
+    Validator('general.dont_notify_manual_actions', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.hi_extension', must_exist=True, default='hi', is_type_of=str, is_in=['hi', 'cc', 'sdh']),
+    Validator('general.embedded_subtitles_parser', must_exist=True, default='ffprobe', is_type_of=str,
+              is_in=['ffprobe', 'mediainfo']),
+    Validator('general.default_und_audio_lang', must_exist=True, default='', is_type_of=str),
+    Validator('general.default_und_embedded_subtitles_lang', must_exist=True, default='', is_type_of=str),
+    Validator('general.parse_embedded_audio_track', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.skip_hashing', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.language_equals', must_exist=True, default=[], is_type_of=list),
+
+    # auth section
+    Validator('auth.apikey', must_exist=True, default=hexlify(os.urandom(16)).decode(), is_type_of=str),
+    Validator('auth.type', must_exist=True, default=None, is_type_of=(NoneType, str),
+              is_in=[None, 'basic', 'form']),
+    Validator('auth.username', must_exist=True, default='', is_type_of=str),
+    Validator('auth.password', must_exist=True, default='', is_type_of=str),
+
+    # cors section
+    Validator('cors.enabled', must_exist=True, default=False, is_type_of=bool),
+
+    # backup section
+    Validator('backup.folder', must_exist=True, default=os.path.join(args.config_dir, 'backup'),
+              is_type_of=str),
+    Validator('backup.retention', must_exist=True, default=31, is_type_of=int, gte=0),
+    Validator('backup.frequency', must_exist=True, default='Weekly', is_type_of=str,
+              is_in=['Manually', 'Daily', 'Weekly']),
+    Validator('backup.day', must_exist=True, default=6, is_type_of=int, gte=0, lte=6),
+    Validator('backup.hour', must_exist=True, default=3, is_type_of=int, gte=0, lte=23),
+
+    # sonarr section
+    Validator('sonarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
+    Validator('sonarr.port', must_exist=True, default=8989, is_type_of=int, gte=1, lte=65535),
+    Validator('sonarr.base_url', must_exist=True, default='/', is_type_of=str),
+    Validator('sonarr.ssl', must_exist=True, default=False, is_type_of=bool),
+    Validator('sonarr.http_timeout', must_exist=True, default=60, is_type_of=int,
+              is_in=[60, 120, 180, 240, 300, 600]),
+    Validator('sonarr.apikey', must_exist=True, default='', is_type_of=str),
+    Validator('sonarr.full_update', must_exist=True, default='Daily', is_type_of=str,
+              is_in=['Manually', 'Daily', 'Weekly']),
+    Validator('sonarr.full_update_day', must_exist=True, default=6, is_type_of=int, gte=0, lte=6),
+    Validator('sonarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
+    Validator('sonarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
+    Validator('sonarr.series_sync', must_exist=True, default=60, is_type_of=int,
+              is_in=[15, 60, 180, 360, 720, 1440]),
+    Validator('sonarr.episodes_sync', must_exist=True, default=60, is_type_of=int,
+              is_in=[15, 60, 180, 360, 720, 1440]),
+    Validator('sonarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
+    Validator('sonarr.excluded_series_types', must_exist=True, default=[], is_type_of=list),
+    Validator('sonarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
+    Validator('sonarr.exclude_season_zero', must_exist=True, default=False, is_type_of=bool),
+    Validator('sonarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
+
+    # radarr section
+    Validator('radarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
+    Validator('radarr.port', must_exist=True, default=7878, is_type_of=int, gte=1, lte=65535),
+    Validator('radarr.base_url', must_exist=True, default='/', is_type_of=str),
+    Validator('radarr.ssl', must_exist=True, default=False, is_type_of=bool),
+    Validator('radarr.http_timeout', must_exist=True, default=60, is_type_of=int,
+              is_in=[60, 120, 180, 240, 300, 600]),
+    Validator('radarr.apikey', must_exist=True, default='', is_type_of=str),
+    Validator('radarr.full_update', must_exist=True, default='Daily', is_type_of=str,
+              is_in=['Manually', 'Daily', 'Weekly']),
+    Validator('radarr.full_update_day', must_exist=True, default=6, is_type_of=int, gte=0, lte=6),
+    Validator('radarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
+    Validator('radarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
+    Validator('radarr.movies_sync', must_exist=True, default=60, is_type_of=int,
+              is_in=[15, 60, 180, 360, 720, 1440]),
+    Validator('radarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
+    Validator('radarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
+    Validator('radarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
+
+    # proxy section
+    Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
+              is_in=[None, 'socks5', 'http']),
+    Validator('proxy.url', must_exist=True, default='', is_type_of=str),
+    Validator('proxy.port', must_exist=True, default='', is_type_of=(str, int)),
+    Validator('proxy.username', must_exist=True, default='', is_type_of=str),
+    Validator('proxy.password', must_exist=True, default='', is_type_of=str),
+    Validator('proxy.exclude', must_exist=True, default=["localhost", "127.0.0.1"], is_type_of=list),
+
+    # opensubtitles.org section
+    Validator('opensubtitles.username', must_exist=True, default='', is_type_of=str),
+    Validator('opensubtitles.password', must_exist=True, default='', is_type_of=str),
+    Validator('opensubtitles.use_tag_search', must_exist=True, default=False, is_type_of=bool),
+    Validator('opensubtitles.vip', must_exist=True, default=False, is_type_of=bool),
+    Validator('opensubtitles.ssl', must_exist=True, default=False, is_type_of=bool),
+    Validator('opensubtitles.timeout', must_exist=True, default=15, is_type_of=int, gte=1),
+    Validator('opensubtitles.skip_wrong_fps', must_exist=True, default=False, is_type_of=bool),
+
+    # opensubtitles.com section
+    Validator('opensubtitlescom.username', must_exist=True, default='', is_type_of=str),
+    Validator('opensubtitlescom.password', must_exist=True, default='', is_type_of=str),
+    Validator('opensubtitlescom.use_hash', must_exist=True, default=True, is_type_of=bool),
+
+    # addic7ed section
+    Validator('addic7ed.username', must_exist=True, default='', is_type_of=str),
+    Validator('addic7ed.password', must_exist=True, default='', is_type_of=str),
+    Validator('addic7ed.cookies', must_exist=True, default='', is_type_of=str),
+    Validator('addic7ed.user_agent', must_exist=True, default='', is_type_of=str),
+    Validator('addic7ed.vip', must_exist=True, default=False, is_type_of=bool),
+
+    # podnapisi section
+    Validator('podnapisi.verify_ssl', must_exist=True, default=True, is_type_of=bool),
+
+    # subf2m section
+    Validator('subf2m.verify_ssl', must_exist=True, default=True, is_type_of=bool),
+    Validator('subf2m.user_agent', must_exist=True, default='', is_type_of=str),
+
+    # hdbits section
+    Validator('hdbits.username', must_exist=True, default='', is_type_of=str),
+    Validator('hdbits.passkey', must_exist=True, default='', is_type_of=str),
+
+    # whisperai section
+    Validator('whisperai.endpoint', must_exist=True, default='http://127.0.0.1:9000', is_type_of=str),
+    Validator('whisperai.timeout', must_exist=True, default=3600, is_type_of=int, gte=1),
+
+    # legendasdivx section
+    Validator('legendasdivx.username', must_exist=True, default='', is_type_of=str),
+    Validator('legendasdivx.password', must_exist=True, default='', is_type_of=str),
+    Validator('legendasdivx.skip_wrong_fps', must_exist=True, default=False, is_type_of=bool),
+
+    # ktuvit section
+    Validator('ktuvit.email', must_exist=True, default='', is_type_of=str),
+    Validator('ktuvit.hashed_password', must_exist=True, default='', is_type_of=str),
+
+    # xsubs section
+    Validator('xsubs.username', must_exist=True, default='', is_type_of=str),
+    Validator('xsubs.password', must_exist=True, default='', is_type_of=str),
+
+    # assrt section
+    Validator('assrt.token', must_exist=True, default='', is_type_of=str),
+
+    # anticaptcha section
+    Validator('anticaptcha.anti_captcha_key', must_exist=True, default='', is_type_of=str),
+
+    # deathbycaptcha section
+    Validator('deathbycaptcha.username', must_exist=True, default='', is_type_of=str),
+    Validator('deathbycaptcha.password', must_exist=True, default='', is_type_of=str),
+
+    # napisy24 section
+    Validator('napisy24.username', must_exist=True, default='', is_type_of=str),
+    Validator('napisy24.password', must_exist=True, default='', is_type_of=str),
+
+    # subscene section
+    Validator('subscene.username', must_exist=True, default='', is_type_of=str),
+    Validator('subscene.password', must_exist=True, default='', is_type_of=str),
+
+    # betaseries section
+    Validator('betaseries.token', must_exist=True, default='', is_type_of=str),
+
+    # analytics section
+    Validator('analytics.enabled', must_exist=True, default=True, is_type_of=bool),
+
+    # titlovi section
+    Validator('titlovi.username', must_exist=True, default='', is_type_of=str),
+    Validator('titlovi.password', must_exist=True, default='', is_type_of=str),
+
+    # titulky section
+    Validator('titulky.username', must_exist=True, default='', is_type_of=str),
+    Validator('titulky.password', must_exist=True, default='', is_type_of=str),
+    Validator('titulky.approved_only', must_exist=True, default=False, is_type_of=bool),
+
+    # embeddedsubtitles section
+    Validator('embeddedsubtitles.included_codecs', must_exist=True, default=[], is_type_of=list),
+    Validator('embeddedsubtitles.hi_fallback', must_exist=True, default=False, is_type_of=bool),
+    Validator('embeddedsubtitles.timeout', must_exist=True, default=600, is_type_of=int, gte=1),
+    Validator('embeddedsubtitles.unknown_as_english', must_exist=True, default=False, is_type_of=bool),
+
+    # karagarga section
+    Validator('karagarga.username', must_exist=True, default='', is_type_of=str),
+    Validator('karagarga.password', must_exist=True, default='', is_type_of=str),
+    Validator('karagarga.f_username', must_exist=True, default='', is_type_of=str),
+    Validator('karagarga.f_password', must_exist=True, default='', is_type_of=str),
+
+    # subsync section
+    Validator('subsync.use_subsync', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.use_subsync_threshold', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.subsync_threshold', must_exist=True, default=90, is_type_of=int, gte=0, lte=100),
+    Validator('subsync.use_subsync_movie_threshold', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.subsync_movie_threshold', must_exist=True, default=70, is_type_of=int, gte=0, lte=100),
+    Validator('subsync.debug', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.force_audio', must_exist=True, default=False, is_type_of=bool),
+
+    # series_scores section
+    Validator('series_scores.hash', must_exist=True, default=359, is_type_of=int),
+    Validator('series_scores.series', must_exist=True, default=180, is_type_of=int),
+    Validator('series_scores.year', must_exist=True, default=90, is_type_of=int),
+    Validator('series_scores.season', must_exist=True, default=30, is_type_of=int),
+    Validator('series_scores.episode', must_exist=True, default=30, is_type_of=int),
+    Validator('series_scores.release_group', must_exist=True, default=14, is_type_of=int),
+    Validator('series_scores.source', must_exist=True, default=7, is_type_of=int),
+    Validator('series_scores.audio_codec', must_exist=True, default=3, is_type_of=int),
+    Validator('series_scores.resolution', must_exist=True, default=2, is_type_of=int),
+    Validator('series_scores.video_codec', must_exist=True, default=2, is_type_of=int),
+    Validator('series_scores.streaming_service', must_exist=True, default=1, is_type_of=int),
+    Validator('series_scores.hearing_impaired', must_exist=True, default=1, is_type_of=int),
+
+    # movie_scores section
+    Validator('movie_scores.hash', must_exist=True, default=119, is_type_of=int),
+    Validator('movie_scores.title', must_exist=True, default=60, is_type_of=int),
+    Validator('movie_scores.year', must_exist=True, default=30, is_type_of=int),
+    Validator('movie_scores.release_group', must_exist=True, default=13, is_type_of=int),
+    Validator('movie_scores.source', must_exist=True, default=7, is_type_of=int),
+    Validator('movie_scores.audio_codec', must_exist=True, default=3, is_type_of=int),
+    Validator('movie_scores.resolution', must_exist=True, default=2, is_type_of=int),
+    Validator('movie_scores.video_codec', must_exist=True, default=2, is_type_of=int),
+    Validator('movie_scores.streaming_service', must_exist=True, default=1, is_type_of=int),
+    Validator('movie_scores.edition', must_exist=True, default=1, is_type_of=int),
+    Validator('movie_scores.hearing_impaired', must_exist=True, default=1, is_type_of=int),
+
+    # postgresql section
+    Validator('postgresql.enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('postgresql.host', must_exist=True, default='localhost', is_type_of=str),
+    Validator('postgresql.port', must_exist=True, default=5432, is_type_of=int, gte=1, lte=65535),
+    Validator('postgresql.database', must_exist=True, default='', is_type_of=str),
+    Validator('postgresql.username', must_exist=True, default='', is_type_of=str),
+    Validator('postgresql.password', must_exist=True, default='', is_type_of=str),
+]
+
+
+def convert_ini_to_yaml(config_file):
+    import configparser
+    import yaml
+    config_object = configparser.RawConfigParser()
+    file = open(config_file, "r")
+    config_object.read_file(file)
+    output_dict = dict()
+    sections = config_object.sections()
+    for section in sections:
+        items = config_object.items(section)
+        output_dict[section] = dict()
+        for item in items:
+            try:
+                output_dict[section].update({item[0]: ast.literal_eval(item[1])})
+            except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+                output_dict[section].update({item[0]: item[1]})
+    with open(os.path.join(os.path.dirname(config_file), 'config.yaml'), 'w') as file:
+        yaml.dump(output_dict, file)
+    os.replace(config_file, f'{config_file}.old')
+
+
+config_yaml_file = os.path.join(args.config_dir, 'config', 'config.yaml')
+config_ini_file = os.path.join(args.config_dir, 'config', 'config.ini')
+if os.path.exists(config_ini_file) and not os.path.exists(config_yaml_file):
+    convert_ini_to_yaml(config_ini_file)
+elif not os.path.exists(config_yaml_file):
+    if not os.path.isdir(os.path.dirname(config_yaml_file)):
+        os.makedirs(os.path.dirname(config_yaml_file))
+    open(config_yaml_file, mode='w').close()
+
+settings = Dynaconf(
+    settings_file=config_yaml_file,
+    core_loaders=['YAML'],
+    apply_default_on_none=True,
+)
+
+settings.validators.register(*validators)
+
+failed_validator = True
+while failed_validator:
+    try:
+        settings.validators.validate_all()
+        failed_validator = False
+    except ValidationError as e:
+        current_validator_details = e.details[0][0]
+        if hasattr(current_validator_details, 'default') and current_validator_details.default is not empty:
+            settings[current_validator_details.names[0]] = current_validator_details.default
+        else:
+            logging.critical(f"Value for {current_validator_details.names[0]} doesn't pass validation and there's no "
+                             f"default value. This issue must be reported. Bazarr won't works until it's been fixed.")
+            os._exit(0)
+
+
+def write_config():
+    write(settings_path=config_yaml_file,
+          settings_data={k.lower(): v for k, v in settings.as_dict().items()},
+          merge=False)
+
+
 base_url = settings.general.base_url.rstrip('/')
 
 ignore_keys = ['flask_secret_key']
-
-raw_keys = ['movie_default_forced', 'serie_default_forced']
 
 array_keys = ['excluded_tags',
               'exclude',
@@ -305,79 +401,50 @@ array_keys = ['excluded_tags',
               'path_mappings_movie',
               'language_equals']
 
-str_keys = ['chmod']
-
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
+str_keys = ['chmod']
+
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
-if int(settings.sonarr.series_sync) < 15:
-    settings.sonarr.series_sync = "60"
-if int(settings.sonarr.episodes_sync) < 15:
-    settings.sonarr.episodes_sync = "60"
-if int(settings.radarr.movies_sync) < 15:
-    settings.radarr.movies_sync = "60"
+if settings.sonarr.series_sync < 15:
+    settings.sonarr.series_sync = 60
+if settings.sonarr.episodes_sync < 15:
+    settings.sonarr.episodes_sync = 60
+if settings.radarr.movies_sync < 15:
+    settings.radarr.movies_sync = 60
 
 # Make sure to get of double slashes in base_url
 settings.general.base_url = base_url_slash_cleaner(uri=settings.general.base_url)
 settings.sonarr.base_url = base_url_slash_cleaner(uri=settings.sonarr.base_url)
 settings.radarr.base_url = base_url_slash_cleaner(uri=settings.radarr.base_url)
 
-# fixing issue with improper page_size value
-if settings.general.page_size not in ['25', '50', '100', '250', '500', '1000']:
-    settings.general.page_size = defaults['general']['page_size']
-
 # increase delay between searches to reduce impact on providers
-if settings.general.wanted_search_frequency == '3':
-    settings.general.wanted_search_frequency = '6'
-if settings.general.wanted_search_frequency_movie == '3':
-    settings.general.wanted_search_frequency_movie = '6'
+if settings.general.wanted_search_frequency == 3:
+    settings.general.wanted_search_frequency = 6
+if settings.general.wanted_search_frequency_movie == 3:
+    settings.general.wanted_search_frequency_movie = 6
 
 # save updated settings to file
-if os.path.exists(os.path.join(args.config_dir, 'config', 'config.ini')):
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-        settings.write(handle)
+write_config()
 
 
 def get_settings():
-    result = dict()
-    sections = settings.sections()
-
-    for sec in sections:
-        sec_values = settings.items(sec, False)
-        values_dict = dict()
-
-        for sec_val in sec_values:
-            key = sec_val[0]
-            value = sec_val[1]
-
-            if key in ignore_keys:
-                continue
-
-            if key not in raw_keys:
-                # Do some postprocessings
-                if value in empty_values:
-                    if key in array_keys:
-                        value = []
-                    else:
-                        continue
-                elif key in array_keys:
-                    value = get_array_from(value)
-                elif value == 'True':
-                    value = True
-                elif value == 'False':
-                    value = False
+    # return {k.lower(): v for k, v in settings.as_dict().items()}
+    settings_to_return = {}
+    for k, v in settings.as_dict().items():
+        if isinstance(v, dict):
+            k = k.lower()
+            settings_to_return[k] = dict()
+            for subk, subv in v.items():
+                if subk.lower() in ignore_keys:
+                    continue
+                if subv in empty_values and subk.lower() in array_keys:
+                    settings_to_return[k].update({subk: []})
+                elif subk == 'subzero_mods':
+                    settings_to_return[k].update({subk: get_array_from(subv)})
                 else:
-                    if key not in str_keys:
-                        try:
-                            value = int(value)
-                        except ValueError:
-                            pass
-
-            values_dict[key] = value
-
-        result[sec] = values_dict
-
-    return result
+                    settings_to_return[k].update({subk: subv})
+    return settings_to_return
 
 
 def save_settings(settings_items):
@@ -408,11 +475,18 @@ def save_settings(settings_items):
 
         settings_keys = key.split('-')
 
-        # Make sure that text based form values aren't pass as list
+        # Make sure that text based form values aren't passed as list
         if isinstance(value, list) and len(value) == 1 and settings_keys[-1] not in array_keys:
             value = value[0]
             if value in empty_values and value != '':
                 value = None
+
+        # try to cast string as integer
+        if isinstance(value, str) and settings_keys[-1] not in str_keys:
+            try:
+                value = int(value)
+            except ValueError:
+                pass
 
         # Make sure empty language list are stored correctly
         if settings_keys[-1] in array_keys and value[0] in empty_values:
@@ -420,12 +494,12 @@ def save_settings(settings_items):
 
         # Handle path mappings settings since they are array in array
         if settings_keys[-1] in ['path_mappings', 'path_mappings_movie']:
-            value = [v.split(',') for v in value]
+            value = [x.split(',') for x in value if isinstance(x, str)]
 
         if value == 'true':
-            value = 'True'
+            value = True
         elif value == 'false':
-            value = 'False'
+            value = False
 
         if key in ['settings-general-use_embedded_subs', 'settings-general-ignore_pgs_subs',
                    'settings-general-ignore_vobsub_subs', 'settings-general-ignore_ass_subs']:
@@ -553,14 +627,13 @@ def save_settings(settings_items):
             reset_throttled_providers(only_auth_or_conf_error=True)
 
         if settings_keys[0] == 'settings':
-            settings[settings_keys[1]][settings_keys[2]] = str(value)
+            settings[settings_keys[1]][settings_keys[2]] = value
 
         if settings_keys[0] == 'subzero':
             mod = settings_keys[1]
-            enabled = value == 'True'
-            if mod in subzero_mods and not enabled:
+            if mod in subzero_mods and not value:
                 subzero_mods.remove(mod)
-            elif enabled:
+            elif value:
                 subzero_mods.append(mod)
 
             # Handle color
@@ -581,77 +654,82 @@ def save_settings(settings_items):
         from .scheduler import scheduler
         from subtitles.indexer.series import list_missing_subtitles
         from subtitles.indexer.movies import list_missing_subtitles_movies
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             scheduler.add_job(list_missing_subtitles, kwargs={'send_event': True})
-        if settings.general.getboolean('use_radarr'):
+        if settings.general.use_radarr:
             scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': True})
 
     if undefined_subtitles_track_default_changed:
         from .scheduler import scheduler
         from subtitles.indexer.series import series_full_scan_subtitles
         from subtitles.indexer.movies import movies_full_scan_subtitles
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             scheduler.add_job(series_full_scan_subtitles, kwargs={'use_cache': True})
-        if settings.general.getboolean('use_radarr'):
+        if settings.general.use_radarr:
             scheduler.add_job(movies_full_scan_subtitles, kwargs={'use_cache': True})
 
     if audio_tracks_parsing_changed:
         from .scheduler import scheduler
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             from sonarr.sync.series import update_series
             scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
-        if settings.general.getboolean('use_radarr'):
+        if settings.general.use_radarr:
             from radarr.sync.movies import update_movies
             scheduler.add_job(update_movies, kwargs={'send_event': True}, max_instances=1)
 
     if update_subzero:
-        settings.set('general', 'subzero_mods', ','.join(subzero_mods))
+        settings.general.subzero_mods = ','.join(subzero_mods)
 
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-        settings.write(handle)
+    try:
+        settings.validators.validate()
+    except ValidationError:
+        settings.reload()
+        raise
+    else:
+        write_config()
 
-    # Reconfigure Bazarr to reflect changes
-    if configure_debug:
-        from .logger import configure_logging
-        configure_logging(settings.general.getboolean('debug') or args.debug)
+        # Reconfigure Bazarr to reflect changes
+        if configure_debug:
+            from .logger import configure_logging
+            configure_logging(settings.general.debug or args.debug)
 
-    if configure_captcha:
-        configure_captcha_func()
+        if configure_captcha:
+            configure_captcha_func()
 
-    if update_schedule:
-        from .scheduler import scheduler
-        from .event_handler import event_stream
-        scheduler.update_configurable_tasks()
-        event_stream(type='task')
+        if update_schedule:
+            from .scheduler import scheduler
+            from .event_handler import event_stream
+            scheduler.update_configurable_tasks()
+            event_stream(type='task')
 
-    if sonarr_changed:
-        from .signalr_client import sonarr_signalr_client
-        try:
-            sonarr_signalr_client.restart()
-        except Exception:
-            pass
+        if sonarr_changed:
+            from .signalr_client import sonarr_signalr_client
+            try:
+                sonarr_signalr_client.restart()
+            except Exception:
+                pass
 
-    if radarr_changed:
-        from .signalr_client import radarr_signalr_client
-        try:
-            radarr_signalr_client.restart()
-        except Exception:
-            pass
+        if radarr_changed:
+            from .signalr_client import radarr_signalr_client
+            try:
+                radarr_signalr_client.restart()
+            except Exception:
+                pass
 
-    if update_path_map:
-        from utilities.path_mappings import path_mappings
-        path_mappings.update()
+        if update_path_map:
+            from utilities.path_mappings import path_mappings
+            path_mappings.update()
 
-    if configure_proxy:
-        configure_proxy_func()
+        if configure_proxy:
+            configure_proxy_func()
 
-    if exclusion_updated:
-        from .event_handler import event_stream
-        event_stream(type='badges')
-        if sonarr_exclusion_updated:
-            event_stream(type='reset-episode-wanted')
-        if radarr_exclusion_updated:
-            event_stream(type='reset-movie-wanted')
+        if exclusion_updated:
+            from .event_handler import event_stream
+            event_stream(type='badges')
+            if sonarr_exclusion_updated:
+                event_stream(type='reset-episode-wanted')
+            if radarr_exclusion_updated:
+                event_stream(type='reset-movie-wanted')
 
 
 def get_array_from(property):
@@ -681,15 +759,15 @@ def configure_captcha_func():
 
 
 def configure_proxy_func():
-    if settings.proxy.type != 'None':
+    if settings.proxy.type:
         if settings.proxy.username != '' and settings.proxy.password != '':
-            proxy = settings.proxy.type + '://' + quote_plus(settings.proxy.username) + ':' + \
-                    quote_plus(settings.proxy.password) + '@' + settings.proxy.url + ':' + settings.proxy.port
+            proxy = (f'{settings.proxy.type}://{quote_plus(settings.proxy.username)}:'
+                     f'{quote_plus(settings.proxy.password)}@{settings.proxy.url}:{settings.proxy.port}')
         else:
-            proxy = settings.proxy.type + '://' + settings.proxy.url + ':' + settings.proxy.port
+            proxy = f'{settings.proxy.type}://{settings.proxy.url}:{settings.proxy.port}'
         os.environ['HTTP_PROXY'] = str(proxy)
         os.environ['HTTPS_PROXY'] = str(proxy)
-        exclude = ','.join(get_array_from(settings.proxy.exclude))
+        exclude = ','.join(settings.proxy.exclude)
         os.environ['NO_PROXY'] = exclude
 
 

@@ -4,16 +4,13 @@ import logging
 import requests
 
 from app.config import settings
-from sonarr.info import get_sonarr_info, url_sonarr
+from sonarr.info import url_api_sonarr
 from constants import headers
 
 
 def notify_sonarr(sonarr_series_id):
     try:
-        if get_sonarr_info.is_legacy():
-            url = url_sonarr() + "/api/command?apikey=" + settings.sonarr.apikey
-        else:
-            url = url_sonarr() + "/api/v3/command?apikey=" + settings.sonarr.apikey
+        url = f"{url_api_sonarr()}command?apikey={settings.sonarr.apikey}"
         data = {
             'name': 'RescanSeries',
             'seriesId': int(sonarr_series_id)

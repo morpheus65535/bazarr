@@ -45,8 +45,9 @@ class SonarrSignalrClientLegacy:
 
     def start(self):
         if get_sonarr_info.is_legacy():
-            logging.warning('BAZARR can only sync from Sonarr v3 SignalR feed to get real-time update. You should '
-                            'consider upgrading your version({}).'.format(get_sonarr_info.version()))
+            logging.warning(
+                f'BAZARR can only sync from Sonarr v3 SignalR feed to get real-time update. You should consider '
+                f'upgrading your version({get_sonarr_info.version()}).')
         else:
             self.connected = False
             event_stream(type='badges')
@@ -86,7 +87,7 @@ class SonarrSignalrClientLegacy:
         if self.connection:
             if self.connection.started:
                 self.stop(log=False)
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             self.start()
 
     def exception_handler(self):
@@ -98,7 +99,7 @@ class SonarrSignalrClientLegacy:
 
     def configure(self):
         self.apikey_sonarr = settings.sonarr.apikey
-        self.connection = Connection(url_sonarr() + "/signalr", self.session)
+        self.connection = Connection(f"{url_sonarr()}/signalr", self.session)
         self.connection.qs = {'apikey': self.apikey_sonarr}
         sonarr_hub = self.connection.register_hub('')  # Sonarr doesn't use named hub
 
@@ -133,7 +134,7 @@ class SonarrSignalrClient:
         if self.connection:
             if self.connection.transport.state.value in [0, 1, 2]:
                 self.stop()
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             self.start()
 
     def exception_handler(self):
@@ -158,7 +159,7 @@ class SonarrSignalrClient:
     def configure(self):
         self.apikey_sonarr = settings.sonarr.apikey
         self.connection = HubConnectionBuilder() \
-            .with_url(url_sonarr() + "/signalr/messages?access_token={}".format(self.apikey_sonarr),
+            .with_url(f"{url_sonarr()}/signalr/messages?access_token={self.apikey_sonarr}",
                       options={
                           "verify_ssl": False,
                           "headers": headers
@@ -200,7 +201,7 @@ class RadarrSignalrClient:
         if self.connection:
             if self.connection.transport.state.value in [0, 1, 2]:
                 self.stop()
-        if settings.general.getboolean('use_radarr'):
+        if settings.general.use_radarr:
             self.start()
 
     def exception_handler(self):
@@ -225,7 +226,7 @@ class RadarrSignalrClient:
     def configure(self):
         self.apikey_radarr = settings.radarr.apikey
         self.connection = HubConnectionBuilder() \
-            .with_url(url_radarr() + "/signalr/messages?access_token={}".format(self.apikey_radarr),
+            .with_url(f"{url_radarr()}/signalr/messages?access_token={self.apikey_radarr}",
                       options={
                           "verify_ssl": False,
                           "headers": headers
@@ -300,13 +301,13 @@ def dispatcher(data):
         elif topic == 'episode':
             logging.debug(f'Event received from Sonarr for episode: {series_title} ({series_year}) - '
                           f'S{season_number:0>2}E{episode_number:0>2} - {episode_title}')
-            sync_one_episode(episode_id=media_id, defer_search=settings.sonarr.getboolean('defer_search_signalr'))
+            sync_one_episode(episode_id=media_id, defer_search=settings.sonarr.defer_search_signalr)
         elif topic == 'movie':
             logging.debug(f'Event received from Radarr for movie: {movie_title} ({movie_year})')
             update_one_movie(movie_id=media_id, action=action,
-                             defer_search=settings.radarr.getboolean('defer_search_signalr'))
+                             defer_search=settings.radarr.defer_search_signalr)
     except Exception as e:
-        logging.debug('BAZARR an exception occurred while parsing SignalR feed: {}'.format(repr(e)))
+        logging.debug(f'BAZARR an exception occurred while parsing SignalR feed: {repr(e)}')
     finally:
         event_stream(type='badges')
         return

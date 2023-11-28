@@ -29,13 +29,13 @@ from .post_processing import postprocessing
 def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, audio_language):
     logging.debug(f'BAZARR Manually uploading subtitles for this file: {path}')
 
-    single = settings.general.getboolean('single_language')
+    single = settings.general.single_language
 
-    use_postprocessing = settings.general.getboolean('use_postprocessing')
+    use_postprocessing = settings.general.use_postprocessing
     postprocessing_cmd = settings.general.postprocessing_cmd
 
     chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
-        'win') and settings.general.getboolean('chmod_enabled') else None
+        'win') and settings.general.chmod_enabled else None
 
     language = alpha3_from_alpha2(language)
 
@@ -84,10 +84,10 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
 
     sub.content = subtitle.read()
     if not sub.is_valid():
-        logging.exception('BAZARR Invalid subtitle file: ' + subtitle.filename)
+        logging.exception(f'BAZARR Invalid subtitle file: {subtitle.filename}')
         sub.mods = None
 
-    if settings.general.getboolean('utf8_encode'):
+    if settings.general.utf8_encode:
         sub.set_encoding("utf-8")
 
     try:
@@ -106,11 +106,11 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
                                          formats=(sub.format,) if use_original_format else ("srt",),
                                          path_decoder=force_unicode)
     except Exception:
-        logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
+        logging.exception(f'BAZARR Error saving Subtitles file to disk for this file: {path}')
         return
 
     if len(saved_subtitles) < 1:
-        logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
+        logging.exception(f'BAZARR Error saving Subtitles file to disk for this file: {path}')
         return
 
     subtitle_path = saved_subtitles[0].storage_path
@@ -168,8 +168,8 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
         event_stream(type='movie', action='update', payload=movie_metadata.radarrId)
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
 
-    result = ProcessSubtitlesResult(message=language_from_alpha3(language) + modifier_string + " Subtitles manually "
-                                                                                               "uploaded.",
+    result = ProcessSubtitlesResult(message=f"{language_from_alpha3(language)}{modifier_string} Subtitles manually "
+                                            "uploaded.",
                                     reversed_path=reversed_path,
                                     downloaded_language_code2=uploaded_language_code2,
                                     downloaded_provider=None,

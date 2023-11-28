@@ -4,7 +4,9 @@ import json
 
 from flask import request, jsonify
 from flask_restx import Resource, Namespace
+from dynaconf.validator import ValidationError
 
+from api.utils import None_Keys
 from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableSettingsNotifier, \
     update_profile_id_list, database, insert, update, delete, select
 from app.event_handler import event_stream
@@ -65,11 +67,12 @@ class SystemSettings(Resource):
                         update(TableLanguagesProfiles)
                         .values(
                             name=item['name'],
-                            cutoff=item['cutoff'] if item['cutoff'] != 'null' else None,
+                            cutoff=item['cutoff'] if item['cutoff'] not in None_Keys else None,
                             items=json.dumps(item['items']),
                             mustContain=str(item['mustContain']),
                             mustNotContain=str(item['mustNotContain']),
-                            originalFormat=item['originalFormat'] if item['originalFormat'] != 'null' else None,
+                            originalFormat=int(item['originalFormat']) if item['originalFormat'] not in None_Keys else
+                            None,
                         )
                         .where(TableLanguagesProfiles.profileId == item['profileId']))
                     existing.remove(item['profileId'])
@@ -80,11 +83,12 @@ class SystemSettings(Resource):
                         .values(
                             profileId=item['profileId'],
                             name=item['name'],
-                            cutoff=item['cutoff'] if item['cutoff'] != 'null' else None,
+                            cutoff=item['cutoff'] if item['cutoff'] not in None_Keys else None,
                             items=json.dumps(item['items']),
                             mustContain=str(item['mustContain']),
                             mustNotContain=str(item['mustNotContain']),
-                            originalFormat=item['originalFormat'] if item['originalFormat'] != 'null' else None,
+                            originalFormat=int(item['originalFormat']) if item['originalFormat'] not in None_Keys else
+                            None,
                         ))
             for profileId in existing:
                 # Remove deleted profiles
@@ -97,9 +101,9 @@ class SystemSettings(Resource):
 
             event_stream("languages")
 
-            if settings.general.getboolean('use_sonarr'):
+            if settings.general.use_sonarr:
                 scheduler.add_job(list_missing_subtitles, kwargs={'send_event': True})
-            if settings.general.getboolean('use_radarr'):
+            if settings.general.use_radarr:
                 scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': True})
 
         # Update Notification
@@ -112,6 +116,11 @@ class SystemSettings(Resource):
                     url=item['url'])
                 .where(TableSettingsNotifier.name == item['name']))
 
-        save_settings(zip(request.form.keys(), request.form.listvalues()))
-        event_stream("settings")
-        return '', 204
+        try:
+            save_settings(zip(request.form.keys(), request.form.listvalues()))
+        except ValidationError as e:
+            event_stream("settings")
+            return e.message, 406
+        else:
+            event_stream("settings")
+            return '', 204

@@ -127,10 +127,10 @@ class Scheduler:
             if day == "*":
                 text = "everyday"
             else:
-                text = "every " + day_name[int(day)]
+                text = f"every {day_name[int(day)]}"
 
             if hour != "*":
-                text += " at " + hour + ":00"
+                text += f" at {hour}:00"
 
             return text
 
@@ -149,7 +149,7 @@ class Scheduler:
                 running = False
 
             if isinstance(job.trigger, IntervalTrigger):
-                interval = "every " + get_time_from_interval(job.trigger.__getstate__()['interval'])
+                interval = f"every {get_time_from_interval(job.trigger.__getstate__()['interval'])}"
                 task_list.append({'name': job.name, 'interval': interval, 'next_run_in': next_run,
                                   'next_run_time': next_run, 'job_id': job.id, 'job_running': running})
             elif isinstance(job.trigger, CronTrigger):
@@ -160,14 +160,14 @@ class Scheduler:
         return task_list
 
     def __sonarr_update_task(self):
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             self.aps_scheduler.add_job(
                 update_series, IntervalTrigger(minutes=int(settings.sonarr.series_sync)), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='update_series', name='Sync with Sonarr',
                 replace_existing=True)
 
     def __radarr_update_task(self):
-        if settings.general.getboolean('use_radarr'):
+        if settings.general.use_radarr:
             self.aps_scheduler.add_job(
                 update_movies, IntervalTrigger(minutes=int(settings.radarr.movies_sync)), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='update_movies', name='Sync with Radarr',
@@ -200,7 +200,7 @@ class Scheduler:
                 pass
 
     def __sonarr_full_update_task(self):
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             full_update = settings.sonarr.full_update
             if full_update == "Daily":
                 self.aps_scheduler.add_job(
@@ -220,7 +220,7 @@ class Scheduler:
                     name='Index all Episode Subtitles from disk', replace_existing=True)
 
     def __radarr_full_update_task(self):
-        if settings.general.getboolean('use_radarr'):
+        if settings.general.use_radarr:
             full_update = settings.radarr.full_update
             if full_update == "Daily":
                 self.aps_scheduler.add_job(
@@ -242,7 +242,7 @@ class Scheduler:
         if not args.no_update and os.environ["BAZARR_VERSION"] != '':
             task_name = 'Update Bazarr'
 
-            if settings.general.getboolean('auto_update'):
+            if settings.general.auto_update:
                 self.aps_scheduler.add_job(
                     check_if_new_update, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
                     misfire_grace_time=15, id='update_bazarr', name=task_name, replace_existing=True)
@@ -264,13 +264,13 @@ class Scheduler:
             id='update_announcements', name='Update Announcements File', replace_existing=True)
 
     def __search_wanted_subtitles_task(self):
-        if settings.general.getboolean('use_sonarr'):
+        if settings.general.use_sonarr:
             self.aps_scheduler.add_job(
                 wanted_search_missing_subtitles_series,
                 IntervalTrigger(hours=int(settings.general.wanted_search_frequency)), max_instances=1, coalesce=True,
                 misfire_grace_time=15, id='wanted_search_missing_subtitles_series', replace_existing=True,
                 name='Search for wanted Series Subtitles')
-        if settings.general.getboolean('use_radarr'):
+        if settings.general.use_radarr:
             self.aps_scheduler.add_job(
                 wanted_search_missing_subtitles_movies,
                 IntervalTrigger(hours=int(settings.general.wanted_search_frequency_movie)), max_instances=1,
@@ -278,8 +278,8 @@ class Scheduler:
                 name='Search for wanted Movies Subtitles', replace_existing=True)
 
     def __upgrade_subtitles_task(self):
-        if settings.general.getboolean('upgrade_subs') and \
-                (settings.general.getboolean('use_sonarr') or settings.general.getboolean('use_radarr')):
+        if settings.general.upgrade_subs and \
+                (settings.general.use_sonarr or settings.general.use_radarr):
             self.aps_scheduler.add_job(
                 upgrade_subtitles, IntervalTrigger(hours=int(settings.general.upgrade_frequency)), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='upgrade_subtitles',
@@ -303,9 +303,9 @@ scheduler = Scheduler()
 
 # Force the execution of the sync process with Sonarr and Radarr after migration to v0.9.1
 if 'BAZARR_AUDIO_PROFILES_MIGRATION' in os.environ:
-    if settings.general.getboolean('use_sonarr'):
+    if settings.general.use_sonarr:
         scheduler.aps_scheduler.modify_job('update_series', next_run_time=datetime.now())
         scheduler.aps_scheduler.modify_job('sync_episodes', next_run_time=datetime.now())
-    if settings.general.getboolean('use_radarr'):
+    if settings.general.use_radarr:
         scheduler.aps_scheduler.modify_job('update_movies', next_run_time=datetime.now())
     del os.environ['BAZARR_AUDIO_PROFILES_MIGRATION']

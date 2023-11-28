@@ -15,7 +15,7 @@ from subtitles.tools.delete import delete_subtitles
 from sonarr.history import history_log
 from app.notifier import send_notifications
 from subtitles.indexer.series import store_subtitles
-from app.event_handler import event_stream
+from app.event_handler import event_stream, show_message
 from app.config import settings
 
 from ..utils import authenticate
@@ -69,6 +69,12 @@ class EpisodesSubtitles(Resource):
         language = args.get('language')
         hi = args.get('hi').capitalize()
         forced = args.get('forced').capitalize()
+        if hi == 'True':
+            language_str = f'{language}:hi'
+        elif forced == 'True':
+            language_str = f'{language}:forced'
+        else:
+            language_str = language
 
         audio_language_list = get_audio_profile_languages(episodeInfo.audio_language)
         if len(audio_language_list) > 0:
@@ -88,7 +94,8 @@ class EpisodesSubtitles(Resource):
                 store_subtitles(result.path, episodePath)
             else:
                 event_stream(type='episode', payload=sonarrEpisodeId)
-                return 'No subtitles found', 500
+                show_message(f'No {language_str.upper()} subtitles found')
+                return '', 204
         except OSError:
             return 'Unable to save subtitles file. Permission or path mapping issue?', 409
         else:
@@ -162,7 +169,7 @@ class EpisodesSubtitles(Resource):
                 provider = "manual"
                 score = 360
                 history_log(4, sonarrSeriesId, sonarrEpisodeId, result, fake_provider=provider, fake_score=score)
-                if not settings.general.getboolean('dont_notify_manual_actions'):
+                if not settings.general.dont_notify_manual_actions:
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
                 store_subtitles(result.path, episodePath)
         except OSError:

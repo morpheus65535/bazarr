@@ -69,8 +69,8 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
 
                 # to improve performance, skip detection of files larger that 1M
                 if os.path.getsize(subtitle_path) > 1 * 1024 * 1024:
-                    logging.debug("BAZARR subtitles file is too large to be text based. Skipping this file: " +
-                                  subtitle_path)
+                    logging.debug(f"BAZARR subtitles file is too large to be text based. Skipping this file: "
+                                  f"{subtitle_path}")
                     continue
 
                 with open(subtitle_path, 'rb') as f:
@@ -80,8 +80,8 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                 if encoding and 'encoding' in encoding and encoding['encoding']:
                     encoding = detect(text)['encoding']
                 else:
-                    logging.debug("BAZARR skipping this subtitles because we can't guess the encoding. "
-                                  "It's probably a binary file: " + subtitle_path)
+                    logging.debug(f"BAZARR skipping this subtitles because we can't guess the encoding. "
+                                  f"It's probably a binary file: {subtitle_path}")
                     continue
                 text = text.decode(encoding)
 
@@ -97,8 +97,7 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                         detected_language = 'zt'
 
                 if detected_language:
-                    logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
-                        detected_language))
+                    logging.debug(f"BAZARR external subtitles detected and guessed this language: {detected_language}")
                     try:
                         subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language), forced=forced,
                                                                hi=False)
@@ -121,8 +120,8 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
             if os.path.exists(subtitle_path) and os.path.splitext(subtitle_path)[1] in core.SUBTITLE_EXTENSIONS:
                 # to improve performance, skip detection of files larger that 1M
                 if os.path.getsize(subtitle_path) > 1 * 1024 * 1024:
-                    logging.debug("BAZARR subtitles file is too large to be text based. Skipping this file: " +
-                                  subtitle_path)
+                    logging.debug(f"BAZARR subtitles file is too large to be text based. Skipping this file: "
+                                  f"{subtitle_path}")
                     continue
 
                 with open(subtitle_path, 'rb') as f:
@@ -132,8 +131,8 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                 if encoding and 'encoding' in encoding and encoding['encoding']:
                     encoding = detect(text)['encoding']
                 else:
-                    logging.debug("BAZARR skipping this subtitles because we can't guess the encoding. "
-                                  "It's probably a binary file: " + subtitle_path)
+                    logging.debug(f"BAZARR skipping this subtitles because we can't guess the encoding. "
+                                  f"It's probably a binary file: {subtitle_path}")
                     continue
                 text = text.decode(encoding)
 

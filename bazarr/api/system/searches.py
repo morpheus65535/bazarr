@@ -27,7 +27,7 @@ class Searches(Resource):
         search_list = []
 
         if query:
-            if settings.general.getboolean('use_sonarr'):
+            if settings.general.use_sonarr:
                 # Get matching series
                 search_list += database.execute(
                     select(TableShows.title,
@@ -36,7 +36,7 @@ class Searches(Resource):
                     .order_by(TableShows.title)) \
                     .all()
 
-            if settings.general.getboolean('use_radarr'):
+            if settings.general.use_radarr:
                 # Get matching movies
                 search_list += database.execute(
                     select(TableMovies.title,

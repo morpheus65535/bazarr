@@ -18,7 +18,7 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
     for image in show['images']:
         if image['coverType'] == 'poster':
             poster_big = image['url'].split('?')[0]
-            poster = os.path.splitext(poster_big)[0] + '-250' + os.path.splitext(poster_big)[1]
+            poster = f'{os.path.splitext(poster_big)[0]}-250{os.path.splitext(poster_big)[1]}'
 
         if image['coverType'] == 'fanart':
             fanart = image['url'].split('?')[0]
@@ -32,7 +32,7 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
     imdbId = show['imdbId'] if 'imdbId' in show else None
 
     audio_language = []
-    if not settings.general.getboolean('parse_embedded_audio_track'):
+    if not settings.general.parse_embedded_audio_track:
         if get_sonarr_info.is_legacy():
             audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
         else:
@@ -98,7 +98,7 @@ def episodeParser(episode):
                     else:
                         sceneName = None
 
-                    if settings.general.getboolean('parse_embedded_audio_track'):
+                    if settings.general.parse_embedded_audio_track:
                         audio_language = embedded_audio_reader(path_mappings.path_replace(episode['episodeFile']
                                                                                           ['path']),
                                                                file_size=episode['episodeFile']['size'],
@@ -144,7 +144,7 @@ def episodeParser(episode):
                     except Exception:
                         video_format = episode['episodeFile']['quality']['quality']['name']
                         try:
-                            video_resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
+                            video_resolution = f'{episode["episodeFile"]["quality"]["quality"]["resolution"]}p'
                         except Exception:
                             video_resolution = None
 

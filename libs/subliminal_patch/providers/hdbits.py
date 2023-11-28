@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 class HDBitsSubtitle(Subtitle):
     provider_name = "hdbits"
     hash_verifiable = False
+    hearing_impaired_verifiable = True
 
     def __init__(self, language, id, name, filename, matches=None, episode=None):
         super().__init__(language, hearing_impaired=language.hi)

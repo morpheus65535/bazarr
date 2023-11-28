@@ -34,7 +34,7 @@ def create_app():
     else:
         app.config["DEBUG"] = False
 
-    socketio.init_app(app, path=base_url.rstrip('/')+'/api/socket.io', cors_allowed_origins='*',
+    socketio.init_app(app, path=f'{base_url.rstrip("/")}/api/socket.io', cors_allowed_origins='*',
                       async_mode='threading', allow_upgrades=False, transports='polling')
 
     @app.errorhandler(404)

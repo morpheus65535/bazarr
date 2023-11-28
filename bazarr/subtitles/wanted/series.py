@@ -109,10 +109,7 @@ def wanted_search_missing_subtitles_series():
     for i, episode in enumerate(episodes):
         show_progress(id='wanted_episodes_progress',
                       header='Searching subtitles...',
-                      name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode.title,
-                                                                 episode.season,
-                                                                 episode.episode,
-                                                                 episode.episodeTitle),
+                      name=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d} - {episode.episodeTitle}',
                       value=i,
                       count=count_episodes)
 

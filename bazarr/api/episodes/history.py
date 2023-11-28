@@ -150,7 +150,7 @@ class EpisodesHistory(Resource):
             del item['external_subtitles']
 
             if item['score']:
-                item['score'] = str(round((int(item['score']) * 100 / 360), 2)) + "%"
+                item['score'] = f"{round((int(item['score']) * 100 / 360), 2)}%"
 
             # Make timestamp pretty
             if item['timestamp']:

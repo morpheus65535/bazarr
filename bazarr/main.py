@@ -28,7 +28,7 @@ if bazarr_version != '':
     apply_update()
 
 # Check for new update and install latest
-if args.no_update or not settings.general.getboolean('auto_update'):
+if args.no_update or not settings.general.auto_update:
     # user have explicitly requested that we do not update or is using some kind of package/docker that prevent it
     check_releases()
 else:
@@ -47,7 +47,7 @@ if args.create_db_revision:
     try:
         stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
     except Exception as e:
-        logging.error('BAZARR Cannot create stop file: ' + repr(e))
+        logging.error(f'BAZARR Cannot create stop file: {repr(e)}')
     else:
         create_db_revision(app)
         logging.info('Bazarr is being shutdown...')
@@ -74,9 +74,9 @@ login_auth = settings.auth.type
 update_notifier()
 
 if not args.no_signalr:
-    if settings.general.getboolean('use_sonarr'):
+    if settings.general.use_sonarr:
         Thread(target=sonarr_signalr_client.start).start()
-    if settings.general.getboolean('use_radarr'):
+    if settings.general.use_radarr:
         Thread(target=radarr_signalr_client.start).start()
 
 

@@ -22,10 +22,10 @@ gc.enable()
 
 
 def store_subtitles(original_path, reversed_path, use_cache=True):
-    logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
+    logging.debug(f'BAZARR started subtitles indexing for this file: {reversed_path}')
     actual_subtitles = []
     if os.path.exists(reversed_path):
-        if settings.general.getboolean('use_embedded_subs'):
+        if settings.general.use_embedded_subs:
             logging.debug("BAZARR is trying to index embedded subtitles.")
             item = database.execute(
                 select(TableEpisodes.episode_file_id, TableEpisodes.file_size)
@@ -41,10 +41,10 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                                                               use_cache=use_cache)
                     for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                         try:
-                            if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
-                                    (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
+                            if (settings.general.ignore_pgs_subs and subtitle_codec.lower() == "pgs") or \
+                                    (settings.general.ignore_vobsub_subs and subtitle_codec.lower() ==
                                      "vobsub") or \
-                                    (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
+                                    (settings.general.ignore_ass_subs and subtitle_codec.lower() ==
                                      "ass"):
                                 logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
                                 continue
@@ -52,10 +52,10 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                             if alpha2_from_alpha3(subtitle_language) is not None:
                                 lang = str(alpha2_from_alpha3(subtitle_language))
                                 if subtitle_forced:
-                                    lang = lang + ":forced"
+                                    lang = f"{lang}:forced"
                                 if subtitle_hi:
-                                    lang = lang + ":hi"
-                                logging.debug("BAZARR embedded subtitles detected: " + lang)
+                                    lang = f"{lang}:hi"
+                                logging.debug(f"BAZARR embedded subtitles detected: {lang}")
                                 actual_subtitles.append([lang, None, None])
                         except Exception as error:
                             logging.debug("BAZARR unable to index this unrecognized language: %s (%s)", subtitle_language, error)
@@ -84,7 +84,7 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                                                            os.stat(path_mappings.path_replace(x[1])).st_size == x[2]]
 
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set(),
-                                                  only_one=settings.general.getboolean('single_language'))
+                                                  only_one=settings.general.single_language)
             full_dest_folder_path = os.path.dirname(reversed_path)
             if dest_folder:
                 if settings.general.subfolder == "absolute":
@@ -118,12 +118,12 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
 
                 elif str(language.basename) != 'und':
                     if language.forced:
-                        language_str = str(language)
+                        language_str = f'{language}:forced'
                     elif language.hi:
-                        language_str = str(language) + ':hi'
+                        language_str = f'{language}:hi'
                     else:
                         language_str = str(language)
-                    logging.debug("BAZARR external subtitles detected: " + language_str)
+                    logging.debug(f"BAZARR external subtitles detected: {language_str}")
                     actual_subtitles.append([language_str, path_mappings.path_replace_reverse(subtitle_path),
                                              os.stat(subtitle_path).st_size])
 
@@ -138,14 +138,14 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
 
         for episode in matching_episodes:
             if episode:
-                logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+                logging.debug(f"BAZARR storing those languages to DB: {actual_subtitles}")
                 list_missing_subtitles(epno=episode.sonarrEpisodeId)
             else:
-                logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
+                logging.debug(f"BAZARR haven't been able to update existing subtitles to DB: {actual_subtitles}")
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
 
-    logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
+    logging.debug(f'BAZARR ended subtitles indexing for this file: {reversed_path}')
 
     return actual_subtitles
 
@@ -168,7 +168,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
         .where(episodes_subtitles_clause))\
         .all()
 
-    use_embedded_subs = settings.general.getboolean('use_embedded_subs')
+    use_embedded_subs = settings.general.use_embedded_subs
 
     for episode_subtitles in episodes_subtitles:
         missing_subtitles_text = '[]'
@@ -266,7 +266,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
         event_stream(type='badges')
 
 
-def series_full_scan_subtitles(use_cache=settings.sonarr.getboolean('use_ffprobe_cache')):
+def series_full_scan_subtitles(use_cache=settings.sonarr.use_ffprobe_cache):
     episodes = database.execute(
         select(TableEpisodes.path))\
         .all()

@@ -23,7 +23,7 @@ def is_search_active(desired_language, attempt_string):
     @rtype: bool
     """
 
-    if settings.general.getboolean('adaptive_searching'):
+    if settings.general.adaptive_searching:
         logging.debug("Adaptive searching is enable, we'll see if it's time to search again...")
         try:
             # let's try to get a list of lists from the string representation in database

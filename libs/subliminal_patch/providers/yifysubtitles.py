@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 class YifySubtitle(Subtitle):
     """YIFY Subtitles"""
     provider_name = 'yifysubtitles'
+    hearing_impaired_verifiable = True
 
     def __init__(self, language, page_link, release, uploader, rating, hi):
         super(YifySubtitle, self).__init__(language)

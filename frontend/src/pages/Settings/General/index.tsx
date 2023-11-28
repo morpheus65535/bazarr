@@ -83,24 +83,32 @@ const SettingsGeneralView: FunctionComponent = () => {
         </CollapseBox>
         <Text
           label="API Key"
-          disabled
+          // User can copy through the clipboard button
+          disabled={window.isSecureContext}
+          // Enable user to at least copy when not in secure context
+          readOnly={!window.isSecureContext}
           rightSectionWidth={95}
           rightSectionProps={{ style: { justifyContent: "flex-end" } }}
           rightSection={
             <MantineGroup spacing="xs" mx="xs" position="right">
-              <Action
-                label="Copy API Key"
-                variant="light"
-                settingKey={settingApiKey}
-                color={copied ? "green" : undefined}
-                icon={copied ? faCheck : faClipboard}
-                onClick={(update, value) => {
-                  if (value) {
-                    clipboard.copy(value);
-                    toggleState(setCopy, 1500);
-                  }
-                }}
-              ></Action>
+              {
+                // Clipboard API is only available in secure contexts See: https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API#interfaces
+                window.isSecureContext && (
+                  <Action
+                    label="Copy API Key"
+                    variant="light"
+                    settingKey={settingApiKey}
+                    color={copied ? "green" : undefined}
+                    icon={copied ? faCheck : faClipboard}
+                    onClick={(update, value) => {
+                      if (value) {
+                        clipboard.copy(value);
+                        toggleState(setCopy, 1500);
+                      }
+                    }}
+                  />
+                )
+              }
               <Action
                 label="Regenerate"
                 variant="light"
