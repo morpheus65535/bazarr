@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -36,6 +32,7 @@ import json
 import contextlib
 import os
 import hashlib
+import locale
 from itertools import chain
 from os.path import expanduser
 from functools import reduce
@@ -142,14 +139,14 @@ NOTIFY_CUSTOM_DEL_TOKENS = re.compile(r'^-(?P<key>.*)\s*')
 NOTIFY_CUSTOM_COLON_TOKENS = re.compile(r'^:(?P<key>.*)\s*')
 
 # Used for attempting to acquire the schema if the URL can't be parsed.
-GET_SCHEMA_RE = re.compile(r'\s*(?P<schema>[a-z0-9]{2,9})://.*$', re.I)
+GET_SCHEMA_RE = re.compile(r'\s*(?P<schema>[a-z0-9]{1,12})://.*$', re.I)
 
 # Used for validating that a provided entry is indeed a schema
 # this is slightly different then the GET_SCHEMA_RE above which
 # insists the schema is only valid with a :// entry.  this one
 # extrapolates the individual entries
 URL_DETAILS_RE = re.compile(
-    r'\s*(?P<schema>[a-z0-9]{2,9})(://(?P<base>.*))?$', re.I)
+    r'\s*(?P<schema>[a-z0-9]{1,12})(://(?P<base>.*))?$', re.I)
 
 # Regular expression based and expanded from:
 # http://www.regular-expressions.info/email.html
@@ -193,7 +190,7 @@ CALL_SIGN_DETECTION_RE = re.compile(
 
 # Regular expression used to destinguish between multiple URLs
 URL_DETECTION_RE = re.compile(
-    r'([a-z0-9]+?:\/\/.*?)(?=$|[\s,]+[a-z0-9]{2,9}?:\/\/)', re.I)
+    r'([a-z0-9]+?:\/\/.*?)(?=$|[\s,]+[a-z0-9]{1,12}?:\/\/)', re.I)
 
 EMAIL_DETECTION_RE = re.compile(
     r'[\s,]*([^@]+@.*?)(?=$|[\s,]+'
@@ -1119,7 +1116,7 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None):
         errors=errors)
 
 
-def parse_list(*args):
+def parse_list(*args, cast=None):
     """
     Take a string list and break it into a delimited
     list of arguments. This funciton also supports
@@ -1142,6 +1139,9 @@ def parse_list(*args):
 
     result = []
     for arg in args:
+        if not isinstance(arg, (str, set, list, bool, tuple)) and arg and cast:
+            arg = cast(arg)
+
         if isinstance(arg, str):
             result += re.split(STRING_DELIMITERS, arg)
 
@@ -1154,7 +1154,6 @@ def parse_list(*args):
     # Since Python v3 returns a filter (iterator) whereas Python v2 returned
     # a list, we need to change it into a list object to remain compatible with
     # both distribution types.
-    # TODO: Review after dropping support for Python 2.
     return sorted([x for x in filter(bool, list(set(result)))])
 
 
@@ -1488,7 +1487,7 @@ def environ(*remove, **update):
 
     # Create a backup of our environment for restoration purposes
     env_orig = os.environ.copy()
-
+    loc_orig = locale.getlocale()
     try:
         os.environ.update(update)
         [os.environ.pop(k, None) for k in remove]
@@ -1497,6 +1496,13 @@ def environ(*remove, **update):
     finally:
         # Restore our snapshot
         os.environ = env_orig.copy()
+        try:
+            # Restore locale
+            locale.setlocale(locale.LC_ALL, loc_orig)
+
+        except locale.Error:
+            # Thrown in py3.6
+            pass
 
 
 def apply_template(template, app_mode=TemplateType.RAW, **kwargs):

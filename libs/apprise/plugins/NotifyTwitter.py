@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -36,6 +32,7 @@ import re
 import requests
 from copy import deepcopy
 from datetime import datetime
+from datetime import timezone
 from requests_oauthlib import OAuth1
 from json import dumps
 from json import loads
@@ -82,10 +79,13 @@ class NotifyTwitter(NotifyBase):
     service_url = 'https://twitter.com/'
 
     # The default secure protocol is twitter.
-    secure_protocol = ('twitter', 'tweet')
+    secure_protocol = ('x', 'twitter', 'tweet')
 
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_twitter'
+
+    # Support attachments
+    attachment_support = True
 
     # Do not set body_maxlen as it is set in a property value below
     # since the length varies depending if we are doing a direct message
@@ -124,13 +124,14 @@ class NotifyTwitter(NotifyBase):
     request_rate_per_sec = 0
 
     # For Tracking Purposes
-    ratelimit_reset = datetime.utcnow()
+    ratelimit_reset = datetime.now(timezone.utc).replace(tzinfo=None)
 
     # Default to 1000; users can send up to 1000 DM's and 2400 tweets a day
     # This value only get's adjusted if the server sets it that way
     ratelimit_remaining = 1
 
     templates = (
+        '{schema}://{ckey}/{csecret}/{akey}/{asecret}',
         '{schema}://{ckey}/{csecret}/{akey}/{asecret}/{targets}',
     )
 
@@ -283,7 +284,7 @@ class NotifyTwitter(NotifyBase):
         # Build a list of our attachments
         attachments = []
 
-        if attach:
+        if attach and self.attachment_support:
             # We need to upload our payload first so that we can source it
             # in remaining messages
             for attachment in attach:
@@ -412,7 +413,7 @@ class NotifyTwitter(NotifyBase):
                 _payload = deepcopy(payload)
                 _payload['media_ids'] = media_ids
 
-                if no:
+                if no or not body:
                     # strip text and replace it with the image representation
                     _payload['status'] = \
                         '{:02d}/{:02d}'.format(no + 1, len(batches))
@@ -512,7 +513,7 @@ class NotifyTwitter(NotifyBase):
                     'additional_owners':
                     ','.join([str(x) for x in targets.values()])
                 }
-                if no:
+                if no or not body:
                     # strip text and replace it with the image representation
                     _data['text'] = \
                         '{:02d}/{:02d}'.format(no + 1, len(attachments))
@@ -678,7 +679,7 @@ class NotifyTwitter(NotifyBase):
             # Twitter server.  One would hope we're on NTP and our clocks are
             # the same allowing this to role smoothly:
 
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc).replace(tzinfo=None)
             if now < self.ratelimit_reset:
                 # We need to throttle for the difference in seconds
                 # We add 0.5 seconds to the end just to allow a grace
@@ -736,8 +737,9 @@ class NotifyTwitter(NotifyBase):
                 # Capture rate limiting if possible
                 self.ratelimit_remaining = \
                     int(r.headers.get('x-rate-limit-remaining'))
-                self.ratelimit_reset = datetime.utcfromtimestamp(
-                    int(r.headers.get('x-rate-limit-reset')))
+                self.ratelimit_reset = datetime.fromtimestamp(
+                    int(r.headers.get('x-rate-limit-reset')), timezone.utc
+                ).replace(tzinfo=None)
 
             except (TypeError, ValueError):
                 # This is returned if we could not retrieve this information

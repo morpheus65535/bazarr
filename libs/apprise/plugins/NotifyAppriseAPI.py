@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -76,6 +72,9 @@ class NotifyAppriseAPI(NotifyBase):
 
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_apprise_api'
+
+    # Support attachments
+    attachment_support = True
 
     # Depending on the number of transactions/notifications taking place, this
     # could take a while. 30 seconds should be enough to perform the task
@@ -163,10 +162,6 @@ class NotifyAppriseAPI(NotifyBase):
 
         """
         super().__init__(**kwargs)
-
-        self.fullpath = kwargs.get('fullpath')
-        if not isinstance(self.fullpath, str):
-            self.fullpath = '/'
 
         self.token = validate_regex(
             token, *self.template_tokens['token']['regex'])
@@ -260,7 +255,7 @@ class NotifyAppriseAPI(NotifyBase):
 
         attachments = []
         files = []
-        if attach:
+        if attach and self.attachment_support:
             for no, attachment in enumerate(attach, start=1):
                 # Perform some simple error checking
                 if not attachment:
@@ -310,7 +305,10 @@ class NotifyAppriseAPI(NotifyBase):
 
         if self.method == AppriseAPIMethod.JSON:
             headers['Content-Type'] = 'application/json'
-            payload['attachments'] = attachments
+
+            if attachments:
+                payload['attachments'] = attachments
+
             payload = dumps(payload)
 
         if self.__tags:
@@ -328,8 +326,8 @@ class NotifyAppriseAPI(NotifyBase):
             url += ':%d' % self.port
 
         fullpath = self.fullpath.strip('/')
-        url += '/{}/'.format(fullpath) if fullpath else '/'
-        url += 'notify/{}'.format(self.token)
+        url += '{}'.format('/' + fullpath) if fullpath else ''
+        url += '/notify/{}'.format(self.token)
 
         # Some entries can not be over-ridden
         headers.update({
