@@ -284,6 +284,8 @@ class Scheduler:
                 upgrade_subtitles, IntervalTrigger(hours=int(settings.general.upgrade_frequency)), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='upgrade_subtitles',
                 name='Upgrade previously downloaded Subtitles', replace_existing=True)
+        else:
+            self.aps_scheduler.remove_job(job_id='upgrade_subtitles')
 
     def __randomize_interval_task(self):
         for job in self.aps_scheduler.get_jobs():
