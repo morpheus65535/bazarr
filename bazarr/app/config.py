@@ -184,13 +184,13 @@ validators = [
               is_in=[None, 'socks5', 'http']),
     Validator('proxy.url', must_exist=True, default='', is_type_of=str),
     Validator('proxy.port', must_exist=True, default='', is_type_of=(str, int)),
-    Validator('proxy.username', must_exist=True, default='', is_type_of=str),
-    Validator('proxy.password', must_exist=True, default='', is_type_of=str),
+    Validator('proxy.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('proxy.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('proxy.exclude', must_exist=True, default=["localhost", "127.0.0.1"], is_type_of=list),
 
     # opensubtitles.org section
-    Validator('opensubtitles.username', must_exist=True, default='', is_type_of=str),
-    Validator('opensubtitles.password', must_exist=True, default='', is_type_of=str),
+    Validator('opensubtitles.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('opensubtitles.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('opensubtitles.use_tag_search', must_exist=True, default=False, is_type_of=bool),
     Validator('opensubtitles.vip', must_exist=True, default=False, is_type_of=bool),
     Validator('opensubtitles.ssl', must_exist=True, default=False, is_type_of=bool),
@@ -198,13 +198,13 @@ validators = [
     Validator('opensubtitles.skip_wrong_fps', must_exist=True, default=False, is_type_of=bool),
 
     # opensubtitles.com section
-    Validator('opensubtitlescom.username', must_exist=True, default='', is_type_of=str),
-    Validator('opensubtitlescom.password', must_exist=True, default='', is_type_of=str),
+    Validator('opensubtitlescom.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('opensubtitlescom.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('opensubtitlescom.use_hash', must_exist=True, default=True, is_type_of=bool),
 
     # addic7ed section
-    Validator('addic7ed.username', must_exist=True, default='', is_type_of=str),
-    Validator('addic7ed.password', must_exist=True, default='', is_type_of=str),
+    Validator('addic7ed.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('addic7ed.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('addic7ed.cookies', must_exist=True, default='', is_type_of=str),
     Validator('addic7ed.user_agent', must_exist=True, default='', is_type_of=str),
     Validator('addic7ed.vip', must_exist=True, default=False, is_type_of=bool),
@@ -217,57 +217,57 @@ validators = [
     Validator('subf2m.user_agent', must_exist=True, default='', is_type_of=str),
 
     # hdbits section
-    Validator('hdbits.username', must_exist=True, default='', is_type_of=str),
-    Validator('hdbits.passkey', must_exist=True, default='', is_type_of=str),
+    Validator('hdbits.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('hdbits.passkey', must_exist=True, default='', is_type_of=str, cast=str),
 
     # whisperai section
     Validator('whisperai.endpoint', must_exist=True, default='http://127.0.0.1:9000', is_type_of=str),
     Validator('whisperai.timeout', must_exist=True, default=3600, is_type_of=int, gte=1),
 
     # legendasdivx section
-    Validator('legendasdivx.username', must_exist=True, default='', is_type_of=str),
-    Validator('legendasdivx.password', must_exist=True, default='', is_type_of=str),
+    Validator('legendasdivx.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('legendasdivx.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('legendasdivx.skip_wrong_fps', must_exist=True, default=False, is_type_of=bool),
 
     # ktuvit section
     Validator('ktuvit.email', must_exist=True, default='', is_type_of=str),
-    Validator('ktuvit.hashed_password', must_exist=True, default='', is_type_of=str),
+    Validator('ktuvit.hashed_password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # xsubs section
-    Validator('xsubs.username', must_exist=True, default='', is_type_of=str),
-    Validator('xsubs.password', must_exist=True, default='', is_type_of=str),
+    Validator('xsubs.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('xsubs.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # assrt section
-    Validator('assrt.token', must_exist=True, default='', is_type_of=str),
+    Validator('assrt.token', must_exist=True, default='', is_type_of=str, cast=str),
 
     # anticaptcha section
     Validator('anticaptcha.anti_captcha_key', must_exist=True, default='', is_type_of=str),
 
     # deathbycaptcha section
-    Validator('deathbycaptcha.username', must_exist=True, default='', is_type_of=str),
-    Validator('deathbycaptcha.password', must_exist=True, default='', is_type_of=str),
+    Validator('deathbycaptcha.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('deathbycaptcha.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # napisy24 section
-    Validator('napisy24.username', must_exist=True, default='', is_type_of=str),
-    Validator('napisy24.password', must_exist=True, default='', is_type_of=str),
+    Validator('napisy24.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('napisy24.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # subscene section
-    Validator('subscene.username', must_exist=True, default='', is_type_of=str),
-    Validator('subscene.password', must_exist=True, default='', is_type_of=str),
+    Validator('subscene.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('subscene.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # betaseries section
-    Validator('betaseries.token', must_exist=True, default='', is_type_of=str),
+    Validator('betaseries.token', must_exist=True, default='', is_type_of=str, cast=str),
 
     # analytics section
     Validator('analytics.enabled', must_exist=True, default=True, is_type_of=bool),
 
     # titlovi section
-    Validator('titlovi.username', must_exist=True, default='', is_type_of=str),
-    Validator('titlovi.password', must_exist=True, default='', is_type_of=str),
+    Validator('titlovi.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('titlovi.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # titulky section
-    Validator('titulky.username', must_exist=True, default='', is_type_of=str),
-    Validator('titulky.password', must_exist=True, default='', is_type_of=str),
+    Validator('titulky.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('titulky.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('titulky.approved_only', must_exist=True, default=False, is_type_of=bool),
 
     # embeddedsubtitles section
@@ -277,10 +277,10 @@ validators = [
     Validator('embeddedsubtitles.unknown_as_english', must_exist=True, default=False, is_type_of=bool),
 
     # karagarga section
-    Validator('karagarga.username', must_exist=True, default='', is_type_of=str),
-    Validator('karagarga.password', must_exist=True, default='', is_type_of=str),
-    Validator('karagarga.f_username', must_exist=True, default='', is_type_of=str),
-    Validator('karagarga.f_password', must_exist=True, default='', is_type_of=str),
+    Validator('karagarga.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('karagarga.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('karagarga.f_username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('karagarga.f_password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # subsync section
     Validator('subsync.use_subsync', must_exist=True, default=False, is_type_of=bool),
@@ -323,8 +323,8 @@ validators = [
     Validator('postgresql.host', must_exist=True, default='localhost', is_type_of=str),
     Validator('postgresql.port', must_exist=True, default=5432, is_type_of=int, gte=1, lte=65535),
     Validator('postgresql.database', must_exist=True, default='', is_type_of=str),
-    Validator('postgresql.username', must_exist=True, default='', is_type_of=str),
-    Validator('postgresql.password', must_exist=True, default='', is_type_of=str),
+    Validator('postgresql.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('postgresql.password', must_exist=True, default='', is_type_of=str, cast=str),
 ]
 
 
