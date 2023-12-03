@@ -6,7 +6,6 @@ import re
 import time
 
 from requests import Session
-from six.moves import range
 from subliminal import __short_version__
 from subliminal.providers import ParserBeautifulSoup
 from subliminal.video import Episode
@@ -27,7 +26,7 @@ _CLEAN_TITLE_RES = [
     (r" {2,}", " "),
 ]
 
-_SPANISH_RE = re.compile(r"españa|ib[eé]rico|castellano|gallego|castilla")
+_SPANISH_RE = re.compile(r"españa|ib[eé]rico|castellano|gallego|castilla|europ[ae]")
 _YEAR_RE = re.compile(r"(\(\d{4}\))")
 _YEAR_RE_INT = re.compile(r"\((\d{4})\)")
 

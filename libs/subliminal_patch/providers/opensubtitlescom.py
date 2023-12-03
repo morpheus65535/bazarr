@@ -74,7 +74,8 @@ def from_opensubtitlescom(lang):
 
 class OpenSubtitlesComSubtitle(Subtitle):
     provider_name = 'opensubtitlescom'
-    hash_verifiable = False
+    hash_verifiable = True
+    hearing_impaired_verifiable = True
 
     def __init__(self, language, forced, hearing_impaired, page_link, file_id, releases, uploader, title, year,
                  hash_matched, file_hash=None, season=None, episode=None, imdb_match=False):

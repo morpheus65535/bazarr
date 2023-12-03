@@ -184,6 +184,327 @@ validators = [
               is_in=[None, 'socks5', 'http']),
     Validator('proxy.url', must_exist=True, default='', is_type_of=str),
     Validator('proxy.port', must_exist=True, default='', is_type_of=(str, int)),
+    Validator('proxy.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('proxy.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('proxy.exclude', must_exist=True, default=["localhost", "127.0.0.1"], is_type_of=list),
+
+    # opensubtitles.org section
+    Validator('opensubtitles.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('opensubtitles.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('opensubtitles.use_tag_search', must_exist=True, default=False, is_type_of=bool),
+    Validator('opensubtitles.vip', must_exist=True, default=False, is_type_of=bool),
+    Validator('opensubtitles.ssl', must_exist=True, default=False, is_type_of=bool),
+    Validator('opensubtitles.timeout', must_exist=True, default=15, is_type_of=int, gte=1),
+    Validator('opensubtitles.skip_wrong_fps', must_exist=True, default=False, is_type_of=bool),
+
+    # opensubtitles.com section
+    Validator('opensubtitlescom.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('opensubtitlescom.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('opensubtitlescom.use_hash', must_exist=True, default=True, is_type_of=bool),
+
+    # addic7ed section
+    Validator('addic7ed.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('addic7ed.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('addic7ed.cookies', must_exist=True, default='', is_type_of=str),
+    Validator('addic7ed.user_agent', must_exist=True, default='', is_type_of=str),
+    Validator('addic7ed.vip', must_exist=True, default=False, is_type_of=bool),
+
+    # podnapisi section
+    Validator('podnapisi.verify_ssl', must_exist=True, default=True, is_type_of=bool),
+
+    # subf2m section
+    Validator('subf2m.verify_ssl', must_exist=True, default=True, is_type_of=bool),
+    Validator('subf2m.user_agent', must_exist=True, default='', is_type_of=str),
+
+    # hdbits section
+    Validator('hdbits.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('hdbits.passkey', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # whisperai section
+    Validator('whisperai.endpoint', must_exist=True, default='http://127.0.0.1:9000', is_type_of=str),
+    Validator('whisperai.timeout', must_exist=True, default=3600, is_type_of=int, gte=1),
+
+    # legendasdivx section
+    Validator('legendasdivx.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('legendasdivx.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('legendasdivx.skip_wrong_fps', must_exist=True, default=False, is_type_of=bool),
+
+    # ktuvit section
+    Validator('ktuvit.email', must_exist=True, default='', is_type_of=str),
+    Validator('ktuvit.hashed_password', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # xsubs section
+    Validator('xsubs.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('xsubs.password', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # assrt section
+    Validator('assrt.token', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # anticaptcha section
+    Validator('anticaptcha.anti_captcha_key', must_exist=True, default='', is_type_of=str),
+
+    # deathbycaptcha section
+    Validator('deathbycaptcha.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('deathbycaptcha.password', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # napisy24 section
+    Validator('napisy24.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('napisy24.password', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # subscene section
+    Validator('subscene.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('subscene.password', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # betaseries section
+    Validator('betaseries.token', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # analytics section
+    Validator('analytics.enabled', must_exist=True, default=True, is_type_of=bool),
+
+    # titlovi section
+    Validator('titlovi.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('titlovi.password', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # titulky section
+    Validator('titulky.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('titulky.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('titulky.approved_only', must_exist=True, default=False, is_type_of=bool),
+
+    # embeddedsubtitles section
+    Validator('embeddedsubtitles.included_codecs', must_exist=True, default=[], is_type_of=list),
+    Validator('embeddedsubtitles.hi_fallback', must_exist=True, default=False, is_type_of=bool),
+    Validator('embeddedsubtitles.timeout', must_exist=True, default=600, is_type_of=int, gte=1),
+    Validator('embeddedsubtitles.unknown_as_english', must_exist=True, default=False, is_type_of=bool),
+
+    # karagarga section
+    Validator('karagarga.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('karagarga.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('karagarga.f_username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('karagarga.f_password', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # subsync section
+    Validator('subsync.use_subsync', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.use_subsync_threshold', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.subsync_threshold', must_exist=True, default=90, is_type_of=int, gte=0, lte=100),
+    Validator('subsync.use_subsync_movie_threshold', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.subsync_movie_threshold', must_exist=True, default=70, is_type_of=int, gte=0, lte=100),
+    Validator('subsync.debug', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.force_audio', must_exist=True, default=False, is_type_of=bool),
+
+    # series_scores section
+    Validator('series_scores.hash', must_exist=True, default=359, is_type_of=int),
+    Validator('series_scores.series', must_exist=True, default=180, is_type_of=int),
+    Validator('series_scores.year', must_exist=True, default=90, is_type_of=int),
+    Validator('series_scores.season', must_exist=True, default=30, is_type_of=int),
+    Validator('series_scores.episode', must_exist=True, default=30, is_type_of=int),
+    Validator('series_scores.release_group', must_exist=True, default=14, is_type_of=int),
+    Validator('series_scores.source', must_exist=True, default=7, is_type_of=int),
+    Validator('series_scores.audio_codec', must_exist=True, default=3, is_type_of=int),
+    Validator('series_scores.resolution', must_exist=True, default=2, is_type_of=int),
+    Validator('series_scores.video_codec', must_exist=True, default=2, is_type_of=int),
+    Validator('series_scores.streaming_service', must_exist=True, default=1, is_type_of=int),
+    Validator('series_scores.hearing_impaired', must_exist=True, default=1, is_type_of=int),
+
+    # movie_scores section
+    Validator('movie_scores.hash', must_exist=True, default=119, is_type_of=int),
+    Validator('movie_scores.title', must_exist=True, default=60, is_type_of=int),
+    Validator('movie_scores.year', must_exist=True, default=30, is_type_of=int),
+    Validator('movie_scores.release_group', must_exist=True, default=13, is_type_of=int),
+    Validator('movie_scores.source', must_exist=True, default=7, is_type_of=int),
+    Validator('movie_scores.audio_codec', must_exist=True, default=3, is_type_of=int),
+    Validator('movie_scores.resolution', must_exist=True, default=2, is_type_of=int),
+    Validator('movie_scores.video_codec', must_exist=True, default=2, is_type_of=int),
+    Validator('movie_scores.streaming_service', must_exist=True, default=1, is_type_of=int),
+    Validator('movie_scores.edition', must_exist=True, default=1, is_type_of=int),
+    Validator('movie_scores.hearing_impaired', must_exist=True, default=1, is_type_of=int),
+
+    # postgresql section
+    Validator('postgresql.enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('postgresql.host', must_exist=True, default='localhost', is_type_of=str),
+    Validator('postgresql.port', must_exist=True, default=5432, is_type_of=int, gte=1, lte=65535),
+    Validator('postgresql.database', must_exist=True, default='', is_type_of=str),
+    Validator('postgresql.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('postgresql.password', must_exist=True, default='', is_type_of=str, cast=str),
+]
+
+
+def convert_ini_to_yaml(config_file):
+    import configparser
+    import yaml
+    config_object = configparser.RawConfigParser()
+    file = open(config_file, "r")
+    config_object.read_file(file)
+    output_dict = dict()
+    sections = config_object.sections()
+    for section in sections:
+        items = config_object.items(section)
+        output_dict[section] = dict()
+        for item in items:
+            try:
+                output_dict[section].update({item[0]: ast.literal_eval(item[1])})
+            except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+                output_dict[section].update({item[0]: item[1]})
+    with open(os.path.join(os.path.dirname(config_file), 'config.yaml'), 'w') as file:
+        yaml.dump(output_dict, file)
+    os.replace(config_file, f'{config_file}.old')
+def validate_ip_address(ip_string):
+    try:
+        ip_address(ip_string)
+        return True
+    except ValueError:
+        return False
+
+
+class Validator(OriginalValidator):
+    # Give the ability to personalize messages sent by the original dynasync Validator class.
+    default_messages = MappingProxyType(
+        {
+            "must_exist_true": "{name} is required",
+            "must_exist_false": "{name} cannot exists",
+            "condition": "{name} invalid for {function}({value})",
+            "operations": "{name} must {operation} {op_value} but it is {value}",
+            "combined": "combined validators failed {errors}",
+        }
+    )
+
+
+validators = [
+    # general section
+    Validator('general.flask_secret_key', must_exist=True, default=hexlify(os.urandom(16)).decode(),
+              is_type_of=str),
+    Validator('general.ip', must_exist=True, default='0.0.0.0', is_type_of=str, condition=validate_ip_address),
+    Validator('general.port', must_exist=True, default=6767, is_type_of=int, gte=1, lte=65535),
+    Validator('general.base_url', must_exist=True, default='', is_type_of=str),
+    Validator('general.path_mappings', must_exist=True, default=[], is_type_of=list),
+    Validator('general.debug', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.branch', must_exist=True, default='master', is_type_of=str,
+              is_in=['master', 'development']),
+    Validator('general.auto_update', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.single_language', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.minimum_score', must_exist=True, default=90, is_type_of=int, gte=0, lte=100),
+    Validator('general.use_scenename', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.use_postprocessing', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.postprocessing_cmd', must_exist=True, default='', is_type_of=str),
+    Validator('general.postprocessing_threshold', must_exist=True, default=90, is_type_of=int, gte=0, lte=100),
+    Validator('general.use_postprocessing_threshold', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.postprocessing_threshold_movie', must_exist=True, default=70, is_type_of=int, gte=0,
+              lte=100),
+    Validator('general.use_postprocessing_threshold_movie', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.use_sonarr', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.path_mappings_movie', must_exist=True, default=[], is_type_of=list),
+    Validator('general.serie_default_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.serie_default_profile', must_exist=True, default='', is_type_of=(int, str)),
+    Validator('general.movie_default_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.movie_default_profile', must_exist=True, default='', is_type_of=(int, str)),
+    Validator('general.page_size', must_exist=True, default=25, is_type_of=int,
+              is_in=[25, 50, 100, 250, 500, 1000]),
+    Validator('general.theme', must_exist=True, default='auto', is_type_of=str,
+              is_in=['auto', 'light', 'dark']),
+    Validator('general.minimum_score_movie', must_exist=True, default=70, is_type_of=int, gte=0, lte=100),
+    Validator('general.use_embedded_subs', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.embedded_subs_show_desired', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.utf8_encode', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.ignore_pgs_subs', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.ignore_vobsub_subs', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.ignore_ass_subs', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.adaptive_searching', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.adaptive_searching_delay', must_exist=True, default='3w', is_type_of=str,
+              is_in=['1w', '2w', '3w', '4w']),
+    Validator('general.adaptive_searching_delta', must_exist=True, default='1w', is_type_of=str,
+              is_in=['3d', '1w', '2w', '3w', '4w']),
+    Validator('general.enabled_providers', must_exist=True, default=[], is_type_of=list),
+    Validator('general.multithreading', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.chmod_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.chmod', must_exist=True, default='0640', is_type_of=str),
+    Validator('general.subfolder', must_exist=True, default='current', is_type_of=str),
+    Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),
+    Validator('general.upgrade_subs', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int, is_in=[6, 12, 24]),
+    Validator('general.days_to_upgrade_subs', must_exist=True, default=7, is_type_of=int, gte=0, lte=30),
+    Validator('general.upgrade_manual', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.anti_captcha_provider', must_exist=True, default=None, is_type_of=(NoneType, str),
+              is_in=[None, 'anti-captcha', 'death-by-captcha']),
+    Validator('general.wanted_search_frequency', must_exist=True, default=6, is_type_of=int, is_in=[6, 12, 24]),
+    Validator('general.wanted_search_frequency_movie', must_exist=True, default=6, is_type_of=int,
+              is_in=[6, 12, 24]),
+    Validator('general.subzero_mods', must_exist=True, default='', is_type_of=str),
+    Validator('general.dont_notify_manual_actions', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.hi_extension', must_exist=True, default='hi', is_type_of=str, is_in=['hi', 'cc', 'sdh']),
+    Validator('general.embedded_subtitles_parser', must_exist=True, default='ffprobe', is_type_of=str,
+              is_in=['ffprobe', 'mediainfo']),
+    Validator('general.default_und_audio_lang', must_exist=True, default='', is_type_of=str),
+    Validator('general.default_und_embedded_subtitles_lang', must_exist=True, default='', is_type_of=str),
+    Validator('general.parse_embedded_audio_track', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.skip_hashing', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.language_equals', must_exist=True, default=[], is_type_of=list),
+
+    # auth section
+    Validator('auth.apikey', must_exist=True, default=hexlify(os.urandom(16)).decode(), is_type_of=str),
+    Validator('auth.type', must_exist=True, default=None, is_type_of=(NoneType, str),
+              is_in=[None, 'basic', 'form']),
+    Validator('auth.username', must_exist=True, default='', is_type_of=str),
+    Validator('auth.password', must_exist=True, default='', is_type_of=str),
+
+    # cors section
+    Validator('cors.enabled', must_exist=True, default=False, is_type_of=bool),
+
+    # backup section
+    Validator('backup.folder', must_exist=True, default=os.path.join(args.config_dir, 'backup'),
+              is_type_of=str),
+    Validator('backup.retention', must_exist=True, default=31, is_type_of=int, gte=0),
+    Validator('backup.frequency', must_exist=True, default='Weekly', is_type_of=str,
+              is_in=['Manually', 'Daily', 'Weekly']),
+    Validator('backup.day', must_exist=True, default=6, is_type_of=int, gte=0, lte=6),
+    Validator('backup.hour', must_exist=True, default=3, is_type_of=int, gte=0, lte=23),
+
+    # sonarr section
+    Validator('sonarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
+    Validator('sonarr.port', must_exist=True, default=8989, is_type_of=int, gte=1, lte=65535),
+    Validator('sonarr.base_url', must_exist=True, default='/', is_type_of=str),
+    Validator('sonarr.ssl', must_exist=True, default=False, is_type_of=bool),
+    Validator('sonarr.http_timeout', must_exist=True, default=60, is_type_of=int,
+              is_in=[60, 120, 180, 240, 300, 600]),
+    Validator('sonarr.apikey', must_exist=True, default='', is_type_of=str),
+    Validator('sonarr.full_update', must_exist=True, default='Daily', is_type_of=str,
+              is_in=['Manually', 'Daily', 'Weekly']),
+    Validator('sonarr.full_update_day', must_exist=True, default=6, is_type_of=int, gte=0, lte=6),
+    Validator('sonarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
+    Validator('sonarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
+    Validator('sonarr.series_sync', must_exist=True, default=60, is_type_of=int,
+              is_in=[15, 60, 180, 360, 720, 1440]),
+    Validator('sonarr.episodes_sync', must_exist=True, default=60, is_type_of=int,
+              is_in=[15, 60, 180, 360, 720, 1440]),
+    Validator('sonarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
+    Validator('sonarr.excluded_series_types', must_exist=True, default=[], is_type_of=list),
+    Validator('sonarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
+    Validator('sonarr.exclude_season_zero', must_exist=True, default=False, is_type_of=bool),
+    Validator('sonarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
+
+    # radarr section
+    Validator('radarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
+    Validator('radarr.port', must_exist=True, default=7878, is_type_of=int, gte=1, lte=65535),
+    Validator('radarr.base_url', must_exist=True, default='/', is_type_of=str),
+    Validator('radarr.ssl', must_exist=True, default=False, is_type_of=bool),
+    Validator('radarr.http_timeout', must_exist=True, default=60, is_type_of=int,
+              is_in=[60, 120, 180, 240, 300, 600]),
+    Validator('radarr.apikey', must_exist=True, default='', is_type_of=str),
+    Validator('radarr.full_update', must_exist=True, default='Daily', is_type_of=str,
+              is_in=['Manually', 'Daily', 'Weekly']),
+    Validator('radarr.full_update_day', must_exist=True, default=6, is_type_of=int, gte=0, lte=6),
+    Validator('radarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
+    Validator('radarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
+    Validator('radarr.movies_sync', must_exist=True, default=60, is_type_of=int,
+              is_in=[15, 60, 180, 360, 720, 1440]),
+    Validator('radarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
+    Validator('radarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
+    Validator('radarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
+
+    # proxy section
+    Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
+              is_in=[None, 'socks5', 'http']),
+    Validator('proxy.url', must_exist=True, default='', is_type_of=str),
+    Validator('proxy.port', must_exist=True, default='', is_type_of=(str, int)),
     Validator('proxy.username', must_exist=True, default='', is_type_of=str),
     Validator('proxy.password', must_exist=True, default='', is_type_of=str),
     Validator('proxy.exclude', must_exist=True, default=["localhost", "127.0.0.1"], is_type_of=list),
@@ -765,10 +1086,10 @@ def configure_captcha_func():
 def configure_proxy_func():
     if settings.proxy.type:
         if settings.proxy.username != '' and settings.proxy.password != '':
-            proxy = settings.proxy.type + '://' + quote_plus(settings.proxy.username) + ':' + \
-                    quote_plus(settings.proxy.password) + '@' + settings.proxy.url + ':' + str(settings.proxy.port)
+            proxy = (f'{settings.proxy.type}://{quote_plus(settings.proxy.username)}:'
+                     f'{quote_plus(settings.proxy.password)}@{settings.proxy.url}:{settings.proxy.port}')
         else:
-            proxy = settings.proxy.type + '://' + settings.proxy.url + ':' + str(settings.proxy.port)
+            proxy = f'{settings.proxy.type}://{settings.proxy.url}:{settings.proxy.port}'
         os.environ['HTTP_PROXY'] = str(proxy)
         os.environ['HTTPS_PROXY'] = str(proxy)
         exclude = ','.join(settings.proxy.exclude)

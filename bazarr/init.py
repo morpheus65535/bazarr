@@ -28,7 +28,7 @@ startTime = time.time()
 restore_from_backup()
 
 # set subliminal_patch user agent
-os.environ["SZ_USER_AGENT"] = "Bazarr/{}".format(os.environ["BAZARR_VERSION"])
+os.environ["SZ_USER_AGENT"] = f"Bazarr/{os.environ['BAZARR_VERSION']}"
 
 # Check if args.config_dir exist
 if not os.path.exists(args.config_dir):
@@ -96,7 +96,7 @@ if not args.no_update:
                         pip_command.insert(4, '--user')
                     subprocess.check_output(pip_command, stderr=subprocess.STDOUT)
                 except subprocess.CalledProcessError as e:
-                    logging.exception('BAZARR requirements.txt installation result: {}'.format(e.stdout))
+                    logging.exception(f'BAZARR requirements.txt installation result: {e.stdout}')
                     os._exit(1)
                 else:
                     logging.info('BAZARR requirements installed.')
@@ -104,7 +104,7 @@ if not args.no_update:
                 try:
                     restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
                 except Exception as e:
-                    logging.error('BAZARR Cannot create restart file: ' + repr(e))
+                    logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
                 else:
                     logging.info('Bazarr is being restarted...')
                     restart_file.write(str(''))
@@ -194,16 +194,28 @@ def init_binaries():
         exe = get_binary("unar")
         rarfile.UNAR_TOOL = exe
         rarfile.UNRAR_TOOL = None
-        rarfile.tool_setup(unrar=False, unar=True, bsdtar=False, force=True)
+        rarfile.SEVENZIP_TOOL = None
+        rarfile.tool_setup(unrar=False, unar=True, bsdtar=False, sevenzip=False, force=True)
     except (BinaryNotFound, rarfile.RarCannotExec):
         try:
             exe = get_binary("unrar")
             rarfile.UNRAR_TOOL = exe
             rarfile.UNAR_TOOL = None
-            rarfile.tool_setup(unrar=True, unar=False, bsdtar=False, force=True)
+            rarfile.SEVENZIP_TOOL = None
+            rarfile.tool_setup(unrar=True, unar=False, bsdtar=False, sevenzip=False, force=True)
         except (BinaryNotFound, rarfile.RarCannotExec):
-            logging.exception("BAZARR requires a rar archive extraction utilities (unrar, unar) and it can't be found.")
-            raise BinaryNotFound
+            try:
+                exe = get_binary("7z")
+                rarfile.UNRAR_TOOL = None
+                rarfile.UNAR_TOOL = None
+                rarfile.SEVENZIP_TOOL = "7z"
+                rarfile.tool_setup(unrar=False, unar=False, bsdtar=False, sevenzip=True, force=True)
+            except (BinaryNotFound, rarfile.RarCannotExec):
+                logging.exception("BAZARR requires a rar archive extraction utilities (unrar, unar, 7zip) and it can't be found.")
+                raise BinaryNotFound
+            else:
+                logging.debug("Using 7zip from: %s", exe)
+                return exe
         else:
             logging.debug("Using UnRAR from: %s", exe)
             return exe

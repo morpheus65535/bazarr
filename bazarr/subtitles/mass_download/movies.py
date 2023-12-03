@@ -67,7 +67,7 @@ def movies_download_subtitles(no):
             logging.info("BAZARR All providers are throttled")
             break
 
-    show_progress(id='movie_search_progress_{}'.format(no),
+    show_progress(id=f'movie_search_progress_{no}',
                   header='Searching missing subtitles...',
                   name=movie.title,
                   value=0,
@@ -88,4 +88,4 @@ def movies_download_subtitles(no):
             history_log_movie(1, no, result)
             send_notifications_movie(no, result.message)
 
-    hide_progress(id='movie_search_progress_{}'.format(no))
+    hide_progress(id=f'movie_search_progress_{no}')

@@ -12,6 +12,7 @@ from deathbycaptcha import SocketClient as DBCClient, DEFAULT_TOKEN_TIMEOUT
 import six
 from six.moves import range
 from urllib import parse
+from subliminal.exceptions import ConfigurationError
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ class PitcherRegistry(object):
     def get_pitcher(self, name_or_site=None, with_proxy=False):
         name_or_site = name_or_site or os.environ.get("ANTICAPTCHA_CLASS")
         if not name_or_site:
-            raise Exception("AntiCaptcha class not given, exiting")
+            raise ConfigurationError("AntiCaptcha class not given, exiting")
 
         key = "%s_%s" % (name_or_site, with_proxy)
 

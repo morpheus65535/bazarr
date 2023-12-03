@@ -35,7 +35,7 @@ class SubSyncer:
              no_fix_framerate=settings.subsync.no_fix_framerate, gss=settings.subsync.gss):
         self.reference = reference or video_path
         self.srtin = srt_path
-        self.srtout = '{}.synced.srt'.format(os.path.splitext(self.srtin)[0])
+        self.srtout = f'{os.path.splitext(self.srtin)[0]}.synced.srt'
         self.args = None
 
         ffprobe_exe = get_binary('ffprobe')
@@ -85,8 +85,8 @@ class SubSyncer:
                 logging.debug('BAZARR deleted the previous subtitles synchronization attempt file.')
             result = run(self.args)
         except Exception:
-            logging.exception('BAZARR an exception occurs during the synchronization process for this subtitles: '
-                              '{0}'.format(self.srtin))
+            logging.exception(
+                f'BAZARR an exception occurs during the synchronization process for this subtitles: {self.srtin}')
             raise OSError
         else:
             if settings.subsync.debug:
@@ -98,9 +98,9 @@ class SubSyncer:
 
                     offset_seconds = result['offset_seconds'] or 0
                     framerate_scale_factor = result['framerate_scale_factor'] or 0
-                    message = "{0} subtitles synchronization ended with an offset of {1} seconds and a framerate " \
-                              "scale factor of {2}.".format(language_from_alpha2(srt_lang), offset_seconds,
-                                                            "{:.2f}".format(framerate_scale_factor))
+                    message = (f"{language_from_alpha2(srt_lang)} subtitles synchronization ended with an offset of "
+                               f"{offset_seconds} seconds and a framerate scale factor of "
+                               f"{f'{framerate_scale_factor:.2f}'}.")
 
                     result = ProcessSubtitlesResult(message=message,
                                                     reversed_path=path_mappings.path_replace_reverse(self.reference),
@@ -118,6 +118,6 @@ class SubSyncer:
                     else:
                         history_log_movie(action=5, radarr_id=radarr_id, result=result)
             else:
-                logging.error('BAZARR unable to sync subtitles: {0}'.format(self.srtin))
+                logging.error(f'BAZARR unable to sync subtitles: {self.srtin}')
 
             return result

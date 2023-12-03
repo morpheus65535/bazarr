@@ -47,13 +47,11 @@ def sync_episodes(series_id, send_event=True):
     episodes_to_add = []
 
     # Get episodes data for a series from Sonarr
-    episodes = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
-                                            series_id=series_id)
+    episodes = get_episodes_from_sonarr_api(apikey_sonarr=apikey_sonarr, series_id=series_id)
     if episodes:
         # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
         if not get_sonarr_info.is_legacy():
-            episodeFiles = get_episodesFiles_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
-                                                             series_id=series_id)
+            episodeFiles = get_episodesFiles_from_sonarr_api(apikey_sonarr=apikey_sonarr, series_id=series_id)
             for episode in episodes:
                 if episodeFiles and episode['hasFile']:
                     item = [x for x in episodeFiles if x['id'] == episode['episodeFileId']]
@@ -80,31 +78,32 @@ def sync_episodes(series_id, send_event=True):
                                     episodes_to_update.append(parsed_episode)
                             else:
                                 episodes_to_add.append(episodeParser(episode))
+    else:
+        return
 
     # Remove old episodes from DB
     episodes_to_delete = list(set(current_episodes_id_db_list) - set(current_episodes_sonarr))
 
     if len(episodes_to_delete):
         try:
-            removed_episodes = database.execute(delete(TableEpisodes)
-                                                .where(TableEpisodes.sonarrEpisodeId.in_(episodes_to_delete))
-                                                .returning(TableEpisodes.sonarrEpisodeId))
+            database.execute(delete(TableEpisodes).where(TableEpisodes.sonarrEpisodeId.in_(episodes_to_delete)))
         except IntegrityError as e:
             logging.error(f"BAZARR cannot delete episodes because of {e}")
         else:
-            for removed_episode in removed_episodes:
+            for removed_episode in episodes_to_delete:
                 if send_event:
-                    event_stream(type='episode', action='delete', payload=removed_episode.sonarrEpisodeId)
+                    event_stream(type='episode', action='delete', payload=removed_episode)
 
     # Update existing episodes in DB
     if len(episodes_to_update):
-        try:
-            database.execute(update(TableEpisodes), episodes_to_update)
-        except IntegrityError as e:
-            logging.error(f"BAZARR cannot update episodes because of {e}")
-        else:
-            for updated_episode in episodes_to_update:
-                # not using .returning() because it's not supported on executemany() with SQlite
+        for updated_episode in episodes_to_update:
+            try:
+                database.execute(update(TableEpisodes)
+                                 .values(updated_episode)
+                                 .where(TableEpisodes.sonarrEpisodeId == updated_episode['sonarrEpisodeId']))
+            except IntegrityError as e:
+                logging.error(f"BAZARR cannot update episodes because of {e}")
+            else:
                 store_subtitles(updated_episode['path'], path_mappings.path_replace(updated_episode['path']))
 
                 if send_event:
@@ -112,25 +111,22 @@ def sync_episodes(series_id, send_event=True):
 
     # Insert new episodes in DB
     if len(episodes_to_add):
-        try:
-            added_episodes = database.execute(
-                insert(TableEpisodes)
-                .values(episodes_to_add)
-                .returning(TableEpisodes.sonarrEpisodeId, TableEpisodes.path, TableEpisodes.sonarrSeriesId))
-        except IntegrityError as e:
-            logging.error(f"BAZARR cannot insert episodes because of {e}")
-        else:
-            for added_episode in added_episodes:
-                store_subtitles(added_episode.path, path_mappings.path_replace(added_episode.path))
+        for added_episode in episodes_to_add:
+            try:
+                database.execute(insert(TableEpisodes).values(added_episode))
+            except IntegrityError as e:
+                logging.error(f"BAZARR cannot insert episodes because of {e}")
+            else:
+                store_subtitles(added_episode['path'], path_mappings.path_replace(added_episode['path']))
 
                 if send_event:
-                    event_stream(type='episode', payload=added_episode.sonarrEpisodeId)
+                    event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
 
     logging.debug(f'BAZARR All episodes from series ID {series_id} synced from Sonarr into database.')
 
 
 def sync_one_episode(episode_id, defer_search=False):
-    logging.debug('BAZARR syncing this specific episode from Sonarr: {}'.format(episode_id))
+    logging.debug(f'BAZARR syncing this specific episode from Sonarr: {episode_id}')
     url = url_sonarr()
     apikey_sonarr = settings.sonarr.apikey
 
@@ -143,8 +139,7 @@ def sync_one_episode(episode_id, defer_search=False):
     try:
         # Get episode data from sonarr api
         episode = None
-        episode_data = get_episodes_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
-                                                    episode_id=episode_id)
+        episode_data = get_episodes_from_sonarr_api(apikey_sonarr=apikey_sonarr, episode_id=episode_id)
         if not episode_data:
             return
 
@@ -152,7 +147,7 @@ def sync_one_episode(episode_id, defer_search=False):
             # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
             if not get_sonarr_info.is_legacy() and existing_episode and episode_data['hasFile']:
                 episode_data['episodeFile'] = \
-                    get_episodesFiles_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
+                    get_episodesFiles_from_sonarr_api(apikey_sonarr=apikey_sonarr,
                                                       episode_file_id=episode_data['episodeFileId'])
             episode = episodeParser(episode_data)
     except Exception:
@@ -173,8 +168,8 @@ def sync_one_episode(episode_id, defer_search=False):
             logging.error(f"BAZARR cannot delete episode {existing_episode.path} because of {e}")
         else:
             event_stream(type='episode', action='delete', payload=int(episode_id))
-            logging.debug('BAZARR deleted this episode from the database:{}'.format(path_mappings.path_replace(
-                existing_episode['path'])))
+            logging.debug(
+                f'BAZARR deleted this episode from the database:{path_mappings.path_replace(existing_episode["path"])}')
         return
 
     # Update existing episodes in DB
@@ -187,9 +182,10 @@ def sync_one_episode(episode_id, defer_search=False):
         except IntegrityError as e:
             logging.error(f"BAZARR cannot update episode {episode['path']} because of {e}")
         else:
+            store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
             event_stream(type='episode', action='update', payload=int(episode_id))
-            logging.debug('BAZARR updated this episode into the database:{}'.format(path_mappings.path_replace(
-                episode['path'])))
+            logging.debug(
+                f'BAZARR updated this episode into the database:{path_mappings.path_replace(episode["path"])}')
 
     # Insert new episodes in DB
     elif episode and not existing_episode:
@@ -200,20 +196,21 @@ def sync_one_episode(episode_id, defer_search=False):
         except IntegrityError as e:
             logging.error(f"BAZARR cannot insert episode {episode['path']} because of {e}")
         else:
+            store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
             event_stream(type='episode', action='update', payload=int(episode_id))
-            logging.debug('BAZARR inserted this episode into the database:{}'.format(path_mappings.path_replace(
-                episode['path'])))
+            logging.debug(
+                f'BAZARR inserted this episode into the database:{path_mappings.path_replace(episode["path"])}')
 
     # Storing existing subtitles
-    logging.debug('BAZARR storing subtitles for this episode: {}'.format(path_mappings.path_replace(
-            episode['path'])))
+    logging.debug(f'BAZARR storing subtitles for this episode: {path_mappings.path_replace(episode["path"])}')
     store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
 
     # Downloading missing subtitles
     if defer_search:
-        logging.debug('BAZARR searching for missing subtitles is deferred until scheduled task execution for this '
-                      'episode: {}'.format(path_mappings.path_replace(episode['path'])))
+        logging.debug(
+            f'BAZARR searching for missing subtitles is deferred until scheduled task execution for this episode: '
+            f'{path_mappings.path_replace(episode["path"])}')
     else:
-        logging.debug('BAZARR downloading missing subtitles for this episode: {}'.format(path_mappings.path_replace(
-            episode['path'])))
+        logging.debug(
+            f'BAZARR downloading missing subtitles for this episode: {path_mappings.path_replace(episode["path"])}')
         episode_download_subtitles(episode_id)

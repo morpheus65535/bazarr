@@ -31,7 +31,7 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
     if hi:
         lang_obj = Language.rebuild(lang_obj, hi=True)
 
-    logging.debug('BAZARR is translating in {0} this subtitles {1}'.format(lang_obj, source_srt_file))
+    logging.debug(f'BAZARR is translating in {lang_obj} this subtitles {source_srt_file}')
 
     max_characters = 5000
 
@@ -46,7 +46,7 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
     lines_list = [x.plaintext for x in subs]
     joined_lines_str = '\n\n\n'.join(lines_list)
 
-    logging.debug('BAZARR splitting subtitles into {} characters blocks'.format(max_characters))
+    logging.debug(f'BAZARR splitting subtitles into {max_characters} characters blocks')
     lines_block_list = []
     translated_lines_list = []
     while len(joined_lines_str):
@@ -60,7 +60,7 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
         lines_block_list.append(new_partial_lines_str)
         joined_lines_str = joined_lines_str.replace(new_partial_lines_str, '')
 
-    logging.debug('BAZARR is sending {} blocks to Google Translate'.format(len(lines_block_list)))
+    logging.debug(f'BAZARR is sending {len(lines_block_list)} blocks to Google Translate')
     for block_str in lines_block_list:
         try:
             translated_partial_srt_text = GoogleTranslator(source='auto',
@@ -74,7 +74,7 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
             translated_partial_srt_list = translated_partial_srt_text.split('\n\n\n')
             translated_lines_list += translated_partial_srt_list
 
-    logging.debug('BAZARR saving translated subtitles to {}'.format(dest_srt_file))
+    logging.debug(f'BAZARR saving translated subtitles to {dest_srt_file}')
     for i, line in enumerate(subs):
         try:
             line.plaintext = translated_lines_list[i]

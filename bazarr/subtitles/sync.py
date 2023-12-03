@@ -17,7 +17,7 @@ def sync_subtitles(video_path, srt_path, srt_lang, forced, percent_score, sonarr
     else:
         logging.debug(f'BAZARR automatic syncing is enabled in settings. We\'ll try to sync this '
                       f'subtitles: {srt_path}.')
-        if sonarr_episode_id:
+        if media_type == 'series':
             use_subsync_threshold = settings.subsync.use_subsync_threshold
             subsync_threshold = settings.subsync.subsync_threshold
         else:
@@ -32,6 +32,6 @@ def sync_subtitles(video_path, srt_path, srt_lang, forced, percent_score, sonarr
             gc.collect()
             return True
         else:
-            logging.debug("BAZARR subsync skipped because subtitles score isn't below this "
-                          "threshold value: " + subsync_threshold + "%")
+            logging.debug(f"BAZARR subsync skipped because subtitles score isn't below this "
+                          f"threshold value: {subsync_threshold}%")
     return False

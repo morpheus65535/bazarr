@@ -20,6 +20,7 @@ _BASE_URL = "https://api.gestdown.info"
 class GestdownSubtitle(Subtitle):
     provider_name = "gestdown"
     hash_verifiable = False
+    hearing_impaired_verifiable = True
 
     def __init__(self, language, data: dict):
         super().__init__(language, hearing_impaired=data["hearingImpaired"])

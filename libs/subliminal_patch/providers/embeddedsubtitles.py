@@ -32,6 +32,7 @@ tags.Language = Language
 class EmbeddedSubtitle(Subtitle):
     provider_name = "embeddedsubtitles"
     hash_verifiable = False
+    hearing_impaired_verifiable = True
 
     def __init__(self, stream, container, matches, media_type):
         super().__init__(stream.language, stream.disposition.hearing_impaired)

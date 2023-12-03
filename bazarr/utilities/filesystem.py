@@ -9,7 +9,7 @@ def browse_bazarr_filesystem(path='#'):
         if os.name == 'nt':
             dir_list = []
             for drive in string.ascii_uppercase:
-                drive_letter = drive + ':\\'
+                drive_letter = f'{drive}:\\'
                 if os.path.exists(drive_letter):
                     dir_list.append(drive_letter)
         else:

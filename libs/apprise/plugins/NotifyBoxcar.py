@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -151,6 +147,12 @@ class NotifyBoxcar(NotifyBase):
         'to': {
             'alias_of': 'targets',
         },
+        'access': {
+            'alias_of': 'access_key',
+        },
+        'secret': {
+            'alias_of': 'secret_key',
+        },
     })
 
     def __init__(self, access, secret, targets=None, include_image=True,
@@ -234,8 +236,7 @@ class NotifyBoxcar(NotifyBase):
         if title:
             payload['aps']['@title'] = title
 
-        if body:
-            payload['aps']['alert'] = body
+        payload['aps']['alert'] = body
 
         if self._tags:
             payload['tags'] = {'or': self._tags}
@@ -380,6 +381,16 @@ class NotifyBoxcar(NotifyBase):
         if 'to' in results['qsd'] and len(results['qsd']['to']):
             results['targets'] += \
                 NotifyBoxcar.parse_list(results['qsd'].get('to'))
+
+        # Access
+        if 'access' in results['qsd'] and results['qsd']['access']:
+            results['access'] = NotifyBoxcar.unquote(
+                results['qsd']['access'].strip())
+
+        # Secret
+        if 'secret' in results['qsd'] and results['qsd']['secret']:
+            results['secret'] = NotifyBoxcar.unquote(
+                results['qsd']['secret'].strip())
 
         # Include images with our message
         results['include_image'] = \

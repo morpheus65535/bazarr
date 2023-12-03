@@ -7,7 +7,7 @@ import shutil
 import logging
 
 from datetime import datetime, timedelta
-from zipfile import ZipFile, BadZipFile
+from zipfile import ZipFile, BadZipFile, ZIP_DEFLATED
 from glob import glob
 
 from app.get_args import args
@@ -74,7 +74,8 @@ def backup_to_zip():
     config_file = os.path.join(args.config_dir, 'config', 'config.yaml')
     logging.debug(f'Config file path to backup is: {config_file}')
 
-    with ZipFile(os.path.join(get_backup_path(), backup_filename), 'w') as backupZip:
+    with ZipFile(os.path.join(get_backup_path(), backup_filename), 'w', compression=ZIP_DEFLATED,
+                 compresslevel=9) as backupZip:
         if database_backup_file:
             backupZip.write(database_backup_file, 'bazarr.db')
             try:

@@ -6,6 +6,7 @@ from flask import request, jsonify
 from flask_restx import Resource, Namespace
 from dynaconf.validator import ValidationError
 
+from api.utils import None_Keys
 from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableSettingsNotifier, \
     update_profile_id_list, database, insert, update, delete, select
 from app.event_handler import event_stream
@@ -66,11 +67,12 @@ class SystemSettings(Resource):
                         update(TableLanguagesProfiles)
                         .values(
                             name=item['name'],
-                            cutoff=item['cutoff'] if item['cutoff'] != 'null' else None,
+                            cutoff=item['cutoff'] if item['cutoff'] not in None_Keys else None,
                             items=json.dumps(item['items']),
                             mustContain=str(item['mustContain']),
                             mustNotContain=str(item['mustNotContain']),
-                            originalFormat=item['originalFormat'] if item['originalFormat'] != 'null' else None,
+                            originalFormat=int(item['originalFormat']) if item['originalFormat'] not in None_Keys else
+                            None,
                         )
                         .where(TableLanguagesProfiles.profileId == item['profileId']))
                     existing.remove(item['profileId'])
@@ -81,11 +83,12 @@ class SystemSettings(Resource):
                         .values(
                             profileId=item['profileId'],
                             name=item['name'],
-                            cutoff=item['cutoff'] if item['cutoff'] != 'null' else None,
+                            cutoff=item['cutoff'] if item['cutoff'] not in None_Keys else None,
                             items=json.dumps(item['items']),
                             mustContain=str(item['mustContain']),
                             mustNotContain=str(item['mustNotContain']),
-                            originalFormat=item['originalFormat'] if item['originalFormat'] != 'null' else None,
+                            originalFormat=int(item['originalFormat']) if item['originalFormat'] not in None_Keys else
+                            None,
                         ))
             for profileId in existing:
                 # Remove deleted profiles

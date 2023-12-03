@@ -9,8 +9,8 @@ from functools import wraps
 from urllib.parse import unquote
 
 from constants import headers
-from sonarr.info import get_sonarr_info, url_sonarr
-from radarr.info import get_radarr_info, url_radarr
+from sonarr.info import url_api_sonarr
+from radarr.info import url_api_radarr
 from utilities.helper import check_credentials
 
 from .config import settings, base_url
@@ -109,12 +109,7 @@ def series_images(url):
     url = url.strip("/")
     apikey = settings.sonarr.apikey
     baseUrl = settings.sonarr.base_url
-    if get_sonarr_info.is_legacy():
-        url_image = (url_sonarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' +
-                     apikey).replace('poster-250', 'poster-500')
-    else:
-        url_image = (url_sonarr() + '/api/v3/' + url.lstrip(baseUrl) + '?apikey=' +
-                     apikey).replace('poster-250', 'poster-500')
+    url_image = f'{url_api_sonarr()}{url.lstrip(baseUrl)}?apikey={apikey}'.replace('poster-250', 'poster-500')
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
     except Exception:
@@ -128,10 +123,7 @@ def series_images(url):
 def movies_images(url):
     apikey = settings.radarr.apikey
     baseUrl = settings.radarr.base_url
-    if get_radarr_info.is_legacy():
-        url_image = url_radarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey
-    else:
-        url_image = url_radarr() + '/api/v3/' + url.lstrip(baseUrl) + '?apikey=' + apikey
+    url_image = f'{url_api_radarr()}{url.lstrip(baseUrl)}?apikey={apikey}'
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
     except Exception:
@@ -171,7 +163,7 @@ def configured():
 def proxy(protocol, url):
     if protocol.lower() not in ['http', 'https']:
         return dict(status=False, error='Unsupported protocol')
-    url = protocol + '://' + unquote(url)
+    url = f'{protocol}://{unquote(url)}'
     params = request.args
     try:
         result = requests.get(url, params, allow_redirects=False, verify=False, timeout=5, headers=headers)

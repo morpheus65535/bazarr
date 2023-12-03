@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -47,6 +43,7 @@ from cryptography.hazmat.primitives import asymmetric
 from cryptography.exceptions import UnsupportedAlgorithm
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 from json.decoder import JSONDecodeError
 from urllib.parse import urlencode as _urlencode
 
@@ -106,7 +103,7 @@ class GoogleOAuth:
         # Our keys we build using the provided content
         self.__refresh_token = None
         self.__access_token = None
-        self.__access_token_expiry = datetime.utcnow()
+        self.__access_token_expiry = datetime.now(timezone.utc)
 
     def load(self, path):
         """
@@ -117,7 +114,7 @@ class GoogleOAuth:
         self.content = None
         self.private_key = None
         self.__access_token = None
-        self.__access_token_expiry = datetime.utcnow()
+        self.__access_token_expiry = datetime.now(timezone.utc)
 
         try:
             with open(path, mode="r", encoding=self.encoding) as fp:
@@ -199,7 +196,7 @@ class GoogleOAuth:
                 'token with.')
             return None
 
-        if self.__access_token_expiry > datetime.utcnow():
+        if self.__access_token_expiry > datetime.now(timezone.utc):
             # Return our no-expired key
             return self.__access_token
 
@@ -209,7 +206,7 @@ class GoogleOAuth:
         key_identifier = self.content.get('private_key_id')
 
         # Generate our Assertion
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expiry = now + self.access_token_lifetime_sec
 
         payload = {
@@ -301,7 +298,7 @@ class GoogleOAuth:
         if 'expires_in' in response:
             delta = timedelta(seconds=int(response['expires_in']))
             self.__access_token_expiry = \
-                delta + datetime.utcnow() - self.clock_skew
+                delta + datetime.now(timezone.utc) - self.clock_skew
 
         else:
             # Allow some grace before we expire

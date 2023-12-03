@@ -6,12 +6,11 @@ import logging
 from sqlalchemy.exc import IntegrityError
 
 from app.config import settings
-from radarr.info import url_radarr
 from utilities.path_mappings import path_mappings
 from subtitles.indexer.movies import store_subtitles_movie, movies_full_scan_subtitles
 from radarr.rootfolder import check_radarr_rootfolder
 from subtitles.mass_download import movies_download_subtitles
-from app.database import TableMovies, database, insert, update, delete, select
+from app.database import TableMovies, TableLanguagesProfiles, database, insert, update, delete, select
 from app.event_handler import event_stream, show_progress, hide_progress
 
 from .utils import get_profile_list, get_tags, get_movies_from_radarr_api
@@ -40,8 +39,7 @@ def update_movie(updated_movie, send_event):
     except IntegrityError as e:
         logging.error(f"BAZARR cannot update movie {updated_movie['path']} because of {e}")
     else:
-        store_subtitles_movie(updated_movie['path'],
-                              path_mappings.path_replace_movie(updated_movie['path']))
+        store_subtitles_movie(updated_movie['path'], path_mappings.path_replace_movie(updated_movie['path']))
 
         if send_event:
             event_stream(type='movie', action='update', payload=updated_movie['radarrId'])
@@ -56,8 +54,7 @@ def add_movie(added_movie, send_event):
     except IntegrityError as e:
         logging.error(f"BAZARR cannot insert movie {added_movie['path']} because of {e}")
     else:
-        store_subtitles_movie(added_movie['path'],
-                              path_mappings.path_replace_movie(added_movie['path']))
+        store_subtitles_movie(added_movie['path'], path_mappings.path_replace_movie(added_movie['path']))
 
         if send_event:
             event_stream(type='movie', action='update', payload=int(added_movie['radarrId']))
@@ -77,6 +74,13 @@ def update_movies(send_event=True):
     else:
         movie_default_profile = None
 
+    # Prevent trying to insert a movie with a non-existing languages profileId
+    if (movie_default_profile and not database.execute(
+            select(TableLanguagesProfiles)
+            .where(TableLanguagesProfiles.profileId == movie_default_profile))
+            .first()):
+        movie_default_profile = None
+
     if apikey_radarr is None:
         pass
     else:
@@ -84,7 +88,7 @@ def update_movies(send_event=True):
         tagsDict = get_tags()
 
         # Get movies data from radarr
-        movies = get_movies_from_radarr_api(url=url_radarr(), apikey_radarr=apikey_radarr)
+        movies = get_movies_from_radarr_api(apikey_radarr=apikey_radarr)
         if not isinstance(movies, list):
             return
         else:
@@ -102,22 +106,19 @@ def update_movies(send_event=True):
                                      'movieFile' in movie and
                                      (movie['movieFile']['size'] > 20480 or
                                       get_movie_file_size_from_db(movie['movieFile']['path']) > 20480)]
-            movies_to_add = []
 
             # Remove old movies from DB
             movies_to_delete = list(set(current_movies_id_db) - set(current_movies_radarr))
 
             if len(movies_to_delete):
                 try:
-                    removed_movies = database.execute(delete(TableMovies)
-                                                      .where(TableMovies.tmdbId.in_(movies_to_delete))
-                                                      .returning(TableMovies.radarrId))
+                    database.execute(delete(TableMovies).where(TableMovies.tmdbId.in_(movies_to_delete)))
                 except IntegrityError as e:
                     logging.error(f"BAZARR cannot delete movies because of {e}")
                 else:
-                    for removed_movie in removed_movies:
+                    for removed_movie in movies_to_delete:
                         if send_event:
-                            event_stream(type='movie', action='delete', payload=removed_movie.radarrId)
+                            event_stream(type='movie', action='delete', payload=removed_movie)
 
             # Build new and updated movies
             movies_count = len(movies)
@@ -155,7 +156,7 @@ def update_movies(send_event=True):
 
 
 def update_one_movie(movie_id, action, defer_search=False):
-    logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movie_id))
+    logging.debug(f'BAZARR syncing this specific movie from Radarr: {movie_id}')
 
     # Check if there's a row in database for this movie ID
     existing_movie = database.execute(
@@ -175,8 +176,9 @@ def update_one_movie(movie_id, action, defer_search=False):
                               f"because of {e}")
             else:
                 event_stream(type='movie', action='delete', payload=int(movie_id))
-                logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
-                    existing_movie.path)))
+                logging.debug(
+                    f'BAZARR deleted this movie from the database: '
+                    f'{path_mappings.path_replace_movie(existing_movie.path)}')
         return
 
     movie_default_enabled = settings.general.movie_default_enabled
@@ -194,8 +196,7 @@ def update_one_movie(movie_id, action, defer_search=False):
     try:
         # Get movie data from radarr api
         movie = None
-        movie_data = get_movies_from_radarr_api(url=url_radarr(), apikey_radarr=settings.radarr.apikey,
-                                                radarr_id=movie_id)
+        movie_data = get_movies_from_radarr_api(apikey_radarr=settings.radarr.apikey, radarr_id=movie_id)
         if not movie_data:
             return
         else:
@@ -224,8 +225,8 @@ def update_one_movie(movie_id, action, defer_search=False):
                           f"of {e}")
         else:
             event_stream(type='movie', action='delete', payload=int(movie_id))
-            logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
-                existing_movie.path)))
+            logging.debug(
+                f'BAZARR deleted this movie from the database:{path_mappings.path_replace_movie(existing_movie.path)}')
         return
 
     # Update existing movie in DB
@@ -239,9 +240,10 @@ def update_one_movie(movie_id, action, defer_search=False):
             logging.error(f"BAZARR cannot update movie {path_mappings.path_replace_movie(movie['path'])} because "
                           f"of {e}")
         else:
+            store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
             event_stream(type='movie', action='update', payload=int(movie_id))
-            logging.debug('BAZARR updated this movie into the database:{}'.format(path_mappings.path_replace_movie(
-                movie['path'])))
+            logging.debug(
+                f'BAZARR updated this movie into the database:{path_mappings.path_replace_movie(movie["path"])}')
 
     # Insert new movie in DB
     elif movie and not existing_movie:
@@ -253,20 +255,21 @@ def update_one_movie(movie_id, action, defer_search=False):
             logging.error(f"BAZARR cannot insert movie {path_mappings.path_replace_movie(movie['path'])} because "
                           f"of {e}")
         else:
+            store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
             event_stream(type='movie', action='update', payload=int(movie_id))
-            logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(
-                movie['path'])))
+            logging.debug(
+                f'BAZARR inserted this movie into the database:{path_mappings.path_replace_movie(movie["path"])}')
 
     # Storing existing subtitles
-    logging.debug('BAZARR storing subtitles for this movie: {}'.format(path_mappings.path_replace_movie(
-            movie['path'])))
+    logging.debug(f'BAZARR storing subtitles for this movie: {path_mappings.path_replace_movie(movie["path"])}')
     store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
 
     # Downloading missing subtitles
     if defer_search:
-        logging.debug('BAZARR searching for missing subtitles is deferred until scheduled task execution for this '
-                      'movie: {}'.format(path_mappings.path_replace_movie(movie['path'])))
+        logging.debug(
+            f'BAZARR searching for missing subtitles is deferred until scheduled task execution for this movie: '
+            f'{path_mappings.path_replace_movie(movie["path"])}')
     else:
-        logging.debug('BAZARR downloading missing subtitles for this movie: {}'.format(path_mappings.path_replace_movie(
-            movie['path'])))
+        logging.debug(
+            f'BAZARR downloading missing subtitles for this movie: {path_mappings.path_replace_movie(movie["path"])}')
         movies_download_subtitles(movie_id)

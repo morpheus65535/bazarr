@@ -15,7 +15,7 @@ from guessit import guessit
 from subliminal.exceptions import ConfigurationError, ServiceUnavailable
 from subliminal.providers.opensubtitles import OpenSubtitlesProvider as _OpenSubtitlesProvider,\
     OpenSubtitlesSubtitle as _OpenSubtitlesSubtitle, Episode, Movie, ServerProxy, Unauthorized, NoSession, \
-    DownloadLimitReached, InvalidImdbid, UnknownUserAgent, DisabledUserAgent, OpenSubtitlesError
+    DownloadLimitReached, InvalidImdbid, UnknownUserAgent, DisabledUserAgent, OpenSubtitlesError, PaymentRequired
 from .mixins import ProviderRetryMixin
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.providers import reinitialize_on_error
@@ -418,6 +418,8 @@ def checked(fn, raise_api_limit=False):
 
     if status_code == 401:
         raise Unauthorized
+    if status_code == 402:
+        raise PaymentRequired
     if status_code == 406:
         raise NoSession
     if status_code == 407:

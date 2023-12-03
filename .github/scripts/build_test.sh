@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python3 "${ROOT_DIRECTORY}"/bazarr.py &
+python3 "${ROOT_DIRECTORY}"/bazarr.py --no-update &
 PID=$!
 
 sleep 30

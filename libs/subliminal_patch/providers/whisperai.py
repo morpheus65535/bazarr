@@ -233,7 +233,7 @@ class WhisperAIProvider(Provider):
         r = self.session.post(f"{self.endpoint}/detect-language",
                               params={'encode': 'false'},
                               files={'audio_file': out},
-                              timeout=self.timeout)
+                              timeout=(5, self.timeout))
 
         logger.info(f"Whisper detected language of {path} as {r.json()['detected_language']}")
 
@@ -290,6 +290,6 @@ class WhisperAIProvider(Provider):
         r = self.session.post(f"{self.endpoint}/asr",
                               params={'task': subtitle.task, 'language': whisper_get_language_reverse(subtitle.audio_language), 'output': 'srt', 'encode': 'false'},
                               files={'audio_file': out},
-                              timeout=self.timeout)
+                              timeout=(5, self.timeout))
 
         subtitle.content = r.content

@@ -47,7 +47,7 @@ if args.create_db_revision:
     try:
         stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
     except Exception as e:
-        logging.error('BAZARR Cannot create stop file: ' + repr(e))
+        logging.error(f'BAZARR Cannot create stop file: {repr(e)}')
     else:
         create_db_revision(app)
         logging.info('Bazarr is being shutdown...')

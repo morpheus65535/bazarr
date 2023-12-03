@@ -28,23 +28,25 @@ class GetRadarrInfo:
             radarr_version = ''
         if settings.general.use_radarr:
             try:
-                rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
-                radarr_json = requests.get(rv, timeout=int(settings.radarr.http_timeout), verify=False, headers=headers).json()
+                rv = f"{url_radarr()}/api/system/status?apikey={settings.radarr.apikey}"
+                radarr_json = requests.get(rv, timeout=int(settings.radarr.http_timeout), verify=False,
+                                           headers=headers).json()
                 if 'version' in radarr_json:
                     radarr_version = radarr_json['version']
                 else:
                     raise json.decoder.JSONDecodeError
             except json.decoder.JSONDecodeError:
                 try:
-                    rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
-                    radarr_version = requests.get(rv, timeout=int(settings.radarr.http_timeout), verify=False, headers=headers).json()['version']
+                    rv = f"{url_radarr()}/api/v3/system/status?apikey={settings.radarr.apikey}"
+                    radarr_version = requests.get(rv, timeout=int(settings.radarr.http_timeout), verify=False,
+                                                  headers=headers).json()['version']
                 except json.decoder.JSONDecodeError:
                     logging.debug('BAZARR cannot get Radarr version')
                     radarr_version = 'unknown'
             except Exception:
                 logging.debug('BAZARR cannot get Radarr version')
                 radarr_version = 'unknown'
-        logging.debug('BAZARR got this Radarr version from its API: {}'.format(radarr_version))
+        logging.debug(f'BAZARR got this Radarr version from its API: {radarr_version}')
         region.set("radarr_version", radarr_version)
         return radarr_version
 
@@ -83,7 +85,7 @@ def url_radarr():
     if settings.radarr.base_url == '':
         settings.radarr.base_url = "/"
     if not settings.radarr.base_url.startswith("/"):
-        settings.radarr.base_url = "/" + settings.radarr.base_url
+        settings.radarr.base_url = f"/{settings.radarr.base_url}"
     if settings.radarr.base_url.endswith("/"):
         settings.radarr.base_url = settings.radarr.base_url[:-1]
 
@@ -93,3 +95,7 @@ def url_radarr():
         port = f":{settings.radarr.port}"
 
     return f"{protocol_radarr}://{settings.radarr.ip}{port}{settings.radarr.base_url}"
+
+
+def url_api_radarr():
+    return url_radarr() + f'/api{"/v3" if not get_radarr_info.is_legacy() else ""}/'

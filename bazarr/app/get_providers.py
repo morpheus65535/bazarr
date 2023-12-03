@@ -12,9 +12,11 @@ import requests
 import traceback
 import re
 
+from requests import ConnectionError
+from subzero.language import Language
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
     MustGetBlacklisted, SearchLimitReached
-from subliminal.providers.opensubtitles import DownloadLimitReached
+from subliminal.providers.opensubtitles import DownloadLimitReached, PaymentRequired, Unauthorized
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable, AuthenticationError, ConfigurationError
 from subliminal import region as subliminal_cache_region
 from subliminal_patch.extensions import provider_registry
@@ -73,17 +75,21 @@ def provider_throttle_map():
             socket.timeout: (datetime.timedelta(hours=1), "1 hour"),
             requests.exceptions.ConnectTimeout: (datetime.timedelta(hours=1), "1 hour"),
             requests.exceptions.ReadTimeout: (datetime.timedelta(hours=1), "1 hour"),
+            ConfigurationError: (datetime.timedelta(hours=12), "12 hours"),
+            PermissionError: (datetime.timedelta(hours=12), "12 hours"),
+            requests.exceptions.ProxyError: (datetime.timedelta(hours=1), "1 hour"),
+            AuthenticationError: (datetime.timedelta(hours=12), "12 hours"),
         },
         "opensubtitles": {
             TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
             DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
             DownloadLimitReached: (datetime.timedelta(hours=6), "6 hours"),
+            PaymentRequired: (datetime.timedelta(hours=12), "12 hours"),
+            Unauthorized: (datetime.timedelta(hours=12), "12 hours"),
             APIThrottled: (datetime.timedelta(seconds=15), "15 seconds"),
             ServiceUnavailable: (datetime.timedelta(hours=1), "1 hour"),
         },
         "opensubtitlescom": {
-            AuthenticationError: (datetime.timedelta(hours=12), "12 hours"),
-            ConfigurationError: (datetime.timedelta(hours=12), "12 hours"),
             TooManyRequests: (datetime.timedelta(minutes=1), "1 minute"),
             DownloadLimitExceeded: (datetime.timedelta(hours=24), "24 hours"),
         },
@@ -108,9 +114,6 @@ def provider_throttle_map():
             SearchLimitReached: (
                 legendasdivx_limit_reset_timedelta(),
                 f"{legendasdivx_limit_reset_timedelta().seconds // 3600 + 1} hours"),
-        },
-        "subf2m": {
-            ConfigurationError: (datetime.timedelta(hours=24), "24 hours"),
         },
         "whisperai": {
             ConnectionError: (datetime.timedelta(hours=24), "24 hours"),
@@ -310,18 +313,25 @@ def get_providers_auth():
     }
 
 
-def _handle_mgb(name, exception):
-    # There's no way to get Radarr/Sonarr IDs from subliminal_patch. Blacklisted subtitles
-    # will not appear on fronted but they will work with get_blacklist
-    if exception.media_type == "series":
-        blacklist_log("", "", name, exception.id, "")
+def _handle_mgb(name, exception, ids, language):
+    if language.forced:
+        language_str = f'{language.basename}:forced'
+    elif language.hi:
+        language_str = f'{language.basename}:hi'
     else:
-        blacklist_log_movie("", name, exception.id, "")
+        language_str = language.basename
+
+    if ids:
+        if exception.media_type == "series":
+            if 'sonarrSeriesId' in ids and 'sonarrEpsiodeId' in ids:
+                blacklist_log(ids['sonarrSeriesId'], ids['sonarrEpisodeId'], name, exception.id, language_str)
+        else:
+            blacklist_log_movie(ids['radarrId'], name, exception.id, language_str)
 
 
-def provider_throttle(name, exception):
-    if isinstance(exception, MustGetBlacklisted):
-        return _handle_mgb(name, exception)
+def provider_throttle(name, exception, ids=None, language=None):
+    if isinstance(exception, MustGetBlacklisted) and isinstance(ids, dict) and isinstance(language, Language):
+        return _handle_mgb(name, exception, ids, language)
 
     cls = getattr(exception, "__class__")
     cls_name = getattr(cls, "__name__")
@@ -450,13 +460,15 @@ def list_throttled_providers():
 
 def reset_throttled_providers(only_auth_or_conf_error=False):
     for provider in list(tp):
-        if only_auth_or_conf_error and tp[provider][0] not in ['AuthenticationError', 'ConfigurationError']:
+        if only_auth_or_conf_error and tp[provider][0] not in ['AuthenticationError', 'ConfigurationError',
+                                                               'PaymentRequired']:
             continue
         del tp[provider]
     set_throttled_providers(str(tp))
     update_throttled_provider()
     if only_auth_or_conf_error:
-        logging.info('BAZARR throttled providers have been reset (only AuthenticationError and ConfigurationError).')
+        logging.info('BAZARR throttled providers have been reset (only AuthenticationError, ConfigurationError and '
+                     'PaymentRequired).')
     else:
         logging.info('BAZARR throttled providers have been reset.')
 

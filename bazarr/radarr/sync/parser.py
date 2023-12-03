@@ -25,7 +25,7 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
             overview = ""
         try:
             poster_big = movie['images'][0]['url']
-            poster = os.path.splitext(poster_big)[0] + '-500' + os.path.splitext(poster_big)[1]
+            poster = f'{os.path.splitext(poster_big)[0]}-500{os.path.splitext(poster_big)[1]}'
         except Exception:
             poster = ""
         try:
@@ -56,7 +56,7 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
         except Exception:
             format = movie['movieFile']['quality']['quality']['name']
             try:
-                resolution = str(movie['movieFile']['quality']['quality']['resolution']) + 'p'
+                resolution = f'{movie["movieFile"]["quality"]["quality"]["resolution"]}p'
             except Exception:
                 resolution = None
 

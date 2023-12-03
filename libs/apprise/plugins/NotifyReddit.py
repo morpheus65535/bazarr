@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -14,10 +14,6 @@
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
 #
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,7 +26,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-#
 # 1. Visit https://www.reddit.com/prefs/apps and scroll to the bottom
 # 2. Click on the button that reads 'are you a developer? create an app...'
 # 3. Set the mode to `script`,
@@ -56,6 +51,7 @@ import requests
 from json import loads
 from datetime import timedelta
 from datetime import datetime
+from datetime import timezone
 
 from .NotifyBase import NotifyBase
 from ..URLBase import PrivacyMode
@@ -133,12 +129,6 @@ class NotifyReddit(NotifyBase):
     #                        still allow to make.
     request_rate_per_sec = 0
 
-    # For Tracking Purposes
-    ratelimit_reset = datetime.utcnow()
-
-    # Default to 1.0
-    ratelimit_remaining = 1.0
-
     # Taken right from google.auth.helpers:
     clock_skew = timedelta(seconds=10)
 
@@ -185,6 +175,7 @@ class NotifyReddit(NotifyBase):
         'targets': {
             'name': _('Targets'),
             'type': 'list:string',
+            'required': True,
         },
     })
 
@@ -275,7 +266,7 @@ class NotifyReddit(NotifyBase):
         # Our keys we build using the provided content
         self.__refresh_token = None
         self.__access_token = None
-        self.__access_token_expiry = datetime.utcnow()
+        self.__access_token_expiry = datetime.now(timezone.utc)
 
         self.kind = kind.strip().lower() \
             if isinstance(kind, str) \
@@ -324,6 +315,13 @@ class NotifyReddit(NotifyBase):
         if not self.subreddits:
             self.logger.warning(
                 'No subreddits were identified to be notified')
+
+        # For Rate Limit Tracking Purposes
+        self.ratelimit_reset = datetime.now(timezone.utc).replace(tzinfo=None)
+
+        # Default to 1.0
+        self.ratelimit_remaining = 1.0
+
         return
 
     def url(self, privacy=False, *args, **kwargs):
@@ -417,10 +415,10 @@ class NotifyReddit(NotifyBase):
         if 'expires_in' in response:
             delta = timedelta(seconds=int(response['expires_in']))
             self.__access_token_expiry = \
-                delta + datetime.utcnow() - self.clock_skew
+                delta + datetime.now(timezone.utc) - self.clock_skew
         else:
             self.__access_token_expiry = self.access_token_lifetime_sec + \
-                datetime.utcnow() - self.clock_skew
+                datetime.now(timezone.utc) - self.clock_skew
 
         # The Refresh Token
         self.__refresh_token = response.get(
@@ -544,10 +542,10 @@ class NotifyReddit(NotifyBase):
             # Determine how long we should wait for or if we should wait at
             # all. This isn't fool-proof because we can't be sure the client
             # time (calling this script) is completely synced up with the
-            # Gitter server.  One would hope we're on NTP and our clocks are
+            # Reddit server.  One would hope we're on NTP and our clocks are
             # the same allowing this to role smoothly:
 
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc).replace(tzinfo=None)
             if now < self.ratelimit_reset:
                 # We need to throttle for the difference in seconds
                 wait = abs(
@@ -671,8 +669,9 @@ class NotifyReddit(NotifyBase):
                 self.ratelimit_remaining = \
                     float(r.headers.get(
                         'X-RateLimit-Remaining'))
-                self.ratelimit_reset = datetime.utcfromtimestamp(
-                    int(r.headers.get('X-RateLimit-Reset')))
+                self.ratelimit_reset = datetime.fromtimestamp(
+                    int(r.headers.get('X-RateLimit-Reset')), timezone.utc
+                ).replace(tzinfo=None)
 
             except (TypeError, ValueError):
                 # This is returned if we could not retrieve this information

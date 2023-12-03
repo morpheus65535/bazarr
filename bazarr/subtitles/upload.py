@@ -84,7 +84,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
 
     sub.content = subtitle.read()
     if not sub.is_valid():
-        logging.exception('BAZARR Invalid subtitle file: ' + subtitle.filename)
+        logging.exception(f'BAZARR Invalid subtitle file: {subtitle.filename}')
         sub.mods = None
 
     if settings.general.utf8_encode:
@@ -106,11 +106,11 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
                                          formats=(sub.format,) if use_original_format else ("srt",),
                                          path_decoder=force_unicode)
     except Exception:
-        logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
+        logging.exception(f'BAZARR Error saving Subtitles file to disk for this file: {path}')
         return
 
     if len(saved_subtitles) < 1:
-        logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
+        logging.exception(f'BAZARR Error saving Subtitles file to disk for this file: {path}')
         return
 
     subtitle_path = saved_subtitles[0].storage_path
@@ -168,8 +168,8 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
         event_stream(type='movie', action='update', payload=movie_metadata.radarrId)
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
 
-    result = ProcessSubtitlesResult(message=language_from_alpha3(language) + modifier_string + " Subtitles manually "
-                                                                                               "uploaded.",
+    result = ProcessSubtitlesResult(message=f"{language_from_alpha3(language)}{modifier_string} Subtitles manually "
+                                            "uploaded.",
                                     reversed_path=reversed_path,
                                     downloaded_language_code2=uploaded_language_code2,
                                     downloaded_provider=None,
