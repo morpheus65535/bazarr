@@ -11,7 +11,7 @@ from subliminal_patch.subtitle import Subtitle
 from pysubs2.formats import get_format_identifier
 
 from languages.get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
-from app.config import settings
+from app.config import settings, get_array_from
 from utilities.helper import get_target_folder, force_unicode
 from utilities.post_processing import pp_replace, set_chmod
 from utilities.path_mappings import path_mappings
@@ -78,7 +78,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
 
     sub = Subtitle(
         lang_obj,
-        mods=settings.general.subzero_mods,
+        mods=get_array_from(settings.general.subzero_mods),
         original_format=use_original_format
     )
 

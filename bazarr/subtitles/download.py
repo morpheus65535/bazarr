@@ -52,7 +52,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
         minimum_score_movie = settings.general.minimum_score_movie
         min_score, max_score, scores = _get_scores(media_type, minimum_score_movie, minimum_score)
 
-        subz_mods = settings.general.subzero_mods
+        subz_mods = get_array_from(settings.general.subzero_mods)
         saved_any = False
 
         if providers:
