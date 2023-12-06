@@ -98,7 +98,7 @@ class ZimukuProvider(Provider):
     video_types = (Episode, Movie)
     logger.info(str(supported_languages))
 
-    server_url = "https://so.zimuku.org"
+    server_url = "https://srtku.com"
     search_url = "/search?q={}"
 
     subtitle_class = ZimukuSubtitle
