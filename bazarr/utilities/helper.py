@@ -14,7 +14,7 @@ def check_credentials(user, pw, request, log_success=True):
     ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
     username = settings.auth.username
     password = settings.auth.password
-    if hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username:
+    if hashlib.md5(f"{pw}".encode('utf-8')).hexdigest() == password and user == username:
         if log_success:
             logging.info(f'Successful authentication from {ip_addr} for user {user}')
         return True
