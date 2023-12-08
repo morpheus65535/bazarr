@@ -27,9 +27,9 @@ api_ns_subtitles = Namespace('Subtitles', description='Apply mods/tools on exter
 @api_ns_subtitles.route('subtitles')
 class Subtitles(Resource):
     get_request_parser = reqparse.RequestParser()
-    get_request_parser.add_argument('subtitles_path', type=str, required=True, help='External subtitles file path')
-    get_request_parser.add_argument('sonarr_episode_id', type=int, required=False, help='Sonarr Episode ID')
-    get_request_parser.add_argument('radarr_movie_id', type=int, required=False, help='Radarr Movie ID')
+    get_request_parser.add_argument('subtitlesPath', type=str, required=True, help='External subtitles file path')
+    get_request_parser.add_argument('sonarrEpisodeId', type=int, required=False, help='Sonarr Episode ID')
+    get_request_parser.add_argument('radarrMovieId', type=int, required=False, help='Radarr Movie ID')
 
     audio_tracks_data_model = api_ns_subtitles.model('audio_tracks_data_model', {
         'stream': fields.String(),
@@ -66,9 +66,9 @@ class Subtitles(Resource):
         """Return available audio and embedded subtitles tracks with external subtitles. Used for manual subsync
         modal"""
         args = self.get_request_parser.parse_args()
-        subtitlesPath = args.get('subtitles_path')
-        episodeId = args.get('sonarr_episode_id', None)
-        movieId = args.get('episode_file_id', None)
+        subtitlesPath = args.get('subtitlesPath')
+        episodeId = args.get('sonarrEpisodeId', None)
+        movieId = args.get('radarrMovieId', None)
 
         result = subtitles_sync_references(subtitles_path=subtitlesPath, sonarr_episode_id=episodeId,
                                            radarr_movie_id=movieId)

@@ -193,7 +193,8 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
             pass
         else:
             for subtitles in parsed_subtitles:
-                if subtitles[1] and subtitles[1] != subtitles_path:
+                if subtitles[1] and subtitles[1] != path_mappings.path_replace_reverse(subtitles_path) \
+                        if sonarr_episode_id else path_mappings.path_replace_reverse_movie(subtitles_path):
                     language_dict = languages_from_colon_seperated_string(subtitles[0])
                     external_subtitles.append({
                         'path': subtitles[1],
