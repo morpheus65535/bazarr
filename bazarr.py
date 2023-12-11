@@ -13,7 +13,7 @@ from bazarr.app.get_args import args
 
 def check_python_version():
     python_version = platform.python_version_tuple()
-    minimum_py3_tuple = (3, 7, 0)
+    minimum_py3_tuple = (3, 8, 0)
     minimum_py3_str = ".".join(str(i) for i in minimum_py3_tuple)
 
     if int(python_version[0]) < minimum_py3_tuple[0]:
