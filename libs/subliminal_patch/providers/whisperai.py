@@ -1,5 +1,8 @@
 from __future__ import absolute_import
 import logging
+import time
+import datetime
+from datetime import timedelta
 
 from requests import Session
 
@@ -121,7 +124,7 @@ whisper_languages = {
 }
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.INFO)
 
 @functools.lru_cache(2)
 def encode_audio_stream(path, ffmpeg_path, audio_stream_language=None):
@@ -235,7 +238,7 @@ class WhisperAIProvider(Provider):
                               files={'audio_file': out},
                               timeout=(5, self.timeout))
 
-        logger.info(f"Whisper detected language of {path} as {r.json()['detected_language']}")
+        logger.debug(f"Whisper detected language of {path} as {r.json()['detected_language']}")
 
         return whisper_get_language(r.json()["language_code"], r.json()["detected_language"])
 
@@ -270,7 +273,7 @@ class WhisperAIProvider(Provider):
 
         if sub.task == "translate":
             if language.alpha3 != "eng":
-                logger.info(f"Translation only possible from {language} to English")
+                logger.debug(f"Translation only possible from {language} to English")
                 return None
 
         logger.debug(f"Whisper ({video.original_path}): {sub.audio_language} -> {language.alpha3} [TASK: {sub.task}]")
@@ -286,10 +289,17 @@ class WhisperAIProvider(Provider):
         # TODO: This loads the entire file into memory, find a good way to stream the file in chunks
 
         out = encode_audio_stream(subtitle.video.original_path, self.ffmpeg_path, subtitle.force_audio_stream)
+        
+        logger.info(f'Starting WhisperAI {subtitle.task} to {subtitle.audio_language} for {subtitle.video.original_path}')
+        startTime = time.time()
 
         r = self.session.post(f"{self.endpoint}/asr",
                               params={'task': subtitle.task, 'language': whisper_get_language_reverse(subtitle.audio_language), 'output': 'srt', 'encode': 'false'},
                               files={'audio_file': out},
                               timeout=(5, self.timeout))
+                              
+        endTime = time.time()
+        elapsedTime = timedelta(seconds=round(endTime - startTime))
+        logger.info(f'Completed WhisperAI {subtitle.task} to {subtitle.audio_language} in {elapsedTime} for {subtitle.video.original_path}')
 
         subtitle.content = r.content
