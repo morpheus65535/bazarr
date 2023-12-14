@@ -122,8 +122,8 @@ validators = [
     Validator('auth.apikey', must_exist=True, default=hexlify(os.urandom(16)).decode(), is_type_of=str),
     Validator('auth.type', must_exist=True, default=None, is_type_of=(NoneType, str),
               is_in=[None, 'basic', 'form']),
-    Validator('auth.username', must_exist=True, default='', is_type_of=str),
-    Validator('auth.password', must_exist=True, default='', is_type_of=str),
+    Validator('auth.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # cors section
     Validator('cors.enabled', must_exist=True, default=False, is_type_of=bool),
