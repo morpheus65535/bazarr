@@ -1,5 +1,5 @@
 import typing
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from logging import NullHandler, getLogger
 
 from knowit.core import Rule
@@ -54,7 +54,7 @@ class AudioChannelsRule(Rule):
             for i in position.split('/'):
                 try:
                     c += Decimal(i)
-                except ValueError:
+                except (ValueError, InvalidOperation):
                     logger.debug('Invalid %s: %s', self.description, i)
                     pass
 
