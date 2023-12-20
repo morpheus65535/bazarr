@@ -1,4 +1,5 @@
 import { Selector } from "@/components";
+import { Selector as GlobalSelector } from "../components";
 import { useModals, withModal } from "@/modules/modals";
 import { BuildKey, useSelectorOptions } from "@/utilities";
 import { ASSERT } from "@/utilities/console";
@@ -206,6 +207,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     info.inputs?.forEach((value) => {
       const key = value.key;
       const label = value.name ?? capitalize(value.key);
+      const options = value.options ?? [];
 
       switch (value.type) {
         case "text":
@@ -236,6 +238,16 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
             ></Check>
           );
           return;
+        case "select":
+          elements.push(
+            <GlobalSelector
+              key={key}
+              label={label}
+              settingKey={`settings-${itemKey}-${key}`}
+              options={options}
+            ></GlobalSelector>
+            );
+            return;
         case "chips":
           elements.push(
             <Chips
