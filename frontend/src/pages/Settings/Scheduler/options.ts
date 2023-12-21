@@ -1,6 +1,7 @@
 import { SelectorOption } from "@/components";
 
 export const seriesSyncOptions: SelectorOption<number>[] = [
+  { label: "Manually", value: 52560000 },
   { label: "15 Minutes", value: 15 },
   { label: "1 Hour", value: 60 },
   { label: "3 Hours", value: 180 },
@@ -32,6 +33,7 @@ export const dayOptions: SelectorOption<number>[] = [
 ];
 
 export const upgradeOptions: SelectorOption<number>[] = [
+  { label: "Manually", value: 876000 },
   { label: "6 Hours", value: 6 },
   { label: "12 Hours", value: 12 },
   { label: "24 Hours", value: 24 },
