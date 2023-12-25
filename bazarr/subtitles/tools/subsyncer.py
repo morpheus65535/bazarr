@@ -56,7 +56,7 @@ class SubSyncer:
         try:
             unparsed_args = [self.reference, '-i', self.srtin, '-o', self.srtout, '--ffmpegpath', self.ffmpeg_path,
                              '--vad', self.vad, '--log-dir-path', self.log_dir_path, '--max-offset-seconds',
-                             max_offset_seconds]
+                             max_offset_seconds, '--output-encoding', 'same']
             if not settings.general.utf8_encode:
                 unparsed_args.append('--output-encoding')
                 unparsed_args.append('same')

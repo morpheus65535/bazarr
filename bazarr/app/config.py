@@ -122,8 +122,8 @@ validators = [
     Validator('auth.apikey', must_exist=True, default=hexlify(os.urandom(16)).decode(), is_type_of=str),
     Validator('auth.type', must_exist=True, default=None, is_type_of=(NoneType, str),
               is_in=[None, 'basic', 'form']),
-    Validator('auth.username', must_exist=True, default='', is_type_of=str),
-    Validator('auth.password', must_exist=True, default='', is_type_of=str),
+    Validator('auth.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # cors section
     Validator('cors.enabled', must_exist=True, default=False, is_type_of=bool),
@@ -523,7 +523,7 @@ def save_settings(settings_items):
 
         if key == 'settings-auth-password':
             if value != settings.auth.password and value is not None:
-                value = hashlib.md5(value.encode('utf-8')).hexdigest()
+                value = hashlib.md5(f"{value}".encode('utf-8')).hexdigest()
 
         if key == 'settings-general-debug':
             configure_debug = True

@@ -35,7 +35,7 @@ def create_app():
         app.config["DEBUG"] = False
 
     socketio.init_app(app, path=f'{base_url.rstrip("/")}/api/socket.io', cors_allowed_origins='*',
-                      async_mode='threading', allow_upgrades=False, transports='polling')
+                      async_mode='threading', allow_upgrades=False, transports='polling', engineio_logger=False)
 
     @app.errorhandler(404)
     def page_not_found(_):
