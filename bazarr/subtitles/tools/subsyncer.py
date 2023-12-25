@@ -31,9 +31,9 @@ class SubSyncer:
         self.log_dir_path = os.path.join(args.config_dir, 'log')
 
     def sync(self, video_path, srt_path, srt_lang, sonarr_series_id=None, sonarr_episode_id=None, radarr_id=None,
-             reference=None, reference_stream=None, max_offset_seconds=str(settings.subsync.max_offset_seconds),
+             reference=None, max_offset_seconds=str(settings.subsync.max_offset_seconds),
              no_fix_framerate=settings.subsync.no_fix_framerate, gss=settings.subsync.gss):
-        self.reference = reference or video_path
+        self.reference = video_path
         self.srtin = srt_path
         self.srtout = f'{os.path.splitext(self.srtin)[0]}.synced.srt'
         self.args = None
@@ -67,10 +67,15 @@ class SubSyncer:
             if gss:
                 unparsed_args.append('--gss')
 
-            if reference_stream:
+            if reference and reference != video_path and os.path.isfile(reference):
+                # subtitles path provided
+                self.reference = reference
+            elif reference and isinstance(reference, str) and len(reference) == 3 and reference[:2] in ['a:', 's:']:
+                # audio or subtitles track id provided
                 unparsed_args.append('--reference-stream')
-                unparsed_args.append(reference_stream)
+                unparsed_args.append(reference)
             elif settings.subsync.force_audio:
+                # nothing else match and force audio settings is enabled
                 unparsed_args.append('--reference-stream')
                 unparsed_args.append('a:0')
 

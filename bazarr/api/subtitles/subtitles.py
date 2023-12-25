@@ -15,7 +15,7 @@ from subtitles.tools.translate import translate_subtitles_file
 from subtitles.tools.mods import subtitles_apply_mods
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
-from app.config import settings
+from app.config import settings, empty_values
 from app.event_handler import event_stream
 
 from ..utils import authenticate
@@ -46,6 +46,7 @@ class Subtitles(Resource):
     })
 
     external_subtitles_data_model = api_ns_subtitles.model('external_subtitles_data_model', {
+        'name': fields.String(),
         'path': fields.String(),
         'language': fields.String(),
         'forced': fields.Boolean(),
@@ -73,7 +74,7 @@ class Subtitles(Resource):
         result = subtitles_sync_references(subtitles_path=subtitlesPath, sonarr_episode_id=episodeId,
                                            radarr_movie_id=movieId)
 
-        return marshal(result, self.get_response_model)
+        return marshal(result, self.get_response_model, envelope='data')
 
     patch_request_parser = reqparse.RequestParser()
     patch_request_parser.add_argument('action', type=str, required=True,
@@ -88,9 +89,8 @@ class Subtitles(Resource):
     patch_request_parser.add_argument('original_format', type=str, required=False,
                                       help='Use original subtitles format from ["True", "False"]')
     patch_request_parser.add_argument('reference', type=str, required=False,
-                                      help='Reference to use for sync from video file path or some subtitles file path')
-    patch_request_parser.add_argument('reference_stream', type=str, required=False,
-                                      help='Reference track from video file')
+                                      help='Reference to use for sync from video file track number (a:0) or some '
+                                           'subtitles file path')
     patch_request_parser.add_argument('max_offset_seconds', type=str, required=False,
                                       help='Maximum offset seconds to allow')
     patch_request_parser.add_argument('no_fix_framerate', type=str, required=False,
@@ -144,11 +144,11 @@ class Subtitles(Resource):
                 'video_path': video_path,
                 'srt_path': subtitles_path,
                 'srt_lang': language,
-                'reference': args.get('reference') or video_path,
-                'reference_stream': args.get('reference_stream'),
-                'max_offset_seconds': args.get('max_offset_seconds') or str(settings.subsync.max_offset_seconds),
-                'no_fix_framerate': args.get('no_fix_framerate') or settings.subsync.no_fix_framerate,
-                'gss': args.get('gss') or settings.subsync.gss,
+                'reference': args.get('reference') if args.get('reference') not in empty_values else video_path,
+                'max_offset_seconds': args.get('max_offset_seconds') if args.get('max_offset_seconds') not in
+                empty_values else str(settings.subsync.max_offset_seconds),
+                'no_fix_framerate': args.get('no_fix_framerate') == 'True',
+                'gss': args.get('gss') == 'True',
             }
 
             subsync = SubSyncer()

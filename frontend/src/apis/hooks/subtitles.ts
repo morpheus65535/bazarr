@@ -125,3 +125,17 @@ export function useSubtitleInfos(names: string[]) {
     api.subtitles.info(names)
   );
 }
+
+export function useRefTracksById(
+  subtitlesPath: string,
+  sonarrEpisodeId?: number,
+  radarrMovieId?: number
+) {
+  return useQuery([subtitlesPath, sonarrEpisodeId, radarrMovieId], () =>
+    api.subtitles.getRefTracksById(
+      subtitlesPath,
+      sonarrEpisodeId,
+      radarrMovieId
+    )
+  );
+}

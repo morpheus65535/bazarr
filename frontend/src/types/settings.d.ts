@@ -114,6 +114,9 @@ declare namespace Settings {
     subsync_movie_threshold: number;
     debug: boolean;
     force_audio: boolean;
+    max_offset_seconds: number;
+    no_fix_framerate: boolean;
+    gss: boolean;
   }
 
   interface Analytic {

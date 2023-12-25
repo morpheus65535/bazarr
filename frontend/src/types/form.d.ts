@@ -45,7 +45,6 @@ declare namespace FormType {
     hi?: PythonBoolean;
     original_format?: PythonBoolean;
     reference?: string;
-    reference_stream?: string;
     max_offset_seconds?: string;
     no_fix_framerate?: PythonBoolean;
     gss?: PythonBoolean;

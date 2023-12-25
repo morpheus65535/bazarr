@@ -1,6 +1,7 @@
 # coding=utf-8
 import ast
 import logging
+import os
 import pickle
 
 from app.config import settings
@@ -131,7 +132,7 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
         if not media_data:
             return references_dict
 
-        data = parse_video_metadata(media_data.path, media_data.file_size, None, media_data.episode_file_id,
+        data = parse_video_metadata(media_data.path, media_data.file_size, None, media_data.movie_file_id,
                                     use_cache=True)
 
     if not data:
@@ -147,7 +148,7 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
         if 'audio' in data[cache_provider]:
             track_id = 0
             for detected_language in data[cache_provider]["audio"]:
-                name = detected_language.get("name", "").lower()
+                name = detected_language.get("name", "").replace("(", "").replace(")", "")
 
                 if "language" not in detected_language:
                     language = 'Undefined'
@@ -168,7 +169,7 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
                     track_id += 1
                     continue
 
-                name = detected_language.get("name", "").lower()
+                name = detected_language.get("name", "").replace("(", "").replace(")", "")
 
                 if "language" not in detected_language:
                     language = 'Undefined'
@@ -186,18 +187,20 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
 
                 track_id += 1
 
-        external_subtitles = []
         try:
             parsed_subtitles = ast.literal_eval(media_data.subtitles)
         except ValueError:
             pass
         else:
             for subtitles in parsed_subtitles:
-                if subtitles[1] and subtitles[1] != path_mappings.path_replace_reverse(subtitles_path) \
-                        if sonarr_episode_id else path_mappings.path_replace_reverse_movie(subtitles_path):
+                reversed_subtitles_path = path_mappings.path_replace_reverse(subtitles_path) if sonarr_episode_id else (
+                    path_mappings.path_replace_reverse_movie(subtitles_path))
+                if subtitles[1] and subtitles[1] != reversed_subtitles_path:
                     language_dict = languages_from_colon_seperated_string(subtitles[0])
-                    external_subtitles.append({
-                        'path': subtitles[1],
+                    references_dict['external_subtitles_tracks'].append({
+                        'name': os.path.basename(subtitles[1]),
+                        'path': path_mappings.path_replace(subtitles[1]) if sonarr_episode_id else
+                        path_mappings.path_replace_reverse_movie(subtitles[1]),
                         'language': language_dict['language'],
                         'forced': language_dict['forced'],
                         'hearing_impaired': language_dict['hi'],
@@ -205,8 +208,6 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
                 else:
                     # excluding subtitles that is going to be synced from the external subtitles list
                     continue
-        finally:
-            references_dict['external_subtitles_tracks'].append(external_subtitles)
 
     return references_dict
 
