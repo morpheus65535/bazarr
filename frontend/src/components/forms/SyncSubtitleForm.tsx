@@ -31,7 +31,7 @@ function useReferencedSubtitles(
     return [];
   } else {
     if (mediaData.data.audio_tracks.length > 0) {
-      mediaData.data.audio_tracks.forEach(function (item) {
+      mediaData.data.audio_tracks.forEach((item) => {
         subtitles.push({
           group: "Embedded audio tracks",
           value: item.stream,
@@ -41,7 +41,7 @@ function useReferencedSubtitles(
     }
 
     if (mediaData.data.embedded_subtitles_tracks.length > 0) {
-      mediaData.data.embedded_subtitles_tracks.forEach(function (item) {
+      mediaData.data.embedded_subtitles_tracks.forEach((item) => {
         subtitles.push({
           group: "Embedded subtitles tracks",
           value: item.stream,
@@ -51,7 +51,7 @@ function useReferencedSubtitles(
     }
 
     if (mediaData.data.external_subtitles_tracks.length > 0) {
-      mediaData.data.external_subtitles_tracks.forEach(function (item) {
+      mediaData.data.external_subtitles_tracks.forEach((item) => {
         if (item) {
           subtitles.push({
             group: "External Subtitles files",
