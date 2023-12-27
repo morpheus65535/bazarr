@@ -286,6 +286,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "use_hash",
         name: "Use Hash",
       },
+      {
+        type: "switch",
+        key: "include_ai_translated",
+        name: "Include AI translated subtitles in search results",
+      },
     ],
   },
   {
