@@ -10,8 +10,6 @@ export const seriesSyncOptions: SelectorOption<number>[] = [
   { label: "24 Hours", value: 1440 },
 ];
 
-export const episodesSyncOptions = seriesSyncOptions;
-
 export const moviesSyncOptions = seriesSyncOptions;
 
 export const diskUpdateOptions: SelectorOption<string>[] = [

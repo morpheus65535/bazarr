@@ -12,7 +12,6 @@ import {
   backupOptions,
   dayOptions,
   diskUpdateOptions,
-  episodesSyncOptions,
   moviesSyncOptions,
   seriesSyncOptions,
   upgradeOptions,
