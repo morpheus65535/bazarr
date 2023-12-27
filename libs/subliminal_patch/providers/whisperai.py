@@ -15,8 +15,9 @@ from subliminal.video import Episode, Movie
 
 from babelfish.exceptions import LanguageReverseError
 
-from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
-from app.config import settings
+# from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
+# from app.config import settings
+import pycountry
 
 import ffmpeg
 import functools
@@ -128,16 +129,12 @@ whisper_languages = {
 
 logger = logging.getLogger(__name__)
 
-def set_log_level(newLevel=None):
-    if newLevel == None:
-        # set logging level as specified by user in settings
-        newLevel = settings.whisperai.loglevel
+def set_log_level(newLevel="INFO"):
     newLevel = newLevel.upper()
-
     # print(f'WhisperAI log level changing from {logging._levelToName[logger.getEffectiveLevel()]} to {newLevel}')
     logger.setLevel(getattr(logging, newLevel))
 
-# initialize from settings
+# initialize to default above
 set_log_level()
 
 @functools.lru_cache(2)
@@ -179,6 +176,9 @@ def whisper_get_language_reverse(alpha3):
             return wl
     raise ValueError
 
+def language_from_alpha3(lang):
+    language = pycountry.languages.get(alpha_3=lang)
+    return language.name
 
 class WhisperAISubtitle(Subtitle):
     '''Whisper AI Subtitle.'''
