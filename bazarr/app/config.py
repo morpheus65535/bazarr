@@ -410,8 +410,6 @@ str_keys = ['chmod']
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
 if settings.sonarr.series_sync < 15:
     settings.sonarr.series_sync = 60
-if settings.sonarr.episodes_sync < 15:
-    settings.sonarr.episodes_sync = 60
 if settings.radarr.movies_sync < 15:
     settings.radarr.movies_sync = 60
 
@@ -535,7 +533,7 @@ def save_settings(settings_items):
 
         if key in ['update_schedule', 'settings-general-use_sonarr', 'settings-general-use_radarr',
                    'settings-general-auto_update', 'settings-general-upgrade_subs',
-                   'settings-sonarr-series_sync', 'settings-sonarr-episodes_sync', 'settings-radarr-movies_sync',
+                   'settings-sonarr-series_sync', 'settings-radarr-movies_sync',
                    'settings-sonarr-full_update', 'settings-sonarr-full_update_day', 'settings-sonarr-full_update_hour',
                    'settings-radarr-full_update', 'settings-radarr-full_update_day', 'settings-radarr-full_update_hour',
                    'settings-general-wanted_search_frequency', 'settings-general-wanted_search_frequency_movie',
