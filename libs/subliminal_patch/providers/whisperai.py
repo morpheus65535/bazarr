@@ -256,7 +256,7 @@ class WhisperAIProvider(Provider):
         r = self.session.post(f"{self.endpoint}/detect-language",
                               params={'encode': 'false'},
                               files={'audio_file': out},
-                              timeout=(5, self.timeout))
+                              timeout=(self.timeout, self.timeout))
 
         logger.debug(f"Whisper detected language of {path} as {r.json()['detected_language']}")
 
@@ -321,16 +321,21 @@ class WhisperAIProvider(Provider):
             subtitle.content = None
             return
 
-        logger.info(f'Starting WhisperAI {subtitle.task} to {language_from_alpha3(subtitle.audio_language)} for {subtitle.video.original_path}')
+        if subtitle.task == "transcribe":
+            output_language = subtitle.audio_language
+        else:
+            output_language = "eng"
+
+        logger.info(f'Starting WhisperAI {subtitle.task} to {language_from_alpha3(output_language)} for {subtitle.video.original_path}')
         startTime = time.time()
 
         r = self.session.post(f"{self.endpoint}/asr",
-                              params={'task': subtitle.task, 'language': whisper_get_language_reverse(subtitle.audio_language), 'output': 'srt', 'encode': 'false'},
+                              params={'task': subtitle.task, 'language': whisper_get_language_reverse(output_language), 'output': 'srt', 'encode': 'false'},
                               files={'audio_file': out},
-                              timeout=(5, self.timeout))
+                              timeout=(self.timeout, self.timeout))
                               
         endTime = time.time()
         elapsedTime = timedelta(seconds=round(endTime - startTime))
-        logger.info(f'Completed WhisperAI {subtitle.task} to {language_from_alpha3(subtitle.audio_language)} in {elapsedTime} for {subtitle.video.original_path}')
+        logger.info(f'Completed WhisperAI {subtitle.task} to {language_from_alpha3(output_language)} in {elapsedTime} for {subtitle.video.original_path}')
 
         subtitle.content = r.content
