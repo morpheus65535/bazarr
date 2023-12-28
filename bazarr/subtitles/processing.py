@@ -82,8 +82,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         series_id = episode_metadata.sonarrSeriesId
         episode_id = episode_metadata.sonarrEpisodeId
 
-        from .sync import sync_subtitles
         if sync_checker(subtitle) is True:
+            from .sync import sync_subtitles
             sync_subtitles(video_path=path, srt_path=downloaded_path,
                            forced=subtitle.language.forced,
                            srt_lang=downloaded_language_code2, media_type=media_type,
@@ -100,8 +100,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         series_id = ""
         episode_id = movie_metadata.radarrId
 
-        from .sync import sync_subtitles
         if sync_checker(subtitle) is True:
+            from .sync import sync_subtitles
             sync_subtitles(video_path=path, srt_path=downloaded_path,
                            forced=subtitle.language.forced,
                            srt_lang=downloaded_language_code2, media_type=media_type,
