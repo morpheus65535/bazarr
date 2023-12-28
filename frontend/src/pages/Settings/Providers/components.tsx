@@ -1,5 +1,4 @@
 import { Selector } from "@/components";
-import { Selector as GlobalSelector } from "../components";
 import { useModals, withModal } from "@/modules/modals";
 import { BuildKey, useSelectorOptions } from "@/utilities";
 import { ASSERT } from "@/utilities/console";
@@ -21,7 +20,15 @@ import {
   useRef,
   useState,
 } from "react";
-import { Card, Check, Chips, Message, Password, Text } from "../components";
+import {
+  Card,
+  Check,
+  Chips,
+  Selector as GlobalSelector,
+  Message,
+  Password,
+  Text,
+} from "../components";
 import {
   FormContext,
   FormValues,
@@ -246,8 +253,8 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
               settingKey={`settings-${itemKey}-${key}`}
               options={options}
             ></GlobalSelector>
-            );
-            return;
+          );
+          return;
         case "chips":
           elements.push(
             <Chips
