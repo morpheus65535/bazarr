@@ -189,7 +189,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         url = self.server_url + "index.php?tipus=adatlap&azon=a_" + str(sub_id)
         # url = https://www.feliratok.eu/index.php?tipus=adatlap&azon=a_1518600916
         logger.info('Get IMDB id from URL %s', url)
-        r = self.session.get(url, timeout=10).content
+        r = self.session.get(url, timeout=30).content
 
         soup = ParserBeautifulSoup(r, ['lxml'])
         links = soup.find_all("a")
@@ -220,13 +220,17 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         url = self.server_url + "index.php?term=" + series + "&nyelv=0&action=autoname"
         # url = self.server_url + "index.php?term=" + "fla"+ "&nyelv=0&action=autoname"
         logger.info('Get series id from URL %s', url)
-        r = self.session.get(url, timeout=10)
+        r = self.session.get(url, timeout=30)
 
         # r is something like this:
         # [{"name":"DC\u2019s Legends of Tomorrow (2016)","ID":"3725"},{"name":"Miles from Tomorrowland (2015)",
         # "ID":"3789"},{"name":"No Tomorrow (2016)","ID":"4179"}]
 
-        results = r.json()
+        try:
+            results = r.json()
+        except JSONDecodeError:
+            logger.error('Unable to parse returned JSON from URL %s', url)
+            return None
 
         # check all of the results:
         for result in results:
@@ -374,7 +378,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
             url += "&rtol=" + str(episode)
 
         try:
-            results = self.session.get(url, timeout=10).json()
+            results = self.session.get(url, timeout=30).json()
         except JSONDecodeError:
             # provider returned improper JSON
             results = None
@@ -447,7 +451,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         subtitles = []
 
         logger.info('URL for subtitles %s', url)
-        r = self.session.get(url, timeout=10).content
+        r = self.session.get(url, timeout=30).content
 
         soup = ParserBeautifulSoup(r, ['lxml'])
         tables = soup.find_all("table")
@@ -537,7 +541,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
             return subtitles
 
     def download_subtitle(self, subtitle):
-        r = self.session.get(subtitle.page_link, timeout=10)
+        r = self.session.get(subtitle.page_link, timeout=30)
         r.raise_for_status()
 
         archive = get_archive_from_bytes(r.content)
