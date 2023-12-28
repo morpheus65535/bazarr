@@ -15,10 +15,7 @@ from subliminal.video import Episode, Movie
 
 from babelfish.exceptions import LanguageReverseError
 
-# from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
-# from app.config import settings
 import pycountry
-
 import ffmpeg
 import functools
 
