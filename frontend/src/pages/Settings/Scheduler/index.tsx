@@ -12,7 +12,6 @@ import {
   backupOptions,
   dayOptions,
   diskUpdateOptions,
-  episodesSyncOptions,
   moviesSyncOptions,
   seriesSyncOptions,
   upgradeOptions,
@@ -32,26 +31,19 @@ const SettingsSchedulerView: FunctionComponent = () => {
     <Layout name="Scheduler">
       <Section header="Sonarr/Radarr Sync">
         <Selector
-          label="Update Series List from Sonarr"
+          label="Sync with Sonarr"
           options={seriesSyncOptions}
           settingKey="settings-sonarr-series_sync"
         ></Selector>
-
         <Selector
-          label="Update Episodes List from Sonarr"
-          options={episodesSyncOptions}
-          settingKey="settings-sonarr-episodes_sync"
-        ></Selector>
-
-        <Selector
-          label="Update Movies List from Radarr"
+          label="Sync with Radarr"
           options={moviesSyncOptions}
           settingKey="settings-radarr-movies_sync"
         ></Selector>
       </Section>
       <Section header="Disk Indexing">
         <Selector
-          label="Update all Episode Subtitles from Disk"
+          label="Update All Episode Subtitles from Disk"
           settingKey="settings-sonarr-full_update"
           options={diskUpdateOptions}
         ></Selector>
@@ -88,7 +80,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
         </Message>
 
         <Selector
-          label="Update all Movie Subtitles from Disk"
+          label="Update All Movie Subtitles from Disk"
           settingKey="settings-radarr-full_update"
           options={diskUpdateOptions}
         ></Selector>
@@ -144,7 +136,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
       </Section>
       <Section header="Backup">
         <Selector
-          label="Backup config and database"
+          label="Backup Database and Configuration File"
           settingKey="settings-backup-frequency"
           options={backupOptions}
         ></Selector>

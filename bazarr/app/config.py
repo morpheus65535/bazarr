@@ -34,6 +34,9 @@ def validate_ip_address(ip_string):
         return False
 
 
+ONE_HUNDRED_YEARS_IN_MINUTES = 52560000
+ONE_HUNDRED_YEARS_IN_HOURS = 876000
+
 class Validator(OriginalValidator):
     # Give the ability to personalize messages sent by the original dynasync Validator class.
     default_messages = MappingProxyType(
@@ -99,14 +102,15 @@ validators = [
     Validator('general.subfolder', must_exist=True, default='current', is_type_of=str),
     Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),
     Validator('general.upgrade_subs', must_exist=True, default=True, is_type_of=bool),
-    Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int, is_in=[6, 12, 24]),
+    Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int, 
+              is_in=[6, 12, 24, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.days_to_upgrade_subs', must_exist=True, default=7, is_type_of=int, gte=0, lte=30),
     Validator('general.upgrade_manual', must_exist=True, default=True, is_type_of=bool),
     Validator('general.anti_captcha_provider', must_exist=True, default=None, is_type_of=(NoneType, str),
               is_in=[None, 'anti-captcha', 'death-by-captcha']),
-    Validator('general.wanted_search_frequency', must_exist=True, default=6, is_type_of=int, is_in=[6, 12, 24]),
+    Validator('general.wanted_search_frequency', must_exist=True, default=6, is_type_of=int, is_in=[6, 12, 24, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.wanted_search_frequency_movie', must_exist=True, default=6, is_type_of=int,
-              is_in=[6, 12, 24]),
+              is_in=[6, 12, 24, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.subzero_mods', must_exist=True, default='', is_type_of=str),
     Validator('general.dont_notify_manual_actions', must_exist=True, default=False, is_type_of=bool),
     Validator('general.hi_extension', must_exist=True, default='hi', is_type_of=str, is_in=['hi', 'cc', 'sdh']),
@@ -151,9 +155,7 @@ validators = [
     Validator('sonarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
     Validator('sonarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('sonarr.series_sync', must_exist=True, default=60, is_type_of=int,
-              is_in=[15, 60, 180, 360, 720, 1440]),
-    Validator('sonarr.episodes_sync', must_exist=True, default=60, is_type_of=int,
-              is_in=[15, 60, 180, 360, 720, 1440]),
+              is_in=[15, 60, 180, 360, 720, 1440, ONE_HUNDRED_YEARS_IN_MINUTES]),
     Validator('sonarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
     Validator('sonarr.excluded_series_types', must_exist=True, default=[], is_type_of=list),
     Validator('sonarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
@@ -174,7 +176,7 @@ validators = [
     Validator('radarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
     Validator('radarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('radarr.movies_sync', must_exist=True, default=60, is_type_of=int,
-              is_in=[15, 60, 180, 360, 720, 1440]),
+              is_in=[15, 60, 180, 360, 720, 1440, ONE_HUNDRED_YEARS_IN_MINUTES]),
     Validator('radarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
     Validator('radarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
     Validator('radarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
@@ -409,8 +411,6 @@ str_keys = ['chmod']
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
 if settings.sonarr.series_sync < 15:
     settings.sonarr.series_sync = 60
-if settings.sonarr.episodes_sync < 15:
-    settings.sonarr.episodes_sync = 60
 if settings.radarr.movies_sync < 15:
     settings.radarr.movies_sync = 60
 
@@ -534,7 +534,7 @@ def save_settings(settings_items):
 
         if key in ['update_schedule', 'settings-general-use_sonarr', 'settings-general-use_radarr',
                    'settings-general-auto_update', 'settings-general-upgrade_subs',
-                   'settings-sonarr-series_sync', 'settings-sonarr-episodes_sync', 'settings-radarr-movies_sync',
+                   'settings-sonarr-series_sync', 'settings-radarr-movies_sync',
                    'settings-sonarr-full_update', 'settings-sonarr-full_update_day', 'settings-sonarr-full_update_hour',
                    'settings-radarr-full_update', 'settings-radarr-full_update_day', 'settings-radarr-full_update_hour',
                    'settings-general-wanted_search_frequency', 'settings-general-wanted_search_frequency_movie',
