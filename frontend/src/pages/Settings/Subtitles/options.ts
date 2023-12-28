@@ -1,4 +1,5 @@
 import { SelectorOption } from "@/components";
+import { ProviderList } from "../Providers/list";
 
 export const hiExtensionOptions: SelectorOption<string>[] = [
   {
@@ -165,3 +166,10 @@ export const colorOptions: SelectorOption<string>[] = [
     value: buildColor("dark-grey"),
   },
 ];
+
+export const providerOptions: SelectorOption<string>[] = ProviderList.map(
+  (v) => ({
+    label: v.key,
+    value: v.key,
+  })
+);

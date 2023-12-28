@@ -402,7 +402,9 @@ array_keys = ['excluded_tags',
               'enabled_providers',
               'path_mappings',
               'path_mappings_movie',
-              'language_equals']
+              'language_equals',
+              'blacklisted_languages',
+              'blacklisted_providers']
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
@@ -630,7 +632,10 @@ def save_settings(settings_items):
             reset_throttled_providers(only_auth_or_conf_error=True)
 
         if settings_keys[0] == 'settings':
-            settings[settings_keys[1]][settings_keys[2]] = value
+            if len(settings_keys) == 3:
+                settings[settings_keys[1]][settings_keys[2]] = value
+            elif len(settings_keys) == 4:
+                settings[settings_keys[1]][settings_keys[2]][settings_keys[3]] = value
 
         if settings_keys[0] == 'subzero':
             mod = settings_keys[1]
