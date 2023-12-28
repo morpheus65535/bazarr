@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-import json
 import logging
 import os
-import re
 import io
 import rarfile
 import zipfile
 
-from babelfish import language_converters
 from guessit import guessit
 from requests import Session
-from subzero.language import Language
 
-from subliminal import Movie, Episode, ProviderError, __short_version__
-from subliminal.exceptions import AuthenticationError, ConfigurationError, DownloadLimitExceeded, ProviderError
+from subliminal import Episode
+from subliminal.exceptions import AuthenticationError, ConfigurationError
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal.subtitle import fix_line_ending, SUBTITLE_EXTENSIONS
 from subliminal_patch.providers import Provider
@@ -77,7 +73,6 @@ class BetaSeriesProvider(Provider):
 
     def query(self, languages, video):
         # query the server
-        result = None
         self.video = video
         matches = set()
         if video.tvdb_id:
@@ -101,6 +96,8 @@ class BetaSeriesProvider(Provider):
             logger.debug('Searching subtitles %r', params)
             res = self.session.get(
                 server_url + 'shows/episodes', params=params, timeout=10)
+            if res.status_code == 400:
+                raise AuthenticationError("Invalid token provided")
             res.raise_for_status()
             result = res.json()
             matches.add('series_tvdb_id')
@@ -115,9 +112,9 @@ class BetaSeriesProvider(Provider):
 
         # parse the subtitles
         subtitles = []
-        if 'episode' in result:
+        if 'episode' in result and 'subtitles' in result['episode']:
             subs = result['episode']['subtitles']
-        elif 'episodes' in result:
+        elif 'episodes' in result and len(result['episodes'] and 'subtitles' in result['episodes'][0]):
             subs = result['episodes'][0]['subtitles']
         else:
             return []
