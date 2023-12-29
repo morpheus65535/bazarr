@@ -20,7 +20,7 @@ from subzero.language import Language
 from guessit import guessit
 from requests import Session
 from six import text_type
-from random import randint
+from random import randint, randrange
 
 from python_anticaptcha import AnticaptchaClient, ImageToTextTask
 from subliminal.providers import ParserBeautifulSoup
@@ -109,7 +109,7 @@ class ZimukuProvider(Provider):
     verify_token = ""
     code = ""
     location_re = re.compile(
-        r'self\.location = "(.*)" \+ stringToHex\(text\)')
+        r'self\.location = "(.*)" \+ stringToHex\(')
     verification_image_re = re.compile(r'<img.*?src="data:image/bmp;base64,(.*?)".*?>')
 
     def yunsuo_bypass(self, url, *args, **kwargs):
@@ -139,7 +139,10 @@ class ZimukuProvider(Provider):
                 # mock js script logic
                 tr = self.location_re.findall(r.text)
                 verification_image = self.verification_image_re.findall(r.text)
-                self.code = parse_verification_image(verification_image[0])
+                if len(verification_image):
+                    self.code = parse_verification_image(verification_image[0])
+                else:
+                    self.code = f"{randrange(800, 1920)},{randrange(600, 1080)}"
                 self.session.cookies.set("srcurl", string_to_hex(r.url))
                 if tr:
                     verify_resp = self.session.get(

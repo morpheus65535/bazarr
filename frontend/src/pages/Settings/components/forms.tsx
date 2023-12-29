@@ -146,6 +146,7 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
       <MantineSlider
         {...sliderProps}
         marks={marks}
+        labelAlwaysOn
         onChange={update}
         value={value ?? 0}
       ></MantineSlider>

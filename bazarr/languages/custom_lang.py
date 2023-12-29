@@ -24,7 +24,9 @@ class CustomLanguage:
     _possible_matches = ("pt-br", "pob", "pb", "brazilian", "brasil", "brazil")
     _extensions = (".pt-br", ".pob", ".pb")
     _extensions_forced = (".pt-br.forced", ".pob.forced", ".pb.forced")
-    _extensions_hi = (".pt-br.hi", ".pob.hi", ".pb.hi")
+    _extensions_hi = (".pt-br.hi", ".pob.hi", ".pb.hi",
+                      ".pt-br.cc", ".pob.cc", ".pb.cc",
+                      ".pt-br.sdh", ".pob.sdh", ".pb.sdh")
 
     def subzero_language(self):
         return Language(self.official_alpha3, self.iso)
@@ -45,7 +47,7 @@ class CustomLanguage:
 
     @classmethod
     def register(cls, table):
-        "Register the custom language subclasses in the database."
+        """Register the custom language subclasses in the database."""
 
         for sub in cls.__subclasses__():
             database.execute(
@@ -107,6 +109,23 @@ class BrazilianPortuguese(CustomLanguage):
     pass
 
 
+class Portuguese(CustomLanguage):
+    alpha2 = "pt"
+    alpha3 = "por"
+    language = "pt-PT"
+    official_alpha2 = "pt"
+    official_alpha3 = "por"
+    name = "Portuguese"
+    iso = "PT"
+    _scripts = []
+    _possible_matches = ("pt-pt", "por", "pt")
+    _extensions = (".pt-pt", ".por", ".pt")
+    _extensions_forced = (".pt-pt.forced", ".por.forced", ".pt.forced")
+    _extensions_hi = (".pt-pt.hi", ".por.hi", ".pt.hi",
+                      ".pt-pt.cc", ".por.cc", ".pt.cc",
+                      ".pt-pt.sdh", ".por.sdh", ".pt.sdh")
+
+
 class ChineseTraditional(CustomLanguage):
     alpha2 = "zt"
     alpha3 = "zht"
@@ -119,67 +138,27 @@ class ChineseTraditional(CustomLanguage):
     # We'll use literals for now
     _scripts = ("Hant",)
     _extensions = (
-        ".cht",
-        ".tc",
-        ".zh-tw",
-        ".zht",
-        ".zh-hant",
-        ".zhhant",
-        ".zh_hant",
-        ".hant",
-        ".big5",
-        ".traditional",
+        ".cht", ".tc", ".zh-tw", ".zht", ".zh-hant", ".zhhant", ".zh_hant", ".hant", ".big5", ".traditional",
     )
     _extensions_forced = (
-        ".cht.forced",
-        ".tc.forced",
-        ".zht.forced",
-        "hant.forced",
-        ".big5.forced",
-        "繁體中文.forced",
-        "雙語.forced",
+        ".cht.forced", ".tc.forced", ".zht.forced", "hant.forced", ".big5.forced", "繁體中文.forced", "雙語.forced",
         ".zh-tw.forced",
     )
     _extensions_hi = (
-        ".cht.hi",
-        ".tc.hi",
-        ".zht.hi",
-        "hant.hi",
-        ".big5.hi",
-        "繁體中文.hi",
-        "雙語.hi",
-        ".zh-tw.hi",
+        ".cht.hi", ".tc.hi", ".zht.hi", "hant.hi", ".big5.hi", "繁體中文.hi", "雙語.hi", ".zh-tw.hi",
     )
     _extensions_fuzzy = ("繁", "雙語")
     _extensions_disamb_fuzzy = ("简", "双语")
     _extensions_disamb = (
-        ".chs",
-        ".sc",
-        ".zhs",
-        ".zh-hans",
-        ".hans",
-        ".zh_hans",
-        ".zhhans",
-        ".gb",
-        ".simplified",
+        ".chs", ".sc", ".zhs", ".zh-hans", ".hans", ".zh_hans", ".zhhans", ".gb", ".simplified",
     )
     _extensions_disamb_forced = (
-        ".chs.forced",
-        ".sc.forced",
-        ".zhs.forced",
-        "hans.forced",
-        ".gb.forced",
-        "简体中文.forced",
-        "双语.forced",
+        ".chs.forced", ".sc.forced", ".zhs.forced", "hans.forced", ".gb.forced", "简体中文.forced", "双语.forced",
     )
     _extensions_disamb_hi = (
-        ".chs.hi",
-        ".sc.hi",
-        ".zhs.hi",
-        "hans.hi",
-        ".gb.hi",
-        "简体中文.hi",
-        "双语.hi",
+        ".chs.hi", ".sc.hi", ".zhs.hi", "hans.hi", ".gb.hi", "简体中文.hi", "双语.hi",
+        ".chs.cc", ".sc.cc", ".zhs.cc", "hans.cc", ".gb.cc", "简体中文.cc", "双语.cc",
+        ".chs.sdh", ".sc.sdh", ".zhs.sdh", "hans.sdh", ".gb.sdh", "简体中文.sdh", "双语.sdh",
     )
 
     @classmethod
@@ -231,31 +210,14 @@ class LatinAmericanSpanish(CustomLanguage):
     iso = "MX"  # Not fair, but ok
     _scripts = ("419",)
     _possible_matches = (
-        "es-la",
-        "spa-la",
-        "spl",
-        "mx",
-        "latin",
-        "mexic",
-        "argent",
-        "latam",
+        "es-la", "spa-la", "spl", "mx", "latin", "mexic", "argent", "latam",
     )
     _extensions = (".es-la", ".spl", ".spa-la", ".ea", ".es-mx", ".lat", ".es.ar")
     _extensions_forced = (
-        ".es-la.forced",
-        ".spl.forced",
-        ".spa-la.forced",
-        ".ea.forced",
-        ".es-mx.forced",
-        ".lat.forced",
-        ".es.ar.forced",
+        ".es-la.forced", ".spl.forced", ".spa-la.forced", ".ea.forced", ".es-mx.forced", ".lat.forced", ".es.ar.forced",
     )
     _extensions_hi = (
-        ".es-la.hi",
-        ".spl.hi",
-        ".spa-la.hi",
-        ".ea.hi",
-        ".es-mx.hi",
-        ".lat.hi",
-        ".es.ar.hi",
+        ".es-la.hi", ".spl.hi", ".spa-la.hi", ".ea.hi", ".es-mx.hi", ".lat.hi", ".es.ar.hi",
+        ".es-la.cc", ".spl.cc", ".spa-la.cc", ".ea.cc", ".es-mx.cc", ".lat.cc", ".es.ar.cc",
+        ".es-la.sdh", ".spl.sdh", ".spa-la.sdh", ".ea.sdh", ".es-mx.sdh", ".lat.sdh", ".es.ar.sdh",
     )

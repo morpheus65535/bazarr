@@ -162,7 +162,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
     video_types = (Episode, Movie)
 
-    def __init__(self, username=None, password=None, use_hash=True, api_key=None):
+    def __init__(self, username=None, password=None, use_hash=True, include_ai_translated=False, api_key=None):
         if not all((username, password)):
             raise ConfigurationError('Username and password must be specified')
 
@@ -181,6 +181,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         self.password = password
         self.video = None
         self.use_hash = use_hash
+        self.include_ai_translated = include_ai_translated
         self._started = None
 
     def initialize(self):
@@ -300,7 +301,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             res = self.retry(
                 lambda: self.checked(
                     lambda: self.session.get(self.server_url + 'subtitles',
-                                             params=(('ai_translated', 'exclude'),
+                                             params=(('ai_translated', 'exclude' if not self.include_ai_translated
+                                                     else 'include'),
                                                      ('episode_number', self.video.episode),
                                                      ('imdb_id', imdb_id if not title_id else None),
                                                      ('languages', langs),
@@ -317,7 +319,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             res = self.retry(
                 lambda: self.checked(
                     lambda: self.session.get(self.server_url + 'subtitles',
-                                             params=(('ai_translated', 'exclude'),
+                                             params=(('ai_translated', 'exclude' if not self.include_ai_translated
+                                                     else 'include'),
                                                      ('id', title_id if title_id else None),
                                                      ('imdb_id', imdb_id if not title_id else None),
                                                      ('languages', langs),
