@@ -1,6 +1,10 @@
 /* eslint-disable camelcase */
 
-import { useRefTracksById, useSubtitleAction } from "@/apis/hooks";
+import {
+  useRefTracksByEpisodeId,
+  useRefTracksByMovieId,
+  useSubtitleAction,
+} from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/Subtitles/options";
@@ -19,11 +23,19 @@ function useReferencedSubtitles(
   mediaId: number,
   subtitlesPath: string
 ) {
-  const mediaData = useRefTracksById(
+  // We cannot call hooks conditionally, we rely on useQuery "enabled" option to do only the required API call
+  const episodeData = useRefTracksByEpisodeId(
     subtitlesPath,
-    mediaType === "episode" ? mediaId : undefined,
-    mediaType === "movie" ? mediaId : undefined
+    mediaId,
+    mediaType === "episode"
   );
+  const movieData = useRefTracksByMovieId(
+    subtitlesPath,
+    mediaId,
+    mediaType === "movie"
+  );
+
+  const mediaData = mediaType === "episode" ? episodeData : movieData;
 
   const subtitles: { group: string; value: string; label: string }[] = [];
 

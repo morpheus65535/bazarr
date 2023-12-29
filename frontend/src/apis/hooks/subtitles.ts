@@ -126,16 +126,26 @@ export function useSubtitleInfos(names: string[]) {
   );
 }
 
-export function useRefTracksById(
+export function useRefTracksByEpisodeId(
   subtitlesPath: string,
-  sonarrEpisodeId?: number,
-  radarrMovieId?: number
+  sonarrEpisodeId: number,
+  isEpisode: boolean
 ) {
-  return useQuery([subtitlesPath, sonarrEpisodeId, radarrMovieId], () =>
-    api.subtitles.getRefTracksById(
-      subtitlesPath,
-      sonarrEpisodeId,
-      radarrMovieId
-    )
+  return useQuery(
+    [QueryKeys.Episodes, sonarrEpisodeId, QueryKeys.Subtitles, subtitlesPath],
+    () => api.subtitles.getRefTracksByEpisodeId(subtitlesPath, sonarrEpisodeId),
+    { enabled: isEpisode }
+  );
+}
+
+export function useRefTracksByMovieId(
+  subtitlesPath: string,
+  radarrMovieId: number,
+  isMovie: boolean
+) {
+  return useQuery(
+    [QueryKeys.Movies, radarrMovieId, QueryKeys.Subtitles, subtitlesPath],
+    () => api.subtitles.getRefTracksByMovieId(subtitlesPath, radarrMovieId),
+    { enabled: isMovie }
   );
 }
