@@ -100,4 +100,4 @@ If you need something that is not already part of Bazarr, feel free to create a 
 ### License
 
 - [GNU GPL v3](http://www.gnu.org/licenses/gpl.html)
-- Copyright 2010-2019
+- Copyright 2010-2024
