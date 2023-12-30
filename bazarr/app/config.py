@@ -293,6 +293,9 @@ validators = [
     Validator('subsync.subsync_movie_threshold', must_exist=True, default=70, is_type_of=int, gte=0, lte=100),
     Validator('subsync.debug', must_exist=True, default=False, is_type_of=bool),
     Validator('subsync.force_audio', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.checker', must_exist=True, default={}, is_type_of=dict),
+    Validator('subsync.checker.blacklisted_providers', must_exist=True, default=[], is_type_of=list),
+    Validator('subsync.checker.blacklisted_languages', must_exist=True, default=[], is_type_of=list),
 
     # series_scores section
     Validator('series_scores.hash', must_exist=True, default=359, is_type_of=int),
@@ -402,7 +405,9 @@ array_keys = ['excluded_tags',
               'enabled_providers',
               'path_mappings',
               'path_mappings_movie',
-              'language_equals']
+              'language_equals',
+              'blacklisted_languages',
+              'blacklisted_providers']
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
@@ -628,7 +633,10 @@ def save_settings(settings_items):
             reset_throttled_providers(only_auth_or_conf_error=True)
 
         if settings_keys[0] == 'settings':
-            settings[settings_keys[1]][settings_keys[2]] = value
+            if len(settings_keys) == 3:
+                settings[settings_keys[1]][settings_keys[2]] = value
+            elif len(settings_keys) == 4:
+                settings[settings_keys[1]][settings_keys[2]][settings_keys[3]] = value
 
         if settings_keys[0] == 'subzero':
             mod = settings_keys[1]
@@ -775,3 +783,31 @@ def configure_proxy_func():
 def get_scores():
     settings = get_settings()
     return {"movie": settings["movie_scores"], "episode": settings["series_scores"]}
+
+
+def sync_checker(subtitle):
+    " This function can be extended with settings. It only takes a Subtitle argument"
+
+    logging.debug("Checker data [%s] for %s", settings.subsync.checker, subtitle)
+
+    bl_providers = settings.subsync.checker.blacklisted_providers
+
+    # TODO
+    # bl_languages = settings.subsync.checker.blacklisted_languages
+
+    verdicts = set()
+
+    # You can add more inner checkers. The following is a verfy basic one for providers,
+    # but you can make your own functions, etc to handle more complex stuff. You have
+    # subtitle data to compare.
+
+    verdicts.add(subtitle.provider_name not in bl_providers)
+
+    met = False not in verdicts
+
+    if met is True:
+        logging.debug("BAZARR Sync checker passed.")
+        return True
+    else:
+        logging.debug("BAZARR Sync checker not passed. Won't sync.")
+        return False
