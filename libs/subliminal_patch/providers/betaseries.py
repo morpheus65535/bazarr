@@ -114,7 +114,7 @@ class BetaSeriesProvider(Provider):
         subtitles = []
         if 'episode' in result and 'subtitles' in result['episode']:
             subs = result['episode']['subtitles']
-        elif 'episodes' in result and len(result['episodes'] and 'subtitles' in result['episodes'][0]):
+        elif 'episodes' in result and len(result['episodes']) and 'subtitles' in result['episodes'][0]:
             subs = result['episodes'][0]['subtitles']
         else:
             return []
