@@ -118,7 +118,7 @@ def configure_logging(debug=False):
         fh = TimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight", interval=1,
                                       backupCount=7, delay=True, encoding='utf-8')
     f = FileHandlerFormatter('%(asctime)s|%(levelname)-8s|%(name)-32s|%(message)s|',
-                             '%d/%m/%Y %H:%M:%S')
+                             '%Y-%m-%d %H:%M:%S')
     fh.setFormatter(f)
     fh.setLevel(log_level)
     logger.addHandler(fh)
