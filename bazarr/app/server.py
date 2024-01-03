@@ -8,6 +8,7 @@ import errno
 
 from waitress.server import create_server
 from time import sleep
+from sqlalchemy.orm import close_all_sessions
 
 from api import api_bp
 from .ui import ui_bp
@@ -63,15 +64,14 @@ class Server:
                 self.shutdown()
 
     def start(self):
+        logging.info(f'BAZARR is started and waiting for request on http://{self.server.effective_host}:'
+                     f'{self.server.effective_port}')
         try:
-            logging.info(f'BAZARR is started and waiting for request on http://{self.server.effective_host}:'
-                         f'{self.server.effective_port}')
-            try:
-                self.server.run()
-            except Exception:
-                pass
-        except KeyboardInterrupt:
+            self.server.run()
+        except (KeyboardInterrupt, SystemExit):
             self.shutdown()
+        except Exception:
+            pass
 
     def shutdown(self):
         try:
@@ -79,7 +79,7 @@ class Server:
         except Exception as e:
             logging.error(f'BAZARR Cannot stop Waitress: {repr(e)}')
         else:
-            database.close()
+            close_all_sessions()
             try:
                 stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
             except Exception as e:
@@ -96,7 +96,7 @@ class Server:
         except Exception as e:
             logging.error(f'BAZARR Cannot stop Waitress: {repr(e)}')
         else:
-            database.close()
+            close_all_sessions()
             try:
                 restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
             except Exception as e:

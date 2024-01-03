@@ -52,22 +52,23 @@ dir_name = os.path.dirname(__file__)
 
 def end_child_process(ep):
     try:
-        ep.kill()
+        if os.name != 'nt':
+            ep.send_signal(signal.SIGINT)
+        else:
+            import win32api
+            import win32con
+            try:
+                win32api.GenerateConsoleCtrlEvent(win32con.CTRL_C_EVENT, ep.pid)
+            except KeyboardInterrupt:
+                pass
     except:
-        pass
-
-def terminate_child_process(ep):
-    try:
         ep.terminate()
-    except:
-        pass
 
 
 def start_bazarr():
     script = [get_python_path(), "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
     ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
     atexit.register(end_child_process, ep=ep)
-    signal.signal(signal.SIGTERM, lambda signal_no, frame: terminate_child_process(ep))
 
 
 def check_status():
