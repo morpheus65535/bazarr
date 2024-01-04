@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 import logging
 import time
-import datetime
 from datetime import timedelta
 
 from requests import Session
@@ -15,7 +14,6 @@ from subliminal.video import Episode, Movie
 
 from babelfish.exceptions import LanguageReverseError
 
-import pycountry
 import ffmpeg
 import functools
 
@@ -174,8 +172,8 @@ def whisper_get_language_reverse(alpha3):
     raise ValueError
 
 def language_from_alpha3(lang):
-    language = pycountry.languages.get(alpha_3=lang)
-    return language.name
+    name = Language(lang).name
+    return name
 
 class WhisperAISubtitle(Subtitle):
     '''Whisper AI Subtitle.'''
@@ -312,11 +310,13 @@ class WhisperAIProvider(Provider):
         # Invoke Whisper through the API. This may take a long time depending on the file.
         # TODO: This loads the entire file into memory, find a good way to stream the file in chunks
 
-        out = encode_audio_stream(subtitle.video.original_path, self.ffmpeg_path, subtitle.force_audio_stream)
+        out = None
+        if subtitle.task != "error":
+            out = encode_audio_stream(subtitle.video.original_path, self.ffmpeg_path, subtitle.force_audio_stream)
         if out == None:
             logger.info(f"Whisper cannot process {subtitle.video.original_path} because of missing/bad audio track")
             subtitle.content = None
-            return
+            return         
 
         if subtitle.task == "transcribe":
             output_language = subtitle.audio_language
@@ -327,7 +327,7 @@ class WhisperAIProvider(Provider):
         startTime = time.time()
 
         r = self.session.post(f"{self.endpoint}/asr",
-                              params={'task': subtitle.task, 'language': whisper_get_language_reverse(output_language), 'output': 'srt', 'encode': 'false'},
+                              params={'task': subtitle.task, 'language': whisper_get_language_reverse(subtitle.audio_language), 'output': 'srt', 'encode': 'false'},
                               files={'audio_file': out},
                               timeout=(self.timeout, self.timeout))
                               
