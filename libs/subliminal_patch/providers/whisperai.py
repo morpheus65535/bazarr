@@ -211,9 +211,6 @@ class WhisperAIProvider(Provider):
     for lan in whisper_languages:
         languages.update({whisper_get_language(lan, whisper_languages[lan])})
 
-    languages.update(set(Language.rebuild(lang, hi=True) for lang in languages))
-    languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
-
     video_types = (Episode, Movie)
 
     def __init__(self, endpoint=None, timeout=None, ffmpeg_path=None, loglevel=None):
