@@ -151,7 +151,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
     if use_postprocessing:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,
                              uploaded_language_code3, audio_language['name'], audio_language['code2'],
-                             audio_language['code3'], 100, "1", "manual", series_id, episode_id)
+                             audio_language['code3'], 100, "1", "manual", "user", "unknown", series_id, episode_id)
         postprocessing(command, path)
         set_chmod(subtitles_path=subtitle_path)
 
