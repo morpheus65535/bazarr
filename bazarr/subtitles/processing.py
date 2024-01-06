@@ -43,6 +43,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     postprocessing_cmd = settings.general.postprocessing_cmd
 
     downloaded_provider = subtitle.provider_name
+    uploader = subtitle.uploader
+    release_info = subtitle.release_info
     downloaded_language_code3 = _get_download_code3(subtitle)
 
     downloaded_language = language_from_alpha3(downloaded_language_code3)
@@ -111,7 +113,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     if use_postprocessing is True:
         command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
                              downloaded_language_code3, audio_language, audio_language_code2, audio_language_code3,
-                             percent_score, subtitle_id, downloaded_provider, series_id, episode_id)
+                             percent_score, subtitle_id, downloaded_provider, uploader, release_info, series_id, episode_id)
 
         if media_type == 'series':
             use_pp_threshold = settings.general.use_postprocessing_threshold
