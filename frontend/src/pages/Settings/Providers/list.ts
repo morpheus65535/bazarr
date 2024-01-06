@@ -1,3 +1,4 @@
+import { SelectorOption } from "@/components";
 import { ReactText } from "react";
 
 type Input<T, N> = {
@@ -6,12 +7,14 @@ type Input<T, N> = {
   defaultValue?: T;
   name?: string;
   description?: string;
+  options?: SelectorOption<string>[];
 };
 
 type AvailableInput =
   | Input<ReactText, "text">
   | Input<string, "password">
   | Input<boolean, "switch">
+  | Input<string, "select">
   | Input<ReactText[], "chips">;
 
 export interface ProviderInfo {
@@ -21,6 +24,14 @@ export interface ProviderInfo {
   message?: string;
   inputs?: AvailableInput[];
 }
+
+export const logLevelOptions: SelectorOption<string>[] = [
+  { label: "DEBUG", value: "DEBUG" },
+  { label: "INFO", value: "INFO" },
+  { label: "WARNING", value: "WARNING" },
+  { label: "ERROR", value: "ERROR" },
+  { label: "CRITICAL", value: "CRITICAL" },
+];
 
 export const ProviderList: Readonly<ProviderInfo[]> = [
   {
@@ -220,6 +231,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "timeout",
         defaultValue: 3600,
         name: "Transcription/translation timeout in seconds",
+      },
+      {
+        type: "select",
+        key: "loglevel",
+        name: "Logging level",
+        options: logLevelOptions,
       },
     ],
   },
