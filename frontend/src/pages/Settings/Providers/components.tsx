@@ -314,4 +314,5 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
 
 const ProviderModal = withModal(ProviderTool, "provider-tool", {
   title: "Provider",
+  size: "calc(50vw)",
 });
