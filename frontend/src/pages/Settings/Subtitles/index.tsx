@@ -99,6 +99,14 @@ const commandOptions: CommandOption[] = [
     description: "Provider of the subtitle file",
   },
   {
+    option: "uploader",
+    description: "Uploader of the subtitle file",
+  },
+  {
+    option: "release_info",
+    description: "Release info for the subtitle file",
+  },
+  {
     option: "series_id",
     description: "Sonarr series ID (Empty if movie)",
   },
