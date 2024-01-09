@@ -54,16 +54,18 @@ If you need something that is not already part of Bazarr, feel free to create a 
 - BSplayer
 - Embedded Subtitles
 - Gestdown.info
+- GreekSubs
 - GreekSubtitles
 - HDBits.org
 - Hosszupuska
-- LegendasDivx
 - Karagarga.in
 - Ktuvit (Get `hashed_password` using method described [here](https://github.com/XBMCil/service.subtitles.ktuvit))
+- LegendasDivx
 - Napiprojekt
 - Napisy24
 - Nekur
-- OpenSubtitles.org
+- OpenSubtitles.com
+- OpenSubtitles.org (VIP users only)
 - Podnapisi
 - RegieLive
 - Sous-Titres.eu
@@ -79,7 +81,6 @@ If you need something that is not already part of Bazarr, feel free to create a 
 - Subtitrari-noi.ro
 - subtitri.id.lv
 - Subtitulamos.tv
-- Sucha
 - Supersubtitles
 - Titlovi
 - Titrari.ro
@@ -100,4 +101,4 @@ If you need something that is not already part of Bazarr, feel free to create a 
 ### License
 
 - [GNU GPL v3](http://www.gnu.org/licenses/gpl.html)
-- Copyright 2010-2019
+- Copyright 2010-2024

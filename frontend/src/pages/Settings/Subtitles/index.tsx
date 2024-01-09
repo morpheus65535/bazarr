@@ -5,6 +5,7 @@ import {
   CollapseBox,
   Layout,
   Message,
+  MultiSelector,
   Section,
   Selector,
   Slider,
@@ -21,6 +22,7 @@ import {
   embeddedSubtitlesParserOption,
   folderOptions,
   hiExtensionOptions,
+  providerOptions,
   syncMaxOffsetSecondsOptions,
 } from "./options";
 
@@ -94,6 +96,14 @@ const commandOptions: CommandOption[] = [
   {
     option: "provider",
     description: "Provider of the subtitle file",
+  },
+  {
+    option: "uploader",
+    description: "Uploader of the subtitle file",
+  },
+  {
+    option: "release_info",
+    description: "Release info for the subtitle file",
   },
   {
     option: "series_id",
@@ -401,6 +411,13 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           subtitles.
         </Message>
         <CollapseBox indent settingKey="settings-subsync-use_subsync">
+          <MultiSelector
+            placeholder="Select providers..."
+            label="Do not sync subtitles downloaded from those providers"
+            clearable
+            options={providerOptions}
+            settingKey="settings-subsync-checker-blacklisted_providers"
+          ></MultiSelector>
           <Check label="Debug" settingKey="settings-subsync-debug"></Check>
           <Message>
             Do not actually sync the subtitles but generate a .tar.gz file to be

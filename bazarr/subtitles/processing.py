@@ -3,7 +3,7 @@
 
 import logging
 
-from app.config import settings
+from app.config import settings, sync_checker as _defaul_sync_checker
 from utilities.path_mappings import path_mappings
 from utilities.post_processing import pp_replace, set_chmod
 from languages.get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
@@ -43,6 +43,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     postprocessing_cmd = settings.general.postprocessing_cmd
 
     downloaded_provider = subtitle.provider_name
+    uploader = subtitle.uploader
+    release_info = subtitle.release_info
     downloaded_language_code3 = _get_download_code3(subtitle)
 
     downloaded_language = language_from_alpha3(downloaded_language_code3)
@@ -69,6 +71,9 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     message = (f"{downloaded_language}{modifier_string} subtitles {action} from {downloaded_provider} with a score of "
                f"{percent_score}%.")
 
+    sync_checker = _defaul_sync_checker
+    logging.debug("Sync checker: %s", sync_checker)
+
     if media_type == 'series':
         episode_metadata = database.execute(
             select(TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId)
@@ -79,13 +84,14 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         series_id = episode_metadata.sonarrSeriesId
         episode_id = episode_metadata.sonarrEpisodeId
 
-        from .sync import sync_subtitles
-        sync_subtitles(video_path=path, srt_path=downloaded_path,
-                       forced=subtitle.language.forced,
-                       srt_lang=downloaded_language_code2,
-                       percent_score=percent_score,
-                       sonarr_series_id=episode_metadata.sonarrSeriesId,
-                       sonarr_episode_id=episode_metadata.sonarrEpisodeId)
+        if sync_checker(subtitle) is True:
+            from .sync import sync_subtitles
+            sync_subtitles(video_path=path, srt_path=downloaded_path,
+                           forced=subtitle.language.forced,
+                           srt_lang=downloaded_language_code2,
+                           percent_score=percent_score,
+                           sonarr_series_id=episode_metadata.sonarrSeriesId,
+                           sonarr_episode_id=episode_metadata.sonarrEpisodeId)
     else:
         movie_metadata = database.execute(
             select(TableMovies.radarrId)
@@ -96,17 +102,18 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         series_id = ""
         episode_id = movie_metadata.radarrId
 
-        from .sync import sync_subtitles
-        sync_subtitles(video_path=path, srt_path=downloaded_path,
-                       forced=subtitle.language.forced,
-                       srt_lang=downloaded_language_code2,
-                       percent_score=percent_score,
-                       radarr_id=movie_metadata.radarrId)
+        if sync_checker(subtitle) is True:
+            from .sync import sync_subtitles
+            sync_subtitles(video_path=path, srt_path=downloaded_path,
+                           forced=subtitle.language.forced,
+                           srt_lang=downloaded_language_code2,
+                           percent_score=percent_score,
+                           radarr_id=movie_metadata.radarrId)
 
     if use_postprocessing is True:
         command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
                              downloaded_language_code3, audio_language, audio_language_code2, audio_language_code3,
-                             percent_score, subtitle_id, downloaded_provider, series_id, episode_id)
+                             percent_score, subtitle_id, downloaded_provider, uploader, release_info, series_id, episode_id)
 
         if media_type == 'series':
             use_pp_threshold = settings.general.use_postprocessing_threshold

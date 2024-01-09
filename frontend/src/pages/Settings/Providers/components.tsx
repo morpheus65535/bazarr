@@ -20,7 +20,15 @@ import {
   useRef,
   useState,
 } from "react";
-import { Card, Check, Chips, Message, Password, Text } from "../components";
+import {
+  Card,
+  Check,
+  Chips,
+  Selector as GlobalSelector,
+  Message,
+  Password,
+  Text,
+} from "../components";
 import {
   FormContext,
   FormValues,
@@ -206,6 +214,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     info.inputs?.forEach((value) => {
       const key = value.key;
       const label = value.name ?? capitalize(value.key);
+      const options = value.options ?? [];
 
       switch (value.type) {
         case "text":
@@ -234,6 +243,16 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
               label={label}
               settingKey={`settings-${itemKey}-${key}`}
             ></Check>
+          );
+          return;
+        case "select":
+          elements.push(
+            <GlobalSelector
+              key={key}
+              label={label}
+              settingKey={`settings-${itemKey}-${key}`}
+              options={options}
+            ></GlobalSelector>
           );
           return;
         case "chips":
@@ -295,4 +314,5 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
 
 const ProviderModal = withModal(ProviderTool, "provider-tool", {
   title: "Provider",
+  size: "calc(50vw)",
 });
