@@ -53,7 +53,10 @@ dir_name = os.path.dirname(__file__)
 def end_child_process(ep):
     try:
         if os.name != 'nt':
-            ep.send_signal(signal.SIGINT)
+            try:
+                ep.send_signal(signal.SIGINT)
+            except ProcessLookupError:
+                pass
         else:
             import win32api
             import win32con
@@ -69,6 +72,7 @@ def start_bazarr():
     script = [get_python_path(), "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
     ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
     atexit.register(end_child_process, ep=ep)
+    signal.signal(signal.SIGTERM, lambda signal_no, frame: end_child_process(ep))
 
 
 def check_status():
