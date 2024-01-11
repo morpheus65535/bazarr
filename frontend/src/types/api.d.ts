@@ -51,6 +51,28 @@ interface Subtitle {
   path: string | null | undefined; // TODO: FIX ME!!!!!!
 }
 
+interface AudioTrack {
+  stream: string;
+  name: string;
+  language: string;
+}
+
+interface SubtitleTrack {
+  stream: string;
+  name: string;
+  language: string;
+  forced: boolean;
+  hearing_impaired: boolean;
+}
+
+interface ExternalSubtitle {
+  name: string;
+  path: string;
+  language: string;
+  forced: boolean;
+  hearing_impaired: boolean;
+}
+
 interface PathType {
   path: string;
 }
@@ -149,6 +171,12 @@ declare namespace Item {
       season: number;
       episode: number;
     };
+
+  type RefTracks = {
+    audio_tracks: AudioTrack[];
+    embedded_subtitles_tracks: SubtitleTrack[];
+    external_subtitles_tracks: ExternalSubtitle[];
+  };
 }
 
 declare namespace Wanted {

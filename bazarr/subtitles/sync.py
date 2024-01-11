@@ -8,7 +8,7 @@ from app.config import settings
 from subtitles.tools.subsyncer import SubSyncer
 
 
-def sync_subtitles(video_path, srt_path, srt_lang, forced, media_type, percent_score, sonarr_series_id=None,
+def sync_subtitles(video_path, srt_path, srt_lang, forced, percent_score, sonarr_series_id=None,
                    sonarr_episode_id=None, radarr_id=None):
     if forced:
         logging.debug('BAZARR cannot sync forced subtitles. Skipping sync routine.')
@@ -26,7 +26,7 @@ def sync_subtitles(video_path, srt_path, srt_lang, forced, media_type, percent_s
 
         if not use_subsync_threshold or (use_subsync_threshold and percent_score < float(subsync_threshold)):
             subsync = SubSyncer()
-            subsync.sync(video_path=video_path, srt_path=srt_path, srt_lang=srt_lang, media_type=media_type,
+            subsync.sync(video_path=video_path, srt_path=srt_path, srt_lang=srt_lang,
                          sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id, radarr_id=radarr_id)
             del subsync
             gc.collect()

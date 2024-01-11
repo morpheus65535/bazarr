@@ -10,7 +10,7 @@ deep-translator==1.9.1
 dogpile.cache==1.1.8
 dynaconf==3.1.12
 fese==0.1.2
-ffsubsync==0.4.20
+ffsubsync==0.4.25
 Flask-Compress==1.13  # modified to import brotli only if required
 flask-cors==3.0.10
 flask-migrate==4.0.4

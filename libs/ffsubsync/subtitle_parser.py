@@ -1,17 +1,29 @@
 # -*- coding: utf-8 -*-
 from datetime import timedelta
 import logging
-from typing import Any, Optional
+from typing import Any, cast, List, Optional
 
 try:
-    import cchardet as chardet
-except ImportError:
-    import chardet  # type: ignore
+    import cchardet
+except:  # noqa: E722
+    cchardet = None
+try:
+    import chardet
+except:  # noqa: E722
+    chardet = None
+try:
+    import charset_normalizer
+except:  # noqa: E722
+    charset_normalizer = None
 import pysubs2
 from ffsubsync.sklearn_shim import TransformerMixin
 import srt
 
-from ffsubsync.constants import *
+from ffsubsync.constants import (
+    DEFAULT_ENCODING,
+    DEFAULT_MAX_SUBTITLE_SECONDS,
+    DEFAULT_START_SECONDS,
+)
 from ffsubsync.file_utils import open_file
 from ffsubsync.generic_subtitles import GenericSubtitle, GenericSubtitlesFile, SubsMixin
 
@@ -61,6 +73,7 @@ class GenericSubtitleParser(SubsMixin, TransformerMixin):
         max_subtitle_seconds: Optional[int] = None,
         start_seconds: int = 0,
         skip_ssa_info: bool = False,
+        strict: bool = False,
     ) -> None:
         super(self.__class__, self).__init__()
         self.sub_format: str = fmt
@@ -72,6 +85,7 @@ class GenericSubtitleParser(SubsMixin, TransformerMixin):
         self.start_seconds: int = start_seconds
         # FIXME: hack to get tests to pass; remove
         self._skip_ssa_info: bool = skip_ssa_info
+        self._strict: bool = strict
 
     def fit(self, fname: str, *_) -> "GenericSubtitleParser":
         if self.caching and self.fit_fname == ("<stdin>" if fname is None else fname):
@@ -80,15 +94,28 @@ class GenericSubtitleParser(SubsMixin, TransformerMixin):
         with open_file(fname, "rb") as f:
             subs = f.read()
         if self.encoding == "infer":
-            encodings_to_try = (chardet.detect(subs)["encoding"],)
-            self.detected_encoding_ = encodings_to_try[0]
+            for chardet_lib in (cchardet, charset_normalizer, chardet):
+                if chardet_lib is not None:
+                    try:
+                        detected_encoding = cast(
+                            Optional[str], chardet_lib.detect(subs)["encoding"]
+                        )
+                    except:  # noqa: E722
+                        continue
+                    if detected_encoding is not None:
+                        self.detected_encoding_ = detected_encoding
+                        encodings_to_try = (detected_encoding,)
+                        break
+            assert self.detected_encoding_ is not None
             logger.info("detected encoding: %s" % self.detected_encoding_)
         exc = None
         for encoding in encodings_to_try:
             try:
                 decoded_subs = subs.decode(encoding, errors="replace").strip()
                 if self.sub_format == "srt":
-                    parsed_subs = srt.parse(decoded_subs)
+                    parsed_subs = srt.parse(
+                        decoded_subs, ignore_errors=not self._strict
+                    )
                 elif self.sub_format in ("ass", "ssa", "sub"):
                     parsed_subs = pysubs2.SSAFile.from_string(decoded_subs)
                 else:
@@ -144,4 +171,5 @@ def make_subtitle_parser(
         max_subtitle_seconds=max_subtitle_seconds,
         start_seconds=start_seconds,
         skip_ssa_info=kwargs.get("skip_ssa_info", False),
+        strict=kwargs.get("strict", False),
     )

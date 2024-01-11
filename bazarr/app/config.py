@@ -298,6 +298,10 @@ validators = [
     Validator('subsync.checker', must_exist=True, default={}, is_type_of=dict),
     Validator('subsync.checker.blacklisted_providers', must_exist=True, default=[], is_type_of=list),
     Validator('subsync.checker.blacklisted_languages', must_exist=True, default=[], is_type_of=list),
+    Validator('subsync.no_fix_framerate', must_exist=True, default=True, is_type_of=bool),
+    Validator('subsync.gss', must_exist=True, default=True, is_type_of=bool),
+    Validator('subsync.max_offset_seconds', must_exist=True, default=60, is_type_of=int,
+              is_in=[60, 120, 300, 600]),
 
     # series_scores section
     Validator('series_scores.hash', must_exist=True, default=359, is_type_of=int),

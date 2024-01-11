@@ -5,6 +5,28 @@ class SubtitlesApi extends BaseApi {
     super("/subtitles");
   }
 
+  async getRefTracksByEpisodeId(
+    subtitlesPath: string,
+    sonarrEpisodeId: number
+  ) {
+    const response = await this.get<DataWrapper<Item.RefTracks>>("", {
+      subtitlesPath,
+      sonarrEpisodeId,
+    });
+    return response.data;
+  }
+
+  async getRefTracksByMovieId(
+    subtitlesPath: string,
+    radarrMovieId?: number | undefined
+  ) {
+    const response = await this.get<DataWrapper<Item.RefTracks>>("", {
+      subtitlesPath,
+      radarrMovieId,
+    });
+    return response.data;
+  }
+
   async info(names: string[]) {
     const response = await this.get<DataWrapper<SubtitleInfo[]>>(`/info`, {
       filenames: names,

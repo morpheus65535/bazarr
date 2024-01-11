@@ -41,6 +41,13 @@ declare namespace FormType {
     type: "episode" | "movie";
     language: string;
     path: string;
+    forced?: PythonBoolean;
+    hi?: PythonBoolean;
+    original_format?: PythonBoolean;
+    reference?: string;
+    max_offset_seconds?: string;
+    no_fix_framerate?: PythonBoolean;
+    gss?: PythonBoolean;
   }
 
   interface DownloadSeries {

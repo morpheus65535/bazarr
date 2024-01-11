@@ -1,15 +1,16 @@
 # coding=utf-8
-
+import ast
 import logging
+import os
 import pickle
 
-from knowit.api import know, KnowitException
-
-from languages.custom_lang import CustomLanguage
-from languages.get_languages import language_from_alpha3, alpha3_from_alpha2
-from app.database import TableEpisodes, TableMovies, database, update, select
-from utilities.path_mappings import path_mappings
 from app.config import settings
+from app.database import TableEpisodes, TableMovies, database, update, select
+from languages.custom_lang import CustomLanguage
+from languages.get_languages import language_from_alpha2, language_from_alpha3, alpha3_from_alpha2
+from utilities.path_mappings import path_mappings
+
+from knowit.api import know, KnowitException
 
 
 def _handle_alpha3(detected_language: dict):
@@ -107,6 +108,110 @@ def embedded_audio_reader(file, file_size, episode_file_id=None, movie_file_id=N
     return audio_list
 
 
+def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_movie_id=None):
+    references_dict = {'audio_tracks': [], 'embedded_subtitles_tracks': [], 'external_subtitles_tracks': []}
+    data = None
+
+    if sonarr_episode_id:
+        media_data = database.execute(
+            select(TableEpisodes.path, TableEpisodes.file_size, TableEpisodes.episode_file_id, TableEpisodes.subtitles)
+            .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)) \
+            .first()
+
+        if not media_data:
+            return references_dict
+
+        data = parse_video_metadata(media_data.path, media_data.file_size, media_data.episode_file_id, None,
+                                    use_cache=True)
+    elif radarr_movie_id:
+        media_data = database.execute(
+            select(TableMovies.path, TableMovies.file_size, TableMovies.movie_file_id, TableMovies.subtitles)
+            .where(TableMovies.radarrId == radarr_movie_id)) \
+            .first()
+
+        if not media_data:
+            return references_dict
+
+        data = parse_video_metadata(media_data.path, media_data.file_size, None, media_data.movie_file_id,
+                                    use_cache=True)
+
+    if not data:
+        return references_dict
+
+    cache_provider = None
+    if "ffprobe" in data and data["ffprobe"]:
+        cache_provider = 'ffprobe'
+    elif 'mediainfo' in data and data["mediainfo"]:
+        cache_provider = 'mediainfo'
+
+    if cache_provider:
+        if 'audio' in data[cache_provider]:
+            track_id = 0
+            for detected_language in data[cache_provider]["audio"]:
+                name = detected_language.get("name", "").replace("(", "").replace(")", "")
+
+                if "language" not in detected_language:
+                    language = 'Undefined'
+                else:
+                    alpha3 = _handle_alpha3(detected_language)
+                    language = language_from_alpha3(alpha3)
+
+                references_dict['audio_tracks'].append({'stream': f'a:{track_id}', 'name': name, 'language': language})
+
+                track_id += 1
+
+        if 'subtitle' in data[cache_provider]:
+            track_id = 0
+            bitmap_subs = ['dvd', 'pgs']
+            for detected_language in data[cache_provider]["subtitle"]:
+                if any([x in detected_language.get("name", "").lower() for x in bitmap_subs]):
+                    # skipping bitmap based subtitles
+                    track_id += 1
+                    continue
+
+                name = detected_language.get("name", "").replace("(", "").replace(")", "")
+
+                if "language" not in detected_language:
+                    language = 'Undefined'
+                else:
+                    alpha3 = _handle_alpha3(detected_language)
+                    language = language_from_alpha3(alpha3)
+
+                forced = detected_language.get("forced", False)
+                hearing_impaired = detected_language.get("hearing_impaired", False)
+
+                references_dict['embedded_subtitles_tracks'].append(
+                    {'stream': f's:{track_id}', 'name': name, 'language': language,  'forced': forced,
+                     'hearing_impaired': hearing_impaired}
+                )
+
+                track_id += 1
+
+        try:
+            parsed_subtitles = ast.literal_eval(media_data.subtitles)
+        except ValueError:
+            pass
+        else:
+            for subtitles in parsed_subtitles:
+                reversed_subtitles_path = path_mappings.path_replace_reverse(subtitles_path) if sonarr_episode_id else (
+                    path_mappings.path_replace_reverse_movie(subtitles_path))
+                if subtitles[1] and subtitles[1] != reversed_subtitles_path:
+                    language_dict = languages_from_colon_seperated_string(subtitles[0])
+                    references_dict['external_subtitles_tracks'].append({
+                        'name': os.path.basename(subtitles[1]),
+                        'path': path_mappings.path_replace(subtitles[1]) if sonarr_episode_id else
+                        path_mappings.path_replace_reverse_movie(subtitles[1]),
+                        'language': language_dict['language'],
+                        'forced': language_dict['forced'],
+                        'hearing_impaired': language_dict['hi'],
+                    })
+                else:
+                    # excluding subtitles that is going to be synced from the external subtitles list
+                    continue
+
+    return references_dict
+
+
 def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
     # Define default data keys value
     data = {
@@ -195,3 +300,15 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
             .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
             .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file)))
     return data
+
+
+def languages_from_colon_seperated_string(lang):
+    splitted_language = lang.split(':')
+    language = language_from_alpha2(splitted_language[0])
+    forced = hi = False
+    if len(splitted_language) > 1:
+        if splitted_language[1] == 'forced':
+            forced = True
+        elif splitted_language[1] == 'hi':
+            hi = True
+    return {'language': language, 'forced': forced, 'hi': hi}

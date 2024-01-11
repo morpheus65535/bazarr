@@ -88,7 +88,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             from .sync import sync_subtitles
             sync_subtitles(video_path=path, srt_path=downloaded_path,
                            forced=subtitle.language.forced,
-                           srt_lang=downloaded_language_code2, media_type=media_type,
+                           srt_lang=downloaded_language_code2,
                            percent_score=percent_score,
                            sonarr_series_id=episode_metadata.sonarrSeriesId,
                            sonarr_episode_id=episode_metadata.sonarrEpisodeId)
@@ -106,7 +106,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             from .sync import sync_subtitles
             sync_subtitles(video_path=path, srt_path=downloaded_path,
                            forced=subtitle.language.forced,
-                           srt_lang=downloaded_language_code2, media_type=media_type,
+                           srt_lang=downloaded_language_code2,
                            percent_score=percent_score,
                            radarr_id=movie_metadata.radarrId)
 

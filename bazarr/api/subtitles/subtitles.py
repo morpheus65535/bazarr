@@ -4,17 +4,18 @@ import os
 import sys
 import gc
 
-from flask_restx import Resource, Namespace, reqparse
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from app.database import TableEpisodes, TableMovies, database, select
 from languages.get_languages import alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
+from utilities.video_analyzer import subtitles_sync_references
 from subtitles.tools.subsyncer import SubSyncer
 from subtitles.tools.translate import translate_subtitles_file
 from subtitles.tools.mods import subtitles_apply_mods
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
-from app.config import settings
+from app.config import settings, empty_values
 from app.event_handler import event_stream
 
 from ..utils import authenticate
@@ -25,6 +26,56 @@ api_ns_subtitles = Namespace('Subtitles', description='Apply mods/tools on exter
 
 @api_ns_subtitles.route('subtitles')
 class Subtitles(Resource):
+    get_request_parser = reqparse.RequestParser()
+    get_request_parser.add_argument('subtitlesPath', type=str, required=True, help='External subtitles file path')
+    get_request_parser.add_argument('sonarrEpisodeId', type=int, required=False, help='Sonarr Episode ID')
+    get_request_parser.add_argument('radarrMovieId', type=int, required=False, help='Radarr Movie ID')
+
+    audio_tracks_data_model = api_ns_subtitles.model('audio_tracks_data_model', {
+        'stream': fields.String(),
+        'name': fields.String(),
+        'language': fields.String(),
+    })
+
+    embedded_subtitles_data_model = api_ns_subtitles.model('embedded_subtitles_data_model', {
+        'stream': fields.String(),
+        'name': fields.String(),
+        'language': fields.String(),
+        'forced': fields.Boolean(),
+        'hearing_impaired': fields.Boolean(),
+    })
+
+    external_subtitles_data_model = api_ns_subtitles.model('external_subtitles_data_model', {
+        'name': fields.String(),
+        'path': fields.String(),
+        'language': fields.String(),
+        'forced': fields.Boolean(),
+        'hearing_impaired': fields.Boolean(),
+    })
+
+    get_response_model = api_ns_subtitles.model('SubtitlesGetResponse', {
+        'audio_tracks': fields.Nested(audio_tracks_data_model),
+        'embedded_subtitles_tracks': fields.Nested(embedded_subtitles_data_model),
+        'external_subtitles_tracks': fields.Nested(external_subtitles_data_model),
+    })
+
+    @authenticate
+    @api_ns_subtitles.response(200, 'Success')
+    @api_ns_subtitles.response(401, 'Not Authenticated')
+    @api_ns_subtitles.doc(parser=get_request_parser)
+    def get(self):
+        """Return available audio and embedded subtitles tracks with external subtitles. Used for manual subsync
+        modal"""
+        args = self.get_request_parser.parse_args()
+        subtitlesPath = args.get('subtitlesPath')
+        episodeId = args.get('sonarrEpisodeId', None)
+        movieId = args.get('radarrMovieId', None)
+
+        result = subtitles_sync_references(subtitles_path=subtitlesPath, sonarr_episode_id=episodeId,
+                                           radarr_movie_id=movieId)
+
+        return marshal(result, self.get_response_model, envelope='data')
+
     patch_request_parser = reqparse.RequestParser()
     patch_request_parser.add_argument('action', type=str, required=True,
                                       help='Action from ["sync", "translate" or mods name]')
@@ -32,10 +83,20 @@ class Subtitles(Resource):
     patch_request_parser.add_argument('path', type=str, required=True, help='Subtitles file path')
     patch_request_parser.add_argument('type', type=str, required=True, help='Media type from ["episode", "movie"]')
     patch_request_parser.add_argument('id', type=int, required=True, help='Media ID (episodeId, radarrId)')
-    patch_request_parser.add_argument('forced', type=str, required=False, help='Forced subtitles from ["True", "False"]')
+    patch_request_parser.add_argument('forced', type=str, required=False,
+                                      help='Forced subtitles from ["True", "False"]')
     patch_request_parser.add_argument('hi', type=str, required=False, help='HI subtitles from ["True", "False"]')
     patch_request_parser.add_argument('original_format', type=str, required=False,
                                       help='Use original subtitles format from ["True", "False"]')
+    patch_request_parser.add_argument('reference', type=str, required=False,
+                                      help='Reference to use for sync from video file track number (a:0) or some '
+                                           'subtitles file path')
+    patch_request_parser.add_argument('max_offset_seconds', type=str, required=False,
+                                      help='Maximum offset seconds to allow')
+    patch_request_parser.add_argument('no_fix_framerate', type=str, required=False,
+                                      help='Don\'t try to fix framerate from ["True", "False"]')
+    patch_request_parser.add_argument('gss', type=str, required=False,
+                                      help='Use Golden-Section Search from ["True", "False"]')
 
     @authenticate
     @api_ns_subtitles.doc(parser=patch_request_parser)
@@ -79,19 +140,30 @@ class Subtitles(Resource):
             video_path = path_mappings.path_replace_movie(metadata.path)
 
         if action == 'sync':
+            sync_kwargs = {
+                'video_path': video_path,
+                'srt_path': subtitles_path,
+                'srt_lang': language,
+                'reference': args.get('reference') if args.get('reference') not in empty_values else video_path,
+                'max_offset_seconds': args.get('max_offset_seconds') if args.get('max_offset_seconds') not in
+                empty_values else str(settings.subsync.max_offset_seconds),
+                'no_fix_framerate': args.get('no_fix_framerate') == 'True',
+                'gss': args.get('gss') == 'True',
+            }
+
             subsync = SubSyncer()
-            if media_type == 'episode':
-                subsync.sync(video_path=video_path, srt_path=subtitles_path,
-                             srt_lang=language, media_type='series', sonarr_series_id=metadata.sonarrSeriesId,
-                             sonarr_episode_id=id)
-            else:
-                try:
-                    subsync.sync(video_path=video_path, srt_path=subtitles_path,
-                                 srt_lang=language, media_type='movies', radarr_id=id)
-                except OSError:
-                    return 'Unable to edit subtitles file. Check logs.', 409
-            del subsync
-            gc.collect()
+            try:
+                if media_type == 'episode':
+                    sync_kwargs['sonarr_series_id'] = metadata.sonarrSeriesId
+                    sync_kwargs['sonarr_episode_id'] = id
+                else:
+                    sync_kwargs['radarr_id'] = id
+                subsync.sync(**sync_kwargs)
+            except OSError:
+                return 'Unable to edit subtitles file. Check logs.', 409
+            finally:
+                del subsync
+                gc.collect()
         elif action == 'translate':
             from_language = subtitles_lang_from_filename(subtitles_path)
             dest_language = language
