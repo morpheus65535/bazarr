@@ -23,7 +23,7 @@ def test_scan_video_episode(tmpdir):
 
 @pytest.fixture
 def pool_instance():
-    yield core.SZProviderPool({"argenteam"}, {})
+    yield core.SZProviderPool({"subdivx"}, {})
 
 
 def test_pool_update_w_nothing(pool_instance):
@@ -33,43 +33,43 @@ def test_pool_update_w_nothing(pool_instance):
 
 
 def test_pool_update_w_multiple_providers(pool_instance):
-    assert pool_instance.providers == {"argenteam"}
-    pool_instance.update({"argenteam", "subdivx", "subf2m"}, {}, [], {})
-    assert pool_instance.providers == {"argenteam", "subdivx", "subf2m"}
+    assert pool_instance.providers == {"subdivx"}
+    pool_instance.update({"subdivx", "subf2m"}, {}, [], {})
+    assert pool_instance.providers == {"subdivx", "subf2m"}
 
 
 def test_pool_update_discarded_providers(pool_instance):
-    assert pool_instance.providers == {"argenteam"}
+    assert pool_instance.providers == {"subdivx"}
 
     # Provider was discarded internally
-    pool_instance.discarded_providers = {"argenteam"}
+    pool_instance.discarded_providers = {"subdivx"}
 
-    assert pool_instance.discarded_providers == {"argenteam"}
+    assert pool_instance.discarded_providers == {"subdivx"}
 
     # Provider is set to be used again
-    pool_instance.update({"subdivx", "argenteam"}, {}, [], {})
+    pool_instance.update({"subdivx", "subf2m"}, {}, [], {})
 
-    assert pool_instance.providers == {"argenteam", "subdivx"}
+    assert pool_instance.providers == {"subf2m", "subdivx"}
 
     # Provider should disappear from discarded providers
     assert pool_instance.discarded_providers == set()
 
 
 def test_pool_update_discarded_providers_2(pool_instance):
-    assert pool_instance.providers == {"argenteam"}
-
-    # Provider was discarded internally
-    pool_instance.discarded_providers = {"argenteam"}
-
-    assert pool_instance.discarded_providers == {"argenteam"}
-
-    # Provider is not set to be used again
-    pool_instance.update({"subdivx"}, {}, [], {})
-
     assert pool_instance.providers == {"subdivx"}
 
+    # Provider was discarded internally
+    pool_instance.discarded_providers = {"subdivx"}
+
+    assert pool_instance.discarded_providers == {"subdivx"}
+
+    # Provider is not set to be used again
+    pool_instance.update({"subf2m"}, {}, [], {})
+
+    assert pool_instance.providers == {"subf2m"}
+
     # Provider should not disappear from discarded providers
-    assert pool_instance.discarded_providers == {"argenteam"}
+    assert pool_instance.discarded_providers == {"subdivx"}
 
 
 def test_language_equals_init():

@@ -122,7 +122,7 @@ def provider_throttle_map():
 
 
 PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendasdivx", "napiprojekt", "shooter",
-                        "hosszupuska", "supersubtitles", "titlovi", "argenteam", "assrt", "subscene"]
+                        "hosszupuska", "supersubtitles", "titlovi", "assrt", "subscene"]
 
 throttle_count = {}
 

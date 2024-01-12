@@ -63,7 +63,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
   },
-  { key: "argenteam", description: "LATAM Spanish Subtitles Provider" },
   {
     key: "assrt",
     description: "Chinese Subtitles Provider",
