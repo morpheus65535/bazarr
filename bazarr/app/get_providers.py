@@ -98,6 +98,9 @@ def provider_throttle_map():
             TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
             IPAddressBlocked: (datetime.timedelta(hours=1), "1 hours"),
         },
+        "titlovi": {
+            TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
+        },
         "titulky": {
             DownloadLimitExceeded: (
                 titulky_limit_reset_timedelta(),
