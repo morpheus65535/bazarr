@@ -19,6 +19,11 @@ from .parser import movieParser
 # map between booleans and strings in DB
 bool_map = {"True": True, "False": False}
 
+FEATURE_PREFIX = "SYNC_MOVIES "
+def trace(message):
+    if settings.general.debug:
+        logging.debug(FEATURE_PREFIX + message)
+
 def update_all_movies():
     movies_full_scan_subtitles()
     logging.info('BAZARR All existing movie subtitles indexed from disk.')
@@ -155,14 +160,16 @@ def update_movies(send_event=True):
                         if sync_monitored:   
                             if get_movie_monitored_status(movie['tmdbId']) != movie['monitored']:
                                 # monitored status is not the same as our DB
-                                logging.debug(f"movie {movie['title']} monitor status changed offline")
+                                trace(f"(Monitor Status Mismatch) {movie['title']}")
                             elif not movie['monitored']:
+                                trace(f"(Skipped Unmonitored) {movie['title']}")
                                 skipped_count += 1
                                 continue
 
                         if (movie['movieFile']['size'] > 20480 or
                                 get_movie_file_size_from_db(movie['movieFile']['path']) > 20480):
                             # Add/update movies from Radarr that have a movie file to current movies list
+                            trace(f"(Processing) {movie['title']}")
                             if str(movie['tmdbId']) in current_movies_id_db:
                                 parsed_movie = movieParser(movie, action='update',
                                                            tags_dict=tagsDict,
@@ -179,19 +186,19 @@ def update_movies(send_event=True):
                                 add_movie(parsed_movie, send_event)
                                 movies_added.append(parsed_movie['title'])
                 else:
-                     logging.debug(f"Movie skipped {movie['title']} because file missing")
+                     trace(f"(Skipped File Missing) {movie['title']}")
                      files_missing += 1
 
             if send_event:
                 hide_progress(id='movies_progress')
 
-            logging.debug(f"Skipped {files_missing} file missing movies out of {i}")
+            trace(f"Skipped {files_missing} file missing movies out of {i}")
             if sync_monitored:
-                logging.debug(f"Skipped {skipped_count} unmonitored movies out of {i}")
-                logging.debug(f"Processed {i - files_missing - skipped_count} movies out of {i} " +
-                              f"with {len(movies_added)} added, {len(movies_updated)} updated and {movies_deleted} deleted")
+                trace(f"Skipped {skipped_count} unmonitored movies out of {i}")
+                trace(f"Processed {i - files_missing - skipped_count} movies out of {i} " +
+                              f"with {len(movies_added)} added, {len(movies_updated)} updated and {len(movies_deleted)} deleted")
             else:
-                logging.debug(f"Processed {i - files_missing} movies out of {i} with {len(movies_added)} added and {len(movies_updated)} updated")
+                trace(f"Processed {i - files_missing} movies out of {i} with {len(movies_added)} added and {len(movies_updated)} updated")
 
             logging.debug('BAZARR All movies synced from Radarr into database.')
 
