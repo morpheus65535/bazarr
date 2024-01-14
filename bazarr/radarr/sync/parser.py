@@ -13,12 +13,6 @@ from .converter import RadarrFormatAudioCodec, RadarrFormatVideoCodec
 
 def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles):
     if 'movieFile' in movie:
-        # Detect file separator
-        if movie['path'][0] == "/":
-            separator = "/"
-        else:
-            separator = "\\"
-
         try:
             overview = str(movie['overview'])
         except Exception:
@@ -122,7 +116,7 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
 
         parsed_movie = {'radarrId': int(movie["id"]),
                     'title': movie["title"],
-                    'path': os.path.normpath(movie["path"] + separator + movie['movieFile']['relativePath']),
+                    'path': os.path.join(movie["path"], movie['movieFile']['relativePath']),                    
                     'tmdbId': str(movie["tmdbId"]),
                     'poster': poster,
                     'fanart': fanart,
