@@ -160,16 +160,16 @@ def update_movies(send_event=True):
                         if sync_monitored:   
                             if get_movie_monitored_status(movie['tmdbId']) != movie['monitored']:
                                 # monitored status is not the same as our DB
-                                trace(f"(Monitor Status Mismatch) {movie['title']}")
+                                trace(f"{i}: (Monitor Status Mismatch) {movie['title']}")
                             elif not movie['monitored']:
-                                trace(f"(Skipped Unmonitored) {movie['title']}")
+                                trace(f"{i}: (Skipped Unmonitored) {movie['title']}")
                                 skipped_count += 1
                                 continue
 
                         if (movie['movieFile']['size'] > 20480 or
                                 get_movie_file_size_from_db(movie['movieFile']['path']) > 20480):
                             # Add/update movies from Radarr that have a movie file to current movies list
-                            trace(f"(Processing) {movie['title']}")
+                            trace(f"{i}: (Processing) {movie['title']}")
                             if str(movie['tmdbId']) in current_movies_id_db:
                                 parsed_movie = movieParser(movie, action='update',
                                                            tags_dict=tagsDict,
@@ -186,7 +186,7 @@ def update_movies(send_event=True):
                                 add_movie(parsed_movie, send_event)
                                 movies_added.append(parsed_movie['title'])
                 else:
-                     trace(f"(Skipped File Missing) {movie['title']}")
+                     trace(f"{i}: (Skipped File Missing) {movie['title']}")
                      files_missing += 1
 
             if send_event:
