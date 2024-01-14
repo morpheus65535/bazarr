@@ -5,7 +5,7 @@ import logging
 
 from sqlalchemy.exc import IntegrityError
 
-from app.database import database, TableEpisodes, delete, update, insert, select
+from app.database import database, TableShows, TableEpisodes, delete, update, insert, select
 from app.config import settings
 from utilities.path_mappings import path_mappings
 from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
@@ -16,14 +16,29 @@ from sonarr.info import get_sonarr_info, url_sonarr
 from .parser import episodeParser
 from .utils import get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
 
+# map between booleans and strings in DB
+bool_map = {"True": True, "False": False}
 
+FEATURE_PREFIX = "SYNC_EPISODES "
+def trace(message):
+    if settings.general.debug:
+        logging.debug(FEATURE_PREFIX + message)
+
+def get_episodes_monitored_table(series_id):
+    episodes_monitored = database.execute(
+        select(TableEpisodes.episode_file_id, TableEpisodes.monitored)
+        .where(TableEpisodes.sonarrSeriesId == series_id))\
+        .all()
+    episode_dict = dict((x, y) for x, y in episodes_monitored)
+    return episode_dict
+  
 def update_all_episodes():
     series_full_scan_subtitles()
     logging.info('BAZARR All existing episode subtitles indexed from disk.')
 
 
 def sync_episodes(series_id, send_event=True):
-    logging.debug('BAZARR Starting episodes sync from Sonarr.')
+    logging.debug(f'BAZARR Starting episodes sync from Sonarr for series ID {series_id}.')
     apikey_sonarr = settings.sonarr.apikey
 
     # Get current episodes id in DB
@@ -58,10 +73,36 @@ def sync_episodes(series_id, send_event=True):
                     if item:
                         episode['episodeFile'] = item[0]
 
+
+        sync_monitored = settings.sonarr.sync_only_monitored_series and settings.sonarr.sync_only_monitored_episodes
+        if sync_monitored:
+            episodes_monitored = get_episodes_monitored_table(series_id)
+            skipped_count = 0
+
         for episode in episodes:
             if 'hasFile' in episode:
                 if episode['hasFile'] is True:
                     if 'episodeFile' in episode:
+                        # monitored_status_db = get_episodes_monitored_status(episode['episodeFileId'])
+                        if sync_monitored:
+                            try:
+                                monitored_status_db = bool_map[episodes_monitored[episode['episodeFileId']]]
+                            except KeyError:
+                                monitored_status_db = None
+
+                            if monitored_status_db == None:
+                                # not in db, might need to add, if we have a file on disk
+                                pass
+                            elif monitored_status_db != episode['monitored']:
+                                # monitored status changed and we don't know about it until now
+                                trace(f"(Monitor Status Mismatch) {episode['title']}")
+                                # pass
+                            elif not episode['monitored']:
+                                # Add unmonitored episode in sonarr to current episode list, otherwise it will be deleted from db
+                                current_episodes_sonarr.append(episode['id'])
+                                skipped_count += 1
+                                continue
+
                         try:
                             bazarr_file_size = \
                                 os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
@@ -80,6 +121,12 @@ def sync_episodes(series_id, send_event=True):
                                 episodes_to_add.append(episodeParser(episode))
     else:
         return
+    
+    if sync_monitored:
+        # try to avoid unnecessary database calls
+        if settings.general.debug:
+            series_title = database.execute(select(TableShows.title).where(TableShows.sonarrSeriesId == series_id)).first()[0]
+            trace(f"Skipped {skipped_count} unmonitored episodes out of {len(episodes)} for {series_title}")
 
     # Remove old episodes from DB
     episodes_to_delete = list(set(current_episodes_id_db_list) - set(current_episodes_sonarr))
