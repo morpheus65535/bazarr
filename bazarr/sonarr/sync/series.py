@@ -16,6 +16,20 @@ from .episodes import sync_episodes
 from .parser import seriesParser
 from .utils import get_profile_list, get_tags, get_series_from_sonarr_api
 
+# map between booleans and strings in DB
+bool_map = {"True": True, "False": False}
+
+FEATURE_PREFIX = "SYNC_SERIES "
+def trace(message):
+    if settings.general.debug:
+        logging.debug(FEATURE_PREFIX + message)
+
+def get_series_monitored_table():
+    series_monitored = database.execute(
+        select(TableShows.tvdbId, TableShows.monitored))\
+        .all()
+    series_dict = dict((x, y) for x, y in series_monitored)
+    return series_dict
 
 def update_series(send_event=True):
     check_sonarr_rootfolder()
@@ -55,6 +69,12 @@ def update_series(send_event=True):
         current_shows_sonarr = []
 
         series_count = len(series)
+        sync_monitored = settings.sonarr.sync_only_monitored_series
+        if sync_monitored:
+            series_monitored = get_series_monitored_table()
+            skipped_count = 0
+        trace(f"Starting sync for {series_count} shows")
+        
         for i, show in enumerate(series):
             if send_event:
                 show_progress(id='series_progress',
@@ -63,6 +83,26 @@ def update_series(send_event=True):
                               value=i,
                               count=series_count)
 
+            if sync_monitored:
+                try:
+                    monitored_status_db = bool_map[series_monitored[show['tvdbId']]]
+                except KeyError:
+                    monitored_status_db = None
+                if monitored_status_db == None:
+                    # not in db, need to add
+                    pass
+                elif monitored_status_db != show['monitored']:
+                    # monitored status changed and we don't know about it until now
+                    trace(f"{i}: (Monitor Status Mismatch) {show['title']}")
+                    # pass
+                elif not show['monitored']:
+                    # Add unmonitored series in sonarr to current series list, otherwise it will be deleted from db
+                    trace(f"{i}: (Skipped Unmonitored) {show['title']}")
+                    current_shows_sonarr.append(show['id'])
+                    skipped_count += 1
+                    continue
+
+            trace(f"{i}: (Processing) {show['title']}")
             # Add shows in Sonarr to current shows list
             current_shows_sonarr.append(show['id'])
 
@@ -76,6 +116,7 @@ def update_series(send_event=True):
                         .filter_by(**updated_series))\
                         .first():
                     try:
+                        trace(f"Updating {show['title']}")
                         database.execute(
                             update(TableShows)
                             .values(updated_series)
@@ -92,6 +133,7 @@ def update_series(send_event=True):
                                             audio_profiles=audio_profiles)
 
                 try:
+                    trace(f"Inserting {show['title']}")
                     database.execute(
                         insert(TableShows)
                         .values(added_series))
@@ -110,6 +152,10 @@ def update_series(send_event=True):
         removed_series = list(set(current_shows_db) - set(current_shows_sonarr))
 
         for series in removed_series:
+             # try to avoid unnecessary database calls
+            if settings.general.debug:
+                series_title = database.execute(select(TableShows.title).where(TableShows.sonarrSeriesId == series)).first()[0]
+                trace(f"Deleting {series_title}")
             database.execute(
                 delete(TableShows)
                 .where(TableShows.sonarrSeriesId == series))
@@ -120,6 +166,8 @@ def update_series(send_event=True):
         if send_event:
             hide_progress(id='series_progress')
 
+        if sync_monitored:
+            trace(f"skipped {skipped_count} unmonitored series out of {i}")
         logging.debug('BAZARR All series synced from Sonarr into database.')
 
 
