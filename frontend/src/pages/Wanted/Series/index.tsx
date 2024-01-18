@@ -72,8 +72,8 @@ const WantedSeriesView: FunctionComponent = () => {
                         episodeId,
                         form: {
                           language: item.code2,
-                          hi,
-                          forced: false,
+                          hi: item.hi,
+                          forced: item.forced,
                         },
                       }
                     );
