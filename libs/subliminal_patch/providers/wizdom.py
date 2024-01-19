@@ -213,7 +213,12 @@ class WizdomProvider(Provider):
         with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             # remove some filenames from the namelist
             namelist = [n for n in zf.namelist() if os.path.splitext(n)[1] in ['.srt', '.sub']]
-            if len(namelist) > 1:
-                raise ProviderError('More than one file to unzip')
-
-            subtitle.content = fix_line_ending(zf.read(namelist[0]))
+            if len(namelist) > 0:
+                subtitle.content = fix_line_ending(zf.read(namelist[0]))
+                # this provider sometimes returns both utf-8 and windows-1255 encodings of the same text in one zip file
+                if len(namelist) > 1:
+                    # check if the first one we downloaded is good
+                    valid = subtitle.is_valid()
+                    if not valid:
+                        # in case we can't use the first one, return the second one and hope for the best
+                        subtitle.content = fix_line_ending(zf.read(namelist[1]))
