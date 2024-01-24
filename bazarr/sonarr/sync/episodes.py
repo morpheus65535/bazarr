@@ -91,7 +91,7 @@ def sync_episodes(series_id, send_event=True):
                             except KeyError:
                                 monitored_status_db = None
 
-                            if monitored_status_db == None:
+                            if monitored_status_db is None:
                                 # not in db, might need to add, if we have a file on disk
                                 pass
                             elif monitored_status_db != episode['monitored']:

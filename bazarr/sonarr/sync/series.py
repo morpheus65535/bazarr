@@ -88,7 +88,7 @@ def update_series(send_event=True):
                     monitored_status_db = bool_map[series_monitored[show['tvdbId']]]
                 except KeyError:
                     monitored_status_db = None
-                if monitored_status_db == None:
+                if monitored_status_db is None:
                     # not in db, need to add
                     pass
                 elif monitored_status_db != show['monitored']:

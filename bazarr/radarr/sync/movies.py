@@ -58,7 +58,7 @@ def get_movie_monitored_status(movie_id):
         select(TableMovies.monitored)
         .where(TableMovies.tmdbId == movie_id))\
         .first()
-    if existing_movie_monitored == None:
+    if existing_movie_monitored is None:
         return True
     else:
         return bool_map[existing_movie_monitored[0]]
