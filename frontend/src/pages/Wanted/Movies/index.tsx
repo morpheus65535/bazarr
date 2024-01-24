@@ -34,7 +34,7 @@ const WantedMoviesView: FunctionComponent = () => {
         accessor: "missing_subtitles",
         Cell: ({ row, value }) => {
           const wanted = row.original;
-          const { hearing_impaired: hi, radarrId } = wanted;
+          const { radarrId } = wanted;
 
           const { download } = useMovieSubtitleModification();
 
@@ -55,8 +55,8 @@ const WantedMoviesView: FunctionComponent = () => {
                         radarrId,
                         form: {
                           language: item.code2,
-                          hi,
-                          forced: false,
+                          hi: item.hi,
+                          forced: item.forced,
                         },
                       }
                     );

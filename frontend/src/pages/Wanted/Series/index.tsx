@@ -48,7 +48,6 @@ const WantedSeriesView: FunctionComponent = () => {
         accessor: "missing_subtitles",
         Cell: ({ row, value }) => {
           const wanted = row.original;
-          const hi = wanted.hearing_impaired;
           const seriesId = wanted.sonarrSeriesId;
           const episodeId = wanted.sonarrEpisodeId;
 
@@ -72,8 +71,8 @@ const WantedSeriesView: FunctionComponent = () => {
                         episodeId,
                         form: {
                           language: item.code2,
-                          hi,
-                          forced: false,
+                          hi: item.hi,
+                          forced: item.forced,
                         },
                       }
                     );
