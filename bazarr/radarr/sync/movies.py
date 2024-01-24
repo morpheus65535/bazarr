@@ -2,6 +2,7 @@
 
 import os
 import logging
+from constants import MINIMUM_VIDEO_SIZE
 
 from sqlalchemy.exc import IntegrityError
 
@@ -121,8 +122,8 @@ def update_movies(send_event=True):
 
             current_movies_radarr = [str(movie['tmdbId']) for movie in movies if movie['hasFile'] and
                                      'movieFile' in movie and
-                                     (movie['movieFile']['size'] > 20480 or
-                                      get_movie_file_size_from_db(movie['movieFile']['path']) > 20480)]
+                                     (movie['movieFile']['size'] > MINIMUM_VIDEO_SIZE or
+                                      get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE)]
 
             # Remove movies from DB that either no longer exist in Radarr or exist and Radarr says do not have a movie file
             movies_to_delete = list(set(current_movies_id_db) - set(current_movies_radarr))
@@ -166,8 +167,8 @@ def update_movies(send_event=True):
                                 skipped_count += 1
                                 continue
 
-                        if (movie['movieFile']['size'] > 20480 or
-                                get_movie_file_size_from_db(movie['movieFile']['path']) > 20480):
+                        if (movie['movieFile']['size'] > MINIMUM_VIDEO_SIZE or
+                                get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE):
                             # Add/update movies from Radarr that have a movie file to current movies list
                             trace(f"{i}: (Processing) {movie['title']}")
                             if str(movie['tmdbId']) in current_movies_id_db:

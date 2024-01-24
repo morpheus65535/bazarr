@@ -2,6 +2,7 @@
 
 import os
 import logging
+from constants import MINIMUM_VIDEO_SIZE
 
 from sqlalchemy.exc import IntegrityError
 
@@ -108,7 +109,7 @@ def sync_episodes(series_id, send_event=True):
                                 os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
                         except OSError:
                             bazarr_file_size = 0
-                        if episode['episodeFile']['size'] > 20480 or bazarr_file_size > 20480:
+                        if episode['episodeFile']['size'] > MINIMUM_VIDEO_SIZE or bazarr_file_size > MINIMUM_VIDEO_SIZE:
                             # Add episodes in sonarr to current episode list
                             current_episodes_sonarr.append(episode['id'])
 
