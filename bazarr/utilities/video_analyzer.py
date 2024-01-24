@@ -266,6 +266,11 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     elif embedded_subs_parser == 'mediainfo':
         mediainfo_path = get_binary("mediainfo")
 
+    # see if file exists (perhaps offline)
+    if not os.path.exists(file):
+        logging.error(f'Video file "{file}" cannot be found for analysis')
+        return None
+    
     # if we have ffprobe available
     if ffprobe_path:
         try:
