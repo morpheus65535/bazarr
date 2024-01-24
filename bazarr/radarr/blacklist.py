@@ -29,7 +29,7 @@ def blacklist_log_movie(radarr_id, provider, subs_id, language):
 def blacklist_delete_movie(provider, subs_id):
     database.execute(
         delete(TableBlacklistMovie)
-        .where((TableBlacklistMovie.provider == provider) and (TableBlacklistMovie.subs_id == subs_id)))
+        .where((TableBlacklistMovie.provider == provider) & (TableBlacklistMovie.subs_id == subs_id)))
     event_stream(type='movie-blacklist', action='delete')
 
 
