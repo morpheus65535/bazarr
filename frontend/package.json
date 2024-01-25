@@ -19,7 +19,7 @@
     "@mantine/hooks": "^6.0.0",
     "@mantine/modals": "^6.0.21",
     "@mantine/notifications": "^6.0.21",
-    "axios": "^1.6.5",
+    "axios": "^1.6.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-query": "^3.39.3",
