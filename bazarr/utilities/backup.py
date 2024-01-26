@@ -151,6 +151,8 @@ def restore_from_backup():
 
     try:
         os.remove(restore_config_path)
+    except FileNotFoundError:
+        pass
     except OSError:
         logging.exception(f'Unable to delete {dest_config_path}')
 
