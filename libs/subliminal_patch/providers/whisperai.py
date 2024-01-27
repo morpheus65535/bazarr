@@ -213,18 +213,22 @@ class WhisperAIProvider(Provider):
 
     video_types = (Episode, Movie)
 
-    def __init__(self, endpoint=None, timeout=None, ffmpeg_path=None, loglevel=None):
+    def __init__(self, endpoint=None, response=None, timeout=None, ffmpeg_path=None, loglevel=None):
         set_log_level(loglevel)
         if not endpoint:
             raise ConfigurationError('Whisper Web Service Endpoint must be provided')
 
+        if not response:
+            raise ConfigurationError('Whisper Web Service Connection/response timeout  must be provided')
+
         if not timeout:
-            raise ConfigurationError('Whisper Web Service Timeout must be provided')
+            raise ConfigurationError('Whisper Web Service Transcription/translation timeout must be provided')
 
         if not ffmpeg_path:
             raise ConfigurationError("ffmpeg path must be provided")
 
         self.endpoint = endpoint
+        self.response = int(response)
         self.timeout = int(timeout)
         self.session = None
         self.ffmpeg_path = ffmpeg_path
@@ -248,7 +252,7 @@ class WhisperAIProvider(Provider):
         r = self.session.post(f"{self.endpoint}/detect-language",
                               params={'encode': 'false'},
                               files={'audio_file': out},
-                              timeout=(self.timeout, self.timeout))
+                              timeout=(self.response, self.timeout))
 
         logger.debug(f"Whisper detected language of {path} as {r.json()['detected_language']}")
 
@@ -326,7 +330,7 @@ class WhisperAIProvider(Provider):
         r = self.session.post(f"{self.endpoint}/asr",
                               params={'task': subtitle.task, 'language': whisper_get_language_reverse(subtitle.audio_language), 'output': 'srt', 'encode': 'false'},
                               files={'audio_file': out},
-                              timeout=(self.timeout, self.timeout))
+                              timeout=(self.response, self.timeout))
                               
         endTime = time.time()
         elapsedTime = timedelta(seconds=round(endTime - startTime))
