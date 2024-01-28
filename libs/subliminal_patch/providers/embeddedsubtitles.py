@@ -190,7 +190,11 @@ class EmbeddedSubtitlesProvider(Provider):
 
     @blacklist_on(ExtractionError)
     def download_subtitle(self, subtitle: EmbeddedSubtitle):
-        path = self._get_subtitle_path(subtitle)
+        try:
+            path = self._get_subtitle_path(subtitle)
+        except KeyError: # TODO: add MustGetBlacklisted support
+            logger.error("Couldn't get subtitle path")
+            return None
 
         modifiers = _type_modifiers.get(subtitle.stream.codec_name) or set()
         logger.debug("Found modifiers for %s type: %s", subtitle.stream, modifiers)
