@@ -64,6 +64,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "argenteam_dump",
+    name: "Argenteam Dump",
+    description: "Subtitles dump of the now extinct Argenteam",
+  },
+  {
     key: "assrt",
     description: "Chinese Subtitles Provider",
     inputs: [
