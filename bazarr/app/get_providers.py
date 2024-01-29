@@ -311,6 +311,7 @@ def get_providers_auth():
         },
         'whisperai': {
             'endpoint': settings.whisperai.endpoint,
+            'response': settings.whisperai.response,
             'timeout': settings.whisperai.timeout,
             'ffmpeg_path': _FFMPEG_BINARY,
             'loglevel': settings.whisperai.loglevel,            

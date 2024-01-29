@@ -228,6 +228,7 @@ validators = [
 
     # whisperai section
     Validator('whisperai.endpoint', must_exist=True, default='http://127.0.0.1:9000', is_type_of=str),
+    Validator('whisperai.response', must_exist=True, default=5, is_type_of=int, gte=1),
     Validator('whisperai.timeout', must_exist=True, default=3600, is_type_of=int, gte=1),
     Validator('whisperai.loglevel', must_exist=True, default='INFO', is_type_of=str,
               is_in=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),

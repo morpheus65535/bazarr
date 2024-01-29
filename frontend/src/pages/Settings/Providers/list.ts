@@ -444,6 +444,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
       {
         type: "text",
+        key: "response",
+        defaultValue: 5,
+        name: "Connection/response timeout in seconds",
+      },
+      {
+        type: "text",
         key: "timeout",
         defaultValue: 3600,
         name: "Transcription/translation timeout in seconds",
