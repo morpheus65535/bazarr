@@ -1,21 +1,10 @@
-from datetime import tzinfo, timedelta
-
-
+from datetime import tzinfo,timedelta
 class TomlTz(tzinfo):
-    def __init__(self, toml_offset):
-        if toml_offset == "Z":
-            self._raw_offset = "+00:00"
-        else:
-            self._raw_offset = toml_offset
-        self._sign = -1 if self._raw_offset[0] == '-' else 1
-        self._hours = int(self._raw_offset[1:3])
-        self._minutes = int(self._raw_offset[4:6])
-
-    def tzname(self, dt):
-        return "UTC" + self._raw_offset
-
-    def utcoffset(self, dt):
-        return self._sign * timedelta(hours=self._hours, minutes=self._minutes)
-
-    def dst(self, dt):
-        return timedelta(0)
+	def __init__(A,toml_offset):
+		B=toml_offset
+		if B=='Z':A._raw_offset='+00:00'
+		else:A._raw_offset=B
+		A._sign=-1 if A._raw_offset[0]=='-'else 1;A._hours=int(A._raw_offset[1:3]);A._minutes=int(A._raw_offset[4:6])
+	def tzname(A,dt):return'UTC'+A._raw_offset
+	def utcoffset(A,dt):return A._sign*timedelta(hours=A._hours,minutes=A._minutes)
+	def dst(A,dt):return timedelta(0)

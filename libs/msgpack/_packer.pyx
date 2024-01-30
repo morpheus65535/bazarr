@@ -71,7 +71,8 @@ cdef class Packer(object):
 
     Packer's constructor has some keyword arguments:
 
-    :param callable default:
+    :param default:
+        When specified, it should be callable.
         Convert user type to builtin type that Packer supports.
         See also simplejson's document.
 
@@ -98,7 +99,6 @@ cdef class Packer(object):
         If set to true, datetime with tzinfo is packed into Timestamp type.
         Note that the tzinfo is stripped in the timestamp.
         You can get UTC datetime with `timestamp=3` option of the Unpacker.
-        (Python 2 is not supported).
 
     :param str unicode_errors:
         The error handler for encoding unicode. (default: 'strict')

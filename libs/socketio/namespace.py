@@ -1,10 +1,18 @@
-class BaseNamespace(object):
-    def __init__(self, namespace=None):
-        self.namespace = namespace or '/'
+from . import base_namespace
 
-    def is_asyncio_based(self):
-        return False
 
+class Namespace(base_namespace.BaseServerNamespace):
+    """Base class for server-side class-based namespaces.
+
+    A class-based namespace is a class that contains all the event handlers
+    for a Socket.IO namespace. The event handlers are methods of the class
+    with the prefix ``on_``, such as ``on_connect``, ``on_disconnect``,
+    ``on_message``, ``on_json``, and so on.
+
+    :param namespace: The Socket.IO namespace to be used with all the event
+                      handlers defined in this class. If this argument is
+                      omitted, the default namespace is used.
+    """
     def trigger_event(self, event, *args):
         """Dispatch an event to the proper handler method.
 
@@ -17,28 +25,8 @@ class BaseNamespace(object):
         if hasattr(self, handler_name):
             return getattr(self, handler_name)(*args)
 
-
-class Namespace(BaseNamespace):
-    """Base class for server-side class-based namespaces.
-
-    A class-based namespace is a class that contains all the event handlers
-    for a Socket.IO namespace. The event handlers are methods of the class
-    with the prefix ``on_``, such as ``on_connect``, ``on_disconnect``,
-    ``on_message``, ``on_json``, and so on.
-
-    :param namespace: The Socket.IO namespace to be used with all the event
-                      handlers defined in this class. If this argument is
-                      omitted, the default namespace is used.
-    """
-    def __init__(self, namespace=None):
-        super(Namespace, self).__init__(namespace=namespace)
-        self.server = None
-
-    def _set_server(self, server):
-        self.server = server
-
     def emit(self, event, data=None, to=None, room=None, skip_sid=None,
-             namespace=None, callback=None):
+             namespace=None, callback=None, ignore_queue=False):
         """Emit a custom event to one or more connected clients.
 
         The only difference with the :func:`socketio.Server.emit` method is
@@ -48,10 +36,10 @@ class Namespace(BaseNamespace):
         return self.server.emit(event, data=data, to=to, room=room,
                                 skip_sid=skip_sid,
                                 namespace=namespace or self.namespace,
-                                callback=callback)
+                                callback=callback, ignore_queue=ignore_queue)
 
     def send(self, data, to=None, room=None, skip_sid=None, namespace=None,
-             callback=None):
+             callback=None, ignore_queue=False):
         """Send a message to one or more connected clients.
 
         The only difference with the :func:`socketio.Server.send` method is
@@ -60,10 +48,10 @@ class Namespace(BaseNamespace):
         """
         return self.server.send(data, to=to, room=room, skip_sid=skip_sid,
                                 namespace=namespace or self.namespace,
-                                callback=callback)
+                                callback=callback, ignore_queue=ignore_queue)
 
     def call(self, event, data=None, to=None, sid=None, namespace=None,
-             timeout=None):
+             timeout=None, ignore_queue=False):
         """Emit a custom event to a client and wait for the response.
 
         The only difference with the :func:`socketio.Server.call` method is
@@ -72,7 +60,7 @@ class Namespace(BaseNamespace):
         """
         return self.server.call(event, data=data, to=to, sid=sid,
                                 namespace=namespace or self.namespace,
-                                timeout=timeout)
+                                timeout=timeout, ignore_queue=ignore_queue)
 
     def enter_room(self, sid, room, namespace=None):
         """Enter a room.
@@ -103,15 +91,6 @@ class Namespace(BaseNamespace):
         """
         return self.server.close_room(room,
                                       namespace=namespace or self.namespace)
-
-    def rooms(self, sid, namespace=None):
-        """Return the rooms a client is in.
-
-        The only difference with the :func:`socketio.Server.rooms` method is
-        that when the ``namespace`` argument is not given the namespace
-        associated with the class is used.
-        """
-        return self.server.rooms(sid, namespace=namespace or self.namespace)
 
     def get_session(self, sid, namespace=None):
         """Return the user session for a client.
@@ -153,7 +132,7 @@ class Namespace(BaseNamespace):
                                       namespace=namespace or self.namespace)
 
 
-class ClientNamespace(BaseNamespace):
+class ClientNamespace(base_namespace.BaseClientNamespace):
     """Base class for client-side class-based namespaces.
 
     A class-based namespace is a class that contains all the event handlers
@@ -165,12 +144,17 @@ class ClientNamespace(BaseNamespace):
                       handlers defined in this class. If this argument is
                       omitted, the default namespace is used.
     """
-    def __init__(self, namespace=None):
-        super(ClientNamespace, self).__init__(namespace=namespace)
-        self.client = None
+    def trigger_event(self, event, *args):
+        """Dispatch an event to the proper handler method.
 
-    def _set_client(self, client):
-        self.client = client
+        In the most common usage, this method is not overloaded by subclasses,
+        as it performs the routing of events to methods. However, this
+        method can be overridden if special dispatching rules are needed, or if
+        having a single method that catches all events is desired.
+        """
+        handler_name = 'on_' + event
+        if hasattr(self, handler_name):
+            return getattr(self, handler_name)(*args)
 
     def emit(self, event, data=None, namespace=None, callback=None):
         """Emit a custom event to the server.

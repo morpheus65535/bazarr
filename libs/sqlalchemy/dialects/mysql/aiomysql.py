@@ -1,5 +1,5 @@
-# mysql/aiomysql.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors <see AUTHORS
+# dialects/mysql/aiomysql.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors <see AUTHORS
 # file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -12,13 +12,6 @@ r"""
     :dbapi: aiomysql
     :connectstring: mysql+aiomysql://user:password@host:port/dbname[?key=value&key=value...]
     :url: https://github.com/aio-libs/aiomysql
-
-.. warning:: The aiomysql dialect is not currently tested as part of
-   SQLAlchemy’s continuous integration. As of September, 2021 the driver
-   appears to be unmaintained and no longer functions for Python version 3.10,
-   and additionally depends on a significantly outdated version of PyMySQL.
-   Please refer to the :ref:`asyncmy` dialect for current MySQL/MariaDB asyncio
-   functionality.
 
 The aiomysql dialect is SQLAlchemy's second Python asyncio dialect.
 
@@ -34,7 +27,6 @@ This dialect should normally be used only with the
 
 
 """  # noqa
-
 from .pymysql import MySQLDialect_pymysql
 from ... import pool
 from ... import util
@@ -45,6 +37,8 @@ from ...util.concurrency import await_only
 
 
 class AsyncAdapt_aiomysql_cursor:
+    # TODO: base on connectors/asyncio.py
+    # see #10415
     server_side = False
     __slots__ = (
         "_adapt_connection",
@@ -59,7 +53,7 @@ class AsyncAdapt_aiomysql_cursor:
         self._connection = adapt_connection._connection
         self.await_ = adapt_connection.await_
 
-        cursor = self._connection.cursor()
+        cursor = self._connection.cursor(adapt_connection.dbapi.Cursor)
 
         # see https://github.com/aio-libs/aiomysql/issues/543
         self._cursor = self.await_(cursor.__aenter__())
@@ -105,10 +99,7 @@ class AsyncAdapt_aiomysql_cursor:
 
     async def _execute_async(self, operation, parameters):
         async with self._adapt_connection._execute_mutex:
-            if parameters is None:
-                result = await self._cursor.execute(operation)
-            else:
-                result = await self._cursor.execute(operation, parameters)
+            result = await self._cursor.execute(operation, parameters)
 
             if not self.server_side:
                 # aiomysql has a "fake" async result, so we have to pull it out
@@ -150,6 +141,8 @@ class AsyncAdapt_aiomysql_cursor:
 
 
 class AsyncAdapt_aiomysql_ss_cursor(AsyncAdapt_aiomysql_cursor):
+    # TODO: base on connectors/asyncio.py
+    # see #10415
     __slots__ = ()
     server_side = True
 
@@ -158,9 +151,7 @@ class AsyncAdapt_aiomysql_ss_cursor(AsyncAdapt_aiomysql_cursor):
         self._connection = adapt_connection._connection
         self.await_ = adapt_connection.await_
 
-        cursor = self._connection.cursor(
-            adapt_connection.dbapi.aiomysql.SSCursor
-        )
+        cursor = self._connection.cursor(adapt_connection.dbapi.SSCursor)
 
         self._cursor = self.await_(cursor.__aenter__())
 
@@ -180,6 +171,8 @@ class AsyncAdapt_aiomysql_ss_cursor(AsyncAdapt_aiomysql_cursor):
 
 
 class AsyncAdapt_aiomysql_connection(AdaptedConnection):
+    # TODO: base on connectors/asyncio.py
+    # see #10415
     await_ = staticmethod(await_only)
     __slots__ = ("dbapi", "_execute_mutex")
 
@@ -215,6 +208,8 @@ class AsyncAdapt_aiomysql_connection(AdaptedConnection):
 
 
 class AsyncAdaptFallback_aiomysql_connection(AsyncAdapt_aiomysql_connection):
+    # TODO: base on connectors/asyncio.py
+    # see #10415
     __slots__ = ()
 
     await_ = staticmethod(await_fallback)
@@ -226,6 +221,7 @@ class AsyncAdapt_aiomysql_dbapi:
         self.pymysql = pymysql
         self.paramstyle = "format"
         self._init_dbapi_attributes()
+        self.Cursor, self.SSCursor = self._init_cursors_subclasses()
 
     def _init_dbapi_attributes(self):
         for name in (
@@ -255,17 +251,30 @@ class AsyncAdapt_aiomysql_dbapi:
 
     def connect(self, *arg, **kw):
         async_fallback = kw.pop("async_fallback", False)
+        creator_fn = kw.pop("async_creator_fn", self.aiomysql.connect)
 
         if util.asbool(async_fallback):
             return AsyncAdaptFallback_aiomysql_connection(
                 self,
-                await_fallback(self.aiomysql.connect(*arg, **kw)),
+                await_fallback(creator_fn(*arg, **kw)),
             )
         else:
             return AsyncAdapt_aiomysql_connection(
                 self,
-                await_only(self.aiomysql.connect(*arg, **kw)),
+                await_only(creator_fn(*arg, **kw)),
             )
+
+    def _init_cursors_subclasses(self):
+        # suppress unconditional warning emitted by aiomysql
+        class Cursor(self.aiomysql.Cursor):
+            async def _show_warnings(self, conn):
+                pass
+
+        class SSCursor(self.aiomysql.SSCursor):
+            async def _show_warnings(self, conn):
+                pass
+
+        return Cursor, SSCursor
 
 
 class MySQLDialect_aiomysql(MySQLDialect_pymysql):
@@ -285,7 +294,6 @@ class MySQLDialect_aiomysql(MySQLDialect_pymysql):
 
     @classmethod
     def get_pool_class(cls, url):
-
         async_fallback = url.query.get("async_fallback", False)
 
         if util.asbool(async_fallback):

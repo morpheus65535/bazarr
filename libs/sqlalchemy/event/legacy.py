@@ -1,5 +1,5 @@
 # event/legacy.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -72,7 +72,6 @@ def _wrap_fn_for_legacy(
         if len(argnames) == len(argspec.args) and has_kw is bool(
             argspec.varkw
         ):
-
             formatted_def = "def %s(%s%s)" % (
                 dispatch_collection.name,
                 ", ".join(dispatch_collection.arg_names),

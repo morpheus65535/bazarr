@@ -6,7 +6,7 @@
 
     .. _pastie: http://pastie.caboo.se/
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -15,11 +15,16 @@ from pygments.token import Keyword, Name, Comment, String, Error, \
      Number, Operator, Generic, Whitespace
 
 
+__all__ = ['PastieStyle']
+
+
 class PastieStyle(Style):
     """
     Style similar to the pastie default style.
     """
 
+    name = 'pastie'
+    
     styles = {
         Whitespace:             '#bbbbbb',
         Comment:                '#888888',
@@ -64,6 +69,7 @@ class PastieStyle(Style):
         Generic.Error:          '#aa0000',
         Generic.Emph:           'italic',
         Generic.Strong:         'bold',
+        Generic.EmphStrong:     'bold italic',
         Generic.Prompt:         '#555555',
         Generic.Output:         '#888888',
         Generic.Traceback:      '#aa0000',

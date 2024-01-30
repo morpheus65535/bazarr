@@ -61,7 +61,7 @@ def get_file_extension(format_: str) -> str:
         if f == format_:
             return ext
 
-    raise RuntimeError("No file extension for format %r" % format_)
+    raise RuntimeError(f"No file extension for format {format_!r}")
 
 
 def autodetect_format(content: str) -> str:
@@ -77,4 +77,4 @@ def autodetect_format(content: str) -> str:
     elif not formats:
         raise FormatAutodetectionError("No suitable formats")
     else:
-        raise FormatAutodetectionError("Multiple suitable formats (%r)" % formats)
+        raise FormatAutodetectionError(f"Multiple suitable formats ({formats!r})")

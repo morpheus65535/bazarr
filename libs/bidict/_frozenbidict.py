@@ -13,6 +13,7 @@
 
 """Provide :class:`frozenbidict`, an immutable, hashable bidirectional mapping type."""
 
+from __future__ import annotations
 import typing as t
 
 from ._base import BidictBase
@@ -28,14 +29,14 @@ class frozenbidict(BidictBase[KT, VT]):
     # Ref: https://github.com/python/typing/issues/548#issuecomment-621571821
     if t.TYPE_CHECKING:
         @property
-        def inverse(self) -> 'frozenbidict[VT, KT]': ...
+        def inverse(self) -> frozenbidict[VT, KT]: ...
 
     def __hash__(self) -> int:
         """The hash of this bidict as determined by its items."""
         if getattr(self, '_hash', None) is None:
             # The following is like hash(frozenset(self.items()))
             # but more memory efficient. See also: https://bugs.python.org/issue46684
-            self._hash = t.ItemsView(self)._hash()  # type: ignore [attr-defined]  # https://github.com/python/typeshed/pull/7153
+            self._hash = t.ItemsView(self)._hash()
         return self._hash
 
 

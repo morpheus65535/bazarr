@@ -634,7 +634,26 @@ class TestValidationErrorMessages(TestCase):
         message = self.message_for(instance="foo", schema=schema)
         self.assertEqual(message, "'foo' is not of type 'array'")
 
-    def test_unevaluated_properties(self):
+    def test_unevaluated_properties_invalid_against_subschema(self):
+        schema = {
+            "properties": {"foo": {"type": "string"}},
+            "unevaluatedProperties": {"const": 12},
+        }
+        message = self.message_for(
+            instance={
+                "foo": "foo",
+                "bar": "bar",
+                "baz": 12,
+            },
+            schema=schema,
+        )
+        self.assertEqual(
+            message,
+            "Unevaluated properties are not valid under the given schema "
+            "('bar' was unevaluated and invalid)",
+        )
+
+    def test_unevaluated_properties_disallowed(self):
         schema = {"type": "object", "unevaluatedProperties": False}
         message = self.message_for(
             instance={
@@ -1827,6 +1846,21 @@ class TestDraft202012Validator(ValidatorTestMixin, TestCase):
     Validator = validators.Draft202012Validator
     valid: tuple[dict, dict] = ({}, {})
     invalid = {"type": "integer"}, "foo"
+
+
+class TestLatestValidator(TestCase):
+    """
+    These really apply to multiple versions but are easiest to test on one.
+    """
+
+    def test_ref_resolvers_may_have_boolean_schemas_stored(self):
+        ref = "someCoolRef"
+        schema = {"$ref": ref}
+        resolver = validators.RefResolver("", {}, store={ref: False})
+        validator = validators._LATEST_VERSION(schema, resolver=resolver)
+
+        with self.assertRaises(exceptions.ValidationError):
+            validator.validate(None)
 
 
 class TestValidatorFor(TestCase):

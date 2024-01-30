@@ -1,3 +1,6 @@
+# mypy: allow-untyped-defs, allow-incomplete-defs, allow-untyped-calls
+# mypy: no-warn-return-any, allow-any-generics
+
 from __future__ import annotations
 
 import re
@@ -5,7 +8,6 @@ from typing import Any
 from typing import Optional
 from typing import TYPE_CHECKING
 
-from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import sqltypes
 
 from .base import AddColumn
@@ -22,6 +24,7 @@ from .base import format_type
 from .base import IdentityColumnDefault
 from .base import RenameTable
 from .impl import DefaultImpl
+from ..util.sqla_compat import compiles
 
 if TYPE_CHECKING:
     from sqlalchemy.dialects.oracle.base import OracleDDLCompiler
@@ -176,7 +179,7 @@ def alter_column(compiler: OracleDDLCompiler, name: str) -> str:
     return "MODIFY %s" % format_column_name(compiler, name)
 
 
-def add_column(compiler: OracleDDLCompiler, column: Column, **kw) -> str:
+def add_column(compiler: OracleDDLCompiler, column: Column[Any], **kw) -> str:
     return "ADD %s" % compiler.get_column_specification(column, **kw)
 
 

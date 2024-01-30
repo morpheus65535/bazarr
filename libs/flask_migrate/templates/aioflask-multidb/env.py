@@ -23,7 +23,7 @@ def get_engine(bind_key=None):
     try:
         # this works with Flask-SQLAlchemy<3 and Alchemical
         return current_app.extensions['migrate'].db.get_engine(bind=bind_key)
-    except TypeError:
+    except (TypeError, AttributeError):
         # this works with Flask-SQLAlchemy>=3
         return current_app.extensions['migrate'].db.engines.get(bind_key)
 
@@ -131,6 +131,10 @@ def do_run_migrations(_, engines):
                     directives[:] = []
                     logger.info('No changes in schema detected.')
 
+    conf_args = current_app.extensions['migrate'].configure_args
+    if conf_args.get("process_revision_directives") is None:
+        conf_args["process_revision_directives"] = process_revision_directives
+
     for name, rec in engines.items():
         rec['sync_connection'] = conn = rec['connection']._sync_connection()
         if USE_TWOPHASE:
@@ -146,8 +150,7 @@ def do_run_migrations(_, engines):
                 upgrade_token="%s_upgrades" % name,
                 downgrade_token="%s_downgrades" % name,
                 target_metadata=get_metadata(name),
-                process_revision_directives=process_revision_directives,
-                **current_app.extensions['migrate'].configure_args
+                **conf_args
             )
             context.run_migrations(engine_name=name)
 

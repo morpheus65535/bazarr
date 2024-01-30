@@ -1,5 +1,5 @@
 # sql/ddl.py
-# Copyright (C) 2009-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2009-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -403,17 +403,14 @@ class DDL(ExecutableDDLElement):
         self.context = context or {}
 
     def __repr__(self):
+        parts = [repr(self.statement)]
+        if self.context:
+            parts.append(f"context={self.context}")
+
         return "<%s@%s; %s>" % (
             type(self).__name__,
             id(self),
-            ", ".join(
-                [repr(self.statement)]
-                + [
-                    "%s=%r" % (key, getattr(self, key))
-                    for key in ("on", "context")
-                    if getattr(self, key)
-                ]
-            ),
+            ", ".join(parts),
         )
 
 
@@ -470,7 +467,7 @@ class CreateSchema(_CreateBase):
 
     __visit_name__ = "create_schema"
 
-    stringify_dialect = "default"  # type: ignore
+    stringify_dialect = "default"
 
     def __init__(
         self,
@@ -491,7 +488,7 @@ class DropSchema(_DropBase):
 
     __visit_name__ = "drop_schema"
 
-    stringify_dialect = "default"  # type: ignore
+    stringify_dialect = "default"
 
     def __init__(
         self,
@@ -527,8 +524,6 @@ class CreateTable(_CreateBase):
          :class:`_schema.ForeignKeyConstraint` objects that will be included
          inline within the CREATE construct; if omitted, all foreign key
          constraints that do not specify use_alter=True are included.
-
-         .. versionadded:: 1.0.0
 
         :param if_not_exists: if True, an IF NOT EXISTS operator will be
          applied to the construct.
@@ -946,7 +941,6 @@ class SchemaGenerator(InvokeCreateDDLBase):
             checkfirst=self.checkfirst,
             _is_metadata_operation=_is_metadata_operation,
         ):
-
             for column in table.columns:
                 if column.default is not None:
                     self.traverse_single(column.default)
@@ -1076,7 +1070,6 @@ class SchemaDropper(InvokeDropDDLBase):
             tables=event_collection,
             checkfirst=self.checkfirst,
         ):
-
             for table, fkcs in collection:
                 if table is not None:
                     self.traverse_single(
@@ -1146,7 +1139,6 @@ class SchemaDropper(InvokeDropDDLBase):
             checkfirst=self.checkfirst,
             _is_metadata_operation=_is_metadata_operation,
         ):
-
             DropTable(table)._invoke_with(self.connection)
 
             # traverse client side defaults which may refer to server-side
@@ -1170,7 +1162,6 @@ class SchemaDropper(InvokeDropDDLBase):
             DropConstraint(constraint)._invoke_with(self.connection)
 
     def visit_sequence(self, sequence, drop_ok=False):
-
         if not drop_ok and not self._can_drop_sequence(sequence):
             return
         with self.with_ddl_events(sequence):
@@ -1305,8 +1296,6 @@ def sort_tables_and_constraints(
 
     :param extra_dependencies: a sequence of 2-tuples of tables which will
      also be considered as dependent on each other.
-
-    .. versionadded:: 1.0.0
 
     .. seealso::
 

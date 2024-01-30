@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import sys
 import typing as t
@@ -7,7 +9,7 @@ from werkzeug.local import LocalProxy
 from .globals import request
 
 if t.TYPE_CHECKING:  # pragma: no cover
-    from .app import Flask
+    from .sansio.app import App
 
 
 @LocalProxy
@@ -20,7 +22,10 @@ def wsgi_errors_stream() -> t.TextIO:
     can't import this directly, you can refer to it as
     ``ext://flask.logging.wsgi_errors_stream``.
     """
-    return request.environ["wsgi.errors"] if request else sys.stderr
+    if request:
+        return request.environ["wsgi.errors"]  # type: ignore[no-any-return]
+
+    return sys.stderr
 
 
 def has_level_handler(logger: logging.Logger) -> bool:
@@ -50,7 +55,7 @@ default_handler.setFormatter(
 )
 
 
-def create_logger(app: "Flask") -> logging.Logger:
+def create_logger(app: App) -> logging.Logger:
     """Get the Flask app's logger and configure it if needed.
 
     The logger name will be the same as

@@ -7,6 +7,8 @@
 
 """Provide all bidict exceptions."""
 
+from __future__ import annotations
+
 
 class BidictException(Exception):
     """Base class for bidict exceptions."""

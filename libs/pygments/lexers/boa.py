@@ -4,19 +4,15 @@
 
     Lexers for the Boa language.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
-import re
-
 from pygments.lexer import RegexLexer, words
-from pygments.token import String, Comment, Keyword, Name, Number, Text, \
-    Operator, Punctuation, Whitespace
+from pygments.token import String, Comment, Keyword, Name, Number, Operator, \
+    Punctuation, Whitespace
 
 __all__ = ['BoaLexer']
-
-line_re = re.compile('.*?\n')
 
 
 class BoaLexer(RegexLexer):

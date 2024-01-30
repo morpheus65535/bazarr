@@ -1,3 +1,6 @@
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
+
 class BaseError(Exception):
     """
     base error structure class
@@ -18,10 +21,13 @@ class BaseError(Exception):
 
 class LanguageNotSupportedException(BaseError):
     """
-    exception thrown if the user uses a language that is not supported by the deep_translator
+    exception thrown if the user uses a language
+    that is not supported by the deep_translator
     """
 
-    def __init__(self, val, message="There is no support for the chosen language"):
+    def __init__(
+        self, val, message="There is no support for the chosen language"
+    ):
         super().__init__(val, message)
 
 
@@ -33,7 +39,8 @@ class NotValidPayload(BaseError):
     def __init__(
         self,
         val,
-        message="text must be a valid text with maximum 5000 character, otherwise it cannot be translated",
+        message="text must be a valid text with maximum 5000 character,"
+        "otherwise it cannot be translated",
     ):
         super(NotValidPayload, self).__init__(val, message)
 
@@ -77,9 +84,7 @@ class NotValidLength(BaseError):
     """
 
     def __init__(self, val, min_chars, max_chars):
-        message = (
-            f"Text length need to be between {min_chars} and {max_chars} characters"
-        )
+        message = f"Text length need to be between {min_chars} and {max_chars} characters"
         super(NotValidLength, self).__init__(val, message)
 
 
@@ -119,7 +124,10 @@ class TooManyRequests(Exception):
 
     def __init__(
         self,
-        message="Server Error: You made too many requests to the server. According to google, you are allowed to make 5 requests per second and up to 200k requests per day. You can wait and try again later or you can try the translate_batch function",
+        message="Server Error: You made too many requests to the server."
+        "According to google, you are allowed to make 5 requests per second"
+        "and up to 200k requests per day. You can wait and try again later or"
+        "you can try the translate_batch function",
     ):
         self.message = message
 
@@ -151,7 +159,37 @@ class ServerException(Exception):
         super(ServerException, self).__init__(message, *args)
 
 
+class ApiKeyException(BaseError):
+    """
+    exception thrown if no ApiKey was provided
+    """
+
+    def __init__(self, env_var):
+        msg = f"""
+You have to pass your api_key!
+You can do this by passing the key as a parameter/argument to the translator class
+or by setting the environment variable {env_var}
+
+Example: export {env_var}="your_api_key"
+"""
+
+        super().__init__(None, msg)
+
+
 class AuthorizationException(Exception):
     def __init__(self, api_key, *args):
         msg = "Unauthorized access with the api key " + api_key
         super().__init__(msg, *args)
+
+
+class BaiduAPIerror(Exception):
+    """
+    exception thrown if Baidu API returns one of its errors
+    """
+
+    def __init__(self, api_message):
+        self.api_message = str(api_message)
+        self.message = "Baidu API returned the following error"
+
+    def __str__(self):
+        return "{}: {}".format(self.message, self.api_message)

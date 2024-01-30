@@ -1,6 +1,9 @@
 """
-google translator API
+papago translator API
 """
+
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
 import json
 from typing import List, Optional
 
@@ -9,7 +12,7 @@ import requests
 from deep_translator.base import BaseTranslator
 from deep_translator.constants import BASE_URLS, PAPAGO_LANGUAGE_TO_CODE
 from deep_translator.exceptions import TranslationNotFound
-from deep_translator.validate import is_input_valid
+from deep_translator.validate import is_input_valid, request_failed
 
 
 class PapagoTranslator(BaseTranslator):
@@ -51,14 +54,20 @@ class PapagoTranslator(BaseTranslator):
         @return: str: translated text
         """
         if is_input_valid(text):
-            payload = {"source": self._source, "target": self._target, "text": text}
+            payload = {
+                "source": self._source,
+                "target": self._target,
+                "text": text,
+            }
             headers = {
                 "X-Naver-Client-Id": self.client_id,
                 "X-Naver-Client-Secret": self.secret_key,
                 "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
             }
-            response = requests.post(self._base_url, headers=headers, data=payload)
-            if response.status_code != 200:
+            response = requests.post(
+                self._base_url, headers=headers, data=payload
+            )
+            if request_failed(status_code=response.status_code):
                 raise Exception(
                     f"Translation error! -> status code: {response.status_code}"
                 )

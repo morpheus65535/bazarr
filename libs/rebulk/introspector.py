@@ -22,7 +22,6 @@ class Description(metaclass=ABCMeta):
         :return: all properties that described object can generate grouped by name.
         :rtype: dict
         """
-        pass
 
 
 class PatternDescription(Description):

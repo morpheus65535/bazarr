@@ -1,5 +1,5 @@
-# orm/collections.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# orm/mapped_collection.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -23,6 +23,7 @@ from typing import Union
 
 from . import base
 from .collections import collection
+from .collections import collection_adapter
 from .. import exc as sa_exc
 from .. import util
 from ..sql import coercions
@@ -31,9 +32,9 @@ from ..sql import roles
 from ..util.typing import Literal
 
 if TYPE_CHECKING:
-
     from . import AttributeEventToken
     from . import Mapper
+    from .collections import CollectionAdapter
     from ..sql.elements import ColumnElement
 
 _KT = TypeVar("_KT", bound=Any)
@@ -134,7 +135,7 @@ class _SerializableColumnGetterV2(_PlainColumnGetter[_KT]):
     def _cols(self, mapper: Mapper[_KT]) -> Sequence[ColumnElement[_KT]]:
         cols: List[ColumnElement[_KT]] = []
         metadata = getattr(mapper.local_table, "metadata", None)
-        for (ckey, tkey) in self.colkeys:
+        for ckey, tkey in self.colkeys:
             if tkey is None or metadata is None or tkey not in metadata:
                 cols.append(mapper.local_table.c[ckey])  # type: ignore
             else:
@@ -230,7 +231,7 @@ class _AttrGetter:
 
 def attribute_keyed_dict(
     attr_name: str, *, ignore_unpopulated_attribute: bool = False
-) -> Type[KeyFuncDict[_KT, _KT]]:
+) -> Type[KeyFuncDict[Any, Any]]:
     """A dictionary-based collection type with attribute-based keying.
 
     .. versionchanged:: 2.0 Renamed :data:`.attribute_mapped_collection` to
@@ -377,19 +378,31 @@ class KeyFuncDict(Dict[_KT, _VT]):
 
     @classmethod
     def _unreduce(
-        cls, keyfunc: _F, values: Dict[_KT, _KT]
+        cls,
+        keyfunc: _F,
+        values: Dict[_KT, _KT],
+        adapter: Optional[CollectionAdapter] = None,
     ) -> "KeyFuncDict[_KT, _KT]":
         mp: KeyFuncDict[_KT, _KT] = KeyFuncDict(keyfunc)
         mp.update(values)
+        # note that the adapter sets itself up onto this collection
+        # when its `__setstate__` method is called
         return mp
 
     def __reduce__(
         self,
     ) -> Tuple[
         Callable[[_KT, _KT], KeyFuncDict[_KT, _KT]],
-        Tuple[Any, Union[Dict[_KT, _KT], Dict[_KT, _KT]]],
+        Tuple[Any, Union[Dict[_KT, _KT], Dict[_KT, _KT]], CollectionAdapter],
     ]:
-        return (KeyFuncDict._unreduce, (self.keyfunc, dict(self)))
+        return (
+            KeyFuncDict._unreduce,
+            (
+                self.keyfunc,
+                dict(self),
+                collection_adapter(self),
+            ),
+        )
 
     @util.preload_module("sqlalchemy.orm.attributes")
     def _raise_for_unpopulated(

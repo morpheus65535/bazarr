@@ -1,5 +1,5 @@
 # ext/asyncio/result.py
-# Copyright (C) 2020-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2020-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -60,7 +60,7 @@ class AsyncCommon(FilterResult[_R]):
         .. versionadded:: 2.0.0b3
 
         """
-        return self._real_result.closed  # type: ignore
+        return self._real_result.closed
 
 
 class AsyncResult(_WithKeys, AsyncCommon[Row[_TP]]):

@@ -1,26 +1,39 @@
-"""
-Admonition extension for Python-Markdown
-========================================
+# Admonition extension for Python-Markdown
+# ========================================
 
+# Adds rST-style admonitions. Inspired by [rST][] feature with the same name.
+
+# [rST]: http://docutils.sourceforge.net/docs/ref/rst/directives.html#specific-admonitions
+
+# See https://Python-Markdown.github.io/extensions/admonition
+# for documentation.
+
+# Original code Copyright [Tiago Serafim](https://www.tiagoserafim.com/).
+
+# All changes Copyright The Python Markdown Project
+
+# License: [BSD](https://opensource.org/licenses/bsd-license.php)
+
+
+"""
 Adds rST-style admonitions. Inspired by [rST][] feature with the same name.
 
-[rST]: http://docutils.sourceforge.net/docs/ref/rst/directives.html#specific-admonitions  # noqa
+[rST]: http://docutils.sourceforge.net/docs/ref/rst/directives.html#specific-admonitions
 
-See <https://Python-Markdown.github.io/extensions/admonition>
-for documentation.
-
-Original code Copyright [Tiago Serafim](https://www.tiagoserafim.com/).
-
-All changes Copyright The Python Markdown Project
-
-License: [BSD](https://opensource.org/licenses/bsd-license.php)
-
+See the [documentation](https://Python-Markdown.github.io/extensions/admonition)
+for details.
 """
+
+from __future__ import annotations
 
 from . import Extension
 from ..blockprocessors import BlockProcessor
 import xml.etree.ElementTree as etree
 import re
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover
+    from markdown import blockparser
 
 
 class AdmonitionExtension(Extension):
@@ -40,15 +53,15 @@ class AdmonitionProcessor(BlockProcessor):
     RE = re.compile(r'(?:^|\n)!!! ?([\w\-]+(?: +[\w\-]+)*)(?: +"(.*?)")? *(?:\n|$)')
     RE_SPACES = re.compile('  +')
 
-    def __init__(self, parser):
+    def __init__(self, parser: blockparser.BlockParser):
         """Initialization."""
 
         super().__init__(parser)
 
-        self.current_sibling = None
-        self.content_indention = 0
+        self.current_sibling: etree.Element | None = None
+        self.content_indent = 0
 
-    def parse_content(self, parent, block):
+    def parse_content(self, parent: etree.Element, block: str) -> tuple[etree.Element | None, str, str]:
         """Get sibling admonition.
 
         Retrieve the appropriate sibling element. This can get tricky when
@@ -69,23 +82,23 @@ class AdmonitionProcessor(BlockProcessor):
 
         sibling = self.lastChild(parent)
 
-        if sibling is None or sibling.get('class', '').find(self.CLASSNAME) == -1:
+        if sibling is None or sibling.tag != 'div' or sibling.get('class', '').find(self.CLASSNAME) == -1:
             sibling = None
         else:
             # If the last child is a list and the content is sufficiently indented
             # to be under it, then the content's sibling is in the list.
             last_child = self.lastChild(sibling)
             indent = 0
-            while last_child:
+            while last_child is not None:
                 if (
-                    sibling and block.startswith(' ' * self.tab_length * 2) and
-                    last_child and last_child.tag in ('ul', 'ol', 'dl')
+                    sibling is not None and block.startswith(' ' * self.tab_length * 2) and
+                    last_child is not None and last_child.tag in ('ul', 'ol', 'dl')
                 ):
 
-                    # The expectation is that we'll find an <li> or <dt>.
+                    # The expectation is that we'll find an `<li>` or `<dt>`.
                     # We should get its last child as well.
                     sibling = self.lastChild(last_child)
-                    last_child = self.lastChild(sibling) if sibling else None
+                    last_child = self.lastChild(sibling) if sibling is not None else None
 
                     # Context has been lost at this point, so we must adjust the
                     # text's indentation level so it will be evaluated correctly
@@ -106,14 +119,14 @@ class AdmonitionProcessor(BlockProcessor):
 
         return sibling, block, the_rest
 
-    def test(self, parent, block):
+    def test(self, parent: etree.Element, block: str) -> bool:
 
         if self.RE.search(block):
             return True
         else:
             return self.parse_content(parent, block)[0] is not None
 
-    def run(self, parent, blocks):
+    def run(self, parent: etree.Element, blocks: list[str]) -> None:
         block = blocks.pop(0)
         m = self.RE.search(block)
 
@@ -151,11 +164,11 @@ class AdmonitionProcessor(BlockProcessor):
             # list for future processing.
             blocks.insert(0, theRest)
 
-    def get_class_and_title(self, match):
+    def get_class_and_title(self, match: re.Match[str]) -> tuple[str, str | None]:
         klass, title = match.group(1).lower(), match.group(2)
         klass = self.RE_SPACES.sub(' ', klass)
         if title is None:
-            # no title was provided, use the capitalized classname as title
+            # no title was provided, use the capitalized class name as title
             # e.g.: `!!! note` will render
             # `<p class="admonition-title">Note</p>`
             title = klass.split(' ', 1)[0].capitalize()

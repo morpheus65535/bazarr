@@ -52,11 +52,15 @@ if you are reading this elsewhere.
 """
 
 # Use private aliases to not re-export these publicly (for Sphinx automodule with imported-members).
+from __future__ import annotations as _annotations
 from sys import version_info as _version_info
 
 
 if _version_info < (3, 7):  # pragma: no cover
     raise ImportError('Python 3.7+ is required.')
+
+
+from contextlib import suppress as _suppress
 
 from ._abc import BidirectionalMapping as BidirectionalMapping, MutableBidirectionalMapping as MutableBidirectionalMapping
 from ._base import BidictBase as BidictBase, GeneratedBidictInverse as GeneratedBidictInverse, BidictKeysView as BidictKeysView
@@ -72,9 +76,8 @@ from ._exc import BidictException as BidictException, DuplicationError as Duplic
 from ._exc import KeyDuplicationError as KeyDuplicationError, ValueDuplicationError as ValueDuplicationError, KeyAndValueDuplicationError as KeyAndValueDuplicationError
 from ._iter import inverted as inverted
 from .metadata import (
-    __author__ as __author__, __maintainer__ as __maintainer__, __copyright__ as __copyright__, __email__ as __email__,
-    __url__ as __url__, __license__ as __license__, __status__ as __status__, __description__ as __description__,
-    __keywords__ as __keywords__, __version__ as __version__, __project_urls__ as __project_urls__,
+    __author__ as __author__, __copyright__ as __copyright__, __description__ as __description__,
+    __license__ as __license__, __url__ as __url__, __version__ as __version__,
 )
 
 
@@ -87,10 +90,8 @@ OnDupAction = OD
 for _obj in tuple(locals().values()):  # pragma: no cover
     if not getattr(_obj, '__module__', '').startswith('bidict.'):
         continue
-    try:
+    with _suppress(AttributeError):
         _obj.__module__ = 'bidict'
-    except AttributeError:  # __module__ is read-only (as in namedtuples like `OnDup`)
-        pass
 
 
 #                             * Code review nav *

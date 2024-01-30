@@ -51,7 +51,7 @@ class Formatter(EntitySubstitution):
             void_element_close_prefix='/', cdata_containing_tags=None,
             empty_attributes_are_booleans=False, indent=1,
     ):
-        """Constructor.
+        r"""Constructor.
 
         :param language: This should be Formatter.XML if you are formatting
            XML markup and Formatter.HTML if you are formatting HTML markup.
@@ -76,7 +76,7 @@ class Formatter(EntitySubstitution):
             negative, or "" will only insert newlines. Using a
             positive integer indent indents that many spaces per
             level. If indent is a string (such as "\t"), that string
-            is used to indent each level. The default behavior to
+            is used to indent each level. The default behavior is to
             indent one space per level.
         """
         self.language = language
@@ -97,7 +97,7 @@ class Formatter(EntitySubstitution):
         else:
             indent = ' '
         self.indent = indent
-        
+
     def substitute(self, ns):
         """Process a string that needs to undergo entity substitution.
         This may be a string encountered in an attribute value or as
@@ -149,14 +149,14 @@ class HTMLFormatter(Formatter):
     """A generic Formatter for HTML."""
     REGISTRY = {}
     def __init__(self, *args, **kwargs):
-        return super(HTMLFormatter, self).__init__(self.HTML, *args, **kwargs)
+        super(HTMLFormatter, self).__init__(self.HTML, *args, **kwargs)
 
     
 class XMLFormatter(Formatter):
     """A generic Formatter for XML."""
     REGISTRY = {}
     def __init__(self, *args, **kwargs):
-        return super(XMLFormatter, self).__init__(self.XML, *args, **kwargs)
+        super(XMLFormatter, self).__init__(self.XML, *args, **kwargs)
 
 
 # Set up aliases for the default formatters.

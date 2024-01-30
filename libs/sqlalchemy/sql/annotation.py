@@ -1,5 +1,5 @@
 # sql/annotation.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -300,7 +300,7 @@ class Annotated(SupportsAnnotations):
 
     def _annotate(self, values: _AnnotationDict) -> Self:
         _values = self._annotations.union(values)
-        new = self._with_annotations(_values)  # type: ignore
+        new = self._with_annotations(_values)
         return new
 
     def _with_annotations(self, values: _AnnotationDict) -> Self:
@@ -402,12 +402,28 @@ annotated_classes: Dict[
 _SA = TypeVar("_SA", bound="SupportsAnnotations")
 
 
+def _safe_annotate(to_annotate: _SA, annotations: _AnnotationDict) -> _SA:
+    try:
+        _annotate = to_annotate._annotate
+    except AttributeError:
+        # skip objects that don't actually have an `_annotate`
+        # attribute, namely QueryableAttribute inside of a join
+        # condition
+        return to_annotate
+    else:
+        return _annotate(annotations)
+
+
 def _deep_annotate(
     element: _SA,
     annotations: _AnnotationDict,
     exclude: Optional[Sequence[SupportsAnnotations]] = None,
+    *,
     detect_subquery_cols: bool = False,
     ind_cols_on_fromclause: bool = False,
+    annotate_callable: Optional[
+        Callable[[SupportsAnnotations, _AnnotationDict], SupportsAnnotations]
+    ] = None,
 ) -> _SA:
     """Deep copy the given ClauseElement, annotating each element
     with the given annotations dictionary.
@@ -422,7 +438,6 @@ def _deep_annotate(
     cloned_ids: Dict[int, SupportsAnnotations] = {}
 
     def clone(elem: SupportsAnnotations, **kw: Any) -> SupportsAnnotations:
-
         # ind_cols_on_fromclause means make sure an AnnotatedFromClause
         # has its own .c collection independent of that which its proxying.
         # this is used specifically by orm.LoaderCriteriaOption to break
@@ -446,9 +461,13 @@ def _deep_annotate(
             newelem = elem._clone(clone=clone, **kw)
         elif annotations != elem._annotations:
             if detect_subquery_cols and elem._is_immutable:
-                newelem = elem._clone(clone=clone, **kw)._annotate(annotations)
+                to_annotate = elem._clone(clone=clone, **kw)
             else:
-                newelem = elem._annotate(annotations)
+                to_annotate = elem
+            if annotate_callable:
+                newelem = annotate_callable(to_annotate, annotations)
+            else:
+                newelem = _safe_annotate(to_annotate, annotations)
         else:
             newelem = elem
 

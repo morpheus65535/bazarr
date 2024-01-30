@@ -1,689 +1,326 @@
 #!/usr/bin/env python
-# -*- coding: UTF-8 -*-
-#
-# Copyright (c) 2017-2020 - Chris Griffith - MIT License
-"""
-Improved dictionary access through dot notation with additional tools.
-"""
-import copy
-import re
-import string
-import warnings
-from collections.abc import Iterable, Mapping, Callable
+_W='box_settings'
+_V='default_box_attr'
+_U='Box is frozen'
+_T='modify_tuples_box'
+_S='box_safe_prefix'
+_R='default_box_none_transform'
+_Q='__created'
+_P='box_dots'
+_O='box_duplicates'
+_N='ignore'
+_M='strict'
+_L='box_recast'
+_K='box_intact_types'
+_J='default_box'
+_I='utf-8'
+_H='_box_config'
+_G=True
+_F='camel_killer_box'
+_E='conversion_box'
+_D='frozen_box'
+_C='__safe_keys'
+_B=False
+_A=None
+import copy,re,string,warnings
+from collections.abc import Iterable,Mapping,Callable
 from keyword import kwlist
 from pathlib import Path
-from typing import Any, Union, Tuple, List, Dict
-
+from typing import Any,Union,Tuple,List,Dict
 from dynaconf.vendor import box
-from .converters import (_to_json, _from_json, _from_toml, _to_toml, _from_yaml, _to_yaml, BOX_PARAMETERS)
-from .exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError, BoxWarning
-
-__all__ = ['Box']
-
-_first_cap_re = re.compile('(.)([A-Z][a-z]+)')
-_all_cap_re = re.compile('([a-z0-9])([A-Z])')
-_list_pos_re = re.compile(r'\[(\d+)\]')
-
-# a sentinel object for indicating no default, in order to allow users
-# to pass `None` as a valid default value
-NO_DEFAULT = object()
-
-
-def _camel_killer(attr):
-    """
-    CamelKiller, qu'est-ce que c'est?
-
-    Taken from http://stackoverflow.com/a/1176023/3244542
-    """
-    attr = str(attr)
-
-    s1 = _first_cap_re.sub(r'\1_\2', attr)
-    s2 = _all_cap_re.sub(r'\1_\2', s1)
-    return re.sub(' *_+', '_', s2.lower())
-
-
-def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
-    out_list = []
-    for i in iterable:
-        if isinstance(i, dict):
-            out_list.append(box_class(i, **kwargs))
-        elif isinstance(i, list) or (recreate_tuples and isinstance(i, tuple)):
-            out_list.append(_recursive_tuples(i, box_class, recreate_tuples, **kwargs))
-        else:
-            out_list.append(i)
-    return tuple(out_list)
-
-
+from.converters import _to_json,_from_json,_from_toml,_to_toml,_from_yaml,_to_yaml,BOX_PARAMETERS
+from.exceptions import BoxError,BoxKeyError,BoxTypeError,BoxValueError,BoxWarning
+__all__=['Box']
+_first_cap_re=re.compile('(.)([A-Z][a-z]+)')
+_all_cap_re=re.compile('([a-z0-9])([A-Z])')
+_list_pos_re=re.compile('\\[(\\d+)\\]')
+NO_DEFAULT=object()
+def _camel_killer(attr):B='\\1_\\2';A=attr;A=str(A);C=_first_cap_re.sub(B,A);D=_all_cap_re.sub(B,C);return re.sub(' *_+','_',D.lower())
+def _recursive_tuples(iterable,box_class,recreate_tuples=_B,**E):
+	D=recreate_tuples;C=box_class;B=[]
+	for A in iterable:
+		if isinstance(A,dict):B.append(C(A,**E))
+		elif isinstance(A,list)or D and isinstance(A,tuple):B.append(_recursive_tuples(A,C,D,**E))
+		else:B.append(A)
+	return tuple(B)
 def _parse_box_dots(item):
-    for idx, char in enumerate(item):
-        if char == '[':
-            return item[:idx], item[idx:]
-        elif char == '.':
-            return item[:idx], item[idx + 1:]
-    raise BoxError('Could not split box dots properly')
-
-
-def _get_box_config():
-    return {
-        # Internal use only
-        '__created': False,
-        '__safe_keys': {}
-    }
-
-
+	A=item
+	for(B,C)in enumerate(A):
+		if C=='[':return A[:B],A[B:]
+		elif C=='.':return A[:B],A[B+1:]
+	raise BoxError('Could not split box dots properly')
+def _get_box_config():return{_Q:_B,_C:{}}
 class Box(dict):
-    """
-    Improved dictionary access through dot notation with additional tools.
-
-    :param default_box: Similar to defaultdict, return a default value
-    :param default_box_attr: Specify the default replacement.
-        WARNING: If this is not the default 'Box', it will not be recursive
-    :param default_box_none_transform: When using default_box, treat keys with none values as absent. True by default
-    :param frozen_box: After creation, the box cannot be modified
-    :param camel_killer_box: Convert CamelCase to snake_case
-    :param conversion_box: Check for near matching keys as attributes
-    :param modify_tuples_box: Recreate incoming tuples with dicts into Boxes
-    :param box_safe_prefix: Conversion box prefix for unsafe attributes
-    :param box_duplicates: "ignore", "error" or "warn" when duplicates exists in a conversion_box
-    :param box_intact_types: tuple of types to ignore converting
-    :param box_recast: cast certain keys to a specified type
-    :param box_dots: access nested Boxes by period separated keys in string
-    """
-
-    _protected_keys = [
-        "to_dict",
-        "to_json",
-        "to_yaml",
-        "from_yaml",
-        "from_json",
-        "from_toml",
-        "to_toml",
-        "merge_update",
-    ] + [attr for attr in dir({}) if not attr.startswith("_")]
-
-    def __new__(cls, *args: Any,  box_settings: Any = None, default_box: bool = False, default_box_attr: Any = NO_DEFAULT,
-                default_box_none_transform: bool = True, frozen_box: bool = False, camel_killer_box: bool = False,
-                conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
-                box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (),
-                box_recast: Dict = None, box_dots: bool = False, **kwargs: Any):
-        """
-        Due to the way pickling works in python 3, we need to make sure
-        the box config is created as early as possible.
-        """
-        obj = super(Box, cls).__new__(cls, *args, **kwargs)
-        obj._box_config = _get_box_config()
-        obj._box_config.update({
-            'default_box': default_box,
-            'default_box_attr': cls.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
-            'default_box_none_transform': default_box_none_transform,
-            'conversion_box': conversion_box,
-            'box_safe_prefix': box_safe_prefix,
-            'frozen_box': frozen_box,
-            'camel_killer_box': camel_killer_box,
-            'modify_tuples_box': modify_tuples_box,
-            'box_duplicates': box_duplicates,
-            'box_intact_types': tuple(box_intact_types),
-            'box_recast': box_recast,
-            'box_dots': box_dots,
-            'box_settings': box_settings or {}
-        })
-        return obj
-
-    def __init__(self, *args: Any, box_settings: Any = None, default_box: bool = False, default_box_attr: Any = NO_DEFAULT,
-                 default_box_none_transform: bool = True, frozen_box: bool = False, camel_killer_box: bool = False,
-                 conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
-                 box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (),
-                 box_recast: Dict = None, box_dots: bool = False, **kwargs: Any):
-        super().__init__()
-        self._box_config = _get_box_config()
-        self._box_config.update({
-            'default_box': default_box,
-            'default_box_attr': self.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
-            'default_box_none_transform': default_box_none_transform,
-            'conversion_box': conversion_box,
-            'box_safe_prefix': box_safe_prefix,
-            'frozen_box': frozen_box,
-            'camel_killer_box': camel_killer_box,
-            'modify_tuples_box': modify_tuples_box,
-            'box_duplicates': box_duplicates,
-            'box_intact_types': tuple(box_intact_types),
-            'box_recast': box_recast,
-            'box_dots': box_dots,
-            'box_settings': box_settings or {}
-        })
-        if not self._box_config['conversion_box'] and self._box_config['box_duplicates'] != 'ignore':
-            raise BoxError('box_duplicates are only for conversion_boxes')
-        if len(args) == 1:
-            if isinstance(args[0], str):
-                raise BoxValueError('Cannot extrapolate Box from string')
-            if isinstance(args[0], Mapping):
-                for k, v in args[0].items():
-                    if v is args[0]:
-                        v = self
-
-                    if v is None and self._box_config['default_box'] and self._box_config['default_box_none_transform']:
-                        continue
-                    self.__setitem__(k, v)
-            elif isinstance(args[0], Iterable):
-                for k, v in args[0]:
-                    self.__setitem__(k, v)
-            else:
-                raise BoxValueError('First argument must be mapping or iterable')
-        elif args:
-            raise BoxTypeError(f'Box expected at most 1 argument, got {len(args)}')
-
-        for k, v in kwargs.items():
-            if args and isinstance(args[0], Mapping) and v is args[0]:
-                v = self
-            self.__setitem__(k, v)
-
-        self._box_config['__created'] = True
-
-    def __add__(self, other: dict):
-        new_box = self.copy()
-        if not isinstance(other, dict):
-            raise BoxTypeError(f'Box can only merge two boxes or a box and a dictionary.')
-        new_box.merge_update(other)
-        return new_box
-
-    def __hash__(self):
-        if self._box_config['frozen_box']:
-            hashing = 54321
-            for item in self.items():
-                hashing ^= hash(item)
-            return hashing
-        raise BoxTypeError('unhashable type: "Box"')
-
-    def __dir__(self):
-        allowed = string.ascii_letters + string.digits + '_'
-        items = set(super().__dir__())
-        # Only show items accessible by dot notation
-        for key in self.keys():
-            key = str(key)
-            if ' ' not in key and key[0] not in string.digits and key not in kwlist:
-                for letter in key:
-                    if letter not in allowed:
-                        break
-                else:
-                    items.add(key)
-
-        for key in self.keys():
-            if key not in items:
-                if self._box_config['conversion_box']:
-                    key = self._safe_attr(key)
-                    if key:
-                        items.add(key)
-
-        return list(items)
-
-    def get(self, key, default=NO_DEFAULT):
-        if key not in self:
-            if default is NO_DEFAULT:
-                if self._box_config['default_box'] and self._box_config['default_box_none_transform']:
-                    return self.__get_default(key)
-                else:
-                    return None
-            if isinstance(default, dict) and not isinstance(default, Box):
-                return Box(default, box_settings=self._box_config.get("box_settings"))
-            if isinstance(default, list) and not isinstance(default, box.BoxList):
-                return box.BoxList(default)
-            return default
-        return self[key]
-
-    def copy(self):
-        return Box(super().copy(), **self.__box_config())
-
-    def __copy__(self):
-        return Box(super().copy(), **self.__box_config())
-
-    def __deepcopy__(self, memodict=None):
-        frozen = self._box_config['frozen_box']
-        config = self.__box_config()
-        config['frozen_box'] = False
-        out = self.__class__(**config)
-        memodict = memodict or {}
-        memodict[id(self)] = out
-        for k, v in self.items():
-            out[copy.deepcopy(k, memodict)] = copy.deepcopy(v, memodict)
-        out._box_config['frozen_box'] = frozen
-        return out
-
-    def __setstate__(self, state):
-        self._box_config = state['_box_config']
-        self.__dict__.update(state)
-
-    def keys(self):
-        return super().keys()
-
-    def values(self):
-        return [self[x] for x in self.keys()]
-
-    def items(self):
-        return [(x, self[x]) for x in self.keys()]
-
-    def __get_default(self, item):
-        default_value = self._box_config['default_box_attr']
-        if default_value in (self.__class__, dict):
-            value = self.__class__(**self.__box_config())
-        elif isinstance(default_value, dict):
-            value = self.__class__(**self.__box_config(), **default_value)
-        elif isinstance(default_value, list):
-            value = box.BoxList(**self.__box_config())
-        elif isinstance(default_value, Callable):
-            value = default_value()
-        elif hasattr(default_value, 'copy'):
-            value = default_value.copy()
-        else:
-            value = default_value
-        self.__convert_and_store(item, value)
-        return value
-
-    def __box_config(self):
-        out = {}
-        for k, v in self._box_config.copy().items():
-            if not k.startswith('__'):
-                out[k] = v
-        return out
-
-    def __recast(self, item, value):
-        if self._box_config['box_recast'] and item in self._box_config['box_recast']:
-            try:
-                return self._box_config['box_recast'][item](value)
-            except ValueError:
-                raise BoxValueError(f'Cannot convert {value} to {self._box_config["box_recast"][item]}') from None
-        return value
-
-    def __convert_and_store(self, item, value):
-        if self._box_config['conversion_box']:
-            safe_key = self._safe_attr(item)
-            self._box_config['__safe_keys'][safe_key] = item
-        if isinstance(value, (int, float, str, bytes, bytearray, bool, complex, set, frozenset)):
-            return super().__setitem__(item, value)
-        # If the value has already been converted or should not be converted, return it as-is
-        if self._box_config['box_intact_types'] and isinstance(value, self._box_config['box_intact_types']):
-            return super().__setitem__(item, value)
-        # This is the magic sauce that makes sub dictionaries into new box objects
-        if isinstance(value, dict) and not isinstance(value, Box):
-            value = self.__class__(value, **self.__box_config())
-        elif isinstance(value, list) and not isinstance(value, box.BoxList):
-            if self._box_config['frozen_box']:
-                value = _recursive_tuples(value,
-                                          self.__class__,
-                                          recreate_tuples=self._box_config['modify_tuples_box'],
-                                          **self.__box_config())
-            else:
-                value = box.BoxList(value, box_class=self.__class__, **self.__box_config())
-        elif self._box_config['modify_tuples_box'] and isinstance(value, tuple):
-            value = _recursive_tuples(value, self.__class__, recreate_tuples=True, **self.__box_config())
-        super().__setitem__(item, value)
-
-    def __getitem__(self, item, _ignore_default=False):
-        try:
-            return super().__getitem__(item)
-        except KeyError as err:
-            if item == '_box_config':
-                raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted') from None
-            if self._box_config['box_dots'] and isinstance(item, str) and ('.' in item or '[' in item):
-                first_item, children = _parse_box_dots(item)
-                if first_item in self.keys():
-                    if hasattr(self[first_item], '__getitem__'):
-                        return self[first_item][children]
-            if self._box_config['camel_killer_box'] and isinstance(item, str):
-                converted = _camel_killer(item)
-                if converted in self.keys():
-                    return super().__getitem__(converted)
-            if self._box_config['default_box'] and not _ignore_default:
-                return self.__get_default(item)
-            raise BoxKeyError(str(err)) from None
-
-    def __getattr__(self, item):
-        try:
-            try:
-                value = self.__getitem__(item, _ignore_default=True)
-            except KeyError:
-                value = object.__getattribute__(self, item)
-        except AttributeError as err:
-            if item == '__getstate__':
-                raise BoxKeyError(item) from None
-            if item == '_box_config':
-                raise BoxError('_box_config key must exist') from None
-            if self._box_config['conversion_box']:
-                safe_key = self._safe_attr(item)
-                if safe_key in self._box_config['__safe_keys']:
-                    return self.__getitem__(self._box_config['__safe_keys'][safe_key])
-            if self._box_config['default_box']:
-                return self.__get_default(item)
-            raise BoxKeyError(str(err)) from None
-        return value
-
-    def __setitem__(self, key, value):
-        if key != '_box_config' and self._box_config['__created'] and self._box_config['frozen_box']:
-            raise BoxError('Box is frozen')
-        if self._box_config['box_dots'] and isinstance(key, str) and '.' in key:
-            first_item, children = _parse_box_dots(key)
-            if first_item in self.keys():
-                if hasattr(self[first_item], '__setitem__'):
-                    return self[first_item].__setitem__(children, value)
-        value = self.__recast(key, value)
-        if key not in self.keys() and self._box_config['camel_killer_box']:
-            if self._box_config['camel_killer_box'] and isinstance(key, str):
-                key = _camel_killer(key)
-        if self._box_config['conversion_box'] and self._box_config['box_duplicates'] != 'ignore':
-            self._conversion_checks(key)
-        self.__convert_and_store(key, value)
-
-    def __setattr__(self, key, value):
-        if key != '_box_config' and self._box_config['frozen_box'] and self._box_config['__created']:
-            raise BoxError('Box is frozen')
-        if key in self._protected_keys:
-            raise BoxKeyError(f'Key name "{key}" is protected')
-        if key == '_box_config':
-            return object.__setattr__(self, key, value)
-        value = self.__recast(key, value)
-        safe_key = self._safe_attr(key)
-        if safe_key in self._box_config['__safe_keys']:
-            key = self._box_config['__safe_keys'][safe_key]
-        self.__setitem__(key, value)
-
-    def __delitem__(self, key):
-        if self._box_config['frozen_box']:
-            raise BoxError('Box is frozen')
-        if key not in self.keys() and self._box_config['box_dots'] and isinstance(key, str) and '.' in key:
-            first_item, children = key.split('.', 1)
-            if first_item in self.keys() and isinstance(self[first_item], dict):
-                return self[first_item].__delitem__(children)
-        if key not in self.keys() and self._box_config['camel_killer_box']:
-            if self._box_config['camel_killer_box'] and isinstance(key, str):
-                for each_key in self:
-                    if _camel_killer(key) == each_key:
-                        key = each_key
-                        break
-        super().__delitem__(key)
-
-    def __delattr__(self, item):
-        if self._box_config['frozen_box']:
-            raise BoxError('Box is frozen')
-        if item == '_box_config':
-            raise BoxError('"_box_config" is protected')
-        if item in self._protected_keys:
-            raise BoxKeyError(f'Key name "{item}" is protected')
-        try:
-            self.__delitem__(item)
-        except KeyError as err:
-            if self._box_config['conversion_box']:
-                safe_key = self._safe_attr(item)
-                if safe_key in self._box_config['__safe_keys']:
-                    self.__delitem__(self._box_config['__safe_keys'][safe_key])
-                    del self._box_config['__safe_keys'][safe_key]
-                    return
-            raise BoxKeyError(err)
-
-    def pop(self, key, *args):
-        if args:
-            if len(args) != 1:
-                raise BoxError('pop() takes only one optional argument "default"')
-            try:
-                item = self[key]
-            except KeyError:
-                return args[0]
-            else:
-                del self[key]
-                return item
-        try:
-            item = self[key]
-        except KeyError:
-            raise BoxKeyError('{0}'.format(key)) from None
-        else:
-            del self[key]
-            return item
-
-    def clear(self):
-        super().clear()
-        self._box_config['__safe_keys'].clear()
-
-    def popitem(self):
-        try:
-            key = next(self.__iter__())
-        except StopIteration:
-            raise BoxKeyError('Empty box') from None
-        return key, self.pop(key)
-
-    def __repr__(self):
-        return f'<Box: {self.to_dict()}>'
-
-    def __str__(self):
-        return str(self.to_dict())
-
-    def __iter__(self):
-        for key in self.keys():
-            yield key
-
-    def __reversed__(self):
-        for key in reversed(list(self.keys())):
-            yield key
-
-    def to_dict(self):
-        """
-        Turn the Box and sub Boxes back into a native python dictionary.
-
-        :return: python dictionary of this Box
-        """
-        out_dict = dict(self)
-        for k, v in out_dict.items():
-            if v is self:
-                out_dict[k] = out_dict
-            elif isinstance(v, Box):
-                out_dict[k] = v.to_dict()
-            elif isinstance(v, box.BoxList):
-                out_dict[k] = v.to_list()
-        return out_dict
-
-    def update(self, __m=None, **kwargs):
-        if __m:
-            if hasattr(__m, 'keys'):
-                for k in __m:
-                    self.__convert_and_store(k, __m[k])
-            else:
-                for k, v in __m:
-                    self.__convert_and_store(k, v)
-        for k in kwargs:
-            self.__convert_and_store(k, kwargs[k])
-
-    def merge_update(self, __m=None, **kwargs):
-        def convert_and_set(k, v):
-            intact_type = (self._box_config['box_intact_types'] and isinstance(v, self._box_config['box_intact_types']))
-            if isinstance(v, dict) and not intact_type:
-                # Box objects must be created in case they are already
-                # in the `converted` box_config set
-                v = self.__class__(v, **self.__box_config())
-                if k in self and isinstance(self[k], dict):
-                    if isinstance(self[k], Box):
-                        self[k].merge_update(v)
-                    else:
-                        self[k].update(v)
-                    return
-            if isinstance(v, list) and not intact_type:
-                v = box.BoxList(v, **self.__box_config())
-            self.__setitem__(k, v)
-
-        if __m:
-            if hasattr(__m, 'keys'):
-                for key in __m:
-                    convert_and_set(key, __m[key])
-            else:
-                for key, value in __m:
-                    convert_and_set(key, value)
-        for key in kwargs:
-            convert_and_set(key, kwargs[key])
-
-    def setdefault(self, item, default=None):
-        if item in self:
-            return self[item]
-
-        if isinstance(default, dict):
-            default = self.__class__(default, **self.__box_config())
-        if isinstance(default, list):
-            default = box.BoxList(default, box_class=self.__class__, **self.__box_config())
-        self[item] = default
-        return default
-
-    def _safe_attr(self, attr):
-        """Convert a key into something that is accessible as an attribute"""
-        allowed = string.ascii_letters + string.digits + '_'
-
-        if isinstance(attr, tuple):
-            attr = "_".join([str(x) for x in attr])
-
-        attr = attr.decode('utf-8', 'ignore') if isinstance(attr, bytes) else str(attr)
-        if self.__box_config()['camel_killer_box']:
-            attr = _camel_killer(attr)
-
-        out = []
-        last_safe = 0
-        for i, character in enumerate(attr):
-            if character in allowed:
-                last_safe = i
-                out.append(character)
-            elif not out:
-                continue
-            else:
-                if last_safe == i - 1:
-                    out.append('_')
-
-        out = "".join(out)[:last_safe + 1]
-
-        try:
-            int(out[0])
-        except (ValueError, IndexError):
-            pass
-        else:
-            out = f'{self.__box_config()["box_safe_prefix"]}{out}'
-
-        if out in kwlist:
-            out = f'{self.__box_config()["box_safe_prefix"]}{out}'
-
-        return out
-
-    def _conversion_checks(self, item):
-        """
-        Internal use for checking if a duplicate safe attribute already exists
-
-        :param item: Item to see if a dup exists
-        :param keys: Keys to check against
-        """
-        safe_item = self._safe_attr(item)
-
-        if safe_item in self._box_config['__safe_keys']:
-            dups = [f'{item}({safe_item})', f'{self._box_config["__safe_keys"][safe_item]}({safe_item})']
-            if self._box_config['box_duplicates'].startswith('warn'):
-                warnings.warn(f'Duplicate conversion attributes exist: {dups}', BoxWarning)
-            else:
-                raise BoxError(f'Duplicate conversion attributes exist: {dups}')
-
-    def to_json(self, filename: Union[str, Path] = None, encoding: str = 'utf-8', errors: str = 'strict',
-                **json_kwargs):
-        """
-        Transform the Box object into a JSON string.
-
-        :param filename: If provided will save to file
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param json_kwargs: additional arguments to pass to json.dump(s)
-        :return: string of JSON (if no filename provided)
-        """
-        return _to_json(self.to_dict(), filename=filename, encoding=encoding, errors=errors, **json_kwargs)
-
-    @classmethod
-    def from_json(cls, json_string: str = None, filename: Union[str, Path] = None, encoding: str = 'utf-8',
-                  errors: str = 'strict', **kwargs):
-        """
-        Transform a json object string into a Box object. If the incoming
-        json is a list, you must use BoxList.from_json.
-
-        :param json_string: string to pass to `json.loads`
-        :param filename: filename to open and pass to `json.load`
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param kwargs: parameters to pass to `Box()` or `json.loads`
-        :return: Box object from json data
-        """
-        box_args = {}
-        for arg in kwargs.copy():
-            if arg in BOX_PARAMETERS:
-                box_args[arg] = kwargs.pop(arg)
-
-        data = _from_json(json_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
-
-        if not isinstance(data, dict):
-            raise BoxError(f'json data not returned as a dictionary, but rather a {type(data).__name__}')
-        return cls(data, **box_args)
-
-    def to_yaml(self, filename: Union[str, Path] = None, default_flow_style: bool = False, encoding: str = 'utf-8',
-                errors: str = 'strict', **yaml_kwargs):
-        """
-        Transform the Box object into a YAML string.
-
-        :param filename:  If provided will save to file
-        :param default_flow_style: False will recursively dump dicts
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param yaml_kwargs: additional arguments to pass to yaml.dump
-        :return: string of YAML (if no filename provided)
-        """
-        return _to_yaml(self.to_dict(), filename=filename, default_flow_style=default_flow_style,
-                        encoding=encoding, errors=errors, **yaml_kwargs)
-
-    @classmethod
-    def from_yaml(cls, yaml_string: str = None, filename: Union[str, Path] = None, encoding: str = 'utf-8',
-                  errors: str = 'strict', **kwargs):
-        """
-        Transform a yaml object string into a Box object. By default will use SafeLoader.
-
-        :param yaml_string: string to pass to `yaml.load`
-        :param filename: filename to open and pass to `yaml.load`
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param kwargs: parameters to pass to `Box()` or `yaml.load`
-        :return: Box object from yaml data
-        """
-        box_args = {}
-        for arg in kwargs.copy():
-            if arg in BOX_PARAMETERS:
-                box_args[arg] = kwargs.pop(arg)
-
-        data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
-        if not isinstance(data, dict):
-            raise BoxError(f'yaml data not returned as a dictionary but rather a {type(data).__name__}')
-        return cls(data, **box_args)
-
-    def to_toml(self, filename: Union[str, Path] = None, encoding: str = 'utf-8', errors: str = 'strict'):
-        """
-        Transform the Box object into a toml string.
-
-        :param filename: File to write toml object too
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :return: string of TOML (if no filename provided)
-        """
-        return _to_toml(self.to_dict(), filename=filename, encoding=encoding, errors=errors)
-
-    @classmethod
-    def from_toml(cls, toml_string: str = None, filename: Union[str, Path] = None,
-                  encoding: str = 'utf-8', errors: str = 'strict', **kwargs):
-        """
-        Transforms a toml string or file into a Box object
-
-        :param toml_string: string to pass to `toml.load`
-        :param filename: filename to open and pass to `toml.load`
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param kwargs: parameters to pass to `Box()`
-        :return:
-        """
-        box_args = {}
-        for arg in kwargs.copy():
-            if arg in BOX_PARAMETERS:
-                box_args[arg] = kwargs.pop(arg)
-
-        data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
-        return cls(data, **box_args)
+	_protected_keys=['to_dict','to_json','to_yaml','from_yaml','from_json','from_toml','to_toml','merge_update']+[A for A in dir({})if not A.startswith('_')]
+	def __new__(A,*D,box_settings=_A,default_box=_B,default_box_attr=NO_DEFAULT,default_box_none_transform=_G,frozen_box=_B,camel_killer_box=_B,conversion_box=_G,modify_tuples_box=_B,box_safe_prefix='x',box_duplicates=_N,box_intact_types=(),box_recast=_A,box_dots=_B,**E):C=default_box_attr;B=super(Box,A).__new__(A,*D,**E);B._box_config=_get_box_config();B._box_config.update({_J:default_box,_V:A.__class__ if C is NO_DEFAULT else C,_R:default_box_none_transform,_E:conversion_box,_S:box_safe_prefix,_D:frozen_box,_F:camel_killer_box,_T:modify_tuples_box,_O:box_duplicates,_K:tuple(box_intact_types),_L:box_recast,_P:box_dots,_W:box_settings or{}});return B
+	def __init__(A,*B,box_settings=_A,default_box=_B,default_box_attr=NO_DEFAULT,default_box_none_transform=_G,frozen_box=_B,camel_killer_box=_B,conversion_box=_G,modify_tuples_box=_B,box_safe_prefix='x',box_duplicates=_N,box_intact_types=(),box_recast=_A,box_dots=_B,**F):
+		E=default_box_attr;super().__init__();A._box_config=_get_box_config();A._box_config.update({_J:default_box,_V:A.__class__ if E is NO_DEFAULT else E,_R:default_box_none_transform,_E:conversion_box,_S:box_safe_prefix,_D:frozen_box,_F:camel_killer_box,_T:modify_tuples_box,_O:box_duplicates,_K:tuple(box_intact_types),_L:box_recast,_P:box_dots,_W:box_settings or{}})
+		if not A._box_config[_E]and A._box_config[_O]!=_N:raise BoxError('box_duplicates are only for conversion_boxes')
+		if len(B)==1:
+			if isinstance(B[0],str):raise BoxValueError('Cannot extrapolate Box from string')
+			if isinstance(B[0],Mapping):
+				for(D,C)in B[0].items():
+					if C is B[0]:C=A
+					if C is _A and A._box_config[_J]and A._box_config[_R]:continue
+					A.__setitem__(D,C)
+			elif isinstance(B[0],Iterable):
+				for(D,C)in B[0]:A.__setitem__(D,C)
+			else:raise BoxValueError('First argument must be mapping or iterable')
+		elif B:raise BoxTypeError(f"Box expected at most 1 argument, got {len(B)}")
+		for(D,C)in F.items():
+			if B and isinstance(B[0],Mapping)and C is B[0]:C=A
+			A.__setitem__(D,C)
+		A._box_config[_Q]=_G
+	def __add__(C,other):
+		A=other;B=C.copy()
+		if not isinstance(A,dict):raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+		B.merge_update(A);return B
+	def __hash__(A):
+		if A._box_config[_D]:
+			B=54321
+			for C in A.items():B^=hash(C)
+			return B
+		raise BoxTypeError('unhashable type: "Box"')
+	def __dir__(B):
+		D=string.ascii_letters+string.digits+'_';C=set(super().__dir__())
+		for A in B.keys():
+			A=str(A)
+			if' 'not in A and A[0]not in string.digits and A not in kwlist:
+				for E in A:
+					if E not in D:break
+				else:C.add(A)
+		for A in B.keys():
+			if A not in C:
+				if B._box_config[_E]:
+					A=B._safe_attr(A)
+					if A:C.add(A)
+		return list(C)
+	def get(B,key,default=NO_DEFAULT):
+		C=key;A=default
+		if C not in B:
+			if A is NO_DEFAULT:
+				if B._box_config[_J]and B._box_config[_R]:return B.__get_default(C)
+				else:return
+			if isinstance(A,dict)and not isinstance(A,Box):return Box(A,box_settings=B._box_config.get(_W))
+			if isinstance(A,list)and not isinstance(A,box.BoxList):return box.BoxList(A)
+			return A
+		return B[C]
+	def copy(A):return Box(super().copy(),**A.__box_config())
+	def __copy__(A):return Box(super().copy(),**A.__box_config())
+	def __deepcopy__(A,memodict=_A):
+		B=memodict;E=A._box_config[_D];D=A.__box_config();D[_D]=_B;C=A.__class__(**D);B=B or{};B[id(A)]=C
+		for(F,G)in A.items():C[copy.deepcopy(F,B)]=copy.deepcopy(G,B)
+		C._box_config[_D]=E;return C
+	def __setstate__(A,state):B=state;A._box_config=B[_H];A.__dict__.update(B)
+	def keys(A):return super().keys()
+	def values(A):return[A[B]for B in A.keys()]
+	def items(A):return[(B,A[B])for B in A.keys()]
+	def _safe_items(A):return[(B,A._safe_get(B))for B in A.keys()]
+	def __get_default(B,item):
+		A=B._box_config[_V]
+		if A in(B.__class__,dict):C=B.__class__(**B.__box_config())
+		elif isinstance(A,dict):C=B.__class__(**B.__box_config(),**A)
+		elif isinstance(A,list):C=box.BoxList(**B.__box_config())
+		elif isinstance(A,Callable):C=A()
+		elif hasattr(A,'copy'):C=A.copy()
+		else:C=A
+		B.__convert_and_store(item,C);return C
+	def __box_config(C):
+		A={}
+		for(B,D)in C._box_config.copy().items():
+			if not B.startswith('__'):A[B]=D
+		return A
+	def __recast(A,item,value):
+		C=value;B=item
+		if A._box_config[_L]and B in A._box_config[_L]:
+			try:return A._box_config[_L][B](C)
+			except ValueError:raise BoxValueError(f"Cannot convert {C} to {A._box_config[_L][B]}")from _A
+		return C
+	def __convert_and_store(B,item,value):
+		C=item;A=value
+		if B._box_config[_E]:D=B._safe_attr(C);B._box_config[_C][D]=C
+		if isinstance(A,(int,float,str,bytes,bytearray,bool,complex,set,frozenset)):return super().__setitem__(C,A)
+		if B._box_config[_K]and isinstance(A,B._box_config[_K]):return super().__setitem__(C,A)
+		if isinstance(A,dict)and not isinstance(A,Box):A=B.__class__(A,**B.__box_config())
+		elif isinstance(A,list)and not isinstance(A,box.BoxList):
+			if B._box_config[_D]:A=_recursive_tuples(A,B.__class__,recreate_tuples=B._box_config[_T],**B.__box_config())
+			else:A=box.BoxList(A,box_class=B.__class__,**B.__box_config())
+		elif B._box_config[_T]and isinstance(A,tuple):A=_recursive_tuples(A,B.__class__,recreate_tuples=_G,**B.__box_config())
+		super().__setitem__(C,A)
+	def __getitem__(B,item,_ignore_default=_B):
+		A=item
+		try:return super().__getitem__(A)
+		except KeyError as E:
+			if A==_H:raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted')from _A
+			if B._box_config[_P]and isinstance(A,str)and('.'in A or'['in A):
+				C,F=_parse_box_dots(A)
+				if C in B.keys():
+					if hasattr(B[C],'__getitem__'):return B[C][F]
+			if B._box_config[_F]and isinstance(A,str):
+				D=_camel_killer(A)
+				if D in B.keys():return super().__getitem__(D)
+			if B._box_config[_J]and not _ignore_default:return B.__get_default(A)
+			raise BoxKeyError(str(E))from _A
+	def __getattr__(A,item):
+		B=item
+		try:
+			try:C=A.__getitem__(B,_ignore_default=_G)
+			except KeyError:C=object.__getattribute__(A,B)
+		except AttributeError as E:
+			if B=='__getstate__':raise BoxKeyError(B)from _A
+			if B==_H:raise BoxError('_box_config key must exist')from _A
+			if A._box_config[_E]:
+				D=A._safe_attr(B)
+				if D in A._box_config[_C]:return A.__getitem__(A._box_config[_C][D])
+			if A._box_config[_J]:return A.__get_default(B)
+			raise BoxKeyError(str(E))from _A
+		return C
+	def __setitem__(A,key,value):
+		C=value;B=key
+		if B!=_H and A._box_config[_Q]and A._box_config[_D]:raise BoxError(_U)
+		if A._box_config[_P]and isinstance(B,str)and'.'in B:
+			D,E=_parse_box_dots(B)
+			if D in A.keys():
+				if hasattr(A[D],'__setitem__'):return A[D].__setitem__(E,C)
+		C=A.__recast(B,C)
+		if B not in A.keys()and A._box_config[_F]:
+			if A._box_config[_F]and isinstance(B,str):B=_camel_killer(B)
+		if A._box_config[_E]and A._box_config[_O]!=_N:A._conversion_checks(B)
+		A.__convert_and_store(B,C)
+	def __setattr__(A,key,value):
+		C=value;B=key
+		if B!=_H and A._box_config[_D]and A._box_config[_Q]:raise BoxError(_U)
+		if B in A._protected_keys:raise BoxKeyError(f'Key name "{B}" is protected')
+		if B==_H:return object.__setattr__(A,B,C)
+		C=A.__recast(B,C);D=A._safe_attr(B)
+		if D in A._box_config[_C]:B=A._box_config[_C][D]
+		A.__setitem__(B,C)
+	def __delitem__(A,key):
+		B=key
+		if A._box_config[_D]:raise BoxError(_U)
+		if B not in A.keys()and A._box_config[_P]and isinstance(B,str)and'.'in B:
+			C,E=B.split('.',1)
+			if C in A.keys()and isinstance(A[C],dict):return A[C].__delitem__(E)
+		if B not in A.keys()and A._box_config[_F]:
+			if A._box_config[_F]and isinstance(B,str):
+				for D in A:
+					if _camel_killer(B)==D:B=D;break
+		super().__delitem__(B)
+	def __delattr__(A,item):
+		B=item
+		if A._box_config[_D]:raise BoxError(_U)
+		if B==_H:raise BoxError('"_box_config" is protected')
+		if B in A._protected_keys:raise BoxKeyError(f'Key name "{B}" is protected')
+		try:A.__delitem__(B)
+		except KeyError as D:
+			if A._box_config[_E]:
+				C=A._safe_attr(B)
+				if C in A._box_config[_C]:A.__delitem__(A._box_config[_C][C]);del A._box_config[_C][C];return
+			raise BoxKeyError(D)
+	def pop(B,key,*C):
+		A=key
+		if C:
+			if len(C)!=1:raise BoxError('pop() takes only one optional argument "default"')
+			try:D=B[A]
+			except KeyError:return C[0]
+			else:del B[A];return D
+		try:D=B[A]
+		except KeyError:raise BoxKeyError('{0}'.format(A))from _A
+		else:del B[A];return D
+	def clear(A):super().clear();A._box_config[_C].clear()
+	def popitem(A):
+		try:B=next(A.__iter__())
+		except StopIteration:raise BoxKeyError('Empty box')from _A
+		return B,A.pop(B)
+	def __repr__(A):return f"<Box: {A.to_dict()}>"
+	def __str__(A):return str(A.to_dict())
+	def __iter__(A):
+		for B in A.keys():yield B
+	def __reversed__(A):
+		for B in reversed(list(A.keys())):yield B
+	def to_dict(D):
+		A=dict(D)
+		for(C,B)in A.items():
+			if B is D:A[C]=A
+			elif isinstance(B,Box):A[C]=B.to_dict()
+			elif isinstance(B,box.BoxList):A[C]=B.to_list()
+		return A
+	def update(C,__m=_A,**D):
+		B=__m
+		if B:
+			if hasattr(B,'keys'):
+				for A in B:C.__convert_and_store(A,B[A])
+			else:
+				for(A,E)in B:C.__convert_and_store(A,E)
+		for A in D:C.__convert_and_store(A,D[A])
+	def merge_update(A,__m=_A,**E):
+		C=__m
+		def D(k,v):
+			B=A._box_config[_K]and isinstance(v,A._box_config[_K])
+			if isinstance(v,dict)and not B:
+				v=A.__class__(v,**A.__box_config())
+				if k in A and isinstance(A[k],dict):
+					if isinstance(A[k],Box):A[k].merge_update(v)
+					else:A[k].update(v)
+					return
+			if isinstance(v,list)and not B:v=box.BoxList(v,**A.__box_config())
+			A.__setitem__(k,v)
+		if C:
+			if hasattr(C,'keys'):
+				for B in C:D(B,C[B])
+			else:
+				for(B,F)in C:D(B,F)
+		for B in E:D(B,E[B])
+	def setdefault(B,item,default=_A):
+		C=item;A=default
+		if C in B:return B[C]
+		if isinstance(A,dict):A=B.__class__(A,**B.__box_config())
+		if isinstance(A,list):A=box.BoxList(A,box_class=B.__class__,**B.__box_config())
+		B[C]=A;return A
+	def _safe_attr(C,attr):
+		B=attr;G=string.ascii_letters+string.digits+'_'
+		if isinstance(B,tuple):B='_'.join([str(A)for A in B])
+		B=B.decode(_I,_N)if isinstance(B,bytes)else str(B)
+		if C.__box_config()[_F]:B=_camel_killer(B)
+		A=[];D=0
+		for(E,F)in enumerate(B):
+			if F in G:D=E;A.append(F)
+			elif not A:continue
+			elif D==E-1:A.append('_')
+		A=''.join(A)[:D+1]
+		try:int(A[0])
+		except(ValueError,IndexError):pass
+		else:A=f"{C.__box_config()[_S]}{A}"
+		if A in kwlist:A=f"{C.__box_config()[_S]}{A}"
+		return A
+	def _conversion_checks(A,item):
+		B=A._safe_attr(item)
+		if B in A._box_config[_C]:
+			C=[f"{item}({B})",f"{A._box_config[_C][B]}({B})"]
+			if A._box_config[_O].startswith('warn'):warnings.warn(f"Duplicate conversion attributes exist: {C}",BoxWarning)
+			else:raise BoxError(f"Duplicate conversion attributes exist: {C}")
+	def to_json(A,filename=_A,encoding=_I,errors=_M,**B):return _to_json(A.to_dict(),filename=filename,encoding=encoding,errors=errors,**B)
+	@classmethod
+	def from_json(E,json_string=_A,filename=_A,encoding=_I,errors=_M,**A):
+		D={}
+		for B in A.copy():
+			if B in BOX_PARAMETERS:D[B]=A.pop(B)
+		C=_from_json(json_string,filename=filename,encoding=encoding,errors=errors,**A)
+		if not isinstance(C,dict):raise BoxError(f"json data not returned as a dictionary, but rather a {type(C).__name__}")
+		return E(C,**D)
+	def to_yaml(A,filename=_A,default_flow_style=_B,encoding=_I,errors=_M,**B):return _to_yaml(A.to_dict(),filename=filename,default_flow_style=default_flow_style,encoding=encoding,errors=errors,**B)
+	@classmethod
+	def from_yaml(E,yaml_string=_A,filename=_A,encoding=_I,errors=_M,**A):
+		D={}
+		for B in A.copy():
+			if B in BOX_PARAMETERS:D[B]=A.pop(B)
+		C=_from_yaml(yaml_string=yaml_string,filename=filename,encoding=encoding,errors=errors,**A)
+		if not isinstance(C,dict):raise BoxError(f"yaml data not returned as a dictionary but rather a {type(C).__name__}")
+		return E(C,**D)
+	def to_toml(A,filename=_A,encoding=_I,errors=_M):return _to_toml(A.to_dict(),filename=filename,encoding=encoding,errors=errors)
+	@classmethod
+	def from_toml(D,toml_string=_A,filename=_A,encoding=_I,errors=_M,**B):
+		C={}
+		for A in B.copy():
+			if A in BOX_PARAMETERS:C[A]=B.pop(A)
+		E=_from_toml(toml_string=toml_string,filename=filename,encoding=encoding,errors=errors);return D(E,**C)

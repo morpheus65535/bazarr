@@ -100,7 +100,7 @@ def extend_safe(target, source):
             target.append(elt)
 
 
-class _Ref(object):
+class _Ref:
     """
     Reference for IdentitySet
     """

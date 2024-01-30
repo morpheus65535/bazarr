@@ -16,25 +16,42 @@
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import enum
+from typing import Type, TypeVar, Union
+
+TIntEnum = TypeVar("TIntEnum", bound="IntEnum")
+
 
 class IntEnum(enum.IntEnum):
     @classmethod
-    def _check_value(cls, value):
-        max = cls._maximum()
-        if value < 0 or value > max:
-            name = cls._short_name()
-            raise ValueError(f"{name} must be between >= 0 and <= {max}")
+    def _missing_(cls, value):
+        cls._check_value(value)
+        val = int.__new__(cls, value)
+        val._name_ = cls._extra_to_text(value, None) or f"{cls._prefix()}{value}"
+        val._value_ = value
+        return val
 
     @classmethod
-    def from_text(cls, text):
+    def _check_value(cls, value):
+        max = cls._maximum()
+        if not isinstance(value, int):
+            raise TypeError
+        if value < 0 or value > max:
+            name = cls._short_name()
+            raise ValueError(f"{name} must be an int between >= 0 and <= {max}")
+
+    @classmethod
+    def from_text(cls: Type[TIntEnum], text: str) -> TIntEnum:
         text = text.upper()
         try:
             return cls[text]
         except KeyError:
             pass
+        value = cls._extra_from_text(text)
+        if value:
+            return value
         prefix = cls._prefix()
-        if text.startswith(prefix) and text[len(prefix):].isdigit():
-            value = int(text[len(prefix):])
+        if text.startswith(prefix) and text[len(prefix) :].isdigit():
+            value = int(text[len(prefix) :])
             cls._check_value(value)
             try:
                 return cls(value)
@@ -43,15 +60,19 @@ class IntEnum(enum.IntEnum):
         raise cls._unknown_exception_class()
 
     @classmethod
-    def to_text(cls, value):
+    def to_text(cls: Type[TIntEnum], value: int) -> str:
         cls._check_value(value)
         try:
-            return cls(value).name
+            text = cls(value).name
         except ValueError:
-            return f"{cls._prefix()}{value}"
+            text = None
+        text = cls._extra_to_text(value, text)
+        if text is None:
+            text = f"{cls._prefix()}{value}"
+        return text
 
     @classmethod
-    def make(cls, value):
+    def make(cls: Type[TIntEnum], value: Union[int, str]) -> TIntEnum:
         """Convert text or a value into an enumerated type, if possible.
 
         *value*, the ``int`` or ``str`` to convert.
@@ -68,10 +89,7 @@ class IntEnum(enum.IntEnum):
         if isinstance(value, str):
             return cls.from_text(value)
         cls._check_value(value)
-        try:
-            return cls(value)
-        except ValueError:
-            return value
+        return cls(value)
 
     @classmethod
     def _maximum(cls):
@@ -83,7 +101,15 @@ class IntEnum(enum.IntEnum):
 
     @classmethod
     def _prefix(cls):
-        return ''
+        return ""
+
+    @classmethod
+    def _extra_from_text(cls, text):  # pylint: disable=W0613
+        return None
+
+    @classmethod
+    def _extra_to_text(cls, value, current_text):  # pylint: disable=W0613
+        return current_text
 
     @classmethod
     def _unknown_exception_class(cls):

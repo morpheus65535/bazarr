@@ -6,11 +6,14 @@ from types import MappingProxyType
 from typing import Any
 from typing import Callable
 from typing import Sequence
+from typing import TYPE_CHECKING
 
 from dynaconf import validator_conditions
 from dynaconf.utils import ensure_a_list
 from dynaconf.utils.functional import empty
 
+if TYPE_CHECKING:
+    from dynaconf.base import LazySettings, Settings
 
 EQUALITY_ATTRS = (
     "names",
@@ -167,7 +170,7 @@ class Validator:
 
     def validate(
         self,
-        settings: Any,
+        settings: Settings,
         only: str | Sequence | None = None,
         exclude: str | Sequence | None = None,
         only_current_env: bool = False,
@@ -216,13 +219,14 @@ class Validator:
             return
 
         for env in self.envs:
-            self._validate_items(
-                settings.from_env(env), only=only, exclude=exclude
-            )
+            env_settings: Settings = settings.from_env(env)
+            self._validate_items(env_settings, only=only, exclude=exclude)
+            # merge source metadata into original settings for history inspect
+            settings._loaded_by_loaders.update(env_settings._loaded_by_loaders)
 
     def _validate_items(
         self,
-        settings: Any,
+        settings: Settings,
         env: str | None = None,
         only: str | Sequence | None = None,
         exclude: str | Sequence | None = None,
@@ -264,6 +268,7 @@ class Validator:
                 name,
                 default_value,
                 apply_default_on_none=self.apply_default_on_none,
+                env=env,
             )
 
             # is name required but not exists?
@@ -282,13 +287,12 @@ class Validator:
             if self.must_exist in (False, None) and value is empty:
                 continue
 
-            if self.cast:
-                # value or default value already set
-                # by settings.setdefault above
-                # however we need to cast it
-                # so we call .set again
-                value = self.cast(settings.get(name))
-                settings.set(name, value)
+            # value or default value already set
+            # by settings.setdefault above
+            # however we need to cast it
+            # so we call .set again
+            value = self.cast(settings.get(name))
+            settings.set(name, value, validate=False)
 
             # is there a callable condition?
             if self.condition is not None:
@@ -304,7 +308,28 @@ class Validator:
             # operations
             for op_name, op_value in self.operations.items():
                 op_function = getattr(validator_conditions, op_name)
-                if not op_function(value, op_value):
+                op_succeeded = False
+
+                # 'is_type_of' special error handling - related to #879
+                if op_name == "is_type_of":
+                    # auto transform quoted types
+                    if isinstance(op_value, str):
+                        op_value = __builtins__.get(  # type: ignore
+                            op_value, op_value
+                        )
+
+                    # invalid type (not in __builtins__) may raise TypeError
+                    try:
+                        op_succeeded = op_function(value, op_value)
+                    except TypeError:
+                        raise ValidationError(
+                            f"Invalid type '{op_value}' for condition "
+                            "'is_type_of'. Should provide a valid type"
+                        )
+                else:
+                    op_succeeded = op_function(value, op_value)
+
+                if not op_succeeded:
                     _message = self.messages["operations"].format(
                         name=name,
                         operation=op_function.__name__,
@@ -417,7 +442,7 @@ class AndValidator(CombinedValidator):
 class ValidatorList(list):
     def __init__(
         self,
-        settings: Any,
+        settings: Settings,
         validators: Sequence[Validator] | None = None,
         *args: Validator,
         **kwargs: Any,

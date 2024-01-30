@@ -3,9 +3,8 @@
 """
 Expected property factory
 """
-from rebulk.remodule import re
-
 from rebulk import Rebulk
+from rebulk.remodule import re
 from rebulk.utils import find_all
 
 from . import dash, seps
@@ -42,12 +41,13 @@ def build_expected_function(context_key):
                 for match in matches:
                     ret.append(match.span)
             else:
-                value = search
                 for sep in seps:
                     input_string = input_string.replace(sep, ' ')
                     search = search.replace(sep, ' ')
                 for start in find_all(input_string, search, ignore_case=True):
-                    ret.append({'start': start, 'end': start + len(search), 'value': value})
+                    end = start + len(search)
+                    value = input_string[start:end]
+                    ret.append({'start': start, 'end': end, 'value': value})
         return ret
 
     return expected

@@ -8,6 +8,7 @@
 """Provide :class:`OnDup` and related functionality."""
 
 
+from __future__ import annotations
 from enum import Enum
 import typing as t
 
@@ -26,9 +27,9 @@ class OD(Enum):
         return f'{self.__class__.__name__}.{self.name}'
 
 
-RAISE = OD.RAISE
-DROP_OLD = OD.DROP_OLD
-DROP_NEW = OD.DROP_NEW
+RAISE: t.Final[OD] = OD.RAISE
+DROP_OLD: t.Final[OD] = OD.DROP_OLD
+DROP_NEW: t.Final[OD] = OD.DROP_NEW
 
 
 class OnDup(t.NamedTuple('_OnDup', [('key', OD), ('val', OD), ('kv', OD)])):
@@ -42,7 +43,7 @@ class OnDup(t.NamedTuple('_OnDup', [('key', OD), ('val', OD), ('kv', OD)])):
 
     __slots__ = ()
 
-    def __new__(cls, key: OD = DROP_OLD, val: OD = RAISE, kv: t.Optional[OD] = None) -> 'OnDup':
+    def __new__(cls, key: OD = DROP_OLD, val: OD = RAISE, kv: OD | None = None) -> OnDup:
         """Override to provide user-friendly default values."""
         return super().__new__(cls, key, val, kv or val)
 
@@ -51,8 +52,8 @@ class OnDup(t.NamedTuple('_OnDup', [('key', OD), ('val', OD), ('kv', OD)])):
 #: :meth:`~bidict.bidict.__init__`,
 #: :meth:`~bidict.bidict.__setitem__`, and
 #: :meth:`~bidict.bidict.update` methods.
-ON_DUP_DEFAULT = OnDup(key=DROP_OLD, val=RAISE, kv=RAISE)
+ON_DUP_DEFAULT: t.Final[OnDup] = OnDup(key=DROP_OLD, val=RAISE, kv=RAISE)
 #: An :class:`OnDup` whose members are all :obj:`RAISE`.
-ON_DUP_RAISE = OnDup(key=RAISE, val=RAISE, kv=RAISE)
+ON_DUP_RAISE: t.Final[OnDup] = OnDup(key=RAISE, val=RAISE, kv=RAISE)
 #: An :class:`OnDup` whose members are all :obj:`DROP_OLD`.
-ON_DUP_DROP_OLD = OnDup(key=DROP_OLD, val=DROP_OLD, kv=DROP_OLD)
+ON_DUP_DROP_OLD: t.Final[OnDup] = OnDup(key=DROP_OLD, val=DROP_OLD, kv=DROP_OLD)

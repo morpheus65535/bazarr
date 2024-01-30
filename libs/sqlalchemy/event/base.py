@@ -1,5 +1,5 @@
 # event/base.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -24,6 +24,7 @@ from typing import Dict
 from typing import Generic
 from typing import Iterator
 from typing import List
+from typing import Mapping
 from typing import MutableMapping
 from typing import Optional
 from typing import overload
@@ -282,7 +283,7 @@ class _HasEventsDispatch(Generic[_ET]):
 
     @classmethod
     def _create_dispatcher_class(
-        cls, classname: str, bases: Tuple[type, ...], dict_: Dict[str, Any]
+        cls, classname: str, bases: Tuple[type, ...], dict_: Mapping[str, Any]
     ) -> None:
         """Create a :class:`._Dispatch` class corresponding to an
         :class:`.Events` class."""
@@ -300,7 +301,7 @@ class _HasEventsDispatch(Generic[_ET]):
             "Type[_Dispatch[_ET]]",
             type(
                 "%sDispatch" % classname,
-                (dispatch_base,),  # type: ignore
+                (dispatch_base,),
                 {"__slots__": event_names},
             ),
         )
@@ -322,7 +323,7 @@ class _HasEventsDispatch(Generic[_ET]):
             assert dispatch_target_cls is not None
             if (
                 hasattr(dispatch_target_cls, "__slots__")
-                and "_slots_dispatch" in dispatch_target_cls.__slots__  # type: ignore  # noqa: E501
+                and "_slots_dispatch" in dispatch_target_cls.__slots__
             ):
                 dispatch_target_cls.dispatch = slots_dispatcher(cls)
             else:
@@ -340,7 +341,6 @@ class Events(_HasEventsDispatch[_ET]):
             return all(isinstance(target.dispatch, t) for t in types)
 
         def dispatch_parent_is(t: Type[Any]) -> bool:
-
             return isinstance(
                 cast("_JoinedDispatcher[_ET]", target.dispatch).parent, t
             )

@@ -1,38 +1,13 @@
-import itertools
-import logging
 import random
-import signal
-import threading
 
 import engineio
 
+from . import base_client
 from . import exceptions
-from . import namespace
 from . import packet
 
-default_logger = logging.getLogger('socketio.client')
-reconnecting_clients = []
 
-
-def signal_handler(sig, frame):  # pragma: no cover
-    """SIGINT handler.
-
-    Notify any clients that are in a reconnect loop to abort. Other
-    disconnection tasks are handled at the engine.io level.
-    """
-    for client in reconnecting_clients[:]:
-        client._reconnect_abort.set()
-    if callable(original_signal_handler):
-        return original_signal_handler(sig, frame)
-    else:  # pragma: no cover
-        # Handle case where no original SIGINT handler was present.
-        return signal.default_int_handler(sig, frame)
-
-
-original_signal_handler = None
-
-
-class Client(object):
+class Client(base_client.BaseClient):
     """A Socket.IO client.
 
     This class implements a fully compliant Socket.IO web client with support
@@ -92,172 +67,6 @@ class Client(object):
                             fatal errors are logged even when
                             ``engineio_logger`` is ``False``.
     """
-    reserved_events = ['connect', 'connect_error', 'disconnect']
-
-    def __init__(self, reconnection=True, reconnection_attempts=0,
-                 reconnection_delay=1, reconnection_delay_max=5,
-                 randomization_factor=0.5, logger=False, serializer='default',
-                 json=None, handle_sigint=True, **kwargs):
-        global original_signal_handler
-        if handle_sigint and original_signal_handler is None and \
-                threading.current_thread() == threading.main_thread():
-            original_signal_handler = signal.signal(signal.SIGINT,
-                                                    signal_handler)
-        self.reconnection = reconnection
-        self.reconnection_attempts = reconnection_attempts
-        self.reconnection_delay = reconnection_delay
-        self.reconnection_delay_max = reconnection_delay_max
-        self.randomization_factor = randomization_factor
-        self.handle_sigint = handle_sigint
-
-        engineio_options = kwargs
-        engineio_options['handle_sigint'] = handle_sigint
-        engineio_logger = engineio_options.pop('engineio_logger', None)
-        if engineio_logger is not None:
-            engineio_options['logger'] = engineio_logger
-        if serializer == 'default':
-            self.packet_class = packet.Packet
-        elif serializer == 'msgpack':
-            from . import msgpack_packet
-            self.packet_class = msgpack_packet.MsgPackPacket
-        else:
-            self.packet_class = serializer
-        if json is not None:
-            self.packet_class.json = json
-            engineio_options['json'] = json
-
-        self.eio = self._engineio_client_class()(**engineio_options)
-        self.eio.on('connect', self._handle_eio_connect)
-        self.eio.on('message', self._handle_eio_message)
-        self.eio.on('disconnect', self._handle_eio_disconnect)
-
-        if not isinstance(logger, bool):
-            self.logger = logger
-        else:
-            self.logger = default_logger
-            if self.logger.level == logging.NOTSET:
-                if logger:
-                    self.logger.setLevel(logging.INFO)
-                else:
-                    self.logger.setLevel(logging.ERROR)
-                self.logger.addHandler(logging.StreamHandler())
-
-        self.connection_url = None
-        self.connection_headers = None
-        self.connection_auth = None
-        self.connection_transports = None
-        self.connection_namespaces = []
-        self.socketio_path = None
-        self.sid = None
-
-        self.connected = False  #: Indicates if the client is connected or not.
-        self.namespaces = {}  #: set of connected namespaces.
-        self.handlers = {}
-        self.namespace_handlers = {}
-        self.callbacks = {}
-        self._binary_packet = None
-        self._connect_event = None
-        self._reconnect_task = None
-        self._reconnect_abort = None
-
-    def is_asyncio_based(self):
-        return False
-
-    def on(self, event, handler=None, namespace=None):
-        """Register an event handler.
-
-        :param event: The event name. It can be any string. The event names
-                      ``'connect'``, ``'message'`` and ``'disconnect'`` are
-                      reserved and should not be used.
-        :param handler: The function that should be invoked to handle the
-                        event. When this parameter is not given, the method
-                        acts as a decorator for the handler function.
-        :param namespace: The Socket.IO namespace for the event. If this
-                          argument is omitted the handler is associated with
-                          the default namespace.
-
-        Example usage::
-
-            # as a decorator:
-            @sio.on('connect')
-            def connect_handler():
-                print('Connected!')
-
-            # as a method:
-            def message_handler(msg):
-                print('Received message: ', msg)
-                sio.send( 'response')
-            sio.on('message', message_handler)
-
-        The ``'connect'`` event handler receives no arguments. The
-        ``'message'`` handler and handlers for custom event names receive the
-        message payload as only argument. Any values returned from a message
-        handler will be passed to the client's acknowledgement callback
-        function if it exists. The ``'disconnect'`` handler does not take
-        arguments.
-        """
-        namespace = namespace or '/'
-
-        def set_handler(handler):
-            if namespace not in self.handlers:
-                self.handlers[namespace] = {}
-            self.handlers[namespace][event] = handler
-            return handler
-
-        if handler is None:
-            return set_handler
-        set_handler(handler)
-
-    def event(self, *args, **kwargs):
-        """Decorator to register an event handler.
-
-        This is a simplified version of the ``on()`` method that takes the
-        event name from the decorated function.
-
-        Example usage::
-
-            @sio.event
-            def my_event(data):
-                print('Received data: ', data)
-
-        The above example is equivalent to::
-
-            @sio.on('my_event')
-            def my_event(data):
-                print('Received data: ', data)
-
-        A custom namespace can be given as an argument to the decorator::
-
-            @sio.event(namespace='/test')
-            def my_event(data):
-                print('Received data: ', data)
-        """
-        if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
-            # the decorator was invoked without arguments
-            # args[0] is the decorated function
-            return self.on(args[0].__name__)(args[0])
-        else:
-            # the decorator was invoked with arguments
-            def set_handler(handler):
-                return self.on(handler.__name__, *args, **kwargs)(handler)
-
-            return set_handler
-
-    def register_namespace(self, namespace_handler):
-        """Register a namespace handler object.
-
-        :param namespace_handler: An instance of a :class:`Namespace`
-                                  subclass that handles all the event traffic
-                                  for a namespace.
-        """
-        if not isinstance(namespace_handler, namespace.ClientNamespace):
-            raise ValueError('Not a namespace instance')
-        if self.is_asyncio_based() != namespace_handler.is_asyncio_based():
-            raise ValueError('Not a valid namespace class for this client')
-        namespace_handler._set_client(self)
-        self.namespace_handlers[namespace_handler.namespace] = \
-            namespace_handler
-
     def connect(self, url, headers={}, auth=None, transports=None,
                 namespaces=None, socketio_path='socket.io', wait=True,
                 wait_timeout=1):
@@ -332,9 +141,10 @@ class Client(object):
                              transports=transports,
                              engineio_path=socketio_path)
         except engineio.exceptions.ConnectionError as exc:
-            self._trigger_event(
-                'connect_error', '/',
-                exc.args[1] if len(exc.args) > 1 else exc.args[0])
+            for n in self.connection_namespaces:
+                self._trigger_event(
+                    'connect_error', n,
+                    exc.args[1] if len(exc.args) > 1 else exc.args[0])
             raise exceptions.ConnectionError(exc.args[0]) from None
 
         if wait:
@@ -365,7 +175,7 @@ class Client(object):
                 break
 
     def emit(self, event, data=None, namespace=None, callback=None):
-        """Emit a custom event to one or more connected clients.
+        """Emit a custom event to the server.
 
         :param event: The event name. It can be any string. The event names
                       ``'connect'``, ``'message'`` and ``'disconnect'`` are
@@ -378,7 +188,7 @@ class Client(object):
                           argument is omitted the event is emitted to the
                           default namespace.
         :param callback: If given, this function will be called to acknowledge
-                         the the server has received the message. The arguments
+                         the server has received the message. The arguments
                          that will be passed to the function are those provided
                          by the server.
 
@@ -409,7 +219,7 @@ class Client(object):
                                             data=[event] + data, id=id))
 
     def send(self, data, namespace=None, callback=None):
-        """Send a message to one or more connected clients.
+        """Send a message to the server.
 
         This function emits an event with the name ``'message'``. Use
         :func:`emit` to issue custom event names.
@@ -422,7 +232,7 @@ class Client(object):
                           argument is omitted the event is emitted to the
                           default namespace.
         :param callback: If given, this function will be called to acknowledge
-                         the the server has received the message. The arguments
+                         the server has received the message. The arguments
                          that will be passed to the function are those provided
                          by the server.
         """
@@ -430,7 +240,7 @@ class Client(object):
                   callback=callback)
 
     def call(self, event, data=None, namespace=None, timeout=60):
-        """Emit a custom event to a client and wait for the response.
+        """Emit a custom event to the server and wait for the response.
 
         This method issues an emit with a callback and waits for the callback
         to be invoked before returning. If the callback isn't invoked before
@@ -449,7 +259,7 @@ class Client(object):
                           argument is omitted the event is emitted to the
                           default namespace.
         :param timeout: The waiting timeout. If the timeout is reached before
-                        the client acknowledges the event, then a
+                        the server acknowledges the event, then a
                         ``TimeoutError`` exception is raised.
 
         Note: this method is not thread safe. If multiple threads are emitting
@@ -481,28 +291,6 @@ class Client(object):
             self._send_packet(self.packet_class(
                 packet.DISCONNECT, namespace=n))
         self.eio.disconnect(abort=True)
-
-    def get_sid(self, namespace=None):
-        """Return the ``sid`` associated with a connection.
-
-        :param namespace: The Socket.IO namespace. If this argument is omitted
-                          the handler is associated with the default
-                          namespace. Note that unlike previous versions, the
-                          current version of the Socket.IO protocol uses
-                          different ``sid`` values per namespace.
-
-        This method returns the ``sid`` for the requested namespace as a
-        string.
-        """
-        return self.namespaces.get(namespace or '/')
-
-    def transport(self):
-        """Return the name of the transport used by the client.
-
-        The two possible values returned by this function are ``'polling'``
-        and ``'websocket'``.
-        """
-        return self.eio.transport()
 
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task using the appropriate async model.
@@ -547,15 +335,6 @@ class Client(object):
         else:
             self.eio.send(encoded_packet)
 
-    def _generate_ack_id(self, namespace, callback):
-        """Generate a unique identifier for an ACK packet."""
-        namespace = namespace or '/'
-        if namespace not in self.callbacks:
-            self.callbacks[namespace] = {0: itertools.count(1)}
-        id = next(self.callbacks[namespace][0])
-        self.callbacks[namespace][id] = callback
-        return id
-
     def _handle_connect(self, namespace, data):
         namespace = namespace or '/'
         if namespace not in self.namespaces:
@@ -569,6 +348,7 @@ class Client(object):
             return
         namespace = namespace or '/'
         self._trigger_event('disconnect', namespace=namespace)
+        self._trigger_event('__disconnect_final', namespace=namespace)
         if namespace in self.namespaces:
             del self.namespaces[namespace]
         if not self.namespaces:
@@ -624,23 +404,20 @@ class Client(object):
     def _trigger_event(self, event, namespace, *args):
         """Invoke an application event handler."""
         # first see if we have an explicit handler for the event
-        if namespace in self.handlers:
-            if event in self.handlers[namespace]:
-                return self.handlers[namespace][event](*args)
-            elif event not in self.reserved_events and \
-                    '*' in self.handlers[namespace]:
-                return self.handlers[namespace]['*'](event, *args)
+        handler, args = self._get_event_handler(event, namespace, args)
+        if handler:
+            return handler(*args)
 
         # or else, forward the event to a namespace handler if one exists
-        elif namespace in self.namespace_handlers:
-            return self.namespace_handlers[namespace].trigger_event(
-                event, *args)
+        handler, args = self._get_namespace_handler(namespace, args)
+        if handler:
+            return handler.trigger_event(event, *args)
 
     def _handle_reconnect(self):
         if self._reconnect_abort is None:  # pragma: no cover
             self._reconnect_abort = self.eio.create_event()
         self._reconnect_abort.clear()
-        reconnecting_clients.append(self)
+        base_client.reconnecting_clients.append(self)
         attempt_count = 0
         current_delay = self.reconnection_delay
         while True:
@@ -654,6 +431,8 @@ class Client(object):
                     delay))
             if self._reconnect_abort.wait(delay):
                 self.logger.info('Reconnect task aborted')
+                for n in self.connection_namespaces:
+                    self._trigger_event('__disconnect_final', namespace=n)
                 break
             attempt_count += 1
             try:
@@ -673,8 +452,10 @@ class Client(object):
                     attempt_count >= self.reconnection_attempts:
                 self.logger.info(
                     'Maximum reconnection attempts reached, giving up')
+                for n in self.connection_namespaces:
+                    self._trigger_event('__disconnect_final', namespace=n)
                 break
-        reconnecting_clients.remove(self)
+        base_client.reconnecting_clients.remove(self)
 
     def _handle_eio_connect(self):
         """Handle the Engine.IO connection event."""
@@ -716,15 +497,18 @@ class Client(object):
     def _handle_eio_disconnect(self):
         """Handle the Engine.IO disconnection event."""
         self.logger.info('Engine.IO connection dropped')
+        will_reconnect = self.reconnection and self.eio.state == 'connected'
         if self.connected:
             for n in self.namespaces:
                 self._trigger_event('disconnect', namespace=n)
+                if not will_reconnect:
+                    self._trigger_event('__disconnect_final', namespace=n)
             self.namespaces = {}
             self.connected = False
         self.callbacks = {}
         self._binary_packet = None
         self.sid = None
-        if self.eio.state == 'connected' and self.reconnection:
+        if will_reconnect:
             self._reconnect_task = self.start_background_task(
                 self._handle_reconnect)
 

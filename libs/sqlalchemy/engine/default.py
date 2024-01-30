@@ -1,5 +1,5 @@
 # engine/default.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -17,6 +17,7 @@ as the base class for their own corresponding classes.
 from __future__ import annotations
 
 import functools
+import operator
 import random
 import re
 from time import perf_counter
@@ -60,9 +61,9 @@ from ..sql import type_api
 from ..sql._typing import is_tuple_type
 from ..sql.base import _NoArg
 from ..sql.compiler import DDLCompiler
+from ..sql.compiler import InsertmanyvaluesSentinelOpts
 from ..sql.compiler import SQLCompiler
 from ..sql.elements import quoted_name
-from ..sql.schema import default_is_scalar
 from ..util.typing import Final
 from ..util.typing import Literal
 
@@ -70,6 +71,7 @@ if typing.TYPE_CHECKING:
     from types import ModuleType
 
     from .base import Engine
+    from .cursor import ResultFetchStrategy
     from .interfaces import _CoreMultiExecuteParams
     from .interfaces import _CoreSingleExecuteParams
     from .interfaces import _DBAPICursorDescription
@@ -134,7 +136,7 @@ class DefaultDialect(Dialect):
 
     # most DBAPIs happy with this for execute().
     # not cx_oracle.
-    execute_sequence_format = tuple  # type: ignore
+    execute_sequence_format = tuple
 
     supports_schemas = True
     supports_views = True
@@ -156,6 +158,8 @@ class DefaultDialect(Dialect):
     supports_native_enum = False
     supports_native_boolean = False
     supports_native_uuid = False
+    returns_native_bytes = False
+
     non_native_boolean_check_constraint = True
 
     supports_simple_order_by_label = True
@@ -223,6 +227,10 @@ class DefaultDialect(Dialect):
     use_insertmanyvalues: bool = False
 
     use_insertmanyvalues_wo_returning: bool = False
+
+    insertmanyvalues_implicit_sentinel: InsertmanyvaluesSentinelOpts = (
+        InsertmanyvaluesSentinelOpts.NOT_SUPPORTED
+    )
 
     insertmanyvalues_page_size: int = 1000
     insertmanyvalues_max_parameters = 32700
@@ -370,13 +378,42 @@ class DefaultDialect(Dialect):
             and self.delete_returning
         )
 
-    @property
+    @util.memoized_property
     def insert_executemany_returning(self):
-        return (
-            self.insert_returning
-            and self.supports_multivalues_insert
-            and self.use_insertmanyvalues
-        )
+        """Default implementation for insert_executemany_returning, if not
+        otherwise overridden by the specific dialect.
+
+        The default dialect determines "insert_executemany_returning" is
+        available if the dialect in use has opted into using the
+        "use_insertmanyvalues" feature. If they haven't opted into that, then
+        this attribute is False, unless the dialect in question overrides this
+        and provides some other implementation (such as the Oracle dialect).
+
+        """
+        return self.insert_returning and self.use_insertmanyvalues
+
+    @util.memoized_property
+    def insert_executemany_returning_sort_by_parameter_order(self):
+        """Default implementation for
+        insert_executemany_returning_deterministic_order, if not otherwise
+        overridden by the specific dialect.
+
+        The default dialect determines "insert_executemany_returning" can have
+        deterministic order only if the dialect in use has opted into using the
+        "use_insertmanyvalues" feature, which implements deterministic ordering
+        using client side sentinel columns only by default.  The
+        "insertmanyvalues" feature also features alternate forms that can
+        use server-generated PK values as "sentinels", but those are only
+        used if the :attr:`.Dialect.insertmanyvalues_implicit_sentinel`
+        bitflag enables those alternate SQL forms, which are disabled
+        by default.
+
+        If the dialect in use hasn't opted into that, then this attribute is
+        False, unless the dialect in question overrides this and provides some
+        other implementation (such as the Oracle dialect).
+
+        """
+        return self.insert_returning and self.use_insertmanyvalues
 
     update_executemany_returning = False
     delete_executemany_returning = False
@@ -395,7 +432,6 @@ class DefaultDialect(Dialect):
         return self.bind_typing is interfaces.BindTyping.RENDER_CASTS
 
     def _ensure_has_table_connection(self, arg):
-
         if not isinstance(arg, Connection):
             raise exc.ArgumentError(
                 "The argument passed to Dialect.has_table() should be a "
@@ -583,7 +619,7 @@ class DefaultDialect(Dialect):
         # inherits the docstring from interfaces.Dialect.create_connect_args
         opts = url.translate_connect_args()
         opts.update(url.query)
-        return [[], opts]
+        return ([], opts)
 
     def set_engine_execution_options(
         self, engine: Engine, opts: Mapping[str, Any]
@@ -615,7 +651,6 @@ class DefaultDialect(Dialect):
             self._set_connection_characteristics(connection, characteristics)
 
     def _set_connection_characteristics(self, connection, characteristics):
-
         characteristic_values = [
             (name, self.connection_characteristics[name], value)
             for name, value in characteristics.items()
@@ -726,20 +761,159 @@ class DefaultDialect(Dialect):
         context = cast(DefaultExecutionContext, context)
         compiled = cast(SQLCompiler, context.compiled)
 
+        imv = compiled._insertmanyvalues
+        assert imv is not None
+
         is_returning: Final[bool] = bool(compiled.effective_returning)
         batch_size = context.execution_options.get(
             "insertmanyvalues_page_size", self.insertmanyvalues_page_size
         )
 
-        if is_returning:
-            context._insertmanyvalues_rows = result = []
+        sentinel_value_resolvers = None
 
-        for batch_rec in compiled._deliver_insertmanyvalues_batches(
-            statement, parameters, generic_setinputsizes, batch_size
+        if is_returning:
+            result: Optional[List[Any]] = []
+            context._insertmanyvalues_rows = result
+
+            sort_by_parameter_order = imv.sort_by_parameter_order
+
+            if imv.num_sentinel_columns:
+                sentinel_value_resolvers = (
+                    compiled._imv_sentinel_value_resolvers
+                )
+        else:
+            sort_by_parameter_order = False
+            result = None
+
+        for imv_batch in compiled._deliver_insertmanyvalues_batches(
+            statement,
+            parameters,
+            generic_setinputsizes,
+            batch_size,
+            sort_by_parameter_order,
         ):
-            yield batch_rec
+            yield imv_batch
+
             if is_returning:
-                result.extend(cursor.fetchall())
+                rows = context.fetchall_for_returning(cursor)
+
+                # I would have thought "is_returning: Final[bool]"
+                # would have assured this but pylance thinks not
+                assert result is not None
+
+                if imv.num_sentinel_columns and not imv_batch.is_downgraded:
+                    composite_sentinel = imv.num_sentinel_columns > 1
+                    if imv.implicit_sentinel:
+                        # for implicit sentinel, which is currently single-col
+                        # integer autoincrement, do a simple sort.
+                        assert not composite_sentinel
+                        result.extend(
+                            sorted(rows, key=operator.itemgetter(-1))
+                        )
+                        continue
+
+                    # otherwise, create dictionaries to match up batches
+                    # with parameters
+                    assert imv.sentinel_param_keys
+
+                    if composite_sentinel:
+                        _nsc = imv.num_sentinel_columns
+                        rows_by_sentinel = {
+                            tuple(row[-_nsc:]): row for row in rows
+                        }
+                    else:
+                        rows_by_sentinel = {row[-1]: row for row in rows}
+
+                    if len(rows_by_sentinel) != len(imv_batch.batch):
+                        # see test_insert_exec.py::
+                        # IMVSentinelTest::test_sentinel_incorrect_rowcount
+                        # for coverage / demonstration
+                        raise exc.InvalidRequestError(
+                            f"Sentinel-keyed result set did not produce "
+                            f"correct number of rows {len(imv_batch.batch)}; "
+                            "produced "
+                            f"{len(rows_by_sentinel)}.  Please ensure the "
+                            "sentinel column is fully unique and populated in "
+                            "all cases."
+                        )
+
+                    try:
+                        if composite_sentinel:
+                            if sentinel_value_resolvers:
+                                # composite sentinel (PK) with value resolvers
+                                ordered_rows = [
+                                    rows_by_sentinel[
+                                        tuple(
+                                            _resolver(parameters[_spk])  # type: ignore  # noqa: E501
+                                            if _resolver
+                                            else parameters[_spk]  # type: ignore  # noqa: E501
+                                            for _resolver, _spk in zip(
+                                                sentinel_value_resolvers,
+                                                imv.sentinel_param_keys,
+                                            )
+                                        )
+                                    ]
+                                    for parameters in imv_batch.batch
+                                ]
+                            else:
+                                # composite sentinel (PK) with no value
+                                # resolvers
+                                ordered_rows = [
+                                    rows_by_sentinel[
+                                        tuple(
+                                            parameters[_spk]  # type: ignore
+                                            for _spk in imv.sentinel_param_keys
+                                        )
+                                    ]
+                                    for parameters in imv_batch.batch
+                                ]
+                        else:
+                            _sentinel_param_key = imv.sentinel_param_keys[0]
+                            if (
+                                sentinel_value_resolvers
+                                and sentinel_value_resolvers[0]
+                            ):
+                                # single-column sentinel with value resolver
+                                _sentinel_value_resolver = (
+                                    sentinel_value_resolvers[0]
+                                )
+                                ordered_rows = [
+                                    rows_by_sentinel[
+                                        _sentinel_value_resolver(
+                                            parameters[_sentinel_param_key]  # type: ignore  # noqa: E501
+                                        )
+                                    ]
+                                    for parameters in imv_batch.batch
+                                ]
+                            else:
+                                # single-column sentinel with no value resolver
+                                ordered_rows = [
+                                    rows_by_sentinel[
+                                        parameters[_sentinel_param_key]  # type: ignore  # noqa: E501
+                                    ]
+                                    for parameters in imv_batch.batch
+                                ]
+                    except KeyError as ke:
+                        # see test_insert_exec.py::
+                        # IMVSentinelTest::test_sentinel_cant_match_keys
+                        # for coverage / demonstration
+                        raise exc.InvalidRequestError(
+                            f"Can't match sentinel values in result set to "
+                            f"parameter sets; key {ke.args[0]!r} was not "
+                            "found. "
+                            "There may be a mismatch between the datatype "
+                            "passed to the DBAPI driver vs. that which it "
+                            "returns in a result row.  Ensure the given "
+                            "Python value matches the expected result type "
+                            "*exactly*, taking care to not rely upon implicit "
+                            "conversions which may occur such as when using "
+                            "strings in place of UUID or integer values, etc. "
+                        ) from ke
+
+                    result.extend(ordered_rows)
+
+                else:
+                    result.extend(rows)
 
     def do_executemany(self, cursor, statement, parameters, context=None):
         cursor.executemany(statement, parameters)
@@ -755,7 +929,6 @@ class DefaultDialect(Dialect):
 
     @util.memoized_instancemethod
     def _gen_allowed_isolation_levels(self, dbapi_conn):
-
         try:
             raw_levels = list(self.get_isolation_level_values(dbapi_conn))
         except NotImplementedError:
@@ -792,12 +965,21 @@ class DefaultDialect(Dialect):
         self.set_isolation_level(dbapi_conn, level)
 
     def reset_isolation_level(self, dbapi_conn):
-        # default_isolation_level is read from the first connection
-        # after the initial set of 'isolation_level', if any, so is
-        # the configured default of this dialect.
-        self._assert_and_set_isolation_level(
-            dbapi_conn, self.default_isolation_level
-        )
+        if self._on_connect_isolation_level is not None:
+            assert (
+                self._on_connect_isolation_level == "AUTOCOMMIT"
+                or self._on_connect_isolation_level
+                == self.default_isolation_level
+            )
+            self._assert_and_set_isolation_level(
+                dbapi_conn, self._on_connect_isolation_level
+            )
+        else:
+            assert self.default_isolation_level is not None
+            self._assert_and_set_isolation_level(
+                dbapi_conn,
+                self.default_isolation_level,
+            )
 
     def normalize_name(self, name):
         if name is None:
@@ -861,7 +1043,6 @@ class DefaultDialect(Dialect):
         scope,
         **kw,
     ):
-
         names_fns = []
         temp_names_fns = []
         if ObjectKind.TABLE in kind:
@@ -963,7 +1144,6 @@ class DefaultDialect(Dialect):
 
 
 class StrCompileDialect(DefaultDialect):
-
     statement_compiler = compiler.StrSQLCompiler
     ddl_compiler = compiler.DDLCompiler
     type_compiler_cls = compiler.StrSQLTypeCompiler
@@ -1044,6 +1224,7 @@ class DefaultExecutionContext(ExecutionContext):
     _empty_dict_params = cast("Mapping[str, Any]", util.EMPTY_DICT)
 
     _insertmanyvalues_rows: Optional[List[Tuple[Any, ...]]] = None
+    _num_sentinel_cols: int = 0
 
     @classmethod
     def _init_ddl(
@@ -1153,6 +1334,17 @@ class DefaultExecutionContext(ExecutionContext):
                     )
                 elif (
                     ii
+                    and dml_statement._sort_by_parameter_order
+                    and not self.dialect.insert_executemany_returning_sort_by_parameter_order  # noqa: E501
+                ):
+                    raise exc.InvalidRequestError(
+                        f"Dialect {self.dialect.dialect_description} with "
+                        f"current server capabilities does not support "
+                        "INSERT..RETURNING with deterministic row ordering "
+                        "when executemany is used"
+                    )
+                elif (
+                    ii
                     and self.dialect.use_insertmanyvalues
                     and not compiled._insertmanyvalues
                 ):
@@ -1195,6 +1387,10 @@ class DefaultExecutionContext(ExecutionContext):
             if len(parameters) > 1:
                 if self.isinsert and compiled._insertmanyvalues:
                     self.execute_style = ExecuteStyle.INSERTMANYVALUES
+
+                    imv = compiled._insertmanyvalues
+                    if imv.sentinel_columns is not None:
+                        self._num_sentinel_cols = imv.num_sentinel_columns
                 else:
                     self.execute_style = ExecuteStyle.EXECUTEMANY
 
@@ -1203,10 +1399,7 @@ class DefaultExecutionContext(ExecutionContext):
         self.cursor = self.create_cursor()
 
         if self.compiled.insert_prefetch or self.compiled.update_prefetch:
-            if self.executemany:
-                self._process_executemany_defaults()
-            else:
-                self._process_executesingle_defaults()
+            self._process_execute_defaults()
 
         processors = compiled._bind_processors
 
@@ -1529,6 +1722,9 @@ class DefaultExecutionContext(ExecutionContext):
             self._is_server_side = False
             return self.create_default_cursor()
 
+    def fetchall_for_returning(self, cursor):
+        return cursor.fetchall()
+
     def create_default_cursor(self):
         return self._dbapi_connection.cursor()
 
@@ -1643,7 +1839,6 @@ class DefaultExecutionContext(ExecutionContext):
                 [name for param, name in out_bindparams]
             ),
         ):
-
             type_ = bindparam.type
             impl_type = type_.dialect_impl(self.dialect)
             dbapi_type = impl_type.get_dbapi_type(self.dialect.loaded_dbapi)
@@ -1659,7 +1854,7 @@ class DefaultExecutionContext(ExecutionContext):
     def _setup_dml_or_text_result(self):
         compiled = cast(SQLCompiler, self.compiled)
 
-        strategy = self.cursor_fetch_strategy
+        strategy: ResultFetchStrategy = self.cursor_fetch_strategy
 
         if self.isinsert:
             if (
@@ -1688,11 +1883,24 @@ class DefaultExecutionContext(ExecutionContext):
             strategy = _cursor.BufferedRowCursorFetchStrategy(
                 self.cursor, self.execution_options
             )
-        cursor_description = (
-            strategy.alternate_cursor_description or self.cursor.description
-        )
+
+        if strategy is _cursor._NO_CURSOR_DML:
+            cursor_description = None
+        else:
+            cursor_description = (
+                strategy.alternate_cursor_description
+                or self.cursor.description
+            )
+
         if cursor_description is None:
             strategy = _cursor._NO_CURSOR_DML
+        elif self._num_sentinel_cols:
+            assert self.execute_style is ExecuteStyle.INSERTMANYVALUES
+            # strip out the sentinel columns from cursor description
+            # a similar logic is done to the rows only in CursorResult
+            cursor_description = cursor_description[
+                0 : -self._num_sentinel_cols
+            ]
 
         result: _cursor.CursorResult[Any] = _cursor.CursorResult(
             self, strategy, cursor_description
@@ -1779,7 +1987,6 @@ class DefaultExecutionContext(ExecutionContext):
         return [getter(None, param) for param in self.compiled_parameters]
 
     def _setup_ins_pk_from_implicit_returning(self, result, rows):
-
         if not rows:
             return []
 
@@ -1907,11 +2114,15 @@ class DefaultExecutionContext(ExecutionContext):
         if default.is_sequence:
             return self.fire_sequence(default, type_)
         elif default.is_callable:
+            # this codepath is not normally used as it's inlined
+            # into _process_execute_defaults
             self.current_column = column
             return default.arg(self)
         elif default.is_clause_element:
             return self._exec_default_clause_element(column, default, type_)
         else:
+            # this codepath is not normally used as it's inlined
+            # into _process_execute_defaults
             return default.arg
 
     def _exec_default_clause_element(self, column, default, type_):
@@ -2028,7 +2239,7 @@ class DefaultExecutionContext(ExecutionContext):
             and compile_state._has_multi_parameters
         ):
             if column._is_multiparam_column:
-                index = column.index + 1  # type: ignore
+                index = column.index + 1
                 d = {column.original.key: parameters[column.key]}
             else:
                 d = {column.key: parameters[column.key]}
@@ -2054,68 +2265,58 @@ class DefaultExecutionContext(ExecutionContext):
         else:
             return self._exec_default(column, column.onupdate, column.type)
 
-    def _process_executemany_defaults(self):
+    def _process_execute_defaults(self):
         compiled = cast(SQLCompiler, self.compiled)
 
         key_getter = compiled._within_exec_param_key_getter
 
-        scalar_defaults: Dict[Column[Any], Any] = {}
+        sentinel_counter = 0
 
-        insert_prefetch = compiled.insert_prefetch
-        update_prefetch = compiled.update_prefetch
-
-        # pre-determine scalar Python-side defaults
-        # to avoid many calls of get_insert_default()/
-        # get_update_default()
-        for c in insert_prefetch:
-            if c.default and default_is_scalar(c.default):
-                scalar_defaults[c] = c.default.arg
-
-        for c in update_prefetch:
-            if c.onupdate and default_is_scalar(c.onupdate):
-                scalar_defaults[c] = c.onupdate.arg
+        if compiled.insert_prefetch:
+            prefetch_recs = [
+                (
+                    c,
+                    key_getter(c),
+                    c._default_description_tuple,
+                    self.get_insert_default,
+                )
+                for c in compiled.insert_prefetch
+            ]
+        elif compiled.update_prefetch:
+            prefetch_recs = [
+                (
+                    c,
+                    key_getter(c),
+                    c._onupdate_description_tuple,
+                    self.get_update_default,
+                )
+                for c in compiled.update_prefetch
+            ]
+        else:
+            prefetch_recs = []
 
         for param in self.compiled_parameters:
             self.current_parameters = param
-            for c in insert_prefetch:
-                if c in scalar_defaults:
-                    val = scalar_defaults[c]
+
+            for (
+                c,
+                param_key,
+                (arg, is_scalar, is_callable, is_sentinel),
+                fallback,
+            ) in prefetch_recs:
+                if is_sentinel:
+                    param[param_key] = sentinel_counter
+                    sentinel_counter += 1
+                elif is_scalar:
+                    param[param_key] = arg
+                elif is_callable:
+                    self.current_column = c
+                    param[param_key] = arg(self)
                 else:
-                    val = self.get_insert_default(c)
-                if val is not None:
-                    param[key_getter(c)] = val
-            for c in update_prefetch:
-                if c in scalar_defaults:
-                    val = scalar_defaults[c]
-                else:
-                    val = self.get_update_default(c)
-                if val is not None:
-                    param[key_getter(c)] = val
+                    val = fallback(c)
+                    if val is not None:
+                        param[param_key] = val
 
-        del self.current_parameters
-
-    def _process_executesingle_defaults(self):
-        compiled = cast(SQLCompiler, self.compiled)
-
-        key_getter = compiled._within_exec_param_key_getter
-        self.current_parameters = (
-            compiled_parameters
-        ) = self.compiled_parameters[0]
-
-        for c in compiled.insert_prefetch:
-            if c.default and default_is_scalar(c.default):
-                val = c.default.arg
-            else:
-                val = self.get_insert_default(c)
-
-            if val is not None:
-                compiled_parameters[key_getter(c)] = val
-
-        for c in compiled.update_prefetch:
-            val = self.get_update_default(c)
-
-            if val is not None:
-                compiled_parameters[key_getter(c)] = val
         del self.current_parameters
 
 

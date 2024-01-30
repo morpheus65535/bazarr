@@ -1,6 +1,9 @@
 """
 linguee translator API
 """
+
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
 from typing import List, Optional, Union
 
 import requests
@@ -16,7 +19,7 @@ from deep_translator.exceptions import (
     TooManyRequests,
     TranslationNotFound,
 )
-from deep_translator.validate import is_empty, is_input_valid
+from deep_translator.validate import is_empty, is_input_valid, request_failed
 
 
 class LingueeTranslator(BaseTranslator):
@@ -25,7 +28,11 @@ class LingueeTranslator(BaseTranslator):
     """
 
     def __init__(
-        self, source: str = "en", target: str = "de", proxies: Optional[dict] = None, **kwargs
+        self,
+        source: str = "en",
+        target: str = "de",
+        proxies: Optional[dict] = None,
+        **kwargs,
     ):
         """
         @param source: source language to translate from
@@ -58,33 +65,34 @@ class LingueeTranslator(BaseTranslator):
 
         if is_input_valid(word, max_chars=50):
             # %s-%s/translation/%s.html
-            url = (
-                f"{self._base_url}{self._source}-{self._target}/translation/{word}.html"
-            )
+            url = f"{self._base_url}{self._source}-{self._target}/search/?source={self._source}&query={word}"
             url = requote_uri(url)
             response = requests.get(url, proxies=self.proxies)
 
             if response.status_code == 429:
                 raise TooManyRequests()
 
-            if response.status_code != 200:
+            if request_failed(status_code=response.status_code):
                 raise RequestError()
+
             soup = BeautifulSoup(response.text, "html.parser")
             elements = soup.find_all(self._element_tag, self._element_query)
             response.close()
-            
+
             if not elements:
                 raise ElementNotFoundInGetRequest(elements)
 
             filtered_elements = []
             for el in elements:
                 try:
-                    pronoun = el.find("span", {"class": "placeholder"}).get_text(
-                        strip=True
-                    )
+                    pronoun = el.find(
+                        "span", {"class": "placeholder"}
+                    ).get_text(strip=True)
                 except AttributeError:
                     pronoun = ""
-                filtered_elements.append(el.get_text(strip=True).replace(pronoun, ""))
+                filtered_elements.append(
+                    el.get_text(strip=True).replace(pronoun, "")
+                )
 
             if not filtered_elements:
                 raise TranslationNotFound(word)

@@ -1,6 +1,8 @@
+# mypy: allow-untyped-defs, allow-incomplete-defs, allow-untyped-calls
+# mypy: no-warn-return-any, allow-any-generics
+
 from __future__ import annotations
 
-from collections import OrderedDict
 from io import StringIO
 import re
 from typing import Any
@@ -26,6 +28,7 @@ from ..util import sqla_compat
 if TYPE_CHECKING:
     from typing import Literal
 
+    from sqlalchemy.sql.base import DialectKWArgs
     from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.elements import TextClause
     from sqlalchemy.sql.schema import CheckConstraint
@@ -94,7 +97,6 @@ def _render_cmd_body(
     op_container: ops.OpContainer,
     autogen_context: AutogenContext,
 ) -> str:
-
     buf = StringIO()
     printer = PythonPrinter(buf)
 
@@ -165,15 +167,22 @@ def _render_modify_table(
 def _render_create_table_comment(
     autogen_context: AutogenContext, op: ops.CreateTableCommentOp
 ) -> str:
-
-    templ = (
-        "{prefix}create_table_comment(\n"
-        "{indent}'{tname}',\n"
-        "{indent}{comment},\n"
-        "{indent}existing_comment={existing},\n"
-        "{indent}schema={schema}\n"
-        ")"
-    )
+    if autogen_context._has_batch:
+        templ = (
+            "{prefix}create_table_comment(\n"
+            "{indent}{comment},\n"
+            "{indent}existing_comment={existing}\n"
+            ")"
+        )
+    else:
+        templ = (
+            "{prefix}create_table_comment(\n"
+            "{indent}'{tname}',\n"
+            "{indent}{comment},\n"
+            "{indent}existing_comment={existing},\n"
+            "{indent}schema={schema}\n"
+            ")"
+        )
     return templ.format(
         prefix=_alembic_autogenerate_prefix(autogen_context),
         tname=op.table_name,
@@ -190,14 +199,20 @@ def _render_create_table_comment(
 def _render_drop_table_comment(
     autogen_context: AutogenContext, op: ops.DropTableCommentOp
 ) -> str:
-
-    templ = (
-        "{prefix}drop_table_comment(\n"
-        "{indent}'{tname}',\n"
-        "{indent}existing_comment={existing},\n"
-        "{indent}schema={schema}\n"
-        ")"
-    )
+    if autogen_context._has_batch:
+        templ = (
+            "{prefix}drop_table_comment(\n"
+            "{indent}existing_comment={existing}\n"
+            ")"
+        )
+    else:
+        templ = (
+            "{prefix}drop_table_comment(\n"
+            "{indent}'{tname}',\n"
+            "{indent}existing_comment={existing},\n"
+            "{indent}schema={schema}\n"
+            ")"
+        )
     return templ.format(
         prefix=_alembic_autogenerate_prefix(autogen_context),
         tname=op.table_name,
@@ -248,6 +263,11 @@ def _add_table(autogen_context: AutogenContext, op: ops.CreateTableOp) -> str:
     comment = table.comment
     if comment:
         text += ",\ncomment=%r" % _ident(comment)
+
+    info = table.info
+    if info:
+        text += f",\ninfo={info!r}"
+
     for k in sorted(op.kw):
         text += ",\n%s=%r" % (k.replace(" ", "_"), op.kw[k])
 
@@ -271,6 +291,15 @@ def _drop_table(autogen_context: AutogenContext, op: ops.DropTableOp) -> str:
     return text
 
 
+def _render_dialect_kwargs_items(
+    autogen_context: AutogenContext, item: DialectKWArgs
+) -> list[str]:
+    return [
+        f"{key}={_render_potential_expr(val, autogen_context)}"
+        for key, val in item.dialect_kwargs.items()
+    ]
+
+
 @renderers.dispatch_for(ops.CreateIndexOp)
 def _add_index(autogen_context: AutogenContext, op: ops.CreateIndexOp) -> str:
     index = op.to_index()
@@ -289,6 +318,8 @@ def _add_index(autogen_context: AutogenContext, op: ops.CreateIndexOp) -> str:
         )
 
     assert index.table is not None
+
+    opts = _render_dialect_kwargs_items(autogen_context, index)
     text = tmpl % {
         "prefix": _alembic_autogenerate_prefix(autogen_context),
         "name": _render_gen_name(autogen_context, index.name),
@@ -300,18 +331,7 @@ def _add_index(autogen_context: AutogenContext, op: ops.CreateIndexOp) -> str:
         "schema": (", schema=%r" % _ident(index.table.schema))
         if index.table.schema
         else "",
-        "kwargs": (
-            ", "
-            + ", ".join(
-                [
-                    "%s=%s"
-                    % (key, _render_potential_expr(val, autogen_context))
-                    for key, val in index.kwargs.items()
-                ]
-            )
-        )
-        if len(index.kwargs)
-        else "",
+        "kwargs": ", " + ", ".join(opts) if opts else "",
     }
     return text
 
@@ -329,24 +349,13 @@ def _drop_index(autogen_context: AutogenContext, op: ops.DropIndexOp) -> str:
             "%(prefix)sdrop_index(%(name)r, "
             "table_name=%(table_name)r%(schema)s%(kwargs)s)"
         )
-
+    opts = _render_dialect_kwargs_items(autogen_context, index)
     text = tmpl % {
         "prefix": _alembic_autogenerate_prefix(autogen_context),
         "name": _render_gen_name(autogen_context, op.index_name),
         "table_name": _ident(op.table_name),
         "schema": ((", schema=%r" % _ident(op.schema)) if op.schema else ""),
-        "kwargs": (
-            ", "
-            + ", ".join(
-                [
-                    "%s=%s"
-                    % (key, _render_potential_expr(val, autogen_context))
-                    for key, val in index.kwargs.items()
-                ]
-            )
-        )
-        if len(index.kwargs)
-        else "",
+        "kwargs": ", " + ", ".join(opts) if opts else "",
     }
     return text
 
@@ -362,7 +371,6 @@ def _add_unique_constraint(
 def _add_fk_constraint(
     autogen_context: AutogenContext, op: ops.CreateForeignKeyOp
 ) -> str:
-
     args = [repr(_render_gen_name(autogen_context, op.constraint_name))]
     if not autogen_context._has_batch:
         args.append(repr(_ident(op.source_table)))
@@ -381,6 +389,7 @@ def _add_fk_constraint(
         "initially",
         "deferrable",
         "use_alter",
+        "match",
     ]
     if not autogen_context._has_batch:
         kwargs.insert(0, "source_schema")
@@ -411,28 +420,25 @@ def _add_check_constraint(constraint, autogen_context):
 def _drop_constraint(
     autogen_context: AutogenContext, op: ops.DropConstraintOp
 ) -> str:
+    prefix = _alembic_autogenerate_prefix(autogen_context)
+    name = _render_gen_name(autogen_context, op.constraint_name)
+    schema = _ident(op.schema) if op.schema else None
+    type_ = _ident(op.constraint_type) if op.constraint_type else None
 
-    if autogen_context._has_batch:
-        template = "%(prefix)sdrop_constraint" "(%(name)r, type_=%(type)r)"
-    else:
-        template = (
-            "%(prefix)sdrop_constraint"
-            "(%(name)r, '%(table_name)s'%(schema)s, type_=%(type)r)"
-        )
+    params_strs = []
+    params_strs.append(repr(name))
+    if not autogen_context._has_batch:
+        params_strs.append(repr(_ident(op.table_name)))
+        if schema is not None:
+            params_strs.append(f"schema={schema!r}")
+    if type_ is not None:
+        params_strs.append(f"type_={type_!r}")
 
-    text = template % {
-        "prefix": _alembic_autogenerate_prefix(autogen_context),
-        "name": _render_gen_name(autogen_context, op.constraint_name),
-        "table_name": _ident(op.table_name),
-        "type": op.constraint_type,
-        "schema": (", schema=%r" % _ident(op.schema)) if op.schema else "",
-    }
-    return text
+    return f"{prefix}drop_constraint({', '.join(params_strs)})"
 
 
 @renderers.dispatch_for(ops.AddColumnOp)
 def _add_column(autogen_context: AutogenContext, op: ops.AddColumnOp) -> str:
-
     schema, tname, column = op.schema, op.table_name, op.column
     if autogen_context._has_batch:
         template = "%(prefix)sadd_column(%(column)s)"
@@ -452,7 +458,6 @@ def _add_column(autogen_context: AutogenContext, op: ops.AddColumnOp) -> str:
 
 @renderers.dispatch_for(ops.DropColumnOp)
 def _drop_column(autogen_context: AutogenContext, op: ops.DropColumnOp) -> str:
-
     schema, tname, column_name = op.schema, op.table_name, op.column_name
 
     if autogen_context._has_batch:
@@ -476,7 +481,6 @@ def _drop_column(autogen_context: AutogenContext, op: ops.DropColumnOp) -> str:
 def _alter_column(
     autogen_context: AutogenContext, op: ops.AlterColumnOp
 ) -> str:
-
     tname = op.table_name
     cname = op.column_name
     server_default = op.modify_server_default
@@ -562,11 +566,12 @@ def _ident(name: Optional[Union[quoted_name, str]]) -> Optional[str]:
 def _render_potential_expr(
     value: Any,
     autogen_context: AutogenContext,
+    *,
     wrap_in_text: bool = True,
     is_server_default: bool = False,
+    is_index: bool = False,
 ) -> str:
     if isinstance(value, sql.ClauseElement):
-
         if wrap_in_text:
             template = "%(prefix)stext(%(sql)r)"
         else:
@@ -575,7 +580,7 @@ def _render_potential_expr(
         return template % {
             "prefix": _sqlalchemy_autogenerate_prefix(autogen_context),
             "sql": autogen_context.migration_context.impl.render_ddl_sql_expr(
-                value, is_server_default=is_server_default
+                value, is_server_default=is_server_default, is_index=is_index
             ),
         }
 
@@ -589,7 +594,7 @@ def _get_index_rendered_expressions(
     return [
         repr(_ident(getattr(exp, "name", None)))
         if isinstance(exp, sa_schema.Column)
-        else _render_potential_expr(exp, autogen_context)
+        else _render_potential_expr(exp, autogen_context, is_index=True)
         for exp in idx.expressions
     ]
 
@@ -613,6 +618,7 @@ def _uq_constraint(
         opts.append(
             ("name", _render_gen_name(autogen_context, constraint.name))
         )
+    dialect_options = _render_dialect_kwargs_items(autogen_context, constraint)
 
     if alter:
         args = [repr(_render_gen_name(autogen_context, constraint.name))]
@@ -620,6 +626,7 @@ def _uq_constraint(
             args += [repr(_ident(constraint.table.name))]
         args.append(repr([_ident(col.name) for col in constraint.columns]))
         args.extend(["%s=%r" % (k, v) for k, v in opts])
+        args.extend(dialect_options)
         return "%(prefix)screate_unique_constraint(%(args)s)" % {
             "prefix": _alembic_autogenerate_prefix(autogen_context),
             "args": ", ".join(args),
@@ -627,6 +634,7 @@ def _uq_constraint(
     else:
         args = [repr(_ident(col.name)) for col in constraint.columns]
         args.extend(["%s=%r" % (k, v) for k, v in opts])
+        args.extend(dialect_options)
         return "%(prefix)sUniqueConstraint(%(args)s)" % {
             "prefix": _sqlalchemy_autogenerate_prefix(autogen_context),
             "args": ", ".join(args),
@@ -664,7 +672,9 @@ def _user_defined_render(
     return False
 
 
-def _render_column(column: Column, autogen_context: AutogenContext) -> str:
+def _render_column(
+    column: Column[Any], autogen_context: AutogenContext
+) -> str:
     rendered = _user_defined_render("column", column, autogen_context)
     if rendered is not False:
         return rendered
@@ -673,7 +683,6 @@ def _render_column(column: Column, autogen_context: AutogenContext) -> str:
     opts: List[Tuple[str, Any]] = []
 
     if column.server_default:
-
         rendered = _render_server_default(  # type:ignore[assignment]
             column.server_default, autogen_context
         )
@@ -727,7 +736,9 @@ def _should_render_server_default_positionally(server_default: Any) -> bool:
 
 
 def _render_server_default(
-    default: Optional[Union[FetchedValue, str, TextClause, ColumnElement]],
+    default: Optional[
+        Union[FetchedValue, str, TextClause, ColumnElement[Any]]
+    ],
     autogen_context: AutogenContext,
     repr_: bool = True,
 ) -> Optional[str]:
@@ -773,25 +784,14 @@ def _render_computed(
 def _render_identity(
     identity: Identity, autogen_context: AutogenContext
 ) -> str:
-    # always=None means something different than always=False
-    kwargs = OrderedDict(always=identity.always)
-    if identity.on_null is not None:
-        kwargs["on_null"] = identity.on_null
-    kwargs.update(_get_identity_options(identity))
+    kwargs = sqla_compat._get_identity_options_dict(
+        identity, dialect_kwargs=True
+    )
 
     return "%(prefix)sIdentity(%(kwargs)s)" % {
         "prefix": _sqlalchemy_autogenerate_prefix(autogen_context),
         "kwargs": (", ".join("%s=%s" % pair for pair in kwargs.items())),
     }
-
-
-def _get_identity_options(identity_options: Identity) -> OrderedDict:
-    kwargs = OrderedDict()
-    for attr in sqla_compat._identity_options_attrs:
-        value = getattr(identity_options, attr, None)
-        if value is not None:
-            kwargs[attr] = value
-    return kwargs
 
 
 def _repr_type(
@@ -852,7 +852,7 @@ def _render_Variant_type(
 ) -> str:
     base_type, variant_mapping = sqla_compat._get_variant_mapping(type_)
     base = _repr_type(base_type, autogen_context, _skip_variants=True)
-    assert base is not None and base is not False
+    assert base is not None and base is not False  # type: ignore[comparison-overlap]  # noqa:E501
     for dialect in sorted(variant_mapping):
         typ = variant_mapping[dialect]
         base += ".with_variant(%s, %r)" % (
@@ -949,7 +949,7 @@ def _fk_colspec(
     won't fail if the remote table can't be resolved.
 
     """
-    colspec = fk._get_colspec()  # type:ignore[attr-defined]
+    colspec = fk._get_colspec()
     tokens = colspec.split(".")
     tname, colname = tokens[-2:]
 
@@ -980,7 +980,6 @@ def _fk_colspec(
 def _populate_render_fk_opts(
     constraint: ForeignKeyConstraint, opts: List[Tuple[str, str]]
 ) -> None:
-
     if constraint.onupdate:
         opts.append(("onupdate", repr(constraint.onupdate)))
     if constraint.ondelete:
@@ -991,6 +990,8 @@ def _populate_render_fk_opts(
         opts.append(("deferrable", repr(constraint.deferrable)))
     if constraint.use_alter:
         opts.append(("use_alter", repr(constraint.use_alter)))
+    if constraint.match:
+        opts.append(("match", repr(constraint.match)))
 
 
 @_constraint_renderers.dispatch_for(sa_schema.ForeignKeyConstraint)
@@ -1018,8 +1019,7 @@ def _render_foreign_key(
         % {
             "prefix": _sqlalchemy_autogenerate_prefix(autogen_context),
             "cols": ", ".join(
-                "%r" % _ident(cast("Column", f.parent).name)
-                for f in constraint.elements
+                repr(_ident(f.parent.name)) for f in constraint.elements
             ),
             "refcols": ", ".join(
                 repr(_fk_colspec(f, apply_metadata_schema, namespace_metadata))
@@ -1060,12 +1060,10 @@ def _render_check_constraint(
     # ideally SQLAlchemy would give us more of a first class
     # way to detect this.
     if (
-        constraint._create_rule  # type:ignore[attr-defined]
-        and hasattr(
-            constraint._create_rule, "target"  # type:ignore[attr-defined]
-        )
+        constraint._create_rule
+        and hasattr(constraint._create_rule, "target")
         and isinstance(
-            constraint._create_rule.target,  # type:ignore[attr-defined]
+            constraint._create_rule.target,
             sqltypes.TypeEngine,
         )
     ):

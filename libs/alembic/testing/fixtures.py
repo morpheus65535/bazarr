@@ -28,7 +28,7 @@ from ..operations import Operations
 from ..util import sqla_compat
 from ..util.sqla_compat import create_mock_engine
 from ..util.sqla_compat import sqla_14
-from ..util.sqla_compat import sqla_1x
+from ..util.sqla_compat import sqla_2
 
 
 testing_config = configparser.ConfigParser()
@@ -36,10 +36,7 @@ testing_config.read(["test.cfg"])
 
 
 class TestBase(SQLAlchemyTestBase):
-    if sqla_1x:
-        is_sqlalchemy_future = False
-    else:
-        is_sqlalchemy_future = True
+    is_sqlalchemy_future = sqla_2
 
     @testing.fixture()
     def ops_context(self, migration_context):
@@ -137,7 +134,6 @@ def op_fixture(
     literal_binds=False,
     native_boolean=None,
 ):
-
     opts = {}
     if naming_convention:
         opts["target_metadata"] = MetaData(naming_convention=naming_convention)
@@ -220,7 +216,6 @@ def op_fixture(
 
 
 class AlterColRoundTripFixture:
-
     # since these tests are about syntax, use more recent SQLAlchemy as some of
     # the type / server default compare logic might not work on older
     # SQLAlchemy versions as seems to be the case for SQLAlchemy 1.1 on Oracle

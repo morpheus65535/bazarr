@@ -14,29 +14,26 @@
 
 """Provide :class:`BidictBase`."""
 
-import typing as t
-import weakref
+from __future__ import annotations
 from functools import partial
 from itertools import starmap
 from operator import eq
 from types import MappingProxyType
+import typing as t
+import weakref
 
 from ._abc import BidirectionalMapping
 from ._dup import ON_DUP_DEFAULT, RAISE, DROP_OLD, DROP_NEW, OnDup
 from ._exc import DuplicationError, KeyDuplicationError, ValueDuplicationError, KeyAndValueDuplicationError
 from ._iter import iteritems, inverted
-from ._typing import KT, VT, MISSING, OKT, OVT, IterItems, MapOrIterItems
+from ._typing import KT, VT, MISSING, OKT, OVT, Items, MapOrItems, TypeAlias
 
 
-# Disable pyright strict diagnostics that are causing many false positives or are just not helpful in this file:
-# pyright: reportPrivateUsage=false, reportUnknownArgumentType=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnnecessaryIsInstance=false
-
-
-OldKV = t.Tuple[OKT[KT], OVT[VT]]
-DedupResult = t.Optional[OldKV[KT, VT]]
-Write = t.List[t.Callable[[], None]]
-Unwrite = Write
-PreparedWrite = t.Tuple[Write, Unwrite]
+OldKV: TypeAlias = 'tuple[OKT[KT], OVT[VT]]'
+DedupResult: TypeAlias = 'OldKV[KT, VT] | None'
+Write: TypeAlias = 'list[t.Callable[[], None]]'
+Unwrite: TypeAlias = Write
+PreparedWrite: TypeAlias = 'tuple[Write, Unwrite]'
 BT = t.TypeVar('BT', bound='BidictBase[t.Any, t.Any]')
 
 
@@ -47,11 +44,7 @@ class BidictKeysView(t.KeysView[KT], t.ValuesView[KT]):
     """
 
 
-dict_keys: t.Type[t.KeysView[t.Any]] = type({}.keys())
-BidictKeysView.register(dict_keys)
-
-
-def get_arg(*args: MapOrIterItems[KT, VT]) -> MapOrIterItems[KT, VT]:
+def get_arg(*args: MapOrItems[KT, VT]) -> MapOrItems[KT, VT]:
     """Ensure there's only a single arg in *args*, then return it."""
     if len(args) > 1:
         raise TypeError(f'Expected at most 1 positional argument, got {len(args)}')
@@ -78,7 +71,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
     _invm_cls: t.ClassVar[t.Type[t.MutableMapping[t.Any, t.Any]]] = dict  #: class of the backing inverse mapping
 
     #: The class of the inverse bidict instance.
-    _inv_cls: 't.ClassVar[t.Type[BidictBase[t.Any, t.Any]]]'
+    _inv_cls: t.ClassVar[t.Type[BidictBase[t.Any, t.Any]]]
 
     #: Used by :meth:`__repr__` for the contained items.
     _repr_delegate: t.ClassVar[t.Any] = dict
@@ -125,7 +118,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         cls._inv_cls = cls._make_inv_cls()
 
     @classmethod
-    def _make_inv_cls(cls: t.Type[BT], _miss: t.Any = object()) -> 't.Type[BT]':
+    def _make_inv_cls(cls: t.Type[BT], _miss: t.Any = object()) -> t.Type[BT]:
         diff = cls._inv_cls_dict_diff()
         cls_is_own_inv = all(getattr(cls, k, _miss) == v for (k, v) in diff.items())
         if cls_is_own_inv:
@@ -138,7 +131,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         return t.cast(t.Type[BT], inv_cls)
 
     @classmethod
-    def _inv_cls_dict_diff(cls) -> t.Dict[str, t.Any]:
+    def _inv_cls_dict_diff(cls) -> dict[str, t.Any]:
         return {
             '_fwdm_cls': cls._invm_cls,
             '_invm_cls': cls._fwdm_cls,
@@ -149,9 +142,9 @@ class BidictBase(BidirectionalMapping[KT, VT]):
     @t.overload
     def __init__(self, __m: t.Mapping[KT, VT], **kw: VT) -> None: ...
     @t.overload
-    def __init__(self, __i: IterItems[KT, VT], **kw: VT) -> None: ...
+    def __init__(self, __i: Items[KT, VT], **kw: VT) -> None: ...
 
-    def __init__(self, *args: MapOrIterItems[KT, VT], **kw: VT) -> None:
+    def __init__(self, *args: MapOrItems[KT, VT], **kw: VT) -> None:
         """Make a new bidirectional mapping.
         The signature behaves like that of :class:`dict`.
         Items passed in are added in the order they are passed,
@@ -166,7 +159,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
     #     def inverse(self: BT[KT, VT]) -> BT[VT, KT]:
     # Ref: https://github.com/python/typing/issues/548#issuecomment-621571821
     @property
-    def inverse(self) -> 'BidictBase[VT, KT]':
+    def inverse(self) -> BidictBase[VT, KT]:
         """The inverse of this bidirectional mapping instance."""
         # When `bi.inverse` is called for the first time, this method
         # computes the inverse instance, stores it for subsequent use, and then
@@ -176,7 +169,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         # in ._invweak.
 
         # First check if a strong reference is already stored.
-        inv: 't.Optional[BidictBase[VT, KT]]' = getattr(self, '_inv', None)
+        inv: BidictBase[VT, KT] | None = getattr(self, '_inv', None)
         if inv is not None:
             return inv
         # Next check if a weak reference is already stored.
@@ -187,8 +180,8 @@ class BidictBase(BidirectionalMapping[KT, VT]):
                 return inv
         # No luck. Compute the inverse reference and store it for subsequent use.
         inv = self._make_inverse()
-        self._inv: 't.Optional[BidictBase[VT, KT]]' = inv
-        self._invweak: 't.Optional[weakref.ReferenceType[BidictBase[VT, KT]]]' = None
+        self._inv: BidictBase[VT, KT] | None = inv
+        self._invweak: weakref.ReferenceType[BidictBase[VT, KT]] | None = None
         # Also store a weak reference back to `instance` on its inverse instance, so that
         # the second `.inverse` access in `bi.inverse.inverse` hits the cached weakref.
         inv._inv = None
@@ -198,14 +191,14 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         # avoiding an unintended potential deallocation.
         return inv
 
-    def _make_inverse(self) -> 'BidictBase[VT, KT]':
-        inv: 'BidictBase[VT, KT]' = self._inv_cls()
+    def _make_inverse(self) -> BidictBase[VT, KT]:
+        inv: BidictBase[VT, KT] = self._inv_cls()
         inv._fwdm = self._invm
         inv._invm = self._fwdm
         return inv
 
     @property
-    def inv(self) -> 'BidictBase[VT, KT]':
+    def inv(self) -> BidictBase[VT, KT]:
         """Alias for :attr:`inverse`."""
         return self.inverse
 
@@ -368,11 +361,11 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         needed to keep its internal linked list nodes consistent with its items' order as changes are made.
         """
         fwdm, invm = self._fwdm, self._invm
-        write: t.List[t.Callable[[], None]] = [
+        write: list[t.Callable[[], None]] = [
             partial(fwdm.__setitem__, newkey, newval),
             partial(invm.__setitem__, newval, newkey),
         ]
-        unwrite: t.List[t.Callable[[], None]]
+        unwrite: list[t.Callable[[], None]]
         if oldval is MISSING and oldkey is MISSING:  # no key or value duplication
             # {0: 1, 2: 3} + (4, 5) => {0: 1, 2: 3, 4: 5}
             unwrite = [
@@ -412,11 +405,11 @@ class BidictBase(BidirectionalMapping[KT, VT]):
 
     def _update(
         self,
-        arg: MapOrIterItems[KT, VT],
+        arg: MapOrItems[KT, VT],
         kw: t.Mapping[str, VT] = MappingProxyType({}),
         *,
-        rbof: t.Optional[bool] = None,
-        on_dup: t.Optional[OnDup] = None,
+        rbof: bool | None = None,
+        on_dup: OnDup | None = None,
     ) -> None:
         """Update, possibly rolling back on failure as per *rbof*."""
         # Must process input in a single pass, since arg may be a generator.
@@ -447,7 +440,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         # There are more already-contained items than updates to process, or we don't know
         # how many updates there are to process. If we need to roll back on failure,
         # save a log of Unwrites as we update so we can undo changes if the update fails.
-        unwrites: t.List[Unwrite] = []
+        unwrites: list[Unwrite] = []
         append_unwrite = unwrites.append
         prep_write = self._prep_write
         for (key, val) in iteritems(arg, **kw):
@@ -477,7 +470,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         return self._from_other(self.__class__, self)
 
     @staticmethod
-    def _from_other(bt: t.Type[BT], other: MapOrIterItems[KT, VT], inv: bool = False) -> BT:
+    def _from_other(bt: t.Type[BT], other: MapOrItems[KT, VT], inv: bool = False) -> BT:
         """Fast, private constructor based on :meth:`_init_from`.
 
         If *inv* is true, return the inverse of the instance instead of the instance itself.
@@ -487,7 +480,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         inst._init_from(other)
         return t.cast(BT, inst.inverse) if inv else inst
 
-    def _init_from(self, other: MapOrIterItems[KT, VT]) -> None:
+    def _init_from(self, other: MapOrItems[KT, VT]) -> None:
         """Fast init from *other*, bypassing item-by-item duplication checking."""
         self._fwdm.clear()
         self._invm.clear()
@@ -495,7 +488,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         # If other is a bidict, use its existing backing inverse mapping, otherwise
         # other could be a generator that's now exhausted, so invert self._fwdm on the fly.
         inv = other.inverse if isinstance(other, BidictBase) else inverted(self._fwdm)
-        self._invm.update(inv)  # pyright: ignore  # https://github.com/jab/bidict/pull/242#discussion_r824223403
+        self._invm.update(inv)
 
     #: Used for the copy protocol.
     #: *See also* the :mod:`copy` module
@@ -529,7 +522,7 @@ class BidictBase(BidirectionalMapping[KT, VT]):
         """*x.__getitem__(key) ⟺ x[key]*"""
         return self._fwdm[key]
 
-    def __reduce__(self) -> t.Tuple[t.Any, ...]:
+    def __reduce__(self) -> tuple[t.Any, ...]:
         """Return state information for pickling."""
         # If this bidict's class is dynamically generated, pickle the inverse instead, whose
         # (presumably not dynamically generated) class the caller is more likely to have a reference to

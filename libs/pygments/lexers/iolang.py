@@ -4,13 +4,13 @@
 
     Lexers for the Io language.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 from pygments.lexer import RegexLexer
-from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
-    Number, Whitespace
+from pygments.token import Comment, Operator, Keyword, Name, String, Number, \
+    Whitespace
 
 __all__ = ['IoLexer']
 

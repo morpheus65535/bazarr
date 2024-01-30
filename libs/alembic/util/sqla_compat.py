@@ -1,12 +1,20 @@
+# mypy: allow-untyped-defs, allow-incomplete-defs, allow-untyped-calls
+# mypy: no-warn-return-any, allow-any-generics
+
 from __future__ import annotations
 
 import contextlib
 import re
 from typing import Any
+from typing import Callable
+from typing import Dict
 from typing import Iterable
 from typing import Iterator
 from typing import Mapping
 from typing import Optional
+from typing import Protocol
+from typing import Set
+from typing import Type
 from typing import TYPE_CHECKING
 from typing import TypeVar
 from typing import Union
@@ -17,11 +25,11 @@ from sqlalchemy import schema
 from sqlalchemy import sql
 from sqlalchemy import types as sqltypes
 from sqlalchemy.engine import url
-from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import CheckConstraint
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import ForeignKeyConstraint
 from sqlalchemy.sql import visitors
+from sqlalchemy.sql.base import DialectKWArgs
 from sqlalchemy.sql.elements import BindParameter
 from sqlalchemy.sql.elements import ColumnClause
 from sqlalchemy.sql.elements import quoted_name
@@ -31,6 +39,7 @@ from sqlalchemy.sql.visitors import traverse
 from typing_extensions import TypeGuard
 
 if TYPE_CHECKING:
+    from sqlalchemy import ClauseElement
     from sqlalchemy import Index
     from sqlalchemy import Table
     from sqlalchemy.engine import Connection
@@ -46,7 +55,12 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.selectable import Select
     from sqlalchemy.sql.selectable import TableClause
 
-_CE = TypeVar("_CE", bound=Union["ColumnElement", "SchemaItem"])
+_CE = TypeVar("_CE", bound=Union["ColumnElement[Any]", "SchemaItem"])
+
+
+class _CompilerProtocol(Protocol):
+    def __call__(self, element: Any, compiler: Any, **kw: Any) -> str:
+        ...
 
 
 def _safe_int(value: str) -> Union[int, str]:
@@ -61,28 +75,40 @@ _vers = tuple(
 )
 sqla_13 = _vers >= (1, 3)
 sqla_14 = _vers >= (1, 4)
+# https://docs.sqlalchemy.org/en/latest/changelog/changelog_14.html#change-0c6e0cc67dfe6fac5164720e57ef307d
+sqla_14_18 = _vers >= (1, 4, 18)
 sqla_14_26 = _vers >= (1, 4, 26)
 sqla_2 = _vers >= (2,)
 sqlalchemy_version = __version__
 
 try:
-    from sqlalchemy.sql.naming import _NONE_NAME as _NONE_NAME
+    from sqlalchemy.sql.naming import _NONE_NAME as _NONE_NAME  # type: ignore[attr-defined]  # noqa: E501
 except ImportError:
     from sqlalchemy.sql.elements import _NONE_NAME as _NONE_NAME  # type: ignore  # noqa: E501
 
 
-if sqla_14:
-    # when future engine merges, this can be again based on version string
-    from sqlalchemy.engine import Connection as legacy_connection
+class _Unsupported:
+    "Placeholder for unsupported SQLAlchemy classes"
 
-    sqla_1x = not hasattr(legacy_connection, "commit")
+
+if TYPE_CHECKING:
+
+    def compiles(
+        element: Type[ClauseElement], *dialects: str
+    ) -> Callable[[_CompilerProtocol], _CompilerProtocol]:
+        ...
+
 else:
-    sqla_1x = True
+    from sqlalchemy.ext.compiler import compiles
 
 try:
-    from sqlalchemy import Computed  # noqa
+    from sqlalchemy import Computed as Computed
 except ImportError:
-    Computed = type(None)  # type: ignore
+    if not TYPE_CHECKING:
+
+        class Computed(_Unsupported):
+            pass
+
     has_computed = False
     has_computed_reflection = False
 else:
@@ -90,25 +116,56 @@ else:
     has_computed_reflection = _vers >= (1, 3, 16)
 
 try:
-    from sqlalchemy import Identity  # noqa
+    from sqlalchemy import Identity as Identity
 except ImportError:
-    Identity = type(None)  # type: ignore
+    if not TYPE_CHECKING:
+
+        class Identity(_Unsupported):
+            pass
+
     has_identity = False
 else:
-    # attributes common to Indentity and Sequence
-    _identity_options_attrs = (
-        "start",
-        "increment",
-        "minvalue",
-        "maxvalue",
-        "nominvalue",
-        "nomaxvalue",
-        "cycle",
-        "cache",
-        "order",
-    )
-    # attributes of Indentity
-    _identity_attrs = _identity_options_attrs + ("on_null",)
+    identity_has_dialect_kwargs = issubclass(Identity, DialectKWArgs)
+
+    def _get_identity_options_dict(
+        identity: Union[Identity, schema.Sequence, None],
+        dialect_kwargs: bool = False,
+    ) -> Dict[str, Any]:
+        if identity is None:
+            return {}
+        elif identity_has_dialect_kwargs:
+            as_dict = identity._as_dict()  # type: ignore
+            if dialect_kwargs:
+                assert isinstance(identity, DialectKWArgs)
+                as_dict.update(identity.dialect_kwargs)
+        else:
+            as_dict = {}
+            if isinstance(identity, Identity):
+                # always=None means something different than always=False
+                as_dict["always"] = identity.always
+                if identity.on_null is not None:
+                    as_dict["on_null"] = identity.on_null
+            # attributes common to Identity and Sequence
+            attrs = (
+                "start",
+                "increment",
+                "minvalue",
+                "maxvalue",
+                "nominvalue",
+                "nomaxvalue",
+                "cycle",
+                "cache",
+                "order",
+            )
+            as_dict.update(
+                {
+                    key: getattr(identity, key, None)
+                    for key in attrs
+                    if getattr(identity, key, None) is not None
+                }
+            )
+        return as_dict
+
     has_identity = True
 
 if sqla_2:
@@ -215,7 +272,7 @@ def _idx_table_bound_expressions(idx: Index) -> Iterable[ColumnElement[Any]]:
 
 def _copy(schema_item: _CE, **kw) -> _CE:
     if hasattr(schema_item, "_copy"):
-        return schema_item._copy(**kw)  # type: ignore[union-attr]
+        return schema_item._copy(**kw)
     else:
         return schema_item.copy(**kw)  # type: ignore[union-attr]
 
@@ -299,9 +356,7 @@ def _columns_for_constraint(constraint):
         return list(constraint.columns)
 
 
-def _reflect_table(
-    inspector: Inspector, table: Table, include_cols: None
-) -> None:
+def _reflect_table(inspector: Inspector, table: Table) -> None:
     if sqla_14:
         return inspector.reflect_table(table, None)
     else:
@@ -335,7 +390,12 @@ else:
         return type_.impl, type_.mapping
 
 
-def _fk_spec(constraint):
+def _fk_spec(constraint: ForeignKeyConstraint) -> Any:
+    if TYPE_CHECKING:
+        assert constraint.columns is not None
+        assert constraint.elements is not None
+        assert isinstance(constraint.parent, Table)
+
     source_columns = [
         constraint.columns[key].name for key in constraint.column_keys
     ]
@@ -364,7 +424,7 @@ def _fk_spec(constraint):
 
 
 def _fk_is_self_referential(constraint: ForeignKeyConstraint) -> bool:
-    spec = constraint.elements[0]._get_colspec()  # type: ignore[attr-defined]
+    spec = constraint.elements[0]._get_colspec()
     tokens = spec.split(".")
     tokens.pop(-1)  # colname
     tablekey = ".".join(tokens)
@@ -376,19 +436,19 @@ def _is_type_bound(constraint: Constraint) -> bool:
     # this deals with SQLAlchemy #3260, don't copy CHECK constraints
     # that will be generated by the type.
     # new feature added for #3260
-    return constraint._type_bound  # type: ignore[attr-defined]
+    return constraint._type_bound
 
 
 def _find_columns(clause):
     """locate Column objects within the given expression."""
 
-    cols = set()
+    cols: Set[ColumnElement[Any]] = set()
     traverse(clause, {}, {"column": cols.add})
     return cols
 
 
 def _remove_column_from_collection(
-    collection: ColumnCollection, column: Union[Column, ColumnClause]
+    collection: ColumnCollection, column: Union[Column[Any], ColumnClause[Any]]
 ) -> None:
     """remove a column from a ColumnCollection."""
 
@@ -406,8 +466,8 @@ def _remove_column_from_collection(
 
 
 def _textual_index_column(
-    table: Table, text_: Union[str, TextClause, ColumnElement]
-) -> Union[ColumnElement, Column]:
+    table: Table, text_: Union[str, TextClause, ColumnElement[Any]]
+) -> Union[ColumnElement[Any], Column[Any]]:
     """a workaround for the Index construct's severe lack of flexibility"""
     if isinstance(text_, str):
         c = Column(text_, sqltypes.NULLTYPE)
@@ -491,14 +551,6 @@ def _render_literal_bindparam(
     return compiler.render_literal_bindparam(element, **kw)
 
 
-def _get_index_expressions(idx):
-    return list(idx.expressions)
-
-
-def _get_index_column_names(idx):
-    return [getattr(exp, "name", None) for exp in _get_index_expressions(idx)]
-
-
 def _column_kwargs(col: Column) -> Mapping:
     if sqla_13:
         return col.kwargs
@@ -522,7 +574,6 @@ def _get_constraint_final_name(
             constraint, _alembic_quote=False
         )
     else:
-
         # prior to SQLAlchemy 1.4, work around quoting logic to get at the
         # final compiled name without quotes.
         if hasattr(constraint.name, "quote"):
@@ -538,9 +589,7 @@ def _get_constraint_final_name(
         if isinstance(constraint, schema.Index):
             # name should not be quoted.
             d = dialect.ddl_compiler(dialect, None)  # type: ignore[arg-type]
-            return d._prepared_index_name(  # type: ignore[attr-defined]
-                constraint
-            )
+            return d._prepared_index_name(constraint)
         else:
             # name should not be quoted.
             return dialect.identifier_preparer.format_constraint(constraint)
@@ -584,7 +633,11 @@ def _insert_inline(table: Union[TableClause, Table]) -> Insert:
 
 if sqla_14:
     from sqlalchemy import create_mock_engine
-    from sqlalchemy import select as _select
+
+    # weird mypy workaround
+    from sqlalchemy import select as _sa_select
+
+    _select = _sa_select
 else:
     from sqlalchemy import create_engine
 
@@ -593,15 +646,20 @@ else:
             "postgresql://", strategy="mock", executor=executor
         )
 
-    def _select(*columns, **kw) -> Select:  # type: ignore[no-redef]
+    def _select(*columns, **kw) -> Select:
         return sql.select(list(columns), **kw)  # type: ignore[call-overload]
 
 
 def is_expression_index(index: Index) -> bool:
-    expr: Any
     for expr in index.expressions:
-        while isinstance(expr, UnaryExpression):
-            expr = expr.element
-        if not isinstance(expr, ColumnClause) or expr.is_literal:
+        if is_expression(expr):
             return True
+    return False
+
+
+def is_expression(expr: Any) -> bool:
+    while isinstance(expr, UnaryExpression):
+        expr = expr.element
+    if not isinstance(expr, ColumnClause) or expr.is_literal:
+        return True
     return False

@@ -8,7 +8,7 @@
     A desaturated, somewhat subdued style created for the Lovelace interactive
     learning environment.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -17,20 +17,25 @@ from pygments.token import Keyword, Name, Comment, String, Error, \
     Number, Operator, Punctuation, Generic, Whitespace
 
 
+__all__ = ['LovelaceStyle']
+
+
 class LovelaceStyle(Style):
     """
     The style used in Lovelace interactive learning environment. Tries to avoid
     the "angry fruit salad" effect with desaturated and dim colours.
     """
-    _KW_BLUE =       '#2838b0'
-    _NAME_GREEN =    '#388038'
-    _DOC_ORANGE =    '#b85820'
-    _OW_PURPLE =     '#a848a8'
-    _FUN_BROWN =     '#785840'
-    _STR_RED =       '#b83838'
-    _CLS_CYAN =      '#287088'
-    _ESCAPE_LIME =   '#709030'
-    _LABEL_CYAN =    '#289870'
+    name = 'lovelace'
+
+    _KW_BLUE = '#2838b0'
+    _NAME_GREEN = '#388038'
+    _DOC_ORANGE = '#b85820'
+    _OW_PURPLE = '#a848a8'
+    _FUN_BROWN = '#785840'
+    _STR_RED = '#b83838'
+    _CLS_CYAN = '#287088'
+    _ESCAPE_LIME = '#709030'
+    _LABEL_CYAN = '#289870'
     _EXCEPT_YELLOW = '#908828'
 
     styles = {
@@ -88,6 +93,7 @@ class LovelaceStyle(Style):
         Generic.Output:      '#666666',
         Generic.Prompt:      '#444444',
         Generic.Strong:      'bold',
+        Generic.EmphStrong:  'bold italic',
         Generic.Traceback:   _KW_BLUE,
 
         Error:               'bg:'+_OW_PURPLE,

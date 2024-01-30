@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=no-self-use, pointless-statement, missing-docstring, invalid-name, len-as-condition
+# pylint: disable=pointless-statement, missing-docstring, invalid-name, len-as-condition
 
 from ..loose import call
 
@@ -35,7 +35,7 @@ def test_loose_kwargs_function():
 
 
 def test_loose_class():
-    class Dummy(object):
+    class Dummy:
         def __init__(self, v1, v2, v3=3, v4=4):
             self.v1 = v1
             self.v2 = v2
@@ -53,7 +53,7 @@ def test_loose_class():
 
 
 def test_loose_varargs_class():
-    class Dummy(object):
+    class Dummy:
         def __init__(self, v1, v2, *args):
             self.v1 = v1
             self.v2 = v2
@@ -69,7 +69,7 @@ def test_loose_varargs_class():
 
 
 def test_loose_kwargs_class():
-    class Dummy(object):
+    class Dummy:
         def __init__(self, v1, v2, **kwargs):
             self.v1 = v1
             self.v2 = v2

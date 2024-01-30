@@ -1,5 +1,5 @@
-# mssql/information_schema.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# dialects/mssql/information_schema.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -211,7 +211,7 @@ class NumericSqlVariant(TypeDecorator):
     cache_ok = True
 
     def column_expression(self, colexpr):
-        return cast(colexpr, Numeric)
+        return cast(colexpr, Numeric(38, 0))
 
 
 identity_columns = Table(

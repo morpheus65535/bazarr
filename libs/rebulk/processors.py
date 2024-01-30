@@ -44,7 +44,7 @@ class ConflictSolver(Rule):
     consequence = RemoveMatch
 
     @property
-    def default_conflict_solver(self):  # pylint:disable=no-self-use
+    def default_conflict_solver(self):
         """
         Default conflict solver to use.
         """

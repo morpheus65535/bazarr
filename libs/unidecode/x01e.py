@@ -157,7 +157,7 @@ data = (
 'S',    # 0x9b
 None,    # 0x9c
 None,    # 0x9d
-'Ss',    # 0x9e
+'SS',    # 0x9e
 None,    # 0x9f
 'A',    # 0xa0
 'a',    # 0xa1

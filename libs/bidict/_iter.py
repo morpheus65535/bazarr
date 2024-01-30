@@ -7,18 +7,19 @@
 
 """Functions for iterating over items in a mapping."""
 
+from __future__ import annotations
 from operator import itemgetter
 import typing as t
 
-from ._typing import KT, VT, IterItems, MapOrIterItems
+from ._typing import KT, VT, ItemsIter, MapOrItems
 
 
-def iteritems_mapping_or_iterable(arg: MapOrIterItems[KT, VT]) -> IterItems[KT, VT]:
+def iteritems_mapping_or_iterable(arg: MapOrItems[KT, VT]) -> ItemsIter[KT, VT]:
     """Yield the items in *arg* based on whether it's a mapping."""
-    yield from arg.items() if isinstance(arg, t.Mapping) else arg  # pyright: ignore
+    yield from arg.items() if isinstance(arg, t.Mapping) else arg
 
 
-def iteritems(__arg: MapOrIterItems[KT, VT], **kw: VT) -> IterItems[KT, VT]:
+def iteritems(__arg: MapOrItems[KT, VT], **kw: VT) -> ItemsIter[KT, VT]:
     """Yield the items from *arg* and then any from *kw* in the order given."""
     yield from iteritems_mapping_or_iterable(__arg)
     yield from kw.items()  # type: ignore [misc]
@@ -27,7 +28,7 @@ def iteritems(__arg: MapOrIterItems[KT, VT], **kw: VT) -> IterItems[KT, VT]:
 swap = itemgetter(1, 0)
 
 
-def inverted(arg: MapOrIterItems[KT, VT]) -> IterItems[VT, KT]:
+def inverted(arg: MapOrItems[KT, VT]) -> ItemsIter[VT, KT]:
     """Yield the inverse items of the provided object.
 
     If *arg* has a :func:`callable` ``__inverted__`` attribute,
@@ -40,6 +41,6 @@ def inverted(arg: MapOrIterItems[KT, VT]) -> IterItems[VT, KT]:
     """
     invattr = getattr(arg, '__inverted__', None)
     if callable(invattr):
-        inv: IterItems[VT, KT] = invattr()
+        inv: ItemsIter[VT, KT] = invattr()
         return inv
     return map(swap, iteritems_mapping_or_iterable(arg))

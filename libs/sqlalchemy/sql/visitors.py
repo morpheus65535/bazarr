@@ -1,5 +1,5 @@
 # sql/visitors.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -146,7 +146,7 @@ class Visitable:
             cls._original_compiler_dispatch
         ) = _compiler_dispatch
 
-    def __class_getitem__(cls, key: str) -> Any:
+    def __class_getitem__(cls, key: Any) -> Any:
         # allow generic classes in py3.9+
         return cls
 
@@ -161,16 +161,17 @@ class InternalTraversal(Enum):
     the ``_traverse_internals`` collection.   Such as, the :class:`.Case`
     object defines ``_traverse_internals`` as ::
 
-        _traverse_internals = [
-            ("value", InternalTraversal.dp_clauseelement),
-            ("whens", InternalTraversal.dp_clauseelement_tuples),
-            ("else_", InternalTraversal.dp_clauseelement),
-        ]
+        class Case(ColumnElement[_T]):
+            _traverse_internals = [
+                ("value", InternalTraversal.dp_clauseelement),
+                ("whens", InternalTraversal.dp_clauseelement_tuples),
+                ("else_", InternalTraversal.dp_clauseelement),
+            ]
 
     Above, the :class:`.Case` class indicates its internal state as the
     attributes named ``value``, ``whens``, and ``else_``.    They each
     link to an :class:`.InternalTraversal` method which indicates the type
-    of datastructure referred towards.
+    of datastructure to which each attribute refers.
 
     Using the ``_traverse_internals`` structure, objects of type
     :class:`.InternalTraversible` will have the following methods automatically
@@ -1049,7 +1050,6 @@ def cloned_traverse(
             return elem
         else:
             if id(elem) not in cloned:
-
                 if "replace" in kw:
                     newelem = cast(
                         Optional[ExternallyTraversible], kw["replace"](elem)

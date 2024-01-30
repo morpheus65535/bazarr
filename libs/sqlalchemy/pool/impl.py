@@ -1,5 +1,5 @@
-# sqlalchemy/pool.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# pool/impl.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -48,7 +48,8 @@ class QueuePool(Pool):
     that imposes a limit on the number of open connections.
 
     :class:`.QueuePool` is the default pooling implementation used for
-    all :class:`_engine.Engine` objects, unless the SQLite dialect is in use.
+    all :class:`_engine.Engine` objects, unless the SQLite dialect is
+    in use with a ``:memory:`` database.
 
     """
 
@@ -385,7 +386,7 @@ class SingletonThreadPool(Pool):
 
     def _do_return_conn(self, record: ConnectionPoolEntry) -> None:
         try:
-            del self._fairy.current  # type: ignore
+            del self._fairy.current
         except AttributeError:
             pass
 

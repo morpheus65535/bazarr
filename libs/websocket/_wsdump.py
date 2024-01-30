@@ -4,7 +4,7 @@
 wsdump.py
 websocket - WebSocket client library for Python
 
-Copyright 2022 engn33r
+Copyright 2023 engn33r
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ limitations under the License.
 
 import argparse
 import code
+import gzip
+import ssl
 import sys
 import threading
 import time
-import ssl
-import gzip
 import zlib
 from urllib.parse import urlparse
 
@@ -37,7 +37,7 @@ except ImportError:
     pass
 
 
-def get_encoding():
+def get_encoding() -> str:
     encoding = getattr(sys.stdin, "encoding", "")
     if not encoding:
         return "utf-8"
@@ -50,8 +50,13 @@ ENCODING = get_encoding()
 
 
 class VAction(argparse.Action):
-
-    def __call__(self, parser, args, values, option_string=None):
+    def __call__(
+        self,
+        parser: argparse.Namespace,
+        args: tuple,
+        values: str,
+        option_string: str = None,
+    ) -> None:
         if values is None:
             values = "1"
         try:
@@ -61,39 +66,45 @@ class VAction(argparse.Action):
         setattr(args, self.dest, values)
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="WebSocket Simple Dump Tool")
-    parser.add_argument("url", metavar="ws_url",
-                        help="websocket url. ex. ws://echo.websocket.events/")
-    parser.add_argument("-p", "--proxy",
-                        help="proxy url. ex. http://127.0.0.1:8080")
-    parser.add_argument("-v", "--verbose", default=0, nargs='?', action=VAction,
-                        dest="verbose",
-                        help="set verbose mode. If set to 1, show opcode. "
-                        "If set to 2, enable to trace  websocket module")
-    parser.add_argument("-n", "--nocert", action='store_true',
-                        help="Ignore invalid SSL cert")
-    parser.add_argument("-r", "--raw", action="store_true",
-                        help="raw output")
-    parser.add_argument("-s", "--subprotocols", nargs='*',
-                        help="Set subprotocols")
-    parser.add_argument("-o", "--origin",
-                        help="Set origin")
-    parser.add_argument("--eof-wait", default=0, type=int,
-                        help="wait time(second) after 'EOF' received.")
-    parser.add_argument("-t", "--text",
-                        help="Send initial text")
-    parser.add_argument("--timings", action="store_true",
-                        help="Print timings in seconds")
-    parser.add_argument("--headers",
-                        help="Set custom headers. Use ',' as separator")
+    parser.add_argument(
+        "url", metavar="ws_url", help="websocket url. ex. ws://echo.websocket.events/"
+    )
+    parser.add_argument("-p", "--proxy", help="proxy url. ex. http://127.0.0.1:8080")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        default=0,
+        nargs="?",
+        action=VAction,
+        dest="verbose",
+        help="set verbose mode. If set to 1, show opcode. "
+        "If set to 2, enable to trace  websocket module",
+    )
+    parser.add_argument(
+        "-n", "--nocert", action="store_true", help="Ignore invalid SSL cert"
+    )
+    parser.add_argument("-r", "--raw", action="store_true", help="raw output")
+    parser.add_argument("-s", "--subprotocols", nargs="*", help="Set subprotocols")
+    parser.add_argument("-o", "--origin", help="Set origin")
+    parser.add_argument(
+        "--eof-wait",
+        default=0,
+        type=int,
+        help="wait time(second) after 'EOF' received.",
+    )
+    parser.add_argument("-t", "--text", help="Send initial text")
+    parser.add_argument(
+        "--timings", action="store_true", help="Print timings in seconds"
+    )
+    parser.add_argument("--headers", help="Set custom headers. Use ',' as separator")
 
     return parser.parse_args()
 
 
 class RawInput:
-
-    def raw_input(self, prompt):
+    def raw_input(self, prompt: str = "") -> str:
         line = input(prompt)
 
         if ENCODING and ENCODING != "utf-8" and not isinstance(line, str):
@@ -105,30 +116,28 @@ class RawInput:
 
 
 class InteractiveConsole(RawInput, code.InteractiveConsole):
-
-    def write(self, data):
+    def write(self, data: str) -> None:
         sys.stdout.write("\033[2K\033[E")
         # sys.stdout.write("\n")
         sys.stdout.write("\033[34m< " + data + "\033[39m")
         sys.stdout.write("\n> ")
         sys.stdout.flush()
 
-    def read(self):
+    def read(self) -> str:
         return self.raw_input("> ")
 
 
 class NonInteractive(RawInput):
-
-    def write(self, data):
+    def write(self, data: str) -> None:
         sys.stdout.write(data)
         sys.stdout.write("\n")
         sys.stdout.flush()
 
-    def read(self):
+    def read(self) -> str:
         return self.raw_input("")
 
 
-def main():
+def main() -> None:
     start_time = time.time()
     args = parse_args()
     if args.verbose > 1:
@@ -146,7 +155,7 @@ def main():
     if args.nocert:
         opts = {"cert_reqs": ssl.CERT_NONE, "check_hostname": False}
     if args.headers:
-        options['header'] = list(map(str.strip, args.headers.split(',')))
+        options["header"] = list(map(str.strip, args.headers.split(",")))
     ws = websocket.create_connection(args.url, sslopt=opts, **options)
     if args.raw:
         console = NonInteractive()
@@ -154,38 +163,42 @@ def main():
         console = InteractiveConsole()
         print("Press Ctrl+C to quit")
 
-    def recv():
+    def recv() -> tuple:
         try:
             frame = ws.recv_frame()
         except websocket.WebSocketException:
-            return websocket.ABNF.OPCODE_CLOSE, None
+            return websocket.ABNF.OPCODE_CLOSE, ""
         if not frame:
-            raise websocket.WebSocketException("Not a valid frame %s" % frame)
+            raise websocket.WebSocketException(f"Not a valid frame {frame}")
         elif frame.opcode in OPCODE_DATA:
             return frame.opcode, frame.data
         elif frame.opcode == websocket.ABNF.OPCODE_CLOSE:
             ws.send_close()
-            return frame.opcode, None
+            return frame.opcode, ""
         elif frame.opcode == websocket.ABNF.OPCODE_PING:
             ws.pong(frame.data)
             return frame.opcode, frame.data
 
         return frame.opcode, frame.data
 
-    def recv_ws():
+    def recv_ws() -> None:
         while True:
             opcode, data = recv()
             msg = None
             if opcode == websocket.ABNF.OPCODE_TEXT and isinstance(data, bytes):
                 data = str(data, "utf-8")
-            if isinstance(data, bytes) and len(data) > 2 and data[:2] == b'\037\213':  # gzip magick
+            if (
+                isinstance(data, bytes) and len(data) > 2 and data[:2] == b"\037\213"
+            ):  # gzip magick
                 try:
                     data = "[gzip] " + str(gzip.decompress(data), "utf-8")
                 except:
                     pass
             elif isinstance(data, bytes):
                 try:
-                    data = "[zlib] " + str(zlib.decompress(data, -zlib.MAX_WBITS), "utf-8")
+                    data = "[zlib] " + str(
+                        zlib.decompress(data, -zlib.MAX_WBITS), "utf-8"
+                    )
                 except:
                     pass
 
@@ -193,13 +206,13 @@ def main():
                 data = repr(data)
 
             if args.verbose:
-                msg = "%s: %s" % (websocket.ABNF.OPCODE_MAP.get(opcode), data)
+                msg = f"{websocket.ABNF.OPCODE_MAP.get(opcode)}: {data}"
             else:
                 msg = data
 
             if msg is not None:
                 if args.timings:
-                    console.write(str(time.time() - start_time) + ": " + msg)
+                    console.write(f"{time.time() - start_time}: {msg}")
                 else:
                     console.write(msg)
 

@@ -4,22 +4,19 @@
 
     Lexers for Erlang.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 import re
 
 from pygments.lexer import Lexer, RegexLexer, bygroups, words, do_insertions, \
-    include, default
-from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
+    include, default, line_re
+from pygments.token import Comment, Operator, Keyword, Name, String, \
     Number, Punctuation, Generic, Whitespace
 
 __all__ = ['ErlangLexer', 'ErlangShellLexer', 'ElixirConsoleLexer',
            'ElixirLexer']
-
-
-line_re = re.compile('.*?\n')
 
 
 class ErlangLexer(RegexLexer):

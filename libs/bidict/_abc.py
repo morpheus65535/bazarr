@@ -14,8 +14,9 @@
 
 """Provide the :class:`BidirectionalMapping` abstract base class."""
 
-import typing as t
+from __future__ import annotations
 from abc import abstractmethod
+import typing as t
 
 from ._typing import KT, VT
 
@@ -34,7 +35,7 @@ class BidirectionalMapping(t.Mapping[KT, VT]):
 
     @property
     @abstractmethod
-    def inverse(self) -> 'BidirectionalMapping[VT, KT]':
+    def inverse(self) -> BidirectionalMapping[VT, KT]:
         """The inverse of this bidirectional mapping instance.
 
         *See also* :attr:`bidict.BidictBase.inverse`, :attr:`bidict.BidictBase.inv`
@@ -47,7 +48,7 @@ class BidirectionalMapping(t.Mapping[KT, VT]):
         # anyway, so it's extra clear that this implementation should never be called.
         raise NotImplementedError
 
-    def __inverted__(self) -> t.Iterator[t.Tuple[VT, KT]]:
+    def __inverted__(self) -> t.Iterator[tuple[VT, KT]]:
         """Get an iterator over the items in :attr:`inverse`.
 
         This is functionally equivalent to iterating over the items in the

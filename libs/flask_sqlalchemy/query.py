@@ -2,16 +2,15 @@ from __future__ import annotations
 
 import typing as t
 
-import sqlalchemy as sa
-import sqlalchemy.exc
-import sqlalchemy.orm
+import sqlalchemy.exc as sa_exc
+import sqlalchemy.orm as sa_orm
 from flask import abort
 
 from .pagination import Pagination
 from .pagination import QueryPagination
 
 
-class Query(sa.orm.Query):  # type: ignore[type-arg]
+class Query(sa_orm.Query):  # type: ignore[type-arg]
     """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with some extra methods
     useful for querying in a web application.
 
@@ -58,7 +57,7 @@ class Query(sa.orm.Query):  # type: ignore[type-arg]
         """
         try:
             return self.one()
-        except (sa.exc.NoResultFound, sa.exc.MultipleResultsFound):
+        except (sa_exc.NoResultFound, sa_exc.MultipleResultsFound):
             abort(404, description=description)
 
     def paginate(

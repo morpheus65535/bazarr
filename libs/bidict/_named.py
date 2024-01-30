@@ -6,15 +6,13 @@
 
 """Provide :func:`bidict.namedbidict`."""
 
-import typing as t
+from __future__ import annotations
 from sys import _getframe
+import typing as t
 
 from ._base import BidictBase
 from ._bidict import bidict
 from ._typing import KT, VT
-
-
-# pyright: reportPrivateUsage=false, reportUnnecessaryIsInstance=false
 
 
 class NamedBidictBase:
@@ -76,7 +74,7 @@ def namedbidict(
         valname = get_valname
 
         @classmethod
-        def _inv_cls_dict_diff(cls) -> t.Dict[str, t.Any]:
+        def _inv_cls_dict_diff(cls) -> dict[str, t.Any]:
             base_diff = super()._inv_cls_dict_diff()
             return {
                 **base_diff,
@@ -96,4 +94,4 @@ def namedbidict(
     NamedInv.__doc__ = f'NamedBidictInv({basename}) {typename!r}: {valname} -> {keyname}'
     caller_module = _getframe(1).f_globals.get('__name__', '__main__')
     NamedBidict.__module__ = NamedInv.__module__ = caller_module
-    return NamedBidict  # pyright: ignore [reportUnknownVariableType]
+    return NamedBidict

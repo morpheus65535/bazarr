@@ -1,3 +1,0 @@
-This lib will be deprecated on 4.0.0
-toml_loader and all the other places
-will default to tomllib.

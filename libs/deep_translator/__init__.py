@@ -1,5 +1,9 @@
 """Top-level package for Deep Translator"""
 
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
+from deep_translator.baidu import BaiduTranslator
+from deep_translator.chatgpt import ChatGptTranslator
 from deep_translator.deepl import DeeplTranslator
 from deep_translator.detection import batch_detection, single_detection
 from deep_translator.google import GoogleTranslator
@@ -27,6 +31,8 @@ __all__ = [
     "DeeplTranslator",
     "LibreTranslator",
     "PapagoTranslator",
+    "ChatGptTranslator",
+    "BaiduTranslator",
     "single_detection",
     "batch_detection",
 ]

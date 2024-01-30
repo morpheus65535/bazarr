@@ -1,5 +1,5 @@
 # sql/lambdas.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -351,7 +351,6 @@ class LambdaElement(elements.ClauseElement):
             element: Optional[visitors.ExternallyTraversible], **kw: Any
         ) -> Optional[visitors.ExternallyTraversible]:
             if isinstance(element, elements.BindParameter):
-
                 if element.key in bindparam_lookup:
                     bind = bindparam_lookup[element.key]
                     if element.expanding:
@@ -719,7 +718,7 @@ class LinkedLambdaElement(StatementLambdaElement):
         opts: Union[Type[LambdaOptions], LambdaOptions],
     ):
         self.opts = opts
-        self.fn = fn  # type: ignore[assignment]
+        self.fn = fn
         self.parent_lambda = parent_lambda
 
         self.tracker_key = parent_lambda.tracker_key + (fn.__code__,)
@@ -988,7 +987,6 @@ class AnalyzedCode:
         if isinstance(cell_contents, _cache_key.HasCacheKey):
 
             def get(closure, opts, anon_map, bindparams):
-
                 obj = closure[idx].cell_contents
                 if use_inspect:
                     obj = inspection.inspect(obj)
@@ -1427,7 +1425,6 @@ class PyWrapper(ColumnOperators):
         return self._sa__add_getter(key, operator.itemgetter)
 
     def _add_getter(self, key, getter_fn):
-
         bind_paths = object.__getattribute__(self, "_bind_paths")
 
         bind_path_key = (key, getter_fn)

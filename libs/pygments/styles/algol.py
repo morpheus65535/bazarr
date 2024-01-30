@@ -25,7 +25,7 @@
 
     [1] `Revised Report on the Algorithmic Language Algol-60 <http://www.masswerk.at/algol60/report.htm>`
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -33,7 +33,11 @@ from pygments.style import Style
 from pygments.token import Keyword, Name, Comment, String, Error, Operator
 
 
+__all__ = ['AlgolStyle']
+
+
 class AlgolStyle(Style):
+    name = 'algol'
 
     background_color = "#ffffff"
 

@@ -1,5 +1,5 @@
 # sql/traversals.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -56,15 +56,15 @@ def _preconfigure_traversals(target_hierarchy: Type[Any]) -> None:
         if hasattr(cls, "_generate_cache_attrs") and hasattr(
             cls, "_traverse_internals"
         ):
-            cls._generate_cache_attrs()  # type: ignore
+            cls._generate_cache_attrs()
             _copy_internals.generate_dispatch(
-                cls,  # type: ignore
-                cls._traverse_internals,  # type: ignore
+                cls,
+                cls._traverse_internals,
                 "_generated_copy_internals_traversal",
             )
             _get_children.generate_dispatch(
-                cls,  # type: ignore
-                cls._traverse_internals,  # type: ignore
+                cls,
+                cls._traverse_internals,
                 "_generated_get_children_traversal",
             )
 
@@ -416,7 +416,7 @@ class _GetChildrenTraversal(HasTraversalDispatch):
         return element
 
     def visit_setup_join_tuple(self, element, **kw):
-        for (target, onclause, from_, flags) in element:
+        for target, onclause, from_, flags in element:
             if from_ is not None:
                 yield from_
 
@@ -713,7 +713,6 @@ class TraversalComparatorStrategy(HasTraversalDispatch, util.MemoizedSlots):
     def visit_string_multi_dict(
         self, attrname, left_parent, left, right_parent, right, **kw
     ):
-
         for lk, rk in zip_longest(
             sorted(left.keys()), sorted(right.keys()), fillvalue=(None, None)
         ):
@@ -737,7 +736,6 @@ class TraversalComparatorStrategy(HasTraversalDispatch, util.MemoizedSlots):
     def visit_multi(
         self, attrname, left_parent, left, right_parent, right, **kw
     ):
-
         lhc = isinstance(left, HasCacheKey)
         rhc = isinstance(right, HasCacheKey)
         if lhc and rhc:

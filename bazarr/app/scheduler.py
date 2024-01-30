@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from calendar import day_name
 from random import randrange
 from tzlocal import get_localzone
-from tzlocal.utils import ZoneInfoNotFoundError
+from backports.zoneinfo._common import ZoneInfoNotFoundError
 from dateutil import tz
 import logging
 

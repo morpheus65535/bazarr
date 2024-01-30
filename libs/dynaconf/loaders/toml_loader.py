@@ -11,7 +11,7 @@ from dynaconf.vendor import toml  # Backwards compatibility with uiri/toml
 from dynaconf.vendor import tomllib  # New tomllib stdlib on py3.11
 
 
-def load(obj, env=None, silent=True, key=None, filename=None):
+def load(obj, env=None, silent=True, key=None, filename=None, validate=False):
     """
     Reads and loads in to "obj" a single key or all keys from source file.
 
@@ -32,6 +32,7 @@ def load(obj, env=None, silent=True, key=None, filename=None):
             file_reader=tomllib.load,
             string_reader=tomllib.loads,
             opener_params={"mode": "rb"},
+            validate=validate,
         )
         loader.load(
             filename=filename,
@@ -60,6 +61,7 @@ def load(obj, env=None, silent=True, key=None, filename=None):
             extensions=TOML_EXTENSIONS,
             file_reader=toml.load,
             string_reader=toml.loads,
+            validate=validate,
         )
         loader.load(
             filename=filename,

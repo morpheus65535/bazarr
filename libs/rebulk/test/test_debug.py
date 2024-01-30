@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=no-self-use, pointless-statement, missing-docstring, protected-access, invalid-name, len-as-condition
+# pylint: disable=pointless-statement, missing-docstring, protected-access, invalid-name, len-as-condition
 
 from .default_rules_module import RuleRemove0
 from .. import debug
@@ -9,7 +9,7 @@ from ..pattern import StringPattern
 from ..rebulk import Rebulk
 
 
-class TestDebug(object):
+class TestDebug:
     # request.addfinalizer(disable_debug)
 
     debug.DEBUG = True
@@ -57,9 +57,6 @@ class TestDebug(object):
         assert repr(self.rule).startswith('<RuleRemove0@test_debug.py#L')
 
     def test_rebulk(self):
-        """
-        This test fails on travis CI, can't find out why there's 1 line offset ...
-        """
         assert self.rebulk._patterns[0].defined_at.lineno > 0
         assert self.rebulk._patterns[0].defined_at.name == 'rebulk.test.test_debug'
         assert self.rebulk._patterns[0].defined_at.filename.endswith('test_debug.py')
@@ -72,8 +69,8 @@ class TestDebug(object):
 
         assert str(self.rebulk._patterns[1].defined_at).startswith('test_debug.py#L')
 
-        assert self.matches[0].defined_at == self.rebulk._patterns[0].defined_at
-        assert self.matches[1].defined_at == self.rebulk._patterns[1].defined_at
+        assert self.matches[0].defined_at == self.rebulk._patterns[0].defined_at  # pylint: disable=no-member
+        assert self.matches[1].defined_at == self.rebulk._patterns[1].defined_at  # pylint: disable=no-member
 
     def test_repr(self):
         str(self.matches)

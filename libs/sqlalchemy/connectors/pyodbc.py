@@ -1,5 +1,5 @@
 # connectors/pyodbc.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -227,7 +227,7 @@ class PyODBCConnector(Connector):
     def get_isolation_level_values(
         self, dbapi_connection: interfaces.DBAPIConnection
     ) -> List[IsolationLevel]:
-        return super().get_isolation_level_values(dbapi_connection) + [  # type: ignore  # noqa: E501
+        return super().get_isolation_level_values(dbapi_connection) + [
             "AUTOCOMMIT"
         ]
 

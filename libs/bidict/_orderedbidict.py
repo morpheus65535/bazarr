@@ -14,6 +14,7 @@
 
 """Provide :class:`OrderedBidict`."""
 
+from __future__ import annotations
 from collections.abc import Set
 import typing as t
 
@@ -23,15 +24,12 @@ from ._orderedbase import OrderedBidictBase
 from ._typing import KT, VT
 
 
-# pyright: reportPrivateUsage=false
-
-
 class OrderedBidict(OrderedBidictBase[KT, VT], MutableBidict[KT, VT]):
     """Mutable bidict type that maintains items in insertion order."""
 
     if t.TYPE_CHECKING:
         @property
-        def inverse(self) -> 'OrderedBidict[VT, KT]': ...
+        def inverse(self) -> OrderedBidict[VT, KT]: ...
 
     def clear(self) -> None:
         """Remove all items."""
@@ -45,7 +43,7 @@ class OrderedBidict(OrderedBidictBase[KT, VT], MutableBidict[KT, VT]):
         self._dissoc_node(node)
         return val
 
-    def popitem(self, last: bool = True) -> t.Tuple[KT, VT]:
+    def popitem(self, last: bool = True) -> tuple[KT, VT]:
         """*b.popitem() → (k, v)*
 
         If *last* is true,
@@ -60,7 +58,7 @@ class OrderedBidict(OrderedBidictBase[KT, VT], MutableBidict[KT, VT]):
         korv = self._node_by_korv.inverse[node]
         if self._bykey:
             return korv, self._pop(korv)
-        return self.inverse._pop(korv), korv  # pyright: ignore [reportGeneralTypeIssues]
+        return self.inverse._pop(korv), korv
 
     def move_to_end(self, key: KT, last: bool = True) -> None:
         """Move the item with the given key to the end if *last* is true, else to the beginning.
@@ -111,7 +109,7 @@ class _OrderedBidictKeysView(BidictKeysView[KT]):
 class _OrderedBidictItemsView(t.ItemsView[KT, VT]):
     _mapping: OrderedBidict[KT, VT]
 
-    def __reversed__(self) -> t.Iterator[t.Tuple[KT, VT]]:
+    def __reversed__(self) -> t.Iterator[tuple[KT, VT]]:
         ob = self._mapping
         for key in reversed(ob):
             yield key, ob[key]
@@ -121,7 +119,7 @@ class _OrderedBidictItemsView(t.ItemsView[KT, VT]):
 # to backing dicts for the methods they inherit from collections.abc.Set. (Cannot delegate
 # for __iter__ and __reversed__ since they are order-sensitive.) See also: https://bugs.python.org/issue46713
 def _override_set_methods_to_use_backing_dict(
-    cls: t.Union[t.Type[_OrderedBidictKeysView[KT]], t.Type[_OrderedBidictItemsView[KT, t.Any]]],
+    cls: t.Type[_OrderedBidictKeysView[KT]] | t.Type[_OrderedBidictItemsView[KT, t.Any]],
     viewname: str,
     _setmethodnames: t.Iterable[str] = (
         '__lt__', '__le__', '__gt__', '__ge__', '__eq__', '__ne__', '__sub__', '__rsub__',
@@ -129,7 +127,7 @@ def _override_set_methods_to_use_backing_dict(
     )
 ) -> None:
     def make_proxy_method(methodname: str) -> t.Any:
-        def method(self: t.Union[_OrderedBidictKeysView[KT], _OrderedBidictItemsView[KT, t.Any]], *args: t.Any) -> t.Any:
+        def method(self: _OrderedBidictKeysView[KT] | _OrderedBidictItemsView[KT, t.Any], *args: t.Any) -> t.Any:
             fwdm = self._mapping._fwdm
             if not isinstance(fwdm, dict):  # dict view speedup not available, fall back to Set's implementation.
                 return getattr(Set, methodname)(self, *args)
@@ -141,7 +139,8 @@ def _override_set_methods_to_use_backing_dict(
             # Use arg's backing dict's corresponding view instead of arg. Otherwise, e.g. `ob1.keys() < ob2.keys()` would give
             # "TypeError: '<' not supported between instances of '_OrderedBidictKeysView' and '_OrderedBidictKeysView'", because
             # both `dict_keys(ob1).__lt__(ob2.keys()) is NotImplemented` and `dict_keys(ob2).__gt__(ob1.keys()) is NotImplemented`.
-            arg_dict_view = getattr(args[0]._mapping._fwdm, viewname)()
+            arg_dict = args[0]._mapping._fwdm
+            arg_dict_view = getattr(arg_dict, viewname)()
             return fwdm_dict_view_method(arg_dict_view)
         method.__name__ = methodname
         method.__qualname__ = f'{cls.__qualname__}.{methodname}'

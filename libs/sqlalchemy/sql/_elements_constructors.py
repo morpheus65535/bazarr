@@ -1,5 +1,5 @@
 # sql/_elements_constructors.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -10,7 +10,6 @@ from __future__ import annotations
 import typing
 from typing import Any
 from typing import Callable
-from typing import Iterable
 from typing import Mapping
 from typing import Optional
 from typing import overload
@@ -40,6 +39,7 @@ from .elements import Null
 from .elements import Over
 from .elements import TextClause
 from .elements import True_
+from .elements import TryCast
 from .elements import Tuple
 from .elements import TypeCoerce
 from .elements import UnaryExpression
@@ -48,6 +48,7 @@ from .functions import FunctionElement
 from ..util.typing import Literal
 
 if typing.TYPE_CHECKING:
+    from ._typing import _ByArgument
     from ._typing import _ColumnExpressionArgument
     from ._typing import _ColumnExpressionOrLiteralArgument
     from ._typing import _ColumnExpressionOrStrLabelArgument
@@ -411,8 +412,6 @@ def between(
     :param symmetric: if True, will render " BETWEEN SYMMETRIC ". Note
      that not all databases support this syntax.
 
-     .. versionadded:: 0.9.5
-
     .. seealso::
 
         :meth:`_expression.ColumnElement.between`
@@ -437,10 +436,8 @@ def outparam(
     return BindParameter(key, None, type_=type_, unique=False, isoutparam=True)
 
 
-# mypy insists that BinaryExpression and _HasClauseElement protocol overlap.
-# they do not.  at all.  bug in mypy?
 @overload
-def not_(clause: BinaryExpression[_T]) -> BinaryExpression[_T]:  # type: ignore
+def not_(clause: BinaryExpression[_T]) -> BinaryExpression[_T]:
     ...
 
 
@@ -878,11 +875,6 @@ def cast(
     as well as the bound-value handling and result-row-handling behavior
     of the type.
 
-    .. versionchanged:: 0.9.0 :func:`.cast` now applies the given type
-       to the expression such that it takes effect on the bound-value,
-       e.g. the Python-to-database direction, in addition to the
-       result handling, e.g. database-to-Python, direction.
-
     An alternative to :func:`.cast` is the :func:`.type_coerce` function.
     This function performs the second task of associating an expression
     with a specific type, but does not render the ``CAST`` expression
@@ -900,6 +892,10 @@ def cast(
 
         :ref:`tutorial_casts`
 
+        :func:`.try_cast` - an alternative to CAST that results in
+        NULLs when the cast fails, instead of raising an error.
+        Only supported by some dialects.
+
         :func:`.type_coerce` - an alternative to CAST that coerces the type
         on the Python side only, which is often sufficient to generate the
         correct SQL and data coercion.
@@ -907,6 +903,49 @@ def cast(
 
     """
     return Cast(expression, type_)
+
+
+def try_cast(
+    expression: _ColumnExpressionOrLiteralArgument[Any],
+    type_: _TypeEngineArgument[_T],
+) -> TryCast[_T]:
+    """Produce a ``TRY_CAST`` expression for backends which support it;
+    this is a ``CAST`` which returns NULL for un-castable conversions.
+
+    In SQLAlchemy, this construct is supported **only** by the SQL Server
+    dialect, and will raise a :class:`.CompileError` if used on other
+    included backends.  However, third party backends may also support
+    this construct.
+
+    .. tip:: As :func:`_sql.try_cast` originates from the SQL Server dialect,
+       it's importable both from ``sqlalchemy.`` as well as from
+       ``sqlalchemy.dialects.mssql``.
+
+    :func:`_sql.try_cast` returns an instance of :class:`.TryCast` and
+    generally behaves similarly to the :class:`.Cast` construct;
+    at the SQL level, the difference between ``CAST`` and ``TRY_CAST``
+    is that ``TRY_CAST`` returns NULL for an un-castable expression,
+    such as attempting to cast a string ``"hi"`` to an integer value.
+
+    E.g.::
+
+        from sqlalchemy import select, try_cast, Numeric
+
+        stmt = select(
+            try_cast(product_table.c.unit_price, Numeric(10, 4))
+        )
+
+    The above would render on Microsoft SQL Server as::
+
+        SELECT TRY_CAST (product_table.unit_price AS NUMERIC(10, 4))
+        FROM product_table
+
+    .. versionadded:: 2.0.14  :func:`.try_cast` has been
+       generalized from the SQL Server dialect into a general use
+       construct that may be supported by additional dialects.
+
+    """
+    return TryCast(expression, type_)
 
 
 def column(
@@ -977,10 +1016,6 @@ def column(
     ad-hoc fashion and is not associated with any
     :class:`_schema.MetaData`, DDL, or events, unlike its
     :class:`_schema.Table` counterpart.
-
-    .. versionchanged:: 1.0.0 :func:`_expression.column` can now
-       be imported from the plain ``sqlalchemy`` namespace like any
-       other SQL element.
 
     :param text: the text of the element.
 
@@ -1178,10 +1213,6 @@ def false() -> False_:
         >>> print(select(t.c.x).where(and_(t.c.x > 5, false())))
         {printsql}SELECT x FROM t WHERE false{stop}
 
-    .. versionchanged:: 0.9 :func:`.true` and :func:`.false` feature
-       better integrated behavior within conjunctions and on dialects
-       that don't support true/false constants.
-
     .. seealso::
 
         :func:`.true`
@@ -1208,8 +1239,6 @@ def funcfilter(
 
     This function is also available from the :data:`~.expression.func`
     construct itself via the :meth:`.FunctionElement.filter` method.
-
-    .. versionadded:: 1.0.0
 
     .. seealso::
 
@@ -1452,18 +1481,8 @@ if not TYPE_CHECKING:
 
 def over(
     element: FunctionElement[_T],
-    partition_by: Optional[
-        Union[
-            Iterable[_ColumnExpressionArgument[Any]],
-            _ColumnExpressionArgument[Any],
-        ]
-    ] = None,
-    order_by: Optional[
-        Union[
-            Iterable[_ColumnExpressionArgument[Any]],
-            _ColumnExpressionArgument[Any],
-        ]
-    ] = None,
+    partition_by: Optional[_ByArgument] = None,
+    order_by: Optional[_ByArgument] = None,
     range_: Optional[typing_Tuple[Optional[int], Optional[int]]] = None,
     rows: Optional[typing_Tuple[Optional[int], Optional[int]]] = None,
 ) -> Over[_T]:
@@ -1514,9 +1533,6 @@ def over(
 
         func.row_number().over(order_by='x', range_=(1, 3))
 
-    .. versionadded:: 1.1 support for RANGE / ROWS within a window
-
-
     :param element: a :class:`.FunctionElement`, :class:`.WithinGroup`,
      or other compatible construct.
     :param partition_by: a column element or string, or a list
@@ -1529,13 +1545,9 @@ def over(
      tuple value which can contain integer values or ``None``,
      and will render a RANGE BETWEEN PRECEDING / FOLLOWING clause.
 
-     .. versionadded:: 1.1
-
     :param rows: optional rows clause for the window.  This is a tuple
      value which can contain integer values or None, and will render
      a ROWS BETWEEN PRECEDING / FOLLOWING clause.
-
-     .. versionadded:: 1.1
 
     This function is also available from the :data:`~.expression.func`
     construct itself via the :meth:`.FunctionElement.over` method.
@@ -1660,10 +1672,6 @@ def true() -> True_:
 
         >>> print(select(t.c.x).where(and_(t.c.x > 5, false())))
         {printsql}SELECT x FROM t WHERE false{stop}
-
-    .. versionchanged:: 0.9 :func:`.true` and :func:`.false` feature
-       better integrated behavior within conjunctions and on dialects
-       that don't support true/false constants.
 
     .. seealso::
 
@@ -1816,8 +1824,6 @@ def within_group(
      generated by :data:`~.expression.func`.
     :param \*order_by: one or more column elements that will be used
      as the ORDER BY clause of the WITHIN GROUP construct.
-
-    .. versionadded:: 1.1
 
     .. seealso::
 

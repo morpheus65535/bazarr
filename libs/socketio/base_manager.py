@@ -6,15 +6,7 @@ from bidict import bidict, ValueDuplicationError
 default_logger = logging.getLogger('socketio')
 
 
-class BaseManager(object):
-    """Manage client connections.
-
-    This class keeps track of all the clients and the rooms they are in, to
-    support the broadcasting of messages. The data used by this class is
-    stored in a memory structure, making it appropriate only for single process
-    services. More sophisticated storage backends can be implemented by
-    subclasses.
-    """
+class BaseManager:
     def __init__(self):
         self.logger = None
         self.server = None
@@ -38,7 +30,7 @@ class BaseManager(object):
 
     def get_participants(self, namespace, room):
         """Return an iterable with the active participants in a room."""
-        ns = self.rooms[namespace]
+        ns = self.rooms.get(namespace, {})
         if hasattr(room, '__len__') and not isinstance(room, str):
             participants = ns[room[0]]._fwdm.copy() if room[0] in ns else {}
             for r in room[1:]:
@@ -52,11 +44,11 @@ class BaseManager(object):
         """Register a client connection to a namespace."""
         sid = self.server.eio.generate_id()
         try:
-            self.enter_room(sid, namespace, None, eio_sid=eio_sid)
+            self.basic_enter_room(sid, namespace, None, eio_sid=eio_sid)
         except ValueDuplicationError:
             # already connected
             return None
-        self.enter_room(sid, namespace, sid, eio_sid=eio_sid)
+        self.basic_enter_room(sid, namespace, sid, eio_sid=eio_sid)
         return sid
 
     def is_connected(self, sid, namespace):
@@ -80,9 +72,6 @@ class BaseManager(object):
         if namespace in self.rooms:
             return self.rooms[namespace][None].get(sid)
 
-    def can_disconnect(self, sid, namespace):
-        return self.is_connected(sid, namespace)
-
     def pre_disconnect(self, sid, namespace):
         """Put the client in the to-be-disconnected list.
 
@@ -95,8 +84,7 @@ class BaseManager(object):
         self.pending_disconnect[namespace].append(sid)
         return self.rooms[namespace][None].get(sid)
 
-    def disconnect(self, sid, namespace, **kwargs):
-        """Register a client disconnect from a namespace."""
+    def basic_disconnect(self, sid, namespace, **kwargs):
         if namespace not in self.rooms:
             return
         rooms = []
@@ -104,7 +92,7 @@ class BaseManager(object):
             if sid in room:
                 rooms.append(room_name)
         for room in rooms:
-            self.leave_room(sid, namespace, room)
+            self.basic_leave_room(sid, namespace, room)
         if sid in self.callbacks:
             del self.callbacks[sid]
         if namespace in self.pending_disconnect and \
@@ -113,8 +101,7 @@ class BaseManager(object):
             if len(self.pending_disconnect[namespace]) == 0:
                 del self.pending_disconnect[namespace]
 
-    def enter_room(self, sid, namespace, room, eio_sid=None):
-        """Add a client to a room."""
+    def basic_enter_room(self, sid, namespace, room, eio_sid=None):
         if eio_sid is None and namespace not in self.rooms:
             raise ValueError('sid is not connected to requested namespace')
         if namespace not in self.rooms:
@@ -125,8 +112,7 @@ class BaseManager(object):
             eio_sid = self.rooms[namespace][None][sid]
         self.rooms[namespace][room][sid] = eio_sid
 
-    def leave_room(self, sid, namespace, room):
-        """Remove a client from a room."""
+    def basic_leave_room(self, sid, namespace, room):
         try:
             del self.rooms[namespace][room][sid]
             if len(self.rooms[namespace][room]) == 0:
@@ -136,12 +122,11 @@ class BaseManager(object):
         except KeyError:
             pass
 
-    def close_room(self, room, namespace):
-        """Remove all participants from a room."""
+    def basic_close_room(self, room, namespace):
         try:
             for sid, _ in self.get_participants(namespace, room):
-                self.leave_room(sid, namespace, room)
-        except KeyError:
+                self.basic_leave_room(sid, namespace, room)
+        except KeyError:  # pragma: no cover
             pass
 
     def get_rooms(self, sid, namespace):
@@ -154,35 +139,6 @@ class BaseManager(object):
         except KeyError:
             pass
         return r
-
-    def emit(self, event, data, namespace, room=None, skip_sid=None,
-             callback=None, **kwargs):
-        """Emit a message to a single client, a room, or all the clients
-        connected to the namespace."""
-        if namespace not in self.rooms:
-            return
-        if not isinstance(skip_sid, list):
-            skip_sid = [skip_sid]
-        for sid, eio_sid in self.get_participants(namespace, room):
-            if sid not in skip_sid:
-                if callback is not None:
-                    id = self._generate_ack_id(sid, callback)
-                else:
-                    id = None
-                self.server._emit_internal(eio_sid, event, data, namespace, id)
-
-    def trigger_callback(self, sid, id, data):
-        """Invoke an application callback."""
-        callback = None
-        try:
-            callback = self.callbacks[sid][id]
-        except KeyError:
-            # if we get an unknown callback we just ignore it
-            self._get_logger().warning('Unknown callback received, ignoring.')
-        else:
-            del self.callbacks[sid][id]
-        if callback is not None:
-            callback(*data)
 
     def _generate_ack_id(self, sid, callback):
         """Generate a unique identifier for an ACK packet."""

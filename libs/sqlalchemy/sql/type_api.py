@@ -1,5 +1,5 @@
-# sql/types_api.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# sql/type_api.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -39,6 +39,7 @@ from .. import exc
 from .. import util
 from ..util.typing import Protocol
 from ..util.typing import Self
+from ..util.typing import TypeAliasType
 from ..util.typing import TypedDict
 from ..util.typing import TypeGuard
 
@@ -67,7 +68,9 @@ _O = TypeVar("_O", bound=object)
 _TE = TypeVar("_TE", bound="TypeEngine[Any]")
 _CT = TypeVar("_CT", bound=Any)
 
-_MatchedOnType = Union["GenericProtocol[Any]", NewType, Type[Any]]
+_MatchedOnType = Union[
+    "GenericProtocol[Any]", TypeAliasType, NewType, Type[Any]
+]
 
 
 class _NoValueInList(Enum):
@@ -94,6 +97,11 @@ class _ResultProcessorType(Protocol[_T_co]):
         ...
 
 
+class _SentinelProcessorType(Protocol[_T_co]):
+    def __call__(self, value: Any) -> Optional[_T_co]:
+        ...
+
+
 class _BaseTypeMemoDict(TypedDict):
     impl: TypeEngine[Any]
     result: Dict[Any, Optional[_ResultProcessorType[Any]]]
@@ -102,6 +110,7 @@ class _BaseTypeMemoDict(TypedDict):
 class _TypeMemoDict(_BaseTypeMemoDict, total=False):
     literal: Optional[_LiteralProcessorType[Any]]
     bind: Optional[_BindProcessorType[Any]]
+    sentinel: Optional[_SentinelProcessorType[Any]]
     custom: Dict[Any, object]
 
 
@@ -185,7 +194,7 @@ class TypeEngine(Visitable, Generic[_T]):
             op_fn, addtl_kw = default_comparator.operator_lookup[op.__name__]
             if kwargs:
                 addtl_kw = addtl_kw.union(kwargs)
-            return op_fn(self.expr, op, *other, **addtl_kw)  # type: ignore
+            return op_fn(self.expr, op, *other, **addtl_kw)
 
         @util.preload_module("sqlalchemy.sql.default_comparator")
         def reverse_operate(
@@ -195,7 +204,7 @@ class TypeEngine(Visitable, Generic[_T]):
             op_fn, addtl_kw = default_comparator.operator_lookup[op.__name__]
             if kwargs:
                 addtl_kw = addtl_kw.union(kwargs)
-            return op_fn(self.expr, op, other, reverse=True, **addtl_kw)  # type: ignore  # noqa: E501
+            return op_fn(self.expr, op, other, reverse=True, **addtl_kw)
 
         def _adapt_expression(
             self,
@@ -229,9 +238,6 @@ class TypeEngine(Visitable, Generic[_T]):
             """
 
             return op, self.type
-
-        def __reduce__(self) -> Any:
-            return _reconstitute_comparator, (self.expr,)
 
     hashable = True
     """Flag, if False, means values from this type aren't hashable.
@@ -292,9 +298,6 @@ class TypeEngine(Visitable, Generic[_T]):
 
         :meth:`.TypeEngine.evaluates_none`
 
-    .. versionadded:: 1.1
-
-
     """
 
     _variant_mapping: util.immutabledict[
@@ -337,8 +340,6 @@ class TypeEngine(Visitable, Generic[_T]):
             ``None``
             still means "no default".
 
-        .. versionadded:: 1.1
-
         .. seealso::
 
             :ref:`session_forcing_null` - in the ORM documentation
@@ -355,35 +356,6 @@ class TypeEngine(Visitable, Generic[_T]):
 
     def copy(self, **kw: Any) -> Self:
         return self.adapt(self.__class__)
-
-    def compare_against_backend(
-        self, dialect: Dialect, conn_type: TypeEngine[Any]
-    ) -> Optional[bool]:
-        """Compare this type against the given backend type.
-
-        This function is currently not implemented for SQLAlchemy
-        types, and for all built in types will return ``None``.  However,
-        it can be implemented by a user-defined type
-        where it can be consumed by schema comparison tools such as
-        Alembic autogenerate.
-
-        A future release of SQLAlchemy will potentially implement this method
-        for builtin types as well.
-
-        The function should return True if this type is equivalent to the
-        given type; the type is typically reflected from the database
-        so should be database specific.  The dialect in use is also
-        passed.   It can also return False to assert that the type is
-        not equivalent.
-
-        :param dialect: a :class:`.Dialect` that is involved in the comparison.
-
-        :param conn_type: the type object reflected from the backend.
-
-        .. versionadded:: 1.0.3
-
-        """
-        return None
 
     def copy_value(self, value: Any) -> Any:
         return value
@@ -605,6 +577,18 @@ class TypeEngine(Visitable, Generic[_T]):
         """
         return None
 
+    def _sentinel_value_resolver(
+        self, dialect: Dialect
+    ) -> Optional[_SentinelProcessorType[_T]]:
+        """Return an optional callable that will match parameter values
+        (post-bind processing) to result values
+        (pre-result-processing), for use in the "sentinel" feature.
+
+        .. versionadded:: 2.0.10
+
+        """
+        return None
+
     @util.memoized_property
     def _has_bind_expression(self) -> bool:
         """memoized boolean, check if bind_expression is implemented.
@@ -808,7 +792,7 @@ class TypeEngine(Visitable, Generic[_T]):
         best_uppercase = None
 
         if not isinstance(self, TypeEngine):
-            return self.__class__  # type: ignore  # mypy bug?
+            return self.__class__
 
         for t in self.__class__.__mro__:
             if (
@@ -952,6 +936,18 @@ class TypeEngine(Visitable, Generic[_T]):
         d["result"][coltype] = rp
         return rp
 
+    def _cached_sentinel_value_processor(
+        self, dialect: Dialect
+    ) -> Optional[_SentinelProcessorType[_T]]:
+        try:
+            return dialect._type_memos[self]["sentinel"]
+        except KeyError:
+            pass
+
+        d = self._dialect_info(dialect)
+        d["sentinel"] = bp = d["impl"]._sentinel_value_resolver(dialect)
+        return bp
+
     def _cached_custom_processor(
         self, dialect: Dialect, key: str, fn: Callable[[TypeEngine[_T]], _O]
     ) -> _O:
@@ -1090,7 +1086,6 @@ class TypeEngine(Visitable, Generic[_T]):
 
     @util.preload_module("sqlalchemy.engine.default")
     def _default_dialect(self) -> Dialect:
-
         default = util.preloaded.engine_default
 
         # dmypy / mypy seems to sporadically keep thinking this line is
@@ -1364,10 +1359,6 @@ class UserDefinedType(
     introspection is used to check for this in order to support legacy
     forms of this function.
 
-    .. versionadded:: 1.0.0 the owning expression is passed to
-       the ``get_col_spec()`` method via the keyword argument
-       ``type_expression``, if it receives ``**kw`` in its signature.
-
     The :attr:`.UserDefinedType.cache_ok` class-level flag indicates if this
     custom :class:`.UserDefinedType` is safe to be used as part of a cache key.
     This flag defaults to ``None`` which will initially generate a warning
@@ -1462,6 +1453,8 @@ class Emulated(TypeEngineMixin):
                 # as only the default logic is implemented.
                 return cls.adapt_native_to_emulated(self, **kw)
         else:
+            # this would be, both classes are Enum, or both classes
+            # are postgresql.ENUM
             if issubclass(cls, self.__class__):
                 return self.adapt_to_emulated(cls, **kw)
             else:
@@ -1501,7 +1494,6 @@ class NativeForEmulated(TypeEngineMixin):
         impl: Union[TypeEngine[Any], TypeEngineMixin],
         **kw: Any,
     ) -> TypeEngine[Any]:
-
         """Given an impl, adapt this type's class to the impl assuming
         "native".
 
@@ -2006,7 +1998,6 @@ class TypeDecorator(SchemaEventTarget, ExternalType, TypeEngine[_T]):
         if process_literal_param is not None:
             impl_processor = self.impl_instance.literal_processor(dialect)
             if impl_processor:
-
                 fixed_impl_processor = impl_processor
                 fixed_process_literal_param = process_literal_param
 
@@ -2143,7 +2134,6 @@ class TypeDecorator(SchemaEventTarget, ExternalType, TypeEngine[_T]):
 
     @util.memoized_property
     def _has_bind_expression(self) -> bool:
-
         return (
             util.method_is_overridden(self, TypeDecorator.bind_expression)
             or self.impl_instance._has_bind_expression
@@ -2292,10 +2282,6 @@ class Variant(TypeDecorator[_T]):
         )
 
 
-def _reconstitute_comparator(expression: Any) -> Any:
-    return expression.comparator
-
-
 @overload
 def to_instance(typeobj: Union[Type[_TE], _TE], *arg: Any, **kw: Any) -> _TE:
     ...
@@ -2313,7 +2299,7 @@ def to_instance(
         return NULLTYPE
 
     if callable(typeobj):
-        return typeobj(*arg, **kw)  # type: ignore  # for pyright
+        return typeobj(*arg, **kw)
     else:
         return typeobj
 

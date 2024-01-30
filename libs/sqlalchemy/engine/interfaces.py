@@ -1,5 +1,5 @@
 # engine/interfaces.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -55,8 +55,10 @@ if TYPE_CHECKING:
     from ..event import dispatcher
     from ..exc import StatementError
     from ..sql import Executable
+    from ..sql.compiler import _InsertManyValuesBatch
     from ..sql.compiler import DDLCompiler
     from ..sql.compiler import IdentifierPreparer
+    from ..sql.compiler import InsertmanyvaluesSentinelOpts
     from ..sql.compiler import Linting
     from ..sql.compiler import SQLCompiler
     from ..sql.elements import BindParameter
@@ -69,7 +71,7 @@ if TYPE_CHECKING:
     from ..sql.type_api import _TypeMemoDict
     from ..sql.type_api import TypeEngine
 
-ConnectArgsType = Tuple[Tuple[str], MutableMapping[str, Any]]
+ConnectArgsType = Tuple[Sequence[str], MutableMapping[str, Any]]
 
 _T = TypeVar("_T", bound="Any")
 
@@ -192,7 +194,7 @@ class DBAPICursor(Protocol):
     def executemany(
         self,
         operation: Any,
-        parameters: Sequence[_DBAPIMultiExecuteParams],
+        parameters: _DBAPIMultiExecuteParams,
     ) -> Any:
         ...
 
@@ -236,14 +238,16 @@ _DBAPIMultiExecuteParams = Union[
 _DBAPIAnyExecuteParams = Union[
     _DBAPIMultiExecuteParams, _DBAPISingleExecuteParams
 ]
-_DBAPICursorDescription = Tuple[
-    str,
-    "DBAPIType",
-    Optional[int],
-    Optional[int],
-    Optional[int],
-    Optional[int],
-    Optional[bool],
+_DBAPICursorDescription = Sequence[
+    Tuple[
+        str,
+        "DBAPIType",
+        Optional[int],
+        Optional[int],
+        Optional[int],
+        Optional[int],
+        Optional[bool],
+    ]
 ]
 
 _AnySingleExecuteParams = _DBAPISingleExecuteParams
@@ -517,7 +521,7 @@ class ReflectedIndex(TypedDict):
     """index name"""
 
     column_names: List[Optional[str]]
-    """column names which the index refers towards.
+    """column names which the index references.
     An element of this list is ``None`` if it's an expression and is
     returned in the ``expressions`` list.
     """
@@ -532,7 +536,7 @@ class ReflectedIndex(TypedDict):
     """whether or not the index has a unique flag"""
 
     duplicates_constraint: NotRequired[Optional[str]]
-    "Indicates if this index mirrors a unique constraint with this name"
+    "Indicates if this index mirrors a constraint with this name"
 
     include_columns: NotRequired[List[str]]
     """columns to include in the INCLUDE clause for supporting databases.
@@ -545,8 +549,9 @@ class ReflectedIndex(TypedDict):
     """
 
     column_sorting: NotRequired[Dict[str, Tuple[str]]]
-    """optional dict mapping column names to tuple of sort keywords,
-    which may include ``asc``, ``desc``, ``nulls_first``, ``nulls_last``.
+    """optional dict mapping column names or expressions to tuple of sort
+    keywords, which may include ``asc``, ``desc``, ``nulls_first``,
+    ``nulls_last``.
 
     .. versionadded:: 1.3.5
     """
@@ -609,9 +614,21 @@ class BindTyping(Enum):
     aren't.
 
     When RENDER_CASTS is used, the compiler will invoke the
-    :meth:`.SQLCompiler.render_bind_cast` method for each
-    :class:`.BindParameter` object whose dialect-level type sets the
-    :attr:`.TypeEngine.render_bind_cast` attribute.
+    :meth:`.SQLCompiler.render_bind_cast` method for the rendered
+    string representation of each :class:`.BindParameter` object whose
+    dialect-level type sets the :attr:`.TypeEngine.render_bind_cast` attribute.
+
+    The :meth:`.SQLCompiler.render_bind_cast` is also used to render casts
+    for one form of "insertmanyvalues" query, when both
+    :attr:`.InsertmanyvaluesSentinelOpts.USE_INSERT_FROM_SELECT` and
+    :attr:`.InsertmanyvaluesSentinelOpts.RENDER_SELECT_COL_CASTS` are set,
+    where the casts are applied to the intermediary columns e.g.
+    "INSERT INTO t (a, b, c) SELECT p0::TYP, p1::TYP, p2::TYP "
+    "FROM (VALUES (?, ?), (?, ?), ...)".
+
+    .. versionadded:: 2.0.10 - :meth:`.SQLCompiler.render_bind_cast` is now
+       used within some elements of the "insertmanyvalues" implementation.
+
 
     """
 
@@ -838,6 +855,14 @@ class Dialect(EventTarget):
 
     """
 
+    insert_executemany_returning_sort_by_parameter_order: bool
+    """dialect / driver / database supports some means of providing
+    INSERT...RETURNING support when dialect.do_executemany() is used
+    along with the :paramref:`_dml.Insert.returning.sort_by_parameter_order`
+    parameter being set.
+
+    """
+
     update_executemany_returning: bool
     """dialect supports UPDATE..RETURNING with executemany."""
 
@@ -880,6 +905,23 @@ class Dialect(EventTarget):
     that don't include RETURNING will also use "insertmanyvalues".
 
     .. versionadded:: 2.0
+
+    .. seealso::
+
+        :ref:`engine_insertmanyvalues`
+
+    """
+
+    insertmanyvalues_implicit_sentinel: InsertmanyvaluesSentinelOpts
+    """Options indicating the database supports a form of bulk INSERT where
+    the autoincrement integer primary key can be reliably used as an ordering
+    for INSERTed rows.
+
+    .. versionadded:: 2.0.10
+
+    .. seealso::
+
+        :ref:`engine_insertmanyvalues_returning_order`
 
     """
 
@@ -1014,6 +1056,14 @@ class Dialect(EventTarget):
 
     """
 
+    returns_native_bytes: bool
+    """indicates if Python bytes() objects are returned natively by the
+    driver for SQL "binary" datatypes.
+
+    .. versionadded:: 2.0.11
+
+    """
+
     construct_arguments: Optional[
         List[Tuple[Type[Union[SchemaItem, ClauseElement]], Mapping[str, Any]]]
     ] = None
@@ -1042,8 +1092,6 @@ class Dialect(EventTarget):
     the namespace of arguments prefixed with that dialect name.  The rationale
     here is so that third-party dialects that haven't yet implemented this
     feature continue to function in the old way.
-
-    .. versionadded:: 0.9.2
 
     .. seealso::
 
@@ -1185,7 +1233,7 @@ class Dialect(EventTarget):
             def create_connect_args(self, url):
                 opts = url.translate_connect_args()
                 opts.update(url.query)
-                return [[], opts]
+                return ([], opts)
 
         :param url: a :class:`.URL` object
 
@@ -1620,8 +1668,6 @@ class Dialect(EventTarget):
 
         This is an internal dialect method. Applications should use
         :meth:`.Inspector.get_check_constraints`.
-
-        .. versionadded:: 1.1.0
 
         """
 
@@ -2120,15 +2166,7 @@ class Dialect(EventTarget):
         parameters: _DBAPIMultiExecuteParams,
         generic_setinputsizes: Optional[_GenericSetInputSizesType],
         context: ExecutionContext,
-    ) -> Iterator[
-        Tuple[
-            str,
-            _DBAPISingleExecuteParams,
-            _GenericSetInputSizesType,
-            int,
-            int,
-        ]
-    ]:
+    ) -> Iterator[_InsertManyValuesBatch]:
         """convert executemany parameters for an INSERT into an iterator
         of statement/single execute values, used by the insertmanyvalues
         feature.
@@ -2511,8 +2549,6 @@ class Dialect(EventTarget):
 
         By default this just returns the cls.
 
-        .. versionadded:: 1.0.3
-
         """
         return cls
 
@@ -2578,8 +2614,6 @@ class Dialect(EventTarget):
         The hook should be used by dialects and/or wrappers to apply special
         events to the engine or its components.   In particular, it allows
         a dialect-wrapping class to apply dialect-level events.
-
-        .. versionadded:: 1.0.3
 
         """
 
@@ -2802,8 +2836,6 @@ class CreateEnginePlugin:
     :meth:`_engine.CreateEnginePlugin.engine_created` hook.  In this hook, additional
     changes can be made to the engine, most typically involving setup of
     events (e.g. those defined in :ref:`core_event_toplevel`).
-
-    .. versionadded:: 1.1
 
     """  # noqa: E501
 
@@ -3122,6 +3154,24 @@ class ExecutionContext:
 
         raise NotImplementedError()
 
+    def fetchall_for_returning(self, cursor: DBAPICursor) -> Sequence[Any]:
+        """For a RETURNING result, deliver cursor.fetchall() from the
+        DBAPI cursor.
+
+        This is a dialect-specific hook for dialects that have special
+        considerations when calling upon the rows delivered for a
+        "RETURNING" statement.   Default implementation is
+        ``cursor.fetchall()``.
+
+        This hook is currently used only by the :term:`insertmanyvalues`
+        feature.   Dialects that don't set ``use_insertmanyvalues=True``
+        don't need to consider this hook.
+
+        .. versionadded:: 2.0.10
+
+        """
+        raise NotImplementedError()
+
 
 class ConnectionEventsTarget(EventTarget):
     """An object which can accept events from :class:`.ConnectionEvents`.
@@ -3289,8 +3339,6 @@ class ExceptionContext:
     The purpose of this flag is for custom disconnect-handling schemes where
     the invalidation of other connections in the pool is to be performed
     based on other conditions, or even on a per-connection basis.
-
-    .. versionadded:: 1.0.3
 
     """
 

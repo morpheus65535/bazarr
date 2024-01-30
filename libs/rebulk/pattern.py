@@ -35,7 +35,6 @@ class BasePattern(metaclass=ABCMeta):
         :return: matches based on input_string for this pattern
         :rtype: iterator[Match]
         """
-        pass
 
 
 class Pattern(BasePattern, metaclass=ABCMeta):
@@ -338,7 +337,6 @@ class Pattern(BasePattern, metaclass=ABCMeta):
         :return: A list of base patterns
         :rtype: list
         """
-        pass
 
     @property
     def properties(self):
@@ -360,7 +358,6 @@ class Pattern(BasePattern, metaclass=ABCMeta):
         :return: **options to pass to Match constructor
         :rtype: dict
         """
-        pass
 
     @abstractmethod
     def _match(self, pattern, input_string, context=None):  # pragma: no cover
@@ -375,7 +372,6 @@ class Pattern(BasePattern, metaclass=ABCMeta):
         :return: matches based on input_string for this pattern
         :rtype: iterator[Match]
         """
-        pass
 
     def __repr__(self):
         defined = ""

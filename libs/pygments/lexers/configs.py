@@ -4,21 +4,21 @@
 
     Lexers for configuration file formats.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 import re
 
 from pygments.lexer import ExtendedRegexLexer, RegexLexer, default, words, \
-    bygroups, include, using
+    bygroups, include, using, line_re
 from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
     Number, Punctuation, Whitespace, Literal, Error, Generic
 from pygments.lexers.shell import BashLexer
 from pygments.lexers.data import JsonLexer
 
-__all__ = ['IniLexer', 'RegeditLexer', 'PropertiesLexer', 'KconfigLexer',
-           'Cfengine3Lexer', 'ApacheConfLexer', 'SquidConfLexer',
+__all__ = ['IniLexer', 'SystemdLexer', 'DesktopLexer', 'RegeditLexer', 'PropertiesLexer',
+           'KconfigLexer', 'Cfengine3Lexer', 'ApacheConfLexer', 'SquidConfLexer',
            'NginxConfLexer', 'LighttpdConfLexer', 'DockerLexer',
            'TerraformLexer', 'TermcapLexer', 'TerminfoLexer',
            'PkgConfigLexer', 'PacmanConfLexer', 'AugeasLexer', 'TOMLLexer',
@@ -34,10 +34,6 @@ class IniLexer(RegexLexer):
     aliases = ['ini', 'cfg', 'dosini']
     filenames = [
         '*.ini', '*.cfg', '*.inf', '.editorconfig',
-        # systemd unit files
-        # https://www.freedesktop.org/software/systemd/man/systemd.unit.html
-        '*.service', '*.socket', '*.device', '*.mount', '*.automount',
-        '*.swap', '*.target', '*.path', '*.timer', '*.slice', '*.scope',
     ]
     mimetypes = ['text/x-ini', 'text/inf']
 
@@ -45,11 +41,21 @@ class IniLexer(RegexLexer):
         'root': [
             (r'\s+', Whitespace),
             (r'[;#].*', Comment.Single),
-            (r'\[.*?\]$', Keyword),
-            (r'(.*?)([ \t]*)(=)([ \t]*)([^\t\n]*)',
+            (r'(\[.*?\])([ \t]*)$', bygroups(Keyword, Whitespace)),
+            (r'(.*?)([  \t]*)([=:])([ \t]*)([^;#\n]*)(\\)(\s+)',
+             bygroups(Name.Attribute, Whitespace, Operator, Whitespace, String,
+                      Text, Whitespace),
+             "value"),
+            (r'(.*?)([ \t]*)([=:])([  \t]*)([^ ;#\n]*(?: +[^ ;#\n]+)*)',
              bygroups(Name.Attribute, Whitespace, Operator, Whitespace, String)),
             # standalone option, supported by some INI parsers
             (r'(.+?)$', Name.Attribute),
+        ],
+        'value': [     # line continuation
+            (r'\s+', Whitespace),
+            (r'(\s*)(.*)(\\)([ \t]*)',
+             bygroups(Whitespace, String, Text, Whitespace)),
+            (r'.*$', String, "#pop"),
         ],
     }
 
@@ -57,7 +63,84 @@ class IniLexer(RegexLexer):
         npos = text.find('\n')
         if npos < 3:
             return False
-        return text[0] == '[' and text[npos-1] == ']'
+        if text[0] == '[' and text[npos-1] == ']':
+            return 0.8
+        return False
+
+
+class DesktopLexer(RegexLexer):
+    """
+    Lexer for .desktop files.
+
+    .. versionadded:: 2.16
+    """
+
+    name = 'Desktop file'
+    url = "https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html"
+    aliases = ['desktop']
+    filenames = ['*.desktop']
+
+    tokens = {
+        'root': [
+            (r'^[ \t]*\n', Whitespace),
+            (r'^(#.*)(\n)', bygroups(Comment.Single, Whitespace)),
+            (r'(\[[^\]\n]+\])(\n)', bygroups(Keyword, Whitespace)),
+            (r'([-A-Za-z0-9]+)(\[[^\] \t=]+\])?([ \t]*)(=)([ \t]*)([^\n]*)([ \t\n]*\n)',
+             bygroups(Name.Attribute, Name.Namespace, Whitespace, Operator, Whitespace, String, Whitespace)),
+        ],
+    }
+
+    def analyse_text(text):
+        if text.startswith("[Desktop Entry]"):
+            return 1.0
+        if re.search(r"^\[Desktop Entry\][ \t]*$", text[:500], re.MULTILINE) is not None:
+            return 0.9
+        return 0.0
+
+
+class SystemdLexer(RegexLexer):
+    """
+    Lexer for systemd unit files.
+
+    .. versionadded:: 2.16
+    """
+
+    name = 'Systemd'
+    url = "https://www.freedesktop.org/software/systemd/man/systemd.syntax.html"
+    aliases = ['systemd']
+    filenames = [
+        '*.service', '*.socket', '*.device', '*.mount', '*.automount',
+        '*.swap', '*.target', '*.path', '*.timer', '*.slice', '*.scope',
+    ]
+
+    tokens = {
+        'root': [
+            (r'^[ \t]*\n', Whitespace),
+            (r'^([;#].*)(\n)', bygroups(Comment.Single, Whitespace)),
+            (r'(\[[^\]\n]+\])(\n)', bygroups(Keyword, Whitespace)),
+            (r'([^=]+)([ \t]*)(=)([ \t]*)([^\n]*)(\\)(\n)',
+             bygroups(Name.Attribute, Whitespace, Operator, Whitespace, String,
+                      Text, Whitespace),
+             "value"),
+            (r'([^=]+)([ \t]*)(=)([ \t]*)([^\n]*)(\n)',
+             bygroups(Name.Attribute, Whitespace, Operator, Whitespace, String, Whitespace)),
+        ],
+        'value': [
+            # line continuation
+            (r'^([;#].*)(\n)', bygroups(Comment.Single, Whitespace)),
+            (r'([ \t]*)([^\n]*)(\\)(\n)',
+             bygroups(Whitespace, String, Text, Whitespace)),
+            (r'([ \t]*)([^\n]*)(\n)',
+             bygroups(Whitespace, String, Whitespace), "#pop"),
+        ],
+    }
+
+    def analyse_text(text):
+        if text.startswith("[Unit]"):
+            return 1.0
+        if re.search(r"^\[Unit\][ \t]*$", text[:500], re.MULTILINE) is not None:
+            return 0.9
+        return 0.0
 
 
 class RegeditLexer(RegexLexer):
@@ -119,14 +202,42 @@ class PropertiesLexer(RegexLexer):
 
     tokens = {
         'root': [
-            (r'^(\w+)([ \t])(\w+\s*)$', bygroups(Name.Attribute, Whitespace, String)),
-            (r'^\w+(\\[ \t]\w*)*$', Name.Attribute),
-            (r'(^ *)([#!].*)', bygroups(Whitespace, Comment)),
-            # More controversial comments
-            (r'(^ *)((?:;|//).*)', bygroups(Whitespace, Comment)),
-            (r'(.*?)([ \t]*)([=:])([ \t]*)(.*(?:(?<=\\)\n.*)*)',
-             bygroups(Name.Attribute, Whitespace, Operator, Whitespace, String)),
-            (r'\s', Whitespace),
+            # comments
+            (r'[!#].*|/{2}.*', Comment.Single),
+            # ending a comment or whitespace-only line
+            (r'\n', Whitespace),
+            # eat whitespace at the beginning of a line
+            (r'^[^\S\n]+', Whitespace),
+            # start lexing a key
+            default('key'),
+        ],
+        'key': [
+            # non-escaped key characters
+            (r'[^\\:=\s]+', Name.Attribute),
+            # escapes
+            include('escapes'),
+            # separator is the first non-escaped whitespace or colon or '=' on the line;
+            # if it's whitespace, = and : are gobbled after it
+            (r'([^\S\n]*)([:=])([^\S\n]*)',
+             bygroups(Whitespace, Operator, Whitespace),
+             ('#pop', 'value')),
+            (r'[^\S\n]+', Whitespace, ('#pop', 'value')),
+            # maybe we got no value after all
+            (r'\n', Whitespace, '#pop'),
+        ],
+        'value': [
+            # non-escaped value characters
+            (r'[^\\\n]+', String),
+            # escapes
+            include('escapes'),
+            # end the value on an unescaped newline
+            (r'\n', Whitespace, '#pop'),
+        ],
+        'escapes': [
+            # line continuations; these gobble whitespace at the beginning of the next line
+            (r'(\\\n)([^\S\n]*)', bygroups(String.Escape, Whitespace)),
+            # other escapes
+            (r'\\(.|\n)', String.Escape),
         ],
     }
 
@@ -431,15 +542,14 @@ class SquidConfLexer(RegexLexer):
         "dst", "time", "dstdomain", "ident", "snmp_community",
     )
 
-    ip_re = (
-        r'(?:(?:(?:[3-9]\d?|2(?:5[0-5]|[0-4]?\d)?|1\d{0,2}|0x0*[0-9a-f]{1,2}|'
-        r'0+[1-3]?[0-7]{0,2})(?:\.(?:[3-9]\d?|2(?:5[0-5]|[0-4]?\d)?|1\d{0,2}|'
-        r'0x0*[0-9a-f]{1,2}|0+[1-3]?[0-7]{0,2})){3})|(?!.*::.*::)(?:(?!:)|'
-        r':(?=:))(?:[0-9a-f]{0,4}(?:(?<=::)|(?<!::):)){6}(?:[0-9a-f]{0,4}'
-        r'(?:(?<=::)|(?<!::):)[0-9a-f]{0,4}(?:(?<=::)|(?<!:)|(?<=:)(?<!::):)|'
-        r'(?:25[0-4]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-4]|2[0-4]\d|1\d\d|'
-        r'[1-9]?\d)){3}))'
-    )
+    ipv4_group = r'(\d+|0x[0-9a-f]+)'
+    ipv4 = rf'({ipv4_group}(\.{ipv4_group}){{3}})'
+    ipv6_group = r'([0-9a-f]{0,4})'
+    ipv6 = rf'({ipv6_group}(:{ipv6_group}){{1,7}})'
+    bare_ip = rf'({ipv4}|{ipv6})'
+    # XXX: /integer is a subnet mark, but what is /IP ?
+    # There is no test where it is used.
+    ip = rf'{bare_ip}(/({bare_ip}|\d+))?'
 
     tokens = {
         'root': [
@@ -452,7 +562,7 @@ class SquidConfLexer(RegexLexer):
             (words(actions_stats, prefix=r'stats/', suffix=r'\b'), String),
             (words(actions_log, prefix=r'log/', suffix=r'='), String),
             (words(acls, prefix=r'\b', suffix=r'\b'), Keyword),
-            (ip_re + r'(?:/(?:' + ip_re + r'|\b\d+\b))?', Number.Float),
+            (ip, Number.Float),
             (r'(?:\b\d+\b(?:-\b\d+|%)?)', Number),
             (r'\S+', Text),
         ],
@@ -585,8 +695,8 @@ class TerraformLexer(ExtendedRegexLexer):
 
     name = 'Terraform'
     url = 'https://www.terraform.io/'
-    aliases = ['terraform', 'tf']
-    filenames = ['*.tf']
+    aliases = ['terraform', 'tf', 'hcl']
+    filenames = ['*.tf', '*.hcl']
     mimetypes = ['application/x-tf', 'application/x-terraform']
 
     classes = ('backend', 'data', 'module', 'output', 'provider',
@@ -653,7 +763,6 @@ class TerraformLexer(ExtendedRegexLexer):
         tolerant = True  # leading whitespace is always accepted
 
         lines = []
-        line_re = re.compile('.*?\n')
 
         for match in line_re.finditer(ctx.text, ctx.pos):
             if tolerant:
@@ -723,14 +832,12 @@ class TerraformLexer(ExtendedRegexLexer):
              bygroups(Keyword.Reserved, Whitespace, Name.Class, Whitespace, Name.Variable, Whitespace, Punctuation)),
 
             # here-doc style delimited strings
-            (
-                r'(<<-?)\s*([a-zA-Z_]\w*)(.*?\n)',
-                heredoc_callback,
-            )
+            (r'(<<-?)\s*([a-zA-Z_]\w*)(.*?\n)', heredoc_callback),
         ],
         'identifier': [
             (r'\b(var\.[0-9a-zA-Z-_\.\[\]]+)\b', bygroups(Name.Variable)),
-            (r'\b([0-9a-zA-Z-_\[\]]+\.[0-9a-zA-Z-_\.\[\]]+)\b', bygroups(Name.Variable)),
+            (r'\b([0-9a-zA-Z-_\[\]]+\.[0-9a-zA-Z-_\.\[\]]+)\b',
+             bygroups(Name.Variable)),
         ],
         'punctuation': [
             (r'[\[\]()\{\},.?:!=]', Punctuation),
@@ -1006,62 +1113,181 @@ class AugeasLexer(RegexLexer):
 
 class TOMLLexer(RegexLexer):
     """
-    Lexer for TOML, a simple language
-    for config files.
+    Lexer for TOML, a simple language for config files.
 
     .. versionadded:: 2.4
     """
 
     name = 'TOML'
-    url = 'https://github.com/toml-lang/toml'
     aliases = ['toml']
     filenames = ['*.toml', 'Pipfile', 'poetry.lock']
+    mimetypes = ['application/toml']
+    url = 'https://toml.io'
+
+    # Based on the TOML spec: https://toml.io/en/v1.0.0
+
+    # The following is adapted from CPython's tomllib:
+    _time = r"\d\d:\d\d:\d\d(\.\d+)?"
+    _datetime = rf"""(?x)
+                  \d\d\d\d-\d\d-\d\d # date, e.g., 1988-10-27
+                (
+                  [Tt ] {_time} # optional time
+                  (
+                    [Zz]|[+-]\d\d:\d\d # optional time offset
+                  )?
+                )?
+              """
 
     tokens = {
         'root': [
-            # Table
-            (r'^(\s*)(\[.*?\])$', bygroups(Whitespace, Keyword)),
+            # Note that we make an effort in order to distinguish
+            # moments at which we're parsing a key and moments at
+            # which we're parsing a value. In the TOML code
+            #
+            #   1234 = 1234
+            #
+            # the first "1234" should be Name, the second Integer.
 
-            # Basics, comments, strings
-            (r'[ \t]+', Whitespace),
-            (r'\n', Whitespace),
-            (r'#.*?$', Comment.Single),
-            # Basic string
-            (r'"(\\\\|\\[^\\]|[^"\\])*"', String),
-            # Literal string
-            (r'\'\'\'(.*)\'\'\'', String),
-            (r'\'[^\']*\'', String),
-            (r'(true|false)$', Keyword.Constant),
-            (r'[a-zA-Z_][\w\-]*', Name),
+            # Whitespace
+            (r'\s+', Whitespace),
 
-            # Datetime
-            # TODO this needs to be expanded, as TOML is rather flexible:
-            # https://github.com/toml-lang/toml#offset-date-time
-            (r'\d{4}-\d{2}-\d{2}(?:T| )\d{2}:\d{2}:\d{2}(?:Z|[-+]\d{2}:\d{2})', Number.Integer),
+            # Comment
+            (r'#.*', Comment.Single),
 
-            # Numbers
-            (r'(\d+\.\d*|\d*\.\d+)([eE][+-]?[0-9]+)?j?', Number.Float),
-            (r'\d+[eE][+-]?[0-9]+j?', Number.Float),
-            # Handle +-inf, +-infinity, +-nan
-            (r'[+-]?(?:(inf(?:inity)?)|nan)', Number.Float),
-            (r'[+-]?\d+', Number.Integer),
+            # Assignment keys
+            include('key'),
 
-            # Punctuation
-            (r'[]{}:(),;[]', Punctuation),
+            # After "=", find a value
+            (r'(=)(\s*)', bygroups(Operator, Whitespace), 'value'),
+
+            # Table header
+            (r'\[\[?', Keyword, 'table-key'),
+        ],
+        'key': [
+            # Start of bare key (only ASCII is allowed here).
+            (r'[A-Za-z0-9_-]+', Name),
+            # Quoted key
+            (r'"', String.Double, 'basic-string'),
+            (r"'", String.Single, 'literal-string'),
+            # Dots act as separators in keys
             (r'\.', Punctuation),
+        ],
+        'table-key': [
+            # This is like 'key', but highlights the name components
+            # and separating dots as Keyword because it looks better
+            # when the whole table header is Keyword. We do highlight
+            # strings as strings though.
+            # Start of bare key (only ASCII is allowed here).
+            (r'[A-Za-z0-9_-]+', Keyword),
+            (r'"', String.Double, 'basic-string'),
+            (r"'", String.Single, 'literal-string'),
+            (r'\.', Keyword),
+            (r'\]\]?', Keyword, '#pop'),
 
-            # Operators
-            (r'=', Operator)
+            # Inline whitespace allowed
+            (r'[ \t]+', Whitespace),
+        ],
+        'value': [
+            # Datetime, baretime
+            (_datetime, Literal.Date, '#pop'),
+            (_time, Literal.Date, '#pop'),
 
-        ]
+            # Recognize as float if there is a fractional part
+            # and/or an exponent.
+            (r'[+-]?\d[0-9_]*[eE][+-]?\d[0-9_]*', Number.Float, '#pop'),
+            (r'[+-]?\d[0-9_]*\.\d[0-9_]*([eE][+-]?\d[0-9_]*)?',
+             Number.Float, '#pop'),
+
+            # Infinities and NaN
+            (r'[+-]?(inf|nan)', Number.Float, '#pop'),
+
+            # Integers
+            (r'-?0b[01_]+', Number.Bin, '#pop'),
+            (r'-?0o[0-7_]+', Number.Oct, '#pop'),
+            (r'-?0x[0-9a-fA-F_]+', Number.Hex, '#pop'),
+            (r'[+-]?[0-9_]+', Number.Integer, '#pop'),
+
+            # Strings
+            (r'"""', String.Double, ('#pop', 'multiline-basic-string')),
+            (r'"', String.Double, ('#pop', 'basic-string')),
+            (r"'''", String.Single, ('#pop', 'multiline-literal-string')),
+            (r"'", String.Single, ('#pop', 'literal-string')),
+
+            # Booleans
+            (r'true|false', Keyword.Constant, '#pop'),
+
+            # Start of array
+            (r'\[', Punctuation, ('#pop', 'array')),
+
+            # Start of inline table
+            (r'\{', Punctuation, ('#pop', 'inline-table')),
+        ],
+        'array': [
+            # Whitespace, including newlines, is ignored inside arrays,
+            # and comments are allowed.
+            (r'\s+', Whitespace),
+            (r'#.*', Comment.Single),
+
+            # Delimiters
+            (r',', Punctuation),
+
+            # End of array
+            (r'\]', Punctuation, '#pop'),
+
+            # Parse a value and come back
+            default('value'),
+        ],
+        'inline-table': [
+            # Note that unlike inline arrays, inline tables do not
+            # allow newlines or comments.
+            (r'[ \t]+', Whitespace),
+
+            # Keys
+            include('key'),
+
+            # Values
+            (r'(=)(\s*)', bygroups(Punctuation, Whitespace), 'value'),
+
+            # Delimiters
+            (r',', Punctuation),
+
+            # End of inline table
+            (r'\}', Punctuation, '#pop'),
+        ],
+        'basic-string': [
+            (r'"', String.Double, '#pop'),
+            include('escapes'),
+            (r'[^"\\]+', String.Double),
+        ],
+        'literal-string': [
+            (r".*?'", String.Single, '#pop'),
+        ],
+        'multiline-basic-string': [
+            (r'"""', String.Double, '#pop'),
+            (r'(\\)(\n)', bygroups(String.Escape, Whitespace)),
+            include('escapes'),
+            (r'[^"\\]+', String.Double),
+            (r'"', String.Double),
+        ],
+        'multiline-literal-string': [
+            (r"'''", String.Single, '#pop'),
+            (r"[^']+", String.Single),
+            (r"'", String.Single),
+        ],
+        'escapes': [
+            (r'\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8}', String.Escape),
+            (r'\\.', String.Escape),
+        ],
     }
 
 class NestedTextLexer(RegexLexer):
     """
-    Lexer for NextedText, a human-friendly data
-    format.
+    Lexer for *NextedText*, a human-friendly data format.
 
     .. versionadded:: 2.9
+
+    .. versionchanged:: 2.16
+        Added support for *NextedText* v3.0.
     """
 
     name = 'NestedText'
@@ -1069,16 +1295,70 @@ class NestedTextLexer(RegexLexer):
     aliases = ['nestedtext', 'nt']
     filenames = ['*.nt']
 
-    _quoted_dict_item = r'^(\s*)({0})(.*?)({0}: ?)(.*?)(\s*)$'
-
     tokens = {
         'root': [
-            (r'^(\s*)(#.*?)$', bygroups(Whitespace, Comment)),
-            (r'^(\s*)(>)( ?)(.*?)(\s*)$', bygroups(Whitespace, Punctuation, Whitespace, String, Whitespace)),
-            (r'^(\s*)(-)( ?)(.*?)(\s*)$', bygroups(Whitespace, Punctuation, Whitespace, String, Whitespace)),
-            (_quoted_dict_item.format("'"), bygroups(Whitespace, Punctuation, Name, Punctuation, String, Whitespace)),
-            (_quoted_dict_item.format('"'), bygroups(Whitespace, Punctuation, Name, Punctuation, String, Whitespace)),
-            (r'^(\s*)(.*?)(:)( ?)(.*?)(\s*)$', bygroups(Whitespace, Name, Punctuation, Whitespace, String, Whitespace)),
+            # Comment: # ...
+            (r'^([ ]*)(#.*)$', bygroups(Whitespace, Comment)),
+
+            # Inline dictionary: {...}
+            (r'^([ ]*)(\{)', bygroups(Whitespace, Punctuation), 'inline_dict'),
+
+            # Inline list: [...]
+            (r'^([ ]*)(\[)', bygroups(Whitespace, Punctuation), 'inline_list'),
+
+            # empty multiline string item: >
+            (r'^([ ]*)(>)$', bygroups(Whitespace, Punctuation)),
+
+            # multiline string item: > ...
+            (r'^([ ]*)(>)( )(.*?)([ \t]*)$', bygroups(Whitespace, Punctuation, Whitespace, Text, Whitespace)),
+
+            # empty list item: -
+            (r'^([ ]*)(-)$', bygroups(Whitespace, Punctuation)),
+
+            # list item: - ...
+            (r'^([ ]*)(-)( )(.*?)([ \t]*)$', bygroups(Whitespace, Punctuation, Whitespace, Text, Whitespace)),
+
+            # empty multiline key item: :
+            (r'^([ ]*)(:)$', bygroups(Whitespace, Punctuation)),
+
+            # multiline key item: : ...
+            (r'^([ ]*)(:)( )([^\n]*?)([ \t]*)$', bygroups(Whitespace, Punctuation, Whitespace, Name.Tag, Whitespace)),
+
+            # empty dict key item: ...:
+            (r'^([ ]*)([^\{\[\s].*?)(:)$', bygroups(Whitespace, Name.Tag, Punctuation)),
+
+            # dict key item: ...: ...
+            (r'^([ ]*)([^\{\[\s].*?)(:)( )(.*?)([ \t]*)$', bygroups(Whitespace, Name.Tag, Punctuation, Whitespace, Text, Whitespace)),
+        ],
+        'inline_list': [
+            include('whitespace'),
+            (r'[^\{\}\[\],\s]+', Text),
+            include('inline_value'),
+            (r',', Punctuation),
+            (r'\]', Punctuation, '#pop'),
+            (r'\n', Error, '#pop'),
+        ],
+        'inline_dict': [
+            include('whitespace'),
+            (r'[^\{\}\[\],:\s]+', Name.Tag),
+            (r':', Punctuation, 'inline_dict_value'),
+            (r'\}', Punctuation, '#pop'),
+            (r'\n', Error, '#pop'),
+        ],
+        'inline_dict_value': [
+            include('whitespace'),
+            (r'[^\{\}\[\],:\s]+', Text),
+            include('inline_value'),
+            (r',', Punctuation, '#pop'),
+            (r'\}', Punctuation, '#pop:2'),
+        ],
+        'inline_value': [
+            include('whitespace'),
+            (r'\{', Punctuation, 'inline_dict'),
+            (r'\[', Punctuation, 'inline_list'),
+        ],
+        'whitespace': [
+            (r'[ \t]+', Whitespace),
         ],
     }
 
@@ -1135,7 +1415,7 @@ class UnixConfigLexer(RegexLexer):
     * ``/etc/group``
     * ``/etc/passwd``
     * ``/etc/shadow``
-    
+
     .. versionadded:: 2.12
     """
 

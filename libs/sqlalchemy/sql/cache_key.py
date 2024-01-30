@@ -1,5 +1,5 @@
 # sql/cache_key.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -11,6 +11,7 @@ import enum
 from itertools import zip_longest
 import typing
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Iterable
 from typing import Iterator
@@ -43,7 +44,7 @@ if typing.TYPE_CHECKING:
 class _CacheKeyTraversalDispatchType(Protocol):
     def __call__(
         s, self: HasCacheKey, visitor: _CacheKeyTraversal
-    ) -> CacheKey:
+    ) -> _CacheKeyTraversalDispatchTypeReturn:
         ...
 
 
@@ -74,6 +75,18 @@ class CacheTraverseTarget(enum.Enum):
     PROPAGATE_ATTRS,
     ANON_NAME,
 ) = tuple(CacheTraverseTarget)
+
+_CacheKeyTraversalDispatchTypeReturn = Sequence[
+    Tuple[
+        str,
+        Any,
+        Union[
+            Callable[..., Tuple[Any, ...]],
+            CacheTraverseTarget,
+            InternalTraversal,
+        ],
+    ]
+]
 
 
 class HasCacheKey:
@@ -324,7 +337,7 @@ class HasCacheKey:
                             ),
                         )
                     else:
-                        result += meth(
+                        result += meth(  # type: ignore
                             attrname, obj, self, anon_map, bindparams
                         )
         return result
@@ -465,6 +478,9 @@ class CacheKey(NamedTuple):
     def __eq__(self, other: Any) -> bool:
         return bool(self.key == other.key)
 
+    def __ne__(self, other: Any) -> bool:
+        return not (self.key == other.key)
+
     @classmethod
     def _diff_tuples(cls, left: CacheKey, right: CacheKey) -> str:
         ck1 = CacheKey(left, [])
@@ -472,7 +488,6 @@ class CacheKey(NamedTuple):
         return ck1._diff(ck2)
 
     def _whats_different(self, other: CacheKey) -> Iterator[str]:
-
         k1 = self.key
         k2 = other.key
 
@@ -544,6 +559,9 @@ class CacheKey(NamedTuple):
     def _apply_params_to_element(
         self, original_cache_key: CacheKey, target_element: ClauseElement
     ) -> ClauseElement:
+        if target_element._is_immutable:
+            return target_element
+
         translate = {
             k.key: v.value
             for k, v in zip(original_cache_key.bindparams, self.bindparams)

@@ -1,5 +1,5 @@
 # orm/collections.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -620,6 +620,28 @@ class CollectionAdapter:
     def __bool__(self):
         return True
 
+    def _fire_append_wo_mutation_event_bulk(
+        self, items, initiator=None, key=NO_KEY
+    ):
+        if not items:
+            return
+
+        if initiator is not False:
+            if self.invalidated:
+                self._warn_invalidated()
+
+            if self.empty:
+                self._reset_empty()
+
+            for item in items:
+                self.attr.fire_append_wo_mutation_event(
+                    self.owner_state,
+                    self.owner_state.dict,
+                    item,
+                    initiator,
+                    key,
+                )
+
     def fire_append_wo_mutation_event(self, item, initiator=None, key=NO_KEY):
         """Notify that a entity is entering the collection but is already
         present.
@@ -667,6 +689,26 @@ class CollectionAdapter:
             )
         else:
             return item
+
+    def _fire_remove_event_bulk(self, items, initiator=None, key=NO_KEY):
+        if not items:
+            return
+
+        if initiator is not False:
+            if self.invalidated:
+                self._warn_invalidated()
+
+            if self.empty:
+                self._reset_empty()
+
+            for item in items:
+                self.attr.fire_remove_event(
+                    self.owner_state,
+                    self.owner_state.dict,
+                    item,
+                    initiator,
+                    key,
+                )
 
     def fire_remove_event(self, item, initiator=None, key=NO_KEY):
         """Notify that a entity has been removed from the collection.
@@ -763,8 +805,10 @@ def bulk_replace(values, existing_adapter, new_adapter, initiator=None):
             appender(member, _sa_initiator=False)
 
     if existing_adapter:
-        for member in removals:
-            existing_adapter.fire_remove_event(member, initiator=initiator)
+        existing_adapter._fire_append_wo_mutation_event_bulk(
+            constants, initiator=initiator
+        )
+        existing_adapter._fire_remove_event_bulk(removals, initiator=initiator)
 
 
 def prepare_instrumentation(
@@ -796,7 +840,6 @@ def prepare_instrumentation(
 
     # Did factory callable return a builtin?
     if cls in __canned_instrumentation:
-
         # if so, just convert.
         # in previous major releases, this codepath wasn't working and was
         # not covered by tests.   prior to that it supplied a "wrapper"
@@ -1548,7 +1591,6 @@ __interfaces: util.immutabledict[
 
 
 def __go(lcls):
-
     global keyfunc_mapping, mapped_collection
     global column_keyed_dict, column_mapped_collection
     global MappedCollection, KeyFuncDict

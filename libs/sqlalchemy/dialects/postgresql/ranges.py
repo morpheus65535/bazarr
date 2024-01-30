@@ -1,4 +1,5 @@
-# Copyright (C) 2013-2023 the SQLAlchemy authors and contributors
+# dialects/postgresql/ranges.py
+# Copyright (C) 2013-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -22,14 +23,23 @@ from typing import TYPE_CHECKING
 from typing import TypeVar
 from typing import Union
 
+from .operators import ADJACENT_TO
+from .operators import CONTAINED_BY
+from .operators import CONTAINS
+from .operators import NOT_EXTEND_LEFT_OF
+from .operators import NOT_EXTEND_RIGHT_OF
+from .operators import OVERLAP
+from .operators import STRICTLY_LEFT_OF
+from .operators import STRICTLY_RIGHT_OF
 from ... import types as sqltypes
+from ...sql import operators
+from ...sql.type_api import TypeEngine
 from ...util import py310
 from ...util.typing import Literal
 
 if TYPE_CHECKING:
     from ...sql.elements import ColumnElement
     from ...sql.type_api import _TE
-    from ...sql.type_api import TypeEngine
     from ...sql.type_api import TypeEngineMixin
 
 _T = TypeVar("_T", bound=Any)
@@ -284,7 +294,7 @@ class Range(Generic[_T]):
             else:
                 return 0
 
-    def __eq__(self, other: Any) -> bool:  # type: ignore[override]  # noqa: E501
+    def __eq__(self, other: Any) -> bool:
         """Compare this range to the `other` taking into account
         bounds inclusivity, returning ``True`` if they are equal.
         """
@@ -641,6 +651,47 @@ class Range(Generic[_T]):
     def __sub__(self, other: Range[_T]) -> Range[_T]:
         return self.difference(other)
 
+    def intersection(self, other: Range[_T]) -> Range[_T]:
+        """Compute the intersection of this range with the `other`.
+
+        .. versionadded:: 2.0.10
+
+        """
+        if self.empty or other.empty or not self.overlaps(other):
+            return Range(None, None, empty=True)
+
+        slower = self.lower
+        slower_b = self.bounds[0]
+        supper = self.upper
+        supper_b = self.bounds[1]
+        olower = other.lower
+        olower_b = other.bounds[0]
+        oupper = other.upper
+        oupper_b = other.bounds[1]
+
+        if self._compare_edges(slower, slower_b, olower, olower_b) < 0:
+            rlower = olower
+            rlower_b = olower_b
+        else:
+            rlower = slower
+            rlower_b = slower_b
+
+        if self._compare_edges(supper, supper_b, oupper, oupper_b) > 0:
+            rupper = oupper
+            rupper_b = oupper_b
+        else:
+            rupper = supper
+            rupper_b = supper_b
+
+        return Range(
+            rlower,
+            rupper,
+            bounds=cast(_BoundsType, rlower_b + rupper_b),
+        )
+
+    def __mul__(self, other: Range[_T]) -> Range[_T]:
+        return self.intersection(other)
+
     def __str__(self) -> str:
         return self._stringify()
 
@@ -725,15 +776,8 @@ class AbstractRange(sqltypes.TypeEngine[Range[_T]]):
             # empty Range, SQL datatype can't be determined here
             return sqltypes.NULLTYPE
 
-    class comparator_factory(sqltypes.Concatenable.Comparator[Range[Any]]):
+    class comparator_factory(TypeEngine.Comparator[Range[Any]]):
         """Define comparison operations for range types."""
-
-        def __ne__(self, other: Any) -> ColumnElement[bool]:  # type: ignore[override]  # noqa: E501
-            "Boolean expression. Returns true if two ranges are not equal"
-            if other is None:
-                return super().__ne__(other)  # type: ignore
-            else:
-                return self.expr.op("<>", is_comparison=True)(other)  # type: ignore # noqa: E501
 
         def contains(self, other: Any, **kw: Any) -> ColumnElement[bool]:
             """Boolean expression. Returns true if the right hand operand,
@@ -743,25 +787,25 @@ class AbstractRange(sqltypes.TypeEngine[Range[_T]]):
             kwargs may be ignored by this operator but are required for API
             conformance.
             """
-            return self.expr.op("@>", is_comparison=True)(other)  # type: ignore  # noqa: E501
+            return self.expr.operate(CONTAINS, other)
 
         def contained_by(self, other: Any) -> ColumnElement[bool]:
             """Boolean expression. Returns true if the column is contained
             within the right hand operand.
             """
-            return self.expr.op("<@", is_comparison=True)(other)  # type: ignore  # noqa: E501
+            return self.expr.operate(CONTAINED_BY, other)
 
         def overlaps(self, other: Any) -> ColumnElement[bool]:
             """Boolean expression. Returns true if the column overlaps
             (has points in common with) the right hand operand.
             """
-            return self.expr.op("&&", is_comparison=True)(other)  # type: ignore  # noqa: E501
+            return self.expr.operate(OVERLAP, other)
 
         def strictly_left_of(self, other: Any) -> ColumnElement[bool]:
             """Boolean expression. Returns true if the column is strictly
             left of the right hand operand.
             """
-            return self.expr.op("<<", is_comparison=True)(other)  # type: ignore  # noqa: E501
+            return self.expr.operate(STRICTLY_LEFT_OF, other)
 
         __lshift__ = strictly_left_of
 
@@ -769,7 +813,7 @@ class AbstractRange(sqltypes.TypeEngine[Range[_T]]):
             """Boolean expression. Returns true if the column is strictly
             right of the right hand operand.
             """
-            return self.expr.op(">>", is_comparison=True)(other)  # type: ignore  # noqa: E501
+            return self.expr.operate(STRICTLY_RIGHT_OF, other)
 
         __rshift__ = strictly_right_of
 
@@ -777,37 +821,40 @@ class AbstractRange(sqltypes.TypeEngine[Range[_T]]):
             """Boolean expression. Returns true if the range in the column
             does not extend right of the range in the operand.
             """
-            return self.expr.op("&<", is_comparison=True)(other)  # type: ignore  # noqa: E501
+            return self.expr.operate(NOT_EXTEND_RIGHT_OF, other)
 
         def not_extend_left_of(self, other: Any) -> ColumnElement[bool]:
             """Boolean expression. Returns true if the range in the column
             does not extend left of the range in the operand.
             """
-            return self.expr.op("&>", is_comparison=True)(other)  # type: ignore  # noqa: E501
+            return self.expr.operate(NOT_EXTEND_LEFT_OF, other)
 
         def adjacent_to(self, other: Any) -> ColumnElement[bool]:
             """Boolean expression. Returns true if the range in the column
             is adjacent to the range in the operand.
             """
-            return self.expr.op("-|-", is_comparison=True)(other)  # type: ignore  # noqa: E501
+            return self.expr.operate(ADJACENT_TO, other)
 
         def union(self, other: Any) -> ColumnElement[bool]:
             """Range expression. Returns the union of the two ranges.
             Will raise an exception if the resulting range is not
             contiguous.
             """
-            return self.expr.op("+")(other)  # type: ignore
-
-        __add__ = union
+            return self.expr.operate(operators.add, other)
 
         def difference(self, other: Any) -> ColumnElement[bool]:
             """Range expression. Returns the union of the two ranges.
             Will raise an exception if the resulting range is not
             contiguous.
             """
-            return self.expr.op("-")(other)  # type: ignore
+            return self.expr.operate(operators.sub, other)
 
-        __sub__ = difference
+        def intersection(self, other: Any) -> ColumnElement[Range[_T]]:
+            """Range expression. Returns the intersection of the two ranges.
+            Will raise an exception if the resulting range is not
+            contiguous.
+            """
+            return self.expr.operate(operators.mul, other)
 
 
 class AbstractRangeImpl(AbstractRange[Range[_T]]):

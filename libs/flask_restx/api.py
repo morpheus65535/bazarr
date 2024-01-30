@@ -14,10 +14,6 @@ from types import MethodType
 from flask import url_for, request, current_app
 from flask import make_response as original_flask_make_response
 
-try:
-    from flask.helpers import _endpoint_from_view_func
-except ImportError:
-    from flask.scaffold import _endpoint_from_view_func
 from flask.signals import got_request_exception
 
 from jsonschema import RefResolver
@@ -32,22 +28,24 @@ from werkzeug.exceptions import (
     InternalServerError,
 )
 
-from werkzeug import __version__ as werkzeug_version
-
-if werkzeug_version.split(".")[0] >= "2":
-    from werkzeug.wrappers import Response as BaseResponse
-else:
-    from werkzeug.wrappers import BaseResponse
-
 from . import apidoc
 from .mask import ParseError, MaskError
 from .namespace import Namespace
 from .postman import PostmanCollectionV1
 from .resource import Resource
 from .swagger import Swagger
-from .utils import default_id, camel_to_dash, unpack
+from .utils import (
+    default_id,
+    camel_to_dash,
+    unpack,
+    import_check_view_func,
+    BaseResponse,
+)
 from .representations import output_json
 from ._http import HTTPStatus
+
+endpoint_from_view_func = import_check_view_func()
+
 
 RE_RULES = re.compile("(<.*>)")
 
@@ -229,6 +227,8 @@ class Api(object):
         self.license_url = kwargs.get("license_url", self.license_url)
         self.url_scheme = kwargs.get("url_scheme", self.url_scheme)
         self._add_specs = kwargs.get("add_specs", True)
+        self._register_specs(app)
+        self._register_doc(app)
 
         # If app is a blueprint, defer the initialization
         try:
@@ -245,9 +245,6 @@ class Api(object):
 
         :param flask.Flask app: The flask application object
         """
-        self._register_specs(self.blueprint or app)
-        self._register_doc(self.blueprint or app)
-
         app.handle_exception = partial(self.error_router, app.handle_exception)
         app.handle_user_exception = partial(
             self.error_router, app.handle_user_exception
@@ -674,6 +671,18 @@ class Api(object):
                 return original_handler(f)
         return original_handler(e)
 
+    def _propagate_exceptions(self):
+        """
+        Returns the value of the ``PROPAGATE_EXCEPTIONS`` configuration
+        value in case it's set, otherwise return true if app.debug or
+        app.testing is set. This method was deprecated in Flask 2.3 but
+        we still need it for our error handlers.
+        """
+        rv = current_app.config.get("PROPAGATE_EXCEPTIONS")
+        if rv is not None:
+            return rv
+        return current_app.testing or current_app.debug
+
     def handle_error(self, e):
         """
         Error handler for the API transforms a raised exception into a Flask response,
@@ -686,10 +695,9 @@ class Api(object):
         # client if a handler is configured for the exception.
         if (
             not isinstance(e, HTTPException)
-            and current_app.propagate_exceptions
+            and self._propagate_exceptions()
             and not isinstance(e, tuple(self._own_and_child_error_handlers.keys()))
         ):
-
             exc_type, exc_value, tb = sys.exc_info()
             if exc_value is e:
                 raise
@@ -716,9 +724,13 @@ class Api(object):
             got_request_exception.send(current_app._get_current_object(), exception=e)
 
             if isinstance(e, HTTPException):
-                code = HTTPStatus(e.code)
+                code = None
+                if e.code is not None:
+                    code = HTTPStatus(e.code)
+                elif e.response is not None:
+                    code = HTTPStatus(e.response.status_code)
                 if include_message_in_response:
-                    default_data = {"message": getattr(e, "description", code.phrase)}
+                    default_data = {"message": e.description or code.phrase}
                 headers = e.get_response().headers
             elif self._default_error_handler:
                 result = self._default_error_handler(e)
@@ -840,7 +852,7 @@ class Api(object):
             rule = blueprint_setup.url_prefix + rule
         options.setdefault("subdomain", blueprint_setup.subdomain)
         if endpoint is None:
-            endpoint = _endpoint_from_view_func(view_func)
+            endpoint = endpoint_from_view_func(view_func)
         defaults = blueprint_setup.url_defaults
         if "defaults" in options:
             defaults = dict(defaults, **options.pop("defaults"))

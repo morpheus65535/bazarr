@@ -22,6 +22,7 @@ Antarctica/Casey
 Antarctica/Davis
 Antarctica/Mawson
 Antarctica/Troll
+Antarctica/Vostok
 Antarctica/Rothera
 Asia/Kabul
 Asia/Yerevan
@@ -239,12 +240,10 @@ America/Edmonton
 America/Vancouver
 America/Dawson_Creek
 America/Fort_Nelson
-America/Pangnirtung
 America/Iqaluit
 America/Resolute
 America/Rankin_Inlet
 America/Cambridge_Bay
-America/Yellowknife
 America/Inuvik
 America/Whitehorse
 America/Dawson
@@ -253,6 +252,7 @@ America/Merida
 America/Matamoros
 America/Monterrey
 America/Mexico_City
+America/Ciudad_Juarez
 America/Ojinaga
 America/Chihuahua
 America/Hermosillo
@@ -498,7 +498,6 @@ America/Tortola
 Antarctica/DumontDUrville
 Antarctica/McMurdo
 Antarctica/Syowa
-Antarctica/Vostok
 Arctic/Longyearbyen
 Asia/Aden
 Asia/Bahrain
@@ -554,12 +553,14 @@ America/Ensenada
 America/Fort_Wayne
 America/Montreal
 America/Nipigon
+America/Pangnirtung
 America/Porto_Acre
 America/Rainy_River
 America/Rosario
 America/Santa_Isabel
 America/Shiprock
 America/Thunder_Bay
+America/Yellowknife
 Antarctica/South_Pole
 Asia/Chongqing
 Asia/Harbin

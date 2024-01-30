@@ -1,3 +1,6 @@
+# mypy: allow-untyped-defs, allow-incomplete-defs, allow-untyped-calls
+# mypy: no-warn-return-any, allow-any-generics
+
 from __future__ import annotations
 
 import contextlib
@@ -7,11 +10,12 @@ from typing import Any
 from typing import cast
 from typing import Dict
 from typing import Iterator
-from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Set
 from typing import Tuple
 from typing import TYPE_CHECKING
+from typing import TypeVar
 from typing import Union
 
 from sqlalchemy import event
@@ -19,10 +23,15 @@ from sqlalchemy import inspect
 from sqlalchemy import schema as sa_schema
 from sqlalchemy import text
 from sqlalchemy import types as sqltypes
+from sqlalchemy.sql import expression
+from sqlalchemy.sql.schema import ForeignKeyConstraint
+from sqlalchemy.sql.schema import Index
+from sqlalchemy.sql.schema import UniqueConstraint
 from sqlalchemy.util import OrderedSet
 
-from alembic.ddl.base import _fk_spec
 from .. import util
+from ..ddl._autogen import is_index_sig
+from ..ddl._autogen import is_uq_sig
 from ..operations import ops
 from ..util import sqla_compat
 
@@ -33,10 +42,7 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.elements import quoted_name
     from sqlalchemy.sql.elements import TextClause
     from sqlalchemy.sql.schema import Column
-    from sqlalchemy.sql.schema import ForeignKeyConstraint
-    from sqlalchemy.sql.schema import Index
     from sqlalchemy.sql.schema import Table
-    from sqlalchemy.sql.schema import UniqueConstraint
 
     from alembic.autogenerate.api import AutogenContext
     from alembic.ddl.impl import DefaultImpl
@@ -44,6 +50,8 @@ if TYPE_CHECKING:
     from alembic.operations.ops import MigrationScript
     from alembic.operations.ops import ModifyTableOps
     from alembic.operations.ops import UpgradeOps
+    from ..ddl._autogen import _constraint_sig
+
 
 log = logging.getLogger(__name__)
 
@@ -64,7 +72,6 @@ comparators = util.Dispatcher(uselist=True)
 def _produce_net_changes(
     autogen_context: AutogenContext, upgrade_ops: UpgradeOps
 ) -> None:
-
     connection = autogen_context.connection
     assert connection is not None
     include_schemas = autogen_context.opts.get("include_schemas", False)
@@ -143,7 +150,6 @@ def _compare_tables(
     upgrade_ops: UpgradeOps,
     autogen_context: AutogenContext,
 ) -> None:
-
     default_schema = inspector.bind.dialect.default_schema_name
 
     # tables coming from the connection will not have "schema"
@@ -210,9 +216,8 @@ def _compare_tables(
                 (inspector),
                 # fmt: on
             )
-            sqla_compat._reflect_table(inspector, t, None)
+            sqla_compat._reflect_table(inspector, t)
         if autogen_context.run_object_filters(t, tname, "table", True, None):
-
             modify_table_ops = ops.ModifyTableOps(tname, [], schema=s)
 
             comparators.dispatch("table")(
@@ -241,7 +246,7 @@ def _compare_tables(
                 _compat_autogen_column_reflect(inspector),
                 # fmt: on
             )
-            sqla_compat._reflect_table(inspector, t, None)
+            sqla_compat._reflect_table(inspector, t)
         conn_column_info[(s, tname)] = t
 
     for s, tname in sorted(existing_tables, key=lambda x: (x[0] or "", x[1])):
@@ -253,7 +258,6 @@ def _compare_tables(
         if autogen_context.run_object_filters(
             metadata_table, tname, "table", False, conn_table
         ):
-
             modify_table_ops = ops.ModifyTableOps(tname, [], schema=s)
             with _compare_columns(
                 s,
@@ -264,7 +268,6 @@ def _compare_tables(
                 autogen_context,
                 inspector,
             ):
-
                 comparators.dispatch("table")(
                     autogen_context,
                     modify_table_ops,
@@ -278,18 +281,44 @@ def _compare_tables(
                 upgrade_ops.ops.append(modify_table_ops)
 
 
-def _make_index(params: Dict[str, Any], conn_table: Table) -> Optional[Index]:
+_IndexColumnSortingOps: Mapping[str, Any] = util.immutabledict(
+    {
+        "asc": expression.asc,
+        "desc": expression.desc,
+        "nulls_first": expression.nullsfirst,
+        "nulls_last": expression.nullslast,
+        "nullsfirst": expression.nullsfirst,  # 1_3 name
+        "nullslast": expression.nullslast,  # 1_3 name
+    }
+)
+
+
+def _make_index(
+    impl: DefaultImpl, params: Dict[str, Any], conn_table: Table
+) -> Optional[Index]:
     exprs: list[Union[Column[Any], TextClause]] = []
+    sorting = params.get("column_sorting")
+
     for num, col_name in enumerate(params["column_names"]):
         item: Union[Column[Any], TextClause]
         if col_name is None:
             assert "expressions" in params
-            item = text(params["expressions"][num])
+            name = params["expressions"][num]
+            item = text(name)
         else:
+            name = col_name
             item = conn_table.c[col_name]
+        if sorting and name in sorting:
+            for operator in sorting[name]:
+                if operator in _IndexColumnSortingOps:
+                    item = _IndexColumnSortingOps[operator](item)
         exprs.append(item)
     ix = sa_schema.Index(
-        params["name"], *exprs, unique=params["unique"], _table=conn_table
+        params["name"],
+        *exprs,
+        unique=params["unique"],
+        _table=conn_table,
+        **impl.adjust_reflected_dialect_options(params, "index"),
     )
     if "duplicates_constraint" in params:
         ix.info["duplicates_constraint"] = params["duplicates_constraint"]
@@ -297,11 +326,12 @@ def _make_index(params: Dict[str, Any], conn_table: Table) -> Optional[Index]:
 
 
 def _make_unique_constraint(
-    params: Dict[str, Any], conn_table: Table
+    impl: DefaultImpl, params: Dict[str, Any], conn_table: Table
 ) -> UniqueConstraint:
     uq = sa_schema.UniqueConstraint(
         *[conn_table.c[cname] for cname in params["column_names"]],
         name=params["name"],
+        **impl.adjust_reflected_dialect_options(params, "unique_constraint"),
     )
     if "duplicates_index" in params:
         uq.info["duplicates_index"] = params["duplicates_index"]
@@ -405,100 +435,7 @@ def _compare_columns(
             log.info("Detected removed column '%s.%s'", name, cname)
 
 
-class _constraint_sig:
-    const: Union[UniqueConstraint, ForeignKeyConstraint, Index]
-
-    def md_name_to_sql_name(self, context: AutogenContext) -> Optional[str]:
-        return sqla_compat._get_constraint_final_name(
-            self.const, context.dialect
-        )
-
-    def __eq__(self, other):
-        return self.const == other.const
-
-    def __ne__(self, other):
-        return self.const != other.const
-
-    def __hash__(self) -> int:
-        return hash(self.const)
-
-
-class _uq_constraint_sig(_constraint_sig):
-    is_index = False
-    is_unique = True
-
-    def __init__(self, const: UniqueConstraint) -> None:
-        self.const = const
-        self.name = const.name
-        self.sig = tuple(sorted([col.name for col in const.columns]))
-
-    @property
-    def column_names(self) -> List[str]:
-        return [col.name for col in self.const.columns]
-
-
-class _ix_constraint_sig(_constraint_sig):
-    is_index = True
-
-    def __init__(self, const: Index, impl: DefaultImpl) -> None:
-        self.const = const
-        self.name = const.name
-        self.sig = impl.create_index_sig(const)
-        self.is_unique = bool(const.unique)
-
-    def md_name_to_sql_name(self, context: AutogenContext) -> Optional[str]:
-        return sqla_compat._get_constraint_final_name(
-            self.const, context.dialect
-        )
-
-    @property
-    def column_names(self) -> Union[List[quoted_name], List[None]]:
-        return sqla_compat._get_index_column_names(self.const)
-
-
-class _fk_constraint_sig(_constraint_sig):
-    def __init__(
-        self, const: ForeignKeyConstraint, include_options: bool = False
-    ) -> None:
-        self.const = const
-        self.name = const.name
-
-        (
-            self.source_schema,
-            self.source_table,
-            self.source_columns,
-            self.target_schema,
-            self.target_table,
-            self.target_columns,
-            onupdate,
-            ondelete,
-            deferrable,
-            initially,
-        ) = _fk_spec(const)
-
-        self.sig: Tuple[Any, ...] = (
-            self.source_schema,
-            self.source_table,
-            tuple(self.source_columns),
-            self.target_schema,
-            self.target_table,
-            tuple(self.target_columns),
-        )
-        if include_options:
-            self.sig += (
-                (None if onupdate.lower() == "no action" else onupdate.lower())
-                if onupdate
-                else None,
-                (None if ondelete.lower() == "no action" else ondelete.lower())
-                if ondelete
-                else None,
-                # convert initially + deferrable into one three-state value
-                "initially_deferrable"
-                if initially and initially.lower() == "deferred"
-                else "deferrable"
-                if deferrable
-                else "not deferrable",
-            )
+_C = TypeVar("_C", bound=Union[UniqueConstraint, ForeignKeyConstraint, Index])
 
 
 @comparators.dispatch_for("table")
@@ -510,10 +447,10 @@ def _compare_indexes_and_uniques(
     conn_table: Optional[Table],
     metadata_table: Optional[Table],
 ) -> None:
-
     inspector = autogen_context.inspector
     is_create_table = conn_table is None
     is_drop_table = metadata_table is None
+    impl = autogen_context.migration_context.impl
 
     # 1a. get raw indexes and unique constraints from metadata ...
     if metadata_table is not None:
@@ -535,32 +472,31 @@ def _compare_indexes_and_uniques(
 
     if conn_table is not None:
         # 1b. ... and from connection, if the table exists
-        if hasattr(inspector, "get_unique_constraints"):
-            try:
-                conn_uniques = inspector.get_unique_constraints(  # type:ignore[assignment] # noqa
-                    tname, schema=schema
+        try:
+            conn_uniques = inspector.get_unique_constraints(  # type:ignore[assignment] # noqa
+                tname, schema=schema
+            )
+            supports_unique_constraints = True
+        except NotImplementedError:
+            pass
+        except TypeError:
+            # number of arguments is off for the base
+            # method in SQLAlchemy due to the cache decorator
+            # not being present
+            pass
+        else:
+            conn_uniques = [  # type:ignore[assignment]
+                uq
+                for uq in conn_uniques
+                if autogen_context.run_name_filters(
+                    uq["name"],
+                    "unique_constraint",
+                    {"table_name": tname, "schema_name": schema},
                 )
-                supports_unique_constraints = True
-            except NotImplementedError:
-                pass
-            except TypeError:
-                # number of arguments is off for the base
-                # method in SQLAlchemy due to the cache decorator
-                # not being present
-                pass
-            else:
-                conn_uniques = [  # type:ignore[assignment]
-                    uq
-                    for uq in conn_uniques
-                    if autogen_context.run_name_filters(
-                        uq["name"],
-                        "unique_constraint",
-                        {"table_name": tname, "schema_name": schema},
-                    )
-                ]
-                for uq in conn_uniques:
-                    if uq.get("duplicates_index"):
-                        unique_constraints_duplicate_unique_indexes = True
+            ]
+            for uq in conn_uniques:
+                if uq.get("duplicates_index"):
+                    unique_constraints_duplicate_unique_indexes = True
         try:
             conn_indexes = inspector.get_indexes(  # type:ignore[assignment]
                 tname, schema=schema
@@ -585,13 +521,15 @@ def _compare_indexes_and_uniques(
             conn_uniques = set()  # type:ignore[assignment]
         else:
             conn_uniques = {  # type:ignore[assignment]
-                _make_unique_constraint(uq_def, conn_table)
+                _make_unique_constraint(impl, uq_def, conn_table)
                 for uq_def in conn_uniques
             }
 
         conn_indexes = {  # type:ignore[assignment]
             index
-            for index in (_make_index(ix, conn_table) for ix in conn_indexes)
+            for index in (
+                _make_index(impl, ix, conn_table) for ix in conn_indexes
+            )
             if index is not None
         }
 
@@ -605,12 +543,13 @@ def _compare_indexes_and_uniques(
             metadata_unique_constraints,
             metadata_indexes,
             autogen_context.dialect,
+            impl,
         )
 
     # 3. give the dialect a chance to omit indexes and constraints that
     # we know are either added implicitly by the DB or that the DB
     # can't accurately report on
-    autogen_context.migration_context.impl.correct_for_autogen_constraints(
+    impl.correct_for_autogen_constraints(
         conn_uniques,  # type: ignore[arg-type]
         conn_indexes,  # type: ignore[arg-type]
         metadata_unique_constraints,
@@ -622,30 +561,31 @@ def _compare_indexes_and_uniques(
     # Index and UniqueConstraint so we can easily work with them
     # interchangeably
     metadata_unique_constraints_sig = {
-        _uq_constraint_sig(uq) for uq in metadata_unique_constraints
+        impl._create_metadata_constraint_sig(uq)
+        for uq in metadata_unique_constraints
     }
 
-    impl = autogen_context.migration_context.impl
     metadata_indexes_sig = {
-        _ix_constraint_sig(ix, impl) for ix in metadata_indexes
+        impl._create_metadata_constraint_sig(ix) for ix in metadata_indexes
     }
 
-    conn_unique_constraints = {_uq_constraint_sig(uq) for uq in conn_uniques}
+    conn_unique_constraints = {
+        impl._create_reflected_constraint_sig(uq) for uq in conn_uniques
+    }
 
-    conn_indexes_sig = {_ix_constraint_sig(ix, impl) for ix in conn_indexes}
+    conn_indexes_sig = {
+        impl._create_reflected_constraint_sig(ix) for ix in conn_indexes
+    }
 
     # 5. index things by name, for those objects that have names
     metadata_names = {
         cast(str, c.md_name_to_sql_name(autogen_context)): c
-        for c in metadata_unique_constraints_sig.union(
-            metadata_indexes_sig  # type:ignore[arg-type]
-        )
-        if isinstance(c, _ix_constraint_sig)
-        or sqla_compat._constraint_is_named(c.const, autogen_context.dialect)
+        for c in metadata_unique_constraints_sig.union(metadata_indexes_sig)
+        if c.is_named
     }
 
-    conn_uniques_by_name: Dict[sqla_compat._ConstraintName, _uq_constraint_sig]
-    conn_indexes_by_name: Dict[sqla_compat._ConstraintName, _ix_constraint_sig]
+    conn_uniques_by_name: Dict[sqla_compat._ConstraintName, _constraint_sig]
+    conn_indexes_by_name: Dict[sqla_compat._ConstraintName, _constraint_sig]
 
     conn_uniques_by_name = {c.name: c for c in conn_unique_constraints}
     conn_indexes_by_name = {c.name: c for c in conn_indexes_sig}
@@ -664,13 +604,12 @@ def _compare_indexes_and_uniques(
 
     # 6. index things by "column signature", to help with unnamed unique
     # constraints.
-    conn_uniques_by_sig = {uq.sig: uq for uq in conn_unique_constraints}
+    conn_uniques_by_sig = {uq.unnamed: uq for uq in conn_unique_constraints}
     metadata_uniques_by_sig = {
-        uq.sig: uq for uq in metadata_unique_constraints_sig
+        uq.unnamed: uq for uq in metadata_unique_constraints_sig
     }
-    metadata_indexes_by_sig = {ix.sig: ix for ix in metadata_indexes_sig}
     unnamed_metadata_uniques = {
-        uq.sig: uq
+        uq.unnamed: uq
         for uq in metadata_unique_constraints_sig
         if not sqla_compat._constraint_is_named(
             uq.const, autogen_context.dialect
@@ -685,18 +624,18 @@ def _compare_indexes_and_uniques(
     # 4. The backend may double up indexes as unique constraints and
     #    vice versa (e.g. MySQL, Postgresql)
 
-    def obj_added(obj):
-        if obj.is_index:
+    def obj_added(obj: _constraint_sig):
+        if is_index_sig(obj):
             if autogen_context.run_object_filters(
                 obj.const, obj.name, "index", False, None
             ):
                 modify_ops.ops.append(ops.CreateIndexOp.from_index(obj.const))
                 log.info(
-                    "Detected added index '%s' on %s",
+                    "Detected added index '%r' on '%s'",
                     obj.name,
-                    ", ".join(["'%s'" % obj.column_names]),
+                    obj.column_names,
                 )
-        else:
+        elif is_uq_sig(obj):
             if not supports_unique_constraints:
                 # can't report unique indexes as added if we don't
                 # detect them
@@ -711,13 +650,15 @@ def _compare_indexes_and_uniques(
                     ops.AddConstraintOp.from_constraint(obj.const)
                 )
                 log.info(
-                    "Detected added unique constraint '%s' on %s",
+                    "Detected added unique constraint %r on '%s'",
                     obj.name,
-                    ", ".join(["'%s'" % obj.column_names]),
+                    obj.column_names,
                 )
+        else:
+            assert False
 
-    def obj_removed(obj):
-        if obj.is_index:
+    def obj_removed(obj: _constraint_sig):
+        if is_index_sig(obj):
             if obj.is_unique and not supports_unique_constraints:
                 # many databases double up unique constraints
                 # as unique indexes.  without that list we can't
@@ -728,10 +669,8 @@ def _compare_indexes_and_uniques(
                 obj.const, obj.name, "index", True, None
             ):
                 modify_ops.ops.append(ops.DropIndexOp.from_index(obj.const))
-                log.info(
-                    "Detected removed index '%s' on '%s'", obj.name, tname
-                )
-        else:
+                log.info("Detected removed index %r on %r", obj.name, tname)
+        elif is_uq_sig(obj):
             if is_create_table or is_drop_table:
                 # if the whole table is being dropped, we don't need to
                 # consider unique constraint separately
@@ -743,33 +682,40 @@ def _compare_indexes_and_uniques(
                     ops.DropConstraintOp.from_constraint(obj.const)
                 )
                 log.info(
-                    "Detected removed unique constraint '%s' on '%s'",
+                    "Detected removed unique constraint %r on %r",
                     obj.name,
                     tname,
                 )
+        else:
+            assert False
 
-    def obj_changed(old, new, msg):
-        if old.is_index:
+    def obj_changed(
+        old: _constraint_sig,
+        new: _constraint_sig,
+        msg: str,
+    ):
+        if is_index_sig(old):
+            assert is_index_sig(new)
+
             if autogen_context.run_object_filters(
                 new.const, new.name, "index", False, old.const
             ):
                 log.info(
-                    "Detected changed index '%s' on '%s':%s",
-                    old.name,
-                    tname,
-                    ", ".join(msg),
+                    "Detected changed index %r on %r: %s", old.name, tname, msg
                 )
                 modify_ops.ops.append(ops.DropIndexOp.from_index(old.const))
                 modify_ops.ops.append(ops.CreateIndexOp.from_index(new.const))
-        else:
+        elif is_uq_sig(old):
+            assert is_uq_sig(new)
+
             if autogen_context.run_object_filters(
                 new.const, new.name, "unique_constraint", False, old.const
             ):
                 log.info(
-                    "Detected changed unique constraint '%s' on '%s':%s",
+                    "Detected changed unique constraint %r on %r: %s",
                     old.name,
                     tname,
-                    ", ".join(msg),
+                    msg,
                 )
                 modify_ops.ops.append(
                     ops.DropConstraintOp.from_constraint(old.const)
@@ -777,19 +723,25 @@ def _compare_indexes_and_uniques(
                 modify_ops.ops.append(
                     ops.AddConstraintOp.from_constraint(new.const)
                 )
+        else:
+            assert False
 
     for removed_name in sorted(set(conn_names).difference(metadata_names)):
-        conn_obj: Union[_ix_constraint_sig, _uq_constraint_sig] = conn_names[
-            removed_name
-        ]
-        if not conn_obj.is_index and conn_obj.sig in unnamed_metadata_uniques:
+        conn_obj = conn_names[removed_name]
+        if (
+            is_uq_sig(conn_obj)
+            and conn_obj.unnamed in unnamed_metadata_uniques
+        ):
             continue
         elif removed_name in doubled_constraints:
+            conn_uq, conn_idx = doubled_constraints[removed_name]
             if (
-                conn_obj.sig not in metadata_indexes_by_sig
-                and conn_obj.sig not in metadata_uniques_by_sig
+                all(
+                    conn_idx.unnamed != meta_idx.unnamed
+                    for meta_idx in metadata_indexes_sig
+                )
+                and conn_uq.unnamed not in metadata_uniques_by_sig
             ):
-                conn_uq, conn_idx = doubled_constraints[removed_name]
                 obj_removed(conn_uq)
                 obj_removed(conn_idx)
         else:
@@ -800,30 +752,36 @@ def _compare_indexes_and_uniques(
 
         if existing_name in doubled_constraints:
             conn_uq, conn_idx = doubled_constraints[existing_name]
-            if metadata_obj.is_index:
+            if is_index_sig(metadata_obj):
                 conn_obj = conn_idx
             else:
                 conn_obj = conn_uq
         else:
             conn_obj = conn_names[existing_name]
 
-        if conn_obj.is_index != metadata_obj.is_index:
+        if type(conn_obj) != type(metadata_obj):
             obj_removed(conn_obj)
             obj_added(metadata_obj)
         else:
-            msg = []
-            if conn_obj.is_unique != metadata_obj.is_unique:
-                msg.append(
-                    " unique=%r to unique=%r"
-                    % (conn_obj.is_unique, metadata_obj.is_unique)
-                )
-            if conn_obj.sig != metadata_obj.sig:
-                msg.append(
-                    " expression %r to %r" % (conn_obj.sig, metadata_obj.sig)
-                )
+            comparison = metadata_obj.compare_to_reflected(conn_obj)
 
-            if msg:
-                obj_changed(conn_obj, metadata_obj, msg)
+            if comparison.is_different:
+                # constraint are different
+                obj_changed(conn_obj, metadata_obj, comparison.message)
+            elif comparison.is_skip:
+                # constraint cannot be compared, skip them
+                thing = (
+                    "index" if is_index_sig(conn_obj) else "unique constraint"
+                )
+                log.info(
+                    "Cannot compare %s %r, assuming equal and skipping. %s",
+                    thing,
+                    conn_obj.name,
+                    comparison.message,
+                )
+            else:
+                # constraint are equal
+                assert comparison.is_equal
 
     for added_name in sorted(set(metadata_names).difference(conn_names)):
         obj = metadata_names[added_name]
@@ -840,6 +798,7 @@ def _correct_for_uq_duplicates_uix(
     metadata_unique_constraints,
     metadata_indexes,
     dialect,
+    impl,
 ):
     # dedupe unique indexes vs. constraints, since MySQL / Oracle
     # doesn't really have unique constraints as a separate construct.
@@ -862,7 +821,7 @@ def _correct_for_uq_duplicates_uix(
     }
 
     unnamed_metadata_uqs = {
-        _uq_constraint_sig(cons).sig
+        impl._create_metadata_constraint_sig(cons).unnamed
         for name, cons in metadata_cons_names
         if name is None
     }
@@ -886,10 +845,11 @@ def _correct_for_uq_duplicates_uix(
     for overlap in uqs_dupe_indexes:
         if overlap not in metadata_uq_names:
             if (
-                _uq_constraint_sig(uqs_dupe_indexes[overlap]).sig
+                impl._create_reflected_constraint_sig(
+                    uqs_dupe_indexes[overlap]
+                ).unnamed
                 not in unnamed_metadata_uqs
             ):
-
                 conn_unique_constraints.discard(uqs_dupe_indexes[overlap])
         elif overlap not in metadata_ix_names:
             conn_indexes.discard(conn_ix_names[overlap])
@@ -902,10 +862,9 @@ def _compare_nullable(
     schema: Optional[str],
     tname: Union[quoted_name, str],
     cname: Union[quoted_name, str],
-    conn_col: Column,
-    metadata_col: Column,
+    conn_col: Column[Any],
+    metadata_col: Column[Any],
 ) -> None:
-
     metadata_col_nullable = metadata_col.nullable
     conn_col_nullable = conn_col.nullable
     alter_column_op.existing_nullable = conn_col_nullable
@@ -944,10 +903,9 @@ def _setup_autoincrement(
     schema: Optional[str],
     tname: Union[quoted_name, str],
     cname: quoted_name,
-    conn_col: Column,
-    metadata_col: Column,
+    conn_col: Column[Any],
+    metadata_col: Column[Any],
 ) -> None:
-
     if metadata_col.table._autoincrement_column is metadata_col:
         alter_column_op.kw["autoincrement"] = True
     elif metadata_col.autoincrement is True:
@@ -963,10 +921,9 @@ def _compare_type(
     schema: Optional[str],
     tname: Union[quoted_name, str],
     cname: Union[quoted_name, str],
-    conn_col: Column,
-    metadata_col: Column,
+    conn_col: Column[Any],
+    metadata_col: Column[Any],
 ) -> None:
-
     conn_type = conn_col.type
     alter_column_op.existing_type = conn_type
     metadata_type = metadata_col.type
@@ -1001,11 +958,8 @@ def _compare_type(
 
 
 def _render_server_default_for_compare(
-    metadata_default: Optional[Any],
-    metadata_col: Column,
-    autogen_context: AutogenContext,
+    metadata_default: Optional[Any], autogen_context: AutogenContext
 ) -> Optional[str]:
-
     if isinstance(metadata_default, sa_schema.DefaultClause):
         if isinstance(metadata_default.arg, str):
             metadata_default = metadata_default.arg
@@ -1017,11 +971,7 @@ def _render_server_default_for_compare(
                 )
             )
     if isinstance(metadata_default, str):
-        if metadata_col.type._type_affinity is sqltypes.String:
-            metadata_default = re.sub(r"^'|'$", "", metadata_default)
-            return f"'{metadata_default}'"
-        else:
-            return metadata_default
+        return metadata_default
     else:
         return None
 
@@ -1042,8 +992,8 @@ def _compare_computed_default(
     schema: Optional[str],
     tname: str,
     cname: str,
-    conn_col: Column,
-    metadata_col: Column,
+    conn_col: Column[Any],
+    metadata_col: Column[Any],
 ) -> None:
     rendered_metadata_default = str(
         cast(sa_schema.Computed, metadata_col.server_default).sqltext.compile(
@@ -1108,10 +1058,9 @@ def _compare_server_default(
     schema: Optional[str],
     tname: Union[quoted_name, str],
     cname: Union[quoted_name, str],
-    conn_col: Column,
-    metadata_col: Column,
+    conn_col: Column[Any],
+    metadata_col: Column[Any],
 ) -> Optional[bool]:
-
     metadata_default = metadata_col.server_default
     conn_col_default = conn_col.server_default
     if conn_col_default is None and metadata_default is None:
@@ -1168,7 +1117,7 @@ def _compare_server_default(
                 )
     else:
         rendered_metadata_default = _render_server_default_for_compare(
-            metadata_default, metadata_col, autogen_context
+            metadata_default, autogen_context
         )
 
         rendered_conn_default = (
@@ -1197,10 +1146,9 @@ def _compare_column_comment(
     schema: Optional[str],
     tname: Union[quoted_name, str],
     cname: quoted_name,
-    conn_col: Column,
-    metadata_col: Column,
+    conn_col: Column[Any],
+    metadata_col: Column[Any],
 ) -> Optional[Literal[False]]:
-
     assert autogen_context.dialect is not None
     if not autogen_context.dialect.supports_comments:
         return None
@@ -1225,10 +1173,9 @@ def _compare_foreign_keys(
     modify_table_ops: ModifyTableOps,
     schema: Optional[str],
     tname: Union[quoted_name, str],
-    conn_table: Optional[Table],
-    metadata_table: Optional[Table],
+    conn_table: Table,
+    metadata_table: Table,
 ) -> None:
-
     # if we're doing CREATE TABLE, all FKs are created
     # inline within the table def
     if conn_table is None or metadata_table is None:
@@ -1251,14 +1198,12 @@ def _compare_foreign_keys(
         )
     ]
 
-    backend_reflects_fk_options = bool(
-        conn_fks_list and "options" in conn_fks_list[0]
-    )
-
     conn_fks = {
         _make_foreign_key(const, conn_table)  # type: ignore[arg-type]
         for const in conn_fks_list
     }
+
+    impl = autogen_context.migration_context.impl
 
     # give the dialect a chance to correct the FKs to match more
     # closely
@@ -1267,17 +1212,24 @@ def _compare_foreign_keys(
     )
 
     metadata_fks_sig = {
-        _fk_constraint_sig(fk, include_options=backend_reflects_fk_options)
-        for fk in metadata_fks
+        impl._create_metadata_constraint_sig(fk) for fk in metadata_fks
     }
 
     conn_fks_sig = {
-        _fk_constraint_sig(fk, include_options=backend_reflects_fk_options)
-        for fk in conn_fks
+        impl._create_reflected_constraint_sig(fk) for fk in conn_fks
     }
 
-    conn_fks_by_sig = {c.sig: c for c in conn_fks_sig}
-    metadata_fks_by_sig = {c.sig: c for c in metadata_fks_sig}
+    # check if reflected FKs include options, indicating the backend
+    # can reflect FK options
+    if conn_fks_list and "options" in conn_fks_list[0]:
+        conn_fks_by_sig = {c.unnamed: c for c in conn_fks_sig}
+        metadata_fks_by_sig = {c.unnamed: c for c in metadata_fks_sig}
+    else:
+        # otherwise compare by sig without options added
+        conn_fks_by_sig = {c.unnamed_no_options: c for c in conn_fks_sig}
+        metadata_fks_by_sig = {
+            c.unnamed_no_options: c for c in metadata_fks_sig
+        }
 
     metadata_fks_by_name = {
         c.name: c for c in metadata_fks_sig if c.name is not None
@@ -1289,7 +1241,7 @@ def _compare_foreign_keys(
             obj.const, obj.name, "foreign_key_constraint", False, compare_to
         ):
             modify_table_ops.ops.append(
-                ops.CreateForeignKeyOp.from_constraint(const.const)
+                ops.CreateForeignKeyOp.from_constraint(const.const)  # type: ignore[has-type]  # noqa: E501
             )
 
             log.info(
@@ -1348,7 +1300,6 @@ def _compare_table_comment(
     conn_table: Optional[Table],
     metadata_table: Optional[Table],
 ) -> None:
-
     assert autogen_context.dialect is not None
     if not autogen_context.dialect.supports_comments:
         return

@@ -5,7 +5,7 @@
     pygments version of the "gruvbox" vim theme.
     https://github.com/morhetz/gruvbox
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -14,10 +14,15 @@ from pygments.token import Token, Keyword, Name, Comment, String, Error, \
      Number, Operator, Generic
 
 
+__all__ = ['GruvboxDarkStyle', 'GruvboxLightStyle']
+
+
 class GruvboxDarkStyle(Style):
     """
     Pygments version of the "gruvbox" dark vim theme.
     """
+    
+    name = 'gruvbox-dark'
 
     background_color = '#282828'
     highlight_color = '#ebdbb2'
@@ -55,6 +60,7 @@ class GruvboxDarkStyle(Style):
         Generic.Error:      '#fb4934',
         Generic.Emph:       'italic',
         Generic.Strong:     'bold',
+        Generic.EmphStrong: 'bold italic',
         Generic.Prompt:     '#a89984',
         Generic.Output:     '#f2e5bc',
         Generic.Traceback:  '#fb4934',
@@ -62,10 +68,13 @@ class GruvboxDarkStyle(Style):
         Error:              'bg:#fb4934 #282828'
     }
 
+
 class GruvboxLightStyle(Style):
     """
     Pygments version of the "gruvbox" Light vim theme.
     """
+
+    name = 'gruvbox-light'
 
     background_color = '#fbf1c7'
     highlight_color = '#3c3836'

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=no-self-use, pointless-statement, missing-docstring, invalid-name, len-as-condition
+# pylint: disable=pointless-statement, missing-docstring, invalid-name, len-as-condition
 from ..match import Match
 from ..rules import Rule
 

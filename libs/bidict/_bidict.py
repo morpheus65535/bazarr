@@ -14,12 +14,13 @@
 
 """Provide :class:`MutableBidict`."""
 
+from __future__ import annotations
 import typing as t
 
 from ._abc import MutableBidirectionalMapping
 from ._base import BidictBase, get_arg
 from ._dup import OnDup, ON_DUP_RAISE, ON_DUP_DROP_OLD
-from ._typing import KT, VT, DT, ODT, MISSING, IterItems, MapOrIterItems
+from ._typing import KT, VT, DT, ODT, MISSING, Items, MapOrItems
 
 
 class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
@@ -27,7 +28,7 @@ class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
 
     if t.TYPE_CHECKING:
         @property
-        def inverse(self) -> 'MutableBidict[VT, KT]': ...
+        def inverse(self) -> MutableBidict[VT, KT]: ...
 
     def _pop(self, key: KT) -> VT:
         val = self._fwdm.pop(key)
@@ -108,9 +109,9 @@ class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
     @t.overload
     def pop(self, __key: KT) -> VT: ...
     @t.overload
-    def pop(self, __key: KT, __default: DT = ...) -> t.Union[VT, DT]: ...
+    def pop(self, __key: KT, __default: DT = ...) -> VT | DT: ...
 
-    def pop(self, key: KT, default: ODT[DT] = MISSING) -> t.Union[VT, DT]:
+    def pop(self, key: KT, default: ODT[DT] = MISSING) -> VT | DT:
         """*x.pop(k[, d]) → v*
 
         Remove specified key and return the corresponding value.
@@ -124,7 +125,7 @@ class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
                 raise
             return default
 
-    def popitem(self) -> t.Tuple[KT, VT]:
+    def popitem(self) -> tuple[KT, VT]:
         """*x.popitem() → (k, v)*
 
         Remove and return some item as a (key, value) pair.
@@ -138,11 +139,11 @@ class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
     @t.overload  # type: ignore [override]  # https://github.com/jab/bidict/pull/242#discussion_r825464731
     def update(self, __m: t.Mapping[KT, VT], **kw: VT) -> None: ...
     @t.overload
-    def update(self, __i: IterItems[KT, VT], **kw: VT) -> None: ...
+    def update(self, __i: Items[KT, VT], **kw: VT) -> None: ...
     @t.overload
     def update(self, **kw: VT) -> None: ...
 
-    def update(self, *args: MapOrIterItems[KT, VT], **kw: VT) -> None:
+    def update(self, *args: MapOrItems[KT, VT], **kw: VT) -> None:
         """Like calling :meth:`putall` with *self.on_dup* passed for *on_dup*."""
         if args or kw:
             self._update(get_arg(*args), kw)
@@ -150,16 +151,16 @@ class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
     @t.overload
     def forceupdate(self, __m: t.Mapping[KT, VT], **kw: VT) -> None: ...
     @t.overload
-    def forceupdate(self, __i: IterItems[KT, VT], **kw: VT) -> None: ...
+    def forceupdate(self, __i: Items[KT, VT], **kw: VT) -> None: ...
     @t.overload
     def forceupdate(self, **kw: VT) -> None: ...
 
-    def forceupdate(self, *args: MapOrIterItems[KT, VT], **kw: VT) -> None:
+    def forceupdate(self, *args: MapOrItems[KT, VT], **kw: VT) -> None:
         """Like a bulk :meth:`forceput`."""
         if args or kw:
             self._update(get_arg(*args), kw, on_dup=ON_DUP_DROP_OLD)
 
-    def __ior__(self, other: t.Mapping[KT, VT]) -> 'MutableBidict[KT, VT]':
+    def __ior__(self, other: t.Mapping[KT, VT]) -> MutableBidict[KT, VT]:
         """Return self|=other."""
         self.update(other)
         return self
@@ -167,9 +168,9 @@ class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
     @t.overload
     def putall(self, items: t.Mapping[KT, VT], on_dup: OnDup) -> None: ...
     @t.overload
-    def putall(self, items: IterItems[KT, VT], on_dup: OnDup = ...) -> None: ...
+    def putall(self, items: Items[KT, VT], on_dup: OnDup = ...) -> None: ...
 
-    def putall(self, items: MapOrIterItems[KT, VT], on_dup: OnDup = ON_DUP_RAISE) -> None:
+    def putall(self, items: MapOrItems[KT, VT], on_dup: OnDup = ON_DUP_RAISE) -> None:
         """Like a bulk :meth:`put`.
 
         If one of the given items causes an exception to be raised,
@@ -188,7 +189,7 @@ class bidict(MutableBidict[KT, VT]):
 
     if t.TYPE_CHECKING:
         @property
-        def inverse(self) -> 'bidict[VT, KT]': ...
+        def inverse(self) -> bidict[VT, KT]: ...
 
 
 #                             * Code review nav *

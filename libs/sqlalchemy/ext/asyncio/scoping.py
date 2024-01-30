@@ -1,5 +1,5 @@
 # ext/asyncio/scoping.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -38,12 +38,13 @@ if TYPE_CHECKING:
     from .result import AsyncScalarResult
     from .session import AsyncSessionTransaction
     from ...engine import Connection
+    from ...engine import CursorResult
     from ...engine import Engine
     from ...engine import Result
     from ...engine import Row
     from ...engine import RowMapping
     from ...engine.interfaces import _CoreAnyExecuteParams
-    from ...engine.interfaces import _CoreSingleExecuteParams
+    from ...engine.interfaces import CoreExecuteOptionsParameter
     from ...engine.result import ScalarResult
     from ...orm._typing import _IdentityKeyType
     from ...orm._typing import _O
@@ -54,8 +55,9 @@ if TYPE_CHECKING:
     from ...orm.session import _PKIdentityArgument
     from ...orm.session import _SessionBind
     from ...sql.base import Executable
+    from ...sql.dml import UpdateBase
     from ...sql.elements import ClauseElement
-    from ...sql.selectable import ForUpdateArg
+    from ...sql.selectable import ForUpdateParameter
     from ...sql.selectable import TypedReturnsRows
 
 _T = TypeVar("_T", bound=Any)
@@ -69,11 +71,13 @@ _T = TypeVar("_T", bound=Any)
     methods=[
         "__contains__",
         "__iter__",
+        "aclose",
         "add",
         "add_all",
         "begin",
         "begin_nested",
         "close",
+        "reset",
         "commit",
         "connection",
         "delete",
@@ -91,6 +95,8 @@ _T = TypeVar("_T", bound=Any)
         "rollback",
         "scalar",
         "scalars",
+        "get",
+        "get_one",
         "stream",
         "stream_scalars",
     ],
@@ -105,6 +111,7 @@ _T = TypeVar("_T", bound=Any)
         "no_autoflush",
         "info",
     ],
+    use_intermediate_variable=["get"],
 )
 class async_scoped_session(Generic[_AS]):
     """Provides scoped management of :class:`.AsyncSession` objects.
@@ -210,49 +217,6 @@ class async_scoped_session(Generic[_AS]):
             await self.registry().close()
         self.registry.clear()
 
-    async def get(
-        self,
-        entity: _EntityBindKey[_O],
-        ident: _PKIdentityArgument,
-        *,
-        options: Optional[Sequence[ORMOption]] = None,
-        populate_existing: bool = False,
-        with_for_update: Optional[ForUpdateArg] = None,
-        identity_token: Optional[Any] = None,
-        execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
-    ) -> Optional[_O]:
-        r"""Return an instance based on the given primary key identifier,
-        or ``None`` if not found.
-
-        .. container:: class_bases
-
-            Proxied for the :class:`_asyncio.AsyncSession` class on
-            behalf of the :class:`_asyncio.scoping.async_scoped_session` class.
-
-        .. seealso::
-
-            :meth:`_orm.Session.get` - main documentation for get
-
-
-
-        """  # noqa: E501
-
-        # this was proxied but Mypy is requiring the return type to be
-        # clarified
-
-        # work around:
-        # https://github.com/python/typing/discussions/1143
-        return_value = await self._proxied.get(
-            entity,
-            ident,
-            options=options,
-            populate_existing=populate_existing,
-            with_for_update=with_for_update,
-            identity_token=identity_token,
-            execution_options=execution_options,
-        )
-        return return_value
-
     # START PROXY METHODS async_scoped_session
 
     # code within this block is **programmatically,
@@ -299,6 +263,25 @@ class async_scoped_session(Generic[_AS]):
         """  # noqa: E501
 
         return self._proxied.__iter__()
+
+    async def aclose(self) -> None:
+        r"""A synonym for :meth:`_asyncio.AsyncSession.close`.
+
+        .. container:: class_bases
+
+            Proxied for the :class:`_asyncio.AsyncSession` class on
+            behalf of the :class:`_asyncio.scoping.async_scoped_session` class.
+
+        The :meth:`_asyncio.AsyncSession.aclose` name is specifically
+        to support the Python standard library ``@contextlib.aclosing``
+        context manager function.
+
+        .. versionadded:: 2.0.20
+
+
+        """  # noqa: E501
+
+        return await self._proxied.aclose()
 
     def add(self, instance: object, _warn: bool = True) -> None:
         r"""Place an object into this :class:`_orm.Session`.
@@ -411,6 +394,12 @@ class async_scoped_session(Generic[_AS]):
         For a general description of ORM begin nested, see
         :meth:`_orm.Session.begin_nested`.
 
+        .. seealso::
+
+            :ref:`aiosqlite_serializable` - special workarounds required
+            with the SQLite asyncio driver in order for SAVEPOINT to work
+            correctly.
+
 
         """  # noqa: E501
 
@@ -425,33 +414,44 @@ class async_scoped_session(Generic[_AS]):
             Proxied for the :class:`_asyncio.AsyncSession` class on
             behalf of the :class:`_asyncio.scoping.async_scoped_session` class.
 
-        This expunges all ORM objects associated with this
-        :class:`_asyncio.AsyncSession`, ends any transaction in progress and
-        :term:`releases` any :class:`_asyncio.AsyncConnection` objects which
-        this :class:`_asyncio.AsyncSession` itself has checked out from
-        associated :class:`_asyncio.AsyncEngine` objects. The operation then
-        leaves the :class:`_asyncio.AsyncSession` in a state which it may be
-        used again.
-
-        .. tip::
-
-            The :meth:`_asyncio.AsyncSession.close` method **does not prevent
-            the Session from being used again**. The
-            :class:`_asyncio.AsyncSession` itself does not actually have a
-            distinct "closed" state; it merely means the
-            :class:`_asyncio.AsyncSession` will release all database
-            connections and ORM objects.
-
-
         .. seealso::
 
+            :meth:`_orm.Session.close` - main documentation for
+            "close"
+
             :ref:`session_closing` - detail on the semantics of
-            :meth:`_asyncio.AsyncSession.close`
+            :meth:`_asyncio.AsyncSession.close` and
+            :meth:`_asyncio.AsyncSession.reset`.
 
 
         """  # noqa: E501
 
         return await self._proxied.close()
+
+    async def reset(self) -> None:
+        r"""Close out the transactional resources and ORM objects used by this
+        :class:`_orm.Session`, resetting the session to its initial state.
+
+        .. container:: class_bases
+
+            Proxied for the :class:`_asyncio.AsyncSession` class on
+            behalf of the :class:`_asyncio.scoping.async_scoped_session` class.
+
+        .. versionadded:: 2.0.22
+
+        .. seealso::
+
+            :meth:`_orm.Session.reset` - main documentation for
+            "reset"
+
+            :ref:`session_closing` - detail on the semantics of
+            :meth:`_asyncio.AsyncSession.close` and
+            :meth:`_asyncio.AsyncSession.reset`.
+
+
+        """  # noqa: E501
+
+        return await self._proxied.reset()
 
     async def commit(self) -> None:
         r"""Commit the current transaction in progress.
@@ -461,11 +461,21 @@ class async_scoped_session(Generic[_AS]):
             Proxied for the :class:`_asyncio.AsyncSession` class on
             behalf of the :class:`_asyncio.scoping.async_scoped_session` class.
 
+        .. seealso::
+
+            :meth:`_orm.Session.commit` - main documentation for
+            "commit"
+
         """  # noqa: E501
 
         return await self._proxied.commit()
 
-    async def connection(self, **kw: Any) -> AsyncConnection:
+    async def connection(
+        self,
+        bind_arguments: Optional[_BindArguments] = None,
+        execution_options: Optional[CoreExecuteOptionsParameter] = None,
+        **kw: Any,
+    ) -> AsyncConnection:
         r"""Return a :class:`_asyncio.AsyncConnection` object corresponding to
         this :class:`.Session` object's transactional state.
 
@@ -488,7 +498,11 @@ class async_scoped_session(Generic[_AS]):
 
         """  # noqa: E501
 
-        return await self._proxied.connection(**kw)
+        return await self._proxied.connection(
+            bind_arguments=bind_arguments,
+            execution_options=execution_options,
+            **kw,
+        )
 
     async def delete(self, instance: object) -> None:
         r"""Mark an instance as deleted.
@@ -523,6 +537,19 @@ class async_scoped_session(Generic[_AS]):
         _parent_execute_state: Optional[Any] = None,
         _add_event: Optional[Any] = None,
     ) -> Result[_T]:
+        ...
+
+    @overload
+    async def execute(
+        self,
+        statement: UpdateBase,
+        params: Optional[_CoreAnyExecuteParams] = None,
+        *,
+        execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
+        bind_arguments: Optional[_BindArguments] = None,
+        _parent_execute_state: Optional[Any] = None,
+        _add_event: Optional[Any] = None,
+    ) -> CursorResult[Any]:
         ...
 
     @overload
@@ -934,7 +961,7 @@ class async_scoped_session(Generic[_AS]):
         self,
         instance: object,
         attribute_names: Optional[Iterable[str]] = None,
-        with_for_update: Optional[ForUpdateArg] = None,
+        with_for_update: ForUpdateParameter = None,
     ) -> None:
         r"""Expire and refresh the attributes on the given instance.
 
@@ -970,6 +997,11 @@ class async_scoped_session(Generic[_AS]):
             Proxied for the :class:`_asyncio.AsyncSession` class on
             behalf of the :class:`_asyncio.scoping.async_scoped_session` class.
 
+        .. seealso::
+
+            :meth:`_orm.Session.rollback` - main documentation for
+            "rollback"
+
         """  # noqa: E501
 
         return await self._proxied.rollback()
@@ -978,7 +1010,7 @@ class async_scoped_session(Generic[_AS]):
     async def scalar(
         self,
         statement: TypedReturnsRows[Tuple[_T]],
-        params: Optional[_CoreSingleExecuteParams] = None,
+        params: Optional[_CoreAnyExecuteParams] = None,
         *,
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
@@ -990,7 +1022,7 @@ class async_scoped_session(Generic[_AS]):
     async def scalar(
         self,
         statement: Executable,
-        params: Optional[_CoreSingleExecuteParams] = None,
+        params: Optional[_CoreAnyExecuteParams] = None,
         *,
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
@@ -1001,7 +1033,7 @@ class async_scoped_session(Generic[_AS]):
     async def scalar(
         self,
         statement: Executable,
-        params: Optional[_CoreSingleExecuteParams] = None,
+        params: Optional[_CoreAnyExecuteParams] = None,
         *,
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
@@ -1033,7 +1065,7 @@ class async_scoped_session(Generic[_AS]):
     async def scalars(
         self,
         statement: TypedReturnsRows[Tuple[_T]],
-        params: Optional[_CoreSingleExecuteParams] = None,
+        params: Optional[_CoreAnyExecuteParams] = None,
         *,
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
@@ -1045,7 +1077,7 @@ class async_scoped_session(Generic[_AS]):
     async def scalars(
         self,
         statement: Executable,
-        params: Optional[_CoreSingleExecuteParams] = None,
+        params: Optional[_CoreAnyExecuteParams] = None,
         *,
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
@@ -1056,7 +1088,7 @@ class async_scoped_session(Generic[_AS]):
     async def scalars(
         self,
         statement: Executable,
-        params: Optional[_CoreSingleExecuteParams] = None,
+        params: Optional[_CoreAnyExecuteParams] = None,
         *,
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
@@ -1091,6 +1123,85 @@ class async_scoped_session(Generic[_AS]):
             execution_options=execution_options,
             bind_arguments=bind_arguments,
             **kw,
+        )
+
+    async def get(
+        self,
+        entity: _EntityBindKey[_O],
+        ident: _PKIdentityArgument,
+        *,
+        options: Optional[Sequence[ORMOption]] = None,
+        populate_existing: bool = False,
+        with_for_update: ForUpdateParameter = None,
+        identity_token: Optional[Any] = None,
+        execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
+    ) -> Union[_O, None]:
+        r"""Return an instance based on the given primary key identifier,
+        or ``None`` if not found.
+
+        .. container:: class_bases
+
+            Proxied for the :class:`_asyncio.AsyncSession` class on
+            behalf of the :class:`_asyncio.scoping.async_scoped_session` class.
+
+        .. seealso::
+
+            :meth:`_orm.Session.get` - main documentation for get
+
+
+
+        """  # noqa: E501
+
+        result = await self._proxied.get(
+            entity,
+            ident,
+            options=options,
+            populate_existing=populate_existing,
+            with_for_update=with_for_update,
+            identity_token=identity_token,
+            execution_options=execution_options,
+        )
+        return result
+
+    async def get_one(
+        self,
+        entity: _EntityBindKey[_O],
+        ident: _PKIdentityArgument,
+        *,
+        options: Optional[Sequence[ORMOption]] = None,
+        populate_existing: bool = False,
+        with_for_update: ForUpdateParameter = None,
+        identity_token: Optional[Any] = None,
+        execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
+    ) -> _O:
+        r"""Return an instance based on the given primary key identifier,
+        or raise an exception if not found.
+
+        .. container:: class_bases
+
+            Proxied for the :class:`_asyncio.AsyncSession` class on
+            behalf of the :class:`_asyncio.scoping.async_scoped_session` class.
+
+        Raises ``sqlalchemy.orm.exc.NoResultFound`` if the query selects
+        no rows.
+
+        ..versionadded: 2.0.22
+
+        .. seealso::
+
+            :meth:`_orm.Session.get_one` - main documentation for get_one
+
+
+        """  # noqa: E501
+
+        return await self._proxied.get_one(
+            entity,
+            ident,
+            options=options,
+            populate_existing=populate_existing,
+            with_for_update=with_for_update,
+            identity_token=identity_token,
+            execution_options=execution_options,
         )
 
     @overload
@@ -1149,7 +1260,7 @@ class async_scoped_session(Generic[_AS]):
     async def stream_scalars(
         self,
         statement: TypedReturnsRows[Tuple[_T]],
-        params: Optional[_CoreSingleExecuteParams] = None,
+        params: Optional[_CoreAnyExecuteParams] = None,
         *,
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
@@ -1161,7 +1272,7 @@ class async_scoped_session(Generic[_AS]):
     async def stream_scalars(
         self,
         statement: Executable,
-        params: Optional[_CoreSingleExecuteParams] = None,
+        params: Optional[_CoreAnyExecuteParams] = None,
         *,
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
@@ -1172,7 +1283,7 @@ class async_scoped_session(Generic[_AS]):
     async def stream_scalars(
         self,
         statement: Executable,
-        params: Optional[_CoreSingleExecuteParams] = None,
+        params: Optional[_CoreAnyExecuteParams] = None,
         *,
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
@@ -1439,13 +1550,15 @@ class async_scoped_session(Generic[_AS]):
         return self._proxied.info
 
     @classmethod
-    async def close_all(self) -> None:
+    async def close_all(cls) -> None:
         r"""Close all :class:`_asyncio.AsyncSession` sessions.
 
         .. container:: class_bases
 
             Proxied for the :class:`_asyncio.AsyncSession` class on
             behalf of the :class:`_asyncio.scoping.async_scoped_session` class.
+
+        .. deprecated:: 2.0 The :meth:`.AsyncSession.close_all` method is deprecated and will be removed in a future release.  Please refer to :func:`_asyncio.close_all_sessions`.
 
         """  # noqa: E501
 

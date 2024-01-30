@@ -1,4 +1,8 @@
 import re
+import warnings
+from typing import List
+
+import pysubs2
 from .formatbase import FormatBase
 from .ssaevent import SSAEvent
 from .ssastyle import SSAStyle
@@ -17,11 +21,13 @@ class SubripFormat(FormatBase):
     @staticmethod
     def ms_to_timestamp(ms: int) -> str:
         """Convert ms to 'HH:MM:SS,mmm'"""
-        # XXX throw on overflow/underflow?
-        if ms < 0: ms = 0
-        if ms > MAX_REPRESENTABLE_TIME: ms = MAX_REPRESENTABLE_TIME
+        if ms < 0:
+            ms = 0
+        if ms > MAX_REPRESENTABLE_TIME:
+            warnings.warn("Overflow in SubRip timestamp, clamping to MAX_REPRESENTABLE_TIME", RuntimeWarning)
+            ms = MAX_REPRESENTABLE_TIME
         h, m, s, ms = ms_to_times(ms)
-        return "%02d:%02d:%02d,%03d" % (h, m, s, ms)
+        return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
     @staticmethod
     def timestamp_to_ms(groups):
@@ -139,15 +145,15 @@ class SubripFormat(FormatBase):
             else:
                 for fragment, sty in parse_tags(text, style, subs.styles):
                     if apply_styles:
-                        if sty.italic: fragment = "<i>%s</i>" % fragment
-                        if sty.underline: fragment = "<u>%s</u>" % fragment
-                        if sty.strikeout: fragment = "<s>%s</s>" % fragment
+                        if sty.italic: fragment = f"<i>{fragment}</i>"
+                        if sty.underline: fragment = f"<u>{fragment}</u>"
+                        if sty.strikeout: fragment = f"<s>{fragment}</s>"
                     if sty.drawing: raise ContentNotUsable
                     body.append(fragment)
 
             return re.sub("\n+", "\n", "".join(body).strip())
 
-        visible_lines = (line for line in subs if not line.is_comment)
+        visible_lines = cls._get_visible_lines(subs)
 
         lineno = 1
         for line in visible_lines:
@@ -158,7 +164,12 @@ class SubripFormat(FormatBase):
             except ContentNotUsable:
                 continue
 
-            print("%d" % lineno, file=fp) # Python 2.7 compat
+            print(lineno, file=fp)
             print(start, "-->", end, file=fp)
             print(text, end="\n\n", file=fp)
             lineno += 1
+
+    @classmethod
+    def _get_visible_lines(cls, subs: "pysubs2.SSAFile") -> List["pysubs2.SSAEvent"]:
+        visible_lines = [line for line in subs if not line.is_comment]
+        return visible_lines

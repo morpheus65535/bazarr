@@ -1,10 +1,22 @@
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
+import os
 from typing import List, Optional
 
 import requests
 
 from deep_translator.base import BaseTranslator
-from deep_translator.constants import BASE_URLS, QCRI_LANGUAGE_TO_CODE
-from deep_translator.exceptions import ServerException, TranslationNotFound
+from deep_translator.constants import (
+    BASE_URLS,
+    QCRI_ENV_VAR,
+    QCRI_LANGUAGE_TO_CODE,
+)
+from deep_translator.exceptions import (
+    ApiKeyException,
+    ServerException,
+    TranslationNotFound,
+)
+from deep_translator.validate import request_failed
 
 
 class QcriTranslator(BaseTranslator):
@@ -14,17 +26,19 @@ class QcriTranslator(BaseTranslator):
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
         source: str = "en",
         target: str = "en",
+        api_key: Optional[str] = os.getenv(QCRI_ENV_VAR, None),
         **kwargs,
     ):
         """
-        @param api_key: your qrci api key. Get one for free here https://mt.qcri.org/api/v1/ref
+        @param api_key: your qrci api key.
+        Get one for free here https://mt.qcri.org/api/v1/ref
         """
 
         if not api_key:
-            raise ServerException(401)
+            raise ApiKeyException(QCRI_ENV_VAR)
+
         self.api_key = api_key
         self.api_endpoints = {
             "get_languages": "getLanguagePairs",
@@ -42,7 +56,10 @@ class QcriTranslator(BaseTranslator):
         )
 
     def _get(
-        self, endpoint: str, params: Optional[dict] = None, return_text: bool = True
+        self,
+        endpoint: str,
+        params: Optional[dict] = None,
+        return_text: bool = True,
     ):
         if not params:
             params = self.params
@@ -80,7 +97,7 @@ class QcriTranslator(BaseTranslator):
             raise ServerException(503)
 
         else:
-            if response.status_code != 200:
+            if request_failed(status_code=response.status_code):
                 ServerException(response.status_code)
             else:
                 res = response.json()

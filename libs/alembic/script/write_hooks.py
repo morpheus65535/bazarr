@@ -1,3 +1,6 @@
+# mypy: allow-untyped-defs, allow-incomplete-defs, allow-untyped-calls
+# mypy: no-warn-return-any, allow-any-generics
+
 from __future__ import annotations
 
 import shlex
@@ -7,6 +10,7 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Union
 
@@ -24,8 +28,6 @@ def register(name: str) -> Callable:
 
     See the documentation linked below for an example.
 
-    .. versionadded:: 1.2.0
-
     .. seealso::
 
         :ref:`post_write_hooks_custom`
@@ -41,7 +43,7 @@ def register(name: str) -> Callable:
 
 
 def _invoke(
-    name: str, revision: str, options: Dict[str, Union[str, int]]
+    name: str, revision: str, options: Mapping[str, Union[str, int]]
 ) -> Any:
     """Invokes the formatter registered for the given name.
 
@@ -55,13 +57,13 @@ def _invoke(
         hook = _registry[name]
     except KeyError as ke:
         raise util.CommandError(
-            "No formatter with name '%s' registered" % name
+            f"No formatter with name '{name}' registered"
         ) from ke
     else:
         return hook(revision, options)
 
 
-def _run_hooks(path: str, hook_config: Dict[str, str]) -> None:
+def _run_hooks(path: str, hook_config: Mapping[str, str]) -> None:
     """Invoke hooks for a generated revision."""
 
     from .base import _split_on_space_comma
@@ -81,17 +83,13 @@ def _run_hooks(path: str, hook_config: Dict[str, str]) -> None:
             type_ = opts["type"]
         except KeyError as ke:
             raise util.CommandError(
-                "Key %s.type is required for post write hook %r" % (name, name)
+                f"Key {name}.type is required for post write hook {name!r}"
             ) from ke
         else:
-            util.status(
-                'Running post write hook "%s"' % name,
-                _invoke,
-                type_,
-                path,
-                opts,
-                newline=True,
-            )
+            with util.status(
+                f"Running post write hook {name!r}", newline=True
+            ):
+                _invoke(type_, path, opts)
 
 
 def _parse_cmdline_options(cmdline_options_str: str, path: str) -> List[str]:
@@ -119,13 +117,12 @@ def _parse_cmdline_options(cmdline_options_str: str, path: str) -> List[str]:
 def console_scripts(
     path: str, options: dict, ignore_output: bool = False
 ) -> None:
-
     try:
         entrypoint_name = options["entrypoint"]
     except KeyError as ke:
         raise util.CommandError(
-            "Key %s.entrypoint is required for post write hook %r"
-            % (options["_hook_name"], options["_hook_name"])
+            f"Key {options['_hook_name']}.entrypoint is required for post "
+            f"write hook {options['_hook_name']!r}"
         ) from ke
     for entry in compat.importlib_metadata_get("console_scripts"):
         if entry.name == entrypoint_name:
@@ -147,9 +144,36 @@ def console_scripts(
         [
             sys.executable,
             "-c",
-            "import %s; %s.%s()" % (impl.module, impl.module, impl.attr),
+            f"import {impl.module}; {impl.module}.{impl.attr}()",
         ]
         + cmdline_options_list,
+        cwd=cwd,
+        **kw,
+    )
+
+
+@register("exec")
+def exec_(path: str, options: dict, ignore_output: bool = False) -> None:
+    try:
+        executable = options["executable"]
+    except KeyError as ke:
+        raise util.CommandError(
+            f"Key {options['_hook_name']}.executable is required for post "
+            f"write hook {options['_hook_name']!r}"
+        ) from ke
+    cwd: Optional[str] = options.get("cwd", None)
+    cmdline_options_str = options.get("options", "")
+    cmdline_options_list = _parse_cmdline_options(cmdline_options_str, path)
+
+    kw: Dict[str, Any] = {}
+    if ignore_output:
+        kw["stdout"] = kw["stderr"] = subprocess.DEVNULL
+
+    subprocess.run(
+        [
+            executable,
+            *cmdline_options_list,
+        ],
         cwd=cwd,
         **kw,
     )

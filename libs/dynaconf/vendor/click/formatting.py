@@ -1,279 +1,90 @@
+_E=True
+_D=False
+_C=' '
+_B='\n'
+_A=None
 from contextlib import contextmanager
-
-from ._compat import term_len
-from .parser import split_opt
-from .termui import get_terminal_size
-
-# Can force a width.  This is used by the test system
-FORCED_WIDTH = None
-
-
+from._compat import term_len
+from.parser import split_opt
+from.termui import get_terminal_size
+FORCED_WIDTH=_A
 def measure_table(rows):
-    widths = {}
-    for row in rows:
-        for idx, col in enumerate(row):
-            widths[idx] = max(widths.get(idx, 0), term_len(col))
-    return tuple(y for x, y in sorted(widths.items()))
-
-
-def iter_rows(rows, col_count):
-    for row in rows:
-        row = tuple(row)
-        yield row + ("",) * (col_count - len(row))
-
-
-def wrap_text(
-    text, width=78, initial_indent="", subsequent_indent="", preserve_paragraphs=False
-):
-    """A helper function that intelligently wraps text.  By default, it
-    assumes that it operates on a single paragraph of text but if the
-    `preserve_paragraphs` parameter is provided it will intelligently
-    handle paragraphs (defined by two empty lines).
-
-    If paragraphs are handled, a paragraph can be prefixed with an empty
-    line containing the ``\\b`` character (``\\x08``) to indicate that
-    no rewrapping should happen in that block.
-
-    :param text: the text that should be rewrapped.
-    :param width: the maximum width for the text.
-    :param initial_indent: the initial indent that should be placed on the
-                           first line as a string.
-    :param subsequent_indent: the indent string that should be placed on
-                              each consecutive line.
-    :param preserve_paragraphs: if this flag is set then the wrapping will
-                                intelligently handle paragraphs.
-    """
-    from ._textwrap import TextWrapper
-
-    text = text.expandtabs()
-    wrapper = TextWrapper(
-        width,
-        initial_indent=initial_indent,
-        subsequent_indent=subsequent_indent,
-        replace_whitespace=False,
-    )
-    if not preserve_paragraphs:
-        return wrapper.fill(text)
-
-    p = []
-    buf = []
-    indent = None
-
-    def _flush_par():
-        if not buf:
-            return
-        if buf[0].strip() == "\b":
-            p.append((indent or 0, True, "\n".join(buf[1:])))
-        else:
-            p.append((indent or 0, False, " ".join(buf)))
-        del buf[:]
-
-    for line in text.splitlines():
-        if not line:
-            _flush_par()
-            indent = None
-        else:
-            if indent is None:
-                orig_len = term_len(line)
-                line = line.lstrip()
-                indent = orig_len - term_len(line)
-            buf.append(line)
-    _flush_par()
-
-    rv = []
-    for indent, raw, text in p:
-        with wrapper.extra_indent(" " * indent):
-            if raw:
-                rv.append(wrapper.indent_only(text))
-            else:
-                rv.append(wrapper.fill(text))
-
-    return "\n\n".join(rv)
-
-
+	A={}
+	for C in rows:
+		for(B,D)in enumerate(C):A[B]=max(A.get(B,0),term_len(D))
+	return tuple(A for(B,A)in sorted(A.items()))
+def iter_rows(rows,col_count):
+	for A in rows:A=tuple(A);yield A+('',)*(col_count-len(A))
+def wrap_text(text,width=78,initial_indent='',subsequent_indent='',preserve_paragraphs=_D):
+	A=text;from._textwrap import TextWrapper as I;A=A.expandtabs();E=I(width,initial_indent=initial_indent,subsequent_indent=subsequent_indent,replace_whitespace=_D)
+	if not preserve_paragraphs:return E.fill(A)
+	F=[];C=[];B=_A
+	def H():
+		if not C:return
+		if C[0].strip()=='\x08':F.append((B or 0,_E,_B.join(C[1:])))
+		else:F.append((B or 0,_D,_C.join(C)))
+		del C[:]
+	for D in A.splitlines():
+		if not D:H();B=_A
+		else:
+			if B is _A:J=term_len(D);D=D.lstrip();B=J-term_len(D)
+			C.append(D)
+	H();G=[]
+	for(B,K,A)in F:
+		with E.extra_indent(_C*B):
+			if K:G.append(E.indent_only(A))
+			else:G.append(E.fill(A))
+	return'\n\n'.join(G)
 class HelpFormatter:
-    """This class helps with formatting text-based help pages.  It's
-    usually just needed for very special internal cases, but it's also
-    exposed so that developers can write their own fancy outputs.
-
-    At present, it always writes into memory.
-
-    :param indent_increment: the additional increment for each level.
-    :param width: the width for the text.  This defaults to the terminal
-                  width clamped to a maximum of 78.
-    """
-
-    def __init__(self, indent_increment=2, width=None, max_width=None):
-        self.indent_increment = indent_increment
-        if max_width is None:
-            max_width = 80
-        if width is None:
-            width = FORCED_WIDTH
-            if width is None:
-                width = max(min(get_terminal_size()[0], max_width) - 2, 50)
-        self.width = width
-        self.current_indent = 0
-        self.buffer = []
-
-    def write(self, string):
-        """Writes a unicode string into the internal buffer."""
-        self.buffer.append(string)
-
-    def indent(self):
-        """Increases the indentation."""
-        self.current_indent += self.indent_increment
-
-    def dedent(self):
-        """Decreases the indentation."""
-        self.current_indent -= self.indent_increment
-
-    def write_usage(self, prog, args="", prefix="Usage: "):
-        """Writes a usage line into the buffer.
-
-        :param prog: the program name.
-        :param args: whitespace separated list of arguments.
-        :param prefix: the prefix for the first line.
-        """
-        usage_prefix = f"{prefix:>{self.current_indent}}{prog} "
-        text_width = self.width - self.current_indent
-
-        if text_width >= (term_len(usage_prefix) + 20):
-            # The arguments will fit to the right of the prefix.
-            indent = " " * term_len(usage_prefix)
-            self.write(
-                wrap_text(
-                    args,
-                    text_width,
-                    initial_indent=usage_prefix,
-                    subsequent_indent=indent,
-                )
-            )
-        else:
-            # The prefix is too long, put the arguments on the next line.
-            self.write(usage_prefix)
-            self.write("\n")
-            indent = " " * (max(self.current_indent, term_len(prefix)) + 4)
-            self.write(
-                wrap_text(
-                    args, text_width, initial_indent=indent, subsequent_indent=indent
-                )
-            )
-
-        self.write("\n")
-
-    def write_heading(self, heading):
-        """Writes a heading into the buffer."""
-        self.write(f"{'':>{self.current_indent}}{heading}:\n")
-
-    def write_paragraph(self):
-        """Writes a paragraph into the buffer."""
-        if self.buffer:
-            self.write("\n")
-
-    def write_text(self, text):
-        """Writes re-indented text into the buffer.  This rewraps and
-        preserves paragraphs.
-        """
-        text_width = max(self.width - self.current_indent, 11)
-        indent = " " * self.current_indent
-        self.write(
-            wrap_text(
-                text,
-                text_width,
-                initial_indent=indent,
-                subsequent_indent=indent,
-                preserve_paragraphs=True,
-            )
-        )
-        self.write("\n")
-
-    def write_dl(self, rows, col_max=30, col_spacing=2):
-        """Writes a definition list into the buffer.  This is how options
-        and commands are usually formatted.
-
-        :param rows: a list of two item tuples for the terms and values.
-        :param col_max: the maximum width of the first column.
-        :param col_spacing: the number of spaces between the first and
-                            second column.
-        """
-        rows = list(rows)
-        widths = measure_table(rows)
-        if len(widths) != 2:
-            raise TypeError("Expected two columns for definition list")
-
-        first_col = min(widths[0], col_max) + col_spacing
-
-        for first, second in iter_rows(rows, len(widths)):
-            self.write(f"{'':>{self.current_indent}}{first}")
-            if not second:
-                self.write("\n")
-                continue
-            if term_len(first) <= first_col - col_spacing:
-                self.write(" " * (first_col - term_len(first)))
-            else:
-                self.write("\n")
-                self.write(" " * (first_col + self.current_indent))
-
-            text_width = max(self.width - first_col - 2, 10)
-            wrapped_text = wrap_text(second, text_width, preserve_paragraphs=True)
-            lines = wrapped_text.splitlines()
-
-            if lines:
-                self.write(f"{lines[0]}\n")
-
-                for line in lines[1:]:
-                    self.write(f"{'':>{first_col + self.current_indent}}{line}\n")
-
-                if len(lines) > 1:
-                    # separate long help from next option
-                    self.write("\n")
-            else:
-                self.write("\n")
-
-    @contextmanager
-    def section(self, name):
-        """Helpful context manager that writes a paragraph, a heading,
-        and the indents.
-
-        :param name: the section name that is written as heading.
-        """
-        self.write_paragraph()
-        self.write_heading(name)
-        self.indent()
-        try:
-            yield
-        finally:
-            self.dedent()
-
-    @contextmanager
-    def indentation(self):
-        """A context manager that increases the indentation."""
-        self.indent()
-        try:
-            yield
-        finally:
-            self.dedent()
-
-    def getvalue(self):
-        """Returns the buffer contents."""
-        return "".join(self.buffer)
-
-
+	def __init__(B,indent_increment=2,width=_A,max_width=_A):
+		C=max_width;A=width;B.indent_increment=indent_increment
+		if C is _A:C=80
+		if A is _A:
+			A=FORCED_WIDTH
+			if A is _A:A=max(min(get_terminal_size()[0],C)-2,50)
+		B.width=A;B.current_indent=0;B.buffer=[]
+	def write(A,string):A.buffer.append(string)
+	def indent(A):A.current_indent+=A.indent_increment
+	def dedent(A):A.current_indent-=A.indent_increment
+	def write_usage(A,prog,args='',prefix='Usage: '):
+		E=prefix;B=f"{E:>{A.current_indent}}{prog} ";D=A.width-A.current_indent
+		if D>=term_len(B)+20:C=_C*term_len(B);A.write(wrap_text(args,D,initial_indent=B,subsequent_indent=C))
+		else:A.write(B);A.write(_B);C=_C*(max(A.current_indent,term_len(E))+4);A.write(wrap_text(args,D,initial_indent=C,subsequent_indent=C))
+		A.write(_B)
+	def write_heading(A,heading):A.write(f"{'':>{A.current_indent}}{heading}:\n")
+	def write_paragraph(A):
+		if A.buffer:A.write(_B)
+	def write_text(A,text):C=max(A.width-A.current_indent,11);B=_C*A.current_indent;A.write(wrap_text(text,C,initial_indent=B,subsequent_indent=B,preserve_paragraphs=_E));A.write(_B)
+	def write_dl(A,rows,col_max=30,col_spacing=2):
+		G=col_spacing;C=rows;C=list(C);E=measure_table(C)
+		if len(E)!=2:raise TypeError('Expected two columns for definition list')
+		B=min(E[0],col_max)+G
+		for(F,H)in iter_rows(C,len(E)):
+			A.write(f"{'':>{A.current_indent}}{F}")
+			if not H:A.write(_B);continue
+			if term_len(F)<=B-G:A.write(_C*(B-term_len(F)))
+			else:A.write(_B);A.write(_C*(B+A.current_indent))
+			I=max(A.width-B-2,10);J=wrap_text(H,I,preserve_paragraphs=_E);D=J.splitlines()
+			if D:
+				A.write(f"{D[0]}\n")
+				for K in D[1:]:A.write(f"{'':>{B+A.current_indent}}{K}\n")
+				if len(D)>1:A.write(_B)
+			else:A.write(_B)
+	@contextmanager
+	def section(self,name):
+		A=self;A.write_paragraph();A.write_heading(name);A.indent()
+		try:yield
+		finally:A.dedent()
+	@contextmanager
+	def indentation(self):
+		self.indent()
+		try:yield
+		finally:self.dedent()
+	def getvalue(A):return''.join(A.buffer)
 def join_options(options):
-    """Given a list of option strings this joins them in the most appropriate
-    way and returns them in the form ``(formatted_string,
-    any_prefix_is_slash)`` where the second item in the tuple is a flag that
-    indicates if any of the option prefixes was a slash.
-    """
-    rv = []
-    any_prefix_is_slash = False
-    for opt in options:
-        prefix = split_opt(opt)[0]
-        if prefix == "/":
-            any_prefix_is_slash = True
-        rv.append((len(prefix), opt))
-
-    rv.sort(key=lambda x: x[0])
-
-    rv = ", ".join(x[1] for x in rv)
-    return rv, any_prefix_is_slash
+	A=[];B=_D
+	for C in options:
+		D=split_opt(C)[0]
+		if D=='/':B=_E
+		A.append((len(D),C))
+	A.sort(key=lambda x:x[0]);A=', '.join(A[1]for A in A);return A,B

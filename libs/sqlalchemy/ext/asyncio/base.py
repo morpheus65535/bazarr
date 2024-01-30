@@ -1,5 +1,5 @@
 # ext/asyncio/base.py
-# Copyright (C) 2020-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2020-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -58,9 +58,7 @@ class ReversibleProxy(Generic[_PT]):
             )
             proxy_ref = weakref.ref(
                 self,
-                functools.partial(  # type: ignore
-                    ReversibleProxy._target_gced, target_ref
-                ),
+                functools.partial(ReversibleProxy._target_gced, target_ref),
             )
             ReversibleProxy._proxy_objects[target_ref] = proxy_ref
 
@@ -70,7 +68,7 @@ class ReversibleProxy(Generic[_PT]):
     def _target_gced(
         cls,
         ref: weakref.ref[_PT],
-        proxy_ref: Optional[weakref.ref[Self]] = None,
+        proxy_ref: Optional[weakref.ref[Self]] = None,  # noqa: U100
     ) -> None:
         cls._proxy_objects.pop(ref, None)
 
@@ -124,7 +122,7 @@ class StartableContext(Awaitable[_T_co], abc.ABC):
         return self.start().__await__()
 
     async def __aenter__(self) -> _T_co:
-        return await self.start(is_ctxmanager=True)  # type: ignore
+        return await self.start(is_ctxmanager=True)
 
     @abc.abstractmethod
     async def __aexit__(
@@ -184,7 +182,7 @@ class GeneratorStartableContext(StartableContext[_T_co]):
                 # tell if we get the same exception back
                 value = typ()
             try:
-                await self.gen.athrow(typ, value, traceback)
+                await self.gen.athrow(value)
             except StopAsyncIteration as exc:
                 # Suppress StopIteration *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration

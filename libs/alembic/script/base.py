@@ -9,9 +9,9 @@ import sys
 from types import ModuleType
 from typing import Any
 from typing import cast
-from typing import Dict
 from typing import Iterator
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Set
@@ -23,25 +23,31 @@ from . import revision
 from . import write_hooks
 from .. import util
 from ..runtime import migration
+from ..util import compat
 from ..util import not_none
 
 if TYPE_CHECKING:
+    from .revision import _GetRevArg
+    from .revision import _RevIdType
+    from .revision import Revision
     from ..config import Config
+    from ..config import MessagingOptions
     from ..runtime.migration import RevisionStep
     from ..runtime.migration import StampStep
-    from ..script.revision import Revision
 
 try:
-    from dateutil import tz
+    if compat.py39:
+        from zoneinfo import ZoneInfo
+        from zoneinfo import ZoneInfoNotFoundError
+    else:
+        from backports.zoneinfo import ZoneInfo  # type: ignore[import-not-found,no-redef] # noqa: E501
+        from backports.zoneinfo import ZoneInfoNotFoundError  # type: ignore[no-redef] # noqa: E501
 except ImportError:
-    tz = None  # type: ignore[assignment]
-
-_RevIdType = Union[str, Sequence[str]]
+    ZoneInfo = None  # type: ignore[assignment, misc]
 
 _sourceless_rev_file = re.compile(r"(?!\.\#|__init__)(.*\.py)(c|o)?$")
 _only_source_rev_file = re.compile(r"(?!\.\#|__init__)(.*\.py)$")
 _legacy_rev = re.compile(r"([a-f0-9]+)\.py$")
-_mod_def_re = re.compile(r"(upgrade|downgrade)_([a-z0-9]+)")
 _slug_re = re.compile(r"\w+")
 _default_file_template = "%(rev)s_%(slug)s"
 _split_on_space_comma = re.compile(r", *|(?: +)")
@@ -79,8 +85,11 @@ class ScriptDirectory:
         sourceless: bool = False,
         output_encoding: str = "utf-8",
         timezone: Optional[str] = None,
-        hook_config: Optional[Dict[str, str]] = None,
+        hook_config: Optional[Mapping[str, str]] = None,
         recursive_version_locations: bool = False,
+        messaging_opts: MessagingOptions = cast(
+            "MessagingOptions", util.EMPTY_DICT
+        ),
     ) -> None:
         self.dir = dir
         self.file_template = file_template
@@ -92,6 +101,7 @@ class ScriptDirectory:
         self.timezone = timezone
         self.hook_config = hook_config
         self.recursive_version_locations = recursive_version_locations
+        self.messaging_opts = messaging_opts
 
         if not os.access(dir, os.F_OK):
             raise util.CommandError(
@@ -109,7 +119,7 @@ class ScriptDirectory:
             return loc[0]
 
     @util.memoized_property
-    def _version_locations(self):
+    def _version_locations(self) -> Sequence[str]:
         if self.version_locations:
             return [
                 os.path.abspath(util.coerce_resource_to_filename(location))
@@ -225,6 +235,7 @@ class ScriptDirectory:
             timezone=config.get_main_option("timezone"),
             hook_config=config.get_section("post_write_hooks", {}),
             recursive_version_locations=rvl,
+            messaging_opts=config.messaging_opts,
         )
 
     @contextmanager
@@ -292,24 +303,22 @@ class ScriptDirectory:
             ):
                 yield cast(Script, rev)
 
-    def get_revisions(self, id_: _RevIdType) -> Tuple[Optional[Script], ...]:
+    def get_revisions(self, id_: _GetRevArg) -> Tuple[Script, ...]:
         """Return the :class:`.Script` instance with the given rev identifier,
         symbolic name, or sequence of identifiers.
 
         """
         with self._catch_revision_errors():
             return cast(
-                Tuple[Optional[Script], ...],
+                Tuple[Script, ...],
                 self.revision_map.get_revisions(id_),
             )
 
-    def get_all_current(self, id_: Tuple[str, ...]) -> Set[Optional[Script]]:
+    def get_all_current(self, id_: Tuple[str, ...]) -> Set[Script]:
         with self._catch_revision_errors():
-            return cast(
-                Set[Optional[Script]], self.revision_map._get_all_current(id_)
-            )
+            return cast(Set[Script], self.revision_map._get_all_current(id_))
 
-    def get_revision(self, id_: str) -> Optional[Script]:
+    def get_revision(self, id_: str) -> Script:
         """Return the :class:`.Script` instance with the given rev id.
 
         .. seealso::
@@ -319,7 +328,7 @@ class ScriptDirectory:
         """
 
         with self._catch_revision_errors():
-            return cast(Optional[Script], self.revision_map.get_revision(id_))
+            return cast(Script, self.revision_map.get_revision(id_))
 
     def as_revision_number(
         self, id_: Optional[str]
@@ -475,7 +484,6 @@ class ScriptDirectory:
             multiple_heads="Multiple heads are present; please specify a "
             "single target revision"
         ):
-
             heads_revs = self.get_revisions(heads)
 
             steps = []
@@ -498,7 +506,6 @@ class ScriptDirectory:
             dests = self.get_revisions(revision) or [None]
 
             for dest in dests:
-
                 if dest is None:
                     # dest is 'base'.  Return a "delete branch" migration
                     # for all applicable heads.
@@ -576,48 +583,51 @@ class ScriptDirectory:
         util.load_python_file(self.dir, "env.py")
 
     @property
-    def env_py_location(self):
+    def env_py_location(self) -> str:
         return os.path.abspath(os.path.join(self.dir, "env.py"))
 
     def _generate_template(self, src: str, dest: str, **kw: Any) -> None:
-        util.status(
-            "Generating %s" % os.path.abspath(dest),
-            util.template_to_file,
-            src,
-            dest,
-            self.output_encoding,
-            **kw,
-        )
+        with util.status(
+            f"Generating {os.path.abspath(dest)}", **self.messaging_opts
+        ):
+            util.template_to_file(src, dest, self.output_encoding, **kw)
 
     def _copy_file(self, src: str, dest: str) -> None:
-        util.status(
-            "Generating %s" % os.path.abspath(dest), shutil.copy, src, dest
-        )
+        with util.status(
+            f"Generating {os.path.abspath(dest)}", **self.messaging_opts
+        ):
+            shutil.copy(src, dest)
 
     def _ensure_directory(self, path: str) -> None:
         path = os.path.abspath(path)
         if not os.path.exists(path):
-            util.status("Creating directory %s" % path, os.makedirs, path)
+            with util.status(
+                f"Creating directory {path}", **self.messaging_opts
+            ):
+                os.makedirs(path)
 
     def _generate_create_date(self) -> datetime.datetime:
         if self.timezone is not None:
-            if tz is None:
+            if ZoneInfo is None:
                 raise util.CommandError(
-                    "The library 'python-dateutil' is required "
-                    "for timezone support"
+                    "Python >= 3.9 is required for timezone support or"
+                    "the 'backports.zoneinfo' package must be installed."
                 )
             # First, assume correct capitalization
-            tzinfo = tz.gettz(self.timezone)
+            try:
+                tzinfo = ZoneInfo(self.timezone)
+            except ZoneInfoNotFoundError:
+                tzinfo = None
             if tzinfo is None:
-                # Fall back to uppercase
-                tzinfo = tz.gettz(self.timezone.upper())
-            if tzinfo is None:
-                raise util.CommandError(
-                    "Can't locate timezone: %s" % self.timezone
-                )
+                try:
+                    tzinfo = ZoneInfo(self.timezone.upper())
+                except ZoneInfoNotFoundError:
+                    raise util.CommandError(
+                        "Can't locate timezone: %s" % self.timezone
+                    ) from None
             create_date = (
                 datetime.datetime.utcnow()
-                .replace(tzinfo=tz.tzutc())
+                .replace(tzinfo=datetime.timezone.utc)
                 .astimezone(tzinfo)
             )
         else:
@@ -628,10 +638,9 @@ class ScriptDirectory:
         self,
         revid: str,
         message: Optional[str],
-        head: Optional[str] = None,
-        refresh: bool = False,
+        head: Optional[_RevIdType] = None,
         splice: Optional[bool] = False,
-        branch_labels: Optional[str] = None,
+        branch_labels: Optional[_RevIdType] = None,
         version_path: Optional[str] = None,
         depends_on: Optional[_RevIdType] = None,
         **kw: Any,
@@ -651,7 +660,6 @@ class ScriptDirectory:
         :param splice: if True, allow the "head" version to not be an
          actual head; otherwise, the selected head must be a head
          (e.g. endpoint) revision.
-        :param refresh: deprecated.
 
         """
         if head is None:
@@ -674,7 +682,7 @@ class ScriptDirectory:
                 self.revision_map.get_revisions(head),
             )
             for h in heads:
-                assert h != "base"
+                assert h != "base"  # type: ignore[comparison-overlap]
 
         if len(set(heads)) != len(heads):
             raise util.CommandError("Duplicate head revisions specified")
@@ -813,7 +821,7 @@ class Script(revision.Revision):
         self.path = path
         super().__init__(
             rev_id,
-            module.down_revision,  # type: ignore[attr-defined]
+            module.down_revision,
             branch_labels=util.to_tuple(
                 getattr(module, "branch_labels", None), default=()
             ),
@@ -846,7 +854,7 @@ class Script(revision.Revision):
         if doc:
             if hasattr(self.module, "_alembic_source_encoding"):
                 doc = doc.decode(  # type: ignore[attr-defined]
-                    self.module._alembic_source_encoding  # type: ignore[attr-defined] # noqa
+                    self.module._alembic_source_encoding
                 )
             return doc.strip()  # type: ignore[union-attr]
         else:
@@ -888,7 +896,7 @@ class Script(revision.Revision):
         )
         return entry
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "%s -> %s%s%s%s, %s" % (
             self._format_down_revision(),
             self.revision,

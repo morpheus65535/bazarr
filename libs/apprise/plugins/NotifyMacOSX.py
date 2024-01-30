@@ -26,9 +26,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import absolute_import
-from __future__ import print_function
-
 import platform
 import subprocess
 import os
@@ -43,7 +40,6 @@ from ..AppriseLocale import gettext_lazy as _
 NOTIFY_MACOSX_SUPPORT_ENABLED = False
 
 
-# TODO: The module will be easier to test without module-level code.
 if platform.system() == 'Darwin':
     # Check this is Mac OS X 10.8, or higher
     major, minor = platform.mac_ver()[0].split('.')[:2]

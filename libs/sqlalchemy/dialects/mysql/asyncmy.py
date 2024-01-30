@@ -1,5 +1,5 @@
-# mysql/asyncmy.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors <see AUTHORS
+# dialects/mysql/asyncmy.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors <see AUTHORS
 # file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -13,10 +13,6 @@ r"""
     :connectstring: mysql+asyncmy://user:password@host:port/dbname[?key=value&key=value...]
     :url: https://github.com/long2ice/asyncmy
 
-.. note:: The asyncmy dialect as of September, 2021 was added to provide
-   MySQL/MariaDB asyncio compatibility given that the :ref:`aiomysql` database
-   driver has become unmaintained, however asyncmy is itself very new.
-
 Using a special asyncio mediation layer, the asyncmy dialect is usable
 as the backend for the :ref:`SQLAlchemy asyncio <asyncio_toplevel>`
 extension package.
@@ -29,7 +25,6 @@ This dialect should normally be used only with the
 
 
 """  # noqa
-
 from contextlib import asynccontextmanager
 
 from .pymysql import MySQLDialect_pymysql
@@ -42,6 +37,8 @@ from ...util.concurrency import await_only
 
 
 class AsyncAdapt_asyncmy_cursor:
+    # TODO: base on connectors/asyncio.py
+    # see #10415
     server_side = False
     __slots__ = (
         "_adapt_connection",
@@ -146,6 +143,8 @@ class AsyncAdapt_asyncmy_cursor:
 
 
 class AsyncAdapt_asyncmy_ss_cursor(AsyncAdapt_asyncmy_cursor):
+    # TODO: base on connectors/asyncio.py
+    # see #10415
     __slots__ = ()
     server_side = True
 
@@ -176,6 +175,8 @@ class AsyncAdapt_asyncmy_ss_cursor(AsyncAdapt_asyncmy_cursor):
 
 
 class AsyncAdapt_asyncmy_connection(AdaptedConnection):
+    # TODO: base on connectors/asyncio.py
+    # see #10415
     await_ = staticmethod(await_only)
     __slots__ = ("dbapi", "_execute_mutex")
 
@@ -267,16 +268,17 @@ class AsyncAdapt_asyncmy_dbapi:
 
     def connect(self, *arg, **kw):
         async_fallback = kw.pop("async_fallback", False)
+        creator_fn = kw.pop("async_creator_fn", self.asyncmy.connect)
 
         if util.asbool(async_fallback):
             return AsyncAdaptFallback_asyncmy_connection(
                 self,
-                await_fallback(self.asyncmy.connect(*arg, **kw)),
+                await_fallback(creator_fn(*arg, **kw)),
             )
         else:
             return AsyncAdapt_asyncmy_connection(
                 self,
-                await_only(self.asyncmy.connect(*arg, **kw)),
+                await_only(creator_fn(*arg, **kw)),
             )
 
 
@@ -295,7 +297,6 @@ class MySQLDialect_asyncmy(MySQLDialect_pymysql):
 
     @classmethod
     def get_pool_class(cls, url):
-
         async_fallback = url.query.get("async_fallback", False)
 
         if util.asbool(async_fallback):

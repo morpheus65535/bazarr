@@ -1,5 +1,5 @@
-# postgresql/psycopg2.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# dialects/postgresql/psycopg.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -44,12 +44,6 @@ The asyncio version of the dialect may also be specified explicitly using the
     from sqlalchemy.ext.asyncio import create_async_engine
     asyncio_engine = create_async_engine("postgresql+psycopg_async://scott:tiger@localhost/test")
 
-The ``psycopg`` dialect has the same API features as that of ``psycopg2``,
-with the exception of the "fast executemany" helpers.   The "fast executemany"
-helpers are expected to be generalized and ported to ``psycopg`` before the final
-release of SQLAlchemy 2.0, however.
-
-
 .. seealso::
 
     :ref:`postgresql_psycopg2` - The SQLAlchemy ``psycopg``
@@ -74,6 +68,7 @@ from .base import REGCONFIG
 from .json import JSON
 from .json import JSONB
 from .json import JSONPathType
+from .types import CITEXT
 from ... import pool
 from ... import util
 from ...engine import AdaptedConnection
@@ -83,6 +78,8 @@ from ...util.concurrency import await_only
 
 if TYPE_CHECKING:
     from typing import Iterable
+
+    from psycopg import AsyncConnection
 
 logger = logging.getLogger("sqlalchemy.dialects.postgresql")
 
@@ -277,6 +274,7 @@ class PGDialect_psycopg(_PGDialect_common_psycopg):
             sqltypes.String: _PGString,
             REGCONFIG: _PGREGCONFIG,
             JSON: _PGJSON,
+            CITEXT: CITEXT,
             sqltypes.JSON: _PGJSON,
             JSONB: _PGJSONB,
             sqltypes.JSON.JSONPathType: _PGJSONPathType,
@@ -315,6 +313,16 @@ class PGDialect_psycopg(_PGDialect_common_psycopg):
             self._psycopg_adapters_map = adapters_map = AdaptersMap(
                 self.dbapi.adapters
             )
+
+            if self._native_inet_types is False:
+                import psycopg.types.string
+
+                adapters_map.register_loader(
+                    "inet", psycopg.types.string.TextLoader
+                )
+                adapters_map.register_loader(
+                    "cidr", psycopg.types.string.TextLoader
+                )
 
             if self._json_deserializer:
                 from psycopg.types.json import set_json_loads
@@ -613,6 +621,7 @@ class AsyncAdapt_psycopg_ss_cursor(AsyncAdapt_psycopg_cursor):
 
 
 class AsyncAdapt_psycopg_connection(AdaptedConnection):
+    _connection: AsyncConnection
     __slots__ = ()
     await_ = staticmethod(await_only)
 
@@ -678,15 +687,16 @@ class PsycopgAdaptDBAPI:
 
     def connect(self, *arg, **kw):
         async_fallback = kw.pop("async_fallback", False)
+        creator_fn = kw.pop(
+            "async_creator_fn", self.psycopg.AsyncConnection.connect
+        )
         if util.asbool(async_fallback):
             return AsyncAdaptFallback_psycopg_connection(
-                await_fallback(
-                    self.psycopg.AsyncConnection.connect(*arg, **kw)
-                )
+                await_fallback(creator_fn(*arg, **kw))
             )
         else:
             return AsyncAdapt_psycopg_connection(
-                await_only(self.psycopg.AsyncConnection.connect(*arg, **kw))
+                await_only(creator_fn(*arg, **kw))
             )
 
 
@@ -705,7 +715,6 @@ class PGDialectAsync_psycopg(PGDialect_psycopg):
 
     @classmethod
     def get_pool_class(cls, url):
-
         async_fallback = url.query.get("async_fallback", False)
 
         if util.asbool(async_fallback):

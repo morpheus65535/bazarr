@@ -1,5 +1,5 @@
 # sql/operators.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -40,6 +40,7 @@ from typing import cast
 from typing import Dict
 from typing import Generic
 from typing import Optional
+from typing import overload
 from typing import Set
 from typing import Tuple
 from typing import Type
@@ -53,7 +54,9 @@ from ..util.typing import Literal
 from ..util.typing import Protocol
 
 if typing.TYPE_CHECKING:
+    from ._typing import ColumnExpressionArgument
     from .cache_key import CacheConst
+    from .elements import ColumnElement
     from .type_api import TypeEngine
 
 _T = TypeVar("_T", bound=Any)
@@ -67,9 +70,29 @@ class OperatorType(Protocol):
 
     __name__: str
 
+    @overload
+    def __call__(
+        self,
+        left: ColumnExpressionArgument[Any],
+        right: Optional[Any] = None,
+        *other: Any,
+        **kwargs: Any,
+    ) -> ColumnElement[Any]:
+        ...
+
+    @overload
     def __call__(
         self,
         left: Operators,
+        right: Optional[Any] = None,
+        *other: Any,
+        **kwargs: Any,
+    ) -> Operators:
+        ...
+
+    def __call__(
+        self,
+        left: Any,
         right: Optional[Any] = None,
         *other: Any,
         **kwargs: Any,
@@ -284,7 +307,7 @@ class Operators:
         )
 
         def against(other: Any) -> Operators:
-            return operator(self, other)  # type: ignore
+            return operator(self, other)
 
         return against
 
@@ -436,6 +459,17 @@ class custom_op(OperatorType, Generic[_T]):
             self.return_type._static_cache_key if self.return_type else None,
         )
 
+    @overload
+    def __call__(
+        self,
+        left: ColumnExpressionArgument[Any],
+        right: Optional[Any] = None,
+        *other: Any,
+        **kwargs: Any,
+    ) -> ColumnElement[Any]:
+        ...
+
+    @overload
     def __call__(
         self,
         left: Operators,
@@ -443,8 +477,17 @@ class custom_op(OperatorType, Generic[_T]):
         *other: Any,
         **kwargs: Any,
     ) -> Operators:
+        ...
+
+    def __call__(
+        self,
+        left: Any,
+        right: Optional[Any] = None,
+        *other: Any,
+        **kwargs: Any,
+    ) -> Operators:
         if hasattr(left, "__sa_operate__"):
-            return left.operate(self, right, *other, **kwargs)
+            return left.operate(self, right, *other, **kwargs)  # type: ignore
         elif self.python_impl:
             return self.python_impl(left, right, *other, **kwargs)  # type: ignore  # noqa: E501
         else:
@@ -526,8 +569,16 @@ class ColumnOperators(Operators):
         """
         return self.operate(le, other)
 
-    # TODO: not sure why we have this
-    __hash__ = Operators.__hash__  # type: ignore
+    # ColumnOperators defines an __eq__ so it must explicitly declare also
+    # an hash or it's set to None by python:
+    # https://docs.python.org/3/reference/datamodel.html#object.__hash__
+    if TYPE_CHECKING:
+
+        def __hash__(self) -> int:
+            ...
+
+    else:
+        __hash__ = Operators.__hash__
 
     def __eq__(self, other: Any) -> ColumnOperators:  # type: ignore[override]
         """Implement the ``==`` operator.
@@ -553,8 +604,6 @@ class ColumnOperators(Operators):
         Renders "a IS DISTINCT FROM b" on most platforms;
         on some such as SQLite may render "a IS NOT b".
 
-        .. versionadded:: 1.1
-
         """
         return self.operate(is_distinct_from, other)
 
@@ -567,8 +616,6 @@ class ColumnOperators(Operators):
         .. versionchanged:: 1.4 The ``is_not_distinct_from()`` operator is
            renamed from ``isnot_distinct_from()`` in previous releases.
            The previous name remains available for backwards compatibility.
-
-        .. versionadded:: 1.1
 
         """
         return self.operate(is_not_distinct_from, other)
@@ -1577,14 +1624,22 @@ class ColumnOperators(Operators):
 
         :param pattern: The regular expression pattern string or column
           clause.
-        :param flags: Any regular expression string flags to apply. Flags
-          tend to be backend specific. It can be a string or a column clause.
+        :param flags: Any regular expression string flags to apply, passed as
+          plain Python string only.  These flags are backend specific.
           Some backends, like PostgreSQL and MariaDB, may alternatively
           specify the flags as part of the pattern.
           When using the ignore case flag 'i' in PostgreSQL, the ignore case
           regexp match operator ``~*`` or ``!~*`` will be used.
 
         .. versionadded:: 1.4
+
+        .. versionchanged:: 1.4.48, 2.0.18  Note that due to an implementation
+           error, the "flags" parameter previously accepted SQL expression
+           objects such as column expressions in addition to plain Python
+           strings.   This implementation did not work correctly with caching
+           and was removed; strings only should be passed for the "flags"
+           parameter, as these flags are rendered as literal inline values
+           within SQL expressions.
 
         .. seealso::
 
@@ -1622,12 +1677,21 @@ class ColumnOperators(Operators):
         :param pattern: The regular expression pattern string or column
           clause.
         :param pattern: The replacement string or column clause.
-        :param flags: Any regular expression string flags to apply. Flags
-          tend to be backend specific. It can be a string or a column clause.
+        :param flags: Any regular expression string flags to apply, passed as
+          plain Python string only.  These flags are backend specific.
           Some backends, like PostgreSQL and MariaDB, may alternatively
           specify the flags as part of the pattern.
 
         .. versionadded:: 1.4
+
+        .. versionchanged:: 1.4.48, 2.0.18  Note that due to an implementation
+           error, the "flags" parameter previously accepted SQL expression
+           objects such as column expressions in addition to plain Python
+           strings.   This implementation did not work correctly with caching
+           and was removed; strings only should be passed for the "flags"
+           parameter, as these flags are rendered as literal inline values
+           within SQL expressions.
+
 
         .. seealso::
 
@@ -1755,12 +1819,10 @@ class ColumnOperators(Operators):
         See the documentation for :func:`_sql.any_` for examples.
 
         .. note:: be sure to not confuse the newer
-            :meth:`_sql.ColumnOperators.any_` method with its older
-            :class:`_types.ARRAY`-specific counterpart, the
-            :meth:`_types.ARRAY.Comparator.any` method, which a different
-            calling syntax and usage pattern.
-
-        .. versionadded:: 1.1
+            :meth:`_sql.ColumnOperators.any_` method with the **legacy**
+            version of this method, the :meth:`_types.ARRAY.Comparator.any`
+            method that's specific to :class:`_types.ARRAY`, which uses a
+            different calling style.
 
         """
         return self.operate(any_op)
@@ -1772,13 +1834,10 @@ class ColumnOperators(Operators):
         See the documentation for :func:`_sql.all_` for examples.
 
         .. note:: be sure to not confuse the newer
-            :meth:`_sql.ColumnOperators.all_` method with its older
-            :class:`_types.ARRAY`-specific counterpart, the
-            :meth:`_types.ARRAY.Comparator.all` method, which a different
-            calling syntax and usage pattern.
-
-
-        .. versionadded:: 1.1
+            :meth:`_sql.ColumnOperators.all_` method with the **legacy**
+            version of this method, the :meth:`_types.ARRAY.Comparator.all`
+            method that's specific to :class:`_types.ARRAY`, which uses a
+            different calling style.
 
         """
         return self.operate(all_op)
@@ -2482,8 +2541,8 @@ _PRECEDENCE: Dict[OperatorType, int] = {
     bitwise_and_op: 7,
     bitwise_lshift_op: 7,
     bitwise_rshift_op: 7,
-    concat_op: 6,
     filter_op: 6,
+    concat_op: 5,
     match_op: 5,
     not_match_op: 5,
     regexp_match_op: 5,
@@ -2523,9 +2582,13 @@ _PRECEDENCE: Dict[OperatorType, int] = {
 }
 
 
-def is_precedent(operator: OperatorType, against: OperatorType) -> bool:
+def is_precedent(
+    operator: OperatorType, against: Optional[OperatorType]
+) -> bool:
     if operator is against and is_natural_self_precedent(operator):
         return False
+    elif against is None:
+        return True
     else:
         return bool(
             _PRECEDENCE.get(

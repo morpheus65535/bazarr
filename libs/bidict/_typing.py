@@ -7,14 +7,23 @@
 
 """Provide typing-related objects."""
 
-import typing as t
+from __future__ import annotations
 from enum import Enum
+import typing as t
+
+if t.TYPE_CHECKING:
+    from typing_extensions import TypeAlias as TypeAlias
+else:
+    TypeAlias = 'TypeAlias'
 
 
 KT = t.TypeVar('KT')
 VT = t.TypeVar('VT')
-IterItems = t.Iterable[t.Tuple[KT, VT]]
-MapOrIterItems = t.Union[t.Mapping[KT, VT], IterItems[KT, VT]]
+
+
+Items: TypeAlias = 't.Iterable[tuple[KT, VT]]'
+MapOrItems: TypeAlias = 't.Mapping[KT, VT] | Items[KT, VT]'
+ItemsIter: TypeAlias = 't.Iterator[tuple[KT, VT]]'
 
 
 class MissingT(Enum):
@@ -26,9 +35,9 @@ class MissingT(Enum):
         return '<MISSING>'
 
 
-MISSING = MissingT.MISSING
-OKT = t.Union[KT, MissingT]  #: optional key type
-OVT = t.Union[VT, MissingT]  #: optional value type
+MISSING: t.Final[MissingT] = MissingT.MISSING
+OKT: TypeAlias = 'KT | MissingT'  #: optional key type
+OVT: TypeAlias = 'VT | MissingT'  #: optional value type
 
-DT = t.TypeVar('DT')  #: for default arguments
-ODT = t.Union[DT, MissingT]
+DT = t.TypeVar('DT')              #: for default arguments
+ODT: TypeAlias = 'DT | MissingT'  #: optional default arg type

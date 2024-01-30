@@ -1,5 +1,5 @@
-# postgresql/array.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# dialects/postgresql/array.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -14,6 +14,9 @@ from typing import Any
 from typing import Optional
 from typing import TypeVar
 
+from .operators import CONTAINED_BY
+from .operators import CONTAINS
+from .operators import OVERLAP
 from ... import types as sqltypes
 from ... import util
 from ...sql import expression
@@ -99,7 +102,6 @@ class array(expression.ExpressionClauseList[_T]):
     inherit_cache = True
 
     def __init__(self, clauses, **kw):
-
         type_arg = kw.pop("type_", None)
         super().__init__(operators.comma_op, *clauses, **kw)
 
@@ -155,19 +157,8 @@ class array(expression.ExpressionClauseList[_T]):
             return self
 
 
-CONTAINS = operators.custom_op("@>", precedence=5, is_comparison=True)
-
-CONTAINED_BY = operators.custom_op("<@", precedence=5, is_comparison=True)
-
-OVERLAP = operators.custom_op("&&", precedence=5, is_comparison=True)
-
-
 class ARRAY(sqltypes.ARRAY):
-
     """PostgreSQL ARRAY type.
-
-    .. versionchanged:: 1.1 The :class:`_postgresql.ARRAY` type is now
-       a subclass of the core :class:`_types.ARRAY` type.
 
     The :class:`_postgresql.ARRAY` type is constructed in the same way
     as the core :class:`_types.ARRAY` type; a member type is required, and a
@@ -308,9 +299,6 @@ class ARRAY(sqltypes.ARRAY):
          a value of one will be added to all index values before passing
          to the database.
 
-         .. versionadded:: 0.9.5
-
-
         """
         if isinstance(item_type, ARRAY):
             raise ValueError(
@@ -415,7 +403,6 @@ class ARRAY(sqltypes.ARRAY):
 
 
 def _split_enum_values(array_string):
-
     if '"' not in array_string:
         # no escape char is present so it can just split on the comma
         return array_string.split(",") if array_string else []

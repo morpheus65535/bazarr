@@ -26,7 +26,7 @@ def parse_args():
             return timedelta_to_milliseconds(delta)
 
     examples = {
-        "Stretch out a subtitle so that second 1 is 2, 2 is 4, etc": "srt linear-timeshift --f1 00:00:01,000 --t1 00:00:01,000 --f2 00:00:02,000 --t2 00:00:03,000"
+        "Stretch out a subtitle so that second 1 is 1, 2 is 3, 3 is 5, etc": "srt linear-timeshift --f1 00:00:01,000 --t1 00:00:01,000 --f2 00:00:02,000 --t2 00:00:03,000"
     }
 
     parser = srt_tools.utils.basic_parser(description=__doc__, examples=examples)

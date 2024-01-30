@@ -1,74 +1,18 @@
-# coding: utf-8
-
 from __future__ import absolute_import
-
-
-from .reader import Reader
-from .scanner import Scanner, RoundTripScanner
-from .parser import Parser, RoundTripParser
-from .composer import Composer
-from .constructor import (
-    BaseConstructor,
-    SafeConstructor,
-    Constructor,
-    RoundTripConstructor,
-)
-from .resolver import VersionedResolver
-
-if False:  # MYPY
-    from typing import Any, Dict, List, Union, Optional  # NOQA
-    from .compat import StreamTextType, VersionType  # NOQA
-
-__all__ = ['BaseLoader', 'SafeLoader', 'Loader', 'RoundTripLoader']
-
-
-class BaseLoader(Reader, Scanner, Parser, Composer, BaseConstructor, VersionedResolver):
-    def __init__(self, stream, version=None, preserve_quotes=None):
-        # type: (StreamTextType, Optional[VersionType], Optional[bool]) -> None
-        Reader.__init__(self, stream, loader=self)
-        Scanner.__init__(self, loader=self)
-        Parser.__init__(self, loader=self)
-        Composer.__init__(self, loader=self)
-        BaseConstructor.__init__(self, loader=self)
-        VersionedResolver.__init__(self, version, loader=self)
-
-
-class SafeLoader(Reader, Scanner, Parser, Composer, SafeConstructor, VersionedResolver):
-    def __init__(self, stream, version=None, preserve_quotes=None):
-        # type: (StreamTextType, Optional[VersionType], Optional[bool]) -> None
-        Reader.__init__(self, stream, loader=self)
-        Scanner.__init__(self, loader=self)
-        Parser.__init__(self, loader=self)
-        Composer.__init__(self, loader=self)
-        SafeConstructor.__init__(self, loader=self)
-        VersionedResolver.__init__(self, version, loader=self)
-
-
-class Loader(Reader, Scanner, Parser, Composer, Constructor, VersionedResolver):
-    def __init__(self, stream, version=None, preserve_quotes=None):
-        # type: (StreamTextType, Optional[VersionType], Optional[bool]) -> None
-        Reader.__init__(self, stream, loader=self)
-        Scanner.__init__(self, loader=self)
-        Parser.__init__(self, loader=self)
-        Composer.__init__(self, loader=self)
-        Constructor.__init__(self, loader=self)
-        VersionedResolver.__init__(self, version, loader=self)
-
-
-class RoundTripLoader(
-    Reader,
-    RoundTripScanner,
-    RoundTripParser,
-    Composer,
-    RoundTripConstructor,
-    VersionedResolver,
-):
-    def __init__(self, stream, version=None, preserve_quotes=None):
-        # type: (StreamTextType, Optional[VersionType], Optional[bool]) -> None
-        # self.reader = Reader.__init__(self, stream)
-        Reader.__init__(self, stream, loader=self)
-        RoundTripScanner.__init__(self, loader=self)
-        RoundTripParser.__init__(self, loader=self)
-        Composer.__init__(self, loader=self)
-        RoundTripConstructor.__init__(self, preserve_quotes=preserve_quotes, loader=self)
-        VersionedResolver.__init__(self, version, loader=self)
+_A=None
+from.reader import Reader
+from.scanner import Scanner,RoundTripScanner
+from.parser import Parser,RoundTripParser
+from.composer import Composer
+from.constructor import BaseConstructor,SafeConstructor,Constructor,RoundTripConstructor
+from.resolver import VersionedResolver
+if False:from typing import Any,Dict,List,Union,Optional;from.compat import StreamTextType,VersionType
+__all__=['BaseLoader','SafeLoader','Loader','RoundTripLoader']
+class BaseLoader(Reader,Scanner,Parser,Composer,BaseConstructor,VersionedResolver):
+	def __init__(A,stream,version=_A,preserve_quotes=_A):Reader.__init__(A,stream,loader=A);Scanner.__init__(A,loader=A);Parser.__init__(A,loader=A);Composer.__init__(A,loader=A);BaseConstructor.__init__(A,loader=A);VersionedResolver.__init__(A,version,loader=A)
+class SafeLoader(Reader,Scanner,Parser,Composer,SafeConstructor,VersionedResolver):
+	def __init__(A,stream,version=_A,preserve_quotes=_A):Reader.__init__(A,stream,loader=A);Scanner.__init__(A,loader=A);Parser.__init__(A,loader=A);Composer.__init__(A,loader=A);SafeConstructor.__init__(A,loader=A);VersionedResolver.__init__(A,version,loader=A)
+class Loader(Reader,Scanner,Parser,Composer,Constructor,VersionedResolver):
+	def __init__(A,stream,version=_A,preserve_quotes=_A):Reader.__init__(A,stream,loader=A);Scanner.__init__(A,loader=A);Parser.__init__(A,loader=A);Composer.__init__(A,loader=A);Constructor.__init__(A,loader=A);VersionedResolver.__init__(A,version,loader=A)
+class RoundTripLoader(Reader,RoundTripScanner,RoundTripParser,Composer,RoundTripConstructor,VersionedResolver):
+	def __init__(A,stream,version=_A,preserve_quotes=_A):Reader.__init__(A,stream,loader=A);RoundTripScanner.__init__(A,loader=A);RoundTripParser.__init__(A,loader=A);Composer.__init__(A,loader=A);RoundTripConstructor.__init__(A,preserve_quotes=preserve_quotes,loader=A);VersionedResolver.__init__(A,version,loader=A)

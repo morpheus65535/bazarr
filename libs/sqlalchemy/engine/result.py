@@ -1,5 +1,5 @@
 # engine/result.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -22,6 +22,7 @@ from typing import Generic
 from typing import Iterable
 from typing import Iterator
 from typing import List
+from typing import Mapping
 from typing import NoReturn
 from typing import Optional
 from typing import overload
@@ -40,6 +41,7 @@ from ..sql.base import _generative
 from ..sql.base import HasMemoized
 from ..sql.base import InPlaceGenerative
 from ..util import HasMemoized_ro_memoized_attribute
+from ..util import NONE_SET
 from ..util._has_cy import HAS_CYEXTENSION
 from ..util.typing import Literal
 from ..util.typing import Self
@@ -59,10 +61,10 @@ _KeyIndexType = Union[str, "Column[Any]", int]
 # is overridden in cursor using _CursorKeyMapRecType
 _KeyMapRecType = Any
 
-_KeyMapType = Dict[_KeyType, _KeyMapRecType]
+_KeyMapType = Mapping[_KeyType, _KeyMapRecType]
 
 
-_RowData = Union[Row, RowMapping, Any]
+_RowData = Union[Row[Any], RowMapping, Any]
 """A generic form of "row" that accommodates for the different kinds of
 "rows" that different result objects return, including row, row mapping, and
 scalar values"""
@@ -80,10 +82,10 @@ across all the result types
 
 """
 
-_InterimSupportsScalarsRowType = Union[Row, Any]
+_InterimSupportsScalarsRowType = Union[Row[Any], Any]
 
 _ProcessorsType = Sequence[Optional["_ResultProcessorType[Any]"]]
-_TupleGetterType = Callable[[Sequence[Any]], Tuple[Any, ...]]
+_TupleGetterType = Callable[[Sequence[Any]], Sequence[Any]]
 _UniqueFilterType = Callable[[Any], Any]
 _UniqueFilterStateType = Tuple[Set[Any], Optional[_UniqueFilterType]]
 
@@ -99,6 +101,7 @@ class ResultMetaData:
     _keymap: _KeyMapType
     _keys: Sequence[str]
     _processors: Optional[_ProcessorsType]
+    _key_to_index: Mapping[_KeyType, int]
 
     @property
     def keys(self) -> RMKeyView:
@@ -112,24 +115,27 @@ class ResultMetaData:
 
     @overload
     def _key_fallback(
-        self, key: Any, err: Exception, raiseerr: Literal[True] = ...
+        self, key: Any, err: Optional[Exception], raiseerr: Literal[True] = ...
     ) -> NoReturn:
         ...
 
     @overload
     def _key_fallback(
-        self, key: Any, err: Exception, raiseerr: Literal[False] = ...
+        self,
+        key: Any,
+        err: Optional[Exception],
+        raiseerr: Literal[False] = ...,
     ) -> None:
         ...
 
     @overload
     def _key_fallback(
-        self, key: Any, err: Exception, raiseerr: bool = ...
+        self, key: Any, err: Optional[Exception], raiseerr: bool = ...
     ) -> Optional[NoReturn]:
         ...
 
     def _key_fallback(
-        self, key: Any, err: Exception, raiseerr: bool = True
+        self, key: Any, err: Optional[Exception], raiseerr: bool = True
     ) -> Optional[NoReturn]:
         assert raiseerr
         raise KeyError(key) from err
@@ -163,7 +169,6 @@ class ResultMetaData:
     def _getter(
         self, key: Any, raiseerr: bool = True
     ) -> Optional[Callable[[Row[Any]], Any]]:
-
         index = self._index_for_key(key, raiseerr)
 
         if index is not None:
@@ -176,6 +181,36 @@ class ResultMetaData:
     ) -> _TupleGetterType:
         indexes = self._indexes_for_keys(keys)
         return tuplegetter(*indexes)
+
+    def _make_key_to_index(
+        self, keymap: Mapping[_KeyType, Sequence[Any]], index: int
+    ) -> Mapping[_KeyType, int]:
+        return {
+            key: rec[index]
+            for key, rec in keymap.items()
+            if rec[index] is not None
+        }
+
+    def _key_not_found(self, key: Any, attr_error: bool) -> NoReturn:
+        if key in self._keymap:
+            # the index must be none in this case
+            self._raise_for_ambiguous_column_name(self._keymap[key])
+        else:
+            # unknown key
+            if attr_error:
+                try:
+                    self._key_fallback(key, None)
+                except KeyError as ke:
+                    raise AttributeError(ke.args[0]) from ke
+            else:
+                self._key_fallback(key, None)
+
+    @property
+    def _effective_processors(self) -> Optional[_ProcessorsType]:
+        if not self._processors or NONE_SET.issuperset(self._processors):
+            return None
+        else:
+            return self._processors
 
 
 class RMKeyView(typing.KeysView[Any]):
@@ -222,6 +257,7 @@ class SimpleResultMetaData(ResultMetaData):
         "_tuplefilter",
         "_translated_indexes",
         "_unique_filters",
+        "_key_to_index",
     )
 
     _keys: Sequence[str]
@@ -257,6 +293,8 @@ class SimpleResultMetaData(ResultMetaData):
 
         self._processors = _processors
 
+        self._key_to_index = self._make_key_to_index(self._keymap, 0)
+
     def _has_key(self, key: object) -> bool:
         return key in self._keymap
 
@@ -290,9 +328,6 @@ class SimpleResultMetaData(ResultMetaData):
             _translated_indexes=_translated_indexes,
             _tuplefilter=_tuplefilter,
         )
-
-    def _contains(self, value: Any, row: Row[Any]) -> bool:
-        return value in row._data
 
     def _index_for_key(self, key: Any, raiseerr: bool = True) -> int:
         if int in key.__class__.__mro__:
@@ -335,7 +370,7 @@ class SimpleResultMetaData(ResultMetaData):
         indexes: Sequence[int]
         new_keys: Sequence[str]
         extra: Sequence[Any]
-        indexes, new_keys, extra = zip(*metadata_for_keys)  # type: ignore
+        indexes, new_keys, extra = zip(*metadata_for_keys)
 
         if self._translated_indexes:
             indexes = [self._translated_indexes[idx] for idx in indexes]
@@ -359,7 +394,7 @@ def result_tuple(
 ) -> Callable[[Iterable[Any]], Row[Any]]:
     parent = SimpleResultMetaData(fields, extra)
     return functools.partial(
-        Row, parent, parent._processors, parent._keymap, Row._default_key_style
+        Row, parent, parent._effective_processors, parent._key_to_index
     )
 
 
@@ -421,25 +456,23 @@ class ResultInternal(InPlaceGenerative, Generic[_R]):
             else:
                 _proc = Row
 
-                def process_row(  # type: ignore
+                def process_row(
                     metadata: ResultMetaData,
-                    processors: _ProcessorsType,
-                    keymap: _KeyMapType,
-                    key_style: Any,
+                    processors: Optional[_ProcessorsType],
+                    key_to_index: Mapping[_KeyType, int],
                     scalar_obj: Any,
                 ) -> Row[Any]:
                     return _proc(
-                        metadata, processors, keymap, key_style, (scalar_obj,)
+                        metadata, processors, key_to_index, (scalar_obj,)
                     )
 
         else:
             process_row = Row  # type: ignore
 
-        key_style = Row._default_key_style
         metadata = self._metadata
 
-        keymap = metadata._keymap
-        processors = metadata._processors
+        key_to_index = metadata._key_to_index
+        processors = metadata._effective_processors
         tf = metadata._tuplefilter
 
         if tf and not real_result._source_supports_scalars:
@@ -447,7 +480,7 @@ class ResultInternal(InPlaceGenerative, Generic[_R]):
                 processors = tf(processors)
 
             _make_row_orig: Callable[..., _R] = functools.partial(  # type: ignore  # noqa E501
-                process_row, metadata, processors, keymap, key_style
+                process_row, metadata, processors, key_to_index
             )
 
             fixed_tf = tf
@@ -457,30 +490,20 @@ class ResultInternal(InPlaceGenerative, Generic[_R]):
 
         else:
             make_row = functools.partial(  # type: ignore
-                process_row, metadata, processors, keymap, key_style
+                process_row, metadata, processors, key_to_index
             )
 
-        fns: Tuple[Any, ...] = ()
-
         if real_result._row_logging_fn:
-            fns = (real_result._row_logging_fn,)
-        else:
-            fns = ()
-
-        if fns:
+            _log_row = real_result._row_logging_fn
             _make_row = make_row
 
             def make_row(row: _InterimRowType[Row[Any]]) -> _R:
-                interim_row = _make_row(row)
-                for fn in fns:
-                    interim_row = fn(interim_row)
-                return interim_row  # type: ignore
+                return _log_row(_make_row(row))  # type: ignore
 
         return make_row
 
     @HasMemoized_ro_memoized_attribute
     def _iterator_getter(self) -> Callable[..., Iterator[_R]]:
-
         make_row = self._row_getter
 
         post_creational_filter = self._post_creational_filter
@@ -521,7 +544,6 @@ class ResultInternal(InPlaceGenerative, Generic[_R]):
         return [make_row(row) for row in rows]
 
     def _allrows(self) -> List[_R]:
-
         post_creational_filter = self._post_creational_filter
 
         make_row = self._row_getter
@@ -1218,7 +1240,7 @@ class Result(_WithKeys, ResultInternal[Row[_TP]]):
 
             :attr:`_engine.Result.t` - shorter synonym
 
-            :attr:`_engine.Row.t` - :class:`_engine.Row` version
+            :attr:`_engine.Row._t` - :class:`_engine.Row` version
 
         """
 
@@ -1354,6 +1376,11 @@ class Result(_WithKeys, ResultInternal[Row[_TP]]):
         .. versionadded:: 1.4
 
         :return: a list of :class:`_engine.Row` objects.
+
+        .. seealso::
+
+            :ref:`engine_stream_results` - How to stream a large result set
+            without loading it completely in python.
 
         """
 

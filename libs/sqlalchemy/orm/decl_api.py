@@ -1,5 +1,5 @@
-# orm/declarative/api.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# orm/decl_api.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -37,17 +37,16 @@ from . import clsregistry
 from . import instrumentation
 from . import interfaces
 from . import mapperlib
-from ._orm_constructors import column_property
 from ._orm_constructors import composite
 from ._orm_constructors import deferred
 from ._orm_constructors import mapped_column
-from ._orm_constructors import query_expression
 from ._orm_constructors import relationship
 from ._orm_constructors import synonym
 from .attributes import InstrumentedAttribute
 from .base import _inspect_mapped_class
 from .base import _is_mapped_class
 from .base import Mapped
+from .base import ORMDescriptor
 from .decl_base import _add_attribute
 from .decl_base import _as_declarative
 from .decl_base import _ClassScanMapperConfig
@@ -59,7 +58,6 @@ from .descriptor_props import Composite
 from .descriptor_props import Synonym
 from .descriptor_props import Synonym as _orm_synonym
 from .mapper import Mapper
-from .properties import ColumnProperty
 from .properties import MappedColumn
 from .relationships import RelationshipProperty
 from .state import InstanceState
@@ -79,7 +77,9 @@ from ..util.typing import flatten_newtype
 from ..util.typing import is_generic
 from ..util.typing import is_literal
 from ..util.typing import is_newtype
+from ..util.typing import is_pep695
 from ..util.typing import Literal
+from ..util.typing import Self
 
 if TYPE_CHECKING:
     from ._typing import _O
@@ -101,7 +101,7 @@ _TypeAnnotationMapType = Mapping[Any, "_TypeEngineArgument[Any]"]
 _MutableTypeAnnotationMapType = Dict[Any, "_TypeEngineArgument[Any]"]
 
 _DeclaredAttrDecorated = Callable[
-    ..., Union[Mapped[_T], SQLCoreOperations[_T]]
+    ..., Union[Mapped[_T], ORMDescriptor[_T], SQLCoreOperations[_T]]
 ]
 
 
@@ -139,7 +139,9 @@ class _DynamicAttributesType(type):
 
 
 class DeclarativeAttributeIntercept(
-    _DynamicAttributesType, inspection.Inspectable[Mapper[Any]]
+    _DynamicAttributesType,
+    # Inspectable is used only by the mypy plugin
+    inspection.Inspectable[Mapper[Any]],
 ):
     """Metaclass that may be used in conjunction with the
     :class:`_orm.DeclarativeBase` class to support addition of class
@@ -153,24 +155,19 @@ class DeclarativeAttributeIntercept(
         MappedColumn,
         RelationshipProperty,
         Composite,
-        ColumnProperty,
         Synonym,
         mapped_column,
         relationship,
         composite,
-        column_property,
         synonym,
         deferred,
-        query_expression,
     ),
 )
 class DCTransformDeclarative(DeclarativeAttributeIntercept):
     """metaclass that includes @dataclass_transforms"""
 
 
-class DeclarativeMeta(
-    _DynamicAttributesType, inspection.Inspectable[Mapper[Any]]
-):
+class DeclarativeMeta(DeclarativeAttributeIntercept):
     metadata: MetaData
     registry: RegistryType
 
@@ -247,6 +244,7 @@ class _declared_attr_common:
         self,
         fn: Callable[..., Any],
         cascading: bool = False,
+        quiet: bool = False,
     ):
         # suppport
         # @declared_attr
@@ -256,10 +254,11 @@ class _declared_attr_common:
         # which seems to help typing tools interpret the fn as a classmethod
         # for situations where needed
         if isinstance(fn, classmethod):
-            fn = fn.__func__  # type: ignore
+            fn = fn.__func__
 
         self.fget = fn
         self._cascading = cascading
+        self._quiet = quiet
         self.__doc__ = fn.__doc__
 
     def _collect_return_annotation(self) -> Optional[Type[Any]]:
@@ -283,11 +282,11 @@ class _declared_attr_common:
                     "Unmanaged access of declarative attribute %s from "
                     "non-mapped class %s" % (self.fget.__name__, cls.__name__)
                 )
-            return self.fget(cls)  # type: ignore
+            return self.fget(cls)
         elif manager.is_mapped:
             # the class is mapped, which means we're outside of the declarative
             # scan setup, just run the function.
-            return self.fget(cls)  # type: ignore
+            return self.fget(cls)
 
         # here, we are inside of the declarative scan.  use the registry
         # that is tracking the values of these attributes.
@@ -299,10 +298,10 @@ class _declared_attr_common:
         reg = declarative_scan.declared_attr_reg
 
         if self in reg:
-            return reg[self]  # type: ignore
+            return reg[self]
         else:
             reg[self] = obj = self.fget(cls)
-            return obj  # type: ignore
+            return obj
 
 
 class _declared_directive(_declared_attr_common, Generic[_T]):
@@ -560,12 +559,12 @@ def _setup_declarative_base(cls: Type[Any]) -> None:
         reg = registry(
             metadata=metadata, type_annotation_map=type_annotation_map
         )
-        cls.registry = reg  # type: ignore
+        cls.registry = reg
 
-    cls._sa_registry = reg  # type: ignore
+    cls._sa_registry = reg
 
     if "metadata" not in cls.__dict__:
-        cls.metadata = cls.registry.metadata  # type: ignore
+        cls.metadata = cls.registry.metadata
 
     if getattr(cls, "__init__", object.__init__) is object.__init__:
         cls.__init__ = cls.registry.constructor
@@ -596,6 +595,7 @@ class MappedAsDataclass(metaclass=DCTransformDeclarative):
         dataclass_callable: Union[
             _NoArg, Callable[..., Type[Any]]
         ] = _NoArg.NO_ARG,
+        **kw: Any,
     ) -> None:
         apply_dc_transforms: _DataclassArguments = {
             "init": init,
@@ -611,7 +611,7 @@ class MappedAsDataclass(metaclass=DCTransformDeclarative):
         current_transforms: _DataclassArguments
 
         if hasattr(cls, "_sa_apply_dc_transforms"):
-            current = cls._sa_apply_dc_transforms  # type: ignore[attr-defined]
+            current = cls._sa_apply_dc_transforms
 
             _ClassScanMapperConfig._assert_dc_arguments(current)
 
@@ -624,7 +624,7 @@ class MappedAsDataclass(metaclass=DCTransformDeclarative):
                 current_transforms
             ) = apply_dc_transforms
 
-        super().__init_subclass__()
+        super().__init_subclass__(**kw)
 
         if not _is_mapped_class(cls):
             new_anno = (
@@ -636,6 +636,7 @@ class MappedAsDataclass(metaclass=DCTransformDeclarative):
 
 
 class DeclarativeBase(
+    # Inspectable is used only by the mypy plugin
     inspection.Inspectable[InstanceState[Any]],
     metaclass=DeclarativeAttributeIntercept,
 ):
@@ -670,7 +671,7 @@ class DeclarativeBase(
         from sqlalchemy import String
         from sqlalchemy.orm import DeclarativeBase
 
-        bigint = Annotated(int, "bigint")
+        bigint = Annotated[int, "bigint"]
         my_metadata = MetaData()
 
         class Base(DeclarativeBase):
@@ -751,6 +752,13 @@ class DeclarativeBase(
     """
 
     if typing.TYPE_CHECKING:
+
+        def _sa_inspect_type(self) -> Mapper[Self]:
+            ...
+
+        def _sa_inspect_instance(self) -> InstanceState[Self]:
+            ...
+
         _sa_registry: ClassVar[_RegistryType]
 
         registry: ClassVar[_RegistryType]
@@ -769,6 +777,9 @@ class DeclarativeBase(
 
         __name__: ClassVar[str]
 
+        # this ideally should be Mapper[Self], but mypy as of 1.4.1 does not
+        # like it, and breaks the declared_attr_one test. Pyright/pylance is
+        # ok with it.
         __mapper__: ClassVar[Mapper[Any]]
         """The :class:`_orm.Mapper` object to which a particular class is
         mapped.
@@ -830,13 +841,13 @@ class DeclarativeBase(
         def __init__(self, **kw: Any):
             ...
 
-    def __init_subclass__(cls) -> None:
+    def __init_subclass__(cls, **kw: Any) -> None:
         if DeclarativeBase in cls.__bases__:
             _check_not_declarative(cls, DeclarativeBase)
             _setup_declarative_base(cls)
         else:
             _as_declarative(cls._sa_registry, cls, cls.__dict__)
-        super().__init_subclass__()
+        super().__init_subclass__(**kw)
 
 
 def _check_not_declarative(cls: Type[Any], base: Type[Any]) -> None:
@@ -854,7 +865,10 @@ def _check_not_declarative(cls: Type[Any], base: Type[Any]) -> None:
         )
 
 
-class DeclarativeBaseNoMeta(inspection.Inspectable[InstanceState[Any]]):
+class DeclarativeBaseNoMeta(
+    # Inspectable is used only by the mypy plugin
+    inspection.Inspectable[InstanceState[Any]]
+):
     """Same as :class:`_orm.DeclarativeBase`, but does not use a metaclass
     to intercept new attributes.
 
@@ -882,6 +896,9 @@ class DeclarativeBaseNoMeta(inspection.Inspectable[InstanceState[Any]]):
 
     """
 
+    # this ideally should be Mapper[Self], but mypy as of 1.4.1 does not
+    # like it, and breaks the declared_attr_one test. Pyright/pylance is
+    # ok with it.
     __mapper__: ClassVar[Mapper[Any]]
     """The :class:`_orm.Mapper` object to which a particular class is
     mapped.
@@ -906,6 +923,12 @@ class DeclarativeBaseNoMeta(inspection.Inspectable[InstanceState[Any]]):
     """
 
     if typing.TYPE_CHECKING:
+
+        def _sa_inspect_type(self) -> Mapper[Self]:
+            ...
+
+        def _sa_inspect_instance(self) -> InstanceState[Self]:
+            ...
 
         __tablename__: Any
         """String name to assign to the generated
@@ -943,12 +966,13 @@ class DeclarativeBaseNoMeta(inspection.Inspectable[InstanceState[Any]]):
         def __init__(self, **kw: Any):
             ...
 
-    def __init_subclass__(cls) -> None:
+    def __init_subclass__(cls, **kw: Any) -> None:
         if DeclarativeBaseNoMeta in cls.__bases__:
             _check_not_declarative(cls, DeclarativeBaseNoMeta)
             _setup_declarative_base(cls)
         else:
-            cls._sa_registry.map_declaratively(cls)
+            _as_declarative(cls._sa_registry, cls, cls.__dict__)
+        super().__init_subclass__(**kw)
 
 
 def add_mapped_attribute(
@@ -1224,7 +1248,6 @@ class registry:
     def _resolve_type(
         self, python_type: _MatchedOnType
     ) -> Optional[sqltypes.TypeEngine[Any]]:
-
         search: Iterable[Tuple[_MatchedOnType, Type[Any]]]
         python_type_type: Type[Any]
 
@@ -1242,6 +1265,10 @@ class registry:
         elif is_newtype(python_type):
             python_type_type = flatten_newtype(python_type)
             search = ((python_type, python_type_type),)
+        elif is_pep695(python_type):
+            python_type_type = python_type.__value__
+            flattened = None
+            search = ((python_type, python_type_type),)
         else:
             python_type_type = cast("Type[Any]", python_type)
             flattened = None
@@ -1254,7 +1281,7 @@ class registry:
                 sql_type = sqltypes._type_map_get(pt)  # type: ignore  # noqa: E501
 
             if sql_type is not None:
-                sql_type_inst = sqltypes.to_instance(sql_type)  # type: ignore
+                sql_type_inst = sqltypes.to_instance(sql_type)
 
                 # ... this additional step will reject most
                 # type -> supertype matches, such as if we had
@@ -1536,7 +1563,7 @@ class registry:
 
         if hasattr(cls, "__class_getitem__"):
 
-            def __class_getitem__(cls: Type[_T], key: str) -> Type[_T]:
+            def __class_getitem__(cls: Type[_T], key: Any) -> Type[_T]:
                 # allow generic classes in py3.9+
                 return cls
 
@@ -1549,15 +1576,12 @@ class registry:
             MappedColumn,
             RelationshipProperty,
             Composite,
-            ColumnProperty,
             Synonym,
             mapped_column,
             relationship,
             composite,
-            column_property,
             synonym,
             deferred,
-            query_expression,
         ),
     )
     @overload
@@ -1611,16 +1635,20 @@ class registry:
         """
 
         def decorate(cls: Type[_O]) -> Type[_O]:
-            cls._sa_apply_dc_transforms = {
-                "init": init,
-                "repr": repr,
-                "eq": eq,
-                "order": order,
-                "unsafe_hash": unsafe_hash,
-                "match_args": match_args,
-                "kw_only": kw_only,
-                "dataclass_callable": dataclass_callable,
-            }
+            setattr(
+                cls,
+                "_sa_apply_dc_transforms",
+                {
+                    "init": init,
+                    "repr": repr,
+                    "eq": eq,
+                    "order": order,
+                    "unsafe_hash": unsafe_hash,
+                    "match_args": match_args,
+                    "kw_only": kw_only,
+                    "dataclass_callable": dataclass_callable,
+                },
+            )
             _as_declarative(self, cls, cls.__dict__)
             return cls
 

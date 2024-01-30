@@ -1,5 +1,5 @@
 # orm/query.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -136,6 +136,7 @@ if TYPE_CHECKING:
     from ..sql.base import ExecutableOption
     from ..sql.elements import ColumnElement
     from ..sql.elements import Label
+    from ..sql.selectable import _ForUpdateOfArgument
     from ..sql.selectable import _JoinTargetElement
     from ..sql.selectable import _SetupJoinsElement
     from ..sql.selectable import Alias
@@ -234,7 +235,9 @@ class Query(
 
     def __init__(
         self,
-        entities: Sequence[_ColumnsClauseArgument[Any]],
+        entities: Union[
+            _ColumnsClauseArgument[Any], Sequence[_ColumnsClauseArgument[Any]]
+        ],
         session: Optional[Session] = None,
     ):
         """Construct a :class:`_query.Query` directly.
@@ -273,11 +276,14 @@ class Query(
         self._set_entities(entities)
 
     def _set_propagate_attrs(self, values: Mapping[str, Any]) -> Self:
-        self._propagate_attrs = util.immutabledict(values)  # type: ignore
+        self._propagate_attrs = util.immutabledict(values)
         return self
 
     def _set_entities(
-        self, entities: Iterable[_ColumnsClauseArgument[Any]]
+        self,
+        entities: Union[
+            _ColumnsClauseArgument[Any], Iterable[_ColumnsClauseArgument[Any]]
+        ],
     ) -> None:
         self._raw_columns = [
             coercions.expect(
@@ -477,7 +483,7 @@ class Query(
         return self
 
     def _clone(self, **kw: Any) -> Self:
-        return self._generate()  # type: ignore
+        return self._generate()
 
     def _get_select_statement_only(self) -> Select[_T]:
         if self._statement is not None:
@@ -1436,16 +1442,20 @@ class Query(
         to the given list of columns
 
         """
+        return self._values_no_warn(*columns)
 
+    _values = values
+
+    def _values_no_warn(
+        self, *columns: _ColumnsClauseArgument[Any]
+    ) -> Iterable[Any]:
         if not columns:
             return iter(())
         q = self._clone().enable_eagerloads(False)
         q._set_entities(columns)
         if not q.load_options._yield_per:
             q.load_options += {"_yield_per": 10}
-        return iter(q)  # type: ignore
-
-    _values = values
+        return iter(q)
 
     @util.deprecated(
         "1.4",
@@ -1460,7 +1470,7 @@ class Query(
 
         """
         try:
-            return next(self.values(column))[0]  # type: ignore
+            return next(self._values_no_warn(column))[0]  # type: ignore
         except StopIteration:
             return None
 
@@ -1782,12 +1792,7 @@ class Query(
         *,
         nowait: bool = False,
         read: bool = False,
-        of: Optional[
-            Union[
-                _ColumnExpressionArgument[Any],
-                Sequence[_ColumnExpressionArgument[Any]],
-            ]
-        ] = None,
+        of: Optional[_ForUpdateOfArgument] = None,
         skip_locked: bool = False,
         key_share: bool = False,
     ) -> Self:
@@ -2432,8 +2437,6 @@ class Query(
 
         :param full=False: render FULL OUTER JOIN; implies ``isouter``.
 
-         .. versionadded:: 1.1
-
         """
 
         join_target = coercions.expect(
@@ -2530,13 +2533,6 @@ class Query(
          to the FROM clause.  Entities can be mapped classes,
          :class:`.AliasedClass` objects, :class:`.Mapper` objects
          as well as core :class:`.FromClause` elements like subqueries.
-
-        .. versionchanged:: 0.9
-            This method no longer applies the given FROM object
-            to be the selectable from which matching entities
-            select from; the :meth:`.select_entity_from` method
-            now accomplishes this.  See that method for a description
-            of this behavior.
 
         .. seealso::
 
@@ -2763,10 +2759,6 @@ class Query(
         Calling :meth:`_query.Query.one_or_none`
         results in an execution of the
         underlying query.
-
-        .. versionadded:: 1.0.9
-
-            Added :meth:`_query.Query.one_or_none`
 
         .. seealso::
 
@@ -3186,14 +3178,11 @@ class Query(
 
         delete_ = sql.delete(*self._raw_columns)  # type: ignore
         delete_._where_criteria = self._where_criteria
-        result: CursorResult[Any] = cast(
-            "CursorResult[Any]",
-            self.session.execute(
-                delete_,
-                self._params,
-                execution_options=self._execution_options.union(
-                    {"synchronize_session": synchronize_session}
-                ),
+        result: CursorResult[Any] = self.session.execute(
+            delete_,
+            self._params,
+            execution_options=self._execution_options.union(
+                {"synchronize_session": synchronize_session}
             ),
         )
         bulk_del.result = result  # type: ignore
@@ -3279,14 +3268,11 @@ class Query(
             upd = upd.with_dialect_options(**update_args)
 
         upd._where_criteria = self._where_criteria
-        result: CursorResult[Any] = cast(
-            "CursorResult[Any]",
-            self.session.execute(
-                upd,
-                self._params,
-                execution_options=self._execution_options.union(
-                    {"synchronize_session": synchronize_session}
-                ),
+        result: CursorResult[Any] = self.session.execute(
+            upd,
+            self._params,
+            execution_options=self._execution_options.union(
+                {"synchronize_session": synchronize_session}
             ),
         )
         bulk_ud.result = result  # type: ignore
@@ -3345,7 +3331,7 @@ class AliasOption(interfaces.LoaderOption):
 
     @util.deprecated(
         "1.4",
-        "The :class:`.AliasOption` is not necessary "
+        "The :class:`.AliasOption` object is not necessary "
         "for entities to be matched up to a query that is established "
         "via :meth:`.Query.from_statement` and now does nothing.",
     )

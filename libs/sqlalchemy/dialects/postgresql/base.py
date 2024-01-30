@@ -1,5 +1,5 @@
-# postgresql/base.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# dialects/postgresql/base.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -9,7 +9,7 @@
 r"""
 .. dialect:: postgresql
     :name: PostgreSQL
-    :full_support: 9.6, 10, 11, 12, 13, 14
+    :full_support: 12, 13, 14, 15
     :normal_support: 9.6+
     :best_effort: 9+
 
@@ -303,7 +303,7 @@ Setting Alternate Search Paths on Connect
 ------------------------------------------
 
 The PostgreSQL ``search_path`` variable refers to the list of schema names
-that will be implicitly referred towards when a particular table or other
+that will be implicitly referenced when a particular table or other
 object is referenced in a SQL statement.  As detailed in the next section
 :ref:`postgresql_schema_reflection`, SQLAlchemy is generally organized around
 the concept of keeping this variable at its default value of ``public``,
@@ -550,8 +550,6 @@ and :meth:`~.postgresql.Insert.on_conflict_do_nothing`:
     >>> print(do_update_stmt)
     {printsql}INSERT INTO my_table (id, data) VALUES (%(id)s, %(data)s)
     ON CONFLICT ON CONSTRAINT pk_my_table DO UPDATE SET data = %(param_1)s
-
-.. versionadded:: 1.1
 
 .. seealso::
 
@@ -1021,15 +1019,11 @@ keyword argument::
 
     Index('my_index', my_table.c.data, postgresql_with={"fillfactor": 50})
 
-.. versionadded:: 1.0.6
-
 PostgreSQL allows to define the tablespace in which to create the index.
 The tablespace can be specified on :class:`.Index` using the
 ``postgresql_tablespace`` keyword argument::
 
     Index('my_index', my_table.c.data, postgresql_tablespace='my_tablespace')
-
-.. versionadded:: 1.1
 
 Note that the same option is available on :class:`_schema.Table` as well.
 
@@ -1054,11 +1048,6 @@ For DROP INDEX, assuming PostgreSQL 9.2 or higher is detected or for
 a connection-less dialect, it will emit::
 
     DROP INDEX CONCURRENTLY test_idx1
-
-.. versionadded:: 1.1 support for CONCURRENTLY on DROP INDEX.  The
-   CONCURRENTLY keyword is now only emitted if a high enough version
-   of PostgreSQL is detected on the connection (or for a connection-less
-   dialect).
 
 When using CONCURRENTLY, the PostgreSQL database requires that the statement
 be invoked outside of a transaction block.   The Python DBAPI enforces that
@@ -1097,14 +1086,6 @@ detected as mirroring a constraint.   When performing reflection using
 in :attr:`_schema.Table.indexes` when it is detected as mirroring a
 :class:`.UniqueConstraint` in the :attr:`_schema.Table.constraints` collection
 .
-
-.. versionchanged:: 1.0.0 - :class:`_schema.Table` reflection now includes
-   :class:`.UniqueConstraint` objects present in the
-   :attr:`_schema.Table.constraints`
-   collection; the PostgreSQL backend will no longer include a "mirrored"
-   :class:`.Index` construct in :attr:`_schema.Table.indexes`
-   if it is detected
-   as corresponding to a unique constraint.
 
 Special Reflection Options
 --------------------------
@@ -1154,8 +1135,6 @@ dialect in conjunction with the :class:`_schema.Table` construct:
     Table("some_table", metadata, ..., postgresql_inherits="some_supertable")
 
     Table("some_table", metadata, ..., postgresql_inherits=("t1", "t2", ...))
-
-    .. versionadded:: 1.0.0
 
 * ``PARTITION BY``::
 
@@ -1397,8 +1376,8 @@ Built-in support for rendering a ``ROW`` may be approximated using
 Table Types passed to Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-PostgreSQL supports passing a table as an argument to a function, which it
-refers towards as a "record" type. SQLAlchemy :class:`_sql.FromClause` objects
+PostgreSQL supports passing a table as an argument to a function, which is
+known as a "record" type. SQLAlchemy :class:`_sql.FromClause` objects
 such as :class:`_schema.Table` support this special form using the
 :meth:`_sql.FromClause.table_valued` method, which is comparable to the
 :meth:`_functions.FunctionElement.table_valued` method except that the collection
@@ -1426,9 +1405,12 @@ from collections import defaultdict
 from functools import lru_cache
 import re
 from typing import Any
+from typing import cast
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import TYPE_CHECKING
+from typing import Union
 
 from . import array as _array
 from . import hstore as _hstore
@@ -1480,6 +1462,7 @@ from ...engine import interfaces
 from ...engine import ObjectKind
 from ...engine import ObjectScope
 from ...engine import reflection
+from ...engine import URL
 from ...engine.reflection import ReflectionDefaults
 from ...sql import bindparam
 from ...sql import coercions
@@ -1489,6 +1472,7 @@ from ...sql import expression
 from ...sql import roles
 from ...sql import sqltypes
 from ...sql import util as sql_util
+from ...sql.compiler import InsertmanyvaluesSentinelOpts
 from ...sql.visitors import InternalTraversal
 from ...types import BIGINT
 from ...types import BOOLEAN
@@ -1618,7 +1602,7 @@ colspecs = {
     sqltypes.Enum: ENUM,
     sqltypes.JSON.JSONPathType: _json.JSONPATH,
     sqltypes.JSON: _json.JSON,
-    UUID: PGUuid,
+    sqltypes.Uuid: PGUuid,
 }
 
 
@@ -1717,11 +1701,15 @@ class PGCompiler(compiler.SQLCompiler):
         return f"{element.name}{self.function_argspec(element, **kw)}"
 
     def render_bind_cast(self, type_, dbapi_type, sqltext):
+        if dbapi_type._type_affinity is sqltypes.String and dbapi_type.length:
+            # use VARCHAR with no length for VARCHAR cast.
+            # see #9511
+            dbapi_type = sqltypes.STRINGTYPE
         return f"""{sqltext}::{
-                self.dialect.type_compiler_instance.process(
-                    dbapi_type, identifier_preparer=self.preparer
-                )
-            }"""
+            self.dialect.type_compiler_instance.process(
+                dbapi_type, identifier_preparer=self.preparer
+            )
+        }"""
 
     def visit_array(self, element, **kw):
         return "ARRAY[%s]" % self.visit_clauselist(element, **kw)
@@ -1805,7 +1793,7 @@ class PGCompiler(compiler.SQLCompiler):
             self.process(binary.right, **kw),
         ) + (
             " ESCAPE " + self.render_literal_value(escape, sqltypes.STRINGTYPE)
-            if escape
+            if escape is not None
             else ""
         )
 
@@ -1816,7 +1804,7 @@ class PGCompiler(compiler.SQLCompiler):
             self.process(binary.right, **kw),
         ) + (
             " ESCAPE " + self.render_literal_value(escape, sqltypes.STRINGTYPE)
-            if escape
+            if escape is not None
             else ""
         )
 
@@ -1826,14 +1814,14 @@ class PGCompiler(compiler.SQLCompiler):
             return self._generate_generic_binary(
                 binary, " %s " % base_op, **kw
             )
-        if isinstance(flags, elements.BindParameter) and flags.value == "i":
+        if flags == "i":
             return self._generate_generic_binary(
                 binary, " %s* " % base_op, **kw
             )
         return "%s %s CONCAT('(?', %s, ')', %s)" % (
             self.process(binary.left, **kw),
             base_op,
-            self.process(flags, **kw),
+            self.render_literal_value(flags, sqltypes.STRINGTYPE),
             self.process(binary.right, **kw),
         )
 
@@ -1845,21 +1833,18 @@ class PGCompiler(compiler.SQLCompiler):
 
     def visit_regexp_replace_op_binary(self, binary, operator, **kw):
         string = self.process(binary.left, **kw)
-        pattern = self.process(binary.right, **kw)
+        pattern_replace = self.process(binary.right, **kw)
         flags = binary.modifiers["flags"]
-        replacement = self.process(binary.modifiers["replacement"], **kw)
         if flags is None:
-            return "REGEXP_REPLACE(%s, %s, %s)" % (
+            return "REGEXP_REPLACE(%s, %s)" % (
                 string,
-                pattern,
-                replacement,
+                pattern_replace,
             )
         else:
-            return "REGEXP_REPLACE(%s, %s, %s, %s)" % (
+            return "REGEXP_REPLACE(%s, %s, %s)" % (
                 string,
-                pattern,
-                replacement,
-                self.process(flags, **kw),
+                pattern_replace,
+                self.render_literal_value(flags, sqltypes.STRINGTYPE),
             )
 
     def visit_empty_set_expr(self, element_types, **kw):
@@ -1882,6 +1867,9 @@ class PGCompiler(compiler.SQLCompiler):
         if self.dialect._backslash_escapes:
             value = value.replace("\\", "\\\\")
         return value
+
+    def visit_aggregate_strings_func(self, fn, **kw):
+        return "string_agg%s" % self.function_argspec(fn)
 
     def visit_sequence(self, seq, **kw):
         return "nextval('%s')" % self.preparer.format_sequence(seq)
@@ -2242,6 +2230,7 @@ class PGDDLCompiler(compiler.DDLCompiler):
         text = "CREATE "
         if index.unique:
             text += "UNIQUE "
+
         text += "INDEX "
 
         if self.dialect._supports_create_index_concurrently:
@@ -2295,6 +2284,14 @@ class PGDDLCompiler(compiler.DDLCompiler):
                 [preparer.quote(c.name) for c in inclusions]
             )
 
+        nulls_not_distinct = index.dialect_options["postgresql"][
+            "nulls_not_distinct"
+        ]
+        if nulls_not_distinct is True:
+            text += " NULLS NOT DISTINCT"
+        elif nulls_not_distinct is False:
+            text += " NULLS DISTINCT"
+
         withclause = index.dialect_options["postgresql"]["with"]
         if withclause:
             text += " WITH (%s)" % (
@@ -2322,6 +2319,18 @@ class PGDDLCompiler(compiler.DDLCompiler):
             text += " WHERE " + where_compiled
 
         return text
+
+    def define_unique_constraint_distinct(self, constraint, **kw):
+        nulls_not_distinct = constraint.dialect_options["postgresql"][
+            "nulls_not_distinct"
+        ]
+        if nulls_not_distinct is True:
+            nulls_not_distinct_param = "NULLS NOT DISTINCT "
+        elif nulls_not_distinct is False:
+            nulls_not_distinct_param = "NULLS DISTINCT "
+        else:
+            nulls_not_distinct_param = ""
+        return nulls_not_distinct_param
 
     def visit_drop_index(self, drop, **kw):
         index = drop.element
@@ -2781,8 +2790,6 @@ class PGInspector(reflection.Inspector):
          (typically 'public') is used.  May also be set to ``'*'`` to
          indicate load enums for all schemas.
 
-        .. versionadded:: 1.0.0
-
         """
         with self._operation_context() as conn:
             return self.dialect._load_enums(
@@ -2798,8 +2805,6 @@ class PGInspector(reflection.Inspector):
         :meth:`_reflection.Inspector.get_table_names`,
         except that the list is limited to those tables that report a
         ``relkind`` value of ``f``.
-
-        .. versionadded:: 1.0.0
 
         """
         with self._operation_context() as conn:
@@ -2932,6 +2937,14 @@ class PGDialect(default.DefaultDialect):
     postfetch_lastrowid = False
     use_insertmanyvalues = True
 
+    returns_native_bytes = True
+
+    insertmanyvalues_implicit_sentinel = (
+        InsertmanyvaluesSentinelOpts.ANY_AUTOINCREMENT
+        | InsertmanyvaluesSentinelOpts.USE_INSERT_FROM_SELECT
+        | InsertmanyvaluesSentinelOpts.RENDER_SELECT_COL_CASTS
+    )
+
     supports_comments = True
     supports_constraint_comments = True
     supports_default_values = True
@@ -2981,6 +2994,7 @@ class PGDialect(default.DefaultDialect):
                 "concurrently": False,
                 "with": {},
                 "tablespace": None,
+                "nulls_not_distinct": None,
             },
         ),
         (
@@ -3006,6 +3020,10 @@ class PGDialect(default.DefaultDialect):
                 "not_valid": False,
             },
         ),
+        (
+            schema.UniqueConstraint,
+            {"nulls_not_distinct": None},
+        ),
     ]
 
     reflection_options = ("postgresql_ignore_search_path",)
@@ -3014,9 +3032,16 @@ class PGDialect(default.DefaultDialect):
     _supports_create_index_concurrently = True
     _supports_drop_index_concurrently = True
 
-    def __init__(self, json_serializer=None, json_deserializer=None, **kwargs):
+    def __init__(
+        self,
+        native_inet_types=None,
+        json_serializer=None,
+        json_deserializer=None,
+        **kwargs,
+    ):
         default.DefaultDialect.__init__(self, **kwargs)
 
+        self._native_inet_types = native_inet_types
         self._json_deserializer = json_deserializer
         self._json_serializer = json_serializer
 
@@ -3071,6 +3096,92 @@ class PGDialect(default.DefaultDialect):
 
     def get_deferrable(self, connection):
         raise NotImplementedError()
+
+    def _split_multihost_from_url(
+        self, url: URL
+    ) -> Union[
+        Tuple[None, None],
+        Tuple[Tuple[Optional[str], ...], Tuple[Optional[int], ...]],
+    ]:
+        hosts: Optional[Tuple[Optional[str], ...]] = None
+        ports_str: Union[str, Tuple[Optional[str], ...], None] = None
+
+        integrated_multihost = False
+
+        if "host" in url.query:
+            if isinstance(url.query["host"], (list, tuple)):
+                integrated_multihost = True
+                hosts, ports_str = zip(
+                    *[
+                        token.split(":") if ":" in token else (token, None)
+                        for token in url.query["host"]
+                    ]
+                )
+
+            elif isinstance(url.query["host"], str):
+                hosts = tuple(url.query["host"].split(","))
+
+                if (
+                    "port" not in url.query
+                    and len(hosts) == 1
+                    and ":" in hosts[0]
+                ):
+                    # internet host is alphanumeric plus dots or hyphens.
+                    # this is essentially rfc1123, which refers to rfc952.
+                    # https://stackoverflow.com/questions/3523028/
+                    # valid-characters-of-a-hostname
+                    host_port_match = re.match(
+                        r"^([a-zA-Z0-9\-\.]*)(?:\:(\d*))?$", hosts[0]
+                    )
+                    if host_port_match:
+                        integrated_multihost = True
+                        h, p = host_port_match.group(1, 2)
+                        if TYPE_CHECKING:
+                            assert isinstance(h, str)
+                            assert isinstance(p, str)
+                        hosts = (h,)
+                        ports_str = cast(
+                            "Tuple[Optional[str], ...]", (p,) if p else (None,)
+                        )
+
+        if "port" in url.query:
+            if integrated_multihost:
+                raise exc.ArgumentError(
+                    "Can't mix 'multihost' formats together; use "
+                    '"host=h1,h2,h3&port=p1,p2,p3" or '
+                    '"host=h1:p1&host=h2:p2&host=h3:p3" separately'
+                )
+            if isinstance(url.query["port"], (list, tuple)):
+                ports_str = url.query["port"]
+            elif isinstance(url.query["port"], str):
+                ports_str = tuple(url.query["port"].split(","))
+
+        ports: Optional[Tuple[Optional[int], ...]] = None
+
+        if ports_str:
+            try:
+                ports = tuple(int(x) if x else None for x in ports_str)
+            except ValueError:
+                raise exc.ArgumentError(
+                    f"Received non-integer port arguments: {ports_str}"
+                ) from None
+
+        if ports and (
+            (not hosts and len(ports) > 1)
+            or (
+                hosts
+                and ports
+                and len(hosts) != len(ports)
+                and (len(hosts) > 1 or len(ports) > 1)
+            )
+        ):
+            raise exc.ArgumentError("number of hosts and ports don't match")
+
+        if hosts is not None:
+            if ports is None:
+                ports = tuple(None for _ in hosts)
+
+        return hosts, ports  # type: ignore
 
     def do_begin_twophase(self, connection, xid):
         self.do_begin(connection.connection)
@@ -3759,12 +3870,13 @@ class PGDialect(default.DefaultDialect):
         result = connection.execute(oid_q, params)
         return result.all()
 
-    @util.memoized_property
-    def _constraint_query(self):
+    @lru_cache()
+    def _constraint_query(self, is_unique):
         con_sq = (
             select(
                 pg_catalog.pg_constraint.c.conrelid,
                 pg_catalog.pg_constraint.c.conname,
+                pg_catalog.pg_constraint.c.conindid,
                 sql.func.unnest(pg_catalog.pg_constraint.c.conkey).label(
                     "attnum"
                 ),
@@ -3789,6 +3901,7 @@ class PGDialect(default.DefaultDialect):
             select(
                 con_sq.c.conrelid,
                 con_sq.c.conname,
+                con_sq.c.conindid,
                 con_sq.c.description,
                 con_sq.c.ord,
                 pg_catalog.pg_attribute.c.attname,
@@ -3801,14 +3914,27 @@ class PGDialect(default.DefaultDialect):
                     pg_catalog.pg_attribute.c.attrelid == con_sq.c.conrelid,
                 ),
             )
+            .where(
+                # NOTE: restate the condition here, since pg15 otherwise
+                # seems to get confused on pscopg2 sometimes, doing
+                # a sequential scan of pg_attribute.
+                # The condition in the con_sq subquery is not actually needed
+                # in pg15, but it may be needed in older versions. Keeping it
+                # does not seems to have any inpact in any case.
+                con_sq.c.conrelid.in_(bindparam("oids"))
+            )
             .subquery("attr")
         )
 
-        return (
+        constraint_query = (
             select(
                 attr_sq.c.conrelid,
                 sql.func.array_agg(
-                    aggregate_order_by(attr_sq.c.attname, attr_sq.c.ord)
+                    # NOTE: cast since some postgresql derivatives may
+                    # not support array_agg on the name type
+                    aggregate_order_by(
+                        attr_sq.c.attname.cast(TEXT), attr_sq.c.ord
+                    )
                 ).label("cols"),
                 attr_sq.c.conname,
                 sql.func.min(attr_sq.c.description).label("description"),
@@ -3817,34 +3943,63 @@ class PGDialect(default.DefaultDialect):
             .order_by(attr_sq.c.conrelid, attr_sq.c.conname)
         )
 
+        if is_unique:
+            if self.server_version_info >= (15,):
+                constraint_query = constraint_query.join(
+                    pg_catalog.pg_index,
+                    attr_sq.c.conindid == pg_catalog.pg_index.c.indexrelid,
+                ).add_columns(
+                    sql.func.bool_and(
+                        pg_catalog.pg_index.c.indnullsnotdistinct
+                    ).label("indnullsnotdistinct")
+                )
+            else:
+                constraint_query = constraint_query.add_columns(
+                    sql.false().label("indnullsnotdistinct")
+                )
+        else:
+            constraint_query = constraint_query.add_columns(
+                sql.null().label("extra")
+            )
+        return constraint_query
+
     def _reflect_constraint(
         self, connection, contype, schema, filter_names, scope, kind, **kw
     ):
+        # used to reflect primary and unique constraint
         table_oids = self._get_table_oids(
             connection, schema, filter_names, scope, kind, **kw
         )
         batches = list(table_oids)
+        is_unique = contype == "u"
 
         while batches:
             batch = batches[0:3000]
             batches[0:3000] = []
 
             result = connection.execute(
-                self._constraint_query,
+                self._constraint_query(is_unique),
                 {"oids": [r[0] for r in batch], "contype": contype},
             )
 
             result_by_oid = defaultdict(list)
-            for oid, cols, constraint_name, comment in result:
-                result_by_oid[oid].append((cols, constraint_name, comment))
+            for oid, cols, constraint_name, comment, extra in result:
+                result_by_oid[oid].append(
+                    (cols, constraint_name, comment, extra)
+                )
 
             for oid, tablename in batch:
                 for_oid = result_by_oid.get(oid, ())
                 if for_oid:
-                    for cols, constraint, comment in for_oid:
-                        yield tablename, cols, constraint, comment
+                    for cols, constraint, comment, extra in for_oid:
+                        if is_unique:
+                            yield tablename, cols, constraint, comment, {
+                                "nullsnotdistinct": extra
+                            }
+                        else:
+                            yield tablename, cols, constraint, comment, None
                 else:
-                    yield tablename, None, None, None
+                    yield tablename, None, None, None, None
 
     @reflection.cache
     def get_pk_constraint(self, connection, table_name, schema=None, **kw):
@@ -3879,7 +4034,7 @@ class PGDialect(default.DefaultDialect):
                 if pk_name is not None
                 else default(),
             )
-            for table_name, cols, pk_name, comment in result
+            for table_name, cols, pk_name, comment, _ in result
         )
 
     @reflection.cache
@@ -3911,6 +4066,8 @@ class PGDialect(default.DefaultDialect):
             select(
                 pg_catalog.pg_class.c.relname,
                 pg_catalog.pg_constraint.c.conname,
+                # NOTE: avoid calling pg_get_constraintdef when not needed
+                # to speed up the query
                 sql.case(
                     (
                         pg_catalog.pg_constraint.c.oid.is_not(None),
@@ -3960,9 +4117,13 @@ class PGDialect(default.DefaultDialect):
 
     @util.memoized_property
     def _fk_regex_pattern(self):
+        # optionally quoted token
+        qtoken = '(?:"[^"]+"|[A-Za-z0-9_]+?)'
+
         # https://www.postgresql.org/docs/current/static/sql-createtable.html
         return re.compile(
-            r"FOREIGN KEY \((.*?)\) REFERENCES (?:(.*?)\.)?(.*?)\((.*?)\)"
+            r"FOREIGN KEY \((.*?)\) "
+            rf"REFERENCES (?:({qtoken})\.)?({qtoken})\(((?:{qtoken}(?: *, *)?)+)\)"  # noqa: E501
             r"[\s]?(MATCH (FULL|PARTIAL|SIMPLE)+)?"
             r"[\s]?(ON UPDATE "
             r"(CASCADE|RESTRICT|NO ACTION|SET NULL|SET DEFAULT)+)?"
@@ -4117,7 +4278,10 @@ class PGDialect(default.DefaultDialect):
                             idx_sq.c.indexrelid, idx_sq.c.ord + 1, True
                         ),
                     ),
-                    else_=pg_catalog.pg_attribute.c.attname,
+                    # NOTE: need to cast this since attname is of type "name"
+                    # that's limited to 63 bytes, while pg_get_indexdef
+                    # returns "text" so its output may get cut
+                    else_=pg_catalog.pg_attribute.c.attname.cast(TEXT),
                 ).label("element"),
                 (idx_sq.c.attnum == 0).label("is_expr"),
             )
@@ -4154,6 +4318,11 @@ class PGDialect(default.DefaultDialect):
         else:
             indnkeyatts = sql.null().label("indnkeyatts")
 
+        if self.server_version_info >= (15,):
+            nulls_not_distinct = pg_catalog.pg_index.c.indnullsnotdistinct
+        else:
+            nulls_not_distinct = sql.false().label("indnullsnotdistinct")
+
         return (
             select(
                 pg_catalog.pg_index.c.indrelid,
@@ -4165,9 +4334,9 @@ class PGDialect(default.DefaultDialect):
                 pg_catalog.pg_index.c.indoption,
                 pg_class_index.c.reloptions,
                 pg_catalog.pg_am.c.amname,
+                # NOTE: pg_get_expr is very fast so this case has almost no
+                # performance impact
                 sql.case(
-                    # pg_get_expr is very fast so this case has almost no
-                    # performance impact
                     (
                         pg_catalog.pg_index.c.indpred.is_not(None),
                         pg_catalog.pg_get_expr(
@@ -4175,9 +4344,10 @@ class PGDialect(default.DefaultDialect):
                             pg_catalog.pg_index.c.indrelid,
                         ),
                     ),
-                    else_=sql.null(),
+                    else_=None,
                 ).label("filter_definition"),
                 indnkeyatts,
+                nulls_not_distinct,
                 cols_sq.c.elements,
                 cols_sq.c.elements_is_expr,
             )
@@ -4321,11 +4491,17 @@ class PGDialect(default.DefaultDialect):
                         dialect_options["postgresql_where"] = row[
                             "filter_definition"
                         ]
-                    if self.server_version_info >= (11, 0):
+                    if self.server_version_info >= (11,):
                         # NOTE: this is legacy, this is part of
                         # dialect_options now as of #7382
                         index["include_columns"] = inc_cols
                         dialect_options["postgresql_include"] = inc_cols
+                    if row["indnullsnotdistinct"]:
+                        # the default is False, so ignore it.
+                        dialect_options["postgresql_nulls_not_distinct"] = row[
+                            "indnullsnotdistinct"
+                        ]
+
                     if dialect_options:
                         index["dialect_options"] = dialect_options
 
@@ -4362,20 +4538,27 @@ class PGDialect(default.DefaultDialect):
         # each table can have multiple unique constraints
         uniques = defaultdict(list)
         default = ReflectionDefaults.unique_constraints
-        for table_name, cols, con_name, comment in result:
+        for table_name, cols, con_name, comment, options in result:
             # ensure a list is created for each table. leave it empty if
             # the table has no unique cosntraint
             if con_name is None:
                 uniques[(schema, table_name)] = default()
                 continue
 
-            uniques[(schema, table_name)].append(
-                {
-                    "column_names": cols,
-                    "name": con_name,
-                    "comment": comment,
-                }
-            )
+            uc_dict = {
+                "column_names": cols,
+                "name": con_name,
+                "comment": comment,
+            }
+            if options:
+                if options["nullsnotdistinct"]:
+                    uc_dict["dialect_options"] = {
+                        "postgresql_nulls_not_distinct": options[
+                            "nullsnotdistinct"
+                        ]
+                    }
+
+            uniques[(schema, table_name)].append(uc_dict)
         return uniques.items()
 
     @reflection.cache
@@ -4451,6 +4634,8 @@ class PGDialect(default.DefaultDialect):
             select(
                 pg_catalog.pg_class.c.relname,
                 pg_catalog.pg_constraint.c.conname,
+                # NOTE: avoid calling pg_get_constraintdef when not needed
+                # to speed up the query
                 sql.case(
                     (
                         pg_catalog.pg_constraint.c.oid.is_not(None),
@@ -4551,7 +4736,9 @@ class PGDialect(default.DefaultDialect):
                 pg_catalog.pg_enum.c.enumtypid,
                 sql.func.array_agg(
                     aggregate_order_by(
-                        pg_catalog.pg_enum.c.enumlabel,
+                        # NOTE: cast since some postgresql derivatives may
+                        # not support array_agg on the name type
+                        pg_catalog.pg_enum.c.enumlabel.cast(TEXT),
                         pg_catalog.pg_enum.c.enumsortorder,
                     )
                 ).label("labels"),
@@ -4614,9 +4801,11 @@ class PGDialect(default.DefaultDialect):
                         pg_catalog.pg_constraint.c.oid, True
                     )
                 ).label("condefs"),
-                sql.func.array_agg(pg_catalog.pg_constraint.c.conname).label(
-                    "connames"
-                ),
+                sql.func.array_agg(
+                    # NOTE: cast since some postgresql derivatives may
+                    # not support array_agg on the name type
+                    pg_catalog.pg_constraint.c.conname.cast(TEXT)
+                ).label("connames"),
             )
             # The domain this constraint is on; zero if not a domain constraint
             .where(pg_catalog.pg_constraint.c.contypid != 0)

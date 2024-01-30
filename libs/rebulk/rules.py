@@ -35,7 +35,6 @@ class Consequence(metaclass=ABCMeta):
         :return: True if the action was runned, False if it wasn't.
         :rtype: bool
         """
-        pass
 
 
 class Condition(metaclass=ABCMeta):
@@ -54,14 +53,13 @@ class Condition(metaclass=ABCMeta):
         :return: truthy if rule should be triggered and execute then action, falsy if it should not.
         :rtype: object
         """
-        pass
 
 
 class CustomRule(Condition, Consequence, metaclass=ABCMeta):
     """
     Definition of a rule to apply
     """
-    # pylint: disable=no-self-use, unused-argument, abstract-method
+    # pylint: disable=unused-argument, abstract-method
     priority = 0
     name = None
     dependency = None

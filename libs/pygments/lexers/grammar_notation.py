@@ -4,11 +4,9 @@
 
     Lexers for grammar notations like BNF.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
-
-import re
 
 from pygments.lexer import RegexLexer, bygroups, include, this, using, words
 from pygments.token import Comment, Keyword, Literal, Name, Number, \
@@ -196,7 +194,7 @@ class JsgfLexer(RegexLexer):
             (r'\*/', Comment.Multiline, '#pop'),
             (r'^(\s*)(\*?)(\s*)(@(?:example|see))(\s+)'
              r'([\w\W]*?(?=(?:^\s*\*?\s*@|\*/)))',
-             bygroups(Whitespace,Comment.Multiline, Whitespace, Comment.Special,
+             bygroups(Whitespace, Comment.Multiline, Whitespace, Comment.Special,
                       Whitespace, using(this, state='example'))),
             (r'(^\s*\*?\s*)(@\S*)',
              bygroups(Comment.Multiline, Comment.Special)),

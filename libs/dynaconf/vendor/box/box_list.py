@@ -1,276 +1,123 @@
 #!/usr/bin/env python
-# -*- coding: UTF-8 -*-
-#
-# Copyright (c) 2017-2020 - Chris Griffith - MIT License
-import copy
-import re
-from typing import Iterable, Optional
-
-
+_G='box_dots'
+_F='BoxList is frozen'
+_E='frozen_box'
+_D=False
+_C='strict'
+_B='utf-8'
+_A=None
+import copy,re
+from typing import Iterable,Optional
 from dynaconf.vendor import box
-from .converters import (_to_yaml, _from_yaml, _to_json, _from_json,
-                         _to_toml, _from_toml, _to_csv, _from_csv, BOX_PARAMETERS)
-from .exceptions import BoxError, BoxTypeError, BoxKeyError
-
-_list_pos_re = re.compile(r'\[(\d+)\]')
-
-
-DYNABOX_CLASS = None  # a cache constant to avoid multiple imports
-
-
+from.converters import _to_yaml,_from_yaml,_to_json,_from_json,_to_toml,_from_toml,_to_csv,_from_csv,BOX_PARAMETERS
+from.exceptions import BoxError,BoxTypeError,BoxKeyError
+_list_pos_re=re.compile('\\[(\\d+)\\]')
+DYNABOX_CLASS=_A
 def get_dynabox_class_avoiding_circular_import():
-    """
-    See dynaconf issue #462
-    """
-    global DYNABOX_CLASS
-    if DYNABOX_CLASS is None:
-        from dynaconf.utils.boxing import DynaBox
-        DYNABOX_CLASS = DynaBox
-    return DYNABOX_CLASS
-
-
+	global DYNABOX_CLASS
+	if DYNABOX_CLASS is _A:from dynaconf.utils.boxing import DynaBox as A;DYNABOX_CLASS=A
+	return DYNABOX_CLASS
 class BoxList(list):
-    """
-    Drop in replacement of list, that converts added objects to Box or BoxList
-    objects as necessary.
-    """
-
-    def __init__(self, iterable: Iterable = None, box_class : Optional[box.Box] = None, **box_options):
-        self.box_class = box_class or get_dynabox_class_avoiding_circular_import()
-        self.box_options = box_options
-        self.box_org_ref = self.box_org_ref = id(iterable) if iterable else 0
-        if iterable:
-            for x in iterable:
-                self.append(x)
-        if box_options.get('frozen_box'):
-            def frozen(*args, **kwargs):
-                raise BoxError('BoxList is frozen')
-
-            for method in ['append', 'extend', 'insert', 'pop', 'remove', 'reverse', 'sort']:
-                self.__setattr__(method, frozen)
-
-    def __getitem__(self, item):
-        if self.box_options.get('box_dots') and isinstance(item, str) and item.startswith('['):
-            list_pos = _list_pos_re.search(item)
-            value = super(BoxList, self).__getitem__(int(list_pos.groups()[0]))
-            if len(list_pos.group()) == len(item):
-                return value
-            return value.__getitem__(item[len(list_pos.group()):].lstrip('.'))
-        return super(BoxList, self).__getitem__(item)
-
-    def __delitem__(self, key):
-        if self.box_options.get('frozen_box'):
-            raise BoxError('BoxList is frozen')
-        super(BoxList, self).__delitem__(key)
-
-    def __setitem__(self, key, value):
-        if self.box_options.get('frozen_box'):
-            raise BoxError('BoxList is frozen')
-        if self.box_options.get('box_dots') and isinstance(key, str) and key.startswith('['):
-            list_pos = _list_pos_re.search(key)
-            pos = int(list_pos.groups()[0])
-            if len(list_pos.group()) == len(key):
-                return super(BoxList, self).__setitem__(pos, value)
-            return super(BoxList, self).__getitem__(pos).__setitem__(key[len(list_pos.group()):].lstrip('.'), value)
-        super(BoxList, self).__setitem__(key, value)
-
-    def _is_intact_type(self, obj):
-        try:
-            if self.box_options.get('box_intact_types') and isinstance(obj, self.box_options['box_intact_types']):
-                return True
-        except AttributeError as err:
-            if 'box_options' in self.__dict__:
-                raise BoxKeyError(err)
-        return False
-
-    def append(self, p_object):
-        if isinstance(p_object, dict) and not self._is_intact_type(p_object):
-            try:
-                p_object = self.box_class(p_object, **self.box_options)
-            except AttributeError as err:
-                if 'box_class' in self.__dict__:
-                    raise BoxKeyError(err)
-        elif isinstance(p_object, list) and not self._is_intact_type(p_object):
-            try:
-                p_object = (self if id(p_object) == self.box_org_ref else BoxList(p_object, **self.box_options))
-            except AttributeError as err:
-                if 'box_org_ref' in self.__dict__:
-                    raise BoxKeyError(err)
-        super(BoxList, self).append(p_object)
-
-    def extend(self, iterable):
-        for item in iterable:
-            self.append(item)
-
-    def insert(self, index, p_object):
-        if isinstance(p_object, dict) and not self._is_intact_type(p_object):
-            p_object = self.box_class(p_object, **self.box_options)
-        elif isinstance(p_object, list) and not self._is_intact_type(p_object):
-            p_object = (self if id(p_object) == self.box_org_ref else BoxList(p_object))
-        super(BoxList, self).insert(index, p_object)
-
-    def __repr__(self):
-        return f'<BoxList: {self.to_list()}>'
-
-    def __str__(self):
-        return str(self.to_list())
-
-    def __copy__(self):
-        return BoxList((x for x in self), self.box_class, **self.box_options)
-
-    def __deepcopy__(self, memo=None):
-        out = self.__class__()
-        memo = memo or {}
-        memo[id(self)] = out
-        for k in self:
-            out.append(copy.deepcopy(k, memo=memo))
-        return out
-
-    def __hash__(self):
-        if self.box_options.get('frozen_box'):
-            hashing = 98765
-            hashing ^= hash(tuple(self))
-            return hashing
-        raise BoxTypeError("unhashable type: 'BoxList'")
-
-    def to_list(self):
-        new_list = []
-        for x in self:
-            if x is self:
-                new_list.append(new_list)
-            elif isinstance(x, box.Box):
-                new_list.append(x.to_dict())
-            elif isinstance(x, BoxList):
-                new_list.append(x.to_list())
-            else:
-                new_list.append(x)
-        return new_list
-
-    def to_json(self, filename: str = None, encoding: str = 'utf-8', errors: str = 'strict',
-                multiline: bool = False, **json_kwargs):
-        """
-        Transform the BoxList object into a JSON string.
-
-        :param filename: If provided will save to file
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param multiline: Put each item in list onto it's own line
-        :param json_kwargs: additional arguments to pass to json.dump(s)
-        :return: string of JSON or return of `json.dump`
-        """
-        if filename and multiline:
-            lines = [_to_json(item, filename=False, encoding=encoding, errors=errors, **json_kwargs) for item in self]
-            with open(filename, 'w', encoding=encoding, errors=errors) as f:
-                f.write("\n".join(lines))
-        else:
-            return _to_json(self.to_list(), filename=filename, encoding=encoding, errors=errors, **json_kwargs)
-
-    @classmethod
-    def from_json(cls, json_string: str = None, filename: str = None, encoding: str = 'utf-8', errors: str = 'strict',
-                  multiline: bool = False, **kwargs):
-        """
-        Transform a json object string into a BoxList object. If the incoming
-        json is a dict, you must use Box.from_json.
-
-        :param json_string: string to pass to `json.loads`
-        :param filename: filename to open and pass to `json.load`
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param multiline: One object per line
-        :param kwargs: parameters to pass to `Box()` or `json.loads`
-        :return: BoxList object from json data
-        """
-        bx_args = {}
-        for arg in list(kwargs.keys()):
-            if arg in BOX_PARAMETERS:
-                bx_args[arg] = kwargs.pop(arg)
-
-        data = _from_json(json_string, filename=filename, encoding=encoding,
-                          errors=errors, multiline=multiline, **kwargs)
-
-        if not isinstance(data, list):
-            raise BoxError(f'json data not returned as a list, but rather a {type(data).__name__}')
-        return cls(data, **bx_args)
-
-    def to_yaml(self, filename: str = None, default_flow_style: bool = False,
-                encoding: str = 'utf-8', errors: str = 'strict', **yaml_kwargs):
-        """
-        Transform the BoxList object into a YAML string.
-
-        :param filename:  If provided will save to file
-        :param default_flow_style: False will recursively dump dicts
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param yaml_kwargs: additional arguments to pass to yaml.dump
-        :return: string of YAML or return of `yaml.dump`
-        """
-        return _to_yaml(self.to_list(), filename=filename, default_flow_style=default_flow_style,
-                        encoding=encoding, errors=errors, **yaml_kwargs)
-
-    @classmethod
-    def from_yaml(cls, yaml_string: str = None, filename: str = None,
-                  encoding: str = 'utf-8', errors: str = 'strict', **kwargs):
-        """
-        Transform a yaml object string into a BoxList object.
-
-        :param yaml_string: string to pass to `yaml.load`
-        :param filename: filename to open and pass to `yaml.load`
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param kwargs: parameters to pass to `BoxList()` or `yaml.load`
-        :return: BoxList object from yaml data
-        """
-        bx_args = {}
-        for arg in list(kwargs.keys()):
-            if arg in BOX_PARAMETERS:
-                bx_args[arg] = kwargs.pop(arg)
-
-        data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
-        if not isinstance(data, list):
-            raise BoxError(f'yaml data not returned as a list but rather a {type(data).__name__}')
-        return cls(data, **bx_args)
-
-    def to_toml(self, filename: str = None, key_name: str = 'toml', encoding: str = 'utf-8', errors: str = 'strict'):
-        """
-        Transform the BoxList object into a toml string.
-
-        :param filename: File to write toml object too
-        :param key_name: Specify the name of the key to store the string under
-            (cannot directly convert to toml)
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :return: string of TOML (if no filename provided)
-        """
-        return _to_toml({key_name: self.to_list()}, filename=filename, encoding=encoding, errors=errors)
-
-    @classmethod
-    def from_toml(cls, toml_string: str = None, filename: str = None, key_name: str = 'toml',
-                  encoding: str = 'utf-8', errors: str = 'strict', **kwargs):
-        """
-        Transforms a toml string or file into a BoxList object
-
-        :param toml_string: string to pass to `toml.load`
-        :param filename: filename to open and pass to `toml.load`
-        :param key_name: Specify the name of the key to pull the list from
-            (cannot directly convert from toml)
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param kwargs: parameters to pass to `Box()`
-        :return:
-        """
-        bx_args = {}
-        for arg in list(kwargs.keys()):
-            if arg in BOX_PARAMETERS:
-                bx_args[arg] = kwargs.pop(arg)
-
-        data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
-        if key_name not in data:
-            raise BoxError(f'{key_name} was not found.')
-        return cls(data[key_name], **bx_args)
-
-    def to_csv(self, filename, encoding: str = 'utf-8', errors: str = 'strict'):
-        _to_csv(self, filename=filename, encoding=encoding, errors=errors)
-
-    @classmethod
-    def from_csv(cls, filename, encoding: str = 'utf-8', errors: str = 'strict'):
-        return cls(_from_csv(filename=filename, encoding=encoding, errors=errors))
+	def __init__(A,iterable=_A,box_class=_A,**C):
+		B=iterable;A.box_class=box_class or get_dynabox_class_avoiding_circular_import();A.box_options=C;A.box_org_ref=A.box_org_ref=id(B)if B else 0
+		if B:
+			for D in B:A.append(D)
+		if C.get(_E):
+			def E(*A,**B):raise BoxError(_F)
+			for F in['append','extend','insert','pop','remove','reverse','sort']:A.__setattr__(F,E)
+	def __getitem__(B,item):
+		A=item
+		if B.box_options.get(_G)and isinstance(A,str)and A.startswith('['):
+			C=_list_pos_re.search(A);D=super(BoxList,B).__getitem__(int(C.groups()[0]))
+			if len(C.group())==len(A):return D
+			return D.__getitem__(A[len(C.group()):].lstrip('.'))
+		return super(BoxList,B).__getitem__(A)
+	def __delitem__(A,key):
+		if A.box_options.get(_E):raise BoxError(_F)
+		super(BoxList,A).__delitem__(key)
+	def __setitem__(B,key,value):
+		C=value;A=key
+		if B.box_options.get(_E):raise BoxError(_F)
+		if B.box_options.get(_G)and isinstance(A,str)and A.startswith('['):
+			D=_list_pos_re.search(A);E=int(D.groups()[0])
+			if len(D.group())==len(A):return super(BoxList,B).__setitem__(E,C)
+			return super(BoxList,B).__getitem__(E).__setitem__(A[len(D.group()):].lstrip('.'),C)
+		super(BoxList,B).__setitem__(A,C)
+	def _is_intact_type(A,obj):
+		B='box_intact_types'
+		try:
+			if A.box_options.get(B)and isinstance(obj,A.box_options[B]):return True
+		except AttributeError as C:
+			if'box_options'in A.__dict__:raise BoxKeyError(C)
+		return _D
+	def append(A,p_object):
+		B=p_object
+		if isinstance(B,dict)and not A._is_intact_type(B):
+			try:B=A.box_class(B,**A.box_options)
+			except AttributeError as C:
+				if'box_class'in A.__dict__:raise BoxKeyError(C)
+		elif isinstance(B,list)and not A._is_intact_type(B):
+			try:B=A if id(B)==A.box_org_ref else BoxList(B,**A.box_options)
+			except AttributeError as C:
+				if'box_org_ref'in A.__dict__:raise BoxKeyError(C)
+		super(BoxList,A).append(B)
+	def extend(A,iterable):
+		for B in iterable:A.append(B)
+	def insert(B,index,p_object):
+		A=p_object
+		if isinstance(A,dict)and not B._is_intact_type(A):A=B.box_class(A,**B.box_options)
+		elif isinstance(A,list)and not B._is_intact_type(A):A=B if id(A)==B.box_org_ref else BoxList(A)
+		super(BoxList,B).insert(index,A)
+	def __repr__(A):return f"<BoxList: {A.to_list()}>"
+	def __str__(A):return str(A.to_list())
+	def __copy__(A):return BoxList((A for A in A),A.box_class,**A.box_options)
+	def __deepcopy__(B,memo=_A):
+		A=memo;C=B.__class__();A=A or{};A[id(B)]=C
+		for D in B:C.append(copy.deepcopy(D,memo=A))
+		return C
+	def __hash__(A):
+		if A.box_options.get(_E):B=98765;B^=hash(tuple(A));return B
+		raise BoxTypeError("unhashable type: 'BoxList'")
+	def to_list(C):
+		A=[]
+		for B in C:
+			if B is C:A.append(A)
+			elif isinstance(B,box.Box):A.append(B.to_dict())
+			elif isinstance(B,BoxList):A.append(B.to_list())
+			else:A.append(B)
+		return A
+	def to_json(D,filename=_A,encoding=_B,errors=_C,multiline=_D,**E):
+		C=errors;B=encoding;A=filename
+		if A and multiline:
+			F=[_to_json(A,filename=_D,encoding=B,errors=C,**E)for A in D]
+			with open(A,'w',encoding=B,errors=C)as G:G.write('\n'.join(F))
+		else:return _to_json(D.to_list(),filename=A,encoding=B,errors=C,**E)
+	@classmethod
+	def from_json(E,json_string=_A,filename=_A,encoding=_B,errors=_C,multiline=_D,**A):
+		D={}
+		for B in list(A.keys()):
+			if B in BOX_PARAMETERS:D[B]=A.pop(B)
+		C=_from_json(json_string,filename=filename,encoding=encoding,errors=errors,multiline=multiline,**A)
+		if not isinstance(C,list):raise BoxError(f"json data not returned as a list, but rather a {type(C).__name__}")
+		return E(C,**D)
+	def to_yaml(A,filename=_A,default_flow_style=_D,encoding=_B,errors=_C,**B):return _to_yaml(A.to_list(),filename=filename,default_flow_style=default_flow_style,encoding=encoding,errors=errors,**B)
+	@classmethod
+	def from_yaml(E,yaml_string=_A,filename=_A,encoding=_B,errors=_C,**A):
+		D={}
+		for B in list(A.keys()):
+			if B in BOX_PARAMETERS:D[B]=A.pop(B)
+		C=_from_yaml(yaml_string=yaml_string,filename=filename,encoding=encoding,errors=errors,**A)
+		if not isinstance(C,list):raise BoxError(f"yaml data not returned as a list but rather a {type(C).__name__}")
+		return E(C,**D)
+	def to_toml(A,filename=_A,key_name='toml',encoding=_B,errors=_C):return _to_toml({key_name:A.to_list()},filename=filename,encoding=encoding,errors=errors)
+	@classmethod
+	def from_toml(F,toml_string=_A,filename=_A,key_name='toml',encoding=_B,errors=_C,**C):
+		A=key_name;D={}
+		for B in list(C.keys()):
+			if B in BOX_PARAMETERS:D[B]=C.pop(B)
+		E=_from_toml(toml_string=toml_string,filename=filename,encoding=encoding,errors=errors)
+		if A not in E:raise BoxError(f"{A} was not found.")
+		return F(E[A],**D)
+	def to_csv(A,filename,encoding=_B,errors=_C):_to_csv(A,filename=filename,encoding=encoding,errors=errors)
+	@classmethod
+	def from_csv(A,filename,encoding=_B,errors=_C):return A(_from_csv(filename=filename,encoding=encoding,errors=errors))

@@ -1,5 +1,5 @@
 # orm/util.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -45,15 +45,18 @@ from .base import _never_set as _never_set  # noqa: F401
 from .base import _none_set as _none_set  # noqa: F401
 from .base import attribute_str as attribute_str  # noqa: F401
 from .base import class_mapper as class_mapper
+from .base import DynamicMapped
 from .base import InspectionAttr as InspectionAttr
 from .base import instance_str as instance_str  # noqa: F401
 from .base import Mapped
 from .base import object_mapper as object_mapper
 from .base import object_state as object_state  # noqa: F401
 from .base import opt_manager_of_class
+from .base import ORMDescriptor
 from .base import state_attribute_str as state_attribute_str  # noqa: F401
 from .base import state_class_str as state_class_str  # noqa: F401
 from .base import state_str as state_str  # noqa: F401
+from .base import WriteOnlyMapped
 from .interfaces import CriteriaOption
 from .interfaces import MapperProperty as MapperProperty
 from .interfaces import ORMColumnsClauseRole
@@ -99,6 +102,7 @@ if typing.TYPE_CHECKING:
     from .context import _MapperEntity
     from .context import ORMCompileState
     from .mapper import Mapper
+    from .path_registry import AbstractEntityRegistry
     from .query import Query
     from .relationships import RelationshipProperty
     from ..engine import Row
@@ -113,10 +117,8 @@ if typing.TYPE_CHECKING:
     from ..sql.base import ReadOnlyColumnCollection
     from ..sql.elements import BindParameter
     from ..sql.selectable import _ColumnsClauseElement
-    from ..sql.selectable import Alias
     from ..sql.selectable import Select
     from ..sql.selectable import Selectable
-    from ..sql.selectable import Subquery
     from ..sql.visitors import anon_map
     from ..util.typing import _AnnotationScanType
     from ..util.typing import ArgsTypeProcotol
@@ -138,7 +140,14 @@ all_cascades = frozenset(
 
 
 _de_stringify_partial = functools.partial(
-    functools.partial, locals_=util.immutabledict({"Mapped": Mapped})
+    functools.partial,
+    locals_=util.immutabledict(
+        {
+            "Mapped": Mapped,
+            "WriteOnlyMapped": WriteOnlyMapped,
+            "DynamicMapped": DynamicMapped,
+        }
+    ),
 )
 
 # partial is practically useless as we have to write out the whole
@@ -935,8 +944,8 @@ class AliasedInsp(
     _weak_entity: weakref.ref[AliasedClass[_O]]
     """the AliasedClass that refers to this AliasedInsp"""
 
-    _target: Union[_O, AliasedClass[_O]]
-    """the thing referred towards by the AliasedClass/AliasedInsp.
+    _target: Union[Type[_O], AliasedClass[_O]]
+    """the thing referenced by the AliasedClass/AliasedInsp.
 
     In the vast majority of cases, this is the mapped class.  However
     it may also be another AliasedClass (alias of alias).
@@ -957,7 +966,6 @@ class AliasedInsp(
         represents_outer_join: bool,
         nest_adapters: bool,
     ):
-
         mapped_class_or_ac = inspected.entity
         mapper = inspected.mapper
 
@@ -1024,12 +1032,11 @@ class AliasedInsp(
     def _alias_factory(
         cls,
         element: Union[_EntityType[_O], FromClause],
-        alias: Optional[Union[Alias, Subquery]] = None,
+        alias: Optional[FromClause] = None,
         name: Optional[str] = None,
         flat: bool = False,
         adapt_on_names: bool = False,
     ) -> Union[AliasedClass[_O], FromClause]:
-
         if isinstance(element, FromClause):
             if adapt_on_names:
                 raise sa_exc.ArgumentError(
@@ -1063,7 +1070,6 @@ class AliasedInsp(
         adapt_on_names: bool = False,
         _use_mapper_path: bool = False,
     ) -> AliasedClass[_O]:
-
         primary_mapper = _class_to_mapper(base)
 
         if selectable not in (None, False) and flat:
@@ -1128,7 +1134,7 @@ class AliasedInsp(
         return self.mapper.class_
 
     @property
-    def _path_registry(self) -> PathRegistry:
+    def _path_registry(self) -> AbstractEntityRegistry:
         if self._use_mapper_path:
             return self.mapper._path_registry
         else:
@@ -1208,7 +1214,7 @@ class AliasedInsp(
         # IMO mypy should see this one also as returning the same type
         # we put into it, but it's not
         return (
-            self._adapter.traverse(expr)  # type: ignore
+            self._adapter.traverse(expr)
             ._annotate(d)
             ._set_propagate_attrs(
                 {"compile_state_plugin": "orm", "plugin_subject": self}
@@ -1401,7 +1407,7 @@ class LoaderCriteriaOption(CriteriaOption):
 
             self.deferred_where_criteria = True
             self.where_criteria = lambdas.DeferredLambdaElement(
-                where_criteria,  # type: ignore
+                where_criteria,
                 roles.WhereHavingRole,
                 lambda_args=(_WrapUserEntity(wrap_entity),),
                 opts=lambdas.LambdaOptions(
@@ -1440,7 +1446,6 @@ class LoaderCriteriaOption(CriteriaOption):
         )
 
     def _all_mappers(self) -> Iterator[Mapper[Any]]:
-
         if self.entity:
             yield from self.entity.mapper.self_and_descendants
         else:
@@ -1516,14 +1521,12 @@ inspection._inspects(AliasedClass)(lambda target: target._aliased_insp)
 def _inspect_mc(
     class_: Type[_O],
 ) -> Optional[Mapper[_O]]:
-
     try:
         class_manager = opt_manager_of_class(class_)
         if class_manager is None or not class_manager.is_mapped:
             return None
         mapper = class_manager.mapper
     except exc.NO_STATE:
-
         return None
     else:
         return mapper
@@ -1536,7 +1539,6 @@ GenericAlias = type(List[Any])
 def _inspect_generic_alias(
     class_: Type[_O],
 ) -> Optional[Mapper[_O]]:
-
     origin = cast("Type[_O]", typing_get_origin(class_))
     return _inspect_mc(origin)
 
@@ -1628,12 +1630,18 @@ class Bundle(
         )
 
     @property
-    def mapper(self) -> Mapper[Any]:
-        return self.exprs[0]._annotations.get("parentmapper", None)
+    def mapper(self) -> Optional[Mapper[Any]]:
+        mp: Optional[Mapper[Any]] = self.exprs[0]._annotations.get(
+            "parentmapper", None
+        )
+        return mp
 
     @property
-    def entity(self) -> _InternalEntityType[Any]:
-        return self.exprs[0]._annotations.get("parententity", None)
+    def entity(self) -> Optional[_InternalEntityType[Any]]:
+        ie: Optional[_InternalEntityType[Any]] = self.exprs[
+            0
+        ]._annotations.get("parententity", None)
+        return ie
 
     @property
     def entity_namespace(
@@ -1835,8 +1843,8 @@ class _ORMJoin(expression.Join):
             prop = None
             on_selectable = None
 
+        left_selectable = left_info.selectable
         if prop:
-            left_selectable = left_info.selectable
             adapt_from: Optional[FromClause]
             if sql_util.clause_is_present(on_selectable, left_selectable):
                 adapt_from = on_selectable
@@ -1873,25 +1881,25 @@ class _ORMJoin(expression.Join):
 
             self._target_adapter = target_adapter
 
-            # we don't use the normal coercions logic for _ORMJoin
-            # (probably should), so do some gymnastics to get the entity.
-            # logic here is for #8721, which was a major bug in 1.4
-            # for almost two years, not reported/fixed until 1.4.43 (!)
-            if is_selectable(left_info):
-                parententity = left_selectable._annotations.get(
-                    "parententity", None
-                )
-            elif insp_is_mapper(left_info) or insp_is_aliased_class(left_info):
-                parententity = left_info
-            else:
-                parententity = None
+        # we don't use the normal coercions logic for _ORMJoin
+        # (probably should), so do some gymnastics to get the entity.
+        # logic here is for #8721, which was a major bug in 1.4
+        # for almost two years, not reported/fixed until 1.4.43 (!)
+        if is_selectable(left_info):
+            parententity = left_selectable._annotations.get(
+                "parententity", None
+            )
+        elif insp_is_mapper(left_info) or insp_is_aliased_class(left_info):
+            parententity = left_info
+        else:
+            parententity = None
 
-            if parententity is not None:
-                self._annotations = self._annotations.union(
-                    {"parententity": parententity}
-                )
+        if parententity is not None:
+            self._annotations = self._annotations.union(
+                {"parententity": parententity}
+            )
 
-        augment_onclause = onclause is None and _extra_criteria
+        augment_onclause = bool(_extra_criteria) and not prop
         expression.Join.__init__(self, left, right, onclause, isouter, full)
 
         assert self.onclause is not None
@@ -2177,9 +2185,9 @@ def _getitem(iterable_query: Query[Any], item: Any) -> Any:
 
         res = iterable_query.slice(start, stop)
         if step is not None:
-            return list(res)[None : None : item.step]  # type: ignore
+            return list(res)[None : None : item.step]
         else:
-            return list(res)  # type: ignore
+            return list(res)
     else:
         if item == -1:
             _no_negative_indexes()
@@ -2242,14 +2250,17 @@ def _cleanup_mapped_str_annotation(
             "outside of TYPE_CHECKING blocks"
         ) from ne
 
-    try:
-        if issubclass(obj, _MappedAnnotationBase):
-            real_symbol = obj.__name__
-        else:
+    if obj is typing.ClassVar:
+        real_symbol = "ClassVar"
+    else:
+        try:
+            if issubclass(obj, _MappedAnnotationBase):
+                real_symbol = obj.__name__
+            else:
+                return annotation
+        except TypeError:
+            # avoid isinstance(obj, type) check, just catch TypeError
             return annotation
-    except TypeError:
-        # avoid isinstance(obj, type) check, just catch TypeError
-        return annotation
 
     # note: if one of the codepaths above didn't define real_symbol and
     # then didn't return, real_symbol raises UnboundLocalError
@@ -2316,7 +2327,6 @@ def _extract_mapped_subtype(
     """
 
     if raw_annotation is None:
-
         if required:
             raise sa_exc.ArgumentError(
                 f"Python typing annotation is required for attribute "
@@ -2354,12 +2364,19 @@ def _extract_mapped_subtype(
         if not hasattr(annotated, "__origin__") or not is_origin_of_cls(
             annotated, _MappedAnnotationBase
         ):
-
             if expect_mapped:
-                if getattr(annotated, "__origin__", None) is typing.ClassVar:
+                if not raiseerr:
                     return None
 
-                if not raiseerr:
+                origin = getattr(annotated, "__origin__", None)
+                if origin is typing.ClassVar:
+                    return None
+
+                # check for other kind of ORM descriptor like AssociationProxy,
+                # don't raise for that (issue #9957)
+                elif isinstance(origin, type) and issubclass(
+                    origin, ORMDescriptor
+                ):
                     return None
 
                 raise sa_exc.ArgumentError(
@@ -2382,9 +2399,9 @@ def _extract_mapped_subtype(
             else:
                 return annotated, None
 
-        if len(annotated.__args__) != 1:  # type: ignore
+        if len(annotated.__args__) != 1:
             raise sa_exc.ArgumentError(
                 "Expected sub-type for Mapped[] annotation"
             )
 
-        return annotated.__args__[0], annotated.__origin__  # type: ignore
+        return annotated.__args__[0], annotated.__origin__

@@ -4,20 +4,26 @@
 
     LilyPond-specific style.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 from pygments.style import Style
 from pygments.token import Token
 
+
+__all__ = ['LilyPondStyle']
+
+
 class LilyPondStyle(Style):
     """
     Style for the LilyPond language.
-        
+
     .. versionadded:: 2.11
     """
 
+    name = 'lilypond'
+    
     # Don't show it in the gallery, it's intended for LilyPond
     # input only and doesn't show good output on Python code.
     web_style_gallery_exclude = True

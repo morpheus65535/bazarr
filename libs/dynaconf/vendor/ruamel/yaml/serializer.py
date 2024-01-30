@@ -1,240 +1,90 @@
-# coding: utf-8
-
 from __future__ import absolute_import
-
-from .error import YAMLError
-from .compat import nprint, DBG_NODE, dbg, string_types, nprintf  # NOQA
-from .util import RegExp
-
-from .events import (
-    StreamStartEvent,
-    StreamEndEvent,
-    MappingStartEvent,
-    MappingEndEvent,
-    SequenceStartEvent,
-    SequenceEndEvent,
-    AliasEvent,
-    ScalarEvent,
-    DocumentStartEvent,
-    DocumentEndEvent,
-)
-from .nodes import MappingNode, ScalarNode, SequenceNode
-
-if False:  # MYPY
-    from typing import Any, Dict, Union, Text, Optional  # NOQA
-    from .compat import VersionType  # NOQA
-
-__all__ = ['Serializer', 'SerializerError']
-
-
-class SerializerError(YAMLError):
-    pass
-
-
-class Serializer(object):
-
-    # 'id' and 3+ numbers, but not 000
-    ANCHOR_TEMPLATE = u'id%03d'
-    ANCHOR_RE = RegExp(u'id(?!000$)\\d{3,}')
-
-    def __init__(
-        self,
-        encoding=None,
-        explicit_start=None,
-        explicit_end=None,
-        version=None,
-        tags=None,
-        dumper=None,
-    ):
-        # type: (Any, Optional[bool], Optional[bool], Optional[VersionType], Any, Any) -> None  # NOQA
-        self.dumper = dumper
-        if self.dumper is not None:
-            self.dumper._serializer = self
-        self.use_encoding = encoding
-        self.use_explicit_start = explicit_start
-        self.use_explicit_end = explicit_end
-        if isinstance(version, string_types):
-            self.use_version = tuple(map(int, version.split('.')))
-        else:
-            self.use_version = version  # type: ignore
-        self.use_tags = tags
-        self.serialized_nodes = {}  # type: Dict[Any, Any]
-        self.anchors = {}  # type: Dict[Any, Any]
-        self.last_anchor_id = 0
-        self.closed = None  # type: Optional[bool]
-        self._templated_id = None
-
-    @property
-    def emitter(self):
-        # type: () -> Any
-        if hasattr(self.dumper, 'typ'):
-            return self.dumper.emitter
-        return self.dumper._emitter
-
-    @property
-    def resolver(self):
-        # type: () -> Any
-        if hasattr(self.dumper, 'typ'):
-            self.dumper.resolver
-        return self.dumper._resolver
-
-    def open(self):
-        # type: () -> None
-        if self.closed is None:
-            self.emitter.emit(StreamStartEvent(encoding=self.use_encoding))
-            self.closed = False
-        elif self.closed:
-            raise SerializerError('serializer is closed')
-        else:
-            raise SerializerError('serializer is already opened')
-
-    def close(self):
-        # type: () -> None
-        if self.closed is None:
-            raise SerializerError('serializer is not opened')
-        elif not self.closed:
-            self.emitter.emit(StreamEndEvent())
-            self.closed = True
-
-    # def __del__(self):
-    #     self.close()
-
-    def serialize(self, node):
-        # type: (Any) -> None
-        if dbg(DBG_NODE):
-            nprint('Serializing nodes')
-            node.dump()
-        if self.closed is None:
-            raise SerializerError('serializer is not opened')
-        elif self.closed:
-            raise SerializerError('serializer is closed')
-        self.emitter.emit(
-            DocumentStartEvent(
-                explicit=self.use_explicit_start, version=self.use_version, tags=self.use_tags
-            )
-        )
-        self.anchor_node(node)
-        self.serialize_node(node, None, None)
-        self.emitter.emit(DocumentEndEvent(explicit=self.use_explicit_end))
-        self.serialized_nodes = {}
-        self.anchors = {}
-        self.last_anchor_id = 0
-
-    def anchor_node(self, node):
-        # type: (Any) -> None
-        if node in self.anchors:
-            if self.anchors[node] is None:
-                self.anchors[node] = self.generate_anchor(node)
-        else:
-            anchor = None
-            try:
-                if node.anchor.always_dump:
-                    anchor = node.anchor.value
-            except:  # NOQA
-                pass
-            self.anchors[node] = anchor
-            if isinstance(node, SequenceNode):
-                for item in node.value:
-                    self.anchor_node(item)
-            elif isinstance(node, MappingNode):
-                for key, value in node.value:
-                    self.anchor_node(key)
-                    self.anchor_node(value)
-
-    def generate_anchor(self, node):
-        # type: (Any) -> Any
-        try:
-            anchor = node.anchor.value
-        except:  # NOQA
-            anchor = None
-        if anchor is None:
-            self.last_anchor_id += 1
-            return self.ANCHOR_TEMPLATE % self.last_anchor_id
-        return anchor
-
-    def serialize_node(self, node, parent, index):
-        # type: (Any, Any, Any) -> None
-        alias = self.anchors[node]
-        if node in self.serialized_nodes:
-            self.emitter.emit(AliasEvent(alias))
-        else:
-            self.serialized_nodes[node] = True
-            self.resolver.descend_resolver(parent, index)
-            if isinstance(node, ScalarNode):
-                # here check if the node.tag equals the one that would result from parsing
-                # if not equal quoting is necessary for strings
-                detected_tag = self.resolver.resolve(ScalarNode, node.value, (True, False))
-                default_tag = self.resolver.resolve(ScalarNode, node.value, (False, True))
-                implicit = (
-                    (node.tag == detected_tag),
-                    (node.tag == default_tag),
-                    node.tag.startswith('tag:yaml.org,2002:'),
-                )
-                self.emitter.emit(
-                    ScalarEvent(
-                        alias,
-                        node.tag,
-                        implicit,
-                        node.value,
-                        style=node.style,
-                        comment=node.comment,
-                    )
-                )
-            elif isinstance(node, SequenceNode):
-                implicit = node.tag == self.resolver.resolve(SequenceNode, node.value, True)
-                comment = node.comment
-                end_comment = None
-                seq_comment = None
-                if node.flow_style is True:
-                    if comment:  # eol comment on flow style sequence
-                        seq_comment = comment[0]
-                        # comment[0] = None
-                if comment and len(comment) > 2:
-                    end_comment = comment[2]
-                else:
-                    end_comment = None
-                self.emitter.emit(
-                    SequenceStartEvent(
-                        alias,
-                        node.tag,
-                        implicit,
-                        flow_style=node.flow_style,
-                        comment=node.comment,
-                    )
-                )
-                index = 0
-                for item in node.value:
-                    self.serialize_node(item, node, index)
-                    index += 1
-                self.emitter.emit(SequenceEndEvent(comment=[seq_comment, end_comment]))
-            elif isinstance(node, MappingNode):
-                implicit = node.tag == self.resolver.resolve(MappingNode, node.value, True)
-                comment = node.comment
-                end_comment = None
-                map_comment = None
-                if node.flow_style is True:
-                    if comment:  # eol comment on flow style sequence
-                        map_comment = comment[0]
-                        # comment[0] = None
-                if comment and len(comment) > 2:
-                    end_comment = comment[2]
-                self.emitter.emit(
-                    MappingStartEvent(
-                        alias,
-                        node.tag,
-                        implicit,
-                        flow_style=node.flow_style,
-                        comment=node.comment,
-                        nr_items=len(node.value),
-                    )
-                )
-                for key, value in node.value:
-                    self.serialize_node(key, node, None)
-                    self.serialize_node(value, node, key)
-                self.emitter.emit(MappingEndEvent(comment=[map_comment, end_comment]))
-            self.resolver.ascend_resolver()
-
-
-def templated_id(s):
-    # type: (Text) -> Any
-    return Serializer.ANCHOR_RE.match(s)
+_E='serializer is not opened'
+_D='serializer is closed'
+_C=False
+_B=True
+_A=None
+from.error import YAMLError
+from.compat import nprint,DBG_NODE,dbg,string_types,nprintf
+from.util import RegExp
+from.events import StreamStartEvent,StreamEndEvent,MappingStartEvent,MappingEndEvent,SequenceStartEvent,SequenceEndEvent,AliasEvent,ScalarEvent,DocumentStartEvent,DocumentEndEvent
+from.nodes import MappingNode,ScalarNode,SequenceNode
+if _C:from typing import Any,Dict,Union,Text,Optional;from.compat import VersionType
+__all__=['Serializer','SerializerError']
+class SerializerError(YAMLError):0
+class Serializer:
+	ANCHOR_TEMPLATE='id%03d';ANCHOR_RE=RegExp('id(?!000$)\\d{3,}')
+	def __init__(A,encoding=_A,explicit_start=_A,explicit_end=_A,version=_A,tags=_A,dumper=_A):
+		B=version;A.dumper=dumper
+		if A.dumper is not _A:A.dumper._serializer=A
+		A.use_encoding=encoding;A.use_explicit_start=explicit_start;A.use_explicit_end=explicit_end
+		if isinstance(B,string_types):A.use_version=tuple(map(int,B.split('.')))
+		else:A.use_version=B
+		A.use_tags=tags;A.serialized_nodes={};A.anchors={};A.last_anchor_id=0;A.closed=_A;A._templated_id=_A
+	@property
+	def emitter(self):
+		A=self
+		if hasattr(A.dumper,'typ'):return A.dumper.emitter
+		return A.dumper._emitter
+	@property
+	def resolver(self):
+		A=self
+		if hasattr(A.dumper,'typ'):A.dumper.resolver
+		return A.dumper._resolver
+	def open(A):
+		if A.closed is _A:A.emitter.emit(StreamStartEvent(encoding=A.use_encoding));A.closed=_C
+		elif A.closed:raise SerializerError(_D)
+		else:raise SerializerError('serializer is already opened')
+	def close(A):
+		if A.closed is _A:raise SerializerError(_E)
+		elif not A.closed:A.emitter.emit(StreamEndEvent());A.closed=_B
+	def serialize(A,node):
+		B=node
+		if dbg(DBG_NODE):nprint('Serializing nodes');B.dump()
+		if A.closed is _A:raise SerializerError(_E)
+		elif A.closed:raise SerializerError(_D)
+		A.emitter.emit(DocumentStartEvent(explicit=A.use_explicit_start,version=A.use_version,tags=A.use_tags));A.anchor_node(B);A.serialize_node(B,_A,_A);A.emitter.emit(DocumentEndEvent(explicit=A.use_explicit_end));A.serialized_nodes={};A.anchors={};A.last_anchor_id=0
+	def anchor_node(B,node):
+		A=node
+		if A in B.anchors:
+			if B.anchors[A]is _A:B.anchors[A]=B.generate_anchor(A)
+		else:
+			C=_A
+			try:
+				if A.anchor.always_dump:C=A.anchor.value
+			except:pass
+			B.anchors[A]=C
+			if isinstance(A,SequenceNode):
+				for D in A.value:B.anchor_node(D)
+			elif isinstance(A,MappingNode):
+				for(E,F)in A.value:B.anchor_node(E);B.anchor_node(F)
+	def generate_anchor(A,node):
+		try:B=node.anchor.value
+		except:B=_A
+		if B is _A:A.last_anchor_id+=1;return A.ANCHOR_TEMPLATE%A.last_anchor_id
+		return B
+	def serialize_node(B,node,parent,index):
+		F=index;A=node;G=B.anchors[A]
+		if A in B.serialized_nodes:B.emitter.emit(AliasEvent(G))
+		else:
+			B.serialized_nodes[A]=_B;B.resolver.descend_resolver(parent,F)
+			if isinstance(A,ScalarNode):K=B.resolver.resolve(ScalarNode,A.value,(_B,_C));L=B.resolver.resolve(ScalarNode,A.value,(_C,_B));E=A.tag==K,A.tag==L,A.tag.startswith('tag:yaml.org,2002:');B.emitter.emit(ScalarEvent(G,A.tag,E,A.value,style=A.style,comment=A.comment))
+			elif isinstance(A,SequenceNode):
+				E=A.tag==B.resolver.resolve(SequenceNode,A.value,_B);C=A.comment;D=_A;H=_A
+				if A.flow_style is _B:
+					if C:H=C[0]
+				if C and len(C)>2:D=C[2]
+				else:D=_A
+				B.emitter.emit(SequenceStartEvent(G,A.tag,E,flow_style=A.flow_style,comment=A.comment));F=0
+				for M in A.value:B.serialize_node(M,A,F);F+=1
+				B.emitter.emit(SequenceEndEvent(comment=[H,D]))
+			elif isinstance(A,MappingNode):
+				E=A.tag==B.resolver.resolve(MappingNode,A.value,_B);C=A.comment;D=_A;I=_A
+				if A.flow_style is _B:
+					if C:I=C[0]
+				if C and len(C)>2:D=C[2]
+				B.emitter.emit(MappingStartEvent(G,A.tag,E,flow_style=A.flow_style,comment=A.comment,nr_items=len(A.value)))
+				for(J,N)in A.value:B.serialize_node(J,A,_A);B.serialize_node(N,A,J)
+				B.emitter.emit(MappingEndEvent(comment=[I,D]))
+			B.resolver.ascend_resolver()
+def templated_id(s):return Serializer.ANCHOR_RE.match(s)

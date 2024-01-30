@@ -4,7 +4,7 @@
 
     A highlighting style for Pygments, inspired by Emacs.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -13,10 +13,14 @@ from pygments.token import Keyword, Name, Comment, String, Error, \
      Number, Operator, Generic, Whitespace
 
 
+__all__ = ['EmacsStyle']
+
+
 class EmacsStyle(Style):
     """
     The default style (inspired by Emacs 22).
     """
+    name = 'emacs'
 
     background_color = "#f8f8f8"
 
@@ -62,6 +66,7 @@ class EmacsStyle(Style):
         Generic.Error:             "#FF0000",
         Generic.Emph:              "italic",
         Generic.Strong:            "bold",
+        Generic.EmphStrong:        "bold italic",
         Generic.Prompt:            "bold #000080",
         Generic.Output:            "#888",
         Generic.Traceback:         "#04D",

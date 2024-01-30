@@ -5,7 +5,7 @@
     Light Style inspired by Stata's do-file editor. Note this is not
     meant to be a complete style, just for Stata's file formats.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -14,12 +14,17 @@ from pygments.token import Keyword, Name, Comment, String, Error, \
     Number, Operator, Whitespace, Text
 
 
+__all__ = ['StataLightStyle']
+
+
 class StataLightStyle(Style):
     """
     Light mode style inspired by Stata's do-file editor. This is not
     meant to be a complete style, just for use with Stata.
     """
 
+    name = 'stata-light'
+    
     styles = {
         Text:                  '#111111',
         Whitespace:            '#bbbbbb',
