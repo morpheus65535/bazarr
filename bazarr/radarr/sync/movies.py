@@ -135,7 +135,7 @@ def update_movies(send_event=True):
                     logging.error(f"BAZARR cannot delete movies because of {e}")
                 else:
                     for removed_movie in movies_to_delete:
-                        movies_deleted.append(removed_movie['title'])
+                        movies_deleted.append(removed_movie)
                         if send_event:
                             event_stream(type='movie', action='delete', payload=removed_movie)
 
