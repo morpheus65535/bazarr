@@ -55,34 +55,34 @@ class NoExceptionFormatter(logging.Formatter):
     def formatException(self, record):
         return ''
 
-    
+
 class UnwantedWaitressMessageFilter(logging.Filter):
     def filter(self, record):
-        if settings.general.debug == True:
+        if settings.general.debug:
             # no filtering in debug mode
             return True
-            
-        unwantedMessages = [ 
-            "Exception while serving /api/socket.io/", 
-            ['Session is disconnected', 'Session not found' ],
-            
-            "Exception while serving /api/socket.io/", 
-            ["'Session is disconnected'", "'Session not found'" ],
-            
-            "Exception while serving /api/socket.io/", 
-            ['"Session is disconnected"', '"Session not found"' ]
+
+        unwantedMessages = [
+            "Exception while serving /api/socket.io/",
+            ['Session is disconnected', 'Session not found'],
+
+            "Exception while serving /api/socket.io/",
+            ["'Session is disconnected'", "'Session not found'"],
+
+            "Exception while serving /api/socket.io/",
+            ['"Session is disconnected"', '"Session not found"']
         ]
-   
-        wanted = True    
+
+        wanted = True
         listLength = len(unwantedMessages)
         for i in range(0, listLength, 2):
             if record.msg == unwantedMessages[i]:
                 exceptionTuple = record.exc_info
-                if exceptionTuple != None:
+                if exceptionTuple is not None:
                     if str(exceptionTuple[1]) in unwantedMessages[i+1]:
                         wanted = False
                         break
-        
+
         return wanted
 
 
@@ -159,7 +159,7 @@ def configure_logging(debug=False):
         logging.getLogger("ga4mp.ga4mp").setLevel(logging.ERROR)
 
     logging.getLogger("waitress").setLevel(logging.ERROR)
-    logging.getLogger("waitress").addFilter(UnwantedWaitressMessageFilter())   
+    logging.getLogger("waitress").addFilter(UnwantedWaitressMessageFilter())
     logging.getLogger("knowit").setLevel(logging.CRITICAL)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)

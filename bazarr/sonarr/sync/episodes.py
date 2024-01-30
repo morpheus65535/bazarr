@@ -11,7 +11,7 @@ from utilities.path_mappings import path_mappings
 from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
 from subtitles.mass_download import episode_download_subtitles
 from app.event_handler import event_stream
-from sonarr.info import get_sonarr_info, url_sonarr
+from sonarr.info import get_sonarr_info
 
 from .parser import episodeParser
 from .utils import get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
@@ -127,7 +127,6 @@ def sync_episodes(series_id, send_event=True):
 
 def sync_one_episode(episode_id, defer_search=False):
     logging.debug(f'BAZARR syncing this specific episode from Sonarr: {episode_id}')
-    url = url_sonarr()
     apikey_sonarr = settings.sonarr.apikey
 
     # Check if there's a row in database for this episode ID

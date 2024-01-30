@@ -37,6 +37,7 @@ def validate_ip_address(ip_string):
 ONE_HUNDRED_YEARS_IN_MINUTES = 52560000
 ONE_HUNDRED_YEARS_IN_HOURS = 876000
 
+
 class Validator(OriginalValidator):
     # Give the ability to personalize messages sent by the original dynasync Validator class.
     default_messages = MappingProxyType(
@@ -102,7 +103,7 @@ validators = [
     Validator('general.subfolder', must_exist=True, default='current', is_type_of=str),
     Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),
     Validator('general.upgrade_subs', must_exist=True, default=True, is_type_of=bool),
-    Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int, 
+    Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int,
               is_in=[6, 12, 24, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.days_to_upgrade_subs', must_exist=True, default=7, is_type_of=int, gte=0, lte=30),
     Validator('general.upgrade_manual', must_exist=True, default=True, is_type_of=bool),

@@ -5,7 +5,6 @@ import logging
 from sqlalchemy.exc import IntegrityError
 
 from app.config import settings
-from sonarr.info import url_sonarr
 from subtitles.indexer.series import list_missing_subtitles
 from sonarr.rootfolder import check_sonarr_rootfolder
 from app.database import TableShows, TableLanguagesProfiles, database, insert, update, delete, select

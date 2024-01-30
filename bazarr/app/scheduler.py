@@ -40,16 +40,19 @@ from dateutil.relativedelta import relativedelta
 
 NO_INTERVAL = "None"
 NEVER_DATE = "Never"
-ONE_YEAR_IN_SECONDS =  60 * 60 * 24 * 365
+ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365
+
 
 def a_long_time_from_now(job):
     # currently defined as more than a year from now
     delta = job.next_run_time - datetime.now(job.next_run_time.tzinfo)
     return delta.total_seconds() > ONE_YEAR_IN_SECONDS
 
+
 def in_a_century():
     century = datetime.now() + relativedelta(years=100)
     return century.year
+
 
 class Scheduler:
 
@@ -133,7 +136,6 @@ class Scheduler:
             return ", ".join(strings)
 
         def get_time_from_cron(cron):
-            year = str(cron[0])
             day = str(cron[4])
             hour = str(cron[5])
 
@@ -183,8 +185,8 @@ class Scheduler:
                 else:
                     interval = get_time_from_cron(job.trigger.fields)
                 task_list.append({'name': job.name, 'interval': interval,
-                                'next_run_in': next_run, 'next_run_time': next_run, 'job_id': job.id,
-                                'job_running': running})
+                                  'next_run_in': next_run, 'next_run_time': next_run, 'job_id': job.id,
+                                  'job_running': running})
 
         return task_list
 
@@ -219,8 +221,8 @@ class Scheduler:
         elif backup == "Manually":
             trigger = CronTrigger(year=in_a_century())
         self.aps_scheduler.add_job(backup_to_zip, trigger,
-                max_instances=1, coalesce=True, misfire_grace_time=15, id='backup',
-                name='Backup Database and Configuration File', replace_existing=True)
+                                   max_instances=1, coalesce=True, misfire_grace_time=15, id='backup',
+                                   name='Backup Database and Configuration File', replace_existing=True)
 
     def __sonarr_full_update_task(self):
         if settings.general.use_sonarr:

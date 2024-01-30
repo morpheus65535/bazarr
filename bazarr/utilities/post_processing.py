@@ -16,7 +16,7 @@ def _escape(in_str):
 
 
 def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3, episode_language,
-               episode_language_code2, episode_language_code3, score, subtitle_id, provider, uploader, 
+               episode_language_code2, episode_language_code3, score, subtitle_id, provider, uploader,
                release_info, series_id, episode_id):
     pp_command = re.sub(r'[\'"]?{{directory}}[\'"]?', _escape(os.path.dirname(episode)), pp_command)
     pp_command = re.sub(r'[\'"]?{{episode}}[\'"]?', _escape(episode), pp_command)
