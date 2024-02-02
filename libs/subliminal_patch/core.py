@@ -574,12 +574,12 @@ class SZProviderPool(ProviderPool):
                 break
 
             # stop when all languages are downloaded
-            if set(s.language.basename for s in downloaded_subtitles) == languages:
+            if set(str(s.language) for s in downloaded_subtitles) == languages:
                 logger.debug('All languages downloaded')
                 break
 
             # check downloaded languages
-            if subtitle.language in set(s.language.basename for s in downloaded_subtitles):
+            if subtitle.language in set(str(s.language) for s in downloaded_subtitles):
                 logger.debug('%r: Skipping subtitle: already downloaded', subtitle.language)
                 continue
 
