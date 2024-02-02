@@ -82,7 +82,7 @@ rebulk==3.2.0
 zipp==3.17.0
 
 # Required-by: jinja2
-markupsafe==2.1.4
+markupsafe==2.1.5
 
 # Required-by: knowit
 pymediainfo==6.1.0

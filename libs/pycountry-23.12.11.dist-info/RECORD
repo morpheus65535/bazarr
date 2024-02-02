@@ -3,7 +3,7 @@ pycountry-23.12.11.dist-info/LICENSE.txt,sha256=P6OcbhijpEEQgrZMFk3q4dj0ewOk1FME
 pycountry-23.12.11.dist-info/METADATA,sha256=Dc1L4pmTWyoPheIg2zld-9UnODLSyealeDzkRnMntPo,12447
 pycountry-23.12.11.dist-info/RECORD,,
 pycountry-23.12.11.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-pycountry-23.12.11.dist-info/WHEEL,sha256=FMvqSimYX_P7y0a7UY-_Mc83r5zkBZsCYPm7Lr0Bsq4,88
+pycountry-23.12.11.dist-info/WHEEL,sha256=sP946D7jFCHeNz5Iq4fL4Lu-PrWrFsgfLXbbkciIZwg,88
 pycountry/__init__.py,sha256=X0f7dfQlqujBseP3BtDA-eZBCrnsGgaXtsjcDBlhoeU,10405
 pycountry/databases/iso15924.json,sha256=Z009yLGKO5ma9xlvd5QopGXl-wr0FNBxlX0QNIvJgX4,17097
 pycountry/databases/iso3166-1.json,sha256=8BuBK1f7qfMf9iG_M-fHVwoBlk2-tb4hZ-lN7PU4yJ8,43284

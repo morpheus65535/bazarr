@@ -3,7 +3,7 @@ babelfish-0.6.0.dist-info/LICENSE,sha256=Oks1Oz6Ct0po2CM5dQD3S8oXrnJOJ1jMNj28Y5y
 babelfish-0.6.0.dist-info/METADATA,sha256=8jYo3WO5AI6-SQfqvix3zYsPwqPVo__07TBgLlKT12A,3003
 babelfish-0.6.0.dist-info/RECORD,,
 babelfish-0.6.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-babelfish-0.6.0.dist-info/WHEEL,sha256=FMvqSimYX_P7y0a7UY-_Mc83r5zkBZsCYPm7Lr0Bsq4,88
+babelfish-0.6.0.dist-info/WHEEL,sha256=sP946D7jFCHeNz5Iq4fL4Lu-PrWrFsgfLXbbkciIZwg,88
 babelfish/__init__.py,sha256=acwjM_qKby8EzOkPVT-R1Usakhba0s7mO-Q4QXFPZgs,761
 babelfish/converters/__init__.py,sha256=T4lfWFLaCXEHGhS86k4v9PWGhn4Hbf0I2LvFs-M3tCs,9366
 babelfish/converters/alpha2.py,sha256=4eeZPb4tDZ7pF2D9AUvk4UAUupYAOnjJFHGScn_UWeM,556

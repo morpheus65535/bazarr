@@ -6,7 +6,7 @@ ftfy-6.1.3.dist-info/LICENSE.txt,sha256=oL_FAgvC4eggVRoGJccMlfqomMFec3EA_0iAqhAZ
 ftfy-6.1.3.dist-info/METADATA,sha256=WGR7WPYS2N1u6a4oO3SJnAo6Bj6IWnsDes7LrLtK_h0,6227
 ftfy-6.1.3.dist-info/RECORD,,
 ftfy-6.1.3.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-ftfy-6.1.3.dist-info/WHEEL,sha256=FMvqSimYX_P7y0a7UY-_Mc83r5zkBZsCYPm7Lr0Bsq4,88
+ftfy-6.1.3.dist-info/WHEEL,sha256=sP946D7jFCHeNz5Iq4fL4Lu-PrWrFsgfLXbbkciIZwg,88
 ftfy-6.1.3.dist-info/entry_points.txt,sha256=N8flv0M3Cdg0X56vlUPd7R_CdvTG76C8pKhrDS9Ysug,38
 ftfy/__init__.py,sha256=XuwZPFzyvp4DfkBK5iAUQvWzHBgT09mCWj1xEBq_4Lw,29222
 ftfy/bad_codecs/__init__.py,sha256=kNDJXrT7ZZgk5WZG4zIWgkinI27UTXLrubOGfrFk3dc,3234
