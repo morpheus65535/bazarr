@@ -13,7 +13,10 @@ from datetime import datetime, timedelta
 from calendar import day_name
 from random import randrange
 from tzlocal import get_localzone
-from backports.zoneinfo._common import ZoneInfoNotFoundError
+try:
+    import zoneinfo  # pragma: no cover
+except ImportError:
+    from backports import zoneinfo  # pragma: no cover
 from dateutil import tz
 import logging
 
@@ -61,7 +64,7 @@ class Scheduler:
 
         try:
             self.timezone = get_localzone()
-        except ZoneInfoNotFoundError as e:
+        except zoneinfo.ZoneInfoNotFoundError as e:
             logging.error(f"BAZARR cannot use specified timezone: {e}")
             self.timezone = tz.gettz("UTC")
 

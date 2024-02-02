@@ -13,15 +13,9 @@
 """Tests for stevedore.extension
 """
 
+import importlib.metadata as importlib_metadata
 import operator
 from unittest import mock
-
-try:
-    # For python 3.8 and later
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    # For everyone else
-    import importlib_metadata
 
 from stevedore import exception
 from stevedore import extension
@@ -273,10 +267,6 @@ class TestExtensionProperties(utils.TestCase):
     def test_module_name(self):
         self.assertEqual('module.name', self.ext1.module_name)
         self.assertEqual('module', self.ext2.module_name)
-
-    def test_extras(self):
-        self.assertEqual(['[extra]'], self.ext1.extras)
-        self.assertEqual([], self.ext2.extras)
 
     def test_attr(self):
         self.assertEqual('attribute.name', self.ext1.attr)

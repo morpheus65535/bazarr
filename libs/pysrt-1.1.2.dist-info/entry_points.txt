@@ -1,0 +1,2 @@
+[console_scripts]
+srt = pysrt.commands:main

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 # Set default logging handler to avoid "No handler found" warnings.
 import logging
+import sys
 import typing
 import warnings
 from logging import NullHandler
@@ -132,6 +133,61 @@ def request(
     Therefore, its side effects could be shared across dependencies relying on it.
     To avoid side effects create a new ``PoolManager`` instance and use it instead.
     The method does not accept low-level ``**urlopen_kw`` keyword arguments.
+
+    :param method:
+        HTTP request method (such as GET, POST, PUT, etc.)
+
+    :param url:
+        The URL to perform the request on.
+
+    :param body:
+        Data to send in the request body, either :class:`str`, :class:`bytes`,
+        an iterable of :class:`str`/:class:`bytes`, or a file-like object.
+
+    :param fields:
+        Data to encode and send in the request body.
+
+    :param headers:
+        Dictionary of custom headers to send, such as User-Agent,
+        If-None-Match, etc.
+
+    :param bool preload_content:
+        If True, the response's body will be preloaded into memory.
+
+    :param bool decode_content:
+        If True, will attempt to decode the body based on the
+        'content-encoding' header.
+
+    :param redirect:
+        If True, automatically handle redirects (status codes 301, 302,
+        303, 307, 308). Each redirect counts as a retry. Disabling retries
+        will disable redirect, too.
+
+    :param retries:
+        Configure the number of retries to allow before raising a
+        :class:`~urllib3.exceptions.MaxRetryError` exception.
+
+        Pass ``None`` to retry until you receive a response. Pass a
+        :class:`~urllib3.util.retry.Retry` object for fine-grained control
+        over different types of retries.
+        Pass an integer number to retry connection errors that many times,
+        but no other types of errors. Pass zero to never retry.
+
+        If ``False``, then retries are disabled and any exception is raised
+        immediately. Also, instead of raising a MaxRetryError on redirects,
+        the redirect response will be returned.
+
+    :type retries: :class:`~urllib3.util.retry.Retry`, False, or an int.
+
+    :param timeout:
+        If specified, overrides the default timeout for this one
+        request. It may be a float (in seconds) or an instance of
+        :class:`urllib3.util.Timeout`.
+
+    :param json:
+        Data to encode and send as JSON with UTF-encoded in the request body.
+        The ``"Content-Type"`` header will be set to ``"application/json"``
+        unless specified otherwise.
     """
 
     return _DEFAULT_POOL.request(
@@ -147,3 +203,9 @@ def request(
         timeout=timeout,
         json=json,
     )
+
+
+if sys.platform == "emscripten":
+    from .contrib.emscripten import inject_into_urllib3  # noqa: 401
+
+    inject_into_urllib3()

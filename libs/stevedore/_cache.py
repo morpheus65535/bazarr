@@ -15,6 +15,7 @@
 import errno
 import glob
 import hashlib
+import importlib.metadata as importlib_metadata
 import itertools
 import json
 import logging
@@ -22,13 +23,6 @@ import os
 import os.path
 import struct
 import sys
-
-try:
-    # For python 3.8 and later
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    # For everyone else
-    import importlib_metadata
 
 
 log = logging.getLogger('stevedore._cache')
@@ -62,7 +56,7 @@ def _get_mtime(name):
         s = os.stat(name)
         return s.st_mtime
     except OSError as err:
-        if err.errno != errno.ENOENT:
+        if err.errno not in {errno.ENOENT, errno.ENOTDIR}:
             raise
     return -1.0
 

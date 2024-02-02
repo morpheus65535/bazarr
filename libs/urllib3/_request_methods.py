@@ -85,6 +85,30 @@ class RequestMethods:
         option to drop down to more specific methods when necessary, such as
         :meth:`request_encode_url`, :meth:`request_encode_body`,
         or even the lowest level :meth:`urlopen`.
+
+        :param method:
+            HTTP request method (such as GET, POST, PUT, etc.)
+
+        :param url:
+            The URL to perform the request on.
+
+        :param body:
+            Data to send in the request body, either :class:`str`, :class:`bytes`,
+            an iterable of :class:`str`/:class:`bytes`, or a file-like object.
+
+        :param fields:
+            Data to encode and send in the request body.  Values are processed
+            by :func:`urllib.parse.urlencode`.
+
+        :param headers:
+            Dictionary of custom headers to send, such as User-Agent,
+            If-None-Match, etc. If None, pool headers are used. If provided,
+            these headers completely replace any pool-specific headers.
+
+        :param json:
+            Data to encode and send as JSON with UTF-encoded in the request body.
+            The ``"Content-Type"`` header will be set to ``"application/json"``
+            unless specified otherwise.
         """
         method = method.upper()
 
@@ -95,9 +119,11 @@ class RequestMethods:
 
         if json is not None:
             if headers is None:
-                headers = self.headers.copy()  # type: ignore
+                headers = self.headers
+
             if not ("content-type" in map(str.lower, headers.keys())):
-                headers["Content-Type"] = "application/json"  # type: ignore
+                headers = HTTPHeaderDict(headers)
+                headers["Content-Type"] = "application/json"
 
             body = _json.dumps(json, separators=(",", ":"), ensure_ascii=False).encode(
                 "utf-8"
@@ -130,6 +156,20 @@ class RequestMethods:
         """
         Make a request using :meth:`urlopen` with the ``fields`` encoded in
         the url. This is useful for request methods like GET, HEAD, DELETE, etc.
+
+        :param method:
+            HTTP request method (such as GET, POST, PUT, etc.)
+
+        :param url:
+            The URL to perform the request on.
+
+        :param fields:
+            Data to encode and send in the request body.
+
+        :param headers:
+            Dictionary of custom headers to send, such as User-Agent,
+            If-None-Match, etc. If None, pool headers are used. If provided,
+            these headers completely replace any pool-specific headers.
         """
         if headers is None:
             headers = self.headers
@@ -186,6 +226,28 @@ class RequestMethods:
         be overwritten because it depends on the dynamic random boundary string
         which is used to compose the body of the request. The random boundary
         string can be explicitly set with the ``multipart_boundary`` parameter.
+
+        :param method:
+            HTTP request method (such as GET, POST, PUT, etc.)
+
+        :param url:
+            The URL to perform the request on.
+
+        :param fields:
+            Data to encode and send in the request body.
+
+        :param headers:
+            Dictionary of custom headers to send, such as User-Agent,
+            If-None-Match, etc. If None, pool headers are used. If provided,
+            these headers completely replace any pool-specific headers.
+
+        :param encode_multipart:
+            If True, encode the ``fields`` using the multipart/form-data MIME
+            format.
+
+        :param multipart_boundary:
+            If not specified, then a random boundary will be generated using
+            :func:`urllib3.filepost.choose_boundary`.
         """
         if headers is None:
             headers = self.headers

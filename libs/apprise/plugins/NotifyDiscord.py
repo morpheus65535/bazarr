@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -104,6 +104,10 @@ class NotifyDiscord(NotifyBase):
 
     # The maximum allowable characters allowed in the body per message
     body_maxlen = 2000
+
+    # The 2000 characters above defined by the body_maxlen include that of the
+    # title.  Setting this to True ensures overflow options behave properly
+    overflow_amalgamate_title = True
 
     # Discord has a limit of the number of fields you can include in an
     # embeds message. This value allows the discord message to safely

@@ -59,29 +59,6 @@ class Extension(object):
         return match.group('module')
 
     @property
-    def extras(self):
-        """The 'extras' settings for the plugin."""
-        # NOTE: The underlying package returned re.Match objects until this was
-        # fixed in importlib-metadata 4.11.3. This was fixed in Python 3.10 and
-        # backported to Python 3.9.11. For older versions without this fix,
-        # translate the re.Match objects to the matched strings, which seem
-        # more useful.
-        extras = []
-        for extra in self.entry_point.extras:
-            if isinstance(extra, str):
-                # We were previously returning the whole string including
-                # backets. We need to continue doing so to preserve API
-                # compatibility.
-                extras.append(f'[{extra}]')
-            else:
-                # Python 3.6 returns _sre.SRE_Match objects. Later
-                # versions of python return re.Match objects. Both types
-                # have a 'string' attribute containing the text that
-                # matched the pattern.
-                extras.append(getattr(extra, 'string', extra))
-        return extras
-
-    @property
     def attr(self):
         """The attribute of the module to be loaded."""
         match = self.entry_point.pattern.match(self.entry_point.value)
