@@ -215,6 +215,9 @@ validators = [
     Validator('addic7ed.user_agent', must_exist=True, default='', is_type_of=str),
     Validator('addic7ed.vip', must_exist=True, default=False, is_type_of=bool),
 
+    # avistaz section
+    Validator('avistaz.cookies', must_exist=True, default='', is_type_of=str),
+
     # podnapisi section
     Validator('podnapisi.verify_ssl', must_exist=True, default=True, is_type_of=bool),
 

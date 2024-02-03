@@ -69,6 +69,18 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Subtitles dump of the now extinct Argenteam",
   },
   {
+    key: "avistaz",
+    name: "AvistaZ",
+    description: "avistaz.to - AvistaZ is an Asian torrent tracker for HD movies, TV shows and music",
+    inputs: [
+      {
+        type: "text",
+        key: "cookies",
+        name: "Cookies, e.g., PHPSESSID=abc; wikisubtitlesuser=xyz; wikisubtitlespass=efg",
+      },
+    ],
+  },
+  {
     key: "assrt",
     description: "Chinese Subtitles Provider",
     inputs: [
