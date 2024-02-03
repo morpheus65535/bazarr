@@ -259,7 +259,8 @@ class AvistazSubtitle(Subtitle):
             matches.add("source")
 
         if isinstance(video, Episode):
-            if video.original_series and self.data.get('year') is None or video.year and video.year == self.data['year']:
+            if (video.original_series and 'year' not in self.data) or (
+                    video.year and 'year' in self.data and self.data['year'] == video.year):
                 matches.add('year')
 
         self.matches = matches
