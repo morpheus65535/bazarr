@@ -129,8 +129,8 @@ class EpisodesBlacklist(Resource):
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('all', type=str, required=False, help='Empty episodes subtitles blacklist')
-    delete_request_parser.add_argument('provider', type=str, required=True, help='Provider name')
-    delete_request_parser.add_argument('subs_id', type=str, required=True, help='Subtitles ID')
+    delete_request_parser.add_argument('provider', type=str, required=False, help='Provider name')
+    delete_request_parser.add_argument('subs_id', type=str, required=False, help='Subtitles ID')
 
     @authenticate
     @api_ns_episodes_blacklist.doc(parser=delete_request_parser)

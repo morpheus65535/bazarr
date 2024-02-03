@@ -13,12 +13,6 @@ from .converter import RadarrFormatAudioCodec, RadarrFormatVideoCodec
 
 def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles):
     if 'movieFile' in movie:
-        # Detect file separator
-        if movie['path'][0] == "/":
-            separator = "/"
-        else:
-            separator = "\\"
-
         try:
             overview = str(movie['overview'])
         except Exception:
@@ -120,10 +114,9 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
 
         tags = [d['label'] for d in tags_dict if d['id'] in movie['tags']]
 
-        if action == 'update':
-            return {'radarrId': int(movie["id"]),
+        parsed_movie = {'radarrId': int(movie["id"]),
                     'title': movie["title"],
-                    'path': movie["path"] + separator + movie['movieFile']['relativePath'],
+                    'path': os.path.join(movie["path"], movie['movieFile']['relativePath']),                    
                     'tmdbId': str(movie["tmdbId"]),
                     'poster': poster,
                     'fanart': fanart,
@@ -142,30 +135,12 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
                     'movie_file_id': int(movie['movieFile']['id']),
                     'tags': str(tags),
                     'file_size': movie['movieFile']['size']}
-        else:
-            return {'radarrId': int(movie["id"]),
-                    'title': movie["title"],
-                    'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                    'tmdbId': str(movie["tmdbId"]),
-                    'subtitles': '[]',
-                    'overview': overview,
-                    'poster': poster,
-                    'fanart': fanart,
-                    'audio_language': str(audio_language),
-                    'sceneName': sceneName,
-                    'monitored': str(bool(movie['monitored'])),
-                    'sortTitle': movie['sortTitle'],
-                    'year': str(movie['year']),
-                    'alternativeTitles': alternativeTitles,
-                    'format': format,
-                    'resolution': resolution,
-                    'video_codec': videoCodec,
-                    'audio_codec': audioCodec,
-                    'imdbId': imdbId,
-                    'movie_file_id': int(movie['movieFile']['id']),
-                    'tags': str(tags),
-                    'profileId': movie_default_profile,
-                    'file_size': movie['movieFile']['size']}
+        
+        if action == 'insert':
+            parsed_movie['subtitles'] = '[]'
+            parsed_movie['profileId'] = movie_default_profile
+
+        return parsed_movie
 
 
 def profile_id_to_language(id, profiles):

@@ -162,6 +162,8 @@ validators = [
     Validator('sonarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
     Validator('sonarr.exclude_season_zero', must_exist=True, default=False, is_type_of=bool),
     Validator('sonarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
+    Validator('sonarr.sync_only_monitored_series', must_exist=True, default=False, is_type_of=bool),
+    Validator('sonarr.sync_only_monitored_episodes', must_exist=True, default=False, is_type_of=bool),
 
     # radarr section
     Validator('radarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
@@ -181,6 +183,7 @@ validators = [
     Validator('radarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
     Validator('radarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
     Validator('radarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
+    Validator('radarr.sync_only_monitored_movies', must_exist=True, default=False, is_type_of=bool),
 
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
@@ -226,6 +229,7 @@ validators = [
 
     # whisperai section
     Validator('whisperai.endpoint', must_exist=True, default='http://127.0.0.1:9000', is_type_of=str),
+    Validator('whisperai.response', must_exist=True, default=5, is_type_of=int, gte=1),
     Validator('whisperai.timeout', must_exist=True, default=3600, is_type_of=int, gte=1),
     Validator('whisperai.loglevel', must_exist=True, default='INFO', is_type_of=str,
               is_in=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),

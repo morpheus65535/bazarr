@@ -2,6 +2,7 @@
 
 import os
 import logging
+from constants import MINIMUM_VIDEO_SIZE
 
 from sqlalchemy.exc import IntegrityError
 
@@ -16,6 +17,13 @@ from app.event_handler import event_stream, show_progress, hide_progress
 from .utils import get_profile_list, get_tags, get_movies_from_radarr_api
 from .parser import movieParser
 
+# map between booleans and strings in DB
+bool_map = {"True": True, "False": False}
+
+FEATURE_PREFIX = "SYNC_MOVIES "
+def trace(message):
+    if settings.general.debug:
+        logging.debug(FEATURE_PREFIX + message)
 
 def update_all_movies():
     movies_full_scan_subtitles()
@@ -44,6 +52,16 @@ def update_movie(updated_movie, send_event):
         if send_event:
             event_stream(type='movie', action='update', payload=updated_movie['radarrId'])
 
+
+def get_movie_monitored_status(movie_id):
+    existing_movie_monitored = database.execute(
+        select(TableMovies.monitored)
+        .where(TableMovies.tmdbId == movie_id))\
+        .first()
+    if existing_movie_monitored is None:
+        return True
+    else:
+        return bool_map[existing_movie_monitored[0]]
 
 # Insert new movies in DB
 def add_movie(added_movie, send_event):
@@ -104,12 +122,12 @@ def update_movies(send_event=True):
 
             current_movies_radarr = [str(movie['tmdbId']) for movie in movies if movie['hasFile'] and
                                      'movieFile' in movie and
-                                     (movie['movieFile']['size'] > 20480 or
-                                      get_movie_file_size_from_db(movie['movieFile']['path']) > 20480)]
+                                     (movie['movieFile']['size'] > MINIMUM_VIDEO_SIZE or
+                                      get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE)]
 
-            # Remove old movies from DB
+            # Remove movies from DB that either no longer exist in Radarr or exist and Radarr says do not have a movie file
             movies_to_delete = list(set(current_movies_id_db) - set(current_movies_radarr))
-
+            movies_deleted = []
             if len(movies_to_delete):
                 try:
                     database.execute(delete(TableMovies).where(TableMovies.tmdbId.in_(movies_to_delete)))
@@ -117,11 +135,19 @@ def update_movies(send_event=True):
                     logging.error(f"BAZARR cannot delete movies because of {e}")
                 else:
                     for removed_movie in movies_to_delete:
+                        movies_deleted.append(removed_movie)
                         if send_event:
                             event_stream(type='movie', action='delete', payload=removed_movie)
 
-            # Build new and updated movies
+            # Add new movies and update movies that Radarr says have media files
+            # Any new movies added to Radarr that don't have media files yet will not be added to DB
             movies_count = len(movies)
+            sync_monitored = settings.radarr.sync_only_monitored_movies
+            if sync_monitored:
+                skipped_count = 0
+            files_missing = 0
+            movies_added = []
+            movies_updated = []
             for i, movie in enumerate(movies):
                 if send_event:
                     show_progress(id='movies_progress',
@@ -129,12 +155,22 @@ def update_movies(send_event=True):
                                   name=movie['title'],
                                   value=i,
                                   count=movies_count)
-
+                # Only movies that Radarr says have files downloaded will be kept up to date in the DB
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
-                        if (movie['movieFile']['size'] > 20480 or
-                                get_movie_file_size_from_db(movie['movieFile']['path']) > 20480):
-                            # Add movies in radarr to current movies list
+                        if sync_monitored:   
+                            if get_movie_monitored_status(movie['tmdbId']) != movie['monitored']:
+                                # monitored status is not the same as our DB
+                                trace(f"{i}: (Monitor Status Mismatch) {movie['title']}")
+                            elif not movie['monitored']:
+                                trace(f"{i}: (Skipped Unmonitored) {movie['title']}")
+                                skipped_count += 1
+                                continue
+
+                        if (movie['movieFile']['size'] > MINIMUM_VIDEO_SIZE or
+                                get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE):
+                            # Add/update movies from Radarr that have a movie file to current movies list
+                            trace(f"{i}: (Processing) {movie['title']}")
                             if str(movie['tmdbId']) in current_movies_id_db:
                                 parsed_movie = movieParser(movie, action='update',
                                                            tags_dict=tagsDict,
@@ -142,15 +178,28 @@ def update_movies(send_event=True):
                                                            audio_profiles=audio_profiles)
                                 if not any([parsed_movie.items() <= x for x in current_movies_db_kv]):
                                     update_movie(parsed_movie, send_event)
+                                    movies_updated.append(parsed_movie['title'])
                             else:
                                 parsed_movie = movieParser(movie, action='insert',
                                                            tags_dict=tagsDict,
                                                            movie_default_profile=movie_default_profile,
                                                            audio_profiles=audio_profiles)
                                 add_movie(parsed_movie, send_event)
+                                movies_added.append(parsed_movie['title'])
+                else:
+                     trace(f"{i}: (Skipped File Missing) {movie['title']}")
+                     files_missing += 1
 
             if send_event:
                 hide_progress(id='movies_progress')
+
+            trace(f"Skipped {files_missing} file missing movies out of {i}")
+            if sync_monitored:
+                trace(f"Skipped {skipped_count} unmonitored movies out of {i}")
+                trace(f"Processed {i - files_missing - skipped_count} movies out of {i} " +
+                              f"with {len(movies_added)} added, {len(movies_updated)} updated and {len(movies_deleted)} deleted")
+            else:
+                trace(f"Processed {i - files_missing} movies out of {i} with {len(movies_added)} added and {len(movies_updated)} updated")
 
             logging.debug('BAZARR All movies synced from Radarr into database.')
 

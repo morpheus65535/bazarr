@@ -64,6 +64,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "argenteam_dump",
+    name: "Argenteam Dump",
+    description: "Subtitles dump of the now extinct Argenteam",
+  },
+  {
     key: "assrt",
     description: "Chinese Subtitles Provider",
     inputs: [
@@ -436,6 +441,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "endpoint",
         defaultValue: "http://127.0.0.1:9000",
         name: "Whisper ASR Docker Endpoint",
+      },
+      {
+        type: "text",
+        key: "response",
+        defaultValue: 5,
+        name: "Connection/response timeout in seconds",
       },
       {
         type: "text",
