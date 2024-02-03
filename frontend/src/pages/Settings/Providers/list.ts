@@ -71,7 +71,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "avistaz",
     name: "AvistaZ",
-    description: "avistaz.to - AvistaZ is an Asian torrent tracker for HD movies, TV shows and music",
+    description:
+      "avistaz.to - AvistaZ is an Asian torrent tracker for HD movies, TV shows and music",
     inputs: [
       {
         type: "text",
