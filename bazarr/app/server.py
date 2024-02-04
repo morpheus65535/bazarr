@@ -13,7 +13,7 @@ from api import api_bp
 from .ui import ui_bp
 from .get_args import args
 from .config import settings, base_url
-from .database import database
+from .database import close_database
 from .app import create_app
 
 app = create_app()
@@ -63,49 +63,40 @@ class Server:
                 self.shutdown()
 
     def start(self):
+        logging.info(f'BAZARR is started and waiting for request on http://{self.server.effective_host}:'
+                     f'{self.server.effective_port}')
         try:
-            logging.info(f'BAZARR is started and waiting for request on http://{self.server.effective_host}:'
-                         f'{self.server.effective_port}')
-            try:
-                self.server.run()
-            except Exception:
-                pass
-        except KeyboardInterrupt:
+            self.server.run()
+        except (KeyboardInterrupt, SystemExit):
             self.shutdown()
+        except Exception:
+            pass
 
     def shutdown(self):
         try:
-            self.server.close()
+            stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
         except Exception as e:
-            logging.error(f'BAZARR Cannot stop Waitress: {repr(e)}')
+            logging.error(f'BAZARR Cannot create stop file: {repr(e)}')
         else:
-            database.close()
-            try:
-                stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
-            except Exception as e:
-                logging.error(f'BAZARR Cannot create stop file: {repr(e)}')
-            else:
-                logging.info('Bazarr is being shutdown...')
-                stop_file.write(str(''))
-                stop_file.close()
-                os._exit(0)
+            logging.info('Bazarr is being shutdown...')
+            stop_file.write(str(''))
+            stop_file.close()
+            close_database()
+            self.server.close()
+            os._exit(0)
 
     def restart(self):
         try:
-            self.server.close()
+            restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
         except Exception as e:
-            logging.error(f'BAZARR Cannot stop Waitress: {repr(e)}')
+            logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
         else:
-            database.close()
-            try:
-                restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
-            except Exception as e:
-                logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
-            else:
-                logging.info('Bazarr is being restarted...')
-                restart_file.write(str(''))
-                restart_file.close()
-                os._exit(0)
+            logging.info('Bazarr is being restarted...')
+            restart_file.write(str(''))
+            restart_file.close()
+            close_database()
+            self.server.close()
+            os._exit(0)
 
 
 webserver = Server()

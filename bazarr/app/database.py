@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import flask_migrate
+import signal
 
 from dogpile.cache import make_region
 from datetime import datetime
@@ -12,7 +13,7 @@ from datetime import datetime
 from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text, BigInteger
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func  # noqa W0611
-from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column
+from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column, close_all_sessions
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.pool import NullPool
 
@@ -74,10 +75,17 @@ session_factory = sessionmaker(bind=engine)
 database = scoped_session(session_factory)
 
 
+def close_database():
+    close_all_sessions()
+    engine.dispose()
+
+
 @atexit.register
 def _stop_worker_threads():
     database.remove()
 
+
+signal.signal(signal.SIGTERM, lambda signal_no, frame: close_database())
 
 Base = declarative_base()
 metadata = Base.metadata

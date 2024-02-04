@@ -2,7 +2,7 @@
 alembic==1.10.3
 aniso8601==9.0.1
 argparse==1.4.0
-apprise==1.4.0
+apprise==1.6.0
 apscheduler==3.9.1
 attrs==22.1.0
 charset-normalizer==3.1.0
@@ -10,7 +10,7 @@ deep-translator==1.9.1
 dogpile.cache==1.1.8
 dynaconf==3.1.12
 fese==0.1.2
-ffsubsync==0.4.20
+ffsubsync==0.4.25
 Flask-Compress==1.13  # modified to import brotli only if required
 flask-cors==3.0.10
 flask-migrate==4.0.4
@@ -32,7 +32,7 @@ python-engineio==4.3.4
 python-socketio==5.7.2
 pytz==2023.3
 pytz_deprecation_shim==0.1.0.post0
-rarfile==4.0
+rarfile==4.1
 requests==2.28.1
 semver==2.13.0
 signalrcore==0.9.5

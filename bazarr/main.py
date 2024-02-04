@@ -1,8 +1,6 @@
 # coding=utf-8
 
 import os
-import io
-import logging
 
 from threading import Thread
 
@@ -75,9 +73,15 @@ update_notifier()
 
 if not args.no_signalr:
     if settings.general.use_sonarr:
-        Thread(target=sonarr_signalr_client.start).start()
+        sonarr_signalr_thread = Thread(target=sonarr_signalr_client.start)
+        sonarr_signalr_thread.daemon = True
+        sonarr_signalr_thread.start()
+        sonarr_signalr_thread.join()
     if settings.general.use_radarr:
-        Thread(target=radarr_signalr_client.start).start()
+        radarr_signalr_thread = Thread(target=radarr_signalr_client.start)
+        radarr_signalr_thread.daemon = True
+        radarr_signalr_thread.start()
+        radarr_signalr_thread.join()
 
 
 if __name__ == "__main__":

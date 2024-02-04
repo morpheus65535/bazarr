@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -43,6 +39,7 @@ from email import charset
 
 from socket import error as SocketError
 from datetime import datetime
+from datetime import timezone
 
 from .NotifyBase import NotifyBase
 from ..URLBase import PrivacyMode
@@ -340,6 +337,9 @@ class NotifyEmail(NotifyBase):
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_email'
 
+    # Support attachments
+    attachment_support = True
+
     # Default Notify Format
     notify_format = NotifyFormat.HTML
 
@@ -384,8 +384,13 @@ class NotifyEmail(NotifyBase):
             'min': 1,
             'max': 65535,
         },
+        'target_email': {
+            'name': _('Target Email'),
+            'type': 'string',
+            'map_to': 'targets',
+        },
         'targets': {
-            'name': _('Target Emails'),
+            'name': _('Targets'),
             'type': 'list:string',
         },
     })
@@ -764,7 +769,7 @@ class NotifyEmail(NotifyBase):
             else:
                 base = MIMEText(body, 'plain', 'utf-8')
 
-            if attach:
+            if attach and self.attachment_support:
                 mixed = MIMEMultipart("mixed")
                 mixed.attach(base)
                 # Now store our attachments
@@ -805,7 +810,8 @@ class NotifyEmail(NotifyBase):
             base['To'] = formataddr((to_name, to_addr), charset='utf-8')
             base['Message-ID'] = make_msgid(domain=self.smtp_host)
             base['Date'] = \
-                datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S +0000")
+                datetime.now(timezone.utc)\
+                .strftime("%a, %d %b %Y %H:%M:%S +0000")
             base['X-Application'] = self.app_id
 
             if cc:
@@ -1030,6 +1036,10 @@ class NotifyEmail(NotifyBase):
         # add one to ourselves
         results['targets'] = NotifyEmail.split_path(results['fullpath'])
 
+        # Attempt to detect 'to' email address
+        if 'to' in results['qsd'] and len(results['qsd']['to']):
+            results['targets'].append(results['qsd']['to'])
+
         # Attempt to detect 'from' email address
         if 'from' in results['qsd'] and len(results['qsd']['from']):
             from_addr = NotifyEmail.unquote(results['qsd']['from'])
@@ -1047,10 +1057,6 @@ class NotifyEmail(NotifyBase):
         elif 'name' in results['qsd'] and len(results['qsd']['name']):
             # Extract from name to associate with from address
             from_addr = NotifyEmail.unquote(results['qsd']['name'])
-
-        # Attempt to detect 'to' email address
-        if 'to' in results['qsd'] and len(results['qsd']['to']):
-            results['targets'].append(results['qsd']['to'])
 
         # Store SMTP Host if specified
         if 'smtp' in results['qsd'] and len(results['qsd']['smtp']):

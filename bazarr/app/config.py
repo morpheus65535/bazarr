@@ -34,6 +34,9 @@ def validate_ip_address(ip_string):
         return False
 
 
+ONE_HUNDRED_YEARS_IN_MINUTES = 52560000
+ONE_HUNDRED_YEARS_IN_HOURS = 876000
+
 class Validator(OriginalValidator):
     # Give the ability to personalize messages sent by the original dynasync Validator class.
     default_messages = MappingProxyType(
@@ -99,14 +102,15 @@ validators = [
     Validator('general.subfolder', must_exist=True, default='current', is_type_of=str),
     Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),
     Validator('general.upgrade_subs', must_exist=True, default=True, is_type_of=bool),
-    Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int, is_in=[6, 12, 24]),
+    Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int, 
+              is_in=[6, 12, 24, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.days_to_upgrade_subs', must_exist=True, default=7, is_type_of=int, gte=0, lte=30),
     Validator('general.upgrade_manual', must_exist=True, default=True, is_type_of=bool),
     Validator('general.anti_captcha_provider', must_exist=True, default=None, is_type_of=(NoneType, str),
               is_in=[None, 'anti-captcha', 'death-by-captcha']),
-    Validator('general.wanted_search_frequency', must_exist=True, default=6, is_type_of=int, is_in=[6, 12, 24]),
+    Validator('general.wanted_search_frequency', must_exist=True, default=6, is_type_of=int, is_in=[6, 12, 24, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.wanted_search_frequency_movie', must_exist=True, default=6, is_type_of=int,
-              is_in=[6, 12, 24]),
+              is_in=[6, 12, 24, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.subzero_mods', must_exist=True, default='', is_type_of=str),
     Validator('general.dont_notify_manual_actions', must_exist=True, default=False, is_type_of=bool),
     Validator('general.hi_extension', must_exist=True, default='hi', is_type_of=str, is_in=['hi', 'cc', 'sdh']),
@@ -122,8 +126,8 @@ validators = [
     Validator('auth.apikey', must_exist=True, default=hexlify(os.urandom(16)).decode(), is_type_of=str),
     Validator('auth.type', must_exist=True, default=None, is_type_of=(NoneType, str),
               is_in=[None, 'basic', 'form']),
-    Validator('auth.username', must_exist=True, default='', is_type_of=str),
-    Validator('auth.password', must_exist=True, default='', is_type_of=str),
+    Validator('auth.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # cors section
     Validator('cors.enabled', must_exist=True, default=False, is_type_of=bool),
@@ -151,14 +155,14 @@ validators = [
     Validator('sonarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
     Validator('sonarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('sonarr.series_sync', must_exist=True, default=60, is_type_of=int,
-              is_in=[15, 60, 180, 360, 720, 1440]),
-    Validator('sonarr.episodes_sync', must_exist=True, default=60, is_type_of=int,
-              is_in=[15, 60, 180, 360, 720, 1440]),
+              is_in=[15, 60, 180, 360, 720, 1440, ONE_HUNDRED_YEARS_IN_MINUTES]),
     Validator('sonarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
     Validator('sonarr.excluded_series_types', must_exist=True, default=[], is_type_of=list),
     Validator('sonarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
     Validator('sonarr.exclude_season_zero', must_exist=True, default=False, is_type_of=bool),
     Validator('sonarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
+    Validator('sonarr.sync_only_monitored_series', must_exist=True, default=False, is_type_of=bool),
+    Validator('sonarr.sync_only_monitored_episodes', must_exist=True, default=False, is_type_of=bool),
 
     # radarr section
     Validator('radarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
@@ -174,23 +178,24 @@ validators = [
     Validator('radarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
     Validator('radarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('radarr.movies_sync', must_exist=True, default=60, is_type_of=int,
-              is_in=[15, 60, 180, 360, 720, 1440]),
+              is_in=[15, 60, 180, 360, 720, 1440, ONE_HUNDRED_YEARS_IN_MINUTES]),
     Validator('radarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
     Validator('radarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
     Validator('radarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
+    Validator('radarr.sync_only_monitored_movies', must_exist=True, default=False, is_type_of=bool),
 
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
               is_in=[None, 'socks5', 'http']),
     Validator('proxy.url', must_exist=True, default='', is_type_of=str),
     Validator('proxy.port', must_exist=True, default='', is_type_of=(str, int)),
-    Validator('proxy.username', must_exist=True, default='', is_type_of=str),
-    Validator('proxy.password', must_exist=True, default='', is_type_of=str),
+    Validator('proxy.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('proxy.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('proxy.exclude', must_exist=True, default=["localhost", "127.0.0.1"], is_type_of=list),
 
     # opensubtitles.org section
-    Validator('opensubtitles.username', must_exist=True, default='', is_type_of=str),
-    Validator('opensubtitles.password', must_exist=True, default='', is_type_of=str),
+    Validator('opensubtitles.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('opensubtitles.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('opensubtitles.use_tag_search', must_exist=True, default=False, is_type_of=bool),
     Validator('opensubtitles.vip', must_exist=True, default=False, is_type_of=bool),
     Validator('opensubtitles.ssl', must_exist=True, default=False, is_type_of=bool),
@@ -198,13 +203,14 @@ validators = [
     Validator('opensubtitles.skip_wrong_fps', must_exist=True, default=False, is_type_of=bool),
 
     # opensubtitles.com section
-    Validator('opensubtitlescom.username', must_exist=True, default='', is_type_of=str),
-    Validator('opensubtitlescom.password', must_exist=True, default='', is_type_of=str),
+    Validator('opensubtitlescom.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('opensubtitlescom.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('opensubtitlescom.use_hash', must_exist=True, default=True, is_type_of=bool),
+    Validator('opensubtitlescom.include_ai_translated', must_exist=True, default=False, is_type_of=bool),
 
     # addic7ed section
-    Validator('addic7ed.username', must_exist=True, default='', is_type_of=str),
-    Validator('addic7ed.password', must_exist=True, default='', is_type_of=str),
+    Validator('addic7ed.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('addic7ed.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('addic7ed.cookies', must_exist=True, default='', is_type_of=str),
     Validator('addic7ed.user_agent', must_exist=True, default='', is_type_of=str),
     Validator('addic7ed.vip', must_exist=True, default=False, is_type_of=bool),
@@ -217,57 +223,60 @@ validators = [
     Validator('subf2m.user_agent', must_exist=True, default='', is_type_of=str),
 
     # hdbits section
-    Validator('hdbits.username', must_exist=True, default='', is_type_of=str),
-    Validator('hdbits.passkey', must_exist=True, default='', is_type_of=str),
+    Validator('hdbits.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('hdbits.passkey', must_exist=True, default='', is_type_of=str, cast=str),
 
     # whisperai section
     Validator('whisperai.endpoint', must_exist=True, default='http://127.0.0.1:9000', is_type_of=str),
+    Validator('whisperai.response', must_exist=True, default=5, is_type_of=int, gte=1),
     Validator('whisperai.timeout', must_exist=True, default=3600, is_type_of=int, gte=1),
+    Validator('whisperai.loglevel', must_exist=True, default='INFO', is_type_of=str,
+              is_in=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),
 
     # legendasdivx section
-    Validator('legendasdivx.username', must_exist=True, default='', is_type_of=str),
-    Validator('legendasdivx.password', must_exist=True, default='', is_type_of=str),
+    Validator('legendasdivx.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('legendasdivx.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('legendasdivx.skip_wrong_fps', must_exist=True, default=False, is_type_of=bool),
 
     # ktuvit section
     Validator('ktuvit.email', must_exist=True, default='', is_type_of=str),
-    Validator('ktuvit.hashed_password', must_exist=True, default='', is_type_of=str),
+    Validator('ktuvit.hashed_password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # xsubs section
-    Validator('xsubs.username', must_exist=True, default='', is_type_of=str),
-    Validator('xsubs.password', must_exist=True, default='', is_type_of=str),
+    Validator('xsubs.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('xsubs.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # assrt section
-    Validator('assrt.token', must_exist=True, default='', is_type_of=str),
+    Validator('assrt.token', must_exist=True, default='', is_type_of=str, cast=str),
 
     # anticaptcha section
     Validator('anticaptcha.anti_captcha_key', must_exist=True, default='', is_type_of=str),
 
     # deathbycaptcha section
-    Validator('deathbycaptcha.username', must_exist=True, default='', is_type_of=str),
-    Validator('deathbycaptcha.password', must_exist=True, default='', is_type_of=str),
+    Validator('deathbycaptcha.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('deathbycaptcha.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # napisy24 section
-    Validator('napisy24.username', must_exist=True, default='', is_type_of=str),
-    Validator('napisy24.password', must_exist=True, default='', is_type_of=str),
+    Validator('napisy24.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('napisy24.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # subscene section
-    Validator('subscene.username', must_exist=True, default='', is_type_of=str),
-    Validator('subscene.password', must_exist=True, default='', is_type_of=str),
+    Validator('subscene.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('subscene.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # betaseries section
-    Validator('betaseries.token', must_exist=True, default='', is_type_of=str),
+    Validator('betaseries.token', must_exist=True, default='', is_type_of=str, cast=str),
 
     # analytics section
     Validator('analytics.enabled', must_exist=True, default=True, is_type_of=bool),
 
     # titlovi section
-    Validator('titlovi.username', must_exist=True, default='', is_type_of=str),
-    Validator('titlovi.password', must_exist=True, default='', is_type_of=str),
+    Validator('titlovi.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('titlovi.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # titulky section
-    Validator('titulky.username', must_exist=True, default='', is_type_of=str),
-    Validator('titulky.password', must_exist=True, default='', is_type_of=str),
+    Validator('titulky.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('titulky.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('titulky.approved_only', must_exist=True, default=False, is_type_of=bool),
 
     # embeddedsubtitles section
@@ -277,10 +286,10 @@ validators = [
     Validator('embeddedsubtitles.unknown_as_english', must_exist=True, default=False, is_type_of=bool),
 
     # karagarga section
-    Validator('karagarga.username', must_exist=True, default='', is_type_of=str),
-    Validator('karagarga.password', must_exist=True, default='', is_type_of=str),
-    Validator('karagarga.f_username', must_exist=True, default='', is_type_of=str),
-    Validator('karagarga.f_password', must_exist=True, default='', is_type_of=str),
+    Validator('karagarga.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('karagarga.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('karagarga.f_username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('karagarga.f_password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # subsync section
     Validator('subsync.use_subsync', must_exist=True, default=False, is_type_of=bool),
@@ -290,6 +299,13 @@ validators = [
     Validator('subsync.subsync_movie_threshold', must_exist=True, default=70, is_type_of=int, gte=0, lte=100),
     Validator('subsync.debug', must_exist=True, default=False, is_type_of=bool),
     Validator('subsync.force_audio', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.checker', must_exist=True, default={}, is_type_of=dict),
+    Validator('subsync.checker.blacklisted_providers', must_exist=True, default=[], is_type_of=list),
+    Validator('subsync.checker.blacklisted_languages', must_exist=True, default=[], is_type_of=list),
+    Validator('subsync.no_fix_framerate', must_exist=True, default=True, is_type_of=bool),
+    Validator('subsync.gss', must_exist=True, default=True, is_type_of=bool),
+    Validator('subsync.max_offset_seconds', must_exist=True, default=60, is_type_of=int,
+              is_in=[60, 120, 300, 600]),
 
     # series_scores section
     Validator('series_scores.hash', must_exist=True, default=359, is_type_of=int),
@@ -323,8 +339,8 @@ validators = [
     Validator('postgresql.host', must_exist=True, default='localhost', is_type_of=str),
     Validator('postgresql.port', must_exist=True, default=5432, is_type_of=int, gte=1, lte=65535),
     Validator('postgresql.database', must_exist=True, default='', is_type_of=str),
-    Validator('postgresql.username', must_exist=True, default='', is_type_of=str),
-    Validator('postgresql.password', must_exist=True, default='', is_type_of=str),
+    Validator('postgresql.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('postgresql.password', must_exist=True, default='', is_type_of=str, cast=str),
 ]
 
 
@@ -399,7 +415,9 @@ array_keys = ['excluded_tags',
               'enabled_providers',
               'path_mappings',
               'path_mappings_movie',
-              'language_equals']
+              'language_equals',
+              'blacklisted_languages',
+              'blacklisted_providers']
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
@@ -408,8 +426,6 @@ str_keys = ['chmod']
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
 if settings.sonarr.series_sync < 15:
     settings.sonarr.series_sync = 60
-if settings.sonarr.episodes_sync < 15:
-    settings.sonarr.episodes_sync = 60
 if settings.radarr.movies_sync < 15:
     settings.radarr.movies_sync = 60
 
@@ -519,7 +535,7 @@ def save_settings(settings_items):
 
         if key == 'settings-auth-password':
             if value != settings.auth.password and value is not None:
-                value = hashlib.md5(value.encode('utf-8')).hexdigest()
+                value = hashlib.md5(f"{value}".encode('utf-8')).hexdigest()
 
         if key == 'settings-general-debug':
             configure_debug = True
@@ -533,7 +549,7 @@ def save_settings(settings_items):
 
         if key in ['update_schedule', 'settings-general-use_sonarr', 'settings-general-use_radarr',
                    'settings-general-auto_update', 'settings-general-upgrade_subs',
-                   'settings-sonarr-series_sync', 'settings-sonarr-episodes_sync', 'settings-radarr-movies_sync',
+                   'settings-sonarr-series_sync', 'settings-radarr-movies_sync',
                    'settings-sonarr-full_update', 'settings-sonarr-full_update_day', 'settings-sonarr-full_update_hour',
                    'settings-radarr-full_update', 'settings-radarr-full_update_day', 'settings-radarr-full_update_hour',
                    'settings-general-wanted_search_frequency', 'settings-general-wanted_search_frequency_movie',
@@ -627,7 +643,10 @@ def save_settings(settings_items):
             reset_throttled_providers(only_auth_or_conf_error=True)
 
         if settings_keys[0] == 'settings':
-            settings[settings_keys[1]][settings_keys[2]] = value
+            if len(settings_keys) == 3:
+                settings[settings_keys[1]][settings_keys[2]] = value
+            elif len(settings_keys) == 4:
+                settings[settings_keys[1]][settings_keys[2]][settings_keys[3]] = value
 
         if settings_keys[0] == 'subzero':
             mod = settings_keys[1]
@@ -774,3 +793,31 @@ def configure_proxy_func():
 def get_scores():
     settings = get_settings()
     return {"movie": settings["movie_scores"], "episode": settings["series_scores"]}
+
+
+def sync_checker(subtitle):
+    " This function can be extended with settings. It only takes a Subtitle argument"
+
+    logging.debug("Checker data [%s] for %s", settings.subsync.checker, subtitle)
+
+    bl_providers = settings.subsync.checker.blacklisted_providers
+
+    # TODO
+    # bl_languages = settings.subsync.checker.blacklisted_languages
+
+    verdicts = set()
+
+    # You can add more inner checkers. The following is a verfy basic one for providers,
+    # but you can make your own functions, etc to handle more complex stuff. You have
+    # subtitle data to compare.
+
+    verdicts.add(subtitle.provider_name not in bl_providers)
+
+    met = False not in verdicts
+
+    if met is True:
+        logging.debug("BAZARR Sync checker passed.")
+        return True
+    else:
+        logging.debug("BAZARR Sync checker not passed. Won't sync.")
+        return False

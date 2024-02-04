@@ -162,7 +162,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
     video_types = (Episode, Movie)
 
-    def __init__(self, username=None, password=None, use_hash=True, api_key=None):
+    def __init__(self, username=None, password=None, use_hash=True, include_ai_translated=False, api_key=None):
         if not all((username, password)):
             raise ConfigurationError('Username and password must be specified')
 
@@ -181,6 +181,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         self.password = password
         self.video = None
         self.use_hash = use_hash
+        self.include_ai_translated = include_ai_translated
         self._started = None
 
     def initialize(self):
@@ -227,7 +228,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         title_id = None
 
         parameters = {'query': title.lower()}
-        logging.debug(f'Searching using this title: {title}')
+        logger.debug(f'Searching using this title: {title}')
 
         results = self.retry(
             lambda: self.checked(
@@ -258,7 +259,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 continue
 
         if title_id:
-            logging.debug(f'Found this title ID: {title_id}')
+            logger.debug(f'Found this title ID: {title_id}')
             return self.sanitize_external_ids(title_id)
 
         if not title_id:
@@ -268,7 +269,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         self.video = video
         if self.use_hash:
             file_hash = self.video.hashes.get('opensubtitlescom')
-            logging.debug(f'Searching using this hash: {hash}')
+            logger.debug(f'Searching using this hash: {file_hash}')
         else:
             file_hash = None
 
@@ -293,14 +294,15 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         langs_list = sorted(list(set([to_opensubtitlescom(lang.basename).lower() for lang in languages])))
 
         langs = ','.join(langs_list)
-        logging.debug(f'Searching for those languages: {langs}')
+        logger.debug(f'Searching for those languages: {langs}')
 
         # query the server
         if isinstance(self.video, Episode):
             res = self.retry(
                 lambda: self.checked(
                     lambda: self.session.get(self.server_url + 'subtitles',
-                                             params=(('ai_translated', 'exclude'),
+                                             params=(('ai_translated', 'exclude' if not self.include_ai_translated
+                                                     else 'include'),
                                                      ('episode_number', self.video.episode),
                                                      ('imdb_id', imdb_id if not title_id else None),
                                                      ('languages', langs),
@@ -317,7 +319,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             res = self.retry(
                 lambda: self.checked(
                     lambda: self.session.get(self.server_url + 'subtitles',
-                                             params=(('ai_translated', 'exclude'),
+                                             params=(('ai_translated', 'exclude' if not self.include_ai_translated
+                                                     else 'include'),
                                                      ('id', title_id if title_id else None),
                                                      ('imdb_id', imdb_id if not title_id else None),
                                                      ('languages', langs),
@@ -341,18 +344,18 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         else:  # not forced
             result['data'] = [x for x in result['data'] if not x['attributes']['foreign_parts_only']]
 
-        logging.debug(f"Query returned {len(result['data'])} subtitles")
+        logger.debug(f"Query returned {len(result['data'])} subtitles")
 
         if len(result['data']):
             for item in result['data']:
                 # ignore AI translated subtitles
                 if 'ai_translated' in item['attributes'] and item['attributes']['ai_translated']:
-                    logging.debug("Skipping AI translated subtitles")
+                    logger.debug("Skipping AI translated subtitles")
                     continue
 
                 # ignore machine translated subtitles
                 if 'machine_translated' in item['attributes'] and item['attributes']['machine_translated']:
-                    logging.debug("Skipping machine translated subtitles")
+                    logger.debug("Skipping machine translated subtitles")
                     continue
 
                 if 'season_number' in item['attributes']['feature_details']:
@@ -437,7 +440,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
     @staticmethod
     def reset_token():
-        logging.debug('Authentication failed: clearing cache and attempting to login.')
+        logger.debug('Authentication failed: clearing cache and attempting to login.')
         region.delete("oscom_token")
         return
 
@@ -467,7 +470,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             except (ConnectionError, Timeout, ReadTimeout):
                 raise ServiceUnavailable(f'Unknown Error, empty response: {response.status_code}: {response}')
             except Exception:
-                logging.exception('Unhandled exception raised.')
+                logger.exception('Unhandled exception raised.')
                 raise ProviderError('Unhandled exception raised. Check log.')
             else:
                 status_code = response.status_code
@@ -516,7 +519,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 log_request_response(response)
                 raise TooManyRequests()
             elif status_code == 500:
-                logging.debug("Server side exception raised while downloading from opensubtitles.com website. They "
+                logger.debug("Server side exception raised while downloading from opensubtitles.com website. They "
                               "should mitigate this soon.")
                 return None
             elif status_code == 502:
@@ -540,10 +543,10 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
             if validate_content:
                 if not hasattr(response, 'content'):
-                    logging.error('Download link returned no content attribute.')
+                    logger.error('Download link returned no content attribute.')
                     return False
                 elif not response.content:
-                    logging.error(f'This download link returned empty content: {response.url}')
+                    logger.error(f'This download link returned empty content: {response.url}')
                     return False
 
         return response
@@ -563,13 +566,13 @@ def log_request_response(response, non_standard=True):
         redacted_response_body['token'] = redacted_response_body['token'][:-8] + 8 * 'x'
 
     if non_standard:
-        logging.debug("opensubtitlescom returned a non standard response. Logging request/response for debugging "
+        logger.debug("opensubtitlescom returned a non standard response. Logging request/response for debugging "
                       "purpose.")
     else:
-        logging.debug("opensubtitlescom returned a standard response. Logging request/response for debugging purpose.")
-    logging.debug(f"Request URL: {response.request.url}")
-    logging.debug(f"Request Headers: {redacted_request_headers}")
-    logging.debug(f"Request Body: {json.dumps(redacted_request_body)}")
-    logging.debug(f"Response Status Code: {response.status_code}")
-    logging.debug(f"Response Headers: {response.headers}")
-    logging.debug(f"Response Body: {json.dumps(redacted_response_body)}")
+        logger.debug("opensubtitlescom returned a standard response. Logging request/response for debugging purpose.")
+    logger.debug(f"Request URL: {response.request.url}")
+    logger.debug(f"Request Headers: {redacted_request_headers}")
+    logger.debug(f"Request Body: {json.dumps(redacted_request_body)}")
+    logger.debug(f"Response Status Code: {response.status_code}")
+    logger.debug(f"Response Headers: {response.headers}")
+    logger.debug(f"Response Body: {json.dumps(redacted_response_body)}")

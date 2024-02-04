@@ -1,3 +1,4 @@
+import { SelectorOption } from "@/components";
 import { ReactText } from "react";
 
 type Input<T, N> = {
@@ -6,12 +7,14 @@ type Input<T, N> = {
   defaultValue?: T;
   name?: string;
   description?: string;
+  options?: SelectorOption<string>[];
 };
 
 type AvailableInput =
   | Input<ReactText, "text">
   | Input<string, "password">
   | Input<boolean, "switch">
+  | Input<string, "select">
   | Input<ReactText[], "chips">;
 
 export interface ProviderInfo {
@@ -21,6 +24,14 @@ export interface ProviderInfo {
   message?: string;
   inputs?: AvailableInput[];
 }
+
+export const logLevelOptions: SelectorOption<string>[] = [
+  { label: "DEBUG", value: "DEBUG" },
+  { label: "INFO", value: "INFO" },
+  { label: "WARNING", value: "WARNING" },
+  { label: "ERROR", value: "ERROR" },
+  { label: "CRITICAL", value: "CRITICAL" },
+];
 
 export const ProviderList: Readonly<ProviderInfo[]> = [
   {
@@ -52,7 +63,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
   },
-  { key: "argenteam", description: "LATAM Spanish Subtitles Provider" },
+  {
+    key: "argenteam_dump",
+    name: "Argenteam Dump",
+    description: "Subtitles dump of the now extinct Argenteam",
+  },
   {
     key: "assrt",
     description: "Chinese Subtitles Provider",
@@ -79,7 +94,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "bsplayer",
     name: "BSplayer",
     description:
-      "Provider removed from Bazarr because it was causing too much issues so it will always return no subtitles",
+      "Provider removed from Bazarr because it was causing too many issues.\nIt will always return no subtitles.",
   },
   {
     key: "embeddedsubtitles",
@@ -147,22 +162,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   { key: "hosszupuska", description: "Hungarian Subtitles Provider" },
   {
-    key: "legendasdivx",
-    name: "LegendasDivx",
-    description: "Brazilian / Portuguese Subtitles Provider",
-    inputs: [
-      {
-        type: "text",
-        key: "username",
-      },
-      {
-        type: "password",
-        key: "password",
-      },
-      { type: "switch", key: "skip_wrong_fps", name: "Skip Wrong FPS" },
-    ],
-  },
-  {
     key: "karagarga",
     name: "Karagarga.in",
     description: "Movie Subtitles Provider (Private Tracker)",
@@ -203,26 +202,23 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
   },
-  { key: "napiprojekt", description: "Polish Subtitles Provider" },
   {
-    key: "whisperai",
-    name: "Whisper",
-    description: "AI Generated Subtitles powered by Whisper",
+    key: "legendasdivx",
+    name: "LegendasDivx",
+    description: "Brazilian / Portuguese Subtitles Provider",
     inputs: [
       {
         type: "text",
-        key: "endpoint",
-        defaultValue: "http://127.0.0.1:9000",
-        name: "Whisper ASR Docker Endpoint",
+        key: "username",
       },
       {
-        type: "text",
-        key: "timeout",
-        defaultValue: 3600,
-        name: "Transcription/translation timeout in seconds",
+        type: "password",
+        key: "password",
       },
+      { type: "switch", key: "skip_wrong_fps", name: "Skip Wrong FPS" },
     ],
   },
+  { key: "napiprojekt", description: "Polish Subtitles Provider" },
   {
     key: "napisy24",
     description: "Polish Subtitles Provider",
@@ -243,6 +239,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "opensubtitles",
     name: "OpenSubtitles.org",
+    description: "Only works if you have VIP status",
     inputs: [
       {
         type: "text",
@@ -286,6 +283,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "use_hash",
         name: "Use Hash",
       },
+      {
+        type: "switch",
+        key: "include_ai_translated",
+        name: "Include AI translated subtitles in search results",
+      },
     ],
   },
   {
@@ -303,7 +305,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "regielive",
     name: "RegieLive",
-    description: "Romanian Subtitles Provider.",
+    description: "Romanian Subtitles Provider",
   },
   {
     key: "soustitreseu",
@@ -311,11 +313,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Mostly French Subtitles Provider",
   },
   { key: "subdivx", description: "LATAM Spanish / Spanish Subtitles Provider" },
-  {
-    key: "subssabbz",
-    name: "Subs.sab.bz",
-    description: "Bulgarian Subtitles Provider",
-  },
   {
     key: "subf2m",
     name: "subf2m.co",
@@ -336,15 +333,20 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     message: "Make sure to use a unique and credible user agent.",
   },
   {
+    key: "subssabbz",
+    name: "Subs.sab.bz",
+    description: "Bulgarian Subtitles Provider",
+  },
+  {
     key: "subs4free",
     name: "Subs4Free",
-    description: "Greek Subtitles Provider. Broken, may not works for some.",
+    description: "Greek Subtitles Provider. Broken, may not work for some.",
   },
   {
     key: "subs4series",
     name: "Subs4Series",
     description:
-      "Greek Subtitles Provider. Requires anti-captcha provider to solve captchas for each download.",
+      "Greek Subtitles Provider.\nRequires anti-captcha provider to solve captchas for each download.",
   },
   {
     key: "subscene",
@@ -358,9 +360,9 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "password",
       },
     ],
-    description: "Broken, may not works for some. Use subf2m instead.",
+    description: "Broken, may not work for some. Use subf2m instead.",
   },
-  { key: "subscenter" },
+  { key: "subscenter", description: "Hebrew Subtitles Provider" },
   {
     key: "subsunacs",
     name: "Subsunacs.net",
@@ -402,16 +404,9 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Mostly Romanian Subtitles Provider",
   },
   {
-    key: "tusubtitulo",
-    name: "Tusubtitulo.com",
-    description:
-      "Provider requested to be removed from Bazarr so it will always return no subtitles. Could potentially come back in the future with an upcoming premium account.",
-    // "LATAM Spanish / Spanish / English Subtitles Provider for TV Shows",
-  },
-  {
     key: "titulky",
     name: "Titulky.com",
-    description: "CZ/SK Subtitles Provider. Available only with VIP",
+    description: "CZ/SK Subtitles Provider. Available only with VIP.",
     inputs: [
       {
         type: "text",
@@ -428,8 +423,46 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
   },
+  {
+    key: "tusubtitulo",
+    name: "Tusubtitulo.com",
+    description:
+      "Provider requested to be removed from Bazarr, so it will always return no subtitles.\nCould potentially come back in the future with an upcoming premium account.",
+    // "LATAM Spanish / Spanish / English Subtitles Provider for TV Shows",
+  },
   { key: "tvsubtitles", name: "TVSubtitles" },
-  { key: "wizdom", description: "Wizdom.xyz Subtitles Provider." },
+  {
+    key: "whisperai",
+    name: "Whisper",
+    description: "AI Generated Subtitles powered by Whisper",
+    inputs: [
+      {
+        type: "text",
+        key: "endpoint",
+        defaultValue: "http://127.0.0.1:9000",
+        name: "Whisper ASR Docker Endpoint",
+      },
+      {
+        type: "text",
+        key: "response",
+        defaultValue: 5,
+        name: "Connection/response timeout in seconds",
+      },
+      {
+        type: "text",
+        key: "timeout",
+        defaultValue: 3600,
+        name: "Transcription/translation timeout in seconds",
+      },
+      {
+        type: "select",
+        key: "loglevel",
+        name: "Logging level",
+        options: logLevelOptions,
+      },
+    ],
+  },
+  { key: "wizdom", description: "Wizdom.xyz Subtitles Provider" },
   {
     key: "xsubs",
     name: "XSubs",
@@ -454,6 +487,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "zimuku",
     name: "Zimuku",
-    description: "Chinese Subtitles Provider. Anti-captcha required",
+    description: "Chinese Subtitles Provider. Anti-captcha required.",
   },
 ];

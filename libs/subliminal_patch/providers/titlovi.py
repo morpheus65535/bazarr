@@ -7,8 +7,6 @@ import re
 from datetime import datetime, timedelta
 import dateutil.parser
 
-import rarfile
-
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 from babelfish import language_converters, Script
@@ -20,6 +18,7 @@ from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming as _fix_inconsistent_naming
 from subliminal.exceptions import ProviderError, AuthenticationError, ConfigurationError
+from subliminal_patch.exceptions import TooManyRequests
 from subliminal.score import get_equivalent_release_groups
 from subliminal.utils import sanitize_release_group
 from subliminal.video import Episode, Movie
@@ -190,7 +189,11 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
 
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
     def get_result(self, search_url, search_params):
-        return self.session.get(search_url, params=search_params)
+        resp = self.session.get(search_url, params=search_params)
+        if resp.status_code == request_codes.too_many_requests:
+            raise TooManyRequests('Too many requests')
+        else:
+            return resp
 
     def query(self, languages, title, season=None, episode=None, year=None, imdb_id=None, video=None):
         search_params = dict()
@@ -235,7 +238,8 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
             resp_json = response.json()
             if resp_json['SubtitleResults']:
                 query_results.extend(resp_json['SubtitleResults'])
-
+        except TooManyRequests:
+            raise
         except Exception as e:
             logger.error(e)
 
@@ -295,6 +299,8 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def download_subtitle(self, subtitle):
         r = self.session.get(subtitle.download_link, timeout=10)
+        if r.status_code == request_codes.too_many_requests:
+            raise TooManyRequests('Too many requests')
         r.raise_for_status()
 
         # open the archive

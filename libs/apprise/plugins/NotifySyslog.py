@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -14,10 +14,6 @@
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
 #
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,14 +26,11 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import os
 import syslog
-import socket
 
 from .NotifyBase import NotifyBase
 from ..common import NotifyType
 from ..utils import parse_bool
-from ..utils import is_hostname
 from ..AppriseLocale import gettext_lazy as _
 
 
@@ -107,20 +100,13 @@ SYSLOG_FACILITY_RMAP = {
     syslog.LOG_LOCAL7: SyslogFacility.LOCAL7,
 }
 
-
-class SyslogMode:
-    # A local query
-    LOCAL = "local"
-
-    # A remote query
-    REMOTE = "remote"
-
-
-# webhook modes are placed ito this list for validation purposes
-SYSLOG_MODES = (
-    SyslogMode.LOCAL,
-    SyslogMode.REMOTE,
-)
+# Used as a lookup when handling the Apprise -> Syslog Mapping
+SYSLOG_PUBLISH_MAP = {
+    NotifyType.INFO: syslog.LOG_INFO,
+    NotifyType.SUCCESS: syslog.LOG_NOTICE,
+    NotifyType.FAILURE: syslog.LOG_CRIT,
+    NotifyType.WARNING: syslog.LOG_WARNING,
+}
 
 
 class NotifySyslog(NotifyBase):
@@ -134,8 +120,8 @@ class NotifySyslog(NotifyBase):
     # The services URL
     service_url = 'https://tools.ietf.org/html/rfc5424'
 
-    # The default secure protocol
-    secure_protocol = 'syslog'
+    # The default protocol
+    protocol = 'syslog'
 
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_syslog'
@@ -148,10 +134,6 @@ class NotifySyslog(NotifyBase):
     templates = (
         '{schema}://',
         '{schema}://{facility}',
-        '{schema}://{host}',
-        '{schema}://{host}:{port}',
-        '{schema}://{host}/{facility}',
-        '{schema}://{host}:{port}/{facility}',
     )
 
     # Define our template tokens
@@ -162,18 +144,6 @@ class NotifySyslog(NotifyBase):
             'values': [k for k in SYSLOG_FACILITY_MAP.keys()],
             'default': SyslogFacility.USER,
         },
-        'host': {
-            'name': _('Hostname'),
-            'type': 'string',
-            'required': True,
-        },
-        'port': {
-            'name': _('Port'),
-            'type': 'int',
-            'min': 1,
-            'max': 65535,
-            'default': 514,
-        },
     })
 
     # Define our template arguments
@@ -181,12 +151,6 @@ class NotifySyslog(NotifyBase):
         'facility': {
             # We map back to the same element defined in template_tokens
             'alias_of': 'facility',
-        },
-        'mode': {
-            'name': _('Syslog Mode'),
-            'type': 'choice:string',
-            'values': SYSLOG_MODES,
-            'default': SyslogMode.LOCAL,
         },
         'logpid': {
             'name': _('Log PID'),
@@ -202,8 +166,8 @@ class NotifySyslog(NotifyBase):
         },
     })
 
-    def __init__(self, facility=None, mode=None, log_pid=True,
-                 log_perror=False, **kwargs):
+    def __init__(self, facility=None, log_pid=True, log_perror=False,
+                 **kwargs):
         """
         Initialize Syslog Object
         """
@@ -223,14 +187,6 @@ class NotifySyslog(NotifyBase):
                 SYSLOG_FACILITY_MAP[
                     self.template_tokens['facility']['default']]
 
-        self.mode = self.template_args['mode']['default'] \
-            if not isinstance(mode, str) else mode.lower()
-
-        if self.mode not in SYSLOG_MODES:
-            msg = 'The mode specified ({}) is invalid.'.format(mode)
-            self.logger.warning(msg)
-            raise TypeError(msg)
-
         # Logging Options
         self.logoptions = 0
 
@@ -249,7 +205,7 @@ class NotifySyslog(NotifyBase):
         if log_perror:
             self.logoptions |= syslog.LOG_PERROR
 
-        # Initialize our loggig
+        # Initialize our logging
         syslog.openlog(
             self.app_id, logoption=self.logoptions, facility=self.facility)
         return
@@ -259,7 +215,7 @@ class NotifySyslog(NotifyBase):
         Perform Syslog Notification
         """
 
-        _pmap = {
+        SYSLOG_PUBLISH_MAP = {
             NotifyType.INFO: syslog.LOG_INFO,
             NotifyType.SUCCESS: syslog.LOG_NOTICE,
             NotifyType.FAILURE: syslog.LOG_CRIT,
@@ -272,70 +228,17 @@ class NotifySyslog(NotifyBase):
 
         # Always call throttle before any remote server i/o is made
         self.throttle()
-        if self.mode == SyslogMode.LOCAL:
-            try:
-                syslog.syslog(_pmap[notify_type], body)
+        try:
+            syslog.syslog(SYSLOG_PUBLISH_MAP[notify_type], body)
 
-            except KeyError:
-                # An invalid notification type was specified
-                self.logger.warning(
-                    'An invalid notification type '
-                    '({}) was specified.'.format(notify_type))
-                return False
+        except KeyError:
+            # An invalid notification type was specified
+            self.logger.warning(
+                'An invalid notification type '
+                '({}) was specified.'.format(notify_type))
+            return False
 
-        else:  # SyslogMode.REMOTE
-
-            host = self.host
-            port = self.port if self.port \
-                else self.template_tokens['port']['default']
-            if self.log_pid:
-                payload = '<%d>- %d - %s' % (
-                    _pmap[notify_type] + self.facility * 8, os.getpid(), body)
-
-            else:
-                payload = '<%d>- %s' % (
-                    _pmap[notify_type] + self.facility * 8, body)
-
-            # send UDP packet to upstream server
-            self.logger.debug(
-                'Syslog Host: %s:%d/%s',
-                host, port, SYSLOG_FACILITY_RMAP[self.facility])
-            self.logger.debug('Syslog Payload: %s' % str(payload))
-
-            # our sent bytes
-            sent = 0
-
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                sock.settimeout(self.socket_connect_timeout)
-                sent = sock.sendto(payload.encode('utf-8'), (host, port))
-                sock.close()
-
-            except socket.gaierror as e:
-                self.logger.warning(
-                    'A connection error occurred sending Syslog '
-                    'notification to %s:%d/%s', host, port,
-                    SYSLOG_FACILITY_RMAP[self.facility]
-                )
-                self.logger.debug('Socket Exception: %s' % str(e))
-                return False
-
-            except socket.timeout as e:
-                self.logger.warning(
-                    'A connection timeout occurred sending Syslog '
-                    'notification to %s:%d/%s', host, port,
-                    SYSLOG_FACILITY_RMAP[self.facility]
-                )
-                self.logger.debug('Socket Exception: %s' % str(e))
-                return False
-
-            if sent < len(payload):
-                self.logger.warning(
-                    'Syslog sent %d byte(s) but intended to send %d byte(s)',
-                    sent, len(payload))
-                return False
-
-        self.logger.info('Sent Syslog (%s) notification.', self.mode)
+        self.logger.info('Sent Syslog notification.')
 
         return True
 
@@ -348,31 +251,16 @@ class NotifySyslog(NotifyBase):
         params = {
             'logperror': 'yes' if self.log_perror else 'no',
             'logpid': 'yes' if self.log_pid else 'no',
-            'mode': self.mode,
         }
 
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
-        if self.mode == SyslogMode.LOCAL:
-            return '{schema}://{facility}/?{params}'.format(
-                facility=self.template_tokens['facility']['default']
-                if self.facility not in SYSLOG_FACILITY_RMAP
-                else SYSLOG_FACILITY_RMAP[self.facility],
-                schema=self.secure_protocol,
-                params=NotifySyslog.urlencode(params),
-            )
-
-        # Remote mode:
-        return '{schema}://{hostname}{port}/{facility}/?{params}'.format(
-            schema=self.secure_protocol,
-            hostname=NotifySyslog.quote(self.host, safe=''),
-            port='' if self.port is None
-            or self.port == self.template_tokens['port']['default']
-            else ':{}'.format(self.port),
+        return '{schema}://{facility}/?{params}'.format(
             facility=self.template_tokens['facility']['default']
             if self.facility not in SYSLOG_FACILITY_RMAP
             else SYSLOG_FACILITY_RMAP[self.facility],
+            schema=self.protocol,
             params=NotifySyslog.urlencode(params),
         )
 
@@ -395,21 +283,12 @@ class NotifySyslog(NotifyBase):
         # Get our path values
         tokens.extend(NotifySyslog.split_path(results['fullpath']))
 
+        # Initialization
         facility = None
-        if len(tokens) > 1 and is_hostname(tokens[0]):
-            # syslog://hostname/facility
-            results['mode'] = SyslogMode.REMOTE
 
-            # Store our facility as the first path entry
-            facility = tokens[-1]
-
-        elif tokens:
-            # This is a bit ambigious... it could be either:
-            # syslog://facility -or- syslog://hostname
-
-            # First lets test it as a facility; we'll correct this
-            # later on if nessisary
-            facility = tokens[-1]
+        if tokens:
+            # Store the last entry as the facility
+            facility = tokens[-1].lower()
 
         # However if specified on the URL, that will over-ride what was
         # identified
@@ -424,20 +303,6 @@ class NotifySyslog(NotifyBase):
             # short form matches like 'u' which will match against user
             facility = next((f for f in SYSLOG_FACILITY_MAP.keys()
                              if f.startswith(facility)), facility)
-
-        # Attempt to solve our ambiguity
-        if len(tokens) == 1 and is_hostname(tokens[0]) and (
-                results['port'] or facility not in SYSLOG_FACILITY_MAP):
-
-            # facility is likely hostname; update our guessed mode
-            results['mode'] = SyslogMode.REMOTE
-
-            # Reset our facility value
-            facility = None
-
-        # Set mode if not otherwise set
-        if 'mode' in results['qsd'] and len(results['qsd']['mode']):
-            results['mode'] = NotifySyslog.unquote(results['qsd']['mode'])
 
         # Save facility if set
         if facility:

@@ -12,7 +12,6 @@ import {
   backupOptions,
   dayOptions,
   diskUpdateOptions,
-  episodesSyncOptions,
   moviesSyncOptions,
   seriesSyncOptions,
   upgradeOptions,
@@ -32,26 +31,63 @@ const SettingsSchedulerView: FunctionComponent = () => {
     <Layout name="Scheduler">
       <Section header="Sonarr/Radarr Sync">
         <Selector
-          label="Update Series List from Sonarr"
+          label="Sync with Sonarr"
           options={seriesSyncOptions}
           settingKey="settings-sonarr-series_sync"
         ></Selector>
-
+        <Check
+          label="Sync Only Monitored Series"
+          settingKey={"settings-sonarr-sync_only_monitored_series"}
+        ></Check>
+        <CollapseBox settingKey={"settings-sonarr-sync_only_monitored_series"}>
+          <Message>
+            If enabled, only series with a monitored status in Sonarr will be
+            synced. If you make changes to a specific unmonitored Sonarr series
+            and you want Bazarr to know about those changes, simply toggle the
+            monitored status back on in Sonarr and Bazarr will sync any changes.
+          </Message>
+        </CollapseBox>
+        <CollapseBox settingKey={"settings-sonarr-sync_only_monitored_series"}>
+          <Check
+            label="Sync Only Monitored Episodes"
+            settingKey={"settings-sonarr-sync_only_monitored_episodes"}
+          ></Check>
+          <CollapseBox
+            settingKey={"settings-sonarr-sync_only_monitored_episodes"}
+          >
+            <Message>
+              If enabled, only episodes with a monitored status in Sonarr will
+              be synced. If you make changes to a specific unmonitored Sonarr
+              episode (or season) and you want Bazarr to know about those
+              changes, simply toggle the monitored status back on in Sonarr and
+              Bazarr will sync any changes. This setting is especially helpful
+              for long running TV series with many seasons and many episodes,
+              but that are still actively producing new episodes (e.g. Saturday
+              Night Live).
+            </Message>
+          </CollapseBox>
+        </CollapseBox>
         <Selector
-          label="Update Episodes List from Sonarr"
-          options={episodesSyncOptions}
-          settingKey="settings-sonarr-episodes_sync"
-        ></Selector>
-
-        <Selector
-          label="Update Movies List from Radarr"
+          label="Sync with Radarr"
           options={moviesSyncOptions}
           settingKey="settings-radarr-movies_sync"
         ></Selector>
+        <Check
+          label="Sync Only Monitored Movies"
+          settingKey={"settings-radarr-sync_only_monitored_movies"}
+        ></Check>
+        <CollapseBox settingKey={"settings-radarr-sync_only_monitored_movies"}>
+          <Message>
+            If enabled, only movies with a monitored status in Radarr will be
+            synced. If you make changes to a specific unmonitored Radarr movie
+            and you want Bazarr to know about those changes, simply toggle the
+            monitored status back on in Radarr and Bazarr will sync any changes.
+          </Message>
+        </CollapseBox>
       </Section>
       <Section header="Disk Indexing">
         <Selector
-          label="Update all Episode Subtitles from Disk"
+          label="Update All Episode Subtitles from Disk"
           settingKey="settings-sonarr-full_update"
           options={diskUpdateOptions}
         ></Selector>
@@ -88,7 +124,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
         </Message>
 
         <Selector
-          label="Update all Movie Subtitles from Disk"
+          label="Update All Movie Subtitles from Disk"
           settingKey="settings-radarr-full_update"
           options={diskUpdateOptions}
         ></Selector>
@@ -144,7 +180,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
       </Section>
       <Section header="Backup">
         <Selector
-          label="Backup config and database"
+          label="Backup Database and Configuration File"
           settingKey="settings-backup-frequency"
           options={backupOptions}
         ></Selector>

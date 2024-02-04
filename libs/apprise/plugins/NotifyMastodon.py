@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -35,6 +31,7 @@ import requests
 from copy import deepcopy
 from json import dumps, loads
 from datetime import datetime
+from datetime import timezone
 
 from .NotifyBase import NotifyBase
 from ..URLBase import PrivacyMode
@@ -110,6 +107,10 @@ class NotifyMastodon(NotifyBase):
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_mastodon'
 
+    # Support attachments
+    attachment_support = True
+
+    # Allows the user to specify the NotifyImageSize object
     # Allows the user to specify the NotifyImageSize object; this is supported
     # through the webhook
     image_size = NotifyImageSize.XY_128
@@ -150,7 +151,7 @@ class NotifyMastodon(NotifyBase):
     request_rate_per_sec = 0
 
     # For Tracking Purposes
-    ratelimit_reset = datetime.utcnow()
+    ratelimit_reset = datetime.now(timezone.utc).replace(tzinfo=None)
 
     # Default to 1000; users can send up to 1000 DM's and 2400 toot a day
     # This value only get's adjusted if the server sets it that way
@@ -413,11 +414,10 @@ class NotifyMastodon(NotifyBase):
             else:
                 targets.add(myself)
 
-        if attach:
+        if attach and self.attachment_support:
             # We need to upload our payload first so that we can source it
             # in remaining messages
             for attachment in attach:
-
                 # Perform some simple error checking
                 if not attachment:
                     # We could not access the attachment
@@ -577,7 +577,7 @@ class NotifyMastodon(NotifyBase):
                 _payload = deepcopy(payload)
                 _payload['media_ids'] = media_ids
 
-                if no:
+                if no or not body:
                     # strip text and replace it with the image representation
                     _payload['status'] = \
                         '{:02d}/{:02d}'.format(no + 1, len(batches))
@@ -834,7 +834,7 @@ class NotifyMastodon(NotifyBase):
             # Mastodon server.  One would hope we're on NTP and our clocks are
             # the same allowing this to role smoothly:
 
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc).replace(tzinfo=None)
             if now < self.ratelimit_reset:
                 # We need to throttle for the difference in seconds
                 # We add 0.5 seconds to the end just to allow a grace
@@ -892,8 +892,9 @@ class NotifyMastodon(NotifyBase):
                 # Capture rate limiting if possible
                 self.ratelimit_remaining = \
                     int(r.headers.get('X-RateLimit-Remaining'))
-                self.ratelimit_reset = datetime.utcfromtimestamp(
-                    int(r.headers.get('X-RateLimit-Limit')))
+                self.ratelimit_reset = datetime.fromtimestamp(
+                    int(r.headers.get('X-RateLimit-Limit')), timezone.utc
+                ).replace(tzinfo=None)
 
             except (TypeError, ValueError):
                 # This is returned if we could not retrieve this information

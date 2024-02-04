@@ -1,11 +1,11 @@
-import { Anchor, Code, Table } from "@mantine/core";
+import { Code, Table } from "@mantine/core";
 import { FunctionComponent } from "react";
 import {
   Check,
   CollapseBox,
   Layout,
   Message,
-  Password,
+  MultiSelector,
   Section,
   Selector,
   Slider,
@@ -18,11 +18,12 @@ import {
 import {
   adaptiveSearchingDelayOption,
   adaptiveSearchingDeltaOption,
-  antiCaptchaOption,
   colorOptions,
   embeddedSubtitlesParserOption,
   folderOptions,
   hiExtensionOptions,
+  providerOptions,
+  syncMaxOffsetSecondsOptions,
 } from "./options";
 
 interface CommandOption {
@@ -97,6 +98,14 @@ const commandOptions: CommandOption[] = [
     description: "Provider of the subtitle file",
   },
   {
+    option: "uploader",
+    description: "Uploader of the subtitle file",
+  },
+  {
+    option: "release_info",
+    description: "Release info for the subtitle file",
+  },
+  {
     option: "series_id",
     description: "Sonarr series ID (Empty if movie)",
   },
@@ -118,7 +127,7 @@ const commandOptionElements: JSX.Element[] = commandOptions.map((op, idx) => (
 const SettingsSubtitlesView: FunctionComponent = () => {
   return (
     <Layout name="Subtitles">
-      <Section header="Subtitles Options">
+      <Section header="Basic Options">
         <Selector
           label="Subtitle Folder"
           options={folderOptions}
@@ -136,6 +145,65 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             settingKey="settings-general-subfolder_custom"
           ></Text>
         </CollapseBox>
+        <Selector
+          label="Hearing-impaired subtitles extension"
+          options={hiExtensionOptions}
+          settingKey="settings-general-hi_extension"
+        ></Selector>
+        <Message>
+          What file extension to use when saving hearing-impaired subtitles to
+          disk (e.g., video.en.sdh.srt).
+        </Message>
+      </Section>
+      <Section header="Embedded Subtitles">
+        <Check
+          label="Use Embedded Subtitles"
+          settingKey="settings-general-use_embedded_subs"
+        ></Check>
+        <Message>
+          Use embedded subtitles in media files when determining missing ones.
+        </Message>
+        <CollapseBox indent settingKey="settings-general-use_embedded_subs">
+          <Selector
+            settingKey="settings-general-embedded_subtitles_parser"
+            settingOptions={{
+              onSaved: (v) => (v === undefined ? "ffprobe" : v),
+            }}
+            options={embeddedSubtitlesParserOption}
+          ></Selector>
+          <Message>Embedded subtitles video parser</Message>
+          <Check
+            label="Ignore Embedded PGS Subtitles"
+            settingKey="settings-general-ignore_pgs_subs"
+          ></Check>
+          <Message>
+            Ignores PGS Subtitles in Embedded Subtitles detection.
+          </Message>
+          <Check
+            label="Ignore Embedded VobSub Subtitles"
+            settingKey="settings-general-ignore_vobsub_subs"
+          ></Check>
+          <Message>
+            Ignores VobSub Subtitles in Embedded Subtitles detection.
+          </Message>
+          <Check
+            label="Ignore Embedded ASS Subtitles"
+            settingKey="settings-general-ignore_ass_subs"
+          ></Check>
+          <Message>
+            Ignores ASS Subtitles in Embedded Subtitles detection.
+          </Message>
+          <Check
+            label="Show Only Desired Languages"
+            settingKey="settings-general-embedded_subs_show_desired"
+          ></Check>
+          <Message>
+            Hide embedded subtitles for languages that are not currently
+            desired.
+          </Message>
+        </CollapseBox>
+      </Section>
+      <Section header="Upgrading Subtitles">
         <Check
           label="Upgrade Previously Downloaded Subtitles"
           settingKey="settings-general-upgrade_subs"
@@ -161,52 +229,25 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             subtitles.
           </Message>
         </CollapseBox>
-        <Selector
-          label="Hearing-impaired subtitles extension"
-          options={hiExtensionOptions}
-          settingKey="settings-general-hi_extension"
-        ></Selector>
+      </Section>
+      <Section header="Encoding">
+        <Check
+          label="Encode Subtitles To UTF8"
+          settingKey="settings-general-utf8_encode"
+        ></Check>
         <Message>
-          What file extension to use when saving hearing-impaired subtitles to
-          disk (e.g., video.en.sdh.srt).
+          Re-encode downloaded Subtitles to UTF8. Should be left enabled in most
+          case.
         </Message>
       </Section>
-      <Section header="Anti-Captcha Options">
-        <Selector
-          clearable
-          placeholder="Select a provider"
-          settingKey="settings-general-anti_captcha_provider"
-          settingOptions={{ onSubmit: (v) => (v === undefined ? "None" : v) }}
-          options={antiCaptchaOption}
-        ></Selector>
-        <Message>Choose the anti-captcha provider you want to use</Message>
-        <CollapseBox
-          settingKey="settings-general-anti_captcha_provider"
-          on={(value) => value === "anti-captcha"}
-        >
-          <Anchor href="http://getcaptchasolution.com/eixxo1rsnw">
-            Anti-Captcha.com
-          </Anchor>
-          <Text
-            label="Account Key"
-            settingKey="settings-anticaptcha-anti_captcha_key"
-          ></Text>
-        </CollapseBox>
-        <CollapseBox
-          settingKey="settings-general-anti_captcha_provider"
-          on={(value) => value === "death-by-captcha"}
-        >
-          <Anchor href="https://www.deathbycaptcha.com">
-            DeathByCaptcha.com
-          </Anchor>
-          <Text
-            label="Username"
-            settingKey="settings-deathbycaptcha-username"
-          ></Text>
-          <Password
-            label="Password"
-            settingKey="settings-deathbycaptcha-password"
-          ></Password>
+      <Section header="Permissions">
+        <Check
+          label="Change file permission (chmod)"
+          settingKey="settings-general-chmod_enabled"
+        ></Check>
+        <CollapseBox indent settingKey="settings-general-chmod_enabled">
+          <Text placeholder="0777" settingKey="settings-general-chmod"></Text>
+          <Message>Must be 4 digit octal</Message>
         </CollapseBox>
       </Section>
       <Section header="Performance / Optimization">
@@ -249,52 +290,6 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           devices)
         </Message>
         <Check
-          label="Use Embedded Subtitles"
-          settingKey="settings-general-use_embedded_subs"
-        ></Check>
-        <Message>
-          Use embedded subtitles in media files when determining missing ones.
-        </Message>
-        <CollapseBox indent settingKey="settings-general-use_embedded_subs">
-          <Check
-            label="Ignore Embedded PGS Subtitles"
-            settingKey="settings-general-ignore_pgs_subs"
-          ></Check>
-          <Message>
-            Ignores PGS Subtitles in Embedded Subtitles detection.
-          </Message>
-          <Check
-            label="Ignore Embedded VobSub Subtitles"
-            settingKey="settings-general-ignore_vobsub_subs"
-          ></Check>
-          <Message>
-            Ignores VobSub Subtitles in Embedded Subtitles detection.
-          </Message>
-          <Check
-            label="Ignore Embedded ASS Subtitles"
-            settingKey="settings-general-ignore_ass_subs"
-          ></Check>
-          <Message>
-            Ignores ASS Subtitles in Embedded Subtitles detection.
-          </Message>
-          <Check
-            label="Show Only Desired Languages"
-            settingKey="settings-general-embedded_subs_show_desired"
-          ></Check>
-          <Message>
-            Hide embedded subtitles for languages that are not currently
-            desired.
-          </Message>
-          <Selector
-            settingKey="settings-general-embedded_subtitles_parser"
-            settingOptions={{
-              onSaved: (v) => (v === undefined ? "ffprobe" : v),
-            }}
-            options={embeddedSubtitlesParserOption}
-          ></Selector>
-          <Message>Embedded subtitles video parser</Message>
-        </CollapseBox>
-        <Check
           label="Skip video file hash calculation"
           settingKey="settings-general-skip_hashing"
         ></Check>
@@ -304,15 +299,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           search results scores.
         </Message>
       </Section>
-      <Section header="Post-Processing">
-        <Check
-          label="Encode Subtitles To UTF8"
-          settingKey="settings-general-utf8_encode"
-        ></Check>
-        <Message>
-          Re-encode downloaded Subtitles to UTF8. Should be left enabled in most
-          case.
-        </Message>
+      <Section header="Subzero Modifications">
         <Check
           label="Hearing Impaired"
           settingOptions={{ onLoaded: SubzeroModification("remove_HI") }}
@@ -380,14 +367,8 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           Reverses the punctuation in right-to-left subtitles for problematic
           playback devices.
         </Message>
-        <Check
-          label="Permission (chmod)"
-          settingKey="settings-general-chmod_enabled"
-        ></Check>
-        <CollapseBox indent settingKey="settings-general-chmod_enabled">
-          <Text placeholder="0777" settingKey="settings-general-chmod"></Text>
-          <Message>Must be 4 digit octal</Message>
-        </CollapseBox>
+      </Section>
+      <Section header="Synchronizarion / Alignement">
         <Check
           label="Always use Audio Track as Reference for Syncing"
           settingKey="settings-subsync-force_audio"
@@ -395,6 +376,31 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         <Message>
           Use the audio track as reference for syncing, instead of using the
           embedded subtitle.
+        </Message>
+        <Check
+          label="No Fix Framerate"
+          settingKey="settings-subsync-no_fix_framerate"
+        ></Check>
+        <Message>
+          If specified, subsync will not attempt to correct a framerate mismatch
+          between reference and subtitles.
+        </Message>
+        <Check
+          label="Gold-Section Search"
+          settingKey="settings-subsync-gss"
+        ></Check>
+        <Message>
+          If specified, use golden-section search to try to find the optimal
+          framerate ratio between video and subtitles.
+        </Message>
+        <Selector
+          label="Max offset seconds"
+          options={syncMaxOffsetSecondsOptions}
+          settingKey="settings-subsync-max_offset_seconds"
+          defaultValue={60}
+        ></Selector>
+        <Message>
+          The max allowed offset seconds for any subtitle segment.
         </Message>
         <Check
           label="Automatic Subtitles Synchronization"
@@ -405,6 +411,13 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           subtitles.
         </Message>
         <CollapseBox indent settingKey="settings-subsync-use_subsync">
+          <MultiSelector
+            placeholder="Select providers..."
+            label="Do not sync subtitles downloaded from those providers"
+            clearable
+            options={providerOptions}
+            settingKey="settings-subsync-checker-blacklisted_providers"
+          ></MultiSelector>
           <Check label="Debug" settingKey="settings-subsync-debug"></Check>
           <Message>
             Do not actually sync the subtitles but generate a .tar.gz file to be
@@ -426,6 +439,8 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             <Slider settingKey="settings-subsync-subsync_movie_threshold"></Slider>
           </CollapseBox>
         </CollapseBox>
+      </Section>
+      <Section header="Custom post-processing">
         <Check
           settingKey="settings-general-use_postprocessing"
           label="Custom Post-Processing"

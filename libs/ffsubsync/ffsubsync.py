@@ -202,10 +202,7 @@ def try_sync(
             if args.output_encoding != "same":
                 out_subs = out_subs.set_encoding(args.output_encoding)
             suppress_output_thresh = args.suppress_output_if_offset_less_than
-            if suppress_output_thresh is None or (
-                scale_step.scale_factor == 1.0
-                and offset_seconds >= suppress_output_thresh
-            ):
+            if offset_seconds >= (suppress_output_thresh or float("-inf")):
                 logger.info("writing output to {}".format(srtout or "stdout"))
                 out_subs.write_file(srtout)
             else:
@@ -216,11 +213,10 @@ def try_sync(
                 )
     except FailedToFindAlignmentException as e:
         sync_was_successful = False
-        logger.error(e)
+        logger.error(str(e))
     except Exception as e:
         exc = e
         sync_was_successful = False
-        logger.error(e)
     else:
         result["offset_seconds"] = offset_seconds
         result["framerate_scale_factor"] = scale_step.scale_factor
@@ -362,23 +358,29 @@ def validate_args(args: argparse.Namespace) -> None:
             )
         if not args.srtin:
             raise ValueError(
-                "need to specify input srt if --overwrite-input is specified since we cannot overwrite stdin"
+                "need to specify input srt if --overwrite-input "
+                "is specified since we cannot overwrite stdin"
             )
         if args.srtout is not None:
             raise ValueError(
-                "overwrite input set but output file specified; refusing to run in case this was not intended"
+                "overwrite input set but output file specified; "
+                "refusing to run in case this was not intended"
             )
     if args.extract_subs_from_stream is not None:
         if args.make_test_case:
             raise ValueError("test case is for sync and not subtitle extraction")
         if args.srtin:
             raise ValueError(
-                "stream specified for reference subtitle extraction; -i flag for sync input not allowed"
+                "stream specified for reference subtitle extraction; "
+                "-i flag for sync input not allowed"
             )
 
 
 def validate_file_permissions(args: argparse.Namespace) -> None:
-    error_string_template = "unable to {action} {file}; try ensuring file exists and has correct permissions"
+    error_string_template = (
+        "unable to {action} {file}; "
+        "try ensuring file exists and has correct permissions"
+    )
     if args.reference is not None and not os.access(args.reference, os.R_OK):
         raise ValueError(
             error_string_template.format(action="read reference", file=args.reference)
@@ -506,27 +508,27 @@ def run(
     try:
         sync_was_successful = _run_impl(args, result)
         result["sync_was_successful"] = sync_was_successful
+        return result
     finally:
-        if log_handler is None or log_path is None:
-            return result
-        try:
+        if log_handler is not None and log_path is not None:
             log_handler.close()
             logger.removeHandler(log_handler)
             if args.make_test_case:
                 result["retval"] += make_test_case(
                     args, _npy_savename(args), sync_was_successful
                 )
-        finally:
             if args.log_dir_path is None or not os.path.isdir(args.log_dir_path):
                 os.remove(log_path)
-        return result
 
 
 def add_main_args_for_cli(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "reference",
         nargs="?",
-        help="Reference (video, subtitles, or a numpy array with VAD speech) to which to synchronize input subtitles.",
+        help=(
+            "Reference (video, subtitles, or a numpy array with VAD speech) "
+            "to which to synchronize input subtitles."
+        ),
     )
     parser.add_argument(
         "-i", "--srtin", nargs="*", help="Input subtitles file (default=stdin)."
@@ -554,11 +556,13 @@ def add_main_args_for_cli(parser: argparse.ArgumentParser) -> None:
         "--reference-track",
         "--reftrack",
         default=None,
-        help="Which stream/track in the video file to use as reference, "
-        "formatted according to ffmpeg conventions. For example, 0:s:0 "
-        "uses the first subtitle track; 0:a:3 would use the third audio track. "
-        "You can also drop the leading `0:`; i.e. use s:0 or a:3, respectively. "
-        "Example: `ffs ref.mkv -i in.srt -o out.srt --reference-stream s:2`",
+        help=(
+            "Which stream/track in the video file to use as reference, "
+            "formatted according to ffmpeg conventions. For example, 0:s:0 "
+            "uses the first subtitle track; 0:a:3 would use the third audio track. "
+            "You can also drop the leading `0:`; i.e. use s:0 or a:3, respectively. "
+            "Example: `ffs ref.mkv -i in.srt -o out.srt --reference-stream s:2`"
+        ),
     )
 
 
@@ -574,7 +578,10 @@ def add_cli_only_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--overwrite-input",
         action="store_true",
-        help="If specified, will overwrite the input srt instead of writing the output to a new file.",
+        help=(
+            "If specified, will overwrite the input srt "
+            "instead of writing the output to a new file."
+        ),
     )
     parser.add_argument(
         "--encoding",
@@ -642,7 +649,14 @@ def add_cli_only_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--vad",
-        choices=["subs_then_webrtc", "webrtc", "subs_then_auditok", "auditok"],
+        choices=[
+            "subs_then_webrtc",
+            "webrtc",
+            "subs_then_auditok",
+            "auditok",
+            "subs_then_silero",
+            "silero",
+        ],
         default=None,
         help="Which voice activity detector to use for speech extraction "
         "(if using video / audio as a reference, default={}).".format(DEFAULT_VAD),
@@ -680,13 +694,21 @@ def add_cli_only_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--log-dir-path",
         default=None,
-        help="If provided, will save log file ffsubsync.log to this path (must be an existing directory).",
+        help=(
+            "If provided, will save log file ffsubsync.log to this path "
+            "(must be an existing directory)."
+        ),
     )
     parser.add_argument(
         "--gss",
         action="store_true",
         help="If specified, use golden-section search to try to find"
         "the optimal framerate ratio between video and subtitles.",
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="If specified, refuse to parse srt files with formatting issues.",
     )
     parser.add_argument("--vlc-mode", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--gui-mode", action="store_true", help=argparse.SUPPRESS)

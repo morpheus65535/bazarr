@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -89,6 +85,7 @@ import base64
 import requests
 from hashlib import sha256
 from datetime import datetime
+from datetime import timezone
 from collections import OrderedDict
 from xml.etree import ElementTree
 from email.mime.text import MIMEText
@@ -135,6 +132,9 @@ class NotifySES(NotifyBase):
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_ses'
 
+    # Support attachments
+    attachment_support = True
+
     # AWS is pretty good for handling data load so request limits
     # can occur in much shorter bursts
     request_rate_per_sec = 2.5
@@ -156,6 +156,7 @@ class NotifySES(NotifyBase):
             'name': _('From Email'),
             'type': 'string',
             'map_to': 'from_addr',
+            'required': True,
         },
         'access_key_id': {
             'name': _('Access Key ID'),
@@ -173,6 +174,7 @@ class NotifySES(NotifyBase):
             'name': _('Region'),
             'type': 'string',
             'regex': (r'^[a-z]{2}-[a-z-]+?-[0-9]+$', 'i'),
+            'required': True,
             'map_to': 'region_name',
         },
         'targets': {
@@ -424,7 +426,8 @@ class NotifySES(NotifyBase):
                 content = MIMEText(body, 'plain', 'utf-8')
 
             # Create a Multipart container if there is an attachment
-            base = MIMEMultipart() if attach else content
+            base = MIMEMultipart() \
+                if attach and self.attachment_support else content
 
             # TODO: Deduplicate with `NotifyEmail`?
             base['Subject'] = Header(title, 'utf-8')
@@ -436,10 +439,11 @@ class NotifySES(NotifyBase):
                 base['Reply-To'] = formataddr(reply_to, charset='utf-8')
             base['Cc'] = ','.join(cc)
             base['Date'] = \
-                datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S +0000")
+                datetime.now(
+                    timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
             base['X-Application'] = self.app_id
 
-            if attach:
+            if attach and self.attachment_support:
                 # First attach our body to our content as the first element
                 base.attach(content)
 
@@ -585,7 +589,7 @@ class NotifySES(NotifyBase):
         }
 
         # Get a reference time (used for header construction)
-        reference = datetime.utcnow()
+        reference = datetime.now(timezone.utc)
 
         # Provide Content-Length
         headers['Content-Length'] = str(len(payload))

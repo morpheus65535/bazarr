@@ -12,7 +12,6 @@ from zipfile import ZipFile
 
 from guessit import guessit
 
-from requests import Session
 from requests.adapters import HTTPAdapter
 
 from subliminal.utils import sanitize
@@ -203,14 +202,14 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
             # query the server
             content = None
             try:
-                content = self.session.get(self.server_url + 'search/old', params=params, timeout=10).content
+                content = self.session.get(self.server_url + 'search/old', params=params, timeout=30).content
                 xml = etree.fromstring(content)
             except etree.ParseError:
                 logger.error("Wrong data returned: %r", content)
                 break
 
             # exit if no results
-            if not int(xml.find('pagination/results').text):
+            if not xml.find('pagination/results') or not int(xml.find('pagination/results').text):
                 logger.debug('No subtitles found')
                 break
 
@@ -279,7 +278,7 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
     def download_subtitle(self, subtitle):
         # download as a zip
         logger.info('Downloading subtitle %r', subtitle)
-        r = self.session.get(self.server_url + subtitle.pid + '/download', params={'container': 'zip'}, timeout=10)
+        r = self.session.get(self.server_url + subtitle.pid + '/download', params={'container': 'zip'}, timeout=30)
         r.raise_for_status()
 
         # open the zip

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -84,6 +80,23 @@ IS_CHAT_ID_RE = re.compile(
 )
 
 
+class TelegramContentPlacement:
+    """
+    The Telegram Content Placement
+    """
+    # Before Attachments
+    BEFORE = "before"
+    # After Attachments
+    AFTER = "after"
+
+
+# Identify Placement Categories
+TELEGRAM_CONTENT_PLACEMENT = (
+    TelegramContentPlacement.BEFORE,
+    TelegramContentPlacement.AFTER,
+)
+
+
 class NotifyTelegram(NotifyBase):
     """
     A wrapper for Telegram Notifications
@@ -105,6 +118,9 @@ class NotifyTelegram(NotifyBase):
 
     # Telegram uses the http protocol with JSON requests
     notify_url = 'https://api.telegram.org/bot'
+
+    # Support attachments
+    attachment_support = True
 
     # Allows the user to specify the NotifyImageSize object
     image_size = NotifyImageSize.XY_256
@@ -319,11 +335,17 @@ class NotifyTelegram(NotifyBase):
         'to': {
             'alias_of': 'targets',
         },
+        'content': {
+            'name': _('Content Placement'),
+            'type': 'choice:string',
+            'values': TELEGRAM_CONTENT_PLACEMENT,
+            'default': TelegramContentPlacement.BEFORE,
+        },
     })
 
     def __init__(self, bot_token, targets, detect_owner=True,
                  include_image=False, silent=None, preview=None, topic=None,
-                 **kwargs):
+                 content=None, **kwargs):
         """
         Initialize Telegram Object
         """
@@ -348,6 +370,15 @@ class NotifyTelegram(NotifyBase):
         # Define whether or not we should display a web page preview
         self.preview = self.template_args['preview']['default'] \
             if preview is None else bool(preview)
+
+        # Setup our content placement
+        self.content = self.template_args['content']['default'] \
+            if not isinstance(content, str) else content.lower()
+        if self.content and self.content not in TELEGRAM_CONTENT_PLACEMENT:
+            msg = 'The content placement specified ({}) is invalid.'\
+                .format(content)
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         if topic:
             try:
@@ -439,11 +470,14 @@ class NotifyTelegram(NotifyBase):
         # content can arrive together.
         self.throttle()
 
+        payload = {'chat_id': chat_id}
+        if self.topic:
+            payload['message_thread_id'] = self.topic
+
         try:
             with open(path, 'rb') as f:
                 # Configure file payload (for upload)
                 files = {key: (file_name, f)}
-                payload = {'chat_id': chat_id}
 
                 self.logger.debug(
                     'Telegram attachment POST URL: %s (cert_verify=%r)' % (
@@ -680,6 +714,10 @@ class NotifyTelegram(NotifyBase):
             # Prepare our payload based on HTML or TEXT
             payload['text'] = body
 
+        # Handle payloads without a body specified (but an attachment present)
+        attach_content = \
+            TelegramContentPlacement.AFTER if not body else self.content
+
         # Create a copy of the chat_ids list
         targets = list(self.targets)
         while len(targets):
@@ -712,6 +750,20 @@ class NotifyTelegram(NotifyBase):
                     self.logger.warning(
                         'Failed to send Telegram type image to {}.',
                         payload['chat_id'])
+
+            if attach and self.attachment_support and \
+                    attach_content == TelegramContentPlacement.AFTER:
+                # Send our attachments now (if specified and if it exists)
+                if not self._send_attachments(
+                        chat_id=payload['chat_id'], notify_type=notify_type,
+                        attach=attach):
+
+                    has_error = True
+                    continue
+
+                if not body:
+                    # Nothing more to do; move along to the next attachment
+                    continue
 
             # Always call throttle before any remote server i/o is made;
             # Telegram throttles to occur before sending the image so that
@@ -775,19 +827,36 @@ class NotifyTelegram(NotifyBase):
 
             self.logger.info('Sent Telegram notification.')
 
-            if attach:
-                # Send our attachments now (if specified and if it exists)
-                for attachment in attach:
-                    if not self.send_media(
-                            payload['chat_id'], notify_type,
-                            attach=attachment):
+            if attach and self.attachment_support \
+                    and attach_content == TelegramContentPlacement.BEFORE:
+                # Send our attachments now (if specified and if it exists) as
+                # it was identified to send the content before the attachments
+                # which is now done.
+                if not self._send_attachments(
+                        chat_id=payload['chat_id'],
+                        notify_type=notify_type,
+                        attach=attach):
 
-                        # We failed; don't continue
-                        has_error = True
-                        break
+                    has_error = True
+                    continue
 
-                    self.logger.info(
-                        'Sent Telegram attachment: {}.'.format(attachment))
+        return not has_error
+
+    def _send_attachments(self, chat_id, notify_type, attach):
+        """
+        Sends our attachments
+        """
+        has_error = False
+        # Send our attachments now (if specified and if it exists)
+        for attachment in attach:
+            if not self.send_media(chat_id, notify_type, attach=attachment):
+
+                # We failed; don't continue
+                has_error = True
+                break
+
+            self.logger.info(
+                'Sent Telegram attachment: {}.'.format(attachment))
 
         return not has_error
 
@@ -802,6 +871,7 @@ class NotifyTelegram(NotifyBase):
             'detect': 'yes' if self.detect_owner else 'no',
             'silent': 'yes' if self.silent else 'no',
             'preview': 'yes' if self.preview else 'no',
+            'content': self.content,
         }
 
         if self.topic:
@@ -884,6 +954,10 @@ class NotifyTelegram(NotifyBase):
 
         # Store our chat ids (as these are the remaining entries)
         results['targets'] = entries
+
+        # content to be displayed 'before' or 'after' attachments
+        if 'content' in results['qsd'] and len(results['qsd']['content']):
+            results['content'] = results['qsd']['content']
 
         # Support the 'to' variable so that we can support rooms this way too
         # The 'to' makes it easier to use yaml configuration

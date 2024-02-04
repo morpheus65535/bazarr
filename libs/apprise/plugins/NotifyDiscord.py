@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -50,6 +46,9 @@
 import re
 import requests
 from json import dumps
+from datetime import timedelta
+from datetime import datetime
+from datetime import timezone
 
 from .NotifyBase import NotifyBase
 from ..common import NotifyImageSize
@@ -81,8 +80,22 @@ class NotifyDiscord(NotifyBase):
     # Discord Webhook
     notify_url = 'https://discord.com/api/webhooks'
 
+    # Support attachments
+    attachment_support = True
+
     # Allows the user to specify the NotifyImageSize object
     image_size = NotifyImageSize.XY_256
+
+    # Discord is kind enough to return how many more requests we're allowed to
+    # continue to make within it's header response as:
+    # X-RateLimit-Reset: The epoc time (in seconds) we can expect our
+    #                    rate-limit to be reset.
+    # X-RateLimit-Remaining: an integer identifying how many requests we're
+    #                        still allow to make.
+    request_rate_per_sec = 0
+
+    # Taken right from google.auth.helpers:
+    clock_skew = timedelta(seconds=10)
 
     # The maximum allowable characters allowed in the body per message
     body_maxlen = 2000
@@ -135,6 +148,13 @@ class NotifyDiscord(NotifyBase):
             'name': _('Avatar URL'),
             'type': 'string',
         },
+        'href': {
+            'name': _('URL'),
+            'type': 'string',
+        },
+        'url': {
+            'alias_of': 'href',
+        },
         # Send a message to the specified thread within a webhook's channel.
         # The thread will automatically be unarchived.
         'thread': {
@@ -166,7 +186,8 @@ class NotifyDiscord(NotifyBase):
 
     def __init__(self, webhook_id, webhook_token, tts=False, avatar=True,
                  footer=False, footer_logo=True, include_image=False,
-                 fields=True, avatar_url=None, thread=None, **kwargs):
+                 fields=True, avatar_url=None, href=None, thread=None,
+                 **kwargs):
         """
         Initialize Discord Object
 
@@ -215,6 +236,15 @@ class NotifyDiscord(NotifyBase):
         # dynamically generated avatar url images
         self.avatar_url = avatar_url
 
+        # A URL to have the title link to
+        self.href = href
+
+        # For Tracking Purposes
+        self.ratelimit_reset = datetime.now(timezone.utc).replace(tzinfo=None)
+
+        # Default to 1.0
+        self.ratelimit_remaining = 1.0
+
         return
 
     def send(self, body, title='', notify_type=NotifyType.INFO, attach=None,
@@ -235,61 +265,6 @@ class NotifyDiscord(NotifyBase):
         # Acquire image_url
         image_url = self.image_url(notify_type)
 
-        # our fields variable
-        fields = []
-
-        if self.notify_format == NotifyFormat.MARKDOWN:
-            # Use embeds for payload
-            payload['embeds'] = [{
-                'author': {
-                    'name': self.app_id,
-                    'url': self.app_url,
-                },
-                'title': title,
-                'description': body,
-
-                # Our color associated with our notification
-                'color': self.color(notify_type, int),
-            }]
-
-            if self.footer:
-                # Acquire logo URL
-                logo_url = self.image_url(notify_type, logo=True)
-
-                # Set Footer text to our app description
-                payload['embeds'][0]['footer'] = {
-                    'text': self.app_desc,
-                }
-
-                if self.footer_logo and logo_url:
-                    payload['embeds'][0]['footer']['icon_url'] = logo_url
-
-            if self.include_image and image_url:
-                payload['embeds'][0]['thumbnail'] = {
-                    'url': image_url,
-                    'height': 256,
-                    'width': 256,
-                }
-
-            if self.fields:
-                # Break titles out so that we can sort them in embeds
-                description, fields = self.extract_markdown_sections(body)
-
-                # Swap first entry for description
-                payload['embeds'][0]['description'] = description
-                if fields:
-                    # Apply our additional parsing for a better presentation
-                    payload['embeds'][0]['fields'] = \
-                        fields[:self.discord_max_fields]
-
-                    # Remove entry from head of fields
-                    fields = fields[self.discord_max_fields:]
-
-        else:
-            # not markdown
-            payload['content'] = \
-                body if not title else "{}\r\n{}".format(title, body)
-
         if self.avatar and (image_url or self.avatar_url):
             payload['avatar_url'] = \
                 self.avatar_url if self.avatar_url else image_url
@@ -298,22 +273,84 @@ class NotifyDiscord(NotifyBase):
             # Optionally override the default username of the webhook
             payload['username'] = self.user
 
+        # Associate our thread_id with our message
         params = {'thread_id': self.thread_id} if self.thread_id else None
-        if not self._send(payload, params=params):
-            # We failed to post our message
-            return False
 
-        # Process any remaining fields IF set
-        if fields:
-            payload['embeds'][0]['description'] = ''
-            for i in range(0, len(fields), self.discord_max_fields):
-                payload['embeds'][0]['fields'] = \
-                    fields[i:i + self.discord_max_fields]
-                if not self._send(payload):
-                    # We failed to post our message
-                    return False
+        if body:
+            # our fields variable
+            fields = []
 
-        if attach:
+            if self.notify_format == NotifyFormat.MARKDOWN:
+                # Use embeds for payload
+                payload['embeds'] = [{
+                    'author': {
+                        'name': self.app_id,
+                        'url': self.app_url,
+                    },
+                    'title': title,
+                    'description': body,
+
+                    # Our color associated with our notification
+                    'color': self.color(notify_type, int),
+                }]
+
+                if self.href:
+                    payload['embeds'][0]['url'] = self.href
+
+                if self.footer:
+                    # Acquire logo URL
+                    logo_url = self.image_url(notify_type, logo=True)
+
+                    # Set Footer text to our app description
+                    payload['embeds'][0]['footer'] = {
+                        'text': self.app_desc,
+                    }
+
+                    if self.footer_logo and logo_url:
+                        payload['embeds'][0]['footer']['icon_url'] = logo_url
+
+                if self.include_image and image_url:
+                    payload['embeds'][0]['thumbnail'] = {
+                        'url': image_url,
+                        'height': 256,
+                        'width': 256,
+                    }
+
+                if self.fields:
+                    # Break titles out so that we can sort them in embeds
+                    description, fields = self.extract_markdown_sections(body)
+
+                    # Swap first entry for description
+                    payload['embeds'][0]['description'] = description
+                    if fields:
+                        # Apply our additional parsing for a better
+                        # presentation
+                        payload['embeds'][0]['fields'] = \
+                            fields[:self.discord_max_fields]
+
+                        # Remove entry from head of fields
+                        fields = fields[self.discord_max_fields:]
+
+            else:
+                # not markdown
+                payload['content'] = \
+                    body if not title else "{}\r\n{}".format(title, body)
+
+            if not self._send(payload, params=params):
+                # We failed to post our message
+                return False
+
+            # Process any remaining fields IF set
+            if fields:
+                payload['embeds'][0]['description'] = ''
+                for i in range(0, len(fields), self.discord_max_fields):
+                    payload['embeds'][0]['fields'] = \
+                        fields[i:i + self.discord_max_fields]
+                    if not self._send(payload):
+                        # We failed to post our message
+                        return False
+
+        if attach and self.attachment_support:
             # Update our payload; the idea is to preserve it's other detected
             # and assigned values for re-use here too
             payload.update({
@@ -336,14 +373,15 @@ class NotifyDiscord(NotifyBase):
             for attachment in attach:
                 self.logger.info(
                     'Posting Discord Attachment {}'.format(attachment.name))
-                if not self._send(payload, attach=attachment):
+                if not self._send(payload, params=params, attach=attachment):
                     # We failed to post our message
                     return False
 
         # Otherwise return
         return True
 
-    def _send(self, payload, attach=None, params=None, **kwargs):
+    def _send(self, payload, attach=None, params=None, rate_limit=1,
+              **kwargs):
         """
         Wrapper to the requests (post) object
         """
@@ -365,8 +403,25 @@ class NotifyDiscord(NotifyBase):
         ))
         self.logger.debug('Discord Payload: %s' % str(payload))
 
-        # Always call throttle before any remote server i/o is made
-        self.throttle()
+        # By default set wait to None
+        wait = None
+
+        if self.ratelimit_remaining <= 0.0:
+            # Determine how long we should wait for or if we should wait at
+            # all. This isn't fool-proof because we can't be sure the client
+            # time (calling this script) is completely synced up with the
+            # Discord server.  One would hope we're on NTP and our clocks are
+            # the same allowing this to role smoothly:
+
+            now = datetime.now(timezone.utc).replace(tzinfo=None)
+            if now < self.ratelimit_reset:
+                # We need to throttle for the difference in seconds
+                wait = abs(
+                    (self.ratelimit_reset - now + self.clock_skew)
+                    .total_seconds())
+
+        # Always call throttle before any remote server i/o is made;
+        self.throttle(wait=wait)
 
         # Perform some simple error checking
         if isinstance(attach, AttachBase):
@@ -401,12 +456,42 @@ class NotifyDiscord(NotifyBase):
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
             )
+
+            # Handle rate limiting (if specified)
+            try:
+                # Store our rate limiting (if provided)
+                self.ratelimit_remaining = \
+                    float(r.headers.get(
+                        'X-RateLimit-Remaining'))
+                self.ratelimit_reset = datetime.fromtimestamp(
+                    int(r.headers.get('X-RateLimit-Reset')),
+                    timezone.utc).replace(tzinfo=None)
+
+            except (TypeError, ValueError):
+                # This is returned if we could not retrieve this
+                # information gracefully accept this state and move on
+                pass
+
             if r.status_code not in (
                     requests.codes.ok, requests.codes.no_content):
 
                 # We had a problem
                 status_str = \
                     NotifyBase.http_response_code_lookup(r.status_code)
+
+                if r.status_code == requests.codes.too_many_requests \
+                        and rate_limit > 0:
+
+                    # handle rate limiting
+                    self.logger.warning(
+                        'Discord rate limiting in effect; '
+                        'blocking for %.2f second(s)',
+                        self.ratelimit_remaining)
+
+                    # Try one more time before failing
+                    return self._send(
+                        payload=payload, attach=attach, params=params,
+                        rate_limit=rate_limit - 1, **kwargs)
 
                 self.logger.warning(
                     'Failed to send {}to Discord notification: '
@@ -464,6 +549,9 @@ class NotifyDiscord(NotifyBase):
 
         if self.avatar_url:
             params['avatar_url'] = self.avatar_url
+
+        if self.href:
+            params['href'] = self.href
 
         if self.thread_id:
             params['thread'] = self.thread_id
@@ -536,10 +624,23 @@ class NotifyDiscord(NotifyBase):
             results['avatar_url'] = \
                 NotifyDiscord.unquote(results['qsd']['avatar_url'])
 
+        # Extract url if it was specified
+        if 'href' in results['qsd']:
+            results['href'] = \
+                NotifyDiscord.unquote(results['qsd']['href'])
+
+        elif 'url' in results['qsd']:
+            results['href'] = \
+                NotifyDiscord.unquote(results['qsd']['url'])
+            # Markdown is implied
+            results['format'] = NotifyFormat.MARKDOWN
+
         # Extract thread id if it was specified
         if 'thread' in results['qsd']:
             results['thread'] = \
                 NotifyDiscord.unquote(results['qsd']['thread'])
+            # Markdown is implied
+            results['format'] = NotifyFormat.MARKDOWN
 
         return results
 

@@ -98,6 +98,9 @@ def provider_throttle_map():
             TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
             IPAddressBlocked: (datetime.timedelta(hours=1), "1 hours"),
         },
+        "titlovi": {
+            TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
+        },
         "titulky": {
             DownloadLimitExceeded: (
                 titulky_limit_reset_timedelta(),
@@ -122,7 +125,7 @@ def provider_throttle_map():
 
 
 PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendasdivx", "napiprojekt", "shooter",
-                        "hosszupuska", "supersubtitles", "titlovi", "argenteam", "assrt", "subscene"]
+                        "hosszupuska", "supersubtitles", "titlovi", "assrt", "subscene"]
 
 throttle_count = {}
 
@@ -240,6 +243,7 @@ def get_providers_auth():
         'opensubtitlescom': {'username': settings.opensubtitlescom.username,
                              'password': settings.opensubtitlescom.password,
                              'use_hash': settings.opensubtitlescom.use_hash,
+                             'include_ai_translated': settings.opensubtitlescom.include_ai_translated,
                              'api_key': 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
                              },
         'podnapisi': {
@@ -307,8 +311,10 @@ def get_providers_auth():
         },
         'whisperai': {
             'endpoint': settings.whisperai.endpoint,
+            'response': settings.whisperai.response,
             'timeout': settings.whisperai.timeout,
             'ffmpeg_path': _FFMPEG_BINARY,
+            'loglevel': settings.whisperai.loglevel,            
         }
     }
 

@@ -36,6 +36,20 @@ if not args.no_update:
 else:
     from .check_update import check_releases
 
+from dateutil.relativedelta import relativedelta
+
+NO_INTERVAL = "None"
+NEVER_DATE = "Never"
+ONE_YEAR_IN_SECONDS =  60 * 60 * 24 * 365
+
+def a_long_time_from_now(job):
+    # currently defined as more than a year from now
+    delta = job.next_run_time - datetime.now(job.next_run_time.tzinfo)
+    return delta.total_seconds() > ONE_YEAR_IN_SECONDS
+
+def in_a_century():
+    century = datetime.now() + relativedelta(years=100)
+    return century.year
 
 class Scheduler:
 
@@ -106,7 +120,9 @@ class Scheduler:
                 ('minute', 60),
                 ('second', 1)
             ]
-
+            if seconds > ONE_YEAR_IN_SECONDS:
+                # more than a year is None
+                return NO_INTERVAL
             strings = []
             for period_name, period_seconds in periods:
                 if seconds > period_seconds:
@@ -118,14 +134,11 @@ class Scheduler:
 
         def get_time_from_cron(cron):
             year = str(cron[0])
-            if year == "2100":
-                return "Never"
-
             day = str(cron[4])
             hour = str(cron[5])
 
             if day == "*":
-                text = "everyday"
+                text = "every day"
             else:
                 text = f"every {day_name[int(day)]}"
 
@@ -136,12 +149,20 @@ class Scheduler:
 
         task_list = []
         for job in self.aps_scheduler.get_jobs():
-            next_run = 'Never'
+            next_run = NEVER_DATE
             if job.next_run_time:
-                next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
-            if isinstance(job.trigger, CronTrigger):
-                if job.next_run_time and str(job.trigger.__getstate__()['fields'][0]) != "2100":
+                if a_long_time_from_now(job):
+                    # Never for IntervalTrigger jobs
+                    next_run = NEVER_DATE
+                else:
                     next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
+            if isinstance(job.trigger, CronTrigger):
+                if a_long_time_from_now(job):
+                    # Never for CronTrigger jobs
+                    next_run = NEVER_DATE
+                else:
+                    if job.next_run_time:
+                        next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
 
             if job.id in self.__running_tasks:
                 running = True
@@ -149,13 +170,21 @@ class Scheduler:
                 running = False
 
             if isinstance(job.trigger, IntervalTrigger):
-                interval = f"every {get_time_from_interval(job.trigger.__getstate__()['interval'])}"
+                interval = get_time_from_interval(job.trigger.__getstate__()['interval'])
+                if interval != NO_INTERVAL:
+                    interval = f"every {interval}"
+                # else:
+                #     interval = "100 Year Interval"
                 task_list.append({'name': job.name, 'interval': interval, 'next_run_in': next_run,
                                   'next_run_time': next_run, 'job_id': job.id, 'job_running': running})
             elif isinstance(job.trigger, CronTrigger):
-                task_list.append({'name': job.name, 'interval': get_time_from_cron(job.trigger.fields),
-                                  'next_run_in': next_run, 'next_run_time': next_run, 'job_id': job.id,
-                                  'job_running': running})
+                if a_long_time_from_now(job):
+                    interval = NO_INTERVAL
+                else:
+                    interval = get_time_from_cron(job.trigger.fields)
+                task_list.append({'name': job.name, 'interval': interval,
+                                'next_run_in': next_run, 'next_run_time': next_run, 'job_id': job.id,
+                                'job_running': running})
 
         return task_list
 
@@ -175,29 +204,23 @@ class Scheduler:
 
     def __cache_cleanup_task(self):
         self.aps_scheduler.add_job(cache_maintenance, IntervalTrigger(hours=24), max_instances=1, coalesce=True,
-                                   misfire_grace_time=15, id='cache_cleanup', name='Cache maintenance')
+                                   misfire_grace_time=15, id='cache_cleanup', name='Cache Maintenance')
 
     def __check_health_task(self):
         self.aps_scheduler.add_job(check_health, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
-                                   misfire_grace_time=15, id='check_health', name='Check health')
+                                   misfire_grace_time=15, id='check_health', name='Check Health')
 
     def __automatic_backup(self):
         backup = settings.backup.frequency
         if backup == "Daily":
-            self.aps_scheduler.add_job(
-                backup_to_zip, CronTrigger(hour=settings.backup.hour), max_instances=1, coalesce=True,
-                misfire_grace_time=15, id='backup', name='Backup database and configuration file',
-                replace_existing=True)
+            trigger = CronTrigger(hour=settings.backup.hour)
         elif backup == "Weekly":
-            self.aps_scheduler.add_job(
-                backup_to_zip, CronTrigger(day_of_week=settings.backup.day, hour=settings.backup.hour),
-                max_instances=1, coalesce=True, misfire_grace_time=15, id='backup',
-                name='Backup database and configuration file', replace_existing=True)
+            trigger = CronTrigger(day_of_week=settings.backup.day, hour=settings.backup.hour)
         elif backup == "Manually":
-            try:
-                self.aps_scheduler.remove_job(job_id='backup')
-            except JobLookupError:
-                pass
+            trigger = CronTrigger(year=in_a_century())
+        self.aps_scheduler.add_job(backup_to_zip, trigger,
+                max_instances=1, coalesce=True, misfire_grace_time=15, id='backup',
+                name='Backup Database and Configuration File', replace_existing=True)
 
     def __sonarr_full_update_task(self):
         if settings.general.use_sonarr:
@@ -206,18 +229,18 @@ class Scheduler:
                 self.aps_scheduler.add_job(
                     update_all_episodes, CronTrigger(hour=settings.sonarr.full_update_hour), max_instances=1,
                     coalesce=True, misfire_grace_time=15, id='update_all_episodes',
-                    name='Index all Episode Subtitles from disk', replace_existing=True)
+                    name='Index All Episode Subtitles from Disk', replace_existing=True)
             elif full_update == "Weekly":
                 self.aps_scheduler.add_job(
                     update_all_episodes,
                     CronTrigger(day_of_week=settings.sonarr.full_update_day, hour=settings.sonarr.full_update_hour),
                     max_instances=1, coalesce=True, misfire_grace_time=15, id='update_all_episodes',
-                    name='Index all Episode Subtitles from disk', replace_existing=True)
+                    name='Index All Episode Subtitles from Disk', replace_existing=True)
             elif full_update == "Manually":
                 self.aps_scheduler.add_job(
-                    update_all_episodes, CronTrigger(year='2100'), max_instances=1, coalesce=True,
+                    update_all_episodes, CronTrigger(year=in_a_century()), max_instances=1, coalesce=True,
                     misfire_grace_time=15, id='update_all_episodes',
-                    name='Index all Episode Subtitles from disk', replace_existing=True)
+                    name='Index All Episode Subtitles from Disk', replace_existing=True)
 
     def __radarr_full_update_task(self):
         if settings.general.use_radarr:
@@ -226,17 +249,17 @@ class Scheduler:
                 self.aps_scheduler.add_job(
                     update_all_movies, CronTrigger(hour=settings.radarr.full_update_hour), max_instances=1,
                     coalesce=True, misfire_grace_time=15,
-                    id='update_all_movies', name='Index all Movie Subtitles from disk', replace_existing=True)
+                    id='update_all_movies', name='Index All Movie Subtitles from Disk', replace_existing=True)
             elif full_update == "Weekly":
                 self.aps_scheduler.add_job(
                     update_all_movies,
                     CronTrigger(day_of_week=settings.radarr.full_update_day, hour=settings.radarr.full_update_hour),
                     max_instances=1, coalesce=True, misfire_grace_time=15, id='update_all_movies',
-                    name='Index all Movie Subtitles from disk', replace_existing=True)
+                    name='Index All Movie Subtitles from Disk', replace_existing=True)
             elif full_update == "Manually":
                 self.aps_scheduler.add_job(
-                    update_all_movies, CronTrigger(year='2100'), max_instances=1, coalesce=True, misfire_grace_time=15,
-                    id='update_all_movies', name='Index all Movie Subtitles from disk', replace_existing=True)
+                    update_all_movies, CronTrigger(year=in_a_century()), max_instances=1, coalesce=True, misfire_grace_time=15,
+                    id='update_all_movies', name='Index All Movie Subtitles from Disk', replace_existing=True)
 
     def __update_bazarr_task(self):
         if not args.no_update and os.environ["BAZARR_VERSION"] != '':
@@ -248,7 +271,7 @@ class Scheduler:
                     misfire_grace_time=15, id='update_bazarr', name=task_name, replace_existing=True)
             else:
                 self.aps_scheduler.add_job(
-                    check_if_new_update, CronTrigger(year='2100'), hour=4, id='update_bazarr', name=task_name,
+                    check_if_new_update, CronTrigger(year=in_a_century()), hour=4, id='update_bazarr', name=task_name,
                     replace_existing=True)
                 self.aps_scheduler.add_job(
                     check_releases, IntervalTrigger(hours=3), max_instances=1, coalesce=True, misfire_grace_time=15,
@@ -269,13 +292,13 @@ class Scheduler:
                 wanted_search_missing_subtitles_series,
                 IntervalTrigger(hours=int(settings.general.wanted_search_frequency)), max_instances=1, coalesce=True,
                 misfire_grace_time=15, id='wanted_search_missing_subtitles_series', replace_existing=True,
-                name='Search for wanted Series Subtitles')
+                name='Search for Missing Series Subtitles')
         if settings.general.use_radarr:
             self.aps_scheduler.add_job(
                 wanted_search_missing_subtitles_movies,
                 IntervalTrigger(hours=int(settings.general.wanted_search_frequency_movie)), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles_movies',
-                name='Search for wanted Movies Subtitles', replace_existing=True)
+                name='Search for Missing Movies Subtitles', replace_existing=True)
 
     def __upgrade_subtitles_task(self):
         if settings.general.upgrade_subs and \
@@ -283,11 +306,19 @@ class Scheduler:
             self.aps_scheduler.add_job(
                 upgrade_subtitles, IntervalTrigger(hours=int(settings.general.upgrade_frequency)), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='upgrade_subtitles',
-                name='Upgrade previously downloaded Subtitles', replace_existing=True)
+                name='Upgrade Previously Downloaded Subtitles', replace_existing=True)
+        else:
+            try:
+                self.aps_scheduler.remove_job(job_id='upgrade_subtitles')
+            except JobLookupError:
+                pass
 
     def __randomize_interval_task(self):
         for job in self.aps_scheduler.get_jobs():
             if isinstance(job.trigger, IntervalTrigger):
+                # do not randomize the Never jobs
+                if job.trigger.interval.total_seconds() > ONE_YEAR_IN_SECONDS:
+                    continue
                 self.aps_scheduler.modify_job(job.id,
                                               next_run_time=datetime.now(tz=self.timezone) +
                                               timedelta(seconds=randrange(

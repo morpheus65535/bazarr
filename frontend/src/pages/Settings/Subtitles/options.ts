@@ -1,4 +1,5 @@
 import { SelectorOption } from "@/components";
+import { ProviderList } from "../Providers/list";
 
 export const hiExtensionOptions: SelectorOption<string>[] = [
   {
@@ -27,17 +28,6 @@ export const folderOptions: SelectorOption<string>[] = [
   {
     label: "Absolute Path",
     value: "absolute",
-  },
-];
-
-export const antiCaptchaOption: SelectorOption<string>[] = [
-  {
-    label: "Anti-Captcha",
-    value: "anti-captcha",
-  },
-  {
-    label: "Death by Captcha",
-    value: "death-by-captcha",
   },
 ];
 
@@ -163,5 +153,31 @@ export const colorOptions: SelectorOption<string>[] = [
   {
     label: "Dark Grey",
     value: buildColor("dark-grey"),
+  },
+];
+
+export const providerOptions: SelectorOption<string>[] = ProviderList.map(
+  (v) => ({
+    label: v.key,
+    value: v.key,
+  })
+);
+
+export const syncMaxOffsetSecondsOptions: SelectorOption<number>[] = [
+  {
+    label: "60",
+    value: 60,
+  },
+  {
+    label: "120",
+    value: 120,
+  },
+  {
+    label: "300",
+    value: 300,
+  },
+  {
+    label: "600",
+    value: 600,
   },
 ];

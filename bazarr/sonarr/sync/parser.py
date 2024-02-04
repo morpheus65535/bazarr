@@ -4,6 +4,7 @@ import os
 
 from app.config import settings
 from app.database import TableShows, database, select
+from constants import MINIMUM_VIDEO_SIZE
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import embedded_audio_reader
 from sonarr.info import get_sonarr_info
@@ -92,7 +93,7 @@ def episodeParser(episode):
                     bazarr_file_size = os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
                 except OSError:
                     bazarr_file_size = 0
-                if episode['episodeFile']['size'] > 20480 or bazarr_file_size > 20480:
+                if episode['episodeFile']['size'] > MINIMUM_VIDEO_SIZE or bazarr_file_size > MINIMUM_VIDEO_SIZE:
                     if 'sceneName' in episode['episodeFile']:
                         sceneName = episode['episodeFile']['sceneName']
                     else:

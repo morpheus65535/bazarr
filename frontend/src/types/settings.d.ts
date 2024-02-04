@@ -114,6 +114,9 @@ declare namespace Settings {
     subsync_movie_threshold: number;
     debug: boolean;
     force_audio: boolean;
+    max_offset_seconds: number;
+    no_fix_framerate: boolean;
+    gss: boolean;
   }
 
   interface Analytic {
@@ -144,7 +147,6 @@ declare namespace Settings {
     full_update_hour: number;
     only_monitored: boolean;
     series_sync: number;
-    episodes_sync: number;
     excluded_tags: string[];
     excluded_series_types: SonarrSeriesType[];
   }

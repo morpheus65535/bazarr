@@ -340,14 +340,20 @@ def consume_queue(queue):
             data = queue.popleft()
         except IndexError:
             pass
+        except (KeyboardInterrupt, SystemExit):
+            break
         else:
             dispatcher(data)
         sleep(0.1)
 
 
 # start both queue consuming threads
-threading.Thread(target=consume_queue, args=(sonarr_queue,)).start()
-threading.Thread(target=consume_queue, args=(radarr_queue,)).start()
+sonarr_queue_thread = threading.Thread(target=consume_queue, args=(sonarr_queue,))
+sonarr_queue_thread.daemon = True
+sonarr_queue_thread.start()
+radarr_queue_thread = threading.Thread(target=consume_queue, args=(radarr_queue,))
+radarr_queue_thread.daemon = True
+radarr_queue_thread.start()
 
 # instantiate proper SignalR client
 sonarr_signalr_client = SonarrSignalrClientLegacy() if get_sonarr_info.version().startswith(('0.', '2.', '3.')) else \

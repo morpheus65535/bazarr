@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -165,6 +161,9 @@ def _sanitize_token(tokens, default_delimiter):
 
     """
 
+    # Used for tracking groups
+    group_map = {}
+
     # Iterate over our tokens
     for key in tokens.keys():
 
@@ -181,14 +180,27 @@ def _sanitize_token(tokens, default_delimiter):
             # Default type to key
             tokens[key]['map_to'] = key
 
+        # Track our map_to objects
+        if tokens[key]['map_to'] not in group_map:
+            group_map[tokens[key]['map_to']] = set()
+        group_map[tokens[key]['map_to']].add(key)
+
         if 'type' not in tokens[key]:
             # Default type to string
             tokens[key]['type'] = 'string'
 
-        elif tokens[key]['type'].startswith('list') \
-                and 'delim' not in tokens[key]:
-            # Default list delimiter (if not otherwise specified)
-            tokens[key]['delim'] = default_delimiter
+        elif tokens[key]['type'].startswith('list'):
+            if 'delim' not in tokens[key]:
+                # Default list delimiter (if not otherwise specified)
+                tokens[key]['delim'] = default_delimiter
+
+            if key in group_map[tokens[key]['map_to']]:  # pragma: no branch
+                # Remove ourselves from the list
+                group_map[tokens[key]['map_to']].remove(key)
+
+            # Pointing to the set directly so we can dynamically update
+            # ourselves
+            tokens[key]['group'] = group_map[tokens[key]['map_to']]
 
         elif tokens[key]['type'].startswith('choice') \
                 and 'default' not in tokens[key] \
@@ -265,6 +277,13 @@ def details(plugin):
     #
     #            # Identifies if the entry specified is required or not
     #            'required': True,
+    #
+    #            # Identifies all tokens detected to be associated with the
+    #            # list:string
+    #            # This is ony present in list:string objects and is only set
+    #            # if this element acts as an alias for several other
+    #            # kwargs/fields.
+    #            'group': [],
     #
     #            # Identify a default value
     #            'default': 'http',

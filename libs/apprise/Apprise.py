@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# BSD 3-Clause License
+# BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
 # Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
@@ -13,10 +13,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -458,7 +454,7 @@ class Apprise:
             logger.error(msg)
             raise TypeError(msg)
 
-        if not (title or body):
+        if not (title or body or attach):
             msg = "No message content specified to deliver"
             logger.error(msg)
             raise TypeError(msg)
@@ -498,25 +494,29 @@ class Apprise:
             # If our code reaches here, we either did not define a tag (it
             # was set to None), or we did define a tag and the logic above
             # determined we need to notify the service it's associated with
-            if server.notify_format not in conversion_body_map:
-                # Perform Conversion
-                conversion_body_map[server.notify_format] = \
-                    convert_between(
-                        body_format, server.notify_format, content=body)
+
+            # First we need to generate a key we will use to determine if we
+            # need to build our data out.  Entries without are merged with
+            # the body at this stage.
+            key = server.notify_format if server.title_maxlen > 0\
+                else f'_{server.notify_format}'
+
+            if key not in conversion_title_map:
 
                 # Prepare our title
-                conversion_title_map[server.notify_format] = \
-                    '' if not title else title
+                conversion_title_map[key] = '' if not title else title
 
-                # Tidy Title IF required (hence it will become part of the
-                # body)
-                if server.title_maxlen <= 0 and \
-                        conversion_title_map[server.notify_format]:
+                # Conversion of title only occurs for services where the title
+                # is blended with the body (title_maxlen <= 0)
+                if conversion_title_map[key] and server.title_maxlen <= 0:
+                    conversion_title_map[key] = convert_between(
+                        body_format, server.notify_format,
+                        content=conversion_title_map[key])
 
-                    conversion_title_map[server.notify_format] = \
-                        convert_between(
-                            body_format, server.notify_format,
-                            content=conversion_title_map[server.notify_format])
+                # Our body is always converted no matter what
+                conversion_body_map[key] = \
+                    convert_between(
+                        body_format, server.notify_format, content=body)
 
                 if interpret_escapes:
                     #
@@ -526,13 +526,13 @@ class Apprise:
                     try:
                         # Added overhead required due to Python 3 Encoding Bug
                         # identified here: https://bugs.python.org/issue21331
-                        conversion_body_map[server.notify_format] = \
-                            conversion_body_map[server.notify_format]\
+                        conversion_body_map[key] = \
+                            conversion_body_map[key]\
                             .encode('ascii', 'backslashreplace')\
                             .decode('unicode-escape')
 
-                        conversion_title_map[server.notify_format] = \
-                            conversion_title_map[server.notify_format]\
+                        conversion_title_map[key] = \
+                            conversion_title_map[key]\
                             .encode('ascii', 'backslashreplace')\
                             .decode('unicode-escape')
 
@@ -543,8 +543,8 @@ class Apprise:
                         raise TypeError(msg)
 
             kwargs = dict(
-                body=conversion_body_map[server.notify_format],
-                title=conversion_title_map[server.notify_format],
+                body=conversion_body_map[key],
+                title=conversion_title_map[key],
                 notify_type=notify_type,
                 attach=attach,
                 body_format=body_format
@@ -685,6 +685,11 @@ class Apprise:
                 # Placeholder - populated below
                 'details': None,
 
+                # Let upstream service know of the plugins that support
+                # attachments
+                'attachment_support': getattr(
+                    plugin, 'attachment_support', False),
+
                 # Differentiat between what is a custom loaded plugin and
                 # which is native.
                 'category': getattr(plugin, 'category', None)
@@ -809,6 +814,36 @@ class Apprise:
 
         # If we reach here, then we indexed out of range
         raise IndexError('list index out of range')
+
+    def __getstate__(self):
+        """
+        Pickle Support dumps()
+        """
+        attributes = {
+            'asset': self.asset,
+            # Prepare our URL list as we need to extract the associated tags
+            # and asset details associated with it
+            'urls': [{
+                'url': server.url(privacy=False),
+                'tag': server.tags if server.tags else None,
+                'asset': server.asset} for server in self.servers],
+            'locale': self.locale,
+            'debug': self.debug,
+            'location': self.location,
+        }
+
+        return attributes
+
+    def __setstate__(self, state):
+        """
+        Pickle Support loads()
+        """
+        self.servers = list()
+        self.asset = state['asset']
+        self.locale = state['locale']
+        self.location = state['location']
+        for entry in state['urls']:
+            self.add(entry['url'], asset=entry['asset'], tag=entry['tag'])
 
     def __bool__(self):
         """

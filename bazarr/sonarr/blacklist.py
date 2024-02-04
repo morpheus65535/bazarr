@@ -30,7 +30,7 @@ def blacklist_log(sonarr_series_id, sonarr_episode_id, provider, subs_id, langua
 def blacklist_delete(provider, subs_id):
     database.execute(
         delete(TableBlacklist)
-        .where((TableBlacklist.provider == provider) and (TableBlacklist.subs_id == subs_id)))
+        .where((TableBlacklist.provider == provider) & (TableBlacklist.subs_id == subs_id)))
     event_stream(type='episode-blacklist', action='delete')
 
 

@@ -77,6 +77,8 @@ def is_virtualenv():
 # deploy requirements.txt
 if not args.no_update:
     try:
+        if os.name == 'nt':
+            import win32api, win32con  # noqa E401
         import lxml, numpy, webrtcvad, setuptools, PIL  # noqa E401
     except ImportError:
         try:
@@ -194,16 +196,28 @@ def init_binaries():
         exe = get_binary("unar")
         rarfile.UNAR_TOOL = exe
         rarfile.UNRAR_TOOL = None
-        rarfile.tool_setup(unrar=False, unar=True, bsdtar=False, force=True)
+        rarfile.SEVENZIP_TOOL = None
+        rarfile.tool_setup(unrar=False, unar=True, bsdtar=False, sevenzip=False, force=True)
     except (BinaryNotFound, rarfile.RarCannotExec):
         try:
             exe = get_binary("unrar")
             rarfile.UNRAR_TOOL = exe
             rarfile.UNAR_TOOL = None
-            rarfile.tool_setup(unrar=True, unar=False, bsdtar=False, force=True)
+            rarfile.SEVENZIP_TOOL = None
+            rarfile.tool_setup(unrar=True, unar=False, bsdtar=False, sevenzip=False, force=True)
         except (BinaryNotFound, rarfile.RarCannotExec):
-            logging.exception("BAZARR requires a rar archive extraction utilities (unrar, unar) and it can't be found.")
-            raise BinaryNotFound
+            try:
+                exe = get_binary("7z")
+                rarfile.UNRAR_TOOL = None
+                rarfile.UNAR_TOOL = None
+                rarfile.SEVENZIP_TOOL = "7z"
+                rarfile.tool_setup(unrar=False, unar=False, bsdtar=False, sevenzip=True, force=True)
+            except (BinaryNotFound, rarfile.RarCannotExec):
+                logging.exception("BAZARR requires a rar archive extraction utilities (unrar, unar, 7zip) and it can't be found.")
+                raise BinaryNotFound
+            else:
+                logging.debug("Using 7zip from: %s", exe)
+                return exe
         else:
             logging.debug("Using UnRAR from: %s", exe)
             return exe
