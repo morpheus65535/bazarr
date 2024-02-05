@@ -231,6 +231,7 @@ def get_providers_auth():
         },
         'avistaz': {
             'cookies': settings.avistaz.cookies,
+            'user_agent': settings.avistaz.user_agent,
         },
         'opensubtitles': {
             'username': settings.opensubtitles.username,

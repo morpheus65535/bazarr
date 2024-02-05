@@ -79,6 +79,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "cookies",
         name: "Cookies, e.g., PHPSESSID=abc; wikisubtitlesuser=xyz; wikisubtitlespass=efg",
       },
+      {
+        type: "text",
+        key: "user_agent",
+        name: "User-Agent, e.g., Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0",
+      },
     ],
   },
   {

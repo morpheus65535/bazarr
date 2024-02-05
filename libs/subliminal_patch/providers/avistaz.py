@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import logging
 import time
+from random import randint
 
 import pycountry
 from guessit import guessit
@@ -289,18 +290,26 @@ class AvistazProvider(Provider):
     server_url = 'https://avistaz.to/'
     search_url = server_url + 'subtitles'
 
-    def __init__(self, cookies=None):
+    def __init__(self, cookies, user_agent=None):
         self.session = None
         self.cookies = cookies
+        self.user_agent = user_agent
         self.logged_in = False
 
     def initialize(self):
         self.session = RetryingCFSession()
+
+        if self.user_agent:
+            self.session.headers['User-Agent'] = self.user_agent
+        else:
+            from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
+            self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
+
         if self.cookies:
             from requests.cookies import RequestsCookieJar
-            self.session.cookies = RequestsCookieJar()
-
             from http.cookies import SimpleCookie
+
+            self.session.cookies = RequestsCookieJar()
             simple_cookie = SimpleCookie()
             simple_cookie.load(self.cookies)
 
