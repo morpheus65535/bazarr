@@ -1,32 +1,25 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-import io
-import os
+
 import logging
 import time
 
 import pycountry
-
-from zipfile import ZipFile, is_zipfile
-
 from guessit import guessit
-from subliminal_patch.http import RetryingCFSession
-import chardet
-from subzero.language import Language
-
-from subliminal_patch.providers import Provider
-from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
-from subliminal_patch.subtitle import Subtitle, guess_matches
+from ratelimiter import RateLimiter
+from subliminal.exceptions import AuthenticationError
 from subliminal.providers import ParserBeautifulSoup
 from subliminal.video import Episode, Movie
-from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError
-from subliminal_patch.pitcher import pitchers, store_verification
-
-from ..utils import sanitize
-from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
+from subliminal_patch.http import RetryingCFSession
+from subliminal_patch.pitcher import store_verification
+from subliminal_patch.providers import Provider
+from subliminal_patch.subtitle import Subtitle, guess_matches
+from subzero.language import Language
+from .utils import get_archive_from_bytes, get_subtitle_from_archive
 
 logger = logging.getLogger(__name__)
 
+# extracted from Su
 supported_languages_names = [
     "Abkhazian",
     "Afar",
@@ -227,24 +220,35 @@ def lookup_lang(name):
         return None
 
 
+def _log_rate_limited(until):
+    logger.info('Rate limited, sleeping for %s seconds', int(round(until - time.time())))
+
+
+@RateLimiter(max_calls=1, period=1, callback=_log_rate_limited)
+def _rate_limited(method):
+    return method()
+
+
 class AvistazSubtitle(Subtitle):
     """AvistaZ.to Subtitle."""
     provider_name = 'avistaz'
 
-    def __init__(self, page_link, download_link, language, video, srt_filename, release, data, uploader):
-        super().__init__(language, page_link)
+    def __init__(self, page_link, download_link, language, video, filename, release, guess, uploader):
+        super().__init__(language, page_link=page_link)
         self.language = language
-        self.srt_filename = srt_filename
+        self.filename = filename
+        self.srt_filename = filename
         self.release_info = release
         self.page_link = page_link
         self.download_link = download_link
-        self.data = data
+        self.data = guess
         self.video = video
         self.matches = None
         self.content = None
         self.hearing_impaired = None
         self.uploader = uploader
         self.encoding = None
+        self.is_pack = 'episode' not in guess and 'other' in guess and 'complete' in guess['other'].lower()
 
     @property
     def id(self):
@@ -254,7 +258,7 @@ class AvistazSubtitle(Subtitle):
         # guess additional info from data
         matches = guess_matches(video, self.data)
 
-        # if the release group matches, the source and year is most likely correct, as well
+        # if the release group matches, the source is most likely correct, as well
         if "release_group" in matches:
             matches.add("source")
 
@@ -262,6 +266,10 @@ class AvistazSubtitle(Subtitle):
             if (video.original_series and 'year' not in self.data) or (
                     video.year and 'year' in self.data and self.data['year'] == video.year):
                 matches.add('year')
+
+            if ('season' not in self.data or 'season' in matches) and self.is_pack:
+                matches.add('episode')
+                matches.add('season')
 
         self.matches = matches
         self.data = None
@@ -278,7 +286,6 @@ class AvistazProvider(Provider):
                        supported_languages_names))))
     languages.update(set(Language.rebuild(L, hi=True) for L in languages))
 
-    video_types = (Episode, Movie)
     server_url = 'https://avistaz.to/'
     search_url = server_url + 'subtitles'
 
@@ -300,14 +307,14 @@ class AvistazProvider(Provider):
             for k, v in simple_cookie.items():
                 self.session.cookies.set(k, v.value)
 
-            rr = self.session.get(self.server_url + 'rules', allow_redirects=False, timeout=10,
-                                  headers={"Referer": self.server_url})
+            rr = _rate_limited(lambda: self.session.get(self.server_url + 'rules', allow_redirects=False, timeout=10,
+                                                        headers={"Referer": self.server_url}))
             if rr.status_code in [302, 404, 403]:
-                logger.info('AvistaZ: Login expired')
+                logger.info('Login expired')
                 raise AuthenticationError("cookies not valid anymore")
 
             store_verification("avistaz", self.session)
-            logger.debug('AvistaZ: Logged in')
+            logger.debug('Logged in')
             self.logged_in = True
             time.sleep(2)
             return True
@@ -315,7 +322,7 @@ class AvistazProvider(Provider):
     def terminate(self):
         self.session.close()
 
-    def _query(self, video):
+    def _list_subtitles(self, video):
         subtitles = []
 
         req_type = 0
@@ -328,63 +335,75 @@ class AvistazProvider(Provider):
             titles = [video.series] + video.alternative_series
 
         for i, title in enumerate(titles):
-            if i > 1:
-                time.sleep(2)
+            html = self._query_subtitles(title, req_type)
+            rows = self._find_subtitle_rows(html)
 
-            self._query_avistaz(subtitles, title, req_type, video)
+            logger.debug('Found %s subtitles', len(rows))
+            for row_soup in rows:
+                download_link, file_name, lang_name, release_link, release_name, uploader_name = self._parse_row(
+                    row_soup)
+
+                lang = lookup_lang(lang_name)
+                if lang is None:
+                    continue
+
+                subtitle = self.subtitle_class(
+                    page_link=release_link,
+                    download_link=download_link,
+                    language=Language(lang.alpha_3),
+                    video=video,
+                    filename=file_name,
+                    release=release_name,
+                    guess=guessit(release_name),
+                    uploader=uploader_name,
+                )
+
+                subtitles.append(subtitle)
 
         return subtitles
 
-    def _query_avistaz(self, subtitles, title, req_type, video):
-        logger.debug(f'AvistaZ: Querying {title}')
-
-        r = self.session.get(self.search_url, params={
+    def _query_subtitles(self, title, req_type):
+        response = _rate_limited(lambda: self.session.get(self.search_url, params={
             'type': req_type,
             'search': title,
             'language': 0,
             'subtitle': 0,
             'uploader': ''
-        }, timeout=30)
-        r.raise_for_status()
+        }, timeout=30))
+        response.raise_for_status()
 
-        soup = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['html.parser'])
+        return response.content.decode('utf-8', 'ignore')
+
+    def _find_subtitle_rows(self, html):
+        soup = ParserBeautifulSoup(html, ['html.parser'])
         rows = soup.select('#content-area > div:nth-child(3) > div > table > tbody > tr')
+        return rows
 
-        logger.debug(f'AvistaZ: Found {len(rows)}')
+    def _parse_row(self, row_soup):
+        lang_name = row_soup.select_one('td:nth-child(3) > a').text.strip()
+        download_link = row_soup.select_one('td:nth-of-type(4) > a')['href']
+        file_name = download_link.split('/')[-1]
+        release_td = row_soup.select_one('td:nth-child(2) > div:nth-child(1) > a')
+        release_name = release_td.text.strip()
+        release_link = release_td['href']
+        uploader_name = row_soup.select_one('td:nth-of-type(7) > span > a').text.strip()
 
-        for row_soup in rows:
-            lang = lookup_lang(row_soup.select_one('td:nth-child(3) > a').text.strip())
-
-            if lang is not None:
-                download_link = row_soup.select_one('td:nth-of-type(4) > a')['href']
-                srt_filename = download_link.split('/')[-1]
-
-                release_td = row_soup.select_one('td:nth-child(2) > div:nth-child(1) > a')
-                release = release_td.text
-
-                guess = guessit(release)
-
-                logger.debug(f'AvistaZ guess: {guess}')
-
-                subtitle = self.subtitle_class(
-                    page_link=release_td['href'],
-                    download_link=download_link,
-                    language=Language(lang.alpha_3),
-                    video=video,
-                    srt_filename=srt_filename,
-                    release=release,
-                    data=guess,
-                    uploader=row_soup.select_one('td:nth-of-type(7) > span > a').text,
-                )
-                logger.debug(subtitle)
-                subtitles.append(subtitle)
+        return download_link, file_name, lang_name, release_link, release_name, uploader_name
 
     def list_subtitles(self, video, languages):
         subtitles = []
 
-        subtitles += [s for s in self._query(video) if s.language in languages]
+        subtitles += [s for s in self._list_subtitles(video) if s.language in languages]
 
         return subtitles
 
     def download_subtitle(self, subtitle):
-        subtitle.content = self.session.get(subtitle.download_link).content
+        response = _rate_limited(lambda: self.session.get(subtitle.download_link))
+        response.raise_for_status()
+        if subtitle.filename.endswith((".zip", ".rar")):
+            archive = get_archive_from_bytes(response.content)
+            subtitle.content = get_subtitle_from_archive(
+                archive, episode=subtitle.video.episode
+            )
+        else:
+            subtitle.content = response.content
