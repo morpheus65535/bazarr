@@ -132,7 +132,6 @@ subliminal==2.1.0
 #subscene-api==1.0.0 # v2.0.0 bring too much changes, I wont update it for now.
 wcwidth==0.2.5
 webencodings==0.5.1
-ratelimiter==1.2.0.post0
 
 # Required-by: subzero
 backports.functools-lru-cache==1.6.4

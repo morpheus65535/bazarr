@@ -7,7 +7,6 @@ from random import randint
 
 import pycountry
 from guessit import guessit
-from ratelimiter import RateLimiter
 from subliminal.exceptions import AuthenticationError
 from subliminal.providers import ParserBeautifulSoup
 from subliminal.video import Episode, Movie
@@ -221,15 +220,6 @@ def lookup_lang(name):
         return None
 
 
-def _log_rate_limited(until):
-    logger.info('Rate limited, sleeping for %s seconds', int(round(until - time.time())))
-
-
-@RateLimiter(max_calls=1, period=1, callback=_log_rate_limited)
-def _rate_limited(method):
-    return method()
-
-
 class AvistazSubtitle(Subtitle):
     """AvistaZ.to Subtitle."""
     provider_name = 'avistaz'
@@ -316,8 +306,8 @@ class AvistazProvider(Provider):
             for k, v in simple_cookie.items():
                 self.session.cookies.set(k, v.value)
 
-            rr = _rate_limited(lambda: self.session.get(self.server_url + 'rules', allow_redirects=False, timeout=10,
-                                                        headers={"Referer": self.server_url}))
+            rr = self.session.get(self.server_url + 'rules', allow_redirects=False, timeout=10,
+                                                        headers={"Referer": self.server_url})
             if rr.status_code in [302, 404, 403]:
                 logger.info('Login expired')
                 raise AuthenticationError("cookies not valid anymore")
@@ -372,13 +362,13 @@ class AvistazProvider(Provider):
         return subtitles
 
     def _query_subtitles(self, title, req_type):
-        response = _rate_limited(lambda: self.session.get(self.search_url, params={
+        response = self.session.get(self.search_url, params={
             'type': req_type,
             'search': title,
             'language': 0,
             'subtitle': 0,
             'uploader': ''
-        }, timeout=30))
+        }, timeout=30)
         response.raise_for_status()
 
         return response.content.decode('utf-8', 'ignore')
@@ -407,7 +397,7 @@ class AvistazProvider(Provider):
         return subtitles
 
     def download_subtitle(self, subtitle):
-        response = _rate_limited(lambda: self.session.get(subtitle.download_link))
+        response = self.session.get(subtitle.download_link)
         response.raise_for_status()
         if subtitle.filename.endswith((".zip", ".rar")):
             archive = get_archive_from_bytes(response.content)
