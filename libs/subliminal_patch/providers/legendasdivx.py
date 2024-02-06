@@ -228,9 +228,9 @@ class LegendasdivxProvider(Provider):
                 if th.text == 'Idioma:':
                     lang = th.find_next("td").find("img").get('src')
                     if 'brazil' in lang.lower():
-                        lang = Language.fromopensubtitles('pob')
+                        lang = Language('por', 'BR')
                     elif 'portugal' in lang.lower():
-                        lang = Language.fromopensubtitles('por')
+                        lang = Language('por', 'PT')
                     else:
                         continue
                 if th.text == "Frame Rate:":
