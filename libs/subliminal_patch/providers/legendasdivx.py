@@ -123,7 +123,7 @@ class LegendasdivxSubtitle(Subtitle):
 
 class LegendasdivxProvider(Provider):
     """Legendasdivx Provider."""
-    languages = {Language('por', 'BR')} | {Language('por')}
+    languages = {Language('por', 'BR')} | {Language('por', 'PT')}
     video_types = (Episode, Movie)
     SEARCH_THROTTLE = 8
     SAFE_SEARCH_LIMIT = 145  # real limit is 150, but we use 145 to keep a buffer and prevent IPAddressBlocked exception to be raised
