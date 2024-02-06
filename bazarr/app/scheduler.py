@@ -11,6 +11,7 @@ from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JO
 from apscheduler.jobstores.base import JobLookupError
 from datetime import datetime, timedelta
 from calendar import day_name
+from math import floor
 from random import randrange
 from tzlocal import get_localzone
 try:
@@ -116,6 +117,18 @@ class Scheduler:
         return self.__running_tasks
 
     def get_task_list(self):
+        def _parse_next_run(next_run_value):
+            if next_run_value.startswith("in "):
+                temp_next_round = next_run_value.lstrip("in ").split(" ")
+                next_run_to_round = floor(float(temp_next_round[0]))
+                return f"in {next_run_to_round} {temp_next_round[1]}"
+            elif next_run_value.endswith(" ago"):
+                temp_next_round = next_run_value.rstrip(" ago").split(" ")
+                next_run_to_round = floor(float(temp_next_round[0]))
+                return f"{next_run_to_round} {temp_next_round[1]} ago"
+            else:
+                return next_run
+
         def get_time_from_interval(td_object):
             seconds = int(td_object.total_seconds())
             periods = [
@@ -168,6 +181,8 @@ class Scheduler:
                 else:
                     if job.next_run_time:
                         next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
+
+            next_run = _parse_next_run(next_run)
 
             if job.id in self.__running_tasks:
                 running = True
