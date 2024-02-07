@@ -349,9 +349,10 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         if len(result['data']):
             for item in result['data']:
                 # ignore AI translated subtitles
-                if 'ai_translated' in item['attributes'] and item['attributes']['ai_translated']:
-                    logger.debug("Skipping AI translated subtitles")
-                    continue
+                if not self.include_ai_translated:
+                    if 'ai_translated' in item['attributes'] and item['attributes']['ai_translated']:
+                        logger.debug("Skipping AI translated subtitles")
+                        continue
 
                 # ignore machine translated subtitles
                 if 'machine_translated' in item['attributes'] and item['attributes']['machine_translated']:
