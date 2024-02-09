@@ -125,6 +125,12 @@ class Portuguese(CustomLanguage):
                       ".pt-pt.cc", ".por.cc", ".pt.cc",
                       ".pt-pt.sdh", ".por.sdh", ".pt.sdh")
 
+    def subzero_language(self):
+        return Language(self.official_alpha3)
+
+    def language_found(self, language: Language):
+        return str(language.alpha3) == self.alpha3
+
 
 class ChineseTraditional(CustomLanguage):
     alpha2 = "zt"
