@@ -82,8 +82,10 @@ def update_pools(f):
         args_spec = getfullargspec(f).args
 
         try:
+            profile_id = kwargs["profile_id"]
+        except KeyError:
             profile_id = args[args_spec.index("profile_id")]
-        except (IndexError, ValueError):
+        except (ValueError, IndexError):
             profile_id = None
 
         updated = _update_pool(args[args_spec.index("media_type")], profile_id)
