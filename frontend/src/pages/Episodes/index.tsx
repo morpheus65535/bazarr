@@ -41,6 +41,12 @@ import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
 
 const SeriesEpisodesView: FunctionComponent = () => {
+  const [state, setState] = useState({
+    expand: false,
+    buttonText: "Expand All",
+    initial: true,
+  });
+
   const params = useParams();
   const id = Number.parseInt(params.id as string);
 
@@ -101,12 +107,6 @@ const SeriesEpisodesView: FunctionComponent = () => {
   if (isNaN(id) || (isFetched && !series)) {
     return <Navigate to={RouterNames.NotFound}></Navigate>;
   }
-
-  const [state, setState] = useState({
-    expand: false,
-    buttonText: "Expand All",
-    initial: true,
-  });
 
   const toggleState = () => {
     state.expand
