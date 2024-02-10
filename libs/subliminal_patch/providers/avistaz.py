@@ -294,8 +294,8 @@ class AvistazProvider(Provider):
         self.session.close()
 
     def list_subtitles(self, video, languages):
-        if video.info_url is None:
-            logger.debug('No info_url in video %s', video)
+        if 'avistaz.to' not in video.info_url:
+            logger.debug('%s not downloaded from AvistaZ. Skipped', video)
             return []
 
         release = self._parse_release_table(self._query_info_url(video.info_url))
