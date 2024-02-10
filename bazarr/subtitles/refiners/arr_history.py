@@ -4,22 +4,22 @@
 import logging
 
 from app.config import settings
-from guessit import guessit
-from sonarr.info import url_api_sonarr
+from radarr.sync.utils import get_history_from_radarr_api
 from sonarr.sync.utils import get_history_from_sonarr_api
-from subliminal import Movie
-
-from utilities.path_mappings import path_mappings
-from app.database import TableEpisodes, TableMovies, database, select
-from utilities.video_analyzer import parse_video_metadata
+from subliminal import Episode, Movie
 
 
-def refine_from_sonarr(path, video):
-    refine_info_url(video)
+def refine_from_arr_history(path, video):
+    if 'avistaz' in settings.general.enabled_providers and video.info_url is None:
+        refine_info_url(video)
 
 
 def refine_info_url(video):
-    history = get_history_from_sonarr_api(settings.sonarr.apikey, video.sonarrEpisodeId)
+    if isinstance(video, Episode):
+        history = get_history_from_sonarr_api(settings.sonarr.apikey, video.sonarrEpisodeId)
+    else:
+        history = get_history_from_radarr_api(settings.radarr.apikey, video.radarrId)
+
     for grab in history['records']:
         if ('releaseGroup' in grab['data'] and grab['data']['releaseGroup'] == video.release_group
                 and 'nzbInfoUrl' in grab['data'] and grab['data']['nzbInfoUrl']):

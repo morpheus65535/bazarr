@@ -14,6 +14,7 @@ class Video(Video_):
     season_fully_aired = None
     audio_languages = None
     external_subtitle_languages = None
+    info_url = None
 
     def __init__(
         self,
