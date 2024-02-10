@@ -32,6 +32,7 @@ class Video(Video_):
         streaming_service=None,
         edition=None,
         other=None,
+        info_url=None,
         **kwargs
     ):
         super(Video, self).__init__(
@@ -55,3 +56,4 @@ class Video(Video_):
         self.edition = edition
         self.original_path = name
         self.other = other
+        self.info_url = info_url
