@@ -169,10 +169,10 @@ def get_episodesFiles_from_sonarr_api(apikey_sonarr, series_id=None, episode_fil
 
 
 def get_history_from_sonarr_api(apikey_sonarr, episode_id):
-    url_sonarr_api_episode = f"{url_api_sonarr()}history?eventType=1&episodeId={episode_id}&apikey={apikey_sonarr}"
+    url_sonarr_api_history = f"{url_api_sonarr()}history?eventType=1&episodeId={episode_id}&apikey={apikey_sonarr}"
 
     try:
-        r = requests.get(url_sonarr_api_episode, timeout=int(settings.sonarr.http_timeout), verify=False,
+        r = requests.get(url_sonarr_api_history, timeout=int(settings.sonarr.http_timeout), verify=False,
                          headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
