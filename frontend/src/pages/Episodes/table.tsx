@@ -226,12 +226,12 @@ const Table: FunctionComponent<Props> = ({
         // make sure season 0 is collapsed
         instance.current.toggleRowExpanded([`season:0`], false);
       } else {
-        if (expand != undefined) {
+        if (expand !== undefined) {
           instance.current.toggleAllRowsExpanded(expand);
         }
       }
     }
-  }, [maxSeason, expand]);
+  }, [maxSeason, expand, initial]);
 
   return (
     <GroupTable

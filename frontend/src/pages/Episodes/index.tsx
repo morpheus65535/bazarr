@@ -102,7 +102,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
     return <Navigate to={RouterNames.NotFound}></Navigate>;
   }
 
-  let [state, setState] = useState({
+  const [state, setState] = useState({
     expand: false,
     buttonText: "Expand All",
     initial: true,
