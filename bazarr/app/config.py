@@ -441,6 +441,12 @@ if settings.general.wanted_search_frequency == 3:
 if settings.general.wanted_search_frequency_movie == 3:
     settings.general.wanted_search_frequency_movie = 6
 
+# backward compatibility embeddedsubtitles provider
+if hasattr(settings.embeddedsubtitles, 'unknown_as_english'):
+    if settings.embeddedsubtitles.unknown_as_english:
+        settings.embeddedsubtitles.unknown_as_fallback = True
+        settings.embeddedsubtitles.fallback_lang = 'en'
+    del settings.embeddedsubtitles.unknown_as_english
 # save updated settings to file
 write_config()
 
