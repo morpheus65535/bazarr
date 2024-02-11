@@ -300,6 +300,10 @@ class AvistazProvider(Provider):
 
         release = self._parse_release_table(self._query_info_url(video.info_url))
 
+        if release['Subtitles'].table is None:
+            logger.debug('No subtitles found for %s', video)
+            return []
+
         subtitle_columns = list(map(lambda x: x.get_text(), release['Subtitles'].thead.find_all('th')))
 
         subtitles = []
