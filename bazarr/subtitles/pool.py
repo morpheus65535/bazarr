@@ -88,7 +88,14 @@ def update_pools(f):
         except (ValueError, IndexError):
             profile_id = None
 
-        updated = _update_pool(args[args_spec.index("media_type")], profile_id)
+        try:
+            media_type = kwargs["media_type"]
+        except KeyError:
+            media_type = args[args_spec.index("media_type")]
+        except (ValueError, IndexError):
+            media_type = None
+
+        updated = _update_pool(media_type, profile_id)
 
         if updated:
             logging.debug(
