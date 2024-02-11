@@ -4,6 +4,7 @@ import hashlib
 import os
 import ast
 import logging
+import re
 
 from urllib.parse import quote_plus
 from subliminal.cache import region
@@ -59,6 +60,10 @@ validators = [
     Validator('general.base_url', must_exist=True, default='', is_type_of=str),
     Validator('general.path_mappings', must_exist=True, default=[], is_type_of=list),
     Validator('general.debug', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.log_include_filter', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('general.log_exclude_filter', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('general.log_ignore_case', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.log_use_regex', must_exist=True, default=False, is_type_of=bool),
     Validator('general.branch', must_exist=True, default='master', is_type_of=str,
               is_in=['master', 'development']),
     Validator('general.auto_update', must_exist=True, default=True, is_type_of=bool),
@@ -421,7 +426,8 @@ array_keys = ['excluded_tags',
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
-str_keys = ['chmod']
+str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter']
+log_regex_keys = ['settings-general-log_use_regex', 'settings-general-log_include_filter', 'settings-general-log_exclude_filter']
 
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
 if settings.sonarr.series_sync < 15:
@@ -462,6 +468,18 @@ def get_settings():
                     settings_to_return[k].update({subk: subv})
     return settings_to_return
 
+def validate_log_regex():
+    if (settings.general.log_use_regex):
+        # compile any regular expressions specified to see if they are valid
+        # if invalid, tell the user which one
+        try:
+            re.compile(settings.general.log_include_filter)
+        except:
+            raise ValidationError(f"Include filter: invalid regular expression: {settings.general.log_include_filter}")
+        try:
+            re.compile(settings.general.log_exclude_filter)
+        except:
+            raise ValidationError(f"Exclude filter: invalid regular expression: {settings.general.log_exclude_filter}")
 
 def save_settings(settings_items):
     configure_debug = False
@@ -479,7 +497,8 @@ def save_settings(settings_items):
     undefined_subtitles_track_default_changed = False
     audio_tracks_parsing_changed = False
     reset_providers = False
-
+    check_log_regex = False
+    
     # Subzero Mods
     update_subzero = False
     subzero_mods = get_array_from(settings.general.subzero_mods)
@@ -516,6 +535,9 @@ def save_settings(settings_items):
             value = True
         elif value == 'false':
             value = False
+
+        if key in log_regex_keys:
+            check_log_regex = True
 
         if key in ['settings-general-use_embedded_subs', 'settings-general-ignore_pgs_subs',
                    'settings-general-ignore_vobsub_subs', 'settings-general-ignore_ass_subs']:
@@ -615,12 +637,10 @@ def save_settings(settings_items):
             if key != settings.opensubtitlescom.username:
                 reset_providers = True
                 region.delete('oscom_token')
-                region.delete('oscom_server')
         elif key == 'settings-opensubtitlescom-password':
             if key != settings.opensubtitlescom.password:
                 reset_providers = True
                 region.delete('oscom_token')
-                region.delete('oscom_server')
 
         if key == 'settings-subscene-username':
             if key != settings.subscene.username:
@@ -703,6 +723,8 @@ def save_settings(settings_items):
 
     try:
         settings.validators.validate()
+        if check_log_regex:
+            validate_log_regex()
     except ValidationError:
         settings.reload()
         raise
