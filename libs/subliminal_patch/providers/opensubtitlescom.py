@@ -154,7 +154,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
 
 class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     """OpenSubtitlesCom Provider"""
-    server_url = 'https://api.opensubtitles.com/api/v1/'
+    server_hostname = 'api.opensubtitles.com'
 
     languages = {Language.fromopensubtitles(lang) for lang in language_converters['szopensubtitles'].codes}
     languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
@@ -193,15 +193,24 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         else:
             self.token = region.get("oscom_token", expiration_time=TOKEN_EXPIRATION_TIME)
 
+        if region.get("oscom_server", expiration_time=TOKEN_EXPIRATION_TIME) is NO_VALUE:
+            logger.debug("No cached server, we'll try to login again.")
+            self.login()
+        else:
+            self.server_hostname = region.get("oscom_server", expiration_time=TOKEN_EXPIRATION_TIME)
+
     def terminate(self):
         self.session.close()
 
     def ping(self):
         return self._started and (time.time() - self._started) < TOKEN_EXPIRATION_TIME
 
+    def server_url(self):
+        return f'https://{self.server_hostname}/api/v1/'
+
     def login(self, is_retry=False):
         r = self.checked(
-            lambda: self.session.post(self.server_url + 'login',
+            lambda: self.session.post(self.server_url() + 'login',
                                       json={"username": self.username, "password": self.password},
                                       allow_redirects=False,
                                       timeout=30),
@@ -215,6 +224,20 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         else:
             log_request_response(r, non_standard=False)
             region.set("oscom_token", self.token)
+
+        try:
+            self.server_hostname = r.json()['base_url']
+        except (ValueError, JSONDecodeError):
+            log_request_response(r)
+            raise ProviderError("Cannot get server from provider login response")
+        else:
+            log_request_response(r, non_standard=False)
+            region.set("oscom_server", self.server_hostname)
+        finally:
+            if self.server_hostname.startswith('vip'):
+                self.session.headers.update({'Authorization': 'Bearer ' + self.token})
+            else:
+                self.session.headers.pop('Authorization', None)
 
     @staticmethod
     def sanitize_external_ids(external_id):
@@ -232,7 +255,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
         results = self.retry(
             lambda: self.checked(
-                lambda: self.session.get(self.server_url + 'features', params=parameters, timeout=30),
+                lambda: self.session.get(self.server_url() + 'features', params=parameters, timeout=30),
                 validate_json=True,
                 json_key_name='data'
             ),
@@ -300,7 +323,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         if isinstance(self.video, Episode):
             res = self.retry(
                 lambda: self.checked(
-                    lambda: self.session.get(self.server_url + 'subtitles',
+                    lambda: self.session.get(self.server_url() + 'subtitles',
                                              params=(('ai_translated', 'exclude' if not self.include_ai_translated
                                                      else 'include'),
                                                      ('episode_number', self.video.episode),
@@ -318,7 +341,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         else:
             res = self.retry(
                 lambda: self.checked(
-                    lambda: self.session.get(self.server_url + 'subtitles',
+                    lambda: self.session.get(self.server_url() + 'subtitles',
                                              params=(('ai_translated', 'exclude' if not self.include_ai_translated
                                                      else 'include'),
                                                      ('id', title_id if title_id else None),
@@ -410,7 +433,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                    'Authorization': 'Bearer ' + self.token}
         res = self.retry(
             lambda: self.checked(
-                lambda: self.session.post(self.server_url + 'download',
+                lambda: self.session.post(self.server_url() + 'download',
                                           json={'file_id': subtitle.file_id, 'sub_format': 'srt'},
                                           headers=headers,
                                           timeout=30),
@@ -443,6 +466,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     def reset_token():
         logger.debug('Authentication failed: clearing cache and attempting to login.')
         region.delete("oscom_token")
+        region.delete("oscom_server")
         return
 
     def checked(self, fn, raise_api_limit=False, validate_json=False, json_key_name=None, validate_content=False,
@@ -558,9 +582,12 @@ def log_request_response(response, non_standard=True):
     if 'Authorization' in redacted_request_headers and isinstance(redacted_request_headers['Authorization'], str):
         redacted_request_headers['Authorization'] = redacted_request_headers['Authorization'][:-8]+8*'x'
 
-    redacted_request_body = json.loads(response.request.body)
-    if 'password' in redacted_request_body:
-        redacted_request_body['password'] = 'redacted'
+    if response.request.body:
+        redacted_request_body = json.loads(response.request.body)
+        if 'password' in redacted_request_body:
+            redacted_request_body['password'] = 'redacted'
+    else:
+        redacted_request_body = None
 
     redacted_response_body = json.loads(response.text)
     if 'token' in redacted_response_body and isinstance(redacted_response_body['token'], str):
