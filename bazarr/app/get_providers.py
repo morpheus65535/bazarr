@@ -293,7 +293,8 @@ def get_providers_auth():
             'ffprobe_path': _FFPROBE_BINARY,
             'ffmpeg_path': _FFMPEG_BINARY,
             'timeout': settings.embeddedsubtitles.timeout,
-            'unknown_as_english': settings.embeddedsubtitles.unknown_as_english,
+            'unknown_as_fallback': settings.embeddedsubtitles.unknown_as_fallback,
+            'fallback_lang': settings.embeddedsubtitles.fallback_lang,
         },
         'karagarga': {
             'username': settings.karagarga.username,
