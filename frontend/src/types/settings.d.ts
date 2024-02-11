@@ -46,6 +46,10 @@ declare namespace Settings {
     ignore_pgs_subs: boolean;
     ignore_vobsub_subs: boolean;
     ip: string;
+    log_include_filter: string;
+    log_exclude_filter: string;
+    log_ignore_case: boolean;
+    log_use_regex: boolean;
     multithreading: boolean;
     minimum_score: number;
     minimum_score_movie: number;
