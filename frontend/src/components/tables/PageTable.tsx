@@ -1,4 +1,5 @@
 import { ScrollToTop } from "@/utilities";
+import { usePageSize } from "@/utilities/storage";
 import { useEffect } from "react";
 import { usePagination, useTable } from "react-table";
 import BaseTable from "./BaseTable";
@@ -21,6 +22,9 @@ export default function PageTable<T extends object>(props: Props<T>) {
     ...tablePlugins,
     ...(plugins ?? [])
   );
+
+  // use page size as specified in UI settings
+  instance.state.pageSize = usePageSize();
 
   if (instanceRef) {
     instanceRef.current = instance;
