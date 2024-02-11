@@ -24,5 +24,5 @@ def refine_info_url(video):
         if ('releaseGroup' in grab['data'] and grab['data']['releaseGroup'] == video.release_group
                 and 'nzbInfoUrl' in grab['data'] and grab['data']['nzbInfoUrl']):
             video.info_url = grab['data']['nzbInfoUrl']
-            logging.info(f'Refining {video} with Info URL: {video.info_url}')
+            logging.debug(f'Refining {video} with Info URL: {video.info_url}')
             break
