@@ -298,7 +298,13 @@ class AvistazProvider(Provider):
             logger.debug('%s not downloaded from AvistaZ. Skipped', video)
             return []
 
-        release = self._parse_release_table(self._query_info_url(video.info_url))
+        html = self._query_info_url(video.info_url)
+
+        if html is None:
+            logger.debug('%s release page not found. Release might have been removed', video)
+            return []
+
+        release = self._parse_release_table(html)
 
         if release['Subtitles'].table is None:
             logger.debug('No subtitles found for %s', video)
@@ -333,7 +339,11 @@ class AvistazProvider(Provider):
 
     def _query_info_url(self, info_url):
         response = self.session.get(info_url, timeout=30)
-        response.raise_for_status()
+
+        if response.status_code == 404:
+            return None
+        else:
+            response.raise_for_status()
 
         return response.content.decode('utf-8', 'ignore')
 
