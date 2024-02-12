@@ -78,12 +78,10 @@ if not args.no_signalr:
         sonarr_signalr_thread = Thread(target=sonarr_signalr_client.start)
         sonarr_signalr_thread.daemon = True
         sonarr_signalr_thread.start()
-        sonarr_signalr_thread.join()
     if settings.general.use_radarr:
         radarr_signalr_thread = Thread(target=radarr_signalr_client.start)
         radarr_signalr_thread.daemon = True
         radarr_signalr_thread.start()
-        radarr_signalr_thread.join()
 
 
 if __name__ == "__main__":

@@ -616,10 +616,12 @@ def save_settings(settings_items):
             if key != settings.opensubtitlescom.username:
                 reset_providers = True
                 region.delete('oscom_token')
+                region.delete('oscom_server')
         elif key == 'settings-opensubtitlescom-password':
             if key != settings.opensubtitlescom.password:
                 reset_providers = True
                 region.delete('oscom_token')
+                region.delete('oscom_server')
 
         if key == 'settings-subscene-username':
             if key != settings.subscene.username:
