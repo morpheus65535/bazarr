@@ -427,7 +427,6 @@ array_keys = ['excluded_tags',
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
 str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter']
-log_regex_keys = ['settings-general-log_use_regex', 'settings-general-log_include_filter', 'settings-general-log_exclude_filter']
 
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
 if settings.sonarr.series_sync < 15:
@@ -469,6 +468,12 @@ def get_settings():
     return settings_to_return
 
 def validate_log_regex():
+    # handle bug in dynaconf that changes strings to numbers, so change them back to str
+    if not isinstance(settings.general.log_include_filter, str):
+         settings.general.log_include_filter = str(settings.general.log_include_filter)
+    if not isinstance(settings.general.log_exclude_filter, str):
+         settings.general.log_exclude_filter = str(settings.general.log_exclude_filter)
+
     if (settings.general.log_use_regex):
         # compile any regular expressions specified to see if they are valid
         # if invalid, tell the user which one
@@ -535,9 +540,6 @@ def save_settings(settings_items):
             value = True
         elif value == 'false':
             value = False
-
-        if key in log_regex_keys:
-            check_log_regex = True
 
         if key in ['settings-general-use_embedded_subs', 'settings-general-ignore_pgs_subs',
                    'settings-general-ignore_vobsub_subs', 'settings-general-ignore_ass_subs']:
@@ -723,8 +725,7 @@ def save_settings(settings_items):
 
     try:
         settings.validators.validate()
-        if check_log_regex:
-            validate_log_regex()
+        validate_log_regex()
     except ValidationError:
         settings.reload()
         raise
