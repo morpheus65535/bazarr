@@ -25,7 +25,7 @@ const PageControl: FunctionComponent<Props> = ({
   // Jump to first page if total page count changes
   useEffect(() => {
     goto(0);
-  }, [total]);
+  }, [total, goto]);
 
   return (
     <Group p={16} position="apart">
