@@ -31,8 +31,8 @@ const SystemLogsView: FunctionComponent = () => {
   const modals = useModals();
 
   const suffix = () => {
-    const include = settings?.general.log_include_filter;
-    const exclude = settings?.general.log_exclude_filter;
+    const include = settings?.log.include_filter;
+    const exclude = settings?.log.exclude_filter;
     const includeIndex = include !== "" && include !== undefined ? 1 : 0;
     const excludeIndex = exclude !== "" && exclude !== undefined ? 1 : 0;
     const filters = [
@@ -62,19 +62,19 @@ const SystemLogsView: FunctionComponent = () => {
             <Message>Debug logging should only be enabled temporarily</Message>
             <Text
               label="Include Filter"
-              settingKey="settings-general-log_include_filter"
+              settingKey="settings-log-include_filter"
             ></Text>
             <Text
               label="Exclude Filter"
-              settingKey="settings-general-log_exclude_filter"
+              settingKey="settings-log-exclude_filter"
             ></Text>
             <Check
               label="Use Regular Expressions (Regex)"
-              settingKey="settings-general-log_use_regex"
+              settingKey="settings-log-use_regex"
             ></Check>
             <Check
               label="Ignore Case"
-              settingKey="settings-general-log_ignore_case"
+              settingKey="settings-log-ignore_case"
             ></Check>
           </Stack>
         </LayoutModal>

@@ -60,10 +60,6 @@ validators = [
     Validator('general.base_url', must_exist=True, default='', is_type_of=str),
     Validator('general.path_mappings', must_exist=True, default=[], is_type_of=list),
     Validator('general.debug', must_exist=True, default=False, is_type_of=bool),
-    Validator('general.log_include_filter', must_exist=True, default='', is_type_of=str, cast=str),
-    Validator('general.log_exclude_filter', must_exist=True, default='', is_type_of=str, cast=str),
-    Validator('general.log_ignore_case', must_exist=True, default=False, is_type_of=bool),
-    Validator('general.log_use_regex', must_exist=True, default=False, is_type_of=bool),
     Validator('general.branch', must_exist=True, default='master', is_type_of=str,
               is_in=['master', 'development']),
     Validator('general.auto_update', must_exist=True, default=True, is_type_of=bool),
@@ -126,6 +122,12 @@ validators = [
     Validator('general.parse_embedded_audio_track', must_exist=True, default=False, is_type_of=bool),
     Validator('general.skip_hashing', must_exist=True, default=False, is_type_of=bool),
     Validator('general.language_equals', must_exist=True, default=[], is_type_of=list),
+
+    # log section
+    Validator('log.include_filter', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('log.exclude_filter', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('log.ignore_case', must_exist=True, default=False, is_type_of=bool),
+    Validator('log.use_regex', must_exist=True, default=False, is_type_of=bool),
 
     # auth section
     Validator('auth.apikey', must_exist=True, default=hexlify(os.urandom(16)).decode(), is_type_of=str),
@@ -469,22 +471,22 @@ def get_settings():
 
 def validate_log_regex():
     # handle bug in dynaconf that changes strings to numbers, so change them back to str
-    if not isinstance(settings.general.log_include_filter, str):
-         settings.general.log_include_filter = str(settings.general.log_include_filter)
-    if not isinstance(settings.general.log_exclude_filter, str):
-         settings.general.log_exclude_filter = str(settings.general.log_exclude_filter)
+    if not isinstance(settings.log.include_filter, str):
+         settings.log.include_filter = str(settings.log.include_filter)
+    if not isinstance(settings.log.exclude_filter, str):
+         settings.log.exclude_filter = str(settings.log.exclude_filter)
 
-    if (settings.general.log_use_regex):
+    if (settings.log.use_regex):
         # compile any regular expressions specified to see if they are valid
         # if invalid, tell the user which one
         try:
-            re.compile(settings.general.log_include_filter)
+            re.compile(settings.log.include_filter)
         except:
-            raise ValidationError(f"Include filter: invalid regular expression: {settings.general.log_include_filter}")
+            raise ValidationError(f"Include filter: invalid regular expression: {settings.log.include_filter}")
         try:
-            re.compile(settings.general.log_exclude_filter)
+            re.compile(settings.log.exclude_filter)
         except:
-            raise ValidationError(f"Exclude filter: invalid regular expression: {settings.general.log_exclude_filter}")
+            raise ValidationError(f"Exclude filter: invalid regular expression: {settings.log.exclude_filter}")
 
 def save_settings(settings_items):
     configure_debug = False

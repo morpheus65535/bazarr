@@ -30,10 +30,10 @@ class SystemLogs(Resource):
     def get(self):
         """List log entries"""
         logs = []
-        include = str(settings.general.log_include_filter)
-        exclude = str(settings.general.log_exclude_filter)
-        ignore_case = settings.general.log_ignore_case
-        regex = settings.general.log_use_regex
+        include = str(settings.log.include_filter)
+        exclude = str(settings.log.exclude_filter)
+        ignore_case = settings.log.ignore_case
+        regex = settings.log.use_regex
         if regex:
             # pre-compile regular expressions for better performance
             if ignore_case:
