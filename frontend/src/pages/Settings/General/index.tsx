@@ -70,9 +70,6 @@ const SettingsGeneralView: FunctionComponent = () => {
           options={securityOptions}
           placeholder="No Authentication"
           settingKey="settings-auth-type"
-          settingOptions={{
-            onSubmit: (v) => (v === null ? "None" : v),
-          }}
         ></Selector>
         <CollapseBox settingKey="settings-auth-type">
           <Text label="Username" settingKey="settings-auth-username"></Text>
@@ -138,9 +135,6 @@ const SettingsGeneralView: FunctionComponent = () => {
           settingKey="settings-proxy-type"
           placeholder="No Proxy"
           options={proxyOptions}
-          settingOptions={{
-            onSubmit: (v) => (v === null ? "None" : v),
-          }}
         ></Selector>
         <CollapseBox
           settingKey="settings-proxy-type"

@@ -24,7 +24,6 @@ const SettingsProvidersView: FunctionComponent = () => {
           label={"Choose the anti-captcha provider you want to use"}
           placeholder="Select a provider"
           settingKey="settings-general-anti_captcha_provider"
-          settingOptions={{ onSubmit: (v) => (v === undefined ? "None" : v) }}
           options={antiCaptchaOption}
         ></Selector>
         <Message></Message>
