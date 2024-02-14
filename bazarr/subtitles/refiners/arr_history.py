@@ -8,17 +8,21 @@ from radarr.sync.utils import get_history_from_radarr_api
 from sonarr.sync.utils import get_history_from_sonarr_api
 from subliminal import Episode, Movie
 
+refined_providers = {'avistaz', 'cinemaz'}
+
 
 def refine_from_arr_history(path, video):
-    if 'avistaz' in settings.general.enabled_providers and video.info_url is None:
+    if refined_providers.intersection(settings.general.enabled_providers) and video.info_url is None:
         refine_info_url(video)
 
 
 def refine_info_url(video):
-    if isinstance(video, Episode):
+    if isinstance(video, Episode) and video.sonarrEpisodeId:
         history = get_history_from_sonarr_api(settings.sonarr.apikey, video.sonarrEpisodeId)
-    else:
+    elif isinstance(video, Movie) and video.radarrId:
         history = get_history_from_radarr_api(settings.radarr.apikey, video.radarrId)
+    else:
+        return
 
     for grab in history['records']:
         # take the latest grab for the episode
