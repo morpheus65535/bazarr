@@ -21,8 +21,8 @@ def refine_info_url(video):
         history = get_history_from_radarr_api(settings.radarr.apikey, video.radarrId)
 
     for grab in history['records']:
-        if ('releaseGroup' in grab['data'] and grab['data']['releaseGroup'] == video.release_group
-                and 'nzbInfoUrl' in grab['data'] and grab['data']['nzbInfoUrl']):
+        # take the latest grab for the episode
+        if 'nzbInfoUrl' in grab['data'] and grab['data']['nzbInfoUrl']:
             video.info_url = grab['data']['nzbInfoUrl']
             logging.debug(f'Refining {video} with Info URL: {video.info_url}')
             break
