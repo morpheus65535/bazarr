@@ -67,8 +67,6 @@ database.execute(
 # Load languages in database
 load_language_in_db()
 
-login_auth = settings.auth.type
-
 update_notifier()
 
 if not args.no_signalr:
