@@ -186,6 +186,10 @@ class SubdivxSubtitlesProvider(Provider):
     
         # Make the POST request
         response = self.session.post(search_link, data=payload)
+        
+        if response.status_code == 500:
+            logger.debug("Error 500 (probably bad encoding of query causing issue on provider side): %s", query)
+            return []
     
         # Ensure it was successful
         response.raise_for_status()
