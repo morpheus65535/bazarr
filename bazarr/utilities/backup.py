@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import os
-import io
 import sqlite3
 import shutil
 import logging
@@ -12,6 +11,7 @@ from glob import glob
 
 from app.get_args import args
 from app.config import settings
+from utilities.central import restart_bazarr
 
 
 def get_backup_path():
@@ -133,16 +133,7 @@ def restore_from_backup():
                 logging.exception(f'Unable to delete {dest_database_path}')
 
         logging.info('Backup restored successfully. Bazarr will restart.')
-
-        try:
-            restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
-        except Exception as e:
-            logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
-        else:
-            logging.info('Bazarr is being restarted...')
-            restart_file.write('')
-            restart_file.close()
-            os._exit(0)
+        restart_bazarr()
     elif os.path.isfile(restore_config_path) or os.path.isfile(restore_database_path):
         logging.debug('Cannot restore a partial backup. You must have both config and database.')
     else:

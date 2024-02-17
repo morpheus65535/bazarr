@@ -42,16 +42,8 @@ from app.server import webserver, app  # noqa E402
 from app.announcements import get_announcements_to_file  # noqa E402
 
 if args.create_db_revision:
-    try:
-        stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
-    except Exception as e:
-        logging.error(f'BAZARR Cannot create stop file: {repr(e)}')
-    else:
-        create_db_revision(app)
-        logging.info('Bazarr is being shutdown...')
-        stop_file.write(str(''))
-        stop_file.close()
-        os._exit(0)
+    create_db_revision(app)
+    stop_bazarr(EXIT_NORMAL)
 else:
     migrate_db(app)
 

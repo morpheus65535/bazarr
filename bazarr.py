@@ -9,7 +9,11 @@ import time
 import atexit
 
 from bazarr.app.get_args import args
+from bazarr.literals import *
 
+def exit_program(status_code):
+    print(f'Bazarr exited with status code {status_code}.')
+    raise SystemExit(status_code)
 
 def check_python_version():
     python_version = platform.python_version_tuple()
@@ -19,7 +23,7 @@ def check_python_version():
     if int(python_version[0]) < minimum_py3_tuple[0]:
         print("Python " + minimum_py3_str + " or greater required. "
               "Current version is " + platform.python_version() + ". Please upgrade Python.")
-        sys.exit(1)
+        exit_program(EXIT_PYTHON_UPGRADE_NEEDED)
     elif int(python_version[0]) == 3 and int(python_version[1]) > 11:
         print("Python version greater than 3.11.x is unsupported. Current version is " + platform.python_version() +
               ". Keep in mind that even if it works, you're on your own.")
@@ -27,7 +31,7 @@ def check_python_version():
             (int(python_version[0]) != minimum_py3_tuple[0]):
         print("Python " + minimum_py3_str + " or greater required. "
               "Current version is " + platform.python_version() + ". Please upgrade Python.")
-        sys.exit(1)
+        exit_program(EXIT_PYTHON_UPGRADE_NEEDED)
 
 
 def get_python_path():
@@ -73,31 +77,57 @@ def start_bazarr():
     ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
     atexit.register(end_child_process, ep=ep)
     signal.signal(signal.SIGTERM, lambda signal_no, frame: end_child_process(ep))
+    print(f"Bazarr starting child process with PID {ep.pid}...")
+    return ep
+
+
+def get_stop_status_code(input_file):
+    try:
+        with open(input_file,'r') as file:
+            # read status code from file, if it exists
+            line = file.readline()
+            try:
+                status_code = int(line)
+            except (ValueError, TypeError):
+                status_code = EXIT_NORMAL
+            file.close()
+    except:
+        status_code = EXIT_NORMAL
+    return status_code
 
 
 def check_status():
+    global child_process
     if os.path.exists(stopfile):
+        status_code = get_stop_status_code(stopfile)
         try:
+            print(f"Deleting stop file...")
             os.remove(stopfile)
-        except Exception:
+        except Exception as e:
             print('Unable to delete stop file.')
         finally:
-            print('Bazarr exited.')
-            sys.exit(0)
+            print(f"Terminating child process with PID {child_process.pid}")
+            child_process.terminate()
+            exit_program(status_code)
 
     if os.path.exists(restartfile):
         try:
+            print(f"Deleting restart file...")
             os.remove(restartfile)
         except Exception:
             print('Unable to delete restart file.')
-        else:
-            print("Bazarr is restarting...")
-            start_bazarr()
+        finally:
+            print(f"Terminating child process with PID {child_process.pid}")
+            child_process.terminate()
+            print(f"Bazarr is restarting...")
+            child_process = start_bazarr()
 
 
 if __name__ == '__main__':
-    restartfile = os.path.join(args.config_dir, 'bazarr.restart')
-    stopfile = os.path.join(args.config_dir, 'bazarr.stop')
+    restartfile = os.path.join(args.config_dir, FILE_RESTART)
+    stopfile = os.path.join(args.config_dir, FILE_STOP)
+    os.environ[ENV_STOPFILE] = stopfile
+    os.environ[ENV_RESTARTFILE] = restartfile
 
     # Cleanup leftover files
     try:
@@ -111,10 +141,9 @@ if __name__ == '__main__':
         pass
 
     # Initial start of main bazarr process
-    print("Bazarr starting...")
-    start_bazarr()
+    child_process = start_bazarr()
 
-    # Keep the script running forever until stop is requested through term or keyboard interrupt
+    # Keep the script running forever until stop is requested through term, special files or keyboard interrupt
     while True:
         check_status()
         try:
@@ -124,5 +153,5 @@ if __name__ == '__main__':
                 os.wait()
                 time.sleep(1)
         except (KeyboardInterrupt, SystemExit, ChildProcessError):
-            print('Bazarr exited.')
-            sys.exit(0)
+            print(f'Bazarr exited main script file via keyboard interrupt.')
+            exit_program(EXIT_NORMAL)

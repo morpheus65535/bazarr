@@ -6,6 +6,8 @@ import ast
 import logging
 
 from urllib.parse import quote_plus
+from literals import EXIT_VALIDATION_ERROR
+from utilities.central import stop_bazarr
 from subliminal.cache import region
 from dynaconf import Dynaconf, Validator as OriginalValidator
 from dynaconf.loaders.yaml_loader import write
@@ -393,8 +395,9 @@ while failed_validator:
             settings[current_validator_details.names[0]] = current_validator_details.default
         else:
             logging.critical(f"Value for {current_validator_details.names[0]} doesn't pass validation and there's no "
-                             f"default value. This issue must be reported. Bazarr won't works until it's been fixed.")
-            os._exit(0)
+                             f"default value. This issue must be reported to and fixed by the development team. "
+                             f"Bazarr won't work until it's been fixed.")
+            stop_bazarr(EXIT_VALIDATION_ERROR)
 
 
 def write_config():

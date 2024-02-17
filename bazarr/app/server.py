@@ -2,9 +2,9 @@
 
 import warnings
 import logging
-import os
-import io
 import errno
+from literals import EXIT_NORMAL
+from utilities.central import restart_bazarr, stop_bazarr
 
 from waitress.server import create_server
 from time import sleep
@@ -72,31 +72,19 @@ class Server:
         except Exception:
             pass
 
+    def close_all(self):
+        print(f"Closing database...")
+        close_database()
+        print(f"Closing webserver...")
+        self.server.close()
+
     def shutdown(self):
-        try:
-            stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
-        except Exception as e:
-            logging.error(f'BAZARR Cannot create stop file: {repr(e)}')
-        else:
-            logging.info('Bazarr is being shutdown...')
-            stop_file.write(str(''))
-            stop_file.close()
-            close_database()
-            self.server.close()
-            os._exit(0)
+        self.close_all()
+        stop_bazarr(EXIT_NORMAL, False)
 
     def restart(self):
-        try:
-            restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
-        except Exception as e:
-            logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
-        else:
-            logging.info('Bazarr is being restarted...')
-            restart_file.write(str(''))
-            restart_file.close()
-            close_database()
-            self.server.close()
-            os._exit(0)
+        self.close_all()
+        restart_bazarr()
 
 
 webserver = Server()
