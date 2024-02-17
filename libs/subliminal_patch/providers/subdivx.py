@@ -78,12 +78,16 @@ class SubdivxSubtitle(Subtitle):
         # episode
         if isinstance(video, Episode):
             # already matched within provider
-            matches.update(["title", "series", "season", "episode", "year"])
+            matches.update(["title", "series", "season", "episode"])
+            if str(video.year) in self.release_info:
+                matches.update(["year"])
 
         # movie
         elif isinstance(video, Movie):
             # already matched within provider
-            matches.update(["title", "year"])
+            matches.update(["title"])
+            if str(video.year) in self.release_info:
+                matches.update(["year"])
 
         update_matches(matches, video, self._description)
 
@@ -184,6 +188,10 @@ class SubdivxSubtitlesProvider(Provider):
         # Make the POST request
         response = self.session.post(search_link, data=payload)
     
+        if response.status_code == 500:
+            logger.debug("Error 500 (probably bad encoding of query causing issue on provider side): %s", query)
+            return []
+
         # Ensure it was successful
         response.raise_for_status()
 
