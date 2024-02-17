@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import io
-import os
+from utilities.central import get_log_file_path
 
 from flask_restx import Resource, Namespace, fields, marshal
 
@@ -29,7 +29,7 @@ class SystemLogs(Resource):
     def get(self):
         """List log entries"""
         logs = []
-        with io.open(os.path.join(args.config_dir, 'log', 'bazarr.log'), encoding='UTF-8') as file:
+        with io.open(get_log_file_path(), encoding='UTF-8') as file:
             raw_lines = file.read()
             lines = raw_lines.split('|\n')
             for line in lines:

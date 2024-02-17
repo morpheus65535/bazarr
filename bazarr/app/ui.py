@@ -9,9 +9,11 @@ from functools import wraps
 from urllib.parse import unquote
 
 from constants import headers
+from literals import FILE_LOG
 from sonarr.info import url_api_sonarr
 from radarr.info import url_api_radarr
 from utilities.helper import check_credentials
+from utilities.central import get_log_file_path
 
 from .config import settings, base_url
 from .database import System
@@ -98,9 +100,9 @@ def catch_all(path):
 
 
 @check_login
-@ui_bp.route('/bazarr.log')
+@ui_bp.route('/' + FILE_LOG)
 def download_log():
-    return send_file(os.path.join(args.config_dir, 'log', 'bazarr.log'), max_age=0, as_attachment=True)
+    return send_file(get_log_file_path(), max_age=0, as_attachment=True)
 
 
 @check_login
