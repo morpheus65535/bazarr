@@ -229,6 +229,14 @@ def get_providers_auth():
             'user_agent': settings.addic7ed.user_agent,
             'is_vip': settings.addic7ed.vip,
         },
+        'avistaz': {
+            'cookies': settings.avistaz.cookies,
+            'user_agent': settings.avistaz.user_agent,
+        },
+        'cinemaz': {
+            'cookies': settings.cinemaz.cookies,
+            'user_agent': settings.cinemaz.user_agent,
+        },
         'opensubtitles': {
             'username': settings.opensubtitles.username,
             'password': settings.opensubtitles.password,

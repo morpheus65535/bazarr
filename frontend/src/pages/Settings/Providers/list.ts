@@ -69,6 +69,24 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Subtitles dump of the now extinct Argenteam",
   },
   {
+    key: "avistaz",
+    name: "AvistaZ",
+    description:
+      "avistaz.to - AvistaZ is an Asian torrent tracker for HD movies, TV shows and music",
+    inputs: [
+      {
+        type: "text",
+        key: "cookies",
+        name: "Cookies, e.g., PHPSESSID=abc; wikisubtitlesuser=xyz; wikisubtitlespass=efg",
+      },
+      {
+        type: "text",
+        key: "user_agent",
+        name: "User-Agent, e.g., Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0",
+      },
+    ],
+  },
+  {
     key: "assrt",
     description: "Chinese Subtitles Provider",
     inputs: [
@@ -95,6 +113,24 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "BSplayer",
     description:
       "Provider removed from Bazarr because it was causing too many issues.\nIt will always return no subtitles.",
+  },
+  {
+    key: "cinemaz",
+    name: "CinemaZ",
+    description:
+      "cinemaz.to - CinemaZ is a private torrent tracker which is dedicated to little-known and cult films that you will not find on other popular torrent resources.",
+    inputs: [
+      {
+        type: "text",
+        key: "cookies",
+        name: "Cookies, e.g., PHPSESSID=abc; wikisubtitlesuser=xyz; wikisubtitlespass=efg",
+      },
+      {
+        type: "text",
+        key: "user_agent",
+        name: "User-Agent, e.g., Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0",
+      },
+    ],
   },
   {
     key: "embeddedsubtitles",
