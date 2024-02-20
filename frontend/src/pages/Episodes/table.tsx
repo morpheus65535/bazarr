@@ -31,9 +31,17 @@ interface Props {
   episodes: Item.Episode[] | null;
   disabled?: boolean;
   profile?: Language.Profile;
+  expand?: boolean;
+  initial?: boolean;
 }
 
-const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
+const Table: FunctionComponent<Props> = ({
+  episodes,
+  profile,
+  disabled,
+  expand,
+  initial,
+}) => {
   const onlyDesired = useShowOnlyDesired();
 
   const profileItems = useProfileItemsToLanguages(profile);
@@ -212,9 +220,18 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
 
   useEffect(() => {
     if (instance.current) {
-      instance.current.toggleRowExpanded([`season:${maxSeason}`], true);
+      if (initial) {
+        // expand the last/current season on initial display
+        instance.current.toggleRowExpanded([`season:${maxSeason}`], true);
+        // make sure season 0 is collapsed
+        instance.current.toggleRowExpanded([`season:0`], false);
+      } else {
+        if (expand !== undefined) {
+          instance.current.toggleAllRowsExpanded(expand);
+        }
+      }
     }
-  }, [maxSeason]);
+  }, [maxSeason, expand, initial]);
 
   return (
     <GroupTable

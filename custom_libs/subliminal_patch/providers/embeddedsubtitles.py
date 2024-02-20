@@ -85,7 +85,8 @@ class EmbeddedSubtitlesProvider(Provider):
         ffmpeg_path=None,
         hi_fallback=False,
         timeout=600,
-        unknown_as_english=False,
+        unknown_as_fallback=False,
+        fallback_lang="en",
     ):
         self._included_codecs = set(included_codecs or _ALLOWED_CODECS)
 
@@ -97,7 +98,8 @@ class EmbeddedSubtitlesProvider(Provider):
             cache_dir or tempfile.gettempdir(), self.__class__.__name__.lower()
         )
         self._hi_fallback = hi_fallback
-        self._unknown_as_english = unknown_as_english
+        self._unknown_as_fallback = unknown_as_fallback
+        self._fallback_lang = fallback_lang
         self._cached_paths = {}
         self._timeout = int(timeout)
 
@@ -110,7 +112,7 @@ class EmbeddedSubtitlesProvider(Provider):
             # Default is True
             container.FFMPEG_STATS = False
 
-        tags.LANGUAGE_FALLBACK = "en" if self._unknown_as_english else None
+        tags.LANGUAGE_FALLBACK = self._fallback_lang if self._unknown_as_fallback and self._fallback_lang else None
         logger.debug("Language fallback set: %s", tags.LANGUAGE_FALLBACK)
 
     def initialize(self):

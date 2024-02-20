@@ -2,9 +2,10 @@
 
 import io
 import os
+import re
 
 from flask_restx import Resource, Namespace, fields, marshal
-
+from app.config import settings
 from app.logger import empty_log
 from app.get_args import args
 
@@ -29,12 +30,62 @@ class SystemLogs(Resource):
     def get(self):
         """List log entries"""
         logs = []
+        include = str(settings.log.include_filter)
+        exclude = str(settings.log.exclude_filter)
+        ignore_case = settings.log.ignore_case
+        regex = settings.log.use_regex
+        if regex:
+            # pre-compile regular expressions for better performance
+            if ignore_case:
+                flags = re.IGNORECASE
+            else:
+                flags = 0
+            if len(include) > 0:
+                try:
+                    include_compiled = re.compile(include, flags)
+                except:
+                    include_compiled = None
+            if len(exclude) > 0:
+                try:
+                    exclude_compiled = re.compile(exclude, flags)
+                except:
+                    exclude_compiled = None
+        elif ignore_case:
+            include = include.casefold()
+            exclude = exclude.casefold()
+
         with io.open(os.path.join(args.config_dir, 'log', 'bazarr.log'), encoding='UTF-8') as file:
             raw_lines = file.read()
             lines = raw_lines.split('|\n')
             for line in lines:
                 if line == '':
                     continue
+                if ignore_case and not regex:
+                    compare_line = line.casefold()
+                else:
+                    compare_line = line
+                if len(include) > 0:
+                    if regex:
+                        if include_compiled is None:
+                            # if invalid re, keep the line
+                            keep = True
+                        else:
+                            keep = include_compiled.search(compare_line)
+                    else:
+                        keep = include in compare_line
+                    if not keep:
+                        continue
+                if len(exclude) > 0:
+                    if regex:
+                        if exclude_compiled is None:
+                            # if invalid re, keep the line
+                            skip = False
+                        else:
+                            skip = exclude_compiled.search(compare_line)
+                    else:
+                        skip = exclude in compare_line
+                    if skip:
+                        continue
                 raw_message = line.split('|')
                 raw_message_len = len(raw_message)
                 if raw_message_len > 3:

@@ -4,6 +4,7 @@ import hashlib
 import os
 import ast
 import logging
+import re
 
 from urllib.parse import quote_plus
 from subliminal.cache import region
@@ -123,6 +124,12 @@ validators = [
     Validator('general.skip_hashing', must_exist=True, default=False, is_type_of=bool),
     Validator('general.language_equals', must_exist=True, default=[], is_type_of=list),
 
+    # log section
+    Validator('log.include_filter', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('log.exclude_filter', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('log.ignore_case', must_exist=True, default=False, is_type_of=bool),
+    Validator('log.use_regex', must_exist=True, default=False, is_type_of=bool),
+
     # auth section
     Validator('auth.apikey', must_exist=True, default=hexlify(os.urandom(16)).decode(), is_type_of=str),
     Validator('auth.type', must_exist=True, default=None, is_type_of=(NoneType, str),
@@ -216,6 +223,14 @@ validators = [
     Validator('addic7ed.user_agent', must_exist=True, default='', is_type_of=str),
     Validator('addic7ed.vip', must_exist=True, default=False, is_type_of=bool),
 
+    # avistaz section
+    Validator('avistaz.cookies', must_exist=True, default='', is_type_of=str),
+    Validator('avistaz.user_agent', must_exist=True, default='', is_type_of=str),
+
+    # cinemaz section
+    Validator('cinemaz.cookies', must_exist=True, default='', is_type_of=str),
+    Validator('cinemaz.user_agent', must_exist=True, default='', is_type_of=str),
+
     # podnapisi section
     Validator('podnapisi.verify_ssl', must_exist=True, default=True, is_type_of=bool),
 
@@ -284,7 +299,8 @@ validators = [
     Validator('embeddedsubtitles.included_codecs', must_exist=True, default=[], is_type_of=list),
     Validator('embeddedsubtitles.hi_fallback', must_exist=True, default=False, is_type_of=bool),
     Validator('embeddedsubtitles.timeout', must_exist=True, default=600, is_type_of=int, gte=1),
-    Validator('embeddedsubtitles.unknown_as_english', must_exist=True, default=False, is_type_of=bool),
+    Validator('embeddedsubtitles.unknown_as_fallback', must_exist=True, default=False, is_type_of=bool),
+    Validator('embeddedsubtitles.fallback_lang', must_exist=True, default='en', is_type_of=str, cast=str),
 
     # karagarga section
     Validator('karagarga.username', must_exist=True, default='', is_type_of=str, cast=str),
@@ -422,7 +438,7 @@ array_keys = ['excluded_tags',
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
-str_keys = ['chmod']
+str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter']
 
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
 if settings.sonarr.series_sync < 15:
@@ -441,6 +457,12 @@ if settings.general.wanted_search_frequency == 3:
 if settings.general.wanted_search_frequency_movie == 3:
     settings.general.wanted_search_frequency_movie = 6
 
+# backward compatibility embeddedsubtitles provider
+if hasattr(settings.embeddedsubtitles, 'unknown_as_english'):
+    if settings.embeddedsubtitles.unknown_as_english:
+        settings.embeddedsubtitles.unknown_as_fallback = True
+        settings.embeddedsubtitles.fallback_lang = 'en'
+    del settings.embeddedsubtitles.unknown_as_english
 # save updated settings to file
 write_config()
 
@@ -463,6 +485,24 @@ def get_settings():
                     settings_to_return[k].update({subk: subv})
     return settings_to_return
 
+def validate_log_regex():
+    # handle bug in dynaconf that changes strings to numbers, so change them back to str
+    if not isinstance(settings.log.include_filter, str):
+         settings.log.include_filter = str(settings.log.include_filter)
+    if not isinstance(settings.log.exclude_filter, str):
+         settings.log.exclude_filter = str(settings.log.exclude_filter)
+
+    if (settings.log.use_regex):
+        # compile any regular expressions specified to see if they are valid
+        # if invalid, tell the user which one
+        try:
+            re.compile(settings.log.include_filter)
+        except:
+            raise ValidationError(f"Include filter: invalid regular expression: {settings.log.include_filter}")
+        try:
+            re.compile(settings.log.exclude_filter)
+        except:
+            raise ValidationError(f"Exclude filter: invalid regular expression: {settings.log.exclude_filter}")
 
 def save_settings(settings_items):
     configure_debug = False
@@ -480,7 +520,8 @@ def save_settings(settings_items):
     undefined_subtitles_track_default_changed = False
     audio_tracks_parsing_changed = False
     reset_providers = False
-
+    check_log_regex = False
+    
     # Subzero Mods
     update_subzero = False
     subzero_mods = get_array_from(settings.general.subzero_mods)
@@ -616,12 +657,10 @@ def save_settings(settings_items):
             if key != settings.opensubtitlescom.username:
                 reset_providers = True
                 region.delete('oscom_token')
-                region.delete('oscom_server')
         elif key == 'settings-opensubtitlescom-password':
             if key != settings.opensubtitlescom.password:
                 reset_providers = True
                 region.delete('oscom_token')
-                region.delete('oscom_server')
 
         if key == 'settings-subscene-username':
             if key != settings.subscene.username:
@@ -704,6 +743,7 @@ def save_settings(settings_items):
 
     try:
         settings.validators.validate()
+        validate_log_regex()
     except ValidationError:
         settings.reload()
         raise

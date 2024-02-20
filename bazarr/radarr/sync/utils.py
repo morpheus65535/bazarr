@@ -93,3 +93,32 @@ def get_movies_from_radarr_api(apikey_radarr, radarr_id=None):
             return r.json()
         else:
             return
+
+
+def get_history_from_radarr_api(apikey_radarr, movie_id):
+    url_radarr_api_history = f"{url_api_radarr()}history?eventType=1&movieIds={movie_id}&apikey={apikey_radarr}"
+
+    try:
+        r = requests.get(url_radarr_api_history, timeout=int(settings.sonarr.http_timeout), verify=False,
+                         headers=headers)
+        r.raise_for_status()
+    except requests.exceptions.HTTPError:
+        logging.exception("BAZARR Error trying to get history from Radarr. Http error.")
+        return
+    except requests.exceptions.ConnectionError:
+        logging.exception("BAZARR Error trying to get history from Radarr. Connection Error.")
+        return
+    except requests.exceptions.Timeout:
+        logging.exception("BAZARR Error trying to get history from Radarr. Timeout Error.")
+        return
+    except requests.exceptions.RequestException:
+        logging.exception("BAZARR Error trying to get history from Radarr.")
+        return
+    except Exception as e:
+        logging.exception(f"Exception raised while getting history from Radarr API: {e}")
+        return
+    else:
+        if r.status_code == 200:
+            return r.json()
+        else:
+            return
