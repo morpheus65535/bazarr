@@ -649,7 +649,7 @@ class HTTPConnectionPool(ConnectionPool, RequestMethods):
             Configure the number of retries to allow before raising a
             :class:`~urllib3.exceptions.MaxRetryError` exception.
 
-            Pass ``None`` to retry until you receive a response. Pass a
+            If ``None`` (default) will retry 3 times, see ``Retry.DEFAULT``. Pass a
             :class:`~urllib3.util.retry.Retry` object for fine-grained control
             over different types of retries.
             Pass an integer number to retry connection errors that many times,
@@ -751,8 +751,8 @@ class HTTPConnectionPool(ConnectionPool, RequestMethods):
         # have to copy the headers dict so we can safely change it without those
         # changes being reflected in anyone else's copy.
         if not http_tunnel_required:
-            headers = HTTPHeaderDict(headers)
-            headers.update(self.proxy_headers)
+            headers = headers.copy()  # type: ignore[attr-defined]
+            headers.update(self.proxy_headers)  # type: ignore[union-attr]
 
         # Must keep the exception bound to a separate variable or else Python 3
         # complains about UnboundLocalError.

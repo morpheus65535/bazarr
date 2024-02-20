@@ -112,11 +112,9 @@ class GenericProtocol(Protocol[_T]):
 # copied from TypeShed, required in order to implement
 # MutableMapping.update()
 class SupportsKeysAndGetItem(Protocol[_KT, _VT_co]):
-    def keys(self) -> Iterable[_KT]:
-        ...
+    def keys(self) -> Iterable[_KT]: ...
 
-    def __getitem__(self, __k: _KT) -> _VT_co:
-        ...
+    def __getitem__(self, __k: _KT) -> _VT_co: ...
 
 
 # work around https://github.com/microsoft/pyright/issues/3025
@@ -156,7 +154,7 @@ def de_stringify_annotation(
             annotation = str_cleanup_fn(annotation, originating_module)
 
         annotation = eval_expression(
-            annotation, originating_module, locals_=locals_
+            annotation, originating_module, locals_=locals_, in_class=cls
         )
 
     if (
@@ -209,6 +207,7 @@ def eval_expression(
     module_name: str,
     *,
     locals_: Optional[Mapping[str, Any]] = None,
+    in_class: Optional[Type[Any]] = None,
 ) -> Any:
     try:
         base_globals: Dict[str, Any] = sys.modules[module_name].__dict__
@@ -219,7 +218,18 @@ def eval_expression(
         ) from ke
 
     try:
-        annotation = eval(expression, base_globals, locals_)
+        if in_class is not None:
+            cls_namespace = dict(in_class.__dict__)
+            cls_namespace.setdefault(in_class.__name__, in_class)
+
+            # see #10899.  We want the locals/globals to take precedence
+            # over the class namespace in this context, even though this
+            # is not the usual way variables would resolve.
+            cls_namespace.update(base_globals)
+
+            annotation = eval(expression, cls_namespace, locals_)
+        else:
+            annotation = eval(expression, base_globals, locals_)
     except Exception as err:
         raise NameError(
             f"Could not de-stringify annotation {expression!r}"
@@ -342,20 +352,17 @@ def is_fwd_ref(
 
 
 @overload
-def de_optionalize_union_types(type_: str) -> str:
-    ...
+def de_optionalize_union_types(type_: str) -> str: ...
 
 
 @overload
-def de_optionalize_union_types(type_: Type[Any]) -> Type[Any]:
-    ...
+def de_optionalize_union_types(type_: Type[Any]) -> Type[Any]: ...
 
 
 @overload
 def de_optionalize_union_types(
     type_: _AnnotationScanType,
-) -> _AnnotationScanType:
-    ...
+) -> _AnnotationScanType: ...
 
 
 def de_optionalize_union_types(
@@ -499,14 +506,11 @@ def _get_type_name(type_: Type[Any]) -> str:
 
 
 class DescriptorProto(Protocol):
-    def __get__(self, instance: object, owner: Any) -> Any:
-        ...
+    def __get__(self, instance: object, owner: Any) -> Any: ...
 
-    def __set__(self, instance: Any, value: Any) -> None:
-        ...
+    def __set__(self, instance: Any, value: Any) -> None: ...
 
-    def __delete__(self, instance: Any) -> None:
-        ...
+    def __delete__(self, instance: Any) -> None: ...
 
 
 _DESC = TypeVar("_DESC", bound=DescriptorProto)
@@ -525,14 +529,11 @@ class DescriptorReference(Generic[_DESC]):
 
     if TYPE_CHECKING:
 
-        def __get__(self, instance: object, owner: Any) -> _DESC:
-            ...
+        def __get__(self, instance: object, owner: Any) -> _DESC: ...
 
-        def __set__(self, instance: Any, value: _DESC) -> None:
-            ...
+        def __set__(self, instance: Any, value: _DESC) -> None: ...
 
-        def __delete__(self, instance: Any) -> None:
-            ...
+        def __delete__(self, instance: Any) -> None: ...
 
 
 _DESC_co = TypeVar("_DESC_co", bound=DescriptorProto, covariant=True)
@@ -548,14 +549,11 @@ class RODescriptorReference(Generic[_DESC_co]):
 
     if TYPE_CHECKING:
 
-        def __get__(self, instance: object, owner: Any) -> _DESC_co:
-            ...
+        def __get__(self, instance: object, owner: Any) -> _DESC_co: ...
 
-        def __set__(self, instance: Any, value: Any) -> NoReturn:
-            ...
+        def __set__(self, instance: Any, value: Any) -> NoReturn: ...
 
-        def __delete__(self, instance: Any) -> NoReturn:
-            ...
+        def __delete__(self, instance: Any) -> NoReturn: ...
 
 
 _FN = TypeVar("_FN", bound=Optional[Callable[..., Any]])
@@ -572,14 +570,11 @@ class CallableReference(Generic[_FN]):
 
     if TYPE_CHECKING:
 
-        def __get__(self, instance: object, owner: Any) -> _FN:
-            ...
+        def __get__(self, instance: object, owner: Any) -> _FN: ...
 
-        def __set__(self, instance: Any, value: _FN) -> None:
-            ...
+        def __set__(self, instance: Any, value: _FN) -> None: ...
 
-        def __delete__(self, instance: Any) -> None:
-            ...
+        def __delete__(self, instance: Any) -> None: ...
 
 
 # $def ro_descriptor_reference(fn: Callable[])

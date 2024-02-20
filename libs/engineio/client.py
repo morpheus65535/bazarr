@@ -450,7 +450,7 @@ class Client(base_client.BaseClient):
 
     def _read_loop_polling(self):
         """Read packets by polling the Engine.IO server."""
-        while self.state == 'connected':
+        while self.state == 'connected' and self.write_loop_task:
             self.logger.info(
                 'Sending polling GET request to ' + self.base_url)
             r = self._send_request(
@@ -476,8 +476,9 @@ class Client(base_client.BaseClient):
             for pkt in p.packets:
                 self._receive_packet(pkt)
 
-        self.logger.info('Waiting for write loop task to end')
-        self.write_loop_task.join()
+        if self.write_loop_task:  # pragma: no branch
+            self.logger.info('Waiting for write loop task to end')
+            self.write_loop_task.join()
         if self.state == 'connected':
             self._trigger_event('disconnect', run_async=False)
             try:
@@ -493,6 +494,9 @@ class Client(base_client.BaseClient):
             p = None
             try:
                 p = self.ws.recv()
+                if len(p) == 0:  # pragma: no cover
+                    # websocket client can return an empty string after close
+                    raise websocket.WebSocketConnectionClosedException()
             except websocket.WebSocketTimeoutException:
                 self.logger.warning(
                     'Server has stopped communicating, aborting')
@@ -503,10 +507,15 @@ class Client(base_client.BaseClient):
                     'WebSocket connection was closed, aborting')
                 self.queue.put(None)
                 break
-            except Exception as e:
-                self.logger.info(
-                    'Unexpected error receiving packet: "%s", aborting',
-                    str(e))
+            except Exception as e:  # pragma: no cover
+                if type(e) is OSError and e.errno == 9:
+                    self.logger.info(
+                        'WebSocket connection is closing, aborting',
+                        str(e))
+                else:
+                    self.logger.info(
+                        'Unexpected error receiving packet: "%s", aborting',
+                        str(e))
                 self.queue.put(None)
                 break
             try:
@@ -518,8 +527,9 @@ class Client(base_client.BaseClient):
                 break
             self._receive_packet(pkt)
 
-        self.logger.info('Waiting for write loop task to end')
-        self.write_loop_task.join()
+        if self.write_loop_task:  # pragma: no branch
+            self.logger.info('Waiting for write loop task to end')
+            self.write_loop_task.join()
         if self.state == 'connected':
             self._trigger_event('disconnect', run_async=False)
             try:
@@ -575,7 +585,7 @@ class Client(base_client.BaseClient):
                 if r.status_code < 200 or r.status_code >= 300:
                     self.logger.warning('Unexpected status code %s in server '
                                         'response, aborting', r.status_code)
-                    self._reset()
+                    self.write_loop_task = None
                     break
             else:
                 # websocket

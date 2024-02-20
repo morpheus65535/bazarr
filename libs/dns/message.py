@@ -1086,7 +1086,6 @@ def _message_factory_from_opcode(opcode):
 
 
 class _WireReader:
-
     """Wire format reader.
 
     parser: the binary parser
@@ -1386,7 +1385,6 @@ def from_wire(
 
 
 class _TextReader:
-
     """Text format reader.
 
     tok: the tokenizer.

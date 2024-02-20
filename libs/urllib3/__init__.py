@@ -167,7 +167,7 @@ def request(
         Configure the number of retries to allow before raising a
         :class:`~urllib3.exceptions.MaxRetryError` exception.
 
-        Pass ``None`` to retry until you receive a response. Pass a
+        If ``None`` (default) will retry 3 times, see ``Retry.DEFAULT``. Pass a
         :class:`~urllib3.util.retry.Retry` object for fine-grained control
         over different types of retries.
         Pass an integer number to retry connection errors that many times,

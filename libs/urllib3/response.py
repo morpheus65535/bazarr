@@ -19,14 +19,14 @@ if typing.TYPE_CHECKING:
 
 try:
     try:
-        import brotlicffi as brotli  # type: ignore[import]
+        import brotlicffi as brotli  # type: ignore[import-not-found]
     except ImportError:
-        import brotli  # type: ignore[import]
+        import brotli  # type: ignore[import-not-found]
 except ImportError:
     brotli = None
 
 try:
-    import zstandard as zstd  # type: ignore[import]
+    import zstandard as zstd  # type: ignore[import-not-found]
 
     # The package 'zstandard' added the 'eof' property starting
     # in v0.18.0 which we require to ensure a complete and
@@ -749,8 +749,18 @@ class HTTPResponse(BaseHTTPResponse):
 
                 raise ReadTimeoutError(self._pool, None, "Read timed out.") from e  # type: ignore[arg-type]
 
+            except IncompleteRead as e:
+                if (
+                    e.expected is not None
+                    and e.partial is not None
+                    and e.expected == -e.partial
+                ):
+                    arg = "Response may not contain content."
+                else:
+                    arg = f"Connection broken: {e!r}"
+                raise ProtocolError(arg, e) from e
+
             except (HTTPException, OSError) as e:
-                # This includes IncompleteRead.
                 raise ProtocolError(f"Connection broken: {e!r}", e) from e
 
             # If no exception is thrown, we should avoid cleaning up
@@ -1100,9 +1110,13 @@ class HTTPResponse(BaseHTTPResponse):
         try:
             self.chunk_left = int(line, 16)
         except ValueError:
-            # Invalid chunked protocol response, abort.
             self.close()
-            raise InvalidChunkLength(self, line) from None
+            if line:
+                # Invalid chunked protocol response, abort.
+                raise InvalidChunkLength(self, line) from None
+            else:
+                # Truncated at start of next chunk
+                raise ProtocolError("Response ended prematurely") from None
 
     def _handle_chunk(self, amt: int | None) -> bytes:
         returned_chunk = None

@@ -41,7 +41,6 @@ from dns.query import (
     NoDOQ,
     UDPMode,
     _compute_times,
-    _have_http2,
     _make_dot_ssl_context,
     _matches_destination,
     _remaining,
@@ -121,6 +120,8 @@ async def receive_udp(
     request_mac: Optional[bytes] = b"",
     ignore_trailing: bool = False,
     raise_on_truncation: bool = False,
+    ignore_errors: bool = False,
+    query: Optional[dns.message.Message] = None,
 ) -> Any:
     """Read a DNS message from a UDP socket.
 
@@ -134,22 +135,40 @@ async def receive_udp(
     """
 
     wire = b""
-    while 1:
+    while True:
         (wire, from_address) = await sock.recvfrom(65535, _timeout(expiration))
-        if _matches_destination(
+        if not _matches_destination(
             sock.family, from_address, destination, ignore_unexpected
         ):
-            break
-    received_time = time.time()
-    r = dns.message.from_wire(
-        wire,
-        keyring=keyring,
-        request_mac=request_mac,
-        one_rr_per_rrset=one_rr_per_rrset,
-        ignore_trailing=ignore_trailing,
-        raise_on_truncation=raise_on_truncation,
-    )
-    return (r, received_time, from_address)
+            continue
+        received_time = time.time()
+        try:
+            r = dns.message.from_wire(
+                wire,
+                keyring=keyring,
+                request_mac=request_mac,
+                one_rr_per_rrset=one_rr_per_rrset,
+                ignore_trailing=ignore_trailing,
+                raise_on_truncation=raise_on_truncation,
+            )
+        except dns.message.Truncated as e:
+            # See the comment in query.py for details.
+            if (
+                ignore_errors
+                and query is not None
+                and not query.is_response(e.message())
+            ):
+                continue
+            else:
+                raise
+        except Exception:
+            if ignore_errors:
+                continue
+            else:
+                raise
+        if ignore_errors and query is not None and not query.is_response(r):
+            continue
+        return (r, received_time, from_address)
 
 
 async def udp(
@@ -165,6 +184,7 @@ async def udp(
     raise_on_truncation: bool = False,
     sock: Optional[dns.asyncbackend.DatagramSocket] = None,
     backend: Optional[dns.asyncbackend.Backend] = None,
+    ignore_errors: bool = False,
 ) -> dns.message.Message:
     """Return the response obtained after sending a query via UDP.
 
@@ -206,9 +226,13 @@ async def udp(
             q.mac,
             ignore_trailing,
             raise_on_truncation,
+            ignore_errors,
+            q,
         )
         r.time = received_time - begin_time
-        if not q.is_response(r):
+        # We don't need to check q.is_response() if we are in ignore_errors mode
+        # as receive_udp() will have checked it.
+        if not (ignore_errors or q.is_response(r)):
             raise BadResponse
         return r
 
@@ -226,6 +250,7 @@ async def udp_with_fallback(
     udp_sock: Optional[dns.asyncbackend.DatagramSocket] = None,
     tcp_sock: Optional[dns.asyncbackend.StreamSocket] = None,
     backend: Optional[dns.asyncbackend.Backend] = None,
+    ignore_errors: bool = False,
 ) -> Tuple[dns.message.Message, bool]:
     """Return the response to the query, trying UDP first and falling back
     to TCP if UDP results in a truncated response.
@@ -261,6 +286,7 @@ async def udp_with_fallback(
             True,
             udp_sock,
             backend,
+            ignore_errors,
         )
         return (response, False)
     except dns.message.Truncated:
@@ -534,7 +560,7 @@ async def https(
     transport = backend.get_transport_class()(
         local_address=local_address,
         http1=True,
-        http2=_have_http2,
+        http2=True,
         verify=verify,
         local_port=local_port,
         bootstrap_address=bootstrap_address,
@@ -546,7 +572,7 @@ async def https(
         cm: contextlib.AbstractAsyncContextManager = NullContext(client)
     else:
         cm = httpx.AsyncClient(
-            http1=True, http2=_have_http2, verify=verify, transport=transport
+            http1=True, http2=True, verify=verify, transport=transport
         )
 
     async with cm as the_client:

@@ -384,7 +384,7 @@ class DeferredColumnLoader(LoaderStrategy):
         super().__init__(parent, strategy_key)
         if hasattr(self.parent_property, "composite_class"):
             raise NotImplementedError(
-                "Deferred loading for composite " "types not implemented yet"
+                "Deferred loading for composite types not implemented yet"
             )
         self.raiseload = self.strategy_opts.get("raiseload", False)
         self.columns = self.parent_property.columns
@@ -758,7 +758,7 @@ class LazyLoader(
                         self._equated_columns[c] = self._equated_columns[col]
 
             self.logger.info(
-                "%s will use Session.get() to " "optimize instance loads", self
+                "%s will use Session.get() to optimize instance loads", self
             )
 
     def init_class_attribute(self, mapper):
@@ -1195,9 +1195,11 @@ class LazyLoader(
                     key,
                     self,
                     loadopt,
-                    loadopt._generate_extra_criteria(context)
-                    if loadopt._extra_criteria
-                    else None,
+                    (
+                        loadopt._generate_extra_criteria(context)
+                        if loadopt._extra_criteria
+                        else None
+                    ),
                 ),
                 key,
             )
@@ -1672,9 +1674,11 @@ class SubqueryLoader(PostLoader):
         elif ltj > 2:
             middle = [
                 (
-                    orm_util.AliasedClass(item[0])
-                    if not inspect(item[0]).is_aliased_class
-                    else item[0].entity,
+                    (
+                        orm_util.AliasedClass(item[0])
+                        if not inspect(item[0]).is_aliased_class
+                        else item[0].entity
+                    ),
                     item[1],
                 )
                 for item in to_join[1:-1]
@@ -2328,9 +2332,11 @@ class JoinedLoader(AbstractRelationshipLoader):
 
             to_adapt = orm_util.AliasedClass(
                 self.mapper,
-                alias=alt_selectable._anonymous_fromclause(flat=True)
-                if alt_selectable is not None
-                else None,
+                alias=(
+                    alt_selectable._anonymous_fromclause(flat=True)
+                    if alt_selectable is not None
+                    else None
+                ),
                 flat=True,
                 use_mapper_path=True,
             )

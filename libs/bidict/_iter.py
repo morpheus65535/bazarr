@@ -1,4 +1,4 @@
-# Copyright 2009-2022 Joshua Bronson. All rights reserved.
+# Copyright 2009-2024 Joshua Bronson. All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,24 +8,29 @@
 """Functions for iterating over items in a mapping."""
 
 from __future__ import annotations
-from operator import itemgetter
+
 import typing as t
+from operator import itemgetter
 
-from ._typing import KT, VT, ItemsIter, MapOrItems
-
-
-def iteritems_mapping_or_iterable(arg: MapOrItems[KT, VT]) -> ItemsIter[KT, VT]:
-    """Yield the items in *arg* based on whether it's a mapping."""
-    yield from arg.items() if isinstance(arg, t.Mapping) else arg
-
-
-def iteritems(__arg: MapOrItems[KT, VT], **kw: VT) -> ItemsIter[KT, VT]:
-    """Yield the items from *arg* and then any from *kw* in the order given."""
-    yield from iteritems_mapping_or_iterable(__arg)
-    yield from kw.items()  # type: ignore [misc]
+from ._typing import KT
+from ._typing import VT
+from ._typing import ItemsIter
+from ._typing import Maplike
+from ._typing import MapOrItems
 
 
-swap = itemgetter(1, 0)
+def iteritems(arg: MapOrItems[KT, VT] = (), /, **kw: VT) -> ItemsIter[KT, VT]:
+    """Yield the items from *arg* and *kw* in the order given."""
+    if isinstance(arg, t.Mapping):
+        yield from arg.items()
+    elif isinstance(arg, Maplike):
+        yield from ((k, arg[k]) for k in arg.keys())
+    else:
+        yield from arg
+    yield from t.cast(ItemsIter[KT, VT], kw.items())
+
+
+swap: t.Final = itemgetter(1, 0)
 
 
 def inverted(arg: MapOrItems[KT, VT]) -> ItemsIter[VT, KT]:
@@ -43,4 +48,4 @@ def inverted(arg: MapOrItems[KT, VT]) -> ItemsIter[VT, KT]:
     if callable(invattr):
         inv: ItemsIter[VT, KT] = invattr()
         return inv
-    return map(swap, iteritems_mapping_or_iterable(arg))
+    return map(swap, iteritems(arg))

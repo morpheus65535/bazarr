@@ -4,9 +4,9 @@ import threading
 import types
 import typing
 
-import h2.config  # type: ignore[import]
-import h2.connection  # type: ignore[import]
-import h2.events  # type: ignore[import]
+import h2.config  # type: ignore[import-untyped]
+import h2.connection  # type: ignore[import-untyped]
+import h2.events  # type: ignore[import-untyped]
 
 import urllib3.connection
 import urllib3.util.ssl_
@@ -97,7 +97,7 @@ class HTTP2Connection(HTTPSConnection):
                 )
             )
 
-    def putheader(self, header: str, *values: str) -> None:
+    def putheader(self, header: str, *values: str) -> None:  # type: ignore[override]
         for value in values:
             self._h2_headers.append(
                 (header.encode("utf-8").lower(), value.encode("utf-8"))
@@ -130,12 +130,7 @@ class HTTP2Connection(HTTPSConnection):
                 if received_data := self.sock.recv(65535):
                     events = h2_conn.receive_data(received_data)
                     for event in events:
-                        if isinstance(
-                            event, h2.events.InformationalResponseReceived
-                        ):  # Defensive:
-                            continue  # TODO: Does the stdlib do anything with these responses?
-
-                        elif isinstance(event, h2.events.ResponseReceived):
+                        if isinstance(event, h2.events.ResponseReceived):
                             headers = HTTPHeaderDict()
                             for header, value in event.headers:
                                 if header == b":status":
@@ -214,6 +209,9 @@ class HTTP2Response(BaseHTTPResponse):
 
     def get_redirect_location(self) -> None:
         return None
+
+    def close(self) -> None:
+        pass
 
 
 def inject_into_urllib3() -> None:

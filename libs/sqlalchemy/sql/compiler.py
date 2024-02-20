@@ -382,8 +382,7 @@ class _ResultMapAppender(Protocol):
         name: str,
         objects: Sequence[Any],
         type_: TypeEngine[Any],
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 # integer indexes into ResultColumnsEntry used by cursor.py.
@@ -737,7 +736,6 @@ class FromLinter(collections.namedtuple("FromLinter", ["froms", "edges"])):
 
 
 class Compiled:
-
     """Represent a compiled SQL or DDL expression.
 
     The ``__str__`` method of the ``Compiled`` object should produce
@@ -967,7 +965,6 @@ class TypeCompiler(util.EnsureKWArg):
 class _CompileLabel(
     roles.BinaryElementRole[Any], elements.CompilerColumnElement
 ):
-
     """lightweight label object which acts as an expression.Label."""
 
     __visit_name__ = "label"
@@ -1037,19 +1034,19 @@ class SQLCompiler(Compiled):
 
     extract_map = EXTRACT_MAP
 
-    bindname_escape_characters: ClassVar[
-        Mapping[str, str]
-    ] = util.immutabledict(
-        {
-            "%": "P",
-            "(": "A",
-            ")": "Z",
-            ":": "C",
-            ".": "_",
-            "[": "_",
-            "]": "_",
-            " ": "_",
-        }
+    bindname_escape_characters: ClassVar[Mapping[str, str]] = (
+        util.immutabledict(
+            {
+                "%": "P",
+                "(": "A",
+                ")": "Z",
+                ":": "C",
+                ".": "_",
+                "[": "_",
+                "]": "_",
+                " ": "_",
+            }
+        )
     )
     """A mapping (e.g. dict or similar) containing a lookup of
     characters keyed to replacement characters which will be applied to all
@@ -1789,11 +1786,15 @@ class SQLCompiler(Compiled):
             for key, value in (
                 (
                     self.bind_names[bindparam],
-                    bindparam.type._cached_bind_processor(self.dialect)
-                    if not bindparam.type._is_tuple_type
-                    else tuple(
-                        elem_type._cached_bind_processor(self.dialect)
-                        for elem_type in cast(TupleType, bindparam.type).types
+                    (
+                        bindparam.type._cached_bind_processor(self.dialect)
+                        if not bindparam.type._is_tuple_type
+                        else tuple(
+                            elem_type._cached_bind_processor(self.dialect)
+                            for elem_type in cast(
+                                TupleType, bindparam.type
+                            ).types
+                        )
                     ),
                 )
                 for bindparam in self.bind_names
@@ -2099,11 +2100,11 @@ class SQLCompiler(Compiled):
 
             if parameter in self.literal_execute_params:
                 if escaped_name not in replacement_expressions:
-                    replacement_expressions[
-                        escaped_name
-                    ] = self.render_literal_bindparam(
-                        parameter,
-                        render_literal_value=parameters.pop(escaped_name),
+                    replacement_expressions[escaped_name] = (
+                        self.render_literal_bindparam(
+                            parameter,
+                            render_literal_value=parameters.pop(escaped_name),
+                        )
                     )
                 continue
 
@@ -2312,12 +2313,14 @@ class SQLCompiler(Compiled):
             else:
                 return row_fn(
                     (
-                        autoinc_getter(lastrowid, parameters)
-                        if autoinc_getter is not None
-                        else lastrowid
+                        (
+                            autoinc_getter(lastrowid, parameters)
+                            if autoinc_getter is not None
+                            else lastrowid
+                        )
+                        if col is autoinc_col
+                        else getter(parameters)
                     )
-                    if col is autoinc_col
-                    else getter(parameters)
                     for getter, col in getters
                 )
 
@@ -2347,11 +2350,15 @@ class SQLCompiler(Compiled):
         getters = cast(
             "List[Tuple[Callable[[Any], Any], bool]]",
             [
-                (operator.itemgetter(ret[col]), True)
-                if col in ret
-                else (
-                    operator.methodcaller("get", param_key_getter(col), None),
-                    False,
+                (
+                    (operator.itemgetter(ret[col]), True)
+                    if col in ret
+                    else (
+                        operator.methodcaller(
+                            "get", param_key_getter(col), None
+                        ),
+                        False,
+                    )
                 )
                 for col in table.primary_key
             ],
@@ -2420,9 +2427,9 @@ class SQLCompiler(Compiled):
                     resolve_dict[order_by_elem.name]
                 )
             ):
-                kwargs[
-                    "render_label_as_label"
-                ] = element.element._order_by_label_element
+                kwargs["render_label_as_label"] = (
+                    element.element._order_by_label_element
+                )
         return self.process(
             element.element,
             within_columns_clause=within_columns_clause,
@@ -2525,7 +2532,7 @@ class SQLCompiler(Compiled):
 
     def _fallback_column_name(self, column):
         raise exc.CompileError(
-            "Cannot compile Column object until " "its 'name' is assigned."
+            "Cannot compile Column object until its 'name' is assigned."
         )
 
     def visit_lambda_element(self, element, **kw):
@@ -2668,9 +2675,9 @@ class SQLCompiler(Compiled):
         )
 
         if populate_result_map:
-            self._ordered_columns = (
-                self._textual_ordered_columns
-            ) = taf.positional
+            self._ordered_columns = self._textual_ordered_columns = (
+                taf.positional
+            )
 
             # enable looser result column matching when the SQL text links to
             # Column objects by name only
@@ -2797,24 +2804,44 @@ class SQLCompiler(Compiled):
 
     def _format_frame_clause(self, range_, **kw):
         return "%s AND %s" % (
-            "UNBOUNDED PRECEDING"
-            if range_[0] is elements.RANGE_UNBOUNDED
-            else "CURRENT ROW"
-            if range_[0] is elements.RANGE_CURRENT
-            else "%s PRECEDING"
-            % (self.process(elements.literal(abs(range_[0])), **kw),)
-            if range_[0] < 0
-            else "%s FOLLOWING"
-            % (self.process(elements.literal(range_[0]), **kw),),
-            "UNBOUNDED FOLLOWING"
-            if range_[1] is elements.RANGE_UNBOUNDED
-            else "CURRENT ROW"
-            if range_[1] is elements.RANGE_CURRENT
-            else "%s PRECEDING"
-            % (self.process(elements.literal(abs(range_[1])), **kw),)
-            if range_[1] < 0
-            else "%s FOLLOWING"
-            % (self.process(elements.literal(range_[1]), **kw),),
+            (
+                "UNBOUNDED PRECEDING"
+                if range_[0] is elements.RANGE_UNBOUNDED
+                else (
+                    "CURRENT ROW"
+                    if range_[0] is elements.RANGE_CURRENT
+                    else (
+                        "%s PRECEDING"
+                        % (
+                            self.process(
+                                elements.literal(abs(range_[0])), **kw
+                            ),
+                        )
+                        if range_[0] < 0
+                        else "%s FOLLOWING"
+                        % (self.process(elements.literal(range_[0]), **kw),)
+                    )
+                )
+            ),
+            (
+                "UNBOUNDED FOLLOWING"
+                if range_[1] is elements.RANGE_UNBOUNDED
+                else (
+                    "CURRENT ROW"
+                    if range_[1] is elements.RANGE_CURRENT
+                    else (
+                        "%s PRECEDING"
+                        % (
+                            self.process(
+                                elements.literal(abs(range_[1])), **kw
+                            ),
+                        )
+                        if range_[1] < 0
+                        else "%s FOLLOWING"
+                        % (self.process(elements.literal(range_[1]), **kw),)
+                    )
+                )
+            ),
         )
 
     def visit_over(self, over, **kwargs):
@@ -3055,9 +3082,12 @@ class SQLCompiler(Compiled):
                 + self.process(
                     elements.Cast(
                         binary.right,
-                        binary.right.type
-                        if binary.right.type._type_affinity is sqltypes.Numeric
-                        else sqltypes.Numeric(),
+                        (
+                            binary.right.type
+                            if binary.right.type._type_affinity
+                            is sqltypes.Numeric
+                            else sqltypes.Numeric()
+                        ),
                     ),
                     **kw,
                 )
@@ -4212,12 +4242,14 @@ class SQLCompiler(Compiled):
                         "%s%s"
                         % (
                             self.preparer.quote(col.name),
-                            " %s"
-                            % self.dialect.type_compiler_instance.process(
-                                col.type, **kwargs
-                            )
-                            if alias._render_derived_w_types
-                            else "",
+                            (
+                                " %s"
+                                % self.dialect.type_compiler_instance.process(
+                                    col.type, **kwargs
+                                )
+                                if alias._render_derived_w_types
+                                else ""
+                            ),
                         )
                         for col in alias.c
                     )
@@ -4609,9 +4641,9 @@ class SQLCompiler(Compiled):
         compile_state = select_stmt._compile_state_factory(
             select_stmt, self, **kwargs
         )
-        kwargs[
-            "ambiguous_table_name_map"
-        ] = compile_state._ambiguous_table_name_map
+        kwargs["ambiguous_table_name_map"] = (
+            compile_state._ambiguous_table_name_map
+        )
 
         select_stmt = compile_state.statement
 
@@ -5747,7 +5779,6 @@ class SQLCompiler(Compiled):
         returning_cols = self.implicit_returning or insert_stmt._returning
         if returning_cols:
             add_sentinel_cols = crud_params_struct.use_sentinel_columns
-
             if add_sentinel_cols is not None:
                 assert use_insertmanyvalues
 
@@ -5854,9 +5885,9 @@ class SQLCompiler(Compiled):
                         insert_stmt._post_values_clause is not None
                     ),
                     sentinel_columns=add_sentinel_cols,
-                    num_sentinel_columns=len(add_sentinel_cols)
-                    if add_sentinel_cols
-                    else 0,
+                    num_sentinel_columns=(
+                        len(add_sentinel_cols) if add_sentinel_cols else 0
+                    ),
                     implicit_sentinel=implicit_sentinel,
                 )
         elif compile_state._has_multi_parameters:
@@ -5950,9 +5981,9 @@ class SQLCompiler(Compiled):
                         insert_stmt._post_values_clause is not None
                     ),
                     sentinel_columns=add_sentinel_cols,
-                    num_sentinel_columns=len(add_sentinel_cols)
-                    if add_sentinel_cols
-                    else 0,
+                    num_sentinel_columns=(
+                        len(add_sentinel_cols) if add_sentinel_cols else 0
+                    ),
                     sentinel_param_keys=named_sentinel_params,
                     implicit_sentinel=implicit_sentinel,
                     embed_values_counter=embed_sentinel_value,
@@ -6437,8 +6468,7 @@ class DDLCompiler(Compiled):
             schema_translate_map: Optional[SchemaTranslateMapType] = ...,
             render_schema_translate: bool = ...,
             compile_kwargs: Mapping[str, Any] = ...,
-        ):
-            ...
+        ): ...
 
     @util.memoized_property
     def sql_compiler(self):
@@ -6608,7 +6638,7 @@ class DDLCompiler(Compiled):
     def _verify_index_table(self, index):
         if index.table is None:
             raise exc.CompileError(
-                "Index '%s' is not associated " "with any table." % index.name
+                "Index '%s' is not associated with any table." % index.name
             )
 
     def visit_create_index(
@@ -7052,6 +7082,9 @@ class GenericTypeCompiler(TypeCompiler):
     def visit_TEXT(self, type_, **kw):
         return self._render_string_type(type_, "TEXT")
 
+    def visit_UUID(self, type_, **kw):
+        return "UUID"
+
     def visit_BLOB(self, type_, **kw):
         return "BLOB"
 
@@ -7065,7 +7098,10 @@ class GenericTypeCompiler(TypeCompiler):
         return "BOOLEAN"
 
     def visit_uuid(self, type_, **kw):
-        return self._render_string_type(type_, "CHAR", length_override=32)
+        if not type_.native_uuid or not self.dialect.supports_native_uuid:
+            return self._render_string_type(type_, "CHAR", length_override=32)
+        else:
+            return self.visit_UUID(type_, **kw)
 
     def visit_large_binary(self, type_, **kw):
         return self.visit_BLOB(type_, **kw)
@@ -7166,17 +7202,14 @@ class StrSQLTypeCompiler(GenericTypeCompiler):
 
 
 class _SchemaForObjectCallable(Protocol):
-    def __call__(self, obj: Any) -> str:
-        ...
+    def __call__(self, obj: Any) -> str: ...
 
 
 class _BindNameForColProtocol(Protocol):
-    def __call__(self, col: ColumnClause[Any]) -> str:
-        ...
+    def __call__(self, col: ColumnClause[Any]) -> str: ...
 
 
 class IdentifierPreparer:
-
     """Handle quoting and case-folding of identifiers based on options."""
 
     reserved_words = RESERVED_WORDS

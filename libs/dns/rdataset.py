@@ -46,7 +46,6 @@ class IncompatibleTypes(dns.exception.DNSException):
 
 
 class Rdataset(dns.set.Set):
-
     """A DNS rdataset."""
 
     __slots__ = ["rdclass", "rdtype", "covers", "ttl"]
@@ -365,7 +364,6 @@ class Rdataset(dns.set.Set):
 
 @dns.immutable.immutable
 class ImmutableRdataset(Rdataset):  # lgtm[py/missing-equals]
-
     """An immutable DNS rdataset."""
 
     _clone_class = Rdataset

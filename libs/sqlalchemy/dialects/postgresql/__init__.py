@@ -8,6 +8,7 @@
 
 from types import ModuleType
 
+from . import array as arraylib  # noqa # must be above base and other dialects
 from . import asyncpg  # noqa
 from . import base
 from . import pg8000  # noqa
@@ -56,12 +57,14 @@ from .named_types import ENUM
 from .named_types import NamedType
 from .ranges import AbstractMultiRange
 from .ranges import AbstractRange
+from .ranges import AbstractSingleRange
 from .ranges import DATEMULTIRANGE
 from .ranges import DATERANGE
 from .ranges import INT4MULTIRANGE
 from .ranges import INT4RANGE
 from .ranges import INT8MULTIRANGE
 from .ranges import INT8RANGE
+from .ranges import MultiRange
 from .ranges import NUMMULTIRANGE
 from .ranges import NUMRANGE
 from .ranges import Range
@@ -85,6 +88,7 @@ from .types import TIME
 from .types import TIMESTAMP
 from .types import TSQUERY
 from .types import TSVECTOR
+
 
 # Alias psycopg also as psycopg_async
 psycopg_async = type(

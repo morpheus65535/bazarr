@@ -67,6 +67,7 @@ class EmscriptenHTTPConnection:
         self.blocksize = blocksize
         self.source_address = None
         self.socket_options = None
+        self.is_verified = False
 
     def set_tunnel(
         self,
@@ -227,6 +228,10 @@ class EmscriptenHTTPSConnection(EmscriptenHTTPConnection):
         self.ca_cert_data = ca_cert_data
 
         self.cert_reqs = None
+
+        # The browser will automatically verify all requests.
+        # We have no control over that setting.
+        self.is_verified = True
 
     def set_cert(
         self,

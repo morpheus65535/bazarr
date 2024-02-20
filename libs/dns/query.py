@@ -29,6 +29,7 @@ import struct
 import time
 from typing import Any, Dict, Optional, Tuple, Union
 
+import dns._features
 import dns.exception
 import dns.inet
 import dns.message
@@ -58,23 +59,13 @@ def _expiration_for_this_attempt(timeout, expiration):
     return min(time.time() + timeout, expiration)
 
 
-_have_httpx = False
-_have_http2 = False
-try:
-    import httpcore
+_have_httpx = dns._features.have("doh")
+if _have_httpx:
     import httpcore._backends.sync
     import httpx
 
     _CoreNetworkBackend = httpcore.NetworkBackend
     _CoreSyncStream = httpcore._backends.sync.SyncStream
-
-    _have_httpx = True
-    try:
-        # See if http2 support is available.
-        with httpx.Client(http2=True):
-            _have_http2 = True
-    except Exception:
-        pass
 
     class _NetworkBackend(_CoreNetworkBackend):
         def __init__(self, resolver, local_port, bootstrap_address, family):
@@ -148,7 +139,7 @@ try:
                 resolver, local_port, bootstrap_address, family
             )
 
-except ImportError:  # pragma: no cover
+else:
 
     class _HTTPTransport:  # type: ignore
         def connect_tcp(self, host, port, timeout, local_address):
@@ -462,7 +453,7 @@ def https(
     transport = _HTTPTransport(
         local_address=local_address,
         http1=True,
-        http2=_have_http2,
+        http2=True,
         verify=verify,
         local_port=local_port,
         bootstrap_address=bootstrap_address,
@@ -473,9 +464,7 @@ def https(
     if session:
         cm: contextlib.AbstractContextManager = contextlib.nullcontext(session)
     else:
-        cm = httpx.Client(
-            http1=True, http2=_have_http2, verify=verify, transport=transport
-        )
+        cm = httpx.Client(http1=True, http2=True, verify=verify, transport=transport)
     with cm as session:
         # see https://tools.ietf.org/html/rfc8484#section-4.1.1 for DoH
         # GET and POST examples
@@ -580,6 +569,8 @@ def receive_udp(
     request_mac: Optional[bytes] = b"",
     ignore_trailing: bool = False,
     raise_on_truncation: bool = False,
+    ignore_errors: bool = False,
+    query: Optional[dns.message.Message] = None,
 ) -> Any:
     """Read a DNS message from a UDP socket.
 
@@ -620,28 +611,58 @@ def receive_udp(
     ``(dns.message.Message, float, tuple)``
     tuple of the received message, the received time, and the address where
     the message arrived from.
+
+    *ignore_errors*, a ``bool``.  If various format errors or response
+    mismatches occur, ignore them and keep listening for a valid response.
+    The default is ``False``.
+
+    *query*, a ``dns.message.Message`` or ``None``.  If not ``None`` and
+    *ignore_errors* is ``True``, check that the received message is a response
+    to this query, and if not keep listening for a valid response.
     """
 
     wire = b""
     while True:
         (wire, from_address) = _udp_recv(sock, 65535, expiration)
-        if _matches_destination(
+        if not _matches_destination(
             sock.family, from_address, destination, ignore_unexpected
         ):
-            break
-    received_time = time.time()
-    r = dns.message.from_wire(
-        wire,
-        keyring=keyring,
-        request_mac=request_mac,
-        one_rr_per_rrset=one_rr_per_rrset,
-        ignore_trailing=ignore_trailing,
-        raise_on_truncation=raise_on_truncation,
-    )
-    if destination:
-        return (r, received_time)
-    else:
-        return (r, received_time, from_address)
+            continue
+        received_time = time.time()
+        try:
+            r = dns.message.from_wire(
+                wire,
+                keyring=keyring,
+                request_mac=request_mac,
+                one_rr_per_rrset=one_rr_per_rrset,
+                ignore_trailing=ignore_trailing,
+                raise_on_truncation=raise_on_truncation,
+            )
+        except dns.message.Truncated as e:
+            # If we got Truncated and not FORMERR, we at least got the header with TC
+            # set, and very likely the question section, so we'll re-raise if the
+            # message seems to be a response as we need to know when truncation happens.
+            # We need to check that it seems to be a response as we don't want a random
+            # injected message with TC set to cause us to bail out.
+            if (
+                ignore_errors
+                and query is not None
+                and not query.is_response(e.message())
+            ):
+                continue
+            else:
+                raise
+        except Exception:
+            if ignore_errors:
+                continue
+            else:
+                raise
+        if ignore_errors and query is not None and not query.is_response(r):
+            continue
+        if destination:
+            return (r, received_time)
+        else:
+            return (r, received_time, from_address)
 
 
 def udp(
@@ -656,6 +677,7 @@ def udp(
     ignore_trailing: bool = False,
     raise_on_truncation: bool = False,
     sock: Optional[Any] = None,
+    ignore_errors: bool = False,
 ) -> dns.message.Message:
     """Return the response obtained after sending a query via UDP.
 
@@ -692,6 +714,10 @@ def udp(
     if a socket is provided, it must be a nonblocking datagram socket,
     and the *source* and *source_port* are ignored.
 
+    *ignore_errors*, a ``bool``.  If various format errors or response
+    mismatches occur, ignore them and keep listening for a valid response.
+    The default is ``False``.
+
     Returns a ``dns.message.Message``.
     """
 
@@ -716,9 +742,13 @@ def udp(
             q.mac,
             ignore_trailing,
             raise_on_truncation,
+            ignore_errors,
+            q,
         )
         r.time = received_time - begin_time
-        if not q.is_response(r):
+        # We don't need to check q.is_response() if we are in ignore_errors mode
+        # as receive_udp() will have checked it.
+        if not (ignore_errors or q.is_response(r)):
             raise BadResponse
         return r
     assert (
@@ -738,48 +768,50 @@ def udp_with_fallback(
     ignore_trailing: bool = False,
     udp_sock: Optional[Any] = None,
     tcp_sock: Optional[Any] = None,
+    ignore_errors: bool = False,
 ) -> Tuple[dns.message.Message, bool]:
     """Return the response to the query, trying UDP first and falling back
     to TCP if UDP results in a truncated response.
 
     *q*, a ``dns.message.Message``, the query to send
 
-    *where*, a ``str`` containing an IPv4 or IPv6 address,  where
-    to send the message.
+    *where*, a ``str`` containing an IPv4 or IPv6 address,  where to send the message.
 
-    *timeout*, a ``float`` or ``None``, the number of seconds to wait before the
-    query times out.  If ``None``, the default, wait forever.
+    *timeout*, a ``float`` or ``None``, the number of seconds to wait before the query
+    times out.  If ``None``, the default, wait forever.
 
     *port*, an ``int``, the port send the message to.  The default is 53.
 
-    *source*, a ``str`` containing an IPv4 or IPv6 address, specifying
-    the source address.  The default is the wildcard address.
+    *source*, a ``str`` containing an IPv4 or IPv6 address, specifying the source
+    address.  The default is the wildcard address.
 
-    *source_port*, an ``int``, the port from which to send the message.
-    The default is 0.
+    *source_port*, an ``int``, the port from which to send the message. The default is
+    0.
 
-    *ignore_unexpected*, a ``bool``.  If ``True``, ignore responses from
-    unexpected sources.
+    *ignore_unexpected*, a ``bool``.  If ``True``, ignore responses from unexpected
+    sources.
 
-    *one_rr_per_rrset*, a ``bool``.  If ``True``, put each RR into its own
-    RRset.
+    *one_rr_per_rrset*, a ``bool``.  If ``True``, put each RR into its own RRset.
 
-    *ignore_trailing*, a ``bool``.  If ``True``, ignore trailing
-    junk at end of the received message.
+    *ignore_trailing*, a ``bool``.  If ``True``, ignore trailing junk at end of the
+    received message.
 
-    *udp_sock*, a ``socket.socket``, or ``None``, the socket to use for the
-    UDP query.  If ``None``, the default, a socket is created.  Note that
-    if a socket is provided, it must be a nonblocking datagram socket,
-    and the *source* and *source_port* are ignored for the UDP query.
+    *udp_sock*, a ``socket.socket``, or ``None``, the socket to use for the UDP query.
+    If ``None``, the default, a socket is created.  Note that if a socket is provided,
+    it must be a nonblocking datagram socket, and the *source* and *source_port* are
+    ignored for the UDP query.
 
     *tcp_sock*, a ``socket.socket``, or ``None``, the connected socket to use for the
-    TCP query.  If ``None``, the default, a socket is created.  Note that
-    if a socket is provided, it must be a nonblocking connected stream
-    socket, and *where*, *source* and *source_port* are ignored for the TCP
-    query.
+    TCP query.  If ``None``, the default, a socket is created.  Note that if a socket is
+    provided, it must be a nonblocking connected stream socket, and *where*, *source*
+    and *source_port* are ignored for the TCP query.
 
-    Returns a (``dns.message.Message``, tcp) tuple where tcp is ``True``
-    if and only if TCP was used.
+    *ignore_errors*, a ``bool``.  If various format errors or response mismatches occur
+    while listening for UDP, ignore them and keep listening for a valid response. The
+    default is ``False``.
+
+    Returns a (``dns.message.Message``, tcp) tuple where tcp is ``True`` if and only if
+    TCP was used.
     """
     try:
         response = udp(
@@ -794,6 +826,7 @@ def udp_with_fallback(
             ignore_trailing,
             True,
             udp_sock,
+            ignore_errors,
         )
         return (response, False)
     except dns.message.Truncated:

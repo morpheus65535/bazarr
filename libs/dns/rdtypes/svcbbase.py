@@ -427,7 +427,6 @@ def _validate_and_define(params, key, value):
 
 @dns.immutable.immutable
 class SVCBBase(dns.rdata.Rdata):
-
     """Base class for SVCB-like records"""
 
     # see: draft-ietf-dnsop-svcb-https-11

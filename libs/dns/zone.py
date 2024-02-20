@@ -54,42 +54,34 @@ from dns.zonetypes import DigestHashAlgorithm, DigestScheme, _digest_hashers
 
 
 class BadZone(dns.exception.DNSException):
-
     """The DNS zone is malformed."""
 
 
 class NoSOA(BadZone):
-
     """The DNS zone has no SOA RR at its origin."""
 
 
 class NoNS(BadZone):
-
     """The DNS zone has no NS RRset at its origin."""
 
 
 class UnknownOrigin(BadZone):
-
     """The DNS zone's origin is unknown."""
 
 
 class UnsupportedDigestScheme(dns.exception.DNSException):
-
     """The zone digest's scheme is unsupported."""
 
 
 class UnsupportedDigestHashAlgorithm(dns.exception.DNSException):
-
     """The zone digest's origin is unsupported."""
 
 
 class NoDigest(dns.exception.DNSException):
-
     """The DNS zone has no ZONEMD RRset at its origin."""
 
 
 class DigestVerificationFailure(dns.exception.DNSException):
-
     """The ZONEMD digest failed to verify."""
 
 
@@ -126,7 +118,6 @@ def _validate_name(
 
 
 class Zone(dns.transaction.TransactionManager):
-
     """A DNS zone.
 
     A ``Zone`` is a mapping from names to nodes.  The zone object may be

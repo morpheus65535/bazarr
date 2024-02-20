@@ -69,7 +69,7 @@ class AsyncClient(base_client.BaseClient):
 
     async def connect(self, url, headers={}, auth=None, transports=None,
                       namespaces=None, socketio_path='socket.io', wait=True,
-                      wait_timeout=1):
+                      wait_timeout=1, retry=False):
         """Connect to a Socket.IO server.
 
         :param url: The URL of the Socket.IO server. It can include custom
@@ -105,6 +105,8 @@ class AsyncClient(base_client.BaseClient):
                              connection. The default is 1 second. This
                              argument is only considered when ``wait`` is set
                              to ``True``.
+        :param retry: Apply the reconnection logic if the initial connection
+                      attempt fails. The default is ``False``.
 
         Note: this method is a coroutine.
 
@@ -147,6 +149,10 @@ class AsyncClient(base_client.BaseClient):
                 await self._trigger_event(
                     'connect_error', n,
                     exc.args[1] if len(exc.args) > 1 else exc.args[0])
+            if retry:  # pragma: no cover
+                await self._handle_reconnect()
+                if self.eio.state == 'connected':
+                    return
             raise exceptions.ConnectionError(exc.args[0]) from None
 
         if wait:
@@ -477,7 +483,8 @@ class AsyncClient(base_client.BaseClient):
                                    auth=self.connection_auth,
                                    transports=self.connection_transports,
                                    namespaces=self.connection_namespaces,
-                                   socketio_path=self.socketio_path)
+                                   socketio_path=self.socketio_path,
+                                   retry=False)
             except (exceptions.ConnectionError, ValueError):
                 pass
             else:

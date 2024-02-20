@@ -45,10 +45,12 @@ class RedisBackend(BytesBackend):
     Arguments accepted in the arguments dictionary:
 
     :param url: string. If provided, will override separate
-     host/password/port/db params.  The format is that accepted by
+     host/username/password/port/db params.  The format is that accepted by
      ``StrictRedis.from_url()``.
 
     :param host: string, default is ``localhost``.
+
+    :param username: string, default is no username.
 
     :param password: string, default is no password.
 
@@ -95,6 +97,8 @@ class RedisBackend(BytesBackend):
 
      .. versionadded:: 1.1.6  Added ``connection_kwargs`` parameter.
 
+     .. versionadded:: 1.3.1  Added ``username`` parameter.
+
     """
 
     def __init__(self, arguments):
@@ -102,6 +106,7 @@ class RedisBackend(BytesBackend):
         self._imports()
         self.url = arguments.pop("url", None)
         self.host = arguments.pop("host", "localhost")
+        self.username = arguments.pop("username", None)
         self.password = arguments.pop("password", None)
         self.port = arguments.pop("port", 6379)
         self.db = arguments.pop("db", 0)
@@ -149,6 +154,7 @@ class RedisBackend(BytesBackend):
             else:
                 args.update(
                     host=self.host,
+                    username=self.username,
                     password=self.password,
                     port=self.port,
                     db=self.db,
@@ -247,6 +253,10 @@ class RedisSentinelBackend(RedisBackend):
 
     Arguments accepted in the arguments dictionary:
 
+    :param username: string, default is no username.
+
+    :param password: string, default is no password.
+
     :param db: integer, default is ``0``.
 
     :param redis_expiration_time: integer, number of seconds after setting
@@ -292,6 +302,8 @@ class RedisSentinelBackend(RedisBackend):
      asynchronous runners, as they run in a different thread than the one
      used to create the lock.
 
+     .. versionadded:: 1.3.1  Added ``username`` parameter.
+
     """
 
     def __init__(self, arguments):
@@ -317,10 +329,12 @@ class RedisSentinelBackend(RedisBackend):
     def _create_client(self):
         sentinel_kwargs = {}
         sentinel_kwargs.update(self.sentinel_kwargs)
+        sentinel_kwargs.setdefault("username", self.username)
         sentinel_kwargs.setdefault("password", self.password)
 
         connection_kwargs = {}
         connection_kwargs.update(self.connection_kwargs)
+        connection_kwargs.setdefault("username", self.username)
         connection_kwargs.setdefault("password", self.password)
 
         if self.db is not None:

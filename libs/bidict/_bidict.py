@@ -1,4 +1,4 @@
-# Copyright 2009-2022 Joshua Bronson. All rights reserved.
+# Copyright 2009-2024 Joshua Bronson. All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,28 +7,40 @@
 
 #                             * Code review nav *
 #                        (see comments in __init__.py)
-#==============================================================================
-# ← Prev: _frozenbidict.py     Current: _bidict.py     Next: _orderedbase.py →
-#==============================================================================
+# ============================================================================
+# ← Prev: _frozen.py          Current: _bidict.py      Next: _orderedbase.py →
+# ============================================================================
 
 
-"""Provide :class:`MutableBidict`."""
+"""Provide :class:`MutableBidict` and :class:`bidict`."""
 
 from __future__ import annotations
+
 import typing as t
 
 from ._abc import MutableBidirectionalMapping
-from ._base import BidictBase, get_arg
-from ._dup import OnDup, ON_DUP_RAISE, ON_DUP_DROP_OLD
-from ._typing import KT, VT, DT, ODT, MISSING, Items, MapOrItems
+from ._base import BidictBase
+from ._dup import ON_DUP_DROP_OLD
+from ._dup import ON_DUP_RAISE
+from ._dup import OnDup
+from ._typing import DT
+from ._typing import KT
+from ._typing import MISSING
+from ._typing import ODT
+from ._typing import VT
+from ._typing import MapOrItems
 
 
 class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
     """Base class for mutable bidirectional mappings."""
 
     if t.TYPE_CHECKING:
+
         @property
         def inverse(self) -> MutableBidict[VT, KT]: ...
+
+        @property
+        def inv(self) -> MutableBidict[VT, KT]: ...
 
     def _pop(self, key: KT) -> VT:
         val = self._fwdm.pop(key)
@@ -88,10 +100,10 @@ class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
 
         :raises bidict.KeyAndValueDuplicationError: if attempting to insert an
             item whose key duplicates one existing item's, and whose value
-            duplicates another existing item's, and *on_dup.kv* is
+            duplicates another existing item's, and *on_dup.val* is
             :attr:`~bidict.RAISE`.
         """
-        self._update([(key, val)], on_dup=on_dup)
+        self._update(((key, val),), on_dup=on_dup)
 
     def forceput(self, key: KT, val: VT) -> None:
         """Associate *key* with *val* unconditionally.
@@ -107,11 +119,11 @@ class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
         self._invm.clear()
 
     @t.overload
-    def pop(self, __key: KT) -> VT: ...
+    def pop(self, key: KT, /) -> VT: ...
     @t.overload
-    def pop(self, __key: KT, __default: DT = ...) -> VT | DT: ...
+    def pop(self, key: KT, default: DT = ..., /) -> VT | DT: ...
 
-    def pop(self, key: KT, default: ODT[DT] = MISSING) -> VT | DT:
+    def pop(self, key: KT, default: ODT[DT] = MISSING, /) -> VT | DT:
         """*x.pop(k[, d]) → v*
 
         Remove specified key and return the corresponding value.
@@ -136,39 +148,13 @@ class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
         del self._invm[val]
         return key, val
 
-    @t.overload  # type: ignore [override]  # https://github.com/jab/bidict/pull/242#discussion_r825464731
-    def update(self, __m: t.Mapping[KT, VT], **kw: VT) -> None: ...
-    @t.overload
-    def update(self, __i: Items[KT, VT], **kw: VT) -> None: ...
-    @t.overload
-    def update(self, **kw: VT) -> None: ...
-
-    def update(self, *args: MapOrItems[KT, VT], **kw: VT) -> None:
+    def update(self, arg: MapOrItems[KT, VT] = (), /, **kw: VT) -> None:
         """Like calling :meth:`putall` with *self.on_dup* passed for *on_dup*."""
-        if args or kw:
-            self._update(get_arg(*args), kw)
+        self._update(arg, kw=kw)
 
-    @t.overload
-    def forceupdate(self, __m: t.Mapping[KT, VT], **kw: VT) -> None: ...
-    @t.overload
-    def forceupdate(self, __i: Items[KT, VT], **kw: VT) -> None: ...
-    @t.overload
-    def forceupdate(self, **kw: VT) -> None: ...
-
-    def forceupdate(self, *args: MapOrItems[KT, VT], **kw: VT) -> None:
+    def forceupdate(self, arg: MapOrItems[KT, VT] = (), /, **kw: VT) -> None:
         """Like a bulk :meth:`forceput`."""
-        if args or kw:
-            self._update(get_arg(*args), kw, on_dup=ON_DUP_DROP_OLD)
-
-    def __ior__(self, other: t.Mapping[KT, VT]) -> MutableBidict[KT, VT]:
-        """Return self|=other."""
-        self.update(other)
-        return self
-
-    @t.overload
-    def putall(self, items: t.Mapping[KT, VT], on_dup: OnDup) -> None: ...
-    @t.overload
-    def putall(self, items: Items[KT, VT], on_dup: OnDup = ...) -> None: ...
+        self._update(arg, kw=kw, on_dup=ON_DUP_DROP_OLD)
 
     def putall(self, items: MapOrItems[KT, VT], on_dup: OnDup = ON_DUP_RAISE) -> None:
         """Like a bulk :meth:`put`.
@@ -176,8 +162,14 @@ class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
         If one of the given items causes an exception to be raised,
         none of the items is inserted.
         """
-        if items:
-            self._update(items, on_dup=on_dup)
+        self._update(items, on_dup=on_dup)
+
+    # other's type is Mapping rather than Maplike since bidict() |= SupportsKeysAndGetItem({})
+    # raises a TypeError, just like dict() |= SupportsKeysAndGetItem({}) does.
+    def __ior__(self, other: t.Mapping[KT, VT]) -> MutableBidict[KT, VT]:
+        """Return self|=other."""
+        self.update(other)
+        return self
 
 
 class bidict(MutableBidict[KT, VT]):
@@ -188,11 +180,15 @@ class bidict(MutableBidict[KT, VT]):
     """
 
     if t.TYPE_CHECKING:
+
         @property
         def inverse(self) -> bidict[VT, KT]: ...
 
+        @property
+        def inv(self) -> bidict[VT, KT]: ...
+
 
 #                             * Code review nav *
-#==============================================================================
-# ← Prev: _frozenbidict.py     Current: _bidict.py     Next: _orderedbase.py →
-#==============================================================================
+# ============================================================================
+# ← Prev: _frozen.py          Current: _bidict.py      Next: _orderedbase.py →
+# ============================================================================

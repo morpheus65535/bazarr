@@ -24,17 +24,18 @@ import functools
 import struct
 from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union
 
-try:
-    import idna  # type: ignore
-
-    have_idna_2008 = True
-except ImportError:  # pragma: no cover
-    have_idna_2008 = False
-
+import dns._features
 import dns.enum
 import dns.exception
 import dns.immutable
 import dns.wire
+
+if dns._features.have("idna"):
+    import idna  # type: ignore
+
+    have_idna_2008 = True
+else:  # pragma: no cover
+    have_idna_2008 = False
 
 CompressType = Dict["Name", int]
 
@@ -355,7 +356,6 @@ def _maybe_convert_to_binary(label: Union[bytes, str]) -> bytes:
 
 @dns.immutable.immutable
 class Name:
-
     """A DNS name.
 
     The dns.name.Name class represents a DNS name as a tuple of

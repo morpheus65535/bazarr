@@ -307,7 +307,7 @@ class HTTPConnection(_HTTPConnection):
             method, url, skip_host=skip_host, skip_accept_encoding=skip_accept_encoding
         )
 
-    def putheader(self, header: str, *values: str) -> None:
+    def putheader(self, header: str, *values: str) -> None:  # type: ignore[override]
         """"""
         if not any(isinstance(v, str) and v == SKIP_HEADER for v in values):
             super().putheader(header, *values)

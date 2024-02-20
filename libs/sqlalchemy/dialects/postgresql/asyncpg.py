@@ -176,8 +176,6 @@ import decimal
 import json as _py_json
 import re
 import time
-from typing import cast
-from typing import TYPE_CHECKING
 
 from . import json
 from . import ranges
@@ -206,9 +204,6 @@ from ...sql import sqltypes
 from ...util.concurrency import asyncio
 from ...util.concurrency import await_fallback
 from ...util.concurrency import await_only
-
-if TYPE_CHECKING:
-    from typing import Iterable
 
 
 class AsyncpgARRAY(PGARRAY):
@@ -361,7 +356,7 @@ class AsyncpgCHAR(sqltypes.CHAR):
     render_bind_cast = True
 
 
-class _AsyncpgRange(ranges.AbstractRangeImpl):
+class _AsyncpgRange(ranges.AbstractSingleRangeImpl):
     def bind_processor(self, dialect):
         asyncpg_Range = dialect.dbapi.asyncpg.Range
 
@@ -415,10 +410,7 @@ class _AsyncpgMultiRange(ranges.AbstractMultiRangeImpl):
                     )
                 return value
 
-            return [
-                to_range(element)
-                for element in cast("Iterable[ranges.Range]", value)
-            ]
+            return [to_range(element) for element in value]
 
         return to_range
 
@@ -437,7 +429,7 @@ class _AsyncpgMultiRange(ranges.AbstractMultiRangeImpl):
                 return rvalue
 
             if value is not None:
-                value = [to_range(elem) for elem in value]
+                value = ranges.MultiRange(to_range(elem) for elem in value)
 
             return value
 
@@ -791,9 +783,9 @@ class AsyncAdapt_asyncpg_connection(AdaptedConnection):
                     translated_error = exception_mapping[super_](
                         "%s: %s" % (type(error), error)
                     )
-                    translated_error.pgcode = (
-                        translated_error.sqlstate
-                    ) = getattr(error, "sqlstate", None)
+                    translated_error.pgcode = translated_error.sqlstate = (
+                        getattr(error, "sqlstate", None)
+                    )
                     raise translated_error from error
             else:
                 raise error
@@ -890,7 +882,11 @@ class AsyncAdapt_asyncpg_connection(AdaptedConnection):
                 # try to gracefully close; see #10717
                 # timeout added in asyncpg 0.14.0 December 2017
                 self.await_(self._connection.close(timeout=2))
-            except asyncio.TimeoutError:
+            except (
+                asyncio.TimeoutError,
+                OSError,
+                self.dbapi.asyncpg.PostgresError,
+            ):
                 # in the case where we are recycling an old connection
                 # that may have already been disconnected, close() will
                 # fail with the above timeout.  in this case, terminate
@@ -1050,7 +1046,7 @@ class PGDialect_asyncpg(PGDialect):
             OID: AsyncpgOID,
             REGCLASS: AsyncpgREGCLASS,
             sqltypes.CHAR: AsyncpgCHAR,
-            ranges.AbstractRange: _AsyncpgRange,
+            ranges.AbstractSingleRange: _AsyncpgRange,
             ranges.AbstractMultiRange: _AsyncpgMultiRange,
         },
     )

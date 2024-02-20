@@ -7,6 +7,7 @@ import socket
 import sys
 
 import dns._asyncbackend
+import dns._features
 import dns.exception
 import dns.inet
 
@@ -122,7 +123,7 @@ class StreamSocket(dns._asyncbackend.StreamSocket):
         return self.writer.get_extra_info("peercert")
 
 
-try:
+if dns._features.have("doh"):
     import anyio
     import httpcore
     import httpcore._backends.anyio
@@ -206,7 +207,7 @@ try:
                 resolver, local_port, bootstrap_address, family
             )
 
-except ImportError:
+else:
     _HTTPTransport = dns._asyncbackend.NullTransport  # type: ignore
 
 

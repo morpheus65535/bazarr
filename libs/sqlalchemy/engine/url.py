@@ -171,6 +171,11 @@ class URL(NamedTuple):
         :param password: database password.  Is typically a string, but may
           also be an object that can be stringified with ``str()``.
 
+          .. note:: The password string should **not** be URL encoded when
+             passed as an argument to :meth:`_engine.URL.create`; the string
+             should contain the password characters exactly as they would be
+             typed.
+
           .. note::  A password-producing object will be stringified only
              **once** per :class:`_engine.Engine` object.  For dynamic password
              generation per connect, see :ref:`engines_dynamic_tokens`.
@@ -248,14 +253,12 @@ class URL(NamedTuple):
         @overload
         def _assert_value(
             val: str,
-        ) -> str:
-            ...
+        ) -> str: ...
 
         @overload
         def _assert_value(
             val: Sequence[str],
-        ) -> Union[str, Tuple[str, ...]]:
-            ...
+        ) -> Union[str, Tuple[str, ...]]: ...
 
         def _assert_value(
             val: Union[str, Sequence[str]],

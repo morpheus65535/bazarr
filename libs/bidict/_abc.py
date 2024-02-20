@@ -1,4 +1,4 @@
-# Copyright 2009-2022 Joshua Bronson. All rights reserved.
+# Copyright 2009-2024 Joshua Bronson. All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,18 +7,20 @@
 
 #                             * Code review nav *
 #                        (see comments in __init__.py)
-#==============================================================================
+# ============================================================================
 # ← Prev: __init__.py          Current: _abc.py               Next: _base.py →
-#==============================================================================
+# ============================================================================
 
 
 """Provide the :class:`BidirectionalMapping` abstract base class."""
 
 from __future__ import annotations
-from abc import abstractmethod
-import typing as t
 
-from ._typing import KT, VT
+import typing as t
+from abc import abstractmethod
+
+from ._typing import KT
+from ._typing import VT
 
 
 class BidirectionalMapping(t.Mapping[KT, VT]):
@@ -26,7 +28,7 @@ class BidirectionalMapping(t.Mapping[KT, VT]):
 
     Extends :class:`collections.abc.Mapping` primarily by adding the
     (abstract) :attr:`inverse` property,
-    which implementors of :class:`BidirectionalMapping`
+    which implementers of :class:`BidirectionalMapping`
     should override to return a reference to the inverse
     :class:`BidirectionalMapping` instance.
     """
@@ -42,10 +44,10 @@ class BidirectionalMapping(t.Mapping[KT, VT]):
 
         :raises NotImplementedError: Meant to be overridden in subclasses.
         """
-        # The @abstractmethod decorator prevents BidirectionalMapping subclasses from being
-        # instantiated unless they override ``.inverse``. So this implementation of ``.inverse``
-        # should never be unintentionally resolved from subclass instances. But raise here
-        # anyway, so it's extra clear that this implementation should never be called.
+        # The @abstractmethod decorator prevents subclasses from being instantiated unless they
+        # override this method. But an overriding implementation may merely return super().inverse,
+        # in which case this implementation is used. Raise NotImplementedError to indicate that
+        # subclasses must actually provide their own implementation.
         raise NotImplementedError
 
     def __inverted__(self) -> t.Iterator[tuple[VT, KT]]:
@@ -72,6 +74,6 @@ class MutableBidirectionalMapping(BidirectionalMapping[KT, VT], t.MutableMapping
 
 
 #                             * Code review nav *
-#==============================================================================
+# ============================================================================
 # ← Prev: __init__.py          Current: _abc.py               Next: _base.py →
-#==============================================================================
+# ============================================================================

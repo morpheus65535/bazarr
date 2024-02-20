@@ -274,7 +274,6 @@ def compact_traceback():
 
 
 class dispatcher:
-
     debug = False
     connected = False
     accepting = False

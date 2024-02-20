@@ -28,7 +28,6 @@ import dns.tokenizer
 
 @dns.immutable.immutable
 class TXTBase(dns.rdata.Rdata):
-
     """Base class for rdata that is like a TXT record (see RFC 1035)."""
 
     __slots__ = ["strings"]

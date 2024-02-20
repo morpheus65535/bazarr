@@ -115,6 +115,8 @@ class Do53Nameserver(AddressAndPortNameserver):
                 raise_on_truncation=True,
                 one_rr_per_rrset=one_rr_per_rrset,
                 ignore_trailing=ignore_trailing,
+                ignore_errors=True,
+                ignore_unexpected=True,
             )
         return response
 
@@ -153,6 +155,8 @@ class Do53Nameserver(AddressAndPortNameserver):
                 backend=backend,
                 one_rr_per_rrset=one_rr_per_rrset,
                 ignore_trailing=ignore_trailing,
+                ignore_errors=True,
+                ignore_unexpected=True,
             )
         return response
 
@@ -163,11 +167,13 @@ class DoHNameserver(Nameserver):
         url: str,
         bootstrap_address: Optional[str] = None,
         verify: Union[bool, str] = True,
+        want_get: bool = False,
     ):
         super().__init__()
         self.url = url
         self.bootstrap_address = bootstrap_address
         self.verify = verify
+        self.want_get = want_get
 
     def kind(self):
         return "DoH"
@@ -201,10 +207,13 @@ class DoHNameserver(Nameserver):
             request,
             self.url,
             timeout=timeout,
+            source=source,
+            source_port=source_port,
             bootstrap_address=self.bootstrap_address,
             one_rr_per_rrset=one_rr_per_rrset,
             ignore_trailing=ignore_trailing,
             verify=self.verify,
+            post=(not self.want_get),
         )
 
     async def async_query(
@@ -222,10 +231,13 @@ class DoHNameserver(Nameserver):
             request,
             self.url,
             timeout=timeout,
+            source=source,
+            source_port=source_port,
             bootstrap_address=self.bootstrap_address,
             one_rr_per_rrset=one_rr_per_rrset,
             ignore_trailing=ignore_trailing,
             verify=self.verify,
+            post=(not self.want_get),
         )
 
 

@@ -225,13 +225,9 @@ class RequestField:
 
         if isinstance(value, tuple):
             if len(value) == 3:
-                filename, data, content_type = typing.cast(
-                    typing.Tuple[str, _TYPE_FIELD_VALUE, str], value
-                )
+                filename, data, content_type = value
             else:
-                filename, data = typing.cast(
-                    typing.Tuple[str, _TYPE_FIELD_VALUE], value
-                )
+                filename, data = value
                 content_type = guess_content_type(filename)
         else:
             filename = None

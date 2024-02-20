@@ -41,7 +41,7 @@ with the proxy:
 from __future__ import annotations
 
 try:
-    import socks  # type: ignore[import]
+    import socks  # type: ignore[import-not-found]
 except ImportError:
     import warnings
 

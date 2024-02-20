@@ -1,5 +1,7 @@
 import sys
 
+import dns._features
+
 if sys.platform == "win32":
     from typing import Any
 
@@ -15,14 +17,14 @@ if sys.platform == "win32":
     except KeyError:
         WindowsError = Exception
 
-    try:
+    if dns._features.have("wmi"):
         import threading
 
         import pythoncom  # pylint: disable=import-error
         import wmi  # pylint: disable=import-error
 
         _have_wmi = True
-    except Exception:
+    else:
         _have_wmi = False
 
     def _config_domain(domain):

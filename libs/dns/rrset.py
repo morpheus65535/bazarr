@@ -26,7 +26,6 @@ import dns.renderer
 
 
 class RRset(dns.rdataset.Rdataset):
-
     """A DNS RRset (named rdataset).
 
     RRset inherits from Rdataset, and RRsets can be treated as

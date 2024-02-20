@@ -46,7 +46,6 @@ class Bitmap(dns.rdtypes.util.Bitmap):
 
 @dns.immutable.immutable
 class NSEC3(dns.rdata.Rdata):
-
     """NSEC3 record"""
 
     __slots__ = ["algorithm", "flags", "iterations", "salt", "next", "windows"]

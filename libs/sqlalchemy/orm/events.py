@@ -494,13 +494,13 @@ class InstanceEvents(event.Events[ClassManager[Any]]):
 
         .. seealso::
 
+            :ref:`mapped_class_load_events`
+
             :meth:`.InstanceEvents.init`
 
             :meth:`.InstanceEvents.refresh`
 
             :meth:`.SessionEvents.loaded_as_persistent`
-
-            :ref:`mapping_constructors`
 
         """
 
@@ -533,6 +533,8 @@ class InstanceEvents(event.Events[ClassManager[Any]]):
          attributes were populated.
 
         .. seealso::
+
+            :ref:`mapped_class_load_events`
 
             :meth:`.InstanceEvents.load`
 
@@ -576,6 +578,8 @@ class InstanceEvents(event.Events[ClassManager[Any]]):
          were populated.
 
         .. seealso::
+
+            :ref:`mapped_class_load_events`
 
             :ref:`orm_server_defaults`
 
@@ -725,9 +729,9 @@ class _EventsHold(event.RefCollection[_ET]):
 
 
 class _InstanceEventsHold(_EventsHold[_ET]):
-    all_holds: weakref.WeakKeyDictionary[
-        Any, Any
-    ] = weakref.WeakKeyDictionary()
+    all_holds: weakref.WeakKeyDictionary[Any, Any] = (
+        weakref.WeakKeyDictionary()
+    )
 
     def resolve(self, class_: Type[_O]) -> Optional[ClassManager[_O]]:
         return instrumentation.opt_manager_of_class(class_)

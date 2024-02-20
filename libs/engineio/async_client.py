@@ -493,7 +493,7 @@ class AsyncClient(base_client.BaseClient):
 
     async def _read_loop_polling(self):
         """Read packets by polling the Engine.IO server."""
-        while self.state == 'connected':
+        while self.state == 'connected' and self.write_loop_task:
             self.logger.info(
                 'Sending polling GET request to ' + self.base_url)
             r = await self._send_request(
@@ -520,8 +520,9 @@ class AsyncClient(base_client.BaseClient):
             for pkt in p.packets:
                 await self._receive_packet(pkt)
 
-        self.logger.info('Waiting for write loop task to end')
-        await self.write_loop_task
+        if self.write_loop_task:  # pragma: no branch
+            self.logger.info('Waiting for write loop task to end')
+            await self.write_loop_task
         if self.state == 'connected':
             await self._trigger_event('disconnect', run_async=False)
             try:
@@ -541,8 +542,10 @@ class AsyncClient(base_client.BaseClient):
                     timeout=self.ping_interval + self.ping_timeout)
                 if not isinstance(p.data, (str, bytes)):  # pragma: no cover
                     self.logger.warning(
-                        'Server sent unexpected packet %s data %s, aborting',
-                        str(p.type), str(p.data))
+                        'Server sent %s packet data %s, aborting',
+                        'close' if p.type in [aiohttp.WSMsgType.CLOSE,
+                                              aiohttp.WSMsgType.CLOSING]
+                        else str(p.type), str(p.data))
                     await self.queue.put(None)
                     break  # the connection is broken
                 p = p.data
@@ -571,8 +574,9 @@ class AsyncClient(base_client.BaseClient):
                 break
             await self._receive_packet(pkt)
 
-        self.logger.info('Waiting for write loop task to end')
-        await self.write_loop_task
+        if self.write_loop_task:  # pragma: no branch
+            self.logger.info('Waiting for write loop task to end')
+            await self.write_loop_task
         if self.state == 'connected':
             await self._trigger_event('disconnect', run_async=False)
             try:
@@ -630,7 +634,7 @@ class AsyncClient(base_client.BaseClient):
                 if r.status < 200 or r.status >= 300:
                     self.logger.warning('Unexpected status code %s in server '
                                         'response, aborting', r.status)
-                    await self._reset()
+                    self.write_loop_task = None
                     break
             else:
                 # websocket
