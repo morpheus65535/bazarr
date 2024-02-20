@@ -156,8 +156,14 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
       {
         type: "switch",
-        key: "unknown_as_english",
-        name: "Use subtitles with unknown info/language as english",
+        key: "unknown_as_fallback",
+        name: "Use subtitles with unknown info/language as fallback language",
+      },
+      {
+        type: "text",
+        key: "fallback_lang",
+        name: "Fallback language",
+        defaultValue: "en",
       },
     ],
     message:

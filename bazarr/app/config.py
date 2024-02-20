@@ -291,7 +291,8 @@ validators = [
     Validator('embeddedsubtitles.included_codecs', must_exist=True, default=[], is_type_of=list),
     Validator('embeddedsubtitles.hi_fallback', must_exist=True, default=False, is_type_of=bool),
     Validator('embeddedsubtitles.timeout', must_exist=True, default=600, is_type_of=int, gte=1),
-    Validator('embeddedsubtitles.unknown_as_english', must_exist=True, default=False, is_type_of=bool),
+    Validator('embeddedsubtitles.unknown_as_fallback', must_exist=True, default=False, is_type_of=bool),
+    Validator('embeddedsubtitles.fallback_lang', must_exist=True, default='en', is_type_of=str, cast=str),
 
     # karagarga section
     Validator('karagarga.username', must_exist=True, default='', is_type_of=str, cast=str),
@@ -448,6 +449,12 @@ if settings.general.wanted_search_frequency == 3:
 if settings.general.wanted_search_frequency_movie == 3:
     settings.general.wanted_search_frequency_movie = 6
 
+# backward compatibility embeddedsubtitles provider
+if hasattr(settings.embeddedsubtitles, 'unknown_as_english'):
+    if settings.embeddedsubtitles.unknown_as_english:
+        settings.embeddedsubtitles.unknown_as_fallback = True
+        settings.embeddedsubtitles.fallback_lang = 'en'
+    del settings.embeddedsubtitles.unknown_as_english
 # save updated settings to file
 write_config()
 
