@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
 interface Settings {
   general: Settings.General;
+  log: Settings.Log;
   proxy: Settings.Proxy;
   auth: Settings.Auth;
   subsync: Settings.Subsync;
@@ -80,6 +81,13 @@ declare namespace Settings {
     utf8_encode: boolean;
     wanted_search_frequency: number;
     wanted_search_frequency_movie: number;
+  }
+
+  interface Log {
+    include_filter: string;
+    exclude_filter: string;
+    ignore_case: boolean;
+    use_regex: boolean;
   }
 
   interface Proxy {

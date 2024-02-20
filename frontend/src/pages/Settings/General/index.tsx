@@ -177,6 +177,22 @@ const SettingsGeneralView: FunctionComponent = () => {
       <Section header="Logging">
         <Check label="Debug" settingKey="settings-general-debug"></Check>
         <Message>Debug logging should only be enabled temporarily</Message>
+        <Text
+          label="Include Filter"
+          settingKey="settings-log-include_filter"
+        ></Text>
+        <Text
+          label="Exclude Filter"
+          settingKey="settings-log-exclude_filter"
+        ></Text>
+        <Check
+          label="Use Regular Expressions (Regex)"
+          settingKey="settings-log-use_regex"
+        ></Check>
+        <Check
+          label="Ignore Case"
+          settingKey="settings-log-ignore_case"
+        ></Check>
       </Section>
       <Section header="Backups">
         <File
