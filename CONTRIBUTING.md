@@ -42,4 +42,4 @@ As we're using Git in the development process, you better disable automatic upda
 - All commits must have a meaningful commit message (ex.: Fixed issue with this, Improved process abc, Added input field to UI, etc.).
 - Fixes can be made directly to `development` branch but keep in mind that a pre-release with a beta versioning will be created every day a new push is made.
 - Features must be developed in dedicated feature branch and merged back to `development` branch using PR.
-- Once reviewed, your PR will be merged using Squash and Merge with a meaningful message.
+- Once reviewed, your PR will be merged by morpheus65535 using Squash and Merge with a meaningful message.
