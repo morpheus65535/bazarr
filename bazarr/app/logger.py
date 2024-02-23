@@ -91,10 +91,10 @@ def configure_logging(debug=False):
     warnings.simplefilter('ignore', category=PytzUsageWarning)
     # warnings.simplefilter('ignore', category=SAWarning)
 
-    if not debug:
-        log_level = "INFO"
+    if debug:
+        log_level = logging.DEBUG
     else:
-        log_level = "DEBUG"
+        log_level = logging.INFO
 
     logger.handlers = []
 
@@ -106,7 +106,7 @@ def configure_logging(debug=False):
         '%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(module)s:%(lineno)d) - %(message)s')
     ch.setFormatter(cf)
 
-    ch.setLevel(log_level)
+    ch.setLevel(logging.DEBUG)
     logger.addHandler(ch)
 
     # File Logging
@@ -120,7 +120,7 @@ def configure_logging(debug=False):
     f = FileHandlerFormatter('%(asctime)s|%(levelname)-8s|%(name)-32s|%(message)s|',
                              '%Y-%m-%d %H:%M:%S')
     fh.setFormatter(f)
-    fh.setLevel(log_level)
+    fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
 
     if debug:
