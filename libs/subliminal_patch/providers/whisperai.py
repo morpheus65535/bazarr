@@ -299,7 +299,7 @@ class WhisperAIProvider(Provider):
             
         # tell the user what we are about to do
         sub.release_info = f"{sub.task} {language_from_alpha3(sub.audio_language)} audio -> {language_from_alpha3(language.alpha3)} SRT"
-        logger.debug(f"Whisper ({video.original_path}): {sub.audio_language} -> {language.alpha3} [TASK: {sub.task}]")
+        logger.debug(f"Whisper query: ({video.original_path}): {sub.audio_language} -> {language.alpha3} [TASK: {sub.task}]")
 
         return sub
 
@@ -319,6 +319,8 @@ class WhisperAIProvider(Provider):
             subtitle.content = None
             return         
 
+        logger.debug(f'Audio stream length (in WAV format) is {len(out):,} bytes')
+
         if subtitle.task == "transcribe":
             output_language = subtitle.audio_language
         else:
@@ -334,6 +336,14 @@ class WhisperAIProvider(Provider):
                               
         endTime = time.time()
         elapsedTime = timedelta(seconds=round(endTime - startTime))
+
+        # for debugging, log if anything got returned
+        subtitle_length = len(r.content)
+        logger.debug(f'Returned subtitle length is {subtitle_length:,} bytes')
+        subtitle_length = min(subtitle_length, 1000)
+        if subtitle_length > 0:
+            logger.debug(f'First {subtitle_length} bytes of subtitle: {r.content[0:subtitle_length]}')
+
         logger.info(f'Completed WhisperAI {subtitle.task} to {language_from_alpha3(output_language)} in {elapsedTime} for {subtitle.video.original_path}')
 
         subtitle.content = r.content
