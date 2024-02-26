@@ -1,6 +1,7 @@
 # Bazarr dependencies
 subliminal_patch
 subzero
+py-pretty==1  # modified version to support Python 3
 
 # Bazarr modified dependencies
 signalr-client-threads==0.0.12  # Modified to work with Sonarr v3. Not used anymore with v4

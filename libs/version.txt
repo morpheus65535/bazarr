@@ -26,7 +26,6 @@ inflect==7.0.0
 jsonschema<=4.17.3  # newer version require other compiled dependency
 knowit==0.5.2
 Mako==1.3.2
-py-pretty==1
 pycountry==23.12.11
 pyrsistent==0.20.0
 pysubs2==1.6.1
