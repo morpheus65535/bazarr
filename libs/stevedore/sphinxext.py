@@ -33,8 +33,8 @@ def _simple_list(mgr):
         ext = mgr[name]
         doc = _get_docstring(ext.plugin) or '\n'
         summary = doc.splitlines()[0].strip()
-        yield('* %s -- %s' % (ext.name, summary),
-              ext.module_name)
+        yield ('* %s -- %s' % (ext.name, summary),
+               ext.module_name)
 
 
 def _detailed_list(mgr, over='', under='-', titlecase=False):

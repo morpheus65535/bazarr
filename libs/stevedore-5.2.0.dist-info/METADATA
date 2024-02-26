@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: stevedore
-Version: 5.1.0
+Version: 5.2.0
 Summary: Manage dynamic plugins for Python applications
 Home-page: https://docs.openstack.org/stevedore/latest/
 Author: OpenStack
@@ -12,6 +12,7 @@ Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.8
 Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3 :: Only
 Classifier: Programming Language :: Python :: Implementation :: CPython
 Classifier: Intended Audience :: Developers

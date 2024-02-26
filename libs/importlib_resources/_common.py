@@ -12,7 +12,7 @@ import itertools
 from typing import Union, Optional, cast
 from .abc import ResourceReader, Traversable
 
-from ._compat import wrap_spec
+from .future.adapters import wrap_spec
 
 Package = Union[types.ModuleType, str]
 Anchor = Package
@@ -27,6 +27,8 @@ def package_to_anchor(func):
     >>> files('a', 'b')
     Traceback (most recent call last):
     TypeError: files() takes from 0 to 1 positional arguments but 2 were given
+
+    Remove this compatibility in Python 3.14.
     """
     undefined = object()
 

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: importlib_resources
-Version: 6.1.1
+Version: 6.1.2
 Summary: Read resources from Python packages
 Home-page: https://github.com/python/importlib_resources
 Author: Barry Warsaw
@@ -27,17 +27,16 @@ Requires-Dist: pytest >=6 ; extra == 'testing'
 Requires-Dist: pytest-checkdocs >=2.4 ; extra == 'testing'
 Requires-Dist: pytest-cov ; extra == 'testing'
 Requires-Dist: pytest-enabler >=2.2 ; extra == 'testing'
-Requires-Dist: pytest-ruff ; extra == 'testing'
+Requires-Dist: pytest-ruff >=0.2.1 ; extra == 'testing'
 Requires-Dist: zipp >=3.17 ; extra == 'testing'
-Requires-Dist: pytest-black >=0.3.7 ; (platform_python_implementation != "PyPy") and extra == 'testing'
-Requires-Dist: pytest-mypy >=0.9.1 ; (platform_python_implementation != "PyPy") and extra == 'testing'
+Requires-Dist: pytest-mypy ; (platform_python_implementation != "PyPy") and extra == 'testing'
 
 .. image:: https://img.shields.io/pypi/v/importlib_resources.svg
    :target: https://pypi.org/project/importlib_resources
 
 .. image:: https://img.shields.io/pypi/pyversions/importlib_resources.svg
 
-.. image:: https://github.com/python/importlib_resources/workflows/tests/badge.svg
+.. image:: https://github.com/python/importlib_resources/actions/workflows/main.yml/badge.svg
    :target: https://github.com/python/importlib_resources/actions?query=workflow%3A%22tests%22
    :alt: tests
 
@@ -45,14 +44,10 @@ Requires-Dist: pytest-mypy >=0.9.1 ; (platform_python_implementation != "PyPy") 
     :target: https://github.com/astral-sh/ruff
     :alt: Ruff
 
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :target: https://github.com/psf/black
-   :alt: Code style: Black
-
 .. image:: https://readthedocs.org/projects/importlib-resources/badge/?version=latest
    :target: https://importlib-resources.readthedocs.io/en/latest/?badge=latest
 
-.. image:: https://img.shields.io/badge/skeleton-2023-informational
+.. image:: https://img.shields.io/badge/skeleton-2024-informational
    :target: https://blog.jaraco.com/skeleton
 
 .. image:: https://tidelift.com/badges/package/pypi/importlib-resources

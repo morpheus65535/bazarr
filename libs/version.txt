@@ -8,7 +8,7 @@ attrs==23.2.0
 blinker==1.7.0
 charset-normalizer==3.3.2
 deep-translator==1.11.4
-dogpile.cache==1.3.1
+dogpile.cache==1.3.2
 dynaconf==3.2.4
 fese==0.2.7
 ffsubsync==0.4.25
@@ -62,11 +62,11 @@ soupsieve==2.3.2.post1
 # Required-by: ffsubsync
 auditok<=0.1.5  # do not upgrade unless ffsubsync requirements.txt change
 ffmpeg-python==0.2.0
-future==0.18.3
+future==1.0.0
 rich==13.7.0
 srt==3.5.3
 tqdm==4.66.2
-typing_extensions==4.9.0
+typing_extensions==4.10.0
 
 # Required-by: flask
 click==8.1.7
@@ -76,7 +76,7 @@ werkzeug==3.0.1
 
 # Required-by: guessit
 python-dateutil==2.8.2
-importlib_resources==6.1.1
+importlib_resources==6.1.2
 rebulk==3.2.0
 zipp==3.17.0
 
@@ -106,7 +106,7 @@ babelfish==0.6.0
 beautifulsoup4==4.12.3
 chardet==5.2.0
 pysrt==1.1.2
-stevedore==5.1.0
+stevedore==5.2.0
 
 # Required-by: subliminal_patch
 cloudscraper==1.2.71
@@ -127,7 +127,7 @@ webencodings==0.5.1
 
 # Required-by: subzero
 backports.functools-lru-cache==2.0.0
-fcache==0.5.1
+fcache==0.5.2
 json_tricks==3.17.3
 tld==0.13
 platformdirs==4.2.0

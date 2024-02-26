@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: fcache
-Version: 0.5.1
+Version: 0.5.2
 Summary: a dictionary-like, file-based cache module for Python
 Project-URL: Documentation, https://tsroten.github.io/fcache
 Project-URL: Changes, https://tsroten.github.io/fcache/history.html
@@ -69,8 +69,6 @@ To install fcache, use pip:
 .. code:: bash
 
     $ pip install fcache
-
-fcache also requires the `appdirs <https://github.com/ActiveState/appdirs>`_ package.
 
 Documentation
 -------------

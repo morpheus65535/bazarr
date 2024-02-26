@@ -4,11 +4,12 @@ import itertools
 import pathlib
 import operator
 import re
+import warnings
 
 from . import abc
 
 from ._itertools import only
-from ._compat import ZipPath, ensure_traversable
+from .compat.py39 import ZipPath
 
 
 def remove_duplicates(items):
@@ -64,7 +65,7 @@ class MultiplexedPath(abc.Traversable):
     """
 
     def __init__(self, *paths):
-        self._paths = list(map(ensure_traversable, remove_duplicates(paths)))
+        self._paths = list(map(_ensure_traversable, remove_duplicates(paths)))
         if not self._paths:
             message = 'MultiplexedPath must contain at least one path'
             raise FileNotFoundError(message)
@@ -155,7 +156,10 @@ class NamespaceReader(abc.TraversableResources):
     def _resolve_zip_path(path_str):
         for match in reversed(list(re.finditer(r'[\\/]', path_str))):
             with contextlib.suppress(
-                FileNotFoundError, IsADirectoryError, PermissionError
+                FileNotFoundError,
+                IsADirectoryError,
+                NotADirectoryError,
+                PermissionError,
             ):
                 inner = path_str[match.end() :].replace('\\', '/') + '/'
                 yield ZipPath(path_str[: match.start()], inner.lstrip('/'))
@@ -170,3 +174,21 @@ class NamespaceReader(abc.TraversableResources):
 
     def files(self):
         return self.path
+
+
+def _ensure_traversable(path):
+    """
+    Convert deprecated string arguments to traversables (pathlib.Path).
+
+    Remove with Python 3.15.
+    """
+    if not isinstance(path, str):
+        return path
+
+    warnings.warn(
+        "String arguments are deprecated. Pass a Traversable instead.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+
+    return pathlib.Path(path)

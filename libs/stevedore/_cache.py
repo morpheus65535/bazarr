@@ -144,7 +144,7 @@ class Cache:
         # target directory or when python executable is under /tmp (this is the
         # case when executed from ansible)
         if any([os.path.isfile(os.path.join(self._dir, '.disable')),
-                sys.executable[0:4] == '/tmp']):
+                sys.executable[0:4] == '/tmp']):  # nosec B108
             self._disable_caching = True
 
     def _get_data_for_path(self, path):

@@ -139,8 +139,7 @@ class FileCache(MutableMapping):
         """Create the write buffer and cache directory."""
         if not self._sync and not hasattr(self, "_buffer"):
             self._buffer = {}
-        if not os.path.exists(self.cache_dir):
-            os.makedirs(self.cache_dir)
+        os.makedirs(self.cache_dir, exist_ok=True)
 
     def clear(self):
         """Remove all items from the write buffer and cache.
