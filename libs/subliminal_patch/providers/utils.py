@@ -18,6 +18,8 @@ from subliminal_patch.subtitle import guess_matches
 
 from ._agent_list import FIRST_THOUSAND_OR_SO_USER_AGENTS
 
+USER_AGENTS = FIRST_THOUSAND_OR_SO_USER_AGENTS
+
 logger = logging.getLogger(__name__)
 
 

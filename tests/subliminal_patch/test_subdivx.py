@@ -35,14 +35,6 @@ def test_list_subtitles_movie_with_one_difference_year(movies):
         assert provider.list_subtitles(item, {Language("spa", "MX")})
 
 
-def test_handle_multi_page_search(episodes):
-    with SubdivxSubtitlesProvider() as provider:
-        for _ in provider._handle_multi_page_search(
-            "Game Of Thrones", episodes["got_s03e10"]
-        ):
-            pass
-
-
 @pytest.mark.parametrize(
     "episode_key,expected", [("breaking_bad_s01e01", 15), ("inexistent", 0)]
 )
@@ -106,7 +98,7 @@ def test_download_subtitle(movies):
         "Dune",
         "",
         "",
-        "https://www.subdivx.com/bajar.php?id=631101&u=9",
+        "https://www.subdivx.com/descargar.php?id=631101",
     )
     with SubdivxSubtitlesProvider() as provider:
         provider.download_subtitle(subtitle)
@@ -124,7 +116,7 @@ def test_download_subtitle_episode_pack(episodes):
         "Breaking Bad S01E01-07",
         "Son los del torrent que vienen Formato / Dimensiones 624x352 / Tamaño 351 MB -Incluye los Torrents-",
         "",
-        "https://www.subdivx.com/bajar.php?id=365610&u=7",
+        "https://www.subdivx.com/descargar.php?id=365610",
     )
     with SubdivxSubtitlesProvider() as provider:
         provider.download_subtitle(subtitle)
@@ -168,7 +160,7 @@ def test_subtitle_matches(video):
             "otras seguramente, gracias por sus comentarios, saludos."
         ),
         "tolobich",
-        "https://www.subdivx.com/bajar.php?id=635101&u=9",
+        "https://www.subdivx.com/descargar.php?id=635101",
     )
 
     matches = subtitle.get_matches(video)

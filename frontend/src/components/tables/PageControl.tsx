@@ -1,6 +1,6 @@
 import { useIsLoading } from "@/contexts";
 import { Group, Pagination, Text } from "@mantine/core";
-import { FunctionComponent } from "react";
+import { FunctionComponent, useEffect } from "react";
 interface Props {
   count: number;
   index: number;
@@ -21,6 +21,11 @@ const PageControl: FunctionComponent<Props> = ({
   const end = Math.min(size * (index + 1), total);
 
   const isLoading = useIsLoading();
+
+  // Jump to first page if total page count changes
+  useEffect(() => {
+    goto(0);
+  }, [total, goto]);
 
   return (
     <Group p={16} position="apart">

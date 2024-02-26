@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
+from json import JSONDecodeError
 import logging
+import random
 import re
-import time
 
 from requests import Session
 from subliminal import __short_version__
-from subliminal.providers import ParserBeautifulSoup
 from subliminal.video import Episode
 from subliminal.video import Movie
 from subliminal_patch.exceptions import APIThrottled
@@ -15,6 +15,7 @@ from subliminal_patch.providers import Provider
 from subliminal_patch.providers.utils import get_archive_from_bytes
 from subliminal_patch.providers.utils import get_subtitle_from_archive
 from subliminal_patch.providers.utils import update_matches
+from subliminal_patch.providers.utils import USER_AGENTS
 from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
 
@@ -40,9 +41,7 @@ _SEASON_NUM_RE = re.compile(
     r"(s|(season|temporada)\s)(?P<x>\d{1,2})", flags=re.IGNORECASE
 )
 _EPISODE_YEAR_RE = re.compile(r"\((?P<x>(19\d{2}|20[0-2]\d))\)")
-_UNSUPPORTED_RE = re.compile(
-    r"(\)?\d{4}\)?|[sS]\d{1,2})\s.{,3}(extras|forzado(s)?|forced)", flags=re.IGNORECASE
-)
+_UNSUPPORTED_RE = re.compile(r"(extras|forzado(s)?|forced)\s?$", flags=re.IGNORECASE)
 
 logger = logging.getLogger(__name__)
 
@@ -109,95 +108,122 @@ class SubdivxSubtitlesProvider(Provider):
     multi_result_throttle = 2
 
     def __init__(self):
-        self.session = None
+        self.session = Session()
 
     def initialize(self):
-        self.session = Session()
-        self.session.headers["User-Agent"] = f"Subliminal/{__short_version__}"
+        # self.session.headers["User-Agent"] = f"Subliminal/{__short_version__}"
+        self.session.headers["User-Agent"] = random.choice(USER_AGENTS)
         self.session.cookies.update({"iduser_cookie": _IDUSER_COOKIE})
 
     def terminate(self):
         self.session.close()
 
-    def query(self, video, languages):
+    def _query(self, video, languages):
         subtitles = []
 
-        if isinstance(video, Episode):
+        episode = isinstance(video, Episode)
+
+        titles = [video.series if episode else video.title]
+
+        try:
+            titles.extend(video.alternative_titles)
+        except:
+            pass
+        else:
+            titles = titles[:5]  # limit alt titles
+
+        logger.debug("Titles to look at: %s", titles)
+
+        if episode:
             # TODO: cache pack queries (TV SHOW S01).
             # Too many redundant server calls.
+            for title in titles:
+                for query in (
+                    f"{title} S{video.season:02}E{video.episode:02}",
+                    f"{title} S{video.season:02}",
+                ):
+                    subtitles += self._query_results(query, video)
 
-            for query in (
-                f"{video.series} S{video.season:02}E{video.episode:02}",
-                f"{video.series} S{video.season:02}",
-            ):
-                subtitles += self._handle_multi_page_search(query, video)
-
-            # Try only with series title
-            if len(subtitles) <= 5:
-                subtitles += self._handle_multi_page_search(video.series, video, 1)
-
-            # Try with episode title as last resort
-            if not subtitles and video.title != video.series:
-                subtitles += self._handle_multi_page_search(video.title, video, 1)
-        else:
-            for query in (video.title, f"{video.title} ({video.year})"):
-                subtitles += self._handle_multi_page_search(query, video)
-                # Second query is a fallback
-                if subtitles:
+                # Try only with series title
+                if len(subtitles) <= 5:
+                    subtitles += self._query_results(title, video)
+                else:
                     break
+
+                # Try with episode title as last resort
+                if not subtitles and video.title and video.title != title:
+                    subtitles += self._query_results(video.title, video)
+
+        else:
+            for title in titles:
+                for query in (title, f"{title} ({video.year})"):
+                    subtitles += self._query_results(query, video)
+                    # Second query is a fallback
+                    if subtitles:
+                        break
 
         return subtitles
 
-    def _handle_multi_page_search(self, query, video, max_loops=2):
-        params = {
-            "buscar2": query,
-            "accion": "5",
-            "masdesc": "",
-            "subtitulos": "1",
-            "realiza_b": "1",
-            "pg": 1,
-        }
+    def _query_results(self, query, video):
+        search_link = f"{_SERVER_URL}/inc/ajax.php"
+
+        payload = {"tabla": "resultados", "filtros": "", "buscar": query}
+
         logger.debug("Query: %s", query)
 
-        loops = 1
-        max_loops_not_met = True
+        response = self.session.post(search_link, data=payload)
 
-        while max_loops_not_met:
-            max_loops_not_met = loops < max_loops
-
-            page_subtitles, last_page = self._get_page_subtitles(params, video)
-
-            logger.debug("Yielding %d subtitles [loop #%d]", len(page_subtitles), loops)
-            yield from page_subtitles
-
-            if last_page:
-                logger.debug("Last page for '%s' query. Breaking loop", query)
-                break
-
-            loops += 1
-
-            params["pg"] += 1  # search next page
-            time.sleep(self.multi_result_throttle)
-
-        if not max_loops_not_met:
-            logger.debug("Max loops limit exceeded (%d)", max_loops)
-
-    def _get_page_subtitles(self, params, video):
-        search_link = f"{_SERVER_URL}/index.php"
-        response = self.session.get(
-            search_link, params=params, allow_redirects=True, timeout=20
-        )
-
-        try:
-            page_subtitles, last_page = self._parse_subtitles_page(video, response)
-        except Exception as error:
-            logger.error(f"Error parsing subtitles list: {error}")
+        if response.status_code == 500:
+            logger.debug(
+                "Error 500 (probably bad encoding of query causing issue on provider side): %s",
+                query,
+            )
             return []
 
-        return page_subtitles, last_page
+        # Ensure it was successful
+        response.raise_for_status()
+
+        # Processing the JSON result
+        subtitles = []
+        try:
+            data = response.json()
+        except JSONDecodeError:
+            logger.debug("JSONDecodeError: %s", response.content)
+            return []
+
+        title_checker = _check_episode if isinstance(video, Episode) else _check_movie
+
+        # Iterate over each subtitle in the response
+        for item in data["aaData"]:
+            id = item["id"]
+            page_link = f"{_SERVER_URL}/descargar.php?id={id}"
+            title = _clean_title(item["titulo"])
+            description = item["descripcion"]
+            uploader = item["nick"]
+
+            download_url = f"{_SERVER_URL}/descargar.php?id={id}"
+
+            if _UNSUPPORTED_RE.search(title) is not None:
+                logger.debug("Skipping unsupported subtitles: %s", title)
+                continue
+
+            if not title_checker(video, title):
+                continue
+
+            spain = _SPANISH_RE.search(description.lower()) is not None
+            language = Language.fromalpha2("es") if spain else Language("spa", "MX")
+
+            subtitle = self.subtitle_class(
+                language, video, page_link, title, description, uploader, download_url
+            )
+
+            logger.debug("Found subtitle %r", subtitle)
+            subtitles.append(subtitle)
+
+        return subtitles
 
     def list_subtitles(self, video, languages):
-        return self.query(video, languages)
+        return self._query(video, languages)
 
     def download_subtitle(self, subtitle):
         # download the subtitle
@@ -220,61 +246,9 @@ class SubdivxSubtitlesProvider(Provider):
         if isinstance(subtitle.video, Episode):
             episode = subtitle.video.episode
 
+        logger.debug("Episode number: %s", episode)
+
         subtitle.content = get_subtitle_from_archive(archive, episode=episode)
-
-    def _parse_subtitles_page(self, video, response):
-        subtitles = []
-
-        page_soup = ParserBeautifulSoup(
-            response.content.decode("utf-8", "ignore"), ["lxml", "html.parser"]
-        )
-        title_soups = page_soup.find_all("div", {"id": "menu_detalle_buscador"})
-        body_soups = page_soup.find_all("div", {"id": "buscador_detalle"})
-
-        title_checker = _check_episode if isinstance(video, Episode) else _check_movie
-
-        for subtitle in range(0, len(title_soups)):
-            title_soup, body_soup = title_soups[subtitle], body_soups[subtitle]
-            # title
-            title = _clean_title(title_soup.find("a").text)
-
-            if _UNSUPPORTED_RE.search(title):
-                logger.debug("Skipping unsupported subtitles: %s", title)
-                continue
-
-            if not title_checker(video, title):
-                continue
-
-            # Data
-            datos = body_soup.find("div", {"id": "buscador_detalle_sub_datos"}).text
-            # Ignore multi-disc and non-srt subtitles
-            if not any(item in datos for item in ("Cds:</b> 1", "SubRip")):
-                continue
-
-            # description
-            sub_details = body_soup.find("div", {"id": "buscador_detalle_sub"}).text
-            description = sub_details.replace(",", " ")
-
-            # language
-            spain = (
-                "/pais/7.gif" in datos
-                or _SPANISH_RE.search(description.lower()) is not None
-            )
-            language = Language.fromalpha2("es") if spain else Language("spa", "MX")
-
-            # uploader
-            uploader = body_soup.find("a", {"class": "link1"}).text
-            download_url = _get_download_url(body_soup)
-            page_link = title_soup.find("a")["href"]
-
-            subtitle = self.subtitle_class(
-                language, video, page_link, title, description, uploader, download_url
-            )
-
-            logger.debug("Found subtitle %r", subtitle)
-            subtitles.append(subtitle)
-
-        return subtitles, len(title_soups) < 100
 
 
 def _clean_title(title):
@@ -286,17 +260,6 @@ def _clean_title(title):
         title = re.sub(og, new, title, flags=re.IGNORECASE)
 
     return title
-
-
-def _get_download_url(data):
-    try:
-        return [
-            a_.get("href")
-            for a_ in data.find_all("a")
-            if "bajar.php" in a_.get("href", "n/a")
-        ][0]
-    except IndexError:
-        return None
 
 
 def _check_episode(video, title):

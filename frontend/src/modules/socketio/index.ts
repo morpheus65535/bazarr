@@ -27,7 +27,7 @@ class SocketIOClient {
     this.socket.on("data", this.onEvent.bind(this));
 
     this.events = [];
-    this.debounceReduce = debounce(this.reduce, 20);
+    this.debounceReduce = debounce(this.reduce, 3);
     this.reducers = [];
 
     onlineManager.setOnline(false);

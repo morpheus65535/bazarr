@@ -301,17 +301,11 @@ class Scheduler:
                 name='Search for Missing Movies Subtitles', replace_existing=True)
 
     def __upgrade_subtitles_task(self):
-        if settings.general.upgrade_subs and \
-                (settings.general.use_sonarr or settings.general.use_radarr):
+        if settings.general.use_sonarr or settings.general.use_radarr:
             self.aps_scheduler.add_job(
                 upgrade_subtitles, IntervalTrigger(hours=int(settings.general.upgrade_frequency)), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='upgrade_subtitles',
                 name='Upgrade Previously Downloaded Subtitles', replace_existing=True)
-        else:
-            try:
-                self.aps_scheduler.remove_job(job_id='upgrade_subtitles')
-            except JobLookupError:
-                pass
 
     def __randomize_interval_task(self):
         for job in self.aps_scheduler.get_jobs():

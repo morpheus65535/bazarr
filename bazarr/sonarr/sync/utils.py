@@ -166,3 +166,32 @@ def get_episodesFiles_from_sonarr_api(apikey_sonarr, series_id=None, episode_fil
             return r.json()
         else:
             return
+
+
+def get_history_from_sonarr_api(apikey_sonarr, episode_id):
+    url_sonarr_api_history = f"{url_api_sonarr()}history?eventType=1&episodeId={episode_id}&apikey={apikey_sonarr}"
+
+    try:
+        r = requests.get(url_sonarr_api_history, timeout=int(settings.sonarr.http_timeout), verify=False,
+                         headers=headers)
+        r.raise_for_status()
+    except requests.exceptions.HTTPError:
+        logging.exception("BAZARR Error trying to get history from Sonarr. Http error.")
+        return
+    except requests.exceptions.ConnectionError:
+        logging.exception("BAZARR Error trying to get history from Sonarr. Connection Error.")
+        return
+    except requests.exceptions.Timeout:
+        logging.exception("BAZARR Error trying to get history from Sonarr. Timeout Error.")
+        return
+    except requests.exceptions.RequestException:
+        logging.exception("BAZARR Error trying to get history from Sonarr.")
+        return
+    except Exception as e:
+        logging.exception(f"Exception raised while getting history from Sonarr API: {e}")
+        return
+    else:
+        if r.status_code == 200:
+            return r.json()
+        else:
+            return

@@ -35,7 +35,13 @@ class SubSyncer:
              no_fix_framerate=settings.subsync.no_fix_framerate, gss=settings.subsync.gss):
         self.reference = video_path
         self.srtin = srt_path
-        self.srtout = f'{os.path.splitext(self.srtin)[0]}.synced.srt'
+        if self.srtin.casefold().endswith('.ass'):
+            # try to preserve original subtitle style
+            # ffmpeg will be able to handle this automatically as long as it has the libass filter
+            extension = '.ass'
+        else:
+            extension = '.srt'
+        self.srtout = f'{os.path.splitext(self.srtin)[0]}.synced{extension}'
         self.args = None
 
         ffprobe_exe = get_binary('ffprobe')

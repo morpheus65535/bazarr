@@ -65,6 +65,7 @@ export const URLTestButton: FunctionComponent<{
 export * from "./Card";
 export * from "./Layout";
 export { default as Layout } from "./Layout";
+export { default as LayoutModal } from "./LayoutModal";
 export * from "./Message";
 export * from "./Section";
 export * from "./collapse";
