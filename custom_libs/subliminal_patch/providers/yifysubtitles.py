@@ -123,7 +123,7 @@ class YifySubtitlesProvider(Provider):
         rating = int(td[0].text)
         sub_lang = td[1].text
         release = re.sub(r'^\nsubtitle ', '', td[2].text)
-        page_link = td[2].find('a').get('href')
+        page_link = urljoin(server_url, td[2].find('a').get('href'))
         hi = True if td[3].find('span', {'class': 'hi-subtitle'}) else False
         uploader = td[4].text
 

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
+from json import JSONDecodeError
 import logging
+import random
 import re
 
 from requests import Session
@@ -13,6 +15,7 @@ from subliminal_patch.providers import Provider
 from subliminal_patch.providers.utils import get_archive_from_bytes
 from subliminal_patch.providers.utils import get_subtitle_from_archive
 from subliminal_patch.providers.utils import update_matches
+from subliminal_patch.providers.utils import USER_AGENTS
 from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
 
@@ -38,9 +41,7 @@ _SEASON_NUM_RE = re.compile(
     r"(s|(season|temporada)\s)(?P<x>\d{1,2})", flags=re.IGNORECASE
 )
 _EPISODE_YEAR_RE = re.compile(r"\((?P<x>(19\d{2}|20[0-2]\d))\)")
-_UNSUPPORTED_RE = re.compile(
-    r"(\)?\d{4}\)?|[sS]\d{1,2})\s.{,3}(extras|forzado(s)?|forced)", flags=re.IGNORECASE
-)
+_UNSUPPORTED_RE = re.compile(r"(extras|forzado(s)?|forced)\s?$", flags=re.IGNORECASE)
 
 logger = logging.getLogger(__name__)
 
@@ -78,16 +79,12 @@ class SubdivxSubtitle(Subtitle):
         # episode
         if isinstance(video, Episode):
             # already matched within provider
-            matches.update(["title", "series", "season", "episode"])
-            if str(video.year) in self.release_info:
-                matches.update(["year"])
+            matches.update(["title", "series", "season", "episode", "year"])
 
         # movie
         elif isinstance(video, Movie):
             # already matched within provider
-            matches.update(["title"])
-            if str(video.year) in self.release_info:
-                matches.update(["year"])
+            matches.update(["title", "year"])
 
         update_matches(matches, video, self._description)
 
@@ -111,85 +108,76 @@ class SubdivxSubtitlesProvider(Provider):
     multi_result_throttle = 2
 
     def __init__(self):
-        self.session = None
+        self.session = Session()
 
     def initialize(self):
-        self.session = Session()
-        self.session.headers["User-Agent"] = f"Subliminal/{__short_version__}"
+        # self.session.headers["User-Agent"] = f"Subliminal/{__short_version__}"
+        self.session.headers["User-Agent"] = random.choice(USER_AGENTS)
         self.session.cookies.update({"iduser_cookie": _IDUSER_COOKIE})
 
     def terminate(self):
         self.session.close()
 
-    def query(self, video, languages):
+    def _query(self, video, languages):
         subtitles = []
 
-        # Determine if the video is a movie or a TV episode and set the search accordingly
-        
-        if isinstance(video, Episode):
-            # For TV episodes, use alternative_series if available
-            titles_to_search = [video.series] + getattr(video, 'alternative_series', [])
+        episode = isinstance(video, Episode)
 
+        titles = [video.series if episode else video.title]
+
+        try:
+            titles.extend(video.alternative_titles)
+        except:
+            pass
+        else:
+            titles = titles[:5]  # limit alt titles
+
+        logger.debug("Titles to look at: %s", titles)
+
+        if episode:
             # TODO: cache pack queries (TV SHOW S01).
             # Too many redundant server calls.
+            for title in titles:
+                for query in (
+                    f"{title} S{video.season:02}E{video.episode:02}",
+                    f"{title} S{video.season:02}",
+                ):
+                    subtitles += self._query_results(query, video)
 
-            # For TV episodes, construct queries with each main and alternative series title
-            for title in titles_to_search:
-                # Perform the existing search logic for each title
-                subtitles += self._handle_search(f"{title} S{video.season:02}E{video.episode:02}", video)
+                # Try only with series title
+                if len(subtitles) <= 5:
+                    subtitles += self._query_results(title, video)
+                else:
+                    break
 
-            # If nothing found under SxxExx, try with only season number
-            if not subtitles:
-                for title in titles_to_search:
-                    # Perform the existing search logic for each title
-                    subtitles += self._handle_search(f"{title} S{video.season:02}", video)
-
-            # If still nothing found, try with only series title (each main and alternative series title)
-            if not subtitles:
-                for title in titles_to_search:
-                    subtitles += self._handle_search(title, video, 1)
-
-            # Try with episode title as last resort
-            if not subtitles and video.title != video.series:
-                subtitles += self._handle_search(video.title, video, 1)
-
-            # Additional logic for handling insufficient subtitle results can go here
+                # Try with episode title as last resort
+                if not subtitles and video.title and video.title != title:
+                    subtitles += self._query_results(video.title, video)
 
         else:
-            # For movies, use alternative_titles if available
-            titles_to_search = [video.title] + getattr(video, 'alternative_titles', [])
-
-            # For movies, first search with the title (each main and alternative movie title)
-            for title in titles_to_search:
-                subtitles += self._handle_search(title, video)
-
-            # Then, if available, search with title and year
-            if video.year:
-                for title in titles_to_search:
-                    subtitles += self._handle_search(f"{title} ({video.year})", video)
-
-            # Additional logic for handling insufficient subtitle results can go here
+            for title in titles:
+                for query in (title, f"{title} ({video.year})"):
+                    subtitles += self._query_results(query, video)
+                    # Second query is a fallback
+                    if subtitles:
+                        break
 
         return subtitles
 
-    def _handle_search(self, query, video):
-        # URL for the POST request
+    def _query_results(self, query, video):
         search_link = f"{_SERVER_URL}/inc/ajax.php"
 
-        # Payload for POST
-        payload = {
-            'tabla': 'resultados',
-            'filtros': '',  # Not used now
-            'buscar': query
-        }
-    
+        payload = {"tabla": "resultados", "filtros": "", "buscar": query}
+
         logger.debug("Query: %s", query)
-    
-        # Make the POST request
+
         response = self.session.post(search_link, data=payload)
-    
+
         if response.status_code == 500:
-            logger.debug("Error 500 (probably bad encoding of query causing issue on provider side): %s", query)
+            logger.debug(
+                "Error 500 (probably bad encoding of query causing issue on provider side): %s",
+                query,
+            )
             return []
 
         # Ensure it was successful
@@ -197,32 +185,45 @@ class SubdivxSubtitlesProvider(Provider):
 
         # Processing the JSON result
         subtitles = []
-        data = response.json()
+        try:
+            data = response.json()
+        except JSONDecodeError:
+            logger.debug("JSONDecodeError: %s", response.content)
+            return []
+
+        title_checker = _check_episode if isinstance(video, Episode) else _check_movie
 
         # Iterate over each subtitle in the response
-        for item in data['aaData']:
-            # Extract the relevant information
-            id_subtitulo = item['id']
-            # There is no direct link to view sub details, this is just the download link
-            page_link = f"{_SERVER_URL}/descargar.php?id={id_subtitulo}"
-            title = item['titulo']
-            description = item['descripcion']
-            uploader = item['nick']
+        for item in data["aaData"]:
+            id = item["id"]
+            page_link = f"{_SERVER_URL}/descargar.php?id={id}"
+            title = _clean_title(item["titulo"])
+            description = item["descripcion"]
+            uploader = item["nick"]
 
-            # Build the download URL - assuming RAR for now
-            download_url = f"{_SERVER_URL}/descargar.php?id={id_subtitulo}"
+            download_url = f"{_SERVER_URL}/descargar.php?id={id}"
 
-            language = Language('spa', 'MX')  # Subdivx is always latin spanish
+            if _UNSUPPORTED_RE.search(title) is not None:
+                logger.debug("Skipping unsupported subtitles: %s", title)
+                continue
 
-            # Create the SubdivxSubtitle instance
-            subtitle = self.subtitle_class(language, video, page_link, title, description, uploader, download_url)
+            if not title_checker(video, title):
+                continue
 
+            spain = _SPANISH_RE.search(description.lower()) is not None
+            language = Language.fromalpha2("es") if spain else Language("spa", "MX")
+
+            subtitle = self.subtitle_class(
+                language, video, page_link, title, description, uploader, download_url
+            )
+
+            logger.debug("Found subtitle %r", subtitle)
             subtitles.append(subtitle)
 
-        return subtitles  # The JSON contains all subs, not paged
+        return subtitles
 
     def list_subtitles(self, video, languages):
-        return self.query(video, languages)
+        return self._query(video, languages)
 
     def download_subtitle(self, subtitle):
         # download the subtitle
@@ -244,6 +245,8 @@ class SubdivxSubtitlesProvider(Provider):
         episode = None
         if isinstance(subtitle.video, Episode):
             episode = subtitle.video.episode
+
+        logger.debug("Episode number: %s", episode)
 
         subtitle.content = get_subtitle_from_archive(archive, episode=episode)
 
@@ -267,22 +270,16 @@ def _check_episode(video, title):
     # Only check if both video and Subdivx's title have year metadata
     if year is not None and video.year:
         year = int(year.group("x"))
-        # Tolerance of 1 year difference
+        # Tolerancy of 1 year difference
         if abs(year - (video.year or 0)) > 1:
             logger.debug("Series year doesn't match: %s", title)
             return False
 
-    # Prepare a list of all series names to check against (include alternative series names)
-    series_names = [video.series] + getattr(video, 'alternative_series', [])
-    
-    # Normalize the title for comparison
-    normalized_title = _clean_title(title).lower()
-
-    # Check if the normalized title contains any of the series names (main or alternative)
-    series_clean_match = any(series_name.lower() in normalized_title for series_name in series_names)
-
     # Include matches where the episode title is present
-    if series_clean_match and (video.title or "").lower() in title.lower():
+    if (
+        video.series.lower() in title.lower()
+        and (video.title or "").lower() in title.lower()
+    ):
         logger.debug("Episode title found in title: %s ~ %s", video.title, title)
         return True
 
@@ -303,7 +300,7 @@ def _check_episode(video, title):
 
     distance = abs(len(series_title) - len(video.series))
 
-    series_matched = (distance < 4 and ep_matches) or series_clean_match
+    series_matched = distance < 4 and ep_matches
 
     logger.debug(
         "Series matched? %s [%s -> %s] [title distance: %d]",
