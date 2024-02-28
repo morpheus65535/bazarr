@@ -26,11 +26,11 @@ export type UsePaginationQueryResult<T extends object> = UseQueryResult<
 
 export function usePaginationQuery<
   TObject extends object = object,
-  TQueryKey extends QueryKey = QueryKey
+  TQueryKey extends QueryKey = QueryKey,
 >(
   queryKey: TQueryKey,
   queryFn: RangeQuery<TObject>,
-  cacheIndividual = true
+  cacheIndividual = true,
 ): UsePaginationQueryResult<TObject> {
   const client = useQueryClient();
 
@@ -59,7 +59,7 @@ export function usePaginationQuery<
           });
         }
       },
-    }
+    },
   );
 
   const { data } = results;
@@ -73,7 +73,7 @@ export function usePaginationQuery<
         setIndex(idx);
       }
     },
-    [pageCount]
+    [pageCount],
   );
 
   const [isPageLoading, setIsPageLoading] = useState(false);

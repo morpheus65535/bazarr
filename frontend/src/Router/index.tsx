@@ -309,7 +309,7 @@ function useRoutes(): CustomRouteObject[] {
       data?.announcements,
       radarr,
       sonarr,
-    ]
+    ],
   );
 }
 
@@ -321,7 +321,7 @@ export const Router: FunctionComponent = () => {
   // TODO: Move this outside the function component scope
   const router = useMemo(
     () => createBrowserRouter(routes, { basename: Environment.baseUrl }),
-    [routes]
+    [routes],
   );
 
   return (

@@ -8,7 +8,7 @@ describe("Settings layout", () => {
     render(
       <Layout name="Test Settings">
         <Text>Value</Text>
-      </Layout>
+      </Layout>,
     );
   });
 
@@ -16,7 +16,7 @@ describe("Settings layout", () => {
     render(
       <Layout name="Test Settings">
         <Text>Value</Text>
-      </Layout>
+      </Layout>,
     );
 
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();

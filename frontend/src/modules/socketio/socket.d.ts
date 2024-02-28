@@ -32,7 +32,7 @@ declare namespace SocketIO {
   type ReducerGroup<
     E extends EventType,
     U extends PayloadType | undefined,
-    D = U
+    D = U,
   > = ValueOf<{
     [P in E]: {
       key: P;

@@ -63,7 +63,7 @@ export const ProviderView: FunctionComponent = () => {
         });
       }
     },
-    [modals, providers, settings, staged, update]
+    [modals, providers, settings, staged, update],
   );
 
   const cards = useMemo(() => {
@@ -171,7 +171,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
         modals.closeAll();
       }
     },
-    [info, enabledProviders, modals]
+    [info, enabledProviders, modals],
   );
 
   const canSave = info !== null;
@@ -192,14 +192,14 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
       ProviderList.filter(
         (v) =>
           enabledProviders?.find((p) => p === v.key && p !== info?.key) ===
-          undefined
+          undefined,
       ),
-    [info?.key, enabledProviders]
+    [info?.key, enabledProviders],
   );
 
   const options = useSelectorOptions(
     availableOptions,
-    (v) => v.name ?? capitalize(v.key)
+    (v) => v.name ?? capitalize(v.key),
   );
 
   const inputs = useMemo(() => {
@@ -223,7 +223,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
               key={BuildKey(itemKey, key)}
               label={label}
               settingKey={`settings-${itemKey}-${key}`}
-            ></Text>
+            ></Text>,
           );
           return;
         case "password":
@@ -232,7 +232,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
               key={BuildKey(itemKey, key)}
               label={label}
               settingKey={`settings-${itemKey}-${key}`}
-            ></Password>
+            ></Password>,
           );
           return;
         case "switch":
@@ -242,7 +242,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
               inline
               label={label}
               settingKey={`settings-${itemKey}-${key}`}
-            ></Check>
+            ></Check>,
           );
           return;
         case "select":
@@ -252,7 +252,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
               label={label}
               settingKey={`settings-${itemKey}-${key}`}
               options={options}
-            ></GlobalSelector>
+            ></GlobalSelector>,
           );
           return;
         case "chips":
@@ -261,7 +261,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
               key={key}
               label={label}
               settingKey={`settings-${itemKey}-${key}`}
-            ></Chips>
+            ></Chips>,
           );
           return;
         default:

@@ -167,7 +167,7 @@ const SeriesHistoryView: FunctionComponent = () => {
         },
       },
     ],
-    []
+    [],
   );
 
   const query = useEpisodeHistoryPagination();

@@ -34,7 +34,7 @@ const AllProvidersWithStrictMode: FunctionComponent<PropsWithChildren> = ({
 
 const customRender = (
   ui: ReactElement,
-  options?: Omit<RenderOptions, "wrapper">
+  options?: Omit<RenderOptions, "wrapper">,
 ) => render(ui, { wrapper: AllProvidersWithStrictMode, ...options });
 
 // re-export everything

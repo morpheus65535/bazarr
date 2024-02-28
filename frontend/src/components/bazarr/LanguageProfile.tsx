@@ -14,7 +14,7 @@ const LanguageProfileName: FunctionComponent<Props> = ({
 
   const name = useMemo(
     () => data?.find((v) => v.profileId === index)?.name ?? empty,
-    [data, empty, index]
+    [data, empty, index],
   );
 
   return <>{name}</>;

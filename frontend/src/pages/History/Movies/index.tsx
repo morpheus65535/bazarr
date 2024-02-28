@@ -144,7 +144,7 @@ const MoviesHistoryView: FunctionComponent = () => {
         },
       },
     ],
-    []
+    [],
   );
 
   const query = useMovieHistoryPagination();

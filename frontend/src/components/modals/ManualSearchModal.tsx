@@ -32,7 +32,7 @@ type SupportType = Item.Movie | Item.Episode;
 interface Props<T extends SupportType> {
   download: (item: T, result: SearchResultType) => Promise<void>;
   query: (
-    id?: number
+    id?: number,
   ) => UseQueryResult<SearchResultType[] | undefined, unknown>;
   item: T;
 }
@@ -111,7 +111,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
 
           const items = useMemo(
             () => value.slice(1).map((v, idx) => <Text key={idx}>{v}</Text>),
-            [value]
+            [value],
           );
 
           if (value.length === 0) {
@@ -176,7 +176,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
                   TaskGroup.DownloadSubtitle,
                   download,
                   item,
-                  result
+                  result,
                 );
               }}
             ></Action>
@@ -184,7 +184,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         },
       },
     ],
-    [download, item]
+    [download, item],
   );
 
   const bSceneNameAvailable =
@@ -228,10 +228,10 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
 export const MovieSearchModal = withModal<Props<Item.Movie>>(
   ManualSearchView,
   "movie-manual-search",
-  { title: "Search Subtitles", size: "calc(100vw - 4rem)" }
+  { title: "Search Subtitles", size: "calc(100vw - 4rem)" },
 );
 export const EpisodeSearchModal = withModal<Props<Item.Episode>>(
   ManualSearchView,
   "episode-manual-search",
-  { title: "Search Subtitles", size: "calc(100vw - 4rem)" }
+  { title: "Search Subtitles", size: "calc(100vw - 4rem)" },
 );

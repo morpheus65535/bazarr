@@ -160,7 +160,7 @@ export const providerOptions: SelectorOption<string>[] = ProviderList.map(
   (v) => ({
     label: v.key,
     value: v.key,
-  })
+  }),
 );
 
 export const syncMaxOffsetSecondsOptions: SelectorOption<number>[] = [

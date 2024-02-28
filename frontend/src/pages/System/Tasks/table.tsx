@@ -52,7 +52,7 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
         },
       },
     ],
-    []
+    [],
   );
 
   return (

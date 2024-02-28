@@ -106,7 +106,7 @@ const SeriesView: FunctionComponent = () => {
                   },
                   {
                     title: original.title,
-                  }
+                  },
                 )
               }
               icon={faWrench}
@@ -115,7 +115,7 @@ const SeriesView: FunctionComponent = () => {
         },
       },
     ],
-    [mutation]
+    [mutation],
   );
 
   useDocumentTitle("Series - Bazarr");

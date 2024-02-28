@@ -72,7 +72,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
         text: series?.seriesType ?? "",
       },
     ],
-    [series]
+    [series],
   );
 
   const modals = useModals();
@@ -92,12 +92,12 @@ const SeriesEpisodesView: FunctionComponent = () => {
         showNotification(
           notification.warn(
             "Cannot Upload Files",
-            "series or language profile is not ready"
-          )
+            "series or language profile is not ready",
+          ),
         );
       }
     },
-    [modals, profile, series]
+    [modals, profile, series],
   );
 
   useDocumentTitle(`${series?.title ?? "Unknown Series"} - Bazarr (Series)`);
@@ -202,7 +202,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
                       item: series,
                       mutation,
                     },
-                    { title: series.title }
+                    { title: series.title },
                   );
                 }
               }}

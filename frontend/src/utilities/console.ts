@@ -25,7 +25,7 @@ export function ENSURE(condition: boolean, msg: string, ...payload: any[]) {
 
 export function GROUP(
   header: string,
-  content: (logger: typeof console.log) => void
+  content: (logger: typeof console.log) => void,
 ) {
   if (!isProdEnv) {
     console.group(header);

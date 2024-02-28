@@ -23,7 +23,7 @@ const Table: FunctionComponent = () => {
     () =>
       1 +
       profiles.reduce<number>((val, prof) => Math.max(prof.profileId, val), 0),
-    [profiles]
+    [profiles],
   );
 
   const { setValue } = useFormActions();
@@ -34,7 +34,7 @@ const Table: FunctionComponent = () => {
     (list: Language.Profile[]) => {
       setValue(list, languageProfileKey, (value) => JSON.stringify(value));
     },
-    [setValue]
+    [setValue],
   );
 
   const updateProfile = useCallback(
@@ -49,7 +49,7 @@ const Table: FunctionComponent = () => {
       }
       submitProfiles(list);
     },
-    [profiles, submitProfiles]
+    [profiles, submitProfiles],
   );
 
   const action = useArrayAction<Language.Profile>((fn) => {
@@ -152,7 +152,7 @@ const Table: FunctionComponent = () => {
       },
     ],
     // TODO: Optimize this
-    [action, languages, modals, updateProfile]
+    [action, languages, modals, updateProfile],
   );
 
   const canAdd = languages.length !== 0;

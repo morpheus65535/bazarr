@@ -27,7 +27,7 @@ const Action = forwardRef<HTMLButtonElement, ActionProps>(
         </ActionIcon>
       </Tooltip>
     );
-  }
+  },
 );
 
 export default Action;

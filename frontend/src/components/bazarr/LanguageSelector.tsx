@@ -25,7 +25,7 @@ const LanguageSelector: FunctionComponent<LanguageSelectorProps> = ({
   const options = useSelectorOptions(
     filteredData ?? [],
     (value) => value.name,
-    (value) => value.code3
+    (value) => value.code3,
   );
 
   return <Selector {...options} searchable {...selector}></Selector>;

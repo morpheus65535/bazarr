@@ -19,7 +19,7 @@ const cacheEpisodes = (client: QueryClient, episodes: Item.Episode[]) => {
         QueryKeys.Episodes,
         item.sonarrEpisodeId,
       ],
-      item
+      item,
     );
   });
 };
@@ -33,7 +33,7 @@ export function useEpisodesByIds(ids: number[]) {
       onSuccess: (data) => {
         cacheEpisodes(client, data);
       },
-    }
+    },
   );
 }
 
@@ -46,20 +46,20 @@ export function useEpisodesBySeriesId(id: number) {
       onSuccess: (data) => {
         cacheEpisodes(client, data);
       },
-    }
+    },
   );
 }
 
 export function useEpisodeWantedPagination() {
   return usePaginationQuery([QueryKeys.Series, QueryKeys.Wanted], (param) =>
-    api.episodes.wanted(param)
+    api.episodes.wanted(param),
   );
 }
 
 export function useEpisodeBlacklist() {
   return useQuery(
     [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
-    () => api.episodes.blacklist()
+    () => api.episodes.blacklist(),
   );
 }
 
@@ -84,7 +84,7 @@ export function useEpisodeAddBlacklist() {
         ]);
         client.invalidateQueries([QueryKeys.Series, seriesId]);
       },
-    }
+    },
   );
 }
 
@@ -102,7 +102,7 @@ export function useEpisodeDeleteBlacklist() {
           QueryKeys.Blacklist,
         ]);
       },
-    }
+    },
   );
 }
 
@@ -110,7 +110,7 @@ export function useEpisodeHistoryPagination() {
   return usePaginationQuery(
     [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.History],
     (param) => api.episodes.history(param),
-    false
+    false,
   );
 }
 
@@ -121,6 +121,6 @@ export function useEpisodeHistory(episodeId?: number) {
       if (episodeId) {
         return api.episodes.historyBy(episodeId);
       }
-    }
+    },
   );
 }

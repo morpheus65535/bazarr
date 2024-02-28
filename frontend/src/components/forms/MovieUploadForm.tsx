@@ -47,7 +47,7 @@ type SubtitleValidateResult = {
 
 const validator = (
   movie: Item.Movie,
-  file: SubtitleFile
+  file: SubtitleFile,
 ): SubtitleValidateResult => {
   if (file.language === null) {
     return {
@@ -57,7 +57,7 @@ const validator = (
   } else {
     const { subtitles } = movie;
     const existing = subtitles.find(
-      (v) => v.code2 === file.language?.code2 && isString(v.path)
+      (v) => v.code2 === file.language?.code2 && isString(v.path),
     );
     if (existing !== undefined) {
       return {
@@ -91,12 +91,12 @@ const MovieUploadForm: FunctionComponent<Props> = ({
   const languageOptions = useSelectorOptions(
     languages,
     (v) => v.name,
-    (v) => v.code2
+    (v) => v.code2,
   );
 
   const defaultLanguage = useMemo(
     () => (languages.length > 0 ? languages[0] : null),
-    [languages]
+    [languages],
   );
 
   const form = useForm({
@@ -120,7 +120,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
             (v) =>
               v.language === null ||
               v.validateResult === undefined ||
-              v.validateResult.state === "error"
+              v.validateResult.state === "error",
           ) === undefined
         );
       }, "Some files cannot be uploaded, please check"),
@@ -254,7 +254,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         },
       },
     ],
-    [action, languageOptions]
+    [action, languageOptions],
   );
 
   const { upload } = useMovieSubtitleModification();
@@ -294,7 +294,7 @@ export const MovieUploadModal = withModal(
   {
     title: "Upload Subtitles",
     size: "xl",
-  }
+  },
 );
 
 export default MovieUploadForm;

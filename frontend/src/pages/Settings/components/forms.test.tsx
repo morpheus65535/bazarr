@@ -17,7 +17,7 @@ const FormSupport: FunctionComponent<PropsWithChildren> = ({ children }) => {
 
 const formRender = (
   ui: ReactElement,
-  options?: Omit<RenderOptions, "wrapper">
+  options?: Omit<RenderOptions, "wrapper">,
 ) => rawRender(ui, { wrapper: FormSupport, ...options });
 
 describe("Settings form", () => {

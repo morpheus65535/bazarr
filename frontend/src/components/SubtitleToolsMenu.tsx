@@ -100,7 +100,7 @@ export function useTools() {
         modal: TranslationModal,
       },
     ],
-    []
+    [],
   );
 }
 
@@ -131,7 +131,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
         task.create(s.path, name, mutateAsync, { action, form });
       });
     },
-    [mutateAsync, selections]
+    [mutateAsync, selections],
   );
 
   const tools = useTools();

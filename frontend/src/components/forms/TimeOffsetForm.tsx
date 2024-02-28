@@ -37,7 +37,7 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       sec: FormUtils.validation((v) => v >= 0, "Second must be larger than 0"),
       ms: FormUtils.validation(
         (v) => v >= 0,
-        "Millisecond must be larger than 0"
+        "Millisecond must be larger than 0",
       ),
     },
   });
@@ -62,7 +62,7 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
           task.create(s.path, TaskName, mutateAsync, {
             action,
             form: s,
-          })
+          }),
         );
 
         onSubmit?.();

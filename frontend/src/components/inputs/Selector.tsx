@@ -29,7 +29,7 @@ function DefaultKeyBuilder<T>(value: T) {
   } else {
     LOG("error", "Unknown value type", value);
     throw new Error(
-      `Invalid type (${typeof value}) in the SelectorOption, please provide a label builder`
+      `Invalid type (${typeof value}) in the SelectorOption, please provide a label builder`,
     );
   }
 }
@@ -64,7 +64,7 @@ export function Selector<T>({
         payload: value,
         ...option,
       })),
-    [keyRef, options]
+    [keyRef, options],
   );
 
   const wrappedValue = useMemo(() => {
@@ -88,7 +88,7 @@ export function Selector<T>({
       const payload = data.find((v) => v.value === value)?.payload ?? null;
       onChange?.(payload);
     },
-    [data, onChange]
+    [data, onChange],
   );
 
   return (
@@ -137,16 +137,16 @@ export function MultiSelector<T>({
         payload: value,
         ...option,
       })),
-    [options]
+    [options],
   );
 
   const wrappedValue = useMemo(
     () => value && value.map(labelRef.current),
-    [value]
+    [value],
   );
   const wrappedDefaultValue = useMemo(
     () => defaultValue && defaultValue.map(labelRef.current),
-    [defaultValue]
+    [defaultValue],
   );
 
   const wrappedOnChange = useCallback(
@@ -162,7 +162,7 @@ export function MultiSelector<T>({
       }
       onChange?.(payloads);
     },
-    [data, onChange]
+    [data, onChange],
   );
 
   return (

@@ -19,7 +19,7 @@ describe("Selector", () => {
   describe("options", () => {
     it("should work with the SelectorOption", () => {
       rawRender(
-        <Selector name={selectorName} options={testOptions}></Selector>
+        <Selector name={selectorName} options={testOptions}></Selector>,
       );
 
       // TODO: selectorName
@@ -28,7 +28,7 @@ describe("Selector", () => {
 
     it("should display when clicked", async () => {
       rawRender(
-        <Selector name={selectorName} options={testOptions}></Selector>
+        <Selector name={selectorName} options={testOptions}></Selector>,
       );
 
       const element = screen.getByRole("searchbox");
@@ -49,7 +49,7 @@ describe("Selector", () => {
           name={selectorName}
           options={testOptions}
           defaultValue={option.value}
-        ></Selector>
+        ></Selector>,
       );
 
       expect(screen.getByDisplayValue(option.label)).toBeDefined();
@@ -62,7 +62,7 @@ describe("Selector", () => {
           name={selectorName}
           options={testOptions}
           value={option.value}
-        ></Selector>
+        ></Selector>,
       );
 
       expect(screen.getByDisplayValue(option.label)).toBeDefined();
@@ -80,7 +80,7 @@ describe("Selector", () => {
           name={selectorName}
           options={testOptions}
           onChange={mockedFn}
-        ></Selector>
+        ></Selector>,
       );
 
       const element = screen.getByRole("searchbox");
@@ -121,7 +121,7 @@ describe("Selector", () => {
           options={objectOptions}
           onChange={mockedFn}
           getkey={(v) => v.name}
-        ></Selector>
+        ></Selector>,
       );
 
       const element = screen.getByRole("searchbox");
@@ -142,7 +142,7 @@ describe("Selector", () => {
           name={selectorName}
           options={testOptions}
           placeholder={placeholder}
-        ></Selector>
+        ></Selector>,
       );
 
       expect(screen.getByPlaceholderText(placeholder)).toBeDefined();

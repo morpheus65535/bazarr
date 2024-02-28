@@ -74,7 +74,7 @@ const WantedSeriesView: FunctionComponent = () => {
                           hi: item.hi,
                           forced: item.forced,
                         },
-                      }
+                      },
                     );
                   }}
                 >
@@ -86,7 +86,7 @@ const WantedSeriesView: FunctionComponent = () => {
         },
       },
     ],
-    []
+    [],
   );
 
   const { mutateAsync } = useSeriesAction();
