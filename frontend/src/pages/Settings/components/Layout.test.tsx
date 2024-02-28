@@ -19,6 +19,6 @@ describe("Settings layout", () => {
       </Layout>,
     );
 
-    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(screen.getAllByRole("button", { name: "Save" })[0]).toBeDisabled();
   });
 });
