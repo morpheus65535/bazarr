@@ -19,8 +19,8 @@
     "incremental": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["./src/*"],
+    },
   },
-  "include": ["./src", "./test"]
+  "include": ["./src", "./test"],
 }
