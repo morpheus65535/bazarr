@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import io
 
 from threading import Thread
 
@@ -20,6 +21,7 @@ from app.get_args import args  # noqa E402
 from app.check_update import apply_update, check_releases, check_if_new_update  # noqa E402
 from app.config import settings, configure_proxy_func, base_url  # noqa E402
 from init import *  # noqa E402
+import logging  # noqa E402
 
 # Install downloaded update
 if bazarr_version != '':

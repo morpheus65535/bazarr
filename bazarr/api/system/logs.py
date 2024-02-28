@@ -43,12 +43,12 @@ class SystemLogs(Resource):
             if len(include) > 0:
                 try:
                     include_compiled = re.compile(include, flags)
-                except:
+                except Exception:
                     include_compiled = None
             if len(exclude) > 0:
                 try:
                     exclude_compiled = re.compile(exclude, flags)
-                except:
+                except Exception:
                     exclude_compiled = None
         elif ignore_case:
             include = include.casefold()
