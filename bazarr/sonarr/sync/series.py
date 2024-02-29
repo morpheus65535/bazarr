@@ -19,9 +19,12 @@ from .utils import get_profile_list, get_tags, get_series_from_sonarr_api
 bool_map = {"True": True, "False": False}
 
 FEATURE_PREFIX = "SYNC_SERIES "
+
+
 def trace(message):
     if settings.general.debug:
         logging.debug(FEATURE_PREFIX + message)
+
 
 def get_series_monitored_table():
     series_monitored = database.execute(
@@ -29,6 +32,7 @@ def get_series_monitored_table():
         .all()
     series_dict = dict((x, y) for x, y in series_monitored)
     return series_dict
+
 
 def update_series(send_event=True):
     check_sonarr_rootfolder()
@@ -73,7 +77,7 @@ def update_series(send_event=True):
             series_monitored = get_series_monitored_table()
             skipped_count = 0
         trace(f"Starting sync for {series_count} shows")
-        
+
         for i, show in enumerate(series):
             if send_event:
                 show_progress(id='series_progress',
@@ -151,7 +155,7 @@ def update_series(send_event=True):
         removed_series = list(set(current_shows_db) - set(current_shows_sonarr))
 
         for series in removed_series:
-             # try to avoid unnecessary database calls
+            # try to avoid unnecessary database calls
             if settings.general.debug:
                 series_title = database.execute(select(TableShows.title).where(TableShows.sonarrSeriesId == series)).first()[0]
                 trace(f"Deleting {series_title}")

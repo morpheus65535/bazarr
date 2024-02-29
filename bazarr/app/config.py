@@ -485,24 +485,26 @@ def get_settings():
                     settings_to_return[k].update({subk: subv})
     return settings_to_return
 
+
 def validate_log_regex():
     # handle bug in dynaconf that changes strings to numbers, so change them back to str
     if not isinstance(settings.log.include_filter, str):
-         settings.log.include_filter = str(settings.log.include_filter)
+        settings.log.include_filter = str(settings.log.include_filter)
     if not isinstance(settings.log.exclude_filter, str):
-         settings.log.exclude_filter = str(settings.log.exclude_filter)
+        settings.log.exclude_filter = str(settings.log.exclude_filter)
 
-    if (settings.log.use_regex):
+    if settings.log.use_regex:
         # compile any regular expressions specified to see if they are valid
         # if invalid, tell the user which one
         try:
             re.compile(settings.log.include_filter)
-        except:
+        except Exception:
             raise ValidationError(f"Include filter: invalid regular expression: {settings.log.include_filter}")
         try:
             re.compile(settings.log.exclude_filter)
-        except:
+        except Exception:
             raise ValidationError(f"Exclude filter: invalid regular expression: {settings.log.exclude_filter}")
+
 
 def save_settings(settings_items):
     configure_debug = False
@@ -520,8 +522,7 @@ def save_settings(settings_items):
     undefined_subtitles_track_default_changed = False
     audio_tracks_parsing_changed = False
     reset_providers = False
-    check_log_regex = False
-    
+
     # Subzero Mods
     update_subzero = False
     subzero_mods = get_array_from(settings.general.subzero_mods)

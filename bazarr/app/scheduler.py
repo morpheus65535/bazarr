@@ -8,7 +8,6 @@ from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
-from apscheduler.jobstores.base import JobLookupError
 from datetime import datetime, timedelta
 from calendar import day_name
 from math import floor
