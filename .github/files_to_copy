@@ -1,4 +1,5 @@
 bazarr
+custom_libs
 frontend/build
 libs
 bazarr.py
