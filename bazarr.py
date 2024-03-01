@@ -75,7 +75,6 @@ def end_child_process(ep):
 def start_bazarr():
     script = [get_python_path(), "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
     ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
-    atexit.register(end_child_process, ep=ep)
     signal.signal(signal.SIGTERM, lambda signal_no, frame: end_child_process(ep))
     print(f"Bazarr starting child process with PID {ep.pid}...")
     return ep
@@ -147,11 +146,7 @@ if __name__ == '__main__':
     while True:
         check_status()
         try:
-            if sys.platform.startswith('win'):
-                time.sleep(5)
-            else:
-                os.wait()
-                time.sleep(1)
+            time.sleep(5)
         except (KeyboardInterrupt, SystemExit, ChildProcessError):
             print(f'Bazarr exited main script file via keyboard interrupt.')
             exit_program(EXIT_NORMAL)
