@@ -71,7 +71,10 @@ class UnwantedWaitressMessageFilter(logging.Filter):
             ["'Session is disconnected'", "'Session not found'" ],
             
             "Exception while serving /api/socket.io/", 
-            ['"Session is disconnected"', '"Session not found"' ]
+            ['"Session is disconnected"', '"Session not found"' ],
+
+            "Exception when servicing %r", 
+            [],
         ]
    
         wanted = True    
@@ -80,7 +83,7 @@ class UnwantedWaitressMessageFilter(logging.Filter):
             if record.msg == unwantedMessages[i]:
                 exceptionTuple = record.exc_info
                 if exceptionTuple != None:
-                    if str(exceptionTuple[1]) in unwantedMessages[i+1]:
+                    if len(unwantedMessages[i+1]) == 0 or str(exceptionTuple[1]) in unwantedMessages[i+1]:
                         wanted = False
                         break
         
