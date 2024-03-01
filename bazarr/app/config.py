@@ -40,6 +40,7 @@ def validate_ip_address(ip_string):
 ONE_HUNDRED_YEARS_IN_MINUTES = 52560000
 ONE_HUNDRED_YEARS_IN_HOURS = 876000
 
+
 class Validator(OriginalValidator):
     # Give the ability to personalize messages sent by the original dynasync Validator class.
     default_messages = MappingProxyType(
@@ -105,7 +106,7 @@ validators = [
     Validator('general.subfolder', must_exist=True, default='current', is_type_of=str),
     Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),
     Validator('general.upgrade_subs', must_exist=True, default=True, is_type_of=bool),
-    Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int, 
+    Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int,
               is_in=[6, 12, 24, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.days_to_upgrade_subs', must_exist=True, default=7, is_type_of=int, gte=0, lte=30),
     Validator('general.upgrade_manual', must_exist=True, default=True, is_type_of=bool),
@@ -487,24 +488,26 @@ def get_settings():
                     settings_to_return[k].update({subk: subv})
     return settings_to_return
 
+
 def validate_log_regex():
     # handle bug in dynaconf that changes strings to numbers, so change them back to str
     if not isinstance(settings.log.include_filter, str):
-         settings.log.include_filter = str(settings.log.include_filter)
+        settings.log.include_filter = str(settings.log.include_filter)
     if not isinstance(settings.log.exclude_filter, str):
-         settings.log.exclude_filter = str(settings.log.exclude_filter)
+        settings.log.exclude_filter = str(settings.log.exclude_filter)
 
-    if (settings.log.use_regex):
+    if settings.log.use_regex:
         # compile any regular expressions specified to see if they are valid
         # if invalid, tell the user which one
         try:
             re.compile(settings.log.include_filter)
-        except:
+        except Exception:
             raise ValidationError(f"Include filter: invalid regular expression: {settings.log.include_filter}")
         try:
             re.compile(settings.log.exclude_filter)
-        except:
+        except Exception:
             raise ValidationError(f"Exclude filter: invalid regular expression: {settings.log.exclude_filter}")
+
 
 def save_settings(settings_items):
     configure_debug = False
@@ -522,8 +525,7 @@ def save_settings(settings_items):
     undefined_subtitles_track_default_changed = False
     audio_tracks_parsing_changed = False
     reset_providers = False
-    check_log_regex = False
-    
+
     # Subzero Mods
     update_subzero = False
     subzero_mods = get_array_from(settings.general.subzero_mods)

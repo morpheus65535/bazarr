@@ -56,10 +56,10 @@ class NoExceptionFormatter(logging.Formatter):
     def formatException(self, record):
         return ''
 
-    
+
 class UnwantedWaitressMessageFilter(logging.Filter):
     def filter(self, record):
-        if settings.general.debug == True:
+        if settings.general.debug is True:
             # no filtering in debug mode
             return True
             
@@ -76,8 +76,8 @@ class UnwantedWaitressMessageFilter(logging.Filter):
             "Exception when servicing %r", 
             [],
         ]
-   
-        wanted = True    
+
+        wanted = True
         listLength = len(unwantedMessages)
         for i in range(0, listLength, 2):
             if record.msg == unwantedMessages[i]:
@@ -86,7 +86,7 @@ class UnwantedWaitressMessageFilter(logging.Filter):
                     if len(unwantedMessages[i+1]) == 0 or str(exceptionTuple[1]) in unwantedMessages[i+1]:
                         wanted = False
                         break
-        
+
         return wanted
 
 
@@ -163,7 +163,7 @@ def configure_logging(debug=False):
         logging.getLogger("ga4mp.ga4mp").setLevel(logging.ERROR)
 
     logging.getLogger("waitress").setLevel(logging.ERROR)
-    logging.getLogger("waitress").addFilter(UnwantedWaitressMessageFilter())   
+    logging.getLogger("waitress").addFilter(UnwantedWaitressMessageFilter())
     logging.getLogger("knowit").setLevel(logging.CRITICAL)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)

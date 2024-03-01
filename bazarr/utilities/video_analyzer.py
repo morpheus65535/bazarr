@@ -270,7 +270,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     if not os.path.exists(file):
         logging.error(f'Video file "{file}" cannot be found for analysis')
         return None
-    
+
     # if we have ffprobe available
     if ffprobe_path:
         try:
