@@ -82,7 +82,7 @@ class UnwantedWaitressMessageFilter(logging.Filter):
         for i in range(0, listLength, 2):
             if record.msg == unwantedMessages[i]:
                 exceptionTuple = record.exc_info
-                if exceptionTuple != None:
+                if exceptionTuple is not None:
                     if len(unwantedMessages[i+1]) == 0 or str(exceptionTuple[1]) in unwantedMessages[i+1]:
                         wanted = False
                         break
