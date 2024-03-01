@@ -265,7 +265,7 @@ def list_missing_subtitles_movies(no=None, send_event=True):
 
 
 def movies_full_scan_subtitles(use_cache=None):
-    if use_cache == None:
+    if use_cache is None:
         use_cache = settings.radarr.use_ffprobe_cache
 
     movies = database.execute(
