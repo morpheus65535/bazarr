@@ -6,7 +6,6 @@ import signal
 import subprocess
 import sys
 import time
-import atexit
 
 from bazarr.app.get_args import args
 from bazarr.literals import *
@@ -53,31 +52,16 @@ check_python_version()
 
 dir_name = os.path.dirname(__file__)
 
-
-def end_child_process(ep):
-    try:
-        if os.name != 'nt':
-            try:
-                ep.send_signal(signal.SIGINT)
-            except ProcessLookupError:
-                pass
-        else:
-            import win32api
-            import win32con
-            try:
-                win32api.GenerateConsoleCtrlEvent(win32con.CTRL_C_EVENT, ep.pid)
-            except KeyboardInterrupt:
-                pass
-    except:
-        ep.terminate()
-
-
 def start_bazarr():
     script = [get_python_path(), "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
     ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
-    signal.signal(signal.SIGTERM, lambda signal_no, frame: end_child_process(ep))
     print(f"Bazarr starting child process with PID {ep.pid}...")
     return ep
+ 
+
+def terminate_child():
+    print(f"Terminating child process with PID {child_process.pid}")
+    child_process.terminate()
 
 
 def get_stop_status_code(input_file):
@@ -105,8 +89,7 @@ def check_status():
         except Exception as e:
             print('Unable to delete stop file.')
         finally:
-            print(f"Terminating child process with PID {child_process.pid}")
-            child_process.terminate()
+            terminate_child()
             exit_program(status_code)
 
     if os.path.exists(restartfile):
@@ -116,13 +99,26 @@ def check_status():
         except Exception:
             print('Unable to delete restart file.')
         finally:
-            print(f"Terminating child process with PID {child_process.pid}")
-            child_process.terminate()
+            terminate_child()
             print(f"Bazarr is restarting...")
             child_process = start_bazarr()
 
 
+def interrupt_handler(signum, frame):
+    # catch and ignore keyboard interrupt Ctrl-C
+    # the child process Server object will catch SIGINT and perform an orderly shutdown
+    global interrupted
+    if not interrupted:
+        # ignore user hammering Ctrl-C; we heard you the first time!
+        interrupted = True
+        print('Handling keyboard interrupt...')
+    else:
+        print(f"Stop doing that! I heard you the first time!")
+
+
 if __name__ == '__main__':
+    interrupted = False
+    signal.signal(signal.SIGINT, interrupt_handler)
     restartfile = os.path.join(args.config_dir, FILE_RESTART)
     stopfile = os.path.join(args.config_dir, FILE_STOP)
     os.environ[ENV_STOPFILE] = stopfile
@@ -148,5 +144,6 @@ if __name__ == '__main__':
         try:
             time.sleep(5)
         except (KeyboardInterrupt, SystemExit, ChildProcessError):
+            # this code should never be reached, if signal handling is working properly
             print(f'Bazarr exited main script file via keyboard interrupt.')
-            exit_program(EXIT_NORMAL)
+            exit_program(EXIT_INTERRUPT)
