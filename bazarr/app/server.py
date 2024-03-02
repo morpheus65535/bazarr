@@ -1,9 +1,10 @@
 # coding=utf-8
 
+import signal
 import warnings
 import logging
 import errno
-from literals import EXIT_NORMAL
+from literals import EXIT_INTERRUPT, EXIT_NORMAL
 from utilities.central import restart_bazarr, stop_bazarr
 
 from waitress.server import create_server
@@ -37,6 +38,7 @@ class Server:
         self.connected = False
         self.address = str(settings.general.ip)
         self.port = int(args.port) if args.port else int(settings.general.port)
+        self.interrupted = False
 
         while not self.connected:
             sleep(0.1)
@@ -62,9 +64,17 @@ class Server:
                 logging.exception("BAZARR cannot start because of unhandled exception.")
                 self.shutdown()
 
+    def interrupt_handler(self, signum, frame):
+        # print('Server signal interrupt handler called with signal', signum)
+        if not self.interrupted:
+            # ignore user hammering Ctrl-C; we heard you the first time!
+            self.interrupted = True
+            self.shutdown(EXIT_INTERRUPT)
+
     def start(self):
         logging.info(f'BAZARR is started and waiting for request on http://{self.server.effective_host}:'
                      f'{self.server.effective_port}')
+        signal.signal(signal.SIGINT, self.interrupt_handler)
         try:
             self.server.run()
         except (KeyboardInterrupt, SystemExit):
@@ -78,9 +88,9 @@ class Server:
         print(f"Closing webserver...")
         self.server.close()
 
-    def shutdown(self):
+    def shutdown(self, status=EXIT_NORMAL):
         self.close_all()
-        stop_bazarr(EXIT_NORMAL, False)
+        stop_bazarr(status, False)
 
     def restart(self):
         self.close_all()
