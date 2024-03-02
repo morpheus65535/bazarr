@@ -21,9 +21,12 @@ from .parser import movieParser
 bool_map = {"True": True, "False": False}
 
 FEATURE_PREFIX = "SYNC_MOVIES "
+
+
 def trace(message):
     if settings.general.debug:
         logging.debug(FEATURE_PREFIX + message)
+
 
 def update_all_movies():
     movies_full_scan_subtitles()
@@ -62,6 +65,7 @@ def get_movie_monitored_status(movie_id):
         return True
     else:
         return bool_map[existing_movie_monitored[0]]
+
 
 # Insert new movies in DB
 def add_movie(added_movie, send_event):
@@ -158,7 +162,7 @@ def update_movies(send_event=True):
                 # Only movies that Radarr says have files downloaded will be kept up to date in the DB
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
-                        if sync_monitored:   
+                        if sync_monitored:
                             if get_movie_monitored_status(movie['tmdbId']) != movie['monitored']:
                                 # monitored status is not the same as our DB
                                 trace(f"{i}: (Monitor Status Mismatch) {movie['title']}")
@@ -187,8 +191,8 @@ def update_movies(send_event=True):
                                 add_movie(parsed_movie, send_event)
                                 movies_added.append(parsed_movie['title'])
                 else:
-                     trace(f"{i}: (Skipped File Missing) {movie['title']}")
-                     files_missing += 1
+                    trace(f"{i}: (Skipped File Missing) {movie['title']}")
+                    files_missing += 1
 
             if send_event:
                 hide_progress(id='movies_progress')
@@ -196,10 +200,12 @@ def update_movies(send_event=True):
             trace(f"Skipped {files_missing} file missing movies out of {i}")
             if sync_monitored:
                 trace(f"Skipped {skipped_count} unmonitored movies out of {i}")
-                trace(f"Processed {i - files_missing - skipped_count} movies out of {i} " +
-                              f"with {len(movies_added)} added, {len(movies_updated)} updated and {len(movies_deleted)} deleted")
+                trace(f"Processed {i - files_missing - skipped_count} movies out of {i} "
+                      f"with {len(movies_added)} added, {len(movies_updated)} updated and "
+                      f"{len(movies_deleted)} deleted")
             else:
-                trace(f"Processed {i - files_missing} movies out of {i} with {len(movies_added)} added and {len(movies_updated)} updated")
+                trace(f"Processed {i - files_missing} movies out of {i} with {len(movies_added)} added and "
+                      f"{len(movies_updated)} updated")
 
             logging.debug('BAZARR All movies synced from Radarr into database.')
 

@@ -115,27 +115,27 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
         tags = [d['label'] for d in tags_dict if d['id'] in movie['tags']]
 
         parsed_movie = {'radarrId': int(movie["id"]),
-                    'title': movie["title"],
-                    'path': os.path.join(movie["path"], movie['movieFile']['relativePath']),                    
-                    'tmdbId': str(movie["tmdbId"]),
-                    'poster': poster,
-                    'fanart': fanart,
-                    'audio_language': str(audio_language),
-                    'sceneName': sceneName,
-                    'monitored': str(bool(movie['monitored'])),
-                    'year': str(movie['year']),
-                    'sortTitle': movie['sortTitle'],
-                    'alternativeTitles': alternativeTitles,
-                    'format': format,
-                    'resolution': resolution,
-                    'video_codec': videoCodec,
-                    'audio_codec': audioCodec,
-                    'overview': overview,
-                    'imdbId': imdbId,
-                    'movie_file_id': int(movie['movieFile']['id']),
-                    'tags': str(tags),
-                    'file_size': movie['movieFile']['size']}
-        
+                        'title': movie["title"],
+                        'path': os.path.join(movie["path"], movie['movieFile']['relativePath']),
+                        'tmdbId': str(movie["tmdbId"]),
+                        'poster': poster,
+                        'fanart': fanart,
+                        'audio_language': str(audio_language),
+                        'sceneName': sceneName,
+                        'monitored': str(bool(movie['monitored'])),
+                        'year': str(movie['year']),
+                        'sortTitle': movie['sortTitle'],
+                        'alternativeTitles': alternativeTitles,
+                        'format': format,
+                        'resolution': resolution,
+                        'video_codec': videoCodec,
+                        'audio_codec': audioCodec,
+                        'overview': overview,
+                        'imdbId': imdbId,
+                        'movie_file_id': int(movie['movieFile']['id']),
+                        'tags': str(tags),
+                        'file_size': movie['movieFile']['size']}
+
         if action == 'insert':
             parsed_movie['subtitles'] = '[]'
             parsed_movie['profileId'] = movie_default_profile

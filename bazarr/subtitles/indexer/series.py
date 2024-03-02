@@ -266,7 +266,10 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
         event_stream(type='badges')
 
 
-def series_full_scan_subtitles(use_cache=settings.sonarr.use_ffprobe_cache):
+def series_full_scan_subtitles(use_cache=None):
+    if use_cache is None:
+        use_cache = settings.sonarr.use_ffprobe_cache
+
     episodes = database.execute(
         select(TableEpisodes.path))\
         .all()

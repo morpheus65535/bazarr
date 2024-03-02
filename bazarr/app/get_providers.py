@@ -323,7 +323,7 @@ def get_providers_auth():
             'response': settings.whisperai.response,
             'timeout': settings.whisperai.timeout,
             'ffmpeg_path': _FFMPEG_BINARY,
-            'loglevel': settings.whisperai.loglevel,            
+            'loglevel': settings.whisperai.loglevel,
         }
     }
 

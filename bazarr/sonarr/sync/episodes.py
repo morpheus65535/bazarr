@@ -12,7 +12,7 @@ from utilities.path_mappings import path_mappings
 from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
 from subtitles.mass_download import episode_download_subtitles
 from app.event_handler import event_stream
-from sonarr.info import get_sonarr_info, url_sonarr
+from sonarr.info import get_sonarr_info
 
 from .parser import episodeParser
 from .utils import get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
@@ -21,9 +21,12 @@ from .utils import get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_a
 bool_map = {"True": True, "False": False}
 
 FEATURE_PREFIX = "SYNC_EPISODES "
+
+
 def trace(message):
     if settings.general.debug:
         logging.debug(FEATURE_PREFIX + message)
+
 
 def get_episodes_monitored_table(series_id):
     episodes_monitored = database.execute(
@@ -32,7 +35,8 @@ def get_episodes_monitored_table(series_id):
         .all()
     episode_dict = dict((x, y) for x, y in episodes_monitored)
     return episode_dict
-  
+
+
 def update_all_episodes():
     series_full_scan_subtitles()
     logging.info('BAZARR All existing episode subtitles indexed from disk.')
@@ -73,7 +77,6 @@ def sync_episodes(series_id, send_event=True):
                     item = [x for x in episodeFiles if x['id'] == episode['episodeFileId']]
                     if item:
                         episode['episodeFile'] = item[0]
-
 
         sync_monitored = settings.sonarr.sync_only_monitored_series and settings.sonarr.sync_only_monitored_episodes
         if sync_monitored:
@@ -122,7 +125,7 @@ def sync_episodes(series_id, send_event=True):
                                 episodes_to_add.append(episodeParser(episode))
     else:
         return
-    
+
     if sync_monitored:
         # try to avoid unnecessary database calls
         if settings.general.debug:
@@ -175,7 +178,6 @@ def sync_episodes(series_id, send_event=True):
 
 def sync_one_episode(episode_id, defer_search=False):
     logging.debug(f'BAZARR syncing this specific episode from Sonarr: {episode_id}')
-    url = url_sonarr()
     apikey_sonarr = settings.sonarr.apikey
 
     # Check if there's a row in database for this episode ID
