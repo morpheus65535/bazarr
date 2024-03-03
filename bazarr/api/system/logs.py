@@ -1,14 +1,15 @@
 # coding=utf-8
 
 import io
-import os
 import re
 
 from flask_restx import Resource, Namespace, fields, marshal
+
 from app.config import settings
 from app.logger import empty_log
 from app.get_args import args
 
+from utilities.central import get_log_file_path
 from ..utils import authenticate
 
 api_ns_system_logs = Namespace('System Logs', description='List log file entries or empty log file')
@@ -54,7 +55,7 @@ class SystemLogs(Resource):
             include = include.casefold()
             exclude = exclude.casefold()
 
-        with io.open(os.path.join(args.config_dir, 'log', 'bazarr.log'), encoding='UTF-8') as file:
+        with io.open(get_log_file_path(), encoding='UTF-8') as file:
             raw_lines = file.read()
             lines = raw_lines.split('|\n')
             for line in lines:
