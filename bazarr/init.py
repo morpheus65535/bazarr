@@ -101,15 +101,6 @@ if not args.no_update:
                     logging.info('BAZARR requirements installed.')
 
                 restart_bazarr()
-                # try:
-                #     restart_file = io.open(get_restart_file_path(), "w", encoding='UTF-8')
-                # except Exception as e:
-                #     logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
-                # else:
-                #     logging.info('Bazarr is being restarted...')
-                #     restart_file.write(str(''))
-                #     restart_file.close()
-                #     os._exit(0)
 
 # change default base_url to ''
 settings.general.base_url = settings.general.base_url.rstrip('/')
