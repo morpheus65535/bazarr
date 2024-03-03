@@ -5,6 +5,7 @@ import re
 from typing import Any
 from typing import Callable
 from typing import cast
+from typing import Dict
 from typing import FrozenSet
 from typing import Iterator
 from typing import List
@@ -15,6 +16,7 @@ from typing import Set
 from typing import Tuple
 from typing import Type
 from typing import TYPE_CHECKING
+from typing import TypeVar
 from typing import Union
 
 from sqlalchemy.types import NULLTYPE
@@ -28,9 +30,7 @@ from ..util import sqla_compat
 if TYPE_CHECKING:
     from typing import Literal
 
-    from sqlalchemy.sql.dml import Insert
-    from sqlalchemy.sql.dml import Update
-    from sqlalchemy.sql.elements import BinaryExpression
+    from sqlalchemy.sql import Executable
     from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.elements import conv
     from sqlalchemy.sql.elements import quoted_name
@@ -53,6 +53,10 @@ if TYPE_CHECKING:
 
     from ..autogenerate.rewriter import Rewriter
     from ..runtime.migration import MigrationContext
+    from ..script.revision import _RevIdType
+
+_T = TypeVar("_T", bound=Any)
+_AC = TypeVar("_AC", bound="AddConstraintOp")
 
 
 class MigrateOperation:
@@ -71,7 +75,7 @@ class MigrateOperation:
     """
 
     @util.memoized_property
-    def info(self):
+    def info(self) -> Dict[Any, Any]:
         """A dictionary that may be used to store arbitrary information
         along with this :class:`.MigrateOperation` object.
 
@@ -93,12 +97,14 @@ class AddConstraintOp(MigrateOperation):
     add_constraint_ops = util.Dispatcher()
 
     @property
-    def constraint_type(self):
+    def constraint_type(self) -> str:
         raise NotImplementedError()
 
     @classmethod
-    def register_add_constraint(cls, type_: str) -> Callable:
-        def go(klass):
+    def register_add_constraint(
+        cls, type_: str
+    ) -> Callable[[Type[_AC]], Type[_AC]]:
+        def go(klass: Type[_AC]) -> Type[_AC]:
             cls.add_constraint_ops.dispatch_for(type_)(klass.from_constraint)
             return klass
 
@@ -106,7 +112,7 @@ class AddConstraintOp(MigrateOperation):
 
     @classmethod
     def from_constraint(cls, constraint: Constraint) -> AddConstraintOp:
-        return cls.add_constraint_ops.dispatch(constraint.__visit_name__)(
+        return cls.add_constraint_ops.dispatch(constraint.__visit_name__)(  # type: ignore[no-any-return]  # noqa: E501
             constraint
         )
 
@@ -133,6 +139,7 @@ class DropConstraintOp(MigrateOperation):
         constraint_name: Optional[sqla_compat._ConstraintNameDefined],
         table_name: str,
         type_: Optional[str] = None,
+        *,
         schema: Optional[str] = None,
         _reverse: Optional[AddConstraintOp] = None,
     ) -> None:
@@ -169,14 +176,11 @@ class DropConstraintOp(MigrateOperation):
             sqla_compat.constraint_name_or_none(constraint.name),
             constraint_table.name,
             schema=constraint_table.schema,
-            type_=types[constraint.__visit_name__],
+            type_=types.get(constraint.__visit_name__),
             _reverse=AddConstraintOp.from_constraint(constraint),
         )
 
-    def to_constraint(
-        self,
-    ) -> Constraint:
-
+    def to_constraint(self) -> Constraint:
         if self._reverse is not None:
             constraint = self._reverse.to_constraint()
             constraint.name = self.constraint_name
@@ -198,8 +202,9 @@ class DropConstraintOp(MigrateOperation):
         constraint_name: str,
         table_name: str,
         type_: Optional[str] = None,
+        *,
         schema: Optional[str] = None,
-    ) -> Optional[Table]:
+    ) -> None:
         r"""Drop a constraint of the given name, typically via DROP CONSTRAINT.
 
         :param constraint_name: name of the constraint.
@@ -258,6 +263,7 @@ class CreatePrimaryKeyOp(AddConstraintOp):
         constraint_name: Optional[sqla_compat._ConstraintNameDefined],
         table_name: str,
         columns: Sequence[str],
+        *,
         schema: Optional[str] = None,
         **kw: Any,
     ) -> None:
@@ -299,18 +305,17 @@ class CreatePrimaryKeyOp(AddConstraintOp):
         constraint_name: Optional[str],
         table_name: str,
         columns: List[str],
+        *,
         schema: Optional[str] = None,
-    ) -> Optional[Table]:
+    ) -> None:
         """Issue a "create primary key" instruction using the current
         migration context.
 
         e.g.::
 
             from alembic import op
-            op.create_primary_key(
-                        "pk_my_table", "my_table",
-                        ["id", "version"]
-                    )
+
+            op.create_primary_key("pk_my_table", "my_table", ["id", "version"])
 
         This internally generates a :class:`~sqlalchemy.schema.Table` object
         containing the necessary columns, then generates a new
@@ -337,7 +342,7 @@ class CreatePrimaryKeyOp(AddConstraintOp):
          :class:`~sqlalchemy.sql.elements.quoted_name`.
 
         """
-        op = cls(constraint_name, table_name, columns, schema)
+        op = cls(constraint_name, table_name, columns, schema=schema)
         return operations.invoke(op)
 
     @classmethod
@@ -382,6 +387,7 @@ class CreateUniqueConstraintOp(AddConstraintOp):
         constraint_name: Optional[sqla_compat._ConstraintNameDefined],
         table_name: str,
         columns: Sequence[str],
+        *,
         schema: Optional[str] = None,
         **kw: Any,
     ) -> None:
@@ -395,12 +401,11 @@ class CreateUniqueConstraintOp(AddConstraintOp):
     def from_constraint(
         cls, constraint: Constraint
     ) -> CreateUniqueConstraintOp:
-
         constraint_table = sqla_compat._table_for_constraint(constraint)
 
         uq_constraint = cast("UniqueConstraint", constraint)
 
-        kw: dict = {}
+        kw: Dict[str, Any] = {}
         if uq_constraint.deferrable:
             kw["deferrable"] = uq_constraint.deferrable
         if uq_constraint.initially:
@@ -433,6 +438,7 @@ class CreateUniqueConstraintOp(AddConstraintOp):
         constraint_name: Optional[str],
         table_name: str,
         columns: Sequence[str],
+        *,
         schema: Optional[str] = None,
         **kw: Any,
     ) -> Any:
@@ -532,9 +538,8 @@ class CreateForeignKeyOp(AddConstraintOp):
 
     @classmethod
     def from_constraint(cls, constraint: Constraint) -> CreateForeignKeyOp:
-
         fk_constraint = cast("ForeignKeyConstraint", constraint)
-        kw: dict = {}
+        kw: Dict[str, Any] = {}
         if fk_constraint.onupdate:
             kw["onupdate"] = fk_constraint.onupdate
         if fk_constraint.ondelete:
@@ -545,6 +550,8 @@ class CreateForeignKeyOp(AddConstraintOp):
             kw["deferrable"] = fk_constraint.deferrable
         if fk_constraint.use_alter:
             kw["use_alter"] = fk_constraint.use_alter
+        if fk_constraint.match:
+            kw["match"] = fk_constraint.match
 
         (
             source_schema,
@@ -593,6 +600,7 @@ class CreateForeignKeyOp(AddConstraintOp):
         referent_table: str,
         local_cols: List[str],
         remote_cols: List[str],
+        *,
         onupdate: Optional[str] = None,
         ondelete: Optional[str] = None,
         deferrable: Optional[bool] = None,
@@ -601,16 +609,21 @@ class CreateForeignKeyOp(AddConstraintOp):
         source_schema: Optional[str] = None,
         referent_schema: Optional[str] = None,
         **dialect_kw: Any,
-    ) -> Optional[Table]:
+    ) -> None:
         """Issue a "create foreign key" instruction using the
         current migration context.
 
         e.g.::
 
             from alembic import op
+
             op.create_foreign_key(
-                        "fk_user_address", "address",
-                        "user", ["user_id"], ["id"])
+                "fk_user_address",
+                "address",
+                "user",
+                ["user_id"],
+                ["id"],
+            )
 
         This internally generates a :class:`~sqlalchemy.schema.Table` object
         containing the necessary columns, then generates a new
@@ -672,12 +685,13 @@ class CreateForeignKeyOp(AddConstraintOp):
         referent_table: str,
         local_cols: List[str],
         remote_cols: List[str],
+        *,
         referent_schema: Optional[str] = None,
-        onupdate: None = None,
-        ondelete: None = None,
-        deferrable: None = None,
-        initially: None = None,
-        match: None = None,
+        onupdate: Optional[str] = None,
+        ondelete: Optional[str] = None,
+        deferrable: Optional[bool] = None,
+        initially: Optional[str] = None,
+        match: Optional[str] = None,
         **dialect_kw: Any,
     ) -> None:
         """Issue a "create foreign key" instruction using the
@@ -690,8 +704,11 @@ class CreateForeignKeyOp(AddConstraintOp):
 
             with batch_alter_table("address") as batch_op:
                 batch_op.create_foreign_key(
-                            "fk_user_address",
-                            "user", ["user_id"], ["id"])
+                    "fk_user_address",
+                    "user",
+                    ["user_id"],
+                    ["id"],
+                )
 
         .. seealso::
 
@@ -733,6 +750,7 @@ class CreateCheckConstraintOp(AddConstraintOp):
         constraint_name: Optional[sqla_compat._ConstraintNameDefined],
         table_name: str,
         condition: Union[str, TextClause, ColumnElement[Any]],
+        *,
         schema: Optional[str] = None,
         **kw: Any,
     ) -> None:
@@ -775,10 +793,11 @@ class CreateCheckConstraintOp(AddConstraintOp):
         operations: Operations,
         constraint_name: Optional[str],
         table_name: str,
-        condition: Union[str, BinaryExpression],
+        condition: Union[str, ColumnElement[bool], TextClause],
+        *,
         schema: Optional[str] = None,
         **kw: Any,
-    ) -> Optional[Table]:
+    ) -> None:
         """Issue a "create check constraint" instruction using the
         current migration context.
 
@@ -790,7 +809,7 @@ class CreateCheckConstraintOp(AddConstraintOp):
             op.create_check_constraint(
                 "ck_user_name_len",
                 "user",
-                func.len(column('name')) > 5
+                func.len(column("name")) > 5,
             )
 
         CHECK constraints are usually against a SQL expression, so ad-hoc
@@ -827,9 +846,9 @@ class CreateCheckConstraintOp(AddConstraintOp):
         cls,
         operations: BatchOperations,
         constraint_name: str,
-        condition: TextClause,
+        condition: Union[str, ColumnElement[bool], TextClause],
         **kw: Any,
-    ) -> Optional[Table]:
+    ) -> None:
         """Issue a "create check constraint" instruction using the
         current batch migration context.
 
@@ -861,8 +880,10 @@ class CreateIndexOp(MigrateOperation):
         index_name: Optional[str],
         table_name: str,
         columns: Sequence[Union[str, TextClause, ColumnElement[Any]]],
+        *,
         schema: Optional[str] = None,
         unique: bool = False,
+        if_not_exists: Optional[bool] = None,
         **kw: Any,
     ) -> None:
         self.index_name = index_name
@@ -870,6 +891,7 @@ class CreateIndexOp(MigrateOperation):
         self.columns = columns
         self.schema = schema
         self.unique = unique
+        self.if_not_exists = if_not_exists
         self.kw = kw
 
     def reverse(self) -> DropIndexOp:
@@ -882,9 +904,9 @@ class CreateIndexOp(MigrateOperation):
     def from_index(cls, index: Index) -> CreateIndexOp:
         assert index.table is not None
         return cls(
-            index.name,  # type: ignore[arg-type]
+            index.name,
             index.table.name,
-            sqla_compat._get_index_expressions(index),
+            index.expressions,
             schema=index.table.schema,
             unique=index.unique,
             **index.kwargs,
@@ -912,24 +934,28 @@ class CreateIndexOp(MigrateOperation):
         index_name: Optional[str],
         table_name: str,
         columns: Sequence[Union[str, TextClause, Function[Any]]],
+        *,
         schema: Optional[str] = None,
         unique: bool = False,
+        if_not_exists: Optional[bool] = None,
         **kw: Any,
-    ) -> Optional[Table]:
+    ) -> None:
         r"""Issue a "create index" instruction using the current
         migration context.
 
         e.g.::
 
             from alembic import op
-            op.create_index('ik_test', 't1', ['foo', 'bar'])
+
+            op.create_index("ik_test", "t1", ["foo", "bar"])
 
         Functional indexes can be produced by using the
         :func:`sqlalchemy.sql.expression.text` construct::
 
             from alembic import op
             from sqlalchemy import text
-            op.create_index('ik_test', 't1', [text('lower(foo)')])
+
+            op.create_index("ik_test", "t1", [text("lower(foo)")])
 
         :param index_name: name of the index.
         :param table_name: name of the owning table.
@@ -941,24 +967,34 @@ class CreateIndexOp(MigrateOperation):
          :class:`~sqlalchemy.sql.elements.quoted_name`.
         :param unique: If True, create a unique index.
 
-        :param quote:
-            Force quoting of this column's name on or off, corresponding
-            to ``True`` or ``False``. When left at its default
-            of ``None``, the column identifier will be quoted according to
-            whether the name is case sensitive (identifiers with at least one
-            upper case character are treated as case sensitive), or if it's a
-            reserved word. This flag is only needed to force quoting of a
-            reserved word which is not known by the SQLAlchemy dialect.
+        :param quote: Force quoting of this column's name on or off,
+         corresponding to ``True`` or ``False``. When left at its default
+         of ``None``, the column identifier will be quoted according to
+         whether the name is case sensitive (identifiers with at least one
+         upper case character are treated as case sensitive), or if it's a
+         reserved word. This flag is only needed to force quoting of a
+         reserved word which is not known by the SQLAlchemy dialect.
+
+        :param if_not_exists: If True, adds IF NOT EXISTS operator when
+         creating the new index.
+
+         .. versionadded:: 1.12.0
 
         :param \**kw: Additional keyword arguments not mentioned above are
-            dialect specific, and passed in the form
-            ``<dialectname>_<argname>``.
-            See the documentation regarding an individual dialect at
-            :ref:`dialect_toplevel` for detail on documented arguments.
+         dialect specific, and passed in the form
+         ``<dialectname>_<argname>``.
+         See the documentation regarding an individual dialect at
+         :ref:`dialect_toplevel` for detail on documented arguments.
 
         """
         op = cls(
-            index_name, table_name, columns, schema=schema, unique=unique, **kw
+            index_name,
+            table_name,
+            columns,
+            schema=schema,
+            unique=unique,
+            if_not_exists=if_not_exists,
+            **kw,
         )
         return operations.invoke(op)
 
@@ -969,7 +1005,7 @@ class CreateIndexOp(MigrateOperation):
         index_name: str,
         columns: List[str],
         **kw: Any,
-    ) -> Optional[Table]:
+    ) -> None:
         """Issue a "create index" instruction using the
         current batch migration context.
 
@@ -998,13 +1034,16 @@ class DropIndexOp(MigrateOperation):
         self,
         index_name: Union[quoted_name, str, conv],
         table_name: Optional[str] = None,
+        *,
         schema: Optional[str] = None,
+        if_exists: Optional[bool] = None,
         _reverse: Optional[CreateIndexOp] = None,
         **kw: Any,
     ) -> None:
         self.index_name = index_name
         self.table_name = table_name
         self.schema = schema
+        self.if_exists = if_exists
         self._reverse = _reverse
         self.kw = kw
 
@@ -1019,9 +1058,10 @@ class DropIndexOp(MigrateOperation):
         assert index.table is not None
         return cls(
             index.name,  # type: ignore[arg-type]
-            index.table.name,
+            table_name=index.table.name,
             schema=index.table.schema,
             _reverse=CreateIndexOp.from_index(index),
+            unique=index.unique,
             **index.kwargs,
         )
 
@@ -1046,9 +1086,11 @@ class DropIndexOp(MigrateOperation):
         operations: Operations,
         index_name: str,
         table_name: Optional[str] = None,
+        *,
         schema: Optional[str] = None,
+        if_exists: Optional[bool] = None,
         **kw: Any,
-    ) -> Optional[Table]:
+    ) -> None:
         r"""Issue a "drop index" instruction using the current
         migration context.
 
@@ -1063,20 +1105,32 @@ class DropIndexOp(MigrateOperation):
          quoting of the schema outside of the default behavior, use
          the SQLAlchemy construct
          :class:`~sqlalchemy.sql.elements.quoted_name`.
+
+        :param if_exists: If True, adds IF EXISTS operator when
+         dropping the index.
+
+         .. versionadded:: 1.12.0
+
         :param \**kw: Additional keyword arguments not mentioned above are
-            dialect specific, and passed in the form
-            ``<dialectname>_<argname>``.
-            See the documentation regarding an individual dialect at
-            :ref:`dialect_toplevel` for detail on documented arguments.
+         dialect specific, and passed in the form
+         ``<dialectname>_<argname>``.
+         See the documentation regarding an individual dialect at
+         :ref:`dialect_toplevel` for detail on documented arguments.
 
         """
-        op = cls(index_name, table_name=table_name, schema=schema, **kw)
+        op = cls(
+            index_name,
+            table_name=table_name,
+            schema=schema,
+            if_exists=if_exists,
+            **kw,
+        )
         return operations.invoke(op)
 
     @classmethod
     def batch_drop_index(
         cls, operations: BatchOperations, index_name: str, **kw: Any
-    ) -> Optional[Table]:
+    ) -> None:
         """Issue a "drop index" instruction using the
         current batch migration context.
 
@@ -1103,6 +1157,7 @@ class CreateTableOp(MigrateOperation):
         self,
         table_name: str,
         columns: Sequence[SchemaItem],
+        *,
         schema: Optional[str] = None,
         _namespace_metadata: Optional[MetaData] = None,
         _constraints_included: bool = False,
@@ -1128,14 +1183,14 @@ class CreateTableOp(MigrateOperation):
 
     @classmethod
     def from_table(
-        cls, table: Table, _namespace_metadata: Optional[MetaData] = None
+        cls, table: Table, *, _namespace_metadata: Optional[MetaData] = None
     ) -> CreateTableOp:
         if _namespace_metadata is None:
             _namespace_metadata = table.metadata
 
         return cls(
             table.name,
-            list(table.c) + list(table.constraints),  # type:ignore[arg-type]
+            list(table.c) + list(table.constraints),
             schema=table.schema,
             _namespace_metadata=_namespace_metadata,
             # given a Table() object, this Table will contain full Index()
@@ -1174,7 +1229,7 @@ class CreateTableOp(MigrateOperation):
         table_name: str,
         *columns: SchemaItem,
         **kw: Any,
-    ) -> Optional[Table]:
+    ) -> Table:
         r"""Issue a "create table" instruction using the current migration
         context.
 
@@ -1186,11 +1241,11 @@ class CreateTableOp(MigrateOperation):
             from alembic import op
 
             op.create_table(
-                'account',
-                Column('id', INTEGER, primary_key=True),
-                Column('name', VARCHAR(50), nullable=False),
-                Column('description', NVARCHAR(200)),
-                Column('timestamp', TIMESTAMP, server_default=func.now())
+                "account",
+                Column("id", INTEGER, primary_key=True),
+                Column("name", VARCHAR(50), nullable=False),
+                Column("description", NVARCHAR(200)),
+                Column("timestamp", TIMESTAMP, server_default=func.now()),
             )
 
         Note that :meth:`.create_table` accepts
@@ -1204,9 +1259,10 @@ class CreateTableOp(MigrateOperation):
             from sqlalchemy import Column, TIMESTAMP, func
 
             # specify "DEFAULT NOW" along with the "timestamp" column
-            op.create_table('account',
-                Column('id', INTEGER, primary_key=True),
-                Column('timestamp', TIMESTAMP, server_default=func.now())
+            op.create_table(
+                "account",
+                Column("id", INTEGER, primary_key=True),
+                Column("timestamp", TIMESTAMP, server_default=func.now()),
             )
 
         The function also returns a newly created
@@ -1219,11 +1275,11 @@ class CreateTableOp(MigrateOperation):
             from alembic import op
 
             account_table = op.create_table(
-                'account',
-                Column('id', INTEGER, primary_key=True),
-                Column('name', VARCHAR(50), nullable=False),
-                Column('description', NVARCHAR(200)),
-                Column('timestamp', TIMESTAMP, server_default=func.now())
+                "account",
+                Column("id", INTEGER, primary_key=True),
+                Column("name", VARCHAR(50), nullable=False),
+                Column("description", NVARCHAR(200)),
+                Column("timestamp", TIMESTAMP, server_default=func.now()),
             )
 
             op.bulk_insert(
@@ -1231,7 +1287,7 @@ class CreateTableOp(MigrateOperation):
                 [
                     {"name": "A1", "description": "account 1"},
                     {"name": "A2", "description": "account 2"},
-                ]
+                ],
             )
 
         :param table_name: Name of the table
@@ -1262,6 +1318,7 @@ class DropTableOp(MigrateOperation):
     def __init__(
         self,
         table_name: str,
+        *,
         schema: Optional[str] = None,
         table_kw: Optional[MutableMapping[Any, Any]] = None,
         _reverse: Optional[CreateTableOp] = None,
@@ -1282,7 +1339,7 @@ class DropTableOp(MigrateOperation):
 
     @classmethod
     def from_table(
-        cls, table: Table, _namespace_metadata: Optional[MetaData] = None
+        cls, table: Table, *, _namespace_metadata: Optional[MetaData] = None
     ) -> DropTableOp:
         return cls(
             table.name,
@@ -1326,6 +1383,7 @@ class DropTableOp(MigrateOperation):
         cls,
         operations: Operations,
         table_name: str,
+        *,
         schema: Optional[str] = None,
         **kw: Any,
     ) -> None:
@@ -1356,6 +1414,7 @@ class AlterTableOp(MigrateOperation):
     def __init__(
         self,
         table_name: str,
+        *,
         schema: Optional[str] = None,
     ) -> None:
         self.table_name = table_name
@@ -1370,6 +1429,7 @@ class RenameTableOp(AlterTableOp):
         self,
         old_table_name: str,
         new_table_name: str,
+        *,
         schema: Optional[str] = None,
     ) -> None:
         super().__init__(old_table_name, schema=schema)
@@ -1381,8 +1441,9 @@ class RenameTableOp(AlterTableOp):
         operations: Operations,
         old_table_name: str,
         new_table_name: str,
+        *,
         schema: Optional[str] = None,
-    ) -> Optional[Table]:
+    ) -> None:
         """Emit an ALTER TABLE to rename a table.
 
         :param old_table_name: old name.
@@ -1408,6 +1469,7 @@ class CreateTableCommentOp(AlterTableOp):
         self,
         table_name: str,
         comment: Optional[str],
+        *,
         schema: Optional[str] = None,
         existing_comment: Optional[str] = None,
     ) -> None:
@@ -1422,12 +1484,11 @@ class CreateTableCommentOp(AlterTableOp):
         operations: Operations,
         table_name: str,
         comment: Optional[str],
-        existing_comment: None = None,
+        *,
+        existing_comment: Optional[str] = None,
         schema: Optional[str] = None,
-    ) -> Optional[Table]:
+    ) -> None:
         """Emit a COMMENT ON operation to set the comment for a table.
-
-        .. versionadded:: 1.0.6
 
         :param table_name: string name of the target table.
         :param comment: string value of the comment being registered against
@@ -1456,14 +1517,13 @@ class CreateTableCommentOp(AlterTableOp):
     @classmethod
     def batch_create_table_comment(
         cls,
-        operations,
-        comment,
-        existing_comment=None,
-    ):
+        operations: BatchOperations,
+        comment: Optional[str],
+        *,
+        existing_comment: Optional[str] = None,
+    ) -> None:
         """Emit a COMMENT ON operation to set the comment for a table
         using the current batch migration context.
-
-        .. versionadded:: 1.6.0
 
         :param comment: string value of the comment being registered against
          the specified table.
@@ -1482,7 +1542,7 @@ class CreateTableCommentOp(AlterTableOp):
         )
         return operations.invoke(op)
 
-    def reverse(self):
+    def reverse(self) -> Union[CreateTableCommentOp, DropTableCommentOp]:
         """Reverses the COMMENT ON operation against a table."""
         if self.existing_comment is None:
             return DropTableCommentOp(
@@ -1498,14 +1558,16 @@ class CreateTableCommentOp(AlterTableOp):
                 schema=self.schema,
             )
 
-    def to_table(self, migration_context=None):
+    def to_table(
+        self, migration_context: Optional[MigrationContext] = None
+    ) -> Table:
         schema_obj = schemaobj.SchemaObjects(migration_context)
 
         return schema_obj.table(
             self.table_name, schema=self.schema, comment=self.comment
         )
 
-    def to_diff_tuple(self):
+    def to_diff_tuple(self) -> Tuple[Any, ...]:
         return ("add_table_comment", self.to_table(), self.existing_comment)
 
 
@@ -1519,6 +1581,7 @@ class DropTableCommentOp(AlterTableOp):
     def __init__(
         self,
         table_name: str,
+        *,
         schema: Optional[str] = None,
         existing_comment: Optional[str] = None,
     ) -> None:
@@ -1531,13 +1594,12 @@ class DropTableCommentOp(AlterTableOp):
         cls,
         operations: Operations,
         table_name: str,
+        *,
         existing_comment: Optional[str] = None,
         schema: Optional[str] = None,
-    ) -> Optional[Table]:
+    ) -> None:
         """Issue a "drop table comment" operation to
         remove an existing comment set on a table.
-
-        .. versionadded:: 1.0.6
 
         :param table_name: string name of the target table.
         :param existing_comment: An optional string value of a comment already
@@ -1555,12 +1617,15 @@ class DropTableCommentOp(AlterTableOp):
         return operations.invoke(op)
 
     @classmethod
-    def batch_drop_table_comment(cls, operations, existing_comment=None):
+    def batch_drop_table_comment(
+        cls,
+        operations: BatchOperations,
+        *,
+        existing_comment: Optional[str] = None,
+    ) -> None:
         """Issue a "drop table comment" operation to
         remove an existing comment set on a table using the current
         batch operations context.
-
-        .. versionadded:: 1.6.0
 
         :param existing_comment: An optional string value of a comment already
          registered on the specified table.
@@ -1574,18 +1639,20 @@ class DropTableCommentOp(AlterTableOp):
         )
         return operations.invoke(op)
 
-    def reverse(self):
+    def reverse(self) -> CreateTableCommentOp:
         """Reverses the COMMENT ON operation against a table."""
         return CreateTableCommentOp(
             self.table_name, self.existing_comment, schema=self.schema
         )
 
-    def to_table(self, migration_context=None):
+    def to_table(
+        self, migration_context: Optional[MigrationContext] = None
+    ) -> Table:
         schema_obj = schemaobj.SchemaObjects(migration_context)
 
         return schema_obj.table(self.table_name, schema=self.schema)
 
-    def to_diff_tuple(self):
+    def to_diff_tuple(self) -> Tuple[Any, ...]:
         return ("remove_table_comment", self.to_table())
 
 
@@ -1598,6 +1665,7 @@ class AlterColumnOp(AlterTableOp):
         self,
         table_name: str,
         column_name: str,
+        *,
         schema: Optional[str] = None,
         existing_type: Optional[Any] = None,
         existing_server_default: Any = False,
@@ -1719,7 +1787,6 @@ class AlterColumnOp(AlterTableOp):
             return False
 
     def reverse(self) -> AlterColumnOp:
-
         kw = self.kw.copy()
         kw["existing_type"] = self.existing_type
         kw["existing_nullable"] = self.existing_nullable
@@ -1757,12 +1824,15 @@ class AlterColumnOp(AlterTableOp):
         operations: Operations,
         table_name: str,
         column_name: str,
+        *,
         nullable: Optional[bool] = None,
         comment: Optional[Union[str, Literal[False]]] = False,
         server_default: Any = False,
         new_column_name: Optional[str] = None,
-        type_: Optional[Union[TypeEngine, Type[TypeEngine]]] = None,
-        existing_type: Optional[Union[TypeEngine, Type[TypeEngine]]] = None,
+        type_: Optional[Union[TypeEngine[Any], Type[TypeEngine[Any]]]] = None,
+        existing_type: Optional[
+            Union[TypeEngine[Any], Type[TypeEngine[Any]]]
+        ] = None,
         existing_server_default: Optional[
             Union[str, bool, Identity, Computed]
         ] = False,
@@ -1770,7 +1840,7 @@ class AlterColumnOp(AlterTableOp):
         existing_comment: Optional[str] = None,
         schema: Optional[str] = None,
         **kw: Any,
-    ) -> Optional[Table]:
+    ) -> None:
         r"""Issue an "alter column" instruction using the
         current migration context.
 
@@ -1809,9 +1879,6 @@ class AlterColumnOp(AlterTableOp):
          Set to ``None`` to have the default removed.
         :param comment: optional string text of a new comment to add to the
          column.
-
-         .. versionadded:: 1.0.6
-
         :param new_column_name: Optional; specify a string name here to
          indicate the new name within a column rename operation.
         :param type\_: Optional; a :class:`~sqlalchemy.types.TypeEngine`
@@ -1828,7 +1895,7 @@ class AlterColumnOp(AlterTableOp):
          don't otherwise specify a new type, as well as for
          when nullability is being changed on a SQL Server
          column.  It is also used if the type is a so-called
-         SQLlchemy "schema" type which may define a constraint (i.e.
+         SQLAlchemy "schema" type which may define a constraint (i.e.
          :class:`~sqlalchemy.types.Boolean`,
          :class:`~sqlalchemy.types.Enum`),
          so that the constraint can be dropped.
@@ -1845,9 +1912,6 @@ class AlterColumnOp(AlterTableOp):
         :param existing_comment: string text of the existing comment on the
          column to be maintained.  Required on MySQL if the existing comment
          on the column is not being changed.
-
-         .. versionadded:: 1.0.6
-
         :param schema: Optional schema name to operate within.  To control
          quoting of the schema outside of the default behavior, use
          the SQLAlchemy construct
@@ -1883,19 +1947,24 @@ class AlterColumnOp(AlterTableOp):
         cls,
         operations: BatchOperations,
         column_name: str,
+        *,
         nullable: Optional[bool] = None,
-        comment: Union[str, Literal[False]] = False,
-        server_default: Union[Function[Any], bool] = False,
+        comment: Optional[Union[str, Literal[False]]] = False,
+        server_default: Any = False,
         new_column_name: Optional[str] = None,
-        type_: Optional[Union[TypeEngine, Type[TypeEngine]]] = None,
-        existing_type: Optional[Union[TypeEngine, Type[TypeEngine]]] = None,
-        existing_server_default: bool = False,
-        existing_nullable: None = None,
-        existing_comment: None = None,
-        insert_before: None = None,
-        insert_after: None = None,
+        type_: Optional[Union[TypeEngine[Any], Type[TypeEngine[Any]]]] = None,
+        existing_type: Optional[
+            Union[TypeEngine[Any], Type[TypeEngine[Any]]]
+        ] = None,
+        existing_server_default: Optional[
+            Union[str, bool, Identity, Computed]
+        ] = False,
+        existing_nullable: Optional[bool] = None,
+        existing_comment: Optional[str] = None,
+        insert_before: Optional[str] = None,
+        insert_after: Optional[str] = None,
         **kw: Any,
-    ) -> Optional[Table]:
+    ) -> None:
         """Issue an "alter column" instruction using the current
         batch migration context.
 
@@ -1905,16 +1974,12 @@ class AlterColumnOp(AlterTableOp):
         :param insert_before: String name of an existing column which this
          column should be placed before, when creating the new table.
 
-         .. versionadded:: 1.4.0
-
         :param insert_after: String name of an existing column which this
          column should be placed after, when creating the new table.  If
          both :paramref:`.BatchOperations.alter_column.insert_before`
          and :paramref:`.BatchOperations.alter_column.insert_after` are
          omitted, the column is inserted after the last existing column
          in the table.
-
-         .. versionadded:: 1.4.0
 
         .. seealso::
 
@@ -1935,6 +2000,8 @@ class AlterColumnOp(AlterTableOp):
             modify_server_default=server_default,
             modify_nullable=nullable,
             modify_comment=comment,
+            insert_before=insert_before,
+            insert_after=insert_after,
             **kw,
         )
 
@@ -1949,7 +2016,8 @@ class AddColumnOp(AlterTableOp):
     def __init__(
         self,
         table_name: str,
-        column: Column,
+        column: Column[Any],
+        *,
         schema: Optional[str] = None,
         **kw: Any,
     ) -> None:
@@ -1964,14 +2032,14 @@ class AddColumnOp(AlterTableOp):
 
     def to_diff_tuple(
         self,
-    ) -> Tuple[str, Optional[str], str, Column]:
+    ) -> Tuple[str, Optional[str], str, Column[Any]]:
         return ("add_column", self.schema, self.table_name, self.column)
 
-    def to_column(self) -> Column:
+    def to_column(self) -> Column[Any]:
         return self.column
 
     @classmethod
-    def from_column(cls, col: Column) -> AddColumnOp:
+    def from_column(cls, col: Column[Any]) -> AddColumnOp:
         return cls(col.table.name, col, schema=col.table.schema)
 
     @classmethod
@@ -1979,7 +2047,7 @@ class AddColumnOp(AlterTableOp):
         cls,
         schema: Optional[str],
         tname: str,
-        col: Column,
+        col: Column[Any],
     ) -> AddColumnOp:
         return cls(tname, col, schema=schema)
 
@@ -1988,9 +2056,10 @@ class AddColumnOp(AlterTableOp):
         cls,
         operations: Operations,
         table_name: str,
-        column: Column,
+        column: Column[Any],
+        *,
         schema: Optional[str] = None,
-    ) -> Optional[Table]:
+    ) -> None:
         """Issue an "add column" instruction using the current
         migration context.
 
@@ -1999,35 +2068,64 @@ class AddColumnOp(AlterTableOp):
             from alembic import op
             from sqlalchemy import Column, String
 
-            op.add_column('organization',
-                Column('name', String())
-            )
+            op.add_column("organization", Column("name", String()))
 
-        The provided :class:`~sqlalchemy.schema.Column` object can also
-        specify a :class:`~sqlalchemy.schema.ForeignKey`, referencing
-        a remote table name.  Alembic will automatically generate a stub
-        "referenced" table and emit a second ALTER statement in order
-        to add the constraint separately::
+        The :meth:`.Operations.add_column` method typically corresponds
+        to the SQL command "ALTER TABLE... ADD COLUMN".    Within the scope
+        of this command, the column's name, datatype, nullability,
+        and optional server-generated defaults may be indicated.
+
+        .. note::
+
+            With the exception of NOT NULL constraints or single-column FOREIGN
+            KEY constraints, other kinds of constraints such as PRIMARY KEY,
+            UNIQUE or CHECK constraints **cannot** be generated using this
+            method; for these constraints, refer to operations such as
+            :meth:`.Operations.create_primary_key` and
+            :meth:`.Operations.create_check_constraint`. In particular, the
+            following :class:`~sqlalchemy.schema.Column` parameters are
+            **ignored**:
+
+            * :paramref:`~sqlalchemy.schema.Column.primary_key` - SQL databases
+              typically do not support an ALTER operation that can add
+              individual columns one at a time to an existing primary key
+              constraint, therefore it's less ambiguous to use the
+              :meth:`.Operations.create_primary_key` method, which assumes no
+              existing primary key constraint is present.
+            * :paramref:`~sqlalchemy.schema.Column.unique` - use the
+              :meth:`.Operations.create_unique_constraint` method
+            * :paramref:`~sqlalchemy.schema.Column.index` - use the
+              :meth:`.Operations.create_index` method
+
+
+        The provided :class:`~sqlalchemy.schema.Column` object may include a
+        :class:`~sqlalchemy.schema.ForeignKey` constraint directive,
+        referencing a remote table name. For this specific type of constraint,
+        Alembic will automatically emit a second ALTER statement in order to
+        add the single-column FOREIGN KEY constraint separately::
 
             from alembic import op
             from sqlalchemy import Column, INTEGER, ForeignKey
 
-            op.add_column('organization',
-                Column('account_id', INTEGER, ForeignKey('accounts.id'))
+            op.add_column(
+                "organization",
+                Column("account_id", INTEGER, ForeignKey("accounts.id")),
             )
 
-        Note that this statement uses the :class:`~sqlalchemy.schema.Column`
-        construct as is from the SQLAlchemy library.  In particular,
-        default values to be created on the database side are
-        specified using the ``server_default`` parameter, and not
-        ``default`` which only specifies Python-side defaults::
+        The column argument passed to :meth:`.Operations.add_column` is a
+        :class:`~sqlalchemy.schema.Column` construct, used in the same way it's
+        used in SQLAlchemy. In particular, values or functions to be indicated
+        as producing the column's default value on the database side are
+        specified using the ``server_default`` parameter, and not ``default``
+        which only specifies Python-side defaults::
 
             from alembic import op
             from sqlalchemy import Column, TIMESTAMP, func
 
             # specify "DEFAULT NOW" along with the column add
-            op.add_column('account',
-                Column('timestamp', TIMESTAMP, server_default=func.now())
+            op.add_column(
+                "account",
+                Column("timestamp", TIMESTAMP, server_default=func.now()),
             )
 
         :param table_name: String name of the parent table.
@@ -2047,10 +2145,11 @@ class AddColumnOp(AlterTableOp):
     def batch_add_column(
         cls,
         operations: BatchOperations,
-        column: Column,
+        column: Column[Any],
+        *,
         insert_before: Optional[str] = None,
         insert_after: Optional[str] = None,
-    ) -> Optional[Table]:
+    ) -> None:
         """Issue an "add column" instruction using the current
         batch migration context.
 
@@ -2084,6 +2183,7 @@ class DropColumnOp(AlterTableOp):
         self,
         table_name: str,
         column_name: str,
+        *,
         schema: Optional[str] = None,
         _reverse: Optional[AddColumnOp] = None,
         **kw: Any,
@@ -2095,7 +2195,7 @@ class DropColumnOp(AlterTableOp):
 
     def to_diff_tuple(
         self,
-    ) -> Tuple[str, Optional[str], str, Column]:
+    ) -> Tuple[str, Optional[str], str, Column[Any]]:
         return (
             "remove_column",
             self.schema,
@@ -2119,7 +2219,7 @@ class DropColumnOp(AlterTableOp):
         cls,
         schema: Optional[str],
         tname: str,
-        col: Column,
+        col: Column[Any],
     ) -> DropColumnOp:
         return cls(
             tname,
@@ -2130,7 +2230,7 @@ class DropColumnOp(AlterTableOp):
 
     def to_column(
         self, migration_context: Optional[MigrationContext] = None
-    ) -> Column:
+    ) -> Column[Any]:
         if self._reverse is not None:
             return self._reverse.column
         schema_obj = schemaobj.SchemaObjects(migration_context)
@@ -2142,15 +2242,16 @@ class DropColumnOp(AlterTableOp):
         operations: Operations,
         table_name: str,
         column_name: str,
+        *,
         schema: Optional[str] = None,
         **kw: Any,
-    ) -> Optional[Table]:
+    ) -> None:
         """Issue a "drop column" instruction using the current
         migration context.
 
         e.g.::
 
-            drop_column('organization', 'account_id')
+            drop_column("organization", "account_id")
 
         :param table_name: name of table
         :param column_name: name of column
@@ -2188,7 +2289,7 @@ class DropColumnOp(AlterTableOp):
     @classmethod
     def batch_drop_column(
         cls, operations: BatchOperations, column_name: str, **kw: Any
-    ) -> Optional[Table]:
+    ) -> None:
         """Issue a "drop column" instruction using the current
         batch migration context.
 
@@ -2213,7 +2314,8 @@ class BulkInsertOp(MigrateOperation):
     def __init__(
         self,
         table: Union[Table, TableClause],
-        rows: List[dict],
+        rows: List[Dict[str, Any]],
+        *,
         multiinsert: bool = True,
     ) -> None:
         self.table = table
@@ -2225,7 +2327,8 @@ class BulkInsertOp(MigrateOperation):
         cls,
         operations: Operations,
         table: Union[Table, TableClause],
-        rows: List[dict],
+        rows: List[Dict[str, Any]],
+        *,
         multiinsert: bool = True,
     ) -> None:
         """Issue a "bulk insert" operation using the current
@@ -2245,37 +2348,58 @@ class BulkInsertOp(MigrateOperation):
             from sqlalchemy import String, Integer, Date
 
             # Create an ad-hoc table to use for the insert statement.
-            accounts_table = table('account',
-                column('id', Integer),
-                column('name', String),
-                column('create_date', Date)
+            accounts_table = table(
+                "account",
+                column("id", Integer),
+                column("name", String),
+                column("create_date", Date),
             )
 
-            op.bulk_insert(accounts_table,
+            op.bulk_insert(
+                accounts_table,
                 [
-                    {'id':1, 'name':'John Smith',
-                            'create_date':date(2010, 10, 5)},
-                    {'id':2, 'name':'Ed Williams',
-                            'create_date':date(2007, 5, 27)},
-                    {'id':3, 'name':'Wendy Jones',
-                            'create_date':date(2008, 8, 15)},
-                ]
+                    {
+                        "id": 1,
+                        "name": "John Smith",
+                        "create_date": date(2010, 10, 5),
+                    },
+                    {
+                        "id": 2,
+                        "name": "Ed Williams",
+                        "create_date": date(2007, 5, 27),
+                    },
+                    {
+                        "id": 3,
+                        "name": "Wendy Jones",
+                        "create_date": date(2008, 8, 15),
+                    },
+                ],
             )
 
         When using --sql mode, some datatypes may not render inline
         automatically, such as dates and other special types.   When this
         issue is present, :meth:`.Operations.inline_literal` may be used::
 
-            op.bulk_insert(accounts_table,
+            op.bulk_insert(
+                accounts_table,
                 [
-                    {'id':1, 'name':'John Smith',
-                            'create_date':op.inline_literal("2010-10-05")},
-                    {'id':2, 'name':'Ed Williams',
-                            'create_date':op.inline_literal("2007-05-27")},
-                    {'id':3, 'name':'Wendy Jones',
-                            'create_date':op.inline_literal("2008-08-15")},
+                    {
+                        "id": 1,
+                        "name": "John Smith",
+                        "create_date": op.inline_literal("2010-10-05"),
+                    },
+                    {
+                        "id": 2,
+                        "name": "Ed Williams",
+                        "create_date": op.inline_literal("2007-05-27"),
+                    },
+                    {
+                        "id": 3,
+                        "name": "Wendy Jones",
+                        "create_date": op.inline_literal("2008-08-15"),
+                    },
                 ],
-                multiinsert=False
+                multiinsert=False,
             )
 
         When using :meth:`.Operations.inline_literal` in conjunction with
@@ -2308,13 +2432,15 @@ class BulkInsertOp(MigrateOperation):
 
 
 @Operations.register_operation("execute")
+@BatchOperations.register_operation("execute", "batch_execute")
 class ExecuteSQLOp(MigrateOperation):
     """Represent an execute SQL operation."""
 
     def __init__(
         self,
-        sqltext: Union[Update, str, Insert, TextClause],
-        execution_options: None = None,
+        sqltext: Union[Executable, str],
+        *,
+        execution_options: Optional[dict[str, Any]] = None,
     ) -> None:
         self.sqltext = sqltext
         self.execution_options = execution_options
@@ -2323,9 +2449,10 @@ class ExecuteSQLOp(MigrateOperation):
     def execute(
         cls,
         operations: Operations,
-        sqltext: Union[str, TextClause, Update],
-        execution_options: None = None,
-    ) -> Optional[Table]:
+        sqltext: Union[Executable, str],
+        *,
+        execution_options: Optional[dict[str, Any]] = None,
+    ) -> None:
         r"""Execute the given SQL using the current migration context.
 
         The given SQL can be a plain string, e.g.::
@@ -2339,14 +2466,12 @@ class ExecuteSQLOp(MigrateOperation):
             from sqlalchemy import String
             from alembic import op
 
-            account = table('account',
-                column('name', String)
-            )
+            account = table("account", column("name", String))
             op.execute(
-                account.update().\\
-                    where(account.c.name==op.inline_literal('account 1')).\\
-                    values({'name':op.inline_literal('account 2')})
-                    )
+                account.update()
+                .where(account.c.name == op.inline_literal("account 1"))
+                .values({"name": op.inline_literal("account 2")})
+            )
 
         Above, we made use of the SQLAlchemy
         :func:`sqlalchemy.sql.expression.table` and
@@ -2370,15 +2495,17 @@ class ExecuteSQLOp(MigrateOperation):
         also be used normally, use the "bind" available from the context::
 
             from alembic import op
+
             connection = op.get_bind()
 
             connection.execute(
-                account.update().where(account.c.name=='account 1').
-                values({"name": "account 2"})
+                account.update()
+                .where(account.c.name == "account 1")
+                .values({"name": "account 2"})
             )
 
         Additionally, when passing the statement as a plain string, it is first
-        coerceed into a :func:`sqlalchemy.sql.expression.text` construct
+        coerced into a :func:`sqlalchemy.sql.expression.text` construct
         before being passed along.  In the less likely case that the
         literal SQL string contains a colon, it must be escaped with a
         backslash, as::
@@ -2391,11 +2518,10 @@ class ExecuteSQLOp(MigrateOperation):
         * a string
         * a :func:`sqlalchemy.sql.expression.text` construct.
         * a :func:`sqlalchemy.sql.expression.insert` construct.
-        * a :func:`sqlalchemy.sql.expression.update`,
-          :func:`sqlalchemy.sql.expression.insert`,
-          or :func:`sqlalchemy.sql.expression.delete`  construct.
-        * Pretty much anything that's "executable" as described
-          in :ref:`sqlexpression_toplevel`.
+        * a :func:`sqlalchemy.sql.expression.update` construct.
+        * a :func:`sqlalchemy.sql.expression.delete` construct.
+        * Any "executable" described in SQLAlchemy Core documentation,
+          noting that no result set is returned.
 
         .. note::  when passing a plain string, the statement is coerced into
            a :func:`sqlalchemy.sql.expression.text` construct. This construct
@@ -2409,6 +2535,28 @@ class ExecuteSQLOp(MigrateOperation):
         """
         op = cls(sqltext, execution_options=execution_options)
         return operations.invoke(op)
+
+    @classmethod
+    def batch_execute(
+        cls,
+        operations: Operations,
+        sqltext: Union[Executable, str],
+        *,
+        execution_options: Optional[dict[str, Any]] = None,
+    ) -> None:
+        """Execute the given SQL using the current migration context.
+
+        .. seealso::
+
+            :meth:`.Operations.execute`
+
+        """
+        return cls.execute(
+            operations, sqltext, execution_options=execution_options
+        )
+
+    def to_diff_tuple(self) -> Tuple[str, Union[Executable, str]]:
+        return ("execute", self.sqltext)
 
 
 class OpContainer(MigrateOperation):
@@ -2441,6 +2589,7 @@ class ModifyTableOps(OpContainer):
         self,
         table_name: str,
         ops: Sequence[MigrateOperation],
+        *,
         schema: Optional[str] = None,
     ) -> None:
         super().__init__(ops)
@@ -2474,7 +2623,7 @@ class UpgradeOps(OpContainer):
         self.upgrade_token = upgrade_token
 
     def reverse_into(self, downgrade_ops: DowngradeOps) -> DowngradeOps:
-        downgrade_ops.ops[:] = list(  # type:ignore[index]
+        downgrade_ops.ops[:] = list(
             reversed([op.reverse() for op in self.ops])
         )
         return downgrade_ops
@@ -2501,7 +2650,7 @@ class DowngradeOps(OpContainer):
         super().__init__(ops=ops)
         self.downgrade_token = downgrade_token
 
-    def reverse(self):
+    def reverse(self) -> UpgradeOps:
         return UpgradeOps(
             ops=list(reversed([op.reverse() for op in self.ops]))
         )
@@ -2532,19 +2681,22 @@ class MigrationScript(MigrateOperation):
     """
 
     _needs_render: Optional[bool]
+    _upgrade_ops: List[UpgradeOps]
+    _downgrade_ops: List[DowngradeOps]
 
     def __init__(
         self,
         rev_id: Optional[str],
         upgrade_ops: UpgradeOps,
         downgrade_ops: DowngradeOps,
+        *,
         message: Optional[str] = None,
         imports: Set[str] = set(),
         head: Optional[str] = None,
         splice: Optional[bool] = None,
-        branch_label: Optional[str] = None,
+        branch_label: Optional[_RevIdType] = None,
         version_path: Optional[str] = None,
-        depends_on: Optional[Union[str, Sequence[str]]] = None,
+        depends_on: Optional[_RevIdType] = None,
     ) -> None:
         self.rev_id = rev_id
         self.message = message
@@ -2558,7 +2710,7 @@ class MigrationScript(MigrateOperation):
         self.downgrade_ops = downgrade_ops
 
     @property
-    def upgrade_ops(self):
+    def upgrade_ops(self) -> Optional[UpgradeOps]:
         """An instance of :class:`.UpgradeOps`.
 
         .. seealso::
@@ -2577,13 +2729,15 @@ class MigrationScript(MigrateOperation):
             return self._upgrade_ops[0]
 
     @upgrade_ops.setter
-    def upgrade_ops(self, upgrade_ops):
+    def upgrade_ops(
+        self, upgrade_ops: Union[UpgradeOps, List[UpgradeOps]]
+    ) -> None:
         self._upgrade_ops = util.to_list(upgrade_ops)
         for elem in self._upgrade_ops:
             assert isinstance(elem, UpgradeOps)
 
     @property
-    def downgrade_ops(self):
+    def downgrade_ops(self) -> Optional[DowngradeOps]:
         """An instance of :class:`.DowngradeOps`.
 
         .. seealso::
@@ -2602,7 +2756,9 @@ class MigrationScript(MigrateOperation):
             return self._downgrade_ops[0]
 
     @downgrade_ops.setter
-    def downgrade_ops(self, downgrade_ops):
+    def downgrade_ops(
+        self, downgrade_ops: Union[DowngradeOps, List[DowngradeOps]]
+    ) -> None:
         self._downgrade_ops = util.to_list(downgrade_ops)
         for elem in self._downgrade_ops:
             assert isinstance(elem, DowngradeOps)

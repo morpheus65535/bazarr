@@ -1,14 +1,17 @@
+# mypy: allow-untyped-defs, allow-incomplete-defs, allow-untyped-calls
+# mypy: no-warn-return-any, allow-any-generics
+
 from __future__ import annotations
 
 import re
 from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import TYPE_CHECKING
 from typing import Union
 
 from sqlalchemy import types as sqltypes
-from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import CreateIndex
 from sqlalchemy.sql.base import Executable
@@ -29,6 +32,7 @@ from .base import RenameTable
 from .impl import DefaultImpl
 from .. import util
 from ..util import sqla_compat
+from ..util.sqla_compat import compiles
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -50,16 +54,13 @@ class MSSQLImpl(DefaultImpl):
     batch_separator = "GO"
 
     type_synonyms = DefaultImpl.type_synonyms + ({"VARCHAR", "NVARCHAR"},)
-    identity_attrs_ignore = (
+    identity_attrs_ignore = DefaultImpl.identity_attrs_ignore + (
         "minvalue",
         "maxvalue",
         "nominvalue",
         "nomaxvalue",
         "cycle",
         "cache",
-        "order",
-        "on_null",
-        "order",
     )
 
     def __init__(self, *arg, **kw) -> None:
@@ -98,7 +99,6 @@ class MSSQLImpl(DefaultImpl):
         existing_nullable: Optional[bool] = None,
         **kw: Any,
     ) -> None:
-
         if nullable is not None:
             if type_ is not None:
                 # the NULL/NOT NULL alter will handle
@@ -171,7 +171,7 @@ class MSSQLImpl(DefaultImpl):
                 table_name, column_name, schema=schema, name=name
             )
 
-    def create_index(self, index: Index) -> None:
+    def create_index(self, index: Index, **kw: Any) -> None:
         # this likely defaults to None if not present, so get()
         # should normally not return the default value.  being
         # defensive in any case
@@ -180,7 +180,7 @@ class MSSQLImpl(DefaultImpl):
         for col in mssql_include:
             if col not in index.table.c:
                 index.table.append_column(Column(col, sqltypes.NullType))
-        self._exec(CreateIndex(index))
+        self._exec(CreateIndex(index, **kw))
 
     def bulk_insert(  # type:ignore[override]
         self, table: Union[TableClause, Table], rows: List[dict], **kw: Any
@@ -201,7 +201,7 @@ class MSSQLImpl(DefaultImpl):
     def drop_column(
         self,
         table_name: str,
-        column: Column,
+        column: Column[Any],
         schema: Optional[str] = None,
         **kw,
     ) -> None:
@@ -231,9 +231,7 @@ class MSSQLImpl(DefaultImpl):
         rendered_metadata_default,
         rendered_inspector_default,
     ):
-
         if rendered_metadata_default is not None:
-
             rendered_metadata_default = re.sub(
                 r"[\(\) \"\']", "", rendered_metadata_default
             )
@@ -266,6 +264,17 @@ class MSSQLImpl(DefaultImpl):
 
         return diff, ignored, is_alter
 
+    def adjust_reflected_dialect_options(
+        self, reflected_object: Dict[str, Any], kind: str
+    ) -> Dict[str, Any]:
+        options: Dict[str, Any]
+        options = reflected_object.get("dialect_options", {}).copy()
+        if not options.get("mssql_include"):
+            options.pop("mssql_include", None)
+        if not options.get("mssql_clustered"):
+            options.pop("mssql_clustered", None)
+        return options
+
 
 class _ExecDropConstraint(Executable, ClauseElement):
     inherit_cache = False
@@ -273,7 +282,7 @@ class _ExecDropConstraint(Executable, ClauseElement):
     def __init__(
         self,
         tname: str,
-        colname: Union[Column, str],
+        colname: Union[Column[Any], str],
         type_: str,
         schema: Optional[str],
     ) -> None:
@@ -287,7 +296,7 @@ class _ExecDropFKConstraint(Executable, ClauseElement):
     inherit_cache = False
 
     def __init__(
-        self, tname: str, colname: Column, schema: Optional[str]
+        self, tname: str, colname: Column[Any], schema: Optional[str]
     ) -> None:
         self.tname = tname
         self.colname = colname
@@ -347,7 +356,9 @@ def visit_add_column(element: AddColumn, compiler: MSDDLCompiler, **kw) -> str:
     )
 
 
-def mssql_add_column(compiler: MSDDLCompiler, column: Column, **kw) -> str:
+def mssql_add_column(
+    compiler: MSDDLCompiler, column: Column[Any], **kw
+) -> str:
     return "ADD %s" % compiler.get_column_specification(column, **kw)
 
 

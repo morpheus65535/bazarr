@@ -4,7 +4,7 @@
 
     pygments version of my "native" vim theme.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -13,11 +13,15 @@ from pygments.token import Keyword, Name, Comment, String, Error, \
      Number, Operator, Generic, Token, Whitespace
 
 
+__all__ = ['NativeStyle']
+
+
 class NativeStyle(Style):
     """
     Pygments version of the "native" vim theme.
     """
-
+    name = 'native'
+    
     background_color = '#202020'
     highlight_color = '#404040'
     line_number_color = '#aaaaaa'
@@ -27,7 +31,7 @@ class NativeStyle(Style):
         Whitespace:         '#666666',
 
         Comment:            'italic #ababab',
-        Comment.Preproc:    'noitalic bold #cd2828',
+        Comment.Preproc:    'noitalic bold #ff3a3a',
         Comment.Special:    'noitalic bold #e50808 bg:#520000',
 
         Keyword:            'bold #6ebf26',
@@ -57,6 +61,7 @@ class NativeStyle(Style):
         Generic.Error:      '#d22323',
         Generic.Emph:       'italic',
         Generic.Strong:     'bold',
+        Generic.EmphStrong: 'bold italic',
         Generic.Prompt:     '#aaaaaa',
         Generic.Output:     '#cccccc',
         Generic.Traceback:  '#d22323',

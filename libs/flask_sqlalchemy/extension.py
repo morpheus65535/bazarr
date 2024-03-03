@@ -1,27 +1,61 @@
 from __future__ import annotations
 
 import os
+import types
 import typing as t
+import warnings
 from weakref import WeakKeyDictionary
 
 import sqlalchemy as sa
-import sqlalchemy.event
-import sqlalchemy.exc
-import sqlalchemy.orm
+import sqlalchemy.event as sa_event
+import sqlalchemy.exc as sa_exc
+import sqlalchemy.orm as sa_orm
 from flask import abort
 from flask import current_app
 from flask import Flask
 from flask import has_app_context
 
 from .model import _QueryProperty
+from .model import BindMixin
 from .model import DefaultMeta
+from .model import DefaultMetaNoName
 from .model import Model
+from .model import NameMixin
 from .pagination import Pagination
 from .pagination import SelectPagination
 from .query import Query
 from .session import _app_ctx_id
 from .session import Session
 from .table import _Table
+
+_O = t.TypeVar("_O", bound=object)  # Based on sqlalchemy.orm._typing.py
+
+
+# Type accepted for model_class argument
+_FSA_MCT = t.TypeVar(
+    "_FSA_MCT",
+    bound=t.Union[
+        t.Type[Model],
+        sa_orm.DeclarativeMeta,
+        t.Type[sa_orm.DeclarativeBase],
+        t.Type[sa_orm.DeclarativeBaseNoMeta],
+    ],
+)
+
+
+# Type returned by make_declarative_base
+class _FSAModel(Model):
+    metadata: sa.MetaData
+
+
+def _get_2x_declarative_bases(
+    model_class: _FSA_MCT,
+) -> list[t.Type[t.Union[sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta]]]:
+    return [
+        b
+        for b in model_class.__bases__
+        if issubclass(b, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta))
+    ]
 
 
 class SQLAlchemy:
@@ -64,6 +98,18 @@ class SQLAlchemy:
     :param add_models_to_shell: Add the ``db`` instance and all model classes to
         ``flask shell``.
 
+    .. versionchanged:: 3.1.0
+        The ``metadata`` parameter can still be used with SQLAlchemy 1.x classes,
+        but is ignored when using SQLAlchemy 2.x style of declarative classes.
+        Instead, specify metadata on your Base class.
+
+    .. versionchanged:: 3.1.0
+        Added the ``disable_autonaming`` parameter.
+
+    .. versionchanged:: 3.1.0
+        Changed ``model_class`` parameter to accepta SQLAlchemy 2.x
+        declarative base subclass.
+
     .. versionchanged:: 3.0
         An active Flask application context is always required to access ``session`` and
         ``engine``.
@@ -98,11 +144,6 @@ class SQLAlchemy:
     .. versionchanged:: 3.0
         Removed the ``use_native_unicode`` parameter and config.
 
-    .. versionchanged:: 3.0
-        The ``COMMIT_ON_TEARDOWN`` configuration is deprecated and will
-        be removed in Flask-SQLAlchemy 3.1. Call ``db.session.commit()``
-        directly instead.
-
     .. versionchanged:: 2.4
         Added the ``engine_options`` parameter.
 
@@ -127,9 +168,10 @@ class SQLAlchemy:
         metadata: sa.MetaData | None = None,
         session_options: dict[str, t.Any] | None = None,
         query_class: type[Query] = Query,
-        model_class: type[Model] | sa.orm.DeclarativeMeta = Model,
+        model_class: _FSA_MCT = Model,  # type: ignore[assignment]
         engine_options: dict[str, t.Any] | None = None,
         add_models_to_shell: bool = True,
+        disable_autonaming: bool = False,
     ):
         if session_options is None:
             session_options = {}
@@ -171,8 +213,17 @@ class SQLAlchemy:
         """
 
         if metadata is not None:
-            metadata.info["bind_key"] = None
-            self.metadatas[None] = metadata
+            if len(_get_2x_declarative_bases(model_class)) > 0:
+                warnings.warn(
+                    "When using SQLAlchemy 2.x style of declarative classes,"
+                    " the `metadata` should be an attribute of the base class."
+                    "The metadata passed into SQLAlchemy() is ignored.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+            else:
+                metadata.info["bind_key"] = None
+                self.metadatas[None] = metadata
 
         self.Table = self._make_table_class()
         """A :class:`sqlalchemy.schema.Table` class that chooses a metadata
@@ -190,7 +241,9 @@ class SQLAlchemy:
             This is a subclass of SQLAlchemy's ``Table`` rather than a function.
         """
 
-        self.Model = self._make_declarative_base(model_class)
+        self.Model = self._make_declarative_base(
+            model_class, disable_autonaming=disable_autonaming
+        )
         """A SQLAlchemy declarative model class. Subclass this to define database
         models.
 
@@ -202,9 +255,15 @@ class SQLAlchemy:
         database engine. Otherwise, it will use the default :attr:`metadata` and
         :attr:`engine`. This is ignored if the model sets ``metadata`` or ``__table__``.
 
-        Customize this by subclassing :class:`.Model` and passing the ``model_class``
-        parameter to the extension. A fully created declarative model class can be
+        For code using the SQLAlchemy 1.x API, customize this model by subclassing
+        :class:`.Model` and passing the ``model_class`` parameter to the extension.
+        A fully created declarative model class can be
         passed as well, to use a custom metaclass.
+
+        For code using the SQLAlchemy 2.x API, customize this model by subclassing
+        :class:`sqlalchemy.orm.DeclarativeBase` or
+        :class:`sqlalchemy.orm.DeclarativeBaseNoMeta`
+        and passing the ``model_class`` parameter to the extension.
         """
 
         if engine_options is None:
@@ -256,23 +315,12 @@ class SQLAlchemy:
             )
 
         app.extensions["sqlalchemy"] = self
+        app.teardown_appcontext(self._teardown_session)
 
         if self._add_models_to_shell:
             from .cli import add_models_to_shell
 
             app.shell_context_processor(add_models_to_shell)
-
-        if app.config.get("SQLALCHEMY_COMMIT_ON_TEARDOWN", False):
-            import warnings
-
-            warnings.warn(
-                "'SQLALCHEMY_COMMIT_ON_TEARDOWN' is deprecated and will be removed in"
-                " Flask-SQAlchemy 3.1. Call 'db.session.commit()'` directly instead.",
-                DeprecationWarning,
-            )
-            app.teardown_appcontext(self._teardown_commit)
-        else:
-            app.teardown_appcontext(self._teardown_session)
 
         basic_uri: str | sa.engine.URL | None = app.config.setdefault(
             "SQLALCHEMY_DATABASE_URI", None
@@ -338,7 +386,7 @@ class SQLAlchemy:
 
     def _make_scoped_session(
         self, options: dict[str, t.Any]
-    ) -> sa.orm.scoped_session[Session]:
+    ) -> sa_orm.scoped_session[Session]:
         """Create a :class:`sqlalchemy.orm.scoping.scoped_session` around the factory
         from :meth:`_make_session_factory`. The result is available as :attr:`session`.
 
@@ -361,11 +409,11 @@ class SQLAlchemy:
         """
         scope = options.pop("scopefunc", _app_ctx_id)
         factory = self._make_session_factory(options)
-        return sa.orm.scoped_session(factory, scope)
+        return sa_orm.scoped_session(factory, scope)
 
     def _make_session_factory(
         self, options: dict[str, t.Any]
-    ) -> sa.orm.sessionmaker[Session]:
+    ) -> sa_orm.sessionmaker[Session]:
         """Create the SQLAlchemy :class:`sqlalchemy.orm.sessionmaker` used by
         :meth:`_make_scoped_session`.
 
@@ -388,21 +436,7 @@ class SQLAlchemy:
         """
         options.setdefault("class_", Session)
         options.setdefault("query_cls", self.Query)
-        return sa.orm.sessionmaker(db=self, **options)
-
-    def _teardown_commit(self, exc: BaseException | None) -> None:
-        """Commit the session at the end of the request if there was not an unhandled
-        exception during the request.
-
-        :meta private:
-
-        .. deprecated:: 3.0
-            Will be removed in 3.1. Use ``db.session.commit()`` directly instead.
-        """
-        if exc is None:
-            self.session.commit()
-
-        self.session.remove()
+        return sa_orm.sessionmaker(db=self, **options)
 
     def _teardown_session(self, exc: BaseException | None) -> None:
         """Remove the current session at the end of the request.
@@ -461,29 +495,16 @@ class SQLAlchemy:
                 if not args or (len(args) >= 2 and isinstance(args[1], sa.MetaData)):
                     return super().__new__(cls, *args, **kwargs)
 
-                if (
-                    bind_key is None
-                    and "info" in kwargs
-                    and "bind_key" in kwargs["info"]
-                ):
-                    import warnings
-
-                    warnings.warn(
-                        "'table.info['bind_key'] is deprecated and will not be used in"
-                        " Flask-SQLAlchemy 3.1. Pass the 'bind_key' parameter instead.",
-                        DeprecationWarning,
-                        stacklevel=2,
-                    )
-                    bind_key = kwargs["info"].get("bind_key")
-
                 metadata = self._make_metadata(bind_key)
                 return super().__new__(cls, *[args[0], metadata, *args[1:]], **kwargs)
 
         return Table
 
     def _make_declarative_base(
-        self, model: type[Model] | sa.orm.DeclarativeMeta
-    ) -> type[t.Any]:
+        self,
+        model_class: _FSA_MCT,
+        disable_autonaming: bool = False,
+    ) -> t.Type[_FSAModel]:
         """Create a SQLAlchemy declarative model class. The result is available as
         :attr:`Model`.
 
@@ -495,7 +516,14 @@ class SQLAlchemy:
 
         :meta private:
 
-        :param model: A model base class, or an already created declarative model class.
+        :param model_class: A model base class, or an already created declarative model
+        class.
+
+        :param disable_autonaming: Turns off automatic tablename generation in models.
+
+        .. versionchanged:: 3.1.0
+            Added support for passing SQLAlchemy 2.x base class as model class.
+            Added optional ``disable_autonaming`` parameter.
 
         .. versionchanged:: 3.0
             Renamed with a leading underscore, this method is internal.
@@ -503,22 +531,45 @@ class SQLAlchemy:
         .. versionchanged:: 2.3
             ``model`` can be an already created declarative model class.
         """
-        if not isinstance(model, sa.orm.DeclarativeMeta):
-            metadata = self._make_metadata(None)
-            model = sa.orm.declarative_base(
-                metadata=metadata, cls=model, name="Model", metaclass=DefaultMeta
+        model: t.Type[_FSAModel]
+        declarative_bases = _get_2x_declarative_bases(model_class)
+        if len(declarative_bases) > 1:
+            # raise error if more than one declarative base is found
+            raise ValueError(
+                "Only one declarative base can be passed to SQLAlchemy."
+                " Got: {}".format(model_class.__bases__)
             )
+        elif len(declarative_bases) == 1:
+            body = dict(model_class.__dict__)
+            body["__fsa__"] = self
+            mixin_classes = [BindMixin, NameMixin, Model]
+            if disable_autonaming:
+                mixin_classes.remove(NameMixin)
+            model = types.new_class(
+                "FlaskSQLAlchemyBase",
+                (*mixin_classes, *model_class.__bases__),
+                {"metaclass": type(declarative_bases[0])},
+                lambda ns: ns.update(body),
+            )
+        elif not isinstance(model_class, sa_orm.DeclarativeMeta):
+            metadata = self._make_metadata(None)
+            metaclass = DefaultMetaNoName if disable_autonaming else DefaultMeta
+            model = sa_orm.declarative_base(
+                metadata=metadata, cls=model_class, name="Model", metaclass=metaclass
+            )
+        else:
+            model = model_class  # type: ignore[assignment]
 
         if None not in self.metadatas:
             # Use the model's metadata as the default metadata.
-            model.metadata.info["bind_key"] = None  # type: ignore[union-attr]
-            self.metadatas[None] = model.metadata  # type: ignore[union-attr]
+            model.metadata.info["bind_key"] = None
+            self.metadatas[None] = model.metadata
         else:
             # Use the passed in default metadata as the model's metadata.
-            model.metadata = self.metadatas[None]  # type: ignore[union-attr]
+            model.metadata = self.metadatas[None]
 
         model.query_class = self.Query
-        model.query = _QueryProperty()
+        model.query = _QueryProperty()  # type: ignore[assignment]
         model.__fsa__ = self
         return model
 
@@ -657,91 +708,56 @@ class SQLAlchemy:
         """
         return self.engines[None]
 
-    def get_engine(self, bind_key: str | None = None) -> sa.engine.Engine:
+    def get_engine(
+        self, bind_key: str | None = None, **kwargs: t.Any
+    ) -> sa.engine.Engine:
         """Get the engine for the given bind key for the current application.
-
         This requires that a Flask application context is active.
 
         :param bind_key: The name of the engine.
 
         .. deprecated:: 3.0
-            Will be removed in Flask-SQLAlchemy 3.1. Use ``engines[key]`` instead.
+            Will be removed in Flask-SQLAlchemy 3.2. Use ``engines[key]`` instead.
 
         .. versionchanged:: 3.0
             Renamed the ``bind`` parameter to ``bind_key``. Removed the ``app``
             parameter.
         """
-        import warnings
-
         warnings.warn(
-            "'get_engine' is deprecated and will be removed in Flask-SQLAlchemy 3.1."
-            " Use 'engine' or 'engines[key]' instead.",
+            "'get_engine' is deprecated and will be removed in Flask-SQLAlchemy"
+            " 3.2. Use 'engine' or 'engines[key]' instead. If you're using"
+            " Flask-Migrate or Alembic, you'll need to update your 'env.py' file.",
             DeprecationWarning,
             stacklevel=2,
         )
+
+        if "bind" in kwargs:
+            bind_key = kwargs.pop("bind")
+
         return self.engines[bind_key]
 
-    def get_tables_for_bind(self, bind_key: str | None = None) -> list[sa.Table]:
-        """Get all tables in the metadata for the given bind key.
-
-        :param bind_key: The bind key to get.
-
-        .. deprecated:: 3.0
-            Will be removed in Flask-SQLAlchemy 3.1. Use ``metadata.tables`` instead.
-
-        .. versionchanged:: 3.0
-            Renamed the ``bind`` parameter to ``bind_key``.
-        """
-        import warnings
-
-        warnings.warn(
-            "'get_tables_for_bind' is deprecated and will be removed in"
-            " Flask-SQLAlchemy 3.1. Use 'metadata.tables' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return list(self.metadatas[bind_key].tables.values())
-
-    def get_binds(self) -> dict[sa.Table, sa.engine.Engine]:
-        """Map all tables to their engine based on their bind key, which can be used to
-        create a session with ``Session(binds=db.get_binds(app))``.
-
-        This requires that a Flask application context is active.
-
-        .. deprecated:: 3.0
-            Will be removed in Flask-SQLAlchemy 3.1. ``db.session`` supports multiple
-            binds directly.
-
-        .. versionchanged:: 3.0
-            Removed the ``app`` parameter.
-        """
-        import warnings
-
-        warnings.warn(
-            "'get_binds' is deprecated and will be removed in Flask-SQLAlchemy 3.1."
-            " 'db.session' supports multiple binds directly.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return {
-            table: engine
-            for bind_key, engine in self.engines.items()
-            for table in self.metadatas[bind_key].tables.values()
-        }
-
     def get_or_404(
-        self, entity: type[t.Any], ident: t.Any, *, description: str | None = None
-    ) -> t.Any:
+        self,
+        entity: type[_O],
+        ident: t.Any,
+        *,
+        description: str | None = None,
+        **kwargs: t.Any,
+    ) -> _O:
         """Like :meth:`session.get() <sqlalchemy.orm.Session.get>` but aborts with a
         ``404 Not Found`` error instead of returning ``None``.
 
         :param entity: The model class to query.
         :param ident: The primary key to query.
         :param description: A custom message to show on the error page.
+        :param kwargs: Extra arguments passed to ``session.get()``.
+
+        .. versionchanged:: 3.1
+            Pass extra keyword arguments to ``session.get()``.
 
         .. versionadded:: 3.0
         """
-        value = self.session.get(entity, ident)
+        value = self.session.get(entity, ident, **kwargs)
 
         if value is None:
             abort(404, description=description)
@@ -780,7 +796,7 @@ class SQLAlchemy:
         """
         try:
             return self.session.execute(statement).scalar_one()
-        except (sa.exc.NoResultFound, sa.exc.MultipleResultsFound):
+        except (sa_exc.NoResultFound, sa_exc.MultipleResultsFound):
             abort(404, description=description)
 
     def paginate(
@@ -859,7 +875,7 @@ class SQLAlchemy:
                 if key is None:
                     message = f"'SQLALCHEMY_DATABASE_URI' config is not set. {message}"
 
-                raise sa.exc.UnboundExecutionError(message) from None
+                raise sa_exc.UnboundExecutionError(message) from None
 
             metadata = self.metadatas[key]
             getattr(metadata, op_name)(bind=engine)
@@ -936,7 +952,7 @@ class SQLAlchemy:
 
     def relationship(
         self, *args: t.Any, **kwargs: t.Any
-    ) -> sa.orm.RelationshipProperty[t.Any]:
+    ) -> sa_orm.RelationshipProperty[t.Any]:
         """A :func:`sqlalchemy.orm.relationship` that applies this extension's
         :attr:`Query` class for dynamic relationships and backrefs.
 
@@ -944,11 +960,11 @@ class SQLAlchemy:
             The :attr:`Query` class is set on ``backref``.
         """
         self._set_rel_query(kwargs)
-        return sa.orm.relationship(*args, **kwargs)
+        return sa_orm.relationship(*args, **kwargs)
 
     def dynamic_loader(
         self, argument: t.Any, **kwargs: t.Any
-    ) -> sa.orm.RelationshipProperty[t.Any]:
+    ) -> sa_orm.RelationshipProperty[t.Any]:
         """A :func:`sqlalchemy.orm.dynamic_loader` that applies this extension's
         :attr:`Query` class for relationships and backrefs.
 
@@ -956,11 +972,11 @@ class SQLAlchemy:
             The :attr:`Query` class is set on ``backref``.
         """
         self._set_rel_query(kwargs)
-        return sa.orm.dynamic_loader(argument, **kwargs)
+        return sa_orm.dynamic_loader(argument, **kwargs)
 
     def _relation(
         self, *args: t.Any, **kwargs: t.Any
-    ) -> sa.orm.RelationshipProperty[t.Any]:
+    ) -> sa_orm.RelationshipProperty[t.Any]:
         """A :func:`sqlalchemy.orm.relationship` that applies this extension's
         :attr:`Query` class for dynamic relationships and backrefs.
 
@@ -971,34 +987,21 @@ class SQLAlchemy:
         .. versionchanged:: 3.0
             The :attr:`Query` class is set on ``backref``.
         """
-        # Deprecated, removed in SQLAlchemy 2.0. Accessed through ``__getattr__``.
         self._set_rel_query(kwargs)
-        f = sa.orm.relation  # type: ignore[attr-defined]
-        return f(*args, **kwargs)  # type: ignore[no-any-return]
+        f = sa_orm.relationship
+        return f(*args, **kwargs)
 
     def __getattr__(self, name: str) -> t.Any:
-        if name == "db":
-            import warnings
-
-            warnings.warn(
-                "The 'db' attribute is deprecated and will be removed in"
-                " Flask-SQLAlchemy 3.1. The extension is registered directly as"
-                " 'app.extensions[\"sqlalchemy\"]'.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return self
-
         if name == "relation":
             return self._relation
 
         if name == "event":
-            return sa.event
+            return sa_event
 
         if name.startswith("_"):
             raise AttributeError(name)
 
-        for mod in (sa, sa.orm):
+        for mod in (sa, sa_orm):
             if hasattr(mod, name):
                 return getattr(mod, name)
 

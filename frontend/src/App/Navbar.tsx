@@ -84,7 +84,7 @@ function useIsActive(parent: string, route: RouteObject) {
 
   const paths = useMemo(
     () => [root, ...(children?.map((v) => pathJoin(root, v.path ?? "")) ?? [])],
-    [root, children]
+    [root, children],
   );
 
   const selection = useSelection().selection;
@@ -92,7 +92,7 @@ function useIsActive(parent: string, route: RouteObject) {
     () =>
       selection?.includes(root) ||
       paths.some((path) => matchPath(path, pathname)),
-    [pathname, paths, root, selection]
+    [pathname, paths, root, selection],
   );
 }
 
@@ -338,7 +338,7 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
           clsx(classes.anchor, {
             [classes.active]: isActive,
             [classes.hover]: hovered,
-          })
+          }),
         )
       }
     >

@@ -5,9 +5,15 @@ if sys.platform == "win32":
         get_localzone,
         get_localzone_name,
         reload_localzone,
-    )  # pragma: no cover
+    )
 else:
     from tzlocal.unix import get_localzone, get_localzone_name, reload_localzone
 
+from tzlocal.utils import assert_tz_offset
 
-__all__ = ["get_localzone", "get_localzone_name", "reload_localzone"]
+__all__ = [
+    "get_localzone",
+    "get_localzone_name",
+    "reload_localzone",
+    "assert_tz_offset",
+]

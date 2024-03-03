@@ -1,129 +1,77 @@
 #!/usr/bin/env python
-# -*- coding: UTF-8 -*-
-
-# Abstract converter functions for use in any Box class
-
-import csv
-import json
-import sys
-import warnings
+_E=False
+_D=True
+_C='strict'
+_B='utf-8'
+_A=None
+import csv,json,sys,warnings
 from pathlib import Path
-
 import dynaconf.vendor.ruamel.yaml as yaml
-from dynaconf.vendor.box.exceptions import BoxError, BoxWarning
+from dynaconf.vendor.box.exceptions import BoxError,BoxWarning
 from dynaconf.vendor import tomllib as toml
-
-
-BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
-                  'frozen_box', 'camel_killer_box',
-                  'box_safe_prefix', 'box_duplicates', 'ordered_box',
-                  'default_box_none_transform', 'box_dots', 'modify_tuples_box',
-                  'box_intact_types', 'box_recast')
-
-
-def _exists(filename, create=False):
-    path = Path(filename)
-    if create:
-        try:
-            path.touch(exist_ok=True)
-        except OSError as err:
-            raise BoxError(f'Could not create file {filename} - {err}')
-        else:
-            return
-    if not path.exists():
-        raise BoxError(f'File "{filename}" does not exist')
-    if not path.is_file():
-        raise BoxError(f'{filename} is not a file')
-
-
-def _to_json(obj, filename=None, encoding="utf-8", errors="strict", **json_kwargs):
-    json_dump = json.dumps(obj, ensure_ascii=False, **json_kwargs)
-    if filename:
-        _exists(filename, create=True)
-        with open(filename, 'w', encoding=encoding, errors=errors) as f:
-            f.write(json_dump if sys.version_info >= (3, 0) else json_dump.decode("utf-8"))
-    else:
-        return json_dump
-
-
-def _from_json(json_string=None, filename=None, encoding="utf-8", errors="strict", multiline=False, **kwargs):
-    if filename:
-        _exists(filename)
-        with open(filename, 'r', encoding=encoding, errors=errors) as f:
-            if multiline:
-                data = [json.loads(line.strip(), **kwargs) for line in f
-                        if line.strip() and not line.strip().startswith("#")]
-            else:
-                data = json.load(f, **kwargs)
-    elif json_string:
-        data = json.loads(json_string, **kwargs)
-    else:
-        raise BoxError('from_json requires a string or filename')
-    return data
-
-
-def _to_yaml(obj, filename=None, default_flow_style=False, encoding="utf-8", errors="strict", **yaml_kwargs):
-    if filename:
-        _exists(filename, create=True)
-        with open(filename, 'w',
-                  encoding=encoding, errors=errors) as f:
-            yaml.dump(obj, stream=f, default_flow_style=default_flow_style, **yaml_kwargs)
-    else:
-        return yaml.dump(obj, default_flow_style=default_flow_style, **yaml_kwargs)
-
-
-def _from_yaml(yaml_string=None, filename=None, encoding="utf-8", errors="strict", **kwargs):
-    if 'Loader' not in kwargs:
-        kwargs['Loader'] = yaml.SafeLoader
-    if filename:
-        _exists(filename)
-        with open(filename, 'r', encoding=encoding, errors=errors) as f:
-            data = yaml.load(f, **kwargs)
-    elif yaml_string:
-        data = yaml.load(yaml_string, **kwargs)
-    else:
-        raise BoxError('from_yaml requires a string or filename')
-    return data
-
-
-def _to_toml(obj, filename=None, encoding="utf-8", errors="strict"):
-    if filename:
-        _exists(filename, create=True)
-        with open(filename, 'w', encoding=encoding, errors=errors) as f:
-            toml.dump(obj, f)
-    else:
-        return toml.dumps(obj)
-
-
-def _from_toml(toml_string=None, filename=None, encoding="utf-8", errors="strict"):
-    if filename:
-        _exists(filename)
-        with open(filename, 'r', encoding=encoding, errors=errors) as f:
-            data = toml.load(f)
-    elif toml_string:
-        data = toml.loads(toml_string)
-    else:
-        raise BoxError('from_toml requires a string or filename')
-    return data
-
-
-def _to_csv(box_list, filename, encoding="utf-8", errors="strict"):
-    csv_column_names = list(box_list[0].keys())
-    for row in box_list:
-        if list(row.keys()) != csv_column_names:
-            raise BoxError('BoxList must contain the same dictionary structure for every item to convert to csv')
-
-    if filename:
-        _exists(filename, create=True)
-        with open(filename, 'w', encoding=encoding, errors=errors, newline='') as csv_file:
-            writer = csv.DictWriter(csv_file, fieldnames=csv_column_names)
-            writer.writeheader()
-            for data in box_list:
-                writer.writerow(data)
-
-
-def _from_csv(filename, encoding="utf-8", errors="strict"):
-    _exists(filename)
-    with open(filename, 'r', encoding=encoding, errors=errors, newline='') as f:
-        reader = csv.DictReader(f)
-        return [row for row in reader]
+BOX_PARAMETERS='default_box','default_box_attr','conversion_box','frozen_box','camel_killer_box','box_safe_prefix','box_duplicates','ordered_box','default_box_none_transform','box_dots','modify_tuples_box','box_intact_types','box_recast'
+def _exists(filename,create=_E):
+	A=filename;B=Path(A)
+	if create:
+		try:B.touch(exist_ok=_D)
+		except OSError as C:raise BoxError(f"Could not create file {A} - {C}")
+		else:return
+	if not B.exists():raise BoxError(f'File "{A}" does not exist')
+	if not B.is_file():raise BoxError(f"{A} is not a file")
+def _to_json(obj,filename=_A,encoding=_B,errors=_C,**C):
+	A=filename;B=json.dumps(obj,ensure_ascii=_E,**C)
+	if A:
+		_exists(A,create=_D)
+		with open(A,'w',encoding=encoding,errors=errors)as D:D.write(B if sys.version_info>=(3,0)else B.decode(_B))
+	else:return B
+def _from_json(json_string=_A,filename=_A,encoding=_B,errors=_C,multiline=_E,**B):
+	D=json_string;A=filename
+	if A:
+		_exists(A)
+		with open(A,'r',encoding=encoding,errors=errors)as E:
+			if multiline:C=[json.loads(A.strip(),**B)for A in E if A.strip()and not A.strip().startswith('#')]
+			else:C=json.load(E,**B)
+	elif D:C=json.loads(D,**B)
+	else:raise BoxError('from_json requires a string or filename')
+	return C
+def _to_yaml(obj,filename=_A,default_flow_style=_E,encoding=_B,errors=_C,**C):
+	B=default_flow_style;A=filename
+	if A:
+		_exists(A,create=_D)
+		with open(A,'w',encoding=encoding,errors=errors)as D:yaml.dump(obj,stream=D,default_flow_style=B,**C)
+	else:return yaml.dump(obj,default_flow_style=B,**C)
+def _from_yaml(yaml_string=_A,filename=_A,encoding=_B,errors=_C,**A):
+	E='Loader';C=yaml_string;B=filename
+	if E not in A:A[E]=yaml.SafeLoader
+	if B:
+		_exists(B)
+		with open(B,'r',encoding=encoding,errors=errors)as F:D=yaml.load(F,**A)
+	elif C:D=yaml.load(C,**A)
+	else:raise BoxError('from_yaml requires a string or filename')
+	return D
+def _to_toml(obj,filename=_A,encoding=_B,errors=_C):
+	A=filename
+	if A:
+		_exists(A,create=_D)
+		with open(A,'w',encoding=encoding,errors=errors)as B:toml.dump(obj,B)
+	else:return toml.dumps(obj)
+def _from_toml(toml_string=_A,filename=_A,encoding=_B,errors=_C):
+	B=toml_string;A=filename
+	if A:
+		_exists(A)
+		with open(A,'r',encoding=encoding,errors=errors)as D:C=toml.load(D)
+	elif B:C=toml.loads(B)
+	else:raise BoxError('from_toml requires a string or filename')
+	return C
+def _to_csv(box_list,filename,encoding=_B,errors=_C):
+	B=filename;A=box_list;C=list(A[0].keys())
+	for E in A:
+		if list(E.keys())!=C:raise BoxError('BoxList must contain the same dictionary structure for every item to convert to csv')
+	if B:
+		_exists(B,create=_D)
+		with open(B,'w',encoding=encoding,errors=errors,newline='')as F:
+			D=csv.DictWriter(F,fieldnames=C);D.writeheader()
+			for G in A:D.writerow(G)
+def _from_csv(filename,encoding=_B,errors=_C):
+	A=filename;_exists(A)
+	with open(A,'r',encoding=encoding,errors=errors,newline='')as B:C=csv.DictReader(B);return[A for A in C]

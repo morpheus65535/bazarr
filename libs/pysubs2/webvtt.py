@@ -1,4 +1,7 @@
 import re
+from typing import List
+
+import pysubs2
 from .subrip import SubripFormat
 from .time import make_time
 
@@ -40,3 +43,9 @@ class WebVTTFormat(SubripFormat):
         print("WEBVTT\n", file=fp)
         return super(WebVTTFormat, cls).to_file(
             subs=subs, fp=fp, format_=format_, **kwargs)
+
+    @classmethod
+    def _get_visible_lines(cls, subs: "pysubs2.SSAFile") -> List["pysubs2.SSAEvent"]:
+        visible_lines = [line for line in subs if not line.is_comment]
+        visible_lines.sort(key=lambda e: e.start)
+        return visible_lines

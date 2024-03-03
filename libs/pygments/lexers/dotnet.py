@@ -4,7 +4,7 @@
 
     Lexers for .net languages.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 import re
@@ -12,14 +12,14 @@ import re
 from pygments.lexer import RegexLexer, DelegatingLexer, bygroups, include, \
     using, this, default, words
 from pygments.token import Punctuation, Text, Comment, Operator, Keyword, \
-        Name, String, Number, Literal, Other, Whitespace
+    Name, String, Number, Literal, Other, Whitespace
 from pygments.util import get_choice_opt
 from pygments import unistring as uni
 
 from pygments.lexers.html import XmlLexer
 
 __all__ = ['CSharpLexer', 'NemerleLexer', 'BooLexer', 'VbNetLexer',
-           'CSharpAspxLexer', 'VbNetAspxLexer', 'FSharpLexer']
+           'CSharpAspxLexer', 'VbNetAspxLexer', 'FSharpLexer', 'XppLexer']
 
 
 class CSharpLexer(RegexLexer):
@@ -62,9 +62,9 @@ class CSharpLexer(RegexLexer):
                   '[' + uni.combine('Lu', 'Ll', 'Lt', 'Lm', 'Nl', 'Nd', 'Pc',
                                     'Cf', 'Mn', 'Mc') + ']*'),
         'full': ('@?(?:_|[^' +
-                 uni.allexcept('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl') + '])'
-                 + '[^' + uni.allexcept('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl',
-                                        'Nd', 'Pc', 'Cf', 'Mn', 'Mc') + ']*'),
+                 uni.allexcept('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl') + '])' +
+                 '[^' + uni.allexcept('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl',
+                                      'Nd', 'Pc', 'Cf', 'Mn', 'Mc') + ']*'),
     }
 
     tokens = {}
@@ -78,24 +78,31 @@ class CSharpLexer(RegexLexer):
                  r'(' + cs_ident + ')'                            # method name
                  r'(\s*)(\()',                               # signature start
                  bygroups(Whitespace, using(this), Name.Function, Whitespace,
-                     Punctuation)),
+                          Punctuation)),
                 (r'^(\s*)(\[.*?\])', bygroups(Whitespace, Name.Attribute)),
                 (r'[^\S\n]+', Whitespace),
                 (r'(\\)(\n)', bygroups(Text, Whitespace)),  # line continuation
                 (r'//.*?\n', Comment.Single),
                 (r'/[*].*?[*]/', Comment.Multiline),
                 (r'\n', Whitespace),
-                (r'[~!%^&*()+=|\[\]:;,.<>/?-]', Punctuation),
+                (words((
+                    '>>>=', '>>=', '<<=', '<=', '>=', '+=', '-=', '*=', '/=',
+                    '%=', '&=', '|=', '^=', '??=', '=>', '??', '?.', '!=', '==',
+                    '&&', '||', '>>>', '>>', '<<', '++', '--', '+', '-', '*',
+                    '/', '%', '&', '|', '^', '<', '>', '?', '!', '~', '=',
+                )), Operator),
+                (r'=~|!=|==|<<|>>|[-+/*%=<>&^|]', Operator),
+                (r'[()\[\];:,.]', Punctuation),
                 (r'[{}]', Punctuation),
                 (r'@"(""|[^"])*"', String),
                 (r'\$?"(\\\\|\\[^\\]|[^"\\\n])*["\n]', String),
                 (r"'\\.'|'[^\\]'", String.Char),
-                (r"[0-9](\.[0-9]*)?([eE][+-][0-9]+)?"
+                (r"[0-9]+(\.[0-9]*)?([eE][+-][0-9]+)?"
                  r"[flFLdD]?|0[xX][0-9a-fA-F]+[Ll]?", Number),
                 (r'(#)([ \t]*)(if|endif|else|elif|define|undef|'
                  r'line|error|warning|region|endregion|pragma)\b(.*?)(\n)',
                  bygroups(Comment.Preproc, Whitespace, Comment.Preproc,
-                     Comment.Preproc, Whitespace)),
+                          Comment.Preproc, Whitespace)),
                 (r'\b(extern)(\s+)(alias)\b', bygroups(Keyword, Whitespace,
                  Keyword)),
                 (r'(abstract|as|async|await|base|break|by|case|catch|'
@@ -178,9 +185,9 @@ class NemerleLexer(RegexLexer):
                   '[' + uni.combine('Lu', 'Ll', 'Lt', 'Lm', 'Nl', 'Nd', 'Pc',
                                     'Cf', 'Mn', 'Mc') + ']*'),
         'full': ('@?(?:_|[^' +
-                 uni.allexcept('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl') + '])'
-                 + '[^' + uni.allexcept('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl',
-                                        'Nd', 'Pc', 'Cf', 'Mn', 'Mc') + ']*'),
+                 uni.allexcept('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl') + '])' +
+                 '[^' + uni.allexcept('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl',
+                                      'Nd', 'Pc', 'Cf', 'Mn', 'Mc') + ']*'),
     }
 
     tokens = {}
@@ -194,7 +201,7 @@ class NemerleLexer(RegexLexer):
                  r'(' + cs_ident + ')'                            # method name
                  r'(\s*)(\()',                               # signature start
                  bygroups(Whitespace, using(this), Name.Function, Whitespace, \
-                     Punctuation)),
+                          Punctuation)),
                 (r'^(\s*)(\[.*?\])', bygroups(Whitespace, Name.Attribute)),
                 (r'[^\S\n]+', Whitespace),
                 (r'(\\)(\n)', bygroups(Text, Whitespace)),  # line continuation
@@ -207,8 +214,8 @@ class NemerleLexer(RegexLexer):
                     'splice-string2'),
                 (r'<#', String, 'recursive-string'),
 
-                (r'(<\[)(\s*)(' + cs_ident + ':)?', bygroups(Keyword,
-                    Whitespace, Keyword)),
+                (r'(<\[)(\s*)(' + cs_ident + ':)?',
+                 bygroups(Keyword, Whitespace, Keyword)),
                 (r'\]\>', Keyword),
 
                 # quasiquotation only
@@ -414,8 +421,9 @@ class VbNetLexer(RegexLexer):
              Comment.Preproc),
             (r'[(){}!#,.:]', Punctuation),
             (r'(Option)(\s+)(Strict|Explicit|Compare)(\s+)'
-             r'(On|Off|Binary|Text)', bygroups(Keyword.Declaration, Whitespace,
-                 Keyword.Declaration, Whitespace, Keyword.Declaration)),
+             r'(On|Off|Binary|Text)',
+             bygroups(Keyword.Declaration, Whitespace, Keyword.Declaration,
+                      Whitespace, Keyword.Declaration)),
             (words((
                 'AddHandler', 'Alias', 'ByRef', 'ByVal', 'Call', 'Case',
                 'Catch', 'CBool', 'CByte', 'CChar', 'CDate', 'CDec', 'CDbl',
@@ -567,9 +575,9 @@ class FSharpLexer(RegexLexer):
     """
 
     name = 'F#'
-    url= 'https://fsharp.org/'
+    url = 'https://fsharp.org/'
     aliases = ['fsharp', 'f#']
-    filenames = ['*.fs', '*.fsi']
+    filenames = ['*.fs', '*.fsi', '*.fsx']
     mimetypes = ['text/x-fsharp']
 
     keywords = [
@@ -649,7 +657,7 @@ class FSharpLexer(RegexLexer):
             (r'\b(%s)\b' % '|'.join(primitives), Keyword.Type),
             (r'(#)([ \t]*)(if|endif|else|line|nowarn|light|\d+)\b(.*?)(\n)',
              bygroups(Comment.Preproc, Whitespace, Comment.Preproc,
-                 Comment.Preproc, Whitespace)),
+                      Comment.Preproc, Whitespace)),
 
             (r"[^\W\d][\w']*", Name),
 
@@ -719,3 +727,115 @@ class FSharpLexer(RegexLexer):
             result += 0.05
 
         return result
+
+
+class XppLexer(RegexLexer):
+
+    """
+    For X++ source code. This is based loosely on the CSharpLexer
+
+    .. versionadded:: 2.15
+    """
+
+    name = 'X++'
+    url = 'https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-language-reference'
+    aliases = ['xpp', 'x++']
+    filenames = ['*.xpp']
+
+    flags = re.MULTILINE
+
+    XPP_CHARS = ('@?(?:_|[^' +
+                 uni.allexcept('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl') + '])' +
+                 '[^' + uni.allexcept('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl',
+                                      'Nd', 'Pc', 'Cf', 'Mn', 'Mc') + ']*');
+    # Temporary, see
+    # https://github.com/thatch/regexlint/pull/49
+    XPP_CHARS = XPP_CHARS.replace('\x00', '\x01')
+
+    OPERATORS = (
+                    '<=', '>=', '+=', '-=', '*=', '/=', '!=', '==',
+                    '&&', '||', '>>', '<<', '++', '--', '+', '-', '*',
+                    '/', '%', '&', '|', '^', '<', '>', '?', '!', '~', '=',
+                )
+    KEYWORDS = ('abstract','anytype','as','async','asc','at','avg','break','breakpoint','by','byref','case','catch',
+                 'changecompany','client','container','continue','count','crosscompany','default','delegate',
+                 'delete_from','desc','display','div','do','edit','else','element','eventhandler','exists','false','final',
+                 'firstfast','firstonly','firstonly10','firstonly100','firstonly1000','flush','for','forceliterals',
+                 'forcenestedloop','forceplaceholders','forceselectorder','forupdate','from','group','if','insert_recordset',
+                 'interface','is','join','like','maxof','minof','mod','new','next','nofetch','notexists','null','optimisticlock','order',
+                 'outer','pause','pessimisticlock','print','private','protected','public','repeatableread','retry','return',
+                 'reverse','select','server','setting','static','sum','super','switch','tablelock','this','throw','true','try','ttsabort','ttsbegin',
+                 'ttscommit','update_recordset','validtimestate','void','where','while','window')
+    RUNTIME_FUNCTIONS = ('_duration','abs','acos','any2Date','any2Enum','any2Guid','any2Int','any2Int64','any2Real','any2Str','anytodate',
+                 'anytoenum','anytoguid','anytoint','anytoint64','anytoreal','anytostr','asin','atan','beep','cTerm','char2Num','classIdGet',
+                 'corrFlagGet','corrFlagSet','cos','cosh','curExt','curUserId','date2Num','date2Str','datetime2Str','dayName','dayOfMth',
+                 'dayOfWk','dayOfYr','ddb','decRound','dg','dimOf','endMth','enum2str','exp','exp10','fV','fieldId2Name','fieldId2PName',
+                 'fieldName2Id','frac','funcName','getCurrentPartition','getCurrentPartitionRecId','getPrefix','guid2Str','idg','indexId2Name',
+                 'indexName2Id','int2Str','int642Str','intvMax','intvName','intvNo','intvNorm','log10','logN','match','max','min','mkDate','mthName',
+                 'mthOfYr','newGuid','nextMth','nextQtr','nextYr','num2Char','num2Date','num2Str','pmt','power','prevMth','prevQtr','prevYr',
+                 'prmIsDefault','pt','pv','rate','refPrintAll','round','runAs','sessionId','setPrefix','sin','sinh','sleep','sln','str2Date',
+                 'str2Datetime','str2Enum','str2Guid','str2Int','str2Int64','str2Num','str2Time','strAlpha','strCmp','strColSeq','strDel',
+                 'strFind','strFmt','strIns','strKeep','strLTrim','strLen','strLine','strLwr','strNFind','strPoke','strPrompt','strRTrim',
+                 'strRem','strRep','strScan','strUpr','subStr','syd','systemDateGet','systemDateSet','tableId2Name',
+                 'tableId2PName','tableName2Id','tan','tanh','term','time2Str','timeNow','today','trunc','typeOf','uint2Str','wkOfYr','year')
+    COMPILE_FUNCTIONS = ('attributeStr','classNum','classStr','configurationKeyNum','configurationKeyStr','dataEntityDataSourceStr','delegateStr',
+                 'dimensionHierarchyLevelStr','dimensionHierarchyStr','dimensionReferenceStr','dutyStr','enumCnt','enumLiteralStr','enumNum','enumStr',
+                 'extendedTypeNum','extendedTypeStr','fieldNum','fieldPName','fieldStr','formControlStr','formDataFieldStr','formDataSourceStr',
+                 'formMethodStr','formStr','identifierStr','indexNum','indexStr','licenseCodeNum','licenseCodeStr','literalStr','maxDate','maxInt',
+                 'measureStr','measurementStr','menuItemActionStr','menuItemDisplayStr','menuItemOutputStr','menuStr','methodStr','minInt','privilegeStr',
+                 'queryDatasourceStr','queryMethodStr','queryStr','reportStr','resourceStr','roleStr','ssrsReportStr','staticDelegateStr','staticMethodStr',
+                 'tableCollectionStr','tableFieldGroupStr','tableMethodStr','tableNum','tablePName','tableStaticMethodStr','tableStr','tileStr','varStr',
+                 'webActionItemStr','webDisplayContentItemStr','webFormStr','webMenuStr','webOutputContentItemStr','webReportStr','webSiteTempStr',
+                 'webStaticFileStr','webUrlItemStr','webWebPartStr','webletItemStr','webpageDefStr','websiteDefStr','workflowApprovalStr',
+                 'workflowCategoryStr','workflowTaskStr','workflowTypeStr')
+
+    tokens = {}
+
+    tokens = {
+        'root': [
+            # method names
+            (r'(\s*)\b(else|if)\b([^\n])', bygroups(Whitespace, Keyword, using(this))), # ensure that if is not treated like a function
+            (r'^([ \t]*)((?:' + XPP_CHARS + r'(?:\[\])?\s+)+?)'  # return type
+                r'(' + XPP_CHARS + ')'                            # method name
+                r'(\s*)(\()',                               # signature start
+                bygroups(Whitespace, using(this), Name.Function, Whitespace,
+                        Punctuation)),
+            (r'^(\s*)(\[)([^\n]*?)(\])', bygroups(Whitespace, Name.Attribute, Name.Variable.Class, Name.Attribute)),
+            (r'[^\S\n]+', Whitespace),
+            (r'(\\)(\n)', bygroups(Text, Whitespace)),  # line continuation
+            (r'//[^\n]*?\n', Comment.Single),
+            (r'/[*][^\n]*?[*]/', Comment.Multiline),
+            (r'\n', Whitespace),
+            (words(OPERATORS), Operator),
+            (r'=~|!=|==|<<|>>|[-+/*%=<>&^|]', Operator),
+            (r'[()\[\];:,.#@]', Punctuation),
+            (r'[{}]', Punctuation),
+            (r'@"(""|[^"])*"', String),
+            (r'\$?"(\\\\|\\[^\\]|[^"\\\n])*["\n]', String),
+            (r"'\\.'|'[^\\]'", String.Char),
+            (r"[0-9]+(\.[0-9]*)?([eE][+-][0-9]+)?"
+                r"[flFLdD]?|0[xX][0-9a-fA-F]+[Ll]?", Number),
+            (words(KEYWORDS, suffix=r'\b'), Keyword),
+            (r'(boolean|int|int64|str|real|guid|date)\b\??', Keyword.Type),
+            (r'(class|struct|extends|implements)(\s+)', bygroups(Keyword, Whitespace), 'class'),
+            (r'('+XPP_CHARS+')(::)', bygroups(Name.Variable.Class, Punctuation)),
+            (r'(\s*)(\w+)(\s+\w+(,|=)?[^\n]*;)', bygroups(Whitespace, Name.Variable.Class, using(this))), # declaration
+            # x++ specific function to get field should highlight the classname
+            (r'(fieldNum\()('+XPP_CHARS+r')(\s*,\s*)('+XPP_CHARS+r')(\s*\))',
+                bygroups(using(this), Name.Variable.Class, using(this), Name.Property, using(this))),
+            # x++ specific function to get table should highlight the classname
+            (r'(tableNum\()('+XPP_CHARS+r')(\s*\))',
+                bygroups(using(this), Name.Variable.Class, using(this))),
+            (words(RUNTIME_FUNCTIONS, suffix=r'(?=\()'), Name.Function.Magic),
+            (words(COMPILE_FUNCTIONS, suffix=r'(?=\()'), Name.Function.Magic),
+            (XPP_CHARS, Name),
+        ],
+        'class': [
+            (XPP_CHARS, Name.Class, '#pop'),
+            default('#pop'),
+        ],
+        'namespace': [
+            (r'(?=\()', Text, '#pop'),  # using (resource)
+            ('(' + XPP_CHARS + r'|\.)+', Name.Namespace, '#pop'),
+        ]
+    }

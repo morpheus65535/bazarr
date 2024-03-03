@@ -14,7 +14,7 @@ const SystemLogModal: FunctionComponent<Props> = ({ stack }) => {
           {v}
         </Text>
       )),
-    [stack]
+    [stack],
   );
 
   return <Code block>{result}</Code>;

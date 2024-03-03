@@ -363,6 +363,7 @@ class MediaInfo:
         legacy_stream_display: bool = False,
         mediainfo_options: Optional[Dict[str, str]] = None,
         output: Optional[str] = None,
+        buffer_size: Optional[int] = 64 * 1024,
     ) -> Union[str, "MediaInfo"]:
         """
         Analyze a media file using libmediainfo.
@@ -406,6 +407,8 @@ class MediaInfo:
                 * ``"JSON"``
 
                 * ``%``-delimited templates (see ``mediainfo --Info-Parameters``)
+        :param int buffer_size: size of the buffer used to read the file, in bytes. This is only
+            used when `filename` is a file-like object.
         :type filename: str or pathlib.Path or os.PathLike or file-like object.
         :rtype: str if `output` is set.
         :rtype: :class:`MediaInfo` otherwise.
@@ -467,7 +470,7 @@ class MediaInfo:
                 raise ValueError("File should be opened in binary mode")
             lib.MediaInfo_Open_Buffer_Init(handle, file_size, 0)
             while True:
-                buffer = filename.read(64 * 1024)
+                buffer = filename.read(buffer_size)
                 if buffer:
                     # https://github.com/MediaArea/MediaInfoLib/blob/v20.09/Source/MediaInfo/File__Analyze.h#L1429
                     # 4th bit = finished

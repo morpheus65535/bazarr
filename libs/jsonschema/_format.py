@@ -44,7 +44,7 @@ class FormatChecker:
         tuple[_FormatCheckCallable, _RaisesType],
     ] = {}
 
-    def __init__(self, formats: typing.Iterable[str] = None):
+    def __init__(self, formats: typing.Iterable[str] | None = None):
         if formats is None:
             formats = self.checkers.keys()
         self.checkers = {k: self.checkers[k] for k in formats}
@@ -454,6 +454,9 @@ with suppress(ImportError):
         # https://tools.ietf.org/html/draft-handrews-relative-json-pointer-01#section-3
         if not isinstance(instance, str):
             return True
+        if not instance:
+            return False
+
         non_negative_integer, rest = [], ""
         for i, character in enumerate(instance):
             if character.isdigit():
@@ -498,7 +501,9 @@ with suppress(ImportError):
     def is_duration(instance: object) -> bool:
         if not isinstance(instance, str):
             return True
-        return bool(isoduration.parse_duration(instance))
+        isoduration.parse_duration(instance)
+        # FIXME: See bolsote/isoduration#25 and bolsote/isoduration#21
+        return instance.endswith(tuple("DMYWHMS"))
 
 
 @_checks_drafts(

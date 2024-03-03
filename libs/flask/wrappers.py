@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import typing as t
 
 from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Request as RequestBase
 from werkzeug.wrappers import Response as ResponseBase
 
@@ -25,7 +28,7 @@ class Request(RequestBase):
     specific ones.
     """
 
-    json_module = json
+    json_module: t.Any = json
 
     #: The internal URL rule that matched the request.  This can be
     #: useful to inspect which methods are allowed for the URL from
@@ -37,28 +40,28 @@ class Request(RequestBase):
     #: because the request was never internally bound.
     #:
     #: .. versionadded:: 0.6
-    url_rule: t.Optional["Rule"] = None
+    url_rule: Rule | None = None
 
     #: A dict of view arguments that matched the request.  If an exception
     #: happened when matching, this will be ``None``.
-    view_args: t.Optional[t.Dict[str, t.Any]] = None
+    view_args: dict[str, t.Any] | None = None
 
     #: If matching the URL failed, this is the exception that will be
     #: raised / was raised as part of the request handling.  This is
     #: usually a :exc:`~werkzeug.exceptions.NotFound` exception or
     #: something similar.
-    routing_exception: t.Optional[Exception] = None
+    routing_exception: HTTPException | None = None
 
     @property
-    def max_content_length(self) -> t.Optional[int]:  # type: ignore
+    def max_content_length(self) -> int | None:  # type: ignore[override]
         """Read-only view of the ``MAX_CONTENT_LENGTH`` config key."""
         if current_app:
-            return current_app.config["MAX_CONTENT_LENGTH"]
+            return current_app.config["MAX_CONTENT_LENGTH"]  # type: ignore[no-any-return]
         else:
             return None
 
     @property
-    def endpoint(self) -> t.Optional[str]:
+    def endpoint(self) -> str | None:
         """The endpoint that matched the request URL.
 
         This will be ``None`` if matching failed or has not been
@@ -73,7 +76,7 @@ class Request(RequestBase):
         return None
 
     @property
-    def blueprint(self) -> t.Optional[str]:
+    def blueprint(self) -> str | None:
         """The registered name of the current blueprint.
 
         This will be ``None`` if the endpoint is not part of a
@@ -92,7 +95,7 @@ class Request(RequestBase):
         return None
 
     @property
-    def blueprints(self) -> t.List[str]:
+    def blueprints(self) -> list[str]:
         """The registered names of the current blueprint upwards through
         parent blueprints.
 
@@ -123,7 +126,7 @@ class Request(RequestBase):
 
             attach_enctype_error_multidict(self)
 
-    def on_json_loading_failed(self, e: t.Optional[ValueError]) -> t.Any:
+    def on_json_loading_failed(self, e: ValueError | None) -> t.Any:
         try:
             return super().on_json_loading_failed(e)
         except BadRequest as e:
@@ -151,7 +154,7 @@ class Response(ResponseBase):
         Added :attr:`max_cookie_size`.
     """
 
-    default_mimetype = "text/html"
+    default_mimetype: str | None = "text/html"
 
     json_module = json
 
@@ -165,7 +168,7 @@ class Response(ResponseBase):
         Werkzeug's docs.
         """
         if current_app:
-            return current_app.config["MAX_COOKIE_SIZE"]
+            return current_app.config["MAX_COOKIE_SIZE"]  # type: ignore[no-any-return]
 
         # return Werkzeug's default when not in an app context
         return super().max_cookie_size

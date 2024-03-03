@@ -1,5 +1,5 @@
 # util/_py_collections.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -59,11 +59,9 @@ class ReadOnlyContainer:
 class ImmutableDictBase(ReadOnlyContainer, Dict[_KT, _VT]):
     if TYPE_CHECKING:
 
-        def __new__(cls, *args: Any) -> Self:
-            ...
+        def __new__(cls, *args: Any) -> Self: ...
 
-        def __init__(cls, *args: Any):
-            ...
+        def __init__(cls, *args: Any): ...
 
     def _readonly(self, *arg: Any, **kw: Any) -> NoReturn:
         self._immutable()
@@ -148,12 +146,16 @@ class immutabledict(ImmutableDictBase[_KT, _VT]):
     def __or__(  # type: ignore[override]
         self, __value: Mapping[_KT, _VT]
     ) -> immutabledict[_KT, _VT]:
-        return immutabledict(super().__or__(__value))
+        return immutabledict(
+            super().__or__(__value),  # type: ignore[call-overload]
+        )
 
     def __ror__(  # type: ignore[override]
         self, __value: Mapping[_KT, _VT]
     ) -> immutabledict[_KT, _VT]:
-        return immutabledict(super().__ror__(__value))
+        return immutabledict(
+            super().__ror__(__value),  # type: ignore[call-overload]
+        )
 
 
 class OrderedSet(Set[_T]):
@@ -168,8 +170,11 @@ class OrderedSet(Set[_T]):
         else:
             self._list = []
 
-    def __reduce__(self):
-        return (OrderedSet, (self._list,))
+    def copy(self) -> OrderedSet[_T]:
+        cp = self.__class__()
+        cp._list = self._list.copy()
+        set.update(cp, cp._list)
+        return cp
 
     def add(self, element: _T) -> None:
         if element not in self:
@@ -179,6 +184,14 @@ class OrderedSet(Set[_T]):
     def remove(self, element: _T) -> None:
         super().remove(element)
         self._list.remove(element)
+
+    def pop(self) -> _T:
+        try:
+            value = self._list.pop()
+        except IndexError:
+            raise KeyError("pop from an empty set") from None
+        super().remove(value)
+        return value
 
     def insert(self, pos: int, element: _T) -> None:
         if element not in self:
@@ -216,13 +229,12 @@ class OrderedSet(Set[_T]):
                     super().add(e)
 
     def __ior__(self, other: AbstractSet[_S]) -> OrderedSet[Union[_T, _S]]:
-        self.update(other)  # type: ignore
-        return self  # type: ignore
+        self.update(other)
+        return self
 
     def union(self, *other: Iterable[_S]) -> OrderedSet[Union[_T, _S]]:
-        result: OrderedSet[Union[_T, _S]] = self.__class__(self)  # type: ignore  # noqa: E501
-        for o in other:
-            result.update(o)
+        result: OrderedSet[Union[_T, _S]] = self.copy()
+        result.update(*other)
         return result
 
     def __or__(self, other: AbstractSet[_S]) -> OrderedSet[Union[_T, _S]]:
@@ -237,9 +249,17 @@ class OrderedSet(Set[_T]):
         return self.intersection(other)
 
     def symmetric_difference(self, other: Iterable[_T]) -> OrderedSet[_T]:
-        other_set = other if isinstance(other, set) else set(other)
+        collection: Collection[_T]
+        if isinstance(other, set):
+            collection = other_set = other
+        elif isinstance(other, Collection):
+            collection = other
+            other_set = set(other)
+        else:
+            collection = list(other)
+            other_set = set(collection)
         result = self.__class__(a for a in self if a not in other_set)
-        result.update(a for a in other if a not in self)
+        result.update(a for a in collection if a not in self)
         return result
 
     def __xor__(self, other: AbstractSet[_S]) -> OrderedSet[Union[_T, _S]]:
@@ -263,9 +283,10 @@ class OrderedSet(Set[_T]):
         return self
 
     def symmetric_difference_update(self, other: Iterable[Any]) -> None:
-        super().symmetric_difference_update(other)
+        collection = other if isinstance(other, Collection) else list(other)
+        super().symmetric_difference_update(collection)
         self._list = [a for a in self._list if a in self]
-        self._list += [a for a in other if a in self]
+        self._list += [a for a in collection if a in self]
 
     def __ixor__(self, other: AbstractSet[_S]) -> OrderedSet[Union[_T, _S]]:
         self.symmetric_difference_update(other)

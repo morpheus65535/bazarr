@@ -1,4 +1,4 @@
-from __future__ import with_statement
+from __future__ import annotations
 
 import contextlib
 import datetime
@@ -17,6 +17,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Type
+from typing import TYPE_CHECKING
 from typing import Union
 
 from decorator import decorate
@@ -27,6 +28,7 @@ from .api import BackendFormatted
 from .api import CachedValue
 from .api import CacheMutex
 from .api import CacheReturnType
+from .api import CantDeserializeException
 from .api import KeyType
 from .api import MetaDataType
 from .api import NO_VALUE
@@ -45,6 +47,7 @@ from ..util import coerce_string_conf
 from ..util import memoized_property
 from ..util import NameRegistry
 from ..util import PluginLoader
+from ..util.typing import Self
 
 value_version = 2
 """An integer placed in the :class:`.CachedValue`
@@ -328,7 +331,17 @@ class CacheRegion:
      deserializer recommended by the backend will be used.   Typical
      deserializers include ``pickle.dumps`` and ``json.dumps``.
 
-     .. versionadded:: 1.1.0
+     Deserializers can raise a :class:`.api.CantDeserializeException` if they
+     are unable to deserialize the value from the backend, indicating
+     deserialization failed and that caching should proceed to re-generate
+     a value.  This allows an application that has been updated to gracefully
+     re-cache old items which were persisted by a previous version of the
+     application and can no longer be successfully deserialized.
+
+     .. versionadded:: 1.1.0 added "deserializer" parameter
+
+     .. versionadded:: 1.2.0 added support for
+        :class:`.api.CantDeserializeException`
 
     :param async_creation_runner:  A callable that, when specified,
      will be passed to and called by dogpile.lock when
@@ -415,7 +428,7 @@ class CacheRegion:
         wrap: Sequence[Union[ProxyBackend, Type[ProxyBackend]]] = (),
         replace_existing_backend: bool = False,
         region_invalidator: Optional[RegionInvalidationStrategy] = None,
-    ) -> "CacheRegion":
+    ) -> Self:
         """Configure a :class:`.CacheRegion`.
 
         The :class:`.CacheRegion` itself
@@ -688,7 +701,12 @@ class CacheRegion:
         """
         return "backend" in self.__dict__
 
-    def get(self, key, expiration_time=None, ignore_expiration=False):
+    def get(
+        self,
+        key: KeyType,
+        expiration_time: Optional[float] = None,
+        ignore_expiration: bool = False,
+    ) -> CacheReturnType:
         """Return a value from the cache, based on the given key.
 
         If the value is not present, the method returns the token
@@ -759,15 +777,49 @@ class CacheRegion:
 
 
         """
+        value = self._get_cache_value(key, expiration_time, ignore_expiration)
+        return value.payload
 
+    def get_value_metadata(
+        self,
+        key: KeyType,
+        expiration_time: Optional[float] = None,
+        ignore_expiration: bool = False,
+    ) -> Optional[CachedValue]:
+        """Return the :class:`.CachedValue` object directly from the cache.
+
+        This is the enclosing datastructure that includes the value as well as
+        the metadata, including the timestamp when the value was cached.
+        Convenience accessors on :class:`.CachedValue` also provide for common
+        data such as :attr:`.CachedValue.cached_time` and
+        :attr:`.CachedValue.age`.
+
+
+        .. versionadded:: 1.3. Added :meth:`.CacheRegion.get_value_metadata`
+        """
+        cache_value = self._get_cache_value(
+            key, expiration_time, ignore_expiration
+        )
+        if cache_value is NO_VALUE:
+            return None
+        else:
+            if TYPE_CHECKING:
+                assert isinstance(cache_value, CachedValue)
+            return cache_value
+
+    def _get_cache_value(
+        self,
+        key: KeyType,
+        expiration_time: Optional[float] = None,
+        ignore_expiration: bool = False,
+    ) -> CacheReturnType:
         if self.key_mangler:
             key = self.key_mangler(key)
         value = self._get_from_backend(key)
         value = self._unexpired_value_fn(expiration_time, ignore_expiration)(
             value
         )
-
-        return value.payload
+        return value
 
     def _unexpired_value_fn(self, expiration_time, ignore_expiration):
         if ignore_expiration:
@@ -887,7 +939,6 @@ class CacheRegion:
         should_cache_fn: Optional[Callable[[ValuePayload], bool]] = None,
         creator_args: Optional[Tuple[Any, Mapping[str, Any]]] = None,
     ) -> ValuePayload:
-
         """Return a cached value based on the given key.
 
         If the value does not exist or is considered to be expired
@@ -1025,7 +1076,6 @@ class CacheRegion:
 
             def async_creator(mutex):
                 if creator_args:
-
                     ca = creator_args
 
                     @wraps(creator)
@@ -1219,8 +1269,12 @@ class CacheRegion:
 
         bytes_metadata, _, bytes_payload = byte_value.partition(b"|")
         metadata = json.loads(bytes_metadata)
-        payload = self.deserializer(bytes_payload)
-        return CachedValue(payload, metadata)
+        try:
+            payload = self.deserializer(bytes_payload)
+        except CantDeserializeException:
+            return NO_VALUE
+        else:
+            return CachedValue(payload, metadata)
 
     def _serialize_cached_value_elements(
         self, payload: ValuePayload, metadata: MetaDataType
@@ -1247,7 +1301,8 @@ class CacheRegion:
         return self._serialize_cached_value_elements(payload, metadata)
 
     def _serialized_cached_value(self, value: CachedValue) -> BackendFormatted:
-        """Return a backend formatted representation of a :class:`.CachedValue`.
+        """Return a backend formatted representation of a
+        :class:`.CachedValue`.
 
         If a serializer is in use then this will return a string representation
         with the value formatted by the serializer.

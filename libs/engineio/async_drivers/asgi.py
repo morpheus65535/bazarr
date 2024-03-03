@@ -223,7 +223,7 @@ class WebSocket(object):  # pragma: no cover
     This wrapper class provides an asgi WebSocket interface that is
     somewhat compatible with eventlet's implementation.
     """
-    def __init__(self, handler):
+    def __init__(self, handler, server):
         self.handler = handler
         self.asgi_receive = None
         self.asgi_send = None
@@ -233,9 +233,14 @@ class WebSocket(object):  # pragma: no cover
         self.asgi_send = environ['asgi.send']
         await self.asgi_send({'type': 'websocket.accept'})
         await self.handler(self)
+        return ''  # send nothing as response
 
     async def close(self):
-        await self.asgi_send({'type': 'websocket.close'})
+        try:
+            await self.asgi_send({'type': 'websocket.close'})
+        except Exception:
+            # if the socket is already close we don't care
+            pass
 
     async def send(self, message):
         msg_bytes = None

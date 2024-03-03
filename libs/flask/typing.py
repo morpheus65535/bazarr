@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import typing as t
 
 if t.TYPE_CHECKING:  # pragma: no cover
     from _typeshed.wsgi import WSGIApplication  # noqa: F401
     from werkzeug.datastructures import Headers  # noqa: F401
-    from werkzeug.wrappers import Response  # noqa: F401
+    from werkzeug.sansio.response import Response  # noqa: F401
 
 # The possible types that are directly convertible or are a Response object.
 ResponseValue = t.Union[
@@ -59,12 +61,17 @@ TeardownCallable = t.Union[
     t.Callable[[t.Optional[BaseException]], None],
     t.Callable[[t.Optional[BaseException]], t.Awaitable[None]],
 ]
-TemplateContextProcessorCallable = t.Callable[[], t.Dict[str, t.Any]]
+TemplateContextProcessorCallable = t.Union[
+    t.Callable[[], t.Dict[str, t.Any]],
+    t.Callable[[], t.Awaitable[t.Dict[str, t.Any]]],
+]
 TemplateFilterCallable = t.Callable[..., t.Any]
 TemplateGlobalCallable = t.Callable[..., t.Any]
 TemplateTestCallable = t.Callable[..., bool]
-URLDefaultCallable = t.Callable[[str, dict], None]
-URLValuePreprocessorCallable = t.Callable[[t.Optional[str], t.Optional[dict]], None]
+URLDefaultCallable = t.Callable[[str, t.Dict[str, t.Any]], None]
+URLValuePreprocessorCallable = t.Callable[
+    [t.Optional[str], t.Optional[t.Dict[str, t.Any]]], None
+]
 
 # This should take Exception, but that either breaks typing the argument
 # with a specific exception, or decorating multiple times with different
@@ -72,7 +79,10 @@ URLValuePreprocessorCallable = t.Callable[[t.Optional[str], t.Optional[dict]], N
 # https://github.com/pallets/flask/issues/4095
 # https://github.com/pallets/flask/issues/4295
 # https://github.com/pallets/flask/issues/4297
-ErrorHandlerCallable = t.Callable[[t.Any], ResponseReturnValue]
+ErrorHandlerCallable = t.Union[
+    t.Callable[[t.Any], ResponseReturnValue],
+    t.Callable[[t.Any], t.Awaitable[ResponseReturnValue]],
+]
 
 RouteCallable = t.Union[
     t.Callable[..., ResponseReturnValue],

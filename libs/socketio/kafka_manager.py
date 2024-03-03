@@ -43,8 +43,7 @@ class KafkaManager(PubSubManager):  # pragma: no cover
                                '(Run "pip install kafka-python" in your '
                                'virtualenv).')
 
-        super(KafkaManager, self).__init__(channel=channel,
-                                           write_only=write_only)
+        super().__init__(channel=channel, write_only=write_only)
 
         urls = [url] if isinstance(url, str) else url
         self.kafka_urls = [url[8:] if url != 'kafka://' else 'localhost:9092'

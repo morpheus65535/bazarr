@@ -4,14 +4,15 @@
 
     Pygments lexers for Ezhil language.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 import re
-from pygments.lexer import RegexLexer, include, words, bygroups
-from pygments.token import Keyword, Text, Comment, Name
-from pygments.token import String, Number, Punctuation, Operator, Whitespace
+
+from pygments.lexer import RegexLexer, include, words
+from pygments.token import Keyword, Comment, Name, String, Number, \
+    Punctuation, Operator, Whitespace
 
 __all__ = ['EzhilLexer']
 

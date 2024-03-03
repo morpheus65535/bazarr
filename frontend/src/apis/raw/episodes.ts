@@ -22,7 +22,7 @@ class EpisodeApi extends BaseApi {
   async wanted(params: Parameter.Range) {
     const response = await this.get<DataWrapperWithTotal<Wanted.Episode>>(
       "/wanted",
-      params
+      params,
     );
     return response;
   }
@@ -30,7 +30,7 @@ class EpisodeApi extends BaseApi {
   async wantedBy(episodeid: number[]) {
     const response = await this.get<DataWrapperWithTotal<Wanted.Episode>>(
       "/wanted",
-      { episodeid }
+      { episodeid },
     );
     return response;
   }
@@ -38,7 +38,7 @@ class EpisodeApi extends BaseApi {
   async history(params: Parameter.Range) {
     const response = await this.get<DataWrapperWithTotal<History.Episode>>(
       "/history",
-      params
+      params,
     );
     return response;
   }
@@ -46,7 +46,7 @@ class EpisodeApi extends BaseApi {
   async historyBy(episodeid: number) {
     const response = await this.get<DataWrapperWithTotal<History.Episode>>(
       "/history",
-      { episodeid }
+      { episodeid },
     );
     return response.data;
   }
@@ -54,7 +54,7 @@ class EpisodeApi extends BaseApi {
   async downloadSubtitles(
     seriesid: number,
     episodeid: number,
-    form: FormType.Subtitle
+    form: FormType.Subtitle,
   ) {
     await this.patch("/subtitles", form, { seriesid, episodeid });
   }
@@ -62,7 +62,7 @@ class EpisodeApi extends BaseApi {
   async uploadSubtitles(
     seriesid: number,
     episodeid: number,
-    form: FormType.UploadSubtitle
+    form: FormType.UploadSubtitle,
   ) {
     await this.post("/subtitles", form, { seriesid, episodeid });
   }
@@ -70,22 +70,21 @@ class EpisodeApi extends BaseApi {
   async deleteSubtitles(
     seriesid: number,
     episodeid: number,
-    form: FormType.DeleteSubtitle
+    form: FormType.DeleteSubtitle,
   ) {
     await this.delete("/subtitles", form, { seriesid, episodeid });
   }
 
   async blacklist() {
-    const response = await this.get<DataWrapper<Blacklist.Episode[]>>(
-      "/blacklist"
-    );
+    const response =
+      await this.get<DataWrapper<Blacklist.Episode[]>>("/blacklist");
     return response.data;
   }
 
   async addBlacklist(
     seriesid: number,
     episodeid: number,
-    form: FormType.AddBlacklist
+    form: FormType.AddBlacklist,
   ) {
     await this.post("/blacklist", form, { seriesid, episodeid });
   }

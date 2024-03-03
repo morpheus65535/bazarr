@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
 import logging
+import os
 import sys
 from typing import List, Optional
 
 import requests
 
 from deep_translator.base import BaseTranslator
-from deep_translator.constants import BASE_URLS
-from deep_translator.exceptions import MicrosoftAPIerror, ServerException
+from deep_translator.constants import BASE_URLS, MSFT_ENV_VAR
+from deep_translator.exceptions import ApiKeyException, MicrosoftAPIerror
 from deep_translator.validate import is_input_valid
 
 
@@ -19,10 +22,10 @@ class MicrosoftTranslator(BaseTranslator):
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        region: Optional[str] = None,
         source: str = "auto",
         target: str = "en",
+        api_key: Optional[str] = os.getenv(MSFT_ENV_VAR, None),
+        region: Optional[str] = None,
         proxies: Optional[dict] = None,
         **kwargs,
     ):
@@ -33,7 +36,7 @@ class MicrosoftTranslator(BaseTranslator):
         """
 
         if not api_key:
-            raise ServerException(401)
+            raise ApiKeyException(env_var=MSFT_ENV_VAR)
 
         self.api_key = api_key
         self.proxies = proxies
@@ -41,7 +44,7 @@ class MicrosoftTranslator(BaseTranslator):
             "Ocp-Apim-Subscription-Key": self.api_key,
             "Content-type": "application/json",
         }
-        # region is not required but very common and goes to headers if passed
+        # parameter region is not required but very common and goes to headers if passed
         if region:
             self.region = region
             self.headers["Ocp-Apim-Subscription-Region"] = self.region
@@ -57,12 +60,13 @@ class MicrosoftTranslator(BaseTranslator):
     # the keys are the abbreviations and the values are the languages
     # a common variable used in the other translators would be: MICROSOFT_CODES_TO_LANGUAGES
     def _get_supported_languages(self):
-
         microsoft_languages_api_url = (
             "https://api.cognitive.microsofttranslator.com/languages?api-version=3.0&scope"
             "=translation "
         )
-        microsoft_languages_response = requests.get(microsoft_languages_api_url)
+        microsoft_languages_response = requests.get(
+            microsoft_languages_api_url
+        )
         translation_dict = microsoft_languages_response.json()["translation"]
 
         return {

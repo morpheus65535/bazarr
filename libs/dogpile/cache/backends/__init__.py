@@ -45,3 +45,8 @@ register_backend(
     "dogpile.cache.backends.redis",
     "RedisSentinelBackend",
 )
+register_backend(
+    "dogpile.cache.redis_cluster",
+    "dogpile.cache.backends.redis",
+    "RedisClusterBackend",
+)

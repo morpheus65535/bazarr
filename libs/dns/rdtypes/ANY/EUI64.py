@@ -16,13 +16,12 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-import dns.rdtypes.euibase
 import dns.immutable
+import dns.rdtypes.euibase
 
 
 @dns.immutable.immutable
 class EUI64(dns.rdtypes.euibase.EUIBase):
-
     """EUI64 record"""
 
     # see: rfc7043.txt

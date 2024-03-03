@@ -4,14 +4,14 @@
 
     Lexers for Haskell and related languages.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 import re
 
 from pygments.lexer import Lexer, RegexLexer, bygroups, do_insertions, \
-    default, include, inherit
+    default, include, inherit, line_re
 from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
     Number, Punctuation, Generic, Whitespace
 from pygments import unistring as uni
@@ -19,9 +19,6 @@ from pygments import unistring as uni
 __all__ = ['HaskellLexer', 'HspecLexer', 'IdrisLexer', 'AgdaLexer', 'CryptolLexer',
            'LiterateHaskellLexer', 'LiterateIdrisLexer', 'LiterateAgdaLexer',
            'LiterateCryptolLexer', 'KokaLexer']
-
-
-line_re = re.compile('.*?\n')
 
 
 class HaskellLexer(RegexLexer):
@@ -166,7 +163,7 @@ class HspecLexer(HaskellLexer):
 
     name = 'Hspec'
     aliases = ['hspec']
-    filenames = []
+    filenames = ['*Spec.hs']
     mimetypes = []
 
     tokens = {

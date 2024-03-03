@@ -9,26 +9,49 @@ from contextlib import suppress
 from pathlib import Path
 
 from dynaconf import default_settings
+from dynaconf.loaders.base import SourceMetadata
 from dynaconf.utils import DynaconfDict
 from dynaconf.utils import object_merge
 from dynaconf.utils import upperfy
 from dynaconf.utils.files import find_file
+from dynaconf.utils.functional import empty
 
 
-def load(obj, settings_module, identifier="py", silent=False, key=None):
-    """Tries to import a python module"""
+def load(
+    obj,
+    settings_module,
+    identifier="py",
+    silent=False,
+    key=None,
+    validate=False,
+):
+    """
+    Tries to import a python module
+
+    Notes:
+        It doesn't handle environment namespaces explicitly. Eg
+            [default], [development], etc
+        See tests/test_nested_loading.py sample python file
+    """
     mod, loaded_from = get_module(obj, settings_module, silent)
     if not (mod and loaded_from):
         return
-    load_from_python_object(obj, mod, settings_module, key, identifier)
+
+    # setup SourceMetadata (for inspecting)
+    loader_identifier = SourceMetadata(identifier, mod.__name__, "global")
+
+    load_from_python_object(
+        obj, mod, settings_module, key, loader_identifier, validate=validate
+    )
 
 
 def load_from_python_object(
-    obj, mod, settings_module, key=None, identifier=None
+    obj, mod, settings_module, key=None, identifier=None, validate=False
 ):
-    file_merge = getattr(mod, "dynaconf_merge", False) or getattr(
-        mod, "DYNACONF_MERGE", False
-    )
+    file_merge = getattr(mod, "dynaconf_merge", empty)
+    if file_merge is empty:
+        file_merge = getattr(mod, "DYNACONF_MERGE", empty)
+
     for setting in dir(mod):
         # A setting var in a Python file should start with upper case
         # valid: A_value=1, ABC_value=3 A_BBB__default=1
@@ -42,6 +65,7 @@ def load_from_python_object(
                     setting_value,
                     loader_identifier=identifier,
                     merge=file_merge,
+                    validate=validate,
                 )
 
     obj._loaded_py_modules.append(mod.__name__)
@@ -49,7 +73,7 @@ def load_from_python_object(
 
 
 def try_to_load_from_py_module_name(
-    obj, name, key=None, identifier="py", silent=False
+    obj, name, key=None, identifier="py", silent=False, validate=False
 ):
     """Try to load module by its string name.
 
@@ -64,9 +88,14 @@ def try_to_load_from_py_module_name(
     """
     ctx = suppress(ImportError, TypeError) if silent else suppress()
 
+    # setup SourceMetadata (for inspecting)
+    loader_identifier = SourceMetadata(identifier, name, "global")
+
     with ctx:
         mod = importlib.import_module(str(name))
-        load_from_python_object(obj, mod, name, key, identifier)
+        load_from_python_object(
+            obj, mod, name, key, loader_identifier, validate=validate
+        )
         return True  # loaded ok!
     # if it reaches this point that means exception occurred, module not found.
     return False

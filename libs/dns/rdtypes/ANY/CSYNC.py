@@ -19,23 +19,22 @@ import struct
 
 import dns.exception
 import dns.immutable
+import dns.name
 import dns.rdata
 import dns.rdatatype
-import dns.name
 import dns.rdtypes.util
 
 
 @dns.immutable.immutable
 class Bitmap(dns.rdtypes.util.Bitmap):
-    type_name = 'CSYNC'
+    type_name = "CSYNC"
 
 
 @dns.immutable.immutable
 class CSYNC(dns.rdata.Rdata):
-
     """CSYNC record"""
 
-    __slots__ = ['serial', 'flags', 'windows']
+    __slots__ = ["serial", "flags", "windows"]
 
     def __init__(self, rdclass, rdtype, serial, flags, windows):
         super().__init__(rdclass, rdtype)
@@ -47,18 +46,19 @@ class CSYNC(dns.rdata.Rdata):
 
     def to_text(self, origin=None, relativize=True, **kw):
         text = Bitmap(self.windows).to_text()
-        return '%d %d%s' % (self.serial, self.flags, text)
+        return "%d %d%s" % (self.serial, self.flags, text)
 
     @classmethod
-    def from_text(cls, rdclass, rdtype, tok, origin=None, relativize=True,
-                  relativize_to=None):
+    def from_text(
+        cls, rdclass, rdtype, tok, origin=None, relativize=True, relativize_to=None
+    ):
         serial = tok.get_uint32()
         flags = tok.get_uint16()
         bitmap = Bitmap.from_text(tok)
         return cls(rdclass, rdtype, serial, flags, bitmap)
 
     def _to_wire(self, file, compress=None, origin=None, canonicalize=False):
-        file.write(struct.pack('!IH', self.serial, self.flags))
+        file.write(struct.pack("!IH", self.serial, self.flags))
         Bitmap(self.windows).to_wire(file)
 
     @classmethod

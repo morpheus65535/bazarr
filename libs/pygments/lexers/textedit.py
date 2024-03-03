@@ -4,7 +4,7 @@
 
     Lexers for languages related to text processing.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -13,7 +13,7 @@ from bisect import bisect
 
 from pygments.lexer import RegexLexer, bygroups, default, include, this, using
 from pygments.lexers.python import PythonLexer
-from pygments.token import Comment, Error, Keyword, Name, Number, Operator, \
+from pygments.token import Comment, Keyword, Name, Number, Operator, \
     Punctuation, String, Text, Whitespace
 
 __all__ = ['AwkLexer', 'SedLexer', 'VimLexer']

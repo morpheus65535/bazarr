@@ -1,185 +1,20 @@
-# coding: utf-8
-
 from __future__ import absolute_import
-
-from _ruamel_yaml import CParser, CEmitter  # type: ignore
-
-from .constructor import Constructor, BaseConstructor, SafeConstructor
-from .representer import Representer, SafeRepresenter, BaseRepresenter
-from .resolver import Resolver, BaseResolver
-
-if False:  # MYPY
-    from typing import Any, Union, Optional  # NOQA
-    from .compat import StreamTextType, StreamType, VersionType  # NOQA
-
-__all__ = ['CBaseLoader', 'CSafeLoader', 'CLoader', 'CBaseDumper', 'CSafeDumper', 'CDumper']
-
-
-# this includes some hacks to solve the  usage of resolver by lower level
-# parts of the parser
-
-
-class CBaseLoader(CParser, BaseConstructor, BaseResolver):  # type: ignore
-    def __init__(self, stream, version=None, preserve_quotes=None):
-        # type: (StreamTextType, Optional[VersionType], Optional[bool]) -> None
-        CParser.__init__(self, stream)
-        self._parser = self._composer = self
-        BaseConstructor.__init__(self, loader=self)
-        BaseResolver.__init__(self, loadumper=self)
-        # self.descend_resolver = self._resolver.descend_resolver
-        # self.ascend_resolver = self._resolver.ascend_resolver
-        # self.resolve = self._resolver.resolve
-
-
-class CSafeLoader(CParser, SafeConstructor, Resolver):  # type: ignore
-    def __init__(self, stream, version=None, preserve_quotes=None):
-        # type: (StreamTextType, Optional[VersionType], Optional[bool]) -> None
-        CParser.__init__(self, stream)
-        self._parser = self._composer = self
-        SafeConstructor.__init__(self, loader=self)
-        Resolver.__init__(self, loadumper=self)
-        # self.descend_resolver = self._resolver.descend_resolver
-        # self.ascend_resolver = self._resolver.ascend_resolver
-        # self.resolve = self._resolver.resolve
-
-
-class CLoader(CParser, Constructor, Resolver):  # type: ignore
-    def __init__(self, stream, version=None, preserve_quotes=None):
-        # type: (StreamTextType, Optional[VersionType], Optional[bool]) -> None
-        CParser.__init__(self, stream)
-        self._parser = self._composer = self
-        Constructor.__init__(self, loader=self)
-        Resolver.__init__(self, loadumper=self)
-        # self.descend_resolver = self._resolver.descend_resolver
-        # self.ascend_resolver = self._resolver.ascend_resolver
-        # self.resolve = self._resolver.resolve
-
-
-class CBaseDumper(CEmitter, BaseRepresenter, BaseResolver):  # type: ignore
-    def __init__(
-        self,
-        stream,
-        default_style=None,
-        default_flow_style=None,
-        canonical=None,
-        indent=None,
-        width=None,
-        allow_unicode=None,
-        line_break=None,
-        encoding=None,
-        explicit_start=None,
-        explicit_end=None,
-        version=None,
-        tags=None,
-        block_seq_indent=None,
-        top_level_colon_align=None,
-        prefix_colon=None,
-    ):
-        # type: (StreamType, Any, Any, Any, Optional[bool], Optional[int], Optional[int], Optional[bool], Any, Any, Optional[bool], Optional[bool], Any, Any, Any, Any, Any) -> None   # NOQA
-        CEmitter.__init__(
-            self,
-            stream,
-            canonical=canonical,
-            indent=indent,
-            width=width,
-            encoding=encoding,
-            allow_unicode=allow_unicode,
-            line_break=line_break,
-            explicit_start=explicit_start,
-            explicit_end=explicit_end,
-            version=version,
-            tags=tags,
-        )
-        self._emitter = self._serializer = self._representer = self
-        BaseRepresenter.__init__(
-            self,
-            default_style=default_style,
-            default_flow_style=default_flow_style,
-            dumper=self,
-        )
-        BaseResolver.__init__(self, loadumper=self)
-
-
-class CSafeDumper(CEmitter, SafeRepresenter, Resolver):  # type: ignore
-    def __init__(
-        self,
-        stream,
-        default_style=None,
-        default_flow_style=None,
-        canonical=None,
-        indent=None,
-        width=None,
-        allow_unicode=None,
-        line_break=None,
-        encoding=None,
-        explicit_start=None,
-        explicit_end=None,
-        version=None,
-        tags=None,
-        block_seq_indent=None,
-        top_level_colon_align=None,
-        prefix_colon=None,
-    ):
-        # type: (StreamType, Any, Any, Any, Optional[bool], Optional[int], Optional[int], Optional[bool], Any, Any, Optional[bool], Optional[bool], Any, Any, Any, Any, Any) -> None   # NOQA
-        self._emitter = self._serializer = self._representer = self
-        CEmitter.__init__(
-            self,
-            stream,
-            canonical=canonical,
-            indent=indent,
-            width=width,
-            encoding=encoding,
-            allow_unicode=allow_unicode,
-            line_break=line_break,
-            explicit_start=explicit_start,
-            explicit_end=explicit_end,
-            version=version,
-            tags=tags,
-        )
-        self._emitter = self._serializer = self._representer = self
-        SafeRepresenter.__init__(
-            self, default_style=default_style, default_flow_style=default_flow_style
-        )
-        Resolver.__init__(self)
-
-
-class CDumper(CEmitter, Representer, Resolver):  # type: ignore
-    def __init__(
-        self,
-        stream,
-        default_style=None,
-        default_flow_style=None,
-        canonical=None,
-        indent=None,
-        width=None,
-        allow_unicode=None,
-        line_break=None,
-        encoding=None,
-        explicit_start=None,
-        explicit_end=None,
-        version=None,
-        tags=None,
-        block_seq_indent=None,
-        top_level_colon_align=None,
-        prefix_colon=None,
-    ):
-        # type: (StreamType, Any, Any, Any, Optional[bool], Optional[int], Optional[int], Optional[bool], Any, Any, Optional[bool], Optional[bool], Any, Any, Any, Any, Any) -> None   # NOQA
-        CEmitter.__init__(
-            self,
-            stream,
-            canonical=canonical,
-            indent=indent,
-            width=width,
-            encoding=encoding,
-            allow_unicode=allow_unicode,
-            line_break=line_break,
-            explicit_start=explicit_start,
-            explicit_end=explicit_end,
-            version=version,
-            tags=tags,
-        )
-        self._emitter = self._serializer = self._representer = self
-        Representer.__init__(
-            self, default_style=default_style, default_flow_style=default_flow_style
-        )
-        Resolver.__init__(self)
+_A=None
+from _ruamel_yaml import CParser,CEmitter
+from.constructor import Constructor,BaseConstructor,SafeConstructor
+from.representer import Representer,SafeRepresenter,BaseRepresenter
+from.resolver import Resolver,BaseResolver
+if False:from typing import Any,Union,Optional;from.compat import StreamTextType,StreamType,VersionType
+__all__=['CBaseLoader','CSafeLoader','CLoader','CBaseDumper','CSafeDumper','CDumper']
+class CBaseLoader(CParser,BaseConstructor,BaseResolver):
+	def __init__(A,stream,version=_A,preserve_quotes=_A):CParser.__init__(A,stream);A._parser=A._composer=A;BaseConstructor.__init__(A,loader=A);BaseResolver.__init__(A,loadumper=A)
+class CSafeLoader(CParser,SafeConstructor,Resolver):
+	def __init__(A,stream,version=_A,preserve_quotes=_A):CParser.__init__(A,stream);A._parser=A._composer=A;SafeConstructor.__init__(A,loader=A);Resolver.__init__(A,loadumper=A)
+class CLoader(CParser,Constructor,Resolver):
+	def __init__(A,stream,version=_A,preserve_quotes=_A):CParser.__init__(A,stream);A._parser=A._composer=A;Constructor.__init__(A,loader=A);Resolver.__init__(A,loadumper=A)
+class CBaseDumper(CEmitter,BaseRepresenter,BaseResolver):
+	def __init__(A,stream,default_style=_A,default_flow_style=_A,canonical=_A,indent=_A,width=_A,allow_unicode=_A,line_break=_A,encoding=_A,explicit_start=_A,explicit_end=_A,version=_A,tags=_A,block_seq_indent=_A,top_level_colon_align=_A,prefix_colon=_A):CEmitter.__init__(A,stream,canonical=canonical,indent=indent,width=width,encoding=encoding,allow_unicode=allow_unicode,line_break=line_break,explicit_start=explicit_start,explicit_end=explicit_end,version=version,tags=tags);A._emitter=A._serializer=A._representer=A;BaseRepresenter.__init__(A,default_style=default_style,default_flow_style=default_flow_style,dumper=A);BaseResolver.__init__(A,loadumper=A)
+class CSafeDumper(CEmitter,SafeRepresenter,Resolver):
+	def __init__(A,stream,default_style=_A,default_flow_style=_A,canonical=_A,indent=_A,width=_A,allow_unicode=_A,line_break=_A,encoding=_A,explicit_start=_A,explicit_end=_A,version=_A,tags=_A,block_seq_indent=_A,top_level_colon_align=_A,prefix_colon=_A):A._emitter=A._serializer=A._representer=A;CEmitter.__init__(A,stream,canonical=canonical,indent=indent,width=width,encoding=encoding,allow_unicode=allow_unicode,line_break=line_break,explicit_start=explicit_start,explicit_end=explicit_end,version=version,tags=tags);A._emitter=A._serializer=A._representer=A;SafeRepresenter.__init__(A,default_style=default_style,default_flow_style=default_flow_style);Resolver.__init__(A)
+class CDumper(CEmitter,Representer,Resolver):
+	def __init__(A,stream,default_style=_A,default_flow_style=_A,canonical=_A,indent=_A,width=_A,allow_unicode=_A,line_break=_A,encoding=_A,explicit_start=_A,explicit_end=_A,version=_A,tags=_A,block_seq_indent=_A,top_level_colon_align=_A,prefix_colon=_A):CEmitter.__init__(A,stream,canonical=canonical,indent=indent,width=width,encoding=encoding,allow_unicode=allow_unicode,line_break=line_break,explicit_start=explicit_start,explicit_end=explicit_end,version=version,tags=tags);A._emitter=A._serializer=A._representer=A;Representer.__init__(A,default_style=default_style,default_flow_style=default_flow_style);Resolver.__init__(A)

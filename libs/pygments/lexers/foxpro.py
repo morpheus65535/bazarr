@@ -4,7 +4,7 @@
 
     Simple lexer for Microsoft Visual FoxPro source code.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -12,7 +12,7 @@ import re
 
 from pygments.lexer import RegexLexer
 from pygments.token import Punctuation, Text, Comment, Operator, Keyword, \
-     Name, String
+    Name, String
 
 __all__ = ['FoxProLexer']
 

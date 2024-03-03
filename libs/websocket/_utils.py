@@ -1,8 +1,10 @@
+from typing import Union
+
 """
 _url.py
 websocket - WebSocket client library for Python
 
-Copyright 2022 engn33r
+Copyright 2023 engn33r
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,11 +22,10 @@ __all__ = ["NoLock", "validate_utf8", "extract_err_message", "extract_error_code
 
 
 class NoLock:
-
-    def __enter__(self):
+    def __enter__(self) -> None:
         pass
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
         pass
 
 
@@ -33,8 +34,9 @@ try:
     # strings.
     from wsaccel.utf8validator import Utf8Validator
 
-    def _validate_utf8(utfbytes):
-        return Utf8Validator().validate(utfbytes)[0]
+    def _validate_utf8(utfbytes: Union[str, bytes]) -> bool:
+        result: bool = Utf8Validator().validate(utfbytes)[0]
+        return result
 
 except ImportError:
     # UTF-8 validator
@@ -46,44 +48,396 @@ except ImportError:
     _UTF8D = [
         # The first part of the table maps bytes to character classes that
         # to reduce the size of the transition table and create bitmasks.
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
-        7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,  7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
-        8,8,2,2,2,2,2,2,2,2,2,2,2,2,2,2,  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-        10,3,3,3,3,3,3,3,3,3,3,3,3,4,3,3, 11,6,6,6,5,8,8,8,8,8,8,8,8,8,8,8,
-
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        8,
+        8,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        10,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        4,
+        3,
+        3,
+        11,
+        6,
+        6,
+        6,
+        5,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
         # The second part is a transition table that maps a combination
         # of a state of the automaton and a character class to a state.
-        0,12,24,36,60,96,84,12,12,12,48,72, 12,12,12,12,12,12,12,12,12,12,12,12,
-        12, 0,12,12,12,12,12, 0,12, 0,12,12, 12,24,12,12,12,12,12,24,12,24,12,12,
-        12,12,12,12,12,12,12,24,12,12,12,12, 12,24,12,12,12,12,12,12,12,24,12,12,
-        12,12,12,12,12,12,12,36,12,36,12,12, 12,36,12,12,12,12,12,36,12,36,12,12,
-        12,36,12,12,12,12,12,12,12,12,12,12, ]
+        0,
+        12,
+        24,
+        36,
+        60,
+        96,
+        84,
+        12,
+        12,
+        12,
+        48,
+        72,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        0,
+        12,
+        12,
+        12,
+        12,
+        12,
+        0,
+        12,
+        0,
+        12,
+        12,
+        12,
+        24,
+        12,
+        12,
+        12,
+        12,
+        12,
+        24,
+        12,
+        24,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        24,
+        12,
+        12,
+        12,
+        12,
+        12,
+        24,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        24,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        36,
+        12,
+        36,
+        12,
+        12,
+        12,
+        36,
+        12,
+        12,
+        12,
+        12,
+        12,
+        36,
+        12,
+        36,
+        12,
+        12,
+        12,
+        36,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+    ]
 
-    def _decode(state, codep, ch):
+    def _decode(state: int, codep: int, ch: int) -> tuple:
         tp = _UTF8D[ch]
 
-        codep = (ch & 0x3f) | (codep << 6) if (
-            state != _UTF8_ACCEPT) else (0xff >> tp) & ch
+        codep = (
+            (ch & 0x3F) | (codep << 6) if (state != _UTF8_ACCEPT) else (0xFF >> tp) & ch
+        )
         state = _UTF8D[256 + state + tp]
 
         return state, codep
 
-    def _validate_utf8(utfbytes):
+    def _validate_utf8(utfbytes: Union[str, bytes]) -> bool:
         state = _UTF8_ACCEPT
         codep = 0
         for i in utfbytes:
-            state, codep = _decode(state, codep, i)
+            state, codep = _decode(state, codep, int(i))
             if state == _UTF8_REJECT:
                 return False
 
         return True
 
 
-def validate_utf8(utfbytes):
+def validate_utf8(utfbytes: Union[str, bytes]) -> bool:
     """
     validate utf8 byte string.
     utfbytes: utf byte string to check.
@@ -92,13 +446,14 @@ def validate_utf8(utfbytes):
     return _validate_utf8(utfbytes)
 
 
-def extract_err_message(exception):
+def extract_err_message(exception: Exception) -> Union[str, None]:
     if exception.args:
-        return exception.args[0]
+        exception_message: str = exception.args[0]
+        return exception_message
     else:
         return None
 
 
-def extract_error_code(exception):
+def extract_error_code(exception: Exception) -> Union[int, None]:
     if exception.args and len(exception.args) > 1:
         return exception.args[0] if isinstance(exception.args[0], int) else None

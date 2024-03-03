@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 
 from jinja2 import BaseLoader
@@ -15,16 +17,17 @@ from .signals import template_rendered
 
 if t.TYPE_CHECKING:  # pragma: no cover
     from .app import Flask
-    from .scaffold import Scaffold
+    from .sansio.app import App
+    from .sansio.scaffold import Scaffold
 
 
-def _default_template_ctx_processor() -> t.Dict[str, t.Any]:
+def _default_template_ctx_processor() -> dict[str, t.Any]:
     """Default template context processor.  Injects `request`,
     `session` and `g`.
     """
     appctx = _cv_app.get(None)
     reqctx = _cv_request.get(None)
-    rv: t.Dict[str, t.Any] = {}
+    rv: dict[str, t.Any] = {}
     if appctx is not None:
         rv["g"] = appctx.g
     if reqctx is not None:
@@ -39,7 +42,7 @@ class Environment(BaseEnvironment):
     name of the blueprint to referenced templates if necessary.
     """
 
-    def __init__(self, app: "Flask", **options: t.Any) -> None:
+    def __init__(self, app: App, **options: t.Any) -> None:
         if "loader" not in options:
             options["loader"] = app.create_global_jinja_loader()
         BaseEnvironment.__init__(self, **options)
@@ -51,24 +54,22 @@ class DispatchingJinjaLoader(BaseLoader):
     the blueprint folders.
     """
 
-    def __init__(self, app: "Flask") -> None:
+    def __init__(self, app: App) -> None:
         self.app = app
 
-    def get_source(  # type: ignore
-        self, environment: Environment, template: str
-    ) -> t.Tuple[str, t.Optional[str], t.Optional[t.Callable]]:
+    def get_source(
+        self, environment: BaseEnvironment, template: str
+    ) -> tuple[str, str | None, t.Callable[[], bool] | None]:
         if self.app.config["EXPLAIN_TEMPLATE_LOADING"]:
             return self._get_source_explained(environment, template)
         return self._get_source_fast(environment, template)
 
     def _get_source_explained(
-        self, environment: Environment, template: str
-    ) -> t.Tuple[str, t.Optional[str], t.Optional[t.Callable]]:
+        self, environment: BaseEnvironment, template: str
+    ) -> tuple[str, str | None, t.Callable[[], bool] | None]:
         attempts = []
-        rv: t.Optional[t.Tuple[str, t.Optional[str], t.Optional[t.Callable[[], bool]]]]
-        trv: t.Optional[
-            t.Tuple[str, t.Optional[str], t.Optional[t.Callable[[], bool]]]
-        ] = None
+        rv: tuple[str, str | None, t.Callable[[], bool] | None] | None
+        trv: None | (tuple[str, str | None, t.Callable[[], bool] | None]) = None
 
         for srcobj, loader in self._iter_loaders(template):
             try:
@@ -88,8 +89,8 @@ class DispatchingJinjaLoader(BaseLoader):
         raise TemplateNotFound(template)
 
     def _get_source_fast(
-        self, environment: Environment, template: str
-    ) -> t.Tuple[str, t.Optional[str], t.Optional[t.Callable]]:
+        self, environment: BaseEnvironment, template: str
+    ) -> tuple[str, str | None, t.Callable[[], bool] | None]:
         for _srcobj, loader in self._iter_loaders(template):
             try:
                 return loader.get_source(environment, template)
@@ -97,9 +98,7 @@ class DispatchingJinjaLoader(BaseLoader):
                 continue
         raise TemplateNotFound(template)
 
-    def _iter_loaders(
-        self, template: str
-    ) -> t.Generator[t.Tuple["Scaffold", BaseLoader], None, None]:
+    def _iter_loaders(self, template: str) -> t.Iterator[tuple[Scaffold, BaseLoader]]:
         loader = self.app.jinja_loader
         if loader is not None:
             yield self.app, loader
@@ -109,7 +108,7 @@ class DispatchingJinjaLoader(BaseLoader):
             if loader is not None:
                 yield blueprint, loader
 
-    def list_templates(self) -> t.List[str]:
+    def list_templates(self) -> list[str]:
         result = set()
         loader = self.app.jinja_loader
         if loader is not None:
@@ -124,17 +123,21 @@ class DispatchingJinjaLoader(BaseLoader):
         return list(result)
 
 
-def _render(app: "Flask", template: Template, context: t.Dict[str, t.Any]) -> str:
+def _render(app: Flask, template: Template, context: dict[str, t.Any]) -> str:
     app.update_template_context(context)
-    before_render_template.send(app, template=template, context=context)
+    before_render_template.send(
+        app, _async_wrapper=app.ensure_sync, template=template, context=context
+    )
     rv = template.render(context)
-    template_rendered.send(app, template=template, context=context)
+    template_rendered.send(
+        app, _async_wrapper=app.ensure_sync, template=template, context=context
+    )
     return rv
 
 
 def render_template(
-    template_name_or_list: t.Union[str, Template, t.List[t.Union[str, Template]]],
-    **context: t.Any
+    template_name_or_list: str | Template | list[str | Template],
+    **context: t.Any,
 ) -> str:
     """Render a template by name with the given context.
 
@@ -160,14 +163,18 @@ def render_template_string(source: str, **context: t.Any) -> str:
 
 
 def _stream(
-    app: "Flask", template: Template, context: t.Dict[str, t.Any]
+    app: Flask, template: Template, context: dict[str, t.Any]
 ) -> t.Iterator[str]:
     app.update_template_context(context)
-    before_render_template.send(app, template=template, context=context)
+    before_render_template.send(
+        app, _async_wrapper=app.ensure_sync, template=template, context=context
+    )
 
     def generate() -> t.Iterator[str]:
         yield from template.generate(context)
-        template_rendered.send(app, template=template, context=context)
+        template_rendered.send(
+            app, _async_wrapper=app.ensure_sync, template=template, context=context
+        )
 
     rv = generate()
 
@@ -179,8 +186,8 @@ def _stream(
 
 
 def stream_template(
-    template_name_or_list: t.Union[str, Template, t.List[t.Union[str, Template]]],
-    **context: t.Any
+    template_name_or_list: str | Template | list[str | Template],
+    **context: t.Any,
 ) -> t.Iterator[str]:
     """Render a template by name with the given context as a stream.
     This returns an iterator of strings, which can be used as a

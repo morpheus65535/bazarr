@@ -50,7 +50,7 @@ const HistoryStats: FunctionComponent = () => {
 
   const languageOptions = useSelectorOptions(
     historyLanguages ?? [],
-    (value) => value.name
+    (value) => value.name,
   );
 
   const [timeFrame, setTimeFrame] = useState<History.TimeFrameOptions>("month");

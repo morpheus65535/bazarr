@@ -100,7 +100,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
         },
       },
     ],
-    []
+    [],
   );
 
   return <PageTable columns={columns} data={backups}></PageTable>;

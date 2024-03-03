@@ -4,7 +4,7 @@
 
     Simple style with MS Visual Studio colors.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -13,8 +13,12 @@ from pygments.token import Keyword, Name, Comment, String, Error, \
      Operator, Generic
 
 
-class VisualStudioStyle(Style):
+__all__ = ['VisualStudioStyle']
 
+
+class VisualStudioStyle(Style):
+    name = 'vs'
+    
     background_color = "#ffffff"
 
     styles = {
@@ -30,6 +34,7 @@ class VisualStudioStyle(Style):
         Generic.Subheading:        "bold",
         Generic.Emph:              "italic",
         Generic.Strong:            "bold",
+        Generic.EmphStrong:        "bold italic",
         Generic.Prompt:            "bold",
 
         Error:                     "border:#FF0000"

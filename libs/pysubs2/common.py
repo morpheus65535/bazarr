@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Union
+from enum import IntEnum
 
 
 @dataclass(init=False)
@@ -25,8 +26,39 @@ class Color:
         self.a = a
 
 
+class Alignment(IntEnum):
+    """
+    An integer enum specifying text alignment
+
+    The integer values correspond to Advanced SubStation Alpha definition (like on numpad).
+    Note that the older SubStation Alpha (SSA) specification used different numbering schema.
+
+    """
+    BOTTOM_LEFT = 1
+    BOTTOM_CENTER = 2
+    BOTTOM_RIGHT = 3
+    MIDDLE_LEFT = 4
+    MIDDLE_CENTER = 5
+    MIDDLE_RIGHT = 6
+    TOP_LEFT = 7
+    TOP_CENTER = 8
+    TOP_RIGHT = 9
+
+    @classmethod
+    def from_ssa_alignment(cls, alignment: int) -> "Alignment":
+        """Convert SSA alignment to ASS alignment"""
+        return Alignment(SSA_ALIGNMENT.index(alignment) + 1)
+
+    def to_ssa_alignment(self) -> int:
+        """Convert ASS alignment to SSA alignment"""
+        return SSA_ALIGNMENT[self.value - 1]
+
+
+SSA_ALIGNMENT = (1, 2, 3, 9, 10, 11, 5, 6, 7)
+
+
 #: Version of the pysubs2 library.
-VERSION = "1.4.4"
+VERSION = "1.6.1"
 
 
 IntOrFloat = Union[int, float]

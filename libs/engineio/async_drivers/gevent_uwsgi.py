@@ -12,7 +12,7 @@ class Thread(gevent.Greenlet):  # pragma: no cover
     with the standard library's Thread class.
     """
     def __init__(self, target, args=[], kwargs={}):
-        super(Thread, self).__init__(target, *args, **kwargs)
+        super().__init__(target, *args, **kwargs)
 
     def _run(self):
         return self.run()
@@ -23,8 +23,8 @@ class uWSGIWebSocket(object):  # pragma: no cover
     This wrapper class provides a uWSGI WebSocket interface that is
     compatible with eventlet's implementation.
     """
-    def __init__(self, app):
-        self.app = app
+    def __init__(self, handler, server):
+        self.app = handler
         self._sock = None
         self.received_messages = []
 
@@ -60,10 +60,11 @@ class uWSGIWebSocket(object):  # pragma: no cover
                 self._event)
 
         self.app(self)
+        uwsgi.disconnect()
+        return ''  # send nothing as response
 
     def close(self):
         """Disconnects uWSGI from the client."""
-        uwsgi.disconnect()
         if self._req_ctx is None:
             # better kill it here in case wait() is not called again
             self._select_greenlet.kill()
@@ -115,6 +116,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                 try:
                     msg = uwsgi.websocket_recv(request_context=self._req_ctx)
                 except IOError:  # connection closed
+                    self.close()
                     return None
                 return self._decode_received(msg)
             else:
@@ -134,14 +136,18 @@ class uWSGIWebSocket(object):  # pragma: no cover
                         except gevent.queue.Empty:
                             break
                     for msg in msgs:
-                        self._send(msg)
+                        try:
+                            self._send(msg)
+                        except IOError:
+                            self.close()
+                            return None
                 # maybe there is something to receive, if not, at least
                 # ensure uWSGI does its ping/ponging
                 while True:
                     try:
                         msg = uwsgi.websocket_recv_nb()
                     except IOError:  # connection closed
-                        self._select_greenlet.kill()
+                        self.close()
                         return None
                     if msg:  # message available
                         self.received_messages.append(

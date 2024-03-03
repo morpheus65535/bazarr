@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=no-self-use, pointless-statement, missing-docstring, unbalanced-tuple-unpacking, len-as-condition, no-member
+# pylint: disable=pointless-statement, missing-docstring, unbalanced-tuple-unpacking, len-as-condition, no-member
 
 import re
 import pytest
@@ -8,7 +8,7 @@ import pytest
 from ..pattern import StringPattern, RePattern, FunctionalPattern, REGEX_ENABLED
 from ..match import Match
 
-class TestStringPattern(object):
+class TestStringPattern:
     """
     Tests for StringPattern matching
     """
@@ -110,7 +110,7 @@ class TestStringPattern(object):
         assert len(matches) == 0
 
 
-class TestRePattern(object):
+class TestRePattern:
     """
     Tests for RePattern matching
     """
@@ -418,7 +418,7 @@ class TestRePattern(object):
         assert children[1].value == "HE"
 
 
-class TestFunctionalPattern(object):
+class TestFunctionalPattern:
     """
     Tests for FunctionalPattern matching
     """
@@ -580,7 +580,7 @@ class TestFunctionalPattern(object):
         assert matches[0].value == "PLAY"
 
 
-class TestValue(object):
+class TestValue:
     """
     Tests for value option
     """
@@ -649,7 +649,7 @@ class TestValue(object):
         assert group2.value == "CHILD"
 
 
-class TestFormatter(object):
+class TestFormatter:
     """
     Tests for formatter option
     """
@@ -741,7 +741,7 @@ class TestFormatter(object):
         assert matches[0].value == 1849 * 3
 
 
-class TestValidator(object):
+class TestValidator:
     """
     Tests for validator option
     """

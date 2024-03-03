@@ -28,7 +28,7 @@ export type LanguageEqualImmediateData =
 export type LanguageEqualData = LanguageEqualGenericData<Language.Server>;
 
 function decodeEqualTarget(
-  text: string
+  text: string,
 ): GenericEqualTarget<Language.CodeType> | undefined {
   const [code, decoration] = text.split("@");
 
@@ -47,7 +47,7 @@ function decodeEqualTarget(
 }
 
 export function decodeEqualData(
-  text: string
+  text: string,
 ): LanguageEqualImmediateData | undefined {
   const [first, second] = text.split(":");
 
@@ -97,10 +97,10 @@ export function useLatestLanguageEquals(): LanguageEqualData[] {
           }
 
           const source = data?.find(
-            (value) => value.code3 === parsed.source.content
+            (value) => value.code3 === parsed.source.content,
           );
           const target = data?.find(
-            (value) => value.code3 === parsed.target.content
+            (value) => value.code3 === parsed.target.content,
           );
 
           if (source === undefined || target === undefined) {
@@ -113,7 +113,7 @@ export function useLatestLanguageEquals(): LanguageEqualData[] {
           };
         })
         .filter((v): v is LanguageEqualData => v !== undefined) ?? [],
-    [data, latest]
+    [data, latest],
   );
 }
 
@@ -134,7 +134,7 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
       LOG("info", "updating language equals data", values);
       setValue(encodedValues, languageEqualsKey);
     },
-    [setValue]
+    [setValue],
   );
 
   const add = useCallback(() => {
@@ -178,7 +178,7 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
       newValue[index] = { ...value };
       setEquals(newValue);
     },
-    [equals, setEquals]
+    [equals, setEquals],
   );
 
   const remove = useCallback(
@@ -193,7 +193,7 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
 
       setEquals(newValue);
     },
-    [equals, setEquals]
+    [equals, setEquals],
   );
 
   const columns = useMemo<Column<LanguageEqualData>[]>(
@@ -349,7 +349,7 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
         },
       },
     ],
-    [remove, update]
+    [remove, update],
   );
 
   return (

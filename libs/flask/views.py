@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import typing as t
 
 from . import typing as ft
 from .globals import current_app
 from .globals import request
 
+F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 http_method_funcs = frozenset(
     ["get", "post", "head", "options", "delete", "put", "trace", "patch"]
@@ -45,12 +48,12 @@ class View:
     #: The methods this view is registered for. Uses the same default
     #: (``["GET", "HEAD", "OPTIONS"]``) as ``route`` and
     #: ``add_url_rule`` by default.
-    methods: t.ClassVar[t.Optional[t.Collection[str]]] = None
+    methods: t.ClassVar[t.Collection[str] | None] = None
 
     #: Control whether the ``OPTIONS`` method is handled automatically.
     #: Uses the same default (``True``) as ``route`` and
     #: ``add_url_rule`` by default.
-    provide_automatic_options: t.ClassVar[t.Optional[bool]] = None
+    provide_automatic_options: t.ClassVar[bool | None] = None
 
     #: A list of decorators to apply, in order, to the generated view
     #: function. Remember that ``@decorator`` syntax is applied bottom
@@ -58,7 +61,7 @@ class View:
     #: decorator.
     #:
     #: .. versionadded:: 0.8
-    decorators: t.ClassVar[t.List[t.Callable]] = []
+    decorators: t.ClassVar[list[t.Callable[[F], F]]] = []
 
     #: Create a new instance of this view class for every request by
     #: default. If a view subclass sets this to ``False``, the same
@@ -92,8 +95,8 @@ class View:
         :attr:`init_every_request` to ``False``, the same instance will
         be used for every request.
 
-        The arguments passed to this method are forwarded to the view
-        class ``__init__`` method.
+        Except for ``name``, all other arguments passed to this method
+        are forwarded to the view class ``__init__`` method.
 
         .. versionchanged:: 2.2
             Added the ``init_every_request`` class attribute.
@@ -104,13 +107,13 @@ class View:
                 self = view.view_class(  # type: ignore[attr-defined]
                     *class_args, **class_kwargs
                 )
-                return current_app.ensure_sync(self.dispatch_request)(**kwargs)
+                return current_app.ensure_sync(self.dispatch_request)(**kwargs)  # type: ignore[no-any-return]
 
         else:
             self = cls(*class_args, **class_kwargs)
 
             def view(**kwargs: t.Any) -> ft.ResponseReturnValue:
-                return current_app.ensure_sync(self.dispatch_request)(**kwargs)
+                return current_app.ensure_sync(self.dispatch_request)(**kwargs)  # type: ignore[no-any-return]
 
         if cls.decorators:
             view.__name__ = name
@@ -185,4 +188,4 @@ class MethodView(View):
             meth = getattr(self, "get", None)
 
         assert meth is not None, f"Unimplemented method {request.method!r}"
-        return current_app.ensure_sync(meth)(**kwargs)
+        return current_app.ensure_sync(meth)(**kwargs)  # type: ignore[no-any-return]

@@ -1,7 +1,6 @@
-import sys
-
 from .client import Client
-from .base_manager import BaseManager
+from .simple_client import SimpleClient
+from .manager import Manager
 from .pubsub_manager import PubSubManager
 from .kombu_manager import KombuManager
 from .redis_manager import RedisManager
@@ -11,26 +10,19 @@ from .server import Server
 from .namespace import Namespace, ClientNamespace
 from .middleware import WSGIApp, Middleware
 from .tornado import get_tornado_handler
-if sys.version_info >= (3, 5):  # pragma: no cover
-    from .asyncio_client import AsyncClient
-    from .asyncio_server import AsyncServer
-    from .asyncio_manager import AsyncManager
-    from .asyncio_namespace import AsyncNamespace, AsyncClientNamespace
-    from .asyncio_redis_manager import AsyncRedisManager
-    from .asyncio_aiopika_manager import AsyncAioPikaManager
-    from .asgi import ASGIApp
-else:  # pragma: no cover
-    AsyncClient = None
-    AsyncServer = None
-    AsyncManager = None
-    AsyncNamespace = None
-    AsyncRedisManager = None
-    AsyncAioPikaManager = None
+from .async_client import AsyncClient
+from .async_simple_client import AsyncSimpleClient
+from .async_server import AsyncServer
+from .async_manager import AsyncManager
+from .async_namespace import AsyncNamespace, AsyncClientNamespace
+from .async_redis_manager import AsyncRedisManager
+from .async_aiopika_manager import AsyncAioPikaManager
+from .asgi import ASGIApp
 
-__all__ = ['Client', 'Server', 'BaseManager', 'PubSubManager',
+__all__ = ['SimpleClient', 'Client', 'Server', 'Manager', 'PubSubManager',
            'KombuManager', 'RedisManager', 'ZmqManager', 'KafkaManager',
-           'Namespace', 'ClientNamespace', 'WSGIApp', 'Middleware']
-if AsyncServer is not None:  # pragma: no cover
-    __all__ += ['AsyncClient', 'AsyncServer', 'AsyncNamespace',
-                'AsyncClientNamespace', 'AsyncManager', 'AsyncRedisManager',
-                'ASGIApp', 'get_tornado_handler', 'AsyncAioPikaManager']
+           'Namespace', 'ClientNamespace', 'WSGIApp', 'Middleware',
+           'AsyncSimpleClient', 'AsyncClient', 'AsyncServer',
+           'AsyncNamespace', 'AsyncClientNamespace', 'AsyncManager',
+           'AsyncRedisManager', 'ASGIApp', 'get_tornado_handler',
+           'AsyncAioPikaManager']

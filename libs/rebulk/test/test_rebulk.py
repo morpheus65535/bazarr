@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=no-self-use, pointless-statement, missing-docstring, no-member, len-as-condition
+# pylint: disable=pointless-statement, missing-docstring, no-member, len-as-condition
 
 from ..rebulk import Rebulk
 from ..rules import Rule
@@ -294,7 +294,7 @@ def test_rebulk_rules_4():
     assert len(matches) == 0
 
 
-class TestMarkers(object):
+class TestMarkers:
     def test_one_marker(self):
         class MarkerRule(Rule):
             def when(self, matches, context):
@@ -398,7 +398,7 @@ class TestMarkers(object):
         assert not matches.markers
 
 
-class TestUnicode(object):
+class TestUnicode:
     def test_rebulk_simple(self):
         input_string = "敏捷的棕色狐狸跳過懶狗"
 
@@ -422,7 +422,7 @@ class TestUnicode(object):
         assert matches[2].value == "的"
 
 
-class TestImmutable(object):
+class TestImmutable:
     def test_starting(self):
         input_string = "The quick brown fox jumps over the lazy dog"
         matches = Rebulk().string("quick").string("over").string("fox").matches(input_string)

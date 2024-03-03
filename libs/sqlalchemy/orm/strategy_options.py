@@ -1,4 +1,5 @@
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# orm/strategy_options.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -34,6 +35,7 @@ from .attributes import QueryableAttribute
 from .base import InspectionAttr
 from .interfaces import LoaderOption
 from .path_registry import _DEFAULT_TOKEN
+from .path_registry import _StrPathToken
 from .path_registry import _WILDCARD_TOKEN
 from .path_registry import AbstractEntityRegistry
 from .path_registry import path_is_property
@@ -77,7 +79,7 @@ if typing.TYPE_CHECKING:
     from ..sql.cache_key import CacheKey
 
 
-_AttrType = Union[str, "QueryableAttribute[Any]"]
+_AttrType = Union[Literal["*"], "QueryableAttribute[Any]"]
 
 _WildcardKeyType = Literal["relationship", "column"]
 _StrategySpec = Dict[str, Any]
@@ -295,12 +297,6 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
             correctness of results, these joins are always INNER and are
             therefore right-nested if linked to an OUTER join.
 
-        .. versionchanged:: 1.0.0 ``innerjoin=True`` now implies
-            ``innerjoin="nested"``, whereas in 0.9 it implied
-            ``innerjoin="unnested"``. In order to achieve the pre-1.0
-            "unnested" inner join behavior, use the value
-            ``innerjoin="unnested"``. See :ref:`migration_3008`.
-
         .. note::
 
             The joins produced by :func:`_orm.joinedload` are **anonymously
@@ -324,9 +320,11 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
         loader = self._set_relationship_strategy(
             attr,
             {"lazy": "joined"},
-            opts={"innerjoin": innerjoin}
-            if innerjoin is not None
-            else util.EMPTY_DICT,
+            opts=(
+                {"innerjoin": innerjoin}
+                if innerjoin is not None
+                else util.EMPTY_DICT
+            ),
         )
         return loader
 
@@ -532,9 +530,6 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
         This function is part of the :class:`_orm.Load` interface and supports
         both method-chained and standalone operation.
 
-
-        .. versionadded:: 1.1
-
         .. seealso::
 
             :ref:`loading_toplevel`
@@ -550,7 +545,12 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
         )
 
     def defaultload(self, attr: _AttrType) -> Self:
-        """Indicate an attribute should load using its default loader style.
+        """Indicate an attribute should load using its predefined loader style.
+
+        The behavior of this loading option is to not change the current
+        loading style of the attribute, meaning that the previously configured
+        one is used or, if no previous style was selected, the default
+        loading will be used.
 
         This method is used to link to other loader options further into
         a chain of attributes without altering the loader style of the links
@@ -750,7 +750,7 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
         )
 
         return self._set_column_strategy(
-            (key,), {"query_expression": True}, opts={"expression": expression}
+            (key,), {"query_expression": True}, extra_criteria=(expression,)
         )
 
     def selectin_polymorphic(self, classes: Iterable[Type[Any]]) -> Self:
@@ -779,12 +779,10 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
         return self
 
     @overload
-    def _coerce_strat(self, strategy: _StrategySpec) -> _StrategyKey:
-        ...
+    def _coerce_strat(self, strategy: _StrategySpec) -> _StrategyKey: ...
 
     @overload
-    def _coerce_strat(self, strategy: Literal[None]) -> None:
-        ...
+    def _coerce_strat(self, strategy: Literal[None]) -> None: ...
 
     def _coerce_strat(
         self, strategy: Optional[_StrategySpec]
@@ -822,6 +820,7 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
         attrs: Tuple[_AttrType, ...],
         strategy: Optional[_StrategySpec],
         opts: Optional[_OptsType] = None,
+        extra_criteria: Optional[Tuple[Any, ...]] = None,
     ) -> Self:
         strategy_key = self._coerce_strat(strategy)
 
@@ -831,6 +830,7 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
             _COLUMN_TOKEN,
             opts=opts,
             attr_group=attrs,
+            extra_criteria=extra_criteria,
         )
         return self
 
@@ -887,6 +887,7 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
         attr_group: Optional[_AttrGroupType] = None,
         propagate_to_loaders: bool = True,
         reconcile_to_other: Optional[bool] = None,
+        extra_criteria: Optional[Tuple[Any, ...]] = None,
     ) -> Self:
         raise NotImplementedError()
 
@@ -936,9 +937,14 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
     ) -> Optional[_PathRepresentation]:
         i = -1
 
-        for i, (c_token, p_token) in enumerate(zip(to_chop, path.path)):
+        for i, (c_token, p_token) in enumerate(
+            zip(to_chop, path.natural_path)
+        ):
             if isinstance(c_token, str):
-                if i == 0 and c_token.endswith(f":{_DEFAULT_TOKEN}"):
+                if i == 0 and (
+                    c_token.endswith(f":{_DEFAULT_TOKEN}")
+                    or c_token.endswith(f":{_WILDCARD_TOKEN}")
+                ):
                     return to_chop
                 elif (
                     c_token != f"{_RELATIONSHIP_TOKEN}:{_WILDCARD_TOKEN}"
@@ -951,36 +957,8 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
             elif (
                 isinstance(c_token, InspectionAttr)
                 and insp_is_mapper(c_token)
-                and (
-                    (insp_is_mapper(p_token) and c_token.isa(p_token))
-                    or (
-                        # a too-liberal check here to allow a path like
-                        # A->A.bs->B->B.cs->C->C.ds, natural path, to chop
-                        # against current path
-                        # A->A.bs->B(B, B2)->B(B, B2)->cs, in an of_type()
-                        # scenario which should only be occurring in a loader
-                        # that is against a non-aliased lead element with
-                        # single path.  otherwise the
-                        # "B" won't match into the B(B, B2).
-                        #
-                        # i>=2 prevents this check from proceeding for
-                        # the first path element.
-                        #
-                        # if we could do away with the "natural_path"
-                        # concept, we would not need guessy checks like this
-                        #
-                        # two conflicting tests for this comparison are:
-                        # test_eager_relations.py->
-                        #       test_lazyload_aliased_abs_bcs_two
-                        # and
-                        # test_of_type.py->test_all_subq_query
-                        #
-                        i >= 2
-                        and insp_is_aliased_class(p_token)
-                        and p_token._is_with_polymorphic
-                        and c_token in p_token.with_polymorphic_mappers
-                    )
-                )
+                and insp_is_mapper(p_token)
+                and c_token.isa(p_token)
             ):
                 continue
 
@@ -1009,6 +987,7 @@ class Load(_AbstractLoad):
     __slots__ = (
         "path",
         "context",
+        "additional_source_entities",
     )
 
     _traverse_internals = [
@@ -1018,11 +997,16 @@ class Load(_AbstractLoad):
             visitors.InternalTraversal.dp_has_cache_key_list,
         ),
         ("propagate_to_loaders", visitors.InternalTraversal.dp_boolean),
+        (
+            "additional_source_entities",
+            visitors.InternalTraversal.dp_has_cache_key_list,
+        ),
     ]
     _cache_key_traversal = None
 
     path: PathRegistry
     context: Tuple[_LoadElement, ...]
+    additional_source_entities: Tuple[_InternalEntityType[Any], ...]
 
     def __init__(self, entity: _EntityType[Any]):
         insp = cast("Union[Mapper[Any], AliasedInsp[Any]]", inspect(entity))
@@ -1031,22 +1015,33 @@ class Load(_AbstractLoad):
         self.path = insp._path_registry
         self.context = ()
         self.propagate_to_loaders = False
+        self.additional_source_entities = ()
 
     def __str__(self) -> str:
         return f"Load({self.path[0]})"
 
     @classmethod
-    def _construct_for_existing_path(cls, path: PathRegistry) -> Load:
+    def _construct_for_existing_path(
+        cls, path: AbstractEntityRegistry
+    ) -> Load:
         load = cls.__new__(cls)
         load.path = path
         load.context = ()
         load.propagate_to_loaders = False
+        load.additional_source_entities = ()
         return load
 
     def _adapt_cached_option_to_uncached_option(
         self, context: QueryContext, uncached_opt: ORMOption
     ) -> ORMOption:
         return self._adjust_for_extra_criteria(context)
+
+    def _prepend_path(self, path: PathRegistry) -> Load:
+        cloned = self._clone()
+        cloned.context = tuple(
+            element._prepend_path(path) for element in self.context
+        )
+        return cloned
 
     def _adjust_for_extra_criteria(self, context: QueryContext) -> Load:
         """Apply the current bound parameters in a QueryContext to all
@@ -1061,31 +1056,29 @@ class Load(_AbstractLoad):
         found_crit = False
 
         def process(opt: _LoadElement) -> _LoadElement:
-            if not opt._extra_criteria:
-                return opt
-
             nonlocal orig_cache_key, replacement_cache_key, found_crit
 
             found_crit = True
 
-            # avoid generating cache keys for the queries if we don't
-            # actually have any extra_criteria options, which is the
-            # common case
             if orig_cache_key is None or replacement_cache_key is None:
                 orig_cache_key = orig_query._generate_cache_key()
                 replacement_cache_key = context.query._generate_cache_key()
 
+            if replacement_cache_key is not None:
                 assert orig_cache_key is not None
-                assert replacement_cache_key is not None
 
-            opt._extra_criteria = tuple(
-                replacement_cache_key._apply_params_to_element(
-                    orig_cache_key, crit
+                opt._extra_criteria = tuple(
+                    replacement_cache_key._apply_params_to_element(
+                        orig_cache_key, crit
+                    )
+                    for crit in opt._extra_criteria
                 )
-                for crit in opt._extra_criteria
-            )
+
             return opt
 
+        # avoid generating cache keys for the queries if we don't
+        # actually have any extra_criteria options, which is the
+        # common case
         new_context = tuple(
             process(value._clone()) if value._extra_criteria else value
             for value in self.context
@@ -1124,7 +1117,6 @@ class Load(_AbstractLoad):
         mapper_entities: Sequence[_MapperEntity],
         raiseerr: bool,
     ) -> None:
-
         reconciled_lead_entity = self._reconcile_query_entities_with_us(
             mapper_entities, raiseerr
         )
@@ -1149,9 +1141,12 @@ class Load(_AbstractLoad):
 
         assert cloned.propagate_to_loaders == self.propagate_to_loaders
 
-        if not orm_util._entity_corresponds_to_use_path_impl(
-            cast("_InternalEntityType[Any]", parent.path[-1]),
-            cast("_InternalEntityType[Any]", cloned.path[0]),
+        if not any(
+            orm_util._entity_corresponds_to_use_path_impl(
+                elem, cloned.path.odd_element(0)
+            )
+            for elem in (parent.path.odd_element(-1),)
+            + parent.additional_source_entities
         ):
             if len(cloned.path) > 1:
                 attrname = cloned.path[1]
@@ -1170,6 +1165,9 @@ class Load(_AbstractLoad):
 
         if cloned.context:
             parent.context += cloned.context
+            parent.additional_source_entities += (
+                cloned.additional_source_entities
+            )
 
     @_generative
     def options(self, *opts: _AbstractLoad) -> Self:
@@ -1224,6 +1222,7 @@ class Load(_AbstractLoad):
         attr_group: Optional[_AttrGroupType] = None,
         propagate_to_loaders: bool = True,
         reconcile_to_other: Optional[bool] = None,
+        extra_criteria: Optional[Tuple[Any, ...]] = None,
     ) -> Self:
         # for individual strategy that needs to propagate, set the whole
         # Load container to also propagate, so that it shows up in
@@ -1257,9 +1256,14 @@ class Load(_AbstractLoad):
                 propagate_to_loaders,
                 attr_group=attr_group,
                 reconcile_to_other=reconcile_to_other,
+                extra_criteria=extra_criteria,
             )
             if load_element:
                 self.context += (load_element,)
+                assert opts is not None
+                self.additional_source_entities += cast(
+                    "Tuple[_InternalEntityType[Any]]", opts["entities"]
+                )
 
         else:
             for attr in attrs:
@@ -1273,6 +1277,7 @@ class Load(_AbstractLoad):
                         propagate_to_loaders,
                         attr_group=attr_group,
                         reconcile_to_other=reconcile_to_other,
+                        extra_criteria=extra_criteria,
                     )
                 else:
                     load_element = _AttributeStrategyLoad.create(
@@ -1284,6 +1289,7 @@ class Load(_AbstractLoad):
                         propagate_to_loaders,
                         attr_group=attr_group,
                         reconcile_to_other=reconcile_to_other,
+                        extra_criteria=extra_criteria,
                     )
 
                 if load_element:
@@ -1330,7 +1336,7 @@ class _WildcardLoad(_AbstractLoad):
 
     strategy: Optional[Tuple[Any, ...]]
     local_opts: _OptsType
-    path: Tuple[str, ...]
+    path: Union[Tuple[()], Tuple[str]]
     propagate_to_loaders = False
 
     def __init__(self) -> None:
@@ -1347,6 +1353,7 @@ class _WildcardLoad(_AbstractLoad):
         attr_group=None,
         propagate_to_loaders=True,
         reconcile_to_other=None,
+        extra_criteria=None,
     ):
         assert attrs is not None
         attr = attrs[0]
@@ -1363,6 +1370,8 @@ class _WildcardLoad(_AbstractLoad):
         if opts:
             self.local_opts = util.immutabledict(opts)
 
+        assert extra_criteria is None
+
     def options(self, *opts: _AbstractLoad) -> Self:
         raise NotImplementedError("Star option does not support sub-options")
 
@@ -1375,6 +1384,7 @@ class _WildcardLoad(_AbstractLoad):
         it may be used as the sub-option of a :class:`_orm.Load` object.
 
         """
+        assert self.path
         attr = self.path[0]
         if attr.endswith(_DEFAULT_TOKEN):
             attr = f"{attr.split(':')[0]}:{_WILDCARD_TOKEN}"
@@ -1405,13 +1415,16 @@ class _WildcardLoad(_AbstractLoad):
 
         start_path: _PathRepresentation = self.path
 
-        # TODO: chop_path already occurs in loader.process_compile_state()
-        # so we will seek to simplify this
         if current_path:
+            # TODO: no cases in test suite where we actually get
+            # None back here
             new_path = self._chop_path(start_path, current_path)
-            if not new_path:
+            if new_path is None:
                 return
-            start_path = new_path
+
+            # chop_path does not actually "chop" a wildcard token path,
+            # just returns it
+            assert new_path == start_path
 
         # start_path is a single-token tuple
         assert start_path and len(start_path) == 1
@@ -1599,9 +1612,10 @@ class _LoadElement(
                 f"Mapped class {path[0]} does not apply to any of the "
                 f"root entities in this query, e.g. "
                 f"""{
-                    ", ".join(str(x.entity_zero)
-                    for x in mapper_entities if x.entity_zero
-                )}. Please """
+                    ", ".join(
+                        str(x.entity_zero)
+                        for x in mapper_entities if x.entity_zero
+                    )}. Please """
                 "specify the full path "
                 "from one of the root entities to the target "
                 "attribute. "
@@ -1627,7 +1641,9 @@ class _LoadElement(
 
 
         """
-        chopped_start_path = Load._chop_path(effective_path.path, current_path)
+        chopped_start_path = Load._chop_path(
+            effective_path.natural_path, current_path
+        )
         if not chopped_start_path:
             return None
 
@@ -1643,7 +1659,9 @@ class _LoadElement(
 
         return effective_path
 
-    def _init_path(self, path, attr, wildcard_key, attr_group, raiseerr):
+    def _init_path(
+        self, path, attr, wildcard_key, attr_group, raiseerr, extra_criteria
+    ):
         """Apply ORM attributes and/or wildcard to an existing path, producing
         a new path.
 
@@ -1695,7 +1713,7 @@ class _LoadElement(
     def create(
         cls,
         path: PathRegistry,
-        attr: Optional[_AttrType],
+        attr: Union[_AttrType, _StrPathToken, None],
         strategy: Optional[_StrategyKey],
         wildcard_key: Optional[_WildcardKeyType],
         local_opts: Optional[_OptsType],
@@ -1703,6 +1721,7 @@ class _LoadElement(
         raiseerr: bool = True,
         attr_group: Optional[_AttrGroupType] = None,
         reconcile_to_other: Optional[bool] = None,
+        extra_criteria: Optional[Tuple[Any, ...]] = None,
     ) -> _LoadElement:
         """Create a new :class:`._LoadElement` object."""
 
@@ -1722,7 +1741,9 @@ class _LoadElement(
         else:
             opt._reconcile_to_other = None
 
-        path = opt._init_path(path, attr, wildcard_key, attr_group, raiseerr)
+        path = opt._init_path(
+            path, attr, wildcard_key, attr_group, raiseerr, extra_criteria
+        )
 
         if not path:
             return None  # type: ignore
@@ -1741,9 +1762,7 @@ class _LoadElement(
 
         return cloned
 
-    def _prepend_path_from(
-        self, parent: Union[Load, _LoadElement]
-    ) -> _LoadElement:
+    def _prepend_path_from(self, parent: Load) -> _LoadElement:
         """adjust the path of this :class:`._LoadElement` to be
         a subpath of that of the given parent :class:`_orm.Load` object's
         path.
@@ -1752,22 +1771,30 @@ class _LoadElement(
         which is in turn part of the :meth:`_orm.Load.options` method.
 
         """
+
+        if not any(
+            orm_util._entity_corresponds_to_use_path_impl(
+                elem,
+                self.path.odd_element(0),
+            )
+            for elem in (parent.path.odd_element(-1),)
+            + parent.additional_source_entities
+        ):
+            raise sa_exc.ArgumentError(
+                f'Attribute "{self.path[1]}" does not link '
+                f'from element "{parent.path[-1]}".'
+            )
+
+        return self._prepend_path(parent.path)
+
+    def _prepend_path(self, path: PathRegistry) -> _LoadElement:
         cloned = self._clone()
 
         assert cloned.strategy == self.strategy
         assert cloned.local_opts == self.local_opts
         assert cloned.is_class_strategy == self.is_class_strategy
 
-        if not orm_util._entity_corresponds_to_use_path_impl(
-            cast("_InternalEntityType[Any]", parent.path[-1]),
-            cast("_InternalEntityType[Any]", cloned.path[0]),
-        ):
-            raise sa_exc.ArgumentError(
-                f'Attribute "{cloned.path[1]}" does not link '
-                f'from element "{parent.path[-1]}".'
-            )
-
-        cloned.path = PathRegistry.coerce(parent.path[0:-1] + cloned.path[:])
+        cloned.path = PathRegistry.coerce(path[0:-1] + cloned.path[:])
 
         return cloned
 
@@ -1816,7 +1843,7 @@ class _LoadElement(
             replacement.local_opts = replacement.local_opts.union(
                 existing.local_opts
             )
-            replacement._extra_criteria += replacement._extra_criteria
+            replacement._extra_criteria += existing._extra_criteria
             return replacement
         elif replacement.path.is_token:
             # use 'last one wins' logic for wildcard options.  this is also
@@ -1858,7 +1885,9 @@ class _AttributeStrategyLoad(_LoadElement):
     is_class_strategy = False
     is_token_strategy = False
 
-    def _init_path(self, path, attr, wildcard_key, attr_group, raiseerr):
+    def _init_path(
+        self, path, attr, wildcard_key, attr_group, raiseerr, extra_criteria
+    ):
         assert attr is not None
         self._of_type = None
         self._path_with_polymorphic_path = None
@@ -1904,7 +1933,11 @@ class _AttributeStrategyLoad(_LoadElement):
         # from an attribute.   This appears to have been an artifact of how
         # _UnboundLoad / Load interacted together, which was opaque and
         # poorly defined.
-        self._extra_criteria = attr._extra_criteria
+        if extra_criteria:
+            assert not attr._extra_criteria
+            self._extra_criteria = extra_criteria
+        else:
+            self._extra_criteria = attr._extra_criteria
 
         if getattr(attr, "_of_type", None):
             ac = attr._of_type
@@ -1976,7 +2009,6 @@ class _AttributeStrategyLoad(_LoadElement):
             )
         start_path = self._path_with_polymorphic_path
         if current_path:
-
             new_path = self._adjust_effective_path_for_current_path(
                 start_path, current_path
             )
@@ -2049,9 +2081,9 @@ class _AttributeStrategyLoad(_LoadElement):
         d["_extra_criteria"] = ()
 
         if self._path_with_polymorphic_path:
-            d[
-                "_path_with_polymorphic_path"
-            ] = self._path_with_polymorphic_path.serialize()
+            d["_path_with_polymorphic_path"] = (
+                self._path_with_polymorphic_path.serialize()
+            )
 
         if self._of_type:
             if self._of_type.is_aliased_class:
@@ -2098,7 +2130,9 @@ class _TokenStrategyLoad(_LoadElement):
     is_class_strategy = False
     is_token_strategy = True
 
-    def _init_path(self, path, attr, wildcard_key, attr_group, raiseerr):
+    def _init_path(
+        self, path, attr, wildcard_key, attr_group, raiseerr, extra_criteria
+    ):
         # assert isinstance(attr, str) or attr is None
         if attr is not None:
             default_token = attr.endswith(_DEFAULT_TOKEN)
@@ -2157,10 +2191,12 @@ class _TokenStrategyLoad(_LoadElement):
         # is set.
 
         return [
-            ("loader", _path.natural_path)
-            for _path in cast(
-                TokenRegistry, effective_path
-            ).generate_for_superclasses()
+            ("loader", natural_path)
+            for natural_path in (
+                cast(
+                    TokenRegistry, effective_path
+                )._generate_natural_for_superclasses()
+            )
         ]
 
 
@@ -2182,7 +2218,9 @@ class _ClassStrategyLoad(_LoadElement):
 
     __visit_name__ = "class_strategy_load_element"
 
-    def _init_path(self, path, attr, wildcard_key, attr_group, raiseerr):
+    def _init_path(
+        self, path, attr, wildcard_key, attr_group, raiseerr, extra_criteria
+    ):
         return path
 
     def _prepare_for_compile_state(
@@ -2473,7 +2511,9 @@ def _raise_for_does_not_link(path, attrname, parent_entity):
                 (
                     "  Did you mean to use "
                     f'"{path[-2]}'
-                    f'.of_type({parent_entity_str})"?'
+                    f'.of_type({parent_entity_str})" or "loadopt.options('
+                    f"selectin_polymorphic({path[-2].mapper.class_.__name__}, "
+                    f'[{parent_entity_str}]), ...)" ?'
                     if not path_is_of_type
                     and not path[-1].is_aliased_class
                     and orm_util._entity_corresponds_to(

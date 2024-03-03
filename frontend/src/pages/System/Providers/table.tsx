@@ -22,7 +22,7 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "retry",
       },
     ],
-    []
+    [],
   );
 
   return <SimpleTable columns={columns} data={props.providers}></SimpleTable>;

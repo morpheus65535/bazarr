@@ -3,7 +3,7 @@
 """
 Introspector tests
 """
-# pylint: disable=no-self-use,pointless-statement,missing-docstring,protected-access,invalid-name,len-as-condition
+# pylint: disable=pointless-statement,missing-docstring,protected-access,invalid-name,len-as-condition
 from ..rebulk import Rebulk
 from .. import introspector
 from .default_rules_module import RuleAppend2, RuleAppend3

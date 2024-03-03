@@ -54,7 +54,7 @@ const LayoutModal: FunctionComponent<Props> = (props) => {
         }, 500);
       }
     },
-    [mutate, callbackModal]
+    [mutate, callbackModal],
   );
 
   const totalStagedCount = useMemo(() => {

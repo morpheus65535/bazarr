@@ -21,7 +21,7 @@ const ModalsProvider: FunctionComponent<PropsWithChildren> = ({ children }) => {
         prev[curr.modalKey] = curr;
         return prev;
       }, {}),
-    []
+    [],
   );
 
   return (

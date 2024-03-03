@@ -1,5 +1,5 @@
 # util/__init__.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -26,6 +26,7 @@ from ._collections import IdentitySet as IdentitySet
 from ._collections import immutabledict as immutabledict
 from ._collections import LRUCache as LRUCache
 from ._collections import merge_lists_w_ordering as merge_lists_w_ordering
+from ._collections import NONE_SET as NONE_SET
 from ._collections import ordered_column_set as ordered_column_set
 from ._collections import OrderedDict as OrderedDict
 from ._collections import OrderedIdentitySet as OrderedIdentitySet
@@ -155,3 +156,4 @@ from .langhelpers import warn_exception as warn_exception
 from .langhelpers import warn_limited as warn_limited
 from .langhelpers import wrap_callable as wrap_callable
 from .preloaded import preload_module as preload_module
+from .typing import is_non_string_iterable as is_non_string_iterable

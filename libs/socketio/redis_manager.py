@@ -48,12 +48,10 @@ class RedisManager(PubSubManager):  # pragma: no cover
         self.redis_url = url
         self.redis_options = redis_options or {}
         self._redis_connect()
-        super(RedisManager, self).__init__(channel=channel,
-                                           write_only=write_only,
-                                           logger=logger)
+        super().__init__(channel=channel, write_only=write_only, logger=logger)
 
     def initialize(self):
-        super(RedisManager, self).initialize()
+        super().initialize()
 
         monkey_patched = True
         if self.server.async_mode == 'eventlet':

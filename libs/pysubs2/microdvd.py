@@ -48,9 +48,9 @@ class MicroDVDFormat(FormatBase):
             def prepare_text(text):
                 text = text.replace("|", r"\N")
 
-                def style_replacer(match):
+                def style_replacer(match: re.Match) -> str:
                     tags = [c for c in "biu" if c in match.group(0)]
-                    return "{%s}" % "".join(r"\%s1" % c for c in tags)
+                    return "{%s}" % "".join(f"\\{c}1" for c in tags)
 
                 text = re.sub(r"\{[Yy]:[^}]+\}", style_replacer, text)
                 text = re.sub(r"\{[Ff]:([^}]+)\}", r"{\\fn\1}", text)
@@ -82,7 +82,7 @@ class MicroDVDFormat(FormatBase):
             raise UnknownFPSError("Framerate must be specified when writing MicroDVD.")
         to_frames = partial(ms_to_frames, fps=fps)
 
-        def is_entirely_italic(line):
+        def is_entirely_italic(line: SSAEvent) -> bool:
             style = subs.styles.get(line.style, SSAStyle.DEFAULT_STYLE)
             for fragment, sty in parse_tags(line.text, style, subs.styles):
                 fragment = fragment.replace(r"\h", " ")

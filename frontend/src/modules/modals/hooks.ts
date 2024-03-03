@@ -15,7 +15,7 @@ export function useModals() {
     <ARGS extends {}>(
       modal: ModalComponent<ARGS>,
       props: ARGS,
-      settings?: ModalSettings
+      settings?: ModalSettings,
     ) => {
       openMantineContextModal(modal.modalKey, {
         ...modal.settings,
@@ -23,14 +23,14 @@ export function useModals() {
         innerProps: props,
       });
     },
-    [openMantineContextModal]
+    [openMantineContextModal],
   );
 
   const closeContextModal = useCallback(
     (modal: ModalComponent) => {
       rest.closeModal(modal.modalKey);
     },
-    [rest]
+    [rest],
   );
 
   const id = useContext(ModalIdContext);
@@ -44,6 +44,6 @@ export function useModals() {
   // TODO: Performance
   return useMemo(
     () => ({ openContextModal, closeContextModal, closeSelf, ...rest }),
-    [closeContextModal, closeSelf, openContextModal, rest]
+    [closeContextModal, closeSelf, openContextModal, rest],
   );
 }

@@ -59,7 +59,7 @@ class NoExceptionFormatter(logging.Formatter):
 
 class UnwantedWaitressMessageFilter(logging.Filter):
     def filter(self, record):
-        if settings.general.debug is True:
+        if settings.general.debug:
             # no filtering in debug mode
             return True
             

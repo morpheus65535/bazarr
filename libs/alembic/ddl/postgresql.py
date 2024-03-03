@@ -1,9 +1,13 @@
+# mypy: allow-untyped-defs, allow-incomplete-defs, allow-untyped-calls
+# mypy: no-warn-return-any, allow-any-generics
+
 from __future__ import annotations
 
 import logging
 import re
 from typing import Any
 from typing import cast
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -12,7 +16,6 @@ from typing import TYPE_CHECKING
 from typing import Union
 
 from sqlalchemy import Column
-from sqlalchemy import Index
 from sqlalchemy import literal_column
 from sqlalchemy import Numeric
 from sqlalchemy import text
@@ -23,18 +26,19 @@ from sqlalchemy.dialects.postgresql import INTEGER
 from sqlalchemy.schema import CreateIndex
 from sqlalchemy.sql.elements import ColumnClause
 from sqlalchemy.sql.elements import TextClause
+from sqlalchemy.sql.functions import FunctionElement
 from sqlalchemy.types import NULLTYPE
 
 from .base import alter_column
 from .base import alter_table
 from .base import AlterColumn
 from .base import ColumnComment
-from .base import compiles
 from .base import format_column_name
 from .base import format_table_name
 from .base import format_type
 from .base import IdentityColumnDefault
 from .base import RenameTable
+from .impl import ComparisonResult
 from .impl import DefaultImpl
 from .. import util
 from ..autogenerate import render
@@ -43,16 +47,20 @@ from ..operations import schemaobj
 from ..operations.base import BatchOperations
 from ..operations.base import Operations
 from ..util import sqla_compat
+from ..util.sqla_compat import compiles
 
 if TYPE_CHECKING:
     from typing import Literal
 
+    from sqlalchemy import Index
+    from sqlalchemy import UniqueConstraint
     from sqlalchemy.dialects.postgresql.array import ARRAY
     from sqlalchemy.dialects.postgresql.base import PGDDLCompiler
     from sqlalchemy.dialects.postgresql.hstore import HSTORE
     from sqlalchemy.dialects.postgresql.json import JSON
     from sqlalchemy.dialects.postgresql.json import JSONB
-    from sqlalchemy.sql.elements import BinaryExpression
+    from sqlalchemy.sql.elements import ClauseElement
+    from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.elements import quoted_name
     from sqlalchemy.sql.schema import MetaData
     from sqlalchemy.sql.schema import Table
@@ -73,20 +81,20 @@ class PostgresqlImpl(DefaultImpl):
     type_synonyms = DefaultImpl.type_synonyms + (
         {"FLOAT", "DOUBLE PRECISION"},
     )
-    identity_attrs_ignore = ("on_null", "order")
 
-    def create_index(self, index):
+    def create_index(self, index: Index, **kw: Any) -> None:
         # this likely defaults to None if not present, so get()
         # should normally not return the default value.  being
         # defensive in any case
         postgresql_include = index.kwargs.get("postgresql_include", None) or ()
         for col in postgresql_include:
-            if col not in index.table.c:
-                index.table.append_column(Column(col, sqltypes.NullType))
-        self._exec(CreateIndex(index))
+            if col not in index.table.c:  # type: ignore[union-attr]
+                index.table.append_column(  # type: ignore[union-attr]
+                    Column(col, sqltypes.NullType)
+                )
+        self._exec(CreateIndex(index, **kw))
 
     def prep_table_for_batch(self, batch_impl, table):
-
         for constraint in table.constraints:
             if (
                 constraint.name is not None
@@ -131,7 +139,9 @@ class PostgresqlImpl(DefaultImpl):
             metadata_default = literal_column(metadata_default)
 
         # run a real compare against the server
-        return not self.connection.scalar(
+        conn = self.connection
+        assert conn is not None
+        return not conn.scalar(
             sqla_compat._select(
                 literal_column(conn_col_default) == metadata_default
             )
@@ -153,7 +163,6 @@ class PostgresqlImpl(DefaultImpl):
         existing_autoincrement: Optional[bool] = None,
         **kw: Any,
     ) -> None:
-
         using = kw.pop("postgresql_using", None)
 
         if using is not None and type_ is None:
@@ -235,7 +244,6 @@ class PostgresqlImpl(DefaultImpl):
         metadata_unique_constraints,
         metadata_indexes,
     ):
-
         doubled_constraints = {
             index
             for index in conn_indexes
@@ -248,38 +256,195 @@ class PostgresqlImpl(DefaultImpl):
         if not sqla_compat.sqla_2:
             self._skip_functional_indexes(metadata_indexes, conn_indexes)
 
+    # pg behavior regarding modifiers
+    # | # | compiled sql     | returned sql     | regexp. group is removed |
+    # | - | ---------------- | -----------------| ------------------------ |
+    # | 1 | nulls first      | nulls first      | -                        |
+    # | 2 | nulls last       |                  | (?<! desc)( nulls last)$ |
+    # | 3 | asc              |                  | ( asc)$                  |
+    # | 4 | asc nulls first  | nulls first      | ( asc) nulls first$      |
+    # | 5 | asc nulls last   |                  | ( asc nulls last)$       |
+    # | 6 | desc             | desc             | -                        |
+    # | 7 | desc nulls first | desc             | desc( nulls first)$      |
+    # | 8 | desc nulls last  | desc nulls last  | -                        |
+    _default_modifiers_re = (  # order of case 2 and 5 matters
+        re.compile("( asc nulls last)$"),  # case 5
+        re.compile("(?<! desc)( nulls last)$"),  # case 2
+        re.compile("( asc)$"),  # case 3
+        re.compile("( asc) nulls first$"),  # case 4
+        re.compile(" desc( nulls first)$"),  # case 7
+    )
+
     def _cleanup_index_expr(self, index: Index, expr: str) -> str:
-        # start = expr
-        expr = expr.lower()
-        expr = expr.replace('"', "")
+        expr = expr.lower().replace('"', "").replace("'", "")
         if index.table is not None:
+            # should not be needed, since include_table=False is in compile
             expr = expr.replace(f"{index.table.name.lower()}.", "")
 
-        while expr and expr[0] == "(" and expr[-1] == ")":
-            expr = expr[1:-1]
         if "::" in expr:
             # strip :: cast. types can have spaces in them
             expr = re.sub(r"(::[\w ]+\w)", "", expr)
 
-        # print(f"START: {start} END: {expr}")
+        while expr and expr[0] == "(" and expr[-1] == ")":
+            expr = expr[1:-1]
+
+        # NOTE: when parsing the connection expression this cleanup could
+        # be skipped
+        for rs in self._default_modifiers_re:
+            if match := rs.search(expr):
+                start, end = match.span(1)
+                expr = expr[:start] + expr[end:]
+                break
+
+        while expr and expr[0] == "(" and expr[-1] == ")":
+            expr = expr[1:-1]
+
+        # strip casts
+        cast_re = re.compile(r"cast\s*\(")
+        if cast_re.match(expr):
+            expr = cast_re.sub("", expr)
+            # remove the as type
+            expr = re.sub(r"as\s+[^)]+\)", "", expr)
+        # remove spaces
+        expr = expr.replace(" ", "")
         return expr
 
-    def create_index_sig(self, index: Index) -> Tuple[Any, ...]:
-        if sqla_compat.is_expression_index(index):
-            return tuple(
-                self._cleanup_index_expr(
-                    index,
-                    e
-                    if isinstance(e, str)
-                    else e.compile(
-                        dialect=self.dialect,
-                        compile_kwargs={"literal_binds": True},
-                    ).string,
+    def _dialect_options(
+        self, item: Union[Index, UniqueConstraint]
+    ) -> Tuple[Any, ...]:
+        # only the positive case is returned by sqlalchemy reflection so
+        # None and False are threated the same
+        if item.dialect_kwargs.get("postgresql_nulls_not_distinct"):
+            return ("nulls_not_distinct",)
+        return ()
+
+    def compare_indexes(
+        self,
+        metadata_index: Index,
+        reflected_index: Index,
+    ) -> ComparisonResult:
+        msg = []
+        unique_msg = self._compare_index_unique(
+            metadata_index, reflected_index
+        )
+        if unique_msg:
+            msg.append(unique_msg)
+        m_exprs = metadata_index.expressions
+        r_exprs = reflected_index.expressions
+        if len(m_exprs) != len(r_exprs):
+            msg.append(f"expression number {len(r_exprs)} to {len(m_exprs)}")
+        if msg:
+            # no point going further, return early
+            return ComparisonResult.Different(msg)
+        skip = []
+        for pos, (m_e, r_e) in enumerate(zip(m_exprs, r_exprs), 1):
+            m_compile = self._compile_element(m_e)
+            m_text = self._cleanup_index_expr(metadata_index, m_compile)
+            # print(f"META ORIG: {m_compile!r} CLEANUP: {m_text!r}")
+            r_compile = self._compile_element(r_e)
+            r_text = self._cleanup_index_expr(metadata_index, r_compile)
+            # print(f"CONN ORIG: {r_compile!r} CLEANUP: {r_text!r}")
+            if m_text == r_text:
+                continue  # expressions these are equal
+            elif m_compile.strip().endswith("_ops") and (
+                " " in m_compile or ")" in m_compile  # is an expression
+            ):
+                skip.append(
+                    f"expression #{pos} {m_compile!r} detected "
+                    "as including operator clause."
                 )
-                for e in index.expressions
-            )
+                util.warn(
+                    f"Expression #{pos} {m_compile!r} in index "
+                    f"{reflected_index.name!r} detected to include "
+                    "an operator clause. Expression compare cannot proceed. "
+                    "Please move the operator clause to the "
+                    "``postgresql_ops`` dict to enable proper compare "
+                    "of the index expressions: "
+                    "https://docs.sqlalchemy.org/en/latest/dialects/postgresql.html#operator-classes",  # noqa: E501
+                )
+            else:
+                msg.append(f"expression #{pos} {r_compile!r} to {m_compile!r}")
+
+        m_options = self._dialect_options(metadata_index)
+        r_options = self._dialect_options(reflected_index)
+        if m_options != r_options:
+            msg.extend(f"options {r_options} to {m_options}")
+
+        if msg:
+            return ComparisonResult.Different(msg)
+        elif skip:
+            # if there are other changes detected don't skip the index
+            return ComparisonResult.Skip(skip)
         else:
-            return super().create_index_sig(index)
+            return ComparisonResult.Equal()
+
+    def compare_unique_constraint(
+        self,
+        metadata_constraint: UniqueConstraint,
+        reflected_constraint: UniqueConstraint,
+    ) -> ComparisonResult:
+        metadata_tup = self._create_metadata_constraint_sig(
+            metadata_constraint
+        )
+        reflected_tup = self._create_reflected_constraint_sig(
+            reflected_constraint
+        )
+
+        meta_sig = metadata_tup.unnamed
+        conn_sig = reflected_tup.unnamed
+        if conn_sig != meta_sig:
+            return ComparisonResult.Different(
+                f"expression {conn_sig} to {meta_sig}"
+            )
+
+        metadata_do = self._dialect_options(metadata_tup.const)
+        conn_do = self._dialect_options(reflected_tup.const)
+        if metadata_do != conn_do:
+            return ComparisonResult.Different(
+                f"expression {conn_do} to {metadata_do}"
+            )
+
+        return ComparisonResult.Equal()
+
+    def adjust_reflected_dialect_options(
+        self, reflected_options: Dict[str, Any], kind: str
+    ) -> Dict[str, Any]:
+        options: Dict[str, Any]
+        options = reflected_options.get("dialect_options", {}).copy()
+        if not options.get("postgresql_include"):
+            options.pop("postgresql_include", None)
+        return options
+
+    def _compile_element(self, element: Union[ClauseElement, str]) -> str:
+        if isinstance(element, str):
+            return element
+        return element.compile(
+            dialect=self.dialect,
+            compile_kwargs={"literal_binds": True, "include_table": False},
+        ).string
+
+    def render_ddl_sql_expr(
+        self,
+        expr: ClauseElement,
+        is_server_default: bool = False,
+        is_index: bool = False,
+        **kw: Any,
+    ) -> str:
+        """Render a SQL expression that is typically a server default,
+        index expression, etc.
+
+        """
+
+        # apply self_group to index expressions;
+        # see https://github.com/sqlalchemy/sqlalchemy/blob/
+        # 82fa95cfce070fab401d020c6e6e4a6a96cc2578/
+        # lib/sqlalchemy/dialects/postgresql/base.py#L2261
+        if is_index and not isinstance(expr, ColumnClause):
+            expr = expr.self_group()
+
+        return super().render_ddl_sql_expr(
+            expr, is_server_default=is_server_default, is_index=is_index, **kw
+        )
 
     def render_type(
         self, type_: TypeEngine, autogen_context: AutogenContext
@@ -440,9 +605,9 @@ class CreateExcludeConstraintOp(ops.AddConstraintOp):
         table_name: Union[str, quoted_name],
         elements: Union[
             Sequence[Tuple[str, str]],
-            Sequence[Tuple[ColumnClause, str]],
+            Sequence[Tuple[ColumnClause[Any], str]],
         ],
-        where: Optional[Union[BinaryExpression, str]] = None,
+        where: Optional[Union[ColumnElement[bool], str]] = None,
         schema: Optional[str] = None,
         _orig_constraint: Optional[ExcludeConstraint] = None,
         **kw,
@@ -463,13 +628,10 @@ class CreateExcludeConstraintOp(ops.AddConstraintOp):
         return cls(
             constraint.name,
             constraint_table.name,
-            [
-                (expr, op)
-                for expr, name, op in constraint._render_exprs  # type:ignore[attr-defined] # noqa
+            [  # type: ignore
+                (expr, op) for expr, name, op in constraint._render_exprs
             ],
-            where=cast(
-                "Optional[Union[BinaryExpression, str]]", constraint.where
-            ),
+            where=cast("ColumnElement[bool] | None", constraint.where),
             schema=constraint_table.schema,
             _orig_constraint=constraint,
             deferrable=constraint.deferrable,
@@ -494,7 +656,7 @@ class CreateExcludeConstraintOp(ops.AddConstraintOp):
             expr,
             name,
             oper,
-        ) in excl._render_exprs:  # type:ignore[attr-defined]
+        ) in excl._render_exprs:
             t.append_column(Column(name, NULLTYPE))
         t.append_constraint(excl)
         return excl
@@ -521,11 +683,9 @@ class CreateExcludeConstraintOp(ops.AddConstraintOp):
             op.create_exclude_constraint(
                 "user_excl",
                 "user",
-
-                ("period", '&&'),
-                ("group", '='),
-                where=("group != 'some group'")
-
+                ("period", "&&"),
+                ("group", "="),
+                where=("group != 'some group'"),
             )
 
         Note that the expressions work the same way as that of
@@ -549,8 +709,12 @@ class CreateExcludeConstraintOp(ops.AddConstraintOp):
 
     @classmethod
     def batch_create_exclude_constraint(
-        cls, operations, constraint_name, *elements, **kw
-    ):
+        cls,
+        operations: BatchOperations,
+        constraint_name: str,
+        *elements: Any,
+        **kw: Any,
+    ) -> Optional[Table]:
         """Issue a "create exclude constraint" instruction using the
         current batch migration context.
 
@@ -590,7 +754,6 @@ def _render_inline_exclude_constraint(
 
 
 def _postgresql_autogenerate_prefix(autogen_context: AutogenContext) -> str:
-
     imports = autogen_context.imports
     if imports is not None:
         imports.add("from sqlalchemy.dialects import postgresql")
@@ -619,38 +782,16 @@ def _exclude_constraint(
             ("name", render._render_gen_name(autogen_context, constraint.name))
         )
 
-    if alter:
-        args = [
-            repr(render._render_gen_name(autogen_context, constraint.name))
-        ]
-        if not has_batch:
-            args += [repr(render._ident(constraint.table.name))]
-        args.extend(
-            [
-                "(%s, %r)"
-                % (
-                    _render_potential_column(sqltext, autogen_context),
-                    opstring,
-                )
-                for sqltext, name, opstring in constraint._render_exprs  # type:ignore[attr-defined] # noqa
-            ]
-        )
-        if constraint.where is not None:
-            args.append(
-                "where=%s"
-                % render._render_potential_expr(
-                    constraint.where, autogen_context
-                )
-            )
-        args.extend(["%s=%r" % (k, v) for k, v in opts])
-        return "%(prefix)screate_exclude_constraint(%(args)s)" % {
-            "prefix": render._alembic_autogenerate_prefix(autogen_context),
-            "args": ", ".join(args),
-        }
-    else:
+    def do_expr_where_opts():
         args = [
             "(%s, %r)"
-            % (_render_potential_column(sqltext, autogen_context), opstring)
+            % (
+                _render_potential_column(
+                    sqltext,  # type:ignore[arg-type]
+                    autogen_context,
+                ),
+                opstring,
+            )
             for sqltext, name, opstring in constraint._render_exprs
         ]
         if constraint.where is not None:
@@ -661,6 +802,21 @@ def _exclude_constraint(
                 )
             )
         args.extend(["%s=%r" % (k, v) for k, v in opts])
+        return args
+
+    if alter:
+        args = [
+            repr(render._render_gen_name(autogen_context, constraint.name))
+        ]
+        if not has_batch:
+            args += [repr(render._ident(constraint.table.name))]
+        args.extend(do_expr_where_opts())
+        return "%(prefix)screate_exclude_constraint(%(args)s)" % {
+            "prefix": render._alembic_autogenerate_prefix(autogen_context),
+            "args": ", ".join(args),
+        }
+    else:
+        args = do_expr_where_opts()
         return "%(prefix)sExcludeConstraint(%(args)s)" % {
             "prefix": _postgresql_autogenerate_prefix(autogen_context),
             "args": ", ".join(args),
@@ -668,7 +824,9 @@ def _exclude_constraint(
 
 
 def _render_potential_column(
-    value: Union[ColumnClause, Column, TextClause],
+    value: Union[
+        ColumnClause[Any], Column[Any], TextClause, FunctionElement[Any]
+    ],
     autogen_context: AutogenContext,
 ) -> str:
     if isinstance(value, ColumnClause):
@@ -684,5 +842,7 @@ def _render_potential_column(
         }
     else:
         return render._render_potential_expr(
-            value, autogen_context, wrap_in_text=isinstance(value, TextClause)
+            value,
+            autogen_context,
+            wrap_in_text=isinstance(value, (TextClause, FunctionElement)),
         )

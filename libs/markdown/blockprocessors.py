@@ -1,45 +1,45 @@
+# Python Markdown
+
+# A Python implementation of John Gruber's Markdown.
+
+# Documentation: https://python-markdown.github.io/
+# GitHub: https://github.com/Python-Markdown/markdown/
+# PyPI: https://pypi.org/project/Markdown/
+
+# Started by Manfred Stienstra (http://www.dwerg.net/).
+# Maintained for a few years by Yuri Takhteyev (http://www.freewisdom.org).
+# Currently maintained by Waylan Limberg (https://github.com/waylan),
+# Dmitry Shachnev (https://github.com/mitya57) and Isaac Muse (https://github.com/facelessuser).
+
+# Copyright 2007-2023 The Python Markdown Project (v. 1.7 and later)
+# Copyright 2004, 2005, 2006 Yuri Takhteyev (v. 0.2-1.6b)
+# Copyright 2004 Manfred Stienstra (the original version)
+
+# License: BSD (see LICENSE.md for details).
+
 """
-Python Markdown
-
-A Python implementation of John Gruber's Markdown.
-
-Documentation: https://python-markdown.github.io/
-GitHub: https://github.com/Python-Markdown/markdown/
-PyPI: https://pypi.org/project/Markdown/
-
-Started by Manfred Stienstra (http://www.dwerg.net/).
-Maintained for a few years by Yuri Takhteyev (http://www.freewisdom.org).
-Currently maintained by Waylan Limberg (https://github.com/waylan),
-Dmitry Shachnev (https://github.com/mitya57) and Isaac Muse (https://github.com/facelessuser).
-
-Copyright 2007-2018 The Python Markdown Project (v. 1.7 and later)
-Copyright 2004, 2005, 2006 Yuri Takhteyev (v. 0.2-1.6b)
-Copyright 2004 Manfred Stienstra (the original version)
-
-License: BSD (see LICENSE.md for details).
-
-CORE MARKDOWN BLOCKPARSER
-===========================================================================
-
-This parser handles basic parsing of Markdown blocks.  It doesn't concern
-itself with inline elements such as **bold** or *italics*, but rather just
-catches blocks, lists, quotes, etc.
-
-The BlockParser is made up of a bunch of BlockProcessors, each handling a
-different type of block. Extensions may add/replace/remove BlockProcessors
-as they need to alter how markdown blocks are parsed.
+A block processor parses blocks of text and adds new elements to the ElementTree. Blocks of text,
+separated from other text by blank lines, may have a different syntax and produce a differently
+structured tree than other Markdown. Block processors excel at handling code formatting, equation
+layouts, tables, etc.
 """
+
+from __future__ import annotations
 
 import logging
 import re
 import xml.etree.ElementTree as etree
+from typing import TYPE_CHECKING, Any
 from . import util
 from .blockparser import BlockParser
+
+if TYPE_CHECKING:  # pragma: no cover
+    from markdown import Markdown
 
 logger = logging.getLogger('MARKDOWN')
 
 
-def build_block_parser(md, **kwargs):
+def build_block_parser(md: Markdown, **kwargs: Any) -> BlockParser:
     """ Build the default block parser used by Markdown. """
     parser = BlockParser(md)
     parser.blockprocessors.register(EmptyBlockProcessor(parser), 'empty', 100)
@@ -60,25 +60,29 @@ class BlockProcessor:
     """ Base class for block processors.
 
     Each subclass will provide the methods below to work with the source and
-    tree. Each processor will need to define it's own ``test`` and ``run``
-    methods. The ``test`` method should return True or False, to indicate
+    tree. Each processor will need to define it's own `test` and `run`
+    methods. The `test` method should return True or False, to indicate
     whether the current block should be processed by this processor. If the
-    test passes, the parser will call the processors ``run`` method.
+    test passes, the parser will call the processors `run` method.
+
+    Attributes:
+        BlockProcessor.parser (BlockParser): The `BlockParser` instance this is attached to.
+        BlockProcessor.tab_length (int): The tab length set on the `Markdown` instance.
 
     """
 
-    def __init__(self, parser):
+    def __init__(self, parser: BlockParser):
         self.parser = parser
         self.tab_length = parser.md.tab_length
 
-    def lastChild(self, parent):
-        """ Return the last child of an etree element. """
+    def lastChild(self, parent: etree.Element) -> etree.Element | None:
+        """ Return the last child of an `etree` element. """
         if len(parent):
             return parent[-1]
         else:
             return None
 
-    def detab(self, text, length=None):
+    def detab(self, text: str, length: int | None = None) -> tuple[str, str]:
         """ Remove a tab from the front of each line of the given text. """
         if length is None:
             length = self.tab_length
@@ -93,7 +97,7 @@ class BlockProcessor:
                 break
         return '\n'.join(newtext), '\n'.join(lines[len(newtext):])
 
-    def looseDetab(self, text, level=1):
+    def looseDetab(self, text: str, level: int = 1) -> str:
         """ Remove a tab from front of lines but allowing dedented lines. """
         lines = text.split('\n')
         for i in range(len(lines)):
@@ -101,47 +105,47 @@ class BlockProcessor:
                 lines[i] = lines[i][self.tab_length*level:]
         return '\n'.join(lines)
 
-    def test(self, parent, block):
+    def test(self, parent: etree.Element, block: str) -> bool:
         """ Test for block type. Must be overridden by subclasses.
 
-        As the parser loops through processors, it will call the ``test``
+        As the parser loops through processors, it will call the `test`
         method on each to determine if the given block of text is of that
-        type. This method must return a boolean ``True`` or ``False``. The
+        type. This method must return a boolean `True` or `False`. The
         actual method of testing is left to the needs of that particular
-        block type. It could be as simple as ``block.startswith(some_string)``
+        block type. It could be as simple as `block.startswith(some_string)`
         or a complex regular expression. As the block type may be different
         depending on the parent of the block (i.e. inside a list), the parent
-        etree element is also provided and may be used as part of the test.
+        `etree` element is also provided and may be used as part of the test.
 
-        Keywords:
-
-        * ``parent``: A etree element which will be the parent of the block.
-        * ``block``: A block of text from the source which has been split at
-            blank lines.
+        Keyword arguments:
+            parent: An `etree` element which will be the parent of the block.
+            block: A block of text from the source which has been split at blank lines.
         """
         pass  # pragma: no cover
 
-    def run(self, parent, blocks):
+    def run(self, parent: etree.Element, blocks: list[str]) -> bool | None:
         """ Run processor. Must be overridden by subclasses.
 
         When the parser determines the appropriate type of a block, the parser
-        will call the corresponding processor's ``run`` method. This method
+        will call the corresponding processor's `run` method. This method
         should parse the individual lines of the block and append them to
-        the etree.
+        the `etree`.
 
-        Note that both the ``parent`` and ``etree`` keywords are pointers
+        Note that both the `parent` and `etree` keywords are pointers
         to instances of the objects which should be edited in place. Each
         processor must make changes to the existing objects as there is no
         mechanism to return new/different objects to replace them.
 
-        This means that this method should be adding SubElements or adding text
-        to the parent, and should remove (``pop``) or add (``insert``) items to
+        This means that this method should be adding `SubElements` or adding text
+        to the parent, and should remove (`pop`) or add (`insert`) items to
         the list of blocks.
 
-        Keywords:
+        If `False` is returned, this will have the same effect as returning `False`
+        from the `test` method.
 
-        * ``parent``: A etree element which is the parent of the current block.
-        * ``blocks``: A list of all remaining blocks of the document.
+        Keyword arguments:
+            parent: An `etree` element which is the parent of the current block.
+            blocks: A list of all remaining blocks of the document.
         """
         pass  # pragma: no cover
 
@@ -149,7 +153,8 @@ class BlockProcessor:
 class ListIndentProcessor(BlockProcessor):
     """ Process children of list items.
 
-    Example:
+    Example
+
         * a list item
             process this part
 
@@ -158,46 +163,48 @@ class ListIndentProcessor(BlockProcessor):
     """
 
     ITEM_TYPES = ['li']
+    """ List of tags used for list items. """
     LIST_TYPES = ['ul', 'ol']
+    """ Types of lists this processor can operate on. """
 
     def __init__(self, *args):
         super().__init__(*args)
         self.INDENT_RE = re.compile(r'^(([ ]{%s})+)' % self.tab_length)
 
-    def test(self, parent, block):
+    def test(self, parent: etree.Element, block: str) -> bool:
         return block.startswith(' '*self.tab_length) and \
             not self.parser.state.isstate('detabbed') and \
             (parent.tag in self.ITEM_TYPES or
                 (len(parent) and parent[-1] is not None and
                     (parent[-1].tag in self.LIST_TYPES)))
 
-    def run(self, parent, blocks):
+    def run(self, parent: etree.Element, blocks: list[str]) -> None:
         block = blocks.pop(0)
         level, sibling = self.get_level(parent, block)
         block = self.looseDetab(block, level)
 
         self.parser.state.set('detabbed')
         if parent.tag in self.ITEM_TYPES:
-            # It's possible that this parent has a 'ul' or 'ol' child list
+            # It's possible that this parent has a `ul` or `ol` child list
             # with a member.  If that is the case, then that should be the
             # parent.  This is intended to catch the edge case of an indented
             # list whose first member was parsed previous to this point
-            # see OListProcessor
+            # see `OListProcessor`
             if len(parent) and parent[-1].tag in self.LIST_TYPES:
                 self.parser.parseBlocks(parent[-1], [block])
             else:
-                # The parent is already a li. Just parse the child block.
+                # The parent is already a `li`. Just parse the child block.
                 self.parser.parseBlocks(parent, [block])
         elif sibling.tag in self.ITEM_TYPES:
-            # The sibling is a li. Use it as parent.
+            # The sibling is a `li`. Use it as parent.
             self.parser.parseBlocks(sibling, [block])
         elif len(sibling) and sibling[-1].tag in self.ITEM_TYPES:
-            # The parent is a list (``ol`` or ``ul``) which has children.
-            # Assume the last child li is the parent of this block.
+            # The parent is a list (`ol` or `ul`) which has children.
+            # Assume the last child `li` is the parent of this block.
             if sibling[-1].text:
-                # If the parent li has text, that text needs to be moved to a p
-                # The p must be 'inserted' at beginning of list in the event
-                # that other children already exist i.e.; a nested sublist.
+                # If the parent `li` has text, that text needs to be moved to a `p`
+                # The `p` must be 'inserted' at beginning of list in the event
+                # that other children already exist i.e.; a nested sub-list.
                 p = etree.Element('p')
                 p.text = sibling[-1].text
                 sibling[-1].text = ''
@@ -207,13 +214,13 @@ class ListIndentProcessor(BlockProcessor):
             self.create_item(sibling, block)
         self.parser.state.reset()
 
-    def create_item(self, parent, block):
-        """ Create a new li and parse the block with it as the parent. """
+    def create_item(self, parent: etree.Element, block: str) -> None:
+        """ Create a new `li` and parse the block with it as the parent. """
         li = etree.SubElement(parent, 'li')
         self.parser.parseBlocks(li, [block])
 
-    def get_level(self, parent, block):
-        """ Get level of indent based on list level. """
+    def get_level(self, parent: etree.Element, block: str) -> tuple[int, etree.Element]:
+        """ Get level of indentation based on list level. """
         # Get indent level
         m = self.INDENT_RE.match(block)
         if m:
@@ -221,10 +228,10 @@ class ListIndentProcessor(BlockProcessor):
         else:
             indent_level = 0
         if self.parser.state.isstate('list'):
-            # We're in a tightlist - so we already are at correct parent.
+            # We're in a tight-list - so we already are at correct parent.
             level = 1
         else:
-            # We're in a looselist - so we need to find parent.
+            # We're in a loose-list - so we need to find parent.
             level = 0
         # Step through children of tree to find matching indent level.
         while indent_level > level:
@@ -235,7 +242,7 @@ class ListIndentProcessor(BlockProcessor):
                     level += 1
                 parent = child
             else:
-                # No more child levels. If we're short of indent_level,
+                # No more child levels. If we're short of `indent_level`,
                 # we have a code block. So we stop here.
                 break
         return level, parent
@@ -244,10 +251,10 @@ class ListIndentProcessor(BlockProcessor):
 class CodeBlockProcessor(BlockProcessor):
     """ Process code blocks. """
 
-    def test(self, parent, block):
+    def test(self, parent: etree.Element, block: str) -> bool:
         return block.startswith(' '*self.tab_length)
 
-    def run(self, parent, blocks):
+    def run(self, parent: etree.Element, blocks: list[str]) -> None:
         sibling = self.lastChild(parent)
         block = blocks.pop(0)
         theRest = ''
@@ -255,14 +262,14 @@ class CodeBlockProcessor(BlockProcessor):
            len(sibling) and sibling[0].tag == "code"):
             # The previous block was a code block. As blank lines do not start
             # new code blocks, append this block to the previous, adding back
-            # linebreaks removed from the split into a list.
+            # line breaks removed from the split into a list.
             code = sibling[0]
             block, theRest = self.detab(block)
             code.text = util.AtomicString(
                 '{}\n{}\n'.format(code.text, util.code_escape(block.rstrip()))
             )
         else:
-            # This is a new codeblock. Create the elements and insert text.
+            # This is a new code block. Create the elements and insert text.
             pre = etree.SubElement(parent, 'pre')
             code = etree.SubElement(pre, 'code')
             block, theRest = self.detab(block)
@@ -275,20 +282,21 @@ class CodeBlockProcessor(BlockProcessor):
 
 
 class BlockQuoteProcessor(BlockProcessor):
+    """ Process blockquotes. """
 
     RE = re.compile(r'(^|\n)[ ]{0,3}>[ ]?(.*)')
 
-    def test(self, parent, block):
+    def test(self, parent: etree.Element, block: str) -> bool:
         return bool(self.RE.search(block)) and not util.nearing_recursion_limit()
 
-    def run(self, parent, blocks):
+    def run(self, parent: etree.Element, blocks: list[str]) -> None:
         block = blocks.pop(0)
         m = self.RE.search(block)
         if m:
             before = block[:m.start()]  # Lines before blockquote
             # Pass lines before blockquote in recursively for parsing first.
             self.parser.parseBlocks(parent, [before])
-            # Remove ``> `` from beginning of each line.
+            # Remove `> ` from beginning of each line.
             block = '\n'.join(
                 [self.clean(line) for line in block[m.start():].split('\n')]
             )
@@ -300,13 +308,13 @@ class BlockQuoteProcessor(BlockProcessor):
             # This is a new blockquote. Create a new parent element.
             quote = etree.SubElement(parent, 'blockquote')
         # Recursively parse block with blockquote as parent.
-        # change parser state so blockquotes embedded in lists use p tags
+        # change parser state so blockquotes embedded in lists use `p` tags
         self.parser.state.set('blockquote')
         self.parser.parseChunk(quote, block)
         self.parser.state.reset()
 
-    def clean(self, line):
-        """ Remove ``>`` from beginning of a line. """
+    def clean(self, line: str) -> str:
+        """ Remove `>` from beginning of a line. """
         m = self.RE.match(line)
         if line.strip() == ">":
             return ""
@@ -319,20 +327,24 @@ class BlockQuoteProcessor(BlockProcessor):
 class OListProcessor(BlockProcessor):
     """ Process ordered list blocks. """
 
-    TAG = 'ol'
-    # The integer (python string) with which the lists starts (default=1)
-    # Eg: If list is initialized as)
-    #   3. Item
-    # The ol tag will get starts="3" attribute
-    STARTSWITH = '1'
-    # Lazy ol - ignore startswith
-    LAZY_OL = True
-    # List of allowed sibling tags.
-    SIBLING_TAGS = ['ol', 'ul']
+    TAG: str = 'ol'
+    """ The tag used for the the wrapping element. """
+    STARTSWITH: str = '1'
+    """
+    The integer (as a string ) with which the list starts. For example, if a list is initialized as
+    `3. Item`, then the `ol` tag will be assigned an HTML attribute of `starts="3"`. Default: `"1"`.
+    """
+    LAZY_OL: bool = True
+    """ Ignore `STARTSWITH` if `True`. """
+    SIBLING_TAGS: list[str] = ['ol', 'ul']
+    """
+    Markdown does not require the type of a new list item match the previous list item type.
+    This is the list of types which can be mixed.
+    """
 
-    def __init__(self, parser):
+    def __init__(self, parser: BlockParser):
         super().__init__(parser)
-        # Detect an item (``1. item``). ``group(1)`` contains contents of item.
+        # Detect an item (`1. item`). `group(1)` contains contents of item.
         self.RE = re.compile(r'^[ ]{0,%d}\d+\.[ ]+(.*)' % (self.tab_length - 1))
         # Detect items on secondary lines. they can be of either list type.
         self.CHILD_RE = re.compile(r'^[ ]{0,%d}((\d+\.)|[*+-])[ ]+(.*)' %
@@ -341,28 +353,28 @@ class OListProcessor(BlockProcessor):
         self.INDENT_RE = re.compile(r'^[ ]{%d,%d}((\d+\.)|[*+-])[ ]+.*' %
                                     (self.tab_length, self.tab_length * 2 - 1))
 
-    def test(self, parent, block):
+    def test(self, parent: etree.Element, block: str) -> bool:
         return bool(self.RE.match(block))
 
-    def run(self, parent, blocks):
-        # Check fr multiple items in one block.
+    def run(self, parent: etree.Element, blocks: list[str]) -> None:
+        # Check for multiple items in one block.
         items = self.get_items(blocks.pop(0))
         sibling = self.lastChild(parent)
 
         if sibling is not None and sibling.tag in self.SIBLING_TAGS:
             # Previous block was a list item, so set that as parent
             lst = sibling
-            # make sure previous item is in a p- if the item has text,
-            # then it isn't in a p
+            # make sure previous item is in a `p` - if the item has text,
+            # then it isn't in a `p`
             if lst[-1].text:
                 # since it's possible there are other children for this
-                # sibling, we can't just SubElement the p, we need to
+                # sibling, we can't just `SubElement` the `p`, we need to
                 # insert it as the first item.
                 p = etree.Element('p')
                 p.text = lst[-1].text
                 lst[-1].text = ''
                 lst[-1].insert(0, p)
-            # if the last item has a tail, then the tail needs to be put in a p
+            # if the last item has a tail, then the tail needs to be put in a `p`
             # likely only when a header is not followed by a blank line
             lch = self.lastChild(lst[-1])
             if lch is not None and lch.tail:
@@ -370,7 +382,7 @@ class OListProcessor(BlockProcessor):
                 p.text = lch.tail.lstrip()
                 lch.tail = ''
 
-            # parse first block differently as it gets wrapped in a p.
+            # parse first block differently as it gets wrapped in a `p`.
             li = etree.SubElement(lst, 'li')
             self.parser.state.set('looselist')
             firstitem = items.pop(0)
@@ -379,9 +391,9 @@ class OListProcessor(BlockProcessor):
         elif parent.tag in ['ol', 'ul']:
             # this catches the edge case of a multi-item indented list whose
             # first item is in a blank parent-list item:
-            # * * subitem1
-            #     * subitem2
-            # see also ListIndentProcessor
+            #     * * subitem1
+            #         * subitem2
+            # see also `ListIndentProcessor`
             lst = parent
         else:
             # This is a new list so create parent with appropriate tag.
@@ -398,12 +410,12 @@ class OListProcessor(BlockProcessor):
                 # Item is indented. Parse with last item as parent
                 self.parser.parseBlocks(lst[-1], [item])
             else:
-                # New item. Create li and parse with it as parent
+                # New item. Create `li` and parse with it as parent
                 li = etree.SubElement(lst, 'li')
                 self.parser.parseBlocks(li, [item])
         self.parser.state.reset()
 
-    def get_items(self, block):
+    def get_items(self, block: str) -> list[str]:
         """ Break a block into list items. """
         items = []
         for line in block.split('\n'):
@@ -433,11 +445,12 @@ class OListProcessor(BlockProcessor):
 class UListProcessor(OListProcessor):
     """ Process unordered list blocks. """
 
-    TAG = 'ul'
+    TAG: str = 'ul'
+    """ The tag used for the the wrapping element. """
 
-    def __init__(self, parser):
+    def __init__(self, parser: BlockParser):
         super().__init__(parser)
-        # Detect an item (``1. item``). ``group(1)`` contains contents of item.
+        # Detect an item (`1. item`). `group(1)` contains contents of item.
         self.RE = re.compile(r'^[ ]{0,%d}[*+-][ ]+(.*)' % (self.tab_length - 1))
 
 
@@ -447,10 +460,10 @@ class HashHeaderProcessor(BlockProcessor):
     # Detect a header at start of any line in block
     RE = re.compile(r'(?:^|\n)(?P<level>#{1,6})(?P<header>(?:\\.|[^\\])*?)#*(?:\n|$)')
 
-    def test(self, parent, block):
+    def test(self, parent: etree.Element, block: str) -> bool:
         return bool(self.RE.search(block))
 
-    def run(self, parent, blocks):
+    def run(self, parent: etree.Element, blocks: list[str]) -> None:
         block = blocks.pop(0)
         m = self.RE.search(block)
         if m:
@@ -478,12 +491,12 @@ class SetextHeaderProcessor(BlockProcessor):
     # Detect Setext-style header. Must be first 2 lines of block.
     RE = re.compile(r'^.*?\n[=-]+[ ]*(\n|$)', re.MULTILINE)
 
-    def test(self, parent, block):
+    def test(self, parent: etree.Element, block: str) -> bool:
         return bool(self.RE.match(block))
 
-    def run(self, parent, blocks):
+    def run(self, parent: etree.Element, blocks: list[str]) -> None:
         lines = blocks.pop(0).split('\n')
-        # Determine level. ``=`` is 1 and ``-`` is 2.
+        # Determine level. `=` is 1 and `-` is 2.
         if lines[1].startswith('='):
             level = 1
         else:
@@ -498,13 +511,13 @@ class SetextHeaderProcessor(BlockProcessor):
 class HRProcessor(BlockProcessor):
     """ Process Horizontal Rules. """
 
-    # Python's re module doesn't officially support atomic grouping. However you can fake it.
+    # Python's `re` module doesn't officially support atomic grouping. However you can fake it.
     # See https://stackoverflow.com/a/13577411/866026
     RE = r'^[ ]{0,3}(?=(?P<atomicgroup>(-+[ ]{0,2}){3,}|(_+[ ]{0,2}){3,}|(\*+[ ]{0,2}){3,}))(?P=atomicgroup)[ ]*$'
     # Detect hr on any line of a block.
     SEARCH_RE = re.compile(RE, re.MULTILINE)
 
-    def test(self, parent, block):
+    def test(self, parent: etree.Element, block: str) -> bool:
         m = self.SEARCH_RE.search(block)
         if m:
             # Save match object on class instance so we can use it later.
@@ -512,30 +525,30 @@ class HRProcessor(BlockProcessor):
             return True
         return False
 
-    def run(self, parent, blocks):
+    def run(self, parent: etree.Element, blocks: list[str]) -> None:
         block = blocks.pop(0)
         match = self.match
-        # Check for lines in block before hr.
+        # Check for lines in block before `hr`.
         prelines = block[:match.start()].rstrip('\n')
         if prelines:
-            # Recursively parse lines before hr so they get parsed first.
+            # Recursively parse lines before `hr` so they get parsed first.
             self.parser.parseBlocks(parent, [prelines])
         # create hr
         etree.SubElement(parent, 'hr')
-        # check for lines in block after hr.
+        # check for lines in block after `hr`.
         postlines = block[match.end():].lstrip('\n')
         if postlines:
-            # Add lines after hr to master blocks for later parsing.
+            # Add lines after `hr` to master blocks for later parsing.
             blocks.insert(0, postlines)
 
 
 class EmptyBlockProcessor(BlockProcessor):
     """ Process blocks that are empty or start with an empty line. """
 
-    def test(self, parent, block):
+    def test(self, parent: etree.Element, block: str) -> bool:
         return not block or block.startswith('\n')
 
-    def run(self, parent, blocks):
+    def run(self, parent: etree.Element, blocks: list[str]) -> None:
         block = blocks.pop(0)
         filler = '\n\n'
         if block:
@@ -550,7 +563,7 @@ class EmptyBlockProcessor(BlockProcessor):
         sibling = self.lastChild(parent)
         if (sibling is not None and sibling.tag == 'pre' and
            len(sibling) and sibling[0].tag == 'code'):
-            # Last block is a codeblock. Append to preserve whitespace.
+            # Last block is a code block. Append to preserve whitespace.
             sibling[0].text = util.AtomicString(
                 '{}{}'.format(sibling[0].text, filler)
             )
@@ -562,10 +575,10 @@ class ReferenceProcessor(BlockProcessor):
         r'^[ ]{0,3}\[([^\[\]]*)\]:[ ]*\n?[ ]*([^\s]+)[ ]*(?:\n[ ]*)?((["\'])(.*)\4[ ]*|\((.*)\)[ ]*)?$', re.MULTILINE
     )
 
-    def test(self, parent, block):
+    def test(self, parent: etree.Element, block: str) -> bool:
         return True
 
-    def run(self, parent, blocks):
+    def run(self, parent: etree.Element, blocks: list[str]) -> bool:
         block = blocks.pop(0)
         m = self.RE.search(block)
         if m:
@@ -588,10 +601,10 @@ class ReferenceProcessor(BlockProcessor):
 class ParagraphProcessor(BlockProcessor):
     """ Process Paragraph blocks. """
 
-    def test(self, parent, block):
+    def test(self, parent: etree.Element, block: str) -> bool:
         return True
 
-    def run(self, parent, blocks):
+    def run(self, parent: etree.Element, blocks: list[str]) -> None:
         block = blocks.pop(0)
         if block.strip():
             # Not a blank block. Add to parent, otherwise throw it away.
@@ -606,7 +619,7 @@ class ParagraphProcessor(BlockProcessor):
                 #     Line 2 of list item - not part of header.
                 sibling = self.lastChild(parent)
                 if sibling is not None:
-                    # Insetrt after sibling.
+                    # Insert after sibling.
                     if sibling.tail:
                         sibling.tail = '{}\n{}'.format(sibling.tail, block)
                     else:

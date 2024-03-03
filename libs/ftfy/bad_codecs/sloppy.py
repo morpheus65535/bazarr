@@ -71,6 +71,7 @@ sloppy-windows-1252 merges Windows-1252 with Latin-1:
     U+0081  \x81    [Cc] <unknown>
     U+201A  ‚       [Ps] SINGLE LOW-9 QUOTATION MARK
 """
+from __future__ import annotations
 import codecs
 from encodings import normalize_encoding
 import sys
@@ -126,7 +127,7 @@ def make_sloppy_codec(encoding):
             return codecs.charmap_encode(input, errors, encoding_table)
 
         def decode(self, input, errors="strict"):
-            return codecs.charmap_decode(input, errors, decoding_table)
+            return codecs.charmap_decode(input, errors, decoding_table)  # type: ignore
 
     class IncrementalEncoder(codecs.IncrementalEncoder):
         def encode(self, input, final=False):
@@ -134,7 +135,7 @@ def make_sloppy_codec(encoding):
 
     class IncrementalDecoder(codecs.IncrementalDecoder):
         def decode(self, input, final=False):
-            return codecs.charmap_decode(input, self.errors, decoding_table)[0]
+            return codecs.charmap_decode(input, self.errors, decoding_table)[0]  # type: ignore
 
     class StreamWriter(Codec, codecs.StreamWriter):
         pass

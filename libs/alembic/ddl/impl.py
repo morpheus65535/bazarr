@@ -1,11 +1,17 @@
+# mypy: allow-untyped-defs, allow-incomplete-defs, allow-untyped-calls
+# mypy: no-warn-return-any, allow-any-generics
+
 from __future__ import annotations
 
-from collections import namedtuple
+import logging
 import re
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Iterable
 from typing import List
+from typing import Mapping
+from typing import NamedTuple
 from typing import Optional
 from typing import Sequence
 from typing import Set
@@ -18,7 +24,10 @@ from sqlalchemy import cast
 from sqlalchemy import schema
 from sqlalchemy import text
 
+from . import _autogen
 from . import base
+from ._autogen import _constraint_sig as _constraint_sig
+from ._autogen import ComparisonResult as ComparisonResult
 from .. import util
 from ..util import sqla_compat
 
@@ -30,7 +39,8 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Dialect
     from sqlalchemy.engine.cursor import CursorResult
     from sqlalchemy.engine.reflection import Inspector
-    from sqlalchemy.sql.elements import ClauseElement
+    from sqlalchemy.sql import ClauseElement
+    from sqlalchemy.sql import Executable
     from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.elements import quoted_name
     from sqlalchemy.sql.schema import Column
@@ -47,6 +57,8 @@ if TYPE_CHECKING:
     from ..operations.batch import ApplyBatchImpl
     from ..operations.batch import BatchOperationsImpl
 
+log = logging.getLogger(__name__)
+
 
 class ImplMeta(type):
     def __init__(
@@ -62,8 +74,6 @@ class ImplMeta(type):
 
 
 _impls: Dict[str, Type[DefaultImpl]] = {}
-
-Params = namedtuple("Params", ["token0", "tokens", "args", "kwargs"])
 
 
 class DefaultImpl(metaclass=ImplMeta):
@@ -86,8 +96,11 @@ class DefaultImpl(metaclass=ImplMeta):
     command_terminator = ";"
     type_synonyms: Tuple[Set[str], ...] = ({"NUMERIC", "DECIMAL"},)
     type_arg_extract: Sequence[str] = ()
-    # on_null is known to be supported only by oracle
-    identity_attrs_ignore: Tuple[str, ...] = ("on_null",)
+    # These attributes are deprecated in SQLAlchemy via #10247. They need to
+    # be ignored to support older version that did not use dialect kwargs.
+    # They only apply to Oracle and are replaced by oracle_order,
+    # oracle_on_null
+    identity_attrs_ignore: Tuple[str, ...] = ("order", "on_null")
 
     def __init__(
         self,
@@ -154,10 +167,10 @@ class DefaultImpl(metaclass=ImplMeta):
 
     def _exec(
         self,
-        construct: Union[ClauseElement, str],
-        execution_options: Optional[dict] = None,
+        construct: Union[Executable, str],
+        execution_options: Optional[dict[str, Any]] = None,
         multiparams: Sequence[dict] = (),
-        params: Dict[str, int] = util.immutabledict(),
+        params: Dict[str, Any] = util.immutabledict(),
     ) -> Optional[CursorResult]:
         if isinstance(construct, str):
             construct = text(construct)
@@ -166,6 +179,7 @@ class DefaultImpl(metaclass=ImplMeta):
                 # TODO: coverage
                 raise Exception("Execution arguments not allowed with as_sql")
 
+            compile_kw: dict[str, Any]
             if self.literal_binds and not isinstance(
                 construct, schema.DDLElement
             ):
@@ -173,9 +187,9 @@ class DefaultImpl(metaclass=ImplMeta):
             else:
                 compile_kw = {}
 
-            compiled = construct.compile(
-                dialect=self.dialect, **compile_kw  # type: ignore[arg-type]
-            )
+            if TYPE_CHECKING:
+                assert isinstance(construct, ClauseElement)
+            compiled = construct.compile(dialect=self.dialect, **compile_kw)
             self.static_output(
                 str(compiled).replace("\t", "    ").strip()
                 + self.command_terminator
@@ -190,14 +204,12 @@ class DefaultImpl(metaclass=ImplMeta):
                 assert isinstance(multiparams, tuple)
                 multiparams += (params,)
 
-            return conn.execute(  # type: ignore[call-overload]
-                construct, multiparams
-            )
+            return conn.execute(construct, multiparams)
 
     def execute(
         self,
-        sql: Union[ClauseElement, str],
-        execution_options: None = None,
+        sql: Union[Executable, str],
+        execution_options: Optional[dict[str, Any]] = None,
     ) -> None:
         self._exec(sql, execution_options)
 
@@ -316,7 +328,7 @@ class DefaultImpl(metaclass=ImplMeta):
     def add_column(
         self,
         table_name: str,
-        column: Column,
+        column: Column[Any],
         schema: Optional[Union[str, quoted_name]] = None,
     ) -> None:
         self._exec(base.AddColumn(table_name, column, schema=schema))
@@ -324,7 +336,7 @@ class DefaultImpl(metaclass=ImplMeta):
     def drop_column(
         self,
         table_name: str,
-        column: Column,
+        column: Column[Any],
         schema: Optional[str] = None,
         **kw,
     ) -> None:
@@ -379,8 +391,8 @@ class DefaultImpl(metaclass=ImplMeta):
             table, self.connection, checkfirst=False, _ddl_runner=self
         )
 
-    def create_index(self, index: Index) -> None:
-        self._exec(schema.CreateIndex(index))
+    def create_index(self, index: Index, **kw: Any) -> None:
+        self._exec(schema.CreateIndex(index, **kw))
 
     def create_table_comment(self, table: Table) -> None:
         self._exec(schema.SetTableComment(table))
@@ -388,11 +400,11 @@ class DefaultImpl(metaclass=ImplMeta):
     def drop_table_comment(self, table: Table) -> None:
         self._exec(schema.DropTableComment(table))
 
-    def create_column_comment(self, column: ColumnElement) -> None:
+    def create_column_comment(self, column: ColumnElement[Any]) -> None:
         self._exec(schema.SetColumnComment(column))
 
-    def drop_index(self, index: Index) -> None:
-        self._exec(schema.DropIndex(index))
+    def drop_index(self, index: Index, **kw: Any) -> None:
+        self._exec(schema.DropIndex(index, **kw))
 
     def bulk_insert(
         self,
@@ -433,6 +445,7 @@ class DefaultImpl(metaclass=ImplMeta):
                         )
 
     def _tokenize_column_type(self, column: Column) -> Params:
+        definition: str
         definition = self.dialect.type_compiler.process(column.type).lower()
 
         # tokenize the SQLAlchemy-generated version of a type, so that
@@ -447,9 +460,9 @@ class DefaultImpl(metaclass=ImplMeta):
         # varchar character set utf8
         #
 
-        tokens = re.findall(r"[\w\-_]+|\(.+?\)", definition)
+        tokens: List[str] = re.findall(r"[\w\-_]+|\(.+?\)", definition)
 
-        term_tokens = []
+        term_tokens: List[str] = []
         paren_term = None
 
         for token in tokens:
@@ -461,6 +474,7 @@ class DefaultImpl(metaclass=ImplMeta):
         params = Params(term_tokens[0], term_tokens[1:], [], {})
 
         if paren_term:
+            term: str
             for term in re.findall("[^(),]+", paren_term):
                 if "=" in term:
                     key, val = term.split("=")
@@ -526,7 +540,7 @@ class DefaultImpl(metaclass=ImplMeta):
         return True
 
     def compare_type(
-        self, inspector_column: Column, metadata_column: Column
+        self, inspector_column: Column[Any], metadata_column: Column
     ) -> bool:
         """Returns True if there ARE differences between the types of the two
         columns. Takes impl.type_synonyms into account between retrospected
@@ -571,17 +585,12 @@ class DefaultImpl(metaclass=ImplMeta):
         """Render a SQL expression that is typically a server default,
         index expression, etc.
 
-        .. versionadded:: 1.0.11
-
         """
 
-        compile_kw = {
-            "compile_kwargs": {"literal_binds": True, "include_table": False}
-        }
+        compile_kw = {"literal_binds": True, "include_table": False}
+
         return str(
-            expr.compile(
-                dialect=self.dialect, **compile_kw  # type: ignore[arg-type]
-            )
+            expr.compile(dialect=self.dialect, compile_kwargs=compile_kw)
         )
 
     def _compat_autogen_column_reflect(self, inspector: Inspector) -> Callable:
@@ -637,14 +646,13 @@ class DefaultImpl(metaclass=ImplMeta):
         return False
 
     def _compare_identity_default(self, metadata_identity, inspector_identity):
-
         # ignored contains the attributes that were not considered
         # because assumed to their default values in the db.
         diff, ignored = _compare_identity_options(
-            sqla_compat._identity_attrs,
             metadata_identity,
             inspector_identity,
             sqla_compat.Identity(),
+            skip={"always"},
         )
 
         meta_always = getattr(metadata_identity, "always", None)
@@ -665,9 +673,96 @@ class DefaultImpl(metaclass=ImplMeta):
             bool(diff) or bool(metadata_identity) != bool(inspector_identity),
         )
 
-    def create_index_sig(self, index: Index) -> Tuple[Any, ...]:
-        # order of col matters in an index
-        return tuple(col.name for col in index.columns)
+    def _compare_index_unique(
+        self, metadata_index: Index, reflected_index: Index
+    ) -> Optional[str]:
+        conn_unique = bool(reflected_index.unique)
+        meta_unique = bool(metadata_index.unique)
+        if conn_unique != meta_unique:
+            return f"unique={conn_unique} to unique={meta_unique}"
+        else:
+            return None
+
+    def _create_metadata_constraint_sig(
+        self, constraint: _autogen._C, **opts: Any
+    ) -> _constraint_sig[_autogen._C]:
+        return _constraint_sig.from_constraint(True, self, constraint, **opts)
+
+    def _create_reflected_constraint_sig(
+        self, constraint: _autogen._C, **opts: Any
+    ) -> _constraint_sig[_autogen._C]:
+        return _constraint_sig.from_constraint(False, self, constraint, **opts)
+
+    def compare_indexes(
+        self,
+        metadata_index: Index,
+        reflected_index: Index,
+    ) -> ComparisonResult:
+        """Compare two indexes by comparing the signature generated by
+        ``create_index_sig``.
+
+        This method returns a ``ComparisonResult``.
+        """
+        msg: List[str] = []
+        unique_msg = self._compare_index_unique(
+            metadata_index, reflected_index
+        )
+        if unique_msg:
+            msg.append(unique_msg)
+        m_sig = self._create_metadata_constraint_sig(metadata_index)
+        r_sig = self._create_reflected_constraint_sig(reflected_index)
+
+        assert _autogen.is_index_sig(m_sig)
+        assert _autogen.is_index_sig(r_sig)
+
+        # The assumption is that the index have no expression
+        for sig in m_sig, r_sig:
+            if sig.has_expressions:
+                log.warning(
+                    "Generating approximate signature for index %s. "
+                    "The dialect "
+                    "implementation should either skip expression indexes "
+                    "or provide a custom implementation.",
+                    sig.const,
+                )
+
+        if m_sig.column_names != r_sig.column_names:
+            msg.append(
+                f"expression {r_sig.column_names} to {m_sig.column_names}"
+            )
+
+        if msg:
+            return ComparisonResult.Different(msg)
+        else:
+            return ComparisonResult.Equal()
+
+    def compare_unique_constraint(
+        self,
+        metadata_constraint: UniqueConstraint,
+        reflected_constraint: UniqueConstraint,
+    ) -> ComparisonResult:
+        """Compare two unique constraints by comparing the two signatures.
+
+        The arguments are two tuples that contain the unique constraint and
+        the signatures generated by ``create_unique_constraint_sig``.
+
+        This method returns a ``ComparisonResult``.
+        """
+        metadata_tup = self._create_metadata_constraint_sig(
+            metadata_constraint
+        )
+        reflected_tup = self._create_reflected_constraint_sig(
+            reflected_constraint
+        )
+
+        meta_sig = metadata_tup.unnamed
+        conn_sig = reflected_tup.unnamed
+        if conn_sig != meta_sig:
+            return ComparisonResult.Different(
+                f"expression {conn_sig} to {meta_sig}"
+            )
+        else:
+            return ComparisonResult.Equal()
 
     def _skip_functional_indexes(self, metadata_indexes, conn_indexes):
         conn_indexes_by_name = {c.name: c for c in conn_indexes}
@@ -686,22 +781,64 @@ class DefaultImpl(metaclass=ImplMeta):
                 )
                 metadata_indexes.discard(idx)
 
+    def adjust_reflected_dialect_options(
+        self, reflected_object: Dict[str, Any], kind: str
+    ) -> Dict[str, Any]:
+        return reflected_object.get("dialect_options", {})
+
+
+class Params(NamedTuple):
+    token0: str
+    tokens: List[str]
+    args: List[str]
+    kwargs: Dict[str, str]
+
 
 def _compare_identity_options(
-    attributes, metadata_io, inspector_io, default_io
+    metadata_io: Union[schema.Identity, schema.Sequence, None],
+    inspector_io: Union[schema.Identity, schema.Sequence, None],
+    default_io: Union[schema.Identity, schema.Sequence],
+    skip: Set[str],
 ):
     # this can be used for identity or sequence compare.
     # default_io is an instance of IdentityOption with all attributes to the
     # default value.
+    meta_d = sqla_compat._get_identity_options_dict(metadata_io)
+    insp_d = sqla_compat._get_identity_options_dict(inspector_io)
+
     diff = set()
     ignored_attr = set()
-    for attr in attributes:
-        meta_value = getattr(metadata_io, attr, None)
-        default_value = getattr(default_io, attr, None)
-        conn_value = getattr(inspector_io, attr, None)
-        if conn_value != meta_value:
-            if meta_value == default_value:
-                ignored_attr.add(attr)
-            else:
-                diff.add(attr)
+
+    def check_dicts(
+        meta_dict: Mapping[str, Any],
+        insp_dict: Mapping[str, Any],
+        default_dict: Mapping[str, Any],
+        attrs: Iterable[str],
+    ):
+        for attr in set(attrs).difference(skip):
+            meta_value = meta_dict.get(attr)
+            insp_value = insp_dict.get(attr)
+            if insp_value != meta_value:
+                default_value = default_dict.get(attr)
+                if meta_value == default_value:
+                    ignored_attr.add(attr)
+                else:
+                    diff.add(attr)
+
+    check_dicts(
+        meta_d,
+        insp_d,
+        sqla_compat._get_identity_options_dict(default_io),
+        set(meta_d).union(insp_d),
+    )
+    if sqla_compat.identity_has_dialect_kwargs:
+        # use only the dialect kwargs in inspector_io since metadata_io
+        # can have options for many backends
+        check_dicts(
+            getattr(metadata_io, "dialect_kwargs", {}),
+            getattr(inspector_io, "dialect_kwargs", {}),
+            default_io.dialect_kwargs,  # type: ignore[union-attr]
+            getattr(inspector_io, "dialect_kwargs", {}),
+        )
+
     return diff, ignored_attr

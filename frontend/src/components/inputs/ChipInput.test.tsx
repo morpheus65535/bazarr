@@ -30,7 +30,7 @@ describe("ChipInput", () => {
     });
 
     rawRender(
-      <ChipInput value={existedValues} onChange={mockedFn}></ChipInput>
+      <ChipInput value={existedValues} onChange={mockedFn}></ChipInput>,
     );
 
     const element = screen.getByRole("searchbox");

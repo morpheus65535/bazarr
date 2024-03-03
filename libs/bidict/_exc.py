@@ -1,4 +1,4 @@
-# Copyright 2009-2022 Joshua Bronson. All rights reserved.
+# Copyright 2009-2024 Joshua Bronson. All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,6 +7,8 @@
 
 """Provide all bidict exceptions."""
 
+from __future__ import annotations
+
 
 class BidictException(Exception):
     """Base class for bidict exceptions."""
@@ -14,7 +16,7 @@ class BidictException(Exception):
 
 class DuplicationError(BidictException):
     """Base class for exceptions raised when uniqueness is violated
-    as per the :attr:~bidict.RAISE` :class:`~bidict.OnDupAction`.
+    as per the :attr:`~bidict.RAISE` :class:`~bidict.OnDupAction`.
     """
 
 

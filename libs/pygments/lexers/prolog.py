@@ -4,7 +4,7 @@
 
     Lexers for Prolog and Prolog-like languages.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -78,7 +78,12 @@ class PrologLexer(RegexLexer):
     }
 
     def analyse_text(text):
-        return ':-' in text
+        """Competes with IDL and Visual Prolog on *.pro"""
+        if ':-' in text:
+            # Visual Prolog also uses :-
+            return 0.5
+        else:
+            return 0
 
 
 class LogtalkLexer(RegexLexer):

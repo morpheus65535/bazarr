@@ -86,7 +86,7 @@ const SystemStatusView: FunctionComponent = () => {
     if (startTime) {
       const duration = moment.duration(
           moment().utc().unix() - startTime,
-          "seconds"
+          "seconds",
         ),
         days = duration.days(),
         hours = duration.hours().toString().padStart(2, "0"),

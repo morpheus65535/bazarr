@@ -2340,7 +2340,7 @@
 
 ? /11.22.63/Season 1/11.22.63.106.hdtv-abc
 : options: -T 11.22.63
-  title: 11.22.63
+  title: 11 22 63
   season: 1
   episode: 6
   source: HDTV
@@ -4062,8 +4062,7 @@
   type: episode
 
 ? 165.Show Name.s08e014
-: absolute_episode: 165
-  title: Show Name
+: title: 165 Show Name
   season: 8
   episode: 14
   type: episode
@@ -4672,7 +4671,7 @@
   episode: 1
   screen_size: 1080p
   streaming_service: Viki
-  source: Web 
+  source: Web
   release_group: BLUEBERRY
   container: mp4
   mimetype: video/mp4
@@ -4702,7 +4701,6 @@
   video_codec: H.264
   audio_codec: FLAC
   container: mkv
-  mimetype: video/x-matroska
   type: episode
 
 ? "[EveTaku] Kyouso Giga ONA v2 [540p][128BAC43].mkv"
@@ -4713,7 +4711,6 @@
   screen_size: 540p
   crc32: 128BAC43
   container: mkv
-  mimetype: video/x-matroska
   type: episode
 
 ? '[Erai-raws] Fumetsu no Anata e - 03 [720p][Multiple Subtitle].mkv'
@@ -4723,7 +4720,6 @@
   screen_size: 720p
   subtitle_language: mul
   container: mkv
-  mimetype: video/x-matroska
   type: episode
 
 ? Mom.S06E08.Jell-O.Shots.and.the.Truth.About.Santa.1080p.AMZN.WEB-DL.DDP5.1.H.264-NTb.mkv
@@ -4739,7 +4735,6 @@
   video_codec: H.264
   release_group: NTb
   container: mkv
-  mimetype: video/x-matroska
   type: episode
 
 ? Archer.2009.S12E05.Shots.720p.HULU.WEB-DL.DDP5.1.H.264-NOGRP
@@ -4753,6 +4748,25 @@
   source: Web
   audio_codec: Dolby Digital Plus
   audio_channels: '5.1'
+  video_codec: H.264
+  release_group: NOGRP
+  type: episode
+
+? /mydatapool/mydata/Videos/Shows/C/Caprica (2008)/Season 1/Apotheosis_1920x1080.mp4
+: title: Caprica
+  year: 2008
+  season: 1
+  episode_title: Apotheosis
+  screen_size: 1080p
+  container: mp4
+  type: episode
+
+? 4400.S01E01.1080p.WEB.H264-NOGRP
+: title: '4400'
+  season: 1
+  episode: 1
+  screen_size: 1080p
+  source: Web
   video_codec: H.264
   release_group: NOGRP
   type: episode

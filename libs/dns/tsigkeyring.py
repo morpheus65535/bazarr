@@ -18,12 +18,13 @@
 """A place to store TSIG keys."""
 
 import base64
+from typing import Any, Dict
 
 import dns.name
 import dns.tsig
 
 
-def from_text(textring):
+def from_text(textring: Dict[str, Any]) -> Dict[dns.name.Name, dns.tsig.Key]:
     """Convert a dictionary containing (textual DNS name, base64 secret)
     pairs into a binary keyring which has (dns.name.Name, bytes) pairs, or
     a dictionary containing (textual DNS name, (algorithm, base64 secret))
@@ -31,17 +32,17 @@ def from_text(textring):
     @rtype: dict"""
 
     keyring = {}
-    for (name, value) in textring.items():
-        name = dns.name.from_text(name)
+    for name, value in textring.items():
+        kname = dns.name.from_text(name)
         if isinstance(value, str):
-            keyring[name] = dns.tsig.Key(name, value).secret
+            keyring[kname] = dns.tsig.Key(kname, value).secret
         else:
             (algorithm, secret) = value
-            keyring[name] = dns.tsig.Key(name, secret, algorithm)
+            keyring[kname] = dns.tsig.Key(kname, secret, algorithm)
     return keyring
 
 
-def to_text(keyring):
+def to_text(keyring: Dict[dns.name.Name, Any]) -> Dict[str, Any]:
     """Convert a dictionary containing (dns.name.Name, dns.tsig.Key) pairs
     into a text keyring which has (textual DNS name, (textual algorithm,
     base64 secret)) pairs, or a dictionary containing (dns.name.Name, bytes)
@@ -49,17 +50,19 @@ def to_text(keyring):
     @rtype: dict"""
 
     textring = {}
+
     def b64encode(secret):
         return base64.encodebytes(secret).decode().rstrip()
-    for (name, key) in keyring.items():
-        name = name.to_text()
+
+    for name, key in keyring.items():
+        tname = name.to_text()
         if isinstance(key, bytes):
-            textring[name] = b64encode(key)
+            textring[tname] = b64encode(key)
         else:
             if isinstance(key.secret, bytes):
                 text_secret = b64encode(key.secret)
             else:
                 text_secret = str(key.secret)
 
-            textring[name] = (key.algorithm.to_text(), text_secret)
+            textring[tname] = (key.algorithm.to_text(), text_secret)
     return textring

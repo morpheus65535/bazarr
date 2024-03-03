@@ -1,4 +1,5 @@
 import pickle
+import time
 import uuid
 
 try:
@@ -53,18 +54,16 @@ class KombuManager(PubSubManager):  # pragma: no cover
             raise RuntimeError('Kombu package is not installed '
                                '(Run "pip install kombu" in your '
                                'virtualenv).')
-        super(KombuManager, self).__init__(channel=channel,
-                                           write_only=write_only,
-                                           logger=logger)
+        super().__init__(channel=channel, write_only=write_only, logger=logger)
         self.url = url
         self.connection_options = connection_options or {}
         self.exchange_options = exchange_options or {}
         self.queue_options = queue_options or {}
         self.producer_options = producer_options or {}
-        self.producer = self._producer()
+        self.publisher_connection = self._connection()
 
     def initialize(self):
-        super(KombuManager, self).initialize()
+        super().initialize()
 
         monkey_patched = True
         if self.server.async_mode == 'eventlet':
@@ -92,31 +91,44 @@ class KombuManager(PubSubManager):  # pragma: no cover
         options.update(self.queue_options)
         return kombu.Queue(queue_name, self._exchange(), **options)
 
-    def _producer(self):
-        return self._connection().Producer(exchange=self._exchange(),
-                                           **self.producer_options)
-
-    def __error_callback(self, exception, interval):
-        self._get_logger().exception('Sleeping {}s'.format(interval))
+    def _producer_publish(self, connection):
+        producer = connection.Producer(exchange=self._exchange(),
+                                       **self.producer_options)
+        return connection.ensure(producer, producer.publish)
 
     def _publish(self, data):
-        connection = self._connection()
-        publish = connection.ensure(self.producer, self.producer.publish,
-                                    errback=self.__error_callback)
-        publish(pickle.dumps(data))
+        retry = True
+        while True:
+            try:
+                producer_publish = self._producer_publish(
+                    self.publisher_connection)
+                producer_publish(pickle.dumps(data))
+                break
+            except (OSError, kombu.exceptions.KombuError):
+                if retry:
+                    self._get_logger().error('Cannot publish to rabbitmq... '
+                                             'retrying')
+                    retry = False
+                else:
+                    self._get_logger().error(
+                        'Cannot publish to rabbitmq... giving up')
+                    break
 
     def _listen(self):
         reader_queue = self._queue()
-
+        retry_sleep = 1
         while True:
-            connection = self._connection().ensure_connection(
-                errback=self.__error_callback)
             try:
-                with connection.SimpleQueue(reader_queue) as queue:
-                    while True:
-                        message = queue.get(block=True)
-                        message.ack()
-                        yield message.payload
-            except connection.connection_errors:
-                self._get_logger().exception("Connection error "
-                                             "while reading from queue")
+                with self._connection() as connection:
+                    with connection.SimpleQueue(reader_queue) as queue:
+                        while True:
+                            message = queue.get(block=True)
+                            message.ack()
+                            yield message.payload
+                            retry_sleep = 1
+            except (OSError, kombu.exceptions.KombuError):
+                self._get_logger().error(
+                    'Cannot receive from rabbitmq... '
+                    'retrying in {} secs'.format(retry_sleep))
+                time.sleep(retry_sleep)
+                retry_sleep = min(retry_sleep * 2, 60)

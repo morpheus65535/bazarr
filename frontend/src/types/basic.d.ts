@@ -13,7 +13,7 @@ type StorageType = string | null;
 
 type SimpleStateType<T> = [
   T,
-  ((item: T) => void) | ((fn: (item: T) => T) => void)
+  ((item: T) => void) | ((fn: (item: T) => T) => void),
 ];
 
 type Factory<T> = () => T;

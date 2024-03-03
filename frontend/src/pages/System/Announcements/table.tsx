@@ -62,7 +62,7 @@ const Table: FunctionComponent<Props> = ({ announcements }) => {
         },
       },
     ],
-    []
+    [],
   );
 
   return (

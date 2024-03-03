@@ -21,17 +21,16 @@ import struct
 
 import dns.exception
 import dns.immutable
-import dns.rdata
 import dns.name
+import dns.rdata
 import dns.rdtypes.util
 
 
 @dns.immutable.immutable
 class MXBase(dns.rdata.Rdata):
-
     """Base class for rdata that is like an MX record."""
 
-    __slots__ = ['preference', 'exchange']
+    __slots__ = ["preference", "exchange"]
 
     def __init__(self, rdclass, rdtype, preference, exchange):
         super().__init__(rdclass, rdtype)
@@ -40,11 +39,12 @@ class MXBase(dns.rdata.Rdata):
 
     def to_text(self, origin=None, relativize=True, **kw):
         exchange = self.exchange.choose_relativity(origin, relativize)
-        return '%d %s' % (self.preference, exchange)
+        return "%d %s" % (self.preference, exchange)
 
     @classmethod
-    def from_text(cls, rdclass, rdtype, tok, origin=None, relativize=True,
-                  relativize_to=None):
+    def from_text(
+        cls, rdclass, rdtype, tok, origin=None, relativize=True, relativize_to=None
+    ):
         preference = tok.get_uint16()
         exchange = tok.get_name(origin, relativize, relativize_to)
         return cls(rdclass, rdtype, preference, exchange)
@@ -70,7 +70,6 @@ class MXBase(dns.rdata.Rdata):
 
 @dns.immutable.immutable
 class UncompressedMX(MXBase):
-
     """Base class for rdata that is like an MX record, but whose name
     is not compressed when converted to DNS wire format, and whose
     digestable form is not downcased."""
@@ -81,7 +80,6 @@ class UncompressedMX(MXBase):
 
 @dns.immutable.immutable
 class UncompressedDowncasingMX(MXBase):
-
     """Base class for rdata that is like an MX record, but whose name
     is not compressed when convert to DNS wire format."""
 

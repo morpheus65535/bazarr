@@ -4,15 +4,13 @@
 
     Lexers for RITA language
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
-import re
-
-from pygments.lexer import RegexLexer, include, bygroups, using, this, \
-    inherit, words
-from pygments.token import Comment, Operator, Keyword, Name, Literal, Punctuation, Text, Whitespace
+from pygments.lexer import RegexLexer
+from pygments.token import Comment, Operator, Keyword, Name, Literal, \
+    Punctuation, Whitespace
 
 __all__ = ['RitaLexer']
 
@@ -21,7 +19,7 @@ class RitaLexer(RegexLexer):
     """
     Lexer for RITA.
 
-     .. versionadded:: 2.11
+    .. versionadded:: 2.11
     """
     name = 'Rita'
     url = 'https://github.com/zaibacu/rita-dsl'

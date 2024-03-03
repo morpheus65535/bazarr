@@ -8,13 +8,16 @@
     Created with Base16 Builder by Chris Kempson
     (https://github.com/chriskempson/base16-builder).
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 from pygments.style import Style
 from pygments.token import Keyword, Name, Comment, String, Error, Text, \
     Number, Operator, Generic, Whitespace, Punctuation, Other, Literal
+
+
+__all__ = ['ParaisoLightStyle']
 
 
 BACKGROUND = "#e7e9db"
@@ -32,7 +35,8 @@ PURPLE = "#815ba4"
 
 
 class ParaisoLightStyle(Style):
-
+    name = 'paraiso-light'
+    
     background_color = BACKGROUND
     highlight_color = SELECTION
 
@@ -114,6 +118,7 @@ class ParaisoLightStyle(Style):
         Generic.Output:            "",                    # class: 'go'
         Generic.Prompt:            "bold " + COMMENT,     # class: 'gp'
         Generic.Strong:            "bold",                # class: 'gs'
+        Generic.EmphStrong:        "bold italic",         # class: 'ges'
         Generic.Subheading:        "bold " + AQUA,        # class: 'gu'
         Generic.Traceback:         "",                    # class: 'gt'
     }

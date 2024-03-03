@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import contextlib
 from typing import Any
-from typing import Callable
 from typing import Dict
 from typing import Iterator
+from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
-from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -17,6 +17,7 @@ from . import compare
 from . import render
 from .. import util
 from ..operations import ops
+from ..util import sqla_compat
 
 """Provide the 'autogenerate' feature which can produce migration operations
 automatically."""
@@ -25,19 +26,22 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Connection
     from sqlalchemy.engine import Dialect
     from sqlalchemy.engine import Inspector
-    from sqlalchemy.sql.schema import Column
-    from sqlalchemy.sql.schema import ForeignKeyConstraint
-    from sqlalchemy.sql.schema import Index
     from sqlalchemy.sql.schema import MetaData
+    from sqlalchemy.sql.schema import SchemaItem
     from sqlalchemy.sql.schema import Table
-    from sqlalchemy.sql.schema import UniqueConstraint
 
-    from alembic.config import Config
-    from alembic.operations.ops import MigrationScript
-    from alembic.operations.ops import UpgradeOps
-    from alembic.runtime.migration import MigrationContext
-    from alembic.script.base import Script
-    from alembic.script.base import ScriptDirectory
+    from ..config import Config
+    from ..operations.ops import DowngradeOps
+    from ..operations.ops import MigrationScript
+    from ..operations.ops import UpgradeOps
+    from ..runtime.environment import NameFilterParentNames
+    from ..runtime.environment import NameFilterType
+    from ..runtime.environment import ProcessRevisionDirectiveFn
+    from ..runtime.environment import RenderItemFn
+    from ..runtime.migration import MigrationContext
+    from ..script.base import Script
+    from ..script.base import ScriptDirectory
+    from ..script.revision import _GetRevArg
 
 
 def compare_metadata(context: MigrationContext, metadata: MetaData) -> Any:
@@ -57,36 +61,42 @@ def compare_metadata(context: MigrationContext, metadata: MetaData) -> Any:
 
         from alembic.migration import MigrationContext
         from alembic.autogenerate import compare_metadata
-        from sqlalchemy.schema import SchemaItem
-        from sqlalchemy.types import TypeEngine
-        from sqlalchemy import (create_engine, MetaData, Column,
-                Integer, String, Table, text)
+        from sqlalchemy import (
+            create_engine,
+            MetaData,
+            Column,
+            Integer,
+            String,
+            Table,
+            text,
+        )
         import pprint
 
         engine = create_engine("sqlite://")
 
         with engine.begin() as conn:
-            conn.execute(text('''
-                create table foo (
-                    id integer not null primary key,
-                    old_data varchar,
-                    x integer
-                )'''))
-
-            conn.execute(text('''
-                create table bar (
-                    data varchar
-                )'''))
+            conn.execute(
+                text(
+                    '''
+                        create table foo (
+                            id integer not null primary key,
+                            old_data varchar,
+                            x integer
+                        )
+                    '''
+                )
+            )
+            conn.execute(text("create table bar (data varchar)"))
 
         metadata = MetaData()
-        Table('foo', metadata,
-            Column('id', Integer, primary_key=True),
-            Column('data', Integer),
-            Column('x', Integer, nullable=False)
+        Table(
+            "foo",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("data", Integer),
+            Column("x", Integer, nullable=False),
         )
-        Table('bat', metadata,
-            Column('info', String)
-        )
+        Table("bat", metadata, Column("info", String))
 
         mc = MigrationContext.configure(engine.connect())
 
@@ -95,29 +105,53 @@ def compare_metadata(context: MigrationContext, metadata: MetaData) -> Any:
 
     Output::
 
-        [ ( 'add_table',
-            Table('bat', MetaData(bind=None),
-                Column('info', String(), table=<bat>), schema=None)),
-          ( 'remove_table',
-            Table(u'bar', MetaData(bind=None),
-                Column(u'data', VARCHAR(), table=<bar>), schema=None)),
-          ( 'add_column',
-            None,
-            'foo',
-            Column('data', Integer(), table=<foo>)),
-          ( 'remove_column',
-            None,
-            'foo',
-            Column(u'old_data', VARCHAR(), table=None)),
-          [ ( 'modify_nullable',
-              None,
-              'foo',
-              u'x',
-              { 'existing_server_default': None,
-                'existing_type': INTEGER()},
-              True,
-              False)]]
-
+        [
+            (
+                "add_table",
+                Table(
+                    "bat",
+                    MetaData(),
+                    Column("info", String(), table=<bat>),
+                    schema=None,
+                ),
+            ),
+            (
+                "remove_table",
+                Table(
+                    "bar",
+                    MetaData(),
+                    Column("data", VARCHAR(), table=<bar>),
+                    schema=None,
+                ),
+            ),
+            (
+                "add_column",
+                None,
+                "foo",
+                Column("data", Integer(), table=<foo>),
+            ),
+            [
+                (
+                    "modify_nullable",
+                    None,
+                    "foo",
+                    "x",
+                    {
+                        "existing_comment": None,
+                        "existing_server_default": False,
+                        "existing_type": INTEGER(),
+                    },
+                    True,
+                    False,
+                )
+            ],
+            (
+                "remove_column",
+                None,
+                "foo",
+                Column("old_data", VARCHAR(), table=<foo>),
+            ),
+        ]
 
     :param context: a :class:`.MigrationContext`
      instance.
@@ -132,6 +166,7 @@ def compare_metadata(context: MigrationContext, metadata: MetaData) -> Any:
     """
 
     migration_script = produce_migrations(context, metadata)
+    assert migration_script.upgrade_ops is not None
     return migration_script.upgrade_ops.as_diffs()
 
 
@@ -167,13 +202,14 @@ def produce_migrations(
 
 
 def render_python_code(
-    up_or_down_op: UpgradeOps,
+    up_or_down_op: Union[UpgradeOps, DowngradeOps],
     sqlalchemy_module_prefix: str = "sa.",
     alembic_module_prefix: str = "op.",
     render_as_batch: bool = False,
-    imports: Tuple[str, ...] = (),
-    render_item: None = None,
+    imports: Sequence[str] = (),
+    render_item: Optional[RenderItemFn] = None,
     migration_context: Optional[MigrationContext] = None,
+    user_module_prefix: Optional[str] = None,
 ) -> str:
     """Render Python code given an :class:`.UpgradeOps` or
     :class:`.DowngradeOps` object.
@@ -181,12 +217,24 @@ def render_python_code(
     This is a convenience function that can be used to test the
     autogenerate output of a user-defined :class:`.MigrationScript` structure.
 
+    :param up_or_down_op: :class:`.UpgradeOps` or :class:`.DowngradeOps` object
+    :param sqlalchemy_module_prefix: module prefix for SQLAlchemy objects
+    :param alembic_module_prefix: module prefix for Alembic constructs
+    :param render_as_batch: use "batch operations" style for rendering
+    :param imports: sequence of import symbols to add
+    :param render_item: callable to render items
+    :param migration_context: optional :class:`.MigrationContext`
+    :param user_module_prefix: optional string prefix for user-defined types
+
+     .. versionadded:: 1.11.0
+
     """
     opts = {
         "sqlalchemy_module_prefix": sqlalchemy_module_prefix,
         "alembic_module_prefix": alembic_module_prefix,
         "render_item": render_item,
         "render_as_batch": render_as_batch,
+        "user_module_prefix": user_module_prefix,
     }
 
     if migration_context is None:
@@ -285,10 +333,9 @@ class AutogenContext:
         self,
         migration_context: MigrationContext,
         metadata: Optional[MetaData] = None,
-        opts: Optional[dict] = None,
+        opts: Optional[Dict[str, Any]] = None,
         autogenerate: bool = True,
     ) -> None:
-
         if (
             autogenerate
             and migration_context is not None
@@ -359,8 +406,8 @@ class AutogenContext:
     def run_name_filters(
         self,
         name: Optional[str],
-        type_: str,
-        parent_names: Dict[str, Optional[str]],
+        type_: NameFilterType,
+        parent_names: NameFilterParentNames,
     ) -> bool:
         """Run the context's name filters and return True if the targets
         should be part of the autogenerate operation.
@@ -388,7 +435,6 @@ class AutogenContext:
                     parent_names["schema_qualified_table_name"] = table_name
 
         for fn in self._name_filters:
-
             if not fn(name, type_, parent_names):
                 return False
         else:
@@ -396,17 +442,11 @@ class AutogenContext:
 
     def run_object_filters(
         self,
-        object_: Union[
-            Table,
-            Index,
-            Column,
-            UniqueConstraint,
-            ForeignKeyConstraint,
-        ],
-        name: Optional[str],
-        type_: str,
+        object_: SchemaItem,
+        name: sqla_compat._ConstraintName,
+        type_: NameFilterType,
         reflected: bool,
-        compare_to: Optional[Union[Table, Index, Column, UniqueConstraint]],
+        compare_to: Optional[SchemaItem],
     ) -> bool:
         """Run the context's object filters and return True if the targets
         should be part of the autogenerate operation.
@@ -427,7 +467,7 @@ class AutogenContext:
     run_filters = run_object_filters
 
     @util.memoized_property
-    def sorted_tables(self):
+    def sorted_tables(self) -> List[Table]:
         """Return an aggregate of the :attr:`.MetaData.sorted_tables`
         collection(s).
 
@@ -443,7 +483,7 @@ class AutogenContext:
         return result
 
     @util.memoized_property
-    def table_key_to_table(self):
+    def table_key_to_table(self) -> Dict[str, Table]:
         """Return an aggregate  of the :attr:`.MetaData.tables` dictionaries.
 
         The :attr:`.MetaData.tables` collection is a dictionary of table key
@@ -454,7 +494,7 @@ class AutogenContext:
         objects contain the same table key, an exception is raised.
 
         """
-        result = {}
+        result: Dict[str, Table] = {}
         for m in util.to_list(self.metadata):
             intersect = set(result).intersection(set(m.tables))
             if intersect:
@@ -472,12 +512,17 @@ class RevisionContext:
     """Maintains configuration and state that's specific to a revision
     file generation operation."""
 
+    generated_revisions: List[MigrationScript]
+    process_revision_directives: Optional[ProcessRevisionDirectiveFn]
+
     def __init__(
         self,
         config: Config,
         script_directory: ScriptDirectory,
         command_args: Dict[str, Any],
-        process_revision_directives: Optional[Callable] = None,
+        process_revision_directives: Optional[
+            ProcessRevisionDirectiveFn
+        ] = None,
     ) -> None:
         self.config = config
         self.script_directory = script_directory
@@ -520,18 +565,18 @@ class RevisionContext:
         )
 
     def run_autogenerate(
-        self, rev: tuple, migration_context: MigrationContext
+        self, rev: _GetRevArg, migration_context: MigrationContext
     ) -> None:
         self._run_environment(rev, migration_context, True)
 
     def run_no_autogenerate(
-        self, rev: tuple, migration_context: MigrationContext
+        self, rev: _GetRevArg, migration_context: MigrationContext
     ) -> None:
         self._run_environment(rev, migration_context, False)
 
     def _run_environment(
         self,
-        rev: tuple,
+        rev: _GetRevArg,
         migration_context: MigrationContext,
         autogenerate: bool,
     ) -> None:

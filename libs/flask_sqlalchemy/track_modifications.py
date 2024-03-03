@@ -3,8 +3,8 @@ from __future__ import annotations
 import typing as t
 
 import sqlalchemy as sa
-import sqlalchemy.event
-import sqlalchemy.orm
+import sqlalchemy.event as sa_event
+import sqlalchemy.orm as sa_orm
 from flask import current_app
 from flask import has_app_context
 from flask.signals import Namespace  # type: ignore[attr-defined]
@@ -29,12 +29,12 @@ commit takes place.
 """
 
 
-def _listen(session: sa.orm.scoped_session[Session]) -> None:
-    sa.event.listen(session, "before_flush", _record_ops, named=True)
-    sa.event.listen(session, "before_commit", _record_ops, named=True)
-    sa.event.listen(session, "before_commit", _before_commit)
-    sa.event.listen(session, "after_commit", _after_commit)
-    sa.event.listen(session, "after_rollback", _after_rollback)
+def _listen(session: sa_orm.scoped_session[Session]) -> None:
+    sa_event.listen(session, "before_flush", _record_ops, named=True)
+    sa_event.listen(session, "before_commit", _record_ops, named=True)
+    sa_event.listen(session, "before_commit", _before_commit)
+    sa_event.listen(session, "after_commit", _after_commit)
+    sa_event.listen(session, "after_rollback", _after_rollback)
 
 
 def _record_ops(session: Session, **kwargs: t.Any) -> None:

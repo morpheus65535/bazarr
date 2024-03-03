@@ -62,6 +62,7 @@
         "FLAC": "Flac",
         "DTS": "DTS",
         "DTS-HD": {"regex":  ["DTS-?HD", "DTS(?=-?MA)"], "conflict_solver": "lambda match, other: other if other.name == 'audio_codec' else '__default__'"},
+        "DTS:X": {"string": ["DTS:X", "DTS-X", "DTSX"] },
         "Dolby TrueHD": {"regex": ["True-?HD"] },
         "Opus": "Opus",
         "Vorbis": "Vorbis",
@@ -189,6 +190,7 @@
         "ram",
         "rm",
         "ts",
+        "m2ts",
         "vob",
         "wav",
         "webm",
@@ -241,12 +243,10 @@
         "Extended": {"string": ["extended"], "regex": ["extended-?cut", "extended-?version"], "tags": ["has-neighbor", "release-group-prefix"]},
         "Alternative Cut": {"regex": ["alternat(e|ive)(?:-?Cut)?"], "tags": ["has-neighbor", "release-group-prefix"]},
         "Remastered": [
-          {"string": "Remastered", "tags": ["has-neighbor", "release-group-prefix"]},
-          {"regex": "4k-remaster(?:ed)?", "tags": ["release-group-prefix"]}
+          {"regex": "(?:4k.)?remaster(?:ed)?", "tags": ["release-group-prefix"]}
         ],
         "Restored": [
-          {"string": "Restored", "tags": ["has-neighbor", "release-group-prefix"]},
-          {"regex": "4k-restore(?:d)?", "tags": ["release-group-prefix"]}
+          {"regex": "(?:4k.)?restore(?:d)?", "tags": ["release-group-prefix"]}
         ],
         "Uncensored": {"string": "Uncensored", "tags": ["has-neighbor", "release-group-prefix"]},
         "Uncut": {"string": "Uncut", "tags": ["has-neighbor", "release-group-prefix"]},
@@ -516,7 +516,7 @@
         "Hardcoded Subtitles": ["HC", "vost"],
         "Standard Dynamic Range": {"string": "SDR", "tags": "uhdbluray-neighbor"},
         "HDR10": {"regex": "HDR(?:10)?", "tags": "uhdbluray-neighbor"},
-        "Dolby Vision": {"regex": "Dolby-?Vision", "tags": "uhdbluray-neighbor"},
+        "Dolby Vision": {"regex": "(?:Dolby-?Vision|DV)", "tags": "uhdbluray-neighbor"},
         "BT.2020": {"regex": "BT-?2020","tags": "uhdbluray-neighbor"},
         "Sample": {"string": "Sample", "tags": ["at-end", "not-a-release-group"]},
         "Extras": [
@@ -617,6 +617,7 @@
       "AMC": "AMC",
       "Amazon Prime": [
         "AMZN",
+        "AMZN-CBR",
         "Amazon",
         "re:Amazon-?Prime"
       ],
@@ -771,6 +772,13 @@
       ],
       "Opto": "OPTO",
       "Oprah Winfrey Network": "OWN",
+      "Paramount+": [
+        "PMTP",
+        "PMNP",
+        "PMT+",
+        "Paramount+",
+        "ParamountPlus"
+      ],
       "PBS": "PBS",
       "PBS Kids": "PBSK",
       "Peacock": [
@@ -839,6 +847,9 @@
       "Yahoo": "YHOO",
       "YouTube Red": "RED",
       "ZDF": "ZDF"
+    },
+    "date": {
+      "week_words": ["week"]
     }
   }
 }

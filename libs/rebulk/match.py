@@ -588,7 +588,7 @@ class Markers(_BaseMatches):
         super()._add_match(match)
 
 
-class Match(object):
+class Match:
     """
     Object storing values related to a single match
     """

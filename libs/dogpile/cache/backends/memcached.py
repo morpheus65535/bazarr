@@ -41,25 +41,27 @@ __all__ = (
 )
 
 
-class MemcachedLock(object):
+class MemcachedLock:
     """Simple distributed lock using memcached."""
 
     def __init__(self, client_fn, key, timeout=0):
         self.client_fn = client_fn
         self.key = "_lock" + key
         self.timeout = timeout
+        self._mutex = threading.Lock()
 
     def acquire(self, wait=True):
         client = self.client_fn()
         i = 0
         while True:
-            if client.add(self.key, 1, self.timeout):
-                return True
-            elif not wait:
-                return False
-            else:
-                sleep_time = (((i + 1) * random.random()) + 2**i) / 2.5
-                time.sleep(sleep_time)
+            with self._mutex:
+                if client.add(self.key, 1, self.timeout):
+                    return True
+                elif not wait:
+                    return False
+
+            sleep_time = (((i + 1) * random.random()) + 2**i) / 2.5
+            time.sleep(sleep_time)
             if i < 15:
                 i += 1
 

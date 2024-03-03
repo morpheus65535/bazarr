@@ -4,7 +4,7 @@
 
     ABAP workbench like style.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -13,7 +13,11 @@ from pygments.token import Keyword, Name, Comment, String, Error, \
     Number, Operator
 
 
+__all__ = ['AbapStyle']
+
+
 class AbapStyle(Style):
+    name = 'abap'
 
     styles = {
         Comment:                'italic #888',

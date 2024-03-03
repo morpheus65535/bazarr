@@ -117,6 +117,7 @@ def main():
     if normalization.lower() == "none":
         normalization = None
 
+    unescape_html: str | bool
     if args.preserve_entities:
         unescape_html = False
     else:

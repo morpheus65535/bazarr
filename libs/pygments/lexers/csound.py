@@ -4,7 +4,7 @@
 
     Lexers for Csound languages.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -25,7 +25,7 @@ newline = (r'((?:(?:;|//).*)*)(\n)', bygroups(Comment.Single, Text))
 
 class CsoundLexer(RegexLexer):
     url = 'https://csound.com/'
-    
+
     tokens = {
         'whitespace': [
             (r'[ \t]+', Whitespace),

@@ -32,7 +32,7 @@ const MovieMassEditor: FunctionComponent = () => {
         },
       },
     ],
-    []
+    [],
   );
 
   useDocumentTitle("Movies - Bazarr (Mass Editor)");

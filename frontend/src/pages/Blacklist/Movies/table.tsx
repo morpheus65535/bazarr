@@ -84,7 +84,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         },
       },
     ],
-    []
+    [],
   );
   return (
     <PageTable

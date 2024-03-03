@@ -73,7 +73,7 @@ const Table: FunctionComponent<Props> = ({
         },
       });
     },
-    [mutateAsync]
+    [mutateAsync],
   );
 
   const columns: Column<Item.Episode>[] = useMemo<Column<Item.Episode>[]>(
@@ -194,7 +194,7 @@ const Table: FunctionComponent<Props> = ({
                     },
                     {
                       title: `History - ${row.original.title}`,
-                    }
+                    },
                   );
                 }}
                 icon={faHistory}
@@ -204,16 +204,16 @@ const Table: FunctionComponent<Props> = ({
         },
       },
     ],
-    [onlyDesired, profileItems, disabled, download]
+    [onlyDesired, profileItems, disabled, download],
   );
 
   const maxSeason = useMemo(
     () =>
       episodes?.reduce<number>(
         (prev, curr) => Math.max(prev, curr.season),
-        0
+        0,
       ) ?? 0,
-    [episodes]
+    [episodes],
   );
 
   const instance = useRef<TableInstance<Item.Episode> | null>(null);

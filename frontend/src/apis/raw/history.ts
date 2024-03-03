@@ -9,7 +9,7 @@ class HistoryApi extends BaseApi {
     timeFrame?: History.TimeFrameOptions,
     action?: History.ActionOptions,
     provider?: string,
-    language?: Language.CodeType
+    language?: Language.CodeType,
   ) {
     const response = await this.get<History.Stat>("/stats", {
       timeFrame,

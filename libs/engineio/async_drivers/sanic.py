@@ -112,8 +112,9 @@ class WebSocket(object):  # pragma: no cover
     This wrapper class provides a sanic WebSocket interface that is
     somewhat compatible with eventlet's implementation.
     """
-    def __init__(self, handler):
+    def __init__(self, handler, server):
         self.handler = handler
+        self.server = server
         self._sock = None
 
     async def __call__(self, environ):
@@ -123,6 +124,7 @@ class WebSocket(object):  # pragma: no cover
 
         self.environ = environ
         await self.handler(self)
+        return self.server._ok()
 
     async def close(self):
         await self._sock.close()

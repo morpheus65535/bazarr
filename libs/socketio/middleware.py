@@ -29,14 +29,12 @@ class WSGIApp(engineio.WSGIApp):
     """
     def __init__(self, socketio_app, wsgi_app=None, static_files=None,
                  socketio_path='socket.io'):
-        super(WSGIApp, self).__init__(socketio_app, wsgi_app,
-                                      static_files=static_files,
-                                      engineio_path=socketio_path)
+        super().__init__(socketio_app, wsgi_app, static_files=static_files,
+                         engineio_path=socketio_path)
 
 
 class Middleware(WSGIApp):
     """This class has been renamed to WSGIApp and is now deprecated."""
     def __init__(self, socketio_app, wsgi_app=None,
                  socketio_path='socket.io'):
-        super(Middleware, self).__init__(socketio_app, wsgi_app,
-                                         socketio_path=socketio_path)
+        super().__init__(socketio_app, wsgi_app, socketio_path=socketio_path)

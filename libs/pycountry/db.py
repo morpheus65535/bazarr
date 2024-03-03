@@ -1,34 +1,65 @@
-# vim:fileencoding=utf-8
-
 import json
 import logging
 import threading
-from io import open
+import warnings
+from typing import Any, Iterator, List, Optional, Type, Union
 
 logger = logging.getLogger("pycountry.db")
 
 
 class Data:
-    def __init__(self, **fields):
+    def __init__(self, **fields: str):
         self._fields = fields
 
     def __getattr__(self, key):
-        if key not in self._fields:
-            raise AttributeError
-        return self._fields[key]
+        if key in self._fields:
+            return self._fields[key]
+        raise AttributeError()
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key: str, value: str) -> None:
         if key != "_fields":
             self._fields[key] = value
-        super(Data, self).__setattr__(key, value)
+        super().__setattr__(key, value)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cls_name = self.__class__.__name__
         fields = ", ".join("%s=%r" % i for i in sorted(self._fields.items()))
-        return "%s(%s)" % (cls_name, fields)
+        return f"{cls_name}({fields})"
 
-    def __dir__(self):
+    def __dir__(self) -> List[str]:
         return dir(self.__class__) + list(self._fields)
+
+    def __iter__(self):
+        # allow casting into a dict
+        for field in self._fields:
+            yield field, getattr(self, field)
+
+
+class Country(Data):
+    def __getattr__(self, key):
+        if key in ("common_name", "official_name"):
+            # First try to get the common_name or official_name
+            value = self._fields.get(key)
+            if value is not None:
+                return value
+            # Fall back to name if common_name or official_name is not found
+            name = self._fields.get("name")
+            if name is not None:
+                warning_message = (
+                    f"Country's {key} not found. Country name provided instead."
+                )
+                warnings.warn(warning_message, UserWarning)
+                return name
+            raise AttributeError()
+        else:
+            # For other keys, simply return the value or raise an error
+            if key in self._fields:
+                return self._fields[key]
+            raise AttributeError()
+
+
+class Subdivision(Data):
+    pass
 
 
 def lazy_load(f):
@@ -42,49 +73,52 @@ def lazy_load(f):
 
 
 class Database:
+    data_class: Union[Type, str]
+    root_key: Optional[str] = None
+    no_index: List[str] = []
 
-    data_class_base = Data
-    data_class_name = None
-    root_key = None
-    no_index = []
-
-    def __init__(self, filename):
+    def __init__(self, filename: str) -> None:
         self.filename = filename
         self._is_loaded = False
         self._load_lock = threading.Lock()
 
-    def _load(self):
-        if self._is_loaded:
-            # Help keeping the _load_if_needed code easier
-            # to read.
-            return
+        if isinstance(self.data_class, str):
+            self.factory = type(self.data_class, (Data,), {})
+        else:
+            self.factory = self.data_class
+
+    def _clear(self):
+        self._is_loaded = False
         self.objects = []
         self.index_names = set()
         self.indices = {}
 
-        self.data_class = type(
-            self.data_class_name, (self.data_class_base,), {}
-        )
+    def _load(self) -> None:
+        if self._is_loaded:
+            # Help keeping the _load_if_needed code easier
+            # to read.
+            return
+        self._clear()
 
-        with open(self.filename, "r", encoding="utf-8") as f:
+        with open(self.filename, encoding="utf-8") as f:
             tree = json.load(f)
 
         for entry in tree[self.root_key]:
-            obj = self.data_class(**entry)
+            obj = self.factory(**entry)
             self.objects.append(obj)
             # Inject into index.
             for key, value in entry.items():
-                # Lookups and searches are case insensitive. Normalize
-                # here.
-                value = value.lower()
                 if key in self.no_index:
                     continue
+                # Lookups and searches are case insensitive. Normalize
+                # here.
                 index = self.indices.setdefault(key, {})
+                value = value.lower()
                 if value in index:
                     logger.debug(
                         "%s %r already taken in index %r and will be "
                         "ignored. This is an error in the databases."
-                        % (self.data_class_name, value, key)
+                        % (self.factory.__name__, value, key)
                     )
                 index[value] = obj
 
@@ -93,15 +127,54 @@ class Database:
     # Public API
 
     @lazy_load
-    def __iter__(self):
+    def add_entry(self, **kw):
+        # create the object with the correct dynamic type
+        obj = self.factory(**kw)
+
+        # append object
+        self.objects.append(obj)
+
+        # update indices
+        for key, value in kw.items():
+            if key in self.no_index:
+                continue
+            value = value.lower()
+            index = self.indices.setdefault(key, {})
+            index[value] = obj
+
+    @lazy_load
+    def remove_entry(self, **kw):
+        # make sure that we receive None if no entry found
+        if "default" in kw:
+            del kw["default"]
+        obj = self.get(**kw)
+        if not obj:
+            raise KeyError(
+                f"{self.factory.__name__} not found and cannot be removed: {kw}"
+            )
+
+        # remove object
+        self.objects.remove(obj)
+
+        # update indices
+        for key, value in obj:
+            if key in self.no_index:
+                continue
+            value = value.lower()
+            index = self.indices.setdefault(key, {})
+            if value in index:
+                del index[value]
+
+    @lazy_load
+    def __iter__(self) -> Iterator["Database"]:
         return iter(self.objects)
 
     @lazy_load
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.objects)
 
     @lazy_load
-    def get(self, **kw):
+    def get(self, **kw: Optional[str]) -> Optional[Any]:
         kw.setdefault("default", None)
         default = kw.pop("default")
         if len(kw) != 1:
@@ -121,7 +194,7 @@ class Database:
             return default
 
     @lazy_load
-    def lookup(self, value):
+    def lookup(self, value: str) -> Type:
         if not isinstance(value, str):
             raise LookupError()
 

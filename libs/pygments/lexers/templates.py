@@ -4,7 +4,7 @@
 
     Lexers for various template engines' markup.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -532,11 +532,11 @@ class MasonLexer(RegexLexer):
 
     tokens = {
         'root': [
-            (r'\s+', Text),
+            (r'\s+', Whitespace),
             (r'(?s)(<%doc>)(.*?)(</%doc>)',
              bygroups(Name.Tag, Comment.Multiline, Name.Tag)),
             (r'(?s)(<%(?:def|method))(\s*)(.*?)(>)(.*?)(</%\2\s*>)',
-             bygroups(Name.Tag, Text, Name.Function, Name.Tag,
+             bygroups(Name.Tag, Whitespace, Name.Function, Name.Tag,
                       using(this), Name.Tag)),
             (r'(?s)(<%(\w+)(.*?)(>))(.*?)(</%\2\s*>)',
              bygroups(Name.Tag, None, None, None, using(PerlLexer), Name.Tag)),
@@ -2291,10 +2291,6 @@ class SqlJinjaLexer(DelegatingLexer):
         if re.search(r'\{\{\s*source\(.*\)\s*\}\}', text):
             rv += 0.25
         # Jinja macro
-        if re.search(
-            r'\{%-?\s*macro \w+\(.*\)\s*-?%\}\s+.*\s+\{%-?\s*endmacro\s*-?%\}',
-            text,
-            re.S,
-        ):
+        if re.search(r'\{%-?\s*macro \w+\(.*\)\s*-?%\}', text):
             rv += 0.15
         return rv

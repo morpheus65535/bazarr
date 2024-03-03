@@ -1,16 +1,14 @@
-# coding: utf-8
 from .exceptions import *
 from .ext import ExtType, Timestamp
 
 import os
-import sys
 
 
-version = (1, 0, 4)
-__version__ = "1.0.4"
+version = (1, 0, 7)
+__version__ = "1.0.7"
 
 
-if os.environ.get("MSGPACK_PUREPYTHON") or sys.version_info[0] == 2:
+if os.environ.get("MSGPACK_PUREPYTHON"):
     from .fallback import Packer, unpackb, Unpacker
 else:
     try:

@@ -1,3 +1,4 @@
+import sys
 import warnings
 from base64 import standard_b64decode
 from collections import OrderedDict
@@ -79,7 +80,7 @@ def json_date_time_hook(dct):
 			microsecond=dct.get('microsecond', 0))
 		if tzinfo is None:
 			return dt
-		return tzinfo.localize(dt)
+		return tzinfo.localize(dt, is_dst=dct.get('is_dst', None))
 	elif '__timedelta__' in dct:
 		return timedelta(days=dct.get('days', 0), seconds=dct.get('seconds', 0),
 			microseconds=dct.get('microseconds', 0))
@@ -150,6 +151,13 @@ def nopathlib_hook(dct):
 						'pathlib.Path data structure, but pathlib support '
 						'is not enabled.'))
 	return dct
+
+def slice_hook(dct):
+	if not isinstance(dct, dict):
+		return dct
+	if not '__slice__' in dct:
+		return dct
+	return slice(dct['start'], dct['stop'], dct['step'])
 
 
 class EnumInstanceHook(ClassInstanceHookBase):
@@ -259,7 +267,7 @@ def nopandas_hook(dct):
 
 def json_numpy_obj_hook(dct):
 	"""
-	Replace any numpy arrays previously encoded by NumpyEncoder to their proper
+	Replace any numpy arrays previously encoded by `numpy_encode` to their proper
 	shape, data type and data.
 
 	:param dct: (dict) json encoded ndarray
@@ -284,22 +292,23 @@ def json_numpy_obj_hook(dct):
 		if nptype == 'object':
 			return _lists_of_obj_to_ndarray(data_json, order, shape, nptype)
 		if isinstance(data_json, str_type):
-			return _bin_str_to_ndarray(data_json, order, shape, nptype)
+			endianness = dct.get('endian', 'native')
+			return _bin_str_to_ndarray(data_json, order, shape, nptype, endianness)
 		else:
 			return _lists_of_numbers_to_ndarray(data_json, order, shape, nptype)
 	else:
 		return _scalar_to_numpy(data_json, nptype)
 
 
-def _bin_str_to_ndarray(data, order, shape, dtype):
+def _bin_str_to_ndarray(data, order, shape, np_type_name, data_endianness):
 	"""
 	From base64 encoded, gzipped binary data to ndarray.
 	"""
 	from base64 import standard_b64decode
-	from numpy import frombuffer
+	from numpy import frombuffer, dtype
 
 	assert order in [None, 'C'], 'specifying different memory order is not (yet) supported ' \
-		'for binary numpy format (got order = {})'.format(order)
+								 'for binary numpy format (got order = {})'.format(order)
 	if data.startswith('b64.gz:'):
 		data = standard_b64decode(data[7:])
 		data = gzip_decompress(data)
@@ -307,7 +316,16 @@ def _bin_str_to_ndarray(data, order, shape, dtype):
 		data = standard_b64decode(data[4:])
 	else:
 		raise ValueError('found numpy array buffer, but did not understand header; supported: b64 or b64.gz')
-	data = frombuffer(data, dtype=dtype)
+	np_type = dtype(np_type_name)
+	if data_endianness == sys.byteorder:
+		pass
+	if data_endianness == 'little':
+		np_type = np_type.newbyteorder('<')
+	elif data_endianness == 'big':
+		np_type = np_type.newbyteorder('>')
+	elif data_endianness != 'native':
+		warnings.warn('array of shape {} has unknown endianness \'{}\''.format(shape, data_endianness))
+	data = frombuffer(bytearray(data), dtype=np_type)
 	return data.reshape(shape)
 
 

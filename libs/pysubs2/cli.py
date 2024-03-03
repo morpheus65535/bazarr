@@ -17,15 +17,16 @@ import logging
 def positive_float(s: str) -> float:
     x = float(s)
     if not x > 0:
-        raise argparse.ArgumentTypeError("%r is not a positive number" % s)
+        raise argparse.ArgumentTypeError(f"{s!r} is not a positive number")
     return x
+
 
 def character_encoding(s: str) -> str:
     try:
         codecs.lookup(s)
         return s
     except LookupError:
-        raise argparse.ArgumentError(None, "unknown character encoding: {}".format(s))
+        raise argparse.ArgumentError(None, f"unknown character encoding: {s}")
 
 
 def time(s: str) -> int:
@@ -63,7 +64,7 @@ class Pysubs2CLI:
                                  "MicroDVD (*.sub) or other supported format. When no files are specified, "
                                  "pysubs2 will work as a pipe, reading from standard input and writing to standard output.")
 
-        parser.add_argument("-v", "--version", action="version", version="pysubs2 %s" % VERSION)
+        parser.add_argument("-v", "--version", action="version", version=f"pysubs2 {VERSION}")
 
         parser.add_argument("-f", "--from", choices=FORMAT_IDENTIFIERS, dest="input_format",
                             help="By default, subtitle format is detected from the file. This option can be used to "

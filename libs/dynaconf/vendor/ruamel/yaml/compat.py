@@ -1,324 +1,120 @@
-# coding: utf-8
-
 from __future__ import print_function
-
-# partially from package six by Benjamin Peterson
-
-import sys
-import os
-import types
-import traceback
+_D='RUAMELDEBUG'
+_C=True
+_B=False
+_A=None
+import sys,os,types,traceback
 from abc import abstractmethod
-
-
-# fmt: off
-if False:  # MYPY
-    from typing import Any, Dict, Optional, List, Union, BinaryIO, IO, Text, Tuple  # NOQA
-    from typing import Optional  # NOQA
-# fmt: on
-
-_DEFAULT_YAML_VERSION = (1, 2)
-
-try:
-    from ruamel.ordereddict import ordereddict
-except:  # NOQA
-    try:
-        from collections import OrderedDict
-    except ImportError:
-        from ordereddict import OrderedDict  # type: ignore
-    # to get the right name import ... as ordereddict doesn't do that
-
-    class ordereddict(OrderedDict):  # type: ignore
-        if not hasattr(OrderedDict, 'insert'):
-
-            def insert(self, pos, key, value):
-                # type: (int, Any, Any) -> None
-                if pos >= len(self):
-                    self[key] = value
-                    return
-                od = ordereddict()
-                od.update(self)
-                for k in od:
-                    del self[k]
-                for index, old_key in enumerate(od):
-                    if pos == index:
-                        self[key] = value
-                    self[old_key] = od[old_key]
-
-
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
-
-
+if _B:from typing import Any,Dict,Optional,List,Union,BinaryIO,IO,Text,Tuple,Optional
+_DEFAULT_YAML_VERSION=1,2
+try:from ruamel.ordereddict import ordereddict
+except:
+	try:from collections import OrderedDict
+	except ImportError:from ordereddict import OrderedDict
+	class ordereddict(OrderedDict):
+		if not hasattr(OrderedDict,'insert'):
+			def insert(A,pos,key,value):
+				C=value
+				if pos>=len(A):A[key]=C;return
+				B=ordereddict();B.update(A)
+				for E in B:del A[E]
+				for(F,D)in enumerate(B):
+					if pos==F:A[key]=C
+					A[D]=B[D]
+PY2=sys.version_info[0]==2
+PY3=sys.version_info[0]==3
 if PY3:
-
-    def utf8(s):
-        # type: (str) -> str
-        return s
-
-    def to_str(s):
-        # type: (str) -> str
-        return s
-
-    def to_unicode(s):
-        # type: (str) -> str
-        return s
-
-
+	def utf8(s):return s
+	def to_str(s):return s
+	def to_unicode(s):return s
 else:
-    if False:
-        unicode = str
-
-    def utf8(s):
-        # type: (unicode) -> str
-        return s.encode('utf-8')
-
-    def to_str(s):
-        # type: (str) -> str
-        return str(s)
-
-    def to_unicode(s):
-        # type: (str) -> unicode
-        return unicode(s)  # NOQA
-
-
-if PY3:
-    string_types = str
-    integer_types = int
-    class_types = type
-    text_type = str
-    binary_type = bytes
-
-    MAXSIZE = sys.maxsize
-    unichr = chr
-    import io
-
-    StringIO = io.StringIO
-    BytesIO = io.BytesIO
-    # have unlimited precision
-    no_limit_int = int
-    from collections.abc import Hashable, MutableSequence, MutableMapping, Mapping  # NOQA
-
-else:
-    string_types = basestring  # NOQA
-    integer_types = (int, long)  # NOQA
-    class_types = (type, types.ClassType)
-    text_type = unicode  # NOQA
-    binary_type = str
-
-    # to allow importing
-    unichr = unichr
-    from StringIO import StringIO as _StringIO
-
-    StringIO = _StringIO
-    import cStringIO
-
-    BytesIO = cStringIO.StringIO
-    # have unlimited precision
-    no_limit_int = long  # NOQA not available on Python 3
-    from collections import Hashable, MutableSequence, MutableMapping, Mapping  # NOQA
-
-if False:  # MYPY
-    # StreamType = Union[BinaryIO, IO[str], IO[unicode],  StringIO]
-    # StreamType = Union[BinaryIO, IO[str], StringIO]  # type: ignore
-    StreamType = Any
-
-    StreamTextType = StreamType  # Union[Text, StreamType]
-    VersionType = Union[List[int], str, Tuple[int, int]]
-
-if PY3:
-    builtins_module = 'builtins'
-else:
-    builtins_module = '__builtin__'
-
-UNICODE_SIZE = 4 if sys.maxunicode > 65535 else 2
-
-
-def with_metaclass(meta, *bases):
-    # type: (Any, Any) -> Any
-    """Create a base class with a metaclass."""
-    return meta('NewBase', bases, {})
-
-
-DBG_TOKEN = 1
-DBG_EVENT = 2
-DBG_NODE = 4
-
-
-_debug = None  # type: Optional[int]
-if 'RUAMELDEBUG' in os.environ:
-    _debugx = os.environ.get('RUAMELDEBUG')
-    if _debugx is None:
-        _debug = 0
-    else:
-        _debug = int(_debugx)
-
-
+	if _B:unicode=str
+	def utf8(s):return s.encode('utf-8')
+	def to_str(s):return str(s)
+	def to_unicode(s):return unicode(s)
+if PY3:string_types=str;integer_types=int;class_types=type;text_type=str;binary_type=bytes;MAXSIZE=sys.maxsize;unichr=chr;import io;StringIO=io.StringIO;BytesIO=io.BytesIO;no_limit_int=int;from collections.abc import Hashable,MutableSequence,MutableMapping,Mapping
+else:string_types=basestring;integer_types=int,long;class_types=type,types.ClassType;text_type=unicode;binary_type=str;unichr=unichr;from StringIO import StringIO as _StringIO;StringIO=_StringIO;import cStringIO;BytesIO=cStringIO.StringIO;no_limit_int=long;from collections import Hashable,MutableSequence,MutableMapping,Mapping
+if _B:StreamType=Any;StreamTextType=StreamType;VersionType=Union[List[int],str,Tuple[int,int]]
+if PY3:builtins_module='builtins'
+else:builtins_module='__builtin__'
+UNICODE_SIZE=4 if sys.maxunicode>65535 else 2
+def with_metaclass(meta,*A):return meta('NewBase',A,{})
+DBG_TOKEN=1
+DBG_EVENT=2
+DBG_NODE=4
+_debug=_A
+if _D in os.environ:
+	_debugx=os.environ.get(_D)
+	if _debugx is _A:_debug=0
+	else:_debug=int(_debugx)
 if bool(_debug):
-
-    class ObjectCounter(object):
-        def __init__(self):
-            # type: () -> None
-            self.map = {}  # type: Dict[Any, Any]
-
-        def __call__(self, k):
-            # type: (Any) -> None
-            self.map[k] = self.map.get(k, 0) + 1
-
-        def dump(self):
-            # type: () -> None
-            for k in sorted(self.map):
-                sys.stdout.write('{} -> {}'.format(k, self.map[k]))
-
-    object_counter = ObjectCounter()
-
-
-# used from yaml util when testing
-def dbg(val=None):
-    # type: (Any) -> Any
-    global _debug
-    if _debug is None:
-        # set to true or false
-        _debugx = os.environ.get('YAMLDEBUG')
-        if _debugx is None:
-            _debug = 0
-        else:
-            _debug = int(_debugx)
-    if val is None:
-        return _debug
-    return _debug & val
-
-
-class Nprint(object):
-    def __init__(self, file_name=None):
-        # type: (Any) -> None
-        self._max_print = None  # type: Any
-        self._count = None  # type: Any
-        self._file_name = file_name
-
-    def __call__(self, *args, **kw):
-        # type: (Any, Any) -> None
-        if not bool(_debug):
-            return
-        out = sys.stdout if self._file_name is None else open(self._file_name, 'a')
-        dbgprint = print  # to fool checking for print statements by dv utility
-        kw1 = kw.copy()
-        kw1['file'] = out
-        dbgprint(*args, **kw1)
-        out.flush()
-        if self._max_print is not None:
-            if self._count is None:
-                self._count = self._max_print
-            self._count -= 1
-            if self._count == 0:
-                dbgprint('forced exit\n')
-                traceback.print_stack()
-                out.flush()
-                sys.exit(0)
-        if self._file_name:
-            out.close()
-
-    def set_max_print(self, i):
-        # type: (int) -> None
-        self._max_print = i
-        self._count = None
-
-
-nprint = Nprint()
-nprintf = Nprint('/var/tmp/ruamel.yaml.log')
-
-# char checkers following production rules
-
-
+	class ObjectCounter:
+		def __init__(A):A.map={}
+		def __call__(A,k):A.map[k]=A.map.get(k,0)+1
+		def dump(A):
+			for B in sorted(A.map):sys.stdout.write('{} -> {}'.format(B,A.map[B]))
+	object_counter=ObjectCounter()
+def dbg(val=_A):
+	global _debug
+	if _debug is _A:
+		A=os.environ.get('YAMLDEBUG')
+		if A is _A:_debug=0
+		else:_debug=int(A)
+	if val is _A:return _debug
+	return _debug&val
+class Nprint:
+	def __init__(A,file_name=_A):A._max_print=_A;A._count=_A;A._file_name=file_name
+	def __call__(A,*E,**F):
+		if not bool(_debug):return
+		B=sys.stdout if A._file_name is _A else open(A._file_name,'a');C=print;D=F.copy();D['file']=B;C(*E,**D);B.flush()
+		if A._max_print is not _A:
+			if A._count is _A:A._count=A._max_print
+			A._count-=1
+			if A._count==0:C('forced exit\n');traceback.print_stack();B.flush();sys.exit(0)
+		if A._file_name:B.close()
+	def set_max_print(A,i):A._max_print=i;A._count=_A
+nprint=Nprint()
+nprintf=Nprint('/var/tmp/ruamel.yaml.log')
 def check_namespace_char(ch):
-    # type: (Any) -> bool
-    if u'\x21' <= ch <= u'\x7E':  # ! to ~
-        return True
-    if u'\xA0' <= ch <= u'\uD7FF':
-        return True
-    if (u'\uE000' <= ch <= u'\uFFFD') and ch != u'\uFEFF':  # excl. byte order mark
-        return True
-    if u'\U00010000' <= ch <= u'\U0010FFFF':
-        return True
-    return False
-
-
+	A=ch
+	if'!'<=A<='~':return _C
+	if'\xa0'<=A<='\ud7ff':return _C
+	if'\ue000'<=A<='�'and A!='\ufeff':return _C
+	if'𐀀'<=A<='\U0010ffff':return _C
+	return _B
 def check_anchorname_char(ch):
-    # type: (Any) -> bool
-    if ch in u',[]{}':
-        return False
-    return check_namespace_char(ch)
-
-
-def version_tnf(t1, t2=None):
-    # type: (Any, Any) -> Any
-    """
-    return True if ruamel.yaml version_info < t1, None if t2 is specified and bigger else False
-    """
-    from dynaconf.vendor.ruamel.yaml import version_info  # NOQA
-
-    if version_info < t1:
-        return True
-    if t2 is not None and version_info < t2:
-        return None
-    return False
-
-
-class MutableSliceableSequence(MutableSequence):  # type: ignore
-    __slots__ = ()
-
-    def __getitem__(self, index):
-        # type: (Any) -> Any
-        if not isinstance(index, slice):
-            return self.__getsingleitem__(index)
-        return type(self)([self[i] for i in range(*index.indices(len(self)))])  # type: ignore
-
-    def __setitem__(self, index, value):
-        # type: (Any, Any) -> None
-        if not isinstance(index, slice):
-            return self.__setsingleitem__(index, value)
-        assert iter(value)
-        # nprint(index.start, index.stop, index.step, index.indices(len(self)))
-        if index.step is None:
-            del self[index.start : index.stop]
-            for elem in reversed(value):
-                self.insert(0 if index.start is None else index.start, elem)
-        else:
-            range_parms = index.indices(len(self))
-            nr_assigned_items = (range_parms[1] - range_parms[0] - 1) // range_parms[2] + 1
-            # need to test before changing, in case TypeError is caught
-            if nr_assigned_items < len(value):
-                raise TypeError(
-                    'too many elements in value {} < {}'.format(nr_assigned_items, len(value))
-                )
-            elif nr_assigned_items > len(value):
-                raise TypeError(
-                    'not enough elements in value {} > {}'.format(
-                        nr_assigned_items, len(value)
-                    )
-                )
-            for idx, i in enumerate(range(*range_parms)):
-                self[i] = value[idx]
-
-    def __delitem__(self, index):
-        # type: (Any) -> None
-        if not isinstance(index, slice):
-            return self.__delsingleitem__(index)
-        # nprint(index.start, index.stop, index.step, index.indices(len(self)))
-        for i in reversed(range(*index.indices(len(self)))):
-            del self[i]
-
-    @abstractmethod
-    def __getsingleitem__(self, index):
-        # type: (Any) -> Any
-        raise IndexError
-
-    @abstractmethod
-    def __setsingleitem__(self, index, value):
-        # type: (Any, Any) -> None
-        raise IndexError
-
-    @abstractmethod
-    def __delsingleitem__(self, index):
-        # type: (Any) -> None
-        raise IndexError
+	if ch in',[]{}':return _B
+	return check_namespace_char(ch)
+def version_tnf(t1,t2=_A):
+	from dynaconf.vendor.ruamel.yaml import version_info as A
+	if A<t1:return _C
+	if t2 is not _A and A<t2:return
+	return _B
+class MutableSliceableSequence(MutableSequence):
+	__slots__=()
+	def __getitem__(A,index):
+		B=index
+		if not isinstance(B,slice):return A.__getsingleitem__(B)
+		return type(A)([A[B]for B in range(*B.indices(len(A)))])
+	def __setitem__(C,index,value):
+		B=value;A=index
+		if not isinstance(A,slice):return C.__setsingleitem__(A,B)
+		assert iter(B)
+		if A.step is _A:
+			del C[A.start:A.stop]
+			for F in reversed(B):C.insert(0 if A.start is _A else A.start,F)
+		else:
+			D=A.indices(len(C));E=(D[1]-D[0]-1)//D[2]+1
+			if E<len(B):raise TypeError('too many elements in value {} < {}'.format(E,len(B)))
+			elif E>len(B):raise TypeError('not enough elements in value {} > {}'.format(E,len(B)))
+			for(G,H)in enumerate(range(*D)):C[H]=B[G]
+	def __delitem__(A,index):
+		B=index
+		if not isinstance(B,slice):return A.__delsingleitem__(B)
+		for C in reversed(range(*B.indices(len(A)))):del A[C]
+	@abstractmethod
+	def __getsingleitem__(self,index):raise IndexError
+	@abstractmethod
+	def __setsingleitem__(self,index,value):raise IndexError
+	@abstractmethod
+	def __delsingleitem__(self,index):raise IndexError

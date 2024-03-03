@@ -96,7 +96,7 @@ const ColorToolForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
     validate: {
       color: FormUtils.validation(
         (value) => colorOptions.find((op) => op.value === value) !== undefined,
-        "Must select a color"
+        "Must select a color",
       ),
     },
   });
@@ -110,7 +110,7 @@ const ColorToolForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
           task.create(s.path, TaskName, mutateAsync, {
             action,
             form: s,
-          })
+          }),
         );
 
         onSubmit?.();

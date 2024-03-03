@@ -1,5 +1,5 @@
 # sql/base.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -30,6 +30,7 @@ from typing import Iterator
 from typing import List
 from typing import Mapping
 from typing import MutableMapping
+from typing import NamedTuple
 from typing import NoReturn
 from typing import Optional
 from typing import overload
@@ -75,6 +76,8 @@ if TYPE_CHECKING:
     from .elements import NamedColumn
     from .elements import SQLCoreOperations
     from .elements import TextClause
+    from .schema import Column
+    from .schema import DefaultGenerator
     from .selectable import _JoinTargetElement
     from .selectable import _SelectIterable
     from .selectable import FromClause
@@ -101,6 +104,9 @@ if not TYPE_CHECKING:
 class _NoArg(Enum):
     NO_ARG = 0
 
+    def __repr__(self):
+        return f"_NoArg.{self.name}"
+
 
 NO_ARG = _NoArg.NO_ARG
 
@@ -119,15 +125,42 @@ _Fn = TypeVar("_Fn", bound=Callable[..., Any])
 _AmbiguousTableNameMap = MutableMapping[str, str]
 
 
+class _DefaultDescriptionTuple(NamedTuple):
+    arg: Any
+    is_scalar: Optional[bool]
+    is_callable: Optional[bool]
+    is_sentinel: Optional[bool]
+
+    @classmethod
+    def _from_column_default(
+        cls, default: Optional[DefaultGenerator]
+    ) -> _DefaultDescriptionTuple:
+        return (
+            _DefaultDescriptionTuple(
+                default.arg,  # type: ignore
+                default.is_scalar,
+                default.is_callable,
+                default.is_sentinel,
+            )
+            if default
+            and (
+                default.has_arg
+                or (not default.for_update and default.is_sentinel)
+            )
+            else _DefaultDescriptionTuple(None, None, None, None)
+        )
+
+
+_never_select_column = operator.attrgetter("_omit_from_statements")
+
+
 class _EntityNamespace(Protocol):
-    def __getattr__(self, key: str) -> SQLCoreOperations[Any]:
-        ...
+    def __getattr__(self, key: str) -> SQLCoreOperations[Any]: ...
 
 
 class _HasEntityNamespace(Protocol):
     @util.ro_non_memoized_property
-    def entity_namespace(self) -> _EntityNamespace:
-        ...
+    def entity_namespace(self) -> _EntityNamespace: ...
 
 
 def _is_has_entity_namespace(element: Any) -> TypeGuard[_HasEntityNamespace]:
@@ -226,8 +259,7 @@ _SelfGenerativeType = TypeVar("_SelfGenerativeType", bound="_GenerativeType")
 
 
 class _GenerativeType(compat_typing.Protocol):
-    def _generate(self) -> Self:
-        ...
+    def _generate(self) -> Self: ...
 
 
 def _generative(fn: _Fn) -> _Fn:
@@ -238,7 +270,7 @@ def _generative(fn: _Fn) -> _Fn:
 
     """
 
-    @util.decorator  # type: ignore
+    @util.decorator
     def _generative(
         fn: _Fn, self: _SelfGenerativeType, *args: Any, **kw: Any
     ) -> _SelfGenerativeType:
@@ -264,7 +296,7 @@ def _exclusive_against(*names: str, **kw: Any) -> Callable[[_Fn], _Fn]:
         for name in names
     ]
 
-    @util.decorator  # type: ignore
+    @util.decorator
     def check(fn, *args, **kw):
         # make pylance happy by not including "self" in the argument
         # list
@@ -280,7 +312,7 @@ def _exclusive_against(*names: str, **kw: Any) -> Callable[[_Fn], _Fn]:
                 raise exc.InvalidRequestError(msg)
         return fn(self, *args, **kw)
 
-    return check  # type: ignore
+    return check
 
 
 def _clone(element, **kw):
@@ -296,6 +328,15 @@ def _expand_cloned(
     """
     # TODO: cython candidate
     return itertools.chain(*[x._cloned_set for x in elements])
+
+
+def _de_clone(
+    elements: Iterable[_CLE],
+) -> Iterable[_CLE]:
+    for x in elements:
+        while x._is_clone_of is not None:
+            x = x._is_clone_of
+        yield x
 
 
 def _cloned_intersection(a: Iterable[_CLE], b: Iterable[_CLE]) -> Set[_CLE]:
@@ -468,8 +509,6 @@ class DialectKWArgs:
 
         :param default: default value of the parameter.
 
-        .. versionadded:: 0.9.4
-
         """
 
         construct_arg_dictionary = DialectKWArgs._kw_registry[dialect_name]
@@ -495,11 +534,6 @@ class DialectKWArgs:
         The collection is also writable; keys are accepted of the
         form ``<dialect>_<kwarg>`` where the value will be assembled
         into the list of options.
-
-        .. versionadded:: 0.9.2
-
-        .. versionchanged:: 0.9.4 The :attr:`.DialectKWArgs.dialect_kwargs`
-           collection is now writable.
 
         .. seealso::
 
@@ -764,14 +798,11 @@ class _MetaOptions(type):
 
     if TYPE_CHECKING:
 
-        def __getattr__(self, key: str) -> Any:
-            ...
+        def __getattr__(self, key: str) -> Any: ...
 
-        def __setattr__(self, key: str, value: Any) -> None:
-            ...
+        def __setattr__(self, key: str, value: Any) -> None: ...
 
-        def __delattr__(self, key: str) -> None:
-            ...
+        def __delattr__(self, key: str) -> None: ...
 
 
 class Options(metaclass=_MetaOptions):
@@ -929,14 +960,11 @@ class Options(metaclass=_MetaOptions):
 
     if TYPE_CHECKING:
 
-        def __getattr__(self, key: str) -> Any:
-            ...
+        def __getattr__(self, key: str) -> Any: ...
 
-        def __setattr__(self, key: str, value: Any) -> None:
-            ...
+        def __setattr__(self, key: str, value: Any) -> None: ...
 
-        def __delattr__(self, key: str) -> None:
-            ...
+        def __delattr__(self, key: str) -> None: ...
 
 
 class CacheableOptions(Options, HasCacheKey):
@@ -1008,7 +1036,6 @@ class Executable(roles.StatementRole):
     is_dml = False
 
     if TYPE_CHECKING:
-
         __visit_name__: str
 
         def _compile_w_cache(
@@ -1022,24 +1049,21 @@ class Executable(roles.StatementRole):
             **kw: Any,
         ) -> Tuple[
             Compiled, Optional[Sequence[BindParameter[Any]]], CacheStats
-        ]:
-            ...
+        ]: ...
 
         def _execute_on_connection(
             self,
             connection: Connection,
             distilled_params: _CoreMultiExecuteParams,
             execution_options: CoreExecuteOptionsParameter,
-        ) -> CursorResult[Any]:
-            ...
+        ) -> CursorResult[Any]: ...
 
         def _execute_on_scalar(
             self,
             connection: Connection,
             distilled_params: _CoreMultiExecuteParams,
             execution_options: CoreExecuteOptionsParameter,
-        ) -> Any:
-            ...
+        ) -> Any: ...
 
     @util.ro_non_memoized_property
     def _all_selected_columns(self):
@@ -1140,15 +1164,14 @@ class Executable(roles.StatementRole):
         autoflush: bool = False,
         synchronize_session: SynchronizeSessionArgument = ...,
         dml_strategy: DMLStrategyArgument = ...,
+        render_nulls: bool = ...,
         is_delete_using: bool = ...,
         is_update_from: bool = ...,
         **opt: Any,
-    ) -> Self:
-        ...
+    ) -> Self: ...
 
     @overload
-    def execution_options(self, **opt: Any) -> Self:
-        ...
+    def execution_options(self, **opt: Any) -> Self: ...
 
     @_generative
     def execution_options(self, **kw: Any) -> Self:
@@ -1305,6 +1328,25 @@ class SchemaVisitor(ClauseVisitor):
     """Define the visiting for ``SchemaItem`` objects."""
 
     __traverse_options__ = {"schema_visitor": True}
+
+
+class _SentinelDefaultCharacterization(Enum):
+    NONE = "none"
+    UNKNOWN = "unknown"
+    CLIENTSIDE = "clientside"
+    SENTINEL_DEFAULT = "sentinel_default"
+    SERVERSIDE = "serverside"
+    IDENTITY = "identity"
+    SEQUENCE = "sequence"
+
+
+class _SentinelColumnCharacterization(NamedTuple):
+    columns: Optional[Sequence[Column[Any]]] = None
+    is_explicit: bool = False
+    is_autoinc: bool = False
+    default_characterization: _SentinelDefaultCharacterization = (
+        _SentinelDefaultCharacterization.NONE
+    )
 
 
 _COLKEY = TypeVar("_COLKEY", Union[None, str], str)
@@ -1535,23 +1577,32 @@ class ColumnCollection(Generic[_COLKEY, _COL_co]):
         return iter([col for _, col, _ in self._collection])
 
     @overload
-    def __getitem__(self, key: Union[str, int]) -> _COL_co:
-        ...
+    def __getitem__(self, key: Union[str, int]) -> _COL_co: ...
 
     @overload
     def __getitem__(
         self, key: Tuple[Union[str, int], ...]
-    ) -> ReadOnlyColumnCollection[_COLKEY, _COL_co]:
-        ...
+    ) -> ReadOnlyColumnCollection[_COLKEY, _COL_co]: ...
+
+    @overload
+    def __getitem__(
+        self, key: slice
+    ) -> ReadOnlyColumnCollection[_COLKEY, _COL_co]: ...
 
     def __getitem__(
-        self, key: Union[str, int, Tuple[Union[str, int], ...]]
+        self, key: Union[str, int, slice, Tuple[Union[str, int], ...]]
     ) -> Union[ReadOnlyColumnCollection[_COLKEY, _COL_co], _COL_co]:
         try:
-            if isinstance(key, tuple):
-                return ColumnCollection(  # type: ignore
-                    [self._index[sub_key] for sub_key in key]
-                ).as_readonly()
+            if isinstance(key, (tuple, slice)):
+                if isinstance(key, slice):
+                    cols = (
+                        (sub_key, col)
+                        for (sub_key, col, _) in self._collection[key]
+                    )
+                else:
+                    cols = (self._index[sub_key] for sub_key in key)
+
+                return ColumnCollection(cols).as_readonly()
             else:
                 return self._index[key][1]
         except KeyError as err:
@@ -1813,7 +1864,6 @@ class ColumnCollection(Generic[_COLKEY, _COL_co]):
                     )
 
                 if len(current_intersection) > len(selected_intersection):
-
                     # 'current' has a larger field of correspondence than
                     # 'selected'. i.e. selectable.c.a1_x->a1.c.x->table.c.x
                     # matches a1.c.x->table.c.x better than
@@ -1890,7 +1940,6 @@ class DedupeColumnCollection(ColumnCollection[str, _NAMEDCOL]):
             )
 
         if key in self._index:
-
             existing = self._index[key][1]
 
             if existing is named_column:
@@ -1903,13 +1952,16 @@ class DedupeColumnCollection(ColumnCollection[str, _NAMEDCOL]):
             # in a _make_proxy operation
             util.memoized_property.reset(named_column, "proxy_set")
         else:
-            l = len(self._collection)
-            self._collection.append(
-                (key, named_column, _ColumnMetrics(self, named_column))
-            )
-            self._colset.add(named_column._deannotate())
-            self._index[l] = (key, named_column)
-            self._index[key] = (key, named_column)
+            self._append_new_column(key, named_column)
+
+    def _append_new_column(self, key: str, named_column: _NAMEDCOL) -> None:
+        l = len(self._collection)
+        self._collection.append(
+            (key, named_column, _ColumnMetrics(self, named_column))
+        )
+        self._colset.add(named_column._deannotate())
+        self._index[l] = (key, named_column)
+        self._index[key] = (key, named_column)
 
     def _populate_separate_keys(
         self, iter_: Iterable[Tuple[str, _NAMEDCOL]]
@@ -1998,6 +2050,9 @@ class DedupeColumnCollection(ColumnCollection[str, _NAMEDCOL]):
         if column.key in self._index:
             remove_col.add(self._index[column.key][1])
 
+        if not remove_col:
+            self._append_new_column(column.key, column)
+            return
         new_cols: List[Tuple[str, _NAMEDCOL, _ColumnMetrics[_NAMEDCOL]]] = []
         replaced = False
         for k, col, metrics in self._collection:

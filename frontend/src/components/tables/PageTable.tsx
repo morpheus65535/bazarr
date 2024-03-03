@@ -20,7 +20,7 @@ export default function PageTable<T extends object>(props: Props<T>) {
     options,
     useDefaultSettings,
     ...tablePlugins,
-    ...(plugins ?? [])
+    ...(plugins ?? []),
   );
 
   // use page size as specified in UI settings

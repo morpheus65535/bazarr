@@ -32,7 +32,7 @@ const SeriesMassEditor: FunctionComponent = () => {
         },
       },
     ],
-    []
+    [],
   );
 
   useDocumentTitle("Series - Bazarr (Mass Editor)");

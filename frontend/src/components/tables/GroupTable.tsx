@@ -60,7 +60,7 @@ function renderRow<T extends object>(row: Row<T>) {
 }
 
 function renderHeaders<T extends object>(
-  headers: HeaderGroup<T>[]
+  headers: HeaderGroup<T>[],
 ): JSX.Element[] {
   return headers
     .filter((col) => !col.isGrouped)

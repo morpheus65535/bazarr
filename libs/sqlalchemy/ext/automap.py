@@ -1,5 +1,5 @@
 # ext/automap.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -379,14 +379,6 @@ follows:
    flag is set to ``True`` in the set of relationship keyword arguments.
    Note that not all backends support reflection of ON DELETE.
 
-   .. versionadded:: 1.0.0 - automap will detect non-nullable foreign key
-      constraints when producing a one-to-many relationship and establish
-      a default cascade of ``all, delete-orphan`` if so; additionally,
-      if the constraint specifies
-      :paramref:`_schema.ForeignKeyConstraint.ondelete`
-      of ``CASCADE`` for non-nullable or ``SET NULL`` for nullable columns,
-      the ``passive_deletes=True`` option is also added.
-
 5. The names of the relationships are determined using the
    :paramref:`.AutomapBase.prepare.name_for_scalar_relationship` and
    :paramref:`.AutomapBase.prepare.name_for_collection_relationship`
@@ -723,8 +715,9 @@ _VT = TypeVar("_VT", bound=Any)
 
 
 class PythonNameForTableType(Protocol):
-    def __call__(self, base: Type[Any], tablename: str, table: Table) -> str:
-        ...
+    def __call__(
+        self, base: Type[Any], tablename: str, table: Table
+    ) -> str: ...
 
 
 def classname_for_table(
@@ -771,8 +764,7 @@ class NameForScalarRelationshipType(Protocol):
         local_cls: Type[Any],
         referred_cls: Type[Any],
         constraint: ForeignKeyConstraint,
-    ) -> str:
-        ...
+    ) -> str: ...
 
 
 def name_for_scalar_relationship(
@@ -812,8 +804,7 @@ class NameForCollectionRelationshipType(Protocol):
         local_cls: Type[Any],
         referred_cls: Type[Any],
         constraint: ForeignKeyConstraint,
-    ) -> str:
-        ...
+    ) -> str: ...
 
 
 def name_for_collection_relationship(
@@ -858,8 +849,7 @@ class GenerateRelationshipType(Protocol):
         local_cls: Type[Any],
         referred_cls: Type[Any],
         **kw: Any,
-    ) -> Relationship[Any]:
-        ...
+    ) -> Relationship[Any]: ...
 
     @overload
     def __call__(
@@ -871,8 +861,7 @@ class GenerateRelationshipType(Protocol):
         local_cls: Type[Any],
         referred_cls: Type[Any],
         **kw: Any,
-    ) -> ORMBackrefArgument:
-        ...
+    ) -> ORMBackrefArgument: ...
 
     def __call__(
         self,
@@ -885,8 +874,7 @@ class GenerateRelationshipType(Protocol):
         local_cls: Type[Any],
         referred_cls: Type[Any],
         **kw: Any,
-    ) -> Union[ORMBackrefArgument, Relationship[Any]]:
-        ...
+    ) -> Union[ORMBackrefArgument, Relationship[Any]]: ...
 
 
 @overload
@@ -898,8 +886,7 @@ def generate_relationship(
     local_cls: Type[Any],
     referred_cls: Type[Any],
     **kw: Any,
-) -> Relationship[Any]:
-    ...
+) -> Relationship[Any]: ...
 
 
 @overload
@@ -911,8 +898,7 @@ def generate_relationship(
     local_cls: Type[Any],
     referred_cls: Type[Any],
     **kw: Any,
-) -> ORMBackrefArgument:
-    ...
+) -> ORMBackrefArgument: ...
 
 
 def generate_relationship(
@@ -1298,7 +1284,6 @@ class AutomapBase:
 
                     by_module_properties: ByModuleProperties = cls.by_module
                     for token in map_config.cls.__module__.split("."):
-
                         if token not in by_module_properties:
                             by_module_properties[token] = util.Properties({})
 
@@ -1579,7 +1564,6 @@ def _m2m_relationship(
     name_for_collection_relationship: NameForCollectionRelationshipType,
     generate_relationship: GenerateRelationshipType,
 ) -> None:
-
     map_config = table_to_map_config.get(lcl_m2m, None)
     referred_cfg = table_to_map_config.get(rem_m2m, None)
     if map_config is None or referred_cfg is None:

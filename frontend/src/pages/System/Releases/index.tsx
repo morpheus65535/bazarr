@@ -42,7 +42,7 @@ const ReleaseCard: FunctionComponent<ReleaseInfo> = ({
 }) => {
   const infos = useMemo(
     () => body.map((v) => v.replace(/(\s\[.*?\])\(.*?\)/, "")),
-    [body]
+    [body],
   );
   return (
     <Card shadow="md" p="lg">

@@ -37,7 +37,7 @@ const NotificationForm: FunctionComponent<Props> = ({
 }) => {
   const availableSelections = useMemo(
     () => selections.filter((v) => !v.enabled || v.name === payload?.name),
-    [payload?.name, selections]
+    [payload?.name, selections],
   );
   const options = useSelectorOptions(availableSelections, (v) => v.name);
 
@@ -51,11 +51,11 @@ const NotificationForm: FunctionComponent<Props> = ({
     validate: {
       selection: FormUtils.validation(
         isObject,
-        "Please select a notification provider"
+        "Please select a notification provider",
       ),
       url: FormUtils.validation(
         (value) => value.trim().length !== 0,
-        "URL must not be empty"
+        "URL must not be empty",
       ),
     },
   });
@@ -123,20 +123,20 @@ export const NotificationView: FunctionComponent = () => {
     {
       onLoaded: (settings) => settings.notifications.providers,
       onSubmit: (value) => value.map((v) => JSON.stringify(v)),
-    }
+    },
   );
 
   const update = useUpdateArray<Settings.NotificationInfo>(
     notificationsKey,
     notifications ?? [],
-    "name"
+    "name",
   );
 
   const updateWrapper = useCallback(
     (info: Settings.NotificationInfo) => {
       update(info, notificationHook);
     },
-    [update]
+    [update],
   );
 
   const modals = useModals();

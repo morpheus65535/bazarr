@@ -2,15 +2,14 @@ import logging
 
 import engineio
 
-from . import base_manager
+from . import base_server
 from . import exceptions
-from . import namespace
 from . import packet
 
 default_logger = logging.getLogger('socketio.server')
 
 
-class Server(object):
+class Server(base_server.BaseServer):
     """A Socket.IO server.
 
     This class implements a fully compliant Socket.IO web server with support
@@ -74,10 +73,12 @@ class Server(object):
                           is a grace period added by the server.
     :param ping_timeout: The time in seconds that the client waits for the
                          server to respond before disconnecting. The default
-                         is 5 seconds.
-    :param max_http_buffer_size: The maximum size of a message when using the
-                                 polling transport. The default is 1,000,000
-                                 bytes.
+                         is 20 seconds.
+    :param max_http_buffer_size: The maximum size that is accepted for incoming
+                                 messages.  The default is 1,000,000 bytes. In
+                                 spite of its name, the value set in this
+                                 argument is enforced for HTTP long-polling and
+                                 WebSocket connections.
     :param allow_upgrades: Whether to allow transport upgrades or not. The
                            default is ``True``.
     :param http_compression: Whether to compress packages when using the
@@ -111,165 +112,8 @@ class Server(object):
                             fatal errors are logged even when
                             ``engineio_logger`` is ``False``.
     """
-    reserved_events = ['connect', 'disconnect']
-
-    def __init__(self, client_manager=None, logger=False, serializer='default',
-                 json=None, async_handlers=True, always_connect=False,
-                 namespaces=None, **kwargs):
-        engineio_options = kwargs
-        engineio_logger = engineio_options.pop('engineio_logger', None)
-        if engineio_logger is not None:
-            engineio_options['logger'] = engineio_logger
-        if serializer == 'default':
-            self.packet_class = packet.Packet
-        elif serializer == 'msgpack':
-            from . import msgpack_packet
-            self.packet_class = msgpack_packet.MsgPackPacket
-        else:
-            self.packet_class = serializer
-        if json is not None:
-            self.packet_class.json = json
-            engineio_options['json'] = json
-        engineio_options['async_handlers'] = False
-        self.eio = self._engineio_server_class()(**engineio_options)
-        self.eio.on('connect', self._handle_eio_connect)
-        self.eio.on('message', self._handle_eio_message)
-        self.eio.on('disconnect', self._handle_eio_disconnect)
-
-        self.environ = {}
-        self.handlers = {}
-        self.namespace_handlers = {}
-        self.not_handled = object()
-
-        self._binary_packet = {}
-
-        if not isinstance(logger, bool):
-            self.logger = logger
-        else:
-            self.logger = default_logger
-            if self.logger.level == logging.NOTSET:
-                if logger:
-                    self.logger.setLevel(logging.INFO)
-                else:
-                    self.logger.setLevel(logging.ERROR)
-                self.logger.addHandler(logging.StreamHandler())
-
-        if client_manager is None:
-            client_manager = base_manager.BaseManager()
-        self.manager = client_manager
-        self.manager.set_server(self)
-        self.manager_initialized = False
-
-        self.async_handlers = async_handlers
-        self.always_connect = always_connect
-        self.namespaces = namespaces or ['/']
-
-        self.async_mode = self.eio.async_mode
-
-    def is_asyncio_based(self):
-        return False
-
-    def on(self, event, handler=None, namespace=None):
-        """Register an event handler.
-
-        :param event: The event name. It can be any string. The event names
-                      ``'connect'``, ``'message'`` and ``'disconnect'`` are
-                      reserved and should not be used.
-        :param handler: The function that should be invoked to handle the
-                        event. When this parameter is not given, the method
-                        acts as a decorator for the handler function.
-        :param namespace: The Socket.IO namespace for the event. If this
-                          argument is omitted the handler is associated with
-                          the default namespace.
-
-        Example usage::
-
-            # as a decorator:
-            @socket_io.on('connect', namespace='/chat')
-            def connect_handler(sid, environ):
-                print('Connection request')
-                if environ['REMOTE_ADDR'] in blacklisted:
-                    return False  # reject
-
-            # as a method:
-            def message_handler(sid, msg):
-                print('Received message: ', msg)
-                eio.send(sid, 'response')
-            socket_io.on('message', namespace='/chat', handler=message_handler)
-
-        The handler function receives the ``sid`` (session ID) for the
-        client as first argument. The ``'connect'`` event handler receives the
-        WSGI environment as a second argument, and can return ``False`` to
-        reject the connection. The ``'message'`` handler and handlers for
-        custom event names receive the message payload as a second argument.
-        Any values returned from a message handler will be passed to the
-        client's acknowledgement callback function if it exists. The
-        ``'disconnect'`` handler does not take a second argument.
-        """
-        namespace = namespace or '/'
-
-        def set_handler(handler):
-            if namespace not in self.handlers:
-                self.handlers[namespace] = {}
-            self.handlers[namespace][event] = handler
-            return handler
-
-        if handler is None:
-            return set_handler
-        set_handler(handler)
-
-    def event(self, *args, **kwargs):
-        """Decorator to register an event handler.
-
-        This is a simplified version of the ``on()`` method that takes the
-        event name from the decorated function.
-
-        Example usage::
-
-            @sio.event
-            def my_event(data):
-                print('Received data: ', data)
-
-        The above example is equivalent to::
-
-            @sio.on('my_event')
-            def my_event(data):
-                print('Received data: ', data)
-
-        A custom namespace can be given as an argument to the decorator::
-
-            @sio.event(namespace='/test')
-            def my_event(data):
-                print('Received data: ', data)
-        """
-        if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
-            # the decorator was invoked without arguments
-            # args[0] is the decorated function
-            return self.on(args[0].__name__)(args[0])
-        else:
-            # the decorator was invoked with arguments
-            def set_handler(handler):
-                return self.on(handler.__name__, *args, **kwargs)(handler)
-
-            return set_handler
-
-    def register_namespace(self, namespace_handler):
-        """Register a namespace handler object.
-
-        :param namespace_handler: An instance of a :class:`Namespace`
-                                  subclass that handles all the event traffic
-                                  for a namespace.
-        """
-        if not isinstance(namespace_handler, namespace.Namespace):
-            raise ValueError('Not a namespace instance')
-        if self.is_asyncio_based() != namespace_handler.is_asyncio_based():
-            raise ValueError('Not a valid namespace class for this server')
-        namespace_handler._set_server(self)
-        self.namespace_handlers[namespace_handler.namespace] = \
-            namespace_handler
-
     def emit(self, event, data=None, to=None, room=None, skip_sid=None,
-             namespace=None, callback=None, **kwargs):
+             namespace=None, callback=None, ignore_queue=False):
         """Emit a custom event to one or more connected clients.
 
         :param event: The event name. It can be any string. The event names
@@ -281,7 +125,7 @@ class Server(object):
                      one of the types indicated above.
         :param to: The recipient of the message. This can be set to the
                    session ID of a client to address only that client, to any
-                   any custom room created by the application to address all
+                   custom room created by the application to address all
                    the clients in that room, or to a list of custom room
                    names. If this argument is omitted the event is broadcasted
                    to all connected clients.
@@ -294,7 +138,7 @@ class Server(object):
                           argument is omitted the event is emitted to the
                           default namespace.
         :param callback: If given, this function will be called to acknowledge
-                         the the client has received the message. The arguments
+                         the client has received the message. The arguments
                          that will be passed to the function are those provided
                          by the client. Callback functions can only be used
                          when addressing an individual client.
@@ -317,10 +161,11 @@ class Server(object):
         self.logger.info('emitting event "%s" to %s [%s]', event,
                          room or 'all', namespace)
         self.manager.emit(event, data, namespace, room=room,
-                          skip_sid=skip_sid, callback=callback, **kwargs)
+                          skip_sid=skip_sid, callback=callback,
+                          ignore_queue=ignore_queue)
 
     def send(self, data, to=None, room=None, skip_sid=None, namespace=None,
-             callback=None, **kwargs):
+             callback=None, ignore_queue=False):
         """Send a message to one or more connected clients.
 
         This function emits an event with the name ``'message'``. Use
@@ -345,7 +190,7 @@ class Server(object):
                           argument is omitted the event is emitted to the
                           default namespace.
         :param callback: If given, this function will be called to acknowledge
-                         the the client has received the message. The arguments
+                         the client has received the message. The arguments
                          that will be passed to the function are those provided
                          by the client. Callback functions can only be used
                          when addressing an individual client.
@@ -358,10 +203,11 @@ class Server(object):
                              value of ``False``.
         """
         self.emit('message', data=data, to=to, room=room, skip_sid=skip_sid,
-                  namespace=namespace, callback=callback, **kwargs)
+                  namespace=namespace, callback=callback,
+                  ignore_queue=ignore_queue)
 
     def call(self, event, data=None, to=None, sid=None, namespace=None,
-             timeout=60, **kwargs):
+             timeout=60, ignore_queue=False):
         """Emit a custom event to a client and wait for the response.
 
         This method issues an emit with a callback and waits for the callback
@@ -412,7 +258,7 @@ class Server(object):
             callback_event.set()
 
         self.emit(event, data=data, room=to or sid, namespace=namespace,
-                  callback=event_callback, **kwargs)
+                  callback=event_callback, ignore_queue=ignore_queue)
         if not callback_event.wait(timeout=timeout):
             raise exceptions.TimeoutError()
         return callback_args[0] if len(callback_args[0]) > 1 \
@@ -461,16 +307,6 @@ class Server(object):
         namespace = namespace or '/'
         self.logger.info('room %s is closing [%s]', room, namespace)
         self.manager.close_room(room, namespace)
-
-    def rooms(self, sid, namespace=None):
-        """Return the rooms a client is in.
-
-        :param sid: Session ID of the client.
-        :param namespace: The Socket.IO namespace for the event. If this
-                          argument is omitted the default namespace is used.
-        """
-        namespace = namespace or '/'
-        return self.manager.get_rooms(sid, namespace)
 
     def get_session(self, sid, namespace=None):
         """Return the user session for a client.
@@ -568,25 +404,14 @@ class Server(object):
             self.manager.disconnect(sid, namespace=namespace,
                                     ignore_queue=True)
 
-    def transport(self, sid):
-        """Return the name of the transport used by the client.
+    def shutdown(self):
+        """Stop Socket.IO background tasks.
 
-        The two possible values returned by this function are ``'polling'``
-        and ``'websocket'``.
-
-        :param sid: The session of the client.
+        This method stops all background activity initiated by the Socket.IO
+        server. It must be called before shutting down the web server.
         """
-        return self.eio.transport(sid)
-
-    def get_environ(self, sid, namespace=None):
-        """Return the WSGI environ dictionary for a client.
-
-        :param sid: The session of the client.
-        :param namespace: The Socket.IO namespace. If this argument is omitted
-                          the default namespace is used.
-        """
-        eio_sid = self.manager.eio_sid_from_sid(sid, namespace or '/')
-        return self.environ.get(eio_sid)
+        self.logger.info('Socket.IO is shutting down')
+        self.eio.shutdown()
 
     def handle_request(self, environ, start_response):
         """Handle an HTTP request from the client.
@@ -631,18 +456,44 @@ class Server(object):
         """
         return self.eio.sleep(seconds)
 
-    def _emit_internal(self, eio_sid, event, data, namespace=None, id=None):
-        """Send a message to a client."""
-        # tuples are expanded to multiple arguments, everything else is sent
-        # as a single argument
-        if isinstance(data, tuple):
-            data = list(data)
-        elif data is not None:
-            data = [data]
-        else:
-            data = []
-        self._send_packet(eio_sid, self.packet_class(
-            packet.EVENT, namespace=namespace, data=[event] + data, id=id))
+    def instrument(self, auth=None, mode='development', read_only=False,
+                   server_id=None, namespace='/admin',
+                   server_stats_interval=2):
+        """Instrument the Socket.IO server for monitoring with the `Socket.IO
+        Admin UI <https://socket.io/docs/v4/admin-ui/>`_.
+
+        :param auth: Authentication credentials for Admin UI access. Set to a
+                     dictionary with the expected login (usually ``username``
+                     and ``password``) or a list of dictionaries if more than
+                     one set of credentials need to be available. For more
+                     complex authentication methods, set to a callable that
+                     receives the authentication dictionary as an argument and
+                     returns ``True`` if the user is allowed or ``False``
+                     otherwise. To disable authentication, set this argument to
+                     ``False`` (not recommended, never do this on a production
+                     server).
+        :param mode: The reporting mode. The default is ``'development'``,
+                     which is best used while debugging, as it may have a
+                     significant performance effect. Set to ``'production'`` to
+                     reduce the amount of information that is reported to the
+                     admin UI.
+        :param read_only: If set to ``True``, the admin interface will be
+                          read-only, with no option to modify room assignments
+                          or disconnect clients. The default is ``False``.
+        :param server_id: The server name to use for this server. If this
+                          argument is omitted, the server generates its own
+                          name.
+        :param namespace: The Socket.IO namespace to use for the admin
+                          interface. The default is ``/admin``.
+        :param server_stats_interval: The interval in seconds at which the
+                                      server emits a summary of it stats to all
+                                      connected admins.
+        """
+        from .admin import InstrumentedServer
+        return InstrumentedServer(
+            self, auth=auth, mode=mode, read_only=read_only,
+            server_id=server_id, namespace=namespace,
+            server_stats_interval=server_stats_interval)
 
     def _send_packet(self, eio_sid, pkt):
         """Send a Socket.IO packet to a client."""
@@ -652,6 +503,10 @@ class Server(object):
                 self.eio.send(eio_sid, ep)
         else:
             self.eio.send(eio_sid, encoded_packet)
+
+    def _send_eio_packet(self, eio_sid, eio_pkt):
+        """Send a raw Engine.IO packet to a client."""
+        self.eio.send_packet(eio_sid, eio_pkt)
 
     def _handle_connect(self, eio_sid, namespace, data):
         """Handle a client connection request."""
@@ -751,19 +606,15 @@ class Server(object):
     def _trigger_event(self, event, namespace, *args):
         """Invoke an application event handler."""
         # first see if we have an explicit handler for the event
-        if namespace in self.handlers:
-            if event in self.handlers[namespace]:
-                return self.handlers[namespace][event](*args)
-            elif event not in self.reserved_events and \
-                    '*' in self.handlers[namespace]:
-                return self.handlers[namespace]['*'](event, *args)
-            else:
-                return self.not_handled
-
+        handler, args = self._get_event_handler(event, namespace, args)
+        if handler:
+            return handler(*args)
         # or else, forward the event to a namespace handler if one exists
-        elif namespace in self.namespace_handlers:  # pragma: no branch
-            return self.namespace_handlers[namespace].trigger_event(
-                event, *args)
+        handler, args = self._get_namespace_handler(namespace, args)
+        if handler:
+            return handler.trigger_event(event, *args)
+        else:
+            return self.not_handled
 
     def _handle_eio_connect(self, eio_sid, environ):
         """Handle the Engine.IO connection event."""

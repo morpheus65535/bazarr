@@ -14,7 +14,7 @@ except ImportError:  # pragma: no cover
 
 
 import dynaconf
-import pkg_resources
+from importlib.metadata import EntryPoint
 
 
 class FlaskDynaconf:
@@ -93,12 +93,12 @@ class FlaskDynaconf:
                 "install it with: pip install flask"
             )
         self.kwargs = {k.upper(): v for k, v in kwargs.items()}
-        kwargs.setdefault("ENVVAR_PREFIX", "FLASK")
-        env_prefix = f"{kwargs['ENVVAR_PREFIX']}_ENV"  # FLASK_ENV
-        kwargs.setdefault("ENV_SWITCHER", env_prefix)
-        kwargs.setdefault("ENVIRONMENTS", True)
-        kwargs.setdefault("load_dotenv", True)
-        kwargs.setdefault(
+        self.kwargs.setdefault("ENVVAR_PREFIX", "FLASK")
+        env_prefix = f"{self.kwargs['ENVVAR_PREFIX']}_ENV"  # FLASK_ENV
+        self.kwargs.setdefault("ENV_SWITCHER", env_prefix)
+        self.kwargs.setdefault("ENVIRONMENTS", True)
+        self.kwargs.setdefault("LOAD_DOTENV", True)
+        self.kwargs.setdefault(
             "default_settings_paths", dynaconf.DEFAULT_SETTINGS_FILES
         )
 
@@ -220,11 +220,11 @@ class DynaconfConfig(Config):
             return
 
         for object_reference in app.config[key]:
-            # add a placeholder `name` to create a valid entry point
-            entry_point_spec = f"__name = {object_reference}"
             # parse the entry point specification
-            entry_point = pkg_resources.EntryPoint.parse(entry_point_spec)
+            entry_point = EntryPoint(
+                name=None, group=None, value=object_reference
+            )
             # dynamically resolve the entry point
-            initializer = entry_point.resolve()
+            initializer = entry_point.load()
             # Invoke extension initializer
             initializer(app)

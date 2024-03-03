@@ -6,11 +6,17 @@ from configparser import ConfigParser
 import inspect
 import os
 import sys
+from typing import Any
+from typing import cast
 from typing import Dict
+from typing import Mapping
 from typing import Optional
 from typing import overload
+from typing import Sequence
 from typing import TextIO
 from typing import Union
+
+from typing_extensions import TypedDict
 
 from . import __version__
 from . import command
@@ -19,7 +25,6 @@ from .util import compat
 
 
 class Config:
-
     r"""Represent an Alembic configuration.
 
     Within an ``env.py`` script, this is available
@@ -30,7 +35,7 @@ class Config:
 
         some_param = context.config.get_main_option("my option")
 
-    When invoking Alembic programatically, a new
+    When invoking Alembic programmatically, a new
     :class:`.Config` can be created by passing
     the name of an .ini file to the constructor::
 
@@ -99,8 +104,8 @@ class Config:
         output_buffer: Optional[TextIO] = None,
         stdout: TextIO = sys.stdout,
         cmd_opts: Optional[Namespace] = None,
-        config_args: util.immutabledict = util.immutabledict(),
-        attributes: Optional[dict] = None,
+        config_args: Mapping[str, Any] = util.immutabledict(),
+        attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Construct a new :class:`.Config`"""
         self.config_file_name = file_
@@ -136,7 +141,7 @@ class Config:
     """
 
     @util.memoized_property
-    def attributes(self):
+    def attributes(self) -> Dict[str, Any]:
         """A Python dictionary for storage of additional state.
 
 
@@ -155,12 +160,14 @@ class Config:
         """
         return {}
 
-    def print_stdout(self, text: str, *arg) -> None:
+    def print_stdout(self, text: str, *arg: Any) -> None:
         """Render a message to standard out.
 
         When :meth:`.Config.print_stdout` is called with additional args
         those arguments will formatted against the provided text,
         otherwise we simply output the provided text verbatim.
+
+        This is a no-op when the``quiet`` messaging option is enabled.
 
         e.g.::
 
@@ -174,10 +181,10 @@ class Config:
         else:
             output = str(text)
 
-        util.write_outstream(self.stdout, output, "\n")
+        util.write_outstream(self.stdout, output, "\n", **self.messaging_opts)
 
     @util.memoized_property
-    def file_config(self):
+    def file_config(self) -> ConfigParser:
         """Return the underlying ``ConfigParser`` object.
 
         Direct access to the .ini file is available here,
@@ -194,7 +201,7 @@ class Config:
         self.config_args["here"] = here
         file_config = ConfigParser(self.config_args)
         if self.config_file_name:
-            file_config.read([self.config_file_name])
+            compat.read_config_parser(file_config, [self.config_file_name])
         else:
             file_config.add_section(self.config_ini_section)
         return file_config
@@ -213,19 +220,33 @@ class Config:
 
     @overload
     def get_section(
+        self, name: str, default: None = ...
+    ) -> Optional[Dict[str, str]]:
+        ...
+
+    # "default" here could also be a TypeVar
+    # _MT = TypeVar("_MT", bound=Mapping[str, str]),
+    # however mypy wasn't handling that correctly (pyright was)
+    @overload
+    def get_section(
         self, name: str, default: Dict[str, str]
     ) -> Dict[str, str]:
         ...
 
     @overload
     def get_section(
-        self, name: str, default: Optional[Dict[str, str]] = ...
-    ) -> Optional[Dict[str, str]]:
+        self, name: str, default: Mapping[str, str]
+    ) -> Union[Dict[str, str], Mapping[str, str]]:
         ...
 
-    def get_section(self, name: str, default=None):
+    def get_section(
+        self, name: str, default: Optional[Mapping[str, str]] = None
+    ) -> Optional[Mapping[str, str]]:
         """Return all the configuration options from a given .ini file section
         as a dictionary.
+
+        If the given section does not exist, the value of ``default``
+        is returned, which is expected to be a dictionary or other mapping.
 
         """
         if not self.file_config.has_section(name):
@@ -301,7 +322,9 @@ class Config:
     ) -> Optional[str]:
         ...
 
-    def get_main_option(self, name, default=None):
+    def get_main_option(
+        self, name: str, default: Optional[str] = None
+    ) -> Optional[str]:
         """Return an option from the 'main' section of the .ini file.
 
         This defaults to being a key from the ``[alembic]``
@@ -311,13 +334,29 @@ class Config:
         """
         return self.get_section_option(self.config_ini_section, name, default)
 
+    @util.memoized_property
+    def messaging_opts(self) -> MessagingOptions:
+        """The messaging options."""
+        return cast(
+            MessagingOptions,
+            util.immutabledict(
+                {"quiet": getattr(self.cmd_opts, "quiet", False)}
+            ),
+        )
+
+
+class MessagingOptions(TypedDict, total=False):
+    quiet: bool
+
 
 class CommandLine:
     def __init__(self, prog: Optional[str] = None) -> None:
         self._generate_args(prog)
 
     def _generate_args(self, prog: Optional[str]) -> None:
-        def add_options(fn, parser, positional, kwargs):
+        def add_options(
+            fn: Any, parser: Any, positional: Any, kwargs: Any
+        ) -> None:
             kwargs_opts = {
                 "template": (
                     "-t",
@@ -512,9 +551,17 @@ class CommandLine:
             action="store_true",
             help="Raise a full stack trace on error",
         )
+        parser.add_argument(
+            "-q",
+            "--quiet",
+            action="store_true",
+            help="Do not log to std output.",
+        )
         subparsers = parser.add_subparsers()
 
-        positional_translations = {command.stamp: {"revision": "revisions"}}
+        positional_translations: Dict[Any, Any] = {
+            command.stamp: {"revision": "revisions"}
+        }
 
         for fn in [getattr(command, n) for n in dir(command)]:
             if (
@@ -522,7 +569,6 @@ class CommandLine:
                 and fn.__name__[0] != "_"
                 and fn.__module__ == "alembic.command"
             ):
-
                 spec = compat.inspect_getfullargspec(fn)
                 if spec[3] is not None:
                     positional = spec[0][1 : -len(spec[3])]
@@ -568,9 +614,9 @@ class CommandLine:
             if options.raiseerr:
                 raise
             else:
-                util.err(str(e))
+                util.err(str(e), **config.messaging_opts)
 
-    def main(self, argv=None):
+    def main(self, argv: Optional[Sequence[str]] = None) -> None:
         options = self.parser.parse_args(argv)
         if not hasattr(options, "cmd"):
             # see http://bugs.python.org/issue9253, argparse
@@ -585,7 +631,11 @@ class CommandLine:
             self.run_cmd(cfg, options)
 
 
-def main(argv=None, prog=None, **kwargs):
+def main(
+    argv: Optional[Sequence[str]] = None,
+    prog: Optional[str] = None,
+    **kwargs: Any,
+) -> None:
     """The console runner function for Alembic."""
 
     CommandLine(prog=prog).main(argv=argv)

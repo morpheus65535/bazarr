@@ -4,7 +4,7 @@
 
     Lexers for BASIC like languages (other than VB.net).
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -625,7 +625,8 @@ class BBCBasicLexer(RegexLexer):
 
             # Some special cases to make functions come out nicer
             (r'(DEF)(\s*)(FN|PROC)([A-Za-z_@][\w@]*)',
-             bygroups(Keyword.Declaration, Whitespace, Keyword.Declaration, Name.Function)),
+             bygroups(Keyword.Declaration, Whitespace,
+                      Keyword.Declaration, Name.Function)),
             (r'(FN|PROC)([A-Za-z_@][\w@]*)',
              bygroups(Keyword, Name.Function)),
 
@@ -633,7 +634,8 @@ class BBCBasicLexer(RegexLexer):
              bygroups(Keyword, Whitespace, Name.Label)),
 
             (r'(TRUE|FALSE)', Keyword.Constant),
-            (r'(PAGE|LOMEM|HIMEM|TIME|WIDTH|ERL|ERR|REPORT\$|POS|VPOS|VOICES)', Keyword.Pseudo),
+            (r'(PAGE|LOMEM|HIMEM|TIME|WIDTH|ERL|ERR|REPORT\$|POS|VPOS|VOICES)',
+             Keyword.Pseudo),
 
             (words(base_keywords), Keyword),
             (words(basic5_keywords), Keyword),

@@ -1,4 +1,5 @@
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# dialects/postgresql/_psycopg_common.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -55,6 +56,10 @@ class _PsycopgNumeric(sqltypes.Numeric):
                 )
 
 
+class _PsycopgFloat(_PsycopgNumeric):
+    __visit_name__ = "float"
+
+
 class _PsycopgHStore(HSTORE):
     def bind_processor(self, dialect):
         if dialect._has_native_hstore:
@@ -104,6 +109,7 @@ class _PGDialect_common_psycopg(PGDialect):
         PGDialect.colspecs,
         {
             sqltypes.Numeric: _PsycopgNumeric,
+            sqltypes.Float: _PsycopgFloat,
             HSTORE: _PsycopgHStore,
             sqltypes.ARRAY: _PsycopgARRAY,
             INT2VECTOR: _PsycopgINT2VECTOR,
@@ -126,9 +132,7 @@ class _PGDialect_common_psycopg(PGDialect):
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username="user", database="dbname")
 
-        is_multihost = False
-        if "host" in url.query:
-            is_multihost = isinstance(url.query["host"], (list, tuple))
+        multihosts, multiports = self._split_multihost_from_url(url)
 
         if opts or url.query:
             if not opts:
@@ -136,21 +140,12 @@ class _PGDialect_common_psycopg(PGDialect):
             if "port" in opts:
                 opts["port"] = int(opts["port"])
             opts.update(url.query)
-            if is_multihost:
-                hosts, ports = zip(
-                    *[
-                        token.split(":") if ":" in token else (token, "")
-                        for token in url.query["host"]
-                    ]
-                )
-                opts["host"] = ",".join(hosts)
-                if "port" in opts:
-                    raise exc.ArgumentError(
-                        "Can't mix 'multihost' formats together; use "
-                        '"host=h1,h2,h3&port=p1,p2,p3" or '
-                        '"host=h1:p1&host=h2:p2&host=h3:p3" separately'
-                    )
-                opts["port"] = ",".join(ports)
+
+            if multihosts:
+                opts["host"] = ",".join(multihosts)
+                comma_ports = ",".join(str(p) if p else "" for p in multiports)
+                if comma_ports:
+                    opts["port"] = comma_ports
             return ([], opts)
         else:
             # no connection arguments whatsoever; psycopg2.connect()

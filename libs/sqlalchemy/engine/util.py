@@ -1,5 +1,5 @@
 # engine/util.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -48,7 +48,7 @@ def connection_memoize(key: str) -> Callable[[_C], _C]:
             connection.info[key] = val = fn(self, connection)
             return val
 
-    return decorated  # type: ignore
+    return decorated
 
 
 class _TConsSubject(Protocol):

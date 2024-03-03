@@ -10,6 +10,8 @@ base backend.
 
 """
 
+from __future__ import annotations
+
 from typing import Mapping
 from typing import Optional
 from typing import Sequence
@@ -20,6 +22,7 @@ from .api import CacheBackend
 from .api import CacheMutex
 from .api import KeyType
 from .api import SerializedReturnType
+from ..util.typing import Self
 
 
 class ProxyBackend(CacheBackend):
@@ -67,7 +70,7 @@ class ProxyBackend(CacheBackend):
     def __init__(self, *arg, **kw):
         pass
 
-    def wrap(self, backend: CacheBackend) -> "ProxyBackend":
+    def wrap(self, backend: CacheBackend) -> Self:
         """Take a backend as an argument and setup the self.proxied property.
         Return an object that be used as a backend by a :class:`.CacheRegion`
         object.

@@ -28,7 +28,7 @@ const Table: FunctionComponent<Props> = ({ health }) => {
         },
       },
     ],
-    []
+    [],
   );
 
   return (

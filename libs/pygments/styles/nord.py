@@ -5,32 +5,24 @@
     pygments version of the "nord" theme by Arctic Ice Studio
     https://www.nordtheme.com/
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 from pygments.style import Style
-from pygments.token import (
-    Keyword,
-    Name,
-    Comment,
-    String,
-    Error,
-    Number,
-    Operator,
-    Generic,
-    Whitespace,
-    Punctuation,
-    Text,
-    Token,
-)
+from pygments.token import Keyword, Name, Comment, String, Error, Number, \
+    Operator, Generic, Whitespace, Punctuation, Text, Token
+
+
+__all__ = ['NordStyle', 'NordDarkerStyle']
 
 
 class NordStyle(Style):
     """
-    Pygments version of the "nord" theme by Arctic Ice Studio
+    Pygments version of the "nord" theme by Arctic Ice Studio.
     """
-
+    name = 'nord'
+    
     line_number_color = "#D8DEE9"
     line_number_background_color = "#242933"
     line_number_special_color = "#242933"
@@ -85,6 +77,7 @@ class NordStyle(Style):
         Generic.Error:              '#bf616a',
         Generic.Emph:               'italic',
         Generic.Strong:             'bold',
+        Generic.EmphStrong:         'bold italic',
         Generic.Prompt:             'bold #616e88',
         Generic.Output:             '#d8dee9',
         Generic.Traceback:          '#bf616a',
@@ -93,11 +86,13 @@ class NordStyle(Style):
         Text:                       '#d8dee9',
     }
 
+
 class NordDarkerStyle(Style):
     """
     Pygments version of a darker "nord" theme by Arctic Ice Studio
     """
-
+    name = 'nord-darker'
+    
     line_number_color = "#D8DEE9"
     line_number_background_color = "#242933"
     line_number_special_color = "#242933"

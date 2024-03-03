@@ -1,5 +1,5 @@
-# postgresql/ext.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# dialects/postgresql/ext.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -53,8 +53,6 @@ class aggregate_order_by(expression.ColumnElement):
     Would represent::
 
         SELECT string_agg(a, ',' ORDER BY a) FROM table;
-
-    .. versionadded:: 1.1
 
     .. versionchanged:: 1.2.13 - the ORDER BY argument may be multiple terms
 
@@ -159,6 +157,10 @@ class ExcludeConstraint(ColumnCollectionConstraint):
                     ops={'group': 'my_operator_class'}
                 )
             )
+
+        The exclude constraint defined in this example requires the
+        ``btree_gist`` extension, that can be created using the
+        command ``CREATE EXTENSION btree_gist;``.
 
         :param \*elements:
 
@@ -288,8 +290,6 @@ def array_agg(*arg, **kw):
     the plain :class:`_types.ARRAY`, unless an explicit ``type_``
     is passed.
 
-    .. versionadded:: 1.1
-
     """
     kw["_default_array_type"] = ARRAY
     return functions.func.array_agg(*arg, **kw)
@@ -301,7 +301,6 @@ class _regconfig_fn(functions.GenericFunction[_T]):
     def __init__(self, *args, **kwargs):
         args = list(args)
         if len(args) > 1:
-
             initial_arg = coercions.expect(
                 roles.ExpressionElementRole,
                 args.pop(0),

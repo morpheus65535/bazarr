@@ -1,5 +1,5 @@
 # ext/hybrid.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -200,7 +200,7 @@ Using ``inplace`` to create pep-484 compliant hybrid properties
 
 In the previous section, a :class:`.hybrid_property` decorator is illustrated
 which includes two separate method-level functions being decorated, both
-to produce a single object attribute referred towards as ``Interval.radius``.
+to produce a single object attribute referenced as ``Interval.radius``.
 There are actually several different modifiers we can use for
 :class:`.hybrid_property` including :meth:`.hybrid_property.expression`,
 :meth:`.hybrid_property.setter` and :meth:`.hybrid_property.update_expression`.
@@ -876,7 +876,6 @@ _T_con = TypeVar("_T_con", bound=Any, contravariant=True)
 
 
 class HybridExtensionType(InspectionAttrExtensionType):
-
     HYBRID_METHOD = "HYBRID_METHOD"
     """Symbol indicating an :class:`InspectionAttr` that's
     of type :class:`.hybrid_method`.
@@ -905,13 +904,11 @@ class HybridExtensionType(InspectionAttrExtensionType):
 
 
 class _HybridGetterType(Protocol[_T_co]):
-    def __call__(s, self: Any) -> _T_co:
-        ...
+    def __call__(s, self: Any) -> _T_co: ...
 
 
 class _HybridSetterType(Protocol[_T_con]):
-    def __call__(s, self: Any, value: _T_con) -> None:
-        ...
+    def __call__(s, self: Any, value: _T_con) -> None: ...
 
 
 class _HybridUpdaterType(Protocol[_T_con]):
@@ -919,25 +916,21 @@ class _HybridUpdaterType(Protocol[_T_con]):
         s,
         cls: Any,
         value: Union[_T_con, _ColumnExpressionArgument[_T_con]],
-    ) -> List[Tuple[_DMLColumnArgument, Any]]:
-        ...
+    ) -> List[Tuple[_DMLColumnArgument, Any]]: ...
 
 
 class _HybridDeleterType(Protocol[_T_co]):
-    def __call__(self, instance: Any) -> None:
-        ...
+    def __call__(s, self: Any) -> None: ...
 
 
-class _HybridExprCallableType(Protocol[_T]):
+class _HybridExprCallableType(Protocol[_T_co]):
     def __call__(
-        self, cls: Any
-    ) -> Union[_HasClauseElement, SQLColumnExpression[_T]]:
-        ...
+        s, cls: Any
+    ) -> Union[_HasClauseElement[_T_co], SQLColumnExpression[_T_co]]: ...
 
 
 class _HybridComparatorCallableType(Protocol[_T]):
-    def __call__(self, cls: Any) -> Comparator[_T]:
-        ...
+    def __call__(self, cls: Any) -> Comparator[_T]: ...
 
 
 class _HybridClassLevelAccessor(QueryableAttribute[_T]):
@@ -948,23 +941,24 @@ class _HybridClassLevelAccessor(QueryableAttribute[_T]):
 
     if TYPE_CHECKING:
 
-        def getter(self, fget: _HybridGetterType[_T]) -> hybrid_property[_T]:
-            ...
+        def getter(
+            self, fget: _HybridGetterType[_T]
+        ) -> hybrid_property[_T]: ...
 
-        def setter(self, fset: _HybridSetterType[_T]) -> hybrid_property[_T]:
-            ...
+        def setter(
+            self, fset: _HybridSetterType[_T]
+        ) -> hybrid_property[_T]: ...
 
-        def deleter(self, fdel: _HybridDeleterType[_T]) -> hybrid_property[_T]:
-            ...
+        def deleter(
+            self, fdel: _HybridDeleterType[_T]
+        ) -> hybrid_property[_T]: ...
 
         @property
-        def overrides(self) -> hybrid_property[_T]:
-            ...
+        def overrides(self) -> hybrid_property[_T]: ...
 
         def update_expression(
             self, meth: _HybridUpdaterType[_T]
-        ) -> hybrid_property[_T]:
-            ...
+        ) -> hybrid_property[_T]: ...
 
 
 class hybrid_method(interfaces.InspectionAttrInfo, Generic[_P, _R]):
@@ -1026,14 +1020,12 @@ class hybrid_method(interfaces.InspectionAttrInfo, Generic[_P, _R]):
     @overload
     def __get__(
         self, instance: Literal[None], owner: Type[object]
-    ) -> Callable[_P, SQLCoreOperations[_R]]:
-        ...
+    ) -> Callable[_P, SQLCoreOperations[_R]]: ...
 
     @overload
     def __get__(
         self, instance: object, owner: Type[object]
-    ) -> Callable[_P, _R]:
-        ...
+    ) -> Callable[_P, _R]: ...
 
     def __get__(
         self, instance: Optional[object], owner: Type[object]
@@ -1107,18 +1099,15 @@ class hybrid_property(interfaces.InspectionAttrInfo, ORMDescriptor[_T]):
         util.update_wrapper(self, fget)
 
     @overload
-    def __get__(self, instance: Any, owner: Literal[None]) -> Self:
-        ...
+    def __get__(self, instance: Any, owner: Literal[None]) -> Self: ...
 
     @overload
     def __get__(
         self, instance: Literal[None], owner: Type[object]
-    ) -> _HybridClassLevelAccessor[_T]:
-        ...
+    ) -> _HybridClassLevelAccessor[_T]: ...
 
     @overload
-    def __get__(self, instance: object, owner: Type[object]) -> _T:
-        ...
+    def __get__(self, instance: object, owner: Type[object]) -> _T: ...
 
     def __get__(
         self, instance: Optional[object], owner: Optional[Type[object]]
@@ -1412,7 +1401,6 @@ class hybrid_property(interfaces.InspectionAttrInfo, ORMDescriptor[_T]):
     def _get_comparator(
         self, comparator: Any
     ) -> Callable[[Any], _HybridClassLevelAccessor[_T]]:
-
         proxy_attr = attributes.create_proxied_attribute(self)
 
         def expr_comparator(
@@ -1449,7 +1437,7 @@ class Comparator(interfaces.PropComparator[_T]):
     classes for usage with hybrids."""
 
     def __init__(
-        self, expression: Union[_HasClauseElement, SQLColumnExpression[_T]]
+        self, expression: Union[_HasClauseElement[_T], SQLColumnExpression[_T]]
     ):
         self.expression = expression
 
@@ -1484,7 +1472,7 @@ class ExprComparator(Comparator[_T]):
     def __init__(
         self,
         cls: Type[Any],
-        expression: Union[_HasClauseElement, SQLColumnExpression[_T]],
+        expression: Union[_HasClauseElement[_T], SQLColumnExpression[_T]],
         hybrid: hybrid_property[_T],
     ):
         self.cls = cls
@@ -1518,7 +1506,7 @@ class ExprComparator(Comparator[_T]):
     def operate(
         self, op: OperatorType, *other: Any, **kwargs: Any
     ) -> ColumnElement[Any]:
-        return op(self.expression, *other, **kwargs)  # type: ignore
+        return op(self.expression, *other, **kwargs)
 
     def reverse_operate(
         self, op: OperatorType, other: Any, **kwargs: Any

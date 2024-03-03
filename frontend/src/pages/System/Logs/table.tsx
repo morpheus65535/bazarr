@@ -70,7 +70,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
         },
       },
     ],
-    []
+    [],
   );
 
   return (
