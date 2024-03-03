@@ -30,9 +30,9 @@ class SubSyncer:
             self.vad = 'subs_then_webrtc'
         self.log_dir_path = os.path.join(args.config_dir, 'log')
 
-    def sync(self, video_path, srt_path, srt_lang, sonarr_series_id=None, sonarr_episode_id=None, radarr_id=None,
-             reference=None, max_offset_seconds=str(settings.subsync.max_offset_seconds),
-             no_fix_framerate=settings.subsync.no_fix_framerate, gss=settings.subsync.gss):
+    def sync(self, video_path, srt_path, srt_lang, 
+             max_offset_seconds, no_fix_framerate, gss, reference=None, 
+             sonarr_series_id=None, sonarr_episode_id=None, radarr_id=None):
         self.reference = video_path
         self.srtin = srt_path
         if self.srtin.casefold().endswith('.ass'):
