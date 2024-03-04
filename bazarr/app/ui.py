@@ -164,7 +164,7 @@ def configured():
 @ui_bp.route('/test/<protocol>/<path:url>', methods=['GET'])
 def proxy(protocol, url):
     if protocol.lower() not in ['http', 'https']:
-        return dict(status=False, error='Unsupported protocol')
+        return dict(status=False, error='Unsupported protocol', code=0)
     url = f'{protocol}://{unquote(url)}'
     params = request.args
     try:
@@ -175,14 +175,14 @@ def proxy(protocol, url):
         if result.status_code == 200:
             try:
                 version = result.json()['version']
-                return dict(status=True, version=version)
+                return dict(status=True, version=version, code=result.status_code)
             except Exception:
-                return dict(status=False, error='Error Occurred. Check your settings.')
+                return dict(status=False, error='Error Occurred. Check your settings.', code=result.status_code)
         elif result.status_code == 401:
-            return dict(status=False, error='Access Denied. Check API key.')
+            return dict(status=False, error='Access Denied. Check API key.', code=result.status_code)
         elif result.status_code == 404:
-            return dict(status=False, error='Cannot get version. Maybe unsupported legacy API call?')
+            return dict(status=False, error='Cannot get version. Maybe unsupported legacy API call?', code=result.status_code)
         elif 300 <= result.status_code <= 399:
-            return dict(status=False, error='Wrong URL Base.')
+            return dict(status=False, error='Wrong URL Base.', code=result.status_code)
         else:
-            return dict(status=False, error=result.raise_for_status())
+            return dict(status=False, error=result.raise_for_status(), code=result.status_code)
