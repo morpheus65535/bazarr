@@ -1,6 +1,6 @@
 import api from "@/apis/raw";
 import { Button } from "@mantine/core";
-import { FunctionComponent, useCallback, useState } from "react";
+import { FunctionComponent, useCallback, useEffect, useState } from "react";
 import { useSettingValue } from "../utilities/hooks";
 
 export const URLTestButton: FunctionComponent<{
@@ -54,6 +54,57 @@ export const URLTestButton: FunctionComponent<{
         });
     }
   }, [address, port, url, apikey, ssl]);
+
+  return (
+    <Button onClick={click} color={color} title={title}>
+      {title}
+    </Button>
+  );
+};
+
+export const ProviderTestButton: FunctionComponent<{
+  category: string;
+}> = ({ category }) => {
+  const testConnection = "Test Connection";
+  const [title, setTitle] = useState(testConnection);
+  const [color, setVar] = useState("primary");
+
+  const testUrl = useSettingValue<string>(`settings-${category}-endpoint`);
+
+  const click = useCallback(() => {
+    if (testUrl !== null) {
+      const urlWithoutProtocol = new URL(testUrl).host;
+      const request = {
+        protocol: "http",
+        url: urlWithoutProtocol,
+      };
+      if (!request.url.endsWith("/")) {
+        request.url += "/";
+      }
+
+      api.utils
+        .providerUrlTest(request.protocol, request.url)
+        .then((result) => {
+          if (result.status) {
+            setTitle(`${result.version}`);
+            setVar("success");
+          } else {
+            setVar("danger");
+            if (result.code === 404) {
+              setTitle(
+                "Connected but no version found (possibly whisper-asr?)"
+              );
+            } else {
+              setTitle(result.error);
+            }
+          }
+        });
+    }
+  }, [testUrl]);
+
+  useEffect(() => {
+    setTitle(testConnection);
+  }, [testUrl]);
 
   return (
     <Button onClick={click} color={color} title={title}>
