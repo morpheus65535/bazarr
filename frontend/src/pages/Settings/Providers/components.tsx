@@ -27,6 +27,7 @@ import {
   Selector as GlobalSelector,
   Message,
   Password,
+  ProviderTestButton,
   Text,
 } from "../components";
 import {
@@ -255,6 +256,11 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
             ></GlobalSelector>,
           );
           return;
+        case "testbutton":
+          elements.push(
+            <ProviderTestButton category={key}></ProviderTestButton>,
+          );
+          return;
         case "chips":
           elements.push(
             <Chips
@@ -278,6 +284,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
         <Stack>
           <Stack spacing="xs">
             <Selector
+              data-autofocus
               searchable
               placeholder="Click to Select a Provider"
               itemComponent={SelectItem}

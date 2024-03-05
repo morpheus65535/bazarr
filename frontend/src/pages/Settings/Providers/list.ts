@@ -15,6 +15,7 @@ type AvailableInput =
   | Input<string, "password">
   | Input<boolean, "switch">
   | Input<string, "select">
+  | Input<string, "testbutton">
   | Input<ReactText[], "chips">;
 
 export interface ProviderInfo {
@@ -501,6 +502,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "loglevel",
         name: "Logging level",
         options: logLevelOptions,
+      },
+      {
+        type: "testbutton",
+        key: "whisperai",
+        name: "Test Connection button",
       },
     ],
   },
