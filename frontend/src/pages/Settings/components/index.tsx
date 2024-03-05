@@ -92,7 +92,7 @@ export const ProviderTestButton: FunctionComponent<{
             setVar("danger");
             if (result.code === 404) {
               setTitle(
-                "Connected but no version found (possibly whisper-asr?)"
+                "Connected but no version found (possibly whisper-asr?)",
               );
             } else {
               setTitle(result.error);
