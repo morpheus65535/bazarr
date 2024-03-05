@@ -10,7 +10,7 @@ charset-normalizer==3.3.2
 deep-translator==1.11.4
 dogpile.cache==1.3.2
 dynaconf==3.2.4
-fese==0.2.7
+fese==0.2.9
 ffsubsync==0.4.25
 flask-cors==4.0.0
 flask-migrate==4.0.5

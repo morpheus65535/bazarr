@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: fese
-Version: 0.2.7
+Version: 0.2.9
 Summary: A library to extract FFmpeg subtitle streams
 Author-email: Vitiko Nogales <averroista@protonmail.com>
 Requires-Python: >=3.7
