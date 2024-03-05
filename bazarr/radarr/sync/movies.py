@@ -197,14 +197,14 @@ def update_movies(send_event=True):
             if send_event:
                 hide_progress(id='movies_progress')
 
-            trace(f"Skipped {files_missing} file missing movies out of {i}")
+            trace(f"Skipped {files_missing} file missing movies out of {movies_count}")
             if sync_monitored:
-                trace(f"Skipped {skipped_count} unmonitored movies out of {i}")
-                trace(f"Processed {i - files_missing - skipped_count} movies out of {i} "
+                trace(f"Skipped {skipped_count} unmonitored movies out of {movies_count}")
+                trace(f"Processed {movies_count - files_missing - skipped_count} movies out of {movies_count} "
                       f"with {len(movies_added)} added, {len(movies_updated)} updated and "
                       f"{len(movies_deleted)} deleted")
             else:
-                trace(f"Processed {i - files_missing} movies out of {i} with {len(movies_added)} added and "
+                trace(f"Processed {movies_count - files_missing} movies out of {movies_count} with {len(movies_added)} added and "
                       f"{len(movies_updated)} updated")
 
             logging.debug('BAZARR All movies synced from Radarr into database.')
