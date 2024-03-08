@@ -109,7 +109,7 @@ pysrt==1.1.2
 stevedore==5.2.0
 
 # Required-by: subliminal_patch
-cloudscraper==1.2.71
+cloudscraper==1.2.58  # newer version dropped captcha v1 support
 decorator==5.1.1
 dnspython==2.6.1
 enzyme==0.4.1

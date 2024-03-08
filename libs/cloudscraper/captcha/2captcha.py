@@ -29,11 +29,6 @@ class captchaSolver(Captcha):
         super(captchaSolver, self).__init__('2captcha')
         self.host = 'https://2captcha.com'
         self.session = requests.Session()
-        self.captchaType = {
-            'reCaptcha': 'userrecaptcha',
-            'hCaptcha': 'hcaptcha',
-            'turnstile': 'turnstile'
-        }
 
     # ------------------------------------------------------------------------------- #
 
@@ -180,16 +175,23 @@ class captchaSolver(Captcha):
             'soft_id': 2905
         }
 
-        data.update({
-            'method': self.captchaType[captchaType],
-            'googlekey' if captchaType == 'reCaptcha' else 'sitekey': siteKey
-        })
+        data.update(
+            {
+                'method': 'userrcaptcha',
+                'googlekey': siteKey
+            } if captchaType == 'reCaptcha' else {
+                'method': 'hcaptcha',
+                'sitekey': siteKey
+            }
+        )
 
         if self.proxy:
-            data.update({
-                'proxy': self.proxy,
-                'proxytype': self.proxyType
-            })
+            data.update(
+                {
+                    'proxy': self.proxy,
+                    'proxytype': self.proxyType
+                }
+            )
 
         response = polling2.poll(
             lambda: self.session.post(
