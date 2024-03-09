@@ -221,10 +221,10 @@ const Table: FunctionComponent<Props> = ({
   useEffect(() => {
     if (instance.current) {
       if (initial) {
+        // start with all rows collapsed
+        instance.current.toggleAllRowsExpanded(false);
         // expand the last/current season on initial display
         instance.current.toggleRowExpanded([`season:${maxSeason}`], true);
-        // make sure season 0 is collapsed
-        instance.current.toggleRowExpanded([`season:0`], false);
       } else {
         if (expand !== undefined) {
           instance.current.toggleAllRowsExpanded(expand);
