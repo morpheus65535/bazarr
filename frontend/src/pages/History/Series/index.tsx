@@ -74,6 +74,7 @@ const SeriesHistoryView: FunctionComponent = () => {
         accessor: "score",
       },
       {
+        Header: "Match",
         accessor: "matches",
         Cell: (row) => {
           const { matches, dont_matches: dont } = row.row.original;
@@ -106,6 +107,7 @@ const SeriesHistoryView: FunctionComponent = () => {
         },
       },
       {
+        Header: "Info",
         accessor: "description",
         Cell: ({ row, value }) => {
           return (
@@ -116,11 +118,12 @@ const SeriesHistoryView: FunctionComponent = () => {
         },
       },
       {
+        Header: "Upgrade",
         accessor: "upgradable",
         Cell: (row) => {
           if (row.value) {
             return (
-              <TextPopover text="This Subtitles File Is Eligible For An Upgrade.">
+              <TextPopover text="This Subtitle File Is Eligible For An Upgrade.">
                 <FontAwesomeIcon size="sm" icon={faRecycle}></FontAwesomeIcon>
               </TextPopover>
             );
@@ -130,6 +133,7 @@ const SeriesHistoryView: FunctionComponent = () => {
         },
       },
       {
+        Header: "Blacklist",
         accessor: "blacklisted",
         Cell: ({ row, value }) => {
           const {
