@@ -10,7 +10,15 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faCode, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Container, Divider, Grid, Stack, Text } from "@mantine/core";
+import {
+  Anchor,
+  Container,
+  Divider,
+  Grid,
+  Space,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import moment from "moment";
 import {
@@ -31,11 +39,13 @@ function Row(props: InfoProps): JSX.Element {
   const { title, children } = props;
   return (
     <Grid>
-      <Grid.Col span={5}>
-        <Text weight="bold">{title}</Text>
+      <Grid.Col span={6}>
+        <Text size="sm" align="right" weight="bold">
+          {title}
+        </Text>
       </Grid.Col>
-      <Grid.Col span={12 - 5}>
-        <Text>{children}</Text>
+      <Grid.Col span={6}>
+        <Text size="sm"> {children}</Text>
       </Grid.Col>
     </Grid>
   );
@@ -68,9 +78,13 @@ const InfoContainer: FunctionComponent<
 > = ({ title, children }) => {
   return (
     <Stack>
-      <h4>{title}</h4>
-      <Divider></Divider>
+      <Divider
+        labelProps={{ size: "medium", weight: "bold" }}
+        labelPosition="center"
+        label={title}
+      ></Divider>
       {children}
+      <Space />
     </Stack>
   );
 };
