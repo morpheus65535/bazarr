@@ -227,7 +227,7 @@ class WhisperAIProvider(Provider):
         if not ffmpeg_path:
             raise ConfigurationError("ffmpeg path must be provided")
 
-        self.endpoint = endpoint
+        self.endpoint = endpoint.rstrip("/")
         self.response = int(response)
         self.timeout = int(timeout)
         self.session = None
