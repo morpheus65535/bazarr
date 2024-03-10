@@ -1,12 +1,12 @@
 Metadata-Version: 2.1
 Name: apprise
-Version: 1.7.3
+Version: 1.7.4
 Summary: Push Notifications that work with just about every platform!
 Home-page: https://github.com/caronc/apprise
 Author: Chris Caron
 Author-email: lead2gold@gmail.com
 License: BSD
-Keywords: Alerts Apprise API Automated Packet Reporting System AWS Boxcar BulkSMS BulkVS Burst SMS Chat CLI ClickSend D7Networks Dapnet DBus DingTalk Discord Email Emby Enigma2 Faast FCM Flock Form Gnome Google Chat Gotify Growl Guilded Home Assistant httpSMS IFTTT Join JSON Kavenegar KODI Kumulos LaMetric Line MacOSX Mailgun Mastodon Matrix Mattermost MessageBird Microsoft Misskey MQTT MSG91 MSTeams Nextcloud NextcloudTalk Notica Notifiarr Notifico Ntfy Office365 OneSignal Opsgenie PagerDuty PagerTree ParsePlatform PopcornNotify Prowl PushBullet Pushed Pushjet PushMe Push Notifications Pushover PushSafer Pushy PushDeer Reddit Revolt Rocket.Chat RSyslog Ryver SendGrid ServerChan SES Signal SimplePush Sinch Slack SMSEagle SMS Manager SMTP2Go SNS SparkPost Streamlabs Stride Synology Chat Syslog Techulus Telegram Threema Gateway Twilio Twist Twitter Voipms Vonage Webex WeCom Bot WhatsApp Windows XBMC XML Zulip
+Keywords: Alerts Apprise API Automated Packet Reporting System AWS Boxcar BulkSMS BulkVS Burst SMS Chat CLI ClickSend D7Networks Dapnet DBus DingTalk Discord Email Emby Enigma2 Faast FCM Flock Form Gnome Google Chat Gotify Growl Guilded Home Assistant httpSMS IFTTT Join JSON Kavenegar KODI Kumulos LaMetric Line LunaSea MacOSX Mailgun Mastodon Matrix Mattermost MessageBird Microsoft Misskey MQTT MSG91 MSTeams Nextcloud NextcloudTalk Notica Notifiarr Notifico Ntfy Office365 OneSignal Opsgenie PagerDuty PagerTree ParsePlatform PopcornNotify Prowl PushBullet Pushed Pushjet PushMe Push Notifications Pushover PushSafer Pushy PushDeer Reddit Revolt Rocket.Chat RSyslog Ryver SendGrid ServerChan SES Signal SimplePush Sinch Slack SMSEagle SMS Manager SMTP2Go SNS SparkPost Streamlabs Stride Synology Chat Syslog Techulus Telegram Threema Gateway Twilio Twist Twitter Voipms Vonage Webex WeCom Bot WhatsApp Windows XBMC XML Zulip
 Classifier: Development Status :: 5 - Production/Stable
 Classifier: Intended Audience :: Developers
 Classifier: Intended Audience :: System Administrators
@@ -115,6 +115,7 @@ The table below identifies the services this tool supports and some example serv
 | [Kumulos](https://github.com/caronc/apprise/wiki/Notify_kumulos) | kumulos:// | (TCP) 443 | kumulos://apikey/serverkey
 | [LaMetric Time](https://github.com/caronc/apprise/wiki/Notify_lametric) | lametric:// | (TCP) 443 | lametric://apikey@device_ipaddr<br/>lametric://apikey@hostname:port<br/>lametric://client_id@client_secret
 | [Line](https://github.com/caronc/apprise/wiki/Notify_line) | line:// | (TCP) 443 | line://Token@User<br/>line://Token/User1/User2/UserN
+| [LunaSea](https://github.com/caronc/apprise/wiki/Notify_lunasea) | lunasea://  | (TCP) 80 or 443   | lunasea://user:pass@+FireBaseDevice/<br/>lunasea://user:pass@FireBaseUser/<br/>lunasea://user:pass@hostname/+FireBaseDevice/<br/>lunasea://user:pass@hostname/@FireBaseUser/
 | [Mailgun](https://github.com/caronc/apprise/wiki/Notify_mailgun) | mailgun:// | (TCP) 443 | mailgun://user@hostname/apikey<br />mailgun://user@hostname/apikey/email<br />mailgun://user@hostname/apikey/email1/email2/emailN<br />mailgun://user@hostname/apikey/?name="From%20User"
 | [Mastodon](https://github.com/caronc/apprise/wiki/Notify_mastodon) | mastodon:// or mastodons://| (TCP) 80 or 443  | mastodon://access_key@hostname<br />mastodon://access_key@hostname/@user<br />mastodon://access_key@hostname/@user1/@user2/@userN
 | [Matrix](https://github.com/caronc/apprise/wiki/Notify_matrix) | matrix:// or matrixs://  | (TCP) 80 or 443 | matrix://hostname<br />matrix://user@hostname<br />matrixs://user:pass@hostname:port/#room_alias<br />matrixs://user:pass@hostname:port/!room_id<br />matrixs://user:pass@hostname:port/#room_alias/!room_id/#room2<br />matrixs://token@hostname:port/?webhook=matrix<br />matrix://user:token@hostname/?webhook=slack&format=markdown
@@ -270,42 +271,34 @@ No one wants to put their credentials out for everyone to see on the command lin
 # By default if no url or configuration is specified apprise will attempt to load
 # configuration files (if present) from:
 #  ~/.apprise
-#  ~/.apprise.yml
 #  ~/.apprise.yaml
-#  ~/.config/apprise
-#  ~/.config/apprise.yml
+#  ~/.config/apprise.conf
 #  ~/.config/apprise.yaml
-#  /etc/apprise
-#  /etc/apprise.yml
+#  /etc/apprise.conf
 #  /etc/apprise.yaml
 
 # Also a subdirectory handling allows you to leverage plugins
 #  ~/.apprise/apprise
-#  ~/.apprise/apprise.yml
 #  ~/.apprise/apprise.yaml
-#  ~/.config/apprise/apprise
-#  ~/.config/apprise/apprise.yml
+#  ~/.config/apprise/apprise.conf
 #  ~/.config/apprise/apprise.yaml
-#  /etc/apprise/apprise
-#  /etc/apprise/apprise.yml
 #  /etc/apprise/apprise.yaml
+#  /etc/apprise/apprise.conf
 
 # Windows users can store their default configuration files here:
-#  %APPDATA%/Apprise/apprise
-#  %APPDATA%/Apprise/apprise.yml
+#  %APPDATA%/Apprise/apprise.conf
 #  %APPDATA%/Apprise/apprise.yaml
-#  %LOCALAPPDATA%/Apprise/apprise
-#  %LOCALAPPDATA%/Apprise/apprise.yml
+#  %LOCALAPPDATA%/Apprise/apprise.conf
 #  %LOCALAPPDATA%/Apprise/apprise.yaml
-#  %ALLUSERSPROFILE%\Apprise\apprise
-#  %ALLUSERSPROFILE%\Apprise\apprise.yml
+#  %ALLUSERSPROFILE%\Apprise\apprise.conf
 #  %ALLUSERSPROFILE%\Apprise\apprise.yaml
-#  %PROGRAMFILES%\Apprise\apprise
-#  %PROGRAMFILES%\Apprise\apprise.yml
+#  %PROGRAMFILES%\Apprise\apprise.conf
 #  %PROGRAMFILES%\Apprise\apprise.yaml
-#  %COMMONPROGRAMFILES%\Apprise\apprise
-#  %COMMONPROGRAMFILES%\Apprise\apprise.yml
+#  %COMMONPROGRAMFILES%\Apprise\apprise.conf
 #  %COMMONPROGRAMFILES%\Apprise\apprise.yaml
+
+# The configuration files specified above can also be identified with a `.yml`
+# extension or even just entirely removing the `.conf` extension altogether.
 
 # If you loaded one of those files, your command line gets really easy:
 apprise -vv -t 'my title' -b 'my notification body'
