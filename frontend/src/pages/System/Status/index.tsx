@@ -38,13 +38,13 @@ interface InfoProps {
 function Row(props: InfoProps): JSX.Element {
   const { title, children } = props;
   return (
-    <Grid>
-      <Grid.Col span={6}>
+    <Grid columns={10}>
+      <Grid.Col span={2}>
         <Text size="sm" align="right" weight="bold">
           {title}
         </Text>
       </Grid.Col>
-      <Grid.Col span={6}>
+      <Grid.Col span={3}>
         <Text size="sm"> {children}</Text>
       </Grid.Col>
     </Grid>
@@ -80,7 +80,7 @@ const InfoContainer: FunctionComponent<
     <Stack>
       <Divider
         labelProps={{ size: "medium", weight: "bold" }}
-        labelPosition="center"
+        labelPosition="left"
         label={title}
       ></Divider>
       {children}
