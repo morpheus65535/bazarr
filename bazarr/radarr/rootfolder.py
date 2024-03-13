@@ -75,8 +75,8 @@ def check_radarr_rootfolder():
         if not os.path.isdir(path_mappings.path_replace_movie(root_path)):
             database.execute(
                 update(TableMoviesRootfolder)
-                .values(accessible=0, error='This Radarr root directory does not seems to be accessible by  Please '
-                                            'check path mapping.')
+                .values(accessible=0, error='This Radarr root directory does not seem to be accessible by Bazarr. '
+                                            'Please check path mapping or if directory/drive is online.')
                 .where(TableMoviesRootfolder.id == item.id))
         elif not os.access(path_mappings.path_replace_movie(root_path), os.W_OK):
             database.execute(

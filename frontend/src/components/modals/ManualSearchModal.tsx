@@ -64,6 +64,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         },
       },
       {
+        Header: "Language",
         accessor: "language",
         Cell: ({ row: { original }, value }) => {
           const lang: Language.Info = {
@@ -137,7 +138,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         },
       },
       {
-        Header: "Upload",
+        Header: "Uploader",
         accessor: "uploader",
         Cell: ({ value }) => {
           const { classes } = useTableStyles();
@@ -145,6 +146,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         },
       },
       {
+        Header: "Match",
         accessor: "matches",
         Cell: (row) => {
           const { matches, dont_matches: dont } = row.row.original;
@@ -158,6 +160,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         },
       },
       {
+        Header: "Get",
         accessor: "subtitle",
         Cell: ({ row }) => {
           const result = row.original;

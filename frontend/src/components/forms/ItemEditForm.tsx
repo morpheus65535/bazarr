@@ -77,7 +77,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
           {...profileOptions}
           {...form.getInputProps("profile")}
           clearable
-          label="Languages Profiles"
+          label="Languages Profile"
         ></Selector>
         <Divider></Divider>
         <Group position="right">
