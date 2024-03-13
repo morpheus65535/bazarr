@@ -35,6 +35,7 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
         accessor: "next_run_in",
       },
       {
+        Header: "Run",
         accessor: "job_running",
         Cell: ({ row, value }) => {
           const { job_id: jobId } = row.original;
@@ -42,7 +43,7 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
 
           return (
             <MutateAction
-              label="Run"
+              label="Run Job"
               icon={faPlay}
               iconProps={{ spin: value }}
               mutation={runTask}
