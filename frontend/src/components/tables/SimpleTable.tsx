@@ -9,7 +9,7 @@ export type SimpleTableProps<T extends object> = TableOptions<T> & {
 };
 
 export default function SimpleTable<T extends object>(
-  props: SimpleTableProps<T>
+  props: SimpleTableProps<T>,
 ) {
   const { plugins, instanceRef, tableStyles, ...options } = props;
 

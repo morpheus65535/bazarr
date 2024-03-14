@@ -1,5 +1,5 @@
-# sqlite/aiosqlite.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# dialects/sqlite/aiosqlite.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -44,6 +44,36 @@ User-Defined Functions
 aiosqlite extends pysqlite to support async, so we can create our own user-defined functions (UDFs)
 in Python and use them directly in SQLite queries as described here: :ref:`pysqlite_udfs`.
 
+.. _aiosqlite_serializable:
+
+Serializable isolation / Savepoints / Transactional DDL (asyncio version)
+-------------------------------------------------------------------------
+
+Similarly to pysqlite, aiosqlite does not support SAVEPOINT feature.
+
+The solution is similar to :ref:`pysqlite_serializable`. This is achieved by the event listeners in async::
+
+    from sqlalchemy import create_engine, event
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    engine = create_async_engine("sqlite+aiosqlite:///myfile.db")
+
+    @event.listens_for(engine.sync_engine, "connect")
+    def do_connect(dbapi_connection, connection_record):
+        # disable aiosqlite's emitting of the BEGIN statement entirely.
+        # also stops it from emitting COMMIT before any DDL.
+        dbapi_connection.isolation_level = None
+
+    @event.listens_for(engine.sync_engine, "begin")
+    def do_begin(conn):
+        # emit our own BEGIN
+        conn.exec_driver_sql("BEGIN")
+
+.. warning:: When using the above recipe, it is advised to not use the
+   :paramref:`.Connection.execution_options.isolation_level` setting on
+   :class:`_engine.Connection` and :func:`_sa.create_engine`
+   with the SQLite driver,
+   as this function necessarily will also alter the ".isolation_level" setting.
 
 """  # noqa
 
@@ -60,6 +90,9 @@ from ...util.concurrency import await_only
 
 
 class AsyncAdapt_aiosqlite_cursor:
+    # TODO: base on connectors/asyncio.py
+    # see #10415
+
     __slots__ = (
         "_adapt_connection",
         "_connection",
@@ -151,6 +184,8 @@ class AsyncAdapt_aiosqlite_cursor:
 
 
 class AsyncAdapt_aiosqlite_ss_cursor(AsyncAdapt_aiosqlite_cursor):
+    # TODO: base on connectors/asyncio.py
+    # see #10415
     __slots__ = "_cursor"
 
     server_side = True
@@ -190,7 +225,6 @@ class AsyncAdapt_aiosqlite_connection(AdaptedConnection):
 
     @isolation_level.setter
     def isolation_level(self, value):
-
         # aiosqlite's isolation_level setter works outside the Thread
         # that it's supposed to, necessitating setting check_same_thread=False.
         # for improved stability, we instead invent our own awaitable version
@@ -239,6 +273,16 @@ class AsyncAdapt_aiosqlite_connection(AdaptedConnection):
     def close(self):
         try:
             self.await_(self._connection.close())
+        except ValueError:
+            # this is undocumented for aiosqlite, that ValueError
+            # was raised if .close() was called more than once, which is
+            # both not customary for DBAPI and is also not a DBAPI.Error
+            # exception. This is now fixed in aiosqlite via my PR
+            # https://github.com/omnilib/aiosqlite/pull/238, so we can be
+            # assured this will not become some other kind of exception,
+            # since it doesn't raise anymore.
+
+            pass
         except Exception as error:
             self._handle_exception(error)
 
@@ -289,10 +333,13 @@ class AsyncAdapt_aiosqlite_dbapi:
     def connect(self, *arg, **kw):
         async_fallback = kw.pop("async_fallback", False)
 
-        connection = self.aiosqlite.connect(*arg, **kw)
-
-        # it's a Thread.   you'll thank us later
-        connection.daemon = True
+        creator_fn = kw.pop("async_creator_fn", None)
+        if creator_fn:
+            connection = creator_fn(*arg, **kw)
+        else:
+            connection = self.aiosqlite.connect(*arg, **kw)
+            # it's a Thread.   you'll thank us later
+            connection.daemon = True
 
         if util.asbool(async_fallback):
             return AsyncAdaptFallback_aiosqlite_connection(

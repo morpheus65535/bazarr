@@ -1,3 +1,3 @@
 type RangeQuery<T> = (
-  param: Parameter.Range
+  param: Parameter.Range,
 ) => Promise<DataWrapperWithTotal<T>>;

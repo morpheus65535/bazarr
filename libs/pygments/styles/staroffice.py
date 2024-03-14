@@ -4,7 +4,7 @@
 
     Style similar to StarOffice style, also in OpenOffice and LibreOffice.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -12,11 +12,16 @@ from pygments.style import Style
 from pygments.token import Comment, Error, Literal, Name, Token
 
 
+__all__ = ['StarofficeStyle']
+
+
 class StarofficeStyle(Style):
     """
     Style similar to StarOffice style, also in OpenOffice and LibreOffice.
     """
+    name = 'staroffice'
 
+    
     styles = {
         Token:                  '#000080',   # Blue
         Comment:                '#696969',   # DimGray

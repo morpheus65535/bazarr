@@ -59,7 +59,7 @@ class TaskDispatcher {
               group,
               task.description,
               index,
-              tasks.length
+              tasks.length,
             );
             updateNotification(notifyInProgress);
 
@@ -120,8 +120,8 @@ class TaskDispatcher {
             item.header,
             item.name,
             item.value,
-            item.count
-          )
+            item.count,
+          ),
         );
       } else if (item.value > 1 && this.progress[item.id] === undefined) {
         showNotification(notification.progress.pending(item.id, item.header));
@@ -134,7 +134,7 @@ class TaskDispatcher {
   public removeProgress(ids: string[]) {
     setTimeout(
       () => ids.forEach(hideNotification),
-      notification.PROGRESS_TIMEOUT
+      notification.PROGRESS_TIMEOUT,
     );
   }
 }

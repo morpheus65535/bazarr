@@ -1,3 +1,6 @@
+# mypy: allow-untyped-defs, allow-incomplete-defs, allow-untyped-calls
+# mypy: no-warn-return-any, allow-any-generics
+
 from __future__ import annotations
 
 import re
@@ -8,7 +11,6 @@ from typing import Union
 
 from sqlalchemy import schema
 from sqlalchemy import types as sqltypes
-from sqlalchemy.ext.compiler import compiles
 
 from .base import alter_table
 from .base import AlterColumn
@@ -20,10 +22,10 @@ from .base import format_column_name
 from .base import format_server_default
 from .impl import DefaultImpl
 from .. import util
-from ..autogenerate import compare
 from ..util import sqla_compat
 from ..util.sqla_compat import _is_mariadb
 from ..util.sqla_compat import _is_type_bound
+from ..util.sqla_compat import compiles
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -161,8 +163,7 @@ class MySQLImpl(DefaultImpl):
     ) -> bool:
         return (
             type_ is not None
-            and type_._type_affinity  # type:ignore[attr-defined]
-            is sqltypes.DateTime
+            and type_._type_affinity is sqltypes.DateTime
             and server_default is not None
         )
 
@@ -185,13 +186,22 @@ class MySQLImpl(DefaultImpl):
             and rendered_inspector_default == "'0'"
         ):
             return False
-        elif inspector_column.type._type_affinity is sqltypes.Integer:
+        elif (
+            rendered_inspector_default
+            and inspector_column.type._type_affinity is sqltypes.Integer
+        ):
             rendered_inspector_default = (
                 re.sub(r"^'|'$", "", rendered_inspector_default)
                 if rendered_inspector_default is not None
                 else None
             )
             return rendered_inspector_default != rendered_metadata_default
+        elif (
+            rendered_metadata_default
+            and metadata_column.type._type_affinity is sqltypes.String
+        ):
+            metadata_default = re.sub(r"^'|'$", "", rendered_metadata_default)
+            return rendered_inspector_default != f"'{metadata_default}'"
         elif rendered_inspector_default and rendered_metadata_default:
             # adjust for "function()" vs. "FUNCTION" as can occur particularly
             # for the CURRENT_TIMESTAMP function on newer MariaDB versions
@@ -231,7 +241,6 @@ class MySQLImpl(DefaultImpl):
         metadata_unique_constraints,
         metadata_indexes,
     ):
-
         # TODO: if SQLA 1.0, make use of "duplicates_index"
         # metadata
         removed = set()
@@ -264,10 +273,12 @@ class MySQLImpl(DefaultImpl):
 
     def correct_for_autogen_foreignkeys(self, conn_fks, metadata_fks):
         conn_fk_by_sig = {
-            compare._fk_constraint_sig(fk).sig: fk for fk in conn_fks
+            self._create_reflected_constraint_sig(fk).unnamed_no_options: fk
+            for fk in conn_fks
         }
         metadata_fk_by_sig = {
-            compare._fk_constraint_sig(fk).sig: fk for fk in metadata_fks
+            self._create_metadata_constraint_sig(fk).unnamed_no_options: fk
+            for fk in metadata_fks
         }
 
         for sig in set(conn_fk_by_sig).intersection(metadata_fk_by_sig):

@@ -2,7 +2,7 @@ type CustomEventDetail<T> = T extends CustomEvent<infer D> ? D : never;
 
 function createEvent<
   K extends keyof WindowEventMap,
-  P extends CustomEventDetail<WindowEventMap[K]>
+  P extends CustomEventDetail<WindowEventMap[K]>,
 >(event: K, payload: P) {
   return new CustomEvent<P>(event, { bubbles: true, detail: payload });
 }

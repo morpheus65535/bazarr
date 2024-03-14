@@ -4,7 +4,7 @@
 
     Lexers for Xorg configs.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -15,7 +15,7 @@ __all__ = ['XorgLexer']
 
 
 class XorgLexer(RegexLexer):
-    """Lexer for xorg.conf file."""
+    """Lexer for xorg.conf files."""
     name = 'Xorg'
     url = 'https://www.x.org/wiki/'
     aliases = ['xorg.conf']

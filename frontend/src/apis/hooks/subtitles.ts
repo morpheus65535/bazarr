@@ -23,7 +23,7 @@ export function useSubtitleAction() {
           client.invalidateQueries([QueryKeys.Movies, id]);
         }
       },
-    }
+    },
   );
 }
 
@@ -42,13 +42,13 @@ export function useEpisodeSubtitleModification() {
       api.episodes.downloadSubtitles(
         param.seriesId,
         param.episodeId,
-        param.form
+        param.form,
       ),
     {
       onSuccess: (_, param) => {
         client.invalidateQueries([QueryKeys.Series, param.seriesId]);
       },
-    }
+    },
   );
 
   const remove = useMutation(
@@ -59,7 +59,7 @@ export function useEpisodeSubtitleModification() {
       onSuccess: (_, param) => {
         client.invalidateQueries([QueryKeys.Series, param.seriesId]);
       },
-    }
+    },
   );
 
   const upload = useMutation(
@@ -70,7 +70,7 @@ export function useEpisodeSubtitleModification() {
       onSuccess: (_, { seriesId }) => {
         client.invalidateQueries([QueryKeys.Series, seriesId]);
       },
-    }
+    },
   );
 
   return { download, remove, upload };
@@ -92,7 +92,7 @@ export function useMovieSubtitleModification() {
       onSuccess: (_, param) => {
         client.invalidateQueries([QueryKeys.Movies, param.radarrId]);
       },
-    }
+    },
   );
 
   const remove = useMutation(
@@ -103,7 +103,7 @@ export function useMovieSubtitleModification() {
       onSuccess: (_, param) => {
         client.invalidateQueries([QueryKeys.Movies, param.radarrId]);
       },
-    }
+    },
   );
 
   const upload = useMutation(
@@ -114,7 +114,7 @@ export function useMovieSubtitleModification() {
       onSuccess: (_, { radarrId }) => {
         client.invalidateQueries([QueryKeys.Movies, radarrId]);
       },
-    }
+    },
   );
 
   return { download, remove, upload };
@@ -122,30 +122,30 @@ export function useMovieSubtitleModification() {
 
 export function useSubtitleInfos(names: string[]) {
   return useQuery([QueryKeys.Subtitles, QueryKeys.Infos, names], () =>
-    api.subtitles.info(names)
+    api.subtitles.info(names),
   );
 }
 
 export function useRefTracksByEpisodeId(
   subtitlesPath: string,
   sonarrEpisodeId: number,
-  isEpisode: boolean
+  isEpisode: boolean,
 ) {
   return useQuery(
     [QueryKeys.Episodes, sonarrEpisodeId, QueryKeys.Subtitles, subtitlesPath],
     () => api.subtitles.getRefTracksByEpisodeId(subtitlesPath, sonarrEpisodeId),
-    { enabled: isEpisode }
+    { enabled: isEpisode },
   );
 }
 
 export function useRefTracksByMovieId(
   subtitlesPath: string,
   radarrMovieId: number,
-  isMovie: boolean
+  isMovie: boolean,
 ) {
   return useQuery(
     [QueryKeys.Movies, radarrMovieId, QueryKeys.Subtitles, subtitlesPath],
     () => api.subtitles.getRefTracksByMovieId(subtitlesPath, radarrMovieId),
-    { enabled: isMovie }
+    { enabled: isMovie },
   );
 }

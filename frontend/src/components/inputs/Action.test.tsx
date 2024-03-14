@@ -28,7 +28,7 @@ describe("Action button", () => {
   it("should call on-click event when clicked", async () => {
     const onClickFn = vitest.fn();
     rawRender(
-      <Action icon={testIcon} label={testLabel} onClick={onClickFn}></Action>
+      <Action icon={testIcon} label={testLabel} onClick={onClickFn}></Action>,
     );
 
     await userEvent.click(screen.getByRole("button", { name: testLabel }));

@@ -13,7 +13,7 @@
     Contributed by Thomas Beale <https://github.com/wolandscat>,
     <https://bitbucket.org/thomas_beale>.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -40,7 +40,8 @@ class AtomsLexer(RegexLexer):
         ],
         'archetype_id': [
             (r'([ \t]*)(([a-zA-Z]\w+(\.[a-zA-Z]\w+)*::)?[a-zA-Z]\w+(-[a-zA-Z]\w+){2}'
-             r'\.\w+[\w-]*\.v\d+(\.\d+){,2}((-[a-z]+)(\.\d+)?)?)', bygroups(Whitespace, Name.Decorator)),
+             r'\.\w+[\w-]*\.v\d+(\.\d+){,2}((-[a-z]+)(\.\d+)?)?)',
+             bygroups(Whitespace, Name.Decorator)),
         ],
         'date_constraints': [
             # ISO 8601-based date/time constraints
@@ -271,7 +272,8 @@ class AdlLexer(AtomsLexer):
             # repeating the following two rules from the root state enable multi-line
             # strings that start in the first column to be dealt with
             (r'^(language|description|ontology|terminology|annotations|'
-             r'component_terminologies|revision_history)([ \t]*\n)', bygroups(Generic.Heading, Whitespace)),
+             r'component_terminologies|revision_history)([ \t]*\n)',
+             bygroups(Generic.Heading, Whitespace)),
             (r'^(definition)([ \t]*\n)', bygroups(Generic.Heading, Whitespace), 'cadl_section'),
             (r'^([ \t]*|[ \t]+.*)\n', using(OdinLexer)),
             (r'^([^"]*")(>[ \t]*\n)', bygroups(String, Punctuation)),

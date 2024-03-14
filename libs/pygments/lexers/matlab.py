@@ -4,7 +4,7 @@
 
     Lexers for Matlab and related languages.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -3294,3 +3294,15 @@ class ScilabLexer(RegexLexer):
             (r'(\s*)([a-zA-Z_]\w*)', bygroups(Text, Name.Function), '#pop'),
         ],
     }
+
+    # the following is needed to distinguish Scilab and GAP .tst files
+    def analyse_text(text):
+        score = 0.0
+
+        # Scilab comments (don't appear in e.g. GAP code)
+        if re.search(r"^\s*//", text):
+            score += 0.1
+        if re.search(r"^\s*/\*", text):
+            score += 0.1
+
+        return min(score, 1.0)

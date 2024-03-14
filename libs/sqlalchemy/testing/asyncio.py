@@ -1,5 +1,5 @@
 # testing/asyncio.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -84,7 +84,6 @@ def _maybe_async(fn, *args, **kwargs):
 
     """
     if not ENABLE_ASYNCIO:
-
         return fn(*args, **kwargs)
 
     is_async = config._current.is_async

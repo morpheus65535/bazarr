@@ -15,11 +15,10 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-import dns.rdtypes.nsbase
 import dns.immutable
+import dns.rdtypes.nsbase
 
 
 @dns.immutable.immutable
 class PTR(dns.rdtypes.nsbase.NSBase):
-
     """PTR record"""

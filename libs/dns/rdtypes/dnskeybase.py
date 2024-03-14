@@ -19,13 +19,14 @@ import base64
 import enum
 import struct
 
+import dns.dnssectypes
 import dns.exception
 import dns.immutable
-import dns.dnssec
 import dns.rdata
 
 # wildcard import
-__all__ = ["SEP", "REVOKE", "ZONE"]   # noqa: F822
+__all__ = ["SEP", "REVOKE", "ZONE"]  # noqa: F822
+
 
 class Flag(enum.IntFlag):
     SEP = 0x0001
@@ -35,25 +36,29 @@ class Flag(enum.IntFlag):
 
 @dns.immutable.immutable
 class DNSKEYBase(dns.rdata.Rdata):
-
     """Base class for rdata that is like a DNSKEY record"""
 
-    __slots__ = ['flags', 'protocol', 'algorithm', 'key']
+    __slots__ = ["flags", "protocol", "algorithm", "key"]
 
     def __init__(self, rdclass, rdtype, flags, protocol, algorithm, key):
         super().__init__(rdclass, rdtype)
-        self.flags = self._as_uint16(flags)
+        self.flags = Flag(self._as_uint16(flags))
         self.protocol = self._as_uint8(protocol)
-        self.algorithm = dns.dnssec.Algorithm.make(algorithm)
+        self.algorithm = dns.dnssectypes.Algorithm.make(algorithm)
         self.key = self._as_bytes(key)
 
     def to_text(self, origin=None, relativize=True, **kw):
-        return '%d %d %d %s' % (self.flags, self.protocol, self.algorithm,
-                                dns.rdata._base64ify(self.key, **kw))
+        return "%d %d %d %s" % (
+            self.flags,
+            self.protocol,
+            self.algorithm,
+            dns.rdata._base64ify(self.key, **kw),
+        )
 
     @classmethod
-    def from_text(cls, rdclass, rdtype, tok, origin=None, relativize=True,
-                  relativize_to=None):
+    def from_text(
+        cls, rdclass, rdtype, tok, origin=None, relativize=True, relativize_to=None
+    ):
         flags = tok.get_uint16()
         protocol = tok.get_uint8()
         algorithm = tok.get_string()
@@ -68,10 +73,10 @@ class DNSKEYBase(dns.rdata.Rdata):
 
     @classmethod
     def from_wire_parser(cls, rdclass, rdtype, parser, origin=None):
-        header = parser.get_struct('!HBB')
+        header = parser.get_struct("!HBB")
         key = parser.get_remaining()
-        return cls(rdclass, rdtype, header[0], header[1], header[2],
-                   key)
+        return cls(rdclass, rdtype, header[0], header[1], header[2], key)
+
 
 ### BEGIN generated Flag constants
 

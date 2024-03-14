@@ -58,7 +58,7 @@ const WantedMoviesView: FunctionComponent = () => {
                           hi: item.hi,
                           forced: item.forced,
                         },
-                      }
+                      },
                     );
                   }}
                 >
@@ -70,7 +70,7 @@ const WantedMoviesView: FunctionComponent = () => {
         },
       },
     ],
-    []
+    [],
   );
 
   const { mutateAsync } = useMovieAction();

@@ -1,0 +1,2473 @@
+Metadata-Version: 2.1
+Name: guessit
+Version: 3.8.0
+Summary: GuessIt - a library for guessing information from video filenames.
+Home-page: https://guessit-io.github.io/guessit
+Download-URL: https://pypi.python.org/packages/source/g/guessit/guessit-3.8.0.tar.gz
+Author: Rémi Alvergnat
+Author-email: toilal.dev@gmail.com
+License: LGPLv3
+Keywords: python library release parser name filename movies series episodes animes
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)
+Classifier: Operating System :: OS Independent
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Multimedia
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Description-Content-Type: text/markdown
+License-File: LICENSE
+License-File: AUTHORS.md
+Requires-Dist: rebulk >=3.2.0
+Requires-Dist: babelfish >=0.6.0
+Requires-Dist: python-dateutil
+Requires-Dist: importlib-resources ; python_version < "3.9"
+Provides-Extra: dev
+Requires-Dist: tox ; extra == 'dev'
+Requires-Dist: mkdocs ; extra == 'dev'
+Requires-Dist: mkdocs-material ; extra == 'dev'
+Requires-Dist: pyinstaller ; extra == 'dev'
+Requires-Dist: wheel ; extra == 'dev'
+Requires-Dist: python-semantic-release ; extra == 'dev'
+Requires-Dist: twine ; extra == 'dev'
+Provides-Extra: test
+Requires-Dist: pytest ; extra == 'test'
+Requires-Dist: pytest-mock ; extra == 'test'
+Requires-Dist: pytest-benchmark ; extra == 'test'
+Requires-Dist: pytest-cov ; extra == 'test'
+Requires-Dist: pylint ; extra == 'test'
+Requires-Dist: PyYAML ; extra == 'test'
+
+GuessIt
+
+[![Latest Version](https://img.shields.io/pypi/v/guessit.svg)](https://pypi.python.org/pypi/guessit)
+[![LGPLv3 License](https://img.shields.io/badge/license-LGPLv3-blue.svg)]()
+[![Build Status](https://img.shields.io/github/workflow/status/guessit-io/guessit/ci)](https://github.com/guessit-io/guessit/actions?query=workflow%3Aci)
+[![Codecov](https://img.shields.io/codecov/c/github/guessit-io/guessit)](https://codecov.io/gh/guessit-io/guessit)
+[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/relekang/python-semantic-release)
+
+GuessIt is a python library that extracts as much information as
+possible from a video filename.
+
+It has a very powerful matcher that allows to guess properties from a
+video using its filename only. This matcher works with both movies and
+tv shows episodes.
+
+For example, GuessIt can do the following:
+
+    $ guessit "Treme.1x03.Right.Place,.Wrong.Time.HDTV.XviD-NoTV.avi"
+    For: Treme.1x03.Right.Place,.Wrong.Time.HDTV.XviD-NoTV.avi
+    GuessIt found: {
+        "title": "Treme",
+        "season": 1,
+        "episode": 3,
+        "episode_title": "Right Place, Wrong Time",
+        "source": "HDTV",
+        "video_codec": "Xvid",
+        "release_group": "NoTV",
+        "container": "avi",
+        "mimetype": "video/x-msvideo",
+        "type": "episode"
+    }
+
+More information is available at [guessit-io.github.io/guessit](https://guessit-io.github.io/guessit).
+
+Support
+-------
+
+This project is hosted on [GitHub](https://github.com/guessit-io/guessit). Feel free to open an issue if you think you have found a bug or something is missing in guessit.
+
+GuessIt relies on [Rebulk](https://github.com/Toilal/rebulk) project for pattern and rules registration.
+
+License
+-------
+
+GuessIt is licensed under the [LGPLv3 license](http://www.gnu.org/licenses/lgpl.html).
+
+
+# CHANGELOG
+
+
+
+## v3.8.0 (2023-12-14)
+
+### Chore
+
+* chore: migrate setup.cfg to pyproject.toml ([`ee9bcbc`](https://github.com/guessit-io/guessit/commit/ee9bcbc2885b636c5d18cb3cea834568d4ef946b))
+
+* chore: remove win_private_assemblies from pyinstaller spec ([`5404433`](https://github.com/guessit-io/guessit/commit/5404433a56444c72f27eb8e4abe9d28224879b59))
+
+* chore(lint): Silence pylint
+
+This fixes the following error:
+
+```
+************* Module guessit.rules.match_processors
+guessit/rules/match_processors.py:7:0: R1710: Either all return statements in a function should return an expression, or none of them should. (inconsistent-return-statements)
+``` ([`6a7bb9f`](https://github.com/guessit-io/guessit/commit/6a7bb9f51b9f7ad869767bb1a896a4cb79f3279e))
+
+### Ci
+
+* ci: use twine to upload packages on pypi ([`edf2916`](https://github.com/guessit-io/guessit/commit/edf29168a185ed2a75dcbea642c6912d11e12d77))
+
+* ci: add version bump in release task ([`ce62ca9`](https://github.com/guessit-io/guessit/commit/ce62ca94a263046f83b5f4f5f3d336752b654863))
+
+* ci: avoid mutating repository on semantic-release version command ([`e8273ca`](https://github.com/guessit-io/guessit/commit/e8273ca10d2280dff13a88c37e95f4d21f81baa8))
+
+* ci: add GH_TOKEN environment variables to semantic-release version commands ([`6d7cee7`](https://github.com/guessit-io/guessit/commit/6d7cee7e5728ffcfc9c389218d203fd9a579c7c4))
+
+* ci: remove verbose flag from semantic release commands ([`485d79e`](https://github.com/guessit-io/guessit/commit/485d79e3f0c7c244ed118634bb139358eb8cfc55))
+
+* ci: add wheel to dev dependencies for setup.py bdist_wheel command to work ([`a49278d`](https://github.com/guessit-io/guessit/commit/a49278dd9a7cc4e0205c0f908430946a5e728df4))
+
+* ci: fix semantic-release commands verbose flag ([`0cfb12f`](https://github.com/guessit-io/guessit/commit/0cfb12feb1fdbc7447375f901a61b988273b26a6))
+
+* ci: upgrade checkout action ([`c39ebef`](https://github.com/guessit-io/guessit/commit/c39ebefb245bc59e572fdd2d060e4a5051018081))
+
+### Feature
+
+* feat(other): detect &#34;Dolby Vision&#34; from &#34;DV&#34; ([`6e08770`](https://github.com/guessit-io/guessit/commit/6e087707bf3e1ffbff67a40aa6dbba7703fc41dc))
+
+* feat(streaming_service): add Paramount+ to Streaming Services ([`60920e3`](https://github.com/guessit-io/guessit/commit/60920e39ab02a1ad9988e21a385fe1f241e4c21d))
+
+* feat(streaming_service): add &#34;amzn-cbr&#34; ([`9207379`](https://github.com/guessit-io/guessit/commit/92073791b23cfdc0497106e64a22806f51fdd90a))
+
+* feat: add python 3.12 and pypy 3.10 support ([`401bcc5`](https://github.com/guessit-io/guessit/commit/401bcc566b7fc1d183d873d5d39f72a1ea0156c0))
+
+### Fix
+
+* fix(deprecated): pathlib.Path.__enter__() is deprecated
+
+pathlib.Path.__enter__() is deprecated and scheduled for removal
+in Python 3.13; Path objects as a context manager is a no-op
+
+References:
+
+https://bugs.python.org/issue39682
+https://bugs.python.org/issue46556
+https://github.com/python/cpython/commit/06e1701ad3956352bc0f42b8f51c2f8cc85bf378 ([`aa85b2e`](https://github.com/guessit-io/guessit/commit/aa85b2e6bc19c6162d16efbff1d92948cea30ea3))
+
+* fix(deprecated): importlib.resources.read_text() is deprecated ([`cd36bad`](https://github.com/guessit-io/guessit/commit/cd36bad1a4b1fc82dc947309fbe5b3448e5ccaeb))
+
+### Style
+
+* style: fix pylint false positive ([`f62ec8c`](https://github.com/guessit-io/guessit/commit/f62ec8ce7b364f89f79cdafa7935f3acd9266fb2))
+
+### Unknown
+
+* Merge pull request #750 from milkers69/develop
+
+feat(Streaming Service): Add Paramount+ ([`bd66746`](https://github.com/guessit-io/guessit/commit/bd6674603463bb34ba31e5270a29911e023231fd))
+
+* Merge pull request #755 from plotski/feat-dv
+
+feat(other): Detect &#34;Dolby Vision&#34; from &#34;DV&#34; ([`342aec4`](https://github.com/guessit-io/guessit/commit/342aec4b4e529ab8710ab919104abd702a65bebb))
+
+* Merge pull request #759 from plotski/deprecated/read_text
+
+fix(deprecated): importlib.resources.read_text() is deprecated ([`0f40bbf`](https://github.com/guessit-io/guessit/commit/0f40bbf90139f7e565ffc71112adeff8226bc7d0))
+
+* Merge pull request #761 from plotski/deprecated/Path.__enter__
+
+pathlib.Path.__enter__() is deprecated ([`ac846dc`](https://github.com/guessit-io/guessit/commit/ac846dc60edb58fac69f0fb4ec13895c5b28aa46))
+
+* Merge pull request #758 from plotski/streaming-service/AMZN-CBR
+
+feat(streaming_service): add &#34;AMZN-CBR&#34; ([`a619e8b`](https://github.com/guessit-io/guessit/commit/a619e8b687ed2372dc30ea58b6ae93f952609fde))
+
+* Merge pull request #762 from guessit-io/python-3.12-support
+
+feat: add python 3.12 and pypy 3.10 support ([`e947d1b`](https://github.com/guessit-io/guessit/commit/e947d1ba3dbc3ca0fec14c92880fd86e4e30edf0))
+
+* Merge pull request #760 from plotski/lint/match_processors.strip
+
+chore(lint): Silence pylint ([`3113f3e`](https://github.com/guessit-io/guessit/commit/3113f3e2b5047134466c9101fe4921df8f1fbb7f))
+
+
+## v3.7.1 (2023-02-20)
+
+### Fix
+
+* fix(episode): ignore absolute_episode guess when SxxExx match is available in filepart
+
+Close #712 ([`4aa5012`](https://github.com/guessit-io/guessit/commit/4aa5012edbf9f2898a417baec2c301859f5bcd92))
+
+* fix(title): fix title guessing for `Show Name/Season XX/episode.mkv` directories pattern
+
+Note that it will grab Show Name as `title` property only if the `Season XX` directory match a season pattern exactly and fully.
+
+Close #721 ([`e717928`](https://github.com/guessit-io/guessit/commit/e717928b8544489bf8aa4f6b2866c0c10f3a7a88))
+
+### Refactor
+
+* refactor(title): refactor rule to make pylint pass ([`d931c05`](https://github.com/guessit-io/guessit/commit/d931c05722f35e0ac2c1a6d5290a74380e5603f1))
+
+### Test
+
+* test(episode): add 4400 test ([`1aa10b7`](https://github.com/guessit-io/guessit/commit/1aa10b7f5119169d49fa0f83d3a87ccc7ea7b17c))
+
+
+## v3.7.0 (2023-02-18)
+
+### Documentation
+
+* docs(contributing): update branch name ([`4af631d`](https://github.com/guessit-io/guessit/commit/4af631df7a7945a7d229919d56c7f4d874750a4a))
+
+### Feature
+
+* feat(week): add week property ([`8309bf1`](https://github.com/guessit-io/guessit/commit/8309bf14e34e17a871e0f496c27cf431aaba18e1))
+
+### Fix
+
+* fix(episode): fix invalid episode range when a weak episode is present before the match
+
+Close #719 ([`ff0a327`](https://github.com/guessit-io/guessit/commit/ff0a3271af736f67e7a6a5fd12b92152035ea57b))
+
+* fix(expected): build output from input string for expected_title/expected_group ([`90cc215`](https://github.com/guessit-io/guessit/commit/90cc2156aafee39ef20c3cb3aaf0e26ddcb83933))
+
+* fix(release_group): properly extract group name from format &#34;Title (MediaInfo Individual) [Group]&#34; ([`25bd367`](https://github.com/guessit-io/guessit/commit/25bd367032262dc2a0ee06852c21846202413823))
+
+### Test
+
+* test: remove non-standard mimetype video/x-matroska assertions
+
+Close #724 ([`9e4178c`](https://github.com/guessit-io/guessit/commit/9e4178c8d771ae0a01d5a3cd48225225c6de6215))
+
+### Unknown
+
+* Merge pull request #740 from jonbenta/support-individual-crediting-groups
+
+Properly extract group name from format `Title (MediaInfo Individual) [Group]`. ([`439ca59`](https://github.com/guessit-io/guessit/commit/439ca59cfe483b1e22f6e2ef5e28728ffe9fe40b))
+
+* Merge branch &#39;master&#39; into develop ([`9a1d33c`](https://github.com/guessit-io/guessit/commit/9a1d33ce9b7fb88072cbe808dc081246b2afc391))
+
+
+## v3.6.0 (2023-02-18)
+
+### Chore
+
+* chore(stack): upgrade stack ([`c6b41de`](https://github.com/guessit-io/guessit/commit/c6b41de6b76f56c9d358b870b957ba3a6ab1f919))
+
+### Feature
+
+* feat(audio_codec): detect &#34;DTS:X&#34; (closes #728) ([`2bdd8f5`](https://github.com/guessit-io/guessit/commit/2bdd8f568a0fa6c5eb97e1f29d5e4d488d86a2aa))
+
+### Fix
+
+* fix(edition): improve remastered/restored detection ([`c3611b9`](https://github.com/guessit-io/guessit/commit/c3611b9b26e7f6c1b6bb2d0e9a708843f3242084))
+
+* fix(container): add m2ts to container extensions
+
+fix #730 ([`05cca80`](https://github.com/guessit-io/guessit/commit/05cca806530302733377a278c4bb8c200b6a502c))
+
+### Unknown
+
+* Merge pull request #736 from plotski/detect-dtsx
+
+feature(audio_codec): detect &#34;DTS:X&#34; (closes #728) ([`58e4fd2`](https://github.com/guessit-io/guessit/commit/58e4fd2856759df077061454e37347418fa29bc4))
+
+* Merge pull request #734 from kannibalox/fix/rm-guessit.io
+
+docs: scrub references to guessit.io ([`b694a8b`](https://github.com/guessit-io/guessit/commit/b694a8b99f286b5db3e48f894347fe135b8a7a82))
+
+* Merge pull request #735 from plotski/master
+
+fix(edition): improve remastered/restored detection ([`fd9fa4a`](https://github.com/guessit-io/guessit/commit/fd9fa4a9c807f4a1fe30851cdd1b869b483004e2))
+
+* Scrub references to guessit.io
+
+Fixes #727 ([`ad5e442`](https://github.com/guessit-io/guessit/commit/ad5e4420dcda41b4190aa2982202bde0d4332def))
+
+
+## v3.5.0 (2022-11-01)
+
+### Chore
+
+* chore(pylint): fix pylint issues on current version ([`9f60c9c`](https://github.com/guessit-io/guessit/commit/9f60c9c9328e63e6e8df9d97971e25c60e937a48))
+
+### Feature
+
+* feat(dependencies): drop Python 3.6 support ([`47f5718`](https://github.com/guessit-io/guessit/commit/47f57184a9d0a25c1b415638d0b003dad88ce607))
+
+### Fix
+
+* fix(audio_codec): detect &#34;E-AC-3&#34; and &#34;AC-3&#34; ([`72dc12e`](https://github.com/guessit-io/guessit/commit/72dc12e2489d240839a216041ffe47e9dd128b0f))
+
+* fix(typo): fix common typo ([`42a80f0`](https://github.com/guessit-io/guessit/commit/42a80f0992387c96fc120480aaea35e4b3d9f5b8))
+
+
+## v3.4.3 (2021-11-20)
+
+### Fix
+
+* fix(setuptools): drop usage of test_requires and setup_requires (#720)
+
+Close #720 ([`324b38c`](https://github.com/guessit-io/guessit/commit/324b38ce62cd43efc51074dbd8c5e2ed64fc7573))
+
+
+## v3.4.2 (2021-11-08)
+
+### Fix
+
+* fix(dependencies): use babelfish&gt;=0.6.0 (#711)
+
+Close #711 ([`d2c1b01`](https://github.com/guessit-io/guessit/commit/d2c1b010ed0025d62322e681471abe948c923a1d))
+
+### Refactor
+
+* refactor(website): use files instead of open_text of importlib.resources (#716)
+
+Close #716 ([`9ce7706`](https://github.com/guessit-io/guessit/commit/9ce7706d847e53bfe7d5c96a8f2f905a610eadbb))
+
+
+## v3.4.1 (2021-11-05)
+
+### Fix
+
+* fix(other): detect &#34;Open Matte&#34; with non-space separator ([`b52a9d9`](https://github.com/guessit-io/guessit/commit/b52a9d9f0315af68d41c22772d35488d00c4f04e))
+
+* fix(packaging): use stdlib importlib.resources in py 3.7+
+
+importlib.resources is available as a stdlib module since Python 3.7.
+Use that if it&#39;s available, and fall back to the external
+importlib_resources back for Python &lt; 3.7. ([`1e7b000`](https://github.com/guessit-io/guessit/commit/1e7b0008232e306478d15f7a78d093804d56df3a))
+
+
+## v3.4.0 (2021-11-04)
+
+### Chore
+
+* chore(oops): don&#39;t use format strings ([`cab06ff`](https://github.com/guessit-io/guessit/commit/cab06ffdd32d13bc2a7f30d3c62d658f6df0b603))
+
+### Ci
+
+* ci: upgrade setuptools on python 3.5 and enable pylint on python 3.9 ([`4c06b0c`](https://github.com/guessit-io/guessit/commit/4c06b0c5835563349844c4682b9be025307e18ca))
+
+* ci(coverage): use Codecov and pytest-cov ([`f743298`](https://github.com/guessit-io/guessit/commit/f743298863746079458e30319464da127a6aeb26))
+
+* ci: enhance job names ([`a2f48e2`](https://github.com/guessit-io/guessit/commit/a2f48e2c6fa53876c3909fbfac2acfc927693834))
+
+* ci(coveralls): add --service=github flag ([`c7d7dcb`](https://github.com/guessit-io/guessit/commit/c7d7dcba98b8265ee4da044144a968d9c5bb4483))
+
+* ci(coveralls): add GITHUB_TOKEN environment variable ([`c5a6e07`](https://github.com/guessit-io/guessit/commit/c5a6e07d52cd9077254f2097548ecf918f7f55c8))
+
+### Documentation
+
+* docs: add new properties ([`f1d8f61`](https://github.com/guessit-io/guessit/commit/f1d8f61fb6d326092e6caaf6419696e9419e8a73))
+
+### Feature
+
+* feat(other): add restored support and match 4k-* patterns ([`99c30eb`](https://github.com/guessit-io/guessit/commit/99c30eb3876a4947ff9a4f5126b70195452a64c7))
+
+* feat(other): add 2in1 support ([`0cf07f4`](https://github.com/guessit-io/guessit/commit/0cf07f47559e0061a6df8437510e98e6afe69747))
+
+* feat(python): add python 3.10 support, drop python 3.5 support ([`a8ea88d`](https://github.com/guessit-io/guessit/commit/a8ea88de31dcf642434fa4ab1315df2467a443ca))
+
+* feat(audio_channels): add support for &#34;1.0&#34; audio channels ([`f22e33d`](https://github.com/guessit-io/guessit/commit/f22e33daada06956c085a5784387e5a4527417e6))
+
+* feat(streaming_service): add more streaming services
+
+9Now:
+https://www.9now.com.au/
+
+AppleTV+:
+Alternate APTV tag.
+
+Binge:
+https://binge.com.au/
+
+Blackpills:
+https://blackpills.com/
+
+BluTV:
+https://www.blutv.com/
+
+Boomerang:
+https://www.boomerang.com/
+
+Channel 4:
+Alternate ALL4 tag.
+
+Crave:
+https://www.crave.ca/
+
+Discovery Plus:
+https://www.discoveryplus.com
+
+Disney+:
+https://www.disneyplus.com/
+
+Facebook Watch:
+https://www.facebook.com/watch/
+
+Fandor:
+https://www.fandor.com/
+
+Fox Premium:
+https://www.foxplay.com/
+https://en.wikipedia.org/wiki/Fox_Premium
+
+Foxtel:
+https://www.foxtel.com.au/
+
+GagaOOLala:
+https://www.gagaoolala.com/en/home
+
+hoichoi:
+https://www.hoichoi.tv/
+
+iflix:
+https://www.iflix.com/
+
+iQIYI:
+https://www.iq.com/
+
+MUBI:
+https://mubi.com/
+
+National Audiovisual Institute:
+https://madelen.ina.fr/
+
+National Film Board:
+https://www.nfb.ca/
+
+Nickelodeon:
+Alternative NICKAPP tag
+
+Opto:
+https://opto.sic.pt/
+
+Oprah Winfrey Network:
+https://www.oprah.com/
+
+Peacock:
+https://www.peacocktv.com/
+
+PokerGO:
+https://pokergo.com
+
+Rakuten TV:
+https://waitforit.rakuten.tv/
+
+The Roku Channel:
+https://therokuchannel.roku.com/
+
+RUUTU:
+https://www.ruutu.fi/
+
+Science Channel:
+https://www.sciencechannel.com/
+
+Sony:
+https://www.sonyliv.com/
+
+TVNZ:
+https://www.tvnz.co.nz/
+
+UFC Fight Pass:
+https://ufcfightpass.com ([`40ce483`](https://github.com/guessit-io/guessit/commit/40ce4831600f915a91cea1e6aba4bcb4cfbc35f0))
+
+* feat(other): add ONA/OAD support ([`0823e37`](https://github.com/guessit-io/guessit/commit/0823e37b382ed3470924a11a5024c0a9a383df30))
+
+* feat(other): add Repack and ReRip followed by a digit support (#653)
+
+The digit following those tags now as the base value for `proper_count` property.
+
+Close #653 ([`997c5c2`](https://github.com/guessit-io/guessit/commit/997c5c29f4adedcd7568a22b38155e2a8c83bf10))
+
+### Fix
+
+* fix(source): avoid Shots to be guessed as Showtime and TS
+
+Close #709
+Close #710 ([`de85403`](https://github.com/guessit-io/guessit/commit/de85403dd40b120a3dc52f26960986a2fb482e64))
+
+* fix(screen_size): add 540i ([`1a7db40`](https://github.com/guessit-io/guessit/commit/1a7db40a1f7d06f49db2ac116a1de074049334c0))
+
+* fix(language): fix `language` and `subtitle_languages` in some situations (#696) ([`f19cfda`](https://github.com/guessit-io/guessit/commit/f19cfda856958c4aa81dde36ecbb3df66cdd4b48))
+
+* fix(packaging): use importlib-resources instead of pkgutil ([`a679a6c`](https://github.com/guessit-io/guessit/commit/a679a6c2b05607029a1267b0b217c5696f85df5f))
+
+* fix(other): fix Open Matte when written as is (#689)
+
+Close #689 ([`ddf8e77`](https://github.com/guessit-io/guessit/commit/ddf8e772d735bc80940ba3068c5014d79499a618))
+
+* fix(frame_rate): enhance `frame_rate` when ending with `.000` or space separated (#693) ([`dba9cef`](https://github.com/guessit-io/guessit/commit/dba9cef859cb548988e411c2a9d537914da14f4e))
+
+* fix(packaging): use importlib-resources instead of pkg_resources ([`6ef222e`](https://github.com/guessit-io/guessit/commit/6ef222ea2879343c7c3dd04dd081a2ce88a327aa))
+
+* fix(edition): better support for &#34;Criterion&#34; ([`85ac52a`](https://github.com/guessit-io/guessit/commit/85ac52a771f53cc6e44bc48a0c3a017e971c0d71))
+
+* fix(advanced-config): fix removal of custom rebulk rules (#692)
+
+Close #692 ([`c2bc1ea`](https://github.com/guessit-io/guessit/commit/c2bc1ea3809626442374f35d018b43e6c775758f))
+
+* fix(streaming_service): make SBS ambiguous
+
+SBS is used ambiguously for both:
+- Special Broadcasting Service (Australia)
+- SBS Broadcasting Group (previously Scandinavian Broadcasting Systems)
+
+White.Wall.S01E01.720p.SBS.WEB-DL.AAC2.0.H.264-GBone.mkv (Scandanavia)
+Gourmet.Farmer.S05E01.720p.SBS.WEB-DL.AAC2.0.H.264-SOIL.mkv (AU) ([`777d2b5`](https://github.com/guessit-io/guessit/commit/777d2b56764d14431125cccb092978fa726c2453))
+
+* fix(streaming_service): keep pattern to avoid rebuilding rules
+
+This causes the `advanced_config` and `self.advanced_config` to differ
+without any changes to the default config in `api.py`. ([`62f0c0e`](https://github.com/guessit-io/guessit/commit/62f0c0ec5d43074175fffc2aff611b178ddb95a0))
+
+* fix(proper_count): fix proper_count raw output to include all matches (#626)
+
+Close #626 ([`1faea7e`](https://github.com/guessit-io/guessit/commit/1faea7e9c8bc9ace9d343976ea1987a5f2628a4f))
+
+* fix(website): fix website when it contains a digit (#659)
+
+Close #659 ([`9e39b7e`](https://github.com/guessit-io/guessit/commit/9e39b7e659e87dc3f71b1449a8994ef898212b0e))
+
+### Refactor
+
+* refactor(source): refactor `source` patterns to configuration ([`066a9dd`](https://github.com/guessit-io/guessit/commit/066a9dd448d594e1bdd67a3534c632050a484bd6))
+
+* refactor(pylint): fix pylint issue ([`6e75104`](https://github.com/guessit-io/guessit/commit/6e751042745b9f27346851905a95216a99c41b8b))
+
+* refactor(other): refactor `other` patterns to configuration ([`18b355d`](https://github.com/guessit-io/guessit/commit/18b355d81ad5fd29b2c2f20c5b062f97ac734709))
+
+* refactor(film): move `film` patterns to configuration ([`ab770ef`](https://github.com/guessit-io/guessit/commit/ab770ef43bbcfc2ebfcc88654bad0a128b164587))
+
+* refactor(edition): move `edition` patterns to configuration ([`814a78e`](https://github.com/guessit-io/guessit/commit/814a78e1b307aeab4a357784465371cca6b6ef55))
+
+* refactor(bonus): set bonus property name to rebulk defaults ([`e673a64`](https://github.com/guessit-io/guessit/commit/e673a64dfd69d4df6d5ebc7e1360d10d848d019d))
+
+* refactor(cd): move `cd` patterns to configuration ([`2be8217`](https://github.com/guessit-io/guessit/commit/2be821735be4e71c4c6c6e5ebe09afc6b6fba9ae))
+
+* refactor(bonus): move `bonus` patterns to configuration ([`60c1354`](https://github.com/guessit-io/guessit/commit/60c1354f4c58989ec9e1234b7cec4d3edda2666f))
+
+* refactor(bit_rate): move `bit_rate` patterns to configuration ([`f8c3bb6`](https://github.com/guessit-io/guessit/commit/f8c3bb6712b26c722c1e6d9296a666a724446c41))
+
+* refactor(audio_codec): move `audio_codec` patterns to configuration ([`4ddc5f5`](https://github.com/guessit-io/guessit/commit/4ddc5f5c15391fc3050ef7dd7124ea0c3a5dc20f))
+
+* refactor(audio_profile): move `audio_profile` patterns to configuration ([`30592b7`](https://github.com/guessit-io/guessit/commit/30592b7abd2b00f7163b265c7c7f34bedfb5653d))
+
+* refactor(audio_channels): move more patterns to configuration ([`d7d6732`](https://github.com/guessit-io/guessit/commit/d7d673227b40e8e8c0516c6a52f9d42687d98218))
+
+* refactor(config): move loading of patterns from config to a function ([`80b97a4`](https://github.com/guessit-io/guessit/commit/80b97a450ff6d2be3e491cd4f2ea491754deb400))
+
+
+## v3.3.1 (2021-02-06)
+
+### Build
+
+* build(ci): add windows and macos binary support ([`4b1fa77`](https://github.com/guessit-io/guessit/commit/4b1fa7748b2a52b5e210faa36c426e5bc7909499))
+
+* build(pyinstaller): add linux binary support ([`d0df79f`](https://github.com/guessit-io/guessit/commit/d0df79f47783ff5d7069d8cbc6149f68e330168e))
+
+### Ci
+
+* ci: configure git before bumping version ([`79014e0`](https://github.com/guessit-io/guessit/commit/79014e0a8f716609a0de736eaa092cee05521953))
+
+### Documentation
+
+* docs: lighten README and update doc index page ([`8e4ba6f`](https://github.com/guessit-io/guessit/commit/8e4ba6f0e4835026e85fca81faba267c95eb31fc))
+
+### Fix
+
+* fix(options): fix custom options.json groups starting/ending (#671) ([`40f43b1`](https://github.com/guessit-io/guessit/commit/40f43b133cf5fb43d79c1e2b886a3620830a4a37))
+
+
+## v3.3.0 (2021-02-03)
+
+### Chore
+
+* chore(docs): update docs with new `streaming_service` values ([`53f822a`](https://github.com/guessit-io/guessit/commit/53f822a8504fec6fff210a36ce399c1386ff7219))
+
+### Ci
+
+* ci(release): use robotology/gh-action-nightly-merge@v1.3.2 ([`7d2b4bd`](https://github.com/guessit-io/guessit/commit/7d2b4bdbc0697ca592ce329b85f8c29a1084149d))
+
+* ci(mkdocs): use github-pages-deploy-action to deploy docs ([`9ceb019`](https://github.com/guessit-io/guessit/commit/9ceb019c2960b842e91545d4cd14cfaa15ced606))
+
+### Documentation
+
+* docs(readme): avoid mixed-content in github pages ([`2e1f29c`](https://github.com/guessit-io/guessit/commit/2e1f29ca47f8586930ca092b31f2431a1f3df52f))
+
+### Feature
+
+* feat: add `--output-input-string` option (#665) ([`bac6143`](https://github.com/guessit-io/guessit/commit/bac6143559d437edc34e2fde0b77172567e4451d))
+
+* feat(streaming_service): Add `Showtime`, `HBO` and `AppleTV` (#661) ([`dc55eaa`](https://github.com/guessit-io/guessit/commit/dc55eaa6d0cdf9d5552c4dbaaa29c8df8365691c))
+
+* feat(other): add `Hybrid` support (#669)
+
+Close #669
+
+Co-authored-by: plotski &lt;plotski@example.org&gt; ([`522af53`](https://github.com/guessit-io/guessit/commit/522af5371cac467dd1f03abb08df9cbf5b409126))
+
+### Fix
+
+* fix(options): avoid appending `None` values to list when merging options (#658) ([`42978c9`](https://github.com/guessit-io/guessit/commit/42978c909c4e5ebb2cc95b94583f80d73759f29a))
+
+* fix(streaming_service): add iT keyword support for iTunes (#669) ([`51e0021`](https://github.com/guessit-io/guessit/commit/51e00217947d8b993bcfb091b012da803245f698))
+
+* fix(streaming_service): fix regex patterns declared with `re:` prefix ([`e02323f`](https://github.com/guessit-io/guessit/commit/e02323f6c1d1e74ef32dfbcfb3ab69e367d11a00))
+
+### Test
+
+* test: make main test less verbose (#665)
+
+Co-authored-by: Carey Metcalfe &lt;carey@cmetcalfe.ca&gt; ([`04881fb`](https://github.com/guessit-io/guessit/commit/04881fb62d77a02ab0cc2b552fa8bbdc99807932))
+
+* test(streaming_service): fix tests for `streaming_service` ([`c635022`](https://github.com/guessit-io/guessit/commit/c635022aa2ab88685472a229bcb4cfaef4b7fc79))
+
+* test: enhance test entry result display ([`5136625`](https://github.com/guessit-io/guessit/commit/51366251f0dbeede9e830234c0dd819766aa846c))
+
+* test: pick both `.yml` and `.yaml` files for tests ([`3c46016`](https://github.com/guessit-io/guessit/commit/3c460161008fb74805cfce842943fccc2e1787b7))
+
+
+## v3.2.0 (2020-12-23)
+
+### Chore
+
+* chore(semantic-release): change release commit message for commitlint concistency ([`dc5f8ed`](https://github.com/guessit-io/guessit/commit/dc5f8edae69998f180ae2b455dbab4eeaa5aa73c))
+
+### Ci
+
+* ci(commitlint): add commitlint to github actions ([`fe06966`](https://github.com/guessit-io/guessit/commit/fe0696646f332f25eb0c686bbb6b9132f377fb80))
+
+* ci: drop TravisCI and ReadTheDocs, replaced by Github Actions and mkdocs ([`384545e`](https://github.com/guessit-io/guessit/commit/384545e35f1919492f92f90757237c8eef0f3529))
+
+### Feature
+
+* feat: add python 3.9 support, drop python 2.7 support ([`2c8b25e`](https://github.com/guessit-io/guessit/commit/2c8b25e77fb424d63f9f73318e85dd96cef865e0))
+
+### Fix
+
+* fix(regex): use rebulk 3+ to have regex module disabled by default
+
+Regex module is now disabled by default in rebulk 3+.
+
+It can be enabled with REBULK_REGEX_ENABLED=1 in your environment. ([`28658b2`](https://github.com/guessit-io/guessit/commit/28658b27720d9eb48c9f9f0edfadb3247910de43))
+
+### Unknown
+
+* Back to development: 3.1.2 ([`6e4ead1`](https://github.com/guessit-io/guessit/commit/6e4ead187ef98f405487301b7ddc89cb5461ac5d))
+
+* Preparing release 3.1.1 ([`dc8e90d`](https://github.com/guessit-io/guessit/commit/dc8e90dc1e0befbeb9ec7b3166b89cbe64887f21))
+
+* Update classifiers with supported python version ([`6189bac`](https://github.com/guessit-io/guessit/commit/6189bac30a5df5378343068a3d9e1f80301e15ce))
+
+* Update history ([`b0ceada`](https://github.com/guessit-io/guessit/commit/b0ceada768150b23a4a8d93d3e1888fa64ff5ee2))
+
+* Drop python 3.4 support and fix pylint issues ([`59cf946`](https://github.com/guessit-io/guessit/commit/59cf946c53dae7b667157174df15dfb617d3396e))
+
+* Use SafeLoader for yaml.load()
+
+Close #642 ([`67058b3`](https://github.com/guessit-io/guessit/commit/67058b36f9b347c23d63133bee155bde6207219d))
+
+* Avoid relying on matroska mimetype in tests
+
+This mimetype is not defined in python module internals, so tests may fail
+in system where this mimetype is not defined in `/etc/mime.types` file.
+
+Close #616 ([`ceb826c`](https://github.com/guessit-io/guessit/commit/ceb826c97d761e7cc7b185be7574012119d93154))
+
+* Back to development: 3.1.1 ([`bf85928`](https://github.com/guessit-io/guessit/commit/bf85928cf93f3a23b8c812db4bcb9a8dd2cb441a))
+
+* Preparing release 3.1.0 ([`de53a35`](https://github.com/guessit-io/guessit/commit/de53a35960a446b6a42e5e0361f0ee3e09e48f6c))
+
+* Update history ([`b90835b`](https://github.com/guessit-io/guessit/commit/b90835b04ecbcb5028ce0acec421fecef7de5215))
+
+* Use better version constraints for rebulk ([`bbf27cb`](https://github.com/guessit-io/guessit/commit/bbf27cb7275f3cb6e0073220dd5e6d4518b8f261))
+
+* Add `Variable Frame Rate` value to `other`
+
+This replace invalid interpretation of `VFR` tag (French language). ([`250ce16`](https://github.com/guessit-io/guessit/commit/250ce163e305913510a25e1c553bce58dcfe521c))
+
+* Remove `v` from `subtitle_language` prefix in options.json
+
+This also adds `vfr` as a synonym for French `language`, and
+makes `Vita` keyword guessed as `PS Vita` only if match has neighbors.
+
+Close #613 ([`553a015`](https://github.com/guessit-io/guessit/commit/553a015629605716d1a404fa62aa96cdb933832b))
+
+* Fix title guessing with 3 fileparts containing language ([`2ea5f62`](https://github.com/guessit-io/guessit/commit/2ea5f62dccae4248e493cff4243c65bcee34b919))
+
+* Never exclude a website if it&#39;s in a group
+
+Close #597 ([`c907a2c`](https://github.com/guessit-io/guessit/commit/c907a2c873f6de4af8c7c2f847f59d77a6322009))
+
+* Find holes for episode_title with same behavior as main title
+
+Close #603 ([`c64868e`](https://github.com/guessit-io/guessit/commit/c64868ea88ff1ed67b97f397e578c5e60c8d6835))
+
+* Fix source validation when more than one pattern match
+
+Close #608 ([`b1ec23c`](https://github.com/guessit-io/guessit/commit/b1ec23c0e0b134abc373fdb58715ada0cb21c158))
+
+* Avoid trigger of useless rules consequences ([`ad5220e`](https://github.com/guessit-io/guessit/commit/ad5220e88c3a158f8e964dd5ff667646f82e7d82))
+
+* Validates streaming_service with higher priority
+
+Close #602 ([`0e41d2a`](https://github.com/guessit-io/guessit/commit/0e41d2ae039f4ead5a52323d04953bf5d4d77b97))
+
+* Use configured episode words in RemoveWeak rule ([`4886863`](https://github.com/guessit-io/guessit/commit/48868639890fcd496372d4c4fdc866acc7cead3e))
+
+* Fix possible crash in weak episode removal
+
+Close #598 ([`d056323`](https://github.com/guessit-io/guessit/commit/d0563238fa7f880fa69883829f9ea91c5d4733cc))
+
+* Bring bak SxxExx tag in chain patterns ([`8511abd`](https://github.com/guessit-io/guessit/commit/8511abd21b2d3e80f2bcaf764b54f7aa7e56f439))
+
+* Disable pylint with python 3.8 ([`5644b9c`](https://github.com/guessit-io/guessit/commit/5644b9c3b7a98d954753c79e1cdb96a6a1301203))
+
+* Migrate to rebulk 2.0.0
+
+This also enhance some rules in season/episodes handling ([`a43966a`](https://github.com/guessit-io/guessit/commit/a43966ab41542d7c397a7981b50ea5f6ffe93a2a))
+
+* Merge pull request #614 from sharkykh/patch-1
+
+Add missing `six` dependency ([`bc65e99`](https://github.com/guessit-io/guessit/commit/bc65e992553a3430898cc97b2cc7135ba8675718))
+
+* Add missing `six` dependency ([`809e175`](https://github.com/guessit-io/guessit/commit/809e175b47e83d51690ded6dd8926abb3ffaecc6))
+
+* Generate test cases dynamically from yml files ([`ca60ce6`](https://github.com/guessit-io/guessit/commit/ca60ce6ec2dcba48b68e77d381e64256af4a5380))
+
+* Add python 3.8 support ([`950ca79`](https://github.com/guessit-io/guessit/commit/950ca79a01972321c97387094bb55e63d39a9ad2))
+
+* Back to development: 3.0.5 ([`1dc0a20`](https://github.com/guessit-io/guessit/commit/1dc0a207917b572b6aaf3e7b6ee48b1bf0f58f86))
+
+* Preparing release 3.0.4 ([`b1651ff`](https://github.com/guessit-io/guessit/commit/b1651ffba7399641a68e3da50cb34504067de02f))
+
+* Fix pyroma issues ([`15907c6`](https://github.com/guessit-io/guessit/commit/15907c6fe291b6cdb17de47c238856057717545e))
+
+* Update history ([`758e487`](https://github.com/guessit-io/guessit/commit/758e4876793c082684bfddc64f8983800193c4c1))
+
+* Use official python alpine for docker image ([`ce8a3ea`](https://github.com/guessit-io/guessit/commit/ce8a3eab42cb312675725a5a3b5e0de9357e40bb))
+
+* Add more streaming sites (#595)
+
+Add more streaming sites
+
+This also adds 30/1.001 Framerate and sorts some options ([`fd8af5f`](https://github.com/guessit-io/guessit/commit/fd8af5f40a6d6e71d8d35896371da69e82259eac))
+
+* #593: Added Extras detection as other property ([`74dbb0c`](https://github.com/guessit-io/guessit/commit/74dbb0c7420cee18969926aba9cc06b8959daa0e))
+
+* Added suggested_expected method to the API to support apps that uses guessit as a library ([`5fbf3a8`](https://github.com/guessit-io/guessit/commit/5fbf3a8217d4ee86428c8499ad65039e5072185a))
+
+* Fixes #358. Added &#39;This is Us&#39; to the default expected_title configuration ([`217e7e4`](https://github.com/guessit-io/guessit/commit/217e7e46c166a2c974b6c8552cbec6d14d851ec2))
+
+* #590: &#39;Fixes Show Name/Season SS/Ep. EE - Title&#39; pattern ([`4174267`](https://github.com/guessit-io/guessit/commit/4174267548e890baca608fc53ad8617de9f03be0))
+
+* Fixes #591. Keeping separators for single characters ([`cdea674`](https://github.com/guessit-io/guessit/commit/cdea6741f5698ea26f674289260a2220e888d96a))
+
+* #408: Fixes REAL and PROPER tags scenarios ([`53e8e86`](https://github.com/guessit-io/guessit/commit/53e8e8626e9b6cfd86251a05e2f07f35bb32dada))
+
+* Minor indentation fix ([`240ca61`](https://github.com/guessit-io/guessit/commit/240ca61c13030713014dcc2d3e3b8944896a7377))
+
+* #588: Fixes wrong 3D detection ([`a6f234f`](https://github.com/guessit-io/guessit/commit/a6f234f404c639a4fde74d37f63def7b27e2b01e))
+
+* #574: Improve language detection ([`44f7d60`](https://github.com/guessit-io/guessit/commit/44f7d60e0894ef0cb0f1654e2b320365f1076468))
+
+* #587: Enhanced source detection to avoid wrong match of the word web ([`6a28a3a`](https://github.com/guessit-io/guessit/commit/6a28a3a936278b2b0324b4d3271f887f9d18bed6))
+
+* Fixes wrong lambda detected by pylint ([`a016b27`](https://github.com/guessit-io/guessit/commit/a016b270c9a656356b2dbad7174aa364954b05b8))
+
+* #585: improve title detection when between brackets ([`0e1dc09`](https://github.com/guessit-io/guessit/commit/0e1dc09aa3a73ad95a4787e84fd1e35e5445245f))
+
+* #584: Added DC Universe to streaming_service. Making streaming_service configurable ([`9d422cc`](https://github.com/guessit-io/guessit/commit/9d422ccefaff77fc981d1781eb79de5420b91b79))
+
+* #551: Fixes wrong bonus detection ([`4c10925`](https://github.com/guessit-io/guessit/commit/4c10925e97046b8801f4d07800fae5cd6500dc37))
+
+* Updating documentation and history ([`05a0c96`](https://github.com/guessit-io/guessit/commit/05a0c96cdcd347cadfac08752bb45409fb94dffa))
+
+* #547: Added 540p to screen_size ([`a164b6a`](https://github.com/guessit-io/guessit/commit/a164b6a2c33dc1e2f153ae944079f259b41ca1db))
+
+* Fixing pylint issues in python 2.7 ([`a8741fe`](https://github.com/guessit-io/guessit/commit/a8741fe2ca369b771a9e1bc52f7967966b3d8546))
+
+* Added regression tests for #583 ([`c0ffdc3`](https://github.com/guessit-io/guessit/commit/c0ffdc382dbb2ed43aada7d38b7bd21d43713dd5))
+
+* Ignoring pylint issues that conflicts with python 2.7 and 3.4+ ([`e74cc1b`](https://github.com/guessit-io/guessit/commit/e74cc1b09063b4e6d8610209d56482471cf08eec))
+
+* #578: Add back common words that conflicts with existing allowed_languages. Added test scenarios for all previous common words. ([`4e874bc`](https://github.com/guessit-io/guessit/commit/4e874bcdb6219078549652b573e8eea5756bfbd6))
+
+* #556: Fixed 6.0 audio_channel detection. Make audio_channel detection configurable ([`315ae4d`](https://github.com/guessit-io/guessit/commit/315ae4d48236ba315319874efbc018eb7d03b43b))
+
+* Back to development: 3.0.4 ([`5c2cfee`](https://github.com/guessit-io/guessit/commit/5c2cfeee519f3027588a5f5afafc5eb22ffbd439))
+
+* Preparing release 3.0.3 ([`4deefbd`](https://github.com/guessit-io/guessit/commit/4deefbdb8ebd93bdf8e34f9fc1299a3979b770e7))
+
+* Update history ([`bcc2985`](https://github.com/guessit-io/guessit/commit/bcc29856fe46c6044b9d9befcb69da7a73cadebc))
+
+* Add {season}e{episode} pattern
+
+Close #579 ([`4811655`](https://github.com/guessit-io/guessit/commit/4811655c50e931b2b8d1b849c4d772be36a1fd77))
+
+* Fix pylint errors ([`42f9791`](https://github.com/guessit-io/guessit/commit/42f9791e03e7941e360c2b4fe8ec623f69dc82dc))
+
+* Move some patterns from Proper to Fix
+
+Close #538 ([`319f698`](https://github.com/guessit-io/guessit/commit/319f69871c03cdb1c212f16e4c9647a59446db9b))
+
+* Add MP2 audio_codec value
+
+Close #539 ([`22a70aa`](https://github.com/guessit-io/guessit/commit/22a70aa8a60c1158b51c61e71813dd84f6b7742b))
+
+* Fix missing property when episode_details keyword in title
+
+Close #555 ([`add43a0`](https://github.com/guessit-io/guessit/commit/add43a0936b7a847e3ba029f22f4ecc8ba221bd6))
+
+* Remove serie(s) from season marker and fix wrong season/year in episode mode
+
+Close #561 ([`12dc120`](https://github.com/guessit-io/guessit/commit/12dc120e2c3a8f3114c190053d165bbede1808a0))
+
+* Fix parent folder ending with a digit detected as title
+
+Close #565 ([`c5d938d`](https://github.com/guessit-io/guessit/commit/c5d938dce703464c062f00af432529d32d6f8172))
+
+* Fix false release_group matches with --expected-title option
+
+Close #564 ([`01591ae`](https://github.com/guessit-io/guessit/commit/01591aeb58661ab51349016dd9db98cebfccf061))
+
+* Fix configuration docs ([`b05aa64`](https://github.com/guessit-io/guessit/commit/b05aa64c736efcd9fadae81d415795e6104f2a3a))
+
+* Back to development: 3.0.3 ([`b20d44e`](https://github.com/guessit-io/guessit/commit/b20d44ee688c5948dd653c184225b9559988c20e))
+
+* Preparing release 3.0.2 ([`946724d`](https://github.com/guessit-io/guessit/commit/946724d2aa8fc0cb1e222776a178b30d4b8d84b8))
+
+* Fix regression when passing options as string to python module ([`80cae9b`](https://github.com/guessit-io/guessit/commit/80cae9b0b136d7bd3a4dd50f21c58928baf0579d))
+
+* Add advanced property to Rebulk Match object
+
+Close #282 ([`8fb54ee`](https://github.com/guessit-io/guessit/commit/8fb54ee4b49e5db1bb5cf50768dcd024faa2be2c))
+
+* Add authors file
+
+Close #567 ([`8d24c99`](https://github.com/guessit-io/guessit/commit/8d24c99bf0eb593641da11200ec2c638eae84cd9))
+
+* Update usage in README ([`169cc80`](https://github.com/guessit-io/guessit/commit/169cc806e760b6294ee3ed0b45c822390fcf59c9))
+
+* Fix python2 regression introduced in previous commit ([`2c67c1d`](https://github.com/guessit-io/guessit/commit/2c67c1d43906a0a3787c8f3b291f43a7e9420b6d))
+
+* Enhance configuration files and ensure consistent behavior CLI/module
+
+This make loading of user default configuration file, configuration files, and custom configuration files easier to reason about.
+
+This also allow overriding advanced_configuration at runtime through options dict.
+
+Rebulk rules are now lazily rebuilt when advanced_configuration is changed since previous call.
+
+Close #553 ([`74195f7`](https://github.com/guessit-io/guessit/commit/74195f745ca514b1bbb564d6ef28ae3d96d23dda))
+
+* Back to development: 3.0.2 ([`b00fea6`](https://github.com/guessit-io/guessit/commit/b00fea6f3da484a42239e9c288e70cc50b18feae))
+
+* Preparing release 3.0.1 ([`71c06a1`](https://github.com/guessit-io/guessit/commit/71c06a1323f9c9660ecce6ed659fdec7d72b2a68))
+
+* Update changelog ([`7da07d8`](https://github.com/guessit-io/guessit/commit/7da07d8a73456ef8ac7140a1c6d0e43491280570))
+
+* Fix issue with dotted titles
+
+Close #546 ([`5abfbb0`](https://github.com/guessit-io/guessit/commit/5abfbb0b927430305c15e5cc374ab835ac7f4404))
+
+* Fix issue with ES audio_profile breaking titles
+
+Close #566 ([`43849f0`](https://github.com/guessit-io/guessit/commit/43849f078f9f3aa3f3fb750cf54dedbce08ebd10))
+
+* Add more video_profile to avoid confusion with some release_group
+
+Close #569 ([`2121da8`](https://github.com/guessit-io/guessit/commit/2121da89a43dfbb782d2a9e3a99eaee80bacf17a))
+
+* Add support for mk3d container
+
+Close #568 ([`c64c54d`](https://github.com/guessit-io/guessit/commit/c64c54d33edf790d4135193c6c1bc960e18baddb))
+
+* Fix possible crash for some release names
+
+Close #573
+Close #570 ([`c6701f9`](https://github.com/guessit-io/guessit/commit/c6701f987ed4cbad83c2cd67c9107b52337d6b97))
+
+* Remove Bonus and Extras from episode_details
+
+Close #558 ([`ab1da59`](https://github.com/guessit-io/guessit/commit/ab1da599cf250a6cf0987770974dcbe82ab87ff8))
+
+* Merge pull request #576 from labrys/patch-1
+
+Close resource after usage ([`fb0e55e`](https://github.com/guessit-io/guessit/commit/fb0e55ecf945e08a8154a6c8685b476826ab123a))
+
+* Add python 3.7 support and fix pylint issues ([`85e0ab4`](https://github.com/guessit-io/guessit/commit/85e0ab4b51112fc1879512bc034aa9023749634c))
+
+* Close resource after usage
+
+This closes the resource &#39;tlds-alpha-by-domain.txt&#39; after usage.
+Fixes #575 ([`b1d3f6f`](https://github.com/guessit-io/guessit/commit/b1d3f6fcb05090ec898836d0d5a5e844b478cd4b))
+
+* Back to development: 3.0.1 ([`a54e8ac`](https://github.com/guessit-io/guessit/commit/a54e8acdd37ba3fac2be3c651e2d22f8742608c6))
+
+* Preparing release 3.0.0 ([`ee409f4`](https://github.com/guessit-io/guessit/commit/ee409f47fe0feefefc7dcffa8a4b6dad2f30a25d))
+
+* Update history ([`86c894a`](https://github.com/guessit-io/guessit/commit/86c894ac047f6550a8b017d42df9bdcbcd932261))
+
+* Rename &#34;Analogue HDTV&#34; to &#34;Analog HDTV&#34; ([`c5f788c`](https://github.com/guessit-io/guessit/commit/c5f788c54612825ee199038d979ab9e545e4e6e8))
+
+* Fix crash when using pathlib.Path object on python 3.4 &amp; 3.5 ([`5ff3cc0`](https://github.com/guessit-io/guessit/commit/5ff3cc06b7301dc211c18b942c63cd250e9c1a3a))
+
+* Allow advanced guessit configuration
+
+# Conflicts:
+#	guessit/api.py ([`8db121b`](https://github.com/guessit-io/guessit/commit/8db121b5c9b5204f3a89dc07aac623f2d48d5ac5))
+
+* Add pypy3 to tox and TravisCI tests ([`29311bc`](https://github.com/guessit-io/guessit/commit/29311bcb015c3e4b968904a336eca0938bc6a80f))
+
+* Merge branch &#39;pulls/543&#39; into develop ([`5c64714`](https://github.com/guessit-io/guessit/commit/5c647148dd86b7fc36c6045c3406b4cdf4a24d6e))
+
+* Adds support for path-like objects (e.g. pathlib.Path in python &gt;=3.4) ([`6beca82`](https://github.com/guessit-io/guessit/commit/6beca82dc376344a4be400fa8e7dbb3bbea15971))
+
+* Add .pytest_cache directory to .gitignore ([`8ae6b1b`](https://github.com/guessit-io/guessit/commit/8ae6b1b1ccf0c7d50e62bf8b77f83f184204a297))
+
+* Fix spelling mistake in docs ([`04cc163`](https://github.com/guessit-io/guessit/commit/04cc16351803e3eeb35af9cc3dee5d227a283662))
+
+* Fixed rebase issue ([`e49d6f5`](https://github.com/guessit-io/guessit/commit/e49d6f55934649076180b7d92ad23e8d6876023e))
+
+* Updating docs about advanced configuration ([`e357afb`](https://github.com/guessit-io/guessit/commit/e357afbe3bfdbf78fef4854d74590bedbd33747f))
+
+* Fixes #505: don&#39;t blacklist languages inside a language group ([`f507608`](https://github.com/guessit-io/guessit/commit/f5076089c22a9331ea2795f93796a442270793f0))
+
+* Reducing common_words to bare minimum ([`c527b83`](https://github.com/guessit-io/guessit/commit/c527b836ecb3d6c800ad31726fadd114afd07369))
+
+* Fix last scenario from #342 ([`4d6c1e6`](https://github.com/guessit-io/guessit/commit/4d6c1e64e69b429e94932f348c44f19bbb4d3671))
+
+* Updating history ([`8581eae`](https://github.com/guessit-io/guessit/commit/8581eae75c545ce0201353e6a8b4adb1da35b5c2))
+
+* Adding language and subtitle affixes to advanced configuration ([`1f891c6`](https://github.com/guessit-io/guessit/commit/1f891c69c3ec2b68a2186e9948d5f0064e73692f))
+
+* Rename to advance configuration. Add common words to advanced configuration. Make sure that adv configuration is always loaded even if no-embedded-config is specified. ([`5480640`](https://github.com/guessit-io/guessit/commit/5480640dd0d2b0d222ffcdce79de0f59677cf662))
+
+* Externalize guessit advanced configuration. Resolves #342 and #277 ([`f135c2e`](https://github.com/guessit-io/guessit/commit/f135c2e1f2d1480eee459cd750752d0fd8ee28b9))
+
+* Merge pull request #536 from guessit-io/feature/additional-other-detections
+
+Detect sample, proof, obfuscated and repost ([`994bdba`](https://github.com/guessit-io/guessit/commit/994bdba5e62ce2fa02dc544e520ab058c0931274))
+
+* Fixes #433 and #516: Detecting sample, proof, obfuscated and repost as other properties ([`9f90bc3`](https://github.com/guessit-io/guessit/commit/9f90bc326c12283ca5c260cd56440adb23045eb9))
+
+* Merge pull request #534 from guessit-io/feature/screen-size-see-conflict
+
+Improving screen_size and SEE conflict resolution ([`07f4e23`](https://github.com/guessit-io/guessit/commit/07f4e239c5fadff2bdbcda5a0e2f2daf6f993b3e))
+
+* Fixes #533: Improving screen_size and SEE conflict resolution ([`52bef12`](https://github.com/guessit-io/guessit/commit/52bef127b33a28850efb1598b7031ffe4ffa59eb))
+
+* Merge pull request #529 from guessit-io/feature/docker-locale
+
+Docker locale configuration ([`3afb850`](https://github.com/guessit-io/guessit/commit/3afb850be95698a46f1c878be408ddf7f671b408))
+
+* Fixes #520: Docker locale configuration ([`9956426`](https://github.com/guessit-io/guessit/commit/99564269de22ca531c3be2e994bcd481fa1c75af))
+
+* Update history and docs: frame_rate property added ([`c902963`](https://github.com/guessit-io/guessit/commit/c9029634f077affaf5c2f615dc31db3181f3b52d))
+
+* Merge pull request #528 from guessit-io/feature/frame_rate
+
+Detect frame rate as frame_rate property ([`32b336a`](https://github.com/guessit-io/guessit/commit/32b336a4a570067ffda0cb5f8d6f480e8d1c9911))
+
+* Detect frame rate as frame_rate property. Fixes #480 ([`e0f497d`](https://github.com/guessit-io/guessit/commit/e0f497d116484ddba066db5861f27f42491f8b8f))
+
+* Fix yaml representation for Quantity objects + minor fix in bit_rate detection ([`bae97df`](https://github.com/guessit-io/guessit/commit/bae97dfd61cced6533796cd85980b70a02ab66c4))
+
+* Fixes #254: Incorrect detection with adult content ([`c9ef77f`](https://github.com/guessit-io/guessit/commit/c9ef77fce8c38badeaa737d4cc7822050b4d6ff9))
+
+* Keep order in yaml output ([`dc5398d`](https://github.com/guessit-io/guessit/commit/dc5398d69590e57ffedcf9e0ccd481756176c8fa))
+
+* Fixes for #519: Added 1440p screen_size, improved bit_rate detection and subtitle_language detection ([`1cc9b20`](https://github.com/guessit-io/guessit/commit/1cc9b200ad1e791f01647791519c7ec1dd264698))
+
+* Merge pull request #527 from guessit-io/feature/fix-episode-conflict-audio-channels
+
+Fix episode not detected due to conflict with audio_channels ([`15f4368`](https://github.com/guessit-io/guessit/commit/15f43688459fae4d5ab5d0625dd98a4c4c8b2b65))
+
+* Fix #521: Episode not detected due to conflict with audio_channels ([`f52d525`](https://github.com/guessit-io/guessit/commit/f52d525b0ce4f7684614b451164a1eb75ca39a67))
+
+* Merge pull request #526 from guessit-io/feature/fix-season-range-fileparts
+
+Fix season range in multiple fileparts ([`d93c522`](https://github.com/guessit-io/guessit/commit/d93c522a445a2444e2603dcb3fc24c69db62687d))
+
+* Fixes #522: Season range in multiple fileparts ([`1487548`](https://github.com/guessit-io/guessit/commit/14875483d6e16800d437f8eeeda2d8f4794e604b))
+
+* Merge pull request #525 from guessit-io/feature/fix-line-detection
+
+Fix Line detection ([`4140137`](https://github.com/guessit-io/guessit/commit/4140137f2b9b56e312b7e918bb2407ed1b38cd75))
+
+* Fixes #524: Line detection ([`0377fd0`](https://github.com/guessit-io/guessit/commit/0377fd06081409fefec98ab2f15410d52816dc34))
+
+* Merge pull request #513 from guessit-io/feature/enable-disable-properties
+
+Proposal for enabling/disabling properties ([`819033f`](https://github.com/guessit-io/guessit/commit/819033fec7a96ac7d262073ec1d90b16d5308d09))
+
+* Update HISTORY.rst ([`919e839`](https://github.com/guessit-io/guessit/commit/919e839200741106a243878dba2e1be8efa50116))
+
+* Updating documentation ([`9fabc29`](https://github.com/guessit-io/guessit/commit/9fabc29878b271aa53101907639ea574355be9dd))
+
+* Merge pull request #517 from guessit-io/feature/fix-pylint-inconsistent-return-statements
+
+Handle new pylint rule: inconsistent-return-statements ([`5e83529`](https://github.com/guessit-io/guessit/commit/5e835292da9cf6d21aeff3b9ced936093d4a85fa))
+
+* Adding tests for include/exclude option with required fixes ([`2ce6443`](https://github.com/guessit-io/guessit/commit/2ce6443e334a8c2ba544ea5a68de0fce4e0641c6))
+
+* Change is_enabled to is_disabled ([`0506a97`](https://github.com/guessit-io/guessit/commit/0506a97505d70d9a31c8dda773c6a6779dcbbb49))
+
+* Fixing failing tests ([`a70d5c9`](https://github.com/guessit-io/guessit/commit/a70d5c91461a02118480a75ed8333f7879f679ff))
+
+* Proposal for #231 enabling/disabling properties ([`7987e29`](https://github.com/guessit-io/guessit/commit/7987e29e56fd05625cc804c637cbcc2ccaf5a0b4))
+
+* Also handle too-many-locals ([`53f6762`](https://github.com/guessit-io/guessit/commit/53f6762734b11694d03511c6da718ab860e5d0ec))
+
+* Handle new pylint rule: inconsistent-return-statements ([`120809a`](https://github.com/guessit-io/guessit/commit/120809a14a0742e98373ce792f0cfb6d302a0cc9))
+
+* Merge pull request #515 from guessit-io/feature/remove-mimetype-from-yaml-files
+
+Removing mimetype from yaml files to prevent failing tests ([`eefa208`](https://github.com/guessit-io/guessit/commit/eefa208308a7a32c97753c035bceecc1a1160be6))
+
+* Fixes #498: Removing mimetype from yaml files to prevent failing tests in different environments ([`56eb296`](https://github.com/guessit-io/guessit/commit/56eb296edde03a532f0970a8b1ddebc6c1c15f81))
+
+* Merge pull request #514 from guessit-io/feature/fix-maximum-recursion-depth-navigablestring
+
+Fix maximum recursion depth exceeded ([`66f447f`](https://github.com/guessit-io/guessit/commit/66f447f8474ba706483daae1000f145fa839f041))
+
+* Fixes #247: Deep clone doesn&#39;t work with NavigableString from beautifulsoup4. Making sure guessit input is either binary or str. ([`e500169`](https://github.com/guessit-io/guessit/commit/e5001691a243f1d90a7df283074d06c8c5b1cbcc))
+
+* Merge pull request #512 from guessit-io/feature/enhance-language-country-detection
+
+Further enhancement in countries/language detection ([`2e4ff8c`](https://github.com/guessit-io/guessit/commit/2e4ff8cbd90ce0ca61250d8b7e6e6219f03161bb))
+
+* Fixes #500 and partially fixes #505: Adding AU to default countries and dropping pt and au from blacklisted words since they&#39;re not needed anymore. ([`91a3bf9`](https://github.com/guessit-io/guessit/commit/91a3bf9fdedc0213e0f1dae9f5aa6493cc64b11b))
+
+* Merge pull request #511 from guessit-io/feature/ascii-error
+
+Ascii error fix and dash separated release group detection fix ([`3ac61f1`](https://github.com/guessit-io/guessit/commit/3ac61f1e91d9c4bea0719672b03e11fec55a4f3a))
+
+* Fixes #492 and fixes dash separated release group detection ([`5b19fd8`](https://github.com/guessit-io/guessit/commit/5b19fd8e4234a976ff7c6acfd33f0aa122a63d70))
+
+* Merge pull request #510 from guessit-io/feature/fix-movie-with-season-word
+
+Disable season pattern when type is movie ([`0129424`](https://github.com/guessit-io/guessit/commit/0129424aa4274673e42ac429a532fddd7cde9c08))
+
+* Fix for #465: Disable season pattern when type is movie ([`6ce2ca6`](https://github.com/guessit-io/guessit/commit/6ce2ca6031861cfe09686b68247541fd6aba9b73))
+
+* Removing duplicated values from streaming_services ([`7e8c12c`](https://github.com/guessit-io/guessit/commit/7e8c12c47849bf98612b5047e48a9012603d0138))
+
+* Organizing streaming_services. Updating docs and history. ([`f577483`](https://github.com/guessit-io/guessit/commit/f57748313fd45d70b502eeac6bee24bf43fb5eb3))
+
+* Merge pull request #483 from fernandog/feature/stream_service_more
+
+Add missing stream services ([`6dccecd`](https://github.com/guessit-io/guessit/commit/6dccecd1139dffe58e44d6eeba7730d61cc39a57))
+
+* Fix streaming_service validator rule ([`8db9ddc`](https://github.com/guessit-io/guessit/commit/8db9ddc520340f6b37e993e95d090f57d5b3d634))
+
+* Merge remote-tracking branch &#39;origin/develop&#39; into feature/stream_service_more
+
+# Conflicts:
+#	guessit/rules/properties/streaming_service.py
+#	guessit/test/episodes.yml ([`23da643`](https://github.com/guessit-io/guessit/commit/23da6435765d69ad552b843416787168144c7637))
+
+* Merge pull request #491 from guessit-io/feature/auto-episode-prefer-number
+
+Automatically use --episode-prefer-number / absolute_episode ([`2a14375`](https://github.com/guessit-io/guessit/commit/2a14375a6debff33c30dd27c48d2781ee76ce732))
+
+* Merge pull request #487 from guessit-io/feature/dm-source
+
+Detect Digital Master source ([`8d1bf08`](https://github.com/guessit-io/guessit/commit/8d1bf08308ec5b77215921e38deafeacd67fa35a))
+
+* Fix merging issue + failing test ([`7b2e678`](https://github.com/guessit-io/guessit/commit/7b2e6780ffff27f4929ec9360640883bbd83149b))
+
+* Fix lambda expressions. Fix tag list shouldn&#39;t be modified to not affect subsequent calls. ([`827bdce`](https://github.com/guessit-io/guessit/commit/827bdce1290b24b7385f214d52a33ff4581555d8))
+
+* Fix for #423: automatically use --episode-prefer-number. Added absolute_episode ([`e718802`](https://github.com/guessit-io/guessit/commit/e71880263afee5e4acebd1a28b4bc39a1c2fda23))
+
+* Fix for #384: Detect Digital Master source ([`16fd9ee`](https://github.com/guessit-io/guessit/commit/16fd9eee5605111f1217bd3402079b63f4c437cf))
+
+* Merge pull request #486 from guessit-io/feature/additional-audio-video-codecs
+
+Additional audio and video codecs ([`774454b`](https://github.com/guessit-io/guessit/commit/774454bc25f6dc67707b0ff1516daa52a2884e5e))
+
+* Fixing failing tests ([`66f4d19`](https://github.com/guessit-io/guessit/commit/66f4d19888ba0f8658ba2283296c369f3488c88c))
+
+* Merge pull request #485 from guessit-io/feature/disc-detection
+
+Detect disc numbers ([`7bd17b9`](https://github.com/guessit-io/guessit/commit/7bd17b9cec72110b6edd91f848e660867286b355))
+
+* Fix failing test ([`f6f64a8`](https://github.com/guessit-io/guessit/commit/f6f64a8e83d4bc545065e73b6e74bbc809f36cf1))
+
+* Fix for #482: VP9 video codec. Plus additional common audio and video codecs. ([`1281d8c`](https://github.com/guessit-io/guessit/commit/1281d8cb80a014ea029d3805c5028e2f8f08c6c7))
+
+* Fix for #401: Detect disc numbers ([`413d8f6`](https://github.com/guessit-io/guessit/commit/413d8f6779724ca0d8c47849ac02abd121cff437))
+
+* Merge pull request #484 from guessit-io/feature/size-output
+
+Enhance size output value / Detect bit rate ([`8598a54`](https://github.com/guessit-io/guessit/commit/8598a549e7f45791296ceddb05cc73ac620e2eb9))
+
+* Adding bit rate detection. Fixes #251 and #477 ([`5505f74`](https://github.com/guessit-io/guessit/commit/5505f74a995bafdfab8330e97eee9624fffd9e1e))
+
+* Using class Size instead of Quantity. ([`ed6db27`](https://github.com/guessit-io/guessit/commit/ed6db27ddcd5f0fcd7a21d95c4bf44814f2ed4aa))
+
+* Fix for #481: Enhance  output value ([`0bda2a7`](https://github.com/guessit-io/guessit/commit/0bda2a73bd83d1e0b4358acdef4449e3edb41d59))
+
+* Merge pull request #476 from guessit-io/feature/default-allowed-languages-countries
+
+Add default and configurable list of allowed languages and countries ([`d8f1c89`](https://github.com/guessit-io/guessit/commit/d8f1c89ef0f0cdbb49b50c1f31f2a039545bfc58))
+
+* Fixing failing test ([`0570dfe`](https://github.com/guessit-io/guessit/commit/0570dfee3e96ab2ff89738ec38e19388b20dfe28))
+
+* Add more test scenarios for #259 ([`02df006`](https://github.com/guessit-io/guessit/commit/02df006cdf6cf681952e14f3aa3ce3e087f68694))
+
+* Add test scenario for #489 ([`44aa38b`](https://github.com/guessit-io/guessit/commit/44aa38bf0725c9c686dcda583a77b5437abaee85))
+
+* Improved release group detection to also fix #196 ([`035b4b9`](https://github.com/guessit-io/guessit/commit/035b4b9488e8e831178306cbcaf0eda5070f7a9a))
+
+* Country and languages can be disabled when allowed list is empty ([`4edadb3`](https://github.com/guessit-io/guessit/commit/4edadb3e07232106b494acf87314fa632663704b))
+
+* Added languages from #462: flemish and swiss german ([`0734d93`](https://github.com/guessit-io/guessit/commit/0734d932889f519aa6b06006057547c88ba0ebcd))
+
+* Avoid language and country detection is allowed list is empty. Simplifying language converter ([`fa61e7b`](https://github.com/guessit-io/guessit/commit/fa61e7b09be47e81ef589899ab59493cc7ae07f8))
+
+* Fix and scenarios for #259 ([`e4a15d2`](https://github.com/guessit-io/guessit/commit/e4a15d20905e5042e483025ebf50ac0fcf5884db))
+
+* Fix and scenarios for #258 ([`bc5559c`](https://github.com/guessit-io/guessit/commit/bc5559cb4159c885578bdb81d8df079f64ff3b86))
+
+* Updating HISTORY.rst ([`3132fbc`](https://github.com/guessit-io/guessit/commit/3132fbcce694340bc331bdacec637bc64cb850ee))
+
+* Fix for #458: Remove conflicting matches in release group ([`63a1779`](https://github.com/guessit-io/guessit/commit/63a1779d764289aa6f48fb39f99bcb6001b16752))
+
+* Fix for #296: Add default and configurable list of allowed languages and countries. ([`5df9ca3`](https://github.com/guessit-io/guessit/commit/5df9ca32799d125b5989f7def8198d49bad7f68b))
+
+* Merge pull request #479 from guessit-io/feature/aspect-ratio
+
+Add aspect_ratio and validate screen_sizes ([`a4209c9`](https://github.com/guessit-io/guessit/commit/a4209c90b4e52b1202a186f574282c924da69207))
+
+* Travis still not supporting py37 ([`4e8fab6`](https://github.com/guessit-io/guessit/commit/4e8fab6329959cfaa5549c0c9853ca039aa6619a))
+
+* Updating travis with supported python versions ([`f3b2d8b`](https://github.com/guessit-io/guessit/commit/f3b2d8b22fdb888b103847d4aaca28679bdd4761))
+
+* Updating supported python versions: dropped py33 and added py37 ([`4f7c468`](https://github.com/guessit-io/guessit/commit/4f7c4683959d94755850c60d1ed431a15f1567fe))
+
+* Fixing broken build due to pytest-capturelog. Its fork pytest-catchlog was merged into pytest core. ([`12a6328`](https://github.com/guessit-io/guessit/commit/12a6328d52feeaefaaf56ead64ed2f8693e21845))
+
+* Merge pull request #488 from guessit-io/feature/prefer-rightmost-filepart
+
+File and folder name: fine tuning marker comparator ([`9b07137`](https://github.com/guessit-io/guessit/commit/9b07137a2aadf3cf6c6ea318d97a3be32154e7e9))
+
+* Add Amazon keyword for Amazon Prime streaming service
+
+Close #495 ([`6a74e05`](https://github.com/guessit-io/guessit/commit/6a74e05ac7c2931a40ca22046338ceb3fe5cd65a))
+
+* Added additional test scenario ([`5198832`](https://github.com/guessit-io/guessit/commit/51988323c9977f1b1ab816d9bd4629d4dbb7b8c7))
+
+* Fine tuning marker comparator: Prefer the rightmost filepart when same matches count. ([`a8bbc5e`](https://github.com/guessit-io/guessit/commit/a8bbc5e2242f9dcb2a212cf6a599e8aef1f96e80))
+
+* Merge pull request #490 from guessit-io/fix-travis-pypy
+
+Attemp to fix failing pypy env after travis image upgrade ([`21b8358`](https://github.com/guessit-io/guessit/commit/21b8358d98a08bd816048870b9f3917031252873))
+
+* Attemp to fix failing pypy env after travis image upgrage ([`cc666b1`](https://github.com/guessit-io/guessit/commit/cc666b135b144f5cc8c689de1f0786be61fd6147))
+
+* Some more ([`c25bf0b`](https://github.com/guessit-io/guessit/commit/c25bf0b809e7206527e979e4097f97d2f1536dca))
+
+* Not detecting YHOO ([`0ed89bb`](https://github.com/guessit-io/guessit/commit/0ed89bb4ae1b657b919a63b0a5761795308d4abe))
+
+* Disable disable=too-many-statements ([`094003c`](https://github.com/guessit-io/guessit/commit/094003cee6c069157c6f36921bc853b326f6d231))
+
+* Move some stream services tests to streaming_services.yaml + add more ([`1890705`](https://github.com/guessit-io/guessit/commit/189070563b9be2d45a418b3993a7108b994d5db5))
+
+* This shouldn&#39;t match &#39;streaming_services&#39; property ([`6f9f4b2`](https://github.com/guessit-io/guessit/commit/6f9f4b26b5ae4f2ce9ac662afe98b32c5796a0a9))
+
+* Add missing stream services ([`68a568c`](https://github.com/guessit-io/guessit/commit/68a568c24169ded5cb7a0d73ba40b19bedcccdca))
+
+* Merge pull request #478 from fernandog/feature/stream_service_it
+
+Detect iT as iTunes stream service ([`ded8697`](https://github.com/guessit-io/guessit/commit/ded8697e038ceb4a842e82c4d63798ba76782df4))
+
+* Updating docs and changelog ([`78ac41f`](https://github.com/guessit-io/guessit/commit/78ac41fcdbbafbf4e94475f36a7547b306d02c39))
+
+* Fix for #276: Added aspect_ratio and validation for standard resolutions ([`cb3892b`](https://github.com/guessit-io/guessit/commit/cb3892bd113050d2d88504906fde070cd11567d1))
+
+* Remove duplicate ([`8d2cfaa`](https://github.com/guessit-io/guessit/commit/8d2cfaa86454f02cb99889ac041936c8ec29f1aa))
+
+* Detect iT as iTunes ([`6fe4c4b`](https://github.com/guessit-io/guessit/commit/6fe4c4b6931b2c13c7201f6fd3bb1686b630f4b0))
+
+* Merge pull request #475 from guessit-io/feature/additional-audio-detection
+
+Enhance audio detection ([`b73d30e`](https://github.com/guessit-io/guessit/commit/b73d30e631203bd9f4174c0256a0ed01104c5331))
+
+* Fix duplicated values in HISTORY.rst ([`102708e`](https://github.com/guessit-io/guessit/commit/102708e88bb1de1a5e4343947d5bd34f31d895d9))
+
+* Merge pull request #474 from guessit-io/feature/edition-and-other-additions
+
+Add IMAX and Upscaled detections ([`08bdc0e`](https://github.com/guessit-io/guessit/commit/08bdc0ee152e5b849b4d8cb9998438b992d60f25))
+
+* #471: Detect Opus audio codec ([`9447b9a`](https://github.com/guessit-io/guessit/commit/9447b9ac9f0f9ef30ee2d41943a51d5c8178cd39))
+
+* #471: Detect Dolby Digital EX ([`c19e854`](https://github.com/guessit-io/guessit/commit/c19e85427e2d975db00a8ea82c427301cca3673b))
+
+* #471: Detect DTS-ES ([`b18588e`](https://github.com/guessit-io/guessit/commit/b18588e9d4b36a01b164a56797201e15509dbd21))
+
+* #471: Detect DTS-HD HRA ([`bf38978`](https://github.com/guessit-io/guessit/commit/bf3897888140d834ccf73c51a4bc565724bfa19c))
+
+* Adding Fan edition ([`6d63341`](https://github.com/guessit-io/guessit/commit/6d63341e557caffa0af47ce3b1e43ed2d98f256a))
+
+* Adding Ultimate edition ([`b1bd480`](https://github.com/guessit-io/guessit/commit/b1bd4801ad7f49868b08a44b723162018825b2ef))
+
+* #470: Added Upscaled as other property ([`1a613e1`](https://github.com/guessit-io/guessit/commit/1a613e1e89ae16e858ad60b49a835ddef804456e))
+
+* #470: Added new edition: IMAX ([`5041233`](https://github.com/guessit-io/guessit/commit/5041233a84af6582498068049e23ddc27d7c8774))
+
+* Merge pull request #473 from guessit-io/feature/media-profile
+
+HDR / SDR and color space detection ([`c8d3fac`](https://github.com/guessit-io/guessit/commit/c8d3faceb8e5673b6384bdfdb130040a897c632a))
+
+* Merge pull request #472 from guessit-io/feature/uhd-bluray
+
+Detect Ultra HD Bluray ([`35788b6`](https://github.com/guessit-io/guessit/commit/35788b69d62d6c25a0204947bf381d55608e9fb8))
+
+* Fix for #468: Added SDR, HDR10, Dolby Vision, 12-bit and BT.2020 detection ([`684c7c5`](https://github.com/guessit-io/guessit/commit/684c7c57806a619eeb43aedc65b6f51cbbbcea20))
+
+* #469: Detect Ultra HD Bluray ([`8fd004b`](https://github.com/guessit-io/guessit/commit/8fd004b51aa506903bda14c4a562f81691fdaf25))
+
+* Merge pull request #464 from guessit-io/feature/properties-values
+
+Proposal for property values ([`2013f34`](https://github.com/guessit-io/guessit/commit/2013f34779f83cfaf469ebd854c2823d13633a11))
+
+* Merge pull request #452 from guessit-io/feature/source
+
+Proposal for #365: Deprecate &#39;format&#39; in favor of &#39;source&#39; property ([`bba7a2b`](https://github.com/guessit-io/guessit/commit/bba7a2bbb407b36b9ca1d86339307759e76dd495))
+
+* Update documentation ([`3451188`](https://github.com/guessit-io/guessit/commit/34511884f2ff9151d3e71b734fe2a6bb0b39e51b))
+
+* Move 8bit/10bit from &#39;video_profile&#39; to &#39;color_depth&#39; ([`834e2fe`](https://github.com/guessit-io/guessit/commit/834e2feff24a7b9344c5bc92c1bda8016aa37fec))
+
+* Refactored &#39;audio_codec&#39; values ([`7bbbf76`](https://github.com/guessit-io/guessit/commit/7bbbf768e1adf9ed94948376b2cf82add71f0666))
+
+* Fix wrong documentation about &#39;audio_codec: FLAC&#39; ([`039191f`](https://github.com/guessit-io/guessit/commit/039191fbeef4d95658d2012ddc84c92c419c7b9d))
+
+* Refactored &#39;video_codec&#39; values ([`80cd9e1`](https://github.com/guessit-io/guessit/commit/80cd9e1c44301e0f6a07cf382de237ec90ceaa33))
+
+* Refactored &#39;audio_profile&#39; values. Added &#39;audio_codec: DTS-HD&#39; ([`b9d6626`](https://github.com/guessit-io/guessit/commit/b9d6626b8a318628acd9b9dd704029e9f7c9da30))
+
+* Refactored &#39;video_profile&#39; values ([`a2893bb`](https://github.com/guessit-io/guessit/commit/a2893bb01e14d387855193ec513cf0c22581804d))
+
+* Detecting interlaced resolutions. Changed &#39;4K&#39; to &#39;2160p&#39;. Added &#39;4320p&#39;. ([`cf8d4a3`](https://github.com/guessit-io/guessit/commit/cf8d4a3e8c3f36db2f7a257e680df94c05c14148))
+
+* Refactored &#39;other&#39; values as discussed in #459 ([`c3ce9b4`](https://github.com/guessit-io/guessit/commit/c3ce9b4ac73462a1c0e74ccdecddcea278de32f6))
+
+* Moved &#39;other: FINAL&#39; to &#39;episode_details: Final&#39; ([`0b2bb1b`](https://github.com/guessit-io/guessit/commit/0b2bb1b43e6e219e310545534c813c311fb1595a))
+
+* Changed &#39;episode_details: Omake&#39; to &#39;episode_details: Extras&#39; ([`f71d7c2`](https://github.com/guessit-io/guessit/commit/f71d7c2b6a0d7bbb5f1e6d9a15862ddf575fe602))
+
+* Moved &#39;Ova&#39; and &#39;Oav&#39; from &#39;episode_details&#39; to &#39;other&#39; ([`fbdb17f`](https://github.com/guessit-io/guessit/commit/fbdb17fde310d02a7bae07cd4cc424b9f936d7e9))
+
+* Moved CC and DDC from &#39;other&#39; to &#39;edition&#39; ([`62d8d60`](https://github.com/guessit-io/guessit/commit/62d8d606e12a1ce7befee1313509b6918a6ead9b))
+
+* Dropped &#39;Edition&#39; suffix from &#39;edition&#39; values ([`50f8f44`](https://github.com/guessit-io/guessit/commit/50f8f446ea7b46f0316f6439a05ab378c9e63068))
+
+* Merge remote-tracking branch &#39;origin/develop&#39; into feature/source ([`fdcc531`](https://github.com/guessit-io/guessit/commit/fdcc53145c3b81f4d6cef0878f2b7d1b1663bd27))
+
+* Merge pull request #461 from guessit-io/feature/priority-validate-neighbor
+
+&#39;other&#39; is detected with no neighbors ([`183f190`](https://github.com/guessit-io/guessit/commit/183f19025cd833223b1d4322d662af1994776598))
+
+* Fix for #460: &#39;other&#39; is detected with no neighbors ([`9e5fc60`](https://github.com/guessit-io/guessit/commit/9e5fc600901c7d0a5bab3fd83b4e065d656b3d5b))
+
+* Adding migration instructions from 2.x to 3.x ([`4d6767d`](https://github.com/guessit-io/guessit/commit/4d6767de46e236f24991dcea5a04f8e7baf8ff08))
+
+* Updating docs ([`929c9c7`](https://github.com/guessit-io/guessit/commit/929c9c7c38c53ba6eb8005ead5bc23fbacafcb26))
+
+* Rename WEB to Web ([`38d7371`](https://github.com/guessit-io/guessit/commit/38d737130ffff16b96fb74be845e94fc0f75b9cb))
+
+* Merge remote-tracking branch &#39;origin/develop&#39; into feature/source ([`a6965b0`](https://github.com/guessit-io/guessit/commit/a6965b08f01c1165e0acafe13195f4cf3aae576f))
+
+* Back to development: 3.0.0 ([`ac2de2d`](https://github.com/guessit-io/guessit/commit/ac2de2de05e893d9c45535afa0b2dfeb7629f152))
+
+* Preparing release 2.1.4 ([`b2ef20c`](https://github.com/guessit-io/guessit/commit/b2ef20cb760c20f019f7280049f686bf1c653ad5))
+
+* Update history ([`93f58cd`](https://github.com/guessit-io/guessit/commit/93f58cd3d5ebbe402d3916441fac9c59c0a14a9d))
+
+* Fix failing test ([`2d02306`](https://github.com/guessit-io/guessit/commit/2d02306d1e81dce5fa4dbb2f91557b2b697eea9d))
+
+* Removing &#39;format&#39; property. Renaming BluRay to Blu-ray ([`68548c9`](https://github.com/guessit-io/guessit/commit/68548c91f406f4c0318ad00f55862309b65568e6))
+
+* Add HD Camera/Telecine/Telesync. Rename PPV to Pay-per-view. Fix wrong HDRip detection. WEBCap is a synonym to WEBRip ([`03d88a9`](https://github.com/guessit-io/guessit/commit/03d88a9f96063b2899b446569fc94697e50dc5f2))
+
+* Fix for #365: Deprecate &#39;format&#39; property in favor of &#39;source&#39; ([`2bfac49`](https://github.com/guessit-io/guessit/commit/2bfac49c6ef33db4da4bf172548da41ad8f3ac78))
+
+* Renamed &#39;format&#39; python module to &#39;source&#39; ([`83187b0`](https://github.com/guessit-io/guessit/commit/83187b0e4276590a2f500504ecb0c9a837796ef2))
+
+* Fix new options docs ([`53db177`](https://github.com/guessit-io/guessit/commit/53db177a51935c3860822955e19339878f35b5bd))
+
+* Merge pull request #455 from guessit-io/feature/rebulk-0.9
+
+Make returned dict structure consistent between CLI and API ([`432f2c8`](https://github.com/guessit-io/guessit/commit/432f2c840e4007c4f0a6c159d6f85a708bc81d58))
+
+* Make returned dict structure consistent between CLI and API
+
+This adds --enforce-list and --single-value options to CLI (enforce_list and single_value to API).
+
+Close #274
+Close #453 ([`dca90cb`](https://github.com/guessit-io/guessit/commit/dca90cbba956a45207776840b7bd33461eb4e25b))
+
+* Merge pull request #451 from guessit-io/feature/edition
+
+Move edition values from &#39;other&#39; to &#39;edition&#39; property ([`6b25b03`](https://github.com/guessit-io/guessit/commit/6b25b03a5fd703707c6687af7cfcc7aba55ec255))
+
+* Rename DolbyDigital to AC3
+
+# Conflicts:
+#	docs/properties.rst ([`9362a45`](https://github.com/guessit-io/guessit/commit/9362a45064bd85cbda0b362170557543f91dfcbe))
+
+* Fix missing coma
+
+Close #454 ([`0270507`](https://github.com/guessit-io/guessit/commit/0270507394d9f3d8f1be310d38f0a498b7e668f6))
+
+* Back to development: 3.0.0 ([`39923b9`](https://github.com/guessit-io/guessit/commit/39923b9a9a7b5a597119b47e9c7eed75b5eb49cb))
+
+* Preparing release 2.1.3 ([`e61659f`](https://github.com/guessit-io/guessit/commit/e61659f856eb6404b825a6793f71bf25a5333f29))
+
+* Fix for #421: Move edition values from &#39;other&#39; to &#39;edition&#39; property ([`f7c992d`](https://github.com/guessit-io/guessit/commit/f7c992db4a234acc37495c73b47180c55f15c768))
+
+* Merge pull request #450 from guessit-io/feature/python-3.6
+
+Adding python 3.6 support ([`44ce700`](https://github.com/guessit-io/guessit/commit/44ce700ce349c62aca2734927e6753c251fe76ea))
+
+* Updating history with python 3.6 support ([`d720086`](https://github.com/guessit-io/guessit/commit/d720086ab36222a085978f15f627734c4f8bae86))
+
+* Adding python 3.6 support ([`d664d23`](https://github.com/guessit-io/guessit/commit/d664d23f01bc366c57a0a7653a843abd8fa17881))
+
+* Merge pull request #449 from guessit-io/feature/other-fullhd
+
+Detecting FullHD ([`3bbb5f9`](https://github.com/guessit-io/guessit/commit/3bbb5f9f9a6fcf112a90a3ce2831fd01ce3ec58d))
+
+* Updating history ([`38aab7d`](https://github.com/guessit-io/guessit/commit/38aab7d0c49ef091e3068c525ad6812d79699f8a))
+
+* Fix for #432: Detecting FullHD ([`1d331b8`](https://github.com/guessit-io/guessit/commit/1d331b84ae5ee5414328ead11196505ac661e7ad))
+
+* Merge pull request #448 from guessit-io/feature/update-properties-docs
+
+Updating properties documentation ([`bcd18d7`](https://github.com/guessit-io/guessit/commit/bcd18d71155dfbab95687abdeb148437e0359348))
+
+* Updating properties.rst with missing values. Fixing rst format issues. Ordering properties values ([`6c73063`](https://github.com/guessit-io/guessit/commit/6c7306302c643b32aa49d3beb08caf4e2e4d592e))
+
+* Fix for #330: Rename DolbyDigital to AC3 ([`075538e`](https://github.com/guessit-io/guessit/commit/075538ed8ec0ad6d95fd0395ae971cd1c6236eaf))
+
+* Merge pull request #446 from guessit-io/feature/enhance-weak-movie-removal-logic
+
+Fix `episode` type detection when series name contains `year` followed by SEE pattern ([`d96859d`](https://github.com/guessit-io/guessit/commit/d96859d056864b8956cbeb8c8f5bb6875d270e39))
+
+* Add test scenario for #428 ([`eba607d`](https://github.com/guessit-io/guessit/commit/eba607d4559ef98fe1c679973add7853d8953d77))
+
+* Fix for #235 and #428: Do not remove &#39;weak-movie&#39; after &#39;year&#39; ([`72bd07f`](https://github.com/guessit-io/guessit/commit/72bd07f33561c4d0413be07e8da7b9821c01679a))
+
+* Merge pull request #445 from guessit-io/feature/eac3-audio-codec
+
+EAC3 as audio_codec ([`d1c4841`](https://github.com/guessit-io/guessit/commit/d1c48411c063c80a1fe019e44355eaf1121902d1))
+
+* Adding EAC3 to audio_codec documentation ([`ae9a5a1`](https://github.com/guessit-io/guessit/commit/ae9a5a107ec4bdf37e6b6e8de238b4104d80f131))
+
+* Fixes #438 and ##431: EAC3 as audio_codec ([`416aa0e`](https://github.com/guessit-io/guessit/commit/416aa0e445f25bc90bacb523c0201745b0e99d65))
+
+* Merge pull request #444 from guessit-io/feature/enhance-container-detection
+
+Enhance container detection ([`67164cf`](https://github.com/guessit-io/guessit/commit/67164cf967eed46dcdd6c4f9adaa95028bdf7a07))
+
+* Updating changelog ([`fa24901`](https://github.com/guessit-io/guessit/commit/fa249017c27dbe891dc3bc567d38e5f675989575))
+
+* Fixes #422: container values should be lowercase (as per documentation) ([`d1e8b06`](https://github.com/guessit-io/guessit/commit/d1e8b06a2b10b5187225d5be9eea6602d050dba8))
+
+* Updating container docs ([`3e25396`](https://github.com/guessit-io/guessit/commit/3e2539658e3cdadbd958149b53a4952a34ba941d))
+
+* Fix for #346: detect nzb as container ([`831fa87`](https://github.com/guessit-io/guessit/commit/831fa876a828fa176847daaf81ec5ffd1018a695))
+
+* Merge pull request #443 from guessit-io/feature/enhance-episode-title-detection
+
+&#39;year&#39; and &#39;part&#39; shouldn&#39;t be detected when in &#39;episode_title&#39; location ([`8d56c9f`](https://github.com/guessit-io/guessit/commit/8d56c9f23ceae87221d50de644c8e0c66176dc26))
+
+* Updating changelog ([`d93705a`](https://github.com/guessit-io/guessit/commit/d93705aad60a4921b7323cbf1e717046345a9907))
+
+* Fixes #331, #435 and #440: &#39;year&#39; and &#39;part&#39; shouldn&#39;t be detected when in &#39;episode_title&#39; location ([`09e9246`](https://github.com/guessit-io/guessit/commit/09e9246cb94f1094e4b5ca68939d789f9cd999c1))
+
+* Merge pull request #442 from guessit-io/feature/fix-unknown-lang-detection
+
+Fix for #441: Unknown shouldn&#39;t be detected as language ([`268167b`](https://github.com/guessit-io/guessit/commit/268167b98ded7d23172d755581ea7c79c4b4e780))
+
+* Dropping python 2.6 support ([`f630d85`](https://github.com/guessit-io/guessit/commit/f630d850d08bc2860acc3331266e951952e2350f))
+
+* Fix for #441: Unknown shouldn&#39;t be detected as language ([`066de49`](https://github.com/guessit-io/guessit/commit/066de49184f87a4ee1a33dc075ad19a84d2a520e))
+
+* Merge pull request #437 from guessit-io/feature/fix-disable-weak-episode-if-movie
+
+Disable weak episode if type is movie ([`b4ed4b5`](https://github.com/guessit-io/guessit/commit/b4ed4b57e1e66e2862e8f87053eea3a2fcab33db))
+
+* Fixes #429: Disable weak episode if type is movie ([`ac0a66f`](https://github.com/guessit-io/guessit/commit/ac0a66f37ad612ca0fae99a209ff93ed8636cf08))
+
+* Merge pull request #436 from guessit-io/feature/fix-wrong-audio-detection
+
+Invalid audio detection ([`ad775aa`](https://github.com/guessit-io/guessit/commit/ad775aa93d34f5907386692cbdd7933eae1416ca))
+
+* Ignoring pylint false positives ([`6d6842d`](https://github.com/guessit-io/guessit/commit/6d6842d3ff6463c620f7bbd6e98e16df0359ef8f))
+
+* Fixing pylint issues ([`3d61863`](https://github.com/guessit-io/guessit/commit/3d61863696ae27251822ee11855a1c21ba0c1c13))
+
+* Fixes #434: Invalid audio detection ([`cc706e2`](https://github.com/guessit-io/guessit/commit/cc706e24ef125fa35fcf7e9a3db9c979d8ef564a))
+
+* Back to development: 2.1.3 ([`dc1f017`](https://github.com/guessit-io/guessit/commit/dc1f0179495f302e39d9b2e1dbddce0cffa04792))
+
+* Preparing release 2.1.2 ([`4c5114a`](https://github.com/guessit-io/guessit/commit/4c5114a109185129c482e559e5b6e3f35ff72821))
+
+* Update manifest with configuration files ([`084875e`](https://github.com/guessit-io/guessit/commit/084875e27e3f837e9938fbd48670374e9ba19f43))
+
+* Update changelog ([`9c5cc3c`](https://github.com/guessit-io/guessit/commit/9c5cc3cd7666f2a7ea643d4932191d1f63d9254f))
+
+* Merge pull request #420 from guessit-io/feature/reserved-words
+
+Detecting tags/reserved words ([`db8e3fc`](https://github.com/guessit-io/guessit/commit/db8e3fc19584c9eab28e0e36f034a23c1ac1d274))
+
+* Detecting WEST.FEED and EAST.FEED ([`70900a4`](https://github.com/guessit-io/guessit/commit/70900a4a45c89f687ec2af59291ab65c2850b9df))
+
+* Enhancing Special Edition detection ([`a2fb629`](https://github.com/guessit-io/guessit/commit/a2fb6292e92386072c342a7a227222661d50edae))
+
+* Detecting OAR ([`01b6ad5`](https://github.com/guessit-io/guessit/commit/01b6ad58db189903c9594ef1f7fc3b73553523ca))
+
+* Detecting LIMITED ([`d980f97`](https://github.com/guessit-io/guessit/commit/d980f9710d97c64c540fe73a08daa383c1a33b62))
+
+* Fix STV detection - Straight to Video ([`fe7bed0`](https://github.com/guessit-io/guessit/commit/fe7bed00e9cf10de644e935cbb070c5ab7ee5273))
+
+* Adding UNCUT test scenario ([`24dc237`](https://github.com/guessit-io/guessit/commit/24dc2373114f16047c7e2e08847266531aee0c38))
+
+* Detecting UNCENSORED ([`01cf05d`](https://github.com/guessit-io/guessit/commit/01cf05d7088aaf341759ecda89a2922cadcc2c3c))
+
+* Detecting Theatrical Edition ([`e8c2b8f`](https://github.com/guessit-io/guessit/commit/e8c2b8fcd4702f5e36458114d3627bdbf1d08c66))
+
+* Detecting SAMPLEFIX ([`39a0459`](https://github.com/guessit-io/guessit/commit/39a04597f0d5c3678eee8555d43bd4d320ad9abc))
+
+* Detecting READNFO ([`d678e4a`](https://github.com/guessit-io/guessit/commit/d678e4a57dc2e1e9c734ec8b02656e3ac8d7017a))
+
+* Detecting PROOFFIX ([`1cc067f`](https://github.com/guessit-io/guessit/commit/1cc067fe5dff09fcebe651c2eaa64d1a72b1c067))
+
+* Detecting Open Matte ([`3892b73`](https://github.com/guessit-io/guessit/commit/3892b73e60ccbbbdf3320377c5b9888ee64f3e4c))
+
+* Detecting NFOFIX ([`9cf2655`](https://github.com/guessit-io/guessit/commit/9cf2655eec9e4a01123935e818597cb04407a158))
+
+* Detecting INTERNAL ([`f716835`](https://github.com/guessit-io/guessit/commit/f7168351ef3200f71e86158edd0ee3bc147f3208))
+
+* Updating FINAL documentation ([`8bf5c4e`](https://github.com/guessit-io/guessit/commit/8bf5c4eab3043e3c9873a4a9c6f08417ce592cd9))
+
+* Detecting FESTIVAL ([`660c99f`](https://github.com/guessit-io/guessit/commit/660c99f12f77a186add402bdfca8cacfe24e8ac5))
+
+* Adding DUB test scenario ([`788d4b4`](https://github.com/guessit-io/guessit/commit/788d4b4bd0b9de5dd1c2a5094aa772bc6a5fb459))
+
+* Detecting Documentary ([`2426998`](https://github.com/guessit-io/guessit/commit/24269985a1b0eaf3d845817a1008fbac78e12951))
+
+* Detecting DIRFIX ([`5a484d2`](https://github.com/guessit-io/guessit/commit/5a484d29213230ed14266ac08c126b6e908184d7))
+
+* Enhancing Director&#39;s cut detection ([`caa6b76`](https://github.com/guessit-io/guessit/commit/caa6b7656279b6c3e691f5624dde5cac0883b3d7))
+
+* Detecting COLORIZED ([`239383f`](https://github.com/guessit-io/guessit/commit/239383fe7a752b3796c67dca28e715a62919d048))
+
+* Detecting CONVERT ([`7721986`](https://github.com/guessit-io/guessit/commit/7721986d94ffbe7821d1188a13ebeb5f6953e613))
+
+* Detecting season in dutch ([`2c1df3a`](https://github.com/guessit-io/guessit/commit/2c1df3ab813f956baf546309efca53a61e86b40b))
+
+* Detecting ALTERNATIVE CUT ([`a89c98e`](https://github.com/guessit-io/guessit/commit/a89c98ee42612ef8741aa93352865ebc3a9a523a))
+
+* Merge pull request #419 from guessit-io/feature/detection-improvements
+
+Detection improvements: format, video_profile, audio_channels, streaming_service, UltraHD ([`dc05118`](https://github.com/guessit-io/guessit/commit/dc0511868eac576b611ba6ec87a9767aa383bca8))
+
+* Minor performance improvement ([`715c0f6`](https://github.com/guessit-io/guessit/commit/715c0f60feefd3f26485c9325ee2917b81397280))
+
+* Proper audio_channels detection and validation ([`c4184af`](https://github.com/guessit-io/guessit/commit/c4184af1e7e47aaf938295abad24c61237725e86))
+
+* Fixing audio_channels detection ([`f2a460f`](https://github.com/guessit-io/guessit/commit/f2a460f6731612ad0bbec7c71216fb60b6e3da98))
+
+* Fix indentation issue ([`098179b`](https://github.com/guessit-io/guessit/commit/098179b60b7baca0be989c9b91edc3a567ffec47))
+
+* Updating docs ([`047279f`](https://github.com/guessit-io/guessit/commit/047279fa656d098dc987516dcec02cb4a1a14f9c))
+
+* Fixing lint issues ([`3f72b09`](https://github.com/guessit-io/guessit/commit/3f72b0922b3aeccc14abfc6576904e267777f646))
+
+* Enhancing streaming_service detection/other without separators. Added several test scenarios ([`ee0ee54`](https://github.com/guessit-io/guessit/commit/ee0ee542ef0481837815497037e6d11596607275))
+
+* Enhancing video_profile detection ([`cc113db`](https://github.com/guessit-io/guessit/commit/cc113db2fb81171ac7fea81f787d336f6cc408e6))
+
+* Enhancing audio_channels detection ([`d1ef82c`](https://github.com/guessit-io/guessit/commit/d1ef82c8c4bfbc057d3048ab991c8522b3e14127))
+
+* UHD &#39;other&#39; detection ([`5c2a797`](https://github.com/guessit-io/guessit/commit/5c2a79719d9cee94d9140763777efcc8913f7031))
+
+* UHDTV format detection ([`ac054b4`](https://github.com/guessit-io/guessit/commit/ac054b4bbfd534f2f84952b1abf4daea56415580))
+
+* Merge pull request #418 from guessit-io/feature/screen-size-conflicts
+
+Remove season/episode matches which conflicts with screen_size ([`6c8159f`](https://github.com/guessit-io/guessit/commit/6c8159f2f633a9baddd9f419a264dcaeca2af933))
+
+* Enhancing screen_size conflict detection ([`ae6e906`](https://github.com/guessit-io/guessit/commit/ae6e9065e391051ec901d3b6fa8336f46d3a6ed2))
+
+* Enhancing TV format detection and dubbed detection ([`32d98cf`](https://github.com/guessit-io/guessit/commit/32d98cf0bfb4bbadb413826a4d2c1205b136eae9))
+
+* Minor enhancement in video_profile detection ([`49c9b8e`](https://github.com/guessit-io/guessit/commit/49c9b8e6508a47112035c06136c64f0f48e059f2))
+
+* Fix for #308: Remove season/episode matches which conflicts with screen_size ([`e39c4d2`](https://github.com/guessit-io/guessit/commit/e39c4d2f3e0686f8c0cfabb92e832f0e70e29aa7))
+
+* Merge pull request #416 from guessit-io/feature/remove-invalid-season-episode-matches
+
+Discarding invalid season/episode matches ([`9b2e0a4`](https://github.com/guessit-io/guessit/commit/9b2e0a42d4ee5876a8146471fca4c4f19edc4a32))
+
+* Fix for #415, #383, #352: Discarding invalid season/episode matches ([`8a62d4c`](https://github.com/guessit-io/guessit/commit/8a62d4cff961fe635f1df5b4cab39676c6c0b44e))
+
+* Merge pull request #412 from guessit-io/feature/enhance-language-support
+
+Fix for #321: Enhancing language support ([`89a01b0`](https://github.com/guessit-io/guessit/commit/89a01b012403a4dab5bc928b47878bd4a085e3a5))
+
+* Fix for #321: Enhancing language support ([`ab60717`](https://github.com/guessit-io/guessit/commit/ab6071757ffd532fd336c15bed4cfa92a700f2f2))
+
+* Merge pull request #414 from guessit-io/feature/title-episode_details-conflict
+
+episode_details should be removed when conflicting with title ([`d317553`](https://github.com/guessit-io/guessit/commit/d317553f02b327b6cbf837ff1d3941b4d0a38192))
+
+* Fix for #413: episode_details should be removed when conflicting with title ([`2aa362f`](https://github.com/guessit-io/guessit/commit/2aa362f3e3a307fb47f4d5dd837f291965f04642))
+
+* Merge pull request #404 from guessit-io/feature/fix-ofwords-regex
+
+Fix for detached episode/season count regex ([`e94af2b`](https://github.com/guessit-io/guessit/commit/e94af2bf437cc0e672f16f5b192b633442408cf9))
+
+* Merge branch &#39;develop&#39; into feature/fix-ofwords-regex ([`3d1e767`](https://github.com/guessit-io/guessit/commit/3d1e76760246f9981fe3fe78759aed7aeba718ed))
+
+* Merge pull request #407 from guessit-io/feature/hardcoded-subs
+
+Detect hardcoded subtitles ([`d0f1183`](https://github.com/guessit-io/guessit/commit/d0f11835df327c24b0db45aad04ccd03a07ddbc9))
+
+* Merge branch &#39;develop&#39; into feature/hardcoded-subs ([`55b3948`](https://github.com/guessit-io/guessit/commit/55b394831159a22b2a1463a8ac2a22795c8a8c81))
+
+* Merge pull request #403 from guessit-io/feature/website-prefixes
+
+Handling website prefixes ([`a6bbd83`](https://github.com/guessit-io/guessit/commit/a6bbd838afa479eb6ca2ac55603ea92cf61ef1cd))
+
+* Merge branch &#39;develop&#39; into feature/website-prefixes ([`bfaad93`](https://github.com/guessit-io/guessit/commit/bfaad93b501cbe7cfb33bd458ca8d308a6151970))
+
+* Merge pull request #402 from guessit-io/feature/enhance-filepart-2-episode-title
+
+Enhances Filepart2EpisodeTitle logic to properly guess episode_title ([`8b5df70`](https://github.com/guessit-io/guessit/commit/8b5df70f9de510b7a023f8eeb6127bc251521752))
+
+* Merge branch &#39;develop&#39; into feature/enhance-filepart-2-episode-title ([`0e36413`](https://github.com/guessit-io/guessit/commit/0e364133757bba0518c3ed82d71e46063822856c))
+
+* Merge pull request #405 from guessit-io/feature/prefer-sxxexx
+
+SxxExx pattern should be preferred over weak matches ([`6a850b3`](https://github.com/guessit-io/guessit/commit/6a850b309b031e9b32634544434130041aa73b1d))
+
+* Don&#39;t parse options from process arguments when using guessit API ([`3fd27df`](https://github.com/guessit-io/guessit/commit/3fd27df36fc7ce94753ef12d8fc4c139866664a0))
+
+* Pylint fixes ([`d0c845b`](https://github.com/guessit-io/guessit/commit/d0c845b91f4071e1618f3eebd4cd21b24f25c28c))
+
+* Detect hardcoded subtitles. Fix for #318 ([`36abccf`](https://github.com/guessit-io/guessit/commit/36abccfea9c72940643fe21c029a3886ab3ab9f4))
+
+* Regression tests for #394 and #399 ([`ad068a4`](https://github.com/guessit-io/guessit/commit/ad068a452b4e64af4620e0be2c1654347e1b3136))
+
+* Pylint fixes ([`3101a07`](https://github.com/guessit-io/guessit/commit/3101a073c4822e901ea2d0444d7387dd07548f66))
+
+* Regression tests for #398 ([`604f24a`](https://github.com/guessit-io/guessit/commit/604f24a5aea90c3d45bf8978e4f0f59aac1a22ef))
+
+* Fixes #396: SxxExx pattern should be preferred over weak matches ([`30afedf`](https://github.com/guessit-io/guessit/commit/30afedff7d0e94b8d2b57cb09b81dead6256dd54))
+
+* Fixes #400: Minor issue in regex ([`df57a9e`](https://github.com/guessit-io/guessit/commit/df57a9e731211b3860d1266838cb5de410662c9b))
+
+* Fixes #392: Handling website prefixes ([`2505640`](https://github.com/guessit-io/guessit/commit/2505640bf172c30ef1b76d506cb37345c7d15171))
+
+* Fixes #393: Enhances Filepart2EpisodeTitle logic to properly guess episode_title ([`8caa3cf`](https://github.com/guessit-io/guessit/commit/8caa3cfb7e271443e72c4980f6d06f60445c6bca))
+
+* Merge branch &#39;patch-1&#39; into develop ([`1a9cf06`](https://github.com/guessit-io/guessit/commit/1a9cf06af6b406d09be1de7d8dd840795063d73d))
+
+* Add additional Streaming Services ([`62c8194`](https://github.com/guessit-io/guessit/commit/62c8194c83573f75edf7bbf31b2755a8b25743e0))
+
+* Fix testing issue on python 2 when input string is not unicode but some values are ([`b8520f1`](https://github.com/guessit-io/guessit/commit/b8520f1dad58e30a4ff9e6cff99c8f080887fe70))
+
+* Merge pull request #382 from guessit-io/feature/default-configuration
+
+Add default configuration ([`d51cf8a`](https://github.com/guessit-io/guessit/commit/d51cf8a1b81a651e5d68f37001d9d9931b46f195))
+
+* Add default configuration with OSS 117 ([`1bcbc7a`](https://github.com/guessit-io/guessit/commit/1bcbc7a5e7e26ea1584d04f84e9560cc2df6bd3e))
+
+* Merge pull request #386 from guessit-io/feature/enhance-clean-groupname
+
+Do not strip out parts of release groups ([`7dc9be4`](https://github.com/guessit-io/guessit/commit/7dc9be483b38bdc2b4222865e51e6308be120d59))
+
+* Merge pull request #387 from guessit-io/feature/handle-empty-groups
+
+Handling empty groups ([`2cdc836`](https://github.com/guessit-io/guessit/commit/2cdc8367bf959aadd04ffbeb610490c5448f8945))
+
+* Closes #385: Handle empty groups ([`9569538`](https://github.com/guessit-io/guessit/commit/956953878e773b8f4e8cede272725c2ddc9d3c95))
+
+* Closes #297: Do not strip out parts of release groups. ([`b11108a`](https://github.com/guessit-io/guessit/commit/b11108ab8c3b1fc9edcf4004c008b3de1070c65e))
+
+* Update usage in README ([`acfbf08`](https://github.com/guessit-io/guessit/commit/acfbf0805bf2619048a7c7a5dbb4155072257776))
+
+* Merge pull request #380 from guessit-io/feature/configuration-file
+
+Add configuration file feature ([`7a42a25`](https://github.com/guessit-io/guessit/commit/7a42a2555f55236b74a4161055000e3e5828d334))
+
+* Add configuration file feature
+
+Close #374 ([`1f7b1f0`](https://github.com/guessit-io/guessit/commit/1f7b1f070e1e3f06de70ac29104b6cc397a36fd2))
+
+* Merge branch &#39;feature/expected&#39; into develop
+
+# Conflicts:
+#	guessit/test/episodes.yml ([`4262ade`](https://github.com/guessit-io/guessit/commit/4262ade6a373aa3d4191bb4ae82e2851283e2f74))
+
+* Merge pull request #379 from guessit-io/feature/fix-377
+
+Fix for #377 ([`9b53cdb`](https://github.com/guessit-io/guessit/commit/9b53cdb620fa161e7689d31103a48b75903afa4f))
+
+* Ensure expected_title and expected_group is surrounded with separators ([`7634f7f`](https://github.com/guessit-io/guessit/commit/7634f7fbaecb1f376bfea5eb5edecacae4fc2862))
+
+* Use search input as value for expected properties ([`2c7c631`](https://github.com/guessit-io/guessit/commit/2c7c6317e5187656589feec99ff9c175d12c08ea))
+
+* Fix episode and year conflict ([`5f47363`](https://github.com/guessit-io/guessit/commit/5f473638c14f3d8e70b4395d00f4b0af439810fd))
+
+* Disable RemoveWeakIfMovie rule when context type=episode
+
+Close #377 ([`491a732`](https://github.com/guessit-io/guessit/commit/491a732a26300c97ddf6052a7c02707971191bfa))
+
+* Enhance expected_title and expected_group
+
+Close #376 ([`b720697`](https://github.com/guessit-io/guessit/commit/b720697f556d148210d75f728ea307d563a19fe5))
+
+* Merge pull request #375 from guessit-io/feature/mux
+
+Implement mux detection ([`527c0ab`](https://github.com/guessit-io/guessit/commit/527c0ab00f7f35b2eb6cd062a3b59a60e83d8d7f))
+
+* Updating docs ([`060897c`](https://github.com/guessit-io/guessit/commit/060897c258d8f2967a811ba58a2946285d950027))
+
+* Relative imports should be used ([`f18f00b`](https://github.com/guessit-io/guessit/commit/f18f00b0bacc94b44236f5b5c652199c322b2494))
+
+* Detect AVC as h264 video codec ([`73d48d0`](https://github.com/guessit-io/guessit/commit/73d48d09053c2db977483b8c6141f59ca00f0e43))
+
+* Mux detection. Closes #307 ([`cacda62`](https://github.com/guessit-io/guessit/commit/cacda62f63e082a948164997e54b0da7d9261599))
+
+* Added ReEncoded to other
+
+# Conflicts:
+#	guessit/test/episodes.yml ([`20c4cec`](https://github.com/guessit-io/guessit/commit/20c4cecdbf0b97450bddb54b23510bd2cf6f9f4d))
+
+* Merge pull request #372 from guessit-io/feature/size
+
+Added size property ([`6c8746c`](https://github.com/guessit-io/guessit/commit/6c8746c6498b12918379b5eb0580edacff2e72a2))
+
+* Add missing docstring ([`f82706e`](https://github.com/guessit-io/guessit/commit/f82706e5d393f2c0af3a3b829288540ec2da01a7))
+
+* Fixing imports in size.py ([`8021531`](https://github.com/guessit-io/guessit/commit/80215312ae813ac92d55bd85678364d373a04ae3))
+
+* Updating properties docs ([`3fe136e`](https://github.com/guessit-io/guessit/commit/3fe136ef07218fd9faae974d2313db3d35a90036))
+
+* Adding size detection. Closes #299 ([`f7db0eb`](https://github.com/guessit-io/guessit/commit/f7db0eb427d70053072b459ae40593ee155c7004))
+
+* Updating properties docs ([`644c8b8`](https://github.com/guessit-io/guessit/commit/644c8b8a8663920b2d7cf3614c6416287025b1d6))
+
+* Implementing Re-Encoded guessing. Closes #300 ([`6fe63d2`](https://github.com/guessit-io/guessit/commit/6fe63d22b07c6ec5ab3d6d6cf853a43861dd7b35))
+
+* Docker images are now available in guessit organization ([`a8a80cc`](https://github.com/guessit-io/guessit/commit/a8a80cc69c3b645fda5c6e1e5e6d9d291982bf9f))
+
+* Back to development: 2.1.2 ([`fcd1747`](https://github.com/guessit-io/guessit/commit/fcd17476dd950e2386bf2cdfe0e773e91eae31f9))
+
+* Preparing release 2.1.1 ([`039f0f5`](https://github.com/guessit-io/guessit/commit/039f0f5232fdd62c47234eae1bb207369a78f412))
+
+* Update changelog ([`1df4099`](https://github.com/guessit-io/guessit/commit/1df4099c6feb4d16e2536c3411c69be285c85e7f))
+
+* Merge pull request #370 from guessit-io/feature/strip-separators-processor
+
+Strip separators from matches ([`74b64d3`](https://github.com/guessit-io/guessit/commit/74b64d3edb35c13b72eb73d5c3d8cf53177a9c57))
+
+* Strip separators from matches
+
+This is useful in advanced mode for raw values like title, episode_title and release_group to have separators stripped off. ([`605526e`](https://github.com/guessit-io/guessit/commit/605526e9858cc1cafc5aba75f2b077b212bd2a8b))
+
+* Detect DDP (Dolby Digital Plus) as DolbyDigital ([`d434514`](https://github.com/guessit-io/guessit/commit/d434514588deb8c85773de89fb3ed91f5a19cc1e))
+
+* Enhance guessit performance by using rebulk 0.8.2 ([`6dc8ece`](https://github.com/guessit-io/guessit/commit/6dc8ece541122cd0f1e8cf5c8c36e50cd3c3d8bd))
+
+* Remove twine dependency constraint ([`1fcbe88`](https://github.com/guessit-io/guessit/commit/1fcbe883653b4f90c426cd90cc0041fe37472313))
+
+* Upgrade to rebulk 0.8.1 to support python 2.6 ([`92bf41d`](https://github.com/guessit-io/guessit/commit/92bf41d449d9a0e5e7d5405f13e9e045001fd155))
+
+* Fix for #357: Episode is not detected in a less relevant filepart
+
+# Conflicts:
+#	guessit/test/episodes.yml ([`017649e`](https://github.com/guessit-io/guessit/commit/017649ea7387619503d354522582e08b24247994))
+
+* Keep more specific season/episode
+
+# Conflicts:
+#	guessit/test/episodes.yml ([`5e50449`](https://github.com/guessit-io/guessit/commit/5e504492b78b68a7b0541ab54e60b30fc2f8bfdb))
+
+* Fix episode range starting from 1 prefixed by episodes word ([`b6b3a00`](https://github.com/guessit-io/guessit/commit/b6b3a00ea5b57a820065830071800d6282ca8e53))
+
+* Detecting date followed by screen_size
+
+# Conflicts:
+#	guessit/test/episodes.yml ([`742f6fa`](https://github.com/guessit-io/guessit/commit/742f6fa7fb4f0750d9df4255d8f0be0dc133c88e))
+
+* Fix pylint issue ([`cb4a31e`](https://github.com/guessit-io/guessit/commit/cb4a31ed32f1e5ea28296553d55e6969803b8420))
+
+* Upgrade to rebulk 0.8.0 and use chain_breaker to avoid generating too long ranges
+
+Close #353 ([`243f8f8`](https://github.com/guessit-io/guessit/commit/243f8f83fc402757dff97ec70d622a68bbadcb5d))
+
+* Guess full name streaming services ([`efd37f7`](https://github.com/guessit-io/guessit/commit/efd37f7e7f3519ff00b34f8d37630978013968ad))
+
+* Add streaming_service property to docs ([`d326689`](https://github.com/guessit-io/guessit/commit/d32668998a4045d41ce4a96ad5c0bb7dc5273126))
+
+* Merge pull request #361 from ratoaq2/feature/add-streaming-service
+
+Adding streaming_service property ([`e84459a`](https://github.com/guessit-io/guessit/commit/e84459a94c68867594433dfcd8432e1d4c1dfab9))
+
+* Upgrade to rebulk 0.7.7 to fix chain patterns in certain scenarios
+
+Close #359 ([`cbda121`](https://github.com/guessit-io/guessit/commit/cbda121ce7a310fcefbb61f73aeb85ed03db923e))
+
+* Fix for #357 ([`ae7d133`](https://github.com/guessit-io/guessit/commit/ae7d1334f00bfa611b22a4713c8fc1e1dca4bc16))
+
+* Fixes #360: Keep more specific season/episode ([`7ff4aca`](https://github.com/guessit-io/guessit/commit/7ff4acaa01baaac8bac6c7ad10a2181473ff2834))
+
+* Merge pull request #364 from ratoaq2/feature/detect-more-formats
+
+More formats to be detected ([`d1dce4d`](https://github.com/guessit-io/guessit/commit/d1dce4d98273049cfd1815f03dfdb2214d7431a0))
+
+* Merge pull request #363 from ratoaq2/feature/improve-video-profile-detection
+
+Improving video_profile detection ([`878d857`](https://github.com/guessit-io/guessit/commit/878d857c7d585692cf11590ca42af7f86b95ae61))
+
+* Fixes #315: More formats to be detected ([`30ef63b`](https://github.com/guessit-io/guessit/commit/30ef63b4b3ff3d4b0bbc30625b2512d44994cc27))
+
+* Fixes #350: improving video_profile detection ([`3c2269d`](https://github.com/guessit-io/guessit/commit/3c2269d56143a88e34cb237cc97107226af94427))
+
+* Fix #351: detecting date followed by screen_size ([`56dc4f3`](https://github.com/guessit-io/guessit/commit/56dc4f3cfb513d3c3e0fd2a77c0ee69002773325))
+
+* Adding streaming_service property ([`4744552`](https://github.com/guessit-io/guessit/commit/4744552f4f3ecaf4cf2ce58b992d0f288cd1bed1))
+
+* Remove unused import ([`35e1ac6`](https://github.com/guessit-io/guessit/commit/35e1ac640023aa20fb3efae72e0ea0ca270a1307))
+
+* Fix website validation
+
+Close #345 ([`54bed86`](https://github.com/guessit-io/guessit/commit/54bed865a6b1d82d16b0125b7d833177abace6f2))
+
+* Prefer release group over second title inside filepart
+
+Close #343 ([`e760fe2`](https://github.com/guessit-io/guessit/commit/e760fe2ffe2dbf9a2f9f6aff9b28bd638643801a))
+
+* Fix validation of film property
+
+Close #294 ([`98b0991`](https://github.com/guessit-io/guessit/commit/98b09911cd4f2bb42a02d7def383d91df80f261a))
+
+* Enhance episode/season range and sequence guessing
+
+Close #311 ([`a4fb286`](https://github.com/guessit-io/guessit/commit/a4fb2865d4b697397aa976388bbd0edf558a24fb))
+
+* Fix invalid comparator in audio_codec conflict solver ([`57fe78f`](https://github.com/guessit-io/guessit/commit/57fe78f9e609dfaa60c66432d21a4c0a1f9f11ba))
+
+* Fix HDD release group detected as DolbyDigital
+
+Close #317 ([`232ef2b`](https://github.com/guessit-io/guessit/commit/232ef2b0beabe5c6d3f066918b674ca417570b88))
+
+* Add name parameter to build_or_pattern re utils ([`c48edbd`](https://github.com/guessit-io/guessit/commit/c48edbd1c536d8d6a0622dd4bc914acc2cb36739))
+
+* Ensure roman numbers are surrounded with separators
+
+Close #304 ([`07aeb52`](https://github.com/guessit-io/guessit/commit/07aeb527885728daefa5fb52d8684b8e5b24e224))
+
+* Enhance season/episode guess validation ([`606fe40`](https://github.com/guessit-io/guessit/commit/606fe40fef127137c4d7638ca628a50e0fb144fd))
+
+* Fix Title not properly guessed when &#39;Complete&#39; appears with &#39;The&#39; article.
+
+Requires new rebulk version (0.7.5)
+
+Close #340 ([`0a04fd3`](https://github.com/guessit-io/guessit/commit/0a04fd3948441178c63d661976e2af273aa83676))
+
+* Avoid guessing of to as episode title when Sxx.to.Sxx ([`0045b7d`](https://github.com/guessit-io/guessit/commit/0045b7df16471f324da5913071d4b1fc7db78a3e))
+
+* Enhance season/episode guessing ([`6c0f8d4`](https://github.com/guessit-io/guessit/commit/6c0f8d46005c9079a8c78a9c1af891c2a72f34e0))
+
+* Add ~ to episode/season range separators ([`c7e0ff6`](https://github.com/guessit-io/guessit/commit/c7e0ff6137bd61bbc3fbb8646d3eb32c9faf3e61))
+
+* Enhance complete guessing
+
+Close #310 ([`d954db0`](https://github.com/guessit-io/guessit/commit/d954db0d150ce44d5cccb451720aeeac10d79a96))
+
+* Fix tests on python 3 ([`09b9c17`](https://github.com/guessit-io/guessit/commit/09b9c170dcfe1c5825b36d43a71e653dd1c44126))
+
+* Encode options like input_string
+
+Close #326 ([`e3dd732`](https://github.com/guessit-io/guessit/commit/e3dd732953ad7c55d3fe0547a80a7d8a4c6751fd))
+
+* Enhance season/episode range guessing
+
+Close #339
+Close #287 ([`7e71e66`](https://github.com/guessit-io/guessit/commit/7e71e66040eda1baac25b61b02adae73a8be1be7))
+
+* Fix cd_count issue with x264-CD...
+
+Close #316 ([`e8b91af`](https://github.com/guessit-io/guessit/commit/e8b91afce81cf4797c9db7900b80db4b1aa1e4bc))
+
+* Fix part property ([`215bad6`](https://github.com/guessit-io/guessit/commit/215bad6f16fc77b70627462c90f4db1266368f5d))
+
+* Better release_group guessing.
+
+Close #313 ([`7636ed3`](https://github.com/guessit-io/guessit/commit/7636ed3bd0f6cfa21b4676aab87f0a6d4841c4a1))
+
+* Fix pylint issue. ([`8423caf`](https://github.com/guessit-io/guessit/commit/8423cafc388b8967497d4d9ba4ec759ef254fea8))
+
+* Drop unicode conversion for -T/-G options
+
+Close #326 ([`ea95691`](https://github.com/guessit-io/guessit/commit/ea956918099a877c2d5f014d1519c64ab18dfe73))
+
+* Add support for SxxEPxx pattern
+
+Close #338 ([`0b73fec`](https://github.com/guessit-io/guessit/commit/0b73fec02a0b47e796d2a692087d15da212326fa))
+
+* Add #328 unit test ([`2750b7b`](https://github.com/guessit-io/guessit/commit/2750b7bcf7b01a144c1ca376692c6c6b6216c9ba))
+
+* Better audio_channels guess when suffixed with ch
+
+Close #328 ([`acc5061`](https://github.com/guessit-io/guessit/commit/acc50612c7339bde3fc87ada4e4ecc7b3e50257c))
+
+* Enhance season list support
+
+Close #336 ([`852cbaa`](https://github.com/guessit-io/guessit/commit/852cbaa87871a5445311e999b9aa7019615be028))
+
+* Upgrade rebulk to 0.7.4
+
+Close #306 ([`eae627b`](https://github.com/guessit-io/guessit/commit/eae627b1bdd8a5d1c485be73b38052ada312bf51))
+
+* Fix invalid guess with --type episode
+
+Close #335 ([`733b746`](https://github.com/guessit-io/guessit/commit/733b7462b3b1d67752a9ada4137f31421c15b263))
+
+* Add workaround for zest.releaser twine issue
+
+See https://github.com/zestsoftware/zest.releaser/issues/183 ([`cc7b59c`](https://github.com/guessit-io/guessit/commit/cc7b59ca850b09caa4b6d2ce951424b5cac596f6))
+
+* Back to development: 2.1.1 ([`ed8a57c`](https://github.com/guessit-io/guessit/commit/ed8a57c0a0707646e17a3c8451c3d72a0eba9b17))
+
+* Preparing release 2.1.0 ([`e1dc01e`](https://github.com/guessit-io/guessit/commit/e1dc01ed72ec54e94a5500d9acaa79818ece5d10))
+
+* Update changelog ([`93d4367`](https://github.com/guessit-io/guessit/commit/93d4367af608dfc3e68fe8f618d9ff0d62d369a0))
+
+* Add Rebulk version when running guessit --version
+
+Close #322 ([`99cb5b3`](https://github.com/guessit-io/guessit/commit/99cb5b3687b68901633ec050142ec9bc1f568406))
+
+* Remove python-dateutils dependency version constraint
+
+Close #329 ([`484f308`](https://github.com/guessit-io/guessit/commit/484f308a8e2d7e6f23740d5052b7f6f26cc1d4f7))
+
+* Fix pylint issue with python 2 ([`66fe4ce`](https://github.com/guessit-io/guessit/commit/66fe4cee6039d97c5433a82bc8e3e49f1f147768))
+
+* Drop regex native module support ([`11658fa`](https://github.com/guessit-io/guessit/commit/11658fac86e3d4132bc535522c3982f99ceb6769))
+
+* Fix pylint issues ([`9943db5`](https://github.com/guessit-io/guessit/commit/9943db5e746c394b77e4f67515f675fc3112d845))
+
+* Merge pull request #325 from ratoaq2/format_video_codec_without_seps
+
+Enhances format and video_codec detection when no separators between … ([`bb6e778`](https://github.com/guessit-io/guessit/commit/bb6e7780b14f5c46b04b0573cbe2451c3cf764c3))
+
+* Merge pull request #324 from ratoaq2/enhance_screen_size
+
+Enhance screen_size to detect 720pHD and 1080pHD ([`2adce40`](https://github.com/guessit-io/guessit/commit/2adce409afa2c8552a5f87bc7475b93a314d630c))
+
+* Upgrade rebulk to 0.7.3 ([`5aabd3e`](https://github.com/guessit-io/guessit/commit/5aabd3ee76396d0fef7904d375e1817ad3b8e77c))
+
+* Enhances format and video_codec detection when no separators between themselves ([`b5c6632`](https://github.com/guessit-io/guessit/commit/b5c66326157d9bba541b81ed8c9cc2d27d421faa))
+
+* Enhance screen_size to detect 720pHD and 1080pHD ([`dc52959`](https://github.com/guessit-io/guessit/commit/dc52959fbca1a9e4a774580f513e8575ac189e10))
+
+* Avoid season/episode to guessed when pattern is included inside other word
+
+Close #242 ([`67b8ac7`](https://github.com/guessit-io/guessit/commit/67b8ac712cb28af6b2e31a8b11a47735b65d59c4))
+
+* Avoid title to be guessed as website.
+
+Close #298 ([`57966ab`](https://github.com/guessit-io/guessit/commit/57966abac1b4ab9f9ba949d383c6837ed168ec4f))
+
+* Guess Dolby keyword as DolbyDigital audio_codec
+
+Close #295 ([`b8be99b`](https://github.com/guessit-io/guessit/commit/b8be99b88e41c1349c341eb8406b7cc6ddb400fa))
+
+* Fix issue when running guessit in non-interactive shell with python 2
+
+Close #293 ([`7615788`](https://github.com/guessit-io/guessit/commit/7615788505cfa8d73c5ae09091f4da71f062c835))
+
+* Fix invalid conflict solving occuring between SssEee and ssXee patterns.
+
+Close #286 ([`eb8229f`](https://github.com/guessit-io/guessit/commit/eb8229fd37c55a65e1f5502873a50b460149c27f))
+
+* Add docs to pytest ignore ([`f130254`](https://github.com/guessit-io/guessit/commit/f130254df26d64379fd58bf4a89fd387d6f5f884))
+
+* Merge pull request #320 from ratoaq2/subtitle_language_fix
+
+Fix subtitle language detection when using subtitle_suffixes ([`977bf25`](https://github.com/guessit-io/guessit/commit/977bf25ccd0ce057c3c2f52a204ef641a1ae2244))
+
+* Fix subtitle language detection when using subtitle_suffixes ([`45e5e85`](https://github.com/guessit-io/guessit/commit/45e5e855d208d2232bab49398d8ae08b24b5bfa7))
+
+* Merge pull request #314 from ratoaq2/release_group_fix_313
+
+Fix for #313 ([`de2bf05`](https://github.com/guessit-io/guessit/commit/de2bf05dc80706d1d17d22af5aae78a2b569274f))
+
+* Adding container, other and language as previous scene_names for SceneReleaseGroup rule ([`2e20069`](https://github.com/guessit-io/guessit/commit/2e2006983dae84d3e1dbd474415673352a507534))
+
+* Update changelog ([`61303fa`](https://github.com/guessit-io/guessit/commit/61303fa009ff3b17cd91be7a18fcccec8642d027))
+
+* Keep langage if it exactly match the hole
+
+Close #269 ([`5bd2ccb`](https://github.com/guessit-io/guessit/commit/5bd2ccbf604eb2971b341e3fadf59afd7c593bb6))
+
+* Remove properties ignore next to title when they are uppercase ([`77c2c7e`](https://github.com/guessit-io/guessit/commit/77c2c7e9733cd89fd16669627a641880ef9ad2a0))
+
+* Add subbed, custom sub and custom subbed as subtitle markers ([`baf7f93`](https://github.com/guessit-io/guessit/commit/baf7f93ff1366147ccb8aa4b8689c0ac133384a0))
+
+* Back to development: 2.1.0 ([`1163c2c`](https://github.com/guessit-io/guessit/commit/1163c2c59d5c836fe5fa31f7eef6b000ae25bec3))
+
+* Preparing release 2.0.5 ([`4e9ee0a`](https://github.com/guessit-io/guessit/commit/4e9ee0ab3ed9a2227841f9f94a92cb7fbb5f5f48))
+
+* Update changelog ([`3276ff6`](https://github.com/guessit-io/guessit/commit/3276ff6de6356972112b0cfd507af484ed7cac8c))
+
+* Make audio_codec AC3D a synonym of AC3 ([`55ba043`](https://github.com/guessit-io/guessit/commit/55ba043406026abc0dbf3ef68d3a81296de61110))
+
+* Fix pylint issues ([`3cf2391`](https://github.com/guessit-io/guessit/commit/3cf239159a956a3ec7786825c089ab180d47f6d8))
+
+* Add support for titles containing dots
+
+Close #278 ([`91f7441`](https://github.com/guessit-io/guessit/commit/91f7441e6cb18d4f0e17ef434fc392a7ea7f0700))
+
+* Lock python-dateutil version
+
+See https://github.com/dateutil/dateutil/commit/2d42e046d55b9fbbc0a2f41ce83fb8ec5de2d28b#commitcomment-17032106
+
+Close #284 ([`7d3a22a`](https://github.com/guessit-io/guessit/commit/7d3a22a75075b730785e024a037242af96dc9fd6))
+
+* Fix docstring ([`2b54491`](https://github.com/guessit-io/guessit/commit/2b544919af30fcbfec5e6dcc03694f7fcfbb2e36))
+
+* Fix docs invalid properties and guessit -p listing
+
+Close #283 ([`a18f827`](https://github.com/guessit-io/guessit/commit/a18f827b45cb6495dd3f340e1d2030b7ebe67830))
+
+* Update docs with guessit-io organization ([`28b6789`](https://github.com/guessit-io/guessit/commit/28b67896fc26a0473d5738526a45d4b4003e6c80))
+
+* Remove unicode stuff from docs ([`7d7f9c0`](https://github.com/guessit-io/guessit/commit/7d7f9c01554a22c33a94f3fbdf590e04b6fc7494))
+
+* Upgrade rebulk to 0.7.1 ([`8192668`](https://github.com/guessit-io/guessit/commit/8192668d90319e22331905aa59c737a3c6fc542f))
+
+* Back to development: 2.1.0 ([`c298cc0`](https://github.com/guessit-io/guessit/commit/c298cc014573e881f6c8db46031858d98ebcfb10))
+
+* Preparing release 2.0.4 ([`d9ea60d`](https://github.com/guessit-io/guessit/commit/d9ea60d641ebfd8edaa4a9c4293305dbb9e1cebf))
+
+* Add GuessitException Report to get information when guessit crash on a guess. ([`58e27fc`](https://github.com/guessit-io/guessit/commit/58e27fcdf92b226561edaa647d390381e125bf80))
+
+* Fix issues related to backslashes
+
+Close #265
+Close #266 ([`3ee4ac0`](https://github.com/guessit-io/guessit/commit/3ee4ac0bd2da5b67c9564610756066d1ad1b34b8))
+
+* Remove possible path separators from patterns
+
+Close #264 ([`27bc2b3`](https://github.com/guessit-io/guessit/commit/27bc2b391a84e69b2afd3faa9beb9bd93d20001e))
+
+* Back to development: 2.1.0 ([`3f7284a`](https://github.com/guessit-io/guessit/commit/3f7284a635608ee373259227c79d95f45d32c46a))
+
+* Preparing release 2.0.3 ([`0f72c3d`](https://github.com/guessit-io/guessit/commit/0f72c3d4854a9d91b61833a776bdb31e575644c8))
+
+* Update history ([`d3aa378`](https://github.com/guessit-io/guessit/commit/d3aa37834063d5d3244194851b3c0c6f1b077fcd))
+
+* Back to development: 2.1.0 ([`b2b43ab`](https://github.com/guessit-io/guessit/commit/b2b43ab0376a663e32d765c96cdd2b35c04a6896))
+
+* Preparing release 2.0.2 ([`e3d665f`](https://github.com/guessit-io/guessit/commit/e3d665f8268abe204b3db7352ce08b8faf9471d5))
+
+* Update history ([`5109e63`](https://github.com/guessit-io/guessit/commit/5109e634076fb34651d6eac2d487583e3f2ac419))
+
+* It now works with pypy ([`4fe0926`](https://github.com/guessit-io/guessit/commit/4fe09269f79902f9371a59ae8d9d762e69514b77))
+
+* Use utf-8 to decode/encode input unicode string ([`c9e5efd`](https://github.com/guessit-io/guessit/commit/c9e5efd6c10128ceede989ceac3cfc0bdd0fe20c))
+
+* Back to development: 2.1.0 ([`be0586e`](https://github.com/guessit-io/guessit/commit/be0586e0832969d408e59b06d093a7bcbc6a8e68))
+
+* Preparing release 2.0.1 ([`d2edcac`](https://github.com/guessit-io/guessit/commit/d2edcac4b9fa3daa4df1bed0f25a125282395812))
+
+* Add support for all type of string with python 2 and python 3 ([`e24a4b0`](https://github.com/guessit-io/guessit/commit/e24a4b05c1de6d25f7b9b6f0cb328ed3e035c8d6))
+
+* Back to development: 2.1.0 ([`04839ac`](https://github.com/guessit-io/guessit/commit/04839ac9ec26a633618511b7b99b84c5f628ba57))
+
+* Preparing release 2.0.0 ([`2dd6ce2`](https://github.com/guessit-io/guessit/commit/2dd6ce262cdcd5725a7e01a786c92b2351b19b28))
+
+* Fix invalid RST description on Pypi ([`50ddb30`](https://github.com/guessit-io/guessit/commit/50ddb300a9caabc5b42b15f83dc945ed6fc98b25))
+
+* Add more builds ([`122b1f8`](https://github.com/guessit-io/guessit/commit/122b1f8f610157bc2fe38f4db0087eed57042353))
+
+* Back to development: 2.0rc9 ([`36af0b5`](https://github.com/guessit-io/guessit/commit/36af0b592f949c63fa9d8ef2e244583b89b545b9))
+
+* Preparing release 2.0rc8 ([`6ea0851`](https://github.com/guessit-io/guessit/commit/6ea08514eedbd42a27c5d376a2f81ae4c2cc299d))
+
+* Make regex module optional using rebulk chain feature
+
+Close #257 ([`fc3ada8`](https://github.com/guessit-io/guessit/commit/fc3ada8cf11695430d1f59ca5f51d4f53a75cb66))
+
+* Better setup.py and requirements ([`a0e95db`](https://github.com/guessit-io/guessit/commit/a0e95db74e240f37bdef0d85369605bca71cf132))
+
+* Add HuBoard badge ([`963bdc3`](https://github.com/guessit-io/guessit/commit/963bdc34e2716967fb7558bc51ad99e27eb62251))
+
+* Back to development: 2.0rc8 ([`9e9f36e`](https://github.com/guessit-io/guessit/commit/9e9f36ebb702b1dd36d757a44d3a48f660a470fb))
+
+* Preparing release 2.0rc7 ([`bd1f50c`](https://github.com/guessit-io/guessit/commit/bd1f50c23d547ad8a3e3b5eb11edafc341846f1e))
+
+* Fix packaging issue on Python 2 ([`2b7c4d7`](https://github.com/guessit-io/guessit/commit/2b7c4d7ae6bc31d1602f62ff898936dc287beace))
+
+* Back to development: 2.0rc7 ([`74ee5c1`](https://github.com/guessit-io/guessit/commit/74ee5c12fc2fff5885f0eb8e1dc83cb0eb02ebd1))
+
+* Preparing release 2.0rc6 ([`058e7d2`](https://github.com/guessit-io/guessit/commit/058e7d2838a47d062fe0c92de9df4a6f4e863e4f))
+
+* Update history ([`a4b5705`](https://github.com/guessit-io/guessit/commit/a4b5705902af76bbec88c01ecc559c42502a420c))
+
+* Oops, invalid python version check ([`e3693a7`](https://github.com/guessit-io/guessit/commit/e3693a7abc7cadb25f6abd87e86cd45f76f13407))
+
+* Add more short words to exclusion list for language guessing
+
+Close #256 ([`d0bd6c0`](https://github.com/guessit-io/guessit/commit/d0bd6c0b51cde554f9c610b0e0e80eb0cde98ea9))
+
+* Handle UTF-8 encoding in setup.py (README/HISTORY) ([`1782213`](https://github.com/guessit-io/guessit/commit/178221363ea0a1607390433c3c0bb9b4df41fcb1))
+
+* Back to development: 2.0rc6 ([`2e246c8`](https://github.com/guessit-io/guessit/commit/2e246c8f1b1bbe4a9aa0326662d524af743e012f))
+
+* Preparing release 2.0rc5 ([`23d74f6`](https://github.com/guessit-io/guessit/commit/23d74f60c851e666c1ea461cdda078bc6280f6ee))
+
+* Update history ([`39efe20`](https://github.com/guessit-io/guessit/commit/39efe202696e245960d1bae4cd79e7d0e92c7982))
+
+* Add Jordan to excluded words for language guessing ([`0c805cd`](https://github.com/guessit-io/guessit/commit/0c805cdf7c7a8137d0d9e81872bc590210df97c1))
+
+* Add more possible values in other property (and AVCHD as h264)
+
+Close #243 ([`898cb3d`](https://github.com/guessit-io/guessit/commit/898cb3d93ca226d4a3bc09463f2adf56a98f4782))
+
+* Guess film number only if less than 100
+
+Close #245 ([`a693b69`](https://github.com/guessit-io/guessit/commit/a693b69f7b60e05fecec44b8e92b5efc7666ed51))
+
+* Add priority to Screener validation to avoid Scrubs collision
+
+Close #246 ([`57c18a5`](https://github.com/guessit-io/guessit/commit/57c18a59c20ed2bdc479480ce068a9a90434c021))
+
+* Add XXX tag value to other property
+
+Close #246 ([`b4b3341`](https://github.com/guessit-io/guessit/commit/b4b334186cf8f7946d3eae3ceac4413aece8a153))
+
+* Add more words to common words for language guessing
+
+Close #250 ([`a76b23e`](https://github.com/guessit-io/guessit/commit/a76b23ee1ab42a3d6488aebb48bf6cdb3f2a160b))
+
+* Add mimetype property to the docs
+
+Close #252 ([`fd522b0`](https://github.com/guessit-io/guessit/commit/fd522b0944c4d0ed9fe7cb82c7fe00a5ae305955))
+
+* Rename alternativeTitle to alternative_title and add it to docs
+
+Close #253 ([`8114ae6`](https://github.com/guessit-io/guessit/commit/8114ae616dad6a5090a6dd226c532a96e4c0dd95))
+
+* Capitalize container property
+
+Close #255 ([`95dd3c4`](https://github.com/guessit-io/guessit/commit/95dd3c4069d940524c741512bcb8a57c78629eb2))
+
+* Add Dolby Atmos audio_codec support
+
+Close #249 ([`a39e019`](https://github.com/guessit-io/guessit/commit/a39e0191213db9fa1eb4a40d88fcba0f9a0dc69d))
+
+* Remove country in title rule ([`e6de767`](https://github.com/guessit-io/guessit/commit/e6de767777e195900a3d95e12768ab2b37dc8e41))
+
+* Remove old repository references ([`43830f6`](https://github.com/guessit-io/guessit/commit/43830f6d4c45eeb616bcc0eb0fd8448cc7d5fa53))
+
+* Add docker section to README ([`0aaf76b`](https://github.com/guessit-io/guessit/commit/0aaf76b6dfcb38a12785f585924158c651aa57d1))
+
+* Back to development: 2.0rc5 ([`bbf35e0`](https://github.com/guessit-io/guessit/commit/bbf35e0be3926ebaa13f3977286cb0f65914a8bc))
+
+* Preparing release 2.0rc4 ([`2cf39ce`](https://github.com/guessit-io/guessit/commit/2cf39ce7c40eacfd1b98d3e6654cbf12e2b66f16))
+
+* Enhance MANIFEST.in and add some ignore to check-manifest ([`02d26fd`](https://github.com/guessit-io/guessit/commit/02d26fddd10724d21dc89dd32bc3f716431f526e))
+
+* Rename `audio_codec` value `true-HD` to `trueHD` ([`6a96441`](https://github.com/guessit-io/guessit/commit/6a964414e05d825d8933cb655b1bf9b738f9ee77))
+
+* Add exotic `screen_size` patterns support like `720hd` and `720p50`. ([`34d0d6a`](https://github.com/guessit-io/guessit/commit/34d0d6aa9dc436b4fe1c040066bcbef4d4bcc522))
+
+* Dockerize ([`0981eba`](https://github.com/guessit-io/guessit/commit/0981eba4fa7080ca05637ffa15a0aff4083d74ec))
+
+* Fix pylint issues ([`5c9003b`](https://github.com/guessit-io/guessit/commit/5c9003be533384304812f71d0f26aab5468318ff))
+
+* Fix travis CI pylint call ([`f998105`](https://github.com/guessit-io/guessit/commit/f998105bc4116fbdd32406611080a561debd7047))
+
+* Upgrade to pylint 1.5.0 ([`88c6376`](https://github.com/guessit-io/guessit/commit/88c6376e95ee6d2c57b14f73748f77c2a4c086b9))
+
+* Add docs and prepare switch to master branch ([`d560755`](https://github.com/guessit-io/guessit/commit/d560755d6b6f55d292f0ebfbc0983479a526c7f9))
+
+* Back to development: 2.0rc4 ([`c74aa1c`](https://github.com/guessit-io/guessit/commit/c74aa1c2fa87abc9f07e3ae8d4aa19dc33cbdbcd))
+
+* Preparing release 2.0rc3 ([`d5dbf27`](https://github.com/guessit-io/guessit/commit/d5dbf27b70d4aaa58de01d21a2c4df798dbd7289))
+
+* Add version to main module ([`66413d5`](https://github.com/guessit-io/guessit/commit/66413d54c2f328e11be9b87fdb913d81e60ca6dc))
+
+* Back to development: 2.0rc3 ([`9dc375b`](https://github.com/guessit-io/guessit/commit/9dc375bc71107c087cf4f7e03562968d1f3a9f5a))
+
+* Preparing release 2.0rc2 ([`19eb96a`](https://github.com/guessit-io/guessit/commit/19eb96a0b631ad8b934df74a8e9e22df08acb311))
+
+* Update history ([`091f399`](https://github.com/guessit-io/guessit/commit/091f399f654cc9ed230a8790363303f4558fd742))
+
+* Fix possible NoneType error ([`ea139f0`](https://github.com/guessit-io/guessit/commit/ea139f0ef1edf941321cb6abc114d3350b4cc1ba))
+
+* Remove ; from titles separators and &amp; from separators ([`59a99a2`](https://github.com/guessit-io/guessit/commit/59a99a283d61fa9bce315665cca8e301d82e3302))
+
+* Single digit episodes are now guessed for --type episode instead of --episode-prefer-number ([`bfd21d3`](https://github.com/guessit-io/guessit/commit/bfd21d3f10f81dc437fdee68239a53a5f380c043))
+
+* Back to development: 2.0rc2 ([`f1df1e3`](https://github.com/guessit-io/guessit/commit/f1df1e335f11509b65c94037c5f0ebc7e15f4fe7))
+
+* Preparing release 2.0rc1 ([`05d64c1`](https://github.com/guessit-io/guessit/commit/05d64c126a2110b784fd81fa7d5760962d642c65))
+
+* Update README for Release Candidate ([`e473dc3`](https://github.com/guessit-io/guessit/commit/e473dc36c5a82e33ce8ba6d3e569ecbf74243555))
+
+* Fallback to default title guessing when expected title doesn&#39;t match ([`301a9bd`](https://github.com/guessit-io/guessit/commit/301a9bd58f6b67047dfe68cc082c026fcd173359))
+
+* Back to development: 2.0b5 ([`3151faa`](https://github.com/guessit-io/guessit/commit/3151faa26864f954373dfd8022d4503f58a2e5cd))
+
+* Preparing release 2.0b4 ([`5e99e5e`](https://github.com/guessit-io/guessit/commit/5e99e5ec7da21fb909e2bafece7aadb4dc7c5fac))
+
+* Update history ([`479ee4d`](https://github.com/guessit-io/guessit/commit/479ee4d6c34f8cce1f7b22bc836105acb4061e81))
+
+* Fix pylint issues ([`d24a3a9`](https://github.com/guessit-io/guessit/commit/d24a3a9622cc93b6799bd8421ee20ea459d3a0a9))
+
+* Add better support for -T option ([`27898a9`](https://github.com/guessit-io/guessit/commit/27898a9641154d33ee59ba3bb51fdc341e43c5fb))
+
+* Add support for unicode in -T/-G options ([`2f74c35`](https://github.com/guessit-io/guessit/commit/2f74c35002153b65fbd8b107454747a1f9dd18e1))
+
+* Fix expected title
+
+Close #238 ([`95b1f71`](https://github.com/guessit-io/guessit/commit/95b1f7101a0ddcb6f6b8b5d3258d91add650d519))
+
+* Give priority to explicit title ([`2d8b53f`](https://github.com/guessit-io/guessit/commit/2d8b53fc8f3d84b5a66d2bad49a080524abcaadf))
+
+* Implement --verbose option ([`94fb398`](https://github.com/guessit-io/guessit/commit/94fb398928499840f5e6ad9d526685148cc58a90))
+
+* Add validation rule for single digit episode to avoid false positives. ([`4570eaa`](https://github.com/guessit-io/guessit/commit/4570eaa0cfc4eafd3f8b5276b3e750a0e3a8b8e3))
+
+* Add --expected-group option ([`9c7f7b7`](https://github.com/guessit-io/guessit/commit/9c7f7b735a50c28f7196a871cd5f0612172cb70d))
+
+* Back to development: 2.0b4 ([`c1beb0e`](https://github.com/guessit-io/guessit/commit/c1beb0e77a9ae20b36bc59fc6fa8eb77a06c3c10))
+
+* Preparing release 2.0b3 ([`e84b645`](https://github.com/guessit-io/guessit/commit/e84b6458a41d29c6211726462ab5d133a719f927))
+
+* Fix IndexError when input has a closing group character with no opening one before. ([`c303db6`](https://github.com/guessit-io/guessit/commit/c303db6a4b9709bc7ce4056f2714ae9ecdc96e8b))
+
+* Ensure date is found when conflicting with episode/season ([`2fb1c64`](https://github.com/guessit-io/guessit/commit/2fb1c64083b6da3a21d91ae7a8823f6334463ac1))
+
+* Add better space support in episode/season properties ([`b6ce12b`](https://github.com/guessit-io/guessit/commit/b6ce12bc1b1c84a7a2f83f94dfc3f01afeb63390))
+
+* Update usage in README.rst ([`e4e2827`](https://github.com/guessit-io/guessit/commit/e4e28277f2681f77e6b2a2fc375950e9519fdea5))
+
+* Avoid uuid and crc32 collision with episode/season properties ([`a56a7f3`](https://github.com/guessit-io/guessit/commit/a56a7f3453991effaab319bcc034dc45c20179e2))
+
+* Update history ([`3ab8726`](https://github.com/guessit-io/guessit/commit/3ab87263bdf35b50631fcbaaaccde85ead16cbf7))
+
+* Update Development Status classifier ([`9a05b28`](https://github.com/guessit-io/guessit/commit/9a05b288fb0d13876bc7202467f743992ddeecb7))
+
+* Force implicit option in CLI ([`2ad4c4d`](https://github.com/guessit-io/guessit/commit/2ad4c4d882027b13e1badfbcf28b866e20ed277a))
+
+* Add --type option ([`7ba5ae3`](https://github.com/guessit-io/guessit/commit/7ba5ae302a84c9fdac53d517762c13ed2c4aecd7))
+
+* Add rebulk implicit option support ([`ed08358`](https://github.com/guessit-io/guessit/commit/ed083582673e4d15272850b812e0dad840a78cd3))
+
+* Add support for Part with no space before number ([`043a032`](https://github.com/guessit-io/guessit/commit/043a032c7801f66e614f2852c929955a9a6242a5))
+
+* Back to development: 2.0b3 ([`ca65d05`](https://github.com/guessit-io/guessit/commit/ca65d05472e7fcc724305938b2fa762769ab1b6d))
+
+* Preparing release 2.0b2 ([`dd8a7bf`](https://github.com/guessit-io/guessit/commit/dd8a7bffe0ba2a6f5481169bd303da7e627328c8))
+
+* Remove pypy environment from tox configuration ([`07725f3`](https://github.com/guessit-io/guessit/commit/07725f3e77ffd541bf8002737ef9e43210bc334f))
+
+* Add python 2.6 support ([`4dcc48a`](https://github.com/guessit-io/guessit/commit/4dcc48a6687a88434f79082ecd52810537a41164))
+
+* Remove rebulk master from dev requirements ([`3b4c467`](https://github.com/guessit-io/guessit/commit/3b4c4679227871c04969913a7407adb7c21e2173))
+
+* Back to development: 2.0b2 ([`6284423`](https://github.com/guessit-io/guessit/commit/6284423e792edc9725b7cef197627a8ac314261e))
+
+* Preparing release 2.0b1 ([`356006a`](https://github.com/guessit-io/guessit/commit/356006a422dffbe07487d8cd25d69f88a5b179fa))
+
+* Update history ([`f8f25de`](https://github.com/guessit-io/guessit/commit/f8f25de032aecdf63fd9c7433d3be42b7c3b7d49))
+
+* Bump rebulk 0.6.1 and enhance title guessing ([`ca469a9`](https://github.com/guessit-io/guessit/commit/ca469a9eaed2f02a7b41c2a8e36d86fbae151015))
+
+* Update migration ([`6733b78`](https://github.com/guessit-io/guessit/commit/6733b785dd0126a34987c6e2018cd1c713e29e30))
+
+* Avoid crash when displaying properties and yaml module is not available. ([`af68081`](https://github.com/guessit-io/guessit/commit/af680817c5cd7614e3b41ac1f85dfe916e848292))
+
+* Increase code coverage ([`f657685`](https://github.com/guessit-io/guessit/commit/f6576854e191ea12c3f2959dbab9a317c8d15324))
+
+* Rename properCount to proper_count and add it to introspector ([`0fe54b6`](https://github.com/guessit-io/guessit/commit/0fe54b694a073d74b71a18d376757bede05bfdb7))
+
+* We are in Beta now ([`f78b201`](https://github.com/guessit-io/guessit/commit/f78b201867ae92e5ad94b01b137c04341a66727a))
+
+* Back to development: 2.0b1 ([`324adb8`](https://github.com/guessit-io/guessit/commit/324adb84fabf2639a23f7719936400ca3e6d9499))
+
+* Preparing release 2.0a4 ([`11d4e51`](https://github.com/guessit-io/guessit/commit/11d4e5153511494032a0354486f381d585cc4fe6))
+
+* Update history ([`07b7f90`](https://github.com/guessit-io/guessit/commit/07b7f907aa1ffe3479ad469da181733a0d8b7cfb))
+
+* Bump rebulk 0.6.0 and add -p/-V options ([`929e499`](https://github.com/guessit-io/guessit/commit/929e499b181d976c41719e9f1bc7ea8c8afd55c6))
+
+* Update HISTORY format to match zest.releaser ([`62b0b08`](https://github.com/guessit-io/guessit/commit/62b0b08fc1d4e6ca357f1b50c42902a226e7bbb1))
+
+* Fix pylint issue on python 2.7 ([`12dba88`](https://github.com/guessit-io/guessit/commit/12dba88ad2eed11fe0ce095c0ed89f7502fc1a04))
+
+* Back to development: 2.0a4 ([`87eeb21`](https://github.com/guessit-io/guessit/commit/87eeb212928bfc5df2d863512c0a34205020a05b))
+
+* Preparing release 2.0a3 ([`a701818`](https://github.com/guessit-io/guessit/commit/a701818f1cdbda4396c333c663e84a7ebe6b9973))
+
+* Refactor api and rules to use builder pattern and allow customization ([`fb36ecc`](https://github.com/guessit-io/guessit/commit/fb36ecca8aae75576d2509ce284599a0195c09d0))
+
+* Back to development ([`d3c01e5`](https://github.com/guessit-io/guessit/commit/d3c01e5552531aefc29ef64f4f4ad581f6e39fed))
+
+* Add zest.releaser[recommended] support ([`adc5b78`](https://github.com/guessit-io/guessit/commit/adc5b78d102cef901ff38814e83a968f82a1dcc1))
+
+* Release 2.0a2 ([`cc6e34b`](https://github.com/guessit-io/guessit/commit/cc6e34be52394ec31cc86d99e23662de652cdcde))
+
+* Raise TypeError instead of AssertionError when non text is given to guessit API.
+
+Thanks @diaoul ([`dfe0d10`](https://github.com/guessit-io/guessit/commit/dfe0d106157e4f5934cb7baa12b26cfb43426780))
+
+* Release 2.0a1 ([`7010401`](https://github.com/guessit-io/guessit/commit/70104011b8a8702980f9884b43b1adbbce4de857))
+
+* Rename properties and update MIGRATION docs ([`eaee32e`](https://github.com/guessit-io/guessit/commit/eaee32e65987a8a381015748e3dc64afeb500ba8))
+
+* Fix pylint issue in benchmark test ([`224c398`](https://github.com/guessit-io/guessit/commit/224c39873dcbf9c129c4fa39fc2e50a02af6c62a))
+
+* Use latest pip on TravisCI and use released version of rebulk ([`245fadf`](https://github.com/guessit-io/guessit/commit/245fadf6f18c9987f231ef6120fde7112f66c724))
+
+* Add benchmark test ([`c62b45c`](https://github.com/guessit-io/guessit/commit/c62b45c86f6d3e36980cf16f4bb009de10a48f8a))
+
+* Fix doctests for python 2.7 ([`125bfc1`](https://github.com/guessit-io/guessit/commit/125bfc1f7f9f87d2df10a6b6f779c80e3df1acdd))
+
+* Fix issues related to str/unicode in python 2.7 ([`e02060c`](https://github.com/guessit-io/guessit/commit/e02060c04fc03f7226c110cafe28e8963a33ec23))
+
+* Add docs and better migration path ([`1ae6ca0`](https://github.com/guessit-io/guessit/commit/1ae6ca07f5ab33df3f25a092a908556075d796d1))
+
+* Remame extension property to container with extension tag ([`ee57672`](https://github.com/guessit-io/guessit/commit/ee576724079112f1765464786c5c8e6f14be0ffd))
+
+* Add mimetype property ([`aba054a`](https://github.com/guessit-io/guessit/commit/aba054a6ec684a4ae437d59c7ddff43f30534f2e))
+
+* Rename type series value to episode ([`b5cf22f`](https://github.com/guessit-io/guessit/commit/b5cf22f297a9ec6a8b3c1122dee0b90289c9e2d7))
+
+* bump rebulk version ([`b2c6917`](https://github.com/guessit-io/guessit/commit/b2c6917be1edbe0a9588bb87672d943350cd1744))
+
+* Add type property, more test cases and fixes ([`53c5522`](https://github.com/guessit-io/guessit/commit/53c5522b23046dab05364bac3078f96660fe7d3b))
+
+* Add more episode tests along with small fixes ([`08e7c5e`](https://github.com/guessit-io/guessit/commit/08e7c5ede5f9d970f52c9aab90823459712a6b21))
+
+* Add container property ([`9100d52`](https://github.com/guessit-io/guessit/commit/9100d52c19f86d90db0ee94942359d5babf57101))
+
+* Make python setup.py test works on an new environment ([`dfbfc0c`](https://github.com/guessit-io/guessit/commit/dfbfc0c10677bff9a1b4e48d3ace4dba8da7c9b7))
+
+* Guess version property when version is detached from episodeNumber ([`938b851`](https://github.com/guessit-io/guessit/commit/938b8512a073a494c1b119471b3337198da62764))
+
+* Add more series tests ([`6e4cc68`](https://github.com/guessit-io/guessit/commit/6e4cc68e38583c0ec5c26be9bee353017f0c30bd))
+
+* Add more audioCodec tests ([`7fb7da7`](https://github.com/guessit-io/guessit/commit/7fb7da7bdde47bc5a0f5b5f768d57f0178619aaa))
+
+* Fix possible NoneType error ([`158eaf3`](https://github.com/guessit-io/guessit/commit/158eaf371ebfc6c998ab2a81f405eaa02e15898a))
+
+* Add + as a separator for episodeNumber list ([`af488c5`](https://github.com/guessit-io/guessit/commit/af488c560e55b8535bbdd87e8a7528d9d5c4a356))
+
+* Fix possible conflict between audioChannel and episodeNumber ([`5157b41`](https://github.com/guessit-io/guessit/commit/5157b41fe2b0c31d2dcdeac5e2431f506333946e))
+
+* Add more series test cases ([`b4d54aa`](https://github.com/guessit-io/guessit/commit/b4d54aa044e80963d949bc2414dc6b9db9d3de0c))
+
+* Bump rebulk version ([`418a552`](https://github.com/guessit-io/guessit/commit/418a552630b86300c19321d896fa1a9321cafe14))
+
+* Add expected-title option and refactor title/episodeTitle guessing ([`eeb5fe1`](https://github.com/guessit-io/guessit/commit/eeb5fe18e053f64b839f29106a4e7568ef00042d))
+
+* Add better conflict solver between screenSize and episodeNumber/season ([`da98979`](https://github.com/guessit-io/guessit/commit/da989793178d1e9b6715dfa3e24ac441e198e923))
+
+* Enhance country, language and title properties ([`69e7d11`](https://github.com/guessit-io/guessit/commit/69e7d111defdfb3bbe42c1555cb3b821afc2d1a0))
+
+* Add enhancements for episodeNumber guessing ([`ad60eb6`](https://github.com/guessit-io/guessit/commit/ad60eb6ec65c95d442b115312bad9229ff2dec52))
+
+* Add better season and episode list and count ([`a480741`](https://github.com/guessit-io/guessit/commit/a4807417f5289046ef2298a1764e4044860ad77b))
+
+* Add episode version property ([`76e6d5a`](https://github.com/guessit-io/guessit/commit/76e6d5a3f5b7176973d04015bf2806fd1c27805e))
+
+* Fix title guessing when title is not the first available hole ([`289b92a`](https://github.com/guessit-io/guessit/commit/289b92a4dc7a9086bb8878bc325a4cd351d34764))
+
+* Add support for weak-duplicates (the.100.109.hdtv-lol.mp4 case) ([`876cb68`](https://github.com/guessit-io/guessit/commit/876cb68e1e2616a865e80b8f357290435c96315a))
+
+* Add season_year post_processor to add year property when season value is a valid year. ([`14e8444`](https://github.com/guessit-io/guessit/commit/14e844450fd5e4d395f36dcdbebc182fadf6df18))
+
+* Add range support for episodeNumber (- character as range) ([`b7a7c2d`](https://github.com/guessit-io/guessit/commit/b7a7c2d06b09d096727dcf478eeccee68a1afc89))
+
+* Add equivalent holes post_processor to include equivalent parts of guessed files in matches list and retrieve best title case. ([`ab700ec`](https://github.com/guessit-io/guessit/commit/ab700ec4179048ee023777962d206d8a4c6fa772))
+
+* Upgrade babelfish to 0.5.5 and add country property support ([`f98c8b7`](https://github.com/guessit-io/guessit/commit/f98c8b7302d76dd991cbbad9f377dfc36d2bc1ca))
+
+* Add better anime releaseGroup support ([`a1d41c8`](https://github.com/guessit-io/guessit/commit/a1d41c864402be4ee32a3758f27730ade8ee8be3))
+
+* Bump rebulk version ([`419c116`](https://github.com/guessit-io/guessit/commit/419c1169100b53aa634e9b8aa7b3581cb457752e))
+
+* Use more toposort for rebulk rules and fix issues with title ([`2a0aca1`](https://github.com/guessit-io/guessit/commit/2a0aca1ec5a166fe1e96c3780847a87d65a4c54f))
+
+* Use latest rebulk Rule API ([`9131068`](https://github.com/guessit-io/guessit/commit/91310682ef058ab2f9d8ade86658df3effdf0025))
+
+* Simplify language prefix/suffix rules ([`496c508`](https://github.com/guessit-io/guessit/commit/496c508cb4d1b3e924ac2779a96bec3a0edd4e4a))
+
+* Avoid using Rebulk Match object in functionnal patterns ([`0a733e4`](https://github.com/guessit-io/guessit/commit/0a733e41345636c9d8b14029922115fca6fb929e))
+
+* Add crc32 property ([`dd232c8`](https://github.com/guessit-io/guessit/commit/dd232c846d14e7eb984333980850d1d18c18e18d))
+
+* Add episodeNumber list support ([`09b7888`](https://github.com/guessit-io/guessit/commit/09b7888055a213931b44c43f2b9eabc2abf26b10))
+
+* Add remove_ambiguous post processor and support better guessing of titles ([`97491e4`](https://github.com/guessit-io/guessit/commit/97491e4d58b67763b3e3757a1e240653f32fab51))
+
+* Add more episodes patterns and properties support ([`140f2fa`](https://github.com/guessit-io/guessit/commit/140f2fa2dc32489bb2d925ba5768b9994d97117f))
+
+* Add alternativeTitle property ([`5c63b96`](https://github.com/guessit-io/guessit/commit/5c63b96a89a4dffb2b4278fbfadbcd3900f7772b))
+
+* Convert language to subtitleLanguage when extension is a subtitle ([`ce169dd`](https://github.com/guessit-io/guessit/commit/ce169dda1e2d081ebfb25e24dc6d51c4ce475564))
+
+* Add private_parent=True to episodes regex to fix various issues ([`dabaa7f`](https://github.com/guessit-io/guessit/commit/dabaa7f088ba3110f64dee93224ed7bc23f92b96))
+
+* Add more season/episodeNumber support ([`485ac71`](https://github.com/guessit-io/guessit/commit/485ac7141005f3f431c0c458f013225d349e2ae7))
+
+* Add weak episodeNumber/season patterns ([`94c6700`](https://github.com/guessit-io/guessit/commit/94c670086d9636a8bc6f5072b22b3fc97bcc782b))
+
+* Add reorder title feature ([`49f7971`](https://github.com/guessit-io/guessit/commit/49f797158cae5deb31caecf85aebd30001017d14))
+
+* Update to latest Rebulk changes ([`01c7751`](https://github.com/guessit-io/guessit/commit/01c775194788cca7e736fb6676a2da954f4af403))
+
+* Add name-only option ([`42aceda`](https://github.com/guessit-io/guessit/commit/42acedaf7c0fdfa192e0aeb61d51a1b788d224e0))
+
+* Keep &#34;,:;-&#34; when cleaning value ([`c318455`](https://github.com/guessit-io/guessit/commit/c31845547bec3cd2ddd223a80e89a470bfe01d63))
+
+* Solve conflict with &#39;HQ&#39; pattern from audioProfile and other properties ([`df56d69`](https://github.com/guessit-io/guessit/commit/df56d69ef9fbdb68c2fdcf7324b1dfef19745cfa))
+
+* Enhance subtitleLanguage guessing with groups ([`3c7bfa9`](https://github.com/guessit-io/guessit/commit/3c7bfa90cbf0834399378510ada59d78d3c0c741))
+
+* Add scr to excluded word for language guessing ([`4614116`](https://github.com/guessit-io/guessit/commit/46141167993784dc6c33e4f01e0b60e9b295d01c))
+
+* Enhance title/language guessing ([`7ae2bb4`](https://github.com/guessit-io/guessit/commit/7ae2bb4680c952d6559dd018a0eed13ce706e153))
+
+* Update conflict_solver Rebulk API ([`66064aa`](https://github.com/guessit-io/guessit/commit/66064aaf423453bad2fb68574e6b0fc0136e05dd))
+
+* Keep &#34;,;&#34; when cleaning value and ensure bonus is surrounded by separators ([`2938574`](https://github.com/guessit-io/guessit/commit/29385741d0d0bd9777a6370b7a74208664258286))
+
+* Enhance title/language ([`aa518c2`](https://github.com/guessit-io/guessit/commit/aa518c242cc2ef5780ccf9d86d612e8c01fe5816))
+
+* Add idNumber property and enhance audio properties conditions ([`1636ade`](https://github.com/guessit-io/guessit/commit/1636adeabf6b72d4b64c6304635dbaee4153d20e))
+
+* Ignore language if included in title ([`ec8e429`](https://github.com/guessit-io/guessit/commit/ec8e4294fa6eedc0e7e30161bf580e542cb08338))
+
+* Add videoApi property ([`8d50a10`](https://github.com/guessit-io/guessit/commit/8d50a10c87c5b915c6b374e9ef42934e51a606e0))
+
+* Enhance cleanup formatter to remove duplicate spaces ([`62bca67`](https://github.com/guessit-io/guessit/commit/62bca6741cb995b92db9aac88596dbed19c3d4a4))
+
+* Enhance year property when multiple match are found ([`331105c`](https://github.com/guessit-io/guessit/commit/331105c063f104d4ff0e65caf40824bab208dc1f))
+
+* Add more tests for part property ([`ff7e1a4`](https://github.com/guessit-io/guessit/commit/ff7e1a4802514796c1fdff1125c57b91aa642c63))
+
+* Optimize imports ([`f4fb6a8`](https://github.com/guessit-io/guessit/commit/f4fb6a8f3e85c6e9607a9afab4b95ed659b4654d))
+
+* Refactor rules module ([`6bc2e95`](https://github.com/guessit-io/guessit/commit/6bc2e9511733422ff78e24006fc13d6ce3a827ef))
+
+* Fix bonusNumber and filmNumber properties ([`bbd7375`](https://github.com/guessit-io/guessit/commit/bbd7375f42c58cb857f8c5e2738a50a747e94deb))
+
+* Add part property support ([`729ca40`](https://github.com/guessit-io/guessit/commit/729ca401000cc6926e73bf1737953339773b7b3c))
+
+* Add filmSeries and filmNumber properties ([`149e344`](https://github.com/guessit-io/guessit/commit/149e344579c75c001c8213a44c80e2132de86069))
+
+* Fix an issue in bonus property ([`0ac46cf`](https://github.com/guessit-io/guessit/commit/0ac46cfea26e7c40fea5ca59ffdd005b37a69654))
+
+* Add bonusNumber and bonusTitle properties ([`d935606`](https://github.com/guessit-io/guessit/commit/d9356063b368b5999611b77c13c2836248a6baa1))
+
+* Add audioChannels property ([`ae700f2`](https://github.com/guessit-io/guessit/commit/ae700f238e7a7cbbab4b05381e4e4ef3dcf7bdc0))
+
+* Enhance code coverage ([`29ad170`](https://github.com/guessit-io/guessit/commit/29ad170b41316a13f2abceeb5abec80c1eba71bf))
+
+* Fix parse_options for python 2.7 ([`4191b42`](https://github.com/guessit-io/guessit/commit/4191b42325f766d4d1211ae75999e7f453ecf527))
+
+* Fix pylint issues ([`3c0c2b4`](https://github.com/guessit-io/guessit/commit/3c0c2b44bfd11b30979835006e3a0df19d4f3e6c))
+
+* Add more movies tests ([`9e73e69`](https://github.com/guessit-io/guessit/commit/9e73e69e0f667530ebd88fb1a9d88df82d14e06d))
+
+* Fix language tests ([`26aad3a`](https://github.com/guessit-io/guessit/commit/26aad3a1b9f722874127f293a2868bab23d5d35e))
+
+* Fix releaseGroup to remove forbidden words at end of match ([`e2d9afc`](https://github.com/guessit-io/guessit/commit/e2d9afc5fd68eb707ae110b9b5c6e633b408b7f0))
+
+* Add babelfish Contry/Language support in json dumps ([`2637723`](https://github.com/guessit-io/guessit/commit/2637723c36b44edd0dbbf72ddf3865895c3a6144))
+
+* Let dot belong to extension ([`9435bf9`](https://github.com/guessit-io/guessit/commit/9435bf9db5c9f6e3a290a0f3c99b0f1d7cf2cefc))
+
+* Add command line support and relax releaseGroup guessing ([`b5de364`](https://github.com/guessit-io/guessit/commit/b5de3644131ae83bf19feb74a3dd56b94f5c884a))
+
+* Add date property ([`2d68c75`](https://github.com/guessit-io/guessit/commit/2d68c756d43c28388bf5b7658ae7b2fc5f670a5d))
+
+* Add unicode support for python 2.7 ([`ca3cfe7`](https://github.com/guessit-io/guessit/commit/ca3cfe715d12bafac0c34469d503cc9d42f71d55))
+
+* Fix pylint issue ([`88b29f2`](https://github.com/guessit-io/guessit/commit/88b29f227ac1a86691271b4f9edca486d417c534))
+
+* If multiple title are found, prefer one where filepart contains year ([`d4d57bc`](https://github.com/guessit-io/guessit/commit/d4d57bcff769d0a1fc4c2cae76292f06e36c2c7b))
+
+* Fix cdNumberTotal property ([`cf01e1f`](https://github.com/guessit-io/guessit/commit/cf01e1f5283b5bc0aff1579a9ea1d28203239bd9))
+
+* Ignore an anime releaseGroup if scene releaseGroup is found ([`6ef3f7b`](https://github.com/guessit-io/guessit/commit/6ef3f7bb4b0dfd0fd83b4f5c7d03a9aa13f675cc))
+
+* Sort the longuer marker before when matches count is equal ([`9dff7d3`](https://github.com/guessit-io/guessit/commit/9dff7d3ad7aed9ebe97a0a8033964e92fe0116dd))
+
+* Enhance releaseGroup guessing ([`881fd3e`](https://github.com/guessit-io/guessit/commit/881fd3e22329be065ec2186078beecbe8aa89744))
+
+* Fix an issue in format validation rule ([`7deae1a`](https://github.com/guessit-io/guessit/commit/7deae1a7122f83a202a6348ccddd7b89aaaf86aa))
+
+* Add support of entries where most information are not in filename. ([`b12682e`](https://github.com/guessit-io/guessit/commit/b12682e46bc7a1042ae378e41e8408f2a4d378a2))
+
+* Add more movies tests ([`d8f6338`](https://github.com/guessit-io/guessit/commit/d8f63383880a0150df78cc043978d310281ac98e))
+
+* Add cdNumber and cdNumberTotal properties ([`cfe5102`](https://github.com/guessit-io/guessit/commit/cfe5102fc6ef333483745dfa16b639c250a52ee7))
+
+* Add edition property ([`3a62d43`](https://github.com/guessit-io/guessit/commit/3a62d437aeae9b91729ab645bcb3db536b60385d))
+
+* Add other and propertCount properties ([`a25e828`](https://github.com/guessit-io/guessit/commit/a25e8289585b48d612dcf4678699f1dc651dd7fa))
+
+* Add videoProfile and audioProfile properties ([`88c46ba`](https://github.com/guessit-io/guessit/commit/88c46ba80d626e51cc8580d9ecee31f474efb4bc))
+
+* Enhance releaseGroup guessing ([`de3acb1`](https://github.com/guessit-io/guessit/commit/de3acb1f36c508a1103a6fb3c214b88981e249a6))
+
+* Enhance language and subtitleLanguage guessing ([`9db5127`](https://github.com/guessit-io/guessit/commit/9db512700c69c4ecf2362ffa4df39479d330cee0))
+
+* Enhance releaseGroup guessing ([`14374bd`](https://github.com/guessit-io/guessit/commit/14374bde89485443cff08fdf9a5162cbfe7ac747))
+
+* Fix issue in subtitle suffix support ([`8b7cc69`](https://github.com/guessit-io/guessit/commit/8b7cc6961e39a17b00fd8629fdfb5807ad5a42d1))
+
+* Add groups markers (...), [...] and {...} ([`4be239b`](https://github.com/guessit-io/guessit/commit/4be239baf6dc594d5042b9321b1105c6e7e1564c))
+
+* Add language and subtitleLanguage property ([`d369634`](https://github.com/guessit-io/guessit/commit/d36963461657f374e1fa54597bb48523ccf5d957))
+
+* Add episodeTitle property ([`8d4dbcd`](https://github.com/guessit-io/guessit/commit/8d4dbcd89729c4b667f4aa5a3f7969159e4765d8))
+
+* Add releaseGroup property as Rule ([`6bd3864`](https://github.com/guessit-io/guessit/commit/6bd38647bd08f5fb1478a2d6affb3ac828d1b213))
+
+* Use Rule class for title property ([`abeda01`](https://github.com/guessit-io/guessit/commit/abeda01444414a3cb62f0cde9ebe46e75d08799e))
+
+* Fix badges to point to 2.x branch build ([`20e4280`](https://github.com/guessit-io/guessit/commit/20e42801cbb9a68fdae25e0a2022db8fdeb9057d))
+
+* Add title property ([`7a545ad`](https://github.com/guessit-io/guessit/commit/7a545ad008a982260fc3b4848fd65e9e1873f15c))
+
+* Add extension patterns ([`40106df`](https://github.com/guessit-io/guessit/commit/40106dfe26b131eb747649cc17dd1956991aa017))
+
+* Add path markers and give priority on last path element ([`e90225f`](https://github.com/guessit-io/guessit/commit/e90225f54d89b8c11490b9c3e9df77625d9d793d))
+
+* Add format, screenSize, videoCodec, audioCodec, website and year patterns ([`9e640e9`](https://github.com/guessit-io/guessit/commit/9e640e9139eb9affa84bf2ca9c1b9fc3c30853f4))
+
+* Add test for __main__ entry point ([`95a759d`](https://github.com/guessit-io/guessit/commit/95a759d12fdc302b04c104fdd48fe3d28a2c0dc7))
+
+* Add HuBoard link ([`9b988a7`](https://github.com/guessit-io/guessit/commit/9b988a7e8705db19689772fd02cb661120e2d2e4))
+
+* Initial commit ([`dab80bd`](https://github.com/guessit-io/guessit/commit/dab80bd200fd90ab83bc156789ca80c516e7fa0c))

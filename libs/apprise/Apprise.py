@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -33,9 +33,11 @@ from itertools import chain
 from . import common
 from .conversion import convert_between
 from .utils import is_exclusive_match
+from .NotificationManager import NotificationManager
 from .utils import parse_list
 from .utils import parse_urls
 from .utils import cwe312_url
+from .emojis import apply_emojis
 from .logger import logger
 from .AppriseAsset import AppriseAsset
 from .AppriseConfig import AppriseConfig
@@ -44,9 +46,11 @@ from .AppriseLocale import AppriseLocale
 from .config.ConfigBase import ConfigBase
 from .plugins.NotifyBase import NotifyBase
 
-
 from . import plugins
 from . import __version__
+
+# Grant access to our Notification Manager Singleton
+N_MGR = NotificationManager()
 
 
 class Apprise:
@@ -137,7 +141,7 @@ class Apprise:
             # We already have our result set
             results = url
 
-            if results.get('schema') not in common.NOTIFY_SCHEMA_MAP:
+            if results.get('schema') not in N_MGR:
                 # schema is a mandatory dictionary item as it is the only way
                 # we can index into our loaded plugins
                 logger.error('Dictionary does not include a "schema" entry.')
@@ -160,7 +164,7 @@ class Apprise:
                 type(url))
             return None
 
-        if not common.NOTIFY_SCHEMA_MAP[results['schema']].enabled:
+        if not N_MGR[results['schema']].enabled:
             #
             # First Plugin Enable Check (Pre Initialization)
             #
@@ -180,13 +184,12 @@ class Apprise:
             try:
                 # Attempt to create an instance of our plugin using the parsed
                 # URL information
-                plugin = common.NOTIFY_SCHEMA_MAP[results['schema']](**results)
+                plugin = N_MGR[results['schema']](**results)
 
                 # Create log entry of loaded URL
                 logger.debug(
                     'Loaded {} URL: {}'.format(
-                        common.
-                        NOTIFY_SCHEMA_MAP[results['schema']].service_name,
+                        N_MGR[results['schema']].service_name,
                         plugin.url(privacy=asset.secure_logging)))
 
             except Exception:
@@ -197,15 +200,14 @@ class Apprise:
                 # the arguments are invalid or can not be used.
                 logger.error(
                     'Could not load {} URL: {}'.format(
-                        common.
-                        NOTIFY_SCHEMA_MAP[results['schema']].service_name,
+                        N_MGR[results['schema']].service_name,
                         loggable_url))
                 return None
 
         else:
             # Attempt to create an instance of our plugin using the parsed
             # URL information but don't wrap it in a try catch
-            plugin = common.NOTIFY_SCHEMA_MAP[results['schema']](**results)
+            plugin = N_MGR[results['schema']](**results)
 
         if not plugin.enabled:
             #
@@ -376,7 +378,7 @@ class Apprise:
                 body, title,
                 notify_type=notify_type, body_format=body_format,
                 tag=tag, match_always=match_always, attach=attach,
-                interpret_escapes=interpret_escapes
+                interpret_escapes=interpret_escapes,
             )
 
         except TypeError:
@@ -501,6 +503,11 @@ class Apprise:
             key = server.notify_format if server.title_maxlen > 0\
                 else f'_{server.notify_format}'
 
+            if server.interpret_emojis:
+                # alter our key slightly to handle emojis since their value is
+                # pulled out of the notification
+                key += "-emojis"
+
             if key not in conversion_title_map:
 
                 # Prepare our title
@@ -541,6 +548,16 @@ class Apprise:
                         msg = 'Failed to escape message body'
                         logger.error(msg)
                         raise TypeError(msg)
+
+                if server.interpret_emojis:
+                    #
+                    # Convert our :emoji: definitions
+                    #
+
+                    conversion_body_map[key] = \
+                        apply_emojis(conversion_body_map[key])
+                    conversion_title_map[key] = \
+                        apply_emojis(conversion_title_map[key])
 
             kwargs = dict(
                 body=conversion_body_map[key],
@@ -674,7 +691,7 @@ class Apprise:
             'asset': self.asset.details(),
         }
 
-        for plugin in set(common.NOTIFY_SCHEMA_MAP.values()):
+        for plugin in N_MGR.plugins():
             # Iterate over our hashed plugins and dynamically build details on
             # their status:
 

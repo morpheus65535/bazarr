@@ -88,9 +88,8 @@ class SystemApi extends BaseApi {
   }
 
   async announcements() {
-    const response = await this.get<DataWrapper<System.Announcements[]>>(
-      "/announcements"
-    );
+    const response =
+      await this.get<DataWrapper<System.Announcements[]>>("/announcements");
     return response.data;
   }
 

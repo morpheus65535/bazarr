@@ -8,7 +8,7 @@ export function useLanguages(history?: boolean) {
     () => api.system.languages(history),
     {
       staleTime: Infinity,
-    }
+    },
   );
 }
 
@@ -18,6 +18,6 @@ export function useLanguageProfiles() {
     () => api.system.languagesProfileList(),
     {
       staleTime: Infinity,
-    }
+    },
   );
 }

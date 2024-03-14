@@ -4,7 +4,7 @@
 
     Lexers for BibTeX bibliography data and styles
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -12,8 +12,8 @@ import re
 
 from pygments.lexer import RegexLexer, ExtendedRegexLexer, include, default, \
     words
-from pygments.token import Name, Comment, String, Error, Number, Text, \
-    Keyword, Punctuation, Whitespace
+from pygments.token import Name, Comment, String, Error, Number, Keyword, \
+    Punctuation, Whitespace
 
 __all__ = ['BibTeXLexer', 'BSTLexer']
 

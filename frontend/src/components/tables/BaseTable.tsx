@@ -33,7 +33,7 @@ const useStyles = createStyles((theme) => {
 });
 
 function DefaultHeaderRenderer<T extends object>(
-  headers: HeaderGroup<T>[]
+  headers: HeaderGroup<T>[],
 ): JSX.Element[] {
   return headers.map((col) => (
     <th style={{ whiteSpace: "nowrap" }} {...col.getHeaderProps()}>
@@ -71,7 +71,7 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
   const colCount = useMemo(() => {
     return headerGroups.reduce(
       (prev, curr) => (curr.headers.length > prev ? curr.headers.length : prev),
-      0
+      0,
     );
   }, [headerGroups]);
 

@@ -1,10 +1,14 @@
 """Know your media files better."""
-__title__ = 'knowit'
-__version__ = '0.5.2'
-__short_version__ = '0.5'
-__author__ = 'Rato AQ2'
-__license__ = 'MIT'
-__url__ = 'https://github.com/ratoaq2/knowit'
+from importlib import metadata
+
+__title__ = metadata.metadata(__package__)['name']
+__version__ = metadata.version(__package__)
+__short_version__ = '.'.join(__version__.split('.')[:2])
+__author__ = metadata.metadata(__package__)['author']
+__license__ = metadata.metadata(__package__)['license']
+__url__ = metadata.metadata(__package__)['home_page']
+
+del metadata
 
 #: Video extensions
 VIDEO_EXTENSIONS = ('.3g2', '.3gp', '.3gp2', '.3gpp', '.60d', '.ajp', '.asf', '.asx', '.avchd', '.avi', '.bik',

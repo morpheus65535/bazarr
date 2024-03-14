@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -33,11 +33,7 @@ from json import dumps
 from time import time
 from hashlib import sha1
 from itertools import chain
-try:
-    from urlparse import urlparse
-
-except ImportError:
-    from urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from .NotifyBase import NotifyBase
 from ..URLBase import PrivacyMode

@@ -1,30 +1,41 @@
+# Python Markdown
+
+# A Python implementation of John Gruber's Markdown.
+
+# Documentation: https://python-markdown.github.io/
+# GitHub: https://github.com/Python-Markdown/markdown/
+# PyPI: https://pypi.org/project/Markdown/
+
+# Started by Manfred Stienstra (http://www.dwerg.net/).
+# Maintained for a few years by Yuri Takhteyev (http://www.freewisdom.org).
+# Currently maintained by Waylan Limberg (https://github.com/waylan),
+# Dmitry Shachnev (https://github.com/mitya57) and Isaac Muse (https://github.com/facelessuser).
+
+# Copyright 2007-2023 The Python Markdown Project (v. 1.7 and later)
+# Copyright 2004, 2005, 2006 Yuri Takhteyev (v. 0.2-1.6b)
+# Copyright 2004 Manfred Stienstra (the original version)
+
+# License: BSD (see LICENSE.md for details).
+
 """
-Python Markdown
-
-A Python implementation of John Gruber's Markdown.
-
-Documentation: https://python-markdown.github.io/
-GitHub: https://github.com/Python-Markdown/markdown/
-PyPI: https://pypi.org/project/Markdown/
-
-Started by Manfred Stienstra (http://www.dwerg.net/).
-Maintained for a few years by Yuri Takhteyev (http://www.freewisdom.org).
-Currently maintained by Waylan Limberg (https://github.com/waylan),
-Dmitry Shachnev (https://github.com/mitya57) and Isaac Muse (https://github.com/facelessuser).
-
-Copyright 2007-2018 The Python Markdown Project (v. 1.7 and later)
-Copyright 2004, 2005, 2006 Yuri Takhteyev (v. 0.2-1.6b)
-Copyright 2004 Manfred Stienstra (the original version)
-
-License: BSD (see LICENSE.md for details).
+This module contains various contacts, classes and functions which get referenced and used
+throughout the code base.
 """
+
+from __future__ import annotations
 
 import re
 import sys
 import warnings
-from collections import namedtuple
 from functools import wraps, lru_cache
 from itertools import count
+from typing import TYPE_CHECKING, Generic, Iterator, NamedTuple, TypeVar, TypedDict, overload
+
+if TYPE_CHECKING:  # pragma: no cover
+    from markdown import Markdown
+    import xml.etree.ElementTree as etree
+
+_T = TypeVar('_T')
 
 
 """
@@ -33,7 +44,7 @@ Constants you might want to modify
 """
 
 
-BLOCK_LEVEL_ELEMENTS = [
+BLOCK_LEVEL_ELEMENTS: list[str] = [
     # Elements which are invalid to wrap in a `<p>` tag.
     # See https://w3c.github.io/html/grouping-content.html#the-p-element
     'address', 'article', 'aside', 'blockquote', 'details', 'div', 'dl',
@@ -41,27 +52,39 @@ BLOCK_LEVEL_ELEMENTS = [
     'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'main', 'menu', 'nav', 'ol',
     'p', 'pre', 'section', 'table', 'ul',
     # Other elements which Markdown should not be mucking up the contents of.
-    'canvas', 'colgroup', 'dd', 'body', 'dt', 'group', 'iframe', 'li', 'legend',
+    'canvas', 'colgroup', 'dd', 'body', 'dt', 'group', 'html', 'iframe', 'li', 'legend',
     'math', 'map', 'noscript', 'output', 'object', 'option', 'progress', 'script',
-    'style', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'tr', 'video'
+    'style', 'summary', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'tr', 'video'
 ]
+"""
+List of HTML tags which get treated as block-level elements. Same as the `block_level_elements`
+attribute of the [`Markdown`][markdown.Markdown] class. Generally one should use the
+attribute on the class. This remains for compatibility with older extensions.
+"""
 
 # Placeholders
-STX = '\u0002'  # Use STX ("Start of text") for start-of-placeholder
-ETX = '\u0003'  # Use ETX ("End of text") for end-of-placeholder
+STX = '\u0002'
+""" "Start of Text" marker for placeholder templates. """
+ETX = '\u0003'
+""" "End of Text" marker for placeholder templates. """
 INLINE_PLACEHOLDER_PREFIX = STX+"klzzwxh:"
+""" Prefix for inline placeholder template. """
 INLINE_PLACEHOLDER = INLINE_PLACEHOLDER_PREFIX + "%s" + ETX
+""" Placeholder template for stashed inline text. """
 INLINE_PLACEHOLDER_RE = re.compile(INLINE_PLACEHOLDER % r'([0-9]+)')
+""" Regular Expression which matches inline placeholders. """
 AMP_SUBSTITUTE = STX+"amp"+ETX
+""" Placeholder template for HTML entities. """
 HTML_PLACEHOLDER = STX + "wzxhzdk:%s" + ETX
+""" Placeholder template for raw HTML. """
 HTML_PLACEHOLDER_RE = re.compile(HTML_PLACEHOLDER % r'([0-9]+)')
+""" Regular expression which matches HTML placeholders. """
 TAG_PLACEHOLDER = STX + "hzzhzkh:%s" + ETX
+""" Placeholder template for tags. """
 
 
-"""
-Constants you probably do not need to change
------------------------------------------------------------------------------
-"""
+# Constants you probably do not need to change
+# -----------------------------------------------------------------------------
 
 RTL_BIDI_RANGES = (
     ('\u0590', '\u07FF'),
@@ -72,30 +95,32 @@ RTL_BIDI_RANGES = (
 )
 
 
-"""
-AUXILIARY GLOBAL FUNCTIONS
-=============================================================================
-"""
+# AUXILIARY GLOBAL FUNCTIONS
+# =============================================================================
 
 
 @lru_cache(maxsize=None)
 def get_installed_extensions():
+    """ Return all entry_points in the `markdown.extensions` group. """
     if sys.version_info >= (3, 10):
         from importlib import metadata
-    else:  # <PY310 use backport
+    else:  # `<PY310` use backport
         import importlib_metadata as metadata
     # Only load extension entry_points once.
     return metadata.entry_points(group='markdown.extensions')
 
 
-def deprecated(message, stacklevel=2):
+def deprecated(message: str, stacklevel: int = 2):
     """
-    Raise a DeprecationWarning when wrapped function/method is called.
+    Raise a [`DeprecationWarning`][] when wrapped function/method is called.
 
     Usage:
-        @deprecated("This method will be removed in version X; use Y instead.")
-        def some_method()"
-            pass
+
+    ```python
+    @deprecated("This method will be removed in version X; use Y instead.")
+    def some_method():
+        pass
+    ```
     """
     def wrapper(func):
         @wraps(func)
@@ -110,11 +135,11 @@ def deprecated(message, stacklevel=2):
     return wrapper
 
 
-def parseBoolValue(value, fail_on_errors=True, preserve_none=False):
-    """Parses a string representing bool value. If parsing was successful,
-       returns True or False. If preserve_none=True, returns True, False,
-       or None. If parsing was not successful, raises  ValueError, or, if
-       fail_on_errors=False, returns None."""
+def parseBoolValue(value: str | None, fail_on_errors: bool = True, preserve_none: bool = False) -> bool | None:
+    """Parses a string representing a boolean value. If parsing was successful,
+       returns `True` or `False`. If `preserve_none=True`, returns `True`, `False`,
+       or `None`. If parsing was not successful, raises `ValueError`, or, if
+       `fail_on_errors=False`, returns `None`."""
     if not isinstance(value, str):
         if preserve_none and value is None:
             return value
@@ -129,8 +154,8 @@ def parseBoolValue(value, fail_on_errors=True, preserve_none=False):
         raise ValueError('Cannot parse bool value: %r' % value)
 
 
-def code_escape(text):
-    """Escape code."""
+def code_escape(text: str) -> str:
+    """HTML escape a string of code."""
     if "&" in text:
         text = text.replace("&", "&amp;")
     if "<" in text:
@@ -140,7 +165,7 @@ def code_escape(text):
     return text
 
 
-def _get_stack_depth(size=2):
+def _get_stack_depth(size: int = 2) -> int:
     """Get current stack depth, performantly.
     """
     frame = sys._getframe(size)
@@ -151,15 +176,13 @@ def _get_stack_depth(size=2):
             return size
 
 
-def nearing_recursion_limit():
+def nearing_recursion_limit() -> bool:
     """Return true if current stack depth is within 100 of maximum limit."""
     return sys.getrecursionlimit() - _get_stack_depth() < 100
 
 
-"""
-MISC AUXILIARY CLASSES
-=============================================================================
-"""
+# MISC AUXILIARY CLASSES
+# =============================================================================
 
 
 class AtomicString(str):
@@ -168,8 +191,25 @@ class AtomicString(str):
 
 
 class Processor:
-    def __init__(self, md=None):
+    """ The base class for all processors.
+
+    Attributes:
+        Processor.md: The `Markdown` instance passed in an initialization.
+
+    Arguments:
+        md: The `Markdown` instance this processor is a part of.
+
+    """
+    def __init__(self, md: Markdown | None = None):
         self.md = md
+
+
+if TYPE_CHECKING:  # pragma: no cover
+    class TagData(TypedDict):
+        tag: str
+        attrs: dict[str, str]
+        left_index: int
+        right_index: int
 
 
 class HtmlStash:
@@ -179,23 +219,23 @@ class HtmlStash:
     """
 
     def __init__(self):
-        """ Create a HtmlStash. """
+        """ Create an `HtmlStash`. """
         self.html_counter = 0  # for counting inline html segments
-        self.rawHtmlBlocks = []
+        self.rawHtmlBlocks: list[str | etree.Element] = []
         self.tag_counter = 0
-        self.tag_data = []  # list of dictionaries in the order tags appear
+        self.tag_data: list[TagData] = []  # list of dictionaries in the order tags appear
 
-    def store(self, html):
+    def store(self, html: str | etree.Element) -> str:
         """
         Saves an HTML segment for later reinsertion.  Returns a
         placeholder string that needs to be inserted into the
         document.
 
         Keyword arguments:
+            html: An html segment.
 
-        * html: an html segment
-
-        Returns : a placeholder string
+        Returns:
+            A placeholder string.
 
         """
         self.rawHtmlBlocks.append(html)
@@ -203,30 +243,33 @@ class HtmlStash:
         self.html_counter += 1
         return placeholder
 
-    def reset(self):
+    def reset(self) -> None:
+        """ Clear the stash. """
         self.html_counter = 0
         self.rawHtmlBlocks = []
 
-    def get_placeholder(self, key):
+    def get_placeholder(self, key: int) -> str:
         return HTML_PLACEHOLDER % key
 
-    def store_tag(self, tag, attrs, left_index, right_index):
+    def store_tag(self, tag: str, attrs: dict[str, str], left_index: int, right_index: int) -> str:
         """Store tag data and return a placeholder."""
         self.tag_data.append({'tag': tag, 'attrs': attrs,
                               'left_index': left_index,
                               'right_index': right_index})
         placeholder = TAG_PLACEHOLDER % str(self.tag_counter)
-        self.tag_counter += 1  # equal to the tag's index in self.tag_data
+        self.tag_counter += 1  # equal to the tag's index in `self.tag_data`
         return placeholder
 
 
 # Used internally by `Registry` for each item in its sorted list.
 # Provides an easier to read API when editing the code later.
 # For example, `item.name` is more clear than `item[0]`.
-_PriorityItem = namedtuple('PriorityItem', ['name', 'priority'])
+class _PriorityItem(NamedTuple):
+    name: str
+    priority: float
 
 
-class Registry:
+class Registry(Generic[_T]):
     """
     A priority sorted registry.
 
@@ -267,25 +310,33 @@ class Registry:
     """
 
     def __init__(self):
-        self._data = {}
-        self._priority = []
+        self._data: dict[str, _T] = {}
+        self._priority: list[_PriorityItem] = []
         self._is_sorted = False
 
-    def __contains__(self, item):
+    def __contains__(self, item: str | _T) -> bool:
         if isinstance(item, str):
             # Check if an item exists by this name.
             return item in self._data.keys()
         # Check if this instance exists.
         return item in self._data.values()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[_T]:
         self._sort()
         return iter([self._data[k] for k, p in self._priority])
 
-    def __getitem__(self, key):
+    @overload
+    def __getitem__(self, key: str | int) -> _T:  # pragma: no cover
+        ...
+
+    @overload
+    def __getitem__(self, key: slice) -> Registry[_T]:  # pragma: no cover
+        ...
+
+    def __getitem__(self, key: str | int | slice) -> _T | Registry[_T]:
         self._sort()
         if isinstance(key, slice):
-            data = Registry()
+            data: Registry[_T] = Registry()
             for k, p in self._priority[key]:
                 data.register(self._data[k], k, p)
             return data
@@ -293,13 +344,13 @@ class Registry:
             return self._data[self._priority[key].name]
         return self._data[key]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._priority)
 
     def __repr__(self):
         return '<{}({})>'.format(self.__class__.__name__, list(self))
 
-    def get_index_for_name(self, name):
+    def get_index_for_name(self, name: str) -> int:
         """
         Return the index of the given name.
         """
@@ -310,15 +361,14 @@ class Registry:
             )
         raise ValueError('No item named "{}" exists.'.format(name))
 
-    def register(self, item, name, priority):
+    def register(self, item: _T, name: str, priority: float) -> None:
         """
         Add an item to the registry with the given name and priority.
 
-        Parameters:
-
-        * `item`: The item being registered.
-        * `name`: A string used to reference the item.
-        * `priority`: An integer or float used to sort against all items.
+        Arguments:
+            item: The item being registered.
+            name: A string used to reference the item.
+            priority: An integer or float used to sort against all items.
 
         If an item is registered with a "name" which already exists, the
         existing item is replaced with the new item. Treat carefully as the
@@ -333,11 +383,11 @@ class Registry:
         self._data[name] = item
         self._priority.append(_PriorityItem(name, priority))
 
-    def deregister(self, name, strict=True):
+    def deregister(self, name: str, strict: bool = True) -> None:
         """
         Remove an item from the registry.
 
-        Set `strict=False` to fail silently.
+        Set `strict=False` to fail silently. Otherwise a [`ValueError`][] is raised for an unknown `name`.
         """
         try:
             index = self.get_index_for_name(name)
@@ -347,7 +397,7 @@ class Registry:
             if strict:
                 raise
 
-    def _sort(self):
+    def _sort(self) -> None:
         """
         Sort the registry by priority from highest to lowest.
 

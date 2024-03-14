@@ -1,4 +1,4 @@
-# Copyright 2009-2022 Joshua Bronson. All rights reserved.
+# Copyright 2009-2024 Joshua Bronson. All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,31 +7,35 @@
 
 #                             * Code review nav *
 #                        (see comments in __init__.py)
-#==============================================================================
-# ← Prev: _frozenordered.py   Current: _orderedbidict.py                 <FIN>
-#==============================================================================
+# ============================================================================
+# ← Prev: _orderedbase.py   Current: _orderedbidict.py                   <FIN>
+# ============================================================================
 
 
 """Provide :class:`OrderedBidict`."""
 
-from collections.abc import Set
+from __future__ import annotations
+
 import typing as t
+from collections.abc import Set
 
 from ._base import BidictKeysView
 from ._bidict import MutableBidict
 from ._orderedbase import OrderedBidictBase
-from ._typing import KT, VT
-
-
-# pyright: reportPrivateUsage=false
+from ._typing import KT
+from ._typing import VT
 
 
 class OrderedBidict(OrderedBidictBase[KT, VT], MutableBidict[KT, VT]):
     """Mutable bidict type that maintains items in insertion order."""
 
     if t.TYPE_CHECKING:
+
         @property
-        def inverse(self) -> 'OrderedBidict[VT, KT]': ...
+        def inverse(self) -> OrderedBidict[VT, KT]: ...
+
+        @property
+        def inv(self) -> OrderedBidict[VT, KT]: ...
 
     def clear(self) -> None:
         """Remove all items."""
@@ -45,7 +49,7 @@ class OrderedBidict(OrderedBidictBase[KT, VT], MutableBidict[KT, VT]):
         self._dissoc_node(node)
         return val
 
-    def popitem(self, last: bool = True) -> t.Tuple[KT, VT]:
+    def popitem(self, last: bool = True) -> tuple[KT, VT]:
         """*b.popitem() → (k, v)*
 
         If *last* is true,
@@ -60,7 +64,7 @@ class OrderedBidict(OrderedBidictBase[KT, VT], MutableBidict[KT, VT]):
         korv = self._node_by_korv.inverse[node]
         if self._bykey:
             return korv, self._pop(korv)
-        return self.inverse._pop(korv), korv  # pyright: ignore [reportGeneralTypeIssues]
+        return self.inverse._pop(korv), korv
 
     def move_to_end(self, key: KT, last: bool = True) -> None:
         """Move the item with the given key to the end if *last* is true, else to the beginning.
@@ -111,7 +115,7 @@ class _OrderedBidictKeysView(BidictKeysView[KT]):
 class _OrderedBidictItemsView(t.ItemsView[KT, VT]):
     _mapping: OrderedBidict[KT, VT]
 
-    def __reversed__(self) -> t.Iterator[t.Tuple[KT, VT]]:
+    def __reversed__(self) -> t.Iterator[tuple[KT, VT]]:
         ob = self._mapping
         for key in reversed(ob):
             yield key, ob[key]
@@ -120,29 +124,36 @@ class _OrderedBidictItemsView(t.ItemsView[KT, VT]):
 # For better performance, make _OrderedBidictKeysView and _OrderedBidictItemsView delegate
 # to backing dicts for the methods they inherit from collections.abc.Set. (Cannot delegate
 # for __iter__ and __reversed__ since they are order-sensitive.) See also: https://bugs.python.org/issue46713
-def _override_set_methods_to_use_backing_dict(
-    cls: t.Union[t.Type[_OrderedBidictKeysView[KT]], t.Type[_OrderedBidictItemsView[KT, t.Any]]],
-    viewname: str,
-    _setmethodnames: t.Iterable[str] = (
-        '__lt__', '__le__', '__gt__', '__ge__', '__eq__', '__ne__', '__sub__', '__rsub__',
-        '__or__', '__ror__', '__xor__', '__rxor__', '__and__', '__rand__', 'isdisjoint',
-    )
-) -> None:
+_OView = t.Union[t.Type[_OrderedBidictKeysView[KT]], t.Type[_OrderedBidictItemsView[KT, t.Any]]]
+_setmethodnames: t.Iterable[str] = (
+    '__lt__ __le__ __gt__ __ge__ __eq__ __ne__ __sub__ __rsub__ '
+    '__or__ __ror__ __xor__ __rxor__ __and__ __rand__ isdisjoint'
+).split()
+
+
+def _override_set_methods_to_use_backing_dict(cls: _OView[KT], viewname: str) -> None:
     def make_proxy_method(methodname: str) -> t.Any:
-        def method(self: t.Union[_OrderedBidictKeysView[KT], _OrderedBidictItemsView[KT, t.Any]], *args: t.Any) -> t.Any:
+        def method(self: _OrderedBidictKeysView[KT] | _OrderedBidictItemsView[KT, t.Any], *args: t.Any) -> t.Any:
             fwdm = self._mapping._fwdm
             if not isinstance(fwdm, dict):  # dict view speedup not available, fall back to Set's implementation.
                 return getattr(Set, methodname)(self, *args)
             fwdm_dict_view = getattr(fwdm, viewname)()
             fwdm_dict_view_method = getattr(fwdm_dict_view, methodname)
-            if len(args) != 1 or not isinstance(args[0], self.__class__) or not isinstance(args[0]._mapping._fwdm, dict):
+            if (
+                len(args) != 1
+                or not isinstance((arg := args[0]), self.__class__)
+                or not isinstance(arg._mapping._fwdm, dict)
+            ):
                 return fwdm_dict_view_method(*args)
-            # self and arg are both _OrderedBidictKeysViews or _OrderedBidictItemsViews whose bidicts are backed by a dict.
-            # Use arg's backing dict's corresponding view instead of arg. Otherwise, e.g. `ob1.keys() < ob2.keys()` would give
-            # "TypeError: '<' not supported between instances of '_OrderedBidictKeysView' and '_OrderedBidictKeysView'", because
-            # both `dict_keys(ob1).__lt__(ob2.keys()) is NotImplemented` and `dict_keys(ob2).__gt__(ob1.keys()) is NotImplemented`.
-            arg_dict_view = getattr(args[0]._mapping._fwdm, viewname)()
+            # self and arg are both _OrderedBidictKeysViews or _OrderedBidictItemsViews whose bidicts are backed by
+            # a dict. Use arg's backing dict's corresponding view instead of arg. Otherwise, e.g. `ob1.keys()
+            # < ob2.keys()` would give "TypeError: '<' not supported between instances of '_OrderedBidictKeysView' and
+            # '_OrderedBidictKeysView'", because both `dict_keys(ob1).__lt__(ob2.keys()) is NotImplemented` and
+            # `dict_keys(ob2).__gt__(ob1.keys()) is NotImplemented`.
+            arg_dict = arg._mapping._fwdm
+            arg_dict_view = getattr(arg_dict, viewname)()
             return fwdm_dict_view_method(arg_dict_view)
+
         method.__name__ = methodname
         method.__qualname__ = f'{cls.__qualname__}.{methodname}'
         return method
@@ -156,6 +167,6 @@ _override_set_methods_to_use_backing_dict(_OrderedBidictItemsView, 'items')
 
 
 #                             * Code review nav *
-#==============================================================================
-# ← Prev: _frozenordered.py   Current: _orderedbidict.py                 <FIN>
-#==============================================================================
+# ============================================================================
+# ← Prev: _orderedbase.py   Current: _orderedbidict.py                   <FIN>
+# ============================================================================

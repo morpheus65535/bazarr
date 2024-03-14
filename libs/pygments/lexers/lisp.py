@@ -4,7 +4,7 @@
 
     Lexers for Lispy languages.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -21,6 +21,7 @@ from pygments.lexers._scheme_builtins import scheme_keywords, scheme_builtins
 __all__ = ['SchemeLexer', 'CommonLispLexer', 'HyLexer', 'RacketLexer',
            'NewLispLexer', 'EmacsLispLexer', 'ShenLexer', 'CPSALexer',
            'XtlangLexer', 'FennelLexer']
+
 
 class SchemeLexer(RegexLexer):
     """
@@ -469,6 +470,16 @@ class CommonLispLexer(RegexLexer):
             (r'\)', Punctuation, '#pop'),
         ],
     }
+
+    def analyse_text(text):
+        """Competes with Visual Prolog on *.cl"""
+        # This is a *really* good indicator (and not conflicting with Visual Prolog)
+        # '(defun ' first on a line
+        # section keyword alone on line e.g. 'clauses'
+        if re.search(r'^\s*\(defun\s', text):
+            return 0.8
+        else:
+            return 0
 
 
 class HyLexer(RegexLexer):

@@ -4,17 +4,13 @@
 
     Lexer for FreeFem++ language.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
-from pygments.lexer import RegexLexer, include, bygroups, inherit, words, \
-    default
-from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
-    Number, Punctuation
+from pygments.token import Comment, Operator, Keyword, Name
 
-from pygments.lexers.c_cpp import CLexer, CppLexer
-from pygments.lexers import _mql_builtins
+from pygments.lexers.c_cpp import CppLexer
 
 __all__ = ['FreeFemLexer']
 

@@ -359,7 +359,7 @@ BADNESS_RE = re.compile(
 )
 
 
-def sequence_weirdness(text):
+def sequence_weirdness(text: str) -> int:
     """
     This was the name of the heuristic used in ftfy 2.x through 5.x. As an
     attempt at compatibility with external code that calls the heuristic
@@ -372,7 +372,7 @@ def sequence_weirdness(text):
     return badness(text)
 
 
-def badness(text):
+def badness(text: str) -> int:
     """
     Get the 'badness' of a sequence of text, counting the number of unlikely
     character sequences. A badness greater than 0 indicates that some of it
@@ -381,7 +381,7 @@ def badness(text):
     return len(BADNESS_RE.findall(text))
 
 
-def is_bad(text):
+def is_bad(text: str) -> bool:
     """
     Returns true iff the given text looks like it contains mojibake.
 

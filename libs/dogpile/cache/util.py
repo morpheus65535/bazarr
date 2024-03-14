@@ -46,7 +46,6 @@ def function_key_generator(namespace, fn, to_str=str):
 
 
 def function_multi_key_generator(namespace, fn, to_str=str):
-
     if namespace is None:
         namespace = "%s:%s" % (fn.__module__, fn.__name__)
     else:
@@ -163,7 +162,6 @@ to_list = langhelpers.to_list
 
 
 class repr_obj:
-
     __slots__ = ("value", "max_chars")
 
     def __init__(self, value, max_chars=300):

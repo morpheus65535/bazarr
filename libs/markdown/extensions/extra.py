@@ -1,12 +1,22 @@
-"""
-Python-Markdown Extra Extension
-===============================
+# Python-Markdown Extra Extension
+# ===============================
 
+# A compilation of various Python-Markdown extensions that imitates
+# [PHP Markdown Extra](http://michelf.com/projects/php-markdown/extra/).
+
+# See https://Python-Markdown.github.io/extensions/extra
+# for documentation.
+
+# Copyright The Python Markdown Project
+
+# License: [BSD](https://opensource.org/licenses/bsd-license.php)
+
+"""
 A compilation of various Python-Markdown extensions that imitates
 [PHP Markdown Extra](http://michelf.com/projects/php-markdown/extra/).
 
 Note that each of the individual extensions still need to be available
-on your PYTHONPATH. This extension simply wraps them all up as a
+on your `PYTHONPATH`. This extension simply wraps them all up as a
 convenience so that only one extension needs to be listed when
 initiating Markdown. See the documentation for each individual
 extension for specifics about that extension.
@@ -20,14 +30,11 @@ under a different name. You could also edit the `extensions` global
 variable defined below, but be aware that such changes may be lost
 when you upgrade to any future version of Python-Markdown.
 
-See <https://Python-Markdown.github.io/extensions/extra>
-for documentation.
-
-Copyright The Python Markdown Project
-
-License: [BSD](https://opensource.org/licenses/bsd-license.php)
-
+See the [documentation](https://Python-Markdown.github.io/extensions/extra)
+for details.
 """
+
+from __future__ import annotations
 
 from . import Extension
 
@@ -40,13 +47,14 @@ extensions = [
     'abbr',
     'md_in_html'
 ]
+""" The list of included extensions. """
 
 
 class ExtraExtension(Extension):
     """ Add various extensions to Markdown class."""
 
     def __init__(self, **kwargs):
-        """ config is a dumb holder which gets passed to actual ext later. """
+        """ `config` is a dumb holder which gets passed to the actual extension later. """
         self.config = kwargs
 
     def extendMarkdown(self, md):

@@ -39,7 +39,7 @@ export function useProfileItemsToLanguages(profile?: Language.Profile) {
           name,
         };
       }) ?? [],
-    [data, profile?.items]
+    [data, profile?.items],
   );
 }
 
@@ -48,6 +48,6 @@ export function useLanguageFromCode3(code3: string) {
 
   return useMemo(
     () => data?.find((value) => value.code3 === code3),
-    [data, code3]
+    [data, code3],
   );
 }

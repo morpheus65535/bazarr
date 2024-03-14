@@ -34,6 +34,7 @@ def create_app():
     else:
         app.config["DEBUG"] = False
 
+    from engineio.async_drivers import threading  # noqa W0611  # required to prevent an import exception in engineio
     socketio.init_app(app, path=f'{base_url.rstrip("/")}/api/socket.io', cors_allowed_origins='*',
                       async_mode='threading', allow_upgrades=False, transports='polling', engineio_logger=False)
 

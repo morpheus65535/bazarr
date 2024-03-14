@@ -1,0 +1,86 @@
+Metadata-Version: 2.1
+Name: fcache
+Version: 0.5.2
+Summary: a dictionary-like, file-based cache module for Python
+Project-URL: Documentation, https://tsroten.github.io/fcache
+Project-URL: Changes, https://tsroten.github.io/fcache/history.html
+Project-URL: Issue Tracker, https://github.com/tsroten/fcache/issues
+Project-URL: Source Code, https://github.com/tsroten/fcache
+Author-email: Thomas Roten <thomas@roten.us>
+License-Expression: MIT
+License-File: AUTHORS.rst
+License-File: LICENSE.txt
+Keywords: cache,file,serialize
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: System :: Filesystems
+Requires-Python: >=3.7
+Requires-Dist: platformdirs~=3.0
+Description-Content-Type: text/x-rst
+
+fcache
+======
+
+.. image:: https://badge.fury.io/py/fcache.svg
+    :target: https://pypi.org/project/fcache
+
+.. image:: https://github.com/tsroten/fcache/actions/workflows/ci.yml/badge.svg
+    :target: https://github.com/tsroten/fcache/actions/workflows/ci.yml
+
+fcache is a dictionary-like, file-based cache module for Python. It's simple
+to use, has an optional write buffer, and is
+`Shelf <http://docs.python.org/3/library/shelve.html#shelve.Shelf>`_-compatible.
+
+.. code:: python
+
+    >>> from fcache.cache import FileCache
+    >>> mycache = FileCache('myapp')
+    >>> mycache['foo'] = [1, 2, 3, 4, 5]
+    >>> mycache['foo']
+    [1, 2, 3, 4, 5]
+    >>> mycache['bar'] = 'value'
+    >>> list(mycache)
+    ['foo', 'bar']
+    >>> del mycache['foo']
+    >>> mycache['foo']
+        ...
+        KeyError: 'foo'
+
+.. code:: python
+
+   with FileCache('myapp') as mycache:
+       mycache['foo'] = [1, 2, 3, 4, 5]
+
+Install
+-------
+
+To install fcache, use pip:
+
+.. code:: bash
+
+    $ pip install fcache
+
+Documentation
+-------------
+
+`fcache's documentation <https://tsroten.github.io/fcache/>`_ contains an introduction along with an API overview. For more information on how to get started with fcache, be sure to read the documentation.
+
+Bug/Issues Tracker
+------------------
+
+fcache uses its `GitHub Issues page <https://github.com/tsroten/fcache/issues>`_ to track bugs, feature requests, and support questions.
+
+License
+-------
+
+fcache is released under the OSI-approved `MIT License <http://opensource.org/licenses/MIT>`_. See the file LICENSE.txt for more information.

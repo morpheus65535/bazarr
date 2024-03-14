@@ -1,3 +1,6 @@
+# mypy: allow-untyped-defs, allow-incomplete-defs, allow-untyped-calls
+# mypy: no-warn-return-any, allow-any-generics
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import schema as sa_schema
@@ -5,6 +8,7 @@ from sqlalchemy import schema as sa_schema
 from . import ops
 from .base import Operations
 from ..util.sqla_compat import _copy
+from ..util.sqla_compat import sqla_14
 
 if TYPE_CHECKING:
     from sqlalchemy.sql.schema import Table
@@ -14,7 +18,6 @@ if TYPE_CHECKING:
 def alter_column(
     operations: "Operations", operation: "ops.AlterColumnOp"
 ) -> None:
-
     compiler = operations.impl.dialect.statement_compiler(
         operations.impl.dialect, None
     )
@@ -60,7 +63,7 @@ def alter_column(
         existing_nullable=existing_nullable,
         comment=comment,
         existing_comment=existing_comment,
-        **operation.kw
+        **operation.kw,
     )
 
     if type_:
@@ -96,13 +99,27 @@ def create_index(
     operations: "Operations", operation: "ops.CreateIndexOp"
 ) -> None:
     idx = operation.to_index(operations.migration_context)
-    operations.impl.create_index(idx)
+    kw = {}
+    if operation.if_not_exists is not None:
+        if not sqla_14:
+            raise NotImplementedError("SQLAlchemy 1.4+ required")
+
+        kw["if_not_exists"] = operation.if_not_exists
+    operations.impl.create_index(idx, **kw)
 
 
 @Operations.implementation_for(ops.DropIndexOp)
 def drop_index(operations: "Operations", operation: "ops.DropIndexOp") -> None:
+    kw = {}
+    if operation.if_exists is not None:
+        if not sqla_14:
+            raise NotImplementedError("SQLAlchemy 1.4+ required")
+
+        kw["if_exists"] = operation.if_exists
+
     operations.impl.drop_index(
-        operation.to_index(operations.migration_context)
+        operation.to_index(operations.migration_context),
+        **kw,
     )
 
 

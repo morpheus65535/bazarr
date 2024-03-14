@@ -10,9 +10,13 @@ from apscheduler.triggers.date import DateTrigger
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 from datetime import datetime, timedelta
 from calendar import day_name
+from math import floor
 from random import randrange
 from tzlocal import get_localzone
-from tzlocal.utils import ZoneInfoNotFoundError
+try:
+    import zoneinfo  # pragma: no cover
+except ImportError:
+    from backports import zoneinfo  # pragma: no cover
 from dateutil import tz
 import logging
 
@@ -60,7 +64,7 @@ class Scheduler:
 
         try:
             self.timezone = get_localzone()
-        except ZoneInfoNotFoundError as e:
+        except zoneinfo.ZoneInfoNotFoundError as e:
             logging.error(f"BAZARR cannot use specified timezone: {e}")
             self.timezone = tz.gettz("UTC")
 
@@ -219,8 +223,9 @@ class Scheduler:
             trigger = CronTrigger(day_of_week=settings.backup.day, hour=settings.backup.hour)
         elif backup == "Manually":
             trigger = CronTrigger(year=in_a_century())
-        self.aps_scheduler.add_job(backup_to_zip, trigger, max_instances=1, coalesce=True, misfire_grace_time=15,
-                                   id='backup', name='Backup Database and Configuration File', replace_existing=True)
+        self.aps_scheduler.add_job(backup_to_zip, trigger,
+                                   max_instances=1, coalesce=True, misfire_grace_time=15, id='backup',
+                                   name='Backup Database and Configuration File', replace_existing=True)
 
     def __sonarr_full_update_task(self):
         if settings.general.use_sonarr:

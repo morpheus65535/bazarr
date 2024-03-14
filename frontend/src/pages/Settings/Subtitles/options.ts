@@ -33,12 +33,13 @@ export const folderOptions: SelectorOption<string>[] = [
 
 export const embeddedSubtitlesParserOption: SelectorOption<string>[] = [
   {
-    label: "ffprobe (faster)",
+    label:
+      "ffprobe (faster than mediainfo. Part of Bazarr installation already)",
     value: "ffprobe",
   },
   {
     label:
-      "mediainfo (slower but may give better results. Must be already installed)",
+      "mediainfo (slower but may give better results. User must install the mediainfo executable first)",
     value: "mediainfo",
   },
 ];
@@ -160,7 +161,7 @@ export const providerOptions: SelectorOption<string>[] = ProviderList.map(
   (v) => ({
     label: v.key,
     value: v.key,
-  })
+  }),
 );
 
 export const syncMaxOffsetSecondsOptions: SelectorOption<number>[] = [

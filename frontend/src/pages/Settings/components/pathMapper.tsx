@@ -56,10 +56,10 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
     (newItems: PathMappingItem[]) => {
       setValue(
         newItems.map((v) => [v.from, v.to]),
-        key
+        key,
       );
     },
-    [key, setValue]
+    [key, setValue],
   );
 
   const addRow = useCallback(() => {
@@ -71,7 +71,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
 
   const data = useMemo<PathMappingItem[]>(
     () => items?.map((v) => ({ from: v[0], to: v[1] })) ?? [],
-    [items]
+    [items],
   );
 
   const action = useArrayAction<PathMappingItem>((fn) => {
@@ -130,7 +130,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
         },
       },
     ],
-    [action, type]
+    [action, type],
   );
 
   if (enabled) {

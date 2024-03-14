@@ -1,6 +1,9 @@
 """
 language detection API
 """
+
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
 from typing import List, Optional, Union
 
 import requests
@@ -16,7 +19,9 @@ config = {
 }
 
 
-def get_request_body(text: Union[str, List[str]], api_key: str, *args, **kwargs):
+def get_request_body(
+    text: Union[str, List[str]], api_key: str, *args, **kwargs
+):
     """
     send a request and return the response body parsed as dictionary
 
@@ -38,7 +43,9 @@ def get_request_body(text: Union[str, List[str]], api_key: str, *args, **kwargs)
         try:
             headers = config["headers"]
             headers["Authorization"] = headers["Authorization"].format(api_key)
-            response = requests.post(config["url"], json={"q": text}, headers=headers)
+            response = requests.post(
+                config["url"], json={"q": text}, headers=headers
+            )
 
             body = response.json().get("data")
             return body
@@ -49,7 +56,11 @@ def get_request_body(text: Union[str, List[str]], api_key: str, *args, **kwargs)
 
 
 def single_detection(
-    text: str, api_key: Optional[str] = None, detailed: bool = False, *args, **kwargs
+    text: str,
+    api_key: Optional[str] = None,
+    detailed: bool = False,
+    *args,
+    **kwargs
 ):
     """
     function responsible for detecting the language from a text
@@ -58,7 +69,8 @@ def single_detection(
     @type text: str
     @type api_key: str
     @param api_key: your private API key
-    @param detailed: set to True if you want to get detailed information about the detection process
+    @param detailed: set to True if you want to get detailed
+    information about the detection process
     """
     body = get_request_body(text, api_key)
     detections = body.get("detections")
@@ -78,7 +90,8 @@ def batch_detection(
 
     @param text_list: target batch that you want to detect its language
     @param api_key: your private API key
-    @param detailed: set to True if you want to get detailed information about the detection process
+    @param detailed: set to True if you want to
+    get detailed information about the detection process
     """
     body = get_request_body(text_list, api_key)
     detections = body.get("detections")

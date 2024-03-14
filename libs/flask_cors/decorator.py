@@ -9,9 +9,11 @@
     :copyright: (c) 2016 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
+import logging
 from functools import update_wrapper
 from flask import make_response, request, current_app
-from .core import *
+
+from .core import get_cors_options, set_cors_headers, FLASK_CORS_EVALUATED
 
 LOG = logging.getLogger(__name__)
 
@@ -21,8 +23,8 @@ def cross_origin(*args, **kwargs):
     In the simplest case, simply use the default parameters to allow all
     origins in what is the most permissive configuration. If this method
     modifies state or performs authentication which may be brute-forced, you
-    should add some degree of protection, such as Cross Site Forgery
-    Request protection.
+    should add some degree of protection, such as Cross Site Request Forgery
+    protection.
 
     :param origins:
         The origin, or list of origins to allow requests from.
@@ -59,7 +61,7 @@ def cross_origin(*args, **kwargs):
         `Access-Control-Allow-Credentials` header in responses. This allows
         cookies and credentials to be submitted across domains.
 
-        :note: This option cannot be used in conjuction with a '*' origin
+        :note: This option cannot be used in conjunction with a '*' origin
 
         Default : False
     :type supports_credentials: bool

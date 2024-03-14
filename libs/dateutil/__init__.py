@@ -4,7 +4,5 @@ try:
 except ImportError:
     __version__ = 'unknown'
 
-from . import rrule
-
 __all__ = ['easter', 'parser', 'relativedelta', 'rrule', 'tz',
            'utils', 'zoneinfo']

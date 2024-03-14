@@ -1,5 +1,5 @@
-# sqlalchemy/log.py
-# Copyright (C) 2006-2023 the SQLAlchemy authors and contributors
+# log.py
+# Copyright (C) 2006-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 # Includes alterations by Vinay Sajip vinay_sajip@yahoo.co.uk
 #
@@ -75,10 +75,10 @@ def _qual_logger_name_for_cls(cls: Type[Identified]) -> str:
 
 def class_logger(cls: Type[_IT]) -> Type[_IT]:
     logger = logging.getLogger(_qual_logger_name_for_cls(cls))
-    cls._should_log_debug = lambda self: logger.isEnabledFor(  # type: ignore[assignment]  # noqa: E501
+    cls._should_log_debug = lambda self: logger.isEnabledFor(  # type: ignore[method-assign]  # noqa: E501
         logging.DEBUG
     )
-    cls._should_log_info = lambda self: logger.isEnabledFor(  # type: ignore[assignment]  # noqa: E501
+    cls._should_log_info = lambda self: logger.isEnabledFor(  # type: ignore[method-assign]  # noqa: E501
         logging.INFO
     )
     cls.logger = logger
@@ -202,7 +202,6 @@ class InstanceLogger:
             selected_level = self.logger.getEffectiveLevel()
 
         if level >= selected_level:
-
             if STACKLEVEL:
                 kwargs["stacklevel"] = (
                     kwargs.get("stacklevel", 1) + STACKLEVEL_OFFSET
@@ -270,14 +269,12 @@ class echo_property:
     @overload
     def __get__(
         self, instance: Literal[None], owner: Type[Identified]
-    ) -> echo_property:
-        ...
+    ) -> echo_property: ...
 
     @overload
     def __get__(
         self, instance: Identified, owner: Type[Identified]
-    ) -> _EchoFlagType:
-        ...
+    ) -> _EchoFlagType: ...
 
     def __get__(
         self, instance: Optional[Identified], owner: Type[Identified]

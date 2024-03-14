@@ -8,6 +8,7 @@ import platform
 import warnings
 
 from logging.handlers import TimedRotatingFileHandler
+from utilities.central import get_log_file_path
 from pytz_deprecation_shim import PytzUsageWarning
 
 from .get_args import args
@@ -58,19 +59,22 @@ class NoExceptionFormatter(logging.Formatter):
 
 class UnwantedWaitressMessageFilter(logging.Filter):
     def filter(self, record):
-        if settings.general.debug is True:
+        if settings.general.debug:
             # no filtering in debug mode
             return True
+            
+        unwantedMessages = [ 
+            "Exception while serving /api/socket.io/", 
+            ['Session is disconnected', 'Session not found' ],
+            
+            "Exception while serving /api/socket.io/", 
+            ["'Session is disconnected'", "'Session not found'" ],
+            
+            "Exception while serving /api/socket.io/", 
+            ['"Session is disconnected"', '"Session not found"' ],
 
-        unwantedMessages = [
-            "Exception while serving /api/socket.io/",
-            ['Session is disconnected', 'Session not found'],
-
-            "Exception while serving /api/socket.io/",
-            ["'Session is disconnected'", "'Session not found'"],
-
-            "Exception while serving /api/socket.io/",
-            ['"Session is disconnected"', '"Session not found"']
+            "Exception when servicing %r", 
+            [],
         ]
 
         wanted = True
@@ -79,7 +83,7 @@ class UnwantedWaitressMessageFilter(logging.Filter):
             if record.msg == unwantedMessages[i]:
                 exceptionTuple = record.exc_info
                 if exceptionTuple is not None:
-                    if str(exceptionTuple[1]) in unwantedMessages[i+1]:
+                    if len(unwantedMessages[i+1]) == 0 or str(exceptionTuple[1]) in unwantedMessages[i+1]:
                         wanted = False
                         break
 
@@ -112,10 +116,10 @@ def configure_logging(debug=False):
     # File Logging
     global fh
     if sys.version_info >= (3, 9):
-        fh = PatchedTimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight",
+        fh = PatchedTimedRotatingFileHandler(get_log_file_path(), when="midnight",
                                              interval=1, backupCount=7, delay=True, encoding='utf-8')
     else:
-        fh = TimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight", interval=1,
+        fh = TimedRotatingFileHandler(get_log_file_path(), when="midnight", interval=1,
                                       backupCount=7, delay=True, encoding='utf-8')
     f = FileHandlerFormatter('%(asctime)s|%(levelname)-8s|%(name)-32s|%(message)s|',
                              '%Y-%m-%d %H:%M:%S')

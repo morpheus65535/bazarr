@@ -15,25 +15,23 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-import struct
 import binascii
+import struct
 
-import dns.rdata
 import dns.immutable
+import dns.rdata
 import dns.rdatatype
 
 
 @dns.immutable.immutable
 class SSHFP(dns.rdata.Rdata):
-
     """SSHFP record"""
 
     # See RFC 4255
 
-    __slots__ = ['algorithm', 'fp_type', 'fingerprint']
+    __slots__ = ["algorithm", "fp_type", "fingerprint"]
 
-    def __init__(self, rdclass, rdtype, algorithm, fp_type,
-                 fingerprint):
+    def __init__(self, rdclass, rdtype, algorithm, fp_type, fingerprint):
         super().__init__(rdclass, rdtype)
         self.algorithm = self._as_uint8(algorithm)
         self.fp_type = self._as_uint8(fp_type)
@@ -41,16 +39,17 @@ class SSHFP(dns.rdata.Rdata):
 
     def to_text(self, origin=None, relativize=True, **kw):
         kw = kw.copy()
-        chunksize = kw.pop('chunksize', 128)
-        return '%d %d %s' % (self.algorithm,
-                             self.fp_type,
-                             dns.rdata._hexify(self.fingerprint,
-                                               chunksize=chunksize,
-                                               **kw))
+        chunksize = kw.pop("chunksize", 128)
+        return "%d %d %s" % (
+            self.algorithm,
+            self.fp_type,
+            dns.rdata._hexify(self.fingerprint, chunksize=chunksize, **kw),
+        )
 
     @classmethod
-    def from_text(cls, rdclass, rdtype, tok, origin=None, relativize=True,
-                  relativize_to=None):
+    def from_text(
+        cls, rdclass, rdtype, tok, origin=None, relativize=True, relativize_to=None
+    ):
         algorithm = tok.get_uint8()
         fp_type = tok.get_uint8()
         fingerprint = tok.concatenate_remaining_identifiers().encode()

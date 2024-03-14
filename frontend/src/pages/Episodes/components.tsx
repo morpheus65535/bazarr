@@ -81,7 +81,7 @@ export const Subtitle: FunctionComponent<Props> = ({
                 hi: subtitle.hi,
                 forced: subtitle.forced,
               },
-            }
+            },
           );
         } else if (action === "delete" && subtitle.path) {
           task.create(
@@ -97,7 +97,7 @@ export const Subtitle: FunctionComponent<Props> = ({
                 forced: subtitle.forced,
                 path: subtitle.path,
               },
-            }
+            },
           );
         }
       }}

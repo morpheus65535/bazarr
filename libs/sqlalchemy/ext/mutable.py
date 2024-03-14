@@ -1,5 +1,5 @@
 # ext/mutable.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -378,6 +378,7 @@ from weakref import WeakKeyDictionary
 from .. import event
 from .. import inspect
 from .. import types
+from .. import util
 from ..orm import Mapper
 from ..orm._typing import _ExternalEntityType
 from ..orm._typing import _O
@@ -468,8 +469,6 @@ class MutableBase:
         :meth:`.InstanceEvents.refresh_flush` events, which pass along a list
         of attribute names that have been refreshed; the list is compared
         against this set to determine if action needs to be taken.
-
-        .. versionadded:: 1.0.5
 
         """
         return {attribute.key}
@@ -695,14 +694,28 @@ class Mutable(MutableBase):
         ) -> None:
             if mapper.non_primary:
                 return
+            _APPLIED_KEY = "_ext_mutable_listener_applied"
+
             for prop in mapper.column_attrs:
                 if (
-                    schema_event_check
-                    and hasattr(prop.expression, "info")
-                    and prop.expression.info.get("_ext_mutable_orig_type")  # type: ignore # noqa: E501 # TODO: https://github.com/python/mypy/issues/1424#issuecomment-1272354487
-                    is sqltype
-                ) or (prop.columns[0].type is sqltype):
-                    cls.associate_with_attribute(getattr(class_, prop.key))
+                    # all Mutable types refer to a Column that's mapped,
+                    # since this is the only kind of Core target the ORM can
+                    # "mutate"
+                    isinstance(prop.expression, Column)
+                    and (
+                        (
+                            schema_event_check
+                            and prop.expression.info.get(
+                                "_ext_mutable_orig_type"
+                            )
+                            is sqltype
+                        )
+                        or prop.expression.type is sqltype
+                    )
+                ):
+                    if not prop.expression.info.get(_APPLIED_KEY, False):
+                        prop.expression.info[_APPLIED_KEY] = True
+                        cls.associate_with_attribute(getattr(class_, prop.key))
 
         event.listen(Mapper, "mapper_configured", listen_for_type)
 
@@ -726,7 +739,6 @@ class MutableComposite(MutableBase):
         """Subclasses should call this method whenever change events occur."""
 
         for parent, key in self._parents.items():
-
             prop = parent.mapper.get_property(key)
             for value, attr_name in zip(
                 prop._composite_values_from_instance(self),
@@ -783,21 +795,17 @@ class MutableDict(Mutable, Dict[_KT, _VT]):
         self.changed()
 
     if TYPE_CHECKING:
-
         # from https://github.com/python/mypy/issues/14858
 
         @overload
         def setdefault(
             self: MutableDict[_KT, Optional[_T]], key: _KT, value: None = None
-        ) -> Optional[_T]:
-            ...
+        ) -> Optional[_T]: ...
 
         @overload
-        def setdefault(self, key: _KT, value: _VT) -> _VT:
-            ...
+        def setdefault(self, key: _KT, value: _VT) -> _VT: ...
 
-        def setdefault(self, key: _KT, value: object = None) -> object:
-            ...
+        def setdefault(self, key: _KT, value: object = None) -> object: ...
 
     else:
 
@@ -818,17 +826,14 @@ class MutableDict(Mutable, Dict[_KT, _VT]):
     if TYPE_CHECKING:
 
         @overload
-        def pop(self, __key: _KT) -> _VT:
-            ...
+        def pop(self, __key: _KT) -> _VT: ...
 
         @overload
-        def pop(self, __key: _KT, __default: _VT | _T) -> _VT | _T:
-            ...
+        def pop(self, __key: _KT, __default: _VT | _T) -> _VT | _T: ...
 
         def pop(
             self, __key: _KT, __default: _VT | _T | None = None
-        ) -> _VT | _T:
-            ...
+        ) -> _VT | _T: ...
 
     else:
 
@@ -880,8 +885,6 @@ class MutableList(Mutable, List[_T]):
     coercion to the values placed in the dictionary so that they too are
     "mutable", and emit events up to their parent structure.
 
-    .. versionadded:: 1.1
-
     .. seealso::
 
         :class:`.MutableDict`
@@ -901,10 +904,10 @@ class MutableList(Mutable, List[_T]):
         self[:] = state
 
     def is_scalar(self, value: _T | Iterable[_T]) -> TypeGuard[_T]:
-        return not isinstance(value, Iterable)
+        return not util.is_non_string_iterable(value)
 
     def is_iterable(self, value: _T | Iterable[_T]) -> TypeGuard[Iterable[_T]]:
-        return isinstance(value, Iterable)
+        return util.is_non_string_iterable(value)
 
     def __setitem__(
         self, index: SupportsIndex | slice, value: _T | Iterable[_T]
@@ -985,8 +988,6 @@ class MutableSet(Mutable, Set[_T]):
     build a subclass of  :class:`.MutableSet` that provides appropriate
     coercion to the values placed in the dictionary so that they too are
     "mutable", and emit events up to their parent structure.
-
-    .. versionadded:: 1.1
 
     .. seealso::
 

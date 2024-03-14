@@ -47,7 +47,7 @@ const Layout: FunctionComponent<Props> = (props) => {
         mutate(settingsToSubmit);
       }
     },
-    [mutate]
+    [mutate],
   );
 
   const totalStagedCount = useMemo(() => {
@@ -56,7 +56,7 @@ const Layout: FunctionComponent<Props> = (props) => {
 
   usePrompt(
     totalStagedCount > 0,
-    `You have ${totalStagedCount} unsaved changes, are you sure you want to leave?`
+    `You have ${totalStagedCount} unsaved changes, are you sure you want to leave?`,
   );
 
   useDocumentTitle(`${name} - Bazarr (Settings)`);

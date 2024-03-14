@@ -1,18 +1,21 @@
 """
 mymemory translator API
 """
+
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
 from typing import List, Optional, Union
 
 import requests
 
 from deep_translator.base import BaseTranslator
-from deep_translator.constants import BASE_URLS
+from deep_translator.constants import BASE_URLS, MY_MEMORY_LANGUAGES_TO_CODES
 from deep_translator.exceptions import (
     RequestError,
     TooManyRequests,
     TranslationNotFound,
 )
-from deep_translator.validate import is_empty, is_input_valid
+from deep_translator.validate import is_empty, is_input_valid, request_failed
 
 
 class MyMemoryTranslator(BaseTranslator):
@@ -38,6 +41,7 @@ class MyMemoryTranslator(BaseTranslator):
             source=source,
             target=target,
             payload_key="q",
+            languages=MY_MEMORY_LANGUAGES_TO_CODES,
         )
 
     def translate(
@@ -67,7 +71,7 @@ class MyMemoryTranslator(BaseTranslator):
 
             if response.status_code == 429:
                 raise TooManyRequests()
-            if response.status_code != 200:
+            if request_failed(status_code=response.status_code):
                 raise RequestError()
 
             data = response.json()
@@ -84,7 +88,6 @@ class MyMemoryTranslator(BaseTranslator):
                 else:
                     # append translation at the start of the matches list
                     return [translation] + list(all_matches)
-
 
             elif not translation:
                 matches = (match["translation"] for match in all_matches)

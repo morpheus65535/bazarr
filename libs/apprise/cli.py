@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -67,21 +67,32 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 DEFAULT_CONFIG_PATHS = (
     # Legacy Path Support
     '~/.apprise',
+    '~/.apprise.conf',
     '~/.apprise.yml',
+    '~/.apprise.yaml',
     '~/.config/apprise',
+    '~/.config/apprise.conf',
     '~/.config/apprise.yml',
+    '~/.config/apprise.yaml',
 
     # Plugin Support Extended Directory Search Paths
     '~/.apprise/apprise',
+    '~/.apprise/apprise.conf',
     '~/.apprise/apprise.yml',
+    '~/.apprise/apprise.yaml',
     '~/.config/apprise/apprise',
+    '~/.config/apprise/apprise.conf',
     '~/.config/apprise/apprise.yml',
+    '~/.config/apprise/apprise.yaml',
 
-    # Global Configuration Support
+    # Global Configuration File Support
     '/etc/apprise',
     '/etc/apprise.yml',
+    '/etc/apprise.yaml',
     '/etc/apprise/apprise',
+    '/etc/apprise/apprise.conf',
     '/etc/apprise/apprise.yml',
+    '/etc/apprise/apprise.yaml',
 )
 
 # Define our paths to search for plugins
@@ -98,9 +109,13 @@ if platform.system() == 'Windows':
     # Default Config Search Path for Windows Users
     DEFAULT_CONFIG_PATHS = (
         expandvars('%APPDATA%\\Apprise\\apprise'),
+        expandvars('%APPDATA%\\Apprise\\apprise.conf'),
         expandvars('%APPDATA%\\Apprise\\apprise.yml'),
+        expandvars('%APPDATA%\\Apprise\\apprise.yaml'),
         expandvars('%LOCALAPPDATA%\\Apprise\\apprise'),
+        expandvars('%LOCALAPPDATA%\\Apprise\\apprise.conf'),
         expandvars('%LOCALAPPDATA%\\Apprise\\apprise.yml'),
+        expandvars('%LOCALAPPDATA%\\Apprise\\apprise.yaml'),
 
         #
         # Global Support
@@ -108,15 +123,21 @@ if platform.system() == 'Windows':
 
         # C:\ProgramData\Apprise\
         expandvars('%ALLUSERSPROFILE%\\Apprise\\apprise'),
+        expandvars('%ALLUSERSPROFILE%\\Apprise\\apprise.conf'),
         expandvars('%ALLUSERSPROFILE%\\Apprise\\apprise.yml'),
+        expandvars('%ALLUSERSPROFILE%\\Apprise\\apprise.yaml'),
 
         # C:\Program Files\Apprise
         expandvars('%PROGRAMFILES%\\Apprise\\apprise'),
+        expandvars('%PROGRAMFILES%\\Apprise\\apprise.conf'),
         expandvars('%PROGRAMFILES%\\Apprise\\apprise.yml'),
+        expandvars('%PROGRAMFILES%\\Apprise\\apprise.yaml'),
 
         # C:\Program Files\Common Files
         expandvars('%COMMONPROGRAMFILES%\\Apprise\\apprise'),
+        expandvars('%COMMONPROGRAMFILES%\\Apprise\\apprise.conf'),
         expandvars('%COMMONPROGRAMFILES%\\Apprise\\apprise.yml'),
+        expandvars('%COMMONPROGRAMFILES%\\Apprise\\apprise.yaml'),
     )
 
     # Default Plugin Search Path for Windows Users
@@ -213,6 +234,8 @@ def print_version_msg():
               'increase the verbosity. I.e.: -vvvv')
 @click.option('--interpret-escapes', '-e', is_flag=True,
               help='Enable interpretation of backslash escapes')
+@click.option('--interpret-emojis', '-j', is_flag=True,
+              help='Enable interpretation of :emoji: definitions')
 @click.option('--debug', '-D', is_flag=True, help='Debug mode')
 @click.option('--version', '-V', is_flag=True,
               help='Display the apprise version and exit.')
@@ -220,7 +243,8 @@ def print_version_msg():
                 metavar='SERVER_URL [SERVER_URL2 [SERVER_URL3]]',)
 def main(body, title, config, attach, urls, notification_type, theme, tag,
          input_format, dry_run, recursion_depth, verbose, disable_async,
-         details, interpret_escapes, plugin_path, debug, version):
+         details, interpret_escapes, interpret_emojis, plugin_path, debug,
+         version):
     """
     Send a notification to all of the specified servers identified by their
     URLs the content provided within the title, body and notification-type.
@@ -307,6 +331,9 @@ def main(body, title, config, attach, urls, notification_type, theme, tag,
 
         # Interpret Escapes
         interpret_escapes=interpret_escapes,
+
+        # Interpret Emojis
+        interpret_emojis=None if not interpret_emojis else True,
 
         # Set the theme
         theme=theme,

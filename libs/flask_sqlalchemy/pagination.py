@@ -4,7 +4,7 @@ import typing as t
 from math import ceil
 
 import sqlalchemy as sa
-import sqlalchemy.orm
+import sqlalchemy.orm as sa_orm
 from flask import abort
 from flask import request
 
@@ -65,6 +65,9 @@ class Pagination:
 
         self.per_page: int = per_page
         """The maximum number of items on a page."""
+
+        self.max_per_page: int | None = max_per_page
+        """The maximum allowed value for ``per_page``."""
 
         items = self._query_items()
 
@@ -249,6 +252,7 @@ class Pagination:
         p = type(self)(
             page=self.page + 1,
             per_page=self.per_page,
+            max_per_page=self.max_per_page,
             error_out=error_out,
             count=False,
             **self._query_args,
@@ -336,7 +340,7 @@ class SelectPagination(Pagination):
 
     def _query_count(self) -> int:
         select = self._query_args["select"]
-        sub = select.options(sa.orm.lazyload("*")).order_by(None).subquery()
+        sub = select.options(sa_orm.lazyload("*")).order_by(None).subquery()
         session = self._query_args["session"]
         out = session.execute(sa.select(sa.func.count()).select_from(sub)).scalar()
         return out  # type: ignore[no-any-return]

@@ -4,11 +4,9 @@
 
     Lexers for the Smithy IDL.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
-
-import re
 
 from pygments.lexer import RegexLexer, bygroups, words
 from pygments.token import Text, Comment, Keyword, Name, String, \
@@ -58,8 +56,9 @@ class SmithyLexer(RegexLexer):
             (words(aggregate_shapes,
                    prefix=r'^', suffix=r'(\s+' + identifier + r')'),
                 bygroups(Keyword.Declaration, Name.Class)),
-            (r'^(metadata)(\s+.+)(\s*)(=)',
-                bygroups(Keyword.Declaration, Name.Class, Whitespace, Name.Decorator)),
+            (r'^(metadata)(\s+)((?:\S+)|(?:\"[^"]+\"))(\s*)(=)',
+                bygroups(Keyword.Declaration, Whitespace, Name.Class,
+                         Whitespace, Name.Decorator)),
             (r"(true|false|null)", Keyword.Constant),
             (r"(-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)", Number),
             (identifier + ":", Name.Label),

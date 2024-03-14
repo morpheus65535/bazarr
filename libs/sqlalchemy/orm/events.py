@@ -1,5 +1,5 @@
 # orm/events.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -494,13 +494,13 @@ class InstanceEvents(event.Events[ClassManager[Any]]):
 
         .. seealso::
 
+            :ref:`mapped_class_load_events`
+
             :meth:`.InstanceEvents.init`
 
             :meth:`.InstanceEvents.refresh`
 
             :meth:`.SessionEvents.loaded_as_persistent`
-
-            :ref:`mapping_constructors`
 
         """
 
@@ -534,6 +534,8 @@ class InstanceEvents(event.Events[ClassManager[Any]]):
 
         .. seealso::
 
+            :ref:`mapped_class_load_events`
+
             :meth:`.InstanceEvents.load`
 
         """
@@ -566,8 +568,6 @@ class InstanceEvents(event.Events[ClassManager[Any]]):
             :meth:`.SessionEvents.pending_to_persistent` and
             :meth:`.MapperEvents.after_insert` are better choices.
 
-        .. versionadded:: 1.0.5
-
         :param target: the mapped instance.  If
          the event is configured with ``raw=True``, this will
          instead be the :class:`.InstanceState` state-management
@@ -578,6 +578,8 @@ class InstanceEvents(event.Events[ClassManager[Any]]):
          were populated.
 
         .. seealso::
+
+            :ref:`mapped_class_load_events`
 
             :ref:`orm_server_defaults`
 
@@ -727,9 +729,9 @@ class _EventsHold(event.RefCollection[_ET]):
 
 
 class _InstanceEventsHold(_EventsHold[_ET]):
-    all_holds: weakref.WeakKeyDictionary[
-        Any, Any
-    ] = weakref.WeakKeyDictionary()
+    all_holds: weakref.WeakKeyDictionary[Any, Any] = (
+        weakref.WeakKeyDictionary()
+    )
 
     def resolve(self, class_: Type[_O]) -> Optional[ClassManager[_O]]:
         return instrumentation.opt_manager_of_class(class_)
@@ -1094,7 +1096,7 @@ class MapperEvents(event.Events[mapperlib.Mapper[Any]]):
 
             @event.listens_for(Mapper, "before_configured")
             def go():
-                # ...
+                ...
 
         Contrast this event to :meth:`.MapperEvents.after_configured`,
         which is invoked after the series of mappers has been configured,
@@ -1114,10 +1116,7 @@ class MapperEvents(event.Events[mapperlib.Mapper[Any]]):
 
             @event.listens_for(mapper, "before_configured", once=True)
             def go():
-                # ...
-
-
-        .. versionadded:: 0.9.3
+                ...
 
 
         .. seealso::
@@ -1606,7 +1605,6 @@ class SessionEvents(event.Events[Session]):
         cls, target: Any, identifier: str
     ) -> Union[Session, type]:
         if isinstance(target, scoped_session):
-
             target = target.session_factory
             if not isinstance(target, sessionmaker) and (
                 not isinstance(target, type) or not issubclass(target, Session)
@@ -1647,7 +1645,6 @@ class SessionEvents(event.Events[Session]):
 
         if is_instance_event:
             if not raw or restore_load_context:
-
                 fn = event_key._listen_fn
 
                 def wrap(
@@ -2042,7 +2039,14 @@ class SessionEvents(event.Events[Session]):
         transaction: SessionTransaction,
         connection: Connection,
     ) -> None:
-        """Execute after a transaction is begun on a connection
+        """Execute after a transaction is begun on a connection.
+
+        .. note:: This event is called within the process of the
+          :class:`_orm.Session` modifying its own internal state.
+          To invoke SQL operations within this hook, use the
+          :class:`_engine.Connection` provided to the event;
+          do not run SQL operations using the :class:`_orm.Session`
+          directly.
 
         :param session: The target :class:`.Session`.
         :param transaction: The :class:`.SessionTransaction`.
@@ -2205,8 +2209,6 @@ class SessionEvents(event.Events[Session]):
 
         :param instance: the ORM-mapped instance being operated upon.
 
-        .. versionadded:: 1.1
-
         .. seealso::
 
             :ref:`session_lifecycle_events`
@@ -2227,8 +2229,6 @@ class SessionEvents(event.Events[Session]):
 
         :param instance: the ORM-mapped instance being operated upon.
 
-        .. versionadded:: 1.1
-
         .. seealso::
 
             :ref:`session_lifecycle_events`
@@ -2247,8 +2247,6 @@ class SessionEvents(event.Events[Session]):
         :param session: target :class:`.Session`
 
         :param instance: the ORM-mapped instance being operated upon.
-
-        .. versionadded:: 1.1
 
         .. seealso::
 
@@ -2270,8 +2268,6 @@ class SessionEvents(event.Events[Session]):
         :param session: target :class:`.Session`
 
         :param instance: the ORM-mapped instance being operated upon.
-
-        .. versionadded:: 1.1
 
         .. seealso::
 
@@ -2308,8 +2304,6 @@ class SessionEvents(event.Events[Session]):
 
         :param instance: the ORM-mapped instance being operated upon.
 
-        .. versionadded:: 1.1
-
         .. seealso::
 
             :ref:`session_lifecycle_events`
@@ -2344,8 +2338,6 @@ class SessionEvents(event.Events[Session]):
 
         :param instance: the ORM-mapped instance being operated upon.
 
-        .. versionadded:: 1.1
-
         .. seealso::
 
             :ref:`session_lifecycle_events`
@@ -2377,8 +2369,6 @@ class SessionEvents(event.Events[Session]):
         the :meth:`.SessionEvents.persistent_to_deleted` event is therefore
         invoked at the end of a flush.
 
-        .. versionadded:: 1.1
-
         .. seealso::
 
             :ref:`session_lifecycle_events`
@@ -2394,8 +2384,6 @@ class SessionEvents(event.Events[Session]):
         successfully in a flush is restored due to a call to
         :meth:`.Session.rollback`.   The event is not called under
         any other circumstances.
-
-        .. versionadded:: 1.1
 
         .. seealso::
 
@@ -2418,8 +2406,6 @@ class SessionEvents(event.Events[Session]):
         when the :meth:`.Session.expunge_all` or :meth:`.Session.close`
         events are called, as well as if the object is individually
         expunged from its deleted state via :meth:`.Session.expunge`.
-
-        .. versionadded:: 1.1
 
         .. seealso::
 
@@ -2450,8 +2436,6 @@ class SessionEvents(event.Events[Session]):
         :param deleted: boolean.  If True, indicates this object moved
          to the detached state because it was marked as deleted and flushed.
 
-
-        .. versionadded:: 1.1
 
         .. seealso::
 
@@ -2562,7 +2546,6 @@ class AttributeEvents(event.Events[QueryableAttribute[Any]]):
         propagate: bool = False,
         include_key: bool = False,
     ) -> None:
-
         target, fn = event_key.dispatch_target, event_key._listen_fn
 
         if active_history:
@@ -2792,10 +2775,6 @@ class AttributeEvents(event.Events[QueryableAttribute[Any]]):
           from its original value by backref handlers in order to control
           chained event propagation.
 
-          .. versionchanged:: 0.9.0 the ``initiator`` argument is now
-             passed as a :class:`.attributes.Event` object, and may be
-             modified by backref handlers within a chain of backref-linked
-             events.
         :param key: When the event is established using the
          :paramref:`.AttributeEvents.include_key` parameter set to
          True, this will be the key used in the operation, such as
@@ -2840,11 +2819,6 @@ class AttributeEvents(event.Events[QueryableAttribute[Any]]):
           representing the initiation of the event.  May be modified
           from its original value by backref handlers in order to control
           chained event propagation.
-
-          .. versionchanged:: 0.9.0 the ``initiator`` argument is now
-             passed as a :class:`.attributes.Event` object, and may be
-             modified by backref handlers within a chain of backref-linked
-             events.
 
         :return: if the event was registered with ``retval=True``,
          the given value, or a new effective value, should be returned.
@@ -2950,8 +2924,6 @@ class AttributeEvents(event.Events[QueryableAttribute[Any]]):
         returned by the previous listener that specifies ``retval=True``
         as the ``value`` argument of the next listener.
 
-        .. versionadded:: 1.1
-
         :param target: the object instance receiving the event.
          If the listener is registered with ``raw=True``, this will
          be the :class:`.InstanceState` object.
@@ -3013,9 +2985,6 @@ class AttributeEvents(event.Events[QueryableAttribute[Any]]):
         :param collection_adapter: the :class:`.CollectionAdapter` that will
          mediate internal access to the collection.
 
-        .. versionadded:: 1.0.0 :meth:`.AttributeEvents.init_collection`
-           and :meth:`.AttributeEvents.dispose_collection` events.
-
         .. seealso::
 
             :class:`.AttributeEvents` - background on listener options such
@@ -3047,9 +3016,6 @@ class AttributeEvents(event.Events[QueryableAttribute[Any]]):
            :meth:`.AttributeEvents.dispose_collection` will now have its
            contents before the dispose intact; previously, the collection
            would be empty.
-
-        .. versionadded:: 1.0.0 the :meth:`.AttributeEvents.init_collection`
-           and :meth:`.AttributeEvents.dispose_collection` events.
 
         .. seealso::
 

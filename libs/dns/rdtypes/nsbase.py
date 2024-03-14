@@ -19,16 +19,15 @@
 
 import dns.exception
 import dns.immutable
-import dns.rdata
 import dns.name
+import dns.rdata
 
 
 @dns.immutable.immutable
 class NSBase(dns.rdata.Rdata):
-
     """Base class for rdata that is like an NS record."""
 
-    __slots__ = ['target']
+    __slots__ = ["target"]
 
     def __init__(self, rdclass, rdtype, target):
         super().__init__(rdclass, rdtype)
@@ -39,8 +38,9 @@ class NSBase(dns.rdata.Rdata):
         return str(target)
 
     @classmethod
-    def from_text(cls, rdclass, rdtype, tok, origin=None, relativize=True,
-                  relativize_to=None):
+    def from_text(
+        cls, rdclass, rdtype, tok, origin=None, relativize=True, relativize_to=None
+    ):
         target = tok.get_name(origin, relativize, relativize_to)
         return cls(rdclass, rdtype, target)
 
@@ -55,7 +55,6 @@ class NSBase(dns.rdata.Rdata):
 
 @dns.immutable.immutable
 class UncompressedNS(NSBase):
-
     """Base class for rdata that is like an NS record, but whose name
     is not compressed when convert to DNS wire format, and whose
     digestable form is not downcased."""

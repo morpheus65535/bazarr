@@ -11,6 +11,8 @@ that may be slowing down your application.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+from __future__ import annotations
+
 import os.path
 import sys
 import time
@@ -42,11 +44,16 @@ class ProfilerMiddleware:
 
     -   ``{method}`` - The request method; GET, POST, etc.
     -   ``{path}`` - The request path or 'root' should one not exist.
-    -   ``{elapsed}`` - The elapsed time of the request.
+    -   ``{elapsed}`` - The elapsed time of the request in milliseconds.
     -   ``{time}`` - The time of the request.
 
-    If it is a callable, it will be called with the WSGI ``environ``
-    dict and should return a filename.
+    If it is a callable, it will be called with the WSGI ``environ`` and
+    be expected to return a filename string. The ``environ`` dictionary
+    will also have the ``"werkzeug.profiler"`` key populated with a
+    dictionary containing the following fields (more may be added in the
+    future):
+    -   ``{elapsed}`` - The elapsed time of the request in milliseconds.
+    -   ``{time}`` - The time of the request.
 
     :param app: The WSGI application to wrap.
     :param stream: Write stats to this stream. Disable with ``None``.
@@ -63,6 +70,10 @@ class ProfilerMiddleware:
         from werkzeug.middleware.profiler import ProfilerMiddleware
         app = ProfilerMiddleware(app)
 
+    .. versionchanged:: 3.0
+        Added the ``"werkzeug.profiler"`` key to the ``filename_format(environ)``
+        parameter with the  ``elapsed`` and ``time`` fields.
+
     .. versionchanged:: 0.15
         Stats are written even if ``profile_dir`` is given, and can be
         disable by passing ``stream=None``.
@@ -76,11 +87,11 @@ class ProfilerMiddleware:
 
     def __init__(
         self,
-        app: "WSGIApplication",
-        stream: t.IO[str] = sys.stdout,
+        app: WSGIApplication,
+        stream: t.IO[str] | None = sys.stdout,
         sort_by: t.Iterable[str] = ("time", "calls"),
-        restrictions: t.Iterable[t.Union[str, int, float]] = (),
-        profile_dir: t.Optional[str] = None,
+        restrictions: t.Iterable[str | int | float] = (),
+        profile_dir: str | None = None,
         filename_format: str = "{method}.{path}.{elapsed:.0f}ms.{time:.0f}.prof",
     ) -> None:
         self._app = app
@@ -91,9 +102,9 @@ class ProfilerMiddleware:
         self._filename_format = filename_format
 
     def __call__(
-        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+        self, environ: WSGIEnvironment, start_response: StartResponse
     ) -> t.Iterable[bytes]:
-        response_body: t.List[bytes] = []
+        response_body: list[bytes] = []
 
         def catching_start_response(status, headers, exc_info=None):  # type: ignore
             start_response(status, headers, exc_info)
@@ -106,7 +117,7 @@ class ProfilerMiddleware:
             response_body.extend(app_iter)
 
             if hasattr(app_iter, "close"):
-                app_iter.close()  # type: ignore
+                app_iter.close()
 
         profile = Profile()
         start = time.time()
@@ -116,6 +127,10 @@ class ProfilerMiddleware:
 
         if self._profile_dir is not None:
             if callable(self._filename_format):
+                environ["werkzeug.profiler"] = {
+                    "elapsed": elapsed * 1000.0,
+                    "time": time.time(),
+                }
                 filename = self._filename_format(environ)
             else:
                 filename = self._filename_format.format(

@@ -1,238 +1,81 @@
-# coding: utf-8
-
-from __future__ import absolute_import, print_function
-
+from __future__ import absolute_import,print_function
+_A=None
 import warnings
-
-from .error import MarkedYAMLError, ReusedAnchorWarning
-from .compat import utf8, nprint, nprintf  # NOQA
-
-from .events import (
-    StreamStartEvent,
-    StreamEndEvent,
-    MappingStartEvent,
-    MappingEndEvent,
-    SequenceStartEvent,
-    SequenceEndEvent,
-    AliasEvent,
-    ScalarEvent,
-)
-from .nodes import MappingNode, ScalarNode, SequenceNode
-
-if False:  # MYPY
-    from typing import Any, Dict, Optional, List  # NOQA
-
-__all__ = ['Composer', 'ComposerError']
-
-
-class ComposerError(MarkedYAMLError):
-    pass
-
-
-class Composer(object):
-    def __init__(self, loader=None):
-        # type: (Any) -> None
-        self.loader = loader
-        if self.loader is not None and getattr(self.loader, '_composer', None) is None:
-            self.loader._composer = self
-        self.anchors = {}  # type: Dict[Any, Any]
-
-    @property
-    def parser(self):
-        # type: () -> Any
-        if hasattr(self.loader, 'typ'):
-            self.loader.parser
-        return self.loader._parser
-
-    @property
-    def resolver(self):
-        # type: () -> Any
-        # assert self.loader._resolver is not None
-        if hasattr(self.loader, 'typ'):
-            self.loader.resolver
-        return self.loader._resolver
-
-    def check_node(self):
-        # type: () -> Any
-        # Drop the STREAM-START event.
-        if self.parser.check_event(StreamStartEvent):
-            self.parser.get_event()
-
-        # If there are more documents available?
-        return not self.parser.check_event(StreamEndEvent)
-
-    def get_node(self):
-        # type: () -> Any
-        # Get the root node of the next document.
-        if not self.parser.check_event(StreamEndEvent):
-            return self.compose_document()
-
-    def get_single_node(self):
-        # type: () -> Any
-        # Drop the STREAM-START event.
-        self.parser.get_event()
-
-        # Compose a document if the stream is not empty.
-        document = None  # type: Any
-        if not self.parser.check_event(StreamEndEvent):
-            document = self.compose_document()
-
-        # Ensure that the stream contains no more documents.
-        if not self.parser.check_event(StreamEndEvent):
-            event = self.parser.get_event()
-            raise ComposerError(
-                'expected a single document in the stream',
-                document.start_mark,
-                'but found another document',
-                event.start_mark,
-            )
-
-        # Drop the STREAM-END event.
-        self.parser.get_event()
-
-        return document
-
-    def compose_document(self):
-        # type: (Any) -> Any
-        # Drop the DOCUMENT-START event.
-        self.parser.get_event()
-
-        # Compose the root node.
-        node = self.compose_node(None, None)
-
-        # Drop the DOCUMENT-END event.
-        self.parser.get_event()
-
-        self.anchors = {}
-        return node
-
-    def compose_node(self, parent, index):
-        # type: (Any, Any) -> Any
-        if self.parser.check_event(AliasEvent):
-            event = self.parser.get_event()
-            alias = event.anchor
-            if alias not in self.anchors:
-                raise ComposerError(
-                    None, None, 'found undefined alias %r' % utf8(alias), event.start_mark
-                )
-            return self.anchors[alias]
-        event = self.parser.peek_event()
-        anchor = event.anchor
-        if anchor is not None:  # have an anchor
-            if anchor in self.anchors:
-                # raise ComposerError(
-                #     "found duplicate anchor %r; first occurrence"
-                #     % utf8(anchor), self.anchors[anchor].start_mark,
-                #     "second occurrence", event.start_mark)
-                ws = (
-                    '\nfound duplicate anchor {!r}\nfirst occurrence {}\nsecond occurrence '
-                    '{}'.format((anchor), self.anchors[anchor].start_mark, event.start_mark)
-                )
-                warnings.warn(ws, ReusedAnchorWarning)
-        self.resolver.descend_resolver(parent, index)
-        if self.parser.check_event(ScalarEvent):
-            node = self.compose_scalar_node(anchor)
-        elif self.parser.check_event(SequenceStartEvent):
-            node = self.compose_sequence_node(anchor)
-        elif self.parser.check_event(MappingStartEvent):
-            node = self.compose_mapping_node(anchor)
-        self.resolver.ascend_resolver()
-        return node
-
-    def compose_scalar_node(self, anchor):
-        # type: (Any) -> Any
-        event = self.parser.get_event()
-        tag = event.tag
-        if tag is None or tag == u'!':
-            tag = self.resolver.resolve(ScalarNode, event.value, event.implicit)
-        node = ScalarNode(
-            tag,
-            event.value,
-            event.start_mark,
-            event.end_mark,
-            style=event.style,
-            comment=event.comment,
-            anchor=anchor,
-        )
-        if anchor is not None:
-            self.anchors[anchor] = node
-        return node
-
-    def compose_sequence_node(self, anchor):
-        # type: (Any) -> Any
-        start_event = self.parser.get_event()
-        tag = start_event.tag
-        if tag is None or tag == u'!':
-            tag = self.resolver.resolve(SequenceNode, None, start_event.implicit)
-        node = SequenceNode(
-            tag,
-            [],
-            start_event.start_mark,
-            None,
-            flow_style=start_event.flow_style,
-            comment=start_event.comment,
-            anchor=anchor,
-        )
-        if anchor is not None:
-            self.anchors[anchor] = node
-        index = 0
-        while not self.parser.check_event(SequenceEndEvent):
-            node.value.append(self.compose_node(node, index))
-            index += 1
-        end_event = self.parser.get_event()
-        if node.flow_style is True and end_event.comment is not None:
-            if node.comment is not None:
-                nprint(
-                    'Warning: unexpected end_event commment in sequence '
-                    'node {}'.format(node.flow_style)
-                )
-            node.comment = end_event.comment
-        node.end_mark = end_event.end_mark
-        self.check_end_doc_comment(end_event, node)
-        return node
-
-    def compose_mapping_node(self, anchor):
-        # type: (Any) -> Any
-        start_event = self.parser.get_event()
-        tag = start_event.tag
-        if tag is None or tag == u'!':
-            tag = self.resolver.resolve(MappingNode, None, start_event.implicit)
-        node = MappingNode(
-            tag,
-            [],
-            start_event.start_mark,
-            None,
-            flow_style=start_event.flow_style,
-            comment=start_event.comment,
-            anchor=anchor,
-        )
-        if anchor is not None:
-            self.anchors[anchor] = node
-        while not self.parser.check_event(MappingEndEvent):
-            # key_event = self.parser.peek_event()
-            item_key = self.compose_node(node, None)
-            # if item_key in node.value:
-            #     raise ComposerError("while composing a mapping",
-            #             start_event.start_mark,
-            #             "found duplicate key", key_event.start_mark)
-            item_value = self.compose_node(node, item_key)
-            # node.value[item_key] = item_value
-            node.value.append((item_key, item_value))
-        end_event = self.parser.get_event()
-        if node.flow_style is True and end_event.comment is not None:
-            node.comment = end_event.comment
-        node.end_mark = end_event.end_mark
-        self.check_end_doc_comment(end_event, node)
-        return node
-
-    def check_end_doc_comment(self, end_event, node):
-        # type: (Any, Any) -> None
-        if end_event.comment and end_event.comment[1]:
-            # pre comments on an end_event, no following to move to
-            if node.comment is None:
-                node.comment = [None, None]
-            assert not isinstance(node, ScalarEvent)
-            # this is a post comment on a mapping node, add as third element
-            # in the list
-            node.comment.append(end_event.comment[1])
-            end_event.comment[1] = None
+from.error import MarkedYAMLError,ReusedAnchorWarning
+from.compat import utf8,nprint,nprintf
+from.events import StreamStartEvent,StreamEndEvent,MappingStartEvent,MappingEndEvent,SequenceStartEvent,SequenceEndEvent,AliasEvent,ScalarEvent
+from.nodes import MappingNode,ScalarNode,SequenceNode
+if False:from typing import Any,Dict,Optional,List
+__all__=['Composer','ComposerError']
+class ComposerError(MarkedYAMLError):0
+class Composer:
+	def __init__(A,loader=_A):
+		A.loader=loader
+		if A.loader is not _A and getattr(A.loader,'_composer',_A)is _A:A.loader._composer=A
+		A.anchors={}
+	@property
+	def parser(self):
+		A=self
+		if hasattr(A.loader,'typ'):A.loader.parser
+		return A.loader._parser
+	@property
+	def resolver(self):
+		A=self
+		if hasattr(A.loader,'typ'):A.loader.resolver
+		return A.loader._resolver
+	def check_node(A):
+		if A.parser.check_event(StreamStartEvent):A.parser.get_event()
+		return not A.parser.check_event(StreamEndEvent)
+	def get_node(A):
+		if not A.parser.check_event(StreamEndEvent):return A.compose_document()
+	def get_single_node(A):
+		A.parser.get_event();B=_A
+		if not A.parser.check_event(StreamEndEvent):B=A.compose_document()
+		if not A.parser.check_event(StreamEndEvent):C=A.parser.get_event();raise ComposerError('expected a single document in the stream',B.start_mark,'but found another document',C.start_mark)
+		A.parser.get_event();return B
+	def compose_document(A):A.parser.get_event();B=A.compose_node(_A,_A);A.parser.get_event();A.anchors={};return B
+	def compose_node(A,parent,index):
+		if A.parser.check_event(AliasEvent):
+			C=A.parser.get_event();D=C.anchor
+			if D not in A.anchors:raise ComposerError(_A,_A,'found undefined alias %r'%utf8(D),C.start_mark)
+			return A.anchors[D]
+		C=A.parser.peek_event();B=C.anchor
+		if B is not _A:
+			if B in A.anchors:F='\nfound duplicate anchor {!r}\nfirst occurrence {}\nsecond occurrence {}'.format(B,A.anchors[B].start_mark,C.start_mark);warnings.warn(F,ReusedAnchorWarning)
+		A.resolver.descend_resolver(parent,index)
+		if A.parser.check_event(ScalarEvent):E=A.compose_scalar_node(B)
+		elif A.parser.check_event(SequenceStartEvent):E=A.compose_sequence_node(B)
+		elif A.parser.check_event(MappingStartEvent):E=A.compose_mapping_node(B)
+		A.resolver.ascend_resolver();return E
+	def compose_scalar_node(C,anchor):
+		D=anchor;A=C.parser.get_event();B=A.tag
+		if B is _A or B=='!':B=C.resolver.resolve(ScalarNode,A.value,A.implicit)
+		E=ScalarNode(B,A.value,A.start_mark,A.end_mark,style=A.style,comment=A.comment,anchor=D)
+		if D is not _A:C.anchors[D]=E
+		return E
+	def compose_sequence_node(B,anchor):
+		F=anchor;C=B.parser.get_event();D=C.tag
+		if D is _A or D=='!':D=B.resolver.resolve(SequenceNode,_A,C.implicit)
+		A=SequenceNode(D,[],C.start_mark,_A,flow_style=C.flow_style,comment=C.comment,anchor=F)
+		if F is not _A:B.anchors[F]=A
+		G=0
+		while not B.parser.check_event(SequenceEndEvent):A.value.append(B.compose_node(A,G));G+=1
+		E=B.parser.get_event()
+		if A.flow_style is True and E.comment is not _A:
+			if A.comment is not _A:nprint('Warning: unexpected end_event commment in sequence node {}'.format(A.flow_style))
+			A.comment=E.comment
+		A.end_mark=E.end_mark;B.check_end_doc_comment(E,A);return A
+	def compose_mapping_node(B,anchor):
+		F=anchor;C=B.parser.get_event();D=C.tag
+		if D is _A or D=='!':D=B.resolver.resolve(MappingNode,_A,C.implicit)
+		A=MappingNode(D,[],C.start_mark,_A,flow_style=C.flow_style,comment=C.comment,anchor=F)
+		if F is not _A:B.anchors[F]=A
+		while not B.parser.check_event(MappingEndEvent):G=B.compose_node(A,_A);H=B.compose_node(A,G);A.value.append((G,H))
+		E=B.parser.get_event()
+		if A.flow_style is True and E.comment is not _A:A.comment=E.comment
+		A.end_mark=E.end_mark;B.check_end_doc_comment(E,A);return A
+	def check_end_doc_comment(C,end_event,node):
+		B=node;A=end_event
+		if A.comment and A.comment[1]:
+			if B.comment is _A:B.comment=[_A,_A]
+			assert not isinstance(B,ScalarEvent);B.comment.append(A.comment[1]);A.comment[1]=_A

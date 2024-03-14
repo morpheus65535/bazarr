@@ -78,7 +78,7 @@ const MovieDetailView: FunctionComponent = () => {
         },
       });
     },
-    [downloadAsync]
+    [downloadAsync],
   );
 
   const onDrop = useCallback(
@@ -92,12 +92,12 @@ const MovieDetailView: FunctionComponent = () => {
         showNotification(
           notification.warn(
             "Cannot Upload Files",
-            "movie or language profile is not ready"
-          )
+            "movie or language profile is not ready",
+          ),
         );
       }
     },
-    [modals, movie, profile]
+    [modals, movie, profile],
   );
 
   const hasTask = useIsMovieActionRunning();
@@ -187,7 +187,7 @@ const MovieDetailView: FunctionComponent = () => {
                       item: movie,
                       mutation,
                     },
-                    { title: movie.title }
+                    { title: movie.title },
                   );
                 }
               }}

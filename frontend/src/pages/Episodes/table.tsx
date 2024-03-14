@@ -73,7 +73,7 @@ const Table: FunctionComponent<Props> = ({
         },
       });
     },
-    [mutateAsync]
+    [mutateAsync],
   );
 
   const columns: Column<Item.Episode>[] = useMemo<Column<Item.Episode>[]>(
@@ -194,7 +194,7 @@ const Table: FunctionComponent<Props> = ({
                     },
                     {
                       title: `History - ${row.original.title}`,
-                    }
+                    },
                   );
                 }}
                 icon={faHistory}
@@ -204,16 +204,16 @@ const Table: FunctionComponent<Props> = ({
         },
       },
     ],
-    [onlyDesired, profileItems, disabled, download]
+    [onlyDesired, profileItems, disabled, download],
   );
 
   const maxSeason = useMemo(
     () =>
       episodes?.reduce<number>(
         (prev, curr) => Math.max(prev, curr.season),
-        0
+        0,
       ) ?? 0,
-    [episodes]
+    [episodes],
   );
 
   const instance = useRef<TableInstance<Item.Episode> | null>(null);
@@ -221,10 +221,10 @@ const Table: FunctionComponent<Props> = ({
   useEffect(() => {
     if (instance.current) {
       if (initial) {
+        // start with all rows collapsed
+        instance.current.toggleAllRowsExpanded(false);
         // expand the last/current season on initial display
         instance.current.toggleRowExpanded([`season:${maxSeason}`], true);
-        // make sure season 0 is collapsed
-        instance.current.toggleRowExpanded([`season:0`], false);
       } else {
         if (expand !== undefined) {
           instance.current.toggleAllRowsExpanded(expand);

@@ -1,5 +1,5 @@
-# sqlalchemy/pool.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# pool/base.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -147,17 +147,14 @@ class _AsyncConnDialect(_ConnDialect):
 
 
 class _CreatorFnType(Protocol):
-    def __call__(self) -> DBAPIConnection:
-        ...
+    def __call__(self) -> DBAPIConnection: ...
 
 
 class _CreatorWRecFnType(Protocol):
-    def __call__(self, rec: ConnectionPoolEntry) -> DBAPIConnection:
-        ...
+    def __call__(self, rec: ConnectionPoolEntry) -> DBAPIConnection: ...
 
 
 class Pool(log.Identified, event.EventTarget):
-
     """Abstract base class for connection pools."""
 
     dispatch: dispatcher[Pool]
@@ -266,9 +263,6 @@ class Pool(log.Identified, event.EventTarget):
          make use of :func:`_sa.create_engine` should not use this parameter
          as it is handled by the engine creation strategy.
 
-         .. versionadded:: 1.1 - ``dialect`` is now a public parameter
-            to the :class:`_pool.Pool`.
-
         :param pre_ping: if True, the pool will emit a "ping" (typically
          "SELECT 1", but is dialect-specific) on the connection
          upon checkout, to test if the connection is alive or not.   If not,
@@ -326,13 +320,13 @@ class Pool(log.Identified, event.EventTarget):
 
         # mypy seems to get super confused assigning functions to
         # attributes
-        self._invoke_creator = self._should_wrap_creator(creator)  # type: ignore  # noqa: E501
+        self._invoke_creator = self._should_wrap_creator(creator)
 
     @_creator.deleter
     def _creator(self) -> None:
         # needed for mock testing
         del self._creator_arg
-        del self._invoke_creator  # type: ignore[misc]
+        del self._invoke_creator
 
     def _should_wrap_creator(
         self, creator: Union[_CreatorFnType, _CreatorWRecFnType]
@@ -636,7 +630,6 @@ class ConnectionPoolEntry(ManagesConnection):
 
 
 class _ConnectionRecord(ConnectionPoolEntry):
-
     """Maintains a position in a connection pool which references a pooled
     connection.
 
@@ -732,11 +725,13 @@ class _ConnectionRecord(ConnectionPoolEntry):
 
         rec.fairy_ref = ref = weakref.ref(
             fairy,
-            lambda ref: _finalize_fairy(
-                None, rec, pool, ref, echo, transaction_was_reset=False
-            )
-            if _finalize_fairy is not None
-            else None,
+            lambda ref: (
+                _finalize_fairy(
+                    None, rec, pool, ref, echo, transaction_was_reset=False
+                )
+                if _finalize_fairy is not None
+                else None
+            ),
         )
         _strong_ref_connection_records[ref] = rec
         if echo:
@@ -838,7 +833,7 @@ class _ConnectionRecord(ConnectionPoolEntry):
         # time and invalidation for the logic below to work reliably.
 
         if self.dbapi_connection is None:
-            self.info.clear()  # type: ignore  # our info is always present
+            self.info.clear()
             self.__connect()
         elif (
             self.__pool._recycle > -1
@@ -866,7 +861,7 @@ class _ConnectionRecord(ConnectionPoolEntry):
 
         if recycle:
             self.__close(terminate=True)
-            self.info.clear()  # type: ignore  # our info is always present
+            self.info.clear()
 
             self.__connect()
 
@@ -1043,7 +1038,9 @@ def _finalize_fairy(
     # test/engine/test_pool.py::PoolEventsTest::test_checkin_event_gc[True]
     # which actually started failing when pytest warnings plugin was
     # turned on, due to util.warn() above
-    fairy.dbapi_connection = fairy._connection_record = None  # type: ignore
+    if fairy is not None:
+        fairy.dbapi_connection = None  # type: ignore
+        fairy._connection_record = None
     del dbapi_connection
     del connection_record
     del fairy
@@ -1075,14 +1072,11 @@ class PoolProxiedConnection(ManagesConnection):
 
     if typing.TYPE_CHECKING:
 
-        def commit(self) -> None:
-            ...
+        def commit(self) -> None: ...
 
-        def cursor(self) -> DBAPICursor:
-            ...
+        def cursor(self) -> DBAPICursor: ...
 
-        def rollback(self) -> None:
-            ...
+        def rollback(self) -> None: ...
 
     @property
     def is_valid(self) -> bool:
@@ -1190,7 +1184,6 @@ class _AdhocProxiedConnection(PoolProxiedConnection):
 
 
 class _ConnectionFairy(PoolProxiedConnection):
-
     """Proxies a DBAPI connection and provides return-on-dereference
     support.
 
@@ -1266,7 +1259,6 @@ class _ConnectionFairy(PoolProxiedConnection):
         threadconns: Optional[threading.local] = None,
         fairy: Optional[_ConnectionFairy] = None,
     ) -> _ConnectionFairy:
-
         if not fairy:
             fairy = _ConnectionRecord.checkout(pool)
 
@@ -1475,7 +1467,6 @@ class _ConnectionFairy(PoolProxiedConnection):
     def invalidate(
         self, e: Optional[BaseException] = None, soft: bool = False
     ) -> None:
-
         if self.dbapi_connection is None:
             util.warn("Can't invalidate an already-closed connection.")
             return

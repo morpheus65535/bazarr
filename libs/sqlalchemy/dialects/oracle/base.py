@@ -1,5 +1,5 @@
-# oracle/base.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# dialects/oracle/base.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -10,7 +10,7 @@
 r"""
 .. dialect:: oracle
     :name: Oracle
-    :full_support: 11.2, 18c
+    :full_support: 18c
     :normal_support: 11+
     :best_effort: 9+
 
@@ -453,8 +453,6 @@ the ``exclude_tablespaces`` parameter::
       "oracle+cx_oracle://scott:tiger@xe",
       exclude_tablespaces=["SYSAUX", "SOME_TABLESPACE"])
 
-.. versionadded:: 1.1
-
 DateTime Compatibility
 ----------------------
 
@@ -465,13 +463,6 @@ dialect provides a type :class:`_oracle.DATE` which is a subclass of
 present as a "marker" for this type; additionally, when a database column
 is reflected and the type is reported as ``DATE``, the time-supporting
 :class:`_oracle.DATE` type is used.
-
-.. versionchanged:: 0.9.4 Added :class:`_oracle.DATE` to subclass
-   :class:`.DateTime`.  This is a change as previous versions
-   would reflect a ``DATE`` column as :class:`_types.DATE`, which subclasses
-   :class:`.Date`.   The only significance here is for schemes that are
-   examining the type of column for use in special Python translations or
-   for migrating schemas to other database backends.
 
 .. _oracle_table_options:
 
@@ -488,8 +479,6 @@ in conjunction with the :class:`_schema.Table` construct:
         "some_table", metadata, ...,
         prefixes=['GLOBAL TEMPORARY'], oracle_on_commit='PRESERVE ROWS')
 
-.. versionadded:: 1.0.0
-
 * ``COMPRESS``::
 
     Table('mytable', metadata, Column('data', String(32)),
@@ -500,8 +489,6 @@ in conjunction with the :class:`_schema.Table` construct:
 
    The ``oracle_compress`` parameter accepts either an integer compression
    level, or ``True`` to use the default compression level.
-
-.. versionadded:: 1.0.0
 
 .. _oracle_index_options:
 
@@ -519,8 +506,6 @@ instead of a B-tree index::
 Bitmap indexes cannot be unique and cannot be compressed. SQLAlchemy will not
 check for such limitations, only the database will.
 
-.. versionadded:: 1.0.0
-
 Index compression
 ~~~~~~~~~~~~~~~~~
 
@@ -536,8 +521,6 @@ compression::
 The ``oracle_compress`` parameter accepts either an integer specifying the
 number of prefix columns to compress, or ``True`` to use the default (all
 columns for non-unique indexes, all but the last column for unique indexes).
-
-.. versionadded:: 1.0.0
 
 """  # noqa
 
@@ -611,7 +594,7 @@ RESERVED_WORDS = set(
 )
 
 NO_ARG_FNS = set(
-    "UID CURRENT_DATE SYSDATE USER " "CURRENT_TIME CURRENT_TIMESTAMP".split()
+    "UID CURRENT_DATE SYSDATE USER CURRENT_TIME CURRENT_TIMESTAMP".split()
 )
 
 
@@ -716,7 +699,6 @@ class OracleTypeCompiler(compiler.GenericTypeCompiler):
         **kw,
     ):
         if precision is None:
-
             precision = getattr(type_, "precision", None)
 
         if _requires_binary_precision:
@@ -1115,7 +1097,6 @@ class OracleCompiler(compiler.SQLCompiler):
 
                 # add expressions to accommodate FOR UPDATE OF
                 if for_update is not None and for_update.of:
-
                     adapter = sql_util.ClauseAdapter(inner_subquery)
                     for_update.of = [
                         adapter.traverse(elem) for elem in for_update.of
@@ -1236,7 +1217,7 @@ class OracleCompiler(compiler.SQLCompiler):
             return "REGEXP_LIKE(%s, %s, %s)" % (
                 string,
                 pattern,
-                self.process(flags, **kw),
+                self.render_literal_value(flags, sqltypes.STRINGTYPE),
             )
 
     def visit_not_regexp_match_op_binary(self, binary, operator, **kw):
@@ -1246,22 +1227,22 @@ class OracleCompiler(compiler.SQLCompiler):
 
     def visit_regexp_replace_op_binary(self, binary, operator, **kw):
         string = self.process(binary.left, **kw)
-        pattern = self.process(binary.right, **kw)
-        replacement = self.process(binary.modifiers["replacement"], **kw)
+        pattern_replace = self.process(binary.right, **kw)
         flags = binary.modifiers["flags"]
         if flags is None:
-            return "REGEXP_REPLACE(%s, %s, %s)" % (
+            return "REGEXP_REPLACE(%s, %s)" % (
                 string,
-                pattern,
-                replacement,
+                pattern_replace,
             )
         else:
-            return "REGEXP_REPLACE(%s, %s, %s, %s)" % (
+            return "REGEXP_REPLACE(%s, %s, %s)" % (
                 string,
-                pattern,
-                replacement,
-                self.process(flags, **kw),
+                pattern_replace,
+                self.render_literal_value(flags, sqltypes.STRINGTYPE),
             )
+
+    def visit_aggregate_strings_func(self, fn, **kw):
+        return "LISTAGG%s" % self.function_argspec(fn, **kw)
 
 
 class OracleDDLCompiler(compiler.DDLCompiler):
@@ -1337,8 +1318,9 @@ class OracleDDLCompiler(compiler.DDLCompiler):
         text = text.replace("NO MINVALUE", "NOMINVALUE")
         text = text.replace("NO MAXVALUE", "NOMAXVALUE")
         text = text.replace("NO CYCLE", "NOCYCLE")
-        text = text.replace("NO ORDER", "NOORDER")
-        return text
+        if identity_options.order is not None:
+            text += " ORDER" if identity_options.order else " NOORDER"
+        return text.strip()
 
     def visit_computed_column(self, generated, **kw):
         text = "GENERATED ALWAYS AS (%s)" % self.sql_compiler.process(
@@ -1369,7 +1351,6 @@ class OracleDDLCompiler(compiler.DDLCompiler):
 
 
 class OracleIdentifierPreparer(compiler.IdentifierPreparer):
-
     reserved_words = {x.lower() for x in RESERVED_WORDS}
     illegal_initial_characters = {str(dig) for dig in range(0, 10)}.union(
         ["_", "$"]
@@ -1422,6 +1403,7 @@ class OracleDialect(default.DefaultDialect):
 
     supports_simple_order_by_label = False
     cte_follows_insert = True
+    returns_native_bytes = True
 
     supports_sequences = True
     sequences_optional = False
@@ -1482,9 +1464,9 @@ class OracleDialect(default.DefaultDialect):
         self.use_ansi = use_ansi
         self.optimize_limits = optimize_limits
         self.exclude_tablespaces = exclude_tablespaces
-        self.enable_offset_fetch = (
-            self._supports_offset_fetch
-        ) = enable_offset_fetch
+        self.enable_offset_fetch = self._supports_offset_fetch = (
+            enable_offset_fetch
+        )
 
     def initialize(self, connection):
         super().initialize(connection)
@@ -2320,6 +2302,8 @@ class OracleDialect(default.DefaultDialect):
             else:
                 return value
 
+        remove_size = re.compile(r"\(\d+\)")
+
         for row_dict in result:
             table_name = self.normalize_name(row_dict["table_name"])
             orig_colname = row_dict["column_name"]
@@ -2355,7 +2339,7 @@ class OracleDialect(default.DefaultDialect):
             elif "WITH LOCAL TIME ZONE" in coltype:
                 coltype = TIMESTAMP(local_timezone=True)
             else:
-                coltype = re.sub(r"\(\d+\)", "", coltype)
+                coltype = re.sub(remove_size, "", coltype)
                 try:
                     coltype = self.ischema_names[coltype]
                 except KeyError:
@@ -2539,10 +2523,12 @@ class OracleDialect(default.DefaultDialect):
         return (
             (
                 (schema, self.normalize_name(table)),
-                {"text": comment}
-                if comment is not None
-                and not comment.startswith(ignore_mat_view)
-                else default(),
+                (
+                    {"text": comment}
+                    if comment is not None
+                    and not comment.startswith(ignore_mat_view)
+                    else default()
+                ),
             )
             for table, comment in result
         )
@@ -2573,6 +2559,8 @@ class OracleDialect(default.DefaultDialect):
                 dictionary.all_indexes.c.uniqueness,
                 dictionary.all_indexes.c.compression,
                 dictionary.all_indexes.c.prefix_length,
+                dictionary.all_ind_columns.c.descend,
+                dictionary.all_ind_expressions.c.column_expression,
             )
             .select_from(dictionary.all_ind_columns)
             .join(
@@ -2580,17 +2568,30 @@ class OracleDialect(default.DefaultDialect):
                 sql.and_(
                     dictionary.all_ind_columns.c.index_name
                     == dictionary.all_indexes.c.index_name,
-                    dictionary.all_ind_columns.c.table_owner
-                    == dictionary.all_indexes.c.table_owner,
-                    # NOTE: this condition on table_name is not required
-                    # but it improves the query performance noticeably
-                    dictionary.all_ind_columns.c.table_name
-                    == dictionary.all_indexes.c.table_name,
+                    dictionary.all_ind_columns.c.index_owner
+                    == dictionary.all_indexes.c.owner,
+                ),
+            )
+            .outerjoin(
+                # NOTE: this adds about 20% to the query time. Using a
+                # case expression with a scalar subquery only when needed
+                # with the assumption that most indexes are not expression
+                # would be faster but oracle does not like that with
+                # LONG datatype. It errors with:
+                # ORA-00997: illegal use of LONG datatype
+                dictionary.all_ind_expressions,
+                sql.and_(
+                    dictionary.all_ind_expressions.c.index_name
+                    == dictionary.all_ind_columns.c.index_name,
+                    dictionary.all_ind_expressions.c.index_owner
+                    == dictionary.all_ind_columns.c.index_owner,
+                    dictionary.all_ind_expressions.c.column_position
+                    == dictionary.all_ind_columns.c.column_position,
                 ),
             )
             .where(
-                dictionary.all_ind_columns.c.table_owner == owner,
-                dictionary.all_ind_columns.c.table_name.in_(
+                dictionary.all_indexes.c.table_owner == owner,
+                dictionary.all_indexes.c.table_name.in_(
                     bindparam("all_objects")
                 ),
             )
@@ -2620,11 +2621,12 @@ class OracleDialect(default.DefaultDialect):
             if row_dict["constraint_type"] == "P"
         }
 
+        # all_ind_expressions.column_expression is LONG
         result = self._run_batches(
             connection,
             query,
             dblink,
-            returns_long=False,
+            returns_long=True,
             mappings=True,
             all_objects=all_objects,
         )
@@ -2658,8 +2660,6 @@ class OracleDialect(default.DefaultDialect):
         enabled = {"DISABLED": False, "ENABLED": True}
         is_bitmap = {"BITMAP", "FUNCTION-BASED BITMAP"}
 
-        oracle_sys_col = re.compile(r"SYS_NC\d+\$", re.IGNORECASE)
-
         indexes = defaultdict(dict)
 
         for row_dict in self._get_indexes_rows(
@@ -2685,13 +2685,25 @@ class OracleDialect(default.DefaultDialect):
             else:
                 index_dict = table_indexes[index_name]
 
-            # filter out Oracle SYS_NC names.  could also do an outer join
-            # to the all_tab_columns table and check for real col names
-            # there.
-            if not oracle_sys_col.match(row_dict["column_name"]):
-                index_dict["column_names"].append(
-                    self.normalize_name(row_dict["column_name"])
-                )
+            expr = row_dict["column_expression"]
+            if expr is not None:
+                index_dict["column_names"].append(None)
+                if "expressions" in index_dict:
+                    index_dict["expressions"].append(expr)
+                else:
+                    index_dict["expressions"] = index_dict["column_names"][:-1]
+                    index_dict["expressions"].append(expr)
+
+                if row_dict["descend"].lower() != "asc":
+                    assert row_dict["descend"].lower() == "desc"
+                    cs = index_dict.setdefault("column_sorting", {})
+                    cs[expr] = ("desc",)
+            else:
+                assert row_dict["descend"].lower() == "asc"
+                cn = self.normalize_name(row_dict["column_name"])
+                index_dict["column_names"].append(cn)
+                if "expressions" in index_dict:
+                    index_dict["expressions"].append(cn)
 
         default = ReflectionDefaults.indexes
 
@@ -3058,9 +3070,11 @@ class OracleDialect(default.DefaultDialect):
                 table_uc[constraint_name] = uc = {
                     "name": constraint_name,
                     "column_names": [],
-                    "duplicates_index": constraint_name
-                    if constraint_name_orig in index_names
-                    else None,
+                    "duplicates_index": (
+                        constraint_name
+                        if constraint_name_orig in index_names
+                        else None
+                    ),
                 }
             else:
                 uc = table_uc[constraint_name]
@@ -3072,9 +3086,11 @@ class OracleDialect(default.DefaultDialect):
         return (
             (
                 key,
-                list(unique_cons[key].values())
-                if key in unique_cons
-                else default(),
+                (
+                    list(unique_cons[key].values())
+                    if key in unique_cons
+                    else default()
+                ),
             )
             for key in (
                 (schema, self.normalize_name(obj_name))
@@ -3197,9 +3213,11 @@ class OracleDialect(default.DefaultDialect):
         return (
             (
                 key,
-                check_constraints[key]
-                if key in check_constraints
-                else default(),
+                (
+                    check_constraints[key]
+                    if key in check_constraints
+                    else default()
+                ),
             )
             for key in (
                 (schema, self.normalize_name(obj_name))

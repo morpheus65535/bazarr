@@ -98,7 +98,7 @@ def frames_to_ms(frames: int, fps: float) -> int:
     
     """
     if fps <= 0:
-        raise ValueError("Framerate must be positive number (%f)." % fps)
+        raise ValueError(f"Framerate must be a positive number ({fps}).")
 
     return int(round(frames * (1000 / fps)))
 
@@ -119,7 +119,7 @@ def ms_to_frames(ms: IntOrFloat, fps: float) -> int:
     
     """
     if fps <= 0:
-        raise ValueError("Framerate must be positive number (%f)." % fps)
+        raise ValueError(f"Framerate must be a positive number ({fps}).")
 
     return int(round((ms / 1000) * fps))
 

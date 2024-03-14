@@ -9,6 +9,7 @@ import warnings
 import webbrowser
 from contextlib import suppress
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from dynaconf import constants
 from dynaconf import default_settings
@@ -27,13 +28,16 @@ from dynaconf.vendor import click
 from dynaconf.vendor import toml
 from dynaconf.vendor import tomllib
 
+
+if TYPE_CHECKING:  # pragma: no cover
+    from dynaconf.base import Settings
+
 os.environ["PYTHONIOENCODING"] = "utf-8"
 
 CWD = None
-try:
+with suppress(FileNotFoundError):
     CWD = Path.cwd()
-except FileNotFoundError:
-    pass
+
 EXTS = ["ini", "toml", "yaml", "json", "py", "env"]
 WRITERS = ["ini", "toml", "yaml", "json", "py", "redis", "vault", "env"]
 
@@ -42,12 +46,11 @@ ENC = default_settings.ENCODING_FOR_DYNACONF
 
 def set_settings(ctx, instance=None):
     """Pick correct settings instance and set it to a global variable."""
-
     global settings
 
     settings = None
 
-    _echo_enabled = ctx.invoked_subcommand not in ["get", None]
+    _echo_enabled = ctx.invoked_subcommand not in ["get", "inspect", None]
 
     if instance is not None:
         if ctx.invoked_subcommand in ["init"]:
@@ -61,25 +64,33 @@ def set_settings(ctx, instance=None):
             from flask.cli import ScriptInfo  # noqa
             from dynaconf import FlaskDynaconf
 
-            flask_app = ScriptInfo().load_app()
+            app_import_path = os.environ["FLASK_APP"]
+            flask_app = ScriptInfo(app_import_path).load_app()
             settings = FlaskDynaconf(flask_app, **flask_app.config).settings
-            _echo_enabled and click.echo(
-                click.style(
-                    "Flask app detected", fg="white", bg="bright_black"
+            if _echo_enabled:
+                click.echo(
+                    click.style(
+                        "Flask app detected", fg="white", bg="bright_black"
+                    )
                 )
-            )
     elif "DJANGO_SETTINGS_MODULE" in os.environ:  # pragma: no cover
         sys.path.insert(0, os.path.abspath(os.getcwd()))
         try:
             # Django extension v2
             from django.conf import settings  # noqa
+            import dynaconf
+            import django
+
+            # see https://docs.djangoproject.com/en/4.2/ref/applications/
+            # at #troubleshooting
+            django.setup()
 
             settings.DYNACONF.configure()
         except AttributeError:
             settings = LazySettings()
 
-        if settings is not None:
-            _echo_enabled and click.echo(
+        if settings is not None and _echo_enabled:
+            click.echo(
                 click.style(
                     "Django app detected", fg="white", bg="bright_black"
                 )
@@ -256,7 +267,9 @@ def main(ctx, instance):
 @click.option("--django", default=os.environ.get("DJANGO_SETTINGS_MODULE"))
 @click.pass_context
 def init(ctx, fileformat, path, env, _vars, _secrets, wg, y, django):
-    """Inits a dynaconf project
+    """
+    Inits a dynaconf project.
+
     By default it creates a settings.toml and a .secrets.toml
     for [default|development|staging|testing|production|global] envs.
 
@@ -461,7 +474,11 @@ def get(key, default, env, unparse):
     if default is not empty:
         result = settings.get(key, default)
     else:
-        result = settings[key]  # let the keyerror raises
+        try:
+            result = settings[key]
+        except KeyError:
+            click.echo("Key not found", nl=False, err=True)
+            sys.exit(1)
 
     if unparse:
         result = unparse_conf_data(result)
@@ -513,8 +530,11 @@ def get(key, default, env, unparse):
     help="Output file is flat (do not include [env] name)",
 )
 def _list(env, key, more, loader, _all=False, output=None, flat=False):
-    """Lists all user defined config values
-    and if `--all` is passed it also shows dynaconf internal variables.
+    """
+    Lists user defined settings or all (including internal configs).
+
+    By default, shows only user defined. If `--all` is passed it also shows
+    dynaconf internal variables aswell.
     """
     if env:
         env = env.strip()
@@ -581,7 +601,7 @@ def _list(env, key, more, loader, _all=False, output=None, flat=False):
             value = empty
 
         if value is empty:
-            click.echo(click.style("Key not found", bg="red", fg="white"))
+            click.secho("Key not found", bg="red", fg="white", err=True)
             return
 
         click.echo(format_setting(key, value))
@@ -635,7 +655,7 @@ def _list(env, key, more, loader, _all=False, output=None, flat=False):
 )
 @click.option("-y", default=False, is_flag=True)
 def write(to, _vars, _secrets, path, env, y):
-    """Writes data to specific source"""
+    """Writes data to specific source."""
     _vars = split_vars(_vars)
     _secrets = split_vars(_secrets)
     loader = importlib.import_module(f"dynaconf.loaders.{to}_loader")
@@ -708,12 +728,14 @@ def write(to, _vars, _secrets, path, env, y):
     "--path", "-p", default=CWD, help="defaults to current directory"
 )
 def validate(path):  # pragma: no cover
-    """Validates Dynaconf settings based on rules defined in
-    dynaconf_validators.toml"""
+    """
+    Validates Dynaconf settings based on provided rules.
+
+    Rules should be defined in dynaconf_validators.toml
+    """
     # reads the 'dynaconf_validators.toml' from path
     # for each section register the validator for specific env
     # call validate
-
     path = Path(path)
 
     if not str(path).endswith(".toml"):
@@ -723,6 +745,7 @@ def validate(path):  # pragma: no cover
         click.echo(click.style(f"{path} not found", fg="white", bg="red"))
         sys.exit(1)
 
+    # parse validator file
     try:  # try tomlib first
         validation_data = tomllib.load(open(str(path), "rb"))
     except UnicodeDecodeError:  # fallback to legacy toml (TBR in 4.0.0)
@@ -733,6 +756,20 @@ def validate(path):  # pragma: no cover
         validation_data = toml.load(
             open(str(path), encoding=default_settings.ENCODING_FOR_DYNACONF),
         )
+    except tomllib.TOMLDecodeError as e:
+        click.echo(
+            click.style(
+                f"Error parsing TOML: {e}. Maybe it should be quoted.",
+                fg="white",
+                bg="red",
+            )
+        )
+        sys.exit(1)
+
+    # guarantee there is an environment
+    validation_data = {k.lower(): v for k, v in validation_data.items()}
+    if not validation_data.get("default"):
+        validation_data = {"default": validation_data}
 
     success = True
     for env, name_data in validation_data.items():
@@ -740,7 +777,8 @@ def validate(path):  # pragma: no cover
             if not isinstance(data, dict):  # pragma: no cover
                 click.echo(
                     click.style(
-                        f"Invalid rule for parameter '{name}'",
+                        f"Invalid rule for parameter '{name}'"
+                        "(this will be skipped)",
                         fg="white",
                         bg="yellow",
                     )
@@ -766,6 +804,78 @@ def validate(path):  # pragma: no cover
         click.echo(click.style("Validation success!", fg="white", bg="green"))
     else:
         click.echo(click.style("Validation error!", fg="white", bg="red"))
+        sys.exit(1)
+
+
+from dynaconf.utils.inspect import (
+    KeyNotFoundError,
+    builtin_dumpers,
+    inspect_settings,
+    EnvNotFoundError,
+    OutputFormatError,
+)
+
+INSPECT_FORMATS = list(builtin_dumpers.keys())
+
+
+@main.command()
+@click.option("--key", "-k", help="Filters result by key.")
+@click.option(
+    "--env", "-e", help="Filters result by environment.", default=None
+)
+@click.option(
+    "--format",
+    "-f",
+    help="The output format.",
+    default="json",
+    type=click.Choice(INSPECT_FORMATS),
+)
+@click.option(
+    "--old-first",
+    "new_first",
+    "-s",
+    help="Invert history sorting to 'old-first'",
+    default=True,
+    is_flag=True,
+)
+@click.option(
+    "--limit",
+    "history_limit",
+    "-n",
+    default=None,
+    type=int,
+    help="Limits how many history entries are shown.",
+)
+@click.option(
+    "--all",
+    "_all",
+    "-a",
+    default=False,
+    is_flag=True,
+    help="Show dynaconf internal settings?",
+)
+def inspect(
+    key, env, format, new_first, history_limit, _all
+):  # pragma: no cover
+    """
+    Inspect the loading history of the given settings instance.
+
+    Filters by key and environement, otherwise shows all.
+    """
+    try:
+        inspect_settings(
+            settings,
+            key=key,
+            env=env or None,
+            dumper=format,
+            new_first=new_first,
+            include_internal=_all,
+            history_limit=history_limit,
+            print_report=True,
+        )
+        click.echo()
+    except (KeyNotFoundError, EnvNotFoundError, OutputFormatError) as err:
+        click.echo(err)
         sys.exit(1)
 
 

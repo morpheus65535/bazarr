@@ -18,7 +18,7 @@ import pytest
 from ..toposort import toposort, toposort_flatten, CyclicDependency
 
 
-class TestCase(object):
+class TestCase:
     def test_simple(self):
         results = list(toposort({2: set([11]), 9: set([11, 8]), 10: set([11, 3]), 11: set([7, 5]), 8: set([7, 3])}))
         expected = [set([3, 5, 7]), set([8, 11]), set([2, 9, 10])]
@@ -88,7 +88,7 @@ class TestCase(object):
         assert data == orig
 
 
-class TestCaseAll(object):
+class TestCaseAll:
     def test_sort_flatten(self):
         data = {2: set([11]),
                 9: set([11, 8]),

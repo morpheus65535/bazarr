@@ -120,6 +120,11 @@
 : audio_codec: DTS
   audio_profile: Extended Surround
 
+? DTS:X
+? DTS-X
+? DTSX
+: audio_codec: DTS:X
+
 ? DD-EX
 ? DDEX
 ? -EX

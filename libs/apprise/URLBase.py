@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -28,7 +28,7 @@
 
 import re
 from .logger import logger
-from time import sleep
+import time
 from datetime import datetime
 from xml.sax.saxutils import escape as sax_escape
 
@@ -298,12 +298,12 @@ class URLBase:
 
         if wait is not None:
             self.logger.debug('Throttling forced for {}s...'.format(wait))
-            sleep(wait)
+            time.sleep(wait)
 
         elif elapsed < self.request_rate_per_sec:
             self.logger.debug('Throttling for {}s...'.format(
                 self.request_rate_per_sec - elapsed))
-            sleep(self.request_rate_per_sec - elapsed)
+            time.sleep(self.request_rate_per_sec - elapsed)
 
         # Update our timestamp before we leave
         self._last_io_datetime = datetime.now()
@@ -550,7 +550,7 @@ class URLBase:
         return paths
 
     @staticmethod
-    def parse_list(content, unquote=True):
+    def parse_list(content, allow_whitespace=True, unquote=True):
         """A wrapper to utils.parse_list() with unquoting support
 
         Parses a specified set of data and breaks it into a list.
@@ -559,6 +559,9 @@ class URLBase:
             content (str): The path to split up into a list. If a list is
                  provided, then it's individual entries are processed.
 
+            allow_whitespace (:obj:`bool`, optional): whitespace is to be
+                 treated as a delimiter
+
             unquote (:obj:`bool`, optional): call unquote on each element
                  added to the returned list.
 
@@ -566,7 +569,7 @@ class URLBase:
             list: A unique list containing all of the elements in the path
         """
 
-        content = parse_list(content)
+        content = parse_list(content, allow_whitespace=allow_whitespace)
         if unquote:
             content = \
                 [URLBase.unquote(x) for x in filter(bool, content)]

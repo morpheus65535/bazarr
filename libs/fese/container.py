@@ -6,7 +6,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import subprocess
+import time
 
 from .exceptions import ExtractionError
 from .exceptions import InvalidSource
@@ -22,6 +24,45 @@ FFMPEG_PATH = os.environ.get("FFMPEG_PATH", "ffmpeg")
 
 FFMPEG_STATS = True
 FF_LOG_LEVEL = "quiet"
+
+_PROGRESS_RE = re.compile(
+    r"size=\s*(\d+\w*B|N/A)\s+time=(\d+:\d+:\d+\.\d+)\s+bitrate=\s*([\d\.]+(?:e[\+\-]?\d+)?\w*bits/s|N/A)\s+speed=([\d\.]+(?:e[\+\-]?\d+)?x|N/A)"
+)
+
+
+def _ffmpeg_call(command, log_callback=None, progress_callback=None, timeout=10000):
+    proc = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
+    log_callback = log_callback or logger.debug
+
+    start = time.time()
+
+    while True:
+        line = proc.stderr.readline()
+        if not line:
+            break
+
+        if line:
+            log_callback("ffmpeg: %s", line.strip())
+
+        if progress_callback is not None:
+            match = _PROGRESS_RE.search(line)
+            if match:
+                size, time_, bitrate, speed = match.groups()
+                info = {"size": size, "time": time_, "bitrate": bitrate, "speed": speed}
+                progress_callback(info)
+
+        if timeout is not None and time.time() - start > timeout:
+            proc.kill()
+            raise subprocess.TimeoutExpired(command, timeout)
+
+        return_code = proc.wait()
+        if return_code != 0:
+            raise subprocess.CalledProcessError(return_code, command)
 
 
 class FFprobeVideoContainer:
@@ -82,6 +123,7 @@ class FFprobeVideoContainer:
         timeout=600,
         convert_format=None,
         basename_callback=None,
+        progress_callback=None,
     ):
         """Extracts a list of subtitles converting them. Returns a dictionary of the
         extracted filenames by index.
@@ -98,6 +140,7 @@ class FFprobeVideoContainer:
         srt
         :param basename_callback: a callback that takes the filename path. Only used if
         custom_dir is set. Defaults to `os.path.basename`
+        :progress_callback: a callback that takes a dict
         :raises: ExtractionError, UnsupportedCodec, OSError
         """
         extract_command = [FFMPEG_PATH, "-v", FF_LOG_LEVEL]
@@ -143,7 +186,10 @@ class FFprobeVideoContainer:
         logger.debug("Extracting subtitle with command %s", " ".join(extract_command))
 
         try:
-            subprocess.run(extract_command, timeout=timeout, check=True)
+            # subprocess.run(extract_command, timeout=timeout, check=True)
+            _ffmpeg_call(
+                extract_command, timeout=timeout, progress_callback=progress_callback
+            )
         except (subprocess.SubprocessError, FileNotFoundError) as error:
             raise ExtractionError(f"Error calling ffmpeg: {error}") from error
 
@@ -161,6 +207,7 @@ class FFprobeVideoContainer:
         timeout=600,
         fallback_to_convert=True,
         basename_callback=None,
+        progress_callback=None,
     ):
         """Extracts a list of subtitles with ffmpeg's copy method. Returns a dictionary
         of the extracted filenames by index.
@@ -174,6 +221,7 @@ class FFprobeVideoContainer:
         incompatible with copy
         :param basename_callback: a callback that takes the filename path. Only used if
         custom_dir is set. Defaults to `os.path.basename`
+        :progress_callback: a callback that takes a dict
         :raises: ExtractionError, UnsupportedCodec, OSError
         """
         extract_command = [FFMPEG_PATH, "-v", FF_LOG_LEVEL]
@@ -224,7 +272,10 @@ class FFprobeVideoContainer:
         logger.debug("Extracting subtitle with command %s", " ".join(extract_command))
 
         try:
-            subprocess.run(extract_command, timeout=timeout, check=True)
+            # subprocess.run(extract_command, timeout=timeout, check=True)
+            _ffmpeg_call(
+                extract_command, timeout=timeout, progress_callback=progress_callback
+            )
         except (subprocess.SubprocessError, FileNotFoundError) as error:
             raise ExtractionError(f"Error calling ffmpeg: {error}") from error
 

@@ -34,6 +34,11 @@ def valid_year(year):
     return 1920 <= year < 2030
 
 
+def valid_week(week):
+    """Check if number is a valid week"""
+    return 1 <= week < 53
+
+
 def _is_int(string):
     """
     Check if the input string is an integer

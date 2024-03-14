@@ -3,7 +3,7 @@ import type { UseFormReturnType } from "@mantine/form";
 import { createContext, useCallback, useContext, useRef } from "react";
 
 export const FormContext = createContext<UseFormReturnType<FormValues> | null>(
-  null
+  null,
 );
 
 export function useFormValues() {
@@ -44,7 +44,7 @@ export function useFormActions() {
       if (hook) {
         LOG(
           "info",
-          `Adding submit hook ${key}, will be executed before submitting`
+          `Adding submit hook ${key}, will be executed before submitting`,
         );
         hooks[key] = hook;
       }
@@ -72,7 +72,7 @@ export type FormValues = {
 
 export function runHooks(
   hooks: FormValues["hooks"],
-  settings: FormValues["settings"]
+  settings: FormValues["settings"],
 ) {
   for (const key in settings) {
     if (key in hooks) {

@@ -1,311 +1,114 @@
-# coding: utf-8
-
 from __future__ import absolute_import
-
-# This module contains abstractions for the input stream. You don't have to
-# looks further, there are no pretty code.
-#
-# We define two classes here.
-#
-#   Mark(source, line, column)
-# It's just a record and its only use is producing nice error messages.
-# Parser does not use it for any other purposes.
-#
-#   Reader(source, data)
-# Reader determines the encoding of `data` and converts it to unicode.
-# Reader provides the following methods and attributes:
-#   reader.peek(length=1) - return the next `length` characters
-#   reader.forward(length=1) - move the current position to `length`
-#      characters.
-#   reader.index - the number of the current character.
-#   reader.line, stream.column - the line and the column of the current
-#      character.
-
+_C='\ufeff'
+_B='ascii'
+_A=None
 import codecs
-
-from .error import YAMLError, FileMark, StringMark, YAMLStreamError
-from .compat import text_type, binary_type, PY3, UNICODE_SIZE
-from .util import RegExp
-
-if False:  # MYPY
-    from typing import Any, Dict, Optional, List, Union, Text, Tuple, Optional  # NOQA
-#    from .compat import StreamTextType  # NOQA
-
-__all__ = ['Reader', 'ReaderError']
-
-
+from.error import YAMLError,FileMark,StringMark,YAMLStreamError
+from.compat import text_type,binary_type,PY3,UNICODE_SIZE
+from.util import RegExp
+if False:from typing import Any,Dict,Optional,List,Union,Text,Tuple,Optional
+__all__=['Reader','ReaderError']
 class ReaderError(YAMLError):
-    def __init__(self, name, position, character, encoding, reason):
-        # type: (Any, Any, Any, Any, Any) -> None
-        self.name = name
-        self.character = character
-        self.position = position
-        self.encoding = encoding
-        self.reason = reason
-
-    def __str__(self):
-        # type: () -> str
-        if isinstance(self.character, binary_type):
-            return "'%s' codec can't decode byte #x%02x: %s\n" '  in "%s", position %d' % (
-                self.encoding,
-                ord(self.character),
-                self.reason,
-                self.name,
-                self.position,
-            )
-        else:
-            return 'unacceptable character #x%04x: %s\n' '  in "%s", position %d' % (
-                self.character,
-                self.reason,
-                self.name,
-                self.position,
-            )
-
-
-class Reader(object):
-    # Reader:
-    # - determines the data encoding and converts it to a unicode string,
-    # - checks if characters are in allowed range,
-    # - adds '\0' to the end.
-
-    # Reader accepts
-    #  - a `str` object (PY2) / a `bytes` object (PY3),
-    #  - a `unicode` object (PY2) / a `str` object (PY3),
-    #  - a file-like object with its `read` method returning `str`,
-    #  - a file-like object with its `read` method returning `unicode`.
-
-    # Yeah, it's ugly and slow.
-
-    def __init__(self, stream, loader=None):
-        # type: (Any, Any) -> None
-        self.loader = loader
-        if self.loader is not None and getattr(self.loader, '_reader', None) is None:
-            self.loader._reader = self
-        self.reset_reader()
-        self.stream = stream  # type: Any  # as .read is called
-
-    def reset_reader(self):
-        # type: () -> None
-        self.name = None  # type: Any
-        self.stream_pointer = 0
-        self.eof = True
-        self.buffer = ""
-        self.pointer = 0
-        self.raw_buffer = None  # type: Any
-        self.raw_decode = None
-        self.encoding = None  # type: Optional[Text]
-        self.index = 0
-        self.line = 0
-        self.column = 0
-
-    @property
-    def stream(self):
-        # type: () -> Any
-        try:
-            return self._stream
-        except AttributeError:
-            raise YAMLStreamError('input stream needs to specified')
-
-    @stream.setter
-    def stream(self, val):
-        # type: (Any) -> None
-        if val is None:
-            return
-        self._stream = None
-        if isinstance(val, text_type):
-            self.name = '<unicode string>'
-            self.check_printable(val)
-            self.buffer = val + u'\0'  # type: ignore
-        elif isinstance(val, binary_type):
-            self.name = '<byte string>'
-            self.raw_buffer = val
-            self.determine_encoding()
-        else:
-            if not hasattr(val, 'read'):
-                raise YAMLStreamError('stream argument needs to have a read() method')
-            self._stream = val
-            self.name = getattr(self.stream, 'name', '<file>')
-            self.eof = False
-            self.raw_buffer = None
-            self.determine_encoding()
-
-    def peek(self, index=0):
-        # type: (int) -> Text
-        try:
-            return self.buffer[self.pointer + index]
-        except IndexError:
-            self.update(index + 1)
-            return self.buffer[self.pointer + index]
-
-    def prefix(self, length=1):
-        # type: (int) -> Any
-        if self.pointer + length >= len(self.buffer):
-            self.update(length)
-        return self.buffer[self.pointer : self.pointer + length]
-
-    def forward_1_1(self, length=1):
-        # type: (int) -> None
-        if self.pointer + length + 1 >= len(self.buffer):
-            self.update(length + 1)
-        while length != 0:
-            ch = self.buffer[self.pointer]
-            self.pointer += 1
-            self.index += 1
-            if ch in u'\n\x85\u2028\u2029' or (
-                ch == u'\r' and self.buffer[self.pointer] != u'\n'
-            ):
-                self.line += 1
-                self.column = 0
-            elif ch != u'\uFEFF':
-                self.column += 1
-            length -= 1
-
-    def forward(self, length=1):
-        # type: (int) -> None
-        if self.pointer + length + 1 >= len(self.buffer):
-            self.update(length + 1)
-        while length != 0:
-            ch = self.buffer[self.pointer]
-            self.pointer += 1
-            self.index += 1
-            if ch == u'\n' or (ch == u'\r' and self.buffer[self.pointer] != u'\n'):
-                self.line += 1
-                self.column = 0
-            elif ch != u'\uFEFF':
-                self.column += 1
-            length -= 1
-
-    def get_mark(self):
-        # type: () -> Any
-        if self.stream is None:
-            return StringMark(
-                self.name, self.index, self.line, self.column, self.buffer, self.pointer
-            )
-        else:
-            return FileMark(self.name, self.index, self.line, self.column)
-
-    def determine_encoding(self):
-        # type: () -> None
-        while not self.eof and (self.raw_buffer is None or len(self.raw_buffer) < 2):
-            self.update_raw()
-        if isinstance(self.raw_buffer, binary_type):
-            if self.raw_buffer.startswith(codecs.BOM_UTF16_LE):
-                self.raw_decode = codecs.utf_16_le_decode  # type: ignore
-                self.encoding = 'utf-16-le'
-            elif self.raw_buffer.startswith(codecs.BOM_UTF16_BE):
-                self.raw_decode = codecs.utf_16_be_decode  # type: ignore
-                self.encoding = 'utf-16-be'
-            else:
-                self.raw_decode = codecs.utf_8_decode  # type: ignore
-                self.encoding = 'utf-8'
-        self.update(1)
-
-    if UNICODE_SIZE == 2:
-        NON_PRINTABLE = RegExp(
-            u'[^\x09\x0A\x0D\x20-\x7E\x85' u'\xA0-\uD7FF' u'\uE000-\uFFFD' u']'
-        )
-    else:
-        NON_PRINTABLE = RegExp(
-            u'[^\x09\x0A\x0D\x20-\x7E\x85'
-            u'\xA0-\uD7FF'
-            u'\uE000-\uFFFD'
-            u'\U00010000-\U0010FFFF'
-            u']'
-        )
-
-    _printable_ascii = ('\x09\x0A\x0D' + "".join(map(chr, range(0x20, 0x7F)))).encode('ascii')
-
-    @classmethod
-    def _get_non_printable_ascii(cls, data):  # type: ignore
-        # type: (Text, bytes) -> Optional[Tuple[int, Text]]
-        ascii_bytes = data.encode('ascii')
-        non_printables = ascii_bytes.translate(None, cls._printable_ascii)  # type: ignore
-        if not non_printables:
-            return None
-        non_printable = non_printables[:1]
-        return ascii_bytes.index(non_printable), non_printable.decode('ascii')
-
-    @classmethod
-    def _get_non_printable_regex(cls, data):
-        # type: (Text) -> Optional[Tuple[int, Text]]
-        match = cls.NON_PRINTABLE.search(data)
-        if not bool(match):
-            return None
-        return match.start(), match.group()
-
-    @classmethod
-    def _get_non_printable(cls, data):
-        # type: (Text) -> Optional[Tuple[int, Text]]
-        try:
-            return cls._get_non_printable_ascii(data)  # type: ignore
-        except UnicodeEncodeError:
-            return cls._get_non_printable_regex(data)
-
-    def check_printable(self, data):
-        # type: (Any) -> None
-        non_printable_match = self._get_non_printable(data)
-        if non_printable_match is not None:
-            start, character = non_printable_match
-            position = self.index + (len(self.buffer) - self.pointer) + start
-            raise ReaderError(
-                self.name,
-                position,
-                ord(character),
-                'unicode',
-                'special characters are not allowed',
-            )
-
-    def update(self, length):
-        # type: (int) -> None
-        if self.raw_buffer is None:
-            return
-        self.buffer = self.buffer[self.pointer :]
-        self.pointer = 0
-        while len(self.buffer) < length:
-            if not self.eof:
-                self.update_raw()
-            if self.raw_decode is not None:
-                try:
-                    data, converted = self.raw_decode(self.raw_buffer, 'strict', self.eof)
-                except UnicodeDecodeError as exc:
-                    if PY3:
-                        character = self.raw_buffer[exc.start]
-                    else:
-                        character = exc.object[exc.start]
-                    if self.stream is not None:
-                        position = self.stream_pointer - len(self.raw_buffer) + exc.start
-                    elif self.stream is not None:
-                        position = self.stream_pointer - len(self.raw_buffer) + exc.start
-                    else:
-                        position = exc.start
-                    raise ReaderError(self.name, position, character, exc.encoding, exc.reason)
-            else:
-                data = self.raw_buffer
-                converted = len(data)
-            self.check_printable(data)
-            self.buffer += data
-            self.raw_buffer = self.raw_buffer[converted:]
-            if self.eof:
-                self.buffer += '\0'
-                self.raw_buffer = None
-                break
-
-    def update_raw(self, size=None):
-        # type: (Optional[int]) -> None
-        if size is None:
-            size = 4096 if PY3 else 1024
-        data = self.stream.read(size)
-        if self.raw_buffer is None:
-            self.raw_buffer = data
-        else:
-            self.raw_buffer += data
-        self.stream_pointer += len(data)
-        if not data:
-            self.eof = True
-
-
-# try:
-#     import psyco
-#     psyco.bind(Reader)
-# except ImportError:
-#     pass
+	def __init__(A,name,position,character,encoding,reason):A.name=name;A.character=character;A.position=position;A.encoding=encoding;A.reason=reason
+	def __str__(A):
+		if isinstance(A.character,binary_type):return'\'%s\' codec can\'t decode byte #x%02x: %s\n  in "%s", position %d'%(A.encoding,ord(A.character),A.reason,A.name,A.position)
+		else:return'unacceptable character #x%04x: %s\n  in "%s", position %d'%(A.character,A.reason,A.name,A.position)
+class Reader:
+	def __init__(A,stream,loader=_A):
+		A.loader=loader
+		if A.loader is not _A and getattr(A.loader,'_reader',_A)is _A:A.loader._reader=A
+		A.reset_reader();A.stream=stream
+	def reset_reader(A):A.name=_A;A.stream_pointer=0;A.eof=True;A.buffer='';A.pointer=0;A.raw_buffer=_A;A.raw_decode=_A;A.encoding=_A;A.index=0;A.line=0;A.column=0
+	@property
+	def stream(self):
+		try:return self._stream
+		except AttributeError:raise YAMLStreamError('input stream needs to specified')
+	@stream.setter
+	def stream(self,val):
+		B=val;A=self
+		if B is _A:return
+		A._stream=_A
+		if isinstance(B,text_type):A.name='<unicode string>';A.check_printable(B);A.buffer=B+'\x00'
+		elif isinstance(B,binary_type):A.name='<byte string>';A.raw_buffer=B;A.determine_encoding()
+		else:
+			if not hasattr(B,'read'):raise YAMLStreamError('stream argument needs to have a read() method')
+			A._stream=B;A.name=getattr(A.stream,'name','<file>');A.eof=False;A.raw_buffer=_A;A.determine_encoding()
+	def peek(A,index=0):
+		B=index
+		try:return A.buffer[A.pointer+B]
+		except IndexError:A.update(B+1);return A.buffer[A.pointer+B]
+	def prefix(A,length=1):
+		B=length
+		if A.pointer+B>=len(A.buffer):A.update(B)
+		return A.buffer[A.pointer:A.pointer+B]
+	def forward_1_1(A,length=1):
+		B=length
+		if A.pointer+B+1>=len(A.buffer):A.update(B+1)
+		while B!=0:
+			C=A.buffer[A.pointer];A.pointer+=1;A.index+=1
+			if C in'\n\x85\u2028\u2029'or C=='\r'and A.buffer[A.pointer]!='\n':A.line+=1;A.column=0
+			elif C!=_C:A.column+=1
+			B-=1
+	def forward(A,length=1):
+		B=length
+		if A.pointer+B+1>=len(A.buffer):A.update(B+1)
+		while B!=0:
+			C=A.buffer[A.pointer];A.pointer+=1;A.index+=1
+			if C=='\n'or C=='\r'and A.buffer[A.pointer]!='\n':A.line+=1;A.column=0
+			elif C!=_C:A.column+=1
+			B-=1
+	def get_mark(A):
+		if A.stream is _A:return StringMark(A.name,A.index,A.line,A.column,A.buffer,A.pointer)
+		else:return FileMark(A.name,A.index,A.line,A.column)
+	def determine_encoding(A):
+		while not A.eof and(A.raw_buffer is _A or len(A.raw_buffer)<2):A.update_raw()
+		if isinstance(A.raw_buffer,binary_type):
+			if A.raw_buffer.startswith(codecs.BOM_UTF16_LE):A.raw_decode=codecs.utf_16_le_decode;A.encoding='utf-16-le'
+			elif A.raw_buffer.startswith(codecs.BOM_UTF16_BE):A.raw_decode=codecs.utf_16_be_decode;A.encoding='utf-16-be'
+			else:A.raw_decode=codecs.utf_8_decode;A.encoding='utf-8'
+		A.update(1)
+	if UNICODE_SIZE==2:NON_PRINTABLE=RegExp('[^\t\n\r -~\x85\xa0-\ud7ff\ue000-�]')
+	else:NON_PRINTABLE=RegExp('[^\t\n\r -~\x85\xa0-\ud7ff\ue000-�𐀀-\U0010ffff]')
+	_printable_ascii=('\t\n\r'+''.join(map(chr,range(32,127)))).encode(_B)
+	@classmethod
+	def _get_non_printable_ascii(D,data):
+		A=data.encode(_B);B=A.translate(_A,D._printable_ascii)
+		if not B:return
+		C=B[:1];return A.index(C),C.decode(_B)
+	@classmethod
+	def _get_non_printable_regex(B,data):
+		A=B.NON_PRINTABLE.search(data)
+		if not bool(A):return
+		return A.start(),A.group()
+	@classmethod
+	def _get_non_printable(A,data):
+		try:return A._get_non_printable_ascii(data)
+		except UnicodeEncodeError:return A._get_non_printable_regex(data)
+	def check_printable(A,data):
+		B=A._get_non_printable(data)
+		if B is not _A:C,D=B;E=A.index+(len(A.buffer)-A.pointer)+C;raise ReaderError(A.name,E,ord(D),'unicode','special characters are not allowed')
+	def update(A,length):
+		if A.raw_buffer is _A:return
+		A.buffer=A.buffer[A.pointer:];A.pointer=0
+		while len(A.buffer)<length:
+			if not A.eof:A.update_raw()
+			if A.raw_decode is not _A:
+				try:C,E=A.raw_decode(A.raw_buffer,'strict',A.eof)
+				except UnicodeDecodeError as B:
+					if PY3:F=A.raw_buffer[B.start]
+					else:F=B.object[B.start]
+					if A.stream is not _A:D=A.stream_pointer-len(A.raw_buffer)+B.start
+					elif A.stream is not _A:D=A.stream_pointer-len(A.raw_buffer)+B.start
+					else:D=B.start
+					raise ReaderError(A.name,D,F,B.encoding,B.reason)
+			else:C=A.raw_buffer;E=len(C)
+			A.check_printable(C);A.buffer+=C;A.raw_buffer=A.raw_buffer[E:]
+			if A.eof:A.buffer+='\x00';A.raw_buffer=_A;break
+	def update_raw(A,size=_A):
+		C=size
+		if C is _A:C=4096 if PY3 else 1024
+		B=A.stream.read(C)
+		if A.raw_buffer is _A:A.raw_buffer=B
+		else:A.raw_buffer+=B
+		A.stream_pointer+=len(B)
+		if not B:A.eof=True

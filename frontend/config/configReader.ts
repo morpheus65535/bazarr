@@ -3,7 +3,7 @@
 
 import { readFile } from "fs/promises";
 import { get } from "lodash";
-import YAML from "yaml";
+import { parse } from "yaml";
 
 class ConfigReader {
   config: object;
@@ -15,7 +15,7 @@ class ConfigReader {
   async open(path: string) {
     try {
       const rawConfig = await readFile(path, "utf8");
-      this.config = YAML.parse(rawConfig);
+      this.config = parse(rawConfig);
     } catch (err) {
       // We don't want to catch the error here, handle it on getValue method
     }
@@ -53,7 +53,7 @@ export default async function overrideEnv(env: Record<string, string>) {
       process.env["VITE_API_KEY"] = apiKey;
     } catch (err) {
       throw new Error(
-        `No API key found, please run the backend first, (error: ${err.message})`
+        `No API key found, please run the backend first, (error: ${err.message})`,
       );
     }
   }
@@ -71,7 +71,7 @@ export default async function overrideEnv(env: Record<string, string>) {
       process.env["VITE_PROXY_URL"] = url;
     } catch (err) {
       throw new Error(
-        `No proxy url found, please run the backend first, (error: ${err.message})`
+        `No proxy url found, please run the backend first, (error: ${err.message})`,
       );
     }
   }

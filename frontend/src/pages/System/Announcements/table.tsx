@@ -33,7 +33,7 @@ const Table: FunctionComponent<Props> = ({ announcements }) => {
         },
       },
       {
-        Header: "More info",
+        Header: "More Info",
         accessor: "link",
         Cell: ({ value }) => {
           if (value) {
@@ -62,7 +62,7 @@ const Table: FunctionComponent<Props> = ({ announcements }) => {
         },
       },
     ],
-    []
+    [],
   );
 
   return (

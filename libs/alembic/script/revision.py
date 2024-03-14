@@ -14,6 +14,7 @@ from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import overload
+from typing import Protocol
 from typing import Sequence
 from typing import Set
 from typing import Tuple
@@ -29,16 +30,34 @@ from ..util import not_none
 if TYPE_CHECKING:
     from typing import Literal
 
-_RevIdType = Union[str, Sequence[str]]
+_RevIdType = Union[str, List[str], Tuple[str, ...]]
+_GetRevArg = Union[
+    str,
+    Iterable[Optional[str]],
+    Iterable[str],
+]
 _RevisionIdentifierType = Union[str, Tuple[str, ...], None]
 _RevisionOrStr = Union["Revision", str]
 _RevisionOrBase = Union["Revision", "Literal['base']"]
 _InterimRevisionMapType = Dict[str, "Revision"]
 _RevisionMapType = Dict[Union[None, str, Tuple[()]], Optional["Revision"]]
-_T = TypeVar("_T", bound=Union[str, "Revision"])
+_T = TypeVar("_T")
+_TR = TypeVar("_TR", bound=Optional[_RevisionOrStr])
 
 _relative_destination = re.compile(r"(?:(.+?)@)?(\w+)?((?:\+|-)\d+)")
 _revision_illegal_chars = ["@", "-", "+"]
+
+
+class _CollectRevisionsProtocol(Protocol):
+    def __call__(
+        self,
+        upper: _RevisionIdentifierType,
+        lower: _RevisionIdentifierType,
+        inclusive: bool,
+        implicit_base: bool,
+        assert_relative_length: bool,
+    ) -> Tuple[Set[Revision], Tuple[Optional[_RevisionOrBase], ...]]:
+        ...
 
 
 class RevisionError(Exception):
@@ -336,7 +355,6 @@ class RevisionMap:
                     and not parent._is_real_branch_point
                     and not parent.is_merge_point
                 ):
-
                     parent.branch_labels.update(revision.branch_labels)
                     if parent.down_revision:
                         parent = map_[parent.down_revision]
@@ -391,7 +409,7 @@ class RevisionMap:
                 for rev in self._get_ancestor_nodes(
                     [revision],
                     include_dependencies=False,
-                    map_=cast(_RevisionMapType, map_),
+                    map_=map_,
                 ):
                     if rev is revision:
                         continue
@@ -502,7 +520,7 @@ class RevisionMap:
         return self.filter_for_lineage(self.bases, identifier)
 
     def get_revisions(
-        self, id_: Union[str, Collection[Optional[str]], None]
+        self, id_: Optional[_GetRevArg]
     ) -> Tuple[Optional[_RevisionOrBase], ...]:
         """Return the :class:`.Revision` instances with the given rev id
         or identifiers.
@@ -524,9 +542,7 @@ class RevisionMap:
         if isinstance(id_, (list, tuple, set, frozenset)):
             return sum([self.get_revisions(id_elem) for id_elem in id_], ())
         else:
-            resolved_id, branch_label = self._resolve_revision_number(
-                id_  # type:ignore [arg-type]
-            )
+            resolved_id, branch_label = self._resolve_revision_number(id_)
             if len(resolved_id) == 1:
                 try:
                     rint = int(resolved_id[0])
@@ -591,7 +607,7 @@ class RevisionMap:
 
     def _revision_for_ident(
         self,
-        resolved_id: Union[str, Tuple[()]],
+        resolved_id: Union[str, Tuple[()], None],
         check_branch: Optional[str] = None,
     ) -> Optional[Revision]:
         branch_rev: Optional[Revision]
@@ -670,10 +686,10 @@ class RevisionMap:
 
     def filter_for_lineage(
         self,
-        targets: Iterable[_T],
+        targets: Iterable[_TR],
         check_against: Optional[str],
         include_dependencies: bool = False,
-    ) -> Tuple[_T, ...]:
+    ) -> Tuple[_TR, ...]:
         id_, branch_label = self._resolve_revision_number(check_against)
 
         shares = []
@@ -692,7 +708,7 @@ class RevisionMap:
 
     def _shares_lineage(
         self,
-        target: _RevisionOrStr,
+        target: Optional[_RevisionOrStr],
         test_against_revs: Sequence[_RevisionOrStr],
         include_dependencies: bool = False,
     ) -> bool:
@@ -729,7 +745,7 @@ class RevisionMap:
         )
 
     def _resolve_revision_number(
-        self, id_: Optional[str]
+        self, id_: Optional[_GetRevArg]
     ) -> Tuple[Tuple[str, ...], Optional[str]]:
         branch_label: Optional[str]
         if isinstance(id_, str) and "@" in id_:
@@ -788,7 +804,7 @@ class RevisionMap:
         The iterator yields :class:`.Revision` objects.
 
         """
-        fn: Callable
+        fn: _CollectRevisionsProtocol
         if select_for_downgrade:
             fn = self._collect_downgrade_revisions
         else:
@@ -813,10 +829,9 @@ class RevisionMap:
         omit_immediate_dependencies: bool = False,
         include_dependencies: bool = True,
     ) -> Iterator[Any]:
-
         if omit_immediate_dependencies:
 
-            def fn(rev):
+            def fn(rev: Revision) -> Iterable[str]:
                 if rev not in targets:
                     return rev._all_nextrev
                 else:
@@ -824,12 +839,12 @@ class RevisionMap:
 
         elif include_dependencies:
 
-            def fn(rev):
+            def fn(rev: Revision) -> Iterable[str]:
                 return rev._all_nextrev
 
         else:
 
-            def fn(rev):
+            def fn(rev: Revision) -> Iterable[str]:
                 return rev.nextrev
 
         return self._iterate_related_revisions(
@@ -843,15 +858,14 @@ class RevisionMap:
         check: bool = False,
         include_dependencies: bool = True,
     ) -> Iterator[Revision]:
-
         if include_dependencies:
 
-            def fn(rev):
+            def fn(rev: Revision) -> Iterable[str]:
                 return rev._normalized_down_revisions
 
         else:
 
-            def fn(rev):
+            def fn(rev: Revision) -> Iterable[str]:
                 return rev._versioned_down_revisions
 
         return self._iterate_related_revisions(
@@ -860,7 +874,7 @@ class RevisionMap:
 
     def _iterate_related_revisions(
         self,
-        fn: Callable,
+        fn: Callable[[Revision], Iterable[str]],
         targets: Collection[Optional[_RevisionOrBase]],
         map_: Optional[_RevisionMapType],
         check: bool = False,
@@ -922,7 +936,7 @@ class RevisionMap:
 
         id_to_rev = self._revision_map
 
-        def get_ancestors(rev_id):
+        def get_ancestors(rev_id: str) -> Set[str]:
             return {
                 r.revision
                 for r in self._get_ancestor_nodes([id_to_rev[rev_id]])
@@ -945,7 +959,6 @@ class RevisionMap:
 
         current_candidate_idx = 0
         while current_heads:
-
             candidate = current_heads[current_candidate_idx]
 
             for check_head_index, ancestors in enumerate(ancestors_by_idx):
@@ -1041,7 +1054,7 @@ class RevisionMap:
         children: Sequence[Optional[_RevisionOrBase]]
         for _ in range(abs(steps)):
             if steps > 0:
-                assert initial != "base"
+                assert initial != "base"  # type: ignore[comparison-overlap]
                 # Walk up
                 walk_up = [
                     is_revision(rev)
@@ -1055,7 +1068,7 @@ class RevisionMap:
                     children = walk_up
             else:
                 # Walk down
-                if initial == "base":
+                if initial == "base":  # type: ignore[comparison-overlap]
                     children = ()
                 else:
                     children = self.get_revisions(
@@ -1084,13 +1097,13 @@ class RevisionMap:
     ) -> Tuple[Optional[str], Optional[_RevisionOrBase]]:
         """
         Parse downgrade command syntax :target to retrieve the target revision
-        and branch label (if any) given the :current_revisons stamp of the
+        and branch label (if any) given the :current_revisions stamp of the
         database.
 
         Returns a tuple (branch_label, target_revision) where branch_label
         is a string from the command specifying the branch to consider (or
         None if no branch given), and target_revision is a Revision object
-        which the command refers to. target_revsions is None if the command
+        which the command refers to. target_revisions is None if the command
         refers to 'base'. The target may be specified in absolute form, or
         relative to :current_revisions.
         """
@@ -1133,7 +1146,7 @@ class RevisionMap:
                         if not symbol_list:
                             # check the case where there are multiple branches
                             # but there is currently a single heads, since all
-                            # other branch heads are dependant of the current
+                            # other branch heads are dependent of the current
                             # single heads.
                             all_current = cast(
                                 Set[Revision], self._get_all_current(cr_tuple)
@@ -1189,7 +1202,7 @@ class RevisionMap:
         # No relative destination given, revision specified is absolute.
         branch_label, _, symbol = target.rpartition("@")
         if not branch_label:
-            branch_label = None  # type:ignore[assignment]
+            branch_label = None
         return branch_label, self.get_revision(symbol)
 
     def _parse_upgrade_target(
@@ -1200,7 +1213,7 @@ class RevisionMap:
     ) -> Tuple[Optional[_RevisionOrBase], ...]:
         """
         Parse upgrade command syntax :target to retrieve the target revision
-        and given the :current_revisons stamp of the database.
+        and given the :current_revisions stamp of the database.
 
         Returns a tuple of Revision objects which should be iterated/upgraded
         to. The target may be specified in absolute form, or relative to
@@ -1215,7 +1228,7 @@ class RevisionMap:
             # No relative destination, target is absolute.
             return self.get_revisions(target)
 
-        current_revisions_tup: Union[str, Collection[Optional[str]], None]
+        current_revisions_tup: Union[str, Tuple[Optional[str], ...], None]
         current_revisions_tup = util.to_tuple(current_revisions)
 
         branch_label, symbol, relative_str = match.groups()
@@ -1228,7 +1241,8 @@ class RevisionMap:
                 start_revs = current_revisions_tup
                 if branch_label:
                     start_revs = self.filter_for_lineage(
-                        self.get_revisions(current_revisions_tup), branch_label
+                        self.get_revisions(current_revisions_tup),  # type: ignore[arg-type] # noqa: E501
+                        branch_label,
                     )
                     if not start_revs:
                         # The requested branch is not a head, so we need to
@@ -1300,11 +1314,11 @@ class RevisionMap:
     def _collect_downgrade_revisions(
         self,
         upper: _RevisionIdentifierType,
-        target: _RevisionIdentifierType,
+        lower: _RevisionIdentifierType,
         inclusive: bool,
         implicit_base: bool,
         assert_relative_length: bool,
-    ) -> Any:
+    ) -> Tuple[Set[Revision], Tuple[Optional[_RevisionOrBase], ...]]:
         """
         Compute the set of current revisions specified by :upper, and the
         downgrade target specified by :target. Return all dependents of target
@@ -1315,7 +1329,7 @@ class RevisionMap:
 
         branch_label, target_revision = self._parse_downgrade_target(
             current_revisions=upper,
-            target=target,
+            target=lower,
             assert_relative_length=assert_relative_length,
         )
         if target_revision == "base":
@@ -1407,7 +1421,7 @@ class RevisionMap:
         inclusive: bool,
         implicit_base: bool,
         assert_relative_length: bool,
-    ) -> Tuple[Set[Revision], Tuple[Optional[_RevisionOrBase]]]:
+    ) -> Tuple[Set[Revision], Tuple[Revision, ...]]:
         """
         Compute the set of required revisions specified by :upper, and the
         current set of active revisions specified by :lower. Find the
@@ -1499,7 +1513,7 @@ class RevisionMap:
             )
             needs.intersection_update(lower_descendents)
 
-        return needs, tuple(targets)  # type:ignore[return-value]
+        return needs, tuple(targets)
 
     def _get_all_current(
         self, id_: Tuple[str, ...]
@@ -1581,8 +1595,8 @@ class Revision:
 
         self.verify_rev_id(revision)
         self.revision = revision
-        self.down_revision = tuple_rev_as_scalar(down_revision)
-        self.dependencies = tuple_rev_as_scalar(dependencies)
+        self.down_revision = tuple_rev_as_scalar(util.to_tuple(down_revision))
+        self.dependencies = tuple_rev_as_scalar(util.to_tuple(dependencies))
         self._orig_branch_labels = util.to_tuple(branch_labels, default=())
         self.branch_labels = set(self._orig_branch_labels)
 
@@ -1680,20 +1694,20 @@ class Revision:
 
 
 @overload
-def tuple_rev_as_scalar(
-    rev: Optional[Sequence[str]],
-) -> Optional[Union[str, Sequence[str]]]:
+def tuple_rev_as_scalar(rev: None) -> None:
     ...
 
 
 @overload
 def tuple_rev_as_scalar(
-    rev: Optional[Sequence[Optional[str]]],
-) -> Optional[Union[Optional[str], Sequence[Optional[str]]]]:
+    rev: Union[Tuple[_T, ...], List[_T]]
+) -> Union[_T, Tuple[_T, ...], List[_T]]:
     ...
 
 
-def tuple_rev_as_scalar(rev):
+def tuple_rev_as_scalar(
+    rev: Optional[Sequence[_T]],
+) -> Union[_T, Sequence[_T], None]:
     if not rev:
         return None
     elif len(rev) == 1:

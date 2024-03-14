@@ -4,12 +4,12 @@
 
     Lexer for Smart Game Format (sgf) file format.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 from pygments.lexer import RegexLexer, bygroups
-from pygments.token import Name, Literal, String, Text, Punctuation, Whitespace
+from pygments.token import Name, Literal, String, Punctuation, Whitespace
 
 __all__ = ["SmartGameFormatLexer"]
 

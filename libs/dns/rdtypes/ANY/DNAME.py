@@ -15,13 +15,12 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-import dns.rdtypes.nsbase
 import dns.immutable
+import dns.rdtypes.nsbase
 
 
 @dns.immutable.immutable
 class DNAME(dns.rdtypes.nsbase.UncompressedNS):
-
     """DNAME record"""
 
     def _to_wire(self, file, compress=None, origin=None, canonicalize=False):

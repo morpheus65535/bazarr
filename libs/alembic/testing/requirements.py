@@ -84,7 +84,7 @@ class SuiteRequirements(Requirements):
     @property
     def sqlalchemy_1x(self):
         return exclusions.skip_if(
-            lambda config: not util.sqla_1x,
+            lambda config: util.sqla_2,
             "SQLAlchemy 1.x test",
         )
 
@@ -94,6 +94,18 @@ class SuiteRequirements(Requirements):
             lambda config: not util.sqla_2,
             "SQLAlchemy 2.x test",
         )
+
+    @property
+    def asyncio(self):
+        def go(config):
+            try:
+                import greenlet  # noqa: F401
+            except ImportError:
+                return False
+            else:
+                return True
+
+        return self.sqlalchemy_14 + exclusions.only_if(go)
 
     @property
     def comments(self):
@@ -196,7 +208,3 @@ class SuiteRequirements(Requirements):
         return exclusions.only_if(
             exclusions.BooleanPredicate(sqla_compat.has_identity)
         )
-
-    @property
-    def supports_identity_on_null(self):
-        return exclusions.closed()

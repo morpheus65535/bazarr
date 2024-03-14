@@ -67,7 +67,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
         },
       },
     ],
-    []
+    [],
   );
 
   const data = useMemo<TableColumnType[]>(
@@ -91,7 +91,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
           }
         });
       }),
-    [payload]
+    [payload],
   );
 
   const plugins = [useRowSelect, useCustomSelection];

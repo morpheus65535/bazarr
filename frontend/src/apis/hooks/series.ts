@@ -39,13 +39,13 @@ export function useSeries() {
       onSuccess: (data) => {
         cacheSeries(client, data);
       },
-    }
+    },
   );
 }
 
 export function useSeriesPagination() {
   return usePaginationQuery([QueryKeys.Series], (param) =>
-    api.series.seriesBy(param)
+    api.series.seriesBy(param),
   );
 }
 
@@ -61,7 +61,7 @@ export function useSeriesModification() {
         });
         client.invalidateQueries([QueryKeys.Series]);
       },
-    }
+    },
   );
 }
 
@@ -74,6 +74,6 @@ export function useSeriesAction() {
       onSuccess: () => {
         client.invalidateQueries([QueryKeys.Series]);
       },
-    }
+    },
   );
 }

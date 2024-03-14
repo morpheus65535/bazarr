@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Cache node_modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: "${{ env.UI_DIRECTORY }}/node_modules"
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
@@ -62,7 +62,7 @@ jobs:
         run: npm run build:ci
         working-directory: ${{ env.UI_DIRECTORY }}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.UI_ARTIFACT_NAME }}
           path: "${{ env.UI_DIRECTORY }}/build"
@@ -81,7 +81,7 @@ jobs:
           python-version: "3.8"
 
       - name: Install UI
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ env.UI_ARTIFACT_NAME }}
           path: "${{ env.UI_DIRECTORY }}/build"

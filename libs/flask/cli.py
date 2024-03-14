@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import ast
+import collections.abc as cabc
+import importlib.metadata
 import inspect
 import os
 import platform
@@ -9,7 +11,8 @@ import sys
 import traceback
 import typing as t
 from functools import update_wrapper
-from operator import attrgetter
+from operator import itemgetter
+from types import ModuleType
 
 import click
 from click.core import ParameterSource
@@ -22,6 +25,12 @@ from .helpers import get_debug_flag
 from .helpers import get_load_dotenv
 
 if t.TYPE_CHECKING:
+    import ssl
+
+    from _typeshed.wsgi import StartResponse
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
+
     from .app import Flask
 
 
@@ -29,7 +38,7 @@ class NoAppException(click.UsageError):
     """Raised if an application cannot be found or loaded."""
 
 
-def find_best_app(module):
+def find_best_app(module: ModuleType) -> Flask:
     """Given a module instance this tries to find the best possible
     application in the module or raises an exception.
     """
@@ -82,7 +91,7 @@ def find_best_app(module):
     )
 
 
-def _called_with_wrong_args(f):
+def _called_with_wrong_args(f: t.Callable[..., Flask]) -> bool:
     """Check whether calling a function raised a ``TypeError`` because
     the call failed or because something in the factory raised the
     error.
@@ -108,7 +117,7 @@ def _called_with_wrong_args(f):
         del tb
 
 
-def find_app_by_string(module, app_name):
+def find_app_by_string(module: ModuleType, app_name: str) -> Flask:
     """Check if the given string is a variable name or a function. Call
     a function to get the app instance, or return the variable directly.
     """
@@ -139,7 +148,11 @@ def find_app_by_string(module, app_name):
         # Parse the positional and keyword arguments as literals.
         try:
             args = [ast.literal_eval(arg) for arg in expr.args]
-            kwargs = {kw.arg: ast.literal_eval(kw.value) for kw in expr.keywords}
+            kwargs = {
+                kw.arg: ast.literal_eval(kw.value)
+                for kw in expr.keywords
+                if kw.arg is not None
+            }
         except ValueError:
             # literal_eval gives cryptic error messages, show a generic
             # message with the full expression instead.
@@ -184,7 +197,7 @@ def find_app_by_string(module, app_name):
     )
 
 
-def prepare_import(path):
+def prepare_import(path: str) -> str:
     """Given a filename this will try to calculate the python path, add it
     to the search path and return the actual module name that is expected.
     """
@@ -213,13 +226,29 @@ def prepare_import(path):
     return ".".join(module_name[::-1])
 
 
-def locate_app(module_name, app_name, raise_if_not_found=True):
+@t.overload
+def locate_app(
+    module_name: str, app_name: str | None, raise_if_not_found: t.Literal[True] = True
+) -> Flask:
+    ...
+
+
+@t.overload
+def locate_app(
+    module_name: str, app_name: str | None, raise_if_not_found: t.Literal[False] = ...
+) -> Flask | None:
+    ...
+
+
+def locate_app(
+    module_name: str, app_name: str | None, raise_if_not_found: bool = True
+) -> Flask | None:
     try:
         __import__(module_name)
     except ImportError:
         # Reraise the ImportError if it occurred within the imported module.
         # Determine this by checking whether the trace has a depth > 1.
-        if sys.exc_info()[2].tb_next:
+        if sys.exc_info()[2].tb_next:  # type: ignore[union-attr]
             raise NoAppException(
                 f"While importing {module_name!r}, an ImportError was"
                 f" raised:\n\n{traceback.format_exc()}"
@@ -227,7 +256,7 @@ def locate_app(module_name, app_name, raise_if_not_found=True):
         elif raise_if_not_found:
             raise NoAppException(f"Could not import {module_name!r}.") from None
         else:
-            return
+            return None
 
     module = sys.modules[module_name]
 
@@ -237,17 +266,17 @@ def locate_app(module_name, app_name, raise_if_not_found=True):
         return find_app_by_string(module, app_name)
 
 
-def get_version(ctx, param, value):
+def get_version(ctx: click.Context, param: click.Parameter, value: t.Any) -> None:
     if not value or ctx.resilient_parsing:
         return
 
-    import werkzeug
-    from . import __version__
+    flask_version = importlib.metadata.version("flask")
+    werkzeug_version = importlib.metadata.version("werkzeug")
 
     click.echo(
         f"Python {platform.python_version()}\n"
-        f"Flask {__version__}\n"
-        f"Werkzeug {werkzeug.__version__}",
+        f"Flask {flask_version}\n"
+        f"Werkzeug {werkzeug_version}",
         color=ctx.color,
     )
     ctx.exit()
@@ -285,7 +314,7 @@ class ScriptInfo:
         self.create_app = create_app
         #: A dictionary with arbitrary data that can be associated with
         #: this script info.
-        self.data: t.Dict[t.Any, t.Any] = {}
+        self.data: dict[t.Any, t.Any] = {}
         self.set_debug_flag = set_debug_flag
         self._loaded_app: Flask | None = None
 
@@ -298,11 +327,11 @@ class ScriptInfo:
             return self._loaded_app
 
         if self.create_app is not None:
-            app = self.create_app()
+            app: Flask | None = self.create_app()
         else:
             if self.app_import_path:
                 path, name = (
-                    re.split(r":(?![\\/])", self.app_import_path, 1) + [None]
+                    re.split(r":(?![\\/])", self.app_import_path, maxsplit=1) + [None]
                 )[:2]
                 import_name = prepare_import(path)
                 app = locate_app(import_name, name)
@@ -311,10 +340,10 @@ class ScriptInfo:
                     import_name = prepare_import(path)
                     app = locate_app(import_name, None, raise_if_not_found=False)
 
-                    if app:
+                    if app is not None:
                         break
 
-        if not app:
+        if app is None:
             raise NoAppException(
                 "Could not locate a Flask application. Use the"
                 " 'flask --app' option, 'FLASK_APP' environment"
@@ -333,8 +362,10 @@ class ScriptInfo:
 
 pass_script_info = click.make_pass_decorator(ScriptInfo, ensure=True)
 
+F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
-def with_appcontext(f):
+
+def with_appcontext(f: F) -> F:
     """Wraps a callback so that it's guaranteed to be executed with the
     script's application context.
 
@@ -349,14 +380,14 @@ def with_appcontext(f):
     """
 
     @click.pass_context
-    def decorator(__ctx, *args, **kwargs):
+    def decorator(ctx: click.Context, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         if not current_app:
-            app = __ctx.ensure_object(ScriptInfo).load_app()
-            __ctx.with_resource(app.app_context())
+            app = ctx.ensure_object(ScriptInfo).load_app()
+            ctx.with_resource(app.app_context())
 
-        return __ctx.invoke(f, *args, **kwargs)
+        return ctx.invoke(f, *args, **kwargs)
 
-    return update_wrapper(decorator, f)
+    return update_wrapper(decorator, f)  # type: ignore[return-value]
 
 
 class AppGroup(click.Group):
@@ -367,27 +398,31 @@ class AppGroup(click.Group):
     Not to be confused with :class:`FlaskGroup`.
     """
 
-    def command(self, *args, **kwargs):
+    def command(  # type: ignore[override]
+        self, *args: t.Any, **kwargs: t.Any
+    ) -> t.Callable[[t.Callable[..., t.Any]], click.Command]:
         """This works exactly like the method of the same name on a regular
         :class:`click.Group` but it wraps callbacks in :func:`with_appcontext`
         unless it's disabled by passing ``with_appcontext=False``.
         """
         wrap_for_ctx = kwargs.pop("with_appcontext", True)
 
-        def decorator(f):
+        def decorator(f: t.Callable[..., t.Any]) -> click.Command:
             if wrap_for_ctx:
                 f = with_appcontext(f)
-            return click.Group.command(self, *args, **kwargs)(f)
+            return super(AppGroup, self).command(*args, **kwargs)(f)  # type: ignore[no-any-return]
 
         return decorator
 
-    def group(self, *args, **kwargs):
+    def group(  # type: ignore[override]
+        self, *args: t.Any, **kwargs: t.Any
+    ) -> t.Callable[[t.Callable[..., t.Any]], click.Group]:
         """This works exactly like the method of the same name on a regular
         :class:`click.Group` but it defaults the group class to
         :class:`AppGroup`.
         """
         kwargs.setdefault("cls", AppGroup)
-        return click.Group.group(self, *args, **kwargs)
+        return super().group(*args, **kwargs)  # type: ignore[no-any-return]
 
 
 def _set_app(ctx: click.Context, param: click.Option, value: str | None) -> str | None:
@@ -544,7 +579,7 @@ class FlaskGroup(AppGroup):
 
         self._loaded_plugin_commands = False
 
-    def _load_plugin_commands(self):
+    def _load_plugin_commands(self) -> None:
         if self._loaded_plugin_commands:
             return
 
@@ -561,7 +596,7 @@ class FlaskGroup(AppGroup):
 
         self._loaded_plugin_commands = True
 
-    def get_command(self, ctx, name):
+    def get_command(self, ctx: click.Context, name: str) -> click.Command | None:
         self._load_plugin_commands()
         # Look up built-in and plugin commands, which should be
         # available even if the app fails to load.
@@ -583,12 +618,12 @@ class FlaskGroup(AppGroup):
         # Push an app context for the loaded app unless it is already
         # active somehow. This makes the context available to parameter
         # and command callbacks without needing @with_appcontext.
-        if not current_app or current_app._get_current_object() is not app:
+        if not current_app or current_app._get_current_object() is not app:  # type: ignore[attr-defined]
             ctx.with_resource(app.app_context())
 
         return app.cli.get_command(ctx, name)
 
-    def list_commands(self, ctx):
+    def list_commands(self, ctx: click.Context) -> list[str]:
         self._load_plugin_commands()
         # Start with the built-in and plugin commands.
         rv = set(super().list_commands(ctx))
@@ -644,14 +679,14 @@ class FlaskGroup(AppGroup):
         return super().parse_args(ctx, args)
 
 
-def _path_is_ancestor(path, other):
+def _path_is_ancestor(path: str, other: str) -> bool:
     """Take ``other`` and remove the length of ``path`` from it. Then join it
     to ``path``. If it is the original value, ``path`` is an ancestor of
     ``other``."""
     return os.path.join(path, other[len(path) :].lstrip(os.sep)) == other
 
 
-def load_dotenv(path: str | os.PathLike | None = None) -> bool:
+def load_dotenv(path: str | os.PathLike[str] | None = None) -> bool:
     """Load "dotenv" files in order of precedence to set environment variables.
 
     If an env var is already set it is not overwritten, so earlier files in the
@@ -712,7 +747,7 @@ def load_dotenv(path: str | os.PathLike | None = None) -> bool:
     return loaded  # True if at least one file was located and loaded.
 
 
-def show_server_banner(debug, app_import_path):
+def show_server_banner(debug: bool, app_import_path: str | None) -> None:
     """Show extra startup messages the first time the server is run,
     ignoring the reloader.
     """
@@ -734,10 +769,12 @@ class CertParamType(click.ParamType):
 
     name = "path"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.path_type = click.Path(exists=True, dir_okay=False, resolve_path=True)
 
-    def convert(self, value, param, ctx):
+    def convert(
+        self, value: t.Any, param: click.Parameter | None, ctx: click.Context | None
+    ) -> t.Any:
         try:
             import ssl
         except ImportError:
@@ -772,7 +809,7 @@ class CertParamType(click.ParamType):
             raise
 
 
-def _validate_key(ctx, param, value):
+def _validate_key(ctx: click.Context, param: click.Parameter, value: t.Any) -> t.Any:
     """The ``--key`` option must be specified when ``--cert`` is a file.
     Modifies the ``cert`` param to be a ``(cert, key)`` pair if needed.
     """
@@ -794,7 +831,9 @@ def _validate_key(ctx, param, value):
 
         if is_context:
             raise click.BadParameter(
-                'When "--cert" is an SSLContext object, "--key is not used.', ctx, param
+                'When "--cert" is an SSLContext object, "--key" is not used.',
+                ctx,
+                param,
             )
 
         if not cert:
@@ -815,8 +854,11 @@ class SeparatedPathType(click.Path):
     validated as a :class:`click.Path` type.
     """
 
-    def convert(self, value, param, ctx):
+    def convert(
+        self, value: t.Any, param: click.Parameter | None, ctx: click.Context | None
+    ) -> t.Any:
         items = self.split_envvar_value(value)
+        # can't call no-arg super() inside list comprehension until Python 3.12
         super_convert = super().convert
         return [super_convert(item, param, ctx) for item in items]
 
@@ -875,16 +917,16 @@ class SeparatedPathType(click.Path):
 )
 @pass_script_info
 def run_command(
-    info,
-    host,
-    port,
-    reload,
-    debugger,
-    with_threads,
-    cert,
-    extra_files,
-    exclude_patterns,
-):
+    info: ScriptInfo,
+    host: str,
+    port: int,
+    reload: bool,
+    debugger: bool,
+    with_threads: bool,
+    cert: ssl.SSLContext | tuple[str, str | None] | t.Literal["adhoc"] | None,
+    extra_files: list[str] | None,
+    exclude_patterns: list[str] | None,
+) -> None:
     """Run a local development server.
 
     This server is for development purposes only. It does not provide
@@ -894,7 +936,7 @@ def run_command(
     option.
     """
     try:
-        app = info.load_app()
+        app: WSGIApplication = info.load_app()
     except Exception as e:
         if is_running_from_reloader():
             # When reloading, print out the error immediately, but raise
@@ -902,7 +944,9 @@ def run_command(
             traceback.print_exc()
             err = e
 
-            def app(environ, start_response):
+            def app(
+                environ: WSGIEnvironment, start_response: StartResponse
+            ) -> cabc.Iterable[bytes]:
                 raise err from None
 
         else:
@@ -933,6 +977,9 @@ def run_command(
     )
 
 
+run_command.params.insert(0, _debug_option)
+
+
 @click.command("shell", short_help="Run a shell in the app context.")
 @with_appcontext
 def shell_command() -> None:
@@ -950,7 +997,7 @@ def shell_command() -> None:
         f"App: {current_app.import_name}\n"
         f"Instance: {current_app.instance_path}"
     )
-    ctx: dict = {}
+    ctx: dict[str, t.Any] = {}
 
     # Support the regular Python interpreter startup script if someone
     # is using it.
@@ -986,49 +1033,62 @@ def shell_command() -> None:
 @click.option(
     "--sort",
     "-s",
-    type=click.Choice(("endpoint", "methods", "rule", "match")),
+    type=click.Choice(("endpoint", "methods", "domain", "rule", "match")),
     default="endpoint",
     help=(
-        'Method to sort routes by. "match" is the order that Flask will match '
-        "routes when dispatching a request."
+        "Method to sort routes by. 'match' is the order that Flask will match routes"
+        " when dispatching a request."
     ),
 )
 @click.option("--all-methods", is_flag=True, help="Show HEAD and OPTIONS methods.")
 @with_appcontext
 def routes_command(sort: str, all_methods: bool) -> None:
     """Show all registered routes with endpoints and methods."""
-
     rules = list(current_app.url_map.iter_rules())
+
     if not rules:
         click.echo("No routes were registered.")
         return
 
-    ignored_methods = set(() if all_methods else ("HEAD", "OPTIONS"))
+    ignored_methods = set() if all_methods else {"HEAD", "OPTIONS"}
+    host_matching = current_app.url_map.host_matching
+    has_domain = any(rule.host if host_matching else rule.subdomain for rule in rules)
+    rows = []
 
-    if sort in ("endpoint", "rule"):
-        rules = sorted(rules, key=attrgetter(sort))
-    elif sort == "methods":
-        rules = sorted(rules, key=lambda rule: sorted(rule.methods))  # type: ignore
+    for rule in rules:
+        row = [
+            rule.endpoint,
+            ", ".join(sorted((rule.methods or set()) - ignored_methods)),
+        ]
 
-    rule_methods = [
-        ", ".join(sorted(rule.methods - ignored_methods))  # type: ignore
-        for rule in rules
-    ]
+        if has_domain:
+            row.append((rule.host if host_matching else rule.subdomain) or "")
 
-    headers = ("Endpoint", "Methods", "Rule")
-    widths = (
-        max(len(rule.endpoint) for rule in rules),
-        max(len(methods) for methods in rule_methods),
-        max(len(rule.rule) for rule in rules),
-    )
-    widths = [max(len(h), w) for h, w in zip(headers, widths)]
-    row = "{{0:<{0}}}  {{1:<{1}}}  {{2:<{2}}}".format(*widths)
+        row.append(rule.rule)
+        rows.append(row)
 
-    click.echo(row.format(*headers).strip())
-    click.echo(row.format(*("-" * width for width in widths)))
+    headers = ["Endpoint", "Methods"]
+    sorts = ["endpoint", "methods"]
 
-    for rule, methods in zip(rules, rule_methods):
-        click.echo(row.format(rule.endpoint, methods, rule.rule).rstrip())
+    if has_domain:
+        headers.append("Host" if host_matching else "Subdomain")
+        sorts.append("domain")
+
+    headers.append("Rule")
+    sorts.append("rule")
+
+    try:
+        rows.sort(key=itemgetter(sorts.index(sort)))
+    except ValueError:
+        pass
+
+    rows.insert(0, headers)
+    widths = [max(len(row[i]) for row in rows) for i in range(len(headers))]
+    rows.insert(1, ["-" * w for w in widths])
+    template = "  ".join(f"{{{i}:<{w}}}" for i, w in enumerate(widths))
+
+    for row in rows:
+        click.echo(template.format(*row))
 
 
 cli = FlaskGroup(

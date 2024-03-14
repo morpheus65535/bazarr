@@ -1,431 +1,156 @@
-"""
-This module started out as largely a copy paste from the stdlib's
-optparse module with the features removed that we do not need from
-optparse because we implement them in Click on a higher level (for
-instance type handling, help formatting and a lot more).
-
-The plan is to remove more and more from here over time.
-
-The reason this is a different module and not optparse from the stdlib
-is that there are differences in 2.x and 3.x about the error messages
-generated and optparse in the stdlib uses gettext for no good reason
-and might cause us issues.
-
-Click uses parts of optparse written by Gregory P. Ward and maintained
-by the Python Software Foundation. This is limited to code in parser.py.
-
-Copyright 2001-2006 Gregory P. Ward. All rights reserved.
-Copyright 2002-2006 Python Software Foundation. All rights reserved.
-"""
-# This code uses parts of optparse written by Gregory P. Ward and
-# maintained by the Python Software Foundation.
-# Copyright 2001-2006 Gregory P. Ward
-# Copyright 2002-2006 Python Software Foundation
+_C='append'
+_B='store'
+_A=None
 import re
 from collections import deque
-
-from .exceptions import BadArgumentUsage
-from .exceptions import BadOptionUsage
-from .exceptions import NoSuchOption
-from .exceptions import UsageError
-
-
-def _unpack_args(args, nargs_spec):
-    """Given an iterable of arguments and an iterable of nargs specifications,
-    it returns a tuple with all the unpacked arguments at the first index
-    and all remaining arguments as the second.
-
-    The nargs specification is the number of arguments that should be consumed
-    or `-1` to indicate that this position should eat up all the remainders.
-
-    Missing items are filled with `None`.
-    """
-    args = deque(args)
-    nargs_spec = deque(nargs_spec)
-    rv = []
-    spos = None
-
-    def _fetch(c):
-        try:
-            if spos is None:
-                return c.popleft()
-            else:
-                return c.pop()
-        except IndexError:
-            return None
-
-    while nargs_spec:
-        nargs = _fetch(nargs_spec)
-        if nargs == 1:
-            rv.append(_fetch(args))
-        elif nargs > 1:
-            x = [_fetch(args) for _ in range(nargs)]
-            # If we're reversed, we're pulling in the arguments in reverse,
-            # so we need to turn them around.
-            if spos is not None:
-                x.reverse()
-            rv.append(tuple(x))
-        elif nargs < 0:
-            if spos is not None:
-                raise TypeError("Cannot have two nargs < 0")
-            spos = len(rv)
-            rv.append(None)
-
-    # spos is the position of the wildcard (star).  If it's not `None`,
-    # we fill it with the remainder.
-    if spos is not None:
-        rv[spos] = tuple(args)
-        args = []
-        rv[spos + 1 :] = reversed(rv[spos + 1 :])
-
-    return tuple(rv), list(args)
-
-
-def _error_opt_args(nargs, opt):
-    if nargs == 1:
-        raise BadOptionUsage(opt, f"{opt} option requires an argument")
-    raise BadOptionUsage(opt, f"{opt} option requires {nargs} arguments")
-
-
+from.exceptions import BadArgumentUsage
+from.exceptions import BadOptionUsage
+from.exceptions import NoSuchOption
+from.exceptions import UsageError
+def _unpack_args(args,nargs_spec):
+	D=nargs_spec;C=args;C=deque(C);D=deque(D);A=[];B=_A
+	def F(c):
+		try:
+			if B is _A:return c.popleft()
+			else:return c.pop()
+		except IndexError:return
+	while D:
+		E=F(D)
+		if E==1:A.append(F(C))
+		elif E>1:
+			G=[F(C)for A in range(E)]
+			if B is not _A:G.reverse()
+			A.append(tuple(G))
+		elif E<0:
+			if B is not _A:raise TypeError('Cannot have two nargs < 0')
+			B=len(A);A.append(_A)
+	if B is not _A:A[B]=tuple(C);C=[];A[B+1:]=reversed(A[B+1:])
+	return tuple(A),list(C)
+def _error_opt_args(nargs,opt):
+	B=nargs;A=opt
+	if B==1:raise BadOptionUsage(A,f"{A} option requires an argument")
+	raise BadOptionUsage(A,f"{A} option requires {B} arguments")
 def split_opt(opt):
-    first = opt[:1]
-    if first.isalnum():
-        return "", opt
-    if opt[1:2] == first:
-        return opt[:2], opt[2:]
-    return first, opt[1:]
-
-
-def normalize_opt(opt, ctx):
-    if ctx is None or ctx.token_normalize_func is None:
-        return opt
-    prefix, opt = split_opt(opt)
-    return f"{prefix}{ctx.token_normalize_func(opt)}"
-
-
+	A=opt;B=A[:1]
+	if B.isalnum():return'',A
+	if A[1:2]==B:return A[:2],A[2:]
+	return B,A[1:]
+def normalize_opt(opt,ctx):
+	B=ctx;A=opt
+	if B is _A or B.token_normalize_func is _A:return A
+	C,A=split_opt(A);return f"{C}{B.token_normalize_func(A)}"
 def split_arg_string(string):
-    """Given an argument string this attempts to split it into small parts."""
-    rv = []
-    for match in re.finditer(
-        r"('([^'\\]*(?:\\.[^'\\]*)*)'|\"([^\"\\]*(?:\\.[^\"\\]*)*)\"|\S+)\s*",
-        string,
-        re.S,
-    ):
-        arg = match.group().strip()
-        if arg[:1] == arg[-1:] and arg[:1] in "\"'":
-            arg = arg[1:-1].encode("ascii", "backslashreplace").decode("unicode-escape")
-        try:
-            arg = type(string)(arg)
-        except UnicodeError:
-            pass
-        rv.append(arg)
-    return rv
-
-
+	B=string;C=[]
+	for D in re.finditer('(\'([^\'\\\\]*(?:\\\\.[^\'\\\\]*)*)\'|\\"([^\\"\\\\]*(?:\\\\.[^\\"\\\\]*)*)\\"|\\S+)\\s*',B,re.S):
+		A=D.group().strip()
+		if A[:1]==A[-1:]and A[:1]in'"\'':A=A[1:-1].encode('ascii','backslashreplace').decode('unicode-escape')
+		try:A=type(B)(A)
+		except UnicodeError:pass
+		C.append(A)
+	return C
 class Option:
-    def __init__(self, opts, dest, action=None, nargs=1, const=None, obj=None):
-        self._short_opts = []
-        self._long_opts = []
-        self.prefixes = set()
-
-        for opt in opts:
-            prefix, value = split_opt(opt)
-            if not prefix:
-                raise ValueError(f"Invalid start character for option ({opt})")
-            self.prefixes.add(prefix[0])
-            if len(prefix) == 1 and len(value) == 1:
-                self._short_opts.append(opt)
-            else:
-                self._long_opts.append(opt)
-                self.prefixes.add(prefix)
-
-        if action is None:
-            action = "store"
-
-        self.dest = dest
-        self.action = action
-        self.nargs = nargs
-        self.const = const
-        self.obj = obj
-
-    @property
-    def takes_value(self):
-        return self.action in ("store", "append")
-
-    def process(self, value, state):
-        if self.action == "store":
-            state.opts[self.dest] = value
-        elif self.action == "store_const":
-            state.opts[self.dest] = self.const
-        elif self.action == "append":
-            state.opts.setdefault(self.dest, []).append(value)
-        elif self.action == "append_const":
-            state.opts.setdefault(self.dest, []).append(self.const)
-        elif self.action == "count":
-            state.opts[self.dest] = state.opts.get(self.dest, 0) + 1
-        else:
-            raise ValueError(f"unknown action '{self.action}'")
-        state.order.append(self.obj)
-
-
+	def __init__(A,opts,dest,action=_A,nargs=1,const=_A,obj=_A):
+		D=action;A._short_opts=[];A._long_opts=[];A.prefixes=set()
+		for B in opts:
+			C,E=split_opt(B)
+			if not C:raise ValueError(f"Invalid start character for option ({B})")
+			A.prefixes.add(C[0])
+			if len(C)==1 and len(E)==1:A._short_opts.append(B)
+			else:A._long_opts.append(B);A.prefixes.add(C)
+		if D is _A:D=_B
+		A.dest=dest;A.action=D;A.nargs=nargs;A.const=const;A.obj=obj
+	@property
+	def takes_value(self):return self.action in(_B,_C)
+	def process(A,value,state):
+		C=value;B=state
+		if A.action==_B:B.opts[A.dest]=C
+		elif A.action=='store_const':B.opts[A.dest]=A.const
+		elif A.action==_C:B.opts.setdefault(A.dest,[]).append(C)
+		elif A.action=='append_const':B.opts.setdefault(A.dest,[]).append(A.const)
+		elif A.action=='count':B.opts[A.dest]=B.opts.get(A.dest,0)+1
+		else:raise ValueError(f"unknown action '{A.action}'")
+		B.order.append(A.obj)
 class Argument:
-    def __init__(self, dest, nargs=1, obj=None):
-        self.dest = dest
-        self.nargs = nargs
-        self.obj = obj
-
-    def process(self, value, state):
-        if self.nargs > 1:
-            holes = sum(1 for x in value if x is None)
-            if holes == len(value):
-                value = None
-            elif holes != 0:
-                raise BadArgumentUsage(
-                    f"argument {self.dest} takes {self.nargs} values"
-                )
-        state.opts[self.dest] = value
-        state.order.append(self.obj)
-
-
+	def __init__(A,dest,nargs=1,obj=_A):A.dest=dest;A.nargs=nargs;A.obj=obj
+	def process(A,value,state):
+		C=state;B=value
+		if A.nargs>1:
+			D=sum(1 for A in B if A is _A)
+			if D==len(B):B=_A
+			elif D!=0:raise BadArgumentUsage(f"argument {A.dest} takes {A.nargs} values")
+		C.opts[A.dest]=B;C.order.append(A.obj)
 class ParsingState:
-    def __init__(self, rargs):
-        self.opts = {}
-        self.largs = []
-        self.rargs = rargs
-        self.order = []
-
-
+	def __init__(A,rargs):A.opts={};A.largs=[];A.rargs=rargs;A.order=[]
 class OptionParser:
-    """The option parser is an internal class that is ultimately used to
-    parse options and arguments.  It's modelled after optparse and brings
-    a similar but vastly simplified API.  It should generally not be used
-    directly as the high level Click classes wrap it for you.
-
-    It's not nearly as extensible as optparse or argparse as it does not
-    implement features that are implemented on a higher level (such as
-    types or defaults).
-
-    :param ctx: optionally the :class:`~click.Context` where this parser
-                should go with.
-    """
-
-    def __init__(self, ctx=None):
-        #: The :class:`~click.Context` for this parser.  This might be
-        #: `None` for some advanced use cases.
-        self.ctx = ctx
-        #: This controls how the parser deals with interspersed arguments.
-        #: If this is set to `False`, the parser will stop on the first
-        #: non-option.  Click uses this to implement nested subcommands
-        #: safely.
-        self.allow_interspersed_args = True
-        #: This tells the parser how to deal with unknown options.  By
-        #: default it will error out (which is sensible), but there is a
-        #: second mode where it will ignore it and continue processing
-        #: after shifting all the unknown options into the resulting args.
-        self.ignore_unknown_options = False
-        if ctx is not None:
-            self.allow_interspersed_args = ctx.allow_interspersed_args
-            self.ignore_unknown_options = ctx.ignore_unknown_options
-        self._short_opt = {}
-        self._long_opt = {}
-        self._opt_prefixes = {"-", "--"}
-        self._args = []
-
-    def add_option(self, opts, dest, action=None, nargs=1, const=None, obj=None):
-        """Adds a new option named `dest` to the parser.  The destination
-        is not inferred (unlike with optparse) and needs to be explicitly
-        provided.  Action can be any of ``store``, ``store_const``,
-        ``append``, ``appnd_const`` or ``count``.
-
-        The `obj` can be used to identify the option in the order list
-        that is returned from the parser.
-        """
-        if obj is None:
-            obj = dest
-        opts = [normalize_opt(opt, self.ctx) for opt in opts]
-        option = Option(opts, dest, action=action, nargs=nargs, const=const, obj=obj)
-        self._opt_prefixes.update(option.prefixes)
-        for opt in option._short_opts:
-            self._short_opt[opt] = option
-        for opt in option._long_opts:
-            self._long_opt[opt] = option
-
-    def add_argument(self, dest, nargs=1, obj=None):
-        """Adds a positional argument named `dest` to the parser.
-
-        The `obj` can be used to identify the option in the order list
-        that is returned from the parser.
-        """
-        if obj is None:
-            obj = dest
-        self._args.append(Argument(dest=dest, nargs=nargs, obj=obj))
-
-    def parse_args(self, args):
-        """Parses positional arguments and returns ``(values, args, order)``
-        for the parsed options and arguments as well as the leftover
-        arguments if there are any.  The order is a list of objects as they
-        appear on the command line.  If arguments appear multiple times they
-        will be memorized multiple times as well.
-        """
-        state = ParsingState(args)
-        try:
-            self._process_args_for_options(state)
-            self._process_args_for_args(state)
-        except UsageError:
-            if self.ctx is None or not self.ctx.resilient_parsing:
-                raise
-        return state.opts, state.largs, state.order
-
-    def _process_args_for_args(self, state):
-        pargs, args = _unpack_args(
-            state.largs + state.rargs, [x.nargs for x in self._args]
-        )
-
-        for idx, arg in enumerate(self._args):
-            arg.process(pargs[idx], state)
-
-        state.largs = args
-        state.rargs = []
-
-    def _process_args_for_options(self, state):
-        while state.rargs:
-            arg = state.rargs.pop(0)
-            arglen = len(arg)
-            # Double dashes always handled explicitly regardless of what
-            # prefixes are valid.
-            if arg == "--":
-                return
-            elif arg[:1] in self._opt_prefixes and arglen > 1:
-                self._process_opts(arg, state)
-            elif self.allow_interspersed_args:
-                state.largs.append(arg)
-            else:
-                state.rargs.insert(0, arg)
-                return
-
-        # Say this is the original argument list:
-        # [arg0, arg1, ..., arg(i-1), arg(i), arg(i+1), ..., arg(N-1)]
-        #                            ^
-        # (we are about to process arg(i)).
-        #
-        # Then rargs is [arg(i), ..., arg(N-1)] and largs is a *subset* of
-        # [arg0, ..., arg(i-1)] (any options and their arguments will have
-        # been removed from largs).
-        #
-        # The while loop will usually consume 1 or more arguments per pass.
-        # If it consumes 1 (eg. arg is an option that takes no arguments),
-        # then after _process_arg() is done the situation is:
-        #
-        #   largs = subset of [arg0, ..., arg(i)]
-        #   rargs = [arg(i+1), ..., arg(N-1)]
-        #
-        # If allow_interspersed_args is false, largs will always be
-        # *empty* -- still a subset of [arg0, ..., arg(i-1)], but
-        # not a very interesting subset!
-
-    def _match_long_opt(self, opt, explicit_value, state):
-        if opt not in self._long_opt:
-            possibilities = [word for word in self._long_opt if word.startswith(opt)]
-            raise NoSuchOption(opt, possibilities=possibilities, ctx=self.ctx)
-
-        option = self._long_opt[opt]
-        if option.takes_value:
-            # At this point it's safe to modify rargs by injecting the
-            # explicit value, because no exception is raised in this
-            # branch.  This means that the inserted value will be fully
-            # consumed.
-            if explicit_value is not None:
-                state.rargs.insert(0, explicit_value)
-
-            nargs = option.nargs
-            if len(state.rargs) < nargs:
-                _error_opt_args(nargs, opt)
-            elif nargs == 1:
-                value = state.rargs.pop(0)
-            else:
-                value = tuple(state.rargs[:nargs])
-                del state.rargs[:nargs]
-
-        elif explicit_value is not None:
-            raise BadOptionUsage(opt, f"{opt} option does not take a value")
-
-        else:
-            value = None
-
-        option.process(value, state)
-
-    def _match_short_opt(self, arg, state):
-        stop = False
-        i = 1
-        prefix = arg[0]
-        unknown_options = []
-
-        for ch in arg[1:]:
-            opt = normalize_opt(f"{prefix}{ch}", self.ctx)
-            option = self._short_opt.get(opt)
-            i += 1
-
-            if not option:
-                if self.ignore_unknown_options:
-                    unknown_options.append(ch)
-                    continue
-                raise NoSuchOption(opt, ctx=self.ctx)
-            if option.takes_value:
-                # Any characters left in arg?  Pretend they're the
-                # next arg, and stop consuming characters of arg.
-                if i < len(arg):
-                    state.rargs.insert(0, arg[i:])
-                    stop = True
-
-                nargs = option.nargs
-                if len(state.rargs) < nargs:
-                    _error_opt_args(nargs, opt)
-                elif nargs == 1:
-                    value = state.rargs.pop(0)
-                else:
-                    value = tuple(state.rargs[:nargs])
-                    del state.rargs[:nargs]
-
-            else:
-                value = None
-
-            option.process(value, state)
-
-            if stop:
-                break
-
-        # If we got any unknown options we re-combinate the string of the
-        # remaining options and re-attach the prefix, then report that
-        # to the state as new larg.  This way there is basic combinatorics
-        # that can be achieved while still ignoring unknown arguments.
-        if self.ignore_unknown_options and unknown_options:
-            state.largs.append(f"{prefix}{''.join(unknown_options)}")
-
-    def _process_opts(self, arg, state):
-        explicit_value = None
-        # Long option handling happens in two parts.  The first part is
-        # supporting explicitly attached values.  In any case, we will try
-        # to long match the option first.
-        if "=" in arg:
-            long_opt, explicit_value = arg.split("=", 1)
-        else:
-            long_opt = arg
-        norm_long_opt = normalize_opt(long_opt, self.ctx)
-
-        # At this point we will match the (assumed) long option through
-        # the long option matching code.  Note that this allows options
-        # like "-foo" to be matched as long options.
-        try:
-            self._match_long_opt(norm_long_opt, explicit_value, state)
-        except NoSuchOption:
-            # At this point the long option matching failed, and we need
-            # to try with short options.  However there is a special rule
-            # which says, that if we have a two character options prefix
-            # (applies to "--foo" for instance), we do not dispatch to the
-            # short option code and will instead raise the no option
-            # error.
-            if arg[:2] not in self._opt_prefixes:
-                return self._match_short_opt(arg, state)
-            if not self.ignore_unknown_options:
-                raise
-            state.largs.append(arg)
+	def __init__(A,ctx=_A):
+		B=ctx;A.ctx=B;A.allow_interspersed_args=True;A.ignore_unknown_options=False
+		if B is not _A:A.allow_interspersed_args=B.allow_interspersed_args;A.ignore_unknown_options=B.ignore_unknown_options
+		A._short_opt={};A._long_opt={};A._opt_prefixes={'-','--'};A._args=[]
+	def add_option(B,opts,dest,action=_A,nargs=1,const=_A,obj=_A):
+		D=obj;C=opts
+		if D is _A:D=dest
+		C=[normalize_opt(A,B.ctx)for A in C];A=Option(C,dest,action=action,nargs=nargs,const=const,obj=D);B._opt_prefixes.update(A.prefixes)
+		for E in A._short_opts:B._short_opt[E]=A
+		for E in A._long_opts:B._long_opt[E]=A
+	def add_argument(B,dest,nargs=1,obj=_A):
+		A=obj
+		if A is _A:A=dest
+		B._args.append(Argument(dest=dest,nargs=nargs,obj=A))
+	def parse_args(B,args):
+		A=ParsingState(args)
+		try:B._process_args_for_options(A);B._process_args_for_args(A)
+		except UsageError:
+			if B.ctx is _A or not B.ctx.resilient_parsing:raise
+		return A.opts,A.largs,A.order
+	def _process_args_for_args(B,state):
+		A=state;C,D=_unpack_args(A.largs+A.rargs,[A.nargs for A in B._args])
+		for(E,F)in enumerate(B._args):F.process(C[E],A)
+		A.largs=D;A.rargs=[]
+	def _process_args_for_options(C,state):
+		B=state
+		while B.rargs:
+			A=B.rargs.pop(0);D=len(A)
+			if A=='--':return
+			elif A[:1]in C._opt_prefixes and D>1:C._process_opts(A,B)
+			elif C.allow_interspersed_args:B.largs.append(A)
+			else:B.rargs.insert(0,A);return
+	def _match_long_opt(D,opt,explicit_value,state):
+		E=explicit_value;B=state;A=opt
+		if A not in D._long_opt:H=[B for B in D._long_opt if B.startswith(A)];raise NoSuchOption(A,possibilities=H,ctx=D.ctx)
+		F=D._long_opt[A]
+		if F.takes_value:
+			if E is not _A:B.rargs.insert(0,E)
+			C=F.nargs
+			if len(B.rargs)<C:_error_opt_args(C,A)
+			elif C==1:G=B.rargs.pop(0)
+			else:G=tuple(B.rargs[:C]);del B.rargs[:C]
+		elif E is not _A:raise BadOptionUsage(A,f"{A} option does not take a value")
+		else:G=_A
+		F.process(G,B)
+	def _match_short_opt(B,arg,state):
+		D=arg;A=state;J=False;F=1;K=D[0];G=[]
+		for L in D[1:]:
+			H=normalize_opt(f"{K}{L}",B.ctx);E=B._short_opt.get(H);F+=1
+			if not E:
+				if B.ignore_unknown_options:G.append(L);continue
+				raise NoSuchOption(H,ctx=B.ctx)
+			if E.takes_value:
+				if F<len(D):A.rargs.insert(0,D[F:]);J=True
+				C=E.nargs
+				if len(A.rargs)<C:_error_opt_args(C,H)
+				elif C==1:I=A.rargs.pop(0)
+				else:I=tuple(A.rargs[:C]);del A.rargs[:C]
+			else:I=_A
+			E.process(I,A)
+			if J:break
+		if B.ignore_unknown_options and G:A.largs.append(f"{K}{''.join(G)}")
+	def _process_opts(B,arg,state):
+		C=state;A=arg;D=_A
+		if'='in A:E,D=A.split('=',1)
+		else:E=A
+		F=normalize_opt(E,B.ctx)
+		try:B._match_long_opt(F,D,C)
+		except NoSuchOption:
+			if A[:2]not in B._opt_prefixes:return B._match_short_opt(A,C)
+			if not B.ignore_unknown_options:raise
+			C.largs.append(A)

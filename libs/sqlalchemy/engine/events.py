@@ -1,5 +1,5 @@
-# sqlalchemy/engine/events.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# engine/events.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -131,7 +131,7 @@ class ConnectionEvents(event.Events[ConnectionEventsTarget]):
         if default_dispatch is None and hasattr(
             target, "_no_async_engine_events"
         ):
-            target._no_async_engine_events()  # type: ignore
+            target._no_async_engine_events()
 
         return default_dispatch
 
@@ -498,8 +498,6 @@ class ConnectionEvents(event.Events[ConnectionEventsTarget]):
         can still be used for new requests in which case
         it re-acquires connection resources.
 
-        .. versionadded:: 1.0.5
-
         """
 
     def begin(self, conn: Connection) -> None:
@@ -636,16 +634,13 @@ class DialectEvents(event.Events[Dialect]):
 
         :meth:`_events.ConnectionEvents.after_execute`
 
-
-    .. versionadded:: 0.9.4
-
     """
 
     _target_class_doc = "SomeEngine"
     _dispatch_target = Dialect
 
     @classmethod
-    def _listen(  # type: ignore
+    def _listen(
         cls,
         event_key: event._EventKey[Dialect],
         *,
@@ -663,7 +658,6 @@ class DialectEvents(event.Events[Dialect]):
         target: Union[Engine, Type[Engine], Dialect, Type[Dialect]],
         identifier: str,
     ) -> Optional[Union[Dialect, Type[Dialect]]]:
-
         if isinstance(target, type):
             if issubclass(target, Engine):
                 return Dialect
@@ -854,9 +848,6 @@ class DialectEvents(event.Events[Dialect]):
             @event.listens_for(e, 'do_connect')
             def receive_do_connect(dialect, conn_rec, cargs, cparams):
                 return psycopg2.connect(*cargs, **cparams)
-
-
-        .. versionadded:: 1.0.3
 
         .. seealso::
 

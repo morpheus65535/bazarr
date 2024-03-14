@@ -1,5 +1,6 @@
 from typing import Optional
 import io
+import pysubs2
 
 
 class FormatBase:
@@ -18,7 +19,7 @@ class FormatBase:
 
     """
     @classmethod
-    def from_file(cls, subs, fp: io.TextIOBase, format_: str, **kwargs):
+    def from_file(cls, subs: "pysubs2.SSAFile", fp: io.TextIOBase, format_: str, **kwargs):
         """
         Load subtitle file into an empty SSAFile.
 
@@ -41,7 +42,7 @@ class FormatBase:
         raise NotImplementedError("Parsing is not supported for this format")
 
     @classmethod
-    def to_file(cls, subs, fp: io.TextIOBase, format_: str, **kwargs):
+    def to_file(cls, subs: "pysubs2.SSAFile", fp: io.TextIOBase, format_: str, **kwargs):
         """
         Write SSAFile into a file.
 
@@ -66,7 +67,7 @@ class FormatBase:
         raise NotImplementedError("Writing is not supported for this format")
 
     @classmethod
-    def guess_format(self, text: str) -> Optional[str]:
+    def guess_format(cls, text: str) -> Optional[str]:
         """
         Return format identifier of recognized format, or None.
 

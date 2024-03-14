@@ -15,14 +15,19 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-import dns.rdtypes.dnskeybase
 import dns.immutable
+import dns.rdtypes.dnskeybase  # lgtm[py/import-and-import-from]
 
 # pylint: disable=unused-import
-from dns.rdtypes.dnskeybase import SEP, REVOKE, ZONE  # noqa: F401
+from dns.rdtypes.dnskeybase import (  # noqa: F401  lgtm[py/unused-import]
+    REVOKE,
+    SEP,
+    ZONE,
+)
+
 # pylint: enable=unused-import
+
 
 @dns.immutable.immutable
 class DNSKEY(dns.rdtypes.dnskeybase.DNSKEYBase):
-
     """DNSKEY record"""

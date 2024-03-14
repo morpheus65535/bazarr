@@ -2,7 +2,6 @@ from base64 import b64encode
 from engineio.json import JSONDecodeError
 import logging
 import queue
-import signal
 import ssl
 import threading
 import time
@@ -16,33 +15,15 @@ try:
     import websocket
 except ImportError:  # pragma: no cover
     websocket = None
+from . import base_client
 from . import exceptions
 from . import packet
 from . import payload
 
 default_logger = logging.getLogger('engineio.client')
-connected_clients = []
 
 
-def signal_handler(sig, frame):
-    """SIGINT handler.
-
-    Disconnect all active clients and then invoke the original signal handler.
-    """
-    for client in connected_clients[:]:
-        if not client.is_asyncio_based():
-            client.disconnect()
-    if callable(original_signal_handler):
-        return original_signal_handler(sig, frame)
-    else:  # pragma: no cover
-        # Handle case where no original SIGINT handler was present.
-        return signal.default_int_handler(sig, frame)
-
-
-original_signal_handler = None
-
-
-class Client(object):
+class Client(base_client.BaseClient):
     """An Engine.IO client.
 
     This class implements a fully compliant Engine.IO web client with support
@@ -71,84 +52,10 @@ class Client(object):
                           leave interrupt handling to the calling application.
                           Interrupt handling can only be enabled when the
                           client instance is created in the main thread.
+    :param websocket_extra_options: Dictionary containing additional keyword
+                                    arguments passed to
+                                    ``websocket.create_connection()``.
     """
-    event_names = ['connect', 'disconnect', 'message']
-
-    def __init__(self, logger=False, json=None, request_timeout=5,
-                 http_session=None, ssl_verify=True, handle_sigint=True):
-        global original_signal_handler
-        if handle_sigint and original_signal_handler is None and \
-                threading.current_thread() == threading.main_thread():
-            original_signal_handler = signal.signal(signal.SIGINT,
-                                                    signal_handler)
-        self.handlers = {}
-        self.base_url = None
-        self.transports = None
-        self.current_transport = None
-        self.sid = None
-        self.upgrades = None
-        self.ping_interval = None
-        self.ping_timeout = None
-        self.http = http_session
-        self.handle_sigint = handle_sigint
-        self.ws = None
-        self.read_loop_task = None
-        self.write_loop_task = None
-        self.queue = None
-        self.state = 'disconnected'
-        self.ssl_verify = ssl_verify
-
-        if json is not None:
-            packet.Packet.json = json
-        if not isinstance(logger, bool):
-            self.logger = logger
-        else:
-            self.logger = default_logger
-            if self.logger.level == logging.NOTSET:
-                if logger:
-                    self.logger.setLevel(logging.INFO)
-                else:
-                    self.logger.setLevel(logging.ERROR)
-                self.logger.addHandler(logging.StreamHandler())
-
-        self.request_timeout = request_timeout
-
-    def is_asyncio_based(self):
-        return False
-
-    def on(self, event, handler=None):
-        """Register an event handler.
-
-        :param event: The event name. Can be ``'connect'``, ``'message'`` or
-                      ``'disconnect'``.
-        :param handler: The function that should be invoked to handle the
-                        event. When this parameter is not given, the method
-                        acts as a decorator for the handler function.
-
-        Example usage::
-
-            # as a decorator:
-            @eio.on('connect')
-            def connect_handler():
-                print('Connection request')
-
-            # as a method:
-            def message_handler(msg):
-                print('Received message: ', msg)
-                eio.send('response')
-            eio.on('message', message_handler)
-        """
-        if event not in self.event_names:
-            raise ValueError('Invalid event')
-
-        def set_handler(handler):
-            self.handlers[event] = handler
-            return handler
-
-        if handler is None:
-            return set_handler
-        set_handler(handler)
-
     def connect(self, url, headers=None, transports=None,
                 engineio_path='engine.io'):
         """Connect to an Engine.IO server.
@@ -195,9 +102,9 @@ class Client(object):
             self.read_loop_task.join()
 
     def send(self, data):
-        """Send a message to a client.
+        """Send a message to the server.
 
-        :param data: The data to send to the client. Data can be of type
+        :param data: The data to send to the server. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
         """
@@ -220,18 +127,10 @@ class Client(object):
                 self.read_loop_task.join()
             self.state = 'disconnected'
             try:
-                connected_clients.remove(self)
+                base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
         self._reset()
-
-    def transport(self):
-        """Return the name of the transport currently in use.
-
-        The possible values returned by this function are ``'polling'`` and
-        ``'websocket'``.
-        """
-        return self.current_transport
 
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task.
@@ -247,7 +146,8 @@ class Client(object):
         on which the ``join()`` method can be invoked to wait for the task to
         complete.
         """
-        th = threading.Thread(target=target, args=args, kwargs=kwargs)
+        th = threading.Thread(target=target, args=args, kwargs=kwargs,
+                              daemon=True)
         th.start()
         return th
 
@@ -264,10 +164,6 @@ class Client(object):
     def create_event(self, *args, **kwargs):
         """Create an event object."""
         return threading.Event(*args, **kwargs)
-
-    def _reset(self):
-        self.state = 'disconnected'
-        self.sid = None
 
     def _connect_polling(self, url, headers, engineio_path):
         """Establish a long-polling connection to the Engine.IO server."""
@@ -313,7 +209,7 @@ class Client(object):
         self.base_url += '&sid=' + self.sid
 
         self.state = 'connected'
-        connected_clients.append(self)
+        base_client.connected_clients.append(self)
         self._trigger_event('connect', run_async=False)
 
         for pkt in p.packets[1:]:
@@ -413,12 +309,22 @@ class Client(object):
                 self.ssl_verify = False
 
         if not self.ssl_verify:
-            extra_options['sslopt'] = {"cert_reqs": ssl.CERT_NONE}
+            if 'sslopt' in extra_options:
+                extra_options['sslopt'].update({"cert_reqs": ssl.CERT_NONE})
+            else:
+                extra_options['sslopt'] = {"cert_reqs": ssl.CERT_NONE}
+
+        # combine internally generated options with the ones supplied by the
+        # caller. The caller's options take precedence.
+        headers.update(self.websocket_extra_options.pop('header', {}))
+        extra_options['header'] = headers
+        extra_options['cookie'] = cookies
+        extra_options['enable_multithread'] = True
+        extra_options['timeout'] = self.request_timeout
+        extra_options.update(self.websocket_extra_options)
         try:
             ws = websocket.create_connection(
-                websocket_url + self._get_url_timestamp(), header=headers,
-                cookie=cookies, enable_multithread=True,
-                timeout=self.request_timeout, **extra_options)
+                websocket_url + self._get_url_timestamp(), **extra_options)
         except (ConnectionError, IOError, websocket.WebSocketException):
             if upgrade:
                 self.logger.warning(
@@ -475,7 +381,7 @@ class Client(object):
             self.current_transport = 'websocket'
 
             self.state = 'connected'
-            connected_clients.append(self)
+            base_client.connected_clients.append(self)
             self._trigger_event('connect', run_async=False)
         self.ws = ws
         self.ws.settimeout(self.ping_interval + self.ping_timeout)
@@ -542,34 +448,9 @@ class Client(object):
                 except:
                     self.logger.exception(event + ' handler error')
 
-    def _get_engineio_url(self, url, engineio_path, transport):
-        """Generate the Engine.IO connection URL."""
-        engineio_path = engineio_path.strip('/')
-        parsed_url = urllib.parse.urlparse(url)
-
-        if transport == 'polling':
-            scheme = 'http'
-        elif transport == 'websocket':
-            scheme = 'ws'
-        else:  # pragma: no cover
-            raise ValueError('invalid transport')
-        if parsed_url.scheme in ['https', 'wss']:
-            scheme += 's'
-
-        return ('{scheme}://{netloc}/{path}/?{query}'
-                '{sep}transport={transport}&EIO=4').format(
-                    scheme=scheme, netloc=parsed_url.netloc,
-                    path=engineio_path, query=parsed_url.query,
-                    sep='&' if parsed_url.query else '',
-                    transport=transport)
-
-    def _get_url_timestamp(self):
-        """Generate the Engine.IO query string timestamp."""
-        return '&t=' + str(time.time())
-
     def _read_loop_polling(self):
         """Read packets by polling the Engine.IO server."""
-        while self.state == 'connected':
+        while self.state == 'connected' and self.write_loop_task:
             self.logger.info(
                 'Sending polling GET request to ' + self.base_url)
             r = self._send_request(
@@ -595,12 +476,13 @@ class Client(object):
             for pkt in p.packets:
                 self._receive_packet(pkt)
 
-        self.logger.info('Waiting for write loop task to end')
-        self.write_loop_task.join()
+        if self.write_loop_task:  # pragma: no branch
+            self.logger.info('Waiting for write loop task to end')
+            self.write_loop_task.join()
         if self.state == 'connected':
             self._trigger_event('disconnect', run_async=False)
             try:
-                connected_clients.remove(self)
+                base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
             self._reset()
@@ -612,6 +494,9 @@ class Client(object):
             p = None
             try:
                 p = self.ws.recv()
+                if len(p) == 0:  # pragma: no cover
+                    # websocket client can return an empty string after close
+                    raise websocket.WebSocketConnectionClosedException()
             except websocket.WebSocketTimeoutException:
                 self.logger.warning(
                     'Server has stopped communicating, aborting')
@@ -622,10 +507,15 @@ class Client(object):
                     'WebSocket connection was closed, aborting')
                 self.queue.put(None)
                 break
-            except Exception as e:
-                self.logger.info(
-                    'Unexpected error receiving packet: "%s", aborting',
-                    str(e))
+            except Exception as e:  # pragma: no cover
+                if type(e) is OSError and e.errno == 9:
+                    self.logger.info(
+                        'WebSocket connection is closing, aborting',
+                        str(e))
+                else:
+                    self.logger.info(
+                        'Unexpected error receiving packet: "%s", aborting',
+                        str(e))
                 self.queue.put(None)
                 break
             try:
@@ -637,12 +527,13 @@ class Client(object):
                 break
             self._receive_packet(pkt)
 
-        self.logger.info('Waiting for write loop task to end')
-        self.write_loop_task.join()
+        if self.write_loop_task:  # pragma: no branch
+            self.logger.info('Waiting for write loop task to end')
+            self.write_loop_task.join()
         if self.state == 'connected':
             self._trigger_event('disconnect', run_async=False)
             try:
-                connected_clients.remove(self)
+                base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
             self._reset()
@@ -694,7 +585,7 @@ class Client(object):
                 if r.status_code < 200 or r.status_code >= 300:
                     self.logger.warning('Unexpected status code %s in server '
                                         'response, aborting', r.status_code)
-                    self._reset()
+                    self.write_loop_task = None
                     break
             else:
                 # websocket

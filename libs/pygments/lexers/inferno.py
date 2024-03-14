@@ -4,14 +4,14 @@
 
     Lexers for Inferno os and all the related stuff.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 import re
 
 from pygments.lexer import RegexLexer, include, bygroups, default
-from pygments.token import Punctuation, Text, Comment, Operator, Keyword, \
+from pygments.token import Punctuation, Comment, Operator, Keyword, \
     Name, String, Number, Whitespace
 
 __all__ = ['LimboLexer']

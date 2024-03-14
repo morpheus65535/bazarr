@@ -18,7 +18,7 @@ export function useGotoHomepage() {
 export function useSelectorOptions<T>(
   options: readonly T[],
   label: (value: T) => string,
-  key?: (value: T) => string
+  key?: (value: T) => string,
 ): Pick<SelectorProps<T>, "options" | "getkey"> {
   const labelRef = useRef(label);
   labelRef.current = label;
@@ -32,7 +32,7 @@ export function useSelectorOptions<T>(
         value,
         label: labelRef.current(value),
       })),
-    [options]
+    [options],
   );
 
   return useMemo(
@@ -40,7 +40,7 @@ export function useSelectorOptions<T>(
       options: wrappedOptions,
       getkey: keyRef.current ?? labelRef.current,
     }),
-    [wrappedOptions]
+    [wrappedOptions],
   );
 }
 
@@ -51,7 +51,7 @@ export function useSliderMarks(values: number[]): SliderProps["marks"] {
         value: value,
         label: value.toString(),
       })),
-    [values]
+    [values],
   );
 }
 
@@ -103,7 +103,7 @@ export function useArrayAction<T>(setData: Dispatch<(prev: T[]) => T[]>) {
       remove,
       update,
     }),
-    [add, mutate, remove, update]
+    [add, mutate, remove, update],
   );
 }
 
@@ -121,7 +121,7 @@ export function useThrottle<F extends GenericFunction>(fn: F, ms: number) {
       }
       timer.current = window.setTimeout(() => fnRef.current(...args), ms);
     },
-    [ms]
+    [ms],
   );
 }
 

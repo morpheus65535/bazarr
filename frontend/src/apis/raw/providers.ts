@@ -19,7 +19,7 @@ class ProviderApi extends BaseApi {
   async movies(id: number) {
     const response = await this.get<DataWrapper<SearchResultType[]>>(
       "/movies",
-      { radarrid: id }
+      { radarrid: id },
     );
     return response.data;
   }
@@ -33,7 +33,7 @@ class ProviderApi extends BaseApi {
       "/episodes",
       {
         episodeid,
-      }
+      },
     );
     return response.data;
   }
@@ -41,7 +41,7 @@ class ProviderApi extends BaseApi {
   async downloadEpisodeSubtitle(
     seriesid: number,
     episodeid: number,
-    form: FormType.ManualDownload
+    form: FormType.ManualDownload,
   ) {
     await this.post("/episodes", form, { seriesid, episodeid });
   }

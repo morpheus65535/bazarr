@@ -126,7 +126,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                         forced,
                         hi,
                       },
-                    }
+                    },
                   );
                 }}
               ></Action>
@@ -150,11 +150,11 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                         hi,
                         path,
                       },
-                    }
+                    },
                   );
                 } else if (action === "search") {
                   throw new Error(
-                    "This shouldn't happen, please report the bug"
+                    "This shouldn't happen, please report the bug",
                   );
                 }
               }}
@@ -170,7 +170,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         },
       },
     ],
-    [movie, disabled]
+    [movie, disabled],
   );
 
   const data: Subtitle[] = useMemo(() => {

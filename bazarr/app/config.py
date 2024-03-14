@@ -7,6 +7,8 @@ import logging
 import re
 
 from urllib.parse import quote_plus
+from literals import EXIT_VALIDATION_ERROR
+from utilities.central import stop_bazarr
 from subliminal.cache import region
 from dynaconf import Dynaconf, Validator as OriginalValidator
 from dynaconf.loaders.yaml_loader import write
@@ -163,7 +165,7 @@ validators = [
     Validator('sonarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
     Validator('sonarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('sonarr.series_sync', must_exist=True, default=60, is_type_of=int,
-              is_in=[15, 60, 180, 360, 720, 1440, ONE_HUNDRED_YEARS_IN_MINUTES]),
+              is_in=[15, 60, 180, 360, 720, 1440, 10080, ONE_HUNDRED_YEARS_IN_MINUTES]),
     Validator('sonarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
     Validator('sonarr.excluded_series_types', must_exist=True, default=[], is_type_of=list),
     Validator('sonarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
@@ -186,7 +188,7 @@ validators = [
     Validator('radarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
     Validator('radarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('radarr.movies_sync', must_exist=True, default=60, is_type_of=int,
-              is_in=[15, 60, 180, 360, 720, 1440, ONE_HUNDRED_YEARS_IN_MINUTES]),
+              is_in=[15, 60, 180, 360, 720, 1440, 10080, ONE_HUNDRED_YEARS_IN_MINUTES]),
     Validator('radarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
     Validator('radarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
     Validator('radarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
@@ -410,8 +412,9 @@ while failed_validator:
             settings[current_validator_details.names[0]] = current_validator_details.default
         else:
             logging.critical(f"Value for {current_validator_details.names[0]} doesn't pass validation and there's no "
-                             f"default value. This issue must be reported. Bazarr won't works until it's been fixed.")
-            os._exit(0)
+                             f"default value. This issue must be reported to and fixed by the development team. "
+                             f"Bazarr won't work until it's been fixed.")
+            stop_bazarr(EXIT_VALIDATION_ERROR)
 
 
 def write_config():
@@ -438,7 +441,7 @@ array_keys = ['excluded_tags',
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
-str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter']
+str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter', 'password', 'f_password', 'hashed_password']
 
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
 if settings.sonarr.series_sync < 15:

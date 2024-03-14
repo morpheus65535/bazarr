@@ -31,13 +31,13 @@ def website(config):
     rebulk = rebulk.regex_defaults(flags=re.IGNORECASE).string_defaults(ignore_case=True)
     rebulk.defaults(name="website")
 
-    with files('guessit.data') as data_files:
-        tld_file = data_files.joinpath('tlds-alpha-by-domain.txt').read_text(encoding='utf-8')
-        tlds = [
-            tld.strip()
-            for tld in tld_file.split('\n')
-            if '--' not in tld
-        ][1:]  # All registered domain extension
+    data_files = files('guessit.data')
+    tld_file = data_files.joinpath('tlds-alpha-by-domain.txt').read_text(encoding='utf-8')
+    tlds = [
+        tld.strip()
+        for tld in tld_file.split('\n')
+        if '--' not in tld
+    ][1:]  # All registered domain extension
 
     safe_tlds = config['safe_tlds']  # For sure a website extension
     safe_subdomains = config['safe_subdomains']  # For sure a website subdomain

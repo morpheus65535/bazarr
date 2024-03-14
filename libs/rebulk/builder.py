@@ -50,7 +50,7 @@ class Builder(metaclass=ABCMeta):
 
         :return:
         """
-        self.__init__()
+        self.__init__()  # pylint: disable=unnecessary-dunder-call
 
     def defaults(self, **kwargs):
         """
@@ -169,7 +169,7 @@ class Builder(metaclass=ABCMeta):
         :return:
         :rtype:
         """
-        from .chain import Chain  # pylint:disable=import-outside-toplevel
+        from .chain import Chain  # pylint:disable=import-outside-toplevel,cyclic-import
 
         with overrides(kwargs):
             set_defaults(self._chain_defaults, kwargs)
@@ -191,7 +191,6 @@ class Builder(metaclass=ABCMeta):
         :param pattern:
         :return:
         """
-        pass
 
     def regex(self, *pattern, **kwargs):
         """

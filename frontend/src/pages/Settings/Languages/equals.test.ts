@@ -15,7 +15,7 @@ describe("Equals Parser", () => {
 
     function testParsedResult(
       text: string,
-      expected: LanguageEqualImmediateData
+      expected: LanguageEqualImmediateData,
     ) {
       const result = decodeEqualData(text);
 
@@ -26,7 +26,7 @@ describe("Equals Parser", () => {
 
       expect(
         result,
-        `${text} does not match with the expected equal data`
+        `${text} does not match with the expected equal data`,
       ).toStrictEqual(expected);
     }
 
@@ -187,7 +187,7 @@ describe("Equals Parser", () => {
 
       expect(
         encoded,
-        `Encoded result '${encoded}' is not matched to '${expected}'`
+        `Encoded result '${encoded}' is not matched to '${expected}'`,
       ).toEqual(expected);
     }
 

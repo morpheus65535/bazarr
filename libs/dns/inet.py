@@ -18,10 +18,10 @@
 """Generic Internet address helper functions."""
 
 import socket
+from typing import Any, Optional, Tuple
 
 import dns.ipv4
 import dns.ipv6
-
 
 # We assume that AF_INET and AF_INET6 are always defined.  We keep
 # these here for the benefit of any old code (unlikely though that
@@ -30,7 +30,7 @@ AF_INET = socket.AF_INET
 AF_INET6 = socket.AF_INET6
 
 
-def inet_pton(family, text):
+def inet_pton(family: int, text: str) -> bytes:
     """Convert the textual form of a network address into its binary form.
 
     *family* is an ``int``, the address family.
@@ -51,7 +51,7 @@ def inet_pton(family, text):
         raise NotImplementedError
 
 
-def inet_ntop(family, address):
+def inet_ntop(family: int, address: bytes) -> str:
     """Convert the binary form of a network address into its textual form.
 
     *family* is an ``int``, the address family.
@@ -72,7 +72,7 @@ def inet_ntop(family, address):
         raise NotImplementedError
 
 
-def af_for_address(text):
+def af_for_address(text: str) -> int:
     """Determine the address family of a textual-form network address.
 
     *text*, a ``str``, the textual address.
@@ -94,7 +94,7 @@ def af_for_address(text):
             raise ValueError
 
 
-def is_multicast(text):
+def is_multicast(text: str) -> bool:
     """Is the textual-form network address a multicast address?
 
     *text*, a ``str``, the textual address.
@@ -116,7 +116,7 @@ def is_multicast(text):
             raise ValueError
 
 
-def is_address(text):
+def is_address(text: str) -> bool:
     """Is the specified string an IPv4 or IPv6 address?
 
     *text*, a ``str``, the textual address.
@@ -135,7 +135,9 @@ def is_address(text):
             return False
 
 
-def low_level_address_tuple(high_tuple, af=None):
+def low_level_address_tuple(
+    high_tuple: Tuple[str, int], af: Optional[int] = None
+) -> Any:
     """Given a "high-level" address tuple, i.e.
     an (address, port) return the appropriate "low-level" address tuple
     suitable for use in socket calls.
@@ -143,7 +145,6 @@ def low_level_address_tuple(high_tuple, af=None):
     If an *af* other than ``None`` is provided, it is assumed the
     address in the high-level tuple is valid and has that af.  If af
     is ``None``, then af_for_address will be called.
-
     """
     address, port = high_tuple
     if af is None:
@@ -151,13 +152,13 @@ def low_level_address_tuple(high_tuple, af=None):
     if af == AF_INET:
         return (address, port)
     elif af == AF_INET6:
-        i = address.find('%')
+        i = address.find("%")
         if i < 0:
             # no scope, shortcut!
             return (address, port, 0, 0)
         # try to avoid getaddrinfo()
         addrpart = address[:i]
-        scope = address[i + 1:]
+        scope = address[i + 1 :]
         if scope.isdigit():
             return (addrpart, port, 0, int(scope))
         try:
@@ -167,4 +168,30 @@ def low_level_address_tuple(high_tuple, af=None):
             ((*_, tup), *_) = socket.getaddrinfo(address, port, flags=ai_flags)
             return tup
     else:
-        raise NotImplementedError(f'unknown address family {af}')
+        raise NotImplementedError(f"unknown address family {af}")
+
+
+def any_for_af(af):
+    """Return the 'any' address for the specified address family."""
+    if af == socket.AF_INET:
+        return "0.0.0.0"
+    elif af == socket.AF_INET6:
+        return "::"
+    raise NotImplementedError(f"unknown address family {af}")
+
+
+def canonicalize(text: str) -> str:
+    """Verify that *address* is a valid text form IPv4 or IPv6 address and return its
+    canonical text form.  IPv6 addresses with scopes are rejected.
+
+    *text*, a ``str``, the address in textual form.
+
+    Raises ``ValueError`` if the text is not valid.
+    """
+    try:
+        return dns.ipv6.canonicalize(text)
+    except Exception:
+        try:
+            return dns.ipv4.canonicalize(text)
+        except Exception:
+            raise ValueError

@@ -15,6 +15,7 @@ type AvailableInput =
   | Input<string, "password">
   | Input<boolean, "switch">
   | Input<string, "select">
+  | Input<string, "testbutton">
   | Input<ReactText[], "chips">;
 
 export interface ProviderInfo {
@@ -118,7 +119,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "cinemaz",
     name: "CinemaZ",
     description:
-      "cinemaz.to - CinemaZ is a private torrent tracker which is dedicated to little-known and cult films that you will not find on other popular torrent resources.",
+      "cinemaz.to - CinemaZ is a private torrent tracker which is dedicated to little-known\nand cult films that you will not find on other popular torrent resources.",
     inputs: [
       {
         type: "text",
@@ -501,6 +502,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "loglevel",
         name: "Logging level",
         options: logLevelOptions,
+      },
+      {
+        type: "testbutton",
+        key: "whisperai",
+        name: "Test Connection button",
       },
     ],
   },

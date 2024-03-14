@@ -1,15 +1,10 @@
 from flask import request
 from flask.views import MethodView
-from werkzeug import __version__ as werkzeug_version
 
-if werkzeug_version.split(".")[0] >= "2":
-    from werkzeug.wrappers import Response as BaseResponse
-else:
-    from werkzeug.wrappers import BaseResponse
 
 from .model import ModelBase
 
-from .utils import unpack
+from .utils import unpack, BaseResponse
 
 
 class Resource(MethodView):
