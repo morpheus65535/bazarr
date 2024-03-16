@@ -7,6 +7,7 @@ import logging
 import re
 
 from urllib.parse import quote_plus
+from utilities.binaries import BinaryNotFound, get_binary
 from literals import EXIT_VALIDATION_ERROR
 from utilities.central import stop_bazarr
 from subliminal.cache import region
@@ -52,6 +53,14 @@ class Validator(OriginalValidator):
             "combined": "combined validators failed {errors}",
         }
     )
+
+
+def check_parser_binary(value):
+    try:
+        get_binary(value)
+    except BinaryNotFound as e:
+        raise ValidationError(f"Executable '{value}' not found in search path. Please install before making this selection.")
+    return True
 
 
 validators = [
@@ -119,7 +128,7 @@ validators = [
     Validator('general.dont_notify_manual_actions', must_exist=True, default=False, is_type_of=bool),
     Validator('general.hi_extension', must_exist=True, default='hi', is_type_of=str, is_in=['hi', 'cc', 'sdh']),
     Validator('general.embedded_subtitles_parser', must_exist=True, default='ffprobe', is_type_of=str,
-              is_in=['ffprobe', 'mediainfo']),
+              is_in=['ffprobe', 'mediainfo'], condition=check_parser_binary),
     Validator('general.default_und_audio_lang', must_exist=True, default='', is_type_of=str),
     Validator('general.default_und_embedded_subtitles_lang', must_exist=True, default='', is_type_of=str),
     Validator('general.parse_embedded_audio_track', must_exist=True, default=False, is_type_of=bool),
