@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from json import JSONDecodeError
+from requests.exceptions import JSONDecodeError
 import logging
 import random
 import re

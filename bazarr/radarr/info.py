@@ -3,7 +3,7 @@
 import logging
 import requests
 import datetime
-import json
+from requests.exceptions import JSONDecodeError
 
 from dogpile.cache import make_region
 
@@ -34,13 +34,13 @@ class GetRadarrInfo:
                 if 'version' in radarr_json:
                     radarr_version = radarr_json['version']
                 else:
-                    raise json.decoder.JSONDecodeError
-            except json.decoder.JSONDecodeError:
+                    raise JSONDecodeError
+            except JSONDecodeError:
                 try:
                     rv = f"{url_radarr()}/api/v3/system/status?apikey={settings.radarr.apikey}"
                     radarr_version = requests.get(rv, timeout=int(settings.radarr.http_timeout), verify=False,
                                                   headers=headers).json()['version']
-                except json.decoder.JSONDecodeError:
+                except JSONDecodeError:
                     logging.debug('BAZARR cannot get Radarr version')
                     radarr_version = 'unknown'
             except Exception:

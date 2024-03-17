@@ -3,7 +3,7 @@
 import logging
 import requests
 import datetime
-import json
+from requests.exceptions import JSONDecodeError
 
 from dogpile.cache import make_region
 
@@ -34,13 +34,13 @@ class GetSonarrInfo:
                 if 'version' in sonarr_json:
                     sonarr_version = sonarr_json['version']
                 else:
-                    raise json.decoder.JSONDecodeError
-            except json.decoder.JSONDecodeError:
+                    raise JSONDecodeError
+            except JSONDecodeError:
                 try:
                     sv = f"{url_sonarr()}/api/v3/system/status?apikey={settings.sonarr.apikey}"
                     sonarr_version = requests.get(sv, timeout=int(settings.sonarr.http_timeout), verify=False,
                                                   headers=headers).json()['version']
-                except json.decoder.JSONDecodeError:
+                except JSONDecodeError:
                     logging.debug('BAZARR cannot get Sonarr version')
                     sonarr_version = 'unknown'
             except Exception:
