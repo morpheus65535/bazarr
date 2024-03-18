@@ -38,12 +38,16 @@ const defaultCutoffOptions: SelectorOption<Language.ProfileItem>[] = [
 
 const subtitlesTypeOptions: SelectorOption<string>[] = [
   {
-    label: "Normal or hearing-impaired",
-    value: "normal",
+    label: "Normal only",
+    value: "never",
   },
   {
-    label: "Hearing-impaired required",
-    value: "hi",
+    label: "Hearing-impaired only",
+    value: "hi_only",
+  },
+  {
+    label: "Normal or hearing-impaired",
+    value: "hi_also",
   },
   {
     label: "Forced (foreign part only)",
@@ -131,7 +135,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         language,
         // eslint-disable-next-line camelcase
         audio_exclude: "False",
-        hi: "False",
+        hi: "Also",
         forced: "False",
       };
 
@@ -181,10 +185,12 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           const selectValue = useMemo(() => {
             if (item.forced === "True") {
               return "forced";
-            } else if (item.hi === "True") {
-              return "hi";
-            } else {
-              return "normal";
+            } else if (item.hi === "also") {
+              return "hi_also";
+            } else if (item.hi === "only") {
+              return "hi_only";
+            } else if (item.hi === "never") {
+              return "never";
             }
           }, [item.forced, item.hi]);
 
@@ -196,7 +202,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
                 if (value) {
                   action.mutate(index, {
                     ...item,
-                    hi: value === "hi" ? "True" : "False",
+                    hi: value,
                     forced: value === "forced" ? "True" : "False",
                   });
                 }
