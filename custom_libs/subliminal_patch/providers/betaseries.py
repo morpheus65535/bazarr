@@ -83,6 +83,14 @@ class BetaSeriesProvider(Provider):
             logger.debug('Searching subtitles %r', params)
             res = self.session.get(
                 server_url + 'episodes/display', params=params, timeout=10)
+            try:
+                if res.status_code == 400 and res.json()['errors'][0]['code'] == 4001:
+                    # this is to catch no series found
+                    return []
+                elif res.status_code == 400 and res.json()['errors'][0]['code'] == 1001:
+                    raise AuthenticationError("Invalid token provided")
+            except Exception:
+                pass
             res.raise_for_status()
             result = res.json()
             matches.add('tvdb_id')
@@ -96,8 +104,14 @@ class BetaSeriesProvider(Provider):
             logger.debug('Searching subtitles %r', params)
             res = self.session.get(
                 server_url + 'shows/episodes', params=params, timeout=10)
-            if res.status_code == 400:
-                raise AuthenticationError("Invalid token provided")
+            try:
+                if res.status_code == 400 and res.json()['errors'][0]['code'] == 4001:
+                    # this is to catch no series found
+                    return []
+                elif res.status_code == 400 and res.json()['errors'][0]['code'] == 1001:
+                    raise AuthenticationError("Invalid token provided")
+            except Exception:
+                pass
             res.raise_for_status()
             result = res.json()
             matches.add('series_tvdb_id')
