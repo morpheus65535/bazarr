@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
-from json import JSONDecodeError
+from requests.exceptions import JSONDecodeError
 import logging
 import re
 import time
