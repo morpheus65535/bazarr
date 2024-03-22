@@ -239,11 +239,11 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                         desired_item = {'language': item['language'], 'forced': item['forced'], 'hi': 'False'}
                         if desired_item not in actual_subtitles_list:
                             missing_subtitles_list.append(desired_item)
-                    elif item['hi'] == 'hi_only':
+                    elif item['hi'] == 'only':
                         desired_item = {'language': item['language'], 'forced': item['forced'], 'hi': 'True'}
                         if desired_item not in actual_subtitles_list:
                             missing_subtitles_list.append(desired_item)
-                    elif item['hi'] == 'hi_also':
+                    elif item['hi'] == 'also':
                         desired_items = [{'language': item['language'], 'forced': item['forced'], 'hi': 'True'},
                                          {'language': item['language'], 'forced': item['forced'], 'hi': 'False'}]
                         if [x for x in desired_items if x in actual_subtitles_list]:

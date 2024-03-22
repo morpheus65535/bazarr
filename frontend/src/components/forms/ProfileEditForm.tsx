@@ -43,11 +43,11 @@ const subtitlesTypeOptions: SelectorOption<string>[] = [
   },
   {
     label: "Hearing-impaired only",
-    value: "hi_only",
+    value: "only",
   },
   {
     label: "Normal or hearing-impaired",
-    value: "hi_also",
+    value: "also",
   },
   {
     label: "Forced (foreign part only)",
@@ -135,7 +135,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         language,
         // eslint-disable-next-line camelcase
         audio_exclude: "False",
-        hi: "Also",
+        hi: "also",
         forced: "False",
       };
 
@@ -186,9 +186,9 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             if (item.forced === "True") {
               return "forced";
             } else if (item.hi === "also") {
-              return "hi_also";
+              return "also";
             } else if (item.hi === "only") {
-              return "hi_only";
+              return "only";
             } else if (item.hi === "never") {
               return "never";
             }
