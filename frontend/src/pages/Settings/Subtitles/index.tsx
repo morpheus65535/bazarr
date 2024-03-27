@@ -409,8 +409,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           settingKey="settings-subsync-use_subsync"
         ></Check>
         <Message>
-          Enable automatic subtitles synchronization after downloading a
-          subtitle.
+          Enable automatic synchronization after downloading subtitles.
         </Message>
         <CollapseBox indent settingKey="settings-subsync-use_subsync">
           <MultiSelector
