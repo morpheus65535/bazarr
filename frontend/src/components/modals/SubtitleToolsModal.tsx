@@ -4,7 +4,15 @@ import { SimpleTable } from "@/components/tables";
 import { useCustomSelection } from "@/components/tables/plugins";
 import { withModal } from "@/modules/modals";
 import { isMovie } from "@/utilities";
-import { Badge, Button, Divider, Group, Stack, Text } from "@mantine/core";
+import {
+  Badge,
+  Button,
+  Divider,
+  Group,
+  Space,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { FunctionComponent, useMemo, useState } from "react";
 import { Column, useRowSelect } from "react-table";
 
@@ -106,6 +114,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
         canSelect={CanSelectSubtitle}
         data={data}
       ></SimpleTable>
+      <Space h="400px"></Space>
       <Divider></Divider>
       <Group>
         <SubtitleToolsMenu selections={selections}>
