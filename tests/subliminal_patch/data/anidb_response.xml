@@ -1,0 +1,779 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<anime id="17495" restricted="false">
+    <type>TV Series</type>
+    <episodecount>12</episodecount>
+    <startdate>2024-01-07</startdate>
+    <enddate>2024-03-31</enddate>
+    <titles>
+        <title xml:lang="x-jat" type="main">Ore dake Level Up na Ken</title>
+        <title xml:lang="en" type="synonym">Only I Level Up</title>
+        <title xml:lang="bg" type="synonym">Соло играч</title>
+        <title xml:lang="ja" type="official">俺だけレベルアップな件</title>
+        <title xml:lang="en" type="official">Solo Leveling</title>
+        <title xml:lang="ko" type="official">나 혼자만 레벨업</title>
+        <title xml:lang="vi" type="official">Thăng Cấp Một Mình</title>
+        <title xml:lang="zh-Hant" type="official">我獨自升級</title>
+        <title xml:lang="zh-Hans" type="official">我独自升级</title>
+        <title xml:lang="x-kot" type="official">Na Honjaman Rebereop</title>
+    </titles>
+    <relatedanime>
+        <anime id="18576" type="Sequel">Ore dake Level Up na Ken Season 2: Arise from the Shadow</anime>
+    </relatedanime>
+    <recommendations total="6">
+        <recommendation type="For Fans" uid="652565">Surface entertainment only, don`t expect anything deeper than that from solo leveling!</recommendation>
+        <recommendation type="Recommended" uid="114339">I like it. Finally a decent "hero levels up and becomes really strong" without it turning into a harem ecchi silly face humor type by Episode 2 or 3. Story is solid. There`s character development and some darker elements. They still could have gone abit more into his early struggles with his training.</recommendation>
+        <recommendation type="Recommended" uid="848084">Levelled up</recommendation>
+        <recommendation type="Recommended" uid="590939">The only real reason that people don`t rate this as highly as they could is because the main protag is portrayed as the "Mr. perfect" at times too much, ruining the overall experience a lot. Which makes at least some parts of the anime dumbed down.
+
+If you can tolerate that, then it`s a great action watch.
+
+I would say try watching the first 3 episodes and decide. But it gets better as anime progresses, IMO. So it`s worth a shot.</recommendation>
+        <recommendation type="Must See" uid="173070">Easily top 10 for 2024. Let that sink in.
+
+Someone who starts at the bottom and continues to rise despite adversity and malice. That is what this series embodies. I do not think there is a single person who would not enjoy this series. The MC is humble, yet slightly insane, bordering on incredible. He goes from a weak person to an absolute badass of his own making, not of some random set of occurrences.
+
+I am EAGERLY awaiting season 2. Watch this, you will not be disappointed.</recommendation>
+    </recommendations>
+    <url>https://sololeveling-anime.net/</url>
+    <creators>
+        <name id="32997" type="Direction">Nakashige Shunsuke</name>
+        <name id="6722" type="Music">Sawano Hiroyuki</name>
+        <name id="1303" type="Animation Work">A-1 Pictures</name>
+        <name id="13185" type="Character Design">Sudou Tomoko</name>
+        <name id="1541" type="Series Composition">Kimura Noboru</name>
+        <name id="67798" type="Original Work">Chugong</name>
+        <name id="67800" type="Original Work">Dubu</name>
+        <name id="67799" type="Original Work">H-goon</name>
+        <name id="19363" type="Chief Animation Direction">Tokuda Hirotaka</name>
+        <name id="13185" type="Chief Animation Direction">Sudou Tomoko</name>
+        <name id="15745" type="Chief Animation Direction">Furuzumi Chiaki</name>
+    </creators>
+    <description>Known as the the Weakest Hunter of All Mankind, E-rank hunter Jinwoo Sung`s contribution to raids amounts to trying not to get killed. Unfortunately, between his mother`s hospital bills, his sister`s tuition, and his own lack of job prospects, he has no choice but to continue to put his life on the line. So when an opportunity arises for a bigger payout, he takes it...only to come face-to-face with a being whose power outranks anything he`s ever seen! With the party leader missing an arm and the only healer a quivering mess, can Jinwoo some­how find them a way out?
+Source: Yen Press
+Note: The first two episodes received an early screening at a special event on December 10, 2023 at United Cinemas Toyosu in Tokyo. The regular TV broadcast started on January 7, 2024.</description>
+    <ratings>
+        <permanent count="480">7.21</permanent>
+        <temporary count="487">7.46</temporary>
+        <review count="1">4.00</review>
+    </ratings>
+    <picture>294410.jpg</picture>
+    <resources>
+        <resource type="1">
+            <externalentity>
+                <identifier>26000</identifier>
+            </externalentity>
+        </resource>
+        <resource type="2">
+            <externalentity>
+                <identifier>52299</identifier>
+            </externalentity>
+            <externalentity>
+                <identifier>58224</identifier>
+            </externalentity>
+        </resource>
+        <resource type="4">
+            <externalentity>
+                <url>https://sololeveling-anime.net/</url>
+            </externalentity>
+        </resource>
+        <resource type="6">
+            <externalentity>
+                <identifier>Solo_Leveling</identifier>
+            </externalentity>
+        </resource>
+        <resource type="7">
+            <externalentity>
+                <identifier>俺だけレベルアップな件</identifier>
+            </externalentity>
+        </resource>
+        <resource type="8">
+            <externalentity>
+                <identifier>6931</identifier>
+            </externalentity>
+        </resource>
+        <resource type="9">
+            <externalentity>
+                <identifier>383712</identifier>
+            </externalentity>
+        </resource>
+        <resource type="10">
+            <externalentity>
+                <identifier>25263</identifier>
+            </externalentity>
+        </resource>
+        <resource type="19">
+            <externalentity>
+                <identifier>나_혼자만_레벨업</identifier>
+            </externalentity>
+        </resource>
+        <resource type="23">
+            <externalentity>
+                <identifier>sololeveling_pr</identifier>
+            </externalentity>
+            <externalentity>
+                <identifier>sololeveling_en</identifier>
+            </externalentity>
+        </resource>
+        <resource type="28">
+            <externalentity>
+                <identifier>GDKHZEJ0K</identifier>
+            </externalentity>
+        </resource>
+        <resource type="43">
+            <externalentity>
+                <identifier>tt21209876</identifier>
+            </externalentity>
+        </resource>
+        <resource type="44">
+            <externalentity>
+                <identifier>127532</identifier>
+                <identifier>tv</identifier>
+            </externalentity>
+        </resource>
+    </resources>
+    <tags>
+        <tag id="2604" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2018-11-08">
+            <name>content indicators</name>
+            <description>The content indicators branch is intended to be a less geographically specific tool than the `age rating` used by convention, for warning about things that might cause offence. Obviously there is still a degree of subjectivity involved, but hopefully it will prove useful for parents with delicate children, or children with delicate parents.
+Note: Refer to further guidance on http://wiki.anidb.net/w/Categories:Content_Indicators [the Wiki page] for how to apply tag weights for content indicators.</description>
+        </tag>
+        <tag id="2607" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2009-04-29">
+            <name>themes</name>
+            <description>Themes describe the very central elements important to the anime stories. They set the backdrop against which the protagonists must face their challenges. Be it School Life, present Daily Life, Military action, Cyberpunk, Law and Order detective work, Sports, or the Underworld. These are only but a few of the more typical backgrounds for anime plots. Add to that a Conspiracy setting with a possible tragic outcome, the Themes span most of the imaginable subject matter relevant to anime.</description>
+        </tag>
+        <tag id="2609" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2018-09-01">
+            <name>original work</name>
+            <description>What the anime is based on! This is given as the original work credit in the OP. Mostly of academic interest, but a useful bit of info, hinting at the possible depth of story.</description>
+        </tag>
+        <tag id="2610" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2009-04-22">
+            <name>setting</name>
+            <description>The setting describes in what time and place an anime takes place. To a certain extent it describes what you can expect from the world in the anime.</description>
+        </tag>
+        <tag id="2611" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2014-09-08">
+            <name>elements</name>
+            <description>Next to Themes setting the backdrop for the protagonists in anime, there are the more detailed plot Elements that centre on character interactions: "What do characters do to each other or what is done to them?". Is it violent Action, an awe-inspiring Adventure in a foreign place, the gripping life of a Detective, a slapstick Comedy, an Ecchi Harem anime, a SciFi epic, or some Fantasy travelling adventure?</description>
+        </tag>
+        <tag id="2613" parentid="2610" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2016-09-04">
+            <name>place</name>
+            <description>The places the anime can take place in. Includes more specific places such as a country on Earth, as well as more general places such as a dystopia or a mirror world.</description>
+        </tag>
+        <tag id="2628" parentid="2613" weight="400" localspoiler="false" globalspoiler="false" verified="true" update="2018-08-31">
+            <name>fictional location</name>
+            <description>A fictional location is a place or world which is run by different set of rules than our common and ordinary world. This may include completely fictional worlds with no semblance of Earth, computer-generated worlds, fantasy worlds, magical worlds, parallel worlds accessible through portals, and so on. Or it may be fictional places like floating islands, dungeons or planets, which can co-exist with ordinary Earth, but are otherwise separate from it.
+A world that generally shares the characteristics of, and/or is generally indistinguishable from the real world (bar research on a "more than cursory" level), would NOT be considered a fictional world. A good example is http://anidb.net/a4521 [Code Geass]. It contains several real world nationalities, such as http://anidb.net/a4521 [China], http://anidb.net/t2672 [Japan] (now Area 11), http://anidb.net/t5091 [India], etc, along with fictional nationalities such as http://anidb.net/t2361 [Britannia]. China, Japan, and India are easily identified with a cursory look. The location is unmistakably the planet Earth, even though national borders have been redrawn.
+The fictional world should only be tagged if it plays a materially important role in the plot and setting; generally, an episodic occurrence of a fictional world should not be tagged.
+A fantasy world is a type of fictional world, part of a fictional universe. Typical worlds involve, but are not limited to: magic or magical abilities, and/or a medieval theme. Some examples include: a parallel world tenuously connected to Earth via magical portals or items; a fictional Earth-like planet in the remote past or future; or an entirely independent world set in another universe. Many fantasy worlds draw heavily on real world history, geography, and sociology, and also on folklore.</description>
+        </tag>
+        <tag id="2630" parentid="2613" weight="400" localspoiler="false" globalspoiler="false" verified="true" update="2012-10-13">
+            <name>Earth</name>
+            <description>The Earth is the third planet from the Sun, and the densest and fifth-largest of the eight planets in the Solar System. It is in effect a ball of hot mud, but on the surface it`s cold enough, so most of us live on it (or are supposed to). It is circa 4.5 billion years old, and, unless we humans succeed in destroying it over the next couple of centuries, it is expected to last for quite another while, though the changes in the Sun`s emissions due to its aging will likely cause the extinction of everything; the species of earthlings are guaranteed to die, even if we fail to kill them -- unless, of course, we find ourselves another planet and figure out a way to take everything there. Our little planet on a corner of this galaxy may mean nothing in the grand scheme of things, but to its inhabitants it is their home, so, as a species, we cherish it dearly, to the point many cultures even to this day deify it. Being the home to the human civilizations, the Earth is the main setting of most fiction, be it anime or otherwise, but not only are many titles set in other places, such as unrelated fantasy worlds, in a considerable number of fictional titles the Earth is actually destroyed by aggressive alien invaders.</description>
+            <picurl>126792.jpg</picurl>
+        </tag>
+        <tag id="2750" parentid="2604" infobox="true" weight="400" localspoiler="false" globalspoiler="false" verified="true" update="2018-11-08">
+            <name>violence</name>
+            <description>Violence is the use of physical force against oneself or another entity, compelling action against one`s will on pain of being hurt.
+Note: Refer to further guidance on http://wiki.anidb.net/w/Categories:Content_Indicators [the Wiki page] for how to apply tag weights for content indicators.</description>
+        </tag>
+        <tag id="2799" parentid="2609" infobox="true" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2019-08-13">
+            <name>novel</name>
+            <description>A novel is a relatively long work of narrative fiction, normally written in prose form, and which is typically published as a book. Manga, comics, or visual novels do not fit this description and are not considered novels; including a small number of illustrations, however, is still permissible, which means that light novels are considered novels.</description>
+        </tag>
+        <tag id="2838" parentid="2628" infobox="true" weight="400" localspoiler="false" globalspoiler="false" verified="true" update="2018-08-31">
+            <name>parallel world</name>
+            <description>A parallel world, parallel universe, or alternative reality is a self-contained separate reality coexisting with our own. Because "alternative reality" sometimes implies that the reality is a variant of our own, like for example a mirror world, we use the term "parallel world/universe" which is more general, without any connotations implying a relationship (or lack thereof) with our own world/universe (meaning a fictional world can just as well have an alternative reality, it doesn`t need to be our reality). To put it more simply, this category is to show if more than 1 world/universe/reality is present in the anime.
+Multiple timelines of the same world/universe/reality are NOT considered parallel worlds. For example, in http://anidb.net/a7729 [Steins;Gate] the cast travels through multiple "World Lines", which are defined as parallel timelines of the same universe had various events occurred with differing outcomes.</description>
+        </tag>
+        <tag id="2841" parentid="2611" weight="200" localspoiler="false" globalspoiler="false" verified="true" update="2017-12-26">
+            <name>action</name>
+            <description>Action anime usually involve a fairly straightforward story of good guys versus bad guys, where most disputes are resolved by using physical force. It often contains a lot of shooting, explosions and fighting.</description>
+            <picurl>211261.jpg</picurl>
+        </tag>
+        <tag id="2849" parentid="7050" weight="200" localspoiler="false" globalspoiler="false" verified="true" update="2005-05-07">
+            <name>fantasy</name>
+            <description>Fantasy is a genre of fiction that uses magic and other supernatural phenomena as a primary element of plot, theme, or setting. Many works within the genre take place in fictional worlds where magic is common. Fantasy is generally distinguished from science fiction and horror by the expectation that it steers clear of (pseudo-)scientific and macabre themes, respectively, though there is a great deal of overlap between the three (which are subgenres of speculative fiction).
+In popular culture, the genre of fantasy is dominated by its medievalist form, especially since the worldwide success of The Lord of the Rings books by J. R. R. Tolkien. In its broadest sense however, fantasy comprises works by many writers, artists, filmmakers, and musicians, from ancient myths and legends to many recent works embraced by a wide audience today.
+Fantasy is a vibrant area of academic study in a number of disciplines (English, cultural studies, comparative literature, history, medieval studies). Work in this area ranges widely, from the structuralist theory of Tzvetan Todorov, which emphasizes the fantastic as a liminal space, to work on the connections (political, historical, literary) between medievalism and popular culture
+Source: Wiki</description>
+            <picurl>68768.jpg</picurl>
+        </tag>
+        <tag id="2850" parentid="2611" weight="200" localspoiler="false" globalspoiler="false" verified="true" update="2015-10-25">
+            <name>adventure</name>
+            <description>Adventures are exciting stories, with new experiences or exotic locales. Adventures are designed to provide an action-filled, energetic experience for the viewer. Rather than the predominant emphasis on violence and fighting that is found in pure action anime, however, the viewer of adventures can live vicariously through the travels, conquests, explorations, creation of empires, struggles and situations that confront the main characters, actual historical figures or protagonists. Under the category of adventures, we can include traditional swashbucklers, serialized films, and historical spectacles, searches or expeditions for lost continents, "jungle" and "desert" epics, treasure hunts and quests, disaster films, and heroic journeys or searches for the unknown. Adventure films are often, but not always, set in an historical period, and may include adapted stories of historical or literary adventure heroes, kings, battles, rebellion, or piracy.</description>
+            <picurl>178879.jpg</picurl>
+        </tag>
+        <tag id="3411" parentid="2841" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2017-12-26">
+            <name>fighting</name>
+            <description>For some reason or other one faction has to take it out on some opponent via fight or battle. Typical examples of this are all the anime with "endless pointless fighting" tag.</description>
+            <picurl>211266.jpg</picurl>
+        </tag>
+        <tag id="3831" parentid="2607" weight="300" localspoiler="false" globalspoiler="false" verified="true" update="2015-05-13">
+            <name>training</name>
+            <description>Training is extensive, serious practising a person undergoes in order to develop skills and abilities, such as handling weapons, playing instruments, playing sports, and so on.</description>
+        </tag>
+        <tag id="4096" parentid="2750" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2014-03-23">
+            <name>gore</name>
+            <description>A Splatter film or Gore film is a sub-genre of horror film that deliberately focuses on graphic portrayals of gore and graphic violence. These films, through the use of special effects and excessive blood and guts, tend to display an overt interest in the vulnerability of the human body and the theatricality of its mutilation. Due to their willingness to portray images society might consider shocking, splatter films share some ideological grounds with the transgressive art movement. The term "splatter cinema" was coined by George A. Romero to describe his film Dawn of the Dead, though Dawn of the Dead is generally considered by critics to have higher aspirations, such as social commentary, than to be simply exploitative for its own sake.
+[Source: wiki]</description>
+            <picurl>32491.jpg</picurl>
+        </tag>
+        <tag id="4128" parentid="6233" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2008-07-29">
+            <name>zero to hero</name>
+            <description>With his first appearance, this character is getting his ass kicked by nearly everyone, but as the plot continues, through training (mental or physical) or instant power-up, he changes into a killing/fighting/winning machine.
+The best example: Makunouchi Ippo from Hajime no Ippo series.</description>
+        </tag>
+        <tag id="5769" parentid="6151" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2017-12-02">
+            <name>panels that require pausing</name>
+            <description>Panels that require pausing are image or text panels that interrupt regular animation and flash by so quickly that the viewer cannot recognize the image or read the text fast enough while playing at regular speed; they require pausing the video, or at least viewing it at a lower speed. Given the short screen time these panels are given, they are usually not relevant to the plot.</description>
+        </tag>
+        <tag id="6151" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2014-09-10">
+            <name>technical aspects</name>
+            <description>It may sometimes be useful to know about technical aspects of a show, such as information about its broadcasting or censorship. Such information can be found here.</description>
+        </tag>
+        <tag id="6173" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2014-09-24">
+            <name>origin</name>
+        </tag>
+        <tag id="6233" parentid="2611" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2015-08-11">
+            <name>tropes</name>
+            <description>A trope is a commonly recurring literary and rhetorical devices, motifs or clichés in creative works. This use is a broader redefining of a literary trope, the use of figurative language, via word, phrase, or even an image, for artistic effect, such as using a figure of speech.
+Source: Wikipedia</description>
+        </tag>
+        <tag id="7050" parentid="2611" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2019-04-18">
+            <name>speculative fiction</name>
+            <description>Speculative fiction is an umbrella genre encompassing fiction with certain elements that do not exist in the real world, often in the context of supernatural, futuristic or other imaginative themes. This includes, but is not limited to, science fiction, fantasy, superhero fiction, horror, utopian and dystopian fiction, fairytale fantasy, supernatural fiction, as well as combinations thereof.
+Source: Wikipedia</description>
+        </tag>
+        <tag id="7141" parentid="2849" weight="200" localspoiler="false" globalspoiler="false" verified="true" update="2018-10-16">
+            <name>goblin</name>
+            <description>A goblin is a monstrous creature from European folklore, first attested in stories from the Middle Ages. They are ascribed various and conflicting abilities, temperaments and appearances depending on the story and country of origin. They are almost always small and grotesque, mischievous or outright malicious, and greedy, especially for gold and jewelry. They often have magical abilities similar to a http://anidb.net/t780 [fairy] or http://anidb.net/t2646 [demon].
+Source: Wikipedia</description>
+            <picurl>220782.jpg</picurl>
+        </tag>
+        <tag id="7640" parentid="2628" weight="400" localspoiler="false" globalspoiler="false" verified="true" update="2020-05-25">
+            <name>demon world</name>
+        </tag>
+        <tag id="7885" parentid="6173" weight="0" localspoiler="false" globalspoiler="false" verified="true" update="2021-11-07">
+            <name>Japanese production</name>
+        </tag>
+    </tags>
+    <characters>
+        <character id="133574" type="main character in" update="2024-01-06">
+            <rating votes="2">2.09</rating>
+            <name>Mizushino Shun</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>298121.jpg</picture>
+            <seiyuu id="54194" picture="242881.jpg">Ban Taito</seiyuu>
+        </character>
+        <character id="133575" type="secondary cast in" update="2024-02-04">
+            <name>Morobishi Kenta</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>298122.jpg</picture>
+            <seiyuu id="56192" picture="223829.jpg">Nakamura Genta</seiyuu>
+        </character>
+        <character id="133576" type="secondary cast in" update="2024-01-06">
+            <name>Shirakawa Taiga</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>298126.jpg</picture>
+            <seiyuu id="451" picture="266875.jpg">Touchi Hiroki</seiyuu>
+        </character>
+        <character id="133577" type="secondary cast in" update="2024-01-06">
+            <name>Mogami Shin</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>298125.jpg</picture>
+            <seiyuu id="99" picture="11084.jpeg">Hirakawa Daisuke</seiyuu>
+        </character>
+        <character id="133578" type="secondary cast in" update="2024-01-06">
+            <rating votes="2">5.58</rating>
+            <name>Kousaka Shizuku</name>
+            <gender>female</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>298124.jpg</picture>
+            <seiyuu id="34984" picture="222849.jpg">Ueda Reina</seiyuu>
+        </character>
+        <character id="133584" type="secondary cast in" update="2024-01-06">
+            <name>Inukai Akira</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>298128.jpg</picture>
+            <seiyuu id="34070" picture="11215.jpeg">Furukawa Makoto</seiyuu>
+        </character>
+        <character id="133585" type="secondary cast in" update="2024-01-06">
+            <name>Gotou Kiyoomi</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>298127.jpg</picture>
+            <seiyuu id="2782" picture="263455.jpg">Ginga Banjou</seiyuu>
+        </character>
+        <character id="135141" type="secondary cast in" update="2024-01-06">
+            <rating votes="1">5.46</rating>
+            <name>Mizushino Aoi</name>
+            <gender>female</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>298123.jpg</picture>
+            <seiyuu id="65930" picture="268452.jpg">Mikawa Haruna</seiyuu>
+        </character>
+        <character id="137407" type="secondary cast in" update="2024-01-21">
+            <rating votes="1">5.46</rating>
+            <name>Mizuki Eri</name>
+            <gender>female</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>298735.jpg</picture>
+            <seiyuu id="38921" picture="11409.jpeg">Hon`izumi Rina</seiyuu>
+        </character>
+        <character id="137408" type="secondary cast in" update="2024-01-21">
+            <name>Michikado Taisei</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>298736.jpg</picture>
+            <seiyuu id="2588" picture="264505.jpg">Uchiyama Kouki</seiyuu>
+        </character>
+        <character id="137409" type="secondary cast in" update="2024-01-21">
+            <name>Mabuchi Isamu</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>298737.jpg</picture>
+            <seiyuu id="277" picture="223606.jpg">Hanawa Eiji</seiyuu>
+        </character>
+        <character id="137921" type="secondary cast in" update="2024-02-03">
+            <name>Mashima Nobuharu</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>299525.jpg</picture>
+            <seiyuu id="40716" picture="159989.jpg">Yamamoto Manta</seiyuu>
+        </character>
+        <character id="137922" type="secondary cast in" update="2024-02-18">
+            <name>Ukyou Hayato</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>299526.jpg</picture>
+            <seiyuu id="6919" picture="223669.jpg">Mamiya Yasuhiro</seiyuu>
+        </character>
+        <character id="137938" type="main character in" update="2024-02-04">
+            <rating votes="2">1.98</rating>
+            <name>Mizushino Shun</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>299558.jpg</picture>
+            <seiyuu id="54194" picture="242881.jpg">Ban Taito</seiyuu>
+        </character>
+        <character id="138808" type="appears in" update="2024-03-16">
+            <name>Ukyou Masato</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301298.jpg</picture>
+            <seiyuu id="200" picture="17015.jpg">Suwabe Jun`ichi</seiyuu>
+        </character>
+        <character id="138809" type="appears in" update="2024-03-03">
+            <name>Hamura</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>300651.jpg</picture>
+            <seiyuu id="61105" picture="249561.jpg">Higa Ryousuke</seiyuu>
+        </character>
+        <character id="139307" type="appears in" update="2024-03-16">
+            <name>Shishido Koushirou</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301273.jpg</picture>
+            <seiyuu id="19477" picture="50701.jpg">Kondou Hironori</seiyuu>
+        </character>
+        <character id="139308" type="appears in" update="2024-03-16">
+            <name>Asahina Rin</name>
+            <gender>female</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301274.jpg</picture>
+            <seiyuu id="43492" picture="232251.jpg">Tomita Miyu</seiyuu>
+        </character>
+        <character id="139309" type="appears in" update="2024-03-16">
+            <name>Yoshida Kyouhei</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301275.jpg</picture>
+            <seiyuu id="58011" picture="289290.jpg">Morinaga Ayato</seiyuu>
+        </character>
+        <character id="139310" type="appears in" update="2024-03-30">
+            <name>Minobe Gou</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>302016.jpg</picture>
+            <seiyuu id="33512" picture="11412.jpeg">Enoki Jun`ya</seiyuu>
+        </character>
+        <character id="139311" type="appears in" update="2024-03-16">
+            <name>Mizushino Satoko</name>
+            <gender>female</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301297.jpg</picture>
+        </character>
+        <character id="139314" type="appears in" update="2024-03-16">
+            <name>Inamiya Satsuki</name>
+            <gender>female</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301281.jpg</picture>
+            <seiyuu id="34427" picture="295986.jpg">Aoki Ruriko</seiyuu>
+        </character>
+        <character id="139315" type="appears in" update="2024-03-16">
+            <name>Rina</name>
+            <gender>female</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301282.jpg</picture>
+            <seiyuu id="53080" picture="211728.jpg">Aihara Kotomi</seiyuu>
+        </character>
+        <character id="139316" type="appears in" update="2024-03-16">
+            <name>Fujisaki Yukari</name>
+            <gender>female</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301283.jpg</picture>
+        </character>
+        <character id="139318" type="appears in" update="2024-03-16">
+            <name>Jun</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301285.jpg</picture>
+            <seiyuu id="38716" picture="228931.jpg">Kobatake Masafumi</seiyuu>
+        </character>
+        <character id="139319" type="appears in" update="2024-03-16">
+            <name>Sawada Kouji</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301286.jpg</picture>
+            <seiyuu id="75113" picture="298294.jpg">Hatano Kakeru</seiyuu>
+        </character>
+        <character id="139320" type="appears in" update="2024-03-16">
+            <name>Wataru</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301287.jpg</picture>
+            <seiyuu id="54148" picture="216456.jpg">Hayama Shouta</seiyuu>
+        </character>
+        <character id="139321" type="appears in" update="2024-03-16">
+            <name>Mikihisa</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301288.jpg</picture>
+        </character>
+        <character id="139322" type="appears in" update="2024-03-16">
+            <name>Jin</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301289.jpg</picture>
+            <seiyuu id="42137" picture="167369.jpg">Hose Yuuichi</seiyuu>
+        </character>
+        <character id="139324" type="appears in" update="2024-03-16">
+            <name>Uehara Yuuma</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301291.jpg</picture>
+            <seiyuu id="36910" picture="214237.jpg">Kobayashi Chikahiro</seiyuu>
+        </character>
+        <character id="139326" type="appears in" update="2024-03-16">
+            <name>Matsuura Ryouhei</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301293.jpg</picture>
+            <seiyuu id="61025" picture="249458.jpg">Hirose Takehisa</seiyuu>
+        </character>
+        <character id="139327" type="appears in" update="2024-03-16">
+            <name>Morobishi Meisei</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301294.jpg</picture>
+            <seiyuu id="144" picture="11542.jpeg">Sakuya Shunsuke</seiyuu>
+        </character>
+        <character id="139328" type="appears in" update="2024-03-16">
+            <name>Mashima Yuuka</name>
+            <gender>female</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301295.jpg</picture>
+            <seiyuu id="61328" picture="249993.jpg">Mitani Ayako</seiyuu>
+        </character>
+        <character id="139330" type="appears in" update="2024-03-16">
+            <name>Laura</name>
+            <gender>female</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301299.jpg</picture>
+            <seiyuu id="33578" picture="225440.jpg">Shiraishi Haruka</seiyuu>
+        </character>
+        <character id="139629" type="appears in" update="2024-03-23">
+            <name>Morobishi Shingo</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>301651.jpg</picture>
+            <seiyuu id="48513" picture="232219.jpg">Okino Kouji</seiyuu>
+        </character>
+        <character id="139864" type="appears in" update="2024-03-30">
+            <name>Kuga Arata</name>
+            <gender>male</gender>
+            <charactertype id="1">Character</charactertype>
+            <picture>302014.jpg</picture>
+            <seiyuu id="40456" picture="181638.jpg">Hayashi Daichi</seiyuu>
+        </character>
+    </characters>
+    <episodes>
+        <episode id="274076" update="2024-01-06">
+            <epno type="1">1</epno>
+            <length>25</length>
+            <airdate>2024-01-07</airdate>
+            <rating votes="10">3.73</rating>
+            <title xml:lang="ja">I`m Used to It</title>
+            <title xml:lang="en">I`m Used to It</title>
+            <title xml:lang="x-jat">I`m Used to It</title>
+            <summary>Around ten years ago, gates that connected our world to another dimension began to appear, leading to the rise of hunters who would traverse these gates to fight the magic beasts within. Sung Jinwoo, E-Rank hunter, is the weakest of them all.
+Source: crunchyroll</summary>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>G14U415QM</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="274077" update="2024-01-06">
+            <epno type="1">2</epno>
+            <length>25</length>
+            <airdate>2024-01-14</airdate>
+            <rating votes="8">4.16</rating>
+            <title xml:lang="ja">If I Had One More Chance</title>
+            <title xml:lang="en">If I Had One More Chance</title>
+            <title xml:lang="x-jat">If I Had One More Chance</title>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>GJWU20KNE</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="274078" update="2023-12-19">
+            <epno type="1">3</epno>
+            <length>25</length>
+            <airdate>2024-01-21</airdate>
+            <rating votes="9">3.06</rating>
+            <title xml:lang="ja">It`s Like a Game</title>
+            <title xml:lang="en">It`s Like a Game</title>
+            <title xml:lang="x-jat">It`s Like a Game</title>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>GN7UD10X2</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="274079" update="2023-12-19">
+            <epno type="1">4</epno>
+            <length>25</length>
+            <airdate>2024-01-28</airdate>
+            <rating votes="10">3.85</rating>
+            <title xml:lang="ja">I`ve Gotta Get Stronger</title>
+            <title xml:lang="en">I`ve Gotta Get Stronger</title>
+            <title xml:lang="x-jat">I`ve Gotta Get Stronger</title>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>GK9U3KWVK</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="275169" update="2024-01-04">
+            <epno type="4">T1</epno>
+            <length>0</length>
+            <title xml:lang="en">Trailer 1</title>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>G50UZVM9M</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="275170" update="2024-01-04">
+            <epno type="4">T2</epno>
+            <length>0</length>
+            <title xml:lang="en">Trailer 2</title>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>GD9UV3EJG</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="275171" update="2024-01-04">
+            <epno type="4">T3</epno>
+            <length>0</length>
+            <title xml:lang="en">Trailer 3</title>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>G8WUN1783</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="276604" update="2024-02-03">
+            <epno type="1">5</epno>
+            <length>25</length>
+            <airdate>2024-02-04</airdate>
+            <rating votes="8">3.98</rating>
+            <title xml:lang="ja">A Pretty Good Deal</title>
+            <title xml:lang="en">A Pretty Good Deal</title>
+            <title xml:lang="x-jat">A Pretty Good Deal</title>
+            <summary>Jinwoo joins a party led by Hwang Dongsuk to meet the headcount necessary for a C-Rank dungeon. Joined by another temporary hire, Yoo Jinho, the party defeats beasts without much trouble, but Jinwoo has suspicions about the group`s lack of a healer.
+Source: crunchyroll</summary>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>GMKUXP091</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="276605" update="2024-02-10">
+            <epno type="1">6</epno>
+            <length>25</length>
+            <airdate>2024-02-11</airdate>
+            <rating votes="8">7.29</rating>
+            <title xml:lang="ja">The Real Hunt Begins</title>
+            <title xml:lang="en">The Real Hunt Begins</title>
+            <title xml:lang="x-jat">The Real Hunt Begins</title>
+            <summary>While the C-Rank dungeon raid by Jinwoo and the others seems to be progressing well, the moment they step into an area covered in mana stones with a sleeping dungeon boss, things take a wrong turn.
+Source: crunchyroll</summary>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>GVWU071XN</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="276606" update="2024-02-17">
+            <epno type="1">7</epno>
+            <length>25</length>
+            <airdate>2024-02-18</airdate>
+            <rating votes="8">5.40</rating>
+            <title xml:lang="ja">Let`s See How Far I Can Go</title>
+            <title xml:lang="en">Let`s See How Far I Can Go</title>
+            <title xml:lang="x-jat">Let`s See How Far I Can Go</title>
+            <summary>As Jinwoo continues his training, he completes a daily quest one day by doing more than the quest requires, and a key that leads to a certain item appears in front of him.
+Source: crunchyroll</summary>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>G31UX48EE</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="276607" update="2024-03-02">
+            <epno type="1">8</epno>
+            <length>25</length>
+            <airdate>2024-03-03</airdate>
+            <rating votes="6">2.67</rating>
+            <title xml:lang="ja">This Is Frustrating</title>
+            <title xml:lang="en">This Is Frustrating</title>
+            <title xml:lang="x-jat">This Is Frustrating</title>
+            <summary>Jinwoo answers a Hunter`s Association request to take part in the raid of a D-Rank dungeon, where he encounters a few familiar faces.
+Source: crunchyroll</summary>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>G2XU0G910</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="277515" update="2024-03-09">
+            <epno type="1">9</epno>
+            <length>25</length>
+            <airdate>2024-03-10</airdate>
+            <rating votes="5">5.86</rating>
+            <title xml:lang="ja">You`ve Been Hiding Your Skills</title>
+            <title xml:lang="en">You`ve Been Hiding Your Skills</title>
+            <title xml:lang="x-jat">You`ve Been Hiding Your Skills</title>
+            <summary>At the D-Rank raid, Jinwoo is reunited with four of the Cartenon Temple survivors. Together, they explore the dungeon with Kang Taeshik and his men. After splitting up, they hear a scream, and then...
+Source: crunchyroll</summary>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>G8WUN15V7</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="277516" update="2024-03-16">
+            <epno type="1">10</epno>
+            <length>25</length>
+            <airdate>2024-03-17</airdate>
+            <rating votes="6">4.23</rating>
+            <title xml:lang="ja">What Is This, a Picnic?</title>
+            <title xml:lang="en">What Is This, a Picnic?</title>
+            <title xml:lang="x-jat">What Is This, a Picnic?</title>
+            <summary>Jinwoo survives tragedy once again, but Woo Jinchul warns him that Hwang Dongsoo, an S-Rank hunter, may be after his life. Determined to grow stronger, Jinwoo teams up with Jinho to raid a succession of C-Rank dungeons, but they attract attention...
+Source: crunchyroll</summary>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>GZ7UVE939</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="277517" update="2024-03-23">
+            <epno type="1">11</epno>
+            <length>25</length>
+            <airdate>2024-03-24</airdate>
+            <rating votes="6">5.40</rating>
+            <title xml:lang="ja">A Knight Who Defends an Empty Throne</title>
+            <title xml:lang="en">A Knight Who Defends an Empty Throne</title>
+            <title xml:lang="x-jat">A Knight Who Defends an Empty Throne</title>
+            <summary>Out of the blue, a "job-change quest" pops up in Jinwoo`s window. Feeling that it may help him get stronger, he enters the gate. Inside, he fights wave after wave of enemies, culminating in a knight who brings back memories of the Cartenon Temple.
+Source: crunchyroll</summary>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>GD9UV37Z0</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="277518" update="2024-03-30">
+            <epno type="1">12</epno>
+            <length>25</length>
+            <airdate>2024-03-31</airdate>
+            <rating votes="4">3.83</rating>
+            <title xml:lang="ja">Arise</title>
+            <title xml:lang="en">Arise</title>
+            <title xml:lang="x-jat">Arise</title>
+            <summary>Drained from endless battle, Jinwoo sees a phantom of his past self. To overcome his own past as the Weakest Hunter of All Mankind, he struggles to find a way to clear the job-change quest.
+Source: crunchyroll</summary>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>GQJUG3W0X</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+        <episode id="277796" recap="true" update="2024-02-24">
+            <epno type="2">S1</epno>
+            <length>25</length>
+            <airdate>2024-02-25</airdate>
+            <title xml:lang="ja">How to Get Stronger</title>
+            <title xml:lang="en">How to Get Stronger</title>
+            <title xml:lang="x-jat">How to Get Stronger</title>
+            <summary>Jinwoo recaps the events of the story so far, from his humble beginnings as the Weakest Hunter of All Mankind to his newfound power and renewed purpose.
+Source: crunchyroll</summary>
+            <resources>
+                <resource type="28">
+                    <externalentity>
+                        <identifier>GPWUKVMJX</identifier>
+                    </externalentity>
+                </resource>
+            </resources>
+        </episode>
+    </episodes>
+</anime>

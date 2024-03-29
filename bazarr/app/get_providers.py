@@ -324,6 +324,12 @@ def get_providers_auth():
             'timeout': settings.whisperai.timeout,
             'ffmpeg_path': _FFMPEG_BINARY,
             'loglevel': settings.whisperai.loglevel,
+        },
+        "animetosho": {
+            'anidb_api_client': settings.animetosho.anidb_api_client,
+            'anidb_api_client_ver': settings.animetosho.anidb_api_client_ver,
+            'search_threshold': settings.animetosho.search_threshold,
+            'cache_dir': os.path.join(args.config_dir, "cache"),
         }
     }
 

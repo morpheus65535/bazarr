@@ -234,6 +234,11 @@ validators = [
     Validator('addic7ed.user_agent', must_exist=True, default='', is_type_of=str),
     Validator('addic7ed.vip', must_exist=True, default=False, is_type_of=bool),
 
+    # animetosho section
+    Validator('animetosho.search_threshold', must_exist=True, default=6, is_type_of=int, gte=1, lte=15),
+    Validator('animetosho.anidb_api_client', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('animetosho.anidb_api_client_ver', must_exist=True, default=1, is_type_of=int, gte=1, lte=9),
+
     # avistaz section
     Validator('avistaz.cookies', must_exist=True, default='', is_type_of=str),
     Validator('avistaz.user_agent', must_exist=True, default='', is_type_of=str),
