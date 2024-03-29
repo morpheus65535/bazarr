@@ -195,8 +195,10 @@ interface ItemProps {
 const ItemBadge: FunctionComponent<ItemProps> = ({ cutoff, item }) => {
   const text = useMemo(() => {
     let result = item.language;
-    if (item.hi === "True") {
+    if (item.hi === "only") {
       result += ":HI";
+    } else if (item.hi === "also") {
+      result += " | " + result + ":HI";
     } else if (item.forced === "True") {
       result += ":Forced";
     }

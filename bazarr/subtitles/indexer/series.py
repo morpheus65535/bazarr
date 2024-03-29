@@ -235,7 +235,11 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                 # get difference between desired and existing subtitles
                 missing_subtitles_list = []
                 for item in desired_subtitles_list:
-                    if item['hi'] == 'never':
+                    if item['forced'] == 'True':
+                        desired_item = {'language': item['language'], 'forced': item['forced'], 'hi': 'False'}
+                        if desired_item not in actual_subtitles_list:
+                            missing_subtitles_list.append(desired_item)
+                    elif item['hi'] == 'never':
                         desired_item = {'language': item['language'], 'forced': item['forced'], 'hi': 'False'}
                         if desired_item not in actual_subtitles_list:
                             missing_subtitles_list.append(desired_item)
