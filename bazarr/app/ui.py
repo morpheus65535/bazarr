@@ -4,7 +4,8 @@ import os
 import requests
 import mimetypes
 
-from flask import request, abort, render_template, Response, session, send_file, stream_with_context, Blueprint
+from flask import (request, abort, render_template, Response, session, send_file, stream_with_context, Blueprint,
+                   redirect)
 from functools import wraps
 from urllib.parse import unquote
 
@@ -65,6 +66,10 @@ def check_login(actual_method):
 @ui_bp.route('/', defaults={'path': ''})
 @ui_bp.route('/<path:path>')
 def catch_all(path):
+    if path.startswith('login') and settings.auth.type not in ['basic', 'form']:
+        # login page has been accessed when no authentication is enabled
+        return redirect('/', code=302)
+
     auth = True
     if settings.auth.type == 'basic':
         auth = request.authorization
