@@ -68,7 +68,7 @@ def check_login(actual_method):
 def catch_all(path):
     if path.startswith('login') and settings.auth.type not in ['basic', 'form']:
         # login page has been accessed when no authentication is enabled
-        return redirect('/', code=302)
+        return redirect(base_url or "/", code=302)
 
     auth = True
     if settings.auth.type == 'basic':
