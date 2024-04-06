@@ -4,7 +4,7 @@ import signal
 import warnings
 import logging
 import errno
-from literals import EXIT_INTERRUPT, EXIT_NORMAL
+from literals import EXIT_INTERRUPT, EXIT_NORMAL, EXIT_PORT_ALREADY_IN_USE_ERROR
 from utilities.central import restart_bazarr, stop_bazarr
 
 from waitress.server import create_server
@@ -56,10 +56,17 @@ class Server:
                 logging.exception("BAZARR cannot bind to specified IP, trying with default (0.0.0.0)")
                 self.address = '0.0.0.0'
                 self.connected = False
+                super(Server, self).__init__()
             elif error.errno == errno.EADDRINUSE:
-                logging.exception("BAZARR cannot bind to specified TCP port, trying with default (6767)")
-                self.port = '6767'
-                self.connected = False
+                if self.port != '6767':
+                    logging.exception("BAZARR cannot bind to specified TCP port, trying with default (6767)")
+                    self.port = '6767'
+                    self.connected = False
+                    super(Server, self).__init__()
+                else:
+                    logging.exception("BAZARR cannot bind to default TCP port (6767) because it's already in use, "
+                                      "exiting...")
+                    self.shutdown(EXIT_PORT_ALREADY_IN_USE_ERROR)
             else:
                 logging.exception("BAZARR cannot start because of unhandled exception.")
                 self.shutdown()
