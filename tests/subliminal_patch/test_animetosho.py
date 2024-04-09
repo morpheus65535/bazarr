@@ -59,6 +59,12 @@ def test_list_subtitles(region, anime_episodes, requests_mock, data):
     language = Language("eng")
     item = anime_episodes["solo_leveling_s01e10"]
 
+    with open(os.path.join(data, 'anilist_response.xml'), "rb") as f:
+        requests_mock.get(
+            'https://raw.githubusercontent.com/Anime-Lists/anime-lists/master/anime-list.xml',
+            content=f.read(),
+        )
+
     with open(os.path.join(data, 'anidb_response.xml'), "rb") as f:
         requests_mock.get('http://api.anidb.net:9001/httpapi', content=f.read())
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<anime-list>
+    <anime anidbid="1" tvdbid="389597" defaulttvdbseason="1">
+        <name>Solo Leveling</name>
+        <supplemental-info>
+            <studio>Sunrise</studio>
+        </supplemental-info>
+    </anime>
+    <anime anidbid="2" tvdbid="424536" defaulttvdbseason="1">
+        <name>Frieren</name>
+        <supplemental-info>
+            <studio>Mocked</studio>
+        </supplemental-info>
+    </anime>
+</anime-list>
