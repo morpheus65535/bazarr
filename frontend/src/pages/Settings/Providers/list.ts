@@ -75,17 +75,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         defaultValue: 6,
         name: "Search Threshold. Increase if you often cannot find subtitles for your Anime. Note that increasing the value will decrease the performance of the search for each Episode.",
       },
-      {
-        type: "text",
-        key: "anidb_api_client",
-        name: "AniDb Api Client Name. Created and Configured under AniDb Api Project."
-      },
-      {
-        type: "text",
-        key: "anidb_api_client_ver",
-        defaultValue: 1,
-        name: "AniDb Api Client Version. Created and Configured under AniDb Api Project."
-      }
     ],
   },
   {
