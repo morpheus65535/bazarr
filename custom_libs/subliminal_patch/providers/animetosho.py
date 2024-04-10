@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-import datetime
+
 import logging
 import lzma
-import os
-import tempfile
 
-from dogpile.cache import make_region
 from guessit import guessit
 from requests import Session
 from subzero.language import Language
@@ -65,24 +62,13 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
     languages = {Language('por', 'BR')} | {Language(sl) for sl in supported_languages}
     video_types = Episode
 
-    def __init__(self, search_threshold=None, anidb_api_client=None, anidb_api_client_ver=None, cache_dir=None):
+    def __init__(self, search_threshold=None):
         self.session = None
 
-        if not all([search_threshold, anidb_api_client, anidb_api_client_ver]):
+        if not all([search_threshold]):
             raise ConfigurationError("Search threshold, Api Client and Version must be specified!")
 
-        cache_dir = os.path.join(
-            cache_dir or tempfile.gettempdir(), self.__class__.__name__.lower()
-        )
-
         self.search_threshold = search_threshold
-        self.anidb_api_client = anidb_api_client
-        self.anidb_api_client_ver = anidb_api_client_ver
-        self.cache = make_region().configure(
-            'dogpile.cache.dbm', expiration_time=datetime.timedelta(days=1).total_seconds(), arguments={
-                "filename": os.path.join(cache_dir)
-            }
-        )
 
     def initialize(self):
         self.session = Session()
@@ -91,12 +77,10 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
         self.session.close()
 
     def list_subtitles(self, video, languages):
-        anidb_episode_id = self._get_episode_id(video)
+        if not video.series_anidb_episode_id:
+            raise ProviderError("Video does not have an AnimeTosho Episode ID!")
 
-        if not anidb_episode_id:
-            raise ProviderError('Unable to retrieve anidb episode id')
-
-        return [s for s in self._get_series(anidb_episode_id) if s.language in languages]
+        return [s for s in self._get_series(video.series_anidb_episode_id) if s.language in languages]
 
     def download_subtitle(self, subtitle):
         logger.info('Downloading subtitle %r', subtitle)
@@ -115,100 +99,6 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
     @staticmethod
     def _is_xz_file(content):
         return content.startswith(b'\xFD\x37\x7A\x58\x5A\x00')
-
-    def _get_episode_id(self, video):
-        api_url = 'http://api.anidb.net:9001/httpapi'
-
-        series_id = self._get_series_id(video)
-
-        if not series_id:
-            return None
-
-        cache_key = 'animetosho_series:{}.episodes'.format(series_id)
-
-        cached_episodes = self.cache.get(cache_key)
-
-        if cached_episodes:
-            logger.debug('Using cached episodes for series %r', series_id)
-
-            episode_elements = etree.fromstring(cached_episodes)
-
-            cached_episode = int(episode_elements.find(f".//episode[epno='{video.episode}']").attrib.get('id'))
-
-            if cached_episode:
-                return cached_episode
-
-        logger.debug('Cached episodes not found. Retrieving from API %r', series_id)
-
-        r = self.session.get(
-            api_url,
-            params={
-                'request': 'anime',
-                'client': self.anidb_api_client,
-                'clientver': self.anidb_api_client_ver,
-                'protover': 1,
-                'aid': series_id
-            },
-            timeout=10)
-        r.raise_for_status()
-
-        xml_root = etree.fromstring(r.content)
-
-        if xml_root.attrib.get('code') == '500':
-            raise ProviderError('AniDb API Abuse detected. Banned status.')
-
-        episode_elements = xml_root.find('episodes')
-
-        # Cache the episodes
-        self.cache.set(cache_key, etree.tostring(episode_elements, encoding='utf-8', method='xml'))
-
-        logger.debug('Cache written for series %r', series_id)
-
-        return int(episode_elements.find(f".//episode[epno='{video.episode}']").attrib.get('id'))
-
-    def _get_series_id(self, video):
-        cache_key_anidb_id = 'animetosho_tvdbid:{}.anidb_id'.format(video.series_tvdb_id)
-        cache_key_id_mappings = 'animetosho_id_mappings'
-
-        cached_series_id = self.cache.get(cache_key_anidb_id)
-
-        if cached_series_id:
-            logger.debug('Using cached value for series tvdb id %r', video.series_tvdb_id)
-
-            return cached_series_id
-
-        id_mappings = self.cache.get(cache_key_id_mappings)
-
-        if not id_mappings:
-            logger.debug('Id mappings not cached, retrieving fresh mappings')
-
-            r = self.session.get(
-                'https://raw.githubusercontent.com/Anime-Lists/anime-lists/master/anime-list.xml',
-                timeout=10
-            )
-
-            r.raise_for_status()
-
-            id_mappings = r.content
-
-            self.cache.set(cache_key_id_mappings, id_mappings)
-
-        xml_root = etree.fromstring(id_mappings)
-
-        season = video.season if video.season else 0
-
-        anime = xml_root.find(f".//anime[@tvdbid='{video.series_tvdb_id}'][@defaulttvdbseason='{season}']")
-
-        if not anime:
-            return None
-
-        anidb_id = int(anime.attrib.get('anidbid'))
-
-        self.cache.set(cache_key_anidb_id, anidb_id)
-
-        logger.debug('Cache written for anidb %r', anidb_id)
-
-        return anidb_id
 
     def _get_series(self, episode_id):
         storage_download_url = 'https://animetosho.org/storage/attach/'

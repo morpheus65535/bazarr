@@ -39,14 +39,19 @@ import {
 } from "../utilities/FormValues";
 import { SettingsProvider, useSettings } from "../utilities/SettingsProvider";
 import { useSettingValue } from "../utilities/hooks";
-import { ProviderInfo, ProviderList } from "./list";
+import { ProviderInfo } from "./list";
 
-const ProviderKey = "settings-general-enabled_providers";
+type SettingsKey = "settings-general-enabled_providers" | "settings-general-enabled_integrations";
 
-export const ProviderView: FunctionComponent = () => {
+interface ProviderViewProps {
+  availableOptions:  Readonly<ProviderInfo[]>
+  settingsKey: SettingsKey
+}
+
+export const ProviderView: FunctionComponent<ProviderViewProps> = ({ availableOptions, settingsKey }) => {
   const settings = useSettings();
   const staged = useStagedValues();
-  const providers = useSettingValue<string[]>(ProviderKey);
+  const providers = useSettingValue<string[]>(settingsKey);
 
   const { update } = useFormActions();
 
@@ -61,17 +66,19 @@ export const ProviderView: FunctionComponent = () => {
           staged,
           settings,
           onChange: update,
+          availableOptions: availableOptions,
+          settingsKey: settingsKey,
         });
       }
     },
-    [modals, providers, settings, staged, update],
+    [modals, providers, settings, staged, update, availableOptions, settingsKey],
   );
 
   const cards = useMemo(() => {
     if (providers) {
       return providers
         .flatMap((v) => {
-          const item = ProviderList.find((inn) => inn.key === v);
+          const item = availableOptions.find((inn) => inn.key === v);
           if (item) {
             return item;
           } else {
@@ -89,7 +96,7 @@ export const ProviderView: FunctionComponent = () => {
     } else {
       return [];
     }
-  }, [providers, select]);
+  }, [providers, select, availableOptions]);
 
   return (
     <SimpleGrid cols={3}>
@@ -106,6 +113,8 @@ interface ProviderToolProps {
   staged: LooseObject;
   settings: Settings;
   onChange: (v: LooseObject) => void;
+  availableOptions: Readonly<ProviderInfo[]>;
+  settingsKey: Readonly<SettingsKey>;
 }
 
 const SelectItem = forwardRef<
@@ -126,6 +135,8 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   staged,
   settings,
   onChange,
+  availableOptions,
+  settingsKey,
 }) => {
   const modals = useModals();
 
@@ -147,11 +158,11 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
       if (idx !== -1) {
         const newProviders = [...enabledProviders];
         newProviders.splice(idx, 1);
-        onChangeRef.current({ [ProviderKey]: newProviders });
+        onChangeRef.current({ [settingsKey]: newProviders });
         modals.closeAll();
       }
     }
-  }, [payload, enabledProviders, modals]);
+  }, [payload, enabledProviders, modals, settingsKey]);
 
   const submit = useCallback(
     (values: FormValues) => {
@@ -161,8 +172,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
 
         // Add this provider if not exist
         if (enabledProviders.find((v) => v === info.key) === undefined) {
-          const newProviders = [...enabledProviders, info.key];
-          changes[ProviderKey] = newProviders;
+          changes[settingsKey] = [...enabledProviders, info.key];
         }
 
         // Apply submit hooks
@@ -172,7 +182,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
         modals.closeAll();
       }
     },
-    [info, enabledProviders, modals],
+    [info, enabledProviders, modals, settingsKey],
   );
 
   const canSave = info !== null;
@@ -188,18 +198,18 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     }
   }, []);
 
-  const availableOptions = useMemo(
+  const fooOptions = useMemo(
     () =>
-      ProviderList.filter(
+      availableOptions.filter(
         (v) =>
           enabledProviders?.find((p) => p === v.key && p !== info?.key) ===
           undefined,
       ),
-    [info?.key, enabledProviders],
+    [info?.key, enabledProviders, availableOptions],
   );
 
   const options = useSelectorOptions(
-    availableOptions,
+    fooOptions,
     (v) => v.name ?? capitalize(v.key),
   );
 

@@ -11,12 +11,14 @@ import {
   Text,
 } from "../components";
 import { ProviderView } from "./components";
+import {IntegrationList, ProviderList} from "@/pages/Settings/Providers/list";
 
 const SettingsProvidersView: FunctionComponent = () => {
   return (
     <Layout name="Providers">
       <Section header="Providers">
-        <ProviderView></ProviderView>
+        <ProviderView availableOptions={ProviderList} settingsKey="settings-general-enabled_providers">
+        </ProviderView>
       </Section>
       <Section header="Anti-Captcha Options">
         <Selector
@@ -57,6 +59,10 @@ const SettingsProvidersView: FunctionComponent = () => {
           </Anchor>
           <Message>Link to subscribe</Message>
         </CollapseBox>
+      </Section>
+       <Section header="Integrations">
+        <ProviderView availableOptions={IntegrationList} settingsKey="settings-general-enabled_integrations">
+        </ProviderView>
       </Section>
     </Layout>
   );

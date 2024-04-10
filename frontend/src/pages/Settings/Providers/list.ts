@@ -562,3 +562,23 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Chinese Subtitles Provider. Anti-captcha required.",
   },
 ];
+
+export const IntegrationList: Readonly<ProviderInfo[]> = [
+    {
+    key: "anidb",
+    name: "AniDB",
+    description: "AniDB is non-profit database of anime information that is freely open to the public.",
+    inputs: [
+      {
+        type: "text",
+        key: "api_client",
+        name: "API Client"
+      },
+      {
+        type: "text",
+        key: "api_client_ver",
+        name: "API Client Version"
+      },
+    ],
+  },
+]
