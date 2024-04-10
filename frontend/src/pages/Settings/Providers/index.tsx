@@ -11,7 +11,7 @@ import {
   Text,
 } from "../components";
 import { ProviderView } from "./components";
-import {IntegrationList, ProviderList} from "@/pages/Settings/Providers/list";
+import { IntegrationList, ProviderList } from "./list";
 
 const SettingsProvidersView: FunctionComponent = () => {
   return (

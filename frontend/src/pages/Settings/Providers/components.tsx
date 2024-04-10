@@ -198,7 +198,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     }
   }, []);
 
-  const fooOptions = useMemo(
+  const options = useMemo(
     () =>
       availableOptions.filter(
         (v) =>
@@ -208,8 +208,8 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     [info?.key, enabledProviders, availableOptions],
   );
 
-  const options = useSelectorOptions(
-    fooOptions,
+  const selectorOptions = useSelectorOptions(
+    options,
     (v) => v.name ?? capitalize(v.key),
   );
 
@@ -299,7 +299,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
               placeholder="Click to Select a Provider"
               itemComponent={SelectItem}
               disabled={payload !== null}
-              {...options}
+              {...selectorOptions}
               value={info}
               onChange={onSelect}
             ></Selector>
