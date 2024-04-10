@@ -3,6 +3,7 @@
 
 import logging
 import requests
+from collections import namedtuple
 from datetime import timedelta
 from requests.exceptions import HTTPError
 
@@ -28,6 +29,8 @@ class AniDBClient(object):
         self.api_client_key = api_client_key
         self.api_client_ver = api_client_ver
 
+    AnimeInfo = namedtuple('AnimeInfo', ['anime', 'episode_offset'])
+
     @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
     def get_series_mappings(self):
         r = self.session.get(
@@ -39,28 +42,47 @@ class AniDBClient(object):
 
         return r.content
 
-    @staticmethod
     @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
-    def get_series_id(mappings, tvdb_series_season, tvdb_series_id):
-        anime = mappings.find(f".//anime[@tvdbid='{tvdb_series_id}'][@defaulttvdbseason='{tvdb_series_season}']")
+    def get_series_id(self, mappings, tvdb_series_season, tvdb_series_id, episode):
+        # Enrich the collection of anime with the episode offset
+        animes = [
+            self.AnimeInfo(anime, int(anime.attrib.get('episodeoffset', 0)))
+            for anime in mappings.findall(
+                f".//anime[@tvdbid='{tvdb_series_id}'][@defaulttvdbseason='{tvdb_series_season}']"
+            )
+        ]
 
-        if not anime:
+        if not animes:
             return None
 
-        return int(anime.attrib.get('anidbid'))
+        # Sort the anime by offset in ascending order
+        animes.sort(key=lambda a: a.episode_offset)
+
+        # Different from Tvdb, Anidb have different ids for the Parts of a season
+        anidb_id = None
+        offset = 0
+
+        for index, anime_info in enumerate(animes):
+            anime, episode_offset = anime_info
+            anidb_id = int(anime.attrib.get('anidbid'))
+            if episode > episode_offset:
+                anidb_id = anidb_id
+                offset = episode_offset
+
+        return anidb_id, episode - offset
 
     @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
     def get_series_episodes_ids(self, tvdb_series_id, season, episode):
         mappings = etree.fromstring(self.get_series_mappings())
 
-        series_id = self.get_series_id(mappings, season, tvdb_series_id)
+        series_id, episode_no = self.get_series_id(mappings, season, tvdb_series_id, episode)
 
         if not series_id:
             return None, None
 
         episodes = etree.fromstring(self.get_episodes(series_id))
 
-        return series_id, int(episodes.find(f".//episode[epno='{episode}']").attrib.get('id'))
+        return series_id, int(episodes.find(f".//episode[epno='{episode_no}']").attrib.get('id'))
 
     @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
     def get_episodes(self, series_id):
