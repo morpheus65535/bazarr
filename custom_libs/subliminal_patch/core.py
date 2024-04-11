@@ -539,6 +539,7 @@ class SZProviderPool(ProviderPool):
         use_hearing_impaired = hearing_impaired in ("prefer", "force HI")
 
         is_episode = isinstance(video, Episode)
+        max_score = sum(val for key, val in compute_score._scores['episode' if is_episode else 'movie'].items() if key != "hash")
 
         # sort subtitles by score
         unsorted_subtitles = []
@@ -570,7 +571,9 @@ class SZProviderPool(ProviderPool):
         for subtitle, score, score_without_hash, matches, orig_matches in scored_subtitles:
             # check score
             if score < min_score:
-                logger.info('%r: Score %d is below min_score (%d)', subtitle, score, min_score)
+                min_score_in_percent = round(min_score * 100 / max_score, 2) if min_score > 0 else 0
+                logger.info('%r: Score %d is below min_score: %d out of %d (or %r%%)',
+                            subtitle, score, min_score, max_score, min_score_in_percent)
                 break
 
             # stop when all languages are downloaded
