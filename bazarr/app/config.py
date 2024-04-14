@@ -109,6 +109,7 @@ validators = [
     Validator('general.adaptive_searching_delta', must_exist=True, default='1w', is_type_of=str,
               is_in=['3d', '1w', '2w', '3w', '4w']),
     Validator('general.enabled_providers', must_exist=True, default=[], is_type_of=list),
+    Validator('general.enabled_integrations', must_exist=True, default=[], is_type_of=list),
     Validator('general.multithreading', must_exist=True, default=True, is_type_of=bool),
     Validator('general.chmod_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.chmod', must_exist=True, default='0640', is_type_of=str),
@@ -233,6 +234,11 @@ validators = [
     Validator('addic7ed.cookies', must_exist=True, default='', is_type_of=str),
     Validator('addic7ed.user_agent', must_exist=True, default='', is_type_of=str),
     Validator('addic7ed.vip', must_exist=True, default=False, is_type_of=bool),
+
+    # animetosho section
+    Validator('animetosho.search_threshold', must_exist=True, default=6, is_type_of=int, gte=1, lte=15),
+    Validator('animetosho.anidb_api_client', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('animetosho.anidb_api_client_ver', must_exist=True, default=1, is_type_of=int, gte=1, lte=9),
 
     # avistaz section
     Validator('avistaz.cookies', must_exist=True, default='', is_type_of=str),
@@ -369,6 +375,10 @@ validators = [
     Validator('postgresql.database', must_exist=True, default='', is_type_of=str),
     Validator('postgresql.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('postgresql.password', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # anidb section
+    Validator('anidb.api_client', must_exist=True, default='', is_type_of=str),
+    Validator('anidb.api_client_ver', must_exist=True, default=1, is_type_of=int),
 ]
 
 
@@ -442,6 +452,7 @@ array_keys = ['excluded_tags',
               'subzero_mods',
               'excluded_series_types',
               'enabled_providers',
+              'enabled_integrations',
               'path_mappings',
               'path_mappings_movie',
               'language_equals',

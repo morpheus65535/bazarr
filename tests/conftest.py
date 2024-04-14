@@ -7,7 +7,7 @@ import pkg_resources
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../libs/"))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../bazarr/"))
-
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../custom_libs/"))
 
 def pytest_report_header(config):
     conflicting_packages = _get_conflicting("libs")
