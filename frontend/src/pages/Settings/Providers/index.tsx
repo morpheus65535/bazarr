@@ -17,8 +17,10 @@ const SettingsProvidersView: FunctionComponent = () => {
   return (
     <Layout name="Providers">
       <Section header="Providers">
-        <ProviderView availableOptions={ProviderList} settingsKey="settings-general-enabled_providers">
-        </ProviderView>
+        <ProviderView
+          availableOptions={ProviderList}
+          settingsKey="settings-general-enabled_providers"
+        ></ProviderView>
       </Section>
       <Section header="Anti-Captcha Options">
         <Selector
@@ -60,9 +62,11 @@ const SettingsProvidersView: FunctionComponent = () => {
           <Message>Link to subscribe</Message>
         </CollapseBox>
       </Section>
-       <Section header="Integrations">
-        <ProviderView availableOptions={IntegrationList} settingsKey="settings-general-enabled_integrations">
-        </ProviderView>
+      <Section header="Integrations">
+        <ProviderView
+          availableOptions={IntegrationList}
+          settingsKey="settings-general-enabled_integrations"
+        ></ProviderView>
       </Section>
     </Layout>
   );

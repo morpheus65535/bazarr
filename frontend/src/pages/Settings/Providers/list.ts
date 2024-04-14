@@ -67,7 +67,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "animetosho",
     name: "Anime Tosho",
-    description: "Anime Tosho is a free, completely automated service which mirrors most torrents posted on TokyoTosho's anime category, Nyaa.si's English translated anime category and AniDex's anime category.",
+    description:
+      "Anime Tosho is a free, completely automated service which mirrors most torrents posted on TokyoTosho's anime category, Nyaa.si's English translated anime category and AniDex's anime category.",
     inputs: [
       {
         type: "text",
@@ -553,21 +554,22 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
 ];
 
 export const IntegrationList: Readonly<ProviderInfo[]> = [
-    {
+  {
     key: "anidb",
     name: "AniDB",
-    description: "AniDB is non-profit database of anime information that is freely open to the public.",
+    description:
+      "AniDB is non-profit database of anime information that is freely open to the public.",
     inputs: [
       {
         type: "text",
         key: "api_client",
-        name: "API Client"
+        name: "API Client",
       },
       {
         type: "text",
         key: "api_client_ver",
-        name: "API Client Version"
+        name: "API Client Version",
       },
     ],
   },
-]
+];

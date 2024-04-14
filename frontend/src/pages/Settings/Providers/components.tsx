@@ -41,14 +41,19 @@ import { SettingsProvider, useSettings } from "../utilities/SettingsProvider";
 import { useSettingValue } from "../utilities/hooks";
 import { ProviderInfo } from "./list";
 
-type SettingsKey = "settings-general-enabled_providers" | "settings-general-enabled_integrations";
+type SettingsKey =
+  | "settings-general-enabled_providers"
+  | "settings-general-enabled_integrations";
 
 interface ProviderViewProps {
-  availableOptions:  Readonly<ProviderInfo[]>
-  settingsKey: SettingsKey
+  availableOptions: Readonly<ProviderInfo[]>;
+  settingsKey: SettingsKey;
 }
 
-export const ProviderView: FunctionComponent<ProviderViewProps> = ({ availableOptions, settingsKey }) => {
+export const ProviderView: FunctionComponent<ProviderViewProps> = ({
+  availableOptions,
+  settingsKey,
+}) => {
   const settings = useSettings();
   const staged = useStagedValues();
   const providers = useSettingValue<string[]>(settingsKey);
@@ -71,7 +76,15 @@ export const ProviderView: FunctionComponent<ProviderViewProps> = ({ availableOp
         });
       }
     },
-    [modals, providers, settings, staged, update, availableOptions, settingsKey],
+    [
+      modals,
+      providers,
+      settings,
+      staged,
+      update,
+      availableOptions,
+      settingsKey,
+    ],
   );
 
   const cards = useMemo(() => {
