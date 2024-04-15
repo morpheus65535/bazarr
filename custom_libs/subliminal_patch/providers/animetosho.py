@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 supported_languages = [
     "ara",  # Arabic
     "eng",  # English
+    "fin",  # Finnish
     "fra",  # French
     "ita",  # Italian
     "jpn",  # Japanese
