@@ -29,6 +29,7 @@ supported_languages = [
     "eng",  # English
     "ita",  # Italian
     "spa",  # Spanish
+    "fra",  # French
 ]
 
 
