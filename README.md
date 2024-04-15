@@ -48,6 +48,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 ## Supported subtitles providers:
 
 - Addic7ed
+- Animetosho (requires AniDb HTTP API client described [here](https://wiki.anidb.net/HTTP_API_Definition))
 - Assrt
 - BetaSeries
 - BSplayer

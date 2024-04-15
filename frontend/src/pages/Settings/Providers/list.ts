@@ -65,6 +65,20 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "animetosho",
+    name: "Anime Tosho",
+    description:
+      "Anime Tosho is a free, completely automated service which mirrors most torrents posted on TokyoTosho's anime category, Nyaa.si's English translated anime category and AniDex's anime category.",
+    inputs: [
+      {
+        type: "text",
+        key: "search_threshold",
+        defaultValue: 6,
+        name: "Search Threshold. Increase if you often cannot find subtitles for your Anime. Note that increasing the value will decrease the performance of the search for each Episode.",
+      },
+    ],
+  },
+  {
     key: "argenteam_dump",
     name: "Argenteam Dump",
     description: "Subtitles dump of the now extinct Argenteam",
@@ -536,5 +550,26 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "zimuku",
     name: "Zimuku",
     description: "Chinese Subtitles Provider. Anti-captcha required.",
+  },
+];
+
+export const IntegrationList: Readonly<ProviderInfo[]> = [
+  {
+    key: "anidb",
+    name: "AniDB",
+    description:
+      "AniDB is non-profit database of anime information that is freely open to the public.",
+    inputs: [
+      {
+        type: "text",
+        key: "api_client",
+        name: "API Client",
+      },
+      {
+        type: "text",
+        key: "api_client_ver",
+        name: "API Client Version",
+      },
+    ],
   },
 ];
