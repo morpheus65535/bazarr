@@ -26,6 +26,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 supported_languages = [
+    "ara",  # Arabic
     "eng",  # English
     "ita",  # Italian
     "spa",  # Spanish
