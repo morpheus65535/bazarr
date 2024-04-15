@@ -26,111 +26,118 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+# Free Mobile
+#   1. Visit https://mobile.free.fr/
+
+# the URL will look something like this:
+#      https://smsapi.free-mobile.fr/sendmsg
+#
+
 import requests
+from json import dumps
 
 from .NotifyBase import NotifyBase
-from ..common import NotifyImageSize
 from ..common import NotifyType
-from ..utils import parse_bool
 from ..AppriseLocale import gettext_lazy as _
-from ..utils import validate_regex
 
 
-class NotifyFaast(NotifyBase):
+class NotifyFreeMobile(NotifyBase):
     """
-    A wrapper for Faast Notifications
+    A wrapper for Free-Mobile Notifications
     """
 
     # The default descriptive name associated with the Notification
-    service_name = 'Faast'
+    service_name = _('Free-Mobile')
 
     # The services URL
-    service_url = 'http://www.faast.io/'
+    service_url = 'https://mobile.free.fr/'
 
-    # The default protocol (this is secure for faast)
-    protocol = 'faast'
+    # The default secure protocol
+    secure_protocol = 'freemobile'
 
     # A URL that takes you to the setup/help of the specific protocol
-    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_faast'
+    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_freemobile'
 
-    # Faast uses the http protocol with JSON requests
-    notify_url = 'https://www.appnotifications.com/account/notifications.json'
-
-    # Allows the user to specify the NotifyImageSize object
-    image_size = NotifyImageSize.XY_72
+    # Plain Text Notification URL
+    notify_url = 'https://smsapi.free-mobile.fr/sendmsg'
 
     # Define object templates
     templates = (
-        '{schema}://{authtoken}',
+        '{schema}://{user}@{password}',
     )
 
-    # Define our template tokens
+    # The title is not used
+    title_maxlen = 0
+
+    # SMS Messages are restricted in size
+    body_maxlen = 160
+
+    # Define our tokens; these are the minimum tokens required required to
+    # be passed into this function (as arguments). The syntax appends any
+    # previously defined in the base package and builds onto them
     template_tokens = dict(NotifyBase.template_tokens, **{
-        'authtoken': {
-            'name': _('Authorization Token'),
+        'user': {
+            'name': _('Username'),
+            'type': 'string',
+            'required': True,
+        },
+        'password': {
+            'name': _('Password'),
             'type': 'string',
             'private': True,
             'required': True,
         },
     })
 
-    # Define our template arguments
-    template_args = dict(NotifyBase.template_args, **{
-        'image': {
-            'name': _('Include Image'),
-            'type': 'bool',
-            'default': True,
-            'map_to': 'include_image',
-        },
-    })
-
-    def __init__(self, authtoken, include_image=True, **kwargs):
+    def __init__(self, **kwargs):
         """
-        Initialize Faast Object
+        Initialize Free Mobile Object
         """
         super().__init__(**kwargs)
 
-        # Store the Authentication Token
-        self.authtoken = validate_regex(authtoken)
-        if not self.authtoken:
-            msg = 'An invalid Faast Authentication Token ' \
-                  '({}) was specified.'.format(authtoken)
+        if not (self.user and self.password):
+            msg = 'A FreeMobile user and password ' \
+                  'combination was not provided.'
             self.logger.warning(msg)
             raise TypeError(msg)
 
-        # Associate an image with our post
-        self.include_image = include_image
-
         return
+
+    def url(self, privacy=False, *args, **kwargs):
+        """
+        Returns the URL built dynamically based on specified arguments.
+        """
+
+        # Prepare our parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
+
+        return '{schema}://{user}@{password}/?{params}'.format(
+            schema=self.secure_protocol,
+            user=self.user,
+            password=self.pprint(self.password, privacy, safe=''),
+            params=NotifyFreeMobile.urlencode(params),
+        )
 
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
-        Perform Faast Notification
+        Send our notification
         """
 
+        # prepare our headers
         headers = {
             'User-Agent': self.app_id,
-            'Content-Type': 'multipart/form-data'
         }
 
-        # prepare JSON Object
+        # Prepare our payload
         payload = {
-            'user_credentials': self.authtoken,
-            'title': title,
-            'message': body,
+            'user': self.user,
+            'pass': self.password,
+            'msg': body
         }
 
-        # Acquire our image if we're configured to do so
-        image_url = None if not self.include_image \
-            else self.image_url(notify_type)
-
-        if image_url:
-            payload['icon_url'] = image_url
-
-        self.logger.debug('Faast POST URL: %s (cert_verify=%r)' % (
-            self.notify_url, self.verify_certificate,
-        ))
-        self.logger.debug('Faast Payload: %s' % str(payload))
+        self.logger.debug('Free Mobile GET URL: %s (cert_verify=%r)' % (
+            self.notify_url, self.verify_certificate))
+        self.logger.debug('Free Mobile Payload: %s' % str(payload))
 
         # Always call throttle before any remote server i/o is made
         self.throttle()
@@ -138,7 +145,7 @@ class NotifyFaast(NotifyBase):
         try:
             r = requests.post(
                 self.notify_url,
-                data=payload,
+                data=dumps(payload).encode('utf-8'),
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
@@ -146,10 +153,10 @@ class NotifyFaast(NotifyBase):
             if r.status_code != requests.codes.ok:
                 # We had a problem
                 status_str = \
-                    NotifyFaast.http_response_code_lookup(r.status_code)
+                    NotifyFreeMobile.http_response_code_lookup(r.status_code)
 
                 self.logger.warning(
-                    'Failed to send Faast notification:'
+                    'Failed to send Free Mobile notification: '
                     '{}{}error={}.'.format(
                         status_str,
                         ', ' if status_str else '',
@@ -161,37 +168,18 @@ class NotifyFaast(NotifyBase):
                 return False
 
             else:
-                self.logger.info('Sent Faast notification.')
+                self.logger.info('Sent Free Mobile notification.')
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occurred sending Faast notification.',
-            )
+                'A Connection error occurred sending Free Mobile '
+                'notification.')
             self.logger.debug('Socket Exception: %s' % str(e))
 
             # Return; we're done
             return False
 
         return True
-
-    def url(self, privacy=False, *args, **kwargs):
-        """
-        Returns the URL built dynamically based on specified arguments.
-        """
-
-        # Define any URL parameters
-        params = {
-            'image': 'yes' if self.include_image else 'no',
-        }
-
-        # Extend our parameters
-        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
-
-        return '{schema}://{authtoken}/?{params}'.format(
-            schema=self.protocol,
-            authtoken=self.pprint(self.authtoken, privacy, safe=''),
-            params=NotifyFaast.urlencode(params),
-        )
 
     @staticmethod
     def parse_url(url):
@@ -200,16 +188,17 @@ class NotifyFaast(NotifyBase):
         us to re-instantiate this object.
 
         """
+
+        # parse_url already handles getting the `user` and `password` fields
+        # populated.
         results = NotifyBase.parse_url(url, verify_host=False)
         if not results:
             # We're done early as we couldn't load the results
             return results
 
-        # Store our authtoken using the host
-        results['authtoken'] = NotifyFaast.unquote(results['host'])
-
-        # Include image with our post
-        results['include_image'] = \
-            parse_bool(results['qsd'].get('image', True))
+        # The hostname can act as the password if specified and a password
+        # was otherwise not (specified):
+        if not results.get('password'):
+            results['password'] = NotifyFreeMobile.unquote(results['host'])
 
         return results
