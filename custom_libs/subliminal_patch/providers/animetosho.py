@@ -34,6 +34,7 @@ supported_languages = [
     "jpn",  # Japanese
     "pol",  # Polish
     "spa",  # Spanish
+    "tur",  # Turkish
 ]
 
 
