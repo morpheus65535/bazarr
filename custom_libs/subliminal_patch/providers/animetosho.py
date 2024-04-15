@@ -25,10 +25,10 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-# TODO: Test and Support Other Languages
 supported_languages = [
     "eng",  # English
     "ita",  # Italian
+    "spa",  # Spanish
 ]
 
 
