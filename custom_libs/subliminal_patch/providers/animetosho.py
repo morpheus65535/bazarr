@@ -36,6 +36,7 @@ supported_languages = [
     "pol",  # Polish
     "spa",  # Spanish
     "swe",  # Swedish
+    "tha",  # Thai
     "tur",  # Turkish
 ]
 
