@@ -28,10 +28,11 @@ logger = logging.getLogger(__name__)
 supported_languages = [
     "ara",  # Arabic
     "eng",  # English
+    "fra",  # French
     "ita",  # Italian
     "jpn",  # Japanese
+    "pol",  # Polish
     "spa",  # Spanish
-    "fra",  # French
 ]
 
 
