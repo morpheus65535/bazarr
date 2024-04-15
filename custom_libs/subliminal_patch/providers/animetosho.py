@@ -32,6 +32,7 @@ supported_languages = [
     "fra",  # French
     "ita",  # Italian
     "jpn",  # Japanese
+    "por",  # Portuguese
     "pol",  # Polish
     "spa",  # Spanish
     "swe",  # Swedish
@@ -135,8 +136,15 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
                 for subtitle_file in subtitle_files:
                     hex_id = format(subtitle_file['id'], '08x')
 
+                    lang = Language.fromalpha3b(subtitle_file['info']['lang'])
+
+                    # For Portuguese and Portuguese Brazilian they both share the same code, the name is the only
+                    # identifier AnimeTosho provides.
+                    if lang.alpha3 == 'por' and subtitle_file['info']['name'].lower().find('Brazil'):
+                        lang = Language('por', 'BR')
+
                     subtitle = self.subtitle_class(
-                        Language.fromalpha3b(subtitle_file['info']['lang']),
+                        lang,
                         storage_download_url + '{}/{}.xz'.format(hex_id, subtitle_file['id']),
                         meta=file,
                     )
