@@ -30,6 +30,7 @@ supported_languages = [
     "eng",  # English
     "fin",  # Finnish
     "fra",  # French
+    "heb",  # Hebrew
     "ita",  # Italian
     "jpn",  # Japanese
     "por",  # Portuguese
