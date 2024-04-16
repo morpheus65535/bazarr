@@ -77,6 +77,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         name: "Search Threshold. Increase if you often cannot find subtitles for your Anime. Note that increasing the value will decrease the performance of the search for each Episode.",
       },
     ],
+    message:
+      "Requires AniDB Integration.",
   },
   {
     key: "argenteam_dump",
