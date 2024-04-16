@@ -140,7 +140,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
   const disabledTools = selections.length === 0;
 
   return (
-    <Menu withArrow position="left-end" {...menu}>
+    <Menu withArrow withinPortal position="left-end" {...menu}>
       <Menu.Target>{children}</Menu.Target>
       <Menu.Dropdown>
         <Menu.Label>Tools</Menu.Label>
