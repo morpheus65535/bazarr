@@ -24,7 +24,6 @@ const useStyles = createStyles((theme) => {
       display: "block",
       maxWidth: "100%",
       overflowX: "auto",
-      overflowWrap: "anywhere",
     },
     table: {
       borderCollapse: "collapse",

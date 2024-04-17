@@ -22,7 +22,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Button,
-  Checkbox,
+  Checkbox, createStyles,
   Divider,
   MantineColor,
   Stack,
@@ -85,12 +85,21 @@ interface Props {
   onComplete?: VoidFunction;
 }
 
+const useStyles = createStyles((theme) => {
+  return {
+    wrapper: {
+       overflowWrap: "anywhere"
+    },
+  };
+});
+
 const SeriesUploadForm: FunctionComponent<Props> = ({
   series,
   files,
   onComplete,
 }) => {
   const modals = useModals();
+  const { classes } = useStyles();
   const episodes = useEpisodesBySeriesId(series.sonarrSeriesId);
   const episodeOptions = useSelectorOptions(
     episodes.data ?? [],
@@ -358,7 +367,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         modals.closeSelf();
       })}
     >
-      <Stack>
+      <Stack className={classes.wrapper}>
         <SimpleTable columns={columns} data={form.values.files}></SimpleTable>
         <Divider></Divider>
         <Button type="submit">Upload</Button>
