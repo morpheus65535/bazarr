@@ -18,10 +18,7 @@ from .database import close_database
 from .app import create_app
 
 app = create_app()
-ui_bp.register_blueprint(api_bp, url_prefix='/api')
-# Mute UserWarning with flask-restx and Flask >= 2.2.0. Will be raised as an exception in 2.3.0
-# https://github.com/python-restx/flask-restx/issues/485
-warnings.filterwarnings('ignore', message='The setup method ')
+app.register_blueprint(api_bp, url_prefix=base_url.rstrip('/') + '/api')
 app.register_blueprint(ui_bp, url_prefix=base_url.rstrip('/'))
 
 
