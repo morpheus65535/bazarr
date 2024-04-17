@@ -19,6 +19,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Button,
   Checkbox,
+  createStyles,
   Divider,
   MantineColor,
   Stack,
@@ -78,12 +79,21 @@ interface Props {
   onComplete?: () => void;
 }
 
+const useStyles = createStyles((theme) => {
+  return {
+    wrapper: {
+      overflowWrap: "anywhere",
+    },
+  };
+});
+
 const MovieUploadForm: FunctionComponent<Props> = ({
   files,
   movie,
   onComplete,
 }) => {
   const modals = useModals();
+  const { classes } = useStyles();
 
   const profile = useLanguageProfileBy(movie.profileId);
 
@@ -279,7 +289,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         modals.closeSelf();
       })}
     >
-      <Stack>
+      <Stack className={classes.wrapper}>
         <SimpleTable columns={columns} data={form.values.files}></SimpleTable>
         <Divider></Divider>
         <Button type="submit">Upload</Button>
