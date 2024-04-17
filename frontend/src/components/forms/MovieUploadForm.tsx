@@ -18,7 +18,8 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Button,
-  Checkbox, createStyles,
+  Checkbox,
+  createStyles,
   Divider,
   MantineColor,
   Stack,
@@ -81,7 +82,7 @@ interface Props {
 const useStyles = createStyles((theme) => {
   return {
     wrapper: {
-       overflowWrap: "anywhere"
+      overflowWrap: "anywhere",
     },
   };
 });
