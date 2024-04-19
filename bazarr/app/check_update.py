@@ -160,8 +160,7 @@ def apply_update():
                                 'BAZARR was unable to delete the previous build directory during upgrade process.')
 
                     for file in archive.namelist():
-                        if file.startswith(zip_root_directory) and file != zip_root_directory and not \
-                                file.endswith('bazarr.py'):
+                        if file.startswith(zip_root_directory) and file != zip_root_directory:
                             file_path = os.path.join(bazarr_dir, file[len(zip_root_directory):])
                             parent_dir = os.path.dirname(file_path)
                             os.makedirs(parent_dir, exist_ok=True)
