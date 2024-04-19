@@ -25,10 +25,20 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-# TODO: Test and Support Other Languages
 supported_languages = [
+    "ara",  # Arabic
     "eng",  # English
+    "fin",  # Finnish
+    "fra",  # French
+    "heb",  # Hebrew
     "ita",  # Italian
+    "jpn",  # Japanese
+    "por",  # Portuguese
+    "pol",  # Polish
+    "spa",  # Spanish
+    "swe",  # Swedish
+    "tha",  # Thai
+    "tur",  # Turkish
 ]
 
 
@@ -128,8 +138,15 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
                 for subtitle_file in subtitle_files:
                     hex_id = format(subtitle_file['id'], '08x')
 
+                    lang = Language.fromalpha3b(subtitle_file['info']['lang'])
+
+                    # For Portuguese and Portuguese Brazilian they both share the same code, the name is the only
+                    # identifier AnimeTosho provides.
+                    if lang.alpha3 == 'por' and subtitle_file['info']['name'].lower().find('brazil'):
+                        lang = Language('por', 'BR')
+
                     subtitle = self.subtitle_class(
-                        Language.fromalpha3b(subtitle_file['info']['lang']),
+                        lang,
                         storage_download_url + '{}/{}.xz'.format(hex_id, subtitle_file['id']),
                         meta=file,
                     )
