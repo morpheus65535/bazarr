@@ -8,11 +8,13 @@ import sys
 import time
 
 from bazarr.app.get_args import args
-from bazarr.literals import *
+from bazarr.literals import EXIT_PYTHON_UPGRADE_NEEDED, EXIT_NORMAL, FILE_RESTART, FILE_STOP, ENV_RESTARTFILE, ENV_STOPFILE, EXIT_INTERRUPT
+
 
 def exit_program(status_code):
     print(f'Bazarr exited with status code {status_code}.')
     raise SystemExit(status_code)
+
 
 def check_python_version():
     python_version = platform.python_version_tuple()
@@ -52,9 +54,10 @@ check_python_version()
 
 dir_name = os.path.dirname(__file__)
 
+
 def start_bazarr():
     script = [get_python_path(), "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
-    ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
+    ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL, env=os.environ)
     print(f"Bazarr starting child process with PID {ep.pid}...")
     return ep
  
@@ -81,21 +84,21 @@ def get_stop_status_code(input_file):
 
 def check_status():
     global child_process
-    if os.path.exists(stopfile):
-        status_code = get_stop_status_code(stopfile)
+    if os.path.exists(stop_file):
+        status_code = get_stop_status_code(stop_file)
         try:
             print(f"Deleting stop file...")
-            os.remove(stopfile)
+            os.remove(stop_file)
         except Exception as e:
             print('Unable to delete stop file.')
         finally:
             terminate_child()
             exit_program(status_code)
 
-    if os.path.exists(restartfile):
+    if os.path.exists(restart_file):
         try:
             print(f"Deleting restart file...")
-            os.remove(restartfile)
+            os.remove(restart_file)
         except Exception:
             print('Unable to delete restart file.')
         finally:
@@ -119,19 +122,19 @@ def interrupt_handler(signum, frame):
 if __name__ == '__main__':
     interrupted = False
     signal.signal(signal.SIGINT, interrupt_handler)
-    restartfile = os.path.join(args.config_dir, FILE_RESTART)
-    stopfile = os.path.join(args.config_dir, FILE_STOP)
-    os.environ[ENV_STOPFILE] = stopfile
-    os.environ[ENV_RESTARTFILE] = restartfile
+    restart_file = os.path.join(args.config_dir, FILE_RESTART)
+    stop_file = os.path.join(args.config_dir, FILE_STOP)
+    os.environ[ENV_STOPFILE] = stop_file
+    os.environ[ENV_RESTARTFILE] = restart_file
 
     # Cleanup leftover files
     try:
-        os.remove(restartfile)
+        os.remove(restart_file)
     except FileNotFoundError:
         pass
 
     try:
-        os.remove(stopfile)
+        os.remove(stop_file)
     except FileNotFoundError:
         pass
 
