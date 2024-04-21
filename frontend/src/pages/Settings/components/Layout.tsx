@@ -73,7 +73,7 @@ const Layout: FunctionComponent<Props> = (props) => {
                 icon={faSave}
                 loading={isMutating}
                 disabled={totalStagedCount === 0}
-                rightIcon={
+                rightSection={
                   <Badge size="xs" radius="sm" hidden={totalStagedCount === 0}>
                     {totalStagedCount}
                   </Badge>

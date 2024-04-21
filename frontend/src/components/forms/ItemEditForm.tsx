@@ -80,7 +80,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
           label="Languages Profile"
         ></Selector>
         <Divider></Divider>
-        <Group position="right">
+        <Group justify="right">
           <Button
             disabled={isOverlayVisible}
             onClick={() => {

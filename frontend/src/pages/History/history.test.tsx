@@ -1,7 +1,7 @@
 import { renderTest, RenderTestCase } from "@/tests/render";
 import MoviesHistoryView from "./Movies";
 import SeriesHistoryView from "./Series";
-import HistoryStats from "./Statistics";
+import HistoryStats from "./Statistics/HistoryStats";
 
 const cases: RenderTestCase[] = [
   {

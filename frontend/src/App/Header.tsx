@@ -1,6 +1,5 @@
 import { useSystem, useSystemSettings } from "@/apis/hooks";
 import { Action, Search } from "@/components";
-import { Layout } from "@/constants";
 import { useNavbar } from "@/contexts/Navbar";
 import { useIsOnline } from "@/contexts/Online";
 import { Environment, useGotoHomepage } from "@/utilities";
@@ -12,27 +11,16 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Anchor,
+  AppShell,
   Avatar,
   Badge,
   Burger,
   Divider,
   Group,
-  Header,
-  MediaQuery,
   Menu,
-  createStyles,
 } from "@mantine/core";
 import { FunctionComponent } from "react";
-
-const useStyles = createStyles((theme) => {
-  const headerBackgroundColor =
-    theme.colorScheme === "light" ? theme.colors.gray[0] : theme.colors.dark[4];
-  return {
-    header: {
-      backgroundColor: headerBackgroundColor,
-    },
-  };
-});
+import styles from "./Header.module.scss";
 
 const AppHeader: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
@@ -47,39 +35,28 @@ const AppHeader: FunctionComponent = () => {
 
   const goHome = useGotoHomepage();
 
-  const { classes } = useStyles();
-
   return (
-    <Header p="md" height={Layout.HEADER_HEIGHT} className={classes.header}>
-      <Group position="apart" noWrap>
-        <Group noWrap>
-          <MediaQuery
-            smallerThan={Layout.MOBILE_BREAKPOINT}
-            styles={{ display: "none" }}
-          >
-            <Anchor onClick={goHome}>
-              <Avatar
-                alt="brand"
-                size={32}
-                src={`${Environment.baseUrl}/images/logo64.png`}
-              ></Avatar>
-            </Anchor>
-          </MediaQuery>
-          <MediaQuery
-            largerThan={Layout.MOBILE_BREAKPOINT}
-            styles={{ display: "none" }}
-          >
-            <Burger
-              opened={showed}
-              onClick={() => show(!showed)}
-              size="sm"
-            ></Burger>
-          </MediaQuery>
+    <AppShell.Header p="md" className={styles.header}>
+      <Group justify="space-between" wrap="nowrap">
+        <Group wrap="nowrap">
+          <Anchor onClick={goHome} visibleFrom="sm">
+            <Avatar
+              alt="brand"
+              size={32}
+              src={`${Environment.baseUrl}/images/logo64.png`}
+            ></Avatar>
+          </Anchor>
+          <Burger
+            opened={showed}
+            onClick={() => show(!showed)}
+            size="sm"
+            hiddenFrom="sm"
+          ></Burger>
           <Badge size="lg" radius="sm">
             Bazarr
           </Badge>
         </Group>
-        <Group spacing="xs" position="right" noWrap>
+        <Group gap="xs" justify="right" wrap="nowrap">
           <Search></Search>
           <Menu>
             <Menu.Target>
@@ -95,13 +72,13 @@ const AppHeader: FunctionComponent = () => {
             </Menu.Target>
             <Menu.Dropdown>
               <Menu.Item
-                icon={<FontAwesomeIcon icon={faArrowRotateLeft} />}
+                leftSection={<FontAwesomeIcon icon={faArrowRotateLeft} />}
                 onClick={() => restart()}
               >
                 Restart
               </Menu.Item>
               <Menu.Item
-                icon={<FontAwesomeIcon icon={faPowerOff} />}
+                leftSection={<FontAwesomeIcon icon={faPowerOff} />}
                 onClick={() => shutdown()}
               >
                 Shutdown
@@ -114,7 +91,7 @@ const AppHeader: FunctionComponent = () => {
           </Menu>
         </Group>
       </Group>
-    </Header>
+    </AppShell.Header>
   );
 };
 

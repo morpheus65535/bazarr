@@ -30,7 +30,7 @@ const SettingsRadarrView: FunctionComponent = () => {
           <Number label="Port" settingKey="settings-radarr-port"></Number>
           <Text
             label="Base URL"
-            icon="/"
+            leftSection="/"
             settingKey="settings-radarr-base_url"
             settingOptions={{
               onLoaded: (s) => s.radarr.base_url?.slice(1) ?? "",

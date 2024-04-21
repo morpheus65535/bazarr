@@ -38,6 +38,11 @@ export const Number: FunctionComponent<NumberProps> = (props) => {
         if (val === "") {
           val = 0;
         }
+
+        if (typeof val === "string") {
+          return update(+val);
+        }
+
         update(val);
       }}
     ></NumberInput>

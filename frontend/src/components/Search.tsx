@@ -5,11 +5,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Anchor,
   Autocomplete,
-  createStyles,
-  SelectItemProps,
+  ComboboxItem,
+  OptionsFilter,
 } from "@mantine/core";
-import { forwardRef, FunctionComponent, useMemo, useState } from "react";
+import { FunctionComponent, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import styles from "./Search.module.scss";
 
 type SearchResultItem = {
   value: string;
@@ -41,36 +42,35 @@ function useSearch(query: string) {
   );
 }
 
-const useStyles = createStyles((theme) => {
-  return {
-    result: {
-      color:
-        theme.colorScheme === "light"
-          ? theme.colors.dark[8]
-          : theme.colors.gray[1],
-    },
-  };
-});
+const optionsFilter: OptionsFilter = ({ options, search }) => {
+  const lowercaseSearch = search.toLowerCase();
+  const trimmedSearch = search.trim();
 
-type ResultCompProps = SelectItemProps & SearchResultItem;
-
-const ResultComponent = forwardRef<HTMLDivElement, ResultCompProps>(
-  ({ link, value }, ref) => {
-    const styles = useStyles();
-
+  return (options as ComboboxItem[]).filter((option) => {
     return (
-      <Anchor
-        component={Link}
-        to={link}
-        underline={false}
-        className={styles.classes.result}
-        p="sm"
-      >
-        {value}
-      </Anchor>
+      option.value.toLowerCase().includes(lowercaseSearch) ||
+      option.value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .includes(trimmedSearch)
     );
-  },
-);
+  });
+};
+
+const ResultComponent = ({ name, link }: { name: string; link: string }) => {
+  return (
+    <Anchor
+      component={Link}
+      to={link}
+      underline="never"
+      className={styles.result}
+      p="sm"
+    >
+      {name}
+    </Anchor>
+  );
+};
 
 const Search: FunctionComponent = () => {
   const [query, setQuery] = useState("");
@@ -79,22 +79,22 @@ const Search: FunctionComponent = () => {
 
   return (
     <Autocomplete
-      icon={<FontAwesomeIcon icon={faSearch} />}
-      itemComponent={ResultComponent}
+      leftSection={<FontAwesomeIcon icon={faSearch} />}
+      renderOption={(input) => (
+        <ResultComponent
+          name={input.option.value}
+          link={
+            results.find((a) => a.value === input.option.value)?.link || "/"
+          }
+        />
+      )}
       placeholder="Search"
       size="sm"
       data={results}
       value={query}
       onChange={setQuery}
       onBlur={() => setQuery("")}
-      filter={(value, item) =>
-        item.value.toLowerCase().includes(value.toLowerCase().trim()) ||
-        item.value
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .includes(value.trim())
-      }
+      filter={optionsFilter}
     ></Autocomplete>
   );
 };

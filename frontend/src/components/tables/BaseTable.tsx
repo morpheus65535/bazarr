@@ -1,8 +1,9 @@
 import { useIsLoading } from "@/contexts";
 import { usePageSize } from "@/utilities/storage";
-import { Box, createStyles, Skeleton, Table, Text } from "@mantine/core";
+import { Box, Skeleton, Table, Text } from "@mantine/core";
 import { ReactNode, useMemo } from "react";
 import { HeaderGroup, Row, TableInstance } from "react-table";
+import styles from "./BaseTable.module.scss";
 
 export type BaseTableProps<T extends object> = TableInstance<T> & {
   tableStyles?: TableStyleProps<T>;
@@ -18,37 +19,23 @@ export interface TableStyleProps<T extends object> {
   rowRenderer?: (row: Row<T>) => Nullable<JSX.Element>;
 }
 
-const useStyles = createStyles((theme) => {
-  return {
-    container: {
-      display: "block",
-      maxWidth: "100%",
-      overflowX: "auto",
-    },
-    table: {
-      borderCollapse: "collapse",
-    },
-    header: {},
-  };
-});
-
 function DefaultHeaderRenderer<T extends object>(
   headers: HeaderGroup<T>[],
 ): JSX.Element[] {
   return headers.map((col) => (
-    <th style={{ whiteSpace: "nowrap" }} {...col.getHeaderProps()}>
+    <Table.Th style={{ whiteSpace: "nowrap" }} {...col.getHeaderProps()}>
       {col.render("Header")}
-    </th>
+    </Table.Th>
   ));
 }
 
 function DefaultRowRenderer<T extends object>(row: Row<T>): JSX.Element | null {
   return (
-    <tr {...row.getRowProps()}>
+    <Table.Tr {...row.getRowProps()}>
       {row.cells.map((cell) => (
-        <td {...cell.getCellProps()}>{cell.render("Cell")}</td>
+        <Table.Td {...cell.getCellProps()}>{cell.render("Cell")}</Table.Td>
       ))}
-    </tr>
+    </Table.Tr>
   );
 }
 
@@ -65,8 +52,6 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
 
   const headersRenderer = tableStyles?.headersRenderer ?? DefaultHeaderRenderer;
   const rowRenderer = tableStyles?.rowRenderer ?? DefaultRowRenderer;
-
-  const { classes } = useStyles();
 
   const colCount = useMemo(() => {
     return headerGroups.reduce(
@@ -88,19 +73,19 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
     body = Array(tableStyles?.placeholder ?? pageSize)
       .fill(0)
       .map((_, i) => (
-        <tr key={i}>
-          <td colSpan={colCount}>
+        <Table.Tr key={i}>
+          <Table.Td colSpan={colCount}>
             <Skeleton height={24}></Skeleton>
-          </td>
-        </tr>
+          </Table.Td>
+        </Table.Tr>
       ));
   } else if (empty && tableStyles?.emptyText) {
     body = (
-      <tr>
-        <td colSpan={colCount}>
-          <Text align="center">{tableStyles.emptyText}</Text>
-        </td>
-      </tr>
+      <Table.Tr>
+        <Table.Td colSpan={colCount}>
+          <Text ta="center">{tableStyles.emptyText}</Text>
+        </Table.Td>
+      </Table.Tr>
     );
   } else {
     body = rows.map((row) => {
@@ -110,20 +95,20 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
   }
 
   return (
-    <Box className={classes.container}>
+    <Box className={styles.container}>
       <Table
-        className={classes.table}
+        className={styles.table}
         striped={tableStyles?.striped ?? true}
         {...getTableProps()}
       >
-        <thead className={classes.header} hidden={tableStyles?.hideHeader}>
+        <Table.Thead hidden={tableStyles?.hideHeader}>
           {headerGroups.map((headerGroup) => (
-            <tr {...headerGroup.getHeaderGroupProps()}>
+            <Table.Tr {...headerGroup.getHeaderGroupProps()}>
               {headersRenderer(headerGroup.headers)}
-            </tr>
+            </Table.Tr>
           ))}
-        </thead>
-        <tbody {...getTableBodyProps()}>{body}</tbody>
+        </Table.Thead>
+        <Table.Tbody {...getTableBodyProps()}>{body}</Table.Tbody>
       </Table>
     </Box>
   );

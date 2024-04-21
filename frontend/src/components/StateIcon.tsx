@@ -31,7 +31,7 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
       return <FontAwesomeIcon icon={faListCheck} />;
     } else {
       return (
-        <Text color={hasIssues ? "yellow" : "green"}>
+        <Text c={hasIssues ? "yellow" : "green"}>
           <FontAwesomeIcon
             icon={hasIssues ? faExclamationCircle : faCheckCircle}
           />
@@ -48,9 +48,9 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
         </Text>
       </Popover.Target>
       <Popover.Dropdown>
-        <Group position="left" spacing="xl" noWrap grow>
-          <Stack align="flex-start" justify="flex-start" spacing="xs" mb="auto">
-            <Text color="green">
+        <Group justify="left" gap="xl" wrap="nowrap" grow>
+          <Stack align="flex-start" justify="flex-start" gap="xs" mb="auto">
+            <Text c="green">
               <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>
             </Text>
             <List>
@@ -59,8 +59,8 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
               ))}
             </List>
           </Stack>
-          <Stack align="flex-start" justify="flex-start" spacing="xs" mb="auto">
-            <Text color="yellow">
+          <Stack align="flex-start" justify="flex-start" gap="xs" mb="auto">
+            <Text c="yellow">
               <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>
             </Text>
             <List>

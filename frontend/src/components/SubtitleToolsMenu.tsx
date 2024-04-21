@@ -148,7 +148,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
           <Menu.Item
             key={tool.key}
             disabled={disabledTools}
-            icon={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
+            leftSection={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
             onClick={() => {
               if (tool.modal) {
                 modals.openContextModal(tool.modal, { selections });
@@ -164,7 +164,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
         <Menu.Label>Actions</Menu.Label>
         <Menu.Item
           disabled={selections.length !== 0 || onAction === undefined}
-          icon={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}
+          leftSection={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}
           onClick={() => {
             onAction?.("search");
           }}
@@ -174,7 +174,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
         <Menu.Item
           disabled={selections.length === 0 || onAction === undefined}
           color="red"
-          icon={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
+          leftSection={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
           onClick={() => {
             modals.openConfirmModal({
               title: "The following subtitles will be deleted",

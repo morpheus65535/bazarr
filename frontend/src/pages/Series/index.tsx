@@ -4,7 +4,6 @@ import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
-import { useTableStyles } from "@/styles";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -34,10 +33,9 @@ const SeriesView: FunctionComponent = () => {
         Header: "Name",
         accessor: "title",
         Cell: ({ row, value }) => {
-          const { classes } = useTableStyles();
           const target = `/series/${row.original.sonarrSeriesId}`;
           return (
-            <Anchor className={classes.primary} component={Link} to={target}>
+            <Anchor className="table-primary" component={Link} to={target}>
               {value}
             </Anchor>
           );
@@ -75,8 +73,9 @@ const SeriesView: FunctionComponent = () => {
               size="xl"
               color={episodeMissingCount === 0 ? "brand" : "yellow"}
               value={progress}
-              label={label}
-            ></Progress>
+            >
+              <Progress.Label>{label}</Progress.Label>
+            </Progress>
           );
         },
       },

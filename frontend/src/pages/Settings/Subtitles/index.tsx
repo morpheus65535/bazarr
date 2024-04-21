@@ -501,7 +501,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             label="Command"
             settingKey="settings-general-postprocessing_cmd"
           ></Text>
-          <Table highlightOnHover fontSize="sm">
+          <Table highlightOnHover fs="sm">
             <tbody>{commandOptionElements}</tbody>
           </Table>
         </CollapseBox>

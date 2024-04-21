@@ -55,13 +55,19 @@ const App: FunctionComponent = () => {
       <NavbarProvider value={{ showed: navbar, show: setNavbar }}>
         <OnlineProvider value={{ online, setOnline }}>
           <AppShell
-            navbarOffsetBreakpoint={Layout.MOBILE_BREAKPOINT}
-            header={<AppHeader></AppHeader>}
-            navbar={<AppNavbar></AppNavbar>}
+            navbar={{
+              width: Layout.NAVBAR_WIDTH,
+              breakpoint: Layout.MOBILE_BREAKPOINT,
+              collapsed: { mobile: !navbar },
+            }}
+            header={{ height: { base: Layout.HEADER_HEIGHT } }}
             padding={0}
-            fixed
           >
-            <Outlet></Outlet>
+            <AppHeader></AppHeader>
+            <AppNavbar></AppNavbar>
+            <AppShell.Main>
+              <Outlet></Outlet>
+            </AppShell.Main>
           </AppShell>
         </OnlineProvider>
       </NavbarProvider>

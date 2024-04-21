@@ -1,9 +1,9 @@
 import { LOG } from "@/utilities/console";
 import {
+  ComboboxItem,
   MultiSelect,
   MultiSelectProps,
   Select,
-  SelectItem,
   SelectProps,
 } from "@mantine/core";
 import { isNull, isUndefined } from "lodash";
@@ -14,10 +14,10 @@ export type SelectorOption<T> = Override<
     value: T;
     label: string;
   },
-  SelectItem
+  ComboboxItem
 >;
 
-type SelectItemWithPayload<T> = SelectItem & {
+type SelectItemWithPayload<T> = ComboboxItem & {
   payload: T;
 };
 
@@ -84,7 +84,7 @@ export function Selector<T>({
   }, [defaultValue, keyRef]);
 
   const wrappedOnChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
       const payload = data.find((v) => v.value === value)?.payload ?? null;
       onChange?.(payload);
     },
@@ -93,7 +93,8 @@ export function Selector<T>({
 
   return (
     <Select
-      withinPortal={true}
+      data-testid="input-selector"
+      comboboxProps={{ withinPortal: true }}
       data={data}
       defaultValue={wrappedDefaultValue}
       value={wrappedValue}
@@ -144,6 +145,7 @@ export function MultiSelector<T>({
     () => value && value.map(labelRef.current),
     [value],
   );
+
   const wrappedDefaultValue = useMemo(
     () => defaultValue && defaultValue.map(labelRef.current),
     [defaultValue],

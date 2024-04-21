@@ -24,7 +24,7 @@ const ToolboxButton: FunctionComponent<ToolboxButtonProps> = ({
     <Button
       color="dark"
       variant="subtle"
-      leftIcon={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
+      leftSection={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
       {...props}
     >
       <Text size="xs">{children}</Text>

@@ -1,5 +1,4 @@
 import { Action } from "@/components";
-import { Layout } from "@/constants";
 import { useNavbar } from "@/contexts/Navbar";
 import { useRouteItems } from "@/Router";
 import { CustomRouteObject, Route } from "@/Router/type";
@@ -14,19 +13,18 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Anchor,
+  AppShell,
   Badge,
   Collapse,
-  createStyles,
   Divider,
   Group,
-  Navbar as MantineNavbar,
   Stack,
   Text,
   useMantineColorScheme,
 } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
 import clsx from "clsx";
-import {
+import React, {
   createContext,
   FunctionComponent,
   useContext,
@@ -35,6 +33,7 @@ import {
   useState,
 } from "react";
 import { matchPath, NavLink, RouteObject, useLocation } from "react-router-dom";
+import styles from "./Navbar.module.scss";
 
 const Selection = createContext<{
   selection: string | null;
@@ -97,7 +96,6 @@ function useIsActive(parent: string, route: RouteObject) {
 }
 
 const AppNavbar: FunctionComponent = () => {
-  const { showed } = useNavbar();
   const [selection, select] = useState<string | null>(null);
 
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
@@ -111,23 +109,10 @@ const AppNavbar: FunctionComponent = () => {
   }, [pathname]);
 
   return (
-    <MantineNavbar
-      p="xs"
-      hiddenBreakpoint={Layout.MOBILE_BREAKPOINT}
-      hidden={!showed}
-      width={{ [Layout.MOBILE_BREAKPOINT]: Layout.NAVBAR_WIDTH }}
-      styles={(theme) => ({
-        root: {
-          backgroundColor:
-            theme.colorScheme === "light"
-              ? theme.colors.gray[2]
-              : theme.colors.dark[6],
-        },
-      })}
-    >
+    <AppShell.Navbar p="xs" className={styles.nav}>
       <Selection.Provider value={{ selection, select }}>
-        <MantineNavbar.Section grow>
-          <Stack spacing={0}>
+        <AppShell.Section grow>
+          <Stack gap={0}>
             {routes.map((route, idx) => (
               <RouteItem
                 key={BuildKey("nav", idx)}
@@ -136,10 +121,10 @@ const AppNavbar: FunctionComponent = () => {
               ></RouteItem>
             ))}
           </Stack>
-        </MantineNavbar.Section>
+        </AppShell.Section>
         <Divider></Divider>
-        <MantineNavbar.Section mt="xs">
-          <Group spacing="xs">
+        <AppShell.Section mt="xs">
+          <Group gap="xs">
             <Action
               label="Change Theme"
               color={dark ? "yellow" : "indigo"}
@@ -159,9 +144,9 @@ const AppNavbar: FunctionComponent = () => {
               ></Action>
             </Anchor>
           </Group>
-        </MantineNavbar.Section>
+        </AppShell.Section>
       </Selection.Provider>
-    </MantineNavbar>
+    </AppShell.Navbar>
   );
 };
 
@@ -186,7 +171,7 @@ const RouteItem: FunctionComponent<{
 
   if (children !== undefined) {
     const elements = (
-      <Stack spacing={0}>
+      <Stack gap={0}>
         {children.map((child, idx) => (
           <RouteItem
             parent={link}
@@ -199,7 +184,7 @@ const RouteItem: FunctionComponent<{
 
     if (name) {
       return (
-        <Stack spacing={0}>
+        <Stack gap={0}>
           <NavbarItem
             primary
             name={name}
@@ -244,53 +229,6 @@ const RouteItem: FunctionComponent<{
   }
 };
 
-const useStyles = createStyles((theme) => {
-  const borderColor =
-    theme.colorScheme === "light" ? theme.colors.gray[5] : theme.colors.dark[4];
-
-  const activeBorderColor =
-    theme.colorScheme === "light"
-      ? theme.colors.brand[4]
-      : theme.colors.brand[8];
-
-  const activeBackgroundColor =
-    theme.colorScheme === "light" ? theme.colors.gray[1] : theme.colors.dark[8];
-
-  const hoverBackgroundColor =
-    theme.colorScheme === "light" ? theme.colors.gray[0] : theme.colors.dark[7];
-
-  const textColor =
-    theme.colorScheme === "light" ? theme.colors.gray[8] : theme.colors.gray[5];
-
-  return {
-    text: {
-      display: "inline-flex",
-      alignItems: "center",
-      width: "100%",
-      color: textColor,
-    },
-    anchor: {
-      textDecoration: "none",
-      borderLeft: `2px solid ${borderColor}`,
-    },
-    active: {
-      backgroundColor: activeBackgroundColor,
-      borderLeft: `2px solid ${activeBorderColor}`,
-      boxShadow: theme.shadows.xs,
-    },
-    hover: {
-      backgroundColor: hoverBackgroundColor,
-    },
-    icon: { width: "1.4rem", marginRight: theme.spacing.xs },
-    badge: {
-      marginLeft: "auto",
-      textDecoration: "none",
-      boxShadow: theme.shadows.xs,
-      color: textColor,
-    },
-  };
-});
-
 interface NavbarItemProps {
   name: string;
   link: string;
@@ -308,8 +246,6 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
   onClick,
   primary = false,
 }) => {
-  const { classes } = useStyles();
-
   const { show } = useNavbar();
 
   const { ref, hovered } = useHover();
@@ -335,9 +271,9 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
       }}
       className={({ isActive }) =>
         clsx(
-          clsx(classes.anchor, {
-            [classes.active]: isActive,
-            [classes.hover]: hovered,
+          clsx(styles.anchor, {
+            [styles.active]: isActive,
+            [styles.hover]: hovered,
           }),
         )
       }
@@ -347,18 +283,19 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
         inline
         p="xs"
         size="sm"
-        weight={primary ? "bold" : "normal"}
-        className={classes.text}
+        fw={primary ? "bold" : "normal"}
+        className={styles.text}
+        span
       >
         {icon && (
           <FontAwesomeIcon
-            className={classes.icon}
+            className={styles.icon}
             icon={icon}
           ></FontAwesomeIcon>
         )}
         {name}
-        {shouldHideBadge === false && (
-          <Badge className={classes.badge} radius="xs">
+        {!shouldHideBadge && (
+          <Badge className={styles.badge} radius="xs">
             {badge}
           </Badge>
         )}

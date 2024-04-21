@@ -9,12 +9,12 @@ import {
   Text as MantineText,
   SimpleGrid,
   Stack,
+  AutocompleteProps,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { capitalize } from "lodash";
 import {
   FunctionComponent,
-  forwardRef,
   useCallback,
   useMemo,
   useRef,
@@ -48,6 +48,11 @@ type SettingsKey =
 interface ProviderViewProps {
   availableOptions: Readonly<ProviderInfo[]>;
   settingsKey: SettingsKey;
+}
+
+interface ProviderSelect {
+  value: string;
+  payload: ProviderInfo;
 }
 
 export const ProviderView: FunctionComponent<ProviderViewProps> = ({
@@ -130,17 +135,16 @@ interface ProviderToolProps {
   settingsKey: Readonly<SettingsKey>;
 }
 
-const SelectItem = forwardRef<
-  HTMLDivElement,
-  { payload: ProviderInfo; label: string }
->(({ payload: { description }, label, ...other }, ref) => {
+const SelectItem: AutocompleteProps["renderOption"] = ({ option }) => {
+  const provider = option as ProviderSelect;
+
   return (
-    <Stack spacing={1} ref={ref} {...other}>
-      <MantineText size="md">{label}</MantineText>
-      <MantineText size="xs">{description}</MantineText>
+    <Stack gap={1}>
+      <MantineText size="md">{provider.value}</MantineText>
+      <MantineText size="xs">{provider.payload.description}</MantineText>
     </Stack>
   );
-});
+};
 
 const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   payload,
@@ -298,19 +302,19 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
       }
     });
 
-    return <Stack spacing="xs">{elements}</Stack>;
+    return <Stack gap="xs">{elements}</Stack>;
   }, [info]);
 
   return (
     <SettingsProvider value={settings}>
       <FormContext.Provider value={form}>
         <Stack>
-          <Stack spacing="xs">
+          <Stack gap="xs">
             <Selector
               data-autofocus
               searchable
               placeholder="Click to Select a Provider"
-              itemComponent={SelectItem}
+              renderOption={SelectItem}
               disabled={payload !== null}
               {...selectorOptions}
               value={info}
@@ -323,7 +327,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
             </div>
           </Stack>
           <Divider></Divider>
-          <Group position="right">
+          <Group justify="right">
             <Button hidden={!payload} color="red" onClick={deletePayload}>
               Delete
             </Button>

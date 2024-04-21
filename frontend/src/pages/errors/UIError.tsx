@@ -45,7 +45,7 @@ const UIError: FunctionComponent<Props> = ({ error }) => {
       <Center my="xl">
         <Code>{stack}</Code>
       </Center>
-      <Group position="center">
+      <Group justify="center">
         <Anchor href={`${GithubRepoRoot}/issues/new/choose`} target="_blank">
           <Button color="yellow">Report Issue</Button>
         </Anchor>
