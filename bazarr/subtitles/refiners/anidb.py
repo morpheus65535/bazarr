@@ -115,16 +115,16 @@ class AniDBClient(object):
 
 
 def refine_from_anidb(path, video):
+    if not isinstance(video, Episode) or not video.series_tvdb_id:
+        logging.debug(f'Video is not an Anime TV series, skipping refinement for {video}')
+
+        return
+
     if refined_providers.intersection(settings.general.enabled_providers) and video.series_anidb_id is None:
         refine_anidb_ids(video)
 
 
 def refine_anidb_ids(video):
-    if not isinstance(video, Episode) and not video.series_tvdb_id:
-        logging.debug(f'Video is not an Anime TV series, skipping refinement for {video}')
-
-        return video
-
     anidb_client = AniDBClient(settings.anidb.api_client, settings.anidb.api_client_ver)
 
     season = video.season if video.season else 0
