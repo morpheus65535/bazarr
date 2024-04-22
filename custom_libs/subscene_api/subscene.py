@@ -64,7 +64,7 @@ class NewEndpoint(Exception):
 
 # utils
 def soup_for(url, data=None, session=None, user_agent=DEFAULT_USER_AGENT):
-    url = re.sub("\s", "+", url)
+    url = re.sub(r"\s", "+", url)
     if not session:
         r = Request(url, data=None, headers=dict(HEADERS, **{"User-Agent": user_agent}))
         html = urlopen(r).read().decode("utf-8")

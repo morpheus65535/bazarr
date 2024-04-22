@@ -321,8 +321,8 @@ class Scheduler:
                 self.aps_scheduler.modify_job(job.id,
                                               next_run_time=datetime.now(tz=self.timezone) +
                                               timedelta(seconds=randrange(
-                                                  job.trigger.interval.total_seconds() * 0.75,
-                                                  job.trigger.interval.total_seconds())))
+                                                  int(job.trigger.interval.total_seconds() * 0.75),
+                                                  int(job.trigger.interval.total_seconds()))))
 
     def __no_task(self):
         for job in self.aps_scheduler.get_jobs():
