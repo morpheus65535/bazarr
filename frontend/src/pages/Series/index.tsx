@@ -68,11 +68,11 @@ const SeriesView: FunctionComponent = () => {
           }
 
           return (
-            <Progress.Root
-              key={title}
-              size="xl"
-            >
-              <Progress.Section value={progress} color={episodeMissingCount === 0 ? "brand" : "yellow"}>
+            <Progress.Root key={title} size="xl">
+              <Progress.Section
+                value={progress}
+                color={episodeMissingCount === 0 ? "brand" : "yellow"}
+              >
                 <Progress.Label>{label}</Progress.Label>
               </Progress.Section>
             </Progress.Root>
