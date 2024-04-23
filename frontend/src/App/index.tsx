@@ -1,7 +1,6 @@
 import AppNavbar from "@/App/Navbar";
 import { RouterNames } from "@/Router/RouterNames";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { Layout } from "@/constants";
 import NavbarProvider from "@/contexts/Navbar";
 import OnlineProvider from "@/contexts/Online";
 import { notification } from "@/modules/task";
@@ -13,6 +12,7 @@ import { showNotification } from "@mantine/notifications";
 import { FunctionComponent, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import AppHeader from "./Header";
+import styleVars from "@/_variables.module.scss";
 
 const App: FunctionComponent = () => {
   const navigate = useNavigate();
@@ -56,11 +56,11 @@ const App: FunctionComponent = () => {
         <OnlineProvider value={{ online, setOnline }}>
           <AppShell
             navbar={{
-              width: Layout.NAVBAR_WIDTH,
-              breakpoint: Layout.MOBILE_BREAKPOINT,
+              width: styleVars.navBarWidth,
+              breakpoint: "sm",
               collapsed: { mobile: !navbar },
             }}
-            header={{ height: { base: Layout.HEADER_HEIGHT } }}
+            header={{ height: { base: styleVars.headerHeight } }}
             padding={0}
           >
             <AppHeader></AppHeader>

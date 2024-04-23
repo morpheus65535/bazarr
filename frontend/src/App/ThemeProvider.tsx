@@ -3,21 +3,22 @@ import "@mantine/notifications/styles.css";
 import { createTheme, MantineProvider } from "@mantine/core";
 import { FunctionComponent, PropsWithChildren } from "react";
 import ThemeLoader from "@/App/ThemeLoader";
+import styleVars from "@/_variables.module.scss";
 
 const themeProvider = createTheme({
   fontFamily: "Roboto, open sans, Helvetica Neue, Helvetica, Arial, sans-serif",
   colors: {
     brand: [
-      "#F8F0FC",
-      "#F3D9FA",
-      "#EEBEFA",
-      "#E599F7",
-      "#DA77F2",
-      "#CC5DE8",
-      "#BE4BDB",
-      "#AE3EC9",
-      "#9C36B5",
-      "#862E9C",
+      styleVars.colorBrand0,
+      styleVars.colorBrand1,
+      styleVars.colorBrand2,
+      styleVars.colorBrand3,
+      styleVars.colorBrand4,
+      styleVars.colorBrand5,
+      styleVars.colorBrand6,
+      styleVars.colorBrand7,
+      styleVars.colorBrand8,
+      styleVars.colorBrand9,
     ],
   },
   primaryColor: "brand",
