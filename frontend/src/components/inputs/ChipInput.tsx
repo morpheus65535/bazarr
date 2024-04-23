@@ -14,6 +14,8 @@ const ChipInput: FunctionComponent<ChipInputProps> = ({
   label,
   onChange,
 }: ChipInputProps) => {
+  // TODO: Replace with our own custom implementation instead of just using the
+  //       built-in TagsInput. https://mantine.dev/combobox/?e=MultiSelectCreatable
   return (
     <TagsInput
       defaultValue={defaultValue}
