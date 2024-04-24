@@ -1057,7 +1057,7 @@ def list_supported_video_types(pool_class, **kwargs):
 
 
 def download_subtitles(subtitles, pool_class=ProviderPool, **kwargs):
-    """Download :attr:`~subliminal.subtitle.Subtitle.content` of `subtitles`.
+    r"""Download :attr:`~subliminal.subtitle.Subtitle.content` of `subtitles`.
 
     :param subtitles: subtitles to download.
     :type subtitles: list of :class:`~subliminal.subtitle.Subtitle`
@@ -1074,7 +1074,7 @@ def download_subtitles(subtitles, pool_class=ProviderPool, **kwargs):
 
 def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=False, only_one=False, compute_score=None,
                             pool_class=ProviderPool, throttle_time=0, **kwargs):
-    """List and download the best matching subtitles.
+    r"""List and download the best matching subtitles.
 
     The `videos` must pass the `languages` and `undefined` (`only_one`) checks of :func:`check_video`.
 
@@ -1245,7 +1245,7 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
 
 
 def refine(video, episode_refiners=None, movie_refiners=None, **kwargs):
-    """Refine a video using :ref:`refiners`.
+    r"""Refine a video using :ref:`refiners`.
 
     patch: add traceback logging
 

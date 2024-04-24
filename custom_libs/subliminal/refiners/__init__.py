@@ -1,4 +1,4 @@
-"""
+r"""
 Refiners enrich a :class:`~subliminal.video.Video` object by adding information to it.
 
 A refiner is a simple function:

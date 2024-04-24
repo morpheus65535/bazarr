@@ -115,7 +115,7 @@ class Video(object):
 
 
 class Episode(Video):
-    """Episode :class:`Video`.
+    r"""Episode :class:`Video`.
 
     :param str series: series of the episode.
     :param int season: season number of the episode.
@@ -202,7 +202,7 @@ class Episode(Video):
 
 
 class Movie(Video):
-    """Movie :class:`Video`.
+    r"""Movie :class:`Video`.
 
     :param str title: title of the movie.
     :param int year: year of the movie.
