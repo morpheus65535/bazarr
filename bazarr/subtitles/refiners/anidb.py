@@ -53,7 +53,7 @@ class AniDBClient(object):
         ]
 
         if not animes:
-            return None
+            return None, None
 
         # Sort the anime by offset in ascending order
         animes.sort(key=lambda a: a.episode_offset)
