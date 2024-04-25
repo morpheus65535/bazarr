@@ -83,7 +83,8 @@ const ProfileEditForm: FunctionComponent<Props> = ({
   const itemCutoffOptions = useSelectorOptions(
     form.values.items,
     (v) => {
-      const suffix = v.hi === "True" ? ':hi' : v.forced === "True" ? ':forced': '';
+      const suffix =
+        v.hi === "True" ? ":hi" : v.forced === "True" ? ":forced" : "";
 
       return v.language + suffix;
     },
