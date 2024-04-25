@@ -141,8 +141,9 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
                     lang = Language.fromalpha3b(subtitle_file['info']['lang'])
 
                     # For Portuguese and Portuguese Brazilian they both share the same code, the name is the only
-                    # identifier AnimeTosho provides.
-                    if lang.alpha3 == 'por' and subtitle_file['info']['name'].lower().find('brazil'):
+                    # identifier AnimeTosho provides. Also, some subtitles does not have name, in this case it could
+                    # be a false negative but there is nothing we can use to guarantee it is PT-BR, we rather skip it.
+                    if lang.alpha3 == 'por' and subtitle_file['info'].get('name', '').lower().find('brazil'):
                         lang = Language('por', 'BR')
 
                     subtitle = self.subtitle_class(
