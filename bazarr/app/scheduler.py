@@ -47,6 +47,10 @@ ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365
 
 
 def a_long_time_from_now(job):
+    # job isn't scheduled at all
+    if job.next_run_time is None:
+        return True
+
     # currently defined as more than a year from now
     delta = job.next_run_time - datetime.now(job.next_run_time.tzinfo)
     return delta.total_seconds() > ONE_YEAR_IN_SECONDS
