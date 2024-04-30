@@ -20,6 +20,7 @@ import {
   Group,
   Stack,
   Text,
+  useComputedColorScheme,
   useMantineColorScheme,
 } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
@@ -98,8 +99,10 @@ function useIsActive(parent: string, route: RouteObject) {
 const AppNavbar: FunctionComponent = () => {
   const [selection, select] = useState<string | null>(null);
 
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
-  const dark = colorScheme === "dark";
+  const { toggleColorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme("light");
+
+  const dark = computedColorScheme === "dark";
 
   const routes = useRouteItems();
 

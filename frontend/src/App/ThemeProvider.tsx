@@ -1,4 +1,10 @@
-import { ActionIcon, Badge, Button, createTheme, MantineProvider } from "@mantine/core";
+import {
+  ActionIcon,
+  Badge,
+  Button,
+  createTheme,
+  MantineProvider,
+} from "@mantine/core";
 import { FunctionComponent, PropsWithChildren } from "react";
 import ThemeLoader from "@/App/ThemeLoader";
 import "@mantine/core/styles.layer.css";
