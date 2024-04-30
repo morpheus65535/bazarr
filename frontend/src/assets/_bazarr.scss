@@ -36,9 +36,3 @@ $header-height: 64px;
     }
   }
 }
-
-button {
-  @include dark {
-    color: $color-brand-0 !important;
-  }
-}

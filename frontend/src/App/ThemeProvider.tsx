@@ -1,9 +1,10 @@
-import "@mantine/core/styles.css";
-import "@mantine/notifications/styles.css";
-import { createTheme, MantineProvider } from "@mantine/core";
+import { ActionIcon, Button, createTheme, MantineProvider } from "@mantine/core";
 import { FunctionComponent, PropsWithChildren } from "react";
 import ThemeLoader from "@/App/ThemeLoader";
-import styleVars from "@/_variables.module.scss";
+import "@mantine/core/styles.layer.css";
+import "@mantine/notifications/styles.layer.css";
+import styleVars from "@/assets/_variables.module.scss";
+import buttonClasses from "@/assets/button.module.scss";
 
 const themeProvider = createTheme({
   fontFamily: "Roboto, open sans, Helvetica Neue, Helvetica, Arial, sans-serif",
@@ -22,6 +23,11 @@ const themeProvider = createTheme({
     ],
   },
   primaryColor: "brand",
+  components: {
+    Button: Button.extend({
+      classNames: buttonClasses,
+    }),
+  },
 });
 
 const ThemeProvider: FunctionComponent<PropsWithChildren> = ({ children }) => {

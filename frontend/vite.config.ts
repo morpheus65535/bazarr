@@ -35,8 +35,8 @@ export default defineConfig(async ({ mode, command }) => {
       preprocessorOptions: {
         scss: {
           additionalData: `
-            @import "./src/_mantine";
-            @import "./src/_bazarr";
+            @import "./src/assets/_mantine";
+            @import "./src/assets/_bazarr";
           `,
         },
       },

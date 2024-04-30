@@ -12,7 +12,7 @@ import { showNotification } from "@mantine/notifications";
 import { FunctionComponent, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import AppHeader from "./Header";
-import styleVars from "@/_variables.module.scss";
+import styleVars from "@/assets/_variables.module.scss";
 
 const App: FunctionComponent = () => {
   const navigate = useNavigate();
