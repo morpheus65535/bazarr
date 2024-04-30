@@ -169,7 +169,7 @@ def whisper_get_language_reverse(alpha3):
         lan = whisper_get_language(wl, whisper_languages[wl])
         if lan.alpha3 == alpha3:
             return wl
-    raise ValueError
+    return None
 
 def language_from_alpha3(lang):
     name = Language(lang).name
@@ -317,7 +317,7 @@ class WhisperAIProvider(Provider):
         if out == None:
             logger.info(f"Whisper cannot process {subtitle.video.original_path} because of missing/bad audio track")
             subtitle.content = None
-            return         
+            return  
 
         logger.debug(f'Audio stream length (in WAV format) is {len(out):,} bytes')
 
@@ -326,11 +326,23 @@ class WhisperAIProvider(Provider):
         else:
             output_language = "eng"
 
+        input_language = whisper_get_language_reverse(subtitle.audio_language)
+        if input_language is None:
+            if output_language == "eng":
+                # guess that audio track is mislabelled English and let whisper try to transcribe it
+                input_language = "en"
+                subtitle.task = "transcribe"
+                logger.info(f"Whisper treating unsupported audio track language: '{subtitle.audio_language}' as English")
+            else:
+                logger.info(f"Whisper cannot process {subtitle.video.original_path} because of unsupported audio track language: '{subtitle.audio_language}'")
+                subtitle.content = None
+                return
+        
         logger.info(f'Starting WhisperAI {subtitle.task} to {language_from_alpha3(output_language)} for {subtitle.video.original_path}')
         startTime = time.time()
 
         r = self.session.post(f"{self.endpoint}/asr",
-                              params={'task': subtitle.task, 'language': whisper_get_language_reverse(subtitle.audio_language), 'output': 'srt', 'encode': 'false'},
+                              params={'task': subtitle.task, 'language': input_language, 'output': 'srt', 'encode': 'false'},
                               files={'audio_file': out},
                               timeout=(self.response, self.timeout))
                               
