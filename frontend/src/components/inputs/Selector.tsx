@@ -170,6 +170,7 @@ export function MultiSelector<T>({
   return (
     <MultiSelect
       {...select}
+      hidePickedOptions
       value={wrappedValue}
       defaultValue={wrappedDefaultValue}
       onChange={wrappedOnChange}
