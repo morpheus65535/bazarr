@@ -31,7 +31,7 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
       return <FontAwesomeIcon icon={faListCheck} />;
     } else {
       return (
-        <Text c={hasIssues ? "yellow" : "green"}>
+        <Text c={hasIssues ? "yellow" : "green"} span>
           <FontAwesomeIcon
             icon={hasIssues ? faExclamationCircle : faCheckCircle}
           />

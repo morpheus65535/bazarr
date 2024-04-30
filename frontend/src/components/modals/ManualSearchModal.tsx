@@ -116,7 +116,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
 
           return (
             <Stack gap={0} onClick={() => setOpen((o) => !o)}>
-              <Text className="table-primary">
+              <Text className="table-primary" span>
                 {value[0]}
                 {value.length > 1 && (
                   <FontAwesomeIcon
