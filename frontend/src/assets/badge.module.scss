@@ -1,0 +1,8 @@
+.root {
+  background-color: var(--mantine-color-grape-light);
+
+  @include light {
+    color: var(--mantine-color-dark-filled);
+    background-color: var(--mantine-color-grape-light);
+  }
+}

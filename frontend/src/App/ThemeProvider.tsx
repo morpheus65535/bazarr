@@ -1,15 +1,12 @@
-import {
-  ActionIcon,
-  Button,
-  createTheme,
-  MantineProvider,
-} from "@mantine/core";
+import { ActionIcon, Badge, Button, createTheme, MantineProvider } from "@mantine/core";
 import { FunctionComponent, PropsWithChildren } from "react";
 import ThemeLoader from "@/App/ThemeLoader";
 import "@mantine/core/styles.layer.css";
 import "@mantine/notifications/styles.layer.css";
 import styleVars from "@/assets/_variables.module.scss";
 import buttonClasses from "@/assets/button.module.scss";
+import actionIconClasses from "@/assets/action_icon.module.scss";
+import badgeClasses from "@/assets/badge.module.scss";
 
 const themeProvider = createTheme({
   fontFamily: "Roboto, open sans, Helvetica Neue, Helvetica, Arial, sans-serif",
@@ -31,6 +28,12 @@ const themeProvider = createTheme({
   components: {
     Button: Button.extend({
       classNames: buttonClasses,
+    }),
+    ActionIcon: ActionIcon.extend({
+      classNames: actionIconClasses,
+    }),
+    Badge: Badge.extend({
+      classNames: badgeClasses,
     }),
   },
 });

@@ -1,6 +1,8 @@
-.root {
-  &[data-variant="danger"] {
-    background-color: var(--mantine-color-red-9);
-    color: var(--mantine-color-red-0);
+@layer mantine {
+  .root {
+    &[data-variant="danger"] {
+      background-color: var(--mantine-color-red-9);
+      color: var(--mantine-color-red-0);
+    }
   }
 }
