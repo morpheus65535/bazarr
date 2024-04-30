@@ -19,6 +19,8 @@ $header-height: 64px;
   .table-primary {
     display: inline-block;
 
+    font-size: var(--mantine-font-size-sm);
+
     @include smaller-than($mantine-breakpoint-sm) {
       min-width: 12rem;
     }
