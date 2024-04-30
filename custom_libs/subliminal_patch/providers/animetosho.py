@@ -88,7 +88,9 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def list_subtitles(self, video, languages):
         if not video.series_anidb_episode_id:
-            raise ProviderError("Video does not have an AnimeTosho Episode ID!")
+            logger.debug('Skipping video %r. It is not an anime or the anidb_episode_id could not be identified', video)
+
+            return
 
         return [s for s in self._get_series(video.series_anidb_episode_id) if s.language in languages]
 
