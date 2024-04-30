@@ -1,5 +1,5 @@
 .root {
-  &[data-variant='danger'] {
+  &[data-variant="danger"] {
     background-color: var(--mantine-color-red-9);
     color: var(--mantine-color-red-0);
   }
