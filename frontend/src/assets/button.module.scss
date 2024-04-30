@@ -1,5 +1,13 @@
 @layer mantine {
   .root {
+    @include dark {
+      color: var(--mantine-color-dark-0);
+
+      @include hover {
+        background-color: var(--mantine-color-dark-8);
+      }
+    }
+
     &[data-variant="danger"] {
       background-color: var(--mantine-color-red-9);
       color: var(--mantine-color-red-0);
