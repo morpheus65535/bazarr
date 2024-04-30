@@ -90,7 +90,7 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
         if not video.series_anidb_episode_id:
             logger.debug('Skipping video %r. It is not an anime or the anidb_episode_id could not be identified', video)
 
-            return
+            return []
 
         return [s for s in self._get_series(video.series_anidb_episode_id) if s.language in languages]
 
