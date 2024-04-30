@@ -163,7 +163,6 @@ const Table: FunctionComponent = () => {
       <Button
         fullWidth
         disabled={!canAdd}
-        color="light"
         onClick={() => {
           const profile = {
             profileId: nextProfileId,

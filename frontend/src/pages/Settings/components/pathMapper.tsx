@@ -141,7 +141,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
           columns={columns}
           data={data}
         ></SimpleTable>
-        <Button fullWidth color="light" onClick={addRow}>
+        <Button fullWidth onClick={addRow}>
           Add
         </Button>
       </>

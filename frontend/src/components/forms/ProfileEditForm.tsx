@@ -267,7 +267,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
                 columns={columns}
                 data={form.values.items}
               ></SimpleTable>
-              <Button fullWidth color="light" onClick={addItem}>
+              <Button fullWidth onClick={addItem}>
                 Add Language
               </Button>
               <Selector

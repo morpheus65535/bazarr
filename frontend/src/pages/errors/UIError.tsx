@@ -49,7 +49,7 @@ const UIError: FunctionComponent<Props> = ({ error }) => {
         <Anchor href={`${GithubRepoRoot}/issues/new/choose`} target="_blank">
           <Button color="yellow">Report Issue</Button>
         </Anchor>
-        <Button onClick={Reload} color="light">
+        <Button onClick={Reload}>
           Reload Page
         </Button>
       </Group>
