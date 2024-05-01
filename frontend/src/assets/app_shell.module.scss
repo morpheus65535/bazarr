@@ -1,3 +1,5 @@
 .main {
-  background-color: rgb(26, 27, 30);
+  @include dark {
+    background-color: rgb(26, 27, 30);
+  }
 }

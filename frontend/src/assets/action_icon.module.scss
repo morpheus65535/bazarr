@@ -1,9 +1,7 @@
 @layer mantine {
   .root {
-    @include dark {
-      &[data-variant="light"] {
-        color: var(--mantine-color-dark-0);
-      }
+    &[data-variant="light"] {
+      color: var(--mantine-color-dark-0);
     }
 
     @include light {
