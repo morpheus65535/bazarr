@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  AppShell,
   Badge,
   Button,
   createTheme,
@@ -12,6 +13,7 @@ import "@mantine/notifications/styles.layer.css";
 import styleVars from "@/assets/_variables.module.scss";
 import buttonClasses from "@/assets/button.module.scss";
 import actionIconClasses from "@/assets/action_icon.module.scss";
+import appShellClasses from "@/assets/app_shell.module.scss";
 import badgeClasses from "@/assets/badge.module.scss";
 
 const themeProvider = createTheme({
@@ -32,14 +34,17 @@ const themeProvider = createTheme({
   },
   primaryColor: "brand",
   components: {
-    Button: Button.extend({
-      classNames: buttonClasses,
-    }),
     ActionIcon: ActionIcon.extend({
       classNames: actionIconClasses,
     }),
+    AppShell: AppShell.extend({
+      classNames: appShellClasses,
+    }),
     Badge: Badge.extend({
       classNames: badgeClasses,
+    }),
+    Button: Button.extend({
+      classNames: buttonClasses,
     }),
   },
 });
