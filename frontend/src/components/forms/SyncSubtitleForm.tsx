@@ -20,7 +20,7 @@ const TaskName = "Syncing Subtitle";
 
 interface SelectOptions {
   group: string;
-  items: {value: string; label: string}[]
+  items: { value: string; label: string }[];
 }
 
 function useReferencedSubtitles(
@@ -42,19 +42,19 @@ function useReferencedSubtitles(
 
   const mediaData = mediaType === "episode" ? episodeData : movieData;
 
-  const subtitles: SelectOptions[] = []
+  const subtitles: SelectOptions[] = [];
 
   if (!mediaData.data) {
     return [];
   } else {
     if (mediaData.data.audio_tracks.length > 0) {
-      const embeddedAudioGroup : SelectOptions = {
+      const embeddedAudioGroup: SelectOptions = {
         group: "Embedded audio tracks",
-        items: []
+        items: [],
       };
 
-      subtitles.push(embeddedAudioGroup)
-      
+      subtitles.push(embeddedAudioGroup);
+
       mediaData.data.audio_tracks.forEach((item) => {
         embeddedAudioGroup.items.push({
           value: item.stream,
@@ -64,12 +64,12 @@ function useReferencedSubtitles(
     }
 
     if (mediaData.data.embedded_subtitles_tracks.length > 0) {
-      const embeddedSubtitlesTrackGroup : SelectOptions = {
+      const embeddedSubtitlesTrackGroup: SelectOptions = {
         group: "Embedded subtitles tracks",
-        items: []
+        items: [],
       };
 
-      subtitles.push(embeddedSubtitlesTrackGroup)
+      subtitles.push(embeddedSubtitlesTrackGroup);
 
       mediaData.data.embedded_subtitles_tracks.forEach((item) => {
         embeddedSubtitlesTrackGroup.items.push({
@@ -80,12 +80,12 @@ function useReferencedSubtitles(
     }
 
     if (mediaData.data.external_subtitles_tracks.length > 0) {
-      const externalSubtitlesFilesGroup : SelectOptions = {
+      const externalSubtitlesFilesGroup: SelectOptions = {
         group: "External Subtitles files",
-        items: []
+        items: [],
       };
 
-      subtitles.push(externalSubtitlesFilesGroup)
+      subtitles.push(externalSubtitlesFilesGroup);
 
       mediaData.data.external_subtitles_tracks.forEach((item) => {
         if (item) {
