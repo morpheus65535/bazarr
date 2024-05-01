@@ -14,9 +14,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Alert, Button, Checkbox, Divider, Stack, Text } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { FunctionComponent } from "react";
-import { Selector, SelectorOption } from "../inputs";
+import { GroupedSelector, Selector } from "../inputs";
 
 const TaskName = "Syncing Subtitle";
+
+interface SelectOptions {
+  group: string;
+  items: {value: string; label: string}[]
+}
 
 function useReferencedSubtitles(
   mediaType: "episode" | "movie",
@@ -37,15 +42,21 @@ function useReferencedSubtitles(
 
   const mediaData = mediaType === "episode" ? episodeData : movieData;
 
-  const subtitles: { group: string; value: string; label: string }[] = [];
+  const subtitles: SelectOptions[] = []
 
   if (!mediaData.data) {
     return [];
   } else {
     if (mediaData.data.audio_tracks.length > 0) {
+      const embeddedAudioGroup : SelectOptions = {
+        group: "Embedded audio tracks",
+        items: []
+      };
+
+      subtitles.push(embeddedAudioGroup)
+      
       mediaData.data.audio_tracks.forEach((item) => {
-        subtitles.push({
-          group: "Embedded audio tracks",
+        embeddedAudioGroup.items.push({
           value: item.stream,
           label: `${item.name || item.language} (${item.stream})`,
         });
@@ -53,9 +64,15 @@ function useReferencedSubtitles(
     }
 
     if (mediaData.data.embedded_subtitles_tracks.length > 0) {
+      const embeddedSubtitlesTrackGroup : SelectOptions = {
+        group: "Embedded subtitles tracks",
+        items: []
+      };
+
+      subtitles.push(embeddedSubtitlesTrackGroup)
+
       mediaData.data.embedded_subtitles_tracks.forEach((item) => {
-        subtitles.push({
-          group: "Embedded subtitles tracks",
+        embeddedSubtitlesTrackGroup.items.push({
           value: item.stream,
           label: `${item.name || item.language} (${item.stream})`,
         });
@@ -63,10 +80,16 @@ function useReferencedSubtitles(
     }
 
     if (mediaData.data.external_subtitles_tracks.length > 0) {
+      const externalSubtitlesFilesGroup : SelectOptions = {
+        group: "External Subtitles files",
+        items: []
+      };
+
+      subtitles.push(externalSubtitlesFilesGroup)
+
       mediaData.data.external_subtitles_tracks.forEach((item) => {
         if (item) {
-          subtitles.push({
-            group: "External Subtitles files",
+          externalSubtitlesFilesGroup.items.push({
             value: item.path,
             label: item.name,
           });
@@ -105,7 +128,7 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
   const mediaId = selections[0].id;
   const subtitlesPath = selections[0].path;
 
-  const subtitles: SelectorOption<string>[] = useReferencedSubtitles(
+  const subtitles: SelectOptions[] = useReferencedSubtitles(
     mediaType,
     mediaId,
     subtitlesPath,
@@ -145,14 +168,14 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
         >
           <Text size="sm">{selections.length} subtitles selected</Text>
         </Alert>
-        <Selector
+        <GroupedSelector
           clearable
           disabled={subtitles.length === 0 || selections.length !== 1}
           label="Reference"
           placeholder="Default: choose automatically within video file"
           options={subtitles}
           {...form.getInputProps("reference")}
-        ></Selector>
+        ></GroupedSelector>
         <Selector
           clearable
           label="Max Offset Seconds"

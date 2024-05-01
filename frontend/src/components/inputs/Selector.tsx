@@ -1,6 +1,7 @@
 import { LOG } from "@/utilities/console";
 import {
   ComboboxItem,
+  ComboboxParsedItemGroup,
   MultiSelect,
   MultiSelectProps,
   Select,
@@ -32,6 +33,30 @@ function DefaultKeyBuilder<T>(value: T) {
       `Invalid type (${typeof value}) in the SelectorOption, please provide a label builder`,
     );
   }
+}
+
+export type GroupedSelectorProps<T> = Override<
+  {
+    options: ComboboxParsedItemGroup[];
+    getkey?: (value: T) => string;
+  },
+  Omit<SelectProps, "data">
+>;
+
+export function GroupedSelector<T>({
+  value,
+  options,
+  getkey = DefaultKeyBuilder,
+  ...select
+}: GroupedSelectorProps<T>) {
+  return (
+    <Select
+      data-testid="input-selector"
+      comboboxProps={{ withinPortal: true }}
+      data={options}
+      {...select}
+    ></Select>
+  );
 }
 
 export type SelectorProps<T> = Override<
