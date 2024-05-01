@@ -25,7 +25,7 @@ def check_releases():
     url_releases = 'https://api.github.com/repos/morpheus65535/Bazarr/releases?per_page=100'
     try:
         logging.debug(f'BAZARR getting releases from Github: {url_releases}')
-        r = requests.get(url_releases, allow_redirects=True)
+        r = requests.get(url_releases, allow_redirects=True, timeout=15)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("Error trying to get releases from Github. Http error.")
