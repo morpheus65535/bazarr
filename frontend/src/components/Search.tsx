@@ -85,6 +85,10 @@ const Search: FunctionComponent = () => {
       size="sm"
       data={results}
       value={query}
+      limit={30}
+      // uncomment following line after upgrade to Mantine 7.x or higher
+      // scrollAreaProps = {{type: auto}}
+      maxDropdownHeight={400}
       onChange={setQuery}
       onBlur={() => setQuery("")}
       filter={(value, item) =>
