@@ -18,7 +18,7 @@ type SearchResultItem = {
 
 function useSearch(query: string) {
   const debouncedQuery = useDebouncedValue(query, 500);
-  const { data } = useServerSearch(debouncedQuery, debouncedQuery.length > 0);
+  const { data } = useServerSearch(debouncedQuery, debouncedQuery.length >= 0);
 
   return useMemo<SearchResultItem[]>(
     () =>
