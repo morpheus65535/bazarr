@@ -8,7 +8,7 @@ from app.database import TableShows, TableMovies, database, select
 
 from ..utils import authenticate
 
-import Levenshtein
+import textdistance
 
 api_ns_system_searches = Namespace('System Searches', description='Search for series or movies by name')
 
@@ -64,6 +64,5 @@ class Searches(Resource):
                 results.append(result)
 
         # sort results by how closely they match the query
-        results = sorted(results, key=lambda x: Levenshtein.distance(query, x['title']))
-
+        results = sorted(results, key=lambda x: textdistance.hamming.distance(query, x['title']))
         return results
