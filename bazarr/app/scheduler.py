@@ -10,7 +10,6 @@ from apscheduler.triggers.date import DateTrigger
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 from datetime import datetime, timedelta
 from calendar import day_name
-from math import floor
 from random import randrange
 from tzlocal import get_localzone
 try:

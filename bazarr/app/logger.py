@@ -11,7 +11,6 @@ from logging.handlers import TimedRotatingFileHandler
 from utilities.central import get_log_file_path
 from pytz_deprecation_shim import PytzUsageWarning
 
-from .get_args import args
 from .config import settings
 
 
@@ -62,18 +61,18 @@ class UnwantedWaitressMessageFilter(logging.Filter):
         if settings.general.debug:
             # no filtering in debug mode
             return True
-            
-        unwantedMessages = [ 
-            "Exception while serving /api/socket.io/", 
-            ['Session is disconnected', 'Session not found' ],
-            
-            "Exception while serving /api/socket.io/", 
-            ["'Session is disconnected'", "'Session not found'" ],
-            
-            "Exception while serving /api/socket.io/", 
-            ['"Session is disconnected"', '"Session not found"' ],
 
-            "Exception when servicing %r", 
+        unwantedMessages = [
+            "Exception while serving /api/socket.io/",
+            ['Session is disconnected', 'Session not found'],
+
+            "Exception while serving /api/socket.io/",
+            ["'Session is disconnected'", "'Session not found'"],
+
+            "Exception while serving /api/socket.io/",
+            ['"Session is disconnected"', '"Session not found"'],
+
+            "Exception when servicing %r",
             [],
         ]
 

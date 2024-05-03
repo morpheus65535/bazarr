@@ -58,7 +58,7 @@ class Validator(OriginalValidator):
 def check_parser_binary(value):
     try:
         get_binary(value)
-    except BinaryNotFound as e:
+    except BinaryNotFound:
         raise ValidationError(f"Executable '{value}' not found in search path. Please install before making this selection.")
     return True
 

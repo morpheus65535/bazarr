@@ -87,9 +87,9 @@ class Server:
             pass
 
     def close_all(self):
-        print(f"Closing database...")
+        print("Closing database...")
         close_database()
-        print(f"Closing webserver...")
+        print("Closing webserver...")
         self.server.close()
 
     def shutdown(self, status=EXIT_NORMAL):

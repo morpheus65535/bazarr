@@ -19,7 +19,8 @@ from utilities.backup import restore_from_backup
 
 from app.database import init_db
 
-from literals import *
+from literals import (EXIT_CONFIG_CREATE_ERROR, ENV_BAZARR_ROOT_DIR, DIR_BACKUP, DIR_CACHE, DIR_CONFIG, DIR_DB, DIR_LOG,
+                      DIR_RESTORE, EXIT_REQUIREMENTS_ERROR)
 from utilities.central import make_bazarr_dir, restart_bazarr, stop_bazarr
 
 # set start time global variable as epoch
