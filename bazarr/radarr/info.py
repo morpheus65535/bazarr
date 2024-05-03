@@ -8,7 +8,7 @@ from requests.exceptions import JSONDecodeError
 from dogpile.cache import make_region
 
 from app.config import settings, empty_values
-from constants import headers
+from constants import HEADERS
 
 region = make_region().configure('dogpile.cache.memory')
 
@@ -30,7 +30,7 @@ class GetRadarrInfo:
             try:
                 rv = f"{url_radarr()}/api/system/status?apikey={settings.radarr.apikey}"
                 radarr_json = requests.get(rv, timeout=int(settings.radarr.http_timeout), verify=False,
-                                           headers=headers).json()
+                                           headers=HEADERS).json()
                 if 'version' in radarr_json:
                     radarr_version = radarr_json['version']
                 else:
@@ -39,7 +39,7 @@ class GetRadarrInfo:
                 try:
                     rv = f"{url_radarr()}/api/v3/system/status?apikey={settings.radarr.apikey}"
                     radarr_version = requests.get(rv, timeout=int(settings.radarr.http_timeout), verify=False,
-                                                  headers=headers).json()['version']
+                                                  headers=HEADERS).json()['version']
                 except JSONDecodeError:
                     logging.debug('BAZARR cannot get Radarr version')
                     radarr_version = 'unknown'

@@ -49,6 +49,8 @@ SUBTITLE_EXTENSIONS = ('.srt', '.sub', '.smi', '.txt', '.ssa', '.ass', '.mpl', '
 
 _POOL_LIFETIME = datetime.timedelta(hours=12)
 
+HI_REGEX = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}](?<!{\\an\d})')
+
 
 def remove_crap_from_fn(fn):
     # in case of the second regex part, the legit release group name will be in group(2), if it's followed by [string]
@@ -1201,6 +1203,8 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             continue
 
         # create subtitle path
+        if bool(re.search(HI_REGEX, subtitle.text)):
+            subtitle.language.hi = True
         subtitle_path = get_subtitle_path(file_path, None if single else subtitle.language,
                                           forced_tag=subtitle.language.forced,
                                           hi_tag=False if must_remove_hi else subtitle.language.hi, tags=tags)
