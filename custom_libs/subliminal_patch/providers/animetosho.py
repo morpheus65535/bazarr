@@ -46,10 +46,11 @@ class AnimeToshoSubtitle(Subtitle):
     """AnimeTosho.org Subtitle."""
     provider_name = 'animetosho'
 
-    def __init__(self, language, download_link, meta):
+    def __init__(self, language, download_link, meta, release_info):
         super(AnimeToshoSubtitle, self).__init__(language, page_link=download_link)
         self.meta = meta
         self.download_link = download_link
+        self.release_info = release_info
 
     @property
     def id(self):
@@ -152,6 +153,7 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
                         lang,
                         storage_download_url + '{}/{}.xz'.format(hex_id, subtitle_file['id']),
                         meta=file,
+                        release_info=entry.get('title'),
                     )
 
                     logger.debug('Found subtitle %r', subtitle)
