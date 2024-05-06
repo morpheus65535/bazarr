@@ -58,7 +58,7 @@
     "prettier-plugin-organize-imports": "^3.2.4",
     "pretty-quick": "^4.0.0",
     "react-table": "^7.8.0",
-    "recharts": "^2.12.4",
+    "recharts": "^2.12.6",
     "sass": "^1.74.1",
     "typescript": "^5.4.4",
     "vite": "^5.2.8",
