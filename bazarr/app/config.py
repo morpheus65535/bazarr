@@ -325,6 +325,9 @@ validators = [
     Validator('karagarga.f_username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('karagarga.f_password', must_exist=True, default='', is_type_of=str, cast=str),
 
+    # subdl section
+    Validator('subdl.api_key', must_exist=True, default='', is_type_of=str, cast=str),
+
     # subsync section
     Validator('subsync.use_subsync', must_exist=True, default=False, is_type_of=bool),
     Validator('subsync.use_subsync_threshold', must_exist=True, default=False, is_type_of=bool),
