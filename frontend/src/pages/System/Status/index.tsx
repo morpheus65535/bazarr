@@ -27,6 +27,13 @@ import {
   useCallback,
   useState,
 } from "react";
+import {
+  divisorDay,
+  divisorHour,
+  divisorMinute,
+  divisorSecond,
+  formatTime,
+} from "@/utilities/time";
 import Table from "./table";
 
 interface InfoProps {
@@ -100,18 +107,14 @@ const SystemStatusView: FunctionComponent = () => {
       const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
       const uptimeInSeconds = currentTime - startTime;
 
-      const days = Math.floor(uptimeInSeconds / (24 * 60 * 60));
-      const hours = Math.floor((uptimeInSeconds % (24 * 60 * 60)) / (60 * 60))
-        .toString()
-        .padStart(2, "0");
-      const minutes = Math.floor((uptimeInSeconds % (60 * 60)) / 60)
-        .toString()
-        .padStart(2, "0");
-      const seconds = Math.floor(uptimeInSeconds % 60)
-        .toString()
-        .padStart(2, "0");
+      const uptime: string = formatTime(uptimeInSeconds, [
+        { unit: "d", divisor: divisorDay },
+        { unit: "h", divisor: divisorHour },
+        { unit: "m", divisor: divisorMinute },
+        { unit: "s", divisor: divisorSecond },
+      ]);
 
-      setUptime(days + "d " + hours + ":" + minutes + ":" + seconds);
+      setUptime(uptime);
     }
   }, [status?.start_time]);
 
