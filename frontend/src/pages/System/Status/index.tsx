@@ -20,7 +20,6 @@ import {
   Text,
 } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
-import moment from "moment";
 import {
   FunctionComponent,
   PropsWithChildren,
@@ -98,14 +97,20 @@ const SystemStatusView: FunctionComponent = () => {
   const update = useCallback(() => {
     const startTime = status?.start_time;
     if (startTime) {
-      const duration = moment.duration(
-          moment().utc().unix() - startTime,
-          "seconds",
-        ),
-        days = duration.days(),
-        hours = duration.hours().toString().padStart(2, "0"),
-        minutes = duration.minutes().toString().padStart(2, "0"),
-        seconds = duration.seconds().toString().padStart(2, "0");
+      const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+      const uptimeInSeconds = currentTime - startTime;
+
+      const days = Math.floor(uptimeInSeconds / (24 * 60 * 60));
+      const hours = Math.floor((uptimeInSeconds % (24 * 60 * 60)) / (60 * 60))
+        .toString()
+        .padStart(2, "0");
+      const minutes = Math.floor((uptimeInSeconds % (60 * 60)) / 60)
+        .toString()
+        .padStart(2, "0");
+      const seconds = Math.floor(uptimeInSeconds % 60)
+        .toString()
+        .padStart(2, "0");
+
       setUptime(days + "d " + hours + ":" + minutes + ":" + seconds);
     }
   }, [status?.start_time]);
