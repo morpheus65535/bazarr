@@ -9,15 +9,15 @@ export const divisorMinute = 60;
 export const divisorSecond = 1;
 
 export const formatTime = (
-  uptimeInSeconds: number,
+  timeInSeconds: number,
   formats: TimeFormat[],
 ): string =>
   formats.reduce(
     (formattedTime: string, { unit, divisor }: TimeFormat, index: number) => {
       const timeValue: number =
         index === 0
-          ? Math.floor(uptimeInSeconds / divisor)
-          : Math.floor(uptimeInSeconds / divisor) % 60;
+          ? Math.floor(timeInSeconds / divisor)
+          : Math.floor(timeInSeconds / divisor) % 60;
       return (
         formattedTime +
         (index === 0
