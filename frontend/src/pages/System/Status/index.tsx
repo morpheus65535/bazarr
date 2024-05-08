@@ -104,7 +104,9 @@ const SystemStatusView: FunctionComponent = () => {
   const update = useCallback(() => {
     const startTime = status?.start_time;
     if (startTime) {
-      const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+      // Current time in seconds
+      const currentTime = Math.floor(Date.now() / 1000);
+
       const uptimeInSeconds = currentTime - startTime;
 
       const uptime: string = formatTime(uptimeInSeconds, [
