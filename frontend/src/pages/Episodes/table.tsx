@@ -7,6 +7,13 @@ import {
 } from "react";
 import { Column, TableInstance } from "react-table";
 import { Group, Text } from "@mantine/core";
+import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
+import {
+  faBookmark,
+  faHistory,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
 import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action, GroupTable } from "@/components";
@@ -19,14 +26,6 @@ import { useTableStyles } from "@/styles";
 import { BuildKey, filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { Subtitle } from "./components";
-
-import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
-import {
-  faBookmark,
-  faHistory,
-  faUser,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 interface Props {
   episodes: Item.Episode[] | null;

@@ -1,6 +1,8 @@
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { Badge, Button, Group } from "@mantine/core";
+import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
+import { cloneDeep } from "lodash";
 import { Action, SimpleTable } from "@/components";
 import {
   anyCutoff,
@@ -11,9 +13,6 @@ import { languageProfileKey } from "@/pages/Settings/keys";
 import { useFormActions } from "@/pages/Settings/utilities/FormValues";
 import { BuildKey, useArrayAction } from "@/utilities";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
-
-import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
-import { cloneDeep } from "lodash";
 
 const Table: FunctionComponent = () => {
   const profiles = useLatestProfiles();

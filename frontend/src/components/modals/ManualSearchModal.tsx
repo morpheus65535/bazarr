@@ -12,14 +12,6 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
-import { Action, PageTable } from "@/components";
-import Language from "@/components/bazarr/Language";
-import StateIcon from "@/components/StateIcon";
-import { withModal } from "@/modules/modals";
-import { task, TaskGroup } from "@/modules/task";
-import { useTableStyles } from "@/styles";
-import { GetItemId } from "@/utilities";
-
 import {
   faCaretDown,
   faDownload,
@@ -27,6 +19,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { isString } from "lodash";
+import { Action, PageTable } from "@/components";
+import Language from "@/components/bazarr/Language";
+import StateIcon from "@/components/StateIcon";
+import { withModal } from "@/modules/modals";
+import { task, TaskGroup } from "@/modules/task";
+import { useTableStyles } from "@/styles";
+import { GetItemId } from "@/utilities";
 
 type SupportType = Item.Movie | Item.Episode;
 

@@ -1,7 +1,6 @@
 import { FunctionComponent, ReactElement } from "react";
 import { Tooltip, TooltipProps } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
-
 import { isNull, isUndefined } from "lodash";
 
 interface TextPopoverProps {

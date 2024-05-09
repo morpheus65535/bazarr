@@ -1,11 +1,10 @@
 import { showNotification } from "@mantine/notifications";
+import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
 import socketio from "@/modules/socketio";
 import { notification } from "@/modules/task";
 import { Environment } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { setAuthenticated } from "@/utilities/event";
-
-import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
 
 function GetErrorMessage(data: unknown, defaultMsg = "Unknown error"): string {
   if (typeof data === "string") {

@@ -41,10 +41,12 @@
                 "^react",
                 // Mantine Packages
                 "^@mantine/",
-                // Internal Packages
-                "^@/\\w",
+                // Vendor Packages
+                "^(\\w|@\\w)",
                 // Side Effect Imports
                 "^\\u0000",
+                // Internal Packages
+                "^@/\\w",
                 // Parent Imports
                 "^\\.\\.(?!/?$)",
                 "^\\.\\./?$",

@@ -10,6 +10,15 @@ import {
   Text,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import {
+  faCheck,
+  faCircleNotch,
+  faInfoCircle,
+  faTimes,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { isString } from "lodash";
 import { useMovieSubtitleModification } from "@/apis/hooks";
 import { Action, Selector } from "@/components/inputs";
 import { SimpleTable } from "@/components/tables";
@@ -23,16 +32,6 @@ import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
 } from "@/utilities/languages";
-
-import {
-  faCheck,
-  faCircleNotch,
-  faInfoCircle,
-  faTimes,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { isString } from "lodash";
 
 type SubtitleFile = {
   file: File;

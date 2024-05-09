@@ -9,6 +9,7 @@ import {
   Textarea,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { isObject } from "lodash";
 import api from "@/apis/raw";
 import { Selector } from "@/components";
 import MutateButton from "@/components/async/MutateButton";
@@ -21,8 +22,6 @@ import {
 } from "@/pages/Settings/utilities/hooks";
 import { BuildKey, useSelectorOptions } from "@/utilities";
 import FormUtils from "@/utilities/form";
-
-import { isObject } from "lodash";
 
 const notificationHook = (notifications: Settings.NotificationInfo[]) => {
   return notifications.map((info) => JSON.stringify(info));

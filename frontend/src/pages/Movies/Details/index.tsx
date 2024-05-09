@@ -5,6 +5,18 @@ import { Dropzone } from "@mantine/dropzone";
 import { useDocumentTitle } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
 import {
+  faCloudUploadAlt,
+  faEllipsis,
+  faHistory,
+  faSearch,
+  faSync,
+  faToolbox,
+  faUser,
+  faWrench,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { isNumber } from "lodash";
+import {
   useDownloadMovieSubtitles,
   useIsMovieActionRunning,
   useMoviesProvider,
@@ -26,19 +38,6 @@ import ItemOverview from "@/pages/views/ItemOverview";
 import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import Table from "./table";
-
-import {
-  faCloudUploadAlt,
-  faEllipsis,
-  faHistory,
-  faSearch,
-  faSync,
-  faToolbox,
-  faUser,
-  faWrench,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { isNumber } from "lodash";
 
 const MovieDetailView: FunctionComponent = () => {
   const param = useParams();

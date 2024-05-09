@@ -15,6 +15,7 @@ import {
   Text as MantineText,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { capitalize } from "lodash";
 import { Selector } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
 import {
@@ -42,8 +43,6 @@ import {
 import { BuildKey, useSelectorOptions } from "@/utilities";
 import { ASSERT } from "@/utilities/console";
 import { ProviderInfo } from "./list";
-
-import { capitalize } from "lodash";
 
 type SettingsKey =
   | "settings-general-enabled_providers"

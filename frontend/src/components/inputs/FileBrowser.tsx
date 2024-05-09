@@ -1,9 +1,8 @@
 import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
 import { Autocomplete, AutocompleteProps } from "@mantine/core";
-import { useFileSystem } from "@/apis/hooks";
-
 import { faFolder } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useFileSystem } from "@/apis/hooks";
 
 // TODO: use fortawesome icons
 const backKey = "⏎ Back";

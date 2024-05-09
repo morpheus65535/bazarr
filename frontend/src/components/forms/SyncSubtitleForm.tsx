@@ -3,6 +3,8 @@
 import { FunctionComponent } from "react";
 import { Alert, Button, Checkbox, Divider, Stack, Text } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   useRefTracksByEpisodeId,
   useRefTracksByMovieId,
@@ -13,9 +15,6 @@ import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/Subtitles/options";
 import { toPython } from "@/utilities";
-
-import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const TaskName = "Syncing Subtitle";
 

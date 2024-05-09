@@ -1,8 +1,7 @@
 import { Text } from "@mantine/core";
+import { describe, it } from "vitest";
 import { render, screen } from "@/tests";
 import Layout from "./Layout";
-
-import { describe, it } from "vitest";
 
 describe("Settings layout", () => {
   it.concurrent("should be able to render without issues", () => {

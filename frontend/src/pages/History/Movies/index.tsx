@@ -3,6 +3,12 @@ import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { Anchor, Badge, Text } from "@mantine/core";
+import {
+  faFileExcel,
+  faInfoCircle,
+  faRecycle,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMovieAddBlacklist, useMovieHistoryPagination } from "@/apis/hooks";
 import { MutateAction } from "@/components/async";
 import { HistoryIcon } from "@/components/bazarr";
@@ -11,13 +17,6 @@ import StateIcon from "@/components/StateIcon";
 import TextPopover from "@/components/TextPopover";
 import HistoryView from "@/pages/views/HistoryView";
 import { useTableStyles } from "@/styles";
-
-import {
-  faFileExcel,
-  faInfoCircle,
-  faRecycle,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const MoviesHistoryView: FunctionComponent = () => {
   const columns: Column<History.Movie>[] = useMemo<Column<History.Movie>[]>(

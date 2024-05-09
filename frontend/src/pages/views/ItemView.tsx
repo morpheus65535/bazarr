@@ -1,9 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Column } from "react-table";
+import { faList } from "@fortawesome/free-solid-svg-icons";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { QueryPageTable, Toolbox } from "@/components";
-
-import { faList } from "@fortawesome/free-solid-svg-icons";
 
 interface Props<T extends Item.Base = Item.Base> {
   query: UsePaginationQueryResult<T>;

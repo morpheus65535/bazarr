@@ -1,12 +1,11 @@
 import { FunctionComponent } from "react";
 import { Container, Stack } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useEpisodeBlacklist, useEpisodeDeleteBlacklist } from "@/apis/hooks";
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import Table from "./table";
-
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 const BlacklistSeriesView: FunctionComponent = () => {
   const blacklist = useEpisodeBlacklist();

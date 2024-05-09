@@ -11,19 +11,18 @@ import {
   MediaQuery,
   Menu,
 } from "@mantine/core";
-import { useSystem, useSystemSettings } from "@/apis/hooks";
-import { Action, Search } from "@/components";
-import { Layout } from "@/constants";
-import { useNavbar } from "@/contexts/Navbar";
-import { useIsOnline } from "@/contexts/Online";
-import { Environment, useGotoHomepage } from "@/utilities";
-
 import {
   faArrowRotateLeft,
   faGear,
   faPowerOff,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useSystem, useSystemSettings } from "@/apis/hooks";
+import { Action, Search } from "@/components";
+import { Layout } from "@/constants";
+import { useNavbar } from "@/contexts/Navbar";
+import { useIsOnline } from "@/contexts/Online";
+import { Environment, useGotoHomepage } from "@/utilities";
 
 const useStyles = createStyles((theme) => {
   const headerBackgroundColor =

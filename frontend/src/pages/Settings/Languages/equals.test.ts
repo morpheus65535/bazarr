@@ -1,11 +1,10 @@
+import { describe, expect, it } from "vitest";
 import {
   decodeEqualData,
   encodeEqualData,
   LanguageEqualData,
   LanguageEqualImmediateData,
 } from "@/pages/Settings/Languages/equals";
-
-import { describe, expect, it } from "vitest";
 
 describe("Equals Parser", () => {
   it("should parse from string correctly", () => {

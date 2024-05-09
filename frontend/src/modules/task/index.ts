@@ -3,10 +3,9 @@ import {
   showNotification,
   updateNotification,
 } from "@mantine/notifications";
+import { uniqueId } from "lodash";
 import { LOG } from "@/utilities/console";
 import { notification } from "./notification";
-
-import { uniqueId } from "lodash";
 
 class TaskDispatcher {
   private running: boolean;

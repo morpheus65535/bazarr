@@ -11,6 +11,15 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import {
+  faCheck,
+  faCircleNotch,
+  faInfoCircle,
+  faTimes,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { isString } from "lodash";
+import {
   useEpisodesBySeriesId,
   useEpisodeSubtitleModification,
   useSubtitleInfos,
@@ -27,16 +36,6 @@ import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
 } from "@/utilities/languages";
-
-import {
-  faCheck,
-  faCircleNotch,
-  faInfoCircle,
-  faTimes,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { isString } from "lodash";
 
 type SubtitleFile = {
   file: File;

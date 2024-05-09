@@ -15,13 +15,6 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { Language } from "@/components/bazarr";
-import { BuildKey } from "@/utilities";
-import {
-  useLanguageProfileBy,
-  useProfileItemsToLanguages,
-} from "@/utilities/languages";
-
 import {
   faBookmark as farBookmark,
   faFolder,
@@ -36,6 +29,12 @@ import {
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Language } from "@/components/bazarr";
+import { BuildKey } from "@/utilities";
+import {
+  useLanguageProfileBy,
+  useProfileItemsToLanguages,
+} from "@/utilities/languages";
 
 interface Props {
   item: Item.Base | null;

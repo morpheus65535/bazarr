@@ -1,12 +1,11 @@
 import { FunctionComponent, useMemo } from "react";
 import { Column, useSortBy } from "react-table";
 import { Text } from "@mantine/core";
+import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import { useRunTask } from "@/apis/hooks";
 import { SimpleTable } from "@/components";
 import MutateAction from "@/components/async/MutateAction";
 import { useTableStyles } from "@/styles";
-
-import { faPlay } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
   tasks: readonly System.Task[];

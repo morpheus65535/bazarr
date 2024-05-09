@@ -1,7 +1,6 @@
 import { FunctionComponent } from "react";
 import { createStyles, Group, Stack, Text } from "@mantine/core";
 import { Dropzone } from "@mantine/dropzone";
-
 import {
   faArrowUp,
   faFileCirclePlus,

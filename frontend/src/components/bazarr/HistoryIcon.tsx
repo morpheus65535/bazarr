@@ -1,6 +1,5 @@
 import { FunctionComponent } from "react";
 import { Tooltip } from "@mantine/core";
-
 import {
   faClock,
   faClosedCaptioning,

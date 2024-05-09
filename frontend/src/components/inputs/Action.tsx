@@ -5,7 +5,6 @@ import {
   Tooltip,
   TooltipProps,
 } from "@mantine/core";
-
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
   FontAwesomeIcon,

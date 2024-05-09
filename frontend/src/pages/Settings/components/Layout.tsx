@@ -2,6 +2,7 @@ import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
 import { Badge, Container, Group, LoadingOverlay } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDocumentTitle } from "@mantine/hooks";
+import { faSave } from "@fortawesome/free-solid-svg-icons";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
 import { Toolbox } from "@/components";
 import { LoadingProvider } from "@/contexts";
@@ -14,8 +15,6 @@ import { SettingsProvider } from "@/pages/Settings/utilities/SettingsProvider";
 import { useOnValueChange } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { usePrompt } from "@/utilities/routers";
-
-import { faSave } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
   name: string;

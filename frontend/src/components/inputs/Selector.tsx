@@ -6,9 +6,8 @@ import {
   SelectItem,
   SelectProps,
 } from "@mantine/core";
-import { LOG } from "@/utilities/console";
-
 import { isNull, isUndefined } from "lodash";
+import { LOG } from "@/utilities/console";
 
 export type SelectorOption<T> = Override<
   {

@@ -2,6 +2,8 @@
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { Badge, Center, Text } from "@mantine/core";
+import { faFileExcel, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   useEpisodeAddBlacklist,
   useEpisodeHistory,
@@ -16,9 +18,6 @@ import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
 import TextPopover from "@/components/TextPopover";
 import { withModal } from "@/modules/modals";
-
-import { faFileExcel, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 interface MovieHistoryViewProps {
   movie: Item.Movie;

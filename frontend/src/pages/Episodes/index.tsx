@@ -11,6 +11,17 @@ import { Dropzone } from "@mantine/dropzone";
 import { useDocumentTitle } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
 import {
+  faAdjust,
+  faBriefcase,
+  faCircleChevronDown,
+  faCircleChevronRight,
+  faCloudUploadAlt,
+  faHdd,
+  faSearch,
+  faSync,
+  faWrench,
+} from "@fortawesome/free-solid-svg-icons";
+import {
   useEpisodesBySeriesId,
   useIsAnyActionRunning,
   useSeriesAction,
@@ -28,18 +39,6 @@ import ItemOverview from "@/pages/views/ItemOverview";
 import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import Table from "./table";
-
-import {
-  faAdjust,
-  faBriefcase,
-  faCircleChevronDown,
-  faCircleChevronRight,
-  faCloudUploadAlt,
-  faHdd,
-  faSearch,
-  faSync,
-  faWrench,
-} from "@fortawesome/free-solid-svg-icons";
 
 const SeriesEpisodesView: FunctionComponent = () => {
   const [state, setState] = useState({

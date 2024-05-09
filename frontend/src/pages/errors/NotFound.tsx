@@ -1,6 +1,5 @@
 import { FunctionComponent } from "react";
 import { Box, Center, Container, Text, Title } from "@mantine/core";
-
 import { faEyeSlash as fasEyeSlash } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 

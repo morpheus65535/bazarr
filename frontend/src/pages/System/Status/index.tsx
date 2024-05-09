@@ -15,6 +15,14 @@ import {
   Text,
 } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
+import { IconDefinition } from "@fortawesome/fontawesome-common-types";
+import {
+  faDiscord,
+  faGithub,
+  faWikipediaW,
+} from "@fortawesome/free-brands-svg-icons";
+import { faCode, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSystemHealth, useSystemStatus } from "@/apis/hooks";
 import { QueryOverlay } from "@/components/async";
 import { GithubRepoRoot } from "@/constants";
@@ -27,15 +35,6 @@ import {
   formatTime,
 } from "@/utilities/time";
 import Table from "./table";
-
-import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-import {
-  faDiscord,
-  faGithub,
-  faWikipediaW,
-} from "@fortawesome/free-brands-svg-icons";
-import { faCode, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 interface InfoProps {
   title: string;

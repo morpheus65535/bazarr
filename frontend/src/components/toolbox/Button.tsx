@@ -6,7 +6,6 @@ import {
   useState,
 } from "react";
 import { Button, ButtonProps, Text } from "@mantine/core";
-
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 

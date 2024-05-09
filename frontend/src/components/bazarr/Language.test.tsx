@@ -1,7 +1,6 @@
+import { describe, it } from "vitest";
 import { rawRender, screen } from "@/tests";
 import { Language } from ".";
-
-import { describe, it } from "vitest";
 
 describe("Language text", () => {
   const testLanguage: Language.Info = {

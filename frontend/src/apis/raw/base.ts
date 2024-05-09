@@ -1,6 +1,5 @@
-import client from "./client";
-
 import { AxiosResponse } from "axios";
+import client from "./client";
 
 class BaseApi {
   prefix: string;

@@ -1,12 +1,11 @@
 import { FunctionComponent } from "react";
 import { Container } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
+import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { useSystemTasks } from "@/apis/hooks";
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import Table from "./table";
-
-import { faSync } from "@fortawesome/free-solid-svg-icons";
 
 const SystemTasksView: FunctionComponent = () => {
   const tasks = useSystemTasks();

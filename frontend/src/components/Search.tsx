@@ -6,11 +6,10 @@ import {
   createStyles,
   SelectItemProps,
 } from "@mantine/core";
-import { useServerSearch } from "@/apis/hooks";
-import { useDebouncedValue } from "@/utilities";
-
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useServerSearch } from "@/apis/hooks";
+import { useDebouncedValue } from "@/utilities";
 
 type SearchResultItem = {
   value: string;

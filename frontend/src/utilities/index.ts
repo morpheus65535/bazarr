@@ -1,7 +1,6 @@
 import { Dispatch } from "react";
-import { isEpisode, isMovie, isSeries } from "./validate";
-
 import { difference, differenceWith } from "lodash";
+import { isEpisode, isMovie, isSeries } from "./validate";
 
 export function toggleState(
   dispatch: Dispatch<boolean>,

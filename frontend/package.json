@@ -71,6 +71,7 @@
     "build": "vite build",
     "build:ci": "vite build -m development",
     "check": "eslint --ext .ts,.tsx src",
+    "check:fix": "eslint --ext .ts,.tsx src --fix",
     "check:ts": "tsc --noEmit --incremental false",
     "check:fmt": "prettier -c .",
     "test": "vitest",

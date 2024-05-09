@@ -6,6 +6,15 @@ import {
   useMemo,
 } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import {
+  faClock,
+  faCogs,
+  faExclamationTriangle,
+  faFileExcel,
+  faFilm,
+  faLaptop,
+  faPlay,
+} from "@fortawesome/free-solid-svg-icons";
 import { useBadges } from "@/apis/hooks";
 import { useEnabledStatus } from "@/apis/hooks/site";
 import App from "@/App";
@@ -43,16 +52,6 @@ import { Environment } from "@/utilities";
 import Redirector from "./Redirector";
 import { RouterNames } from "./RouterNames";
 import { CustomRouteObject } from "./type";
-
-import {
-  faClock,
-  faCogs,
-  faExclamationTriangle,
-  faFileExcel,
-  faFilm,
-  faLaptop,
-  faPlay,
-} from "@fortawesome/free-solid-svg-icons";
 
 const HistoryStats = lazy(() => import("@/pages/History/Statistics"));
 const SystemStatusView = lazy(() => import("@/pages/System/Status"));

@@ -10,11 +10,10 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { GithubRepoRoot } from "@/constants";
-import { Reload } from "@/utilities";
-
 import { faDizzy } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { GithubRepoRoot } from "@/constants";
+import { Reload } from "@/utilities";
 
 const Placeholder = "********";
 

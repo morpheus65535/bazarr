@@ -1,9 +1,8 @@
-import { rawRender, screen } from "@/tests";
-import Action from "./Action";
-
 import { faStickyNote } from "@fortawesome/free-regular-svg-icons";
 import userEvent from "@testing-library/user-event";
 import { describe, it, vitest } from "vitest";
+import { rawRender, screen } from "@/tests";
+import Action from "./Action";
 
 const testLabel = "Test Label";
 const testIcon = faStickyNote;

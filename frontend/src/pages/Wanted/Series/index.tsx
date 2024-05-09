@@ -2,6 +2,8 @@ import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { Anchor, Badge, Group } from "@mantine/core";
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   useEpisodeSubtitleModification,
   useEpisodeWantedPagination,
@@ -12,9 +14,6 @@ import { task, TaskGroup } from "@/modules/task";
 import WantedView from "@/pages/views/WantedView";
 import { useTableStyles } from "@/styles";
 import { BuildKey } from "@/utilities";
-
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const WantedSeriesView: FunctionComponent = () => {
   const columns: Column<Wanted.Episode>[] = useMemo<Column<Wanted.Episode>[]>(

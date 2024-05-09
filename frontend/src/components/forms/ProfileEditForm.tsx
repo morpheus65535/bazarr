@@ -11,6 +11,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
 import ChipInput from "@/components/inputs/ChipInput";
 import { useModals, withModal } from "@/modules/modals";
@@ -18,8 +19,6 @@ import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import FormUtils from "@/utilities/form";
-
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 export const anyCutoff = 65535;
 
