@@ -77,7 +77,7 @@
     "test:ui": "vitest --ui",
     "coverage": "vitest run --coverage",
     "format": "prettier -w .",
-    "prepare": "cd .. && husky install frontend/.husky"
+    "prepare": "cd .. && husky frontend/.husky"
   },
   "browserslist": {
     "production": [
