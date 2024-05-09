@@ -1,15 +1,16 @@
-import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-import {
-  FontAwesomeIcon,
-  FontAwesomeIconProps,
-} from "@fortawesome/react-fontawesome";
+import { forwardRef } from "react";
 import {
   ActionIcon,
   ActionIconProps,
   Tooltip,
   TooltipProps,
 } from "@mantine/core";
-import { forwardRef } from "react";
+
+import { IconDefinition } from "@fortawesome/fontawesome-common-types";
+import {
+  FontAwesomeIcon,
+  FontAwesomeIconProps,
+} from "@fortawesome/react-fontawesome";
 
 export type ActionProps = MantineComp<ActionIconProps, "button"> & {
   icon: IconDefinition;

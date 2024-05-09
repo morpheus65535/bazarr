@@ -1,16 +1,15 @@
+import { FunctionComponent, useMemo } from "react";
+import { Input } from "@mantine/core";
 import {
   MultiSelector,
   MultiSelectorProps,
   SelectorOption,
 } from "@/components";
-import { Language } from "@/components/bazarr";
+import { Selector, SelectorProps } from "@/pages/Settings/components";
+import { useFormActions } from "@/pages/Settings/utilities/FormValues";
+import { BaseInput } from "@/pages/Settings/utilities/hooks";
 import { useSelectorOptions } from "@/utilities";
-import { Input } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
-import { Selector, SelectorProps } from "../components";
-import { useFormActions } from "../utilities/FormValues";
-import { BaseInput } from "../utilities/hooks";
 
 type LanguageSelectorProps = Omit<
   MultiSelectorProps<Language.Info>,

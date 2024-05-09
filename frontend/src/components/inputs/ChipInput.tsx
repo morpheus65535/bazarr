@@ -1,5 +1,5 @@
-import { useSelectorOptions } from "@/utilities";
 import { FunctionComponent } from "react";
+import { useSelectorOptions } from "@/utilities";
 import { MultiSelector, MultiSelectorProps } from "./Selector";
 
 export type ChipInputProps = Omit<

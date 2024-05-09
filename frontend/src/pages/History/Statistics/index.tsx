@@ -1,3 +1,12 @@
+import { FunctionComponent, useMemo, useState } from "react";
+import {
+  Box,
+  Container,
+  createStyles,
+  SimpleGrid,
+  useMantineTheme,
+} from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import {
   useHistoryStats,
   useLanguages,
@@ -8,16 +17,9 @@ import { QueryOverlay } from "@/components/async";
 import Language from "@/components/bazarr/Language";
 import { Layout } from "@/constants";
 import { useSelectorOptions } from "@/utilities";
-import {
-  Box,
-  Container,
-  SimpleGrid,
-  createStyles,
-  useMantineTheme,
-} from "@mantine/core";
-import { useDocumentTitle } from "@mantine/hooks";
+import { actionOptions, timeFrameOptions } from "./options";
+
 import { merge } from "lodash";
-import { FunctionComponent, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -28,7 +30,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { actionOptions, timeFrameOptions } from "./options";
 
 const useStyles = createStyles((theme) => ({
   container: {

@@ -1,4 +1,15 @@
-import { RouterNames } from "@/Router/RouterNames";
+import {
+  FunctionComponent,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Navigate, useParams } from "react-router-dom";
+import { Container, Group, Stack } from "@mantine/core";
+import { Dropzone } from "@mantine/dropzone";
+import { useDocumentTitle } from "@mantine/hooks";
+import { showNotification } from "@mantine/notifications";
 import {
   useEpisodesBySeriesId,
   useIsAnyActionRunning,
@@ -12,9 +23,12 @@ import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { SeriesUploadModal } from "@/components/forms/SeriesUploadForm";
 import { SubtitleToolsModal } from "@/components/modals";
 import { useModals } from "@/modules/modals";
-import { TaskGroup, notification, task } from "@/modules/task";
+import { notification, task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
+import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
+import Table from "./table";
+
 import {
   faAdjust,
   faBriefcase,
@@ -26,19 +40,6 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { Container, Group, Stack } from "@mantine/core";
-import { Dropzone } from "@mantine/dropzone";
-import { useDocumentTitle } from "@mantine/hooks";
-import { showNotification } from "@mantine/notifications";
-import {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { Navigate, useParams } from "react-router-dom";
-import Table from "./table";
 
 const SeriesEpisodesView: FunctionComponent = () => {
   const [state, setState] = useState({

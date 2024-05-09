@@ -1,11 +1,12 @@
+import { FunctionComponent } from "react";
+import { Container, Group } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { useResetProvider, useSystemProviders } from "@/apis/hooks";
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
-import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { Container, Group } from "@mantine/core";
-import { useDocumentTitle } from "@mantine/hooks";
-import { FunctionComponent } from "react";
 import Table from "./table";
+
+import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 const SystemProvidersView: FunctionComponent = () => {
   const providers = useSystemProviders();

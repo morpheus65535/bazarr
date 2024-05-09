@@ -4,6 +4,7 @@ import {
   LanguageEqualData,
   LanguageEqualImmediateData,
 } from "@/pages/Settings/Languages/equals";
+
 import { describe, expect, it } from "vitest";
 
 describe("Equals Parser", () => {

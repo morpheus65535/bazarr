@@ -1,13 +1,6 @@
-import { withModal } from "@/modules/modals";
-import { task, TaskGroup } from "@/modules/task";
-import { useTableStyles } from "@/styles";
-import { GetItemId } from "@/utilities";
-import {
-  faCaretDown,
-  faDownload,
-  faInfoCircle,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useCallback, useMemo, useState } from "react";
+import { UseQueryResult } from "react-query";
+import { Column } from "react-table";
 import {
   Alert,
   Anchor,
@@ -19,13 +12,21 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
+import { Action, PageTable } from "@/components";
+import Language from "@/components/bazarr/Language";
+import StateIcon from "@/components/StateIcon";
+import { withModal } from "@/modules/modals";
+import { task, TaskGroup } from "@/modules/task";
+import { useTableStyles } from "@/styles";
+import { GetItemId } from "@/utilities";
+
+import {
+  faCaretDown,
+  faDownload,
+  faInfoCircle,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { isString } from "lodash";
-import { useCallback, useMemo, useState } from "react";
-import { UseQueryResult } from "react-query";
-import { Column } from "react-table";
-import { Action, PageTable } from "..";
-import Language from "../bazarr/Language";
-import StateIcon from "../StateIcon";
 
 type SupportType = Item.Movie | Item.Episode;
 

@@ -1,20 +1,21 @@
 /* eslint-disable camelcase */
 
+import { FunctionComponent } from "react";
+import { Alert, Button, Checkbox, Divider, Stack, Text } from "@mantine/core";
+import { useForm } from "@mantine/form";
 import {
   useRefTracksByEpisodeId,
   useRefTracksByMovieId,
   useSubtitleAction,
 } from "@/apis/hooks";
+import { Selector, SelectorOption } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/Subtitles/options";
 import { toPython } from "@/utilities";
+
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Alert, Button, Checkbox, Divider, Stack, Text } from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { FunctionComponent } from "react";
-import { Selector, SelectorOption } from "../inputs";
 
 const TaskName = "Syncing Subtitle";
 

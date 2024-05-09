@@ -1,15 +1,10 @@
-import { useSystemHealth, useSystemStatus } from "@/apis/hooks";
-import { QueryOverlay } from "@/components/async";
-import { GithubRepoRoot } from "@/constants";
-import { Environment, useInterval } from "@/utilities";
-import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
-  faDiscord,
-  faGithub,
-  faWikipediaW,
-} from "@fortawesome/free-brands-svg-icons";
-import { faCode, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+  FunctionComponent,
+  PropsWithChildren,
+  ReactNode,
+  useCallback,
+  useState,
+} from "react";
 import {
   Anchor,
   Container,
@@ -20,13 +15,10 @@ import {
   Text,
 } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
-import {
-  FunctionComponent,
-  PropsWithChildren,
-  ReactNode,
-  useCallback,
-  useState,
-} from "react";
+import { useSystemHealth, useSystemStatus } from "@/apis/hooks";
+import { QueryOverlay } from "@/components/async";
+import { GithubRepoRoot } from "@/constants";
+import { Environment, useInterval } from "@/utilities";
 import {
   divisorDay,
   divisorHour,
@@ -35,6 +27,15 @@ import {
   formatTime,
 } from "@/utilities/time";
 import Table from "./table";
+
+import { IconDefinition } from "@fortawesome/fontawesome-common-types";
+import {
+  faDiscord,
+  faGithub,
+  faWikipediaW,
+} from "@fortawesome/free-brands-svg-icons";
+import { faCode, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 interface InfoProps {
   title: string;

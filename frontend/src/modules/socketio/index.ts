@@ -1,9 +1,10 @@
-import { debounce, forIn, remove, uniq } from "lodash";
 import { onlineManager } from "react-query";
-import { Socket, io } from "socket.io-client";
-import { Environment, isDevEnv, isTestEnv } from "../../utilities";
-import { ENSURE, GROUP, LOG } from "../../utilities/console";
+import { Environment, isDevEnv, isTestEnv } from "@/utilities";
+import { ENSURE, GROUP, LOG } from "@/utilities/console";
 import { createDefaultReducer } from "./reducer";
+
+import { debounce, forIn, remove, uniq } from "lodash";
+import { io, Socket } from "socket.io-client";
 
 class SocketIOClient {
   private socket: Socket;

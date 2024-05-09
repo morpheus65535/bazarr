@@ -1,3 +1,5 @@
+import { FunctionComponent, ReactElement, useCallback, useMemo } from "react";
+import { Divider, List, Menu, MenuProps, ScrollArea } from "@mantine/core";
 import { useSubtitleAction } from "@/apis/hooks";
 import { ColorToolModal } from "@/components/forms/ColorToolForm";
 import { FrameRateModal } from "@/components/forms/FrameRateForm";
@@ -6,6 +8,8 @@ import { TranslationModal } from "@/components/forms/TranslationForm";
 import { useModals } from "@/modules/modals";
 import { ModalComponent } from "@/modules/modals/WithModal";
 import { task } from "@/modules/task";
+import { SyncSubtitleModal } from "./forms/SyncSubtitleForm";
+
 import {
   faClock,
   faCode,
@@ -23,9 +27,6 @@ import {
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Divider, List, Menu, MenuProps, ScrollArea } from "@mantine/core";
-import { FunctionComponent, ReactElement, useCallback, useMemo } from "react";
-import { SyncSubtitleModal } from "./forms/SyncSubtitleForm";
 
 export interface ToolOptions {
   key: string;

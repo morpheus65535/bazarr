@@ -1,4 +1,8 @@
+import { FunctionComponent } from "react";
+import { Group, List, Popover, Stack, Text } from "@mantine/core";
+import { useHover } from "@mantine/hooks";
 import { BuildKey } from "@/utilities";
+
 import {
   faCheck,
   faCheckCircle,
@@ -7,9 +11,6 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Group, List, Popover, Stack, Text } from "@mantine/core";
-import { useHover } from "@mantine/hooks";
-import { FunctionComponent } from "react";
 
 interface StateIconProps {
   matches: string[];

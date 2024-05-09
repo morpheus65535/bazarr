@@ -1,25 +1,5 @@
-import {
-  useEpisodesBySeriesId,
-  useEpisodeSubtitleModification,
-  useSubtitleInfos,
-} from "@/apis/hooks";
-import { useModals, withModal } from "@/modules/modals";
-import { task, TaskGroup } from "@/modules/task";
-import { useTableStyles } from "@/styles";
-import { useArrayAction, useSelectorOptions } from "@/utilities";
-import FormUtils from "@/utilities/form";
-import {
-  useLanguageProfileBy,
-  useProfileItemsToLanguages,
-} from "@/utilities/languages";
-import {
-  faCheck,
-  faCircleNotch,
-  faInfoCircle,
-  faTimes,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FunctionComponent, useEffect, useMemo } from "react";
+import { Column } from "react-table";
 import {
   Button,
   Checkbox,
@@ -30,12 +10,33 @@ import {
   Text,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import {
+  useEpisodesBySeriesId,
+  useEpisodeSubtitleModification,
+  useSubtitleInfos,
+} from "@/apis/hooks";
+import { Action, Selector } from "@/components/inputs";
+import { SimpleTable } from "@/components/tables";
+import TextPopover from "@/components/TextPopover";
+import { useModals, withModal } from "@/modules/modals";
+import { task, TaskGroup } from "@/modules/task";
+import { useTableStyles } from "@/styles";
+import { useArrayAction, useSelectorOptions } from "@/utilities";
+import FormUtils from "@/utilities/form";
+import {
+  useLanguageProfileBy,
+  useProfileItemsToLanguages,
+} from "@/utilities/languages";
+
+import {
+  faCheck,
+  faCircleNotch,
+  faInfoCircle,
+  faTimes,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { isString } from "lodash";
-import { FunctionComponent, useEffect, useMemo } from "react";
-import { Column } from "react-table";
-import { Action, Selector } from "../inputs";
-import { SimpleTable } from "../tables";
-import TextPopover from "../TextPopover";
 
 type SubtitleFile = {
   file: File;

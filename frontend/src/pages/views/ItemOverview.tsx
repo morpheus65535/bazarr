@@ -1,28 +1,10 @@
-import { Language } from "@/components/bazarr";
-import { BuildKey } from "@/utilities";
-import {
-  useLanguageProfileBy,
-  useProfileItemsToLanguages,
-} from "@/utilities/languages";
-import {
-  faFolder,
-  faBookmark as farBookmark,
-} from "@fortawesome/free-regular-svg-icons";
-import {
-  IconDefinition,
-  faBookmark,
-  faClone,
-  faLanguage,
-  faMusic,
-  faStream,
-  faTags,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FunctionComponent, useMemo } from "react";
 import {
   BackgroundImage,
   Badge,
   BadgeProps,
   Box,
+  createStyles,
   Grid,
   Group,
   HoverCard,
@@ -32,9 +14,28 @@ import {
   Stack,
   Text,
   Title,
-  createStyles,
 } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
+import { Language } from "@/components/bazarr";
+import { BuildKey } from "@/utilities";
+import {
+  useLanguageProfileBy,
+  useProfileItemsToLanguages,
+} from "@/utilities/languages";
+
+import {
+  faBookmark as farBookmark,
+  faFolder,
+} from "@fortawesome/free-regular-svg-icons";
+import {
+  faBookmark,
+  faClone,
+  faLanguage,
+  faMusic,
+  faStream,
+  faTags,
+  IconDefinition,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 interface Props {
   item: Item.Base | null;

@@ -1,6 +1,3 @@
-import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Text } from "@mantine/core";
 import {
   Cell,
   HeaderGroup,
@@ -9,7 +6,11 @@ import {
   useGroupBy,
   useSortBy,
 } from "react-table";
+import { Box, Text } from "@mantine/core";
 import SimpleTable, { SimpleTableProps } from "./SimpleTable";
+
+import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 function renderCell<T extends object = object>(cell: Cell<T>, row: Row<T>) {
   if (cell.isGrouped) {

@@ -1,3 +1,8 @@
+import { FunctionComponent, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { Column } from "react-table";
+import { Anchor, Badge, Container } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
 import { Action } from "@/components";
 import { AudioList } from "@/components/bazarr";
@@ -8,14 +13,10 @@ import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
 import { useTableStyles } from "@/styles";
 import { BuildKey } from "@/utilities";
+
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Badge, Container } from "@mantine/core";
-import { useDocumentTitle } from "@mantine/hooks";
-import { FunctionComponent, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Column } from "react-table";
 
 const MovieView: FunctionComponent = () => {
   const query = useMoviesPagination();

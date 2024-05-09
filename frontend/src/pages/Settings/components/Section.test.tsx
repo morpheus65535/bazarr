@@ -1,7 +1,8 @@
-import { rawRender, screen } from "@/tests";
 import { Text } from "@mantine/core";
-import { describe, it } from "vitest";
+import { rawRender, screen } from "@/tests";
 import { Section } from "./Section";
+
+import { describe, it } from "vitest";
 
 describe("Settings section", () => {
   const header = "Section Header";

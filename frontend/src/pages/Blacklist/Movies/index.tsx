@@ -1,14 +1,15 @@
+import { FunctionComponent } from "react";
+import { Container, Stack } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import {
   useMovieBlacklist,
   useMovieDeleteBlacklist,
 } from "@/apis/hooks/movies";
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { Container, Stack } from "@mantine/core";
-import { useDocumentTitle } from "@mantine/hooks";
-import { FunctionComponent } from "react";
 import Table from "./table";
+
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 const BlacklistMoviesView: FunctionComponent = () => {
   const blacklist = useMovieBlacklist();

@@ -1,5 +1,5 @@
-import { Divider, Stack, Title } from "@mantine/core";
 import { FunctionComponent, PropsWithChildren } from "react";
+import { Divider, Stack, Title } from "@mantine/core";
 
 interface SectionProps {
   header: string;

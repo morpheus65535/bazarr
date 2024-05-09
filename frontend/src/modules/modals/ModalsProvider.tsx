@@ -1,8 +1,8 @@
+import { FunctionComponent, PropsWithChildren, useMemo } from "react";
 import {
   ModalsProvider as MantineModalsProvider,
   ModalsProviderProps as MantineModalsProviderProps,
 } from "@mantine/modals";
-import { FunctionComponent, PropsWithChildren, useMemo } from "react";
 import { ModalComponent, StaticModals } from "./WithModal";
 
 const DefaultModalProps: MantineModalsProviderProps["modalProps"] = {

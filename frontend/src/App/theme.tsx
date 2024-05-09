@@ -1,4 +1,10 @@
-import { useSystemSettings } from "@/apis/hooks";
+import {
+  FunctionComponent,
+  PropsWithChildren,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import {
   ColorScheme,
   ColorSchemeProvider,
@@ -7,13 +13,7 @@ import {
   MantineThemeOverride,
 } from "@mantine/core";
 import { useColorScheme } from "@mantine/hooks";
-import {
-  FunctionComponent,
-  PropsWithChildren,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { useSystemSettings } from "@/apis/hooks";
 
 const theme: MantineThemeOverride = {
   fontFamily: "Roboto, open sans, Helvetica Neue, Helvetica, Arial, sans-serif",

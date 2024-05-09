@@ -1,19 +1,20 @@
+import { FunctionComponent, useCallback } from "react";
+import { Badge, Container, Group, Stack } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
+import { useModals } from "@mantine/modals";
 import { useDeleteLogs, useSystemLogs, useSystemSettings } from "@/apis/hooks";
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { Check, LayoutModal, Message, Text } from "@/pages/Settings/components";
 import { Environment } from "@/utilities";
+import Table from "./table";
+
 import {
   faDownload,
   faFilter,
   faSync,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
-import { Badge, Container, Group, Stack } from "@mantine/core";
-import { useDocumentTitle } from "@mantine/hooks";
-import { useModals } from "@mantine/modals";
-import { FunctionComponent, useCallback } from "react";
-import Table from "./table";
 
 const SystemLogsView: FunctionComponent = () => {
   const logs = useSystemLogs();

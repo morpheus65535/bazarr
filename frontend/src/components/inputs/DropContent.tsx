@@ -1,12 +1,13 @@
+import { FunctionComponent } from "react";
+import { createStyles, Group, Stack, Text } from "@mantine/core";
+import { Dropzone } from "@mantine/dropzone";
+
 import {
   faArrowUp,
   faFileCirclePlus,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Group, Stack, Text, createStyles } from "@mantine/core";
-import { Dropzone } from "@mantine/dropzone";
-import { FunctionComponent } from "react";
 
 const useStyle = createStyles((theme) => {
   return {

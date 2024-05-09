@@ -1,15 +1,16 @@
-import { useServerSearch } from "@/apis/hooks";
-import { useDebouncedValue } from "@/utilities";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { forwardRef, FunctionComponent, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Anchor,
   Autocomplete,
   createStyles,
   SelectItemProps,
 } from "@mantine/core";
-import { forwardRef, FunctionComponent, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useServerSearch } from "@/apis/hooks";
+import { useDebouncedValue } from "@/utilities";
+
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 type SearchResultItem = {
   value: string;

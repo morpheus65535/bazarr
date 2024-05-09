@@ -2,6 +2,13 @@
   "rules": {
     "no-console": "error",
     "camelcase": "warn",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": ["..*"]
+      }
+    ],
+    "simple-import-sort/imports": "error",
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/no-empty-function": "warn",
     "@typescript-eslint/no-empty-interface": "off",
@@ -13,7 +20,7 @@
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended"
   ],
-  "plugins": ["testing-library"],
+  "plugins": ["testing-library", "simple-import-sort"],
   "overrides": [
     {
       "files": [
@@ -21,6 +28,41 @@
         "**/?(*.)+(spec|test).[jt]s?(x)"
       ],
       "extends": ["plugin:testing-library/react"]
+    },
+    {
+      "files": ["*.ts", "*.tsx"],
+      "rules": {
+        "simple-import-sort/imports": [
+          "error",
+          {
+            "groups": [
+              [
+                // React Packages
+                "^react",
+                // Mantine Packages
+                "^@mantine/",
+                // Internal Packages
+                "^@/\\w",
+                // Side Effect Imports
+                "^\\u0000",
+                // Parent Imports
+                "^\\.\\.(?!/?$)",
+                "^\\.\\./?$",
+                // Relative Imports
+                "^\\./(?=.*/)(?!/?$)",
+                "^\\.(?!/?$)",
+                "^\\./?$",
+                // Style Imports
+                "^.+\\.?(css)$"
+              ]
+            ]
+          }
+        ]
+      }
     }
-  ]
+  ],
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": "latest"
+  }
 }

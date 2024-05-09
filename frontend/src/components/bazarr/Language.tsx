@@ -1,6 +1,6 @@
-import { BuildKey } from "@/utilities";
-import { Badge, Group, Text, TextProps } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
+import { Badge, Group, Text, TextProps } from "@mantine/core";
+import { BuildKey } from "@/utilities";
 
 type LanguageTextProps = TextProps & {
   value: Language.Info;

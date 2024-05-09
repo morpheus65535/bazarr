@@ -1,7 +1,4 @@
-import { GithubRepoRoot } from "@/constants";
-import { Reload } from "@/utilities";
-import { faDizzy } from "@fortawesome/free-regular-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FunctionComponent, useMemo } from "react";
 import {
   Anchor,
   Box,
@@ -13,7 +10,11 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
+import { GithubRepoRoot } from "@/constants";
+import { Reload } from "@/utilities";
+
+import { faDizzy } from "@fortawesome/free-regular-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const Placeholder = "********";
 

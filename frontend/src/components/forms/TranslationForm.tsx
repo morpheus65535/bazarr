@@ -1,14 +1,15 @@
+import { FunctionComponent, useMemo } from "react";
+import { Alert, Button, Divider, Stack } from "@mantine/core";
+import { useForm } from "@mantine/form";
 import { useSubtitleAction } from "@/apis/hooks";
+import { Selector } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import { useSelectorOptions } from "@/utilities";
 import FormUtils from "@/utilities/form";
 import { useEnabledLanguages } from "@/utilities/languages";
-import { Alert, Button, Divider, Stack } from "@mantine/core";
-import { useForm } from "@mantine/form";
+
 import { isObject } from "lodash";
-import { FunctionComponent, useMemo } from "react";
-import { Selector } from "../inputs";
 
 const TaskName = "Translating Subtitles";
 

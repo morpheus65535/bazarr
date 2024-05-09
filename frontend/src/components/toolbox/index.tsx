@@ -1,5 +1,5 @@
-import { createStyles, Group } from "@mantine/core";
 import { FunctionComponent, PropsWithChildren } from "react";
+import { createStyles, Group } from "@mantine/core";
 import ToolboxButton, { ToolboxMutateButton } from "./Button";
 
 const useStyles = createStyles((theme) => ({

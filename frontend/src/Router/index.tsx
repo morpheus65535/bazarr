@@ -1,11 +1,20 @@
-import App from "@/App";
+import {
+  createContext,
+  FunctionComponent,
+  lazy,
+  useContext,
+  useMemo,
+} from "react";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { useBadges } from "@/apis/hooks";
 import { useEnabledStatus } from "@/apis/hooks/site";
+import App from "@/App";
 import { Lazy } from "@/components/async";
 import Authentication from "@/pages/Authentication";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
 import Episodes from "@/pages/Episodes";
+import NotFound from "@/pages/errors/NotFound";
 import MoviesHistoryView from "@/pages/History/Movies";
 import SeriesHistoryView from "@/pages/History/Series";
 import MovieView from "@/pages/Movies";
@@ -30,8 +39,11 @@ import SystemReleasesView from "@/pages/System/Releases";
 import SystemTasksView from "@/pages/System/Tasks";
 import WantedMoviesView from "@/pages/Wanted/Movies";
 import WantedSeriesView from "@/pages/Wanted/Series";
-import NotFound from "@/pages/errors/NotFound";
 import { Environment } from "@/utilities";
+import Redirector from "./Redirector";
+import { RouterNames } from "./RouterNames";
+import { CustomRouteObject } from "./type";
+
 import {
   faClock,
   faCogs,
@@ -41,17 +53,6 @@ import {
   faLaptop,
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
-import {
-  FunctionComponent,
-  createContext,
-  lazy,
-  useContext,
-  useMemo,
-} from "react";
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import Redirector from "./Redirector";
-import { RouterNames } from "./RouterNames";
-import { CustomRouteObject } from "./type";
 
 const HistoryStats = lazy(() => import("@/pages/History/Statistics"));
 const SystemStatusView = lazy(() => import("@/pages/System/Status"));

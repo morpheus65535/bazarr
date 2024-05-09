@@ -1,6 +1,7 @@
 import { render, screen } from "@/tests";
-import { describe, it } from "vitest";
 import Authentication from "./Authentication";
+
+import { describe, it } from "vitest";
 
 describe("Authentication", () => {
   it("should render without crash", () => {

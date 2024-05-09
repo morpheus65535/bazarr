@@ -1,9 +1,9 @@
+import { FunctionComponent, useMemo, useState } from "react";
+import { Badge, MantineColor, Tooltip } from "@mantine/core";
 import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import { task, TaskGroup } from "@/modules/task";
-import { Badge, MantineColor, Tooltip } from "@mantine/core";
-import { FunctionComponent, useMemo, useState } from "react";
 
 interface Props {
   seriesId: number;

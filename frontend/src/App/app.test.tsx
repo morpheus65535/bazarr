@@ -1,6 +1,7 @@
 import { render } from "@/tests";
-import { describe, it } from "vitest";
 import App from ".";
+
+import { describe, it } from "vitest";
 
 describe("App", () => {
   it("should render without crash", () => {

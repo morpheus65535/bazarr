@@ -1,4 +1,8 @@
 /* eslint-disable camelcase */
+import { FunctionComponent, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { Column } from "react-table";
+import { Anchor, Badge, Text } from "@mantine/core";
 import {
   useEpisodeAddBlacklist,
   useEpisodeHistoryPagination,
@@ -10,16 +14,13 @@ import StateIcon from "@/components/StateIcon";
 import TextPopover from "@/components/TextPopover";
 import HistoryView from "@/pages/views/HistoryView";
 import { useTableStyles } from "@/styles";
+
 import {
   faFileExcel,
   faInfoCircle,
   faRecycle,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Badge, Text } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Column } from "react-table";
 
 const SeriesHistoryView: FunctionComponent = () => {
   const columns: Column<History.Episode>[] = useMemo<Column<History.Episode>[]>(

@@ -1,7 +1,8 @@
 import { rawRender, screen } from "@/tests";
+import ChipInput from "./ChipInput";
+
 import userEvent from "@testing-library/user-event";
 import { describe, it, vitest } from "vitest";
-import ChipInput from "./ChipInput";
 
 describe("ChipInput", () => {
   const existedValues = ["value_1", "value_2"];

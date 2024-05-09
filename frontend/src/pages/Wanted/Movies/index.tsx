@@ -1,18 +1,19 @@
+import { FunctionComponent, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { Column } from "react-table";
+import { Anchor, Badge, Group } from "@mantine/core";
 import {
   useMovieAction,
   useMovieSubtitleModification,
   useMovieWantedPagination,
 } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
-import { TaskGroup, task } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import WantedView from "@/pages/views/WantedView";
 import { BuildKey } from "@/utilities";
+
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Badge, Group } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Column } from "react-table";
 
 const WantedMoviesView: FunctionComponent = () => {
   const columns: Column<Wanted.Movie>[] = useMemo<Column<Wanted.Movie>[]>(

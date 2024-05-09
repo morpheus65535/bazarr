@@ -1,4 +1,4 @@
-import { LOG } from "@/utilities/console";
+import { useCallback, useMemo, useRef } from "react";
 import {
   MultiSelect,
   MultiSelectProps,
@@ -6,8 +6,9 @@ import {
   SelectItem,
   SelectProps,
 } from "@mantine/core";
+import { LOG } from "@/utilities/console";
+
 import { isNull, isUndefined } from "lodash";
-import { useCallback, useMemo, useRef } from "react";
 
 export type SelectorOption<T> = Override<
   {

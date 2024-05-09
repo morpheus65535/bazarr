@@ -1,7 +1,8 @@
 import { rawRender, screen } from "@/tests";
+import { Selector, SelectorOption } from "./Selector";
+
 import userEvent from "@testing-library/user-event";
 import { describe, it, vitest } from "vitest";
-import { Selector, SelectorOption } from "./Selector";
 
 const selectorName = "Test Selections";
 const testOptions: SelectorOption<string>[] = [

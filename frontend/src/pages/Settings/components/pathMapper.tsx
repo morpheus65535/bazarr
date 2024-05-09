@@ -1,20 +1,21 @@
-import { Action, FileBrowser, SimpleTable } from "@/components";
-import { useArrayAction } from "@/utilities";
-import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button } from "@mantine/core";
-import { capitalize } from "lodash";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
+import { Button } from "@mantine/core";
+import { Action, FileBrowser, SimpleTable } from "@/components";
 import {
   moviesEnabledKey,
   pathMappingsKey,
   pathMappingsMovieKey,
   seriesEnabledKey,
-} from "../keys";
-import { useFormActions } from "../utilities/FormValues";
-import { useSettingValue } from "../utilities/hooks";
+} from "@/pages/Settings/keys";
+import { useFormActions } from "@/pages/Settings/utilities/FormValues";
+import { useSettingValue } from "@/pages/Settings/utilities/hooks";
+import { useArrayAction } from "@/utilities";
 import { Message } from "./Message";
+
+import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { capitalize } from "lodash";
 
 type SupportType = "sonarr" | "radarr";
 

@@ -1,17 +1,12 @@
-import { Action } from "@/components";
-import { Layout } from "@/constants";
-import { useNavbar } from "@/contexts/Navbar";
-import { useRouteItems } from "@/Router";
-import { CustomRouteObject, Route } from "@/Router/type";
-import { BuildKey, pathJoin } from "@/utilities";
-import { LOG } from "@/utilities/console";
 import {
-  faHeart,
-  faMoon,
-  faSun,
-  IconDefinition,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+  createContext,
+  FunctionComponent,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { matchPath, NavLink, RouteObject, useLocation } from "react-router-dom";
 import {
   Anchor,
   Badge,
@@ -25,16 +20,22 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
-import clsx from "clsx";
+import { Action } from "@/components";
+import { Layout } from "@/constants";
+import { useNavbar } from "@/contexts/Navbar";
+import { useRouteItems } from "@/Router";
+import { CustomRouteObject, Route } from "@/Router/type";
+import { BuildKey, pathJoin } from "@/utilities";
+import { LOG } from "@/utilities/console";
+
 import {
-  createContext,
-  FunctionComponent,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { matchPath, NavLink, RouteObject, useLocation } from "react-router-dom";
+  faHeart,
+  faMoon,
+  faSun,
+  IconDefinition,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import clsx from "clsx";
 
 const Selection = createContext<{
   selection: string | null;

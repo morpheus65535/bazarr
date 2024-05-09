@@ -1,16 +1,21 @@
-import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
-import { Toolbox } from "@/components";
-import { LoadingProvider } from "@/contexts";
-import { useOnValueChange } from "@/utilities";
-import { LOG } from "@/utilities/console";
-import { usePrompt } from "@/utilities/routers";
-import { faSave } from "@fortawesome/free-solid-svg-icons";
+import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
 import { Badge, Container, Group, LoadingOverlay } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDocumentTitle } from "@mantine/hooks";
-import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
-import { FormContext, FormValues, runHooks } from "../utilities/FormValues";
-import { SettingsProvider } from "../utilities/SettingsProvider";
+import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
+import { Toolbox } from "@/components";
+import { LoadingProvider } from "@/contexts";
+import {
+  FormContext,
+  FormValues,
+  runHooks,
+} from "@/pages/Settings/utilities/FormValues";
+import { SettingsProvider } from "@/pages/Settings/utilities/SettingsProvider";
+import { useOnValueChange } from "@/utilities";
+import { LOG } from "@/utilities/console";
+import { usePrompt } from "@/utilities/routers";
+
+import { faSave } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
   name: string;

@@ -1,45 +1,49 @@
-import { Selector } from "@/components";
-import { useModals, withModal } from "@/modules/modals";
-import { BuildKey, useSelectorOptions } from "@/utilities";
-import { ASSERT } from "@/utilities/console";
 import {
-  Button,
-  Divider,
-  Group,
-  Text as MantineText,
-  SimpleGrid,
-  Stack,
-} from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { capitalize } from "lodash";
-import {
-  FunctionComponent,
   forwardRef,
+  FunctionComponent,
   useCallback,
   useMemo,
   useRef,
   useState,
 } from "react";
 import {
+  Button,
+  Divider,
+  Group,
+  SimpleGrid,
+  Stack,
+  Text as MantineText,
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { Selector } from "@/components";
+import { useModals, withModal } from "@/modules/modals";
+import {
   Card,
   Check,
   Chips,
-  Selector as GlobalSelector,
   Message,
   Password,
   ProviderTestButton,
+  Selector as GlobalSelector,
   Text,
-} from "../components";
+} from "@/pages/Settings/components";
 import {
   FormContext,
   FormValues,
   runHooks,
   useFormActions,
   useStagedValues,
-} from "../utilities/FormValues";
-import { SettingsProvider, useSettings } from "../utilities/SettingsProvider";
-import { useSettingValue } from "../utilities/hooks";
+} from "@/pages/Settings/utilities/FormValues";
+import { useSettingValue } from "@/pages/Settings/utilities/hooks";
+import {
+  SettingsProvider,
+  useSettings,
+} from "@/pages/Settings/utilities/SettingsProvider";
+import { BuildKey, useSelectorOptions } from "@/utilities";
+import { ASSERT } from "@/utilities/console";
 import { ProviderInfo } from "./list";
+
+import { capitalize } from "lodash";
 
 type SettingsKey =
   | "settings-general-enabled_providers"

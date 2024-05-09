@@ -1,12 +1,6 @@
-import { Environment, toggleState } from "@/utilities";
-import {
-  faCheck,
-  faClipboard,
-  faSync,
-} from "@fortawesome/free-solid-svg-icons";
+import { FunctionComponent, useState } from "react";
 import { Group as MantineGroup, Text as MantineText } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
-import { FunctionComponent, useState } from "react";
 import {
   Action,
   Check,
@@ -20,8 +14,15 @@ import {
   Section,
   Selector,
   Text,
-} from "../components";
+} from "@/pages/Settings/components";
+import { Environment, toggleState } from "@/utilities";
 import { branchOptions, proxyOptions, securityOptions } from "./options";
+
+import {
+  faCheck,
+  faClipboard,
+  faSync,
+} from "@fortawesome/free-solid-svg-icons";
 
 const characters = "abcdef0123456789";
 const settingApiKey = "settings-auth-apikey";

@@ -1,6 +1,4 @@
-import { useSystemReleases } from "@/apis/hooks";
-import { QueryOverlay } from "@/components/async";
-import { BuildKey } from "@/utilities";
+import { FunctionComponent, useMemo } from "react";
 import {
   Badge,
   Card,
@@ -12,7 +10,9 @@ import {
   Text,
 } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
-import { FunctionComponent, useMemo } from "react";
+import { useSystemReleases } from "@/apis/hooks";
+import { QueryOverlay } from "@/components/async";
+import { BuildKey } from "@/utilities";
 
 const SystemReleasesView: FunctionComponent = () => {
   const releases = useSystemReleases();
