@@ -383,7 +383,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "subf2m",
     name: "subf2m.co",
-    description: "Subscene Alternative Provider",
     inputs: [
       {
         type: "switch",
@@ -414,20 +413,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Subs4Series",
     description:
       "Greek Subtitles Provider.\nRequires anti-captcha provider to solve captchas for each download.",
-  },
-  {
-    key: "subscene",
-    inputs: [
-      {
-        type: "text",
-        key: "username",
-      },
-      {
-        type: "password",
-        key: "password",
-      },
-    ],
-    description: "Broken, may not work for some. Use subf2m instead.",
   },
   { key: "subscenter", description: "Hebrew Subtitles Provider" },
   {

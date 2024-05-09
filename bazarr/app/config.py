@@ -293,10 +293,6 @@ validators = [
     Validator('napisy24.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('napisy24.password', must_exist=True, default='', is_type_of=str, cast=str),
 
-    # subscene section
-    Validator('subscene.username', must_exist=True, default='', is_type_of=str, cast=str),
-    Validator('subscene.password', must_exist=True, default='', is_type_of=str, cast=str),
-
     # betaseries section
     Validator('betaseries.token', must_exist=True, default='', is_type_of=str, cast=str),
 
@@ -688,15 +684,6 @@ def save_settings(settings_items):
             if key != settings.opensubtitlescom.password:
                 reset_providers = True
                 region.delete('oscom_token')
-
-        if key == 'settings-subscene-username':
-            if key != settings.subscene.username:
-                reset_providers = True
-                region.delete('subscene_cookies2')
-        elif key == 'settings-subscene-password':
-            if key != settings.subscene.password:
-                reset_providers = True
-                region.delete('subscene_cookies2')
 
         if key == 'settings-titlovi-username':
             if key != settings.titlovi.username:
