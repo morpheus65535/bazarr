@@ -31,16 +31,20 @@ supported_languages = list(language_converters['subdl'].to_subdl.keys())
 class SubdlSubtitle(Subtitle):
     provider_name = 'subdl'
     hash_verifiable = False
-    hearing_impaired_verifiable = False
+    hearing_impaired_verifiable = True
 
-    def __init__(self, language, page_link, download_link, file_id, release_name, uploader, season=None, episode=None):
+    def __init__(self, language, forced, hearing_impaired, page_link, download_link, file_id, release_name, uploader,
+                 season=None, episode=None):
         super().__init__(language)
+        language = Language.rebuild(language, hi=hearing_impaired, forced=forced)
 
         self.season = season
         self.episode = episode
         self.releases = release_name
         self.release_info = release_name
         self.language = language
+        self.forced = forced
+        self.hearing_impaired = hearing_impaired
         self.file_id = file_id
         self.page_link = page_link
         self.download_link = download_link
@@ -159,7 +163,7 @@ class SubdlProvider(ProviderRetryMixin, Provider):
 
         result = res.json()
 
-        if not result['status']:
+        if ('success' in result and not result['success']) or ('status' in result and not result['status']):
             raise ProviderError(result['error'])
 
         logger.debug(f"Query returned {len(result['subtitles'])} subtitles")
@@ -170,8 +174,10 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                 episode_number = item.get('episode', None)
 
                 subtitle = SubdlSubtitle(
-                    language=Language.fromsubdl(langs),  # TODO: fix this when we can get the language code
-                    page_link='',  # TODO fix this when we can get the page link
+                    language=Language.fromsubdl(item['language']),
+                    forced=False,  # TODO change that when we'll have the forced status from API response
+                    hearing_impaired="_HI_" in item['name'],
+                    page_link=urljoin("https://subdl.com", item['subtitlePage']),
                     download_link=item['url'],
                     file_id=item['name'],
                     release_name=item['release_name'],
