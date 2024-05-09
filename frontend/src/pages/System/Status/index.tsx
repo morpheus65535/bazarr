@@ -20,7 +20,6 @@ import {
   Text,
 } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
-import moment from "moment";
 import {
   FunctionComponent,
   PropsWithChildren,
@@ -28,6 +27,13 @@ import {
   useCallback,
   useState,
 } from "react";
+import {
+  divisorDay,
+  divisorHour,
+  divisorMinute,
+  divisorSecond,
+  formatTime,
+} from "@/utilities/time";
 import Table from "./table";
 
 interface InfoProps {
@@ -98,15 +104,19 @@ const SystemStatusView: FunctionComponent = () => {
   const update = useCallback(() => {
     const startTime = status?.start_time;
     if (startTime) {
-      const duration = moment.duration(
-          moment().utc().unix() - startTime,
-          "seconds",
-        ),
-        days = duration.days(),
-        hours = duration.hours().toString().padStart(2, "0"),
-        minutes = duration.minutes().toString().padStart(2, "0"),
-        seconds = duration.seconds().toString().padStart(2, "0");
-      setUptime(days + "d " + hours + ":" + minutes + ":" + seconds);
+      // Current time in seconds
+      const currentTime = Math.floor(Date.now() / 1000);
+
+      const uptimeInSeconds = currentTime - startTime;
+
+      const uptime: string = formatTime(uptimeInSeconds, [
+        { unit: "d", divisor: divisorDay },
+        { unit: "h", divisor: divisorHour },
+        { unit: "m", divisor: divisorMinute },
+        { unit: "s", divisor: divisorSecond },
+      ]);
+
+      setUptime(uptime);
     }
   }, [status?.start_time]);
 
