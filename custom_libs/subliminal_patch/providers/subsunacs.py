@@ -108,7 +108,7 @@ class SubsUnacsSubtitle(Subtitle):
         guess_filename = guessit(self.filename, video.hints)
         matches |= guess_matches(video, guess_filename)
 
-        if isinstance(video, Movie) and (self.num_cds > 1 or 'cd' in guess_filename):
+        if isinstance(video, Movie) and ((isinstance(self.num_cds, int) and self.num_cds > 1) or 'cd' in guess_filename):
             # reduce score of subtitles for multi-disc movie releases
             return set()
 
