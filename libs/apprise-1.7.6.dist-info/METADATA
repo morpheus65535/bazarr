@@ -1,12 +1,12 @@
 Metadata-Version: 2.1
 Name: apprise
-Version: 1.7.4
+Version: 1.7.6
 Summary: Push Notifications that work with just about every platform!
 Home-page: https://github.com/caronc/apprise
 Author: Chris Caron
 Author-email: lead2gold@gmail.com
 License: BSD
-Keywords: Alerts Apprise API Automated Packet Reporting System AWS Boxcar BulkSMS BulkVS Burst SMS Chat CLI ClickSend D7Networks Dapnet DBus DingTalk Discord Email Emby Enigma2 Faast FCM Flock Form Gnome Google Chat Gotify Growl Guilded Home Assistant httpSMS IFTTT Join JSON Kavenegar KODI Kumulos LaMetric Line LunaSea MacOSX Mailgun Mastodon Matrix Mattermost MessageBird Microsoft Misskey MQTT MSG91 MSTeams Nextcloud NextcloudTalk Notica Notifiarr Notifico Ntfy Office365 OneSignal Opsgenie PagerDuty PagerTree ParsePlatform PopcornNotify Prowl PushBullet Pushed Pushjet PushMe Push Notifications Pushover PushSafer Pushy PushDeer Reddit Revolt Rocket.Chat RSyslog Ryver SendGrid ServerChan SES Signal SimplePush Sinch Slack SMSEagle SMS Manager SMTP2Go SNS SparkPost Streamlabs Stride Synology Chat Syslog Techulus Telegram Threema Gateway Twilio Twist Twitter Voipms Vonage Webex WeCom Bot WhatsApp Windows XBMC XML Zulip
+Keywords: Alerts Apprise API Automated Packet Reporting System AWS Boxcar BulkSMS BulkVS Burst SMS Chantify Chat CLI ClickSend D7Networks Dapnet DBus DingTalk Discord Email Emby Enigma2 FCM Feishu Flock Form Free Mobile Gnome Google Chat Gotify Growl Guilded Home Assistant httpSMS IFTTT Join JSON Kavenegar KODI Kumulos LaMetric Line LunaSea MacOSX Mailgun Mastodon Matrix Mattermost MessageBird Microsoft Misskey MQTT MSG91 MSTeams Nextcloud NextcloudTalk Notica Notifiarr Notifico Ntfy Office365 OneSignal Opsgenie PagerDuty PagerTree ParsePlatform PopcornNotify Prowl PushBullet Pushed Pushjet PushMe Push Notifications Pushover PushSafer Pushy PushDeer Reddit Revolt Rocket.Chat RSyslog Ryver SendGrid ServerChan SES Signal SimplePush Sinch Slack SMSEagle SMS Manager SMTP2Go SNS SparkPost Streamlabs Stride Synology Chat Syslog Techulus Telegram Threema Gateway Twilio Twist Twitter Voipms Vonage Webex WeCom Bot WhatsApp Windows XBMC XML Zulip
 Classifier: Development Status :: 5 - Production/Stable
 Classifier: Intended Audience :: Developers
 Classifier: Intended Audience :: System Administrators
@@ -20,6 +20,7 @@ Classifier: Programming Language :: Python :: 3.8
 Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
 Classifier: Programming Language :: Python :: Implementation :: CPython
 Classifier: Programming Language :: Python :: Implementation :: PyPy
 Classifier: License :: OSI Approved :: BSD License
@@ -98,11 +99,12 @@ The table below identifies the services this tool supports and some example serv
 | [AWS SES](https://github.com/caronc/apprise/wiki/Notify_ses)  | ses://   | (TCP) 443   | ses://user@domain/AccessKeyID/AccessSecretKey/RegionName<br/>ses://user@domain/AccessKeyID/AccessSecretKey/RegionName/email1/email2/emailN
 | [Bark](https://github.com/caronc/apprise/wiki/Notify_bark)  | bark://   | (TCP) 80 or 443   | bark://hostname<br />bark://hostname/device_key<br />bark://hostname/device_key1/device_key2/device_keyN<br/>barks://hostname<br />barks://hostname/device_key<br />barks://hostname/device_key1/device_key2/device_keyN
 | [Boxcar](https://github.com/caronc/apprise/wiki/Notify_boxcar)  | boxcar://   | (TCP) 443   | boxcar://hostname<br />boxcar://hostname/@tag<br/>boxcar://hostname/device_token<br />boxcar://hostname/device_token1/device_token2/device_tokenN<br />boxcar://hostname/@tag/@tag2/device_token
+| [Chantify](https://github.com/caronc/apprise/wiki/Notify_chantify) | chantify://    | (TCP) 443    | chantify://token
 | [Discord](https://github.com/caronc/apprise/wiki/Notify_discord)  | discord://   | (TCP) 443   | discord://webhook_id/webhook_token<br />discord://avatar@webhook_id/webhook_token
 | [Emby](https://github.com/caronc/apprise/wiki/Notify_emby)  | emby:// or embys:// | (TCP) 8096 | emby://user@hostname/<br />emby://user:password@hostname
 | [Enigma2](https://github.com/caronc/apprise/wiki/Notify_enigma2)  | enigma2:// or enigma2s:// | (TCP) 80 or 443 | enigma2://hostname
-| [Faast](https://github.com/caronc/apprise/wiki/Notify_faast) | faast://    | (TCP) 443    | faast://authorizationtoken
 | [FCM](https://github.com/caronc/apprise/wiki/Notify_fcm) | fcm://    | (TCP) 443    | fcm://project@apikey/DEVICE_ID<br />fcm://project@apikey/#TOPIC<br/>fcm://project@apikey/DEVICE_ID1/#topic1/#topic2/DEVICE_ID2/
+| [Feishu](https://github.com/caronc/apprise/wiki/Notify_feishu) | feishu://    | (TCP) 443    | feishu://token
 | [Flock](https://github.com/caronc/apprise/wiki/Notify_flock) | flock://    | (TCP) 443    | flock://token<br/>flock://botname@token<br/>flock://app_token/u:userid<br/>flock://app_token/g:channel_id<br/>flock://app_token/u:userid/g:channel_id
 | [Google Chat](https://github.com/caronc/apprise/wiki/Notify_googlechat) | gchat://    | (TCP) 443    | gchat://workspace/key/token
 | [Gotify](https://github.com/caronc/apprise/wiki/Notify_gotify) | gotify:// or gotifys://   | (TCP) 80 or 443    | gotify://hostname/token<br />gotifys://hostname/token?priority=high
@@ -184,6 +186,7 @@ The table below identifies the services this tool supports and some example serv
 | [DAPNET](https://github.com/caronc/apprise/wiki/Notify_dapnet) | dapnet://  | (TCP) 80   | dapnet://user:pass@callsign<br/>dapnet://user:pass@callsign1/callsign2/callsignN
 | [D7 Networks](https://github.com/caronc/apprise/wiki/Notify_d7networks) | d7sms://  | (TCP) 443   | d7sms://token@PhoneNo<br/>d7sms://token@ToPhoneNo1/ToPhoneNo2/ToPhoneNoN
 | [DingTalk](https://github.com/caronc/apprise/wiki/Notify_dingtalk)  | dingtalk://   | (TCP) 443   | dingtalk://token/<br />dingtalk://token/ToPhoneNo<br />dingtalk://token/ToPhoneNo1/ToPhoneNo2/ToPhoneNo1/
+| [Free-Mobile](https://github.com/caronc/apprise/wiki/Notify_freemobile)  | freemobile://   | (TCP) 443   | freemobile://user@password/
  [httpSMS](https://github.com/caronc/apprise/wiki/Notify_httpsms) | httpsms://  | (TCP) 443   | httpsms://ApiKey@FromPhoneNo<br/>httpsms://ApiKey@FromPhoneNo/ToPhoneNo<br/>httpsms://ApiKey@FromPhoneNo/ToPhoneNo1/ToPhoneNo2/ToPhoneNoN/
 | [Kavenegar](https://github.com/caronc/apprise/wiki/Notify_kavenegar) | kavenegar://  | (TCP) 443   | kavenegar://ApiKey/ToPhoneNo<br/>kavenegar://FromPhoneNo@ApiKey/ToPhoneNo<br/>kavenegar://ApiKey/ToPhoneNo1/ToPhoneNo2/ToPhoneNoN
 | [MessageBird](https://github.com/caronc/apprise/wiki/Notify_messagebird) | msgbird://  | (TCP) 443   | msgbird://ApiKey/FromPhoneNo<br/>msgbird://ApiKey/FromPhoneNo/ToPhoneNo<br/>msgbird://ApiKey/FromPhoneNo/ToPhoneNo1/ToPhoneNo2/ToPhoneNoN/

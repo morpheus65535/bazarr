@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import os
-import io
 
 from threading import Thread
 
@@ -42,6 +41,8 @@ from languages.get_languages import load_language_in_db  # noqa E402
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
 from app.server import webserver, app  # noqa E402
 from app.announcements import get_announcements_to_file  # noqa E402
+from utilities.central import stop_bazarr  # noqa E402
+from literals import EXIT_NORMAL  # noqa E402
 
 if args.create_db_revision:
     create_db_revision(app)

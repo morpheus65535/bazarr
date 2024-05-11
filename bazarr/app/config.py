@@ -7,6 +7,7 @@ import logging
 import re
 
 from urllib.parse import quote_plus
+from utilities.binaries import BinaryNotFound, get_binary
 from literals import EXIT_VALIDATION_ERROR
 from utilities.central import stop_bazarr
 from subliminal.cache import region
@@ -52,6 +53,14 @@ class Validator(OriginalValidator):
             "combined": "combined validators failed {errors}",
         }
     )
+
+
+def check_parser_binary(value):
+    try:
+        get_binary(value)
+    except BinaryNotFound:
+        raise ValidationError(f"Executable '{value}' not found in search path. Please install before making this selection.")
+    return True
 
 
 validators = [
@@ -100,6 +109,7 @@ validators = [
     Validator('general.adaptive_searching_delta', must_exist=True, default='1w', is_type_of=str,
               is_in=['3d', '1w', '2w', '3w', '4w']),
     Validator('general.enabled_providers', must_exist=True, default=[], is_type_of=list),
+    Validator('general.enabled_integrations', must_exist=True, default=[], is_type_of=list),
     Validator('general.multithreading', must_exist=True, default=True, is_type_of=bool),
     Validator('general.chmod_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.chmod', must_exist=True, default='0640', is_type_of=str),
@@ -119,7 +129,7 @@ validators = [
     Validator('general.dont_notify_manual_actions', must_exist=True, default=False, is_type_of=bool),
     Validator('general.hi_extension', must_exist=True, default='hi', is_type_of=str, is_in=['hi', 'cc', 'sdh']),
     Validator('general.embedded_subtitles_parser', must_exist=True, default='ffprobe', is_type_of=str,
-              is_in=['ffprobe', 'mediainfo']),
+              is_in=['ffprobe', 'mediainfo'], condition=check_parser_binary),
     Validator('general.default_und_audio_lang', must_exist=True, default='', is_type_of=str),
     Validator('general.default_und_embedded_subtitles_lang', must_exist=True, default='', is_type_of=str),
     Validator('general.parse_embedded_audio_track', must_exist=True, default=False, is_type_of=bool),
@@ -225,6 +235,11 @@ validators = [
     Validator('addic7ed.user_agent', must_exist=True, default='', is_type_of=str),
     Validator('addic7ed.vip', must_exist=True, default=False, is_type_of=bool),
 
+    # animetosho section
+    Validator('animetosho.search_threshold', must_exist=True, default=6, is_type_of=int, gte=1, lte=15),
+    Validator('animetosho.anidb_api_client', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('animetosho.anidb_api_client_ver', must_exist=True, default=1, is_type_of=int, gte=1, lte=9),
+
     # avistaz section
     Validator('avistaz.cookies', must_exist=True, default='', is_type_of=str),
     Validator('avistaz.user_agent', must_exist=True, default='', is_type_of=str),
@@ -277,10 +292,6 @@ validators = [
     # napisy24 section
     Validator('napisy24.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('napisy24.password', must_exist=True, default='', is_type_of=str, cast=str),
-
-    # subscene section
-    Validator('subscene.username', must_exist=True, default='', is_type_of=str, cast=str),
-    Validator('subscene.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # betaseries section
     Validator('betaseries.token', must_exist=True, default='', is_type_of=str, cast=str),
@@ -360,6 +371,10 @@ validators = [
     Validator('postgresql.database', must_exist=True, default='', is_type_of=str),
     Validator('postgresql.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('postgresql.password', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # anidb section
+    Validator('anidb.api_client', must_exist=True, default='', is_type_of=str),
+    Validator('anidb.api_client_ver', must_exist=True, default=1, is_type_of=int),
 ]
 
 
@@ -433,6 +448,7 @@ array_keys = ['excluded_tags',
               'subzero_mods',
               'excluded_series_types',
               'enabled_providers',
+              'enabled_integrations',
               'path_mappings',
               'path_mappings_movie',
               'language_equals',
@@ -665,15 +681,6 @@ def save_settings(settings_items):
             if key != settings.opensubtitlescom.password:
                 reset_providers = True
                 region.delete('oscom_token')
-
-        if key == 'settings-subscene-username':
-            if key != settings.subscene.username:
-                reset_providers = True
-                region.delete('subscene_cookies2')
-        elif key == 'settings-subscene-password':
-            if key != settings.subscene.password:
-                reset_providers = True
-                region.delete('subscene_cookies2')
 
         if key == 'settings-titlovi-username':
             if key != settings.titlovi.username:

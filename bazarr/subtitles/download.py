@@ -24,8 +24,9 @@ from .processing import process_subtitle
 
 
 @update_pools
-def generate_subtitles(path, languages, audio_language, sceneName, title, media_type,
-                       forced_minimum_score=None, is_upgrade=False, profile_id=None, check_if_still_required=False):
+def generate_subtitles(path, languages, audio_language, sceneName, title, media_type, forced_minimum_score=None,
+                       is_upgrade=False, profile_id=None, check_if_still_required=False,
+                       previous_subtitles_to_delete=None):
     if not languages:
         return None
 
@@ -88,6 +89,13 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                             fld = get_target_folder(path)
                             chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
                                 'win') and settings.general.chmod_enabled else None
+                            if is_upgrade and previous_subtitles_to_delete:
+                                try:
+                                    # delete previously downloaded subtitles in case of an upgrade to prevent edge loop
+                                    # issue.
+                                    os.remove(previous_subtitles_to_delete)
+                                except (OSError, FileNotFoundError):
+                                    pass
                             saved_subtitles = save_subtitles(video.original_path, subtitles,
                                                              single=settings.general.single_language,
                                                              tags=None,  # fixme

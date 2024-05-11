@@ -125,7 +125,7 @@ def provider_throttle_map():
 
 
 PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendasdivx", "napiprojekt", "shooter",
-                        "hosszupuska", "supersubtitles", "titlovi", "assrt", "subscene"]
+                        "hosszupuska", "supersubtitles", "titlovi", "assrt"]
 
 throttle_count = {}
 
@@ -259,11 +259,6 @@ def get_providers_auth():
             'also_foreign': False,  # fixme
             'verify_ssl': settings.podnapisi.verify_ssl
         },
-        'subscene': {
-            'username': settings.subscene.username,
-            'password': settings.subscene.password,
-            'only_foreign': False,  # fixme
-        },
         'legendasdivx': {
             'username': settings.legendasdivx.username,
             'password': settings.legendasdivx.password,
@@ -324,6 +319,9 @@ def get_providers_auth():
             'timeout': settings.whisperai.timeout,
             'ffmpeg_path': _FFMPEG_BINARY,
             'loglevel': settings.whisperai.loglevel,
+        },
+        "animetosho": {
+            'search_threshold': settings.animetosho.search_threshold,
         }
     }
 

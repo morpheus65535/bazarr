@@ -7,7 +7,6 @@ from flask_restx import Resource, Namespace, fields, marshal
 
 from app.config import settings
 from app.logger import empty_log
-from app.get_args import args
 
 from utilities.central import get_log_file_path
 from ..utils import authenticate

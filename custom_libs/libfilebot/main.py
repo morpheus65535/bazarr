@@ -50,7 +50,7 @@ def default_xattr(fn):
 XATTR_MAP = {
     "default": (
         default_xattr,
-        lambda result: re.search('(?um)(net\.filebot\.filename(?=="|: )[=:" ]+|Attribute.+:\s)([^"\n\r\0]+)',
+        lambda result: re.search(r'(?um)(net\.filebot\.filename(?=="|: )[=:" ]+|Attribute.+:\s)([^"\n\r\0]+)',
                                  result).group(2)
     ),
     # "darwin": (
@@ -60,7 +60,7 @@ XATTR_MAP = {
     # ),
     "darwin": (
         lambda fn: ["filebot", "-script", "fn:xattr", fn],
-        lambda result: re.search('(?um)(net\.filebot\.filename(?=="|: )[=:" ]+|Attribute.+:\s)([^"\n\r\0]+)',
+        lambda result: re.search(r'(?um)(net\.filebot\.filename(?=="|: )[=:" ]+|Attribute.+:\s)([^"\n\r\0]+)',
                                  result).group(2)
     ),
     "win32": (

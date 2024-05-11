@@ -33,9 +33,9 @@ def sync_subtitles(video_path, srt_path, srt_lang, forced, percent_score, sonarr
                 'max_offset_seconds': str(settings.subsync.max_offset_seconds),
                 'no_fix_framerate': settings.subsync.no_fix_framerate,
                 'gss': settings.subsync.gss,
-                'reference': None, # means choose automatically within video file
-                'sonarr_series_id': sonarr_series_id, 
-                'sonarr_episode_id': sonarr_episode_id, 
+                'reference': None,  # means choose automatically within video file
+                'sonarr_series_id': sonarr_series_id,
+                'sonarr_episode_id': sonarr_episode_id,
                 'radarr_id': radarr_id,
             }
             subsync.sync(**sync_kwargs)

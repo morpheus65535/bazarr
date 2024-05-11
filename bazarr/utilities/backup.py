@@ -33,7 +33,7 @@ def get_restore_path():
 def get_backup_files(fullpath=True):
     backup_file_pattern = os.path.join(get_backup_path(), 'bazarr_backup_v*.zip')
     file_list = glob(backup_file_pattern)
-    file_list.sort(key=os.path.getmtime)
+    file_list.sort(key=os.path.getmtime, reverse=True)
     if fullpath:
         return file_list
     else:

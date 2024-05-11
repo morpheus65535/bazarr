@@ -4,11 +4,12 @@ import os
 import requests
 import mimetypes
 
-from flask import request, abort, render_template, Response, session, send_file, stream_with_context, Blueprint
+from flask import (request, abort, render_template, Response, session, send_file, stream_with_context, Blueprint,
+                   redirect)
 from functools import wraps
 from urllib.parse import unquote
 
-from constants import headers
+from constants import HEADERS
 from literals import FILE_LOG
 from sonarr.info import url_api_sonarr
 from radarr.info import url_api_radarr
@@ -65,6 +66,10 @@ def check_login(actual_method):
 @ui_bp.route('/', defaults={'path': ''})
 @ui_bp.route('/<path:path>')
 def catch_all(path):
+    if path.startswith('login') and settings.auth.type not in ['basic', 'form']:
+        # login page has been accessed when no authentication is enabled
+        return redirect(base_url or "/", code=302)
+
     auth = True
     if settings.auth.type == 'basic':
         auth = request.authorization
@@ -113,7 +118,7 @@ def series_images(url):
     baseUrl = settings.sonarr.base_url
     url_image = f'{url_api_sonarr()}{url.lstrip(baseUrl)}?apikey={apikey}'.replace('poster-250', 'poster-500')
     try:
-        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
+        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=HEADERS)
     except Exception:
         return '', 404
     else:
@@ -127,7 +132,7 @@ def movies_images(url):
     baseUrl = settings.radarr.base_url
     url_image = f'{url_api_radarr()}{url.lstrip(baseUrl)}?apikey={apikey}'
     try:
-        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
+        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=HEADERS)
     except Exception:
         return '', 404
     else:
@@ -168,7 +173,7 @@ def proxy(protocol, url):
     url = f'{protocol}://{unquote(url)}'
     params = request.args
     try:
-        result = requests.get(url, params, allow_redirects=False, verify=False, timeout=5, headers=headers)
+        result = requests.get(url, params, allow_redirects=False, verify=False, timeout=5, headers=HEADERS)
     except Exception as e:
         return dict(status=False, error=repr(e))
     else:

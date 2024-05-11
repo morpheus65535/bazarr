@@ -6,7 +6,7 @@ from stevedore import ExtensionManager
 
 
 class RegistrableExtensionManager(ExtensionManager):
-    """:class:~stevedore.extensions.ExtensionManager` with support for registration.
+    r""":class:~stevedore.extensions.ExtensionManager` with support for registration.
 
     It allows loading of internal extensions without setup and registering/unregistering additional extensions.
 

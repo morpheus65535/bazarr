@@ -8,6 +8,19 @@ updates:
       prefix: "[bot]"
     open-pull-requests-limit: 1
     target-branch: "development"
+    groups:
+      fortawesome:
+        patterns:
+          - "@fortawesome*"
+      mantine:
+        patterns:
+          - "@mantine*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:

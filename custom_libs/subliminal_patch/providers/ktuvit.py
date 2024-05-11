@@ -3,6 +3,7 @@ import io
 import logging
 import os
 import json
+from requests.exceptions import JSONDecodeError
 
 from subzero.language import Language
 from guessit import guessit
@@ -144,7 +145,7 @@ class KtuvitProvider(Provider):
             self.session.headers["Pragma"] = "no-cache"
             self.session.headers["Cache-Control"] = "no-cache"
             self.session.headers["Content-Type"] = "application/json"
-            self.session.headers["User-Agent"]: os.environ.get(
+            self.session.headers["User-Agent"] = os.environ.get(
                 "SZ_USER_AGENT", "Sub-Zero/2"
             )
 
@@ -161,13 +162,13 @@ class KtuvitProvider(Provider):
                     is_success = self.parse_d_response(
                         r, "IsSuccess", False, "Authentication to the provider"
                     )
-                except json.decoder.JSONDecodeError:
+                except JSONDecodeError:
                     logger.info("Failed to Login to Ktuvit")
                 if not is_success:
                     error_message = ''
                     try:
                         error_message = self.parse_d_response(r, "ErrorMessage", "[None]")
-                    except json.decode.JSONDecoderError:
+                    except JSONDecodeError:
                         raise AuthenticationError(
                             "Error Logging in to Ktuvit Provider: " + str(r.content)
                         )
@@ -473,8 +474,8 @@ class KtuvitProvider(Provider):
 
         try:
             response_content = response.json()
-        except json.decoder.JSONDecodeError as ex:
-            raise json.decoder.JSONDecodeError(
+        except JSONDecodeError as ex:
+            raise JSONDecodeError(
                 "Unable to parse JSON returned while getting " + message, ex.doc, ex.pos
             )
         else:
@@ -486,11 +487,11 @@ class KtuvitProvider(Provider):
                 value = response_content.get(field, default_value)
 
                 if not value and value != default_value:
-                    raise json.decoder.JSONDecodeError(
+                    raise JSONDecodeError(
                         "Missing " + message, str(response_content), 0
                     )
             else:
-                raise json.decoder.JSONDecodeError(
+                raise JSONDecodeError(
                     "Incomplete JSON returned while getting " + message,
                     str(response_content),
                     0

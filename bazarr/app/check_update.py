@@ -25,7 +25,7 @@ def check_releases():
     url_releases = 'https://api.github.com/repos/morpheus65535/Bazarr/releases?per_page=100'
     try:
         logging.debug(f'BAZARR getting releases from Github: {url_releases}')
-        r = requests.get(url_releases, allow_redirects=True)
+        r = requests.get(url_releases, allow_redirects=True, timeout=15)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("Error trying to get releases from Github. Http error.")
@@ -160,8 +160,7 @@ def apply_update():
                                 'BAZARR was unable to delete the previous build directory during upgrade process.')
 
                     for file in archive.namelist():
-                        if file.startswith(zip_root_directory) and file != zip_root_directory and not \
-                                file.endswith('bazarr.py'):
+                        if file.startswith(zip_root_directory) and file != zip_root_directory:
                             file_path = os.path.join(bazarr_dir, file[len(zip_root_directory):])
                             parent_dir = os.path.dirname(file_path)
                             os.makedirs(parent_dir, exist_ok=True)

@@ -10,7 +10,6 @@ from apscheduler.triggers.date import DateTrigger
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 from datetime import datetime, timedelta
 from calendar import day_name
-from math import floor
 from random import randrange
 from tzlocal import get_localzone
 try:
@@ -47,6 +46,10 @@ ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365
 
 
 def a_long_time_from_now(job):
+    # job isn't scheduled at all
+    if job.next_run_time is None:
+        return True
+
     # currently defined as more than a year from now
     delta = job.next_run_time - datetime.now(job.next_run_time.tzinfo)
     return delta.total_seconds() > ONE_YEAR_IN_SECONDS
@@ -321,8 +324,8 @@ class Scheduler:
                 self.aps_scheduler.modify_job(job.id,
                                               next_run_time=datetime.now(tz=self.timezone) +
                                               timedelta(seconds=randrange(
-                                                  job.trigger.interval.total_seconds() * 0.75,
-                                                  job.trigger.interval.total_seconds())))
+                                                  int(job.trigger.interval.total_seconds() * 0.75),
+                                                  int(job.trigger.interval.total_seconds()))))
 
     def __no_task(self):
         for job in self.aps_scheduler.get_jobs():

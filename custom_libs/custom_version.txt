@@ -15,5 +15,4 @@ deathbycaptcha  # unknown version, only found on gist
 git+https://github.com/pannal/libfilebot#egg=libfilebot
 git+https://github.com/RobinDavid/pyADS.git@28a2f6dbfb357f85b2c2f49add770b336e88840d#egg=pyads
 py7zr==0.7.0  # modified to prevent importing of modules that can't be vendored
-subscene-api==1.0.0  # modified specificaly for Bazarr
 subliminal==2.1.0  # modified specifically for Bazarr

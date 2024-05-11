@@ -8,11 +8,13 @@ import sys
 import time
 
 from bazarr.app.get_args import args
-from bazarr.literals import *
+from bazarr.literals import EXIT_PYTHON_UPGRADE_NEEDED, EXIT_NORMAL, FILE_RESTART, FILE_STOP, ENV_RESTARTFILE, ENV_STOPFILE, EXIT_INTERRUPT
+
 
 def exit_program(status_code):
     print(f'Bazarr exited with status code {status_code}.')
     raise SystemExit(status_code)
+
 
 def check_python_version():
     python_version = platform.python_version_tuple()
@@ -52,12 +54,13 @@ check_python_version()
 
 dir_name = os.path.dirname(__file__)
 
+
 def start_bazarr():
     script = [get_python_path(), "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
-    ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
+    ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL, env=os.environ)
     print(f"Bazarr starting child process with PID {ep.pid}...")
     return ep
- 
+
 
 def terminate_child():
     print(f"Terminating child process with PID {child_process.pid}")
@@ -66,7 +69,7 @@ def terminate_child():
 
 def get_stop_status_code(input_file):
     try:
-        with open(input_file,'r') as file:
+        with open(input_file, 'r') as file:
             # read status code from file, if it exists
             line = file.readline()
             try:
@@ -74,33 +77,33 @@ def get_stop_status_code(input_file):
             except (ValueError, TypeError):
                 status_code = EXIT_NORMAL
             file.close()
-    except:
+    except Exception:
         status_code = EXIT_NORMAL
     return status_code
 
 
 def check_status():
     global child_process
-    if os.path.exists(stopfile):
-        status_code = get_stop_status_code(stopfile)
+    if os.path.exists(stop_file):
+        status_code = get_stop_status_code(stop_file)
         try:
-            print(f"Deleting stop file...")
-            os.remove(stopfile)
-        except Exception as e:
+            print("Deleting stop file...")
+            os.remove(stop_file)
+        except Exception:
             print('Unable to delete stop file.')
         finally:
             terminate_child()
             exit_program(status_code)
 
-    if os.path.exists(restartfile):
+    if os.path.exists(restart_file):
         try:
-            print(f"Deleting restart file...")
-            os.remove(restartfile)
+            print("Deleting restart file...")
+            os.remove(restart_file)
         except Exception:
             print('Unable to delete restart file.')
         finally:
             terminate_child()
-            print(f"Bazarr is restarting...")
+            print("Bazarr is restarting...")
             child_process = start_bazarr()
 
 
@@ -113,25 +116,25 @@ def interrupt_handler(signum, frame):
         interrupted = True
         print('Handling keyboard interrupt...')
     else:
-        print(f"Stop doing that! I heard you the first time!")
+        print("Stop doing that! I heard you the first time!")
 
 
 if __name__ == '__main__':
     interrupted = False
     signal.signal(signal.SIGINT, interrupt_handler)
-    restartfile = os.path.join(args.config_dir, FILE_RESTART)
-    stopfile = os.path.join(args.config_dir, FILE_STOP)
-    os.environ[ENV_STOPFILE] = stopfile
-    os.environ[ENV_RESTARTFILE] = restartfile
+    restart_file = os.path.join(args.config_dir, FILE_RESTART)
+    stop_file = os.path.join(args.config_dir, FILE_STOP)
+    os.environ[ENV_STOPFILE] = stop_file
+    os.environ[ENV_RESTARTFILE] = restart_file
 
     # Cleanup leftover files
     try:
-        os.remove(restartfile)
+        os.remove(restart_file)
     except FileNotFoundError:
         pass
 
     try:
-        os.remove(stopfile)
+        os.remove(stop_file)
     except FileNotFoundError:
         pass
 
@@ -145,5 +148,5 @@ if __name__ == '__main__':
             time.sleep(5)
         except (KeyboardInterrupt, SystemExit, ChildProcessError):
             # this code should never be reached, if signal handling is working properly
-            print(f'Bazarr exited main script file via keyboard interrupt.')
+            print('Bazarr exited main script file via keyboard interrupt.')
             exit_program(EXIT_INTERRUPT)

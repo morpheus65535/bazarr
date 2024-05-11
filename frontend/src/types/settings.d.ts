@@ -20,7 +20,6 @@ interface Settings {
   xsubs: Settings.XSubs;
   assrt: Settings.Assrt;
   napisy24: Settings.Napisy24;
-  subscene: Settings.Subscene;
   betaseries: Settings.Betaseries;
   titlovi: Settings.Titlovi;
   ktuvit: Settings.Ktuvit;
@@ -210,8 +209,6 @@ declare namespace Settings {
   interface XSubs extends BaseProvider {}
 
   interface Napisy24 extends BaseProvider {}
-
-  interface Subscene extends BaseProvider {}
 
   interface Titlovi extends BaseProvider {}
 

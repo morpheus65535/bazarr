@@ -324,7 +324,7 @@ class LegendasdivxProvider(Provider):
                     # for series, if no results found, try again just with series and season (subtitle packs)
                     if isinstance(video, Episode):
                         logger.debug("Legendasdivx.pt :: trying again with just series and season on query.")
-                        querytext = re.sub("(e|E)(\d{2})", "", querytext)
+                        querytext = re.sub(r"(e|E)(\d{2})", "", querytext)
                         # sleep for a 1 second before another request
                         sleep(1)
                         res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
