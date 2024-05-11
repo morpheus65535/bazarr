@@ -30,7 +30,7 @@ const defaultCutoffOptions: SelectorOption<Language.ProfileItem>[] = [
       // eslint-disable-next-line camelcase
       audio_exclude: "False",
       forced: "False",
-      hi: "False",
+      hi: "also",
       language: "any",
     },
   },
@@ -88,7 +88,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
     form.values.items,
     (v) => {
       const suffix =
-        v.hi === "True" ? ":hi" : v.forced === "True" ? ":forced" : "";
+        v.hi === "only" ? ":hi" : v.forced === "True" ? ":forced" : "";
 
       return v.language + suffix;
     },
@@ -190,12 +190,8 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           const selectValue = useMemo(() => {
             if (item.forced === "True") {
               return "forced";
-            } else if (item.hi === "also") {
-              return "also";
-            } else if (item.hi === "only") {
-              return "only";
-            } else if (item.hi === "never") {
-              return "never";
+            } else {
+              return item.hi;
             }
           }, [item.forced, item.hi]);
 
@@ -209,7 +205,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
                     ...item,
                     hi: value,
                     forced: value === "forced" ? "True" : "False",
-                  });
+                  } as Language.ProfileItem);
                 }
               }}
             ></Select>
