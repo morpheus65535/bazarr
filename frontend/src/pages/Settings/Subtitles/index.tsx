@@ -2,6 +2,7 @@ import { Code, Space, Table } from "@mantine/core";
 import { FunctionComponent } from "react";
 import {
   Check,
+  Chips,
   CollapseBox,
   Layout,
   Message,
@@ -172,26 +173,12 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             options={embeddedSubtitlesParserOption}
           ></Selector>
           <Message>Embedded Subtitles video parser.</Message>
-          <Check
-            label="Ignore Embedded PGS Subtitles"
-            settingKey="settings-general-ignore_pgs_subs"
-          ></Check>
+          <Chips
+              label="Codecs to ignore (pgs, vobsub, ass, subrip, etc.)."
+              settingKey="settings-general-ignored_subs"
+          ></Chips>
           <Message>
-            Ignores PGS Subtitles in Embedded Subtitles detection.
-          </Message>
-          <Check
-            label="Ignore Embedded VobSub Subtitles"
-            settingKey="settings-general-ignore_vobsub_subs"
-          ></Check>
-          <Message>
-            Ignores VobSub Subtitles in Embedded Subtitles detection.
-          </Message>
-          <Check
-            label="Ignore Embedded ASS Subtitles"
-            settingKey="settings-general-ignore_ass_subs"
-          ></Check>
-          <Message>
-            Ignores ASS Subtitles in Embedded Subtitles detection.
+            Ignores subtitles of listed codecs in Embedded Subtitles detection.
           </Message>
           <Check
             label="Show Only Desired Languages"
