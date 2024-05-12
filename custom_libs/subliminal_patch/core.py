@@ -1203,7 +1203,7 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             continue
 
         # create subtitle path
-        if bool(re.search(HI_REGEX, subtitle.text)):
+        if subtitle.text and bool(re.search(HI_REGEX, subtitle.text)):
             subtitle.language.hi = True
         subtitle_path = get_subtitle_path(file_path, None if single else subtitle.language,
                                           forced_tag=subtitle.language.forced,
