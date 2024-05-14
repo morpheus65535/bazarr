@@ -1193,7 +1193,7 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
         must_remove_hi = 'remove_HI' in subtitle.mods
 
         # check content
-        if subtitle.content is None:
+        if subtitle.content is None or subtitle.text is None:
             logger.error('Skipping subtitle %r: no content', subtitle)
             continue
 
