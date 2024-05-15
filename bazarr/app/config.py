@@ -578,8 +578,7 @@ def save_settings(settings_items):
         elif value == 'false':
             value = False
 
-        if key in ['settings-general-use_embedded_subs', 'settings-general-ignore_pgs_subs',
-                   'settings-general-ignore_vobsub_subs', 'settings-general-ignore_ass_subs']:
+        if key in ['settings-general-use_embedded_subs', 'settings-general-ignored_subs]:
             use_embedded_subs_changed = True
 
         if key == 'settings-general-default_und_audio_lang':
