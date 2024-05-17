@@ -11,7 +11,8 @@ from requests import Session
 from babelfish import language_converters
 from subzero.language import Language
 from subliminal import Episode, Movie
-from subliminal.exceptions import ConfigurationError, ProviderError
+from subliminal.exceptions import ConfigurationError, ProviderError, DownloadLimitExceeded
+from subliminal_patch.exceptions import APIThrottled
 from .mixins import ProviderRetryMixin
 from subliminal_patch.subtitle import Subtitle
 from subliminal.subtitle import fix_line_ending
@@ -22,6 +23,7 @@ from guessit import guessit
 logger = logging.getLogger(__name__)
 
 retry_amount = 3
+retry_timeout = 5
 
 language_converters.register('subdl = subliminal_patch.converters.subdl:SubdlConverter')
 
@@ -33,15 +35,15 @@ class SubdlSubtitle(Subtitle):
     hash_verifiable = False
     hearing_impaired_verifiable = True
 
-    def __init__(self, language, forced, hearing_impaired, page_link, download_link, file_id, release_name, uploader,
+    def __init__(self, language, forced, hearing_impaired, page_link, download_link, file_id, release_names, uploader,
                  season=None, episode=None):
         super().__init__(language)
         language = Language.rebuild(language, hi=hearing_impaired, forced=forced)
 
         self.season = season
         self.episode = episode
-        self.releases = release_name
-        self.release_info = release_name
+        self.releases = release_names
+        self.release_info = ', '.join(release_names)
         self.language = language
         self.forced = forced
         self.hearing_impaired = hearing_impaired
@@ -90,6 +92,8 @@ class SubdlProvider(ProviderRetryMixin, Provider):
     server_hostname = 'api.subdl.com'
 
     languages = {Language(*lang) for lang in supported_languages}
+    languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
+    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
     video_types = (Episode, Movie)
 
@@ -142,9 +146,12 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                                                  ('languages', langs),
                                                  ('season_number', self.video.season),
                                                  ('subs_per_page', 30),
-                                                 ('type', 'tv')),
+                                                 ('type', 'tv'),
+                                                 ('comment', 1),
+                                                 ('releases', 1)),
                                          timeout=30),
-                amount=retry_amount
+                amount=retry_amount,
+                retry_timeout=retry_timeout
             )
         else:
             res = self.retry(
@@ -154,10 +161,20 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                                                  ('imdb_id', imdb_id if imdb_id else None),
                                                  ('languages', langs),
                                                  ('subs_per_page', 30),
-                                                 ('type', 'movie')),
+                                                 ('type', 'movie'),
+                                                 ('comment', 1),
+                                                 ('releases', 1)),
                                          timeout=30),
-                amount=retry_amount
+                amount=retry_amount,
+                retry_timeout=retry_timeout
             )
+
+        if res.status_code == 429:
+            raise APIThrottled("Too many requests")
+        elif res.status_code == 403:
+            raise ConfigurationError("Invalid API key")
+        elif res.status_code != 200:
+            res.raise_for_status()
 
         subtitles = []
 
@@ -170,23 +187,21 @@ class SubdlProvider(ProviderRetryMixin, Provider):
 
         if len(result['subtitles']):
             for item in result['subtitles']:
-                season_number = item.get('season', None)
-                episode_number = item.get('episode', None)
-
                 subtitle = SubdlSubtitle(
                     language=Language.fromsubdl(item['language']),
-                    forced=False,  # TODO change that when we'll have the forced status from API response
-                    hearing_impaired="_HI_" in item['name'],
-                    page_link=urljoin("https://subdl.com", item['subtitlePage']),
+                    forced=any(x in item.get('comment', '').lower() for x in ['forced', 'foreign']),
+                    hearing_impaired="_HI_" in item.get('name', ''),
+                    page_link=urljoin("https://subdl.com", item.get('subtitlePage', '')),
                     download_link=item['url'],
                     file_id=item['name'],
-                    release_name=item['release_name'],
-                    uploader=item['author'],
-                    season=season_number,
-                    episode=episode_number,
+                    release_names=item.get('releases', []),
+                    uploader=item.get('author', ''),
+                    season=item.get('season', None),
+                    episode=item.get('episode', None),
                 )
                 subtitle.get_matches(self.video)
-                subtitles.append(subtitle)
+                if subtitle.language in languages:  # make sure only matching forced or normal/HI subtitles are returned
+                    subtitles.append(subtitle)
 
         return subtitles
 
@@ -199,8 +214,16 @@ class SubdlProvider(ProviderRetryMixin, Provider):
 
         r = self.retry(
             lambda: self.session.get(download_link, timeout=30),
-            amount=retry_amount
+            amount=retry_amount,
+            retry_timeout=retry_timeout
         )
+
+        if r.status_code == 429:
+            raise DownloadLimitExceeded("Daily download limit exceeded")
+        elif r.status_code == 403:
+            raise ConfigurationError("Invalid API key")
+        elif r.status_code != 200:
+            r.raise_for_status()
 
         if not r:
             logger.error(f'Could not download subtitle from {download_link}')
