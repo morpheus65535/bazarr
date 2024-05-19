@@ -3,10 +3,11 @@ import codecs
 import os
 import re
 import os.path as op
-import io
-from io import open
+from io import TextIOWrapper
 import sys
 from textwrap import dedent
+from typing import List
+
 from .formats import get_file_extension, FORMAT_IDENTIFIERS
 from .time import make_time
 from .ssafile import SSAFile
@@ -42,7 +43,7 @@ def change_ext(path: str, ext: str) -> str:
 
 
 class Pysubs2CLI:
-    def __init__(self):
+    def __init__(self) -> None:
         parser = self.parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                                        prog="pysubs2",
                                                        description=dedent("""
@@ -80,6 +81,12 @@ class Pysubs2CLI:
                                  "If you wish to convert between encodings, make sure --input-enc is set correctly! "
                                  "Otherwise, your output files will probably be corrupted. It's a good idea to "
                                  "back up your files or use the -o option.")
+        parser.add_argument("--enc-error-handling", choices=("strict", "surrogateescape"),
+                            default="surrogateescape",
+                            help="Character encoding error handling for input and output. Defaults to 'surrogateescape' "
+                                 "which passes through unrecognized characters to output unchanged. Use 'strict' if "
+                                 "you want the command to fail when encountering a character incompatible with selected "
+                                 "input/output encoding.")
         parser.add_argument("--fps", metavar="FPS", type=positive_float,
                             help="This argument specifies framerate for MicroDVD files. By default, framerate "
                                  "is detected from the file. Use this when framerate specification is missing "
@@ -116,13 +123,14 @@ class Pysubs2CLI:
         extra_sub_options.add_argument("--sub-no-write-fps-declaration", action="store_true",
                                        help="(output) omit writing FPS as first zero-length subtitle")
 
-    def __call__(self, argv):
+    def __call__(self, argv: List[str]) -> int:
         try:
-            self.main(argv)
+            return self.main(argv)
         except KeyboardInterrupt:
-            exit("\nAborted by user.")
+            print("\nAborted by user.", file=sys.stderr)
+            return 1
 
-    def main(self, argv):
+    def main(self, argv: List[str]) -> int:
         args = self.parser.parse_args(argv)
         errors = 0
 
@@ -157,7 +165,7 @@ class Pysubs2CLI:
                     print("Skipping", path, "(not a file)")
                     errors += 1
                 else:
-                    with open(path, encoding=args.input_enc) as infile:
+                    with open(path, encoding=args.input_enc, errors=args.enc_error_handling) as infile:
                         subs = SSAFile.from_file(infile, args.input_format, args.fps, **extra_input_args)
 
                     self.process(subs, args)
@@ -165,31 +173,37 @@ class Pysubs2CLI:
                     if args.output_format is None:
                         outpath = path
                         output_format = subs.format
+                        assert output_format is not None, "subs.format must not be None (it was read from file)"
                     else:
                         ext = get_file_extension(args.output_format)
                         outpath = change_ext(path, ext)
                         output_format = args.output_format
+                        assert output_format is not None, "args.output_format must not be None (see if/else)"
 
                     if args.output_dir is not None:
                         _, filename = op.split(outpath)
                         outpath = op.join(args.output_dir, filename)
 
-                    with open(outpath, "w", encoding=args.output_enc) as outfile:
+                    with open(outpath, "w", encoding=args.output_enc, errors=args.enc_error_handling) as outfile:
                         subs.to_file(outfile, output_format, args.fps, apply_styles=not args.clean,
                                      **extra_output_args)
-        else:
-            infile = io.TextIOWrapper(sys.stdin.buffer, args.input_enc)
-            outfile = io.TextIOWrapper(sys.stdout.buffer, args.output_enc)
+        elif not sys.stdin.isatty():
+            infile = TextIOWrapper(sys.stdin.buffer, encoding=args.input_enc, errors=args.enc_error_handling)
+            outfile = TextIOWrapper(sys.stdout.buffer, encoding=args.output_enc, errors=args.enc_error_handling)
 
             subs = SSAFile.from_file(infile, args.input_format, args.fps)
             self.process(subs, args)
             output_format = args.output_format or subs.format
+            assert output_format is not None, "output_format must not be None (it's either given or inferred at read time)"
             subs.to_file(outfile, output_format, args.fps, apply_styles=not args.clean)
+        else:
+            self.parser.print_help()
+            errors += 1
 
-        return (0 if errors == 0 else 1)
+        return 0 if errors == 0 else 1
 
     @staticmethod
-    def process(subs, args):
+    def process(subs: SSAFile, args: argparse.Namespace) -> None:
         if args.shift is not None:
             subs.shift(ms=args.shift)
         elif args.shift_back is not None:
@@ -202,7 +216,7 @@ class Pysubs2CLI:
             subs.remove_miscellaneous_events()
 
 
-def __main__():
+def __main__() -> None:
     cli = Pysubs2CLI()
     rv = cli(sys.argv[1:])
     sys.exit(rv)

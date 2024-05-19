@@ -1,0 +1,70 @@
+Metadata-Version: 2.1
+Name: pysubs2
+Version: 1.7.1
+Summary: A library for editing subtitle files
+Home-page: https://github.com/tkarabela/pysubs2
+Author: Tomas Karabela
+Author-email: tkarabela@seznam.cz
+License: MIT
+Project-URL: Documentation, https://pysubs2.readthedocs.io
+Project-URL: Bug Tracker, https://github.com/tkarabela/pysubs2/issues
+Keywords: SubStation,SubRip,MicroDVD,MPL2,WebVTT,ass,srt,sub,vtt,subtitles,captions
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Text Processing :: Markup
+Classifier: Topic :: Multimedia :: Video
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: Operating System :: OS Independent
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Typing :: Typed
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+
+pysubs2
+=======
+
+[![pysubs2 build master branch](https://img.shields.io/github/actions/workflow/status/tkarabela/pysubs2/main.yml?branch=master)](https://github.com/tkarabela/pysubs2/actions)
+[![pysubs2 test code coverage](https://img.shields.io/codecov/c/github/tkarabela/pysubs2)](https://app.codecov.io/github/tkarabela/pysubs2)
+[![Static Badge](https://img.shields.io/badge/MyPy%20%26%20Ruffle-checked-blue?style=flat)](https://github.com/tkarabela/pysubs2/actions)
+[![PyPI - Version](https://img.shields.io/pypi/v/pysubs2.svg?style=flat)](https://pypi.org/project/pysubs2/)
+[![PyPI - Status](https://img.shields.io/pypi/status/pysubs2.svg?style=flat)](https://pypi.org/project/pysubs2/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pysubs2.svg?style=flat)](https://pypi.org/project/pysubs2/)
+[![PyPI - License](https://img.shields.io/pypi/l/pysubs2.svg?style=flat)](LICENSE.txt)
+[![GitHub Repo stars](https://img.shields.io/github/stars/tkarabela/pysubs2?style=flat&label=GitHub%20stars)](https://github.com/tkarabela/pysubs2)
+
+
+pysubs2 is a Python library for editing subtitle files.
+It’s based on *SubStation Alpha*, the native format of
+[Aegisub](http://www.aegisub.org/); it also supports *SubRip (SRT)*,
+*MicroDVD*, *MPL2*, *TMP* and *WebVTT* formats and *OpenAI Whisper* captions.
+
+There is a small CLI tool for batch conversion and retiming.
+
+```bash
+pip install pysubs2
+pysubs2 --shift 0.3s *.srt
+pysubs2 --to srt *.ass
+```
+
+```python
+import pysubs2
+subs = pysubs2.load("my_subtitles.ass", encoding="utf-8")
+subs.shift(s=2.5)
+for line in subs:
+    line.text = "{\\be1}" + line.text
+subs.save("my_subtitles_edited.ass")
+```
+
+To learn more, please [see the documentation](http://pysubs2.readthedocs.io).
+If you'd like to contribute, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+pysubs2 is licensed under the MIT license (see [LICENSE.txt](LICENSE.txt)).

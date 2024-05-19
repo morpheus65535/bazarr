@@ -1,6 +1,6 @@
 import re
 import warnings
-from typing import Optional, Dict, Any, ClassVar
+from typing import Optional, Dict, Any, ClassVar, FrozenSet
 import dataclasses
 
 from .common import IntOrFloat
@@ -41,7 +41,7 @@ class SSAEvent:
     type: str = "Dialogue"  #: Line type (Dialogue/Comment)
 
     @property
-    def FIELDS(self):
+    def FIELDS(self) -> FrozenSet[str]:
         """All fields in SSAEvent."""
         warnings.warn("Deprecated in 1.2.0 - it's a dataclass now", DeprecationWarning)
         return frozenset(field.name for field in dataclasses.fields(self))
@@ -57,7 +57,7 @@ class SSAEvent:
         return self.end - self.start
 
     @duration.setter
-    def duration(self, ms: int):
+    def duration(self, ms: int) -> None:
         if ms >= 0:
             self.end = self.start + ms
         else:
@@ -74,7 +74,7 @@ class SSAEvent:
         return self.type == "Comment"
 
     @is_comment.setter
-    def is_comment(self, value: bool):
+    def is_comment(self, value: bool) -> None:
         if value:
             self.type = "Comment"
         else:
@@ -83,8 +83,17 @@ class SSAEvent:
     @property
     def is_drawing(self) -> bool:
         """Returns True if line is SSA drawing tag (ie. not text)"""
-        from .substation import parse_tags
+        from .formats.substation import parse_tags
         return any(sty.drawing for _, sty in parse_tags(self.text))
+
+    @property
+    def is_text(self) -> bool:
+        """
+        Returns False for SSA drawings and comment lines, True otherwise
+
+        In general, for non-SSA formats these events should be ignored.
+        """
+        return not (self.is_comment or self.is_drawing)
 
     @property
     def plaintext(self) -> str:
@@ -102,11 +111,11 @@ class SSAEvent:
         return text
 
     @plaintext.setter
-    def plaintext(self, text: str):
+    def plaintext(self, text: str) -> None:
         self.text = text.replace("\n", r"\N")
 
-    def shift(self, h: IntOrFloat=0, m: IntOrFloat=0, s: IntOrFloat=0, ms: IntOrFloat=0,
-              frames: Optional[int]=None, fps: Optional[float]=None):
+    def shift(self, h: IntOrFloat = 0, m: IntOrFloat = 0, s: IntOrFloat = 0, ms: IntOrFloat = 0,
+              frames: Optional[int] = None, fps: Optional[float] = None) -> None:
         """
         Shift start and end times.
 
@@ -132,36 +141,36 @@ class SSAEvent:
         else:
             raise TypeError("Cannot compare to non-SSAEvent object")
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         # XXX document this
         if not isinstance(other, SSAEvent):
             return NotImplemented
         return self.start == other.start and self.end == other.end
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, other: object) -> bool:
         if not isinstance(other, SSAEvent):
             return NotImplemented
         return self.start != other.start or self.end != other.end
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: object) -> bool:
         if not isinstance(other, SSAEvent):
             return NotImplemented
         return (self.start, self.end) < (other.start, other.end)
 
-    def __le__(self, other) -> bool:
+    def __le__(self, other: object) -> bool:
         if not isinstance(other, SSAEvent):
             return NotImplemented
         return (self.start, self.end) <= (other.start, other.end)
 
-    def __gt__(self, other) -> bool:
+    def __gt__(self, other: object) -> bool:
         if not isinstance(other, SSAEvent):
             return NotImplemented
         return (self.start, self.end) > (other.start, other.end)
 
-    def __ge__(self, other) -> bool:
+    def __ge__(self, other: object) -> bool:
         if not isinstance(other, SSAEvent):
             return NotImplemented
         return (self.start, self.end) >= (other.start, other.end)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<SSAEvent type={self.type} start={ms_to_str(self.start)} end={ms_to_str(self.end)} text={self.text!r}>"
