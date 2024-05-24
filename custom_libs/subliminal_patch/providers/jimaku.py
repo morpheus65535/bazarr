@@ -150,7 +150,11 @@ class JimakuProvider(Provider):
 
     # As we'll only ever handle "ja", we'll just ignore the parameter "languages"
     def list_subtitles(self, video, languages=None):
-        return [s for s in self.query(video)]
+        subtitles = self.query(video)
+        if not subtitles:
+            return []
+        
+        return [s for s in subtitles]
 
     def download_subtitle(self, subtitle: JimakuSubtitle):
         target_url = subtitle.subtitle_url
