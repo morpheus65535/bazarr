@@ -229,6 +229,9 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
     dir_to_ignore_regex = re.compile(dir_to_ignore_regex_string)
 
     file_to_ignore = ['nssm.exe', '7za.exe', 'unins000.exe', 'unins000.dat']
+    # prevent deletion of leftover Apprise.py/pyi files after 1.8.0 version that caused issue on case-insensitive
+    # filesystem. This could be removed in a couple of major versions.
+    file_to_ignore += ['Apprise.py', 'Apprise.pyi', 'apprise.py', 'apprise.pyi']
     logging.debug(f'BAZARR upgrade leftover cleaner will ignore those files: {", ".join(file_to_ignore)}')
     extension_to_ignore = ['.pyc']
     logging.debug(
