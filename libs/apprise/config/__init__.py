@@ -27,8 +27,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 # Used for testing
-from .base import ConfigBase
-from ..manager_config import ConfigurationManager
+from .ConfigBase import ConfigBase
+from ..ConfigurationManager import ConfigurationManager
 
 # Initalize our Config Manager Singleton
 C_MGR = ConfigurationManager()
@@ -36,5 +36,4 @@ C_MGR = ConfigurationManager()
 __all__ = [
     # Reference
     'ConfigBase',
-    'ConfigurationManager',
 ]
