@@ -298,6 +298,9 @@ validators = [
 
     # analytics section
     Validator('analytics.enabled', must_exist=True, default=True, is_type_of=bool),
+    
+    # jimaku section
+    Validator('jimaku.api_key', must_exist=True, default='', is_type_of=str),
 
     # titlovi section
     Validator('titlovi.username', must_exist=True, default='', is_type_of=str, cast=str),
