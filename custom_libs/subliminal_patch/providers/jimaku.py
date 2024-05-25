@@ -5,7 +5,8 @@ from rapidfuzz import process, fuzz
 from requests import Session
 import urllib.parse
 
-from guessit import guessit
+import requests
+
 from subliminal import __short_version__
 from subliminal.exceptions import ConfigurationError
 from subliminal.utils import sanitize
@@ -88,9 +89,52 @@ class JimakuProvider(Provider):
         series_name = str(video.series)
         episode_number = video.episode
         
-        logger.info(f"Getting entry with name: '{series_name}', episode number '{episode_number}'.")
+        # Attempt to derive anilist_id
+        derived_anilist_id = None
+        derive_from_tag = ""
         
-        url = f"{self.api_url}/entries/search?query={urllib.parse.quote_plus(series_name)}"
+        # Not yet handled: series_anidb_series_id being '(None, )' (class 'str')
+        for tag in ["series_anidb_id", "tvdb_id", "series_tvdb_id"]:
+            candidate = getattr(video, tag, None)
+            if candidate:
+                derive_from_tag = tag
+                break
+            
+        if derive_from_tag:
+            logger.info(f"Will attempt to derive Anilist ID based on '{derive_from_tag}'")
+            
+            # Left: video, right: anime-lists
+            tag_map = {
+                "series_anidb_id": "anidb_id",
+                "tvdb_id": "thetvdb_id",
+                "series_tvdb_id": "thetvdb_id",
+            }
+            mapped_tag = tag_map[derive_from_tag]
+            
+            try:
+                # We won't use self.session as the endpoint doesnt need our API key
+                response = requests.get(
+                    "https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-mini.json",
+                    headers={'Content-Type': 'application/json'}
+                )
+                response.raise_for_status()
+                
+                data = response.json()
+                obj = [obj for obj in data if mapped_tag in obj and obj[mapped_tag] == getattr(video, derive_from_tag)]
+                derived_anilist_id = obj[0]["anilist_id"]
+            except Exception as e:
+                logger.error(f"Could not derive anilist_id: {str(e)}")
+                
+        url_search_param = None
+        if derived_anilist_id:
+            logger.info(f"Will search for entry based on anilist_id: {derived_anilist_id}")
+            url_search_param = f"anilist_id={derived_anilist_id}"
+        else:
+            logger.info(f"Will search for entry based on series_name: {series_name}")
+            url_search_param = f"query={urllib.parse.quote_plus(series_name)}"
+        
+        # Search for entry
+        url = f"{self.api_url}/entries/search?{url_search_param}"
         response = self.session.get(url, timeout=10)
         response.raise_for_status()
         
@@ -100,26 +144,28 @@ class JimakuProvider(Provider):
             logger.error(f"No entries have been returned.")
             return None
         
-        # TODO: Get entry with anilist ID if available
         # Determine entry
         entry_id = None
         anilist_id = None
         name_is_japanese = self._is_string_japanese(f"series_name")
         
         for entry in data:
-            entry_has_jp_name_field = 'japanese_name' in entry
-            dict_field = 'japanese_name' if (name_is_japanese and entry_has_jp_name_field) else 'english_name'
-            logger.debug(f"Attempting to get entry based on '{dict_field}' because name_is_japanese: {name_is_japanese} and entry_has_jp_name_field: {entry_has_jp_name_field}")
+            if not derived_anilist_id:
+                entry_has_jp_name_field = 'japanese_name' in entry
+                dict_field = 'japanese_name' if (name_is_japanese and entry_has_jp_name_field) else 'english_name'
+                logger.debug(f"Attempting to get entry based on '{dict_field}' because name_is_japanese: {name_is_japanese} and entry_has_jp_name_field: {entry_has_jp_name_field}")
+            else:
+                dict_field = 'anilist_id'
             
             # Only match first entry
-            entry_name = entry.get(dict_field, None)
-            if entry_name is not None:
+            entry_property_value = entry.get(dict_field, None)
+            if entry_property_value is not None:
                 entry_id = entry.get('id')
                 anilist_id = entry.get('anilist_id', None)
                 logger.info(f"Matched entry: ID: '{entry_id}', anilist_id: '{anilist_id}', name: '{entry.get('name')}', english_name: '{entry.get('english_name')}'")
                 break
             
-        if entry_name is None:
+        if entry_property_value is None:
             logger.error('Matched no entries.')
             return None
         
