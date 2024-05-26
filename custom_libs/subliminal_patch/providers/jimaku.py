@@ -13,6 +13,7 @@ from subliminal.utils import sanitize
 from subliminal.video import Episode, Movie
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
+from functools import cache
 from subzero.language import Language
 
 logger = logging.getLogger(__name__)
@@ -93,34 +94,32 @@ class JimakuProvider(Provider):
         derived_anilist_id = None
         derive_from_tag = ""
         
-        # Not yet handled: series_anidb_series_id being '(None, )' (class 'str')
-        for tag in ["series_anidb_id", "tvdb_id", "series_tvdb_id"]:
+        logger.info(f"Attempting to derive anilist ID...")
+        for tag in ["series_anidb_id", "series_anidb_episode_id", "tvdb_id", "series_tvdb_id"]:
+            # Because tvdb assigns a single ID to all seasons of a show, we won't be able to use it for mapping purposes.
+            if "tvdb" in tag and video.season > 1:
+                logger.warning(f"> Skipping '{tag}' because this videos season ({video.season}) is greater than 1")
+                continue
+            
             candidate = getattr(video, tag, None)
             if candidate:
                 derive_from_tag = tag
+                logger.info(f"Got candidate tag '{derive_from_tag}' with value '{candidate}'")
                 break
             
         if derive_from_tag:
-            logger.info(f"Will attempt to derive Anilist ID based on '{derive_from_tag}'")
-            
             # Left: video, right: anime-lists
             tag_map = {
                 "series_anidb_id": "anidb_id",
+                "series_anidb_episode_id": "anidb_id",
                 "tvdb_id": "thetvdb_id",
                 "series_tvdb_id": "thetvdb_id",
             }
             mapped_tag = tag_map[derive_from_tag]
             
             try:
-                # We won't use self.session as the endpoint doesnt need our API key
-                response = requests.get(
-                    "https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-mini.json",
-                    headers={'Content-Type': 'application/json'}
-                )
-                response.raise_for_status()
-                
-                data = response.json()
-                obj = [obj for obj in data if mapped_tag in obj and obj[mapped_tag] == getattr(video, derive_from_tag)]
+                anime_list = self._get_anime_list_map()
+                obj = [obj for obj in anime_list if mapped_tag in obj and obj[mapped_tag] == getattr(video, derive_from_tag)]
                 derived_anilist_id = obj[0]["anilist_id"]
             except Exception as e:
                 logger.error(f"Could not derive anilist_id: {str(e)}")
@@ -218,3 +217,15 @@ class JimakuProvider(Provider):
                 '\uFF66' <= char <= '\uFF9D'):   # Half-width Katakana
                 return True
         return False
+    
+    @cache
+    @staticmethod
+    def _get_anime_list_map():
+        # We won't use self.session as the endpoint doesnt need our API key
+        response = requests.get(
+            "https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-mini.json",
+            headers={'Content-Type': 'application/json'}
+        )
+        response.raise_for_status()
+        
+        return response.json()
