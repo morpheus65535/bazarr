@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 import logging
-from rapidfuzz import process, fuzz
 
 from requests import Session
 import urllib.parse
@@ -149,12 +148,12 @@ class JimakuProvider(Provider):
         name_is_japanese = self._is_string_japanese(f"series_name")
         
         for entry in data:
-            if not derived_anilist_id:
+            if derived_anilist_id:
+                dict_field = 'anilist_id'
+            else:
                 entry_has_jp_name_field = 'japanese_name' in entry
                 dict_field = 'japanese_name' if (name_is_japanese and entry_has_jp_name_field) else 'english_name'
-                logger.debug(f"Attempting to get entry based on '{dict_field}' because name_is_japanese: {name_is_japanese} and entry_has_jp_name_field: {entry_has_jp_name_field}")
-            else:
-                dict_field = 'anilist_id'
+                logger.debug(f"Attempting to get entry based on '{dict_field}' (name_is_japanese: {name_is_japanese} | entry_has_jp_name_field: {entry_has_jp_name_field})")
             
             # Only match first entry
             entry_property_value = entry.get(dict_field, None)
@@ -179,19 +178,18 @@ class JimakuProvider(Provider):
             logger.error(f"No subtitles have been returned by entry '{entry_id}' for episode number {episode_number}.")
             return None
         
-        # Determine which subtitle to use
-        # Unfortunatley, subtitles will have differing name schemes
-        # For that reason, we'll just try our luck with fuzyy matching
-        fuzzy_verdict = process.extractOne(video.original_name, [item['name'] for item in data], scorer=fuzz.WRatio)
-        logger.debug(f"fuzzy_verdict: {fuzzy_verdict}")
-        logger.info(f"Matched subtitle: '{fuzzy_verdict[0]}' based on '{video.original_name}'")
-        
+        # Filter subtitles
+        list_of_subtitles = []
         archive_formats = ('.rar', '.zip', '.7z')
-        subtitle_object = next(item for item in data if (item['name'] == fuzzy_verdict[0] and not item['name'].endswith(archive_formats)))
-        subtitle_url = subtitle_object.get('url')
-        subtitle_id = f"{str(anilist_id)}_{episode_number}_{video.release_group}"
+        for item in data:
+            if not item['name'].endswith(archive_formats):
+                subtitle_url = item.get('url')
+                subtitle_id = f"{str(anilist_id)}_{episode_number}_{video.release_group}"
+                list_of_subtitles.append(JimakuSubtitle(video, subtitle_id, subtitle_url, anilist_id))
+            else:
+                logger.debug(f"> Skipping subtitle of name {item['name']} as it did not pass the archive format filter.")
         
-        return [JimakuSubtitle(video, subtitle_id, subtitle_url, anilist_id)]
+        return list_of_subtitles
 
     # As we'll only ever handle "ja", we'll just ignore the parameter "languages"
     def list_subtitles(self, video, languages=None):
@@ -203,7 +201,6 @@ class JimakuProvider(Provider):
 
     def download_subtitle(self, subtitle: JimakuSubtitle):
         target_url = subtitle.subtitle_url
-        logger.debug(f"Will attempt download of '{target_url}'...")
         response = self.session.get(target_url, timeout=10)
         response.raise_for_status()
         subtitle.content = response.content
