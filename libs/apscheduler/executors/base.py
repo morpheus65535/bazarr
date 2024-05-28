@@ -123,6 +123,8 @@ def run_job(job, jobstore_alias, run_times, logger_name):
         logger.info('Running job "%s" (scheduled at %s)', job, run_time)
         try:
             retval = job.func(*job.args, **job.kwargs)
+        except SystemExit as se:
+            raise se
         except BaseException:
             exc, tb = sys.exc_info()[1:]
             formatted_tb = ''.join(format_tb(tb))
