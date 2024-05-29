@@ -128,9 +128,7 @@ def run_job(job, jobstore_alias, run_times, logger_name):
         except SystemExit as se:
             # System exit will terminate the process regardless if we don't re-raise the exception at this point, so we
             # can swallow for a graceful shutdown when the exit code is EXIT_NORMAL since it is an expected result.
-            if se.code == EXIT_NORMAL:
-                pass
-            else:
+            if se.code != EXIT_NORMAL:
                 raise se
         except BaseException:
             exc, tb = sys.exc_info()[1:]
