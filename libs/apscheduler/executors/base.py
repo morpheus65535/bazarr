@@ -11,6 +11,8 @@ import six
 from apscheduler.events import (
     JobExecutionEvent, EVENT_JOB_MISSED, EVENT_JOB_ERROR, EVENT_JOB_EXECUTED)
 
+from bazarr.literals import EXIT_NORMAL
+
 
 class MaxInstancesReachedError(Exception):
     def __init__(self, job):
@@ -124,7 +126,12 @@ def run_job(job, jobstore_alias, run_times, logger_name):
         try:
             retval = job.func(*job.args, **job.kwargs)
         except SystemExit as se:
-            raise se
+            # System exit will terminate the process regardless if we don't re-raise the exception at this point, so we
+            # can swallow for a graceful shutdown when the exit code is EXIT_NORMAL since it is an expected result.
+            if se.code == EXIT_NORMAL:
+                pass
+            else:
+                raise se
         except BaseException:
             exc, tb = sys.exc_info()[1:]
             formatted_tb = ''.join(format_tb(tb))
