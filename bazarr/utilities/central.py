@@ -49,6 +49,13 @@ def stop_bazarr(status_code=EXIT_NORMAL, exit_main=True):
 
 
 def restart_bazarr():
+    """
+    Inner function to act as a wrapper for gracefully exit to be performed.
+
+    The concept is to wrap this inner function with a try except statement or contextlib.supress where the cleanup
+    still performed but the exception is not raised making the python process to exit with the desired exit code, but
+    not in due to the exception.
+    """
     def restart():
         raise SystemExit(EXIT_NORMAL)
 
