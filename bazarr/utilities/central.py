@@ -3,6 +3,7 @@
 # only methods can be specified here that do not cause other moudules to be loaded
 # for other methods that use settings, etc., use utilities/helper.py
 
+import contextlib
 import logging
 import os
 from pathlib import Path
@@ -48,9 +49,14 @@ def stop_bazarr(status_code=EXIT_NORMAL, exit_main=True):
 
 
 def restart_bazarr():
+    def restart():
+        raise SystemExit(EXIT_NORMAL)
+
     try:
         Path(get_restart_file_path()).touch()
     except Exception as e:
         logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
     logging.info('Bazarr is being restarted...')
-    raise SystemExit(EXIT_NORMAL)
+
+    with contextlib.suppress(SystemExit):
+        restart()
