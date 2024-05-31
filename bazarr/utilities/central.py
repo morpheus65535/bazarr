@@ -49,21 +49,13 @@ def stop_bazarr(status_code=EXIT_NORMAL, exit_main=True):
 
 
 def restart_bazarr():
-    """
-    Inner function to act as a wrapper for gracefully exit to be performed.
-
-    The concept is to wrap this inner function with a try except statement or contextlib.supress where the cleanup
-    still performed but the exception is not raised making the python process to exit with the desired exit code, but
-    not in due to the exception.
-    """
-    def restart():
-        raise SystemExit(EXIT_NORMAL)
-
     try:
         Path(get_restart_file_path()).touch()
     except Exception as e:
         logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
     logging.info('Bazarr is being restarted...')
 
+    # Wrap the SystemExit for a graceful restart. The SystemExit still performs the cleanup but the traceback is omitted
+    # preventing to throw the exception to the caller but still terminates the Python process with the desired Exit Code
     with contextlib.suppress(SystemExit):
-        restart()
+        raise SystemExit(EXIT_NORMAL)
