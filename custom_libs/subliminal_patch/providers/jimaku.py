@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import logging
 import re
+import time
 import urllib.parse
 import requests
 import xml.etree.ElementTree as etree
@@ -156,15 +157,7 @@ class JimakuProvider(Provider):
             url_search_param = f"query={urllib.parse.quote_plus(series_name)}"
         
         # Search for entry
-        url = f"{self.api_url}/entries/search?{url_search_param}"
-        response = self.session.get(url, timeout=10)
-        response.raise_for_status()
-        
-        data = response.json()
-        logger.debug(f"Length of response on {url}: {len(data)}")
-        if len(data) == 0:
-            logger.error(f"Jimaku returned no items for our our query: {url_search_param}")
-            return None
+        data = self._get_series_entry(url_search_param)
         
         # Determine entry
         entry_id = None
@@ -238,6 +231,37 @@ class JimakuProvider(Provider):
                 '\uFF66' <= char <= '\uFF9D'):   # Half-width Katakana
                 return True
         return False
+    
+    @cache
+    def _get_series_entry(self, url_param):
+        url = f"{self.api_url}/entries/search?{url_param}"
+        
+        max_retries = 3; retry_count = 0
+        while retry_count < max_retries:
+            retry_count = 0
+            response = self.session.get(url, timeout=10)
+            
+            if response.status_code == 429:
+                # Default: Rratelimit quota replenishes after ~60 seconds
+                reset_time = int(response.headers.get("x-ratelimit-reset", time.time() + 60))
+                current_time = int(time.time())
+                wait_time = reset_time - current_time
+                
+                logger.warning(f"Jimaku ratelimit hit, waiting for at least: '{wait_time}' seconds ({retry_count}/{max_retries} tries)")
+                time.sleep(wait_time)
+            else:
+                response.raise_for_status()
+            
+            data = response.json()
+            logger.debug(f"Length of response on {url}: {len(data)}")
+            if len(data) == 0:
+                logger.error(f"Jimaku returned no items for our our query: {url_param}")
+                return None
+            else:
+                return data
+            
+        # Max retries exceeded
+        raise Exception(f"Jimaku ratelimit max backoff limit of {max_retries} reached, aborting.")
     
     @staticmethod
     @cache
