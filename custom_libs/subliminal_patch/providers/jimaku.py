@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import logging
+import re
 import urllib.parse
 import requests
 import xml.etree.ElementTree as etree
@@ -86,9 +87,18 @@ class JimakuProvider(Provider):
         self.session.close()
 
     def query(self, video):
-        series_name = str(video.series)
+        series_name = sanitize(video.alternative_series[0] if len(video.alternative_series) > 0 else str(video.series_name))
         episode_number = video.episode
-        
+
+        # Check if series_name ends with "Sn", if so strip chars as Jimaku only lists seasons by numbers alone
+        # If 'n' is 1, completely strip it as first seasons don't have a season number
+        if re.search(r'S\d$', series_name):
+            if int(series_name[-1]) == 1:
+                series_name = re.sub(r'S\d$', "",  series_name)
+            else:
+                # As shows sometimes have the wrong season number in the title, we'll reassemble it
+                series_name = re.sub(r'S\d$', str(video.season),  series_name)
+
         # Attempt to derive anilist_id
         derived_anilist_id = None
         derived_anidb_id = None
@@ -108,12 +118,15 @@ class JimakuProvider(Provider):
                 tag_to_derive_from = tag
                 logger.info(f"Got candidate tag '{tag_to_derive_from}' with value '{candidate}'")
                 break
-            
+
         if tag_to_derive_from or derived_anidb_id:
             try:
                 anime_list = self._get_anime_list_map()
                 
-                if not derived_anidb_id:
+                if derived_anidb_id:
+                    mapped_tag = "anidb_id"
+                    value_to_use = derived_anidb_id
+                else:
                     # Left: video, right: anime-lists
                     tag_map = {
                         "series_anidb_id": "anidb_id",
@@ -123,14 +136,16 @@ class JimakuProvider(Provider):
                     }
                     mapped_tag = tag_map[tag_to_derive_from]
                     value_to_use = getattr(video, tag_to_derive_from)
-                else:
-                    mapped_tag = "anidb_id"
-                    value_to_use = derived_anidb_id
                 
-                obj = [obj for obj in anime_list if mapped_tag in obj and obj[mapped_tag] == value_to_use]
-                derived_anilist_id = obj[0]["anilist_id"]
+                obj = [obj for obj in anime_list if mapped_tag in obj and str(obj[mapped_tag]) == str(value_to_use)]
+                logger.debug(f"Based on '{mapped_tag}': '{value_to_use}', anime-list matched: {obj}")
+
+                if len(obj) > 0:
+                    derived_anilist_id = obj[0]["anilist_id"]
+                else:
+                    logger.warning(f"Could not find corresponding Anilist ID with '{mapped_tag}': {value_to_use}")
             except Exception as e:
-                logger.error(f"Could not derive anilist_id: {str(e)}")
+                logger.error(f"Failed deriving anilist_id: {str(e)}")
                 
         url_search_param = None
         if derived_anilist_id:
@@ -148,7 +163,7 @@ class JimakuProvider(Provider):
         data = response.json()
         logger.debug(f"Length of response on {url}: {len(data)}")
         if len(data) == 0:
-            logger.error(f"No entries have been returned.")
+            logger.error(f"Jimaku returned no items for our our query: {url_search_param}")
             return None
         
         # Determine entry
@@ -260,5 +275,7 @@ class JimakuProvider(Provider):
                 except Exception as e:
                     logger.debug(f"Error returning on index {i}: {str(e)}")
                     continue
+        else:
+            logger.warning(f"Could not find an AniDB ID for provided TVDB ID and season ({season})!")
         
         return None
