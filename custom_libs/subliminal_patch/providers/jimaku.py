@@ -1,11 +1,11 @@
 from __future__ import absolute_import
+
 import logging
+import urllib.parse
+import requests
+import xml.etree.ElementTree as etree
 
 from requests import Session
-import urllib.parse
-
-import requests
-
 from subliminal import __short_version__
 from subliminal.exceptions import ConfigurationError
 from subliminal.utils import sanitize
@@ -91,34 +91,43 @@ class JimakuProvider(Provider):
         
         # Attempt to derive anilist_id
         derived_anilist_id = None
-        derive_from_tag = ""
+        derived_anidb_id = None
+        tag_to_derive_from = ""
         
         logger.info(f"Attempting to derive anilist ID...")
         for tag in ["series_anidb_id", "series_anidb_episode_id", "tvdb_id", "series_tvdb_id"]:
-            # Because tvdb assigns a single ID to all seasons of a show, we won't be able to use it for mapping purposes.
-            if "tvdb" in tag and video.season > 1:
-                logger.warning(f"> Skipping '{tag}' because this videos season ({video.season}) is greater than 1")
-                continue
-            
             candidate = getattr(video, tag, None)
+            
             if candidate:
-                derive_from_tag = tag
-                logger.info(f"Got candidate tag '{derive_from_tag}' with value '{candidate}'")
+                # Because tvdb assigns a single ID to all seasons of a show, we'll have to use another list to determine the correct AniDB ID
+                if "tvdb" in tag and video.season > 1:
+                    derived_anidb_id = self._get_tvdb_anidb_mapping(candidate, video.season)
+                    logger.info(f"Found AniDB ID '{derived_anidb_id}' for TVDB ID '{candidate}', season '{video.season}'")
+                    break
+                    
+                tag_to_derive_from = tag
+                logger.info(f"Got candidate tag '{tag_to_derive_from}' with value '{candidate}'")
                 break
             
-        if derive_from_tag:
-            # Left: video, right: anime-lists
-            tag_map = {
-                "series_anidb_id": "anidb_id",
-                "series_anidb_episode_id": "anidb_id",
-                "tvdb_id": "thetvdb_id",
-                "series_tvdb_id": "thetvdb_id",
-            }
-            mapped_tag = tag_map[derive_from_tag]
-            
+        if tag_to_derive_from or derived_anidb_id:
             try:
                 anime_list = self._get_anime_list_map()
-                obj = [obj for obj in anime_list if mapped_tag in obj and obj[mapped_tag] == getattr(video, derive_from_tag)]
+                
+                if not derived_anidb_id:
+                    # Left: video, right: anime-lists
+                    tag_map = {
+                        "series_anidb_id": "anidb_id",
+                        "series_anidb_episode_id": "anidb_id",
+                        "tvdb_id": "thetvdb_id",
+                        "series_tvdb_id": "thetvdb_id",
+                    }
+                    mapped_tag = tag_map[tag_to_derive_from]
+                    value_to_use = getattr(video, tag_to_derive_from)
+                else:
+                    mapped_tag = "anidb_id"
+                    value_to_use = derived_anidb_id
+                
+                obj = [obj for obj in anime_list if mapped_tag in obj and obj[mapped_tag] == value_to_use]
                 derived_anilist_id = obj[0]["anilist_id"]
             except Exception as e:
                 logger.error(f"Could not derive anilist_id: {str(e)}")
@@ -215,8 +224,8 @@ class JimakuProvider(Provider):
                 return True
         return False
     
-    @cache
     @staticmethod
+    @cache
     def _get_anime_list_map():
         # We won't use self.session as the endpoint doesnt need our API key
         response = requests.get(
@@ -226,3 +235,30 @@ class JimakuProvider(Provider):
         response.raise_for_status()
         
         return response.json()
+    
+    @staticmethod
+    @cache
+    def _get_tvdb_anidb_map():
+        # We won't use self.session as the endpoint doesnt need our API key
+        response = requests.get(
+            "https://raw.githubusercontent.com/Anime-Lists/anime-lists/master/anime-list.xml"
+        )
+        response.raise_for_status()
+        
+        return response.content
+
+    def _get_tvdb_anidb_mapping(self, tvdbid, season=1):
+        xml = etree.fromstring(self._get_tvdb_anidb_map())
+        findings = xml.findall(
+            f".//anime[@tvdbid='{tvdbid}'][@defaulttvdbseason='{season}']"
+        )
+        
+        if len(findings) > 0:
+            for i, v in enumerate(findings):
+                try:
+                    return v.attrib.get('anidbid')
+                except Exception as e:
+                    logger.debug(f"Error returning on index {i}: {str(e)}")
+                    continue
+        
+        return None
