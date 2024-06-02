@@ -1,5 +1,5 @@
-# sqlite/pysqlite.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# dialects/sqlite/pysqlite.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -486,6 +486,7 @@ class _SQLite_pysqliteDate(DATE):
 class SQLiteDialect_pysqlite(SQLiteDialect):
     default_paramstyle = "qmark"
     supports_statement_cache = True
+    returns_native_bytes = True
 
     colspecs = util.update_copy(
         SQLiteDialect.colspecs,
@@ -531,7 +532,6 @@ class SQLiteDialect_pysqlite(SQLiteDialect):
     )
 
     def set_isolation_level(self, dbapi_connection, level):
-
         if level == "AUTOCOMMIT":
             dbapi_connection.isolation_level = None
         else:

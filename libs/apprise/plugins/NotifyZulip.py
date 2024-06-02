@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -162,6 +162,9 @@ class NotifyZulip(NotifyBase):
     template_args = dict(NotifyBase.template_args, **{
         'to': {
             'alias_of': 'targets',
+        },
+        'token': {
+            'alias_of': 'token',
         },
     })
 
@@ -377,20 +380,23 @@ class NotifyZulip(NotifyBase):
         # The botname
         results['botname'] = NotifyZulip.unquote(results['user'])
 
-        # The first token is stored in the hostname
+        # The organization is stored in the hostname
         results['organization'] = NotifyZulip.unquote(results['host'])
 
-        # Now fetch the remaining tokens
-        try:
-            results['token'] = \
-                NotifyZulip.split_path(results['fullpath'])[0]
+        # Store our targets
+        results['targets'] = NotifyZulip.split_path(results['fullpath'])
 
-        except IndexError:
+        if 'token' in results['qsd'] and len(results['qsd']['token']):
+            # Store our token if specified
+            results['token'] = NotifyZulip.unquote(results['qsd']['token'])
+
+        elif results['targets']:
+            # First item is the token
+            results['token'] = results['targets'].pop(0)
+
+        else:
             # no token
             results['token'] = None
-
-        # Get unquoted entries
-        results['targets'] = NotifyZulip.split_path(results['fullpath'])[1:]
 
         # Support the 'to' variable so that we can support rooms this way too
         # The 'to' makes it easier to use yaml configuration

@@ -6,13 +6,17 @@
 
     .. _theme: http://sanssecours.github.io/Rainbow-Dash.tmbundle
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 from pygments.style import Style
-from pygments.token import (Comment, Error, Generic, Name, Number, Operator,
-                            String, Text, Whitespace, Keyword)
+from pygments.token import Comment, Error, Generic, Name, Number, Operator, \
+    String, Text, Whitespace, Keyword
+
+
+__all__ = ['RainbowDashStyle']
+
 
 BLUE_LIGHT = '#0080ff'
 BLUE = '#2c5dcd'
@@ -37,6 +41,8 @@ class RainbowDashStyle(Style):
     A bright and colorful syntax highlighting theme.
     """
 
+    name = 'rainbow_dash'
+    
     background_color = WHITE
 
     styles = {
@@ -54,6 +60,7 @@ class RainbowDashStyle(Style):
         Generic.Output: GREY,
         Generic.Prompt: 'bold {}'.format(BLUE),
         Generic.Strong: 'bold',
+        Generic.EmphStrong: 'bold italic',
         Generic.Subheading: 'bold {}'.format(BLUE),
         Generic.Traceback: RED_DARK,
 

@@ -9,6 +9,7 @@ from dynaconf.utils import RENAMED_VARS
 from dynaconf.utils import upperfy
 from dynaconf.utils import warn_deprecations
 from dynaconf.utils.files import find_file
+from dynaconf.utils.parse_conf import boolean_fix
 from dynaconf.utils.parse_conf import parse_conf_data
 from dynaconf.vendor.dotenv import load_dotenv
 
@@ -33,7 +34,7 @@ def get(key, default=None):
         value = try_renamed(key, value, old, new)
 
     return (
-        parse_conf_data(value, tomlfy=True, box_settings={})
+        parse_conf_data(boolean_fix(value), tomlfy=True, box_settings={})
         if value is not None
         else default
     )
@@ -188,6 +189,8 @@ VAULT_AUTH_WITH_IAM_FOR_DYNACONF = get(
 VAULT_AUTH_ROLE_FOR_DYNACONF = get("VAULT_AUTH_ROLE_FOR_DYNACONF", None)
 VAULT_ROLE_ID_FOR_DYNACONF = get("VAULT_ROLE_ID_FOR_DYNACONF", None)
 VAULT_SECRET_ID_FOR_DYNACONF = get("VAULT_SECRET_ID_FOR_DYNACONF", None)
+VAULT_USERNAME_FOR_DYNACONF = get("VAULT_USERNAME_FOR_DYNACONF", None)
+VAULT_PASSWORD_FOR_DYNACONF = get("VAULT_PASSWORD_FOR_DYNACONF", None)
 
 # Only core loaders defined on this list will be invoked
 core_loaders = ["YAML", "TOML", "INI", "JSON", "PY"]
@@ -245,6 +248,13 @@ SKIP_FILES_FOR_DYNACONF = get("SKIP_FILES_FOR_DYNACONF", [])
 APPLY_DEFAULT_ON_NONE_FOR_DYNACONF = get(
     "APPLY_DEFAULT_ON_NONE_FOR_DYNACONF", None
 )
+
+# Auto trigger validation when Settings update methods are called directly
+# (set, update, load_file)
+VALIDATE_ON_UPDATE_FOR_DYNACONF = get("VALIDATE_ON_UPDATE_FOR_DYNACONF", False)
+
+# Use system environ as fallback when a setting was not set
+SYSENV_FALLBACK_FOR_DYNACONF = get("SYSENV_FALLBACK_FOR_DYNACONF", False)
 
 
 # Backwards compatibility with renamed variables

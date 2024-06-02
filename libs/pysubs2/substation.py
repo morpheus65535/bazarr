@@ -1,18 +1,23 @@
 import logging
 import re
+import warnings
 from numbers import Number
+from typing import Any, Union, Optional, Dict
+
+import pysubs2
 from .formatbase import FormatBase
 from .ssaevent import SSAEvent
 from .ssastyle import SSAStyle
-from .common import Color
+from .common import Color, Alignment, SSA_ALIGNMENT
 from .time import make_time, ms_to_times, timestamp_to_ms, TIMESTAMP, TIMESTAMP_SHORT
 
-SSA_ALIGNMENT = (1, 2, 3, 9, 10, 11, 5, 6, 7)
 
 def ass_to_ssa_alignment(i):
+    warnings.warn("ass_to_ssa_alignment function is deprecated, please use the Alignment enum", DeprecationWarning)
     return SSA_ALIGNMENT[i-1]
 
 def ssa_to_ass_alignment(i):
+    warnings.warn("ssa_to_ass_alignment function is deprecated, please use the Alignment enum", DeprecationWarning)
     return SSA_ALIGNMENT.index(i) + 1
 
 SECTION_HEADING = re.compile(
@@ -22,7 +27,7 @@ SECTION_HEADING = re.compile(
     r"]"  # close square bracket
 )
 
-FONT_FILE_HEADING = re.compile(r"fontname:\s+(\S+)")
+ATTACHMENT_FILE_HEADING = re.compile(r"(fontname|filename):\s+(?P<name>\S+)")
 
 STYLE_FORMAT_LINE = {
     "ass": "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic,"
@@ -54,10 +59,10 @@ EVENT_FIELDS = {
 MAX_REPRESENTABLE_TIME = make_time(h=10) - 10
 
 def color_to_ass_rgba(c: Color) -> str:
-    return "&H%08X" % ((c.a << 24) | (c.b << 16) | (c.g << 8) | c.r)
+    return f"&H{((c.a << 24) | (c.b << 16) | (c.g << 8) | c.r):08X}"
 
 def color_to_ssa_rgb(c: Color) -> str:
-    return "%d" % ((c.b << 16) | (c.g << 8) | c.r)
+    return f"{((c.b << 16) | (c.g << 8) | c.r)}"
 
 def rgba_to_color(s: str) -> Color:
     if s[0] == '&':
@@ -81,7 +86,7 @@ def is_valid_field_content(s: str) -> bool:
     return "\n" not in s and "," not in s
 
 
-def parse_tags(text, style=SSAStyle.DEFAULT_STYLE, styles={}):
+def parse_tags(text: str, style: SSAStyle = SSAStyle.DEFAULT_STYLE, styles: Optional[Dict[str, SSAStyle]] = None):
     """
     Split text into fragments with computed SSAStyles.
     
@@ -98,20 +103,23 @@ def parse_tags(text, style=SSAStyle.DEFAULT_STYLE, styles={}):
     - r (with or without style name)
     
     """
+    if styles is None:
+        styles = {}
     
     fragments = SSAEvent.OVERRIDE_SEQUENCE.split(text)
     if len(fragments) == 1:
         return [(text, style)]
     
-    def apply_overrides(all_overrides):
+    def apply_overrides(all_overrides: str) -> SSAStyle:
         s = style.copy()
         for tag in re.findall(r"\\[ibusp][0-9]|\\r[a-zA-Z_0-9 ]*", all_overrides):
             if tag == r"\r":
                 s = style.copy() # reset to original line style
             elif tag.startswith(r"\r"):
                 name = tag[2:]
-                if name in styles:
-                    s = styles[name].copy() # reset to named style
+                if name in styles:  # type: ignore[operator]
+                    # reset to named style
+                    s = styles[name].copy()  # type: ignore[index]
             else:
                 if "i" in tag: s.italic = "1" in tag
                 elif "b" in tag: s.bold = "1" in tag
@@ -140,11 +148,18 @@ class SubstationFormat(FormatBase):
     @staticmethod
     def ms_to_timestamp(ms: int) -> str:
         """Convert ms to 'H:MM:SS.cc'"""
-        # XXX throw on overflow/underflow?
-        if ms < 0: ms = 0
-        if ms > MAX_REPRESENTABLE_TIME: ms = MAX_REPRESENTABLE_TIME
+        if ms < 0:
+            ms = 0
+        if ms > MAX_REPRESENTABLE_TIME:
+            warnings.warn("Overflow in SubStation timestamp, clamping to MAX_REPRESENTABLE_TIME", RuntimeWarning)
+            ms = MAX_REPRESENTABLE_TIME
+
         h, m, s, ms = ms_to_times(ms)
-        return "%01d:%02d:%02d.%02d" % (h, m, s, ms//10)
+
+        # Aegisub does rounding, see https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/include/libaegisub/ass/time.h#L32
+        cs = ((ms + 5) - (ms + 5) % 10) // 10
+
+        return f"{h:01d}:{m:02d}:{s:02d}.{cs:02d}"
 
     @classmethod
     def guess_format(cls, text):
@@ -155,7 +170,7 @@ class SubstationFormat(FormatBase):
             return "ssa"
 
     @classmethod
-    def from_file(cls, subs, fp, format_, **kwargs):
+    def from_file(cls, subs: "pysubs2.SSAFile", fp, format_, **kwargs):
         """See :meth:`pysubs2.formats.FormatBase.from_file()`"""
 
         def string_to_field(f: str, v: str):
@@ -177,7 +192,7 @@ class SubstationFormat(FormatBase):
                 if m is None:
                     m = TIMESTAMP_SHORT.match(v)
                     if m is None:
-                        raise ValueError("Failed to parse timestamp: {!r}".format(v))
+                        raise ValueError(f"Failed to parse timestamp: {v!r}")
 
                 return sign * timestamp_to_ms(m.groups())
             elif "color" in f:
@@ -192,11 +207,14 @@ class SubstationFormat(FormatBase):
             elif f == "marked":
                 return v.endswith("1")
             elif f == "alignment":
-                i = int(v)
-                if format_ == "ass":
-                    return i
-                else:
-                    return ssa_to_ass_alignment(i)
+                try:
+                    if format_ == "ass":
+                        return Alignment(int(v))
+                    else:
+                        return Alignment.from_ssa_alignment(int(v))
+                except Exception:
+                    warnings.warn("Failed to parse alignment, using default", RuntimeWarning)
+                    return Alignment.BOTTOM_CENTER
             elif f == "fontname":
                 return v.strip()
             else:
@@ -206,12 +224,15 @@ class SubstationFormat(FormatBase):
         subs.aegisub_project.clear()
         subs.styles.clear()
         subs.fonts_opaque.clear()
+        subs.graphics_opaque.clear()
 
         inside_info_section = False
         inside_aegisub_section = False
         inside_font_section = False
-        current_font_name = None
-        current_font_lines_buffer = []
+        inside_graphic_section = False
+        current_attachment_name = None
+        current_attachment_lines_buffer = []
+        current_attachment_is_font = None
 
         for lineno, line in enumerate(fp, 1):
             line = line.strip()
@@ -221,6 +242,7 @@ class SubstationFormat(FormatBase):
                 inside_info_section = "Info" in line
                 inside_aegisub_section = "Aegisub" in line
                 inside_font_section = "Fonts" in line
+                inside_graphic_section = "Graphics" in line
             elif inside_info_section or inside_aegisub_section:
                 if line.startswith(";"): continue # skip comments
                 try:
@@ -231,24 +253,30 @@ class SubstationFormat(FormatBase):
                         subs.aegisub_project[k] = v.strip()
                 except ValueError:
                     pass
-            elif inside_font_section:
-                m = FONT_FILE_HEADING.match(line)
+            elif inside_font_section or inside_graphic_section:
+                m = ATTACHMENT_FILE_HEADING.match(line)
+                current_attachment_is_font = inside_font_section
 
-                if current_font_name and (m or not line):
-                    # flush last font on newline or new font name
-                    font_data = current_font_lines_buffer[:]
-                    subs.fonts_opaque[current_font_name] = font_data
-                    logging.debug("at line %d: finished font definition %s", lineno, current_font_name)
-                    current_font_lines_buffer.clear()
-                    current_font_name = None
+                if current_attachment_name and (m or not line):
+                    # flush last font/picture on newline or new font/picture name
+                    attachment_data = current_attachment_lines_buffer[:]
+                    if inside_font_section:
+                        subs.fonts_opaque[current_attachment_name] = attachment_data
+                    elif inside_graphic_section:
+                        subs.graphics_opaque[current_attachment_name] = attachment_data
+                    else:
+                        raise NotImplementedError("Bad attachment section, expected [Fonts] or [Graphics]")
+                    logging.debug("at line %d: finished attachment definition %s", lineno, current_attachment_name)
+                    current_attachment_lines_buffer.clear()
+                    current_attachment_name = None
 
                 if m:
-                    # start new font
-                    font_name = m.group(1)
-                    current_font_name = font_name
+                    # start new font/picture
+                    attachment_name = m.group("name")
+                    current_attachment_name = attachment_name
                 elif line:
                     # add non-empty line to current buffer
-                    current_font_lines_buffer.append(line)
+                    current_attachment_lines_buffer.append(line)
             elif line.startswith("Style:"):
                 _, rest = line.split(":", 1)
                 buf = rest.strip().split(",")
@@ -264,17 +292,22 @@ class SubstationFormat(FormatBase):
                 ev = SSAEvent(**field_dict)
                 subs.events.append(ev)
 
-        # cleanup fonts
-        if current_font_name:
+        # cleanup fonts/pictures
+        if current_attachment_name:
             # flush last font on EOF or new section w/o newline
-            font_data = current_font_lines_buffer[:]
-            subs.fonts_opaque[current_font_name] = font_data
-            logging.debug("at EOF: finished font definition %s", current_font_name)
-            current_font_lines_buffer.clear()
-            current_font_name = None
+            attachment_data = current_attachment_lines_buffer[:]
+
+            if current_attachment_is_font:
+                subs.fonts_opaque[current_attachment_name] = attachment_data
+            else:
+                subs.graphics_opaque[current_attachment_name] = attachment_data
+
+            logging.debug("at EOF: finished attachment definition %s", current_attachment_name)
+            current_attachment_lines_buffer.clear()
+            current_attachment_name = None
 
     @classmethod
-    def to_file(cls, subs, fp, format_, header_notice=NOTICE, **kwargs):
+    def to_file(cls, subs: "pysubs2.SSAFile", fp, format_, header_notice=NOTICE, **kwargs):
         """See :meth:`pysubs2.formats.FormatBase.to_file()`"""
         print("[Script Info]", file=fp)
         for line in header_notice.splitlines(False):
@@ -289,13 +322,22 @@ class SubstationFormat(FormatBase):
             for k, v in subs.aegisub_project.items():
                 print(k, v, sep=": ", file=fp)
 
-        def field_to_string(f, v, line):
+        def field_to_string(f: str, v: Any, line: Union[SSAEvent, SSAStyle]):
             if f in {"start", "end"}:
                 return cls.ms_to_timestamp(v)
             elif f == "marked":
-                return "Marked=%d" % v
-            elif f == "alignment" and format_ == "ssa":
-                return str(ass_to_ssa_alignment(v))
+                return f"Marked={v:d}"
+            elif f == "alignment":
+                if isinstance(v, Alignment):
+                    alignment = v
+                else:
+                    warnings.warn("The 'alignment' attribute of SSAStyle should be an Alignment instance, using plain int is deprecated", DeprecationWarning)
+                    alignment = Alignment(v)
+
+                if format_ == "ssa":
+                    return str(alignment.to_ssa_alignment())
+                else:
+                    return str(alignment.value)
             elif isinstance(v, bool):
                 return "-1" if v else "0"
             elif isinstance(v, (str, Number)):
@@ -306,19 +348,27 @@ class SubstationFormat(FormatBase):
                 else:
                     return color_to_ssa_rgb(v)
             else:
-                raise TypeError("Unexpected type when writing a SubStation field {!r} for line {!r}".format(f, line))
+                raise TypeError(f"Unexpected type when writing a SubStation field {f!r} for line {line!r}")
 
         print("\n[V4+ Styles]" if format_ == "ass" else "\n[V4 Styles]", file=fp)
         print(STYLE_FORMAT_LINE[format_], file=fp)
         for name, sty in subs.styles.items():
             fields = [field_to_string(f, getattr(sty, f), sty) for f in STYLE_FIELDS[format_]]
-            print("Style: %s" % name, *fields, sep=",", file=fp)
+            print(f"Style: {name}", *fields, sep=",", file=fp)
 
         if subs.fonts_opaque:
             print("\n[Fonts]", file=fp)
             for font_name, font_lines in sorted(subs.fonts_opaque.items()):
-                print("fontname: {}".format(font_name), file=fp)
+                print(f"fontname: {font_name}", file=fp)
                 for line in font_lines:
+                    print(line, file=fp)
+                print(file=fp)
+
+        if subs.graphics_opaque:
+            print("\n[Graphics]", file=fp)
+            for picture_name, picture_lines in sorted(subs.graphics_opaque.items()):
+                print(f"filename: {picture_name}", file=fp)
+                for line in picture_lines:
                     print(line, file=fp)
                 print(file=fp)
 

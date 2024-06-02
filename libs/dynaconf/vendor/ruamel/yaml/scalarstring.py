@@ -1,156 +1,57 @@
-# coding: utf-8
-
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-from .compat import text_type
-from .anchor import Anchor
-
-if False:  # MYPY
-    from typing import Text, Any, Dict, List  # NOQA
-
-__all__ = [
-    'ScalarString',
-    'LiteralScalarString',
-    'FoldedScalarString',
-    'SingleQuotedScalarString',
-    'DoubleQuotedScalarString',
-    'PlainScalarString',
-    # PreservedScalarString is the old name, as it was the first to be preserved on rt,
-    # use LiteralScalarString instead
-    'PreservedScalarString',
-]
-
-
+from __future__ import print_function,absolute_import,division,unicode_literals
+_C='comment'
+_B=False
+_A=None
+from.compat import text_type
+from.anchor import Anchor
+if _B:from typing import Text,Any,Dict,List
+__all__=['ScalarString','LiteralScalarString','FoldedScalarString','SingleQuotedScalarString','DoubleQuotedScalarString','PlainScalarString','PreservedScalarString']
 class ScalarString(text_type):
-    __slots__ = Anchor.attrib
-
-    def __new__(cls, *args, **kw):
-        # type: (Any, Any) -> Any
-        anchor = kw.pop('anchor', None)  # type: ignore
-        ret_val = text_type.__new__(cls, *args, **kw)  # type: ignore
-        if anchor is not None:
-            ret_val.yaml_set_anchor(anchor, always_dump=True)
-        return ret_val
-
-    def replace(self, old, new, maxreplace=-1):
-        # type: (Any, Any, int) -> Any
-        return type(self)((text_type.replace(self, old, new, maxreplace)))
-
-    @property
-    def anchor(self):
-        # type: () -> Any
-        if not hasattr(self, Anchor.attrib):
-            setattr(self, Anchor.attrib, Anchor())
-        return getattr(self, Anchor.attrib)
-
-    def yaml_anchor(self, any=False):
-        # type: (bool) -> Any
-        if not hasattr(self, Anchor.attrib):
-            return None
-        if any or self.anchor.always_dump:
-            return self.anchor
-        return None
-
-    def yaml_set_anchor(self, value, always_dump=False):
-        # type: (Any, bool) -> None
-        self.anchor.value = value
-        self.anchor.always_dump = always_dump
-
-
+	__slots__=Anchor.attrib
+	def __new__(D,*E,**A):
+		B=A.pop('anchor',_A);C=text_type.__new__(D,*E,**A)
+		if B is not _A:C.yaml_set_anchor(B,always_dump=True)
+		return C
+	def replace(A,old,new,maxreplace=-1):return type(A)(text_type.replace(A,old,new,maxreplace))
+	@property
+	def anchor(self):
+		A=self
+		if not hasattr(A,Anchor.attrib):setattr(A,Anchor.attrib,Anchor())
+		return getattr(A,Anchor.attrib)
+	def yaml_anchor(A,any=_B):
+		if not hasattr(A,Anchor.attrib):return
+		if any or A.anchor.always_dump:return A.anchor
+	def yaml_set_anchor(A,value,always_dump=_B):A.anchor.value=value;A.anchor.always_dump=always_dump
 class LiteralScalarString(ScalarString):
-    __slots__ = 'comment'  # the comment after the | on the first line
-
-    style = '|'
-
-    def __new__(cls, value, anchor=None):
-        # type: (Text, Any) -> Any
-        return ScalarString.__new__(cls, value, anchor=anchor)
-
-
-PreservedScalarString = LiteralScalarString
-
-
+	__slots__=_C;style='|'
+	def __new__(A,value,anchor=_A):return ScalarString.__new__(A,value,anchor=anchor)
+PreservedScalarString=LiteralScalarString
 class FoldedScalarString(ScalarString):
-    __slots__ = ('fold_pos', 'comment')  # the comment after the > on the first line
-
-    style = '>'
-
-    def __new__(cls, value, anchor=None):
-        # type: (Text, Any) -> Any
-        return ScalarString.__new__(cls, value, anchor=anchor)
-
-
+	__slots__='fold_pos',_C;style='>'
+	def __new__(A,value,anchor=_A):return ScalarString.__new__(A,value,anchor=anchor)
 class SingleQuotedScalarString(ScalarString):
-    __slots__ = ()
-
-    style = "'"
-
-    def __new__(cls, value, anchor=None):
-        # type: (Text, Any) -> Any
-        return ScalarString.__new__(cls, value, anchor=anchor)
-
-
+	__slots__=();style="'"
+	def __new__(A,value,anchor=_A):return ScalarString.__new__(A,value,anchor=anchor)
 class DoubleQuotedScalarString(ScalarString):
-    __slots__ = ()
-
-    style = '"'
-
-    def __new__(cls, value, anchor=None):
-        # type: (Text, Any) -> Any
-        return ScalarString.__new__(cls, value, anchor=anchor)
-
-
+	__slots__=();style='"'
+	def __new__(A,value,anchor=_A):return ScalarString.__new__(A,value,anchor=anchor)
 class PlainScalarString(ScalarString):
-    __slots__ = ()
-
-    style = ''
-
-    def __new__(cls, value, anchor=None):
-        # type: (Text, Any) -> Any
-        return ScalarString.__new__(cls, value, anchor=anchor)
-
-
-def preserve_literal(s):
-    # type: (Text) -> Text
-    return LiteralScalarString(s.replace('\r\n', '\n').replace('\r', '\n'))
-
-
-def walk_tree(base, map=None):
-    # type: (Any, Any) -> None
-    """
-    the routine here walks over a simple yaml tree (recursing in
-    dict values and list items) and converts strings that
-    have multiple lines to literal scalars
-
-    You can also provide an explicit (ordered) mapping for multiple transforms
-    (first of which is executed):
-        map = ruamel.yaml.compat.ordereddict
-        map['\n'] = preserve_literal
-        map[':'] = SingleQuotedScalarString
-        walk_tree(data, map=map)
-    """
-    from dynaconf.vendor.ruamel.yaml.compat import string_types
-    from dynaconf.vendor.ruamel.yaml.compat import MutableMapping, MutableSequence  # type: ignore
-
-    if map is None:
-        map = {'\n': preserve_literal}
-
-    if isinstance(base, MutableMapping):
-        for k in base:
-            v = base[k]  # type: Text
-            if isinstance(v, string_types):
-                for ch in map:
-                    if ch in v:
-                        base[k] = map[ch](v)
-                        break
-            else:
-                walk_tree(v)
-    elif isinstance(base, MutableSequence):
-        for idx, elem in enumerate(base):
-            if isinstance(elem, string_types):
-                for ch in map:
-                    if ch in elem:  # type: ignore
-                        base[idx] = map[ch](elem)
-                        break
-            else:
-                walk_tree(elem)
+	__slots__=();style=''
+	def __new__(A,value,anchor=_A):return ScalarString.__new__(A,value,anchor=anchor)
+def preserve_literal(s):return LiteralScalarString(s.replace('\r\n','\n').replace('\r','\n'))
+def walk_tree(base,map=_A):
+	A=base;from dynaconf.vendor.ruamel.yaml.compat import string_types as E,MutableMapping as G,MutableSequence as H
+	if map is _A:map={'\n':preserve_literal}
+	if isinstance(A,G):
+		for F in A:
+			C=A[F]
+			if isinstance(C,E):
+				for B in map:
+					if B in C:A[F]=map[B](C);break
+			else:walk_tree(C)
+	elif isinstance(A,H):
+		for(I,D)in enumerate(A):
+			if isinstance(D,E):
+				for B in map:
+					if B in D:A[I]=map[B](D);break
+			else:walk_tree(D)

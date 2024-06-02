@@ -1,0 +1,18 @@
+# Bazarr dependencies
+subliminal_patch
+subzero
+py-pretty==1  # modified version to support Python 3
+
+# Bazarr modified dependencies
+signalr-client-threads==0.0.12  # Modified to work with Sonarr v3. Not used anymore with v4
+Flask-Compress==1.14  # modified to import brotli only if required
+
+# Required-by: signalr-client-threads
+sseclient==0.0.27  # Modified to work with Sonarr v3
+
+# Required-by: subliminal_patch
+deathbycaptcha  # unknown version, only found on gist
+git+https://github.com/pannal/libfilebot#egg=libfilebot
+git+https://github.com/RobinDavid/pyADS.git@28a2f6dbfb357f85b2c2f49add770b336e88840d#egg=pyads
+py7zr==0.7.0  # modified to prevent importing of modules that can't be vendored
+subliminal==2.1.0  # modified specifically for Bazarr

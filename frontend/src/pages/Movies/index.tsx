@@ -99,7 +99,7 @@ const MovieView: FunctionComponent = () => {
                   },
                   {
                     title: row.original.title,
-                  }
+                  },
                 )
               }
               icon={faWrench}
@@ -108,7 +108,7 @@ const MovieView: FunctionComponent = () => {
         },
       },
     ],
-    []
+    [],
   );
 
   useDocumentTitle("Movies - Bazarr");

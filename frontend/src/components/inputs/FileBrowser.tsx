@@ -53,7 +53,7 @@ export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
         item: v,
       })) ?? []),
     ],
-    [tree]
+    [tree],
   );
 
   const parent = useMemo(() => {

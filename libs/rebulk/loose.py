@@ -10,9 +10,9 @@ from inspect import isclass
 try:
     from inspect import getfullargspec as getargspec
 
-    _fullargspec_supported = True
+    _FULLARGSPEC_SUPPORTED = True
 except ImportError:
-    _fullargspec_supported = False
+    _FULLARGSPEC_SUPPORTED = False
     from inspect import getargspec
 
 from .utils import is_iterable
@@ -120,7 +120,7 @@ def argspec_args(argspec, constructor, *args, **kwargs):
     return call_args, call_kwarg
 
 
-if not _fullargspec_supported:
+if not _FULLARGSPEC_SUPPORTED:
     def argspec_args_legacy(argspec, constructor, *args, **kwargs):
         """
         Return (args, kwargs) matching the argspec object

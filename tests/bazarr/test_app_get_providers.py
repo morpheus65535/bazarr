@@ -35,7 +35,8 @@ def test_get_providers_auth_embeddedsubtitles():
     assert isinstance(item["ffprobe_path"], str)
     assert isinstance(item["ffmpeg_path"], str)
     assert isinstance(item["timeout"], str)
-    assert isinstance(item["unknown_as_english"], bool)
+    assert isinstance(item["unknown_as_fallback"], bool)
+    assert isinstance(item["fallback_lang"], str)
 
 
 def test_get_providers_auth_karagarga():

@@ -9,14 +9,8 @@
 """
 import re
 import logging
-try:
-    # on python 3
-    from collections.abc import Iterable
-except ImportError:
-    # on python 2.7 and pypy
-    from collections import Iterable
+from collections.abc import Iterable
 from datetime import timedelta
-from six import string_types
 from flask import request, current_app
 from werkzeug.datastructures import Headers, MultiDict
 
@@ -29,10 +23,12 @@ ACL_ALLOW_HEADERS = 'Access-Control-Allow-Headers'
 ACL_EXPOSE_HEADERS = 'Access-Control-Expose-Headers'
 ACL_CREDENTIALS = 'Access-Control-Allow-Credentials'
 ACL_MAX_AGE = 'Access-Control-Max-Age'
+ACL_RESPONSE_PRIVATE_NETWORK = 'Access-Control-Allow-Private-Network'
 
 # Request Header
 ACL_REQUEST_METHOD = 'Access-Control-Request-Method'
 ACL_REQUEST_HEADERS = 'Access-Control-Request-Headers'
+ACL_REQUEST_HEADER_PRIVATE_NETWORK = 'Access-Control-Request-Private-Network'
 
 ALL_METHODS = ['GET', 'HEAD', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE']
 CONFIG_OPTIONS = ['CORS_ORIGINS', 'CORS_METHODS', 'CORS_ALLOW_HEADERS',
@@ -80,7 +76,7 @@ def parse_resources(resources):
                       key=pattern_length,
                       reverse=True)
 
-    elif isinstance(resources, string_types):
+    elif isinstance(resources, str):
         return [(re_fix(resources), {})]
 
     elif isinstance(resources, Iterable):
@@ -186,7 +182,11 @@ def get_cors_headers(options, request_headers, request_method):
     headers[ACL_EXPOSE_HEADERS] = options.get('expose_headers')
 
     if options.get('supports_credentials'):
-        headers[ACL_CREDENTIALS] = 'true'  # case sensative
+        headers[ACL_CREDENTIALS] = 'true'  # case sensitive
+
+    if ACL_REQUEST_HEADER_PRIVATE_NETWORK in request_headers \
+            and request_headers.get(ACL_REQUEST_HEADER_PRIVATE_NETWORK) == 'true':
+        headers[ACL_RESPONSE_PRIVATE_NETWORK] = 'true'
 
     # This is a preflight request
     # http://www.w3.org/TR/cors/#resource-preflight-requests
@@ -223,7 +223,7 @@ def get_cors_headers(options, request_headers, request_method):
 
 def set_cors_headers(resp, options):
     """
-    Performs the actual evaluation of Flas-CORS options and actually
+    Performs the actual evaluation of Flask-CORS options and actually
     modifies the response object.
 
     This function is used both in the decorator and the after_request
@@ -323,9 +323,8 @@ def flexible_str(obj):
     """
     if obj is None:
         return None
-    elif(not isinstance(obj, string_types)
-            and isinstance(obj, Iterable)):
-        return ', '.join(str(item) for item in sorted(obj))
+    elif not isinstance(obj, str) and isinstance(obj, Iterable):
+        return ", ".join(str(item) for item in sorted(obj))
     else:
         return str(obj)
 
@@ -340,7 +339,7 @@ def ensure_iterable(inst):
     """
     Wraps scalars or string types as a list, or returns the iterable instance.
     """
-    if isinstance(inst, string_types):
+    if isinstance(inst, str):
         return [inst]
     elif not isinstance(inst, Iterable):
         return [inst]

@@ -1,0 +1,54 @@
+Metadata-Version: 2.1
+Name: pymediainfo
+Version: 6.1.0
+Summary: A Python wrapper for the mediainfo library.
+Home-page: https://github.com/sbraz/pymediainfo
+Author: Louis Sautier
+Author-email: sautier.louis@gmail.com
+License: MIT
+Project-URL: Documentation, https://pymediainfo.readthedocs.io/
+Project-URL: Bugs, https://github.com/sbraz/pymediainfo/issues
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: License :: OSI Approved :: MIT License
+Requires-Python: >=3.7
+Description-Content-Type: text/x-rst; charset=UTF-8
+License-File: LICENSE
+License-File: AUTHORS
+Requires-Dist: importlib-metadata ; python_version < "3.8"
+
+pymediainfo
+-----------
+
+.. image:: https://img.shields.io/pypi/v/pymediainfo.svg
+  :target: https://pypi.org/project/pymediainfo
+
+.. image:: https://img.shields.io/pypi/pyversions/pymediainfo.svg
+  :target: https://pypi.org/project/pymediainfo
+
+.. image:: https://repology.org/badge/tiny-repos/python:pymediainfo.svg
+  :target: https://repology.org/metapackage/python:pymediainfo
+
+.. image:: https://img.shields.io/pypi/implementation/pymediainfo.svg
+  :target: https://pypi.org/project/pymediainfo
+
+.. image:: https://ci.appveyor.com/api/projects/status/g15a2daem1oub57n/branch/master?svg=true
+  :target: https://ci.appveyor.com/project/sbraz/pymediainfo
+
+
+This small package is a wrapper around the MediaInfo library.
+
+It works on Linux, Mac OS X and Windows and is tested with Python 3.7 to 3.12 and PyPy3.
+
+See https://pymediainfo.readthedocs.io/ for more information.

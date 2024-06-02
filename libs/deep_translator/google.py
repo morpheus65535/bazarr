@@ -2,6 +2,8 @@
 google translator API
 """
 
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
 from typing import List, Optional
 
 import requests
@@ -14,7 +16,7 @@ from deep_translator.exceptions import (
     TooManyRequests,
     TranslationNotFound,
 )
-from deep_translator.validate import is_empty, is_input_valid
+from deep_translator.validate import is_empty, is_input_valid, request_failed
 
 
 class GoogleTranslator(BaseTranslator):
@@ -52,7 +54,7 @@ class GoogleTranslator(BaseTranslator):
         @param text: desired text to translate
         @return: str: translated text
         """
-        if is_input_valid(text):
+        if is_input_valid(text, max_chars=5000):
             text = text.strip()
             if self._same_source_target() or is_empty(text):
                 return text
@@ -68,7 +70,7 @@ class GoogleTranslator(BaseTranslator):
             if response.status_code == 429:
                 raise TooManyRequests()
 
-            if response.status_code != 200:
+            if request_failed(status_code=response.status_code):
                 raise RequestError()
 
             soup = BeautifulSoup(response.text, "html.parser")
@@ -81,7 +83,9 @@ class GoogleTranslator(BaseTranslator):
                 if not element:
                     raise TranslationNotFound(text)
             if element.get_text(strip=True) == text.strip():
-                to_translate_alpha = "".join(ch for ch in text.strip() if ch.isalnum())
+                to_translate_alpha = "".join(
+                    ch for ch in text.strip() if ch.isalnum()
+                )
                 translated_alpha = "".join(
                     ch for ch in element.get_text(strip=True) if ch.isalnum()
                 )
@@ -116,9 +120,3 @@ class GoogleTranslator(BaseTranslator):
         @return: list of translations
         """
         return self._translate_batch(batch, **kwargs)
-
-
-if __name__ == "__main__":
-    trans = GoogleTranslator(source="auto", target="zh-CN")
-    res = trans.translate("good")
-    print("translation: ", res)

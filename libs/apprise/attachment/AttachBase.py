@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -253,7 +253,7 @@ class AttachBase(URLBase):
         return self.detected_mimetype \
             if self.detected_mimetype else self.unknown_mimetype
 
-    def exists(self):
+    def exists(self, retrieve_if_missing=True):
         """
         Simply returns true if the object has downloaded and stored the
         attachment AND the attachment has not expired.
@@ -282,7 +282,7 @@ class AttachBase(URLBase):
                 # The file is not present
                 pass
 
-        return self.download()
+        return False if not retrieve_if_missing else self.download()
 
     def invalidate(self):
         """

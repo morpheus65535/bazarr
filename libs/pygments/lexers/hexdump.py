@@ -4,12 +4,12 @@
 
     Lexers for hexadecimal dumps.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 from pygments.lexer import RegexLexer, bygroups, include
-from pygments.token import Text, Name, Number, String, Punctuation, Whitespace
+from pygments.token import Name, Number, String, Punctuation, Whitespace
 
 __all__ = ['HexdumpLexer']
 

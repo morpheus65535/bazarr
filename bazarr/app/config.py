@@ -4,8 +4,12 @@ import hashlib
 import os
 import ast
 import logging
+import re
 
 from urllib.parse import quote_plus
+from utilities.binaries import BinaryNotFound, get_binary
+from literals import EXIT_VALIDATION_ERROR
+from utilities.central import stop_bazarr
 from subliminal.cache import region
 from dynaconf import Dynaconf, Validator as OriginalValidator
 from dynaconf.loaders.yaml_loader import write
@@ -37,6 +41,7 @@ def validate_ip_address(ip_string):
 ONE_HUNDRED_YEARS_IN_MINUTES = 52560000
 ONE_HUNDRED_YEARS_IN_HOURS = 876000
 
+
 class Validator(OriginalValidator):
     # Give the ability to personalize messages sent by the original dynasync Validator class.
     default_messages = MappingProxyType(
@@ -48,6 +53,14 @@ class Validator(OriginalValidator):
             "combined": "combined validators failed {errors}",
         }
     )
+
+
+def check_parser_binary(value):
+    try:
+        get_binary(value)
+    except BinaryNotFound:
+        raise ValidationError(f"Executable '{value}' not found in search path. Please install before making this selection.")
+    return True
 
 
 validators = [
@@ -96,13 +109,14 @@ validators = [
     Validator('general.adaptive_searching_delta', must_exist=True, default='1w', is_type_of=str,
               is_in=['3d', '1w', '2w', '3w', '4w']),
     Validator('general.enabled_providers', must_exist=True, default=[], is_type_of=list),
+    Validator('general.enabled_integrations', must_exist=True, default=[], is_type_of=list),
     Validator('general.multithreading', must_exist=True, default=True, is_type_of=bool),
     Validator('general.chmod_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.chmod', must_exist=True, default='0640', is_type_of=str),
     Validator('general.subfolder', must_exist=True, default='current', is_type_of=str),
     Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),
     Validator('general.upgrade_subs', must_exist=True, default=True, is_type_of=bool),
-    Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int, 
+    Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int,
               is_in=[6, 12, 24, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.days_to_upgrade_subs', must_exist=True, default=7, is_type_of=int, gte=0, lte=30),
     Validator('general.upgrade_manual', must_exist=True, default=True, is_type_of=bool),
@@ -115,12 +129,18 @@ validators = [
     Validator('general.dont_notify_manual_actions', must_exist=True, default=False, is_type_of=bool),
     Validator('general.hi_extension', must_exist=True, default='hi', is_type_of=str, is_in=['hi', 'cc', 'sdh']),
     Validator('general.embedded_subtitles_parser', must_exist=True, default='ffprobe', is_type_of=str,
-              is_in=['ffprobe', 'mediainfo']),
+              is_in=['ffprobe', 'mediainfo'], condition=check_parser_binary),
     Validator('general.default_und_audio_lang', must_exist=True, default='', is_type_of=str),
     Validator('general.default_und_embedded_subtitles_lang', must_exist=True, default='', is_type_of=str),
     Validator('general.parse_embedded_audio_track', must_exist=True, default=False, is_type_of=bool),
     Validator('general.skip_hashing', must_exist=True, default=False, is_type_of=bool),
     Validator('general.language_equals', must_exist=True, default=[], is_type_of=list),
+
+    # log section
+    Validator('log.include_filter', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('log.exclude_filter', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('log.ignore_case', must_exist=True, default=False, is_type_of=bool),
+    Validator('log.use_regex', must_exist=True, default=False, is_type_of=bool),
 
     # auth section
     Validator('auth.apikey', must_exist=True, default=hexlify(os.urandom(16)).decode(), is_type_of=str),
@@ -155,7 +175,7 @@ validators = [
     Validator('sonarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
     Validator('sonarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('sonarr.series_sync', must_exist=True, default=60, is_type_of=int,
-              is_in=[15, 60, 180, 360, 720, 1440, ONE_HUNDRED_YEARS_IN_MINUTES]),
+              is_in=[15, 60, 180, 360, 720, 1440, 10080, ONE_HUNDRED_YEARS_IN_MINUTES]),
     Validator('sonarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
     Validator('sonarr.excluded_series_types', must_exist=True, default=[], is_type_of=list),
     Validator('sonarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
@@ -178,7 +198,7 @@ validators = [
     Validator('radarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
     Validator('radarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('radarr.movies_sync', must_exist=True, default=60, is_type_of=int,
-              is_in=[15, 60, 180, 360, 720, 1440, ONE_HUNDRED_YEARS_IN_MINUTES]),
+              is_in=[15, 60, 180, 360, 720, 1440, 10080, ONE_HUNDRED_YEARS_IN_MINUTES]),
     Validator('radarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
     Validator('radarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
     Validator('radarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
@@ -214,6 +234,19 @@ validators = [
     Validator('addic7ed.cookies', must_exist=True, default='', is_type_of=str),
     Validator('addic7ed.user_agent', must_exist=True, default='', is_type_of=str),
     Validator('addic7ed.vip', must_exist=True, default=False, is_type_of=bool),
+
+    # animetosho section
+    Validator('animetosho.search_threshold', must_exist=True, default=6, is_type_of=int, gte=1, lte=15),
+    Validator('animetosho.anidb_api_client', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('animetosho.anidb_api_client_ver', must_exist=True, default=1, is_type_of=int, gte=1, lte=9),
+
+    # avistaz section
+    Validator('avistaz.cookies', must_exist=True, default='', is_type_of=str),
+    Validator('avistaz.user_agent', must_exist=True, default='', is_type_of=str),
+
+    # cinemaz section
+    Validator('cinemaz.cookies', must_exist=True, default='', is_type_of=str),
+    Validator('cinemaz.user_agent', must_exist=True, default='', is_type_of=str),
 
     # podnapisi section
     Validator('podnapisi.verify_ssl', must_exist=True, default=True, is_type_of=bool),
@@ -260,10 +293,6 @@ validators = [
     Validator('napisy24.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('napisy24.password', must_exist=True, default='', is_type_of=str, cast=str),
 
-    # subscene section
-    Validator('subscene.username', must_exist=True, default='', is_type_of=str, cast=str),
-    Validator('subscene.password', must_exist=True, default='', is_type_of=str, cast=str),
-
     # betaseries section
     Validator('betaseries.token', must_exist=True, default='', is_type_of=str, cast=str),
 
@@ -283,7 +312,8 @@ validators = [
     Validator('embeddedsubtitles.included_codecs', must_exist=True, default=[], is_type_of=list),
     Validator('embeddedsubtitles.hi_fallback', must_exist=True, default=False, is_type_of=bool),
     Validator('embeddedsubtitles.timeout', must_exist=True, default=600, is_type_of=int, gte=1),
-    Validator('embeddedsubtitles.unknown_as_english', must_exist=True, default=False, is_type_of=bool),
+    Validator('embeddedsubtitles.unknown_as_fallback', must_exist=True, default=False, is_type_of=bool),
+    Validator('embeddedsubtitles.fallback_lang', must_exist=True, default='en', is_type_of=str, cast=str),
 
     # karagarga section
     Validator('karagarga.username', must_exist=True, default='', is_type_of=str, cast=str),
@@ -341,6 +371,10 @@ validators = [
     Validator('postgresql.database', must_exist=True, default='', is_type_of=str),
     Validator('postgresql.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('postgresql.password', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # anidb section
+    Validator('anidb.api_client', must_exist=True, default='', is_type_of=str),
+    Validator('anidb.api_client_ver', must_exist=True, default=1, is_type_of=int),
 ]
 
 
@@ -393,8 +427,9 @@ while failed_validator:
             settings[current_validator_details.names[0]] = current_validator_details.default
         else:
             logging.critical(f"Value for {current_validator_details.names[0]} doesn't pass validation and there's no "
-                             f"default value. This issue must be reported. Bazarr won't works until it's been fixed.")
-            os._exit(0)
+                             f"default value. This issue must be reported to and fixed by the development team. "
+                             f"Bazarr won't work until it's been fixed.")
+            stop_bazarr(EXIT_VALIDATION_ERROR)
 
 
 def write_config():
@@ -413,6 +448,7 @@ array_keys = ['excluded_tags',
               'subzero_mods',
               'excluded_series_types',
               'enabled_providers',
+              'enabled_integrations',
               'path_mappings',
               'path_mappings_movie',
               'language_equals',
@@ -421,7 +457,7 @@ array_keys = ['excluded_tags',
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
-str_keys = ['chmod']
+str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter', 'password', 'f_password', 'hashed_password']
 
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
 if settings.sonarr.series_sync < 15:
@@ -440,6 +476,12 @@ if settings.general.wanted_search_frequency == 3:
 if settings.general.wanted_search_frequency_movie == 3:
     settings.general.wanted_search_frequency_movie = 6
 
+# backward compatibility embeddedsubtitles provider
+if hasattr(settings.embeddedsubtitles, 'unknown_as_english'):
+    if settings.embeddedsubtitles.unknown_as_english:
+        settings.embeddedsubtitles.unknown_as_fallback = True
+        settings.embeddedsubtitles.fallback_lang = 'en'
+    del settings.embeddedsubtitles.unknown_as_english
 # save updated settings to file
 write_config()
 
@@ -461,6 +503,26 @@ def get_settings():
                 else:
                     settings_to_return[k].update({subk: subv})
     return settings_to_return
+
+
+def validate_log_regex():
+    # handle bug in dynaconf that changes strings to numbers, so change them back to str
+    if not isinstance(settings.log.include_filter, str):
+        settings.log.include_filter = str(settings.log.include_filter)
+    if not isinstance(settings.log.exclude_filter, str):
+        settings.log.exclude_filter = str(settings.log.exclude_filter)
+
+    if settings.log.use_regex:
+        # compile any regular expressions specified to see if they are valid
+        # if invalid, tell the user which one
+        try:
+            re.compile(settings.log.include_filter)
+        except Exception:
+            raise ValidationError(f"Include filter: invalid regular expression: {settings.log.include_filter}")
+        try:
+            re.compile(settings.log.exclude_filter)
+        except Exception:
+            raise ValidationError(f"Exclude filter: invalid regular expression: {settings.log.exclude_filter}")
 
 
 def save_settings(settings_items):
@@ -615,21 +677,10 @@ def save_settings(settings_items):
             if key != settings.opensubtitlescom.username:
                 reset_providers = True
                 region.delete('oscom_token')
-                region.delete('oscom_server')
         elif key == 'settings-opensubtitlescom-password':
             if key != settings.opensubtitlescom.password:
                 reset_providers = True
                 region.delete('oscom_token')
-                region.delete('oscom_server')
-
-        if key == 'settings-subscene-username':
-            if key != settings.subscene.username:
-                reset_providers = True
-                region.delete('subscene_cookies2')
-        elif key == 'settings-subscene-password':
-            if key != settings.subscene.password:
-                reset_providers = True
-                region.delete('subscene_cookies2')
 
         if key == 'settings-titlovi-username':
             if key != settings.titlovi.username:
@@ -703,6 +754,7 @@ def save_settings(settings_items):
 
     try:
         settings.validators.validate()
+        validate_log_regex()
     except ValidationError:
         settings.reload()
         raise

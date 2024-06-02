@@ -6,7 +6,7 @@ import pickle
 import shutil
 import tempfile
 
-import appdirs
+import platformdirs
 
 from .posixemulation import rename
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class FileCache(MutableMapping):
     """A persistent file cache that is dictionary-like and has a write buffer.
 
-    *appname* is passed to `appdirs <https://pypi.python.org/pypi/appdirs/>`_
+    *appname* is passed to `platformdirs <https://pypi.org/project/platformdirs/>`_
     to determine a system-appropriate location for the cache files. The cache
     directory used is available via :data:`cache_dir`.
 
@@ -40,7 +40,7 @@ class FileCache(MutableMapping):
     :param bool serialize: Whether or not to (de)serialize the values. If a
         cache is used with a :class:`~shelve.Shelf`, set this to ``False``.
     :param str app_cache_dir: absolute path to root cache directory to be
-        used in place of system-appropriate location determined by appdirs
+        used in place of system-appropriate location determined by platformdirs
 
     The optional *flag* argument can be:
 
@@ -106,7 +106,7 @@ class FileCache(MutableMapping):
         self._is_subcache = bool(subcache)
 
         if not app_cache_dir:
-            app_cache_dir = appdirs.user_cache_dir(appname, appname)
+            app_cache_dir = platformdirs.user_cache_dir(appname, appname)
         subcache_dir = os.path.join(app_cache_dir, *subcache)
         self.cache_dir = os.path.join(subcache_dir, "cache")
         exists = os.path.exists(self.cache_dir)
@@ -139,8 +139,7 @@ class FileCache(MutableMapping):
         """Create the write buffer and cache directory."""
         if not self._sync and not hasattr(self, "_buffer"):
             self._buffer = {}
-        if not os.path.exists(self.cache_dir):
-            os.makedirs(self.cache_dir)
+        os.makedirs(self.cache_dir, exist_ok=True)
 
     def clear(self):
         """Remove all items from the write buffer and cache.

@@ -15,6 +15,9 @@ def evaluate_lazy_format(f):
 
     @wraps(f)
     def evaluate(dynabox, item, *args, **kwargs):
+        if dynabox._box_config.get("_bypass_evaluation") is True:
+            return f(dynabox, item, *args, **kwargs)
+
         value = f(dynabox, item, *args, **kwargs)
         settings = dynabox._box_config["box_settings"]
 
@@ -42,6 +45,14 @@ class DynaBox(Box):
 
     @evaluate_lazy_format
     def __getitem__(self, item, *args, **kwargs):
+        try:
+            return super().__getitem__(item, *args, **kwargs)
+        except (AttributeError, KeyError):
+            n_item = find_the_correct_casing(item, self) or item
+            return super().__getitem__(n_item, *args, **kwargs)
+
+    def _safe_get(self, item, *args, **kwargs):
+        """Get item bypassing recursive evaluation"""
         try:
             return super().__getitem__(item, *args, **kwargs)
         except (AttributeError, KeyError):

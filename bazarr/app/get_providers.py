@@ -125,7 +125,7 @@ def provider_throttle_map():
 
 
 PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendasdivx", "napiprojekt", "shooter",
-                        "hosszupuska", "supersubtitles", "titlovi", "assrt", "subscene"]
+                        "hosszupuska", "supersubtitles", "titlovi", "assrt"]
 
 throttle_count = {}
 
@@ -229,6 +229,14 @@ def get_providers_auth():
             'user_agent': settings.addic7ed.user_agent,
             'is_vip': settings.addic7ed.vip,
         },
+        'avistaz': {
+            'cookies': settings.avistaz.cookies,
+            'user_agent': settings.avistaz.user_agent,
+        },
+        'cinemaz': {
+            'cookies': settings.cinemaz.cookies,
+            'user_agent': settings.cinemaz.user_agent,
+        },
         'opensubtitles': {
             'username': settings.opensubtitles.username,
             'password': settings.opensubtitles.password,
@@ -250,11 +258,6 @@ def get_providers_auth():
             'only_foreign': False,  # fixme
             'also_foreign': False,  # fixme
             'verify_ssl': settings.podnapisi.verify_ssl
-        },
-        'subscene': {
-            'username': settings.subscene.username,
-            'password': settings.subscene.password,
-            'only_foreign': False,  # fixme
         },
         'legendasdivx': {
             'username': settings.legendasdivx.username,
@@ -293,7 +296,8 @@ def get_providers_auth():
             'ffprobe_path': _FFPROBE_BINARY,
             'ffmpeg_path': _FFMPEG_BINARY,
             'timeout': settings.embeddedsubtitles.timeout,
-            'unknown_as_english': settings.embeddedsubtitles.unknown_as_english,
+            'unknown_as_fallback': settings.embeddedsubtitles.unknown_as_fallback,
+            'fallback_lang': settings.embeddedsubtitles.fallback_lang,
         },
         'karagarga': {
             'username': settings.karagarga.username,
@@ -314,7 +318,10 @@ def get_providers_auth():
             'response': settings.whisperai.response,
             'timeout': settings.whisperai.timeout,
             'ffmpeg_path': _FFMPEG_BINARY,
-            'loglevel': settings.whisperai.loglevel,            
+            'loglevel': settings.whisperai.loglevel,
+        },
+        "animetosho": {
+            'search_threshold': settings.animetosho.search_threshold,
         }
     }
 
@@ -489,7 +496,7 @@ def get_throttled_providers():
     except Exception:
         # set empty content in throttled_providers.dat
         logging.error("Invalid content in throttled_providers.dat. Resetting")
-        set_throttled_providers(providers)
+        set_throttled_providers(str(providers))
     finally:
         return providers
 

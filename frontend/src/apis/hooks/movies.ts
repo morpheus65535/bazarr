@@ -39,13 +39,13 @@ export function useMovies() {
       onSuccess: (data) => {
         cacheMovies(client, data);
       },
-    }
+    },
   );
 }
 
 export function useMoviesPagination() {
   return usePaginationQuery([QueryKeys.Movies], (param) =>
-    api.movies.moviesBy(param)
+    api.movies.moviesBy(param),
   );
 }
 
@@ -62,7 +62,7 @@ export function useMovieModification() {
         // TODO: query less
         client.invalidateQueries([QueryKeys.Movies]);
       },
-    }
+    },
   );
 }
 
@@ -75,19 +75,19 @@ export function useMovieAction() {
       onSuccess: () => {
         client.invalidateQueries([QueryKeys.Movies]);
       },
-    }
+    },
   );
 }
 
 export function useMovieWantedPagination() {
   return usePaginationQuery([QueryKeys.Movies, QueryKeys.Wanted], (param) =>
-    api.movies.wanted(param)
+    api.movies.wanted(param),
   );
 }
 
 export function useMovieBlacklist() {
   return useQuery([QueryKeys.Movies, QueryKeys.Blacklist], () =>
-    api.movies.blacklist()
+    api.movies.blacklist(),
   );
 }
 
@@ -104,7 +104,7 @@ export function useMovieAddBlacklist() {
         client.invalidateQueries([QueryKeys.Movies, QueryKeys.Blacklist]);
         client.invalidateQueries([QueryKeys.Movies, id]);
       },
-    }
+    },
   );
 }
 
@@ -118,7 +118,7 @@ export function useMovieDeleteBlacklist() {
       onSuccess: (_, param) => {
         client.invalidateQueries([QueryKeys.Movies, QueryKeys.Blacklist]);
       },
-    }
+    },
   );
 }
 
@@ -126,7 +126,7 @@ export function useMovieHistoryPagination() {
   return usePaginationQuery(
     [QueryKeys.Movies, QueryKeys.History],
     (param) => api.movies.history(param),
-    false
+    false,
   );
 }
 

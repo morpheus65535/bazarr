@@ -146,13 +146,13 @@ const TranslationForm: FunctionComponent<Props> = ({
 
   const available = useMemo(
     () => languages.filter((v) => v.code2 in translations),
-    [languages]
+    [languages],
   );
 
   const options = useSelectorOptions(
     available,
     (v) => v.name,
-    (v) => v.code2
+    (v) => v.code2,
   );
 
   return (
@@ -166,7 +166,7 @@ const TranslationForm: FunctionComponent<Props> = ({
                 ...s,
                 language: language.code2,
               },
-            })
+            }),
           );
 
           onSubmit?.();

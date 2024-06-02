@@ -3,7 +3,6 @@
 """
 Chain patterns and handle repetiting capture group
 """
-# pylint: disable=super-init-not-called
 import itertools
 
 from .builder import Builder
@@ -17,7 +16,6 @@ class _InvalidChainException(Exception):
     """
     Internal exception raised when a chain is not valid
     """
-    pass
 
 
 class Chain(Pattern, Builder):
@@ -25,7 +23,7 @@ class Chain(Pattern, Builder):
     Definition of a pattern chain to search for.
     """
 
-    def __init__(self, parent, chain_breaker=None, **kwargs):
+    def __init__(self, parent, chain_breaker=None, **kwargs):  # pylint: disable=super-init-not-called
         Builder.__init__(self)
         call(Pattern.__init__, self, **kwargs)
         self._kwargs = kwargs
@@ -259,7 +257,7 @@ class ChainPart(BasePattern):
     def _validate_repeater(self, matches):
         max_match_index = -1
         if matches:
-            max_match_index = max([m.match_index for m in matches])
+            max_match_index = max(m.match_index for m in matches)
         if max_match_index + 1 < self.repeater_start:
             raise _InvalidChainException
 

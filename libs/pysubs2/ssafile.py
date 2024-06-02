@@ -1,7 +1,4 @@
-try:
-    from collections import abc
-except ImportError:
-    import collections as abc  # type: ignore[no-redef]
+from collections.abc import MutableSequence
 import io
 from io import open
 from itertools import chain
@@ -17,8 +14,7 @@ from .ssastyle import SSAStyle
 from .time import make_time, ms_to_str
 
 
-# TODO fix mypy errors regarding SSAFile
-class SSAFile(abc.MutableSequence):
+class SSAFile(MutableSequence):
     """
     Subtitle file in SubStation Alpha format.
 
@@ -42,12 +38,13 @@ class SSAFile(abc.MutableSequence):
         "Collisions": "Normal"
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.events: List[SSAEvent] = []  #: List of :class:`SSAEvent` instances, ie. individual subtitles.
         self.styles: Dict[str, SSAStyle] = {"Default": SSAStyle.DEFAULT_STYLE.copy()}  #: Dict of :class:`SSAStyle` instances.
         self.info: Dict[str, str] = self.DEFAULT_INFO.copy()  #: Dict with script metadata, ie. ``[Script Info]``.
         self.aegisub_project: Dict[str, str] = {}  #: Dict with Aegisub project, ie. ``[Aegisub Project Garbage]``.
         self.fonts_opaque: Dict[str, Any] = {}  #: Dict with embedded fonts, ie. ``[Fonts]``.
+        self.graphics_opaque: Dict[str, Any] = {}  #: Dict with embedded images, ie. ``[Graphics]``.
         self.fps: Optional[float] = None  #: Framerate used when reading the file, if applicable.
         self.format: Optional[str] = None  #: Format of source subtitle file, if applicable, eg. ``"srt"``.
 
@@ -286,7 +283,7 @@ class SSAFile(abc.MutableSequence):
 
         """
         if in_fps <= 0 or out_fps <= 0:
-            raise ValueError("Framerates must be positive, cannot transform %f -> %f" % (in_fps, out_fps))
+            raise ValueError(f"Framerates must be positive, cannot transform {in_fps} -> {out_fps}")
 
         ratio = in_fps / out_fps
         for line in self:
@@ -312,11 +309,11 @@ class SSAFile(abc.MutableSequence):
 
         """
         if old_name not in self.styles:
-            raise KeyError("Style %r not found" % old_name)
+            raise KeyError(f"Style {old_name!r} not found")
         if new_name in self.styles:
-            raise ValueError("There is already a style called %r" % new_name)
+            raise ValueError(f"There is already a style called {new_name!r}")
         if not is_valid_field_content(new_name):
-            raise ValueError("%r is not a valid name" % new_name)
+            raise ValueError(f"{new_name!r} is not a valid name")
 
         self.styles[new_name] = self.styles[old_name]
         del self.styles[old_name]
@@ -414,6 +411,18 @@ class SSAFile(abc.MutableSequence):
                     return False
                 elif self_font != other_font:
                     logging.debug("fonts_opaque %r differs (self=%r, other=%r)", key, self_font, other_font)
+                    return False
+
+            for key in set(chain(self.graphics_opaque.keys(), other.graphics_opaque.keys())):
+                self_image, other_image = self.graphics_opaque.get(key), other.graphics_opaque.get(key)
+                if self_image is None:
+                    logging.debug("%r missing in self.graphics_opaque", key)
+                    return False
+                elif other_image is None:
+                    logging.debug("%r missing in other.graphics_opaque", key)
+                    return False
+                elif self_image != other_image:
+                    logging.debug("graphics_opaque %r differs (self=%r, other=%r)", key, self_image, other_image)
                     return False
 
             for key in set(chain(self.styles.keys(), other.styles.keys())):

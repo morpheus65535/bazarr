@@ -32,6 +32,10 @@ KV_PATTERN = re.compile(r"([a-zA-Z0-9 ]*=[a-zA-Z0-9\- :]*)")
 """matches `a=b, c=d, e=f` used on `VALUE='@merge foo=bar'` variables."""
 
 
+class DynaconfFormatError(Exception):
+    """Error to raise when formatting a lazy variable fails"""
+
+
 class DynaconfParseError(Exception):
     """Error to raise when parsing @casts"""
 
@@ -143,7 +147,14 @@ class BaseFormatter:
         self.token = token
 
     def __call__(self, value, **context):
-        return self.function(value, **context)
+        try:
+            return self.function(value, **context)
+        except (KeyError, AttributeError) as exc:
+            # A template like `{this.KEY}` failed with AttributeError
+            # Or KeyError in the case of `{env[KEY]}`
+            raise DynaconfFormatError(
+                f"Dynaconf can't interpolate variable because {exc}"
+            ) from exc
 
     def __str__(self):
         return str(self.token)
@@ -267,13 +278,34 @@ converters = {
 }
 
 
-def get_converter(converter_key, value, box_settings):
+def apply_converter(converter_key, value, box_settings):
+    """
+    Get converter and apply it to @value.
+
+    Lazy converters will return Lazy objects for later evaluation.
+    """
     converter = converters[converter_key]
     try:
         converted_value = converter(value, box_settings=box_settings)
     except TypeError:
         converted_value = converter(value)
     return converted_value
+
+
+def add_converter(converter_key, func):
+    """Adds a new converter to the converters dict"""
+    if not converter_key.startswith("@"):
+        converter_key = f"@{converter_key}"
+
+    converters[converter_key] = wraps(func)(
+        lambda value: value.set_casting(func)
+        if isinstance(value, Lazy)
+        else Lazy(
+            value,
+            casting=func,
+            formatter=BaseFormatter(lambda x, **_: x, converter_key),
+        )
+    )
 
 
 def parse_with_toml(data):
@@ -340,7 +372,7 @@ def _parse_conf_data(data, tomlfy=False, box_settings=None):
 
         # Parse the converters iteratively
         for converter_key in converter_key_list[::-1]:
-            value = get_converter(converter_key, value, box_settings)
+            value = apply_converter(converter_key, value, box_settings)
     else:
         value = parse_with_toml(data) if tomlfy else data
 
@@ -351,6 +383,11 @@ def _parse_conf_data(data, tomlfy=False, box_settings=None):
 
 
 def parse_conf_data(data, tomlfy=False, box_settings=None):
+    """
+    Apply parsing tokens recursively and return transformed data.
+
+    Strings with lazy parser (e.g, @format) will become Lazy objects.
+    """
 
     # fix for https://github.com/dynaconf/dynaconf/issues/595
     if isnamedtupleinstance(data):
@@ -366,7 +403,16 @@ def parse_conf_data(data, tomlfy=False, box_settings=None):
             for item in data
         ]
 
-    if isinstance(data, (dict, DynaBox)):
+    if isinstance(data, DynaBox):
+        # recursively parse inner dict items
+        _parsed = DynaBox({}, box_settings=box_settings)
+        for k, v in data._safe_items():
+            _parsed[k] = parse_conf_data(
+                v, tomlfy=tomlfy, box_settings=box_settings
+            )
+        return _parsed
+
+    if isinstance(data, dict):
         # recursively parse inner dict items
         _parsed = {}
         for k, v in data.items():
@@ -398,4 +444,18 @@ def unparse_conf_data(value):
     if value is None:
         return "@none "
 
+    return value
+
+
+def boolean_fix(value: str | None):
+    """Gets a value like `True/False` and turns to `true/false`
+    This function exists because of issue #976
+    Toml parser casts booleans from true/false lower case
+    however envvars are usually exportes as True/False capitalized
+    by mistake, this helper fixes it for envvars only.
+
+    Assume envvars are always str.
+    """
+    if value and value.strip() in ("True", "False"):
+        return value.lower()
     return value

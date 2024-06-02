@@ -15,6 +15,7 @@ class Packet(object):
     def __init__(self, packet_type=NOOP, data=None, encoded_packet=None):
         self.packet_type = packet_type
         self.data = data
+        self.encode_cache = None
         if isinstance(data, str):
             self.binary = False
         elif isinstance(data, binary_types):
@@ -27,7 +28,13 @@ class Packet(object):
             self.decode(encoded_packet)
 
     def encode(self, b64=False):
-        """Encode the packet for transmission."""
+        """Encode the packet for transmission.
+
+        Note: as a performance optimization, subsequent calls to this method
+        will return a cached encoded packet, even if the data has changed.
+        """
+        if self.encode_cache:
+            return self.encode_cache
         if self.binary:
             if b64:
                 encoded_packet = 'b' + base64.b64encode(self.data).decode(
@@ -43,6 +50,7 @@ class Packet(object):
                                                   separators=(',', ':'))
             elif self.data is not None:
                 encoded_packet += str(self.data)
+        self.encode_cache = encoded_packet
         return encoded_packet
 
     def decode(self, encoded_packet):

@@ -6,7 +6,7 @@
     meant to be a complete style, just for Stata's file formats.
 
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -15,8 +15,12 @@ from pygments.token import Token, Keyword, Name, Comment, String, Error, \
     Number, Operator, Whitespace, Generic
 
 
-class StataDarkStyle(Style):
+__all__ = ['StataDarkStyle']
 
+
+class StataDarkStyle(Style):
+    name = 'stata-dark'
+    
     background_color = "#232629"
     highlight_color = "#49483e"
 

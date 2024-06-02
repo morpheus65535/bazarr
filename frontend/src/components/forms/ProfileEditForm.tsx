@@ -69,11 +69,11 @@ const ProfileEditForm: FunctionComponent<Props> = ({
     validate: {
       name: FormUtils.validation(
         (value) => value.length > 0,
-        "Must have a name"
+        "Must have a name",
       ),
       items: FormUtils.validation(
         (value) => value.length > 0,
-        "Must contain at lease 1 language"
+        "Must contain at lease 1 language",
       ),
     },
   });
@@ -82,8 +82,13 @@ const ProfileEditForm: FunctionComponent<Props> = ({
 
   const itemCutoffOptions = useSelectorOptions(
     form.values.items,
-    (v) => v.language,
-    (v) => String(v.id)
+    (v) => {
+      const suffix =
+        v.hi === "True" ? ":hi" : v.forced === "True" ? ":forced" : "";
+
+      return v.language + suffix;
+    },
+    (v) => String(v.id),
   );
 
   const cutoffOptions = useMemo(
@@ -91,24 +96,24 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       ...itemCutoffOptions,
       options: [...itemCutoffOptions.options, ...defaultCutoffOptions],
     }),
-    [itemCutoffOptions]
+    [itemCutoffOptions],
   );
 
   const selectedCutoff = useMemo(
     () =>
       cutoffOptions.options.find((v) => v.value.id === form.values.cutoff)
         ?.value ?? null,
-    [cutoffOptions, form.values.cutoff]
+    [cutoffOptions, form.values.cutoff],
   );
 
   const mustContainOptions = useSelectorOptions(
     form.values.mustContain,
-    (v) => v
+    (v) => v,
   );
 
   const mustNotContainOptions = useSelectorOptions(
     form.values.mustNotContain,
-    (v) => v
+    (v) => v,
   );
 
   const action = useArrayAction<Language.ProfileItem>((fn) => {
@@ -120,7 +125,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       1 +
       form.values.items.reduce<number>(
         (val, item) => Math.max(item.id, val),
-        0
+        0,
       );
 
     if (languages.length > 0) {
@@ -154,7 +159,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             () =>
               languageOptions.options.find((l) => l.value.code2 === code)
                 ?.value ?? null,
-            [code]
+            [code],
           );
 
           const { classes } = useTableStyles();
@@ -238,7 +243,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         },
       },
     ],
-    [action, languageOptions]
+    [action, languageOptions],
   );
 
   return (
@@ -332,5 +337,5 @@ export const ProfileEditModal = withModal(
   {
     title: "Edit Languages Profile",
     size: "xl",
-  }
+  },
 );

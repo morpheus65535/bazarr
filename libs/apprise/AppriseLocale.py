@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -219,6 +219,9 @@ class AppriseLocale:
             try:
                 # Acquire our locale
                 lang = locale.getlocale()[0]
+                # Compatibility for Python >= 3.12
+                if lang == 'C':
+                    lang = AppriseLocale._default_language
 
             except (ValueError, TypeError) as e:
                 # This occurs when an invalid locale was parsed from the

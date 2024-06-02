@@ -26,8 +26,19 @@ def sync_subtitles(video_path, srt_path, srt_lang, forced, percent_score, sonarr
 
         if not use_subsync_threshold or (use_subsync_threshold and percent_score < float(subsync_threshold)):
             subsync = SubSyncer()
-            subsync.sync(video_path=video_path, srt_path=srt_path, srt_lang=srt_lang,
-                         sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id, radarr_id=radarr_id)
+            sync_kwargs = {
+                'video_path': video_path,
+                'srt_path': srt_path,
+                'srt_lang': srt_lang,
+                'max_offset_seconds': str(settings.subsync.max_offset_seconds),
+                'no_fix_framerate': settings.subsync.no_fix_framerate,
+                'gss': settings.subsync.gss,
+                'reference': None,  # means choose automatically within video file
+                'sonarr_series_id': sonarr_series_id,
+                'sonarr_episode_id': sonarr_episode_id,
+                'radarr_id': radarr_id,
+            }
+            subsync.sync(**sync_kwargs)
             del subsync
             gc.collect()
             return True

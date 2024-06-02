@@ -4,7 +4,7 @@
 
     Lexers for ML family languages.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -366,13 +366,13 @@ class OcamlLexer(RegexLexer):
     mimetypes = ['text/x-ocaml']
 
     keywords = (
-        'as', 'assert', 'begin', 'class', 'constraint', 'do', 'done',
+        'and', 'as', 'assert', 'begin', 'class', 'constraint', 'do', 'done',
         'downto', 'else', 'end', 'exception', 'external', 'false',
         'for', 'fun', 'function', 'functor', 'if', 'in', 'include',
         'inherit', 'initializer', 'lazy', 'let', 'match', 'method',
         'module', 'mutable', 'new', 'object', 'of', 'open', 'private',
         'raise', 'rec', 'sig', 'struct', 'then', 'to', 'true', 'try',
-        'type', 'value', 'val', 'virtual', 'when', 'while', 'with',
+        'type', 'val', 'virtual', 'when', 'while', 'with',
     )
     keyopts = (
         '!=', '#', '&', '&&', r'\(', r'\)', r'\*', r'\+', ',', '-',
@@ -382,7 +382,7 @@ class OcamlLexer(RegexLexer):
     )
 
     operators = r'[!$%&*+\./:<=>?@^|~-]'
-    word_operators = ('and', 'asr', 'land', 'lor', 'lsl', 'lxor', 'mod', 'or')
+    word_operators = ('asr', 'land', 'lor', 'lsl', 'lxor', 'mod', 'or')
     prefix_syms = r'[!?~]'
     infix_syms = r'[=<>@^|&+\*/$%-]'
     primitives = ('unit', 'int', 'float', 'bool', 'string', 'char', 'list', 'array')

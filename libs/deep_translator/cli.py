@@ -1,4 +1,7 @@
 """Console script for deep_translator."""
+
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
 import argparse
 from typing import Optional
 
@@ -12,7 +15,9 @@ class CLI(object):
     def __init__(self, custom_args: Optional[list] = None):
         self.custom_args = custom_args
         self.args = self.parse_args()
-        translator_class = self.translators_dict.get(self.args.translator, None)
+        translator_class = self.translators_dict.get(
+            self.args.translator, None
+        )
         if not translator_class:
             raise Exception(
                 f"Translator {self.args.translator} is not supported."
@@ -34,19 +39,21 @@ class CLI(object):
 
     def get_supported_languages(self) -> None:
         """
-        function used to return the languages supported by the translator service from the parsed terminal arguments
+        function used to return the languages supported by the translator service
+        from the parsed terminal arguments
         @return: None
         """
 
-        translator_supported_languages = self.translator.get_supported_languages(
-            as_dict=True
+        translator_supported_languages = (
+            self.translator.get_supported_languages(as_dict=True)
         )
         print(f"Languages supported by '{self.args.translator}' are :\n")
         print(translator_supported_languages)
 
     def parse_args(self) -> argparse.Namespace:
         """
-        function responsible for parsing terminal arguments and provide them for further use in the translation process
+        function responsible for parsing terminal arguments and provide
+        them for further use in the translation process
         """
         parser = argparse.ArgumentParser(
             add_help=True,

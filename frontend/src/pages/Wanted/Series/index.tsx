@@ -10,7 +10,7 @@ import { useTableStyles } from "@/styles";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Badge, Group, Text } from "@mantine/core";
+import { Anchor, Badge, Group } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -37,11 +37,6 @@ const WantedSeriesView: FunctionComponent = () => {
       },
       {
         accessor: "episodeTitle",
-        Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-
-          return <Text className={classes.noWrap}>{value}</Text>;
-        },
       },
       {
         Header: "Missing",
@@ -74,7 +69,7 @@ const WantedSeriesView: FunctionComponent = () => {
                           hi: item.hi,
                           forced: item.forced,
                         },
-                      }
+                      },
                     );
                   }}
                 >
@@ -86,7 +81,7 @@ const WantedSeriesView: FunctionComponent = () => {
         },
       },
     ],
-    []
+    [],
   );
 
   const { mutateAsync } = useSeriesAction();

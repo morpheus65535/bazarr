@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -42,6 +42,7 @@ from json import dumps
 from os.path import basename
 
 from .NotifyBase import NotifyBase
+from ..common import NotifyFormat
 from ..common import NotifyType
 from ..common import NotifyImageSize
 from ..AppriseLocale import gettext_lazy as _
@@ -515,6 +516,10 @@ class NotifyNtfy(NotifyBase):
         if body:
             virt_payload['message'] = body
 
+        if self.notify_format == NotifyFormat.MARKDOWN:
+            # Support Markdown
+            headers['X-Markdown'] = 'yes'
+
         if self.priority != NtfyPriority.NORMAL:
             headers['X-Priority'] = self.priority
 
@@ -693,7 +698,7 @@ class NotifyNtfy(NotifyBase):
         """
         Returns the number of targets associated with this notification
         """
-        return len(self.topics)
+        return 1 if not self.topics else len(self.topics)
 
     @staticmethod
     def parse_url(url):

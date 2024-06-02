@@ -4,17 +4,14 @@
 
     Lexer for scdoc, a simple man page generator.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 import re
 
-from pygments.lexer import RegexLexer, include, bygroups, \
-    using, this
-from pygments.token import Text, Comment, Keyword, String, \
-    Generic
-
+from pygments.lexer import RegexLexer, include, bygroups, using, this
+from pygments.token import Text, Comment, Keyword, String, Generic
 
 __all__ = ['ScdocLexer']
 
@@ -22,7 +19,7 @@ __all__ = ['ScdocLexer']
 class ScdocLexer(RegexLexer):
     """
     `scdoc` is a simple man page generator for POSIX systems written in C99.
-    
+
     .. versionadded:: 2.5
     """
     name = 'scdoc'
@@ -69,14 +66,21 @@ class ScdocLexer(RegexLexer):
     }
 
     def analyse_text(text):
-        """This is very similar to markdown, save for the escape characters
-        needed for * and _."""
+        """We checks for bold and underline text with * and _. Also
+        every scdoc file must start with a strictly defined first line."""
         result = 0
 
-        if '\\*' in text:
+        if '*' in text:
             result += 0.01
 
-        if '\\_' in text:
+        if '_' in text:
             result += 0.01
+
+        # name(section) ["left_footer" ["center_header"]]
+        first_line = text.partition('\n')[0]
+        scdoc_preamble_pattern = r'^.*\([1-7]\)( "[^"]+"){0,2}$'
+
+        if re.search(scdoc_preamble_pattern, first_line):
+            result += 0.5
 
         return result

@@ -821,6 +821,7 @@
     {
       "alpha_2": "IR",
       "alpha_3": "IRN",
+      "common_name": "Iran",
       "flag": "🇮🇷",
       "name": "Iran, Islamic Republic of",
       "numeric": "364",
@@ -953,6 +954,7 @@
     {
       "alpha_2": "LA",
       "alpha_3": "LAO",
+      "common_name": "Laos",
       "flag": "🇱🇦",
       "name": "Lao People's Democratic Republic",
       "numeric": "418"
@@ -1653,6 +1655,7 @@
     {
       "alpha_2": "SY",
       "alpha_3": "SYR",
+      "common_name": "Syria",
       "flag": "🇸🇾",
       "name": "Syrian Arab Republic",
       "numeric": "760"
@@ -1746,9 +1749,9 @@
       "alpha_2": "TR",
       "alpha_3": "TUR",
       "flag": "🇹🇷",
-      "name": "Turkey",
+      "name": "Türkiye",
       "numeric": "792",
-      "official_name": "Republic of Turkey"
+      "official_name": "Republic of Türkiye"
     },
     {
       "alpha_2": "TV",

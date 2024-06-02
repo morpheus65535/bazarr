@@ -1,25 +1,37 @@
-"""
-Attribute List Extension for Python-Markdown
-============================================
+# Attribute List Extension for Python-Markdown
+# ============================================
 
-Adds attribute list syntax. Inspired by
-[maruku](http://maruku.rubyforge.org/proposal.html#attribute_lists)'s
+# Adds attribute list syntax. Inspired by
+# [Maruku](http://maruku.rubyforge.org/proposal.html#attribute_lists)'s
+# feature of the same name.
+
+# See https://Python-Markdown.github.io/extensions/attr_list
+# for documentation.
+
+# Original code Copyright 2011 [Waylan Limberg](http://achinghead.com/).
+
+# All changes Copyright 2011-2014 The Python Markdown Project
+
+# License: [BSD](https://opensource.org/licenses/bsd-license.php)
+
+"""
+ Adds attribute list syntax. Inspired by
+[Maruku](http://maruku.rubyforge.org/proposal.html#attribute_lists)'s
 feature of the same name.
 
-See <https://Python-Markdown.github.io/extensions/attr_list>
-for documentation.
-
-Original code Copyright 2011 [Waylan Limberg](http://achinghead.com/).
-
-All changes Copyright 2011-2014 The Python Markdown Project
-
-License: [BSD](https://opensource.org/licenses/bsd-license.php)
-
+See the [documentation](https://Python-Markdown.github.io/extensions/attr_list)
+for details.
 """
+
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
 from . import Extension
 from ..treeprocessors import Treeprocessor
 import re
+
+if TYPE_CHECKING:  # pragma: no cover
+    from xml.etree.ElementTree import Element
 
 
 def _handle_double_quote(s, t):
@@ -53,12 +65,12 @@ _scanner = re.Scanner([
 ])
 
 
-def get_attrs(str):
+def get_attrs(str: str) -> list[tuple[str, str]]:
     """ Parse attribute list and return a list of attribute tuples. """
     return _scanner.scan(str)[0]
 
 
-def isheader(elem):
+def isheader(elem: Element) -> bool:
     return elem.tag in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']
 
 
@@ -74,36 +86,36 @@ class AttrListTreeprocessor(Treeprocessor):
                          r'\uf900-\ufdcf\ufdf0-\ufffd'
                          r'\:\-\.0-9\u00b7\u0300-\u036f\u203f-\u2040]+')
 
-    def run(self, doc):
+    def run(self, doc: Element) -> None:
         for elem in doc.iter():
             if self.md.is_block_level(elem.tag):
-                # Block level: check for attrs on last line of text
+                # Block level: check for `attrs` on last line of text
                 RE = self.BLOCK_RE
                 if isheader(elem) or elem.tag in ['dt', 'td', 'th']:
-                    # header, def-term, or table cell: check for attrs at end of element
+                    # header, def-term, or table cell: check for attributes at end of element
                     RE = self.HEADER_RE
                 if len(elem) and elem.tag == 'li':
-                    # special case list items. children may include a ul or ol.
+                    # special case list items. children may include a `ul` or `ol`.
                     pos = None
-                    # find the ul or ol position
+                    # find the `ul` or `ol` position
                     for i, child in enumerate(elem):
                         if child.tag in ['ul', 'ol']:
                             pos = i
                             break
                     if pos is None and elem[-1].tail:
-                        # use tail of last child. no ul or ol.
+                        # use tail of last child. no `ul` or `ol`.
                         m = RE.search(elem[-1].tail)
                         if m:
                             self.assign_attrs(elem, m.group(1))
                             elem[-1].tail = elem[-1].tail[:m.start()]
                     elif pos is not None and pos > 0 and elem[pos-1].tail:
-                        # use tail of last child before ul or ol
+                        # use tail of last child before `ul` or `ol`
                         m = RE.search(elem[pos-1].tail)
                         if m:
                             self.assign_attrs(elem, m.group(1))
                             elem[pos-1].tail = elem[pos-1].tail[:m.start()]
                     elif elem.text:
-                        # use text. ul is first child.
+                        # use text. `ul` is first child.
                         m = RE.search(elem.text)
                         if m:
                             self.assign_attrs(elem, m.group(1))
@@ -127,15 +139,15 @@ class AttrListTreeprocessor(Treeprocessor):
                             # clean up trailing #s
                             elem.text = elem.text.rstrip('#').rstrip()
             else:
-                # inline: check for attrs at start of tail
+                # inline: check for `attrs` at start of tail
                 if elem.tail:
                     m = self.INLINE_RE.match(elem.tail)
                     if m:
                         self.assign_attrs(elem, m.group(1))
                         elem.tail = elem.tail[m.end():]
 
-    def assign_attrs(self, elem, attrs):
-        """ Assign attrs to element. """
+    def assign_attrs(self, elem: Element, attrs: str) -> None:
+        """ Assign `attrs` to element. """
         for k, v in get_attrs(attrs):
             if k == '.':
                 # add to class
@@ -145,10 +157,10 @@ class AttrListTreeprocessor(Treeprocessor):
                 else:
                     elem.set('class', v)
             else:
-                # assign attr k with v
+                # assign attribute `k` with `v`
                 elem.set(self.sanitize_name(k), v)
 
-    def sanitize_name(self, name):
+    def sanitize_name(self, name: str) -> str:
         """
         Sanitize name as 'an XML Name, minus the ":"'.
         See https://www.w3.org/TR/REC-xml-names/#NT-NCName
@@ -157,6 +169,7 @@ class AttrListTreeprocessor(Treeprocessor):
 
 
 class AttrListExtension(Extension):
+    """ Attribute List extension for Python-Markdown """
     def extendMarkdown(self, md):
         md.treeprocessors.register(AttrListTreeprocessor(md), 'attr_list', 8)
         md.registerExtension(self)

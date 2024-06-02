@@ -60,14 +60,9 @@ def immutable(members='', name='Immutable', verbose=False):
 
         return ''
 
-    verbose_string = ""
-    if sys.version_info < (3, 7):
-        # Verbose is no longer supported in Python 3.7
-        verbose_string = ", verbose={verbose}".format(verbose=verbose)
-
     quoted_members = ', '.join("'%s'" % m for m in members)
     template = """
-class {class_name}(namedtuple('ImmutableBase', [{quoted_members}]{verbose_string})):
+class {class_name}(namedtuple('ImmutableBase', [{quoted_members}])):
     __slots__ = tuple()
 
     def __repr__(self):
@@ -87,7 +82,6 @@ class {class_name}(namedtuple('ImmutableBase', [{quoted_members}]{verbose_string
 """.format(quoted_members=quoted_members,
                member_set="set([%s])" % quoted_members if quoted_members else 'set()',
                frozen_member_test=frozen_member_test(),
-               verbose_string=verbose_string,
                class_name=name)
 
     if verbose:

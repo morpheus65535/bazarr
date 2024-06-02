@@ -105,9 +105,9 @@ None,    # 0x4f
 '(X)',    # 0x67
 '(Y)',    # 0x68
 '(Z)',    # 0x69
-None,    # 0x6a
-None,    # 0x6b
-None,    # 0x6c
+'(mc)',    # 0x6a
+'(md)',    # 0x6b
+'(mr)',    # 0x6c
 None,    # 0x6d
 None,    # 0x6e
 None,    # 0x6f
@@ -155,7 +155,7 @@ None,    # 0x8f
 '[UP!]',    # 0x99
 '[VS]',    # 0x9a
 '[3D]',    # 0x9b
-'[2nc-Scr]',    # 0x9c
+'[2nd-Scr]',    # 0x9c
 '[2K]',    # 0x9d
 '[4K]',    # 0x9e
 '[8K]',    # 0x9f
@@ -168,7 +168,7 @@ None,    # 0x8f
 '[HC]',    # 0xa6
 '[HDR]',    # 0xa7
 '[Hi-res]',    # 0xa8
-'[Loss-less]',    # 0xa9
+'[Lossless]',    # 0xa9
 '[SHV]',    # 0xaa
 '[UHD]',    # 0xab
 '[VOD]',    # 0xac

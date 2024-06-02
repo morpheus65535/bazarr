@@ -17,18 +17,17 @@
 
 import dns.exception
 import dns.immutable
-import dns.rdata
 import dns.name
+import dns.rdata
 
 
 @dns.immutable.immutable
 class RP(dns.rdata.Rdata):
-
     """RP record"""
 
     # see: RFC 1183
 
-    __slots__ = ['mbox', 'txt']
+    __slots__ = ["mbox", "txt"]
 
     def __init__(self, rdclass, rdtype, mbox, txt):
         super().__init__(rdclass, rdtype)
@@ -41,8 +40,9 @@ class RP(dns.rdata.Rdata):
         return "{} {}".format(str(mbox), str(txt))
 
     @classmethod
-    def from_text(cls, rdclass, rdtype, tok, origin=None, relativize=True,
-                  relativize_to=None):
+    def from_text(
+        cls, rdclass, rdtype, tok, origin=None, relativize=True, relativize_to=None
+    ):
         mbox = tok.get_name(origin, relativize, relativize_to)
         txt = tok.get_name(origin, relativize, relativize_to)
         return cls(rdclass, rdtype, mbox, txt)

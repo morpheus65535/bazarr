@@ -1,5 +1,5 @@
 # util/typing.py
-# Copyright (C) 2022 the SQLAlchemy authors and contributors
+# Copyright (C) 2022-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+import builtins
+import collections.abc as collections_abc
 import re
 import sys
 import typing
@@ -23,6 +25,7 @@ from typing import NewType
 from typing import NoReturn
 from typing import Optional
 from typing import overload
+from typing import Set
 from typing import Tuple
 from typing import Type
 from typing import TYPE_CHECKING
@@ -50,7 +53,7 @@ if True:  # zimports removes the tailing comments
     from typing_extensions import TypedDict as TypedDict  # 3.8
     from typing_extensions import TypeGuard as TypeGuard  # 3.10
     from typing_extensions import Self as Self  # 3.11
-
+    from typing_extensions import TypeAliasType as TypeAliasType  # 3.12
 
 _T = TypeVar("_T", bound=Any)
 _KT = TypeVar("_KT")
@@ -74,7 +77,7 @@ typing_get_origin = get_origin
 
 
 _AnnotationScanType = Union[
-    Type[Any], str, ForwardRef, NewType, "GenericProtocol[Any]"
+    Type[Any], str, ForwardRef, NewType, TypeAliasType, "GenericProtocol[Any]"
 ]
 
 
@@ -109,11 +112,9 @@ class GenericProtocol(Protocol[_T]):
 # copied from TypeShed, required in order to implement
 # MutableMapping.update()
 class SupportsKeysAndGetItem(Protocol[_KT, _VT_co]):
-    def keys(self) -> Iterable[_KT]:
-        ...
+    def keys(self) -> Iterable[_KT]: ...
 
-    def __getitem__(self, __k: _KT) -> _VT_co:
-        ...
+    def __getitem__(self, __k: _KT) -> _VT_co: ...
 
 
 # work around https://github.com/microsoft/pyright/issues/3025
@@ -128,6 +129,7 @@ def de_stringify_annotation(
     *,
     str_cleanup_fn: Optional[Callable[[str, str], str]] = None,
     include_generic: bool = False,
+    _already_seen: Optional[Set[Any]] = None,
 ) -> Type[Any]:
     """Resolve annotations that may be string based into real objects.
 
@@ -137,24 +139,22 @@ def de_stringify_annotation(
     etc.
 
     """
-
     # looked at typing.get_type_hints(), looked at pydantic.  We need much
     # less here, and we here try to not use any private typing internals
     # or construct ForwardRef objects which is documented as something
     # that should be avoided.
 
-    if (
-        is_fwd_ref(annotation)
-        and not cast(ForwardRef, annotation).__forward_evaluated__
-    ):
-        annotation = cast(ForwardRef, annotation).__forward_arg__
+    original_annotation = annotation
+
+    if is_fwd_ref(annotation):
+        annotation = annotation.__forward_arg__
 
     if isinstance(annotation, str):
         if str_cleanup_fn:
             annotation = str_cleanup_fn(annotation, originating_module)
 
         annotation = eval_expression(
-            annotation, originating_module, locals_=locals_
+            annotation, originating_module, locals_=locals_, in_class=cls
         )
 
     if (
@@ -162,6 +162,18 @@ def de_stringify_annotation(
         and is_generic(annotation)
         and not is_literal(annotation)
     ):
+        if _already_seen is None:
+            _already_seen = set()
+
+        if annotation in _already_seen:
+            # only occurs recursively.  outermost return type
+            # will always be Type.
+            # the element here will be either ForwardRef or
+            # Optional[ForwardRef]
+            return original_annotation  # type: ignore
+        else:
+            _already_seen.add(annotation)
+
         elements = tuple(
             de_stringify_annotation(
                 cls,
@@ -170,6 +182,7 @@ def de_stringify_annotation(
                 locals_,
                 str_cleanup_fn=str_cleanup_fn,
                 include_generic=include_generic,
+                _already_seen=_already_seen,
             )
             for elem in annotation.__args__
         )
@@ -194,6 +207,7 @@ def eval_expression(
     module_name: str,
     *,
     locals_: Optional[Mapping[str, Any]] = None,
+    in_class: Optional[Type[Any]] = None,
 ) -> Any:
     try:
         base_globals: Dict[str, Any] = sys.modules[module_name].__dict__
@@ -204,7 +218,18 @@ def eval_expression(
         ) from ke
 
     try:
-        annotation = eval(expression, base_globals, locals_)
+        if in_class is not None:
+            cls_namespace = dict(in_class.__dict__)
+            cls_namespace.setdefault(in_class.__name__, in_class)
+
+            # see #10899.  We want the locals/globals to take precedence
+            # over the class namespace in this context, even though this
+            # is not the usual way variables would resolve.
+            cls_namespace.update(base_globals)
+
+            annotation = eval(expression, cls_namespace, locals_)
+        else:
+            annotation = eval(expression, base_globals, locals_)
     except Exception as err:
         raise NameError(
             f"Could not de-stringify annotation {expression!r}"
@@ -236,6 +261,12 @@ def eval_name_only(
     try:
         return base_globals[name]
     except KeyError as ke:
+        # check in builtins as well to handle `list`, `set` or `dict`, etc.
+        try:
+            return builtins.__dict__[name]
+        except KeyError:
+            pass
+
         raise NameError(
             f"Could not locate name {name} in module {module_name}"
         ) from ke
@@ -276,6 +307,12 @@ def is_pep593(type_: Optional[_AnnotationScanType]) -> bool:
     return type_ is not None and typing_get_origin(type_) is Annotated
 
 
+def is_non_string_iterable(obj: Any) -> TypeGuard[Iterable[Any]]:
+    return isinstance(obj, collections_abc.Iterable) and not isinstance(
+        obj, (str, bytes)
+    )
+
+
 def is_literal(type_: _AnnotationScanType) -> bool:
     return get_origin(type_) is Literal
 
@@ -292,6 +329,10 @@ def is_generic(type_: _AnnotationScanType) -> TypeGuard[GenericProtocol[Any]]:
     return hasattr(type_, "__args__") and hasattr(type_, "__origin__")
 
 
+def is_pep695(type_: _AnnotationScanType) -> TypeGuard[TypeAliasType]:
+    return isinstance(type_, TypeAliasType)
+
+
 def flatten_newtype(type_: NewType) -> Type[Any]:
     super_type = type_.__supertype__
     while is_newtype(super_type):
@@ -301,7 +342,7 @@ def flatten_newtype(type_: NewType) -> Type[Any]:
 
 def is_fwd_ref(
     type_: _AnnotationScanType, check_generic: bool = False
-) -> bool:
+) -> TypeGuard[ForwardRef]:
     if isinstance(type_, ForwardRef):
         return True
     elif check_generic and is_generic(type_):
@@ -311,20 +352,17 @@ def is_fwd_ref(
 
 
 @overload
-def de_optionalize_union_types(type_: str) -> str:
-    ...
+def de_optionalize_union_types(type_: str) -> str: ...
 
 
 @overload
-def de_optionalize_union_types(type_: Type[Any]) -> Type[Any]:
-    ...
+def de_optionalize_union_types(type_: Type[Any]) -> Type[Any]: ...
 
 
 @overload
 def de_optionalize_union_types(
     type_: _AnnotationScanType,
-) -> _AnnotationScanType:
-    ...
+) -> _AnnotationScanType: ...
 
 
 def de_optionalize_union_types(
@@ -336,7 +374,7 @@ def de_optionalize_union_types(
     """
 
     if is_fwd_ref(type_):
-        return de_optionalize_fwd_ref_union_types(cast(ForwardRef, type_))
+        return de_optionalize_fwd_ref_union_types(type_)
 
     elif is_optional(type_):
         typ = set(type_.__args__)
@@ -468,14 +506,11 @@ def _get_type_name(type_: Type[Any]) -> str:
 
 
 class DescriptorProto(Protocol):
-    def __get__(self, instance: object, owner: Any) -> Any:
-        ...
+    def __get__(self, instance: object, owner: Any) -> Any: ...
 
-    def __set__(self, instance: Any, value: Any) -> None:
-        ...
+    def __set__(self, instance: Any, value: Any) -> None: ...
 
-    def __delete__(self, instance: Any) -> None:
-        ...
+    def __delete__(self, instance: Any) -> None: ...
 
 
 _DESC = TypeVar("_DESC", bound=DescriptorProto)
@@ -494,14 +529,11 @@ class DescriptorReference(Generic[_DESC]):
 
     if TYPE_CHECKING:
 
-        def __get__(self, instance: object, owner: Any) -> _DESC:
-            ...
+        def __get__(self, instance: object, owner: Any) -> _DESC: ...
 
-        def __set__(self, instance: Any, value: _DESC) -> None:
-            ...
+        def __set__(self, instance: Any, value: _DESC) -> None: ...
 
-        def __delete__(self, instance: Any) -> None:
-            ...
+        def __delete__(self, instance: Any) -> None: ...
 
 
 _DESC_co = TypeVar("_DESC_co", bound=DescriptorProto, covariant=True)
@@ -517,14 +549,11 @@ class RODescriptorReference(Generic[_DESC_co]):
 
     if TYPE_CHECKING:
 
-        def __get__(self, instance: object, owner: Any) -> _DESC_co:
-            ...
+        def __get__(self, instance: object, owner: Any) -> _DESC_co: ...
 
-        def __set__(self, instance: Any, value: Any) -> NoReturn:
-            ...
+        def __set__(self, instance: Any, value: Any) -> NoReturn: ...
 
-        def __delete__(self, instance: Any) -> NoReturn:
-            ...
+        def __delete__(self, instance: Any) -> NoReturn: ...
 
 
 _FN = TypeVar("_FN", bound=Optional[Callable[..., Any]])
@@ -541,14 +570,11 @@ class CallableReference(Generic[_FN]):
 
     if TYPE_CHECKING:
 
-        def __get__(self, instance: object, owner: Any) -> _FN:
-            ...
+        def __get__(self, instance: object, owner: Any) -> _FN: ...
 
-        def __set__(self, instance: Any, value: _FN) -> None:
-            ...
+        def __set__(self, instance: Any, value: _FN) -> None: ...
 
-        def __delete__(self, instance: Any) -> None:
-            ...
+        def __delete__(self, instance: Any) -> None: ...
 
 
 # $def ro_descriptor_reference(fn: Callable[])

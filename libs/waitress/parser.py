@@ -126,7 +126,7 @@ class HTTPRequestParser:
                 # Header finished.
                 header_plus = s[:index]
 
-                # Remove preceeding blank lines. This is suggested by
+                # Remove preceding blank lines. This is suggested by
                 # https://tools.ietf.org/html/rfc7230#section-3.5 to support
                 # clients sending an extra CR LF after another request when
                 # using HTTP pipelining
@@ -247,6 +247,9 @@ class HTTPRequestParser:
 
         # command, uri, version will be bytes
         command, uri, version = crack_first_line(first_line)
+        if command == uri == version == b"":
+            raise ParsingError("Start line is invalid")
+
         # self.request_uri is like nginx's request_uri:
         # "full original request URI (with arguments)"
         self.request_uri = uri.decode("latin-1")
@@ -407,36 +410,33 @@ def get_header_lines(header):
 
 
 first_line_re = re.compile(
-    b"([^ ]+) "
-    b"((?:[^ :?#]+://[^ ?#/]*(?:[0-9]{1,5})?)?[^ ]+)"
-    b"(( HTTP/([0-9.]+))$|$)"
+    rb"(?P<method>[!#$%&'*+\-.^_`|~0-9A-Za-z]+) "
+    rb"(?P<uri>(?:[^ :?#]+://[^ ?#/]*(?:[0-9]{1,5})?)?[^ ]+)"
+    rb"(?: HTTP/(?P<version>[0-9]\.[0-9]))?"
 )
 
 
 def crack_first_line(line):
-    m = first_line_re.match(line)
+    m = first_line_re.fullmatch(line)
 
-    if m is not None and m.end() == len(line):
-        if m.group(3):
-            version = m.group(5)
-        else:
-            version = b""
-        method = m.group(1)
-
-        # the request methods that are currently defined are all uppercase:
-        # https://www.iana.org/assignments/http-methods/http-methods.xhtml and
-        # the request method is case sensitive according to
-        # https://tools.ietf.org/html/rfc7231#section-4.1
-
-        # By disallowing anything but uppercase methods we save poor
-        # unsuspecting souls from sending lowercase HTTP methods to waitress
-        # and having the request complete, while servers like nginx drop the
-        # request onto the floor.
-
-        if method != method.upper():
-            raise ParsingError('Malformed HTTP method "%s"' % str(method, "latin-1"))
-        uri = m.group(2)
-
-        return method, uri, version
-    else:
+    if m is None:
         return b"", b"", b""
+
+    version = m["version"] or b""
+    method = m["method"]
+    uri = m["uri"]
+
+    # the request methods that are currently defined are all uppercase:
+    # https://www.iana.org/assignments/http-methods/http-methods.xhtml and
+    # the request method is case sensitive according to
+    # https://tools.ietf.org/html/rfc7231#section-4.1
+
+    # By disallowing anything but uppercase methods we save poor
+    # unsuspecting souls from sending lowercase HTTP methods to waitress
+    # and having the request complete, while servers like nginx drop the
+    # request onto the floor.
+
+    if method != method.upper():
+        raise ParsingError('Malformed HTTP method "%s"' % str(method, "latin-1"))
+
+    return method, uri, version

@@ -53,7 +53,7 @@ describe("Language text", () => {
 
   it("should show long text with Forced", () => {
     rawRender(
-      <Language.Text value={testLanguageWithForced} long></Language.Text>
+      <Language.Text value={testLanguageWithForced} long></Language.Text>,
     );
 
     const expectedText = `${testLanguageWithHi.name} Forced`;

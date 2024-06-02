@@ -16,7 +16,7 @@ except ImportError:  # pragma: no cover
     commentjson = None
 
 
-def load(obj, env=None, silent=True, key=None, filename=None):
+def load(obj, env=None, silent=True, key=None, filename=None, validate=False):
     """
     Reads and loads in to "obj" a single key or all keys from source file.
 
@@ -43,6 +43,7 @@ def load(obj, env=None, silent=True, key=None, filename=None):
         extensions=JSON_EXTENSIONS,
         file_reader=file_reader,
         string_reader=string_reader,
+        validate=validate,
     )
     loader.load(
         filename=filename,

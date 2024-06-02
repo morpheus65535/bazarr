@@ -13,12 +13,7 @@
 """Tests for stevedore.extension
 """
 
-try:
-    # For python 3.8 and later
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    # For everyone else
-    import importlib_metadata
+import importlib.metadata as importlib_metadata
 
 from stevedore import driver
 from stevedore import exception

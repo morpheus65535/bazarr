@@ -123,7 +123,7 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
         },
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -263,7 +263,7 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
         },
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -280,5 +280,5 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
 export const EpisodeHistoryModal = withModal(
   EpisodeHistoryView,
   "episode-history",
-  { size: "xl" }
+  { size: "xl" },
 );

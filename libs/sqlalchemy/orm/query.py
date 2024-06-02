@@ -1,5 +1,5 @@
 # orm/query.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -136,6 +136,7 @@ if TYPE_CHECKING:
     from ..sql.base import ExecutableOption
     from ..sql.elements import ColumnElement
     from ..sql.elements import Label
+    from ..sql.selectable import _ForUpdateOfArgument
     from ..sql.selectable import _JoinTargetElement
     from ..sql.selectable import _SetupJoinsElement
     from ..sql.selectable import Alias
@@ -165,7 +166,6 @@ class Query(
     Executable,
     Generic[_T],
 ):
-
     """ORM-level SQL construction object.
 
     .. legacy:: The ORM :class:`.Query` object is a legacy construct
@@ -204,9 +204,9 @@ class Query(
 
     _memoized_select_entities = ()
 
-    _compile_options: Union[
-        Type[CacheableOptions], CacheableOptions
-    ] = ORMCompileState.default_compile_options
+    _compile_options: Union[Type[CacheableOptions], CacheableOptions] = (
+        ORMCompileState.default_compile_options
+    )
 
     _with_options: Tuple[ExecutableOption, ...]
     load_options = QueryContext.default_load_options + {
@@ -234,7 +234,9 @@ class Query(
 
     def __init__(
         self,
-        entities: Sequence[_ColumnsClauseArgument[Any]],
+        entities: Union[
+            _ColumnsClauseArgument[Any], Sequence[_ColumnsClauseArgument[Any]]
+        ],
         session: Optional[Session] = None,
     ):
         """Construct a :class:`_query.Query` directly.
@@ -273,11 +275,14 @@ class Query(
         self._set_entities(entities)
 
     def _set_propagate_attrs(self, values: Mapping[str, Any]) -> Self:
-        self._propagate_attrs = util.immutabledict(values)  # type: ignore
+        self._propagate_attrs = util.immutabledict(values)
         return self
 
     def _set_entities(
-        self, entities: Iterable[_ColumnsClauseArgument[Any]]
+        self,
+        entities: Union[
+            _ColumnsClauseArgument[Any], Iterable[_ColumnsClauseArgument[Any]]
+        ],
     ) -> None:
         self._raw_columns = [
             coercions.expect(
@@ -477,7 +482,7 @@ class Query(
         return self
 
     def _clone(self, **kw: Any) -> Self:
-        return self._generate()  # type: ignore
+        return self._generate()
 
     def _get_select_statement_only(self) -> Select[_T]:
         if self._statement is not None:
@@ -728,18 +733,15 @@ class Query(
     @overload
     def as_scalar(
         self: Query[Tuple[_MAYBE_ENTITY]],
-    ) -> ScalarSelect[_MAYBE_ENTITY]:
-        ...
+    ) -> ScalarSelect[_MAYBE_ENTITY]: ...
 
     @overload
     def as_scalar(
         self: Query[Tuple[_NOT_ENTITY]],
-    ) -> ScalarSelect[_NOT_ENTITY]:
-        ...
+    ) -> ScalarSelect[_NOT_ENTITY]: ...
 
     @overload
-    def as_scalar(self) -> ScalarSelect[Any]:
-        ...
+    def as_scalar(self) -> ScalarSelect[Any]: ...
 
     @util.deprecated(
         "1.4",
@@ -757,18 +759,15 @@ class Query(
     @overload
     def scalar_subquery(
         self: Query[Tuple[_MAYBE_ENTITY]],
-    ) -> ScalarSelect[Any]:
-        ...
+    ) -> ScalarSelect[Any]: ...
 
     @overload
     def scalar_subquery(
         self: Query[Tuple[_NOT_ENTITY]],
-    ) -> ScalarSelect[_NOT_ENTITY]:
-        ...
+    ) -> ScalarSelect[_NOT_ENTITY]: ...
 
     @overload
-    def scalar_subquery(self) -> ScalarSelect[Any]:
-        ...
+    def scalar_subquery(self) -> ScalarSelect[Any]: ...
 
     def scalar_subquery(self) -> ScalarSelect[Any]:
         """Return the full SELECT statement represented by this
@@ -816,14 +815,12 @@ class Query(
     @overload
     def only_return_tuples(
         self: Query[_O], value: Literal[True]
-    ) -> RowReturningQuery[Tuple[_O]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_O]]: ...
 
     @overload
     def only_return_tuples(
         self: Query[_O], value: Literal[False]
-    ) -> Query[_O]:
-        ...
+    ) -> Query[_O]: ...
 
     @_generative
     def only_return_tuples(self, value: bool) -> Query[Any]:
@@ -1436,16 +1433,20 @@ class Query(
         to the given list of columns
 
         """
+        return self._values_no_warn(*columns)
 
+    _values = values
+
+    def _values_no_warn(
+        self, *columns: _ColumnsClauseArgument[Any]
+    ) -> Iterable[Any]:
         if not columns:
             return iter(())
         q = self._clone().enable_eagerloads(False)
         q._set_entities(columns)
         if not q.load_options._yield_per:
             q.load_options += {"_yield_per": 10}
-        return iter(q)  # type: ignore
-
-    _values = values
+        return iter(q)
 
     @util.deprecated(
         "1.4",
@@ -1460,20 +1461,18 @@ class Query(
 
         """
         try:
-            return next(self.values(column))[0]  # type: ignore
+            return next(self._values_no_warn(column))[0]  # type: ignore
         except StopIteration:
             return None
 
     @overload
-    def with_entities(self, _entity: _EntityType[_O]) -> Query[_O]:
-        ...
+    def with_entities(self, _entity: _EntityType[_O]) -> Query[_O]: ...
 
     @overload
     def with_entities(
         self,
         _colexpr: roles.TypedColumnsClauseRole[_T],
-    ) -> RowReturningQuery[Tuple[_T]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T]]: ...
 
     # START OVERLOADED FUNCTIONS self.with_entities RowReturningQuery 2-8
 
@@ -1483,14 +1482,12 @@ class Query(
     @overload
     def with_entities(
         self, __ent0: _TCCA[_T0], __ent1: _TCCA[_T1]
-    ) -> RowReturningQuery[Tuple[_T0, _T1]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1]]: ...
 
     @overload
     def with_entities(
         self, __ent0: _TCCA[_T0], __ent1: _TCCA[_T1], __ent2: _TCCA[_T2]
-    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2]]: ...
 
     @overload
     def with_entities(
@@ -1499,8 +1496,7 @@ class Query(
         __ent1: _TCCA[_T1],
         __ent2: _TCCA[_T2],
         __ent3: _TCCA[_T3],
-    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3]]: ...
 
     @overload
     def with_entities(
@@ -1510,8 +1506,7 @@ class Query(
         __ent2: _TCCA[_T2],
         __ent3: _TCCA[_T3],
         __ent4: _TCCA[_T4],
-    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4]]: ...
 
     @overload
     def with_entities(
@@ -1522,8 +1517,7 @@ class Query(
         __ent3: _TCCA[_T3],
         __ent4: _TCCA[_T4],
         __ent5: _TCCA[_T5],
-    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4, _T5]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4, _T5]]: ...
 
     @overload
     def with_entities(
@@ -1535,8 +1529,7 @@ class Query(
         __ent4: _TCCA[_T4],
         __ent5: _TCCA[_T5],
         __ent6: _TCCA[_T6],
-    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4, _T5, _T6]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4, _T5, _T6]]: ...
 
     @overload
     def with_entities(
@@ -1549,16 +1542,14 @@ class Query(
         __ent5: _TCCA[_T5],
         __ent6: _TCCA[_T6],
         __ent7: _TCCA[_T7],
-    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4, _T5, _T6, _T7]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4, _T5, _T6, _T7]]: ...
 
     # END OVERLOADED FUNCTIONS self.with_entities
 
     @overload
     def with_entities(
         self, *entities: _ColumnsClauseArgument[Any]
-    ) -> Query[Any]:
-        ...
+    ) -> Query[Any]: ...
 
     @_generative
     def with_entities(
@@ -1720,12 +1711,10 @@ class Query(
         populate_existing: bool = False,
         autoflush: bool = False,
         **opt: Any,
-    ) -> Self:
-        ...
+    ) -> Self: ...
 
     @overload
-    def execution_options(self, **opt: Any) -> Self:
-        ...
+    def execution_options(self, **opt: Any) -> Self: ...
 
     @_generative
     def execution_options(self, **kwargs: Any) -> Self:
@@ -1782,12 +1771,7 @@ class Query(
         *,
         nowait: bool = False,
         read: bool = False,
-        of: Optional[
-            Union[
-                _ColumnExpressionArgument[Any],
-                Sequence[_ColumnExpressionArgument[Any]],
-            ]
-        ] = None,
+        of: Optional[_ForUpdateOfArgument] = None,
         skip_locked: bool = False,
         key_share: bool = False,
     ) -> Self:
@@ -2432,8 +2416,6 @@ class Query(
 
         :param full=False: render FULL OUTER JOIN; implies ``isouter``.
 
-         .. versionadded:: 1.1
-
         """
 
         join_target = coercions.expect(
@@ -2530,13 +2512,6 @@ class Query(
          to the FROM clause.  Entities can be mapped classes,
          :class:`.AliasedClass` objects, :class:`.Mapper` objects
          as well as core :class:`.FromClause` elements like subqueries.
-
-        .. versionchanged:: 0.9
-            This method no longer applies the given FROM object
-            to be the selectable from which matching entities
-            select from; the :meth:`.select_entity_from` method
-            now accomplishes this.  See that method for a description
-            of this behavior.
 
         .. seealso::
 
@@ -2763,10 +2738,6 @@ class Query(
         Calling :meth:`_query.Query.one_or_none`
         results in an execution of the
         underlying query.
-
-        .. versionadded:: 1.0.9
-
-            Added :meth:`_query.Query.one_or_none`
 
         .. seealso::
 
@@ -3186,14 +3157,11 @@ class Query(
 
         delete_ = sql.delete(*self._raw_columns)  # type: ignore
         delete_._where_criteria = self._where_criteria
-        result: CursorResult[Any] = cast(
-            "CursorResult[Any]",
-            self.session.execute(
-                delete_,
-                self._params,
-                execution_options=self._execution_options.union(
-                    {"synchronize_session": synchronize_session}
-                ),
+        result: CursorResult[Any] = self.session.execute(
+            delete_,
+            self._params,
+            execution_options=self._execution_options.union(
+                {"synchronize_session": synchronize_session}
             ),
         )
         bulk_del.result = result  # type: ignore
@@ -3279,14 +3247,11 @@ class Query(
             upd = upd.with_dialect_options(**update_args)
 
         upd._where_criteria = self._where_criteria
-        result: CursorResult[Any] = cast(
-            "CursorResult[Any]",
-            self.session.execute(
-                upd,
-                self._params,
-                execution_options=self._execution_options.union(
-                    {"synchronize_session": synchronize_session}
-                ),
+        result: CursorResult[Any] = self.session.execute(
+            upd,
+            self._params,
+            execution_options=self._execution_options.union(
+                {"synchronize_session": synchronize_session}
             ),
         )
         bulk_ud.result = result  # type: ignore
@@ -3345,7 +3310,7 @@ class AliasOption(interfaces.LoaderOption):
 
     @util.deprecated(
         "1.4",
-        "The :class:`.AliasOption` is not necessary "
+        "The :class:`.AliasOption` object is not necessary "
         "for entities to be matched up to a query that is established "
         "via :meth:`.Query.from_statement` and now does nothing.",
     )

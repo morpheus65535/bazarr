@@ -1,27 +1,14 @@
 import sys
 import time
 
+from . import base_socket
 from . import exceptions
 from . import packet
 from . import payload
 
 
-class Socket(object):
+class Socket(base_socket.BaseSocket):
     """An Engine.IO socket."""
-    upgrade_protocols = ['websocket']
-
-    def __init__(self, server, sid):
-        self.server = server
-        self.sid = sid
-        self.queue = self.server.create_queue()
-        self.last_ping = None
-        self.connected = False
-        self.upgrading = False
-        self.upgraded = False
-        self.closing = False
-        self.closed = False
-        self.session = {}
-
     def poll(self):
         """Wait for packets to send to the client."""
         queue_empty = self.server.get_queue_empty_exception()
@@ -138,14 +125,14 @@ class Socket(object):
                 self.queue.join()
 
     def schedule_ping(self):
-        def send_ping():
-            self.last_ping = None
-            self.server.sleep(self.server.ping_interval)
-            if not self.closing and not self.closed:
-                self.last_ping = time.time()
-                self.send(packet.Packet(packet.PING))
+        self.server.start_background_task(self._send_ping)
 
-        self.server.start_background_task(send_ping)
+    def _send_ping(self):
+        self.last_ping = None
+        self.server.sleep(self.server.ping_interval)
+        if not self.closing and not self.closed:
+            self.last_ping = time.time()
+            self.send(packet.Packet(packet.PING))
 
     def _upgrade_websocket(self, environ, start_response):
         """Upgrade the connection from polling to websocket."""
@@ -154,7 +141,8 @@ class Socket(object):
         if self.server._async['websocket'] is None:
             # the selected async mode does not support websocket
             return self.server._bad_request()
-        ws = self.server._async['websocket'](self._websocket_handler)
+        ws = self.server._async['websocket'](
+            self._websocket_handler, self.server)
         return ws(environ, start_response)
 
     def _websocket_handler(self, ws):
@@ -219,6 +207,8 @@ class Socket(object):
                         ws.send(pkt.encode())
                 except:
                     break
+            ws.close()
+
         writer_task = self.server.start_background_task(writer)
 
         self.server.logger.info(

@@ -4,7 +4,7 @@
 
     Lexers for HTML, XML and related markup.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -13,7 +13,7 @@ import re
 from pygments.lexer import RegexLexer, ExtendedRegexLexer, include, bygroups, \
     default, using
 from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
-    Punctuation
+    Punctuation, Whitespace
 from pygments.util import looks_like_xml, html_doctype_matches
 
 from pygments.lexers.javascript import JavascriptLexer
@@ -22,7 +22,7 @@ from pygments.lexers.css import CssLexer, _indentation, _starts_block
 from pygments.lexers.ruby import RubyLexer
 
 __all__ = ['HtmlLexer', 'DtdLexer', 'XmlLexer', 'XsltLexer', 'HamlLexer',
-           'ScamlLexer', 'PugLexer']
+           'ScamlLexer', 'PugLexer', 'UrlEncodedLexer']
 
 
 class HtmlLexer(RegexLexer):
@@ -207,7 +207,8 @@ class XmlLexer(RegexLexer):
 
     tokens = {
         'root': [
-            ('[^<&]+', Text),
+            (r'[^<&\s]+', Text),
+            (r'[^<&\S]+', Whitespace),
             (r'&\S*?;', Name.Entity),
             (r'\<\!\[CDATA\[.*?\]\]\>', Comment.Preproc),
             (r'<!--.*?-->', Comment.Multiline),
@@ -217,12 +218,12 @@ class XmlLexer(RegexLexer):
             (r'<\s*/\s*[\w:.-]+\s*>', Name.Tag),
         ],
         'tag': [
-            (r'\s+', Text),
+            (r'\s+', Whitespace),
             (r'[\w.:-]+\s*=', Name.Attribute, 'attr'),
             (r'/?\s*>', Name.Tag, '#pop'),
         ],
         'attr': [
-            (r'\s+', Text),
+            (r'\s+', Whitespace),
             ('".*?"', String, '#pop'),
             ("'.*?'", String, '#pop'),
             (r'[^\s>]+', String, '#pop'),
@@ -602,3 +603,21 @@ class PugLexer(ExtendedRegexLexer):
         ],
     }
 JadeLexer = PugLexer  # compat
+
+
+class UrlEncodedLexer(RegexLexer):
+    """
+    Lexer for urlencoded data
+
+    .. versionadded:: 2.16
+    """
+
+    name = 'urlencoded'
+    aliases = ['urlencoded']
+    mimetypes = ['application/x-www-form-urlencoded']
+
+    tokens = {
+        'root': [
+            ('([^&=]*)(=)([^=&]*)(&?)', bygroups(Name.Tag, Operator, String, Punctuation)),
+        ],
+    }

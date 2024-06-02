@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
 interface Settings {
   general: Settings.General;
+  log: Settings.Log;
   proxy: Settings.Proxy;
   auth: Settings.Auth;
   subsync: Settings.Subsync;
@@ -19,7 +20,6 @@ interface Settings {
   xsubs: Settings.XSubs;
   assrt: Settings.Assrt;
   napisy24: Settings.Napisy24;
-  subscene: Settings.Subscene;
   betaseries: Settings.Betaseries;
   titlovi: Settings.Titlovi;
   ktuvit: Settings.Ktuvit;
@@ -80,6 +80,13 @@ declare namespace Settings {
     utf8_encode: boolean;
     wanted_search_frequency: number;
     wanted_search_frequency_movie: number;
+  }
+
+  interface Log {
+    include_filter: string;
+    exclude_filter: string;
+    ignore_case: boolean;
+    use_regex: boolean;
   }
 
   interface Proxy {
@@ -202,8 +209,6 @@ declare namespace Settings {
   interface XSubs extends BaseProvider {}
 
   interface Napisy24 extends BaseProvider {}
-
-  interface Subscene extends BaseProvider {}
 
   interface Titlovi extends BaseProvider {}
 

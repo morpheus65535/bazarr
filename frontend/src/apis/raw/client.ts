@@ -64,7 +64,7 @@ class BazarrClient {
       (error: AxiosError) => {
         const message = GetErrorMessage(
           error.response?.data,
-          "You have disconnected from the server"
+          "You have disconnected from the server",
         );
 
         const backendError: BackendError = {
@@ -76,7 +76,7 @@ class BazarrClient {
         this.handleError(backendError);
 
         return Promise.reject(error);
-      }
+      },
     );
   }
 

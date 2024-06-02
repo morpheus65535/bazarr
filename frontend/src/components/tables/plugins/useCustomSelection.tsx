@@ -71,7 +71,7 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
   useEffect(() => {
     // Performance
     let items = Object.keys(selectedRowIds).flatMap(
-      (v) => rows.find((n) => n.id === v)?.original ?? []
+      (v) => rows.find((n) => n.id === v)?.original ?? [],
     );
 
     if (canSelect) {
@@ -84,7 +84,7 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
 
 function visibleColumns<T extends object>(
   columns: ColumnInstance<T>[],
-  meta: MetaBase<T>
+  meta: MetaBase<T>,
 ): Column<T>[] {
   const { instance } = meta;
   const checkbox: Column<T> = {

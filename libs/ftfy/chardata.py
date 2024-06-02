@@ -2,7 +2,7 @@
 This gives other modules access to the gritty details about characters and the
 encodings that use them.
 """
-
+from __future__ import annotations
 import html
 import itertools
 import re
@@ -62,7 +62,7 @@ def _build_html_entities():
     # Create a dictionary based on the built-in HTML5 entity dictionary.
     # Add a limited set of HTML entities that we'll also decode if they've
     # been case-folded to uppercase, such as decoding &NTILDE; as "Ñ".
-    for name, char in html.entities.html5.items():
+    for name, char in html.entities.html5.items():  # type: ignore
         if name.endswith(";"):
             entities["&" + name] = char
 
@@ -98,7 +98,7 @@ def _build_control_char_mapping():
     See :func:`ftfy.fixes.remove_control_chars` for a description of these
     codepoint ranges and why they should be removed.
     """
-    control_chars = {}
+    control_chars: dict[int, None] = {}
 
     for i in itertools.chain(
         range(0x00, 0x09),

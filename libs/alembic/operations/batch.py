@@ -1,3 +1,6 @@
+# mypy: allow-untyped-defs, allow-incomplete-defs, allow-untyped-calls
+# mypy: no-warn-return-any, allow-any-generics
+
 from __future__ import annotations
 
 from typing import Any
@@ -17,7 +20,7 @@ from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy import schema as sql_schema
 from sqlalchemy import Table
 from sqlalchemy import types as sqltypes
-from sqlalchemy.events import SchemaEventTarget
+from sqlalchemy.sql.schema import SchemaEventTarget
 from sqlalchemy.util import OrderedDict
 from sqlalchemy.util import topological
 
@@ -185,11 +188,11 @@ class BatchOperationsImpl:
     def rename_table(self, *arg, **kw):
         self.batch.append(("rename_table", arg, kw))
 
-    def create_index(self, idx: Index) -> None:
-        self.batch.append(("create_index", (idx,), {}))
+    def create_index(self, idx: Index, **kw: Any) -> None:
+        self.batch.append(("create_index", (idx,), kw))
 
-    def drop_index(self, idx: Index) -> None:
-        self.batch.append(("drop_index", (idx,), {}))
+    def drop_index(self, idx: Index, **kw: Any) -> None:
+        self.batch.append(("drop_index", (idx,), kw))
 
     def create_table_comment(self, table):
         self.batch.append(("create_table_comment", (table,), {}))
@@ -243,7 +246,7 @@ class ApplyBatchImpl:
 
     def _grab_table_elements(self) -> None:
         schema = self.table.schema
-        self.columns: Dict[str, Column] = OrderedDict()
+        self.columns: Dict[str, Column[Any]] = OrderedDict()
         for c in self.table.c:
             c_copy = _copy(c, schema=schema)
             c_copy.unique = c_copy.index = False
@@ -337,7 +340,6 @@ class ApplyBatchImpl:
         for const in (
             list(self.named_constraints.values()) + self.unnamed_constraints
         ):
-
             const_columns = {c.key for c in _columns_for_constraint(const)}
 
             if not const_columns.issubset(self.column_transfers):
@@ -375,7 +377,7 @@ class ApplyBatchImpl:
         for idx_existing in self.indexes.values():
             # this is a lift-and-move from Table.to_metadata
 
-            if idx_existing._column_flag:  # type: ignore
+            if idx_existing._column_flag:
                 continue
 
             idx_copy = Index(
@@ -404,9 +406,7 @@ class ApplyBatchImpl:
     def _setup_referent(
         self, metadata: MetaData, constraint: ForeignKeyConstraint
     ) -> None:
-        spec = constraint.elements[
-            0
-        ]._get_colspec()  # type:ignore[attr-defined]
+        spec = constraint.elements[0]._get_colspec()
         parts = spec.split(".")
         tname = parts[-2]
         if len(parts) == 3:
@@ -487,7 +487,7 @@ class ApplyBatchImpl:
         server_default: Optional[Union[Function[Any], str, bool]] = False,
         name: Optional[str] = None,
         type_: Optional[TypeEngine] = None,
-        autoincrement: None = None,
+        autoincrement: Optional[Union[bool, Literal["auto"]]] = None,
         comment: Union[str, Literal[False]] = False,
         **kw,
     ) -> None:
@@ -547,9 +547,7 @@ class ApplyBatchImpl:
             else:
                 sql_schema.DefaultClause(
                     server_default  # type: ignore[arg-type]
-                )._set_parent(  # type:ignore[attr-defined]
-                    existing
-                )
+                )._set_parent(existing)
         if autoincrement is not None:
             existing.autoincrement = bool(autoincrement)
 
@@ -607,7 +605,7 @@ class ApplyBatchImpl:
     def add_column(
         self,
         table_name: str,
-        column: Column,
+        column: Column[Any],
         insert_before: Optional[str] = None,
         insert_after: Optional[str] = None,
         **kw,
@@ -621,7 +619,10 @@ class ApplyBatchImpl:
         self.column_transfers[column.name] = {}
 
     def drop_column(
-        self, table_name: str, column: Union[ColumnClause, Column], **kw
+        self,
+        table_name: str,
+        column: Union[ColumnClause[Any], Column[Any]],
+        **kw,
     ) -> None:
         if column.name in self.table.primary_key.columns:
             _remove_column_from_collection(

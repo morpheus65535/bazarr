@@ -14,6 +14,6 @@ if (container === null) {
       <AllProviders>
         <Router />
       </AllProviders>
-    </StrictMode>
+    </StrictMode>,
   );
 }

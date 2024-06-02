@@ -1,0 +1,3 @@
+[console_scripts]
+trakit=trakit.__main__:main
+

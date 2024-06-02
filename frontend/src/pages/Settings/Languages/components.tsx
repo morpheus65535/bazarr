@@ -35,7 +35,7 @@ export const LanguageSelector: FunctionComponent<
         searchable
         onChange={(val) => {
           setValue(val, settingKey, (value: Language.Info[]) =>
-            value.map((v) => v.code2)
+            value.map((v) => v.code2),
           );
         }}
       ></MultiSelector>
@@ -53,7 +53,7 @@ export const ProfileSelector: FunctionComponent<
       profiles.map((v) => {
         return { label: v.name, value: v.profileId };
       }),
-    [profiles]
+    [profiles],
   );
 
   return (

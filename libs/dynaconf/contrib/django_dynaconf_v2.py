@@ -27,6 +27,7 @@ import os
 import sys
 
 import dynaconf
+from dynaconf.hooking import HookableSettings
 
 try:  # pragma: no cover
     from django import conf
@@ -73,6 +74,7 @@ def load(django_settings_module_name=None, **kwargs):  # pragma: no cover
     options.setdefault(
         "default_settings_paths", dynaconf.DEFAULT_SETTINGS_FILES
     )
+    options.setdefault("_wrapper_class", HookableSettings)
 
     class UserSettingsHolder(dynaconf.LazySettings):
         _django_override = True

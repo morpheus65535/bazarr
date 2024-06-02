@@ -20,13 +20,17 @@
 import io
 import random
 import struct
+from typing import Any, Collection, Dict, List, Optional, Union, cast
 
 import dns.exception
 import dns.immutable
-import dns.rdatatype
-import dns.rdataclass
+import dns.name
 import dns.rdata
+import dns.rdataclass
+import dns.rdatatype
+import dns.renderer
 import dns.set
+import dns.ttl
 
 # define SimpleSet here for backwards compatibility
 SimpleSet = dns.set.Set
@@ -42,27 +46,32 @@ class IncompatibleTypes(dns.exception.DNSException):
 
 
 class Rdataset(dns.set.Set):
-
     """A DNS rdataset."""
 
-    __slots__ = ['rdclass', 'rdtype', 'covers', 'ttl']
+    __slots__ = ["rdclass", "rdtype", "covers", "ttl"]
 
-    def __init__(self, rdclass, rdtype, covers=dns.rdatatype.NONE, ttl=0):
+    def __init__(
+        self,
+        rdclass: dns.rdataclass.RdataClass,
+        rdtype: dns.rdatatype.RdataType,
+        covers: dns.rdatatype.RdataType = dns.rdatatype.NONE,
+        ttl: int = 0,
+    ):
         """Create a new rdataset of the specified class and type.
 
-        *rdclass*, an ``int``, the rdataclass.
+        *rdclass*, a ``dns.rdataclass.RdataClass``, the rdataclass.
 
-        *rdtype*, an ``int``, the rdatatype.
+        *rdtype*, an ``dns.rdatatype.RdataType``, the rdatatype.
 
-        *covers*, an ``int``, the covered rdatatype.
+        *covers*, an ``dns.rdatatype.RdataType``, the covered rdatatype.
 
         *ttl*, an ``int``, the TTL.
         """
 
         super().__init__()
         self.rdclass = rdclass
-        self.rdtype = rdtype
-        self.covers = covers
+        self.rdtype: dns.rdatatype.RdataType = rdtype
+        self.covers: dns.rdatatype.RdataType = covers
         self.ttl = ttl
 
     def _clone(self):
@@ -73,7 +82,7 @@ class Rdataset(dns.set.Set):
         obj.ttl = self.ttl
         return obj
 
-    def update_ttl(self, ttl):
+    def update_ttl(self, ttl: int) -> None:
         """Perform TTL minimization.
 
         Set the TTL of the rdataset to be the lesser of the set's current
@@ -88,7 +97,9 @@ class Rdataset(dns.set.Set):
         elif ttl < self.ttl:
             self.ttl = ttl
 
-    def add(self, rd, ttl=None):  # pylint: disable=arguments-differ
+    def add(  # pylint: disable=arguments-differ,arguments-renamed
+        self, rd: dns.rdata.Rdata, ttl: Optional[int] = None
+    ) -> None:
         """Add the specified rdata to the rdataset.
 
         If the optional *ttl* parameter is supplied, then
@@ -115,8 +126,7 @@ class Rdataset(dns.set.Set):
             raise IncompatibleTypes
         if ttl is not None:
             self.update_ttl(ttl)
-        if self.rdtype == dns.rdatatype.RRSIG or \
-           self.rdtype == dns.rdatatype.SIG:
+        if self.rdtype == dns.rdatatype.RRSIG or self.rdtype == dns.rdatatype.SIG:
             covers = rd.covers()
             if len(self) == 0 and self.covers == dns.rdatatype.NONE:
                 self.covers = covers
@@ -147,19 +157,26 @@ class Rdataset(dns.set.Set):
     def _rdata_repr(self):
         def maybe_truncate(s):
             if len(s) > 100:
-                return s[:100] + '...'
+                return s[:100] + "..."
             return s
-        return '[%s]' % ', '.join('<%s>' % maybe_truncate(str(rr))
-                                  for rr in self)
+
+        return "[%s]" % ", ".join("<%s>" % maybe_truncate(str(rr)) for rr in self)
 
     def __repr__(self):
         if self.covers == 0:
-            ctext = ''
+            ctext = ""
         else:
-            ctext = '(' + dns.rdatatype.to_text(self.covers) + ')'
-        return '<DNS ' + dns.rdataclass.to_text(self.rdclass) + ' ' + \
-               dns.rdatatype.to_text(self.rdtype) + ctext + \
-               ' rdataset: ' + self._rdata_repr() + '>'
+            ctext = "(" + dns.rdatatype.to_text(self.covers) + ")"
+        return (
+            "<DNS "
+            + dns.rdataclass.to_text(self.rdclass)
+            + " "
+            + dns.rdatatype.to_text(self.rdtype)
+            + ctext
+            + " rdataset: "
+            + self._rdata_repr()
+            + ">"
+        )
 
     def __str__(self):
         return self.to_text()
@@ -167,17 +184,26 @@ class Rdataset(dns.set.Set):
     def __eq__(self, other):
         if not isinstance(other, Rdataset):
             return False
-        if self.rdclass != other.rdclass or \
-           self.rdtype != other.rdtype or \
-           self.covers != other.covers:
+        if (
+            self.rdclass != other.rdclass
+            or self.rdtype != other.rdtype
+            or self.covers != other.covers
+        ):
             return False
         return super().__eq__(other)
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def to_text(self, name=None, origin=None, relativize=True,
-                override_rdclass=None, want_comments=False, **kw):
+    def to_text(
+        self,
+        name: Optional[dns.name.Name] = None,
+        origin: Optional[dns.name.Name] = None,
+        relativize: bool = True,
+        override_rdclass: Optional[dns.rdataclass.RdataClass] = None,
+        want_comments: bool = False,
+        **kw: Dict[str, Any],
+    ) -> str:
         """Convert the rdataset into DNS zone file format.
 
         See ``dns.name.Name.choose_relativity`` for more information
@@ -206,10 +232,10 @@ class Rdataset(dns.set.Set):
         if name is not None:
             name = name.choose_relativity(origin, relativize)
             ntext = str(name)
-            pad = ' '
+            pad = " "
         else:
-            ntext = ''
-            pad = ''
+            ntext = ""
+            pad = ""
         s = io.StringIO()
         if override_rdclass is not None:
             rdclass = override_rdclass
@@ -221,28 +247,46 @@ class Rdataset(dns.set.Set):
             # some dynamic updates, so we don't need to print out the TTL
             # (which is meaningless anyway).
             #
-            s.write('{}{}{} {}\n'.format(ntext, pad,
-                                         dns.rdataclass.to_text(rdclass),
-                                         dns.rdatatype.to_text(self.rdtype)))
+            s.write(
+                "{}{}{} {}\n".format(
+                    ntext,
+                    pad,
+                    dns.rdataclass.to_text(rdclass),
+                    dns.rdatatype.to_text(self.rdtype),
+                )
+            )
         else:
             for rd in self:
-                extra = ''
+                extra = ""
                 if want_comments:
                     if rd.rdcomment:
-                        extra = f' ;{rd.rdcomment}'
-                s.write('%s%s%d %s %s %s%s\n' %
-                        (ntext, pad, self.ttl, dns.rdataclass.to_text(rdclass),
-                         dns.rdatatype.to_text(self.rdtype),
-                         rd.to_text(origin=origin, relativize=relativize,
-                                    **kw),
-                         extra))
+                        extra = f" ;{rd.rdcomment}"
+                s.write(
+                    "%s%s%d %s %s %s%s\n"
+                    % (
+                        ntext,
+                        pad,
+                        self.ttl,
+                        dns.rdataclass.to_text(rdclass),
+                        dns.rdatatype.to_text(self.rdtype),
+                        rd.to_text(origin=origin, relativize=relativize, **kw),
+                        extra,
+                    )
+                )
         #
         # We strip off the final \n for the caller's convenience in printing
         #
         return s.getvalue()[:-1]
 
-    def to_wire(self, name, file, compress=None, origin=None,
-                override_rdclass=None, want_shuffle=True):
+    def to_wire(
+        self,
+        name: dns.name.Name,
+        file: Any,
+        compress: Optional[dns.name.CompressType] = None,
+        origin: Optional[dns.name.Name] = None,
+        override_rdclass: Optional[dns.rdataclass.RdataClass] = None,
+        want_shuffle: bool = True,
+    ) -> int:
         """Convert the rdataset to wire format.
 
         *name*, a ``dns.name.Name`` is the owner name to use.
@@ -272,13 +316,12 @@ class Rdataset(dns.set.Set):
             want_shuffle = False
         else:
             rdclass = self.rdclass
-        file.seek(0, io.SEEK_END)
         if len(self) == 0:
             name.to_wire(file, compress, origin)
-            stuff = struct.pack("!HHIH", self.rdtype, rdclass, 0, 0)
-            file.write(stuff)
+            file.write(struct.pack("!HHIH", self.rdtype, rdclass, 0, 0))
             return 1
         else:
+            l: Union[Rdataset, List[dns.rdata.Rdata]]
             if want_shuffle:
                 l = list(self)
                 random.shuffle(l)
@@ -286,30 +329,25 @@ class Rdataset(dns.set.Set):
                 l = self
             for rd in l:
                 name.to_wire(file, compress, origin)
-                stuff = struct.pack("!HHIH", self.rdtype, rdclass,
-                                    self.ttl, 0)
-                file.write(stuff)
-                start = file.tell()
-                rd.to_wire(file, compress, origin)
-                end = file.tell()
-                assert end - start < 65536
-                file.seek(start - 2)
-                stuff = struct.pack("!H", end - start)
-                file.write(stuff)
-                file.seek(0, io.SEEK_END)
+                file.write(struct.pack("!HHI", self.rdtype, rdclass, self.ttl))
+                with dns.renderer.prefixed_length(file, 2):
+                    rd.to_wire(file, compress, origin)
             return len(self)
 
-    def match(self, rdclass, rdtype, covers):
+    def match(
+        self,
+        rdclass: dns.rdataclass.RdataClass,
+        rdtype: dns.rdatatype.RdataType,
+        covers: dns.rdatatype.RdataType,
+    ) -> bool:
         """Returns ``True`` if this rdataset matches the specified class,
         type, and covers.
         """
-        if self.rdclass == rdclass and \
-           self.rdtype == rdtype and \
-           self.covers == covers:
+        if self.rdclass == rdclass and self.rdtype == rdtype and self.covers == covers:
             return True
         return False
 
-    def processing_order(self):
+    def processing_order(self) -> List[dns.rdata.Rdata]:
         """Return rdatas in a valid processing order according to the type's
         specification.  For example, MX records are in preference order from
         lowest to highest preferences, with items of the same preference
@@ -325,51 +363,55 @@ class Rdataset(dns.set.Set):
 
 
 @dns.immutable.immutable
-class ImmutableRdataset(Rdataset):
-
+class ImmutableRdataset(Rdataset):  # lgtm[py/missing-equals]
     """An immutable DNS rdataset."""
 
     _clone_class = Rdataset
 
-    def __init__(self, rdataset):
+    def __init__(self, rdataset: Rdataset):
         """Create an immutable rdataset from the specified rdataset."""
 
-        super().__init__(rdataset.rdclass, rdataset.rdtype, rdataset.covers,
-                         rdataset.ttl)
+        super().__init__(
+            rdataset.rdclass, rdataset.rdtype, rdataset.covers, rdataset.ttl
+        )
         self.items = dns.immutable.Dict(rdataset.items)
 
     def update_ttl(self, ttl):
-        raise TypeError('immutable')
+        raise TypeError("immutable")
 
     def add(self, rd, ttl=None):
-        raise TypeError('immutable')
+        raise TypeError("immutable")
 
     def union_update(self, other):
-        raise TypeError('immutable')
+        raise TypeError("immutable")
 
     def intersection_update(self, other):
-        raise TypeError('immutable')
+        raise TypeError("immutable")
 
     def update(self, other):
-        raise TypeError('immutable')
+        raise TypeError("immutable")
 
     def __delitem__(self, i):
-        raise TypeError('immutable')
+        raise TypeError("immutable")
 
-    def __ior__(self, other):
-        raise TypeError('immutable')
+    # lgtm complains about these not raising ArithmeticError, but there is
+    # precedent for overrides of these methods in other classes to raise
+    # TypeError, and it seems like the better exception.
 
-    def __iand__(self, other):
-        raise TypeError('immutable')
+    def __ior__(self, other):  # lgtm[py/unexpected-raise-in-special-method]
+        raise TypeError("immutable")
 
-    def __iadd__(self, other):
-        raise TypeError('immutable')
+    def __iand__(self, other):  # lgtm[py/unexpected-raise-in-special-method]
+        raise TypeError("immutable")
 
-    def __isub__(self, other):
-        raise TypeError('immutable')
+    def __iadd__(self, other):  # lgtm[py/unexpected-raise-in-special-method]
+        raise TypeError("immutable")
+
+    def __isub__(self, other):  # lgtm[py/unexpected-raise-in-special-method]
+        raise TypeError("immutable")
 
     def clear(self):
-        raise TypeError('immutable')
+        raise TypeError("immutable")
 
     def __copy__(self):
         return ImmutableRdataset(super().copy())
@@ -386,9 +428,20 @@ class ImmutableRdataset(Rdataset):
     def difference(self, other):
         return ImmutableRdataset(super().difference(other))
 
+    def symmetric_difference(self, other):
+        return ImmutableRdataset(super().symmetric_difference(other))
 
-def from_text_list(rdclass, rdtype, ttl, text_rdatas, idna_codec=None,
-                   origin=None, relativize=True, relativize_to=None):
+
+def from_text_list(
+    rdclass: Union[dns.rdataclass.RdataClass, str],
+    rdtype: Union[dns.rdatatype.RdataType, str],
+    ttl: int,
+    text_rdatas: Collection[str],
+    idna_codec: Optional[dns.name.IDNACodec] = None,
+    origin: Optional[dns.name.Name] = None,
+    relativize: bool = True,
+    relativize_to: Optional[dns.name.Name] = None,
+) -> Rdataset:
     """Create an rdataset with the specified class, type, and TTL, and with
     the specified list of rdatas in text format.
 
@@ -412,23 +465,29 @@ def from_text_list(rdclass, rdtype, ttl, text_rdatas, idna_codec=None,
     r = Rdataset(rdclass, rdtype)
     r.update_ttl(ttl)
     for t in text_rdatas:
-        rd = dns.rdata.from_text(r.rdclass, r.rdtype, t, origin, relativize,
-                                 relativize_to, idna_codec)
+        rd = dns.rdata.from_text(
+            r.rdclass, r.rdtype, t, origin, relativize, relativize_to, idna_codec
+        )
         r.add(rd)
     return r
 
 
-def from_text(rdclass, rdtype, ttl, *text_rdatas):
+def from_text(
+    rdclass: Union[dns.rdataclass.RdataClass, str],
+    rdtype: Union[dns.rdatatype.RdataType, str],
+    ttl: int,
+    *text_rdatas: Any,
+) -> Rdataset:
     """Create an rdataset with the specified class, type, and TTL, and with
     the specified rdatas in text format.
 
     Returns a ``dns.rdataset.Rdataset`` object.
     """
 
-    return from_text_list(rdclass, rdtype, ttl, text_rdatas)
+    return from_text_list(rdclass, rdtype, ttl, cast(Collection[str], text_rdatas))
 
 
-def from_rdata_list(ttl, rdatas):
+def from_rdata_list(ttl: int, rdatas: Collection[dns.rdata.Rdata]) -> Rdataset:
     """Create an rdataset with the specified TTL, and with
     the specified list of rdata objects.
 
@@ -443,14 +502,15 @@ def from_rdata_list(ttl, rdatas):
             r = Rdataset(rd.rdclass, rd.rdtype)
             r.update_ttl(ttl)
         r.add(rd)
+    assert r is not None
     return r
 
 
-def from_rdata(ttl, *rdatas):
+def from_rdata(ttl: int, *rdatas: Any) -> Rdataset:
     """Create an rdataset with the specified TTL, and with
     the specified rdata objects.
 
     Returns a ``dns.rdataset.Rdataset`` object.
     """
 
-    return from_rdata_list(ttl, rdatas)
+    return from_rdata_list(ttl, cast(Collection[dns.rdata.Rdata], rdatas))

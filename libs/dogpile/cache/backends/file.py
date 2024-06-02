@@ -6,8 +6,6 @@ Provides backends that deal with local filesystem access.
 
 """
 
-from __future__ import with_statement
-
 from contextlib import contextmanager
 import dbm
 import os

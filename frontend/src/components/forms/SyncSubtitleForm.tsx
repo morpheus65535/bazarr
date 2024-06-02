@@ -21,18 +21,18 @@ const TaskName = "Syncing Subtitle";
 function useReferencedSubtitles(
   mediaType: "episode" | "movie",
   mediaId: number,
-  subtitlesPath: string
+  subtitlesPath: string,
 ) {
   // We cannot call hooks conditionally, we rely on useQuery "enabled" option to do only the required API call
   const episodeData = useRefTracksByEpisodeId(
     subtitlesPath,
     mediaId,
-    mediaType === "episode"
+    mediaType === "episode",
   );
   const movieData = useRefTracksByMovieId(
     subtitlesPath,
     mediaId,
-    mediaType === "movie"
+    mediaType === "movie",
   );
 
   const mediaData = mediaType === "episode" ? episodeData : movieData;
@@ -108,7 +108,7 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
   const subtitles: SelectorOption<string>[] = useReferencedSubtitles(
     mediaType,
     mediaId,
-    subtitlesPath
+    subtitlesPath,
   );
 
   const form = useForm<FormValues>({

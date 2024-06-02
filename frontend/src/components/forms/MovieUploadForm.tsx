@@ -19,6 +19,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Button,
   Checkbox,
+  createStyles,
   Divider,
   MantineColor,
   Stack,
@@ -47,7 +48,7 @@ type SubtitleValidateResult = {
 
 const validator = (
   movie: Item.Movie,
-  file: SubtitleFile
+  file: SubtitleFile,
 ): SubtitleValidateResult => {
   if (file.language === null) {
     return {
@@ -57,7 +58,7 @@ const validator = (
   } else {
     const { subtitles } = movie;
     const existing = subtitles.find(
-      (v) => v.code2 === file.language?.code2 && isString(v.path)
+      (v) => v.code2 === file.language?.code2 && isString(v.path),
     );
     if (existing !== undefined) {
       return {
@@ -78,12 +79,21 @@ interface Props {
   onComplete?: () => void;
 }
 
+const useStyles = createStyles((theme) => {
+  return {
+    wrapper: {
+      overflowWrap: "anywhere",
+    },
+  };
+});
+
 const MovieUploadForm: FunctionComponent<Props> = ({
   files,
   movie,
   onComplete,
 }) => {
   const modals = useModals();
+  const { classes } = useStyles();
 
   const profile = useLanguageProfileBy(movie.profileId);
 
@@ -91,12 +101,12 @@ const MovieUploadForm: FunctionComponent<Props> = ({
   const languageOptions = useSelectorOptions(
     languages,
     (v) => v.name,
-    (v) => v.code2
+    (v) => v.code2,
   );
 
   const defaultLanguage = useMemo(
     () => (languages.length > 0 ? languages[0] : null),
-    [languages]
+    [languages],
   );
 
   const form = useForm({
@@ -120,7 +130,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
             (v) =>
               v.language === null ||
               v.validateResult === undefined ||
-              v.validateResult.state === "error"
+              v.validateResult.state === "error",
           ) === undefined
         );
       }, "Some files cannot be uploaded, please check"),
@@ -254,7 +264,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         },
       },
     ],
-    [action, languageOptions]
+    [action, languageOptions],
   );
 
   const { upload } = useMovieSubtitleModification();
@@ -279,7 +289,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         modals.closeSelf();
       })}
     >
-      <Stack>
+      <Stack className={classes.wrapper}>
         <SimpleTable columns={columns} data={form.values.files}></SimpleTable>
         <Divider></Divider>
         <Button type="submit">Upload</Button>
@@ -294,7 +304,7 @@ export const MovieUploadModal = withModal(
   {
     title: "Upload Subtitles",
     size: "xl",
-  }
+  },
 );
 
 export default MovieUploadForm;

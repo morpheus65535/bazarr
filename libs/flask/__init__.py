@@ -1,10 +1,9 @@
-from markupsafe import escape
-from markupsafe import Markup
+from __future__ import annotations
+
+import typing as t
 
 from . import json as json
 from .app import Flask as Flask
-from .app import Request as Request
-from .app import Response as Response
 from .blueprints import Blueprint as Blueprint
 from .config import Config as Config
 from .ctx import after_this_request as after_this_request
@@ -35,37 +34,27 @@ from .signals import message_flashed as message_flashed
 from .signals import request_finished as request_finished
 from .signals import request_started as request_started
 from .signals import request_tearing_down as request_tearing_down
-from .signals import signals_available as signals_available
 from .signals import template_rendered as template_rendered
 from .templating import render_template as render_template
 from .templating import render_template_string as render_template_string
 from .templating import stream_template as stream_template
 from .templating import stream_template_string as stream_template_string
+from .wrappers import Request as Request
+from .wrappers import Response as Response
 
-__version__ = "2.2.2"
 
-
-def __getattr__(name):
-    if name == "_app_ctx_stack":
+def __getattr__(name: str) -> t.Any:
+    if name == "__version__":
+        import importlib.metadata
         import warnings
-        from .globals import __app_ctx_stack
 
         warnings.warn(
-            "'_app_ctx_stack' is deprecated and will be removed in Flask 2.3.",
+            "The '__version__' attribute is deprecated and will be removed in"
+            " Flask 3.1. Use feature detection or"
+            " 'importlib.metadata.version(\"flask\")' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return __app_ctx_stack
-
-    if name == "_request_ctx_stack":
-        import warnings
-        from .globals import __request_ctx_stack
-
-        warnings.warn(
-            "'_request_ctx_stack' is deprecated and will be removed in Flask 2.3.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return __request_ctx_stack
+        return importlib.metadata.version("flask")
 
     raise AttributeError(name)

@@ -1,5 +1,5 @@
 # orm/mapper.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -132,9 +132,9 @@ _WithPolymorphicArg = Union[
 ]
 
 
-_mapper_registries: weakref.WeakKeyDictionary[
-    _RegistryType, bool
-] = weakref.WeakKeyDictionary()
+_mapper_registries: weakref.WeakKeyDictionary[_RegistryType, bool] = (
+    weakref.WeakKeyDictionary()
+)
 
 
 def _all_registries() -> Set[registry]:
@@ -344,10 +344,6 @@ class Mapper(
           those rows automatically.  The warning may be changed to an
           exception in a future release.
 
-          .. versionadded:: 0.9.4 - added
-             :paramref:`.mapper.confirm_deleted_rows` as well as conditional
-             matched row checking on delete.
-
         :param eager_defaults: if True, the ORM will immediately fetch the
           value of server-generated default values after an INSERT or UPDATE,
           rather than leaving them as expired to be fetched on next access.
@@ -380,9 +376,6 @@ class Mapper(
           .. seealso::
 
                 :ref:`orm_server_defaults`
-
-          .. versionchanged:: 0.9.0 The ``eager_defaults`` option can now
-             make use of :term:`RETURNING` for backends which support it.
 
           .. versionchanged:: 2.0.0  RETURNING now works with multiple rows
              INSERTed at once using the
@@ -477,8 +470,6 @@ class Mapper(
            subclass mappers; that is, it's not possible for a superclass
            to specify passive_deletes without this taking effect for
            all subclass mappers.
-
-           .. versionadded:: 1.1
 
            .. seealso::
 
@@ -694,9 +685,6 @@ class Mapper(
           Please see :ref:`server_side_version_counter` for a discussion
           of important points when using this option.
 
-          .. versionadded:: 0.9.0 ``version_id_generator`` supports
-             server-side version number generation.
-
           .. seealso::
 
              :ref:`custom_version_counter`
@@ -766,7 +754,10 @@ class Mapper(
 
         if local_table is not None:
             self.local_table = coercions.expect(
-                roles.StrictFromClauseRole, local_table
+                roles.StrictFromClauseRole,
+                local_table,
+                disable_inspection=True,
+                argname="local_table",
             )
         elif self.inherits:
             # note this is a new flow as of 2.0 so that
@@ -795,7 +786,7 @@ class Mapper(
 
         # interim - polymorphic_on is further refined in
         # _configure_polymorphic_setter
-        self.polymorphic_on = (  # type: ignore
+        self.polymorphic_on = (
             coercions.expect(  # type: ignore
                 roles.ColumnArgumentOrKeyRole,
                 polymorphic_on,
@@ -852,7 +843,6 @@ class Mapper(
         # while a configure_mappers() is occurring (and defer a
         # configure_mappers() until construction succeeds)
         with _CONFIGURE_MUTEX:
-
             cast("MapperEvents", self.dispatch._events)._new_mapper_instance(
                 class_, self
             )
@@ -974,8 +964,8 @@ class Mapper(
     version_id_generator: Optional[Union[Literal[False], Callable[[Any], Any]]]
 
     local_table: FromClause
-    """The immediate :class:`_expression.FromClause` which this
-    :class:`_orm.Mapper` refers towards.
+    """The immediate :class:`_expression.FromClause` to which this
+    :class:`_orm.Mapper` refers.
 
     Typically is an instance of :class:`_schema.Table`, may be any
     :class:`.FromClause`.
@@ -1410,7 +1400,7 @@ class Mapper(
             self.with_polymorphic = None
 
         if self.with_polymorphic and self.with_polymorphic[1] is not None:
-            self.with_polymorphic = (  # type: ignore
+            self.with_polymorphic = (
                 self.with_polymorphic[0],
                 coercions.expect(
                     roles.StrictFromClauseRole,
@@ -1514,7 +1504,7 @@ class Mapper(
         manager = instrumentation.register_class(
             self.class_,
             mapper=self,
-            expired_attribute_loader=util.partial(  # type: ignore
+            expired_attribute_loader=util.partial(
                 loading.load_scalar_attributes, self
             ),
             # finalize flag means instrument the __init__ method
@@ -1615,13 +1605,14 @@ class Mapper(
             )
 
         if self._primary_key_argument:
-
             coerced_pk_arg = [
-                self._str_arg_to_mapped_col("primary_key", c)
-                if isinstance(c, str)
-                else c
+                (
+                    self._str_arg_to_mapped_col("primary_key", c)
+                    if isinstance(c, str)
+                    else c
+                )
                 for c in (
-                    coercions.expect(  # type: ignore
+                    coercions.expect(
                         roles.DDLConstraintColumnRole,
                         coerce_pk,
                         argname="primary_key",
@@ -1713,7 +1704,6 @@ class Mapper(
         }
 
     def _configure_properties(self) -> None:
-
         self.columns = self.c = sql_base.ColumnCollection()  # type: ignore
 
         # object attribute names mapped to MapperProperty objects
@@ -1758,7 +1748,9 @@ class Mapper(
 
                 if _map_as_property_now:
                     self._configure_property(
-                        key, possible_col_prop, init=False
+                        key,
+                        possible_col_prop,
+                        init=False,
                     )
 
         # step 2: pull properties from the inherited mapper.  reconcile
@@ -1771,7 +1763,6 @@ class Mapper(
 
                 incoming_prop = explicit_col_props_by_key.get(key)
                 if incoming_prop:
-
                     new_prop = self._reconcile_prop_with_incoming_columns(
                         key,
                         inherited_prop,
@@ -1822,7 +1813,10 @@ class Mapper(
                     column_key = mapper._columntoproperty[column].key
 
             self._configure_property(
-                column_key, column, init=False, setparent=True
+                column_key,
+                column,
+                init=False,
+                setparent=True,
             )
 
     def _configure_polymorphic_setter(self, init=False):
@@ -2162,6 +2156,15 @@ class Mapper(
                 for proxy_col in col.proxy_set:
                     self._columntoproperty[proxy_col] = prop
 
+        if getattr(prop, "key", key) != key:
+            util.warn(
+                f"ORM mapped property {self.class_.__name__}.{prop.key} being "
+                "assigned to attribute "
+                f"{key!r} is already associated with "
+                f"attribute {prop.key!r}. The attribute will be de-associated "
+                f"from {prop.key!r}."
+            )
+
         prop.key = key
 
         if setparent:
@@ -2177,37 +2180,50 @@ class Mapper(
                 "%r for column %r" % (syn, key, key, syn)
             )
 
+        # replacement cases
+
+        # case one: prop is replacing a prop that we have mapped.  this is
+        # independent of whatever might be in the actual class dictionary
         if (
             key in self._props
-            and not isinstance(prop, properties.ColumnProperty)
             and not isinstance(
-                self._props[key],
-                (
-                    properties.ColumnProperty,
-                    descriptor_props.ConcreteInheritedProperty,
-                ),
+                self._props[key], descriptor_props.ConcreteInheritedProperty
             )
+            and not isinstance(prop, descriptor_props.SynonymProperty)
         ):
-            util.warn(
-                "Property %s on %s being replaced with new "
-                "property %s; the old property will be discarded"
-                % (self._props[key], self, prop)
-            )
+            if warn_for_existing:
+                util.warn_deprecated(
+                    f"User-placed attribute {self.class_.__name__}.{key} on "
+                    f"{self} is replacing an existing ORM-mapped attribute.  "
+                    "Behavior is not fully defined in this case.  This "
+                    "use is deprecated and will raise an error in a future "
+                    "release",
+                    "2.0",
+                )
             oldprop = self._props[key]
             self._path_registry.pop(oldprop, None)
 
-        if (
+        # case two: prop is replacing an attribute on the class of some kind.
+        # we have to be more careful here since it's normal when using
+        # Declarative that all the "declared attributes" on the class
+        # get replaced.
+        elif (
             warn_for_existing
             and self.class_.__dict__.get(key, None) is not None
+            and not isinstance(prop, descriptor_props.SynonymProperty)
             and not isinstance(
                 self._props.get(key, None),
-                (descriptor_props.ConcreteInheritedProperty,),
+                descriptor_props.ConcreteInheritedProperty,
             )
         ):
-            util.warn(
-                "User-placed attribute %r on %s being replaced with "
-                'new property "%s"; the old attribute will be discarded'
-                % (self.class_.__dict__[key], self, prop)
+            util.warn_deprecated(
+                f"User-placed attribute {self.class_.__name__}.{key} on "
+                f"{self} is replacing an existing class-bound "
+                "attribute of the same name.  "
+                "Behavior is not fully defined in this case.  This "
+                "use is deprecated and will raise an error in a future "
+                "release",
+                "2.0",
             )
 
         self._props[key] = prop
@@ -2234,7 +2250,6 @@ class Mapper(
             Sequence[KeyedColumnElement[Any]], KeyedColumnElement[Any]
         ],
     ) -> ColumnProperty[Any]:
-
         columns = util.to_list(column)
         mapped_column = []
         for c in columns:
@@ -2267,7 +2282,6 @@ class Mapper(
         incoming_prop: Optional[ColumnProperty[Any]] = None,
         single_column: Optional[KeyedColumnElement[Any]] = None,
     ) -> ColumnProperty[Any]:
-
         if incoming_prop and (
             self.concrete
             or not isinstance(existing_prop, properties.ColumnProperty)
@@ -2415,7 +2429,9 @@ class Mapper(
         the given MapperProperty is configured immediately.
 
         """
-        prop = self._configure_property(key, prop, init=self.configured)
+        prop = self._configure_property(
+            key, prop, init=self.configured, warn_for_existing=True
+        )
         assert isinstance(prop, MapperProperty)
         self._init_properties[key] = prop
 
@@ -2451,15 +2467,17 @@ class Mapper(
         return "Mapper[%s%s(%s)]" % (
             self.class_.__name__,
             self.non_primary and " (non-primary)" or "",
-            self.local_table.description
-            if self.local_table is not None
-            else self.persist_selectable.description,
+            (
+                self.local_table.description
+                if self.local_table is not None
+                else self.persist_selectable.description
+            ),
         )
 
     def _is_orphan(self, state: InstanceState[_O]) -> bool:
         orphan_possible = False
         for mapper in self.iterate_to_root():
-            for (key, cls) in mapper._delete_orphans:
+            for key, cls in mapper._delete_orphans:
                 orphan_possible = True
 
                 has_parent = attributes.manager_of_class(cls).has_parent(
@@ -2828,7 +2846,6 @@ class Mapper(
 
     @HasMemoized.memoized_instancemethod
     def __clause_element__(self):
-
         annotations: Dict[str, Any] = {
             "entity_namespace": self,
             "parententity": self,
@@ -2918,10 +2935,11 @@ class Mapper(
         adapter = self._polymorphic_adapter
 
         return [
-            adapter.columns[prop.columns[0]] if adapter else prop.columns[0]
+            adapter.columns[c] if adapter else c
             for prop in poly_properties
             if isinstance(prop, properties.ColumnProperty)
             and prop._renders_in_subqueries
+            for c in prop.columns
         ]
 
     def _columns_plus_keys(self, polymorphic_mappers=()):
@@ -3285,6 +3303,9 @@ class Mapper(
 
         """
 
+        if column is not None and sql_base._never_select_column(column):
+            return True
+
         # check for class-bound attributes and/or descriptors,
         # either local or from an inherited class
         # ignore dataclass field default values
@@ -3577,7 +3598,6 @@ class Mapper(
     def _get_committed_state_attr_by_column(
         self, state, dict_, column, passive=PassiveFlag.PASSIVE_RETURN_NO_VALUE
     ):
-
         prop = self._columntoproperty[column]
         return state.manager[prop.key].impl.get_committed_value(
             state, dict_, passive=passive
@@ -3809,7 +3829,6 @@ class Mapper(
             m = m.inherits
 
         for prop in self.attrs:
-
             # skip prop keys that are not instrumented on the mapped class.
             # this is primarily the "_sa_polymorphic_on" property that gets
             # created for an ad-hoc polymorphic_on SQL expression, issue #8704
@@ -3868,7 +3887,6 @@ class Mapper(
                 in_expr.in_(sql.bindparam("primary_keys", expanding=True))
             ).order_by(*primary_key)
         else:
-
             q = sql.select(self).set_label_style(
                 LABEL_STYLE_TABLENAME_PLUS_COL
             )
@@ -4083,7 +4101,7 @@ class _OptGetColumnsNotAvailable(Exception):
     pass
 
 
-def configure_mappers():
+def configure_mappers() -> None:
     """Initialize the inter-mapper relationships of all mappers that
     have been constructed thus far across all :class:`_orm.registry`
     collections.
@@ -4169,7 +4187,6 @@ def _configure_registries(
             return
         _already_compiling = True
         try:
-
             # double-check inside mutex
             for reg in registries:
                 if reg._new_mappers:
@@ -4193,7 +4210,6 @@ def _configure_registries(
 def _do_configure_registries(
     registries: Set[_RegistryType], cascade: bool
 ) -> None:
-
     registry = util.preloaded.orm_decl_api.registry
 
     orig = set(registries)
@@ -4245,7 +4261,6 @@ def _do_configure_registries(
 
 @util.preload_module("sqlalchemy.orm.decl_api")
 def _dispose_registries(registries: Set[_RegistryType], cascade: bool) -> None:
-
     registry = util.preloaded.orm_decl_api.registry
 
     orig = set(registries)
@@ -4309,7 +4324,7 @@ def reconstructor(fn):
 
 
 def validates(
-    *names: str, include_removes: bool = False, include_backrefs: bool = False
+    *names: str, include_removes: bool = False, include_backrefs: bool = True
 ) -> Callable[[_Fn], _Fn]:
     r"""Decorate a method as a 'validator' for one or more named properties.
 
@@ -4338,7 +4353,9 @@ def validates(
      :func:`.validates` usage where only one validator should emit per
      attribute operation.
 
-     .. versionadded:: 0.9.0
+     .. versionchanged:: 2.0.16 This paramter inadvertently defaulted to
+        ``False`` for releases 2.0.0 through 2.0.15.  Its correct default
+        of ``True`` is restored in 2.0.16.
 
     .. seealso::
 

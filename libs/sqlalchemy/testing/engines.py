@@ -1,5 +1,5 @@
 # testing/engines.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -230,7 +230,6 @@ class ReconnectFixture:
         return getattr(self.dbapi, key)
 
     def connect(self, *args, **kwargs):
-
         conn = self.dbapi.connect(*args, **kwargs)
         if self.is_stopped:
             self._safe(conn.close)
@@ -290,8 +289,7 @@ def testing_engine(
     options: Optional[Dict[str, Any]] = None,
     asyncio: Literal[False] = False,
     transfer_staticpool: bool = False,
-) -> Engine:
-    ...
+) -> Engine: ...
 
 
 @typing.overload
@@ -300,8 +298,7 @@ def testing_engine(
     options: Optional[Dict[str, Any]] = None,
     asyncio: Literal[True] = True,
     transfer_staticpool: bool = False,
-) -> AsyncEngine:
-    ...
+) -> AsyncEngine: ...
 
 
 def testing_engine(

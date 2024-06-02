@@ -32,7 +32,7 @@ export const notification = {
   progress: {
     pending: (
       id: string,
-      header: string
+      header: string,
     ): NotificationProps & { id: string } => {
       return {
         id,
@@ -47,7 +47,7 @@ export const notification = {
       header: string,
       body: string,
       current: number,
-      total: number
+      total: number,
     ): NotificationProps & { id: string } => {
       return {
         id,

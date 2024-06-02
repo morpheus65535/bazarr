@@ -1,6 +1,7 @@
 from flask import current_app
 
 from alembic import context
+from sqlalchemy import text
 
 import logging
 
@@ -95,7 +96,21 @@ def run_migrations_online():
         )
 
         with context.begin_transaction():
+            bind = context.get_bind()
+
+            if bind.engine.name == 'sqlite':
+                bind.execute(text("PRAGMA foreign_keys=OFF;"))
+            elif bind.engine.name == 'postgresql':
+                bind.execute(text("SET CONSTRAINTS ALL DEFERRED;"))
+
             context.run_migrations()
+
+            if bind.engine.name == 'sqlite':
+                bind.execute(text("PRAGMA foreign_keys=ON;"))
+            elif bind.engine.name == 'postgresql':
+                bind.execute(text("SET CONSTRAINTS ALL IMMEDIATE;"))
+
+            bind.close()
 
 
 if context.is_offline_mode():

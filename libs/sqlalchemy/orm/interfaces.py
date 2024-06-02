@@ -1,5 +1,5 @@
 # orm/interfaces.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -69,6 +69,7 @@ from ..sql.cache_key import HasCacheKey
 from ..sql.operators import ColumnOperators
 from ..sql.schema import Column
 from ..sql.type_api import TypeEngine
+from ..util import warn_deprecated
 from ..util.typing import RODescriptorReference
 from ..util.typing import TypedDict
 
@@ -106,6 +107,7 @@ if typing.TYPE_CHECKING:
 _StrategyKey = Tuple[Any, ...]
 
 _T = TypeVar("_T", bound=Any)
+_T_co = TypeVar("_T_co", bound=Any, covariant=True)
 
 _TLS = TypeVar("_TLS", bound="Type[LoaderStrategy]")
 
@@ -113,7 +115,7 @@ _TLS = TypeVar("_TLS", bound="Type[LoaderStrategy]")
 class ORMStatementRole(roles.StatementRole):
     __slots__ = ()
     _role_name = (
-        "Executable SQL or text() construct, including ORM " "aware objects"
+        "Executable SQL or text() construct, including ORM aware objects"
     )
 
 
@@ -200,7 +202,7 @@ class _AttributeOptions(NamedTuple):
     dataclasses_compare: Union[_NoArg, bool]
     dataclasses_kw_only: Union[_NoArg, bool]
 
-    def _as_dataclass_field(self) -> Any:
+    def _as_dataclass_field(self, key: str) -> Any:
         """Return a ``dataclasses.Field`` object given these arguments."""
 
         kw: Dict[str, Any] = {}
@@ -216,6 +218,34 @@ class _AttributeOptions(NamedTuple):
             kw["compare"] = self.dataclasses_compare
         if self.dataclasses_kw_only is not _NoArg.NO_ARG:
             kw["kw_only"] = self.dataclasses_kw_only
+
+        if "default" in kw and callable(kw["default"]):
+            # callable defaults are ambiguous. deprecate them in favour of
+            # insert_default or default_factory. #9936
+            warn_deprecated(
+                f"Callable object passed to the ``default`` parameter for "
+                f"attribute {key!r} in a ORM-mapped Dataclasses context is "
+                "ambiguous, "
+                "and this use will raise an error in a future release.  "
+                "If this callable is intended to produce Core level INSERT "
+                "default values for an underlying ``Column``, use "
+                "the ``mapped_column.insert_default`` parameter instead.  "
+                "To establish this callable as providing a default value "
+                "for instances of the dataclass itself, use the "
+                "``default_factory`` dataclasses parameter.",
+                "2.0",
+            )
+
+        if (
+            "init" in kw
+            and not kw["init"]
+            and "default" in kw
+            and not callable(kw["default"])  # ignore callable defaults. #9936
+            and "default_factory" not in kw  # illegal but let dc.field raise
+        ):
+            # fix for #9879
+            default = kw.pop("default")
+            kw["default_factory"] = lambda: default
 
         return dataclasses.field(**kw)
 
@@ -236,7 +266,7 @@ class _AttributeOptions(NamedTuple):
 
         """
         if isinstance(elem, _DCAttributeOptions):
-            dc_field = elem._attribute_options._as_dataclass_field()
+            dc_field = elem._attribute_options._as_dataclass_field(key)
 
             return (key, annotation, dc_field)
         elif elem is not _NoArg.NO_ARG:
@@ -262,6 +292,15 @@ class _AttributeOptions(NamedTuple):
 
 _DEFAULT_ATTRIBUTE_OPTIONS = _AttributeOptions(
     _NoArg.NO_ARG,
+    _NoArg.NO_ARG,
+    _NoArg.NO_ARG,
+    _NoArg.NO_ARG,
+    _NoArg.NO_ARG,
+    _NoArg.NO_ARG,
+)
+
+_DEFAULT_READONLY_ATTRIBUTE_OPTIONS = _AttributeOptions(
+    False,
     _NoArg.NO_ARG,
     _NoArg.NO_ARG,
     _NoArg.NO_ARG,
@@ -398,10 +437,6 @@ class MapperProperty(
     :func:`.column_property`, :func:`_orm.relationship`, or :func:`.composite`
     functions.
 
-    .. versionchanged:: 1.0.0 :attr:`.InspectionAttr.info` moved
-        from :class:`.MapperProperty` so that it can apply to a wider
-        variety of ORM and extension constructs.
-
     .. seealso::
 
         :attr:`.QueryableAttribute.info`
@@ -419,11 +454,6 @@ class MapperProperty(
         :func:`.column_property`, :func:`_orm.relationship`, or
         :func:`.composite`
         functions.
-
-        .. versionchanged:: 1.0.0 :attr:`.MapperProperty.info` is also
-           available on extension types via the
-           :attr:`.InspectionAttrInfo.info` attribute, so that it can apply
-           to a wider variety of ORM and extension constructs.
 
         .. seealso::
 
@@ -519,19 +549,24 @@ class MapperProperty(
         """
 
     def __init__(
-        self, attribute_options: Optional[_AttributeOptions] = None
+        self,
+        attribute_options: Optional[_AttributeOptions] = None,
+        _assume_readonly_dc_attributes: bool = False,
     ) -> None:
         self._configure_started = False
         self._configure_finished = False
-        if (
-            attribute_options
-            and attribute_options != _DEFAULT_ATTRIBUTE_OPTIONS
-        ):
+
+        if _assume_readonly_dc_attributes:
+            default_attrs = _DEFAULT_READONLY_ATTRIBUTE_OPTIONS
+        else:
+            default_attrs = _DEFAULT_ATTRIBUTE_OPTIONS
+
+        if attribute_options and attribute_options != default_attrs:
             self._has_dataclass_arguments = True
             self._attribute_options = attribute_options
         else:
             self._has_dataclass_arguments = False
-            self._attribute_options = _DEFAULT_ATTRIBUTE_OPTIONS
+            self._attribute_options = default_attrs
 
     def init(self) -> None:
         """Called after all mappers are created to assemble
@@ -619,7 +654,7 @@ class MapperProperty(
 
 
 @inspection._self_inspects
-class PropComparator(SQLORMOperations[_T], Generic[_T], ColumnOperators):
+class PropComparator(SQLORMOperations[_T_co], Generic[_T_co], ColumnOperators):
     r"""Defines SQL operations for ORM mapped attributes.
 
     SQLAlchemy allows for operators to
@@ -700,13 +735,14 @@ class PropComparator(SQLORMOperations[_T], Generic[_T], ColumnOperators):
         :attr:`.TypeEngine.comparator_factory`
 
     """
+
     __slots__ = "prop", "_parententity", "_adapt_to_entity"
 
     __visit_name__ = "orm_prop_comparator"
 
     _parententity: _InternalEntityType[Any]
     _adapt_to_entity: Optional[AliasedInsp[Any]]
-    prop: RODescriptorReference[MapperProperty[_T]]
+    prop: RODescriptorReference[MapperProperty[_T_co]]
 
     def __init__(
         self,
@@ -719,7 +755,7 @@ class PropComparator(SQLORMOperations[_T], Generic[_T], ColumnOperators):
         self._adapt_to_entity = adapt_to_entity
 
     @util.non_memoized_property
-    def property(self) -> MapperProperty[_T]:
+    def property(self) -> MapperProperty[_T_co]:
         """Return the :class:`.MapperProperty` associated with this
         :class:`.PropComparator`.
 
@@ -749,7 +785,7 @@ class PropComparator(SQLORMOperations[_T], Generic[_T], ColumnOperators):
 
     def adapt_to_entity(
         self, adapt_to_entity: AliasedInsp[Any]
-    ) -> PropComparator[_T]:
+    ) -> PropComparator[_T_co]:
         """Return a copy of this PropComparator which will use the given
         :class:`.AliasedInsp` to produce corresponding expressions.
         """
@@ -803,15 +839,13 @@ class PropComparator(SQLORMOperations[_T], Generic[_T], ColumnOperators):
 
         def operate(
             self, op: OperatorType, *other: Any, **kwargs: Any
-        ) -> ColumnElement[Any]:
-            ...
+        ) -> ColumnElement[Any]: ...
 
         def reverse_operate(
             self, op: OperatorType, other: Any, **kwargs: Any
-        ) -> ColumnElement[Any]:
-            ...
+        ) -> ColumnElement[Any]: ...
 
-    def of_type(self, class_: _EntityType[Any]) -> PropComparator[_T]:
+    def of_type(self, class_: _EntityType[Any]) -> PropComparator[_T_co]:
         r"""Redefine this object in terms of a polymorphic subclass,
         :func:`_orm.with_polymorphic` construct, or :func:`_orm.aliased`
         construct.
@@ -888,9 +922,7 @@ class PropComparator(SQLORMOperations[_T], Generic[_T], ColumnOperators):
 
         """
 
-        return self.operate(  # type: ignore
-            PropComparator.any_op, criterion, **kwargs
-        )
+        return self.operate(PropComparator.any_op, criterion, **kwargs)
 
     def has(
         self,
@@ -912,9 +944,7 @@ class PropComparator(SQLORMOperations[_T], Generic[_T], ColumnOperators):
 
         """
 
-        return self.operate(  # type: ignore
-            PropComparator.has_op, criterion, **kwargs
-        )
+        return self.operate(PropComparator.has_op, criterion, **kwargs)
 
 
 class StrategizedProperty(MapperProperty[_T]):
@@ -964,7 +994,6 @@ class StrategizedProperty(MapperProperty[_T]):
     def _get_context_loader(
         self, context: ORMCompileState, path: AbstractEntityRegistry
     ) -> Optional[_LoadElement]:
-
         load: Optional[_LoadElement] = None
 
         search_path = path[self]

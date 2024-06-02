@@ -217,7 +217,7 @@ cdef class Unpacker(object):
 
     :param file_like:
         File-like object having `.read(n)` method.
-        If specified, unpacker reads serialized data from it and :meth:`feed()` is not usable.
+        If specified, unpacker reads serialized data from it and `.feed()` is not usable.
 
     :param int read_size:
         Used as `file_like.read(read_size)`. (default: `min(16*1024, max_buffer_size)`)
@@ -236,17 +236,17 @@ cdef class Unpacker(object):
             0 - Timestamp
             1 - float  (Seconds from the EPOCH)
             2 - int  (Nanoseconds from the EPOCH)
-            3 - datetime.datetime  (UTC).  Python 2 is not supported.
+            3 - datetime.datetime  (UTC).
 
     :param bool strict_map_key:
         If true (default), only str or bytes are accepted for map (dict) keys.
 
-    :param callable object_hook:
+    :param object_hook:
         When specified, it should be callable.
         Unpacker calls it with a dict argument after unpacking msgpack map.
         (See also simplejson)
 
-    :param callable object_pairs_hook:
+    :param object_pairs_hook:
         When specified, it should be callable.
         Unpacker calls it with a list of key-value pairs after unpacking msgpack map.
         (See also simplejson)

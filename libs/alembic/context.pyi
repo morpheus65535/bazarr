@@ -4,12 +4,17 @@ from __future__ import annotations
 
 from typing import Any
 from typing import Callable
+from typing import Collection
 from typing import ContextManager
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Literal
+from typing import Mapping
+from typing import MutableMapping
 from typing import Optional
 from typing import overload
+from typing import Sequence
 from typing import TextIO
 from typing import Tuple
 from typing import TYPE_CHECKING
@@ -18,18 +23,25 @@ from typing import Union
 if TYPE_CHECKING:
     from sqlalchemy.engine.base import Connection
     from sqlalchemy.engine.url import URL
-    from sqlalchemy.sql.elements import ClauseElement
+    from sqlalchemy.sql import Executable
+    from sqlalchemy.sql.schema import Column
+    from sqlalchemy.sql.schema import FetchedValue
     from sqlalchemy.sql.schema import MetaData
+    from sqlalchemy.sql.schema import SchemaItem
+    from sqlalchemy.sql.type_api import TypeEngine
 
+    from .autogenerate.api import AutogenContext
     from .config import Config
-    from .operations import MigrateOperation
+    from .operations.ops import MigrationScript
     from .runtime.migration import _ProxyTransaction
     from .runtime.migration import MigrationContext
+    from .runtime.migration import MigrationInfo
     from .script import ScriptDirectory
+
 ### end imports ###
 
 def begin_transaction() -> Union[_ProxyTransaction, ContextManager[None]]:
-    r"""Return a context manager that will
+    """Return a context manager that will
     enclose an operation within a "transaction",
     as defined by the environment's offline
     and transactional DDL settings.
@@ -86,28 +98,111 @@ def configure(
     tag: Optional[str] = None,
     template_args: Optional[Dict[str, Any]] = None,
     render_as_batch: bool = False,
-    target_metadata: Optional[MetaData] = None,
-    include_name: Optional[Callable[..., bool]] = None,
-    include_object: Optional[Callable[..., bool]] = None,
+    target_metadata: Union[MetaData, Sequence[MetaData], None] = None,
+    include_name: Optional[
+        Callable[
+            [
+                Optional[str],
+                Literal[
+                    "schema",
+                    "table",
+                    "column",
+                    "index",
+                    "unique_constraint",
+                    "foreign_key_constraint",
+                ],
+                MutableMapping[
+                    Literal[
+                        "schema_name",
+                        "table_name",
+                        "schema_qualified_table_name",
+                    ],
+                    Optional[str],
+                ],
+            ],
+            bool,
+        ]
+    ] = None,
+    include_object: Optional[
+        Callable[
+            [
+                SchemaItem,
+                Optional[str],
+                Literal[
+                    "schema",
+                    "table",
+                    "column",
+                    "index",
+                    "unique_constraint",
+                    "foreign_key_constraint",
+                ],
+                bool,
+                Optional[SchemaItem],
+            ],
+            bool,
+        ]
+    ] = None,
     include_schemas: bool = False,
     process_revision_directives: Optional[
         Callable[
-            [MigrationContext, Tuple[str, str], List[MigrateOperation]], None
+            [
+                MigrationContext,
+                Union[str, Iterable[Optional[str]], Iterable[str]],
+                List[MigrationScript],
+            ],
+            None,
         ]
     ] = None,
-    compare_type: bool = False,
-    compare_server_default: bool = False,
-    render_item: Optional[Callable[..., bool]] = None,
+    compare_type: Union[
+        bool,
+        Callable[
+            [
+                MigrationContext,
+                Column[Any],
+                Column[Any],
+                TypeEngine[Any],
+                TypeEngine[Any],
+            ],
+            Optional[bool],
+        ],
+    ] = True,
+    compare_server_default: Union[
+        bool,
+        Callable[
+            [
+                MigrationContext,
+                Column[Any],
+                Column[Any],
+                Optional[str],
+                Optional[FetchedValue],
+                Optional[str],
+            ],
+            Optional[bool],
+        ],
+    ] = False,
+    render_item: Optional[
+        Callable[[str, Any, AutogenContext], Union[str, Literal[False]]]
+    ] = None,
     literal_binds: bool = False,
     upgrade_token: str = "upgrades",
     downgrade_token: str = "downgrades",
     alembic_module_prefix: str = "op.",
     sqlalchemy_module_prefix: str = "sa.",
     user_module_prefix: Optional[str] = None,
-    on_version_apply: Optional[Callable[..., None]] = None,
+    on_version_apply: Optional[
+        Callable[
+            [
+                MigrationContext,
+                MigrationInfo,
+                Collection[Any],
+                Mapping[str, Any],
+            ],
+            None,
+        ]
+    ] = None,
     **kw: Any,
 ) -> None:
-    r"""Configure a :class:`.MigrationContext` within this
+    """Configure a :class:`.MigrationContext` within this
     :class:`.EnvironmentContext` which will provide database
     connectivity and other configuration to a series of
     migration scripts.
@@ -151,9 +246,6 @@ def configure(
      ``connection`` and ``url`` are not passed.
     :param dialect_opts: dictionary of options to be passed to dialect
      constructor.
-
-     .. versionadded:: 1.0.12
-
     :param transactional_ddl: Force the usage of "transactional"
      DDL on or off;
      this otherwise defaults to whether or not the dialect in
@@ -236,12 +328,16 @@ def configure(
      to produce candidate upgrade/downgrade operations.
     :param compare_type: Indicates type comparison behavior during
      an autogenerate
-     operation.  Defaults to ``False`` which disables type
-     comparison.  Set to
-     ``True`` to turn on default type comparison, which has varied
-     accuracy depending on backend.   See :ref:`compare_types`
+     operation.  Defaults to ``True`` turning on type comparison, which
+     has good accuracy on most backends.   See :ref:`compare_types`
      for an example as well as information on other type
-     comparison options.
+     comparison options. Set to ``False`` which disables type
+     comparison. A callable can also be passed to provide custom type
+     comparison, see :ref:`compare_types` for additional details.
+
+     .. versionchanged:: 1.12.0 The default value of
+        :paramref:`.EnvironmentContext.configure.compare_type` has been
+        changed to ``True``.
 
      .. seealso::
 
@@ -308,7 +404,8 @@ def configure(
        ``"unique_constraint"``, or ``"foreign_key_constraint"``
      * ``parent_names``: a dictionary of "parent" object names, that are
        relative to the name being given.  Keys in this dictionary may
-       include:  ``"schema_name"``, ``"table_name"``.
+       include:  ``"schema_name"``, ``"table_name"`` or
+       ``"schema_qualified_table_name"``.
 
      E.g.::
 
@@ -323,8 +420,6 @@ def configure(
             include_schemas = True,
             include_name = include_name
         )
-
-     .. versionadded:: 1.5
 
      .. seealso::
 
@@ -541,9 +636,10 @@ def configure(
     """
 
 def execute(
-    sql: Union[ClauseElement, str], execution_options: Optional[dict] = None
+    sql: Union[Executable, str],
+    execution_options: Optional[Dict[str, Any]] = None,
 ) -> None:
-    r"""Execute the given SQL using the current change context.
+    """Execute the given SQL using the current change context.
 
     The behavior of :meth:`.execute` is the same
     as that of :meth:`.Operations.execute`.  Please see that
@@ -556,7 +652,7 @@ def execute(
     """
 
 def get_bind() -> Connection:
-    r"""Return the current 'bind'.
+    """Return the current 'bind'.
 
     In "online" mode, this is the
     :class:`sqlalchemy.engine.Connection` currently being used
@@ -568,7 +664,7 @@ def get_bind() -> Connection:
     """
 
 def get_context() -> MigrationContext:
-    r"""Return the current :class:`.MigrationContext` object.
+    """Return the current :class:`.MigrationContext` object.
 
     If :meth:`.EnvironmentContext.configure` has not been
     called yet, raises an exception.
@@ -576,7 +672,7 @@ def get_context() -> MigrationContext:
     """
 
 def get_head_revision() -> Union[str, Tuple[str, ...], None]:
-    r"""Return the hex identifier of the 'head' script revision.
+    """Return the hex identifier of the 'head' script revision.
 
     If the script directory has multiple heads, this
     method raises a :class:`.CommandError`;
@@ -590,7 +686,7 @@ def get_head_revision() -> Union[str, Tuple[str, ...], None]:
     """
 
 def get_head_revisions() -> Union[str, Tuple[str, ...], None]:
-    r"""Return the hex identifier of the 'heads' script revision(s).
+    """Return the hex identifier of the 'heads' script revision(s).
 
     This returns a tuple containing the version number of all
     heads in the script directory.
@@ -601,7 +697,7 @@ def get_head_revisions() -> Union[str, Tuple[str, ...], None]:
     """
 
 def get_revision_argument() -> Union[str, Tuple[str, ...], None]:
-    r"""Get the 'destination' revision argument.
+    """Get the 'destination' revision argument.
 
     This is typically the argument passed to the
     ``upgrade`` or ``downgrade`` command.
@@ -616,7 +712,7 @@ def get_revision_argument() -> Union[str, Tuple[str, ...], None]:
     """
 
 def get_starting_revision_argument() -> Union[str, Tuple[str, ...], None]:
-    r"""Return the 'starting revision' argument,
+    """Return the 'starting revision' argument,
     if the revision was passed using ``start:end``.
 
     This is only meaningful in "offline" mode.
@@ -629,7 +725,7 @@ def get_starting_revision_argument() -> Union[str, Tuple[str, ...], None]:
     """
 
 def get_tag_argument() -> Optional[str]:
-    r"""Return the value passed for the ``--tag`` argument, if any.
+    """Return the value passed for the ``--tag`` argument, if any.
 
     The ``--tag`` argument is not used directly by Alembic,
     but is available for custom ``env.py`` configurations that
@@ -655,7 +751,7 @@ def get_x_argument(as_dictionary: Literal[True]) -> Dict[str, str]: ...
 def get_x_argument(
     as_dictionary: bool = ...,
 ) -> Union[List[str], Dict[str, str]]:
-    r"""Return the value(s) passed for the ``-x`` argument, if any.
+    """Return the value(s) passed for the ``-x`` argument, if any.
 
     The ``-x`` argument is an open ended flag that allows any user-defined
     value or values to be passed on the command line, then available
@@ -664,7 +760,11 @@ def get_x_argument(
     The return value is a list, returned directly from the ``argparse``
     structure.  If ``as_dictionary=True`` is passed, the ``x`` arguments
     are parsed using ``key=value`` format into a dictionary that is
-    then returned.
+    then returned. If there is no ``=`` in the argument, value is an empty
+    string.
+
+    .. versionchanged:: 1.13.1 Support ``as_dictionary=True`` when
+       arguments are passed without the ``=`` symbol.
 
     For example, to support passing a database URL on the command line,
     the standard ``env.py`` script can be modified like this::
@@ -695,7 +795,7 @@ def get_x_argument(
     """
 
 def is_offline_mode() -> bool:
-    r"""Return True if the current migrations environment
+    """Return True if the current migrations environment
     is running in "offline mode".
 
     This is ``True`` or ``False`` depending
@@ -706,8 +806,8 @@ def is_offline_mode() -> bool:
 
     """
 
-def is_transactional_ddl():
-    r"""Return True if the context is configured to expect a
+def is_transactional_ddl() -> bool:
+    """Return True if the context is configured to expect a
     transactional DDL capable backend.
 
     This defaults to the type of database in use, and
@@ -720,7 +820,7 @@ def is_transactional_ddl():
     """
 
 def run_migrations(**kw: Any) -> None:
-    r"""Run migrations as determined by the current command line
+    """Run migrations as determined by the current command line
     configuration
     as well as versioning information present (or not) in the current
     database connection (if one is present).
@@ -743,7 +843,7 @@ def run_migrations(**kw: Any) -> None:
 script: ScriptDirectory
 
 def static_output(text: str) -> None:
-    r"""Emit text directly to the "offline" SQL stream.
+    """Emit text directly to the "offline" SQL stream.
 
     Typically this is for emitting comments that
     start with --.  The statement is not treated

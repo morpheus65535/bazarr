@@ -31,7 +31,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
 
   const data = useMemo(
     () => uniqBy([...dirties, ...(raw ?? [])], GetItemId),
-    [dirties, raw]
+    [dirties, raw],
   );
 
   const profileOptions = useSelectorOptions(profiles ?? [], (v) => v.name);
@@ -43,7 +43,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
       { label: "Clear", value: null, group: "Action" },
       ...profileOptions.options,
     ],
-    [profileOptions.options]
+    [profileOptions.options],
   );
 
   const getKey = useCallback((value: Language.Profile | null) => {
@@ -80,7 +80,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
         return uniqBy([...newItems, ...dirty], GetItemId);
       });
     },
-    [selections]
+    [selections],
   );
   return (
     <Container fluid px={0}>

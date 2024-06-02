@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import errno
 import json
 import os
@@ -6,27 +8,48 @@ import typing as t
 
 from werkzeug.utils import import_string
 
+if t.TYPE_CHECKING:
+    import typing_extensions as te
 
-class ConfigAttribute:
+    from .sansio.app import App
+
+
+T = t.TypeVar("T")
+
+
+class ConfigAttribute(t.Generic[T]):
     """Makes an attribute forward to the config"""
 
-    def __init__(self, name: str, get_converter: t.Optional[t.Callable] = None) -> None:
+    def __init__(
+        self, name: str, get_converter: t.Callable[[t.Any], T] | None = None
+    ) -> None:
         self.__name__ = name
         self.get_converter = get_converter
 
-    def __get__(self, obj: t.Any, owner: t.Any = None) -> t.Any:
+    @t.overload
+    def __get__(self, obj: None, owner: None) -> te.Self:
+        ...
+
+    @t.overload
+    def __get__(self, obj: App, owner: type[App]) -> T:
+        ...
+
+    def __get__(self, obj: App | None, owner: type[App] | None = None) -> T | te.Self:
         if obj is None:
             return self
+
         rv = obj.config[self.__name__]
+
         if self.get_converter is not None:
             rv = self.get_converter(rv)
-        return rv
 
-    def __set__(self, obj: t.Any, value: t.Any) -> None:
+        return rv  # type: ignore[no-any-return]
+
+    def __set__(self, obj: App, value: t.Any) -> None:
         obj.config[self.__name__] = value
 
 
-class Config(dict):
+class Config(dict):  # type: ignore[type-arg]
     """Works exactly like a dict but provides ways to fill it from files
     or special dictionaries.  There are two common patterns to populate the
     config.
@@ -70,7 +93,11 @@ class Config(dict):
     :param defaults: an optional dictionary of default values
     """
 
-    def __init__(self, root_path: str, defaults: t.Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        root_path: str | os.PathLike[str],
+        defaults: dict[str, t.Any] | None = None,
+    ) -> None:
         super().__init__(defaults or {})
         self.root_path = root_path
 
@@ -162,7 +189,9 @@ class Config(dict):
 
         return True
 
-    def from_pyfile(self, filename: str, silent: bool = False) -> bool:
+    def from_pyfile(
+        self, filename: str | os.PathLike[str], silent: bool = False
+    ) -> bool:
         """Updates the values in the config from a Python file.  This function
         behaves as if the file was imported as module with the
         :meth:`from_object` function.
@@ -191,7 +220,7 @@ class Config(dict):
         self.from_object(d)
         return True
 
-    def from_object(self, obj: t.Union[object, str]) -> None:
+    def from_object(self, obj: object | str) -> None:
         """Updates the values from the given object.  An object can be of one
         of the following two types:
 
@@ -231,9 +260,10 @@ class Config(dict):
 
     def from_file(
         self,
-        filename: str,
-        load: t.Callable[[t.IO[t.Any]], t.Mapping],
+        filename: str | os.PathLike[str],
+        load: t.Callable[[t.IO[t.Any]], t.Mapping[str, t.Any]],
         silent: bool = False,
+        text: bool = True,
     ) -> bool:
         """Update the values in the config from a file that is loaded
         using the ``load`` parameter. The loaded data is passed to the
@@ -244,8 +274,8 @@ class Config(dict):
             import json
             app.config.from_file("config.json", load=json.load)
 
-            import toml
-            app.config.from_file("config.toml", load=toml.load)
+            import tomllib
+            app.config.from_file("config.toml", load=tomllib.load, text=False)
 
         :param filename: The path to the data file. This can be an
             absolute path or relative to the config root path.
@@ -254,14 +284,18 @@ class Config(dict):
         :type load: ``Callable[[Reader], Mapping]`` where ``Reader``
             implements a ``read`` method.
         :param silent: Ignore the file if it doesn't exist.
+        :param text: Open the file in text or binary mode.
         :return: ``True`` if the file was loaded successfully.
+
+        .. versionchanged:: 2.3
+            The ``text`` parameter was added.
 
         .. versionadded:: 2.0
         """
         filename = os.path.join(self.root_path, filename)
 
         try:
-            with open(filename) as f:
+            with open(filename, "r" if text else "rb") as f:
                 obj = load(f)
         except OSError as e:
             if silent and e.errno in (errno.ENOENT, errno.EISDIR):
@@ -273,15 +307,16 @@ class Config(dict):
         return self.from_mapping(obj)
 
     def from_mapping(
-        self, mapping: t.Optional[t.Mapping[str, t.Any]] = None, **kwargs: t.Any
+        self, mapping: t.Mapping[str, t.Any] | None = None, **kwargs: t.Any
     ) -> bool:
-        """Updates the config like :meth:`update` ignoring items with non-upper
-        keys.
+        """Updates the config like :meth:`update` ignoring items with
+        non-upper keys.
+
         :return: Always returns ``True``.
 
         .. versionadded:: 0.11
         """
-        mappings: t.Dict[str, t.Any] = {}
+        mappings: dict[str, t.Any] = {}
         if mapping is not None:
             mappings.update(mapping)
         mappings.update(kwargs)
@@ -292,7 +327,7 @@ class Config(dict):
 
     def get_namespace(
         self, namespace: str, lowercase: bool = True, trim_namespace: bool = True
-    ) -> t.Dict[str, t.Any]:
+    ) -> dict[str, t.Any]:
         """Returns a dictionary containing a subset of configuration options
         that match the specified namespace/prefix. Example usage::
 

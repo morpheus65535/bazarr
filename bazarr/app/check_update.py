@@ -25,7 +25,7 @@ def check_releases():
     url_releases = 'https://api.github.com/repos/morpheus65535/Bazarr/releases?per_page=100'
     try:
         logging.debug(f'BAZARR getting releases from Github: {url_releases}')
-        r = requests.get(url_releases, allow_redirects=True)
+        r = requests.get(url_releases, allow_redirects=True, timeout=15)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("Error trying to get releases from Github. Http error.")
@@ -160,12 +160,14 @@ def apply_update():
                                 'BAZARR was unable to delete the previous build directory during upgrade process.')
 
                     for file in archive.namelist():
-                        if file.startswith(zip_root_directory) and file != zip_root_directory and not \
-                                file.endswith('bazarr.py'):
+                        if file.startswith(zip_root_directory) and file != zip_root_directory:
                             file_path = os.path.join(bazarr_dir, file[len(zip_root_directory):])
                             parent_dir = os.path.dirname(file_path)
                             os.makedirs(parent_dir, exist_ok=True)
                             if not os.path.isdir(file_path):
+                                if os.path.exists(file_path):
+                                    # remove the file first to handle case-insensitive file systems
+                                    os.remove(file_path)
                                 with open(file_path, 'wb+') as f:
                                     f.write(archive.read(file))
             except Exception:
@@ -230,6 +232,9 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
     dir_to_ignore_regex = re.compile(dir_to_ignore_regex_string)
 
     file_to_ignore = ['nssm.exe', '7za.exe', 'unins000.exe', 'unins000.dat']
+    # prevent deletion of leftover Apprise.py/pyi files after 1.8.0 version that caused issue on case-insensitive
+    # filesystem. This could be removed in a couple of major versions.
+    file_to_ignore += ['Apprise.py', 'Apprise.pyi', 'apprise.py', 'apprise.pyi']
     logging.debug(f'BAZARR upgrade leftover cleaner will ignore those files: {", ".join(file_to_ignore)}')
     extension_to_ignore = ['.pyc']
     logging.debug(

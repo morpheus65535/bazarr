@@ -38,15 +38,8 @@ READERS = {
     BINARY: read_element_binary
 }
 
-class BaseElement(object):
 
-    def __init__(self, id=None, position=None, size=None, data=None):
-        self.id = id
-        self.position = position
-        self.size = size
-        self.data = data
-
-class Element(BaseElement):
+class Element(object):
     """Base object of EBML
 
     :param int id: id of the element, best represented as hexadecimal (0x18538067 for Matroska Segment element)
@@ -59,11 +52,14 @@ class Element(BaseElement):
     :param data: data as read by the corresponding :data:`READERS`
 
     """
-    def __init__(self, id=None, type=None, name=None, level=None, position=None, size=None, data=None):
-        super(Element, self).__init__(id, position, size, data)
+    def __init__(self, id=None, type=None, name=None, level=None, position=None, size=None, data=None):  # @ReservedAssignment
+        self.id = id
         self.type = type
         self.name = name
         self.level = level
+        self.position = position
+        self.size = size
+        self.data = data
 
     def __repr__(self):
         return '<%s [%s, %r]>' % (self.__class__.__name__, self.name, self.data)
@@ -93,7 +89,7 @@ class MasterElement(Element):
         Element(DocType, u'matroska')
 
     """
-    def __init__(self, id=None, name=None, level=None, position=None, size=None, data=None):
+    def __init__(self, id=None, name=None, level=None, position=None, size=None, data=None):  # @ReservedAssignment
         super(MasterElement, self).__init__(id, MASTER, name, level, position, size, data)
 
     def load(self, stream, specs, ignore_element_types=None, ignore_element_names=None, max_level=None):
@@ -141,7 +137,8 @@ class MasterElement(Element):
     def __iter__(self):
         return iter(self.data)
 
-def parse(stream, specs, size=None, ignore_element_types=None, ignore_element_names=None, max_level=None, include_element_names=None):
+
+def parse(stream, specs, size=None, ignore_element_types=None, ignore_element_names=None, max_level=None):
     """Parse a stream for `size` bytes according to the `specs`
 
     :param stream: file-like object from which to read
@@ -151,7 +148,6 @@ def parse(stream, specs, size=None, ignore_element_types=None, ignore_element_na
     :param list ignore_element_types: list of element types to ignore
     :param list ignore_element_names: list of element names to ignore
     :param int max_level: maximum level of elements
-    :param list include_element_names: list of element names to include exclusively, so ignoring all other element names
     :return: parsed data as a tree of :class:`~enzyme.parsers.ebml.core.Element`
     :rtype: list
 
@@ -162,36 +158,26 @@ def parse(stream, specs, size=None, ignore_element_types=None, ignore_element_na
     """
     ignore_element_types = ignore_element_types if ignore_element_types is not None else []
     ignore_element_names = ignore_element_names if ignore_element_names is not None else []
-    include_element_names = include_element_names if include_element_names is not None else []
     start = stream.tell()
     elements = []
     while size is None or stream.tell() - start < size:
         try:
             element = parse_element(stream, specs)
-            if not element or not hasattr(element, "type"):
-                stream.seek(element.size, 1)
+            if element is None:
                 continue
-
-            if element.type is None:
-                logger.error('Element with id 0x%x is not in the specs' % element.id)
-                stream.seek(element.size, 1)
+            logger.debug('%s %s parsed', element.__class__.__name__, element.name)
+            if element.type in ignore_element_types or element.name in ignore_element_names:
+                logger.info('%s %s ignored', element.__class__.__name__, element.name)
+                if element.type == MASTER:
+                    stream.seek(element.size, 1)
                 continue
-            elif element.type in ignore_element_types or element.name in ignore_element_names:
-                logger.info('%s %s %s ignored', element.__class__.__name__, element.name, element.type)
-                stream.seek(element.size, 1)
-                continue
-            elif len(include_element_names) > 0 and element.name not in include_element_names:
-                stream.seek(element.size, 1)
-                continue
-            elif element.type == MASTER:
+            if element.type == MASTER:
                 if max_level is not None and element.level >= max_level:
                     logger.info('Maximum level %d reached for children of %s %s', max_level, element.__class__.__name__, element.name)
                     stream.seek(element.size, 1)
                 else:
                     logger.debug('Loading child elements for %s %s with size %d', element.__class__.__name__, element.name, element.size)
-                    element.data = parse(stream, specs, element.size, ignore_element_types, ignore_element_names, max_level,include_element_names)
-            else:
-                element.data = READERS[element.type](stream, element.size)
+                    element.data = parse(stream, specs, element.size, ignore_element_types, ignore_element_names, max_level)
             elements.append(element)
         except ReadError:
             if size is not None:
@@ -200,15 +186,21 @@ def parse(stream, specs, size=None, ignore_element_types=None, ignore_element_na
     return elements
 
 
-def parse_element(stream, specs):
+def parse_element(stream, specs, load_children=False, ignore_element_types=None, ignore_element_names=None, max_level=None):
     """Extract a single :class:`Element` from the `stream` according to the `specs`
 
     :param stream: file-like object from which to read
     :param dict specs: see :ref:`specs`
+    :param bool load_children: load children elements if the parsed element is a :class:`MasterElement`
+    :param list ignore_element_types: list of element types to ignore
+    :param list ignore_element_names: list of element names to ignore
+    :param int max_level: maximum level for children elements
     :return: the parsed element
     :rtype: :class:`Element`
 
     """
+    ignore_element_types = ignore_element_types if ignore_element_types is not None else []
+    ignore_element_names = ignore_element_names if ignore_element_names is not None else []
     element_id = read_element_id(stream)
     if element_id is None:
         raise ReadError('Cannot read element id')
@@ -216,13 +208,19 @@ def parse_element(stream, specs):
     if element_size is None:
         raise ReadError('Cannot read element size')
     if element_id not in specs:
-        return BaseElement(element_id,stream.tell(),element_size)
+        logger.error('Element with id 0x%x is not in the specs' % element_id)
+        stream.seek(element_size, 1)
+        return None
     element_type, element_name, element_level = specs[element_id]
     if element_type == MASTER:
         element = MasterElement(element_id, element_name, element_level, stream.tell(), element_size)
+        if load_children:
+            element.data = parse(stream, specs, element.size, ignore_element_types, ignore_element_names, max_level)
     else:
         element = Element(element_id, element_type, element_name, element_level, stream.tell(), element_size)
+        element.data = READERS[element_type](stream, element_size)
     return element
+
 
 def get_matroska_specs(webm_only=False):
     """Get the Matroska specs

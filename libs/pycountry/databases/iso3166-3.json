@@ -12,9 +12,10 @@
       "alpha_2": "AN",
       "alpha_3": "ANT",
       "alpha_4": "ANHH",
+      "comment": "had numeric code 532 until Aruba split away in 1986",
       "name": "Netherlands Antilles",
       "numeric": "530",
-      "withdrawal_date": "1993-07-12"
+      "withdrawal_date": "2010-12-15"
     },
     {
       "alpha_2": "BQ",
@@ -53,7 +54,7 @@
       "alpha_4": "CSXX",
       "name": "Serbia and Montenegro",
       "numeric": "891",
-      "withdrawal_date": "2006-06-05"
+      "withdrawal_date": "2006-09-26"
     },
     {
       "alpha_2": "CT",
@@ -236,9 +237,10 @@
       "alpha_2": "YU",
       "alpha_3": "YUG",
       "alpha_4": "YUCS",
-      "name": "Yugoslavia, Socialist Federal Republic of",
+      "comment": "had numeric code 890 until the 'Socialist Federal Republic of Yugoslavia' formerly broke apart on 27 April 1992 and the 'Federal Republic of Yugoslavia' was founded",
+      "name": "Yugoslavia, (Socialist) Federal Republic of",
       "numeric": "891",
-      "withdrawal_date": "1993-07-28"
+      "withdrawal_date": "2003-07-23"
     },
     {
       "alpha_2": "ZR",

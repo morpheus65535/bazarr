@@ -15,7 +15,7 @@ class SeriesApi extends BaseApi {
   async seriesBy(params: Parameter.Range) {
     const response = await this.get<DataWrapperWithTotal<Item.Series>>(
       "",
-      params
+      params,
     );
     return response;
   }

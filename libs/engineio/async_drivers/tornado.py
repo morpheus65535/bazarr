@@ -147,7 +147,7 @@ class WebSocket(object):  # pragma: no cover
     This wrapper class provides a tornado WebSocket interface that is
     somewhat compatible with eventlet's implementation.
     """
-    def __init__(self, handler):
+    def __init__(self, handler, server):
         self.handler = handler
         self.tornado_handler = None
 

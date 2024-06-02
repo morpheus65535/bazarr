@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask import Flask, redirect
+from flask import Flask, redirect, Request
 
 from flask_compress import Compress
 from flask_cors import CORS
@@ -13,9 +13,17 @@ from .config import settings, base_url
 socketio = SocketIO()
 
 
+class CustomRequest(Request):
+    def __init__(self, *args, **kwargs):
+        super(CustomRequest, self).__init__(*args, **kwargs)
+        # required to increase form-data size before returning a 413
+        self.max_form_parts = 10000
+
+
 def create_app():
     # Flask Setup
     app = Flask(__name__)
+    app.request_class = CustomRequest
     app.config['COMPRESS_ALGORITHM'] = 'gzip'
     Compress(app)
     app.wsgi_app = ReverseProxied(app.wsgi_app)
@@ -34,6 +42,7 @@ def create_app():
     else:
         app.config["DEBUG"] = False
 
+    from engineio.async_drivers import threading  # noqa W0611  # required to prevent an import exception in engineio
     socketio.init_app(app, path=f'{base_url.rstrip("/")}/api/socket.io', cors_allowed_origins='*',
                       async_mode='threading', allow_upgrades=False, transports='polling', engineio_logger=False)
 

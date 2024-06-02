@@ -126,8 +126,8 @@ def fake_streams():
 
 
 @pytest.mark.parametrize("tags_", [{}, {"language": "und", "title": "Unknown"}])
-def test_list_subtitles_unknown_as_english(mocker, tags_, video_single_language):
-    with EmbeddedSubtitlesProvider(unknown_as_english=True) as provider:
+def test_list_subtitles_unknown_as_fallback(mocker, tags_, video_single_language):
+    with EmbeddedSubtitlesProvider(unknown_as_fallback=True, fallback_lang="en") as provider:
         fake = FFprobeSubtitleStream(
             {"index": 3, "codec_name": "subrip", "tags": tags_}
         )
@@ -141,10 +141,10 @@ def test_list_subtitles_unknown_as_english(mocker, tags_, video_single_language)
         assert len(result) == 1
 
 
-def test_list_subtitles_unknown_as_english_w_real_english_subtitles(
+def test_list_subtitles_unknown_as_fallback_w_real_english_subtitles(
     video_single_language, mocker
 ):
-    with EmbeddedSubtitlesProvider(unknown_as_english=True) as provider:
+    with EmbeddedSubtitlesProvider(unknown_as_fallback=True, fallback_lang="en") as provider:
         fakes = [
             FFprobeSubtitleStream(
                 {"index": 3, "codec_name": "subrip", "tags": {"language": "und"}}
@@ -164,8 +164,8 @@ def test_list_subtitles_unknown_as_english_w_real_english_subtitles(
 
 
 @pytest.mark.parametrize("tags_", [{}, {"language": "und", "title": "Unknown"}])
-def test_list_subtitles_unknown_as_english_disabled(tags_):
-    with EmbeddedSubtitlesProvider(unknown_as_english=False):
+def test_list_subtitles_unknown_as_fallback_disabled(tags_):
+    with EmbeddedSubtitlesProvider(unknown_as_fallback=False,fallback_lang="en"):
         with pytest.raises(LanguageNotFound):
             assert FFprobeSubtitleStream(
                 {"index": 3, "codec_name": "subrip", "tags": tags_}

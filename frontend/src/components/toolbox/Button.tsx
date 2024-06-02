@@ -38,7 +38,7 @@ type ToolboxMutateButtonProps<R, T extends () => Promise<R>> = {
 } & Omit<ToolboxButtonProps, "onClick" | "loading">;
 
 export function ToolboxMutateButton<R, T extends () => Promise<R>>(
-  props: PropsWithChildren<ToolboxMutateButtonProps<R, T>>
+  props: PropsWithChildren<ToolboxMutateButtonProps<R, T>>,
 ): JSX.Element {
   const { promise, onSuccess, ...button } = props;
 

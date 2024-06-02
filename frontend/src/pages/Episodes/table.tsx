@@ -31,9 +31,17 @@ interface Props {
   episodes: Item.Episode[] | null;
   disabled?: boolean;
   profile?: Language.Profile;
+  expand?: boolean;
+  initial?: boolean;
 }
 
-const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
+const Table: FunctionComponent<Props> = ({
+  episodes,
+  profile,
+  disabled,
+  expand,
+  initial,
+}) => {
   const onlyDesired = useShowOnlyDesired();
 
   const profileItems = useProfileItemsToLanguages(profile);
@@ -65,7 +73,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
         },
       });
     },
-    [mutateAsync]
+    [mutateAsync],
   );
 
   const columns: Column<Item.Episode>[] = useMemo<Column<Item.Episode>[]>(
@@ -186,7 +194,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
                     },
                     {
                       title: `History - ${row.original.title}`,
-                    }
+                    },
                   );
                 }}
                 icon={faHistory}
@@ -196,25 +204,34 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
         },
       },
     ],
-    [onlyDesired, profileItems, disabled, download]
+    [onlyDesired, profileItems, disabled, download],
   );
 
   const maxSeason = useMemo(
     () =>
       episodes?.reduce<number>(
         (prev, curr) => Math.max(prev, curr.season),
-        0
+        0,
       ) ?? 0,
-    [episodes]
+    [episodes],
   );
 
   const instance = useRef<TableInstance<Item.Episode> | null>(null);
 
   useEffect(() => {
     if (instance.current) {
-      instance.current.toggleRowExpanded([`season:${maxSeason}`], true);
+      if (initial) {
+        // start with all rows collapsed
+        instance.current.toggleAllRowsExpanded(false);
+        // expand the last/current season on initial display
+        instance.current.toggleRowExpanded([`season:${maxSeason}`], true);
+      } else {
+        if (expand !== undefined) {
+          instance.current.toggleAllRowsExpanded(expand);
+        }
+      }
     }
-  }, [maxSeason]);
+  }, [maxSeason, expand, initial]);
 
   return (
     <GroupTable

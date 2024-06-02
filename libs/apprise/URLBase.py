@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -28,7 +28,7 @@
 
 import re
 from .logger import logger
-from time import sleep
+import time
 from datetime import datetime
 from xml.sax.saxutils import escape as sax_escape
 
@@ -298,12 +298,12 @@ class URLBase:
 
         if wait is not None:
             self.logger.debug('Throttling forced for {}s...'.format(wait))
-            sleep(wait)
+            time.sleep(wait)
 
         elif elapsed < self.request_rate_per_sec:
             self.logger.debug('Throttling for {}s...'.format(
                 self.request_rate_per_sec - elapsed))
-            sleep(self.request_rate_per_sec - elapsed)
+            time.sleep(self.request_rate_per_sec - elapsed)
 
         # Update our timestamp before we leave
         self._last_io_datetime = datetime.now()
@@ -550,7 +550,7 @@ class URLBase:
         return paths
 
     @staticmethod
-    def parse_list(content, unquote=True):
+    def parse_list(content, allow_whitespace=True, unquote=True):
         """A wrapper to utils.parse_list() with unquoting support
 
         Parses a specified set of data and breaks it into a list.
@@ -559,6 +559,9 @@ class URLBase:
             content (str): The path to split up into a list. If a list is
                  provided, then it's individual entries are processed.
 
+            allow_whitespace (:obj:`bool`, optional): whitespace is to be
+                 treated as a delimiter
+
             unquote (:obj:`bool`, optional): call unquote on each element
                  added to the returned list.
 
@@ -566,7 +569,7 @@ class URLBase:
             list: A unique list containing all of the elements in the path
         """
 
-        content = parse_list(content)
+        content = parse_list(content, allow_whitespace=allow_whitespace)
         if unquote:
             content = \
                 [URLBase.unquote(x) for x in filter(bool, content)]
@@ -667,6 +670,79 @@ class URLBase:
         }
 
     @staticmethod
+    def post_process_parse_url_results(results):
+        """
+        After parsing the URL, this function applies a bit of extra logic to
+        support extra entries like `pass` becoming `password`, etc
+
+        This function assumes that parse_url() was called previously setting
+        up the basics to be checked
+        """
+
+        # if our URL ends with an 's', then assume our secure flag is set.
+        results['secure'] = (results['schema'][-1] == 's')
+
+        # QSD Checking (over-rides all)
+        qsd_exists = True if isinstance(results.get('qsd'), dict) else False
+
+        if qsd_exists and 'verify' in results['qsd']:
+            # Pulled from URL String
+            results['verify'] = parse_bool(
+                results['qsd'].get('verify', True))
+
+        elif 'verify' in results:
+            # Pulled from YAML Configuratoin
+            results['verify'] = parse_bool(results.get('verify', True))
+
+        else:
+            # Support SSL Certificate 'verify' keyword. Default to being
+            # enabled
+            results['verify'] = True
+
+        # Password overrides
+        if 'pass' in results:
+            results['password'] = results['pass']
+            del results['pass']
+
+        if qsd_exists:
+            if 'password' in results['qsd']:
+                results['password'] = results['qsd']['password']
+            if 'pass' in results['qsd']:
+                results['password'] = results['qsd']['pass']
+
+            # User overrides
+            if 'user' in results['qsd']:
+                results['user'] = results['qsd']['user']
+
+            # parse_url() always creates a 'password' and 'user' entry in the
+            # results returned.  Entries are set to None if they weren't
+            # specified
+            if results['password'] is None and 'user' in results['qsd']:
+                # Handle cases where the user= provided in 2 locations, we want
+                # the original to fall back as a being a password (if one
+                # wasn't otherwise defined) e.g.
+                #    mailtos://PASSWORD@hostname?user=admin@mail-domain.com
+                # - in the above, the PASSWORD gets lost in the parse url()
+                #   since a user= over-ride is specified.
+                presults = parse_url(results['url'])
+                if presults:
+                    # Store our Password
+                    results['password'] = presults['user']
+
+            # Store our socket read timeout if specified
+            if 'rto' in results['qsd']:
+                results['rto'] = results['qsd']['rto']
+
+            # Store our socket connect timeout if specified
+            if 'cto' in results['qsd']:
+                results['cto'] = results['qsd']['cto']
+
+            if 'port' in results['qsd']:
+                results['port'] = results['qsd']['port']
+
+        return results
+
+    @staticmethod
     def parse_url(url, verify_host=True, plus_to_space=False,
                   strict_port=False):
         """Parses the URL and returns it broken apart into a dictionary.
@@ -695,53 +771,7 @@ class URLBase:
             # We're done; we failed to parse our url
             return results
 
-        # if our URL ends with an 's', then assume our secure flag is set.
-        results['secure'] = (results['schema'][-1] == 's')
-
-        # Support SSL Certificate 'verify' keyword. Default to being enabled
-        results['verify'] = True
-
-        if 'verify' in results['qsd']:
-            results['verify'] = parse_bool(
-                results['qsd'].get('verify', True))
-
-        # Password overrides
-        if 'password' in results['qsd']:
-            results['password'] = results['qsd']['password']
-        if 'pass' in results['qsd']:
-            results['password'] = results['qsd']['pass']
-
-        # User overrides
-        if 'user' in results['qsd']:
-            results['user'] = results['qsd']['user']
-
-        # parse_url() always creates a 'password' and 'user' entry in the
-        # results returned.  Entries are set to None if they weren't specified
-        if results['password'] is None and 'user' in results['qsd']:
-            # Handle cases where the user= provided in 2 locations, we want
-            # the original to fall back as a being a password (if one wasn't
-            # otherwise defined)
-            # e.g.
-            # mailtos://PASSWORD@hostname?user=admin@mail-domain.com
-            #  - the PASSWORD gets lost in the parse url() since a user=
-            #    over-ride is specified.
-            presults = parse_url(results['url'])
-            if presults:
-                # Store our Password
-                results['password'] = presults['user']
-
-        # Store our socket read timeout if specified
-        if 'rto' in results['qsd']:
-            results['rto'] = results['qsd']['rto']
-
-        # Store our socket connect timeout if specified
-        if 'cto' in results['qsd']:
-            results['cto'] = results['qsd']['cto']
-
-        if 'port' in results['qsd']:
-            results['port'] = results['qsd']['port']
-
-        return results
+        return URLBase.post_process_parse_url_results(results)
 
     @staticmethod
     def http_response_code_lookup(code, response_mask=None):

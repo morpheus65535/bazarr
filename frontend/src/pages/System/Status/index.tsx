@@ -10,9 +10,16 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faCode, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Container, Divider, Grid, Stack, Text } from "@mantine/core";
+import {
+  Anchor,
+  Container,
+  Divider,
+  Grid,
+  Space,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
-import moment from "moment";
 import {
   FunctionComponent,
   PropsWithChildren,
@@ -20,6 +27,13 @@ import {
   useCallback,
   useState,
 } from "react";
+import {
+  divisorDay,
+  divisorHour,
+  divisorMinute,
+  divisorSecond,
+  formatTime,
+} from "@/utilities/time";
 import Table from "./table";
 
 interface InfoProps {
@@ -30,12 +44,14 @@ interface InfoProps {
 function Row(props: InfoProps): JSX.Element {
   const { title, children } = props;
   return (
-    <Grid>
-      <Grid.Col span={5}>
-        <Text weight="bold">{title}</Text>
+    <Grid columns={10}>
+      <Grid.Col span={2}>
+        <Text size="sm" align="right" weight="bold">
+          {title}
+        </Text>
       </Grid.Col>
-      <Grid.Col span={12 - 5}>
-        <Text>{children}</Text>
+      <Grid.Col span={3}>
+        <Text size="sm"> {children}</Text>
       </Grid.Col>
     </Grid>
   );
@@ -68,9 +84,13 @@ const InfoContainer: FunctionComponent<
 > = ({ title, children }) => {
   return (
     <Stack>
-      <h4>{title}</h4>
-      <Divider></Divider>
+      <Divider
+        labelProps={{ size: "medium", weight: "bold" }}
+        labelPosition="left"
+        label={title}
+      ></Divider>
       {children}
+      <Space />
     </Stack>
   );
 };
@@ -84,15 +104,19 @@ const SystemStatusView: FunctionComponent = () => {
   const update = useCallback(() => {
     const startTime = status?.start_time;
     if (startTime) {
-      const duration = moment.duration(
-          moment().utc().unix() - startTime,
-          "seconds"
-        ),
-        days = duration.days(),
-        hours = duration.hours().toString().padStart(2, "0"),
-        minutes = duration.minutes().toString().padStart(2, "0"),
-        seconds = duration.seconds().toString().padStart(2, "0");
-      setUptime(days + "d " + hours + ":" + minutes + ":" + seconds);
+      // Current time in seconds
+      const currentTime = Math.floor(Date.now() / 1000);
+
+      const uptimeInSeconds = currentTime - startTime;
+
+      const uptime: string = formatTime(uptimeInSeconds, [
+        { unit: "d", divisor: divisorDay },
+        { unit: "h", divisor: divisorHour },
+        { unit: "m", divisor: divisorMinute },
+        { unit: "s", divisor: divisorSecond },
+      ]);
+
+      setUptime(uptime);
     }
   }, [status?.start_time]);
 

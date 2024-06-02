@@ -7,7 +7,7 @@
     using the luminosity value calculated by
     http://www.workwithcolor.com/color-converter-01.htm
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -16,12 +16,16 @@ from pygments.token import Keyword, Name, Comment, String, Error, \
      Number, Operator, Generic, Whitespace
 
 
+__all__ = ['FriendlyGrayscaleStyle']
+
+
 class FriendlyGrayscaleStyle(Style):
     """
     A modern grayscale style based on the friendly style.
 
     .. versionadded:: 2.11
     """
+    name = 'friendly_grayscale'
 
     background_color = "#f0f0f0"
 
@@ -67,6 +71,7 @@ class FriendlyGrayscaleStyle(Style):
         Generic.Error:             "#898989",
         Generic.Emph:              "italic",
         Generic.Strong:            "bold",
+        Generic.EmphStrong:        "bold italic",
         Generic.Prompt:            "bold #7E7E7E",
         Generic.Output:            "#888888",
         Generic.Traceback:         "#6D6D6D",

@@ -4,10 +4,12 @@ type UrlTestResponse =
   | {
       status: true;
       version: string;
+      code: number;
     }
   | {
       status: false;
       error: string;
+      code: number;
     };
 
 class RequestUtils {
@@ -15,7 +17,7 @@ class RequestUtils {
     try {
       const result = await client.axios.get<UrlTestResponse>(
         `../test/${protocol}/${url}api/system/status`,
-        { params }
+        { params },
       );
       const { data } = result;
       if (data.status && data.version) {
@@ -26,10 +28,22 @@ class RequestUtils {
     } catch (e) {
       const result = await client.axios.get<UrlTestResponse>(
         `../test/${protocol}/${url}api/v3/system/status`,
-        { params }
+        { params },
       );
       return result.data;
     }
+  }
+
+  async providerUrlTest(protocol: string, url: string, params?: LooseObject) {
+    const result = await client.axios.get<UrlTestResponse>(
+      `../test/${protocol}/${url}status`,
+      { params },
+    );
+    const { data } = result;
+    if (data.status && data.version) {
+      return data;
+    }
+    return result.data;
   }
 }
 

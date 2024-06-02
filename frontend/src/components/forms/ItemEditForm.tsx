@@ -27,12 +27,12 @@ const ItemEditForm: FunctionComponent<Props> = ({
   const profileOptions = useSelectorOptions(
     data ?? [],
     (v) => v.name ?? "Unknown",
-    (v) => v.profileId.toString() ?? "-1"
+    (v) => v.profileId.toString() ?? "-1",
   );
 
   const profile = useMemo(
     () => data?.find((v) => v.profileId === item?.profileId) ?? null,
-    [data, item?.profileId]
+    [data, item?.profileId],
   );
 
   const form = useForm({
@@ -44,7 +44,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
   const options = useSelectorOptions(
     item?.audio_language ?? [],
     (v) => v.name,
-    (v) => v.code2
+    (v) => v.code2,
   );
 
   const isOverlayVisible = isLoading || isFetching || item === null;
@@ -77,7 +77,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
           {...profileOptions}
           {...form.getInputProps("profile")}
           clearable
-          label="Languages Profiles"
+          label="Languages Profile"
         ></Selector>
         <Divider></Divider>
         <Group position="right">

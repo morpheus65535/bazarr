@@ -8,6 +8,7 @@ export const seriesSyncOptions: SelectorOption<number>[] = [
   { label: "6 Hours", value: 360 },
   { label: "12 Hours", value: 720 },
   { label: "24 Hours", value: 1440 },
+  { label: "Weekly", value: 10080 },
 ];
 
 export const moviesSyncOptions = seriesSyncOptions;

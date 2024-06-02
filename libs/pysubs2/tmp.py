@@ -1,4 +1,6 @@
 import re
+import warnings
+
 from .formatbase import FormatBase
 from .ssaevent import SSAEvent
 from .ssastyle import SSAStyle
@@ -9,7 +11,7 @@ from .time import ms_to_times, make_time, TIMESTAMP_SHORT, timestamp_to_ms
 TMP_LINE = re.compile(r"(\d{1,2}:\d{2}:\d{2}):(.+)")
 
 #: Largest timestamp allowed in Tmp, ie. 99:59:59.
-MAX_REPRESENTABLE_TIME = make_time(h=100) - 1
+MAX_REPRESENTABLE_TIME = make_time(h=99, m=59, s=59)
 
 
 class TmpFormat(FormatBase):
@@ -18,11 +20,13 @@ class TmpFormat(FormatBase):
     @staticmethod
     def ms_to_timestamp(ms: int) -> str:
         """Convert ms to 'HH:MM:SS'"""
-        # XXX throw on overflow/underflow?
-        if ms < 0: ms = 0
-        if ms > MAX_REPRESENTABLE_TIME: ms = MAX_REPRESENTABLE_TIME
-        h, m, s, ms = ms_to_times(ms)
-        return "%02d:%02d:%02d" % (h, m, s)
+        if ms < 0:
+            ms = 0
+        if ms > MAX_REPRESENTABLE_TIME:
+            warnings.warn("Overflow in TMP timestamp, clamping to MAX_REPRESENTABLE_TIME", RuntimeWarning)
+            ms = MAX_REPRESENTABLE_TIME
+        h, m, s, _ = ms_to_times(ms)
+        return f"{h:02d}:{m:02d}:{s:02d}"
 
     @classmethod
     def guess_format(cls, text):
@@ -86,9 +90,9 @@ class TmpFormat(FormatBase):
                 fragment = fragment.replace(r"\n", "\n")
                 fragment = fragment.replace(r"\N", "\n")
                 if apply_styles:
-                    if sty.italic: fragment = "<i>%s</i>" % fragment
-                    if sty.underline: fragment = "<u>%s</u>" % fragment
-                    if sty.strikeout: fragment = "<s>%s</s>" % fragment
+                    if sty.italic: fragment = f"<i>{fragment}</i>"
+                    if sty.underline: fragment = f"<u>{fragment}</u>"
+                    if sty.strikeout: fragment = f"<s>{fragment}</s>"
                 if sty.drawing: skip = True
                 body.append(fragment)
 

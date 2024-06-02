@@ -1,6 +1,9 @@
 """
 pons translator API
 """
+
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
 from typing import List, Optional, Union
 
 import requests
@@ -16,7 +19,7 @@ from deep_translator.exceptions import (
     TooManyRequests,
     TranslationNotFound,
 )
-from deep_translator.validate import is_empty, is_input_valid
+from deep_translator.validate import is_empty, is_input_valid, request_failed
 
 
 class PonsTranslator(BaseTranslator):
@@ -25,7 +28,11 @@ class PonsTranslator(BaseTranslator):
     """
 
     def __init__(
-        self, source: str, target: str = "en", proxies: Optional[dict] = None, **kwargs
+        self,
+        source: str,
+        target: str = "en",
+        proxies: Optional[dict] = None,
+        **kwargs,
     ):
         """
         @param source: source language to translate from
@@ -64,11 +71,13 @@ class PonsTranslator(BaseTranslator):
             if response.status_code == 429:
                 raise TooManyRequests()
 
-            if response.status_code != 200:
+            if request_failed(status_code=response.status_code):
                 raise RequestError()
 
             soup = BeautifulSoup(response.text, "html.parser")
-            elements = soup.findAll(self._element_tag, self._element_query)
+            elements = soup.find("div", {"class": "result_list"}).findAll(
+                self._element_tag, self._element_query
+            )
             response.close()
 
             if not elements:
@@ -76,15 +85,17 @@ class PonsTranslator(BaseTranslator):
 
             filtered_elements = []
             for el in elements:
-                temp = ""
+                temp = []
                 for e in el.findAll("a"):
-                    temp += e.get_text() + " "
-                filtered_elements.append(temp)
+                    temp.append(e.get_text())
+                filtered_elements.append(" ".join(temp))
 
             if not filtered_elements:
                 raise ElementNotFoundInGetRequest(word)
 
-            word_list = [word for word in filtered_elements if word and len(word) > 1]
+            word_list = [
+                word for word in filtered_elements if word and len(word) > 1
+            ]
 
             if not word_list:
                 raise TranslationNotFound(word)

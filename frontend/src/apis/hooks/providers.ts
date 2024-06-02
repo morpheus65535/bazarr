@@ -5,7 +5,7 @@ import api from "../raw";
 export function useSystemProviders(history?: boolean) {
   return useQuery(
     [QueryKeys.System, QueryKeys.Providers, history ?? false],
-    () => api.providers.providers(history)
+    () => api.providers.providers(history),
   );
 }
 
@@ -19,7 +19,7 @@ export function useMoviesProvider(radarrId?: number) {
     },
     {
       staleTime: 0,
-    }
+    },
   );
 }
 
@@ -33,7 +33,7 @@ export function useEpisodesProvider(episodeId?: number) {
     },
     {
       staleTime: 0,
-    }
+    },
   );
 }
 
@@ -46,7 +46,7 @@ export function useResetProvider() {
       onSuccess: () => {
         client.invalidateQueries([QueryKeys.System, QueryKeys.Providers]);
       },
-    }
+    },
   );
 }
 
@@ -68,13 +68,13 @@ export function useDownloadEpisodeSubtitles() {
       api.providers.downloadEpisodeSubtitle(
         param.seriesId,
         param.episodeId,
-        param.form
+        param.form,
       ),
     {
       onSuccess: (_, param) => {
         client.invalidateQueries([QueryKeys.Series, param.seriesId]);
       },
-    }
+    },
   );
 }
 
@@ -94,6 +94,6 @@ export function useDownloadMovieSubtitles() {
       onSuccess: (_, param) => {
         client.invalidateQueries([QueryKeys.Movies, param.radarrId]);
       },
-    }
+    },
   );
 }

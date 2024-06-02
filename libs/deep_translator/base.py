@@ -1,6 +1,9 @@
 """base translator class"""
 
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import List, Optional, Union
 
 from deep_translator.constants import GOOGLE_LANGUAGES_TO_CODES
@@ -17,7 +20,7 @@ class BaseTranslator(ABC):
 
     def __init__(
         self,
-        base_url: str,
+        base_url: str = None,
         languages: dict = GOOGLE_LANGUAGES_TO_CODES,
         source: str = "auto",
         target: str = "en",
@@ -66,9 +69,11 @@ class BaseTranslator(ABC):
 
     def _map_language_to_code(self, *languages):
         """
-        map language to its corresponding code (abbreviation) if the language was passed by its full name by the user
+        map language to its corresponding code (abbreviation) if the language was passed
+        by its full name by the user
         @param languages: list of languages
-        @return: mapped value of the language or raise an exception if the language is not supported
+        @return: mapped value of the language or raise an exception if the language is
+        not supported
         """
         for language in languages:
             if language in self._languages.values() or language == "auto":
@@ -91,7 +96,8 @@ class BaseTranslator(ABC):
     ) -> Union[list, dict]:
         """
         return the supported languages by the Google translator
-        @param as_dict: if True, the languages will be returned as a dictionary mapping languages to their abbreviations
+        @param as_dict: if True, the languages will be returned as a dictionary
+        mapping languages to their abbreviations
         @return: list or dict
         """
         return self._supported_languages if not as_dict else self._languages
@@ -114,12 +120,25 @@ class BaseTranslator(ABC):
     @abstractmethod
     def translate(self, text: str, **kwargs) -> str:
         """
-        translate a text using a translator under the hood and return the translated text
+        translate a text using a translator under the hood and return
+        the translated text
         @param text: text to translate
         @param kwargs: additional arguments
         @return: str
         """
         return NotImplemented("You need to implement the translate method!")
+
+    def _read_docx(self, f: str):
+        import docx2txt
+
+        return docx2txt.process(f)
+
+    def _read_pdf(self, f: str):
+        import pypdf
+
+        reader = pypdf.PdfReader(f)
+        page = reader.pages[0]
+        return page.extract_text()
 
     def _translate_file(self, path: str, **kwargs) -> str:
         """
@@ -129,12 +148,25 @@ class BaseTranslator(ABC):
         @param kwargs: additional args
         @return: str
         """
-        try:
+        if not isinstance(path, Path):
+            path = Path(path)
+
+        if not path.exists():
+            print("Path to the file is wrong!")
+            exit(1)
+
+        ext = path.suffix
+
+        if ext == ".docx":
+            text = self._read_docx(f=str(path))
+
+        elif ext == ".pdf":
+            text = self._read_pdf(f=str(path))
+        else:
             with open(path, "r", encoding="utf-8") as f:
                 text = f.read().strip()
-            return self.translate(text)
-        except Exception as e:
-            raise e
+
+        return self.translate(text)
 
     def _translate_batch(self, batch: List[str], **kwargs) -> List[str]:
         """

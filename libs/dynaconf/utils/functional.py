@@ -43,7 +43,12 @@ class LazyObject:
     __getattr__ = new_method_proxy(getattr)
 
     def __setattr__(self, name, value):
-        if name in ["_wrapped", "_kwargs", "_warn_dynaconf_global_settings"]:
+        if name in [
+            "_wrapped",
+            "_kwargs",
+            "_warn_dynaconf_global_settings",
+            "_wrapper_class",
+        ]:
             # Assign to __dict__ to avoid infinite __setattr__ loops.
             self.__dict__[name] = value
         else:

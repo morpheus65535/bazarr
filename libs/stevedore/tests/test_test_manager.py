@@ -129,7 +129,7 @@ class TestTestManager(utils.TestCase):
         extensions = [test_extension, test_extension2]
         em = HookManager.make_test_instance(extensions)
         # This will raise KeyError if the names don't match
-        assert(em[test_extension.name])
+        assert (em[test_extension.name])
 
     def test_hook_manager_should_have_default_namespace(self):
         em = HookManager.make_test_instance([test_extension])

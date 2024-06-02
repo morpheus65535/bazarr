@@ -1,27 +1,36 @@
+__copyright__ = "Copyright (C) 2020 Nidhal Baccouri"
+
+import os
 from typing import List, Optional
 
 import requests
 
 from deep_translator.base import BaseTranslator
-from deep_translator.constants import BASE_URLS, DEEPL_LANGUAGE_TO_CODE
+from deep_translator.constants import (
+    BASE_URLS,
+    DEEPL_ENV_VAR,
+    DEEPL_LANGUAGE_TO_CODE,
+)
 from deep_translator.exceptions import (
+    ApiKeyException,
     AuthorizationException,
     ServerException,
     TranslationNotFound,
 )
-from deep_translator.validate import is_empty, is_input_valid
+from deep_translator.validate import is_empty, is_input_valid, request_failed
 
 
 class DeeplTranslator(BaseTranslator):
     """
-    class that wraps functions, which use the DeeplTranslator translator under the hood to translate word(s)
+    class that wraps functions, which use the DeeplTranslator translator
+    under the hood to translate word(s)
     """
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
         source: str = "de",
         target: str = "en",
+        api_key: Optional[str] = os.getenv(DEEPL_ENV_VAR, None),
         use_free_api: bool = True,
         **kwargs
     ):
@@ -32,7 +41,8 @@ class DeeplTranslator(BaseTranslator):
         @param target: target language
         """
         if not api_key:
-            raise ServerException(401)
+            raise ApiKeyException(env_var=DEEPL_ENV_VAR)
+
         self.version = "v2"
         self.api_key = api_key
         url = (
@@ -75,7 +85,7 @@ class DeeplTranslator(BaseTranslator):
             # If the answer is not success, raise server exception.
             if response.status_code == 403:
                 raise AuthorizationException(self.api_key)
-            elif response.status_code != 200:
+            if request_failed(status_code=response.status_code):
                 raise ServerException(response.status_code)
             # Get the response and check is not empty.
             res = response.json()

@@ -7,22 +7,26 @@
     Inspired by one-dark-ui for the code editor Atom
     (https://atom.io/themes/one-dark-ui).
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 from pygments.style import Style
-from pygments.token import (Comment, Generic, Keyword, Name, Number, Operator,
-                            Punctuation, String, Token, Whitespace)
+from pygments.token import Comment, Keyword, Name, Number, Operator, \
+    Punctuation, String, Token
+
+
+__all__ = ['OneDarkStyle']
 
 
 class OneDarkStyle(Style):
     """
-    Theme inspired by One Dark Pro for Atom
+    Theme inspired by One Dark Pro for Atom.
 
     .. versionadded:: 2.11
     """
-
+    name = 'one-dark'
+    
     background_color = '#282C34'
 
     styles = {

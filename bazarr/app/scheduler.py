@@ -8,12 +8,14 @@ from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
-from apscheduler.jobstores.base import JobLookupError
 from datetime import datetime, timedelta
 from calendar import day_name
 from random import randrange
 from tzlocal import get_localzone
-from tzlocal.utils import ZoneInfoNotFoundError
+try:
+    import zoneinfo  # pragma: no cover
+except ImportError:
+    from backports import zoneinfo  # pragma: no cover
 from dateutil import tz
 import logging
 
@@ -40,16 +42,23 @@ from dateutil.relativedelta import relativedelta
 
 NO_INTERVAL = "None"
 NEVER_DATE = "Never"
-ONE_YEAR_IN_SECONDS =  60 * 60 * 24 * 365
+ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365
+
 
 def a_long_time_from_now(job):
+    # job isn't scheduled at all
+    if job.next_run_time is None:
+        return True
+
     # currently defined as more than a year from now
     delta = job.next_run_time - datetime.now(job.next_run_time.tzinfo)
     return delta.total_seconds() > ONE_YEAR_IN_SECONDS
 
+
 def in_a_century():
     century = datetime.now() + relativedelta(years=100)
     return century.year
+
 
 class Scheduler:
 
@@ -58,7 +67,7 @@ class Scheduler:
 
         try:
             self.timezone = get_localzone()
-        except ZoneInfoNotFoundError as e:
+        except zoneinfo.ZoneInfoNotFoundError as e:
             logging.error(f"BAZARR cannot use specified timezone: {e}")
             self.timezone = tz.gettz("UTC")
 
@@ -133,7 +142,6 @@ class Scheduler:
             return ", ".join(strings)
 
         def get_time_from_cron(cron):
-            year = str(cron[0])
             day = str(cron[4])
             hour = str(cron[5])
 
@@ -183,8 +191,8 @@ class Scheduler:
                 else:
                     interval = get_time_from_cron(job.trigger.fields)
                 task_list.append({'name': job.name, 'interval': interval,
-                                'next_run_in': next_run, 'next_run_time': next_run, 'job_id': job.id,
-                                'job_running': running})
+                                  'next_run_in': next_run, 'next_run_time': next_run, 'job_id': job.id,
+                                  'job_running': running})
 
         return task_list
 
@@ -219,8 +227,8 @@ class Scheduler:
         elif backup == "Manually":
             trigger = CronTrigger(year=in_a_century())
         self.aps_scheduler.add_job(backup_to_zip, trigger,
-                max_instances=1, coalesce=True, misfire_grace_time=15, id='backup',
-                name='Backup Database and Configuration File', replace_existing=True)
+                                   max_instances=1, coalesce=True, misfire_grace_time=15, id='backup',
+                                   name='Backup Database and Configuration File', replace_existing=True)
 
     def __sonarr_full_update_task(self):
         if settings.general.use_sonarr:
@@ -301,17 +309,11 @@ class Scheduler:
                 name='Search for Missing Movies Subtitles', replace_existing=True)
 
     def __upgrade_subtitles_task(self):
-        if settings.general.upgrade_subs and \
-                (settings.general.use_sonarr or settings.general.use_radarr):
+        if settings.general.use_sonarr or settings.general.use_radarr:
             self.aps_scheduler.add_job(
                 upgrade_subtitles, IntervalTrigger(hours=int(settings.general.upgrade_frequency)), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='upgrade_subtitles',
                 name='Upgrade Previously Downloaded Subtitles', replace_existing=True)
-        else:
-            try:
-                self.aps_scheduler.remove_job(job_id='upgrade_subtitles')
-            except JobLookupError:
-                pass
 
     def __randomize_interval_task(self):
         for job in self.aps_scheduler.get_jobs():
@@ -322,8 +324,8 @@ class Scheduler:
                 self.aps_scheduler.modify_job(job.id,
                                               next_run_time=datetime.now(tz=self.timezone) +
                                               timedelta(seconds=randrange(
-                                                  job.trigger.interval.total_seconds() * 0.75,
-                                                  job.trigger.interval.total_seconds())))
+                                                  int(job.trigger.interval.total_seconds() * 0.75),
+                                                  int(job.trigger.interval.total_seconds()))))
 
     def __no_task(self):
         for job in self.aps_scheduler.get_jobs():

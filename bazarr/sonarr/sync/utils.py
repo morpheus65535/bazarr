@@ -5,7 +5,7 @@ import logging
 
 from app.config import settings
 from sonarr.info import get_sonarr_info, url_api_sonarr
-from constants import headers
+from constants import HEADERS
 
 
 def get_profile_list():
@@ -23,7 +23,7 @@ def get_profile_list():
 
     try:
         profiles_json = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False,
-                                     headers=headers)
+                                     headers=HEADERS)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
         return None
@@ -53,7 +53,7 @@ def get_tags():
     url_sonarr_api_series = f"{url_api_sonarr()}tag?apikey={apikey_sonarr}"
 
     try:
-        tagsDict = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
+        tagsDict = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False, headers=HEADERS)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get tags from Sonarr. Connection Error.")
         return []
@@ -71,7 +71,7 @@ def get_series_from_sonarr_api(apikey_sonarr, sonarr_series_id=None):
     url_sonarr_api_series = (f"{url_api_sonarr()}series/{sonarr_series_id if sonarr_series_id else ''}?"
                              f"apikey={apikey_sonarr}")
     try:
-        r = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
+        r = requests.get(url_sonarr_api_series, timeout=int(settings.sonarr.http_timeout), verify=False, headers=HEADERS)
         r.raise_for_status()
     except requests.exceptions.HTTPError as e:
         if e.response.status_code:
@@ -110,7 +110,7 @@ def get_episodes_from_sonarr_api(apikey_sonarr, series_id=None, episode_id=None)
         return
 
     try:
-        r = requests.get(url_sonarr_api_episode, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
+        r = requests.get(url_sonarr_api_episode, timeout=int(settings.sonarr.http_timeout), verify=False, headers=HEADERS)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get episodes from Sonarr. Http error.")
@@ -144,7 +144,7 @@ def get_episodesFiles_from_sonarr_api(apikey_sonarr, series_id=None, episode_fil
 
     try:
         r = requests.get(url_sonarr_api_episodeFiles, timeout=int(settings.sonarr.http_timeout), verify=False,
-                         headers=headers)
+                         headers=HEADERS)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get episodeFiles from Sonarr. Http error.")
@@ -160,6 +160,35 @@ def get_episodesFiles_from_sonarr_api(apikey_sonarr, series_id=None, episode_fil
         return
     except Exception as e:
         logging.exception(f"Exception raised while getting episodes from Sonarr API: {e}")
+        return
+    else:
+        if r.status_code == 200:
+            return r.json()
+        else:
+            return
+
+
+def get_history_from_sonarr_api(apikey_sonarr, episode_id):
+    url_sonarr_api_history = f"{url_api_sonarr()}history?eventType=1&episodeId={episode_id}&apikey={apikey_sonarr}"
+
+    try:
+        r = requests.get(url_sonarr_api_history, timeout=int(settings.sonarr.http_timeout), verify=False,
+                         headers=HEADERS)
+        r.raise_for_status()
+    except requests.exceptions.HTTPError:
+        logging.exception("BAZARR Error trying to get history from Sonarr. Http error.")
+        return
+    except requests.exceptions.ConnectionError:
+        logging.exception("BAZARR Error trying to get history from Sonarr. Connection Error.")
+        return
+    except requests.exceptions.Timeout:
+        logging.exception("BAZARR Error trying to get history from Sonarr. Timeout Error.")
+        return
+    except requests.exceptions.RequestException:
+        logging.exception("BAZARR Error trying to get history from Sonarr.")
+        return
+    except Exception as e:
+        logging.exception(f"Exception raised while getting history from Sonarr API: {e}")
         return
     else:
         if r.status_code == 200:

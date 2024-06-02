@@ -4,13 +4,13 @@
 
     Lexers for D languages.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 from pygments.lexer import RegexLexer, include, words, bygroups
-from pygments.token import Text, Comment, Keyword, Name, String, \
-    Number, Punctuation, Whitespace
+from pygments.token import Comment, Keyword, Name, String, Number, \
+    Punctuation, Whitespace
 
 __all__ = ['DLexer', 'CrocLexer', 'MiniDLexer']
 

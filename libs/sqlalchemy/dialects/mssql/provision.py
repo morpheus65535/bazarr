@@ -1,3 +1,9 @@
+# dialects/mssql/provision.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# <see AUTHORS file>
+#
+# This module is part of SQLAlchemy and is released under
+# the MIT License: https://www.opensource.org/licenses/mit-license.php
 # mypy: ignore-errors
 
 from sqlalchemy import inspect
@@ -22,13 +28,15 @@ from ...testing.provision import temp_table_keyword_args
 
 @generate_driver_url.for_db("mssql")
 def generate_driver_url(url, driver, query_str):
-
     backend = url.get_backend_name()
 
     new_url = url.set(drivername="%s+%s" % (backend, driver))
 
-    if driver != "pyodbc":
+    if driver not in ("pyodbc", "aioodbc"):
         new_url = new_url.set(query="")
+
+    if driver == "aioodbc":
+        new_url = new_url.update_query_dict({"MARS_Connection": "Yes"})
 
     if query_str:
         new_url = new_url.update_query_string(query_str)
@@ -84,7 +92,6 @@ def _reap_mssql_dbs(url, idents):
     log.info("db reaper connecting to %r", url)
     eng = create_engine(url)
     with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-
         log.info("identifiers in file: %s", ", ".join(idents))
 
         to_reap = conn.exec_driver_sql(

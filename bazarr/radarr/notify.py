@@ -5,7 +5,7 @@ import requests
 
 from app.config import settings
 from radarr.info import url_api_radarr
-from constants import headers
+from constants import HEADERS
 
 
 def notify_radarr(radarr_id):
@@ -15,6 +15,6 @@ def notify_radarr(radarr_id):
             'name': 'RescanMovie',
             'movieId': int(radarr_id)
         }
-        requests.post(url, json=data, timeout=int(settings.radarr.http_timeout), verify=False, headers=headers)
+        requests.post(url, json=data, timeout=int(settings.radarr.http_timeout), verify=False, headers=HEADERS)
     except Exception:
         logging.exception('BAZARR cannot notify Radarr')

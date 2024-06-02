@@ -1,5 +1,5 @@
 # sql/util.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -350,9 +350,9 @@ def find_tables(
         ] = _visitors["lateral"] = tables.append
 
     if include_crud:
-        _visitors["insert"] = _visitors["update"] = _visitors[
-            "delete"
-        ] = lambda ent: tables.append(ent.table)
+        _visitors["insert"] = _visitors["update"] = _visitors["delete"] = (
+            lambda ent: tables.append(ent.table)
+        )
 
     if check_columns:
 
@@ -367,7 +367,7 @@ def find_tables(
     return tables
 
 
-def unwrap_order_by(clause):
+def unwrap_order_by(clause: Any) -> Any:
     """Break up an 'order by' expression into individual column-expressions,
     without DESC/ASC/NULLS FIRST/NULLS LAST"""
 
@@ -878,8 +878,7 @@ def reduce_columns(
     columns: Iterable[ColumnElement[Any]],
     *clauses: Optional[ClauseElement],
     **kw: bool,
-) -> Sequence[ColumnElement[Any]]:
-    ...
+) -> Sequence[ColumnElement[Any]]: ...
 
 
 @overload
@@ -887,8 +886,7 @@ def reduce_columns(
     columns: _SelectIterable,
     *clauses: Optional[ClauseElement],
     **kw: bool,
-) -> Sequence[Union[ColumnElement[Any], TextClause]]:
-    ...
+) -> Sequence[Union[ColumnElement[Any], TextClause]]: ...
 
 
 def reduce_columns(
@@ -1099,8 +1097,7 @@ class ClauseAdapter(visitors.ReplacingExternalTraversal):
     if TYPE_CHECKING:
 
         @overload
-        def traverse(self, obj: Literal[None]) -> None:
-            ...
+        def traverse(self, obj: Literal[None]) -> None: ...
 
         # note this specializes the ReplacingExternalTraversal.traverse()
         # method to state
@@ -1111,13 +1108,11 @@ class ClauseAdapter(visitors.ReplacingExternalTraversal):
         # FromClause but Mypy is not accepting those as compatible with
         # the base ReplacingExternalTraversal
         @overload
-        def traverse(self, obj: _ET) -> _ET:
-            ...
+        def traverse(self, obj: _ET) -> _ET: ...
 
         def traverse(
             self, obj: Optional[ExternallyTraversible]
-        ) -> Optional[ExternallyTraversible]:
-            ...
+        ) -> Optional[ExternallyTraversible]: ...
 
     def _corresponding_column(
         self, col, require_embedded, _seen=util.EMPTY_SET
@@ -1219,23 +1214,18 @@ class ClauseAdapter(visitors.ReplacingExternalTraversal):
 
 class _ColumnLookup(Protocol):
     @overload
-    def __getitem__(self, key: None) -> None:
-        ...
+    def __getitem__(self, key: None) -> None: ...
 
     @overload
-    def __getitem__(self, key: ColumnClause[Any]) -> ColumnClause[Any]:
-        ...
+    def __getitem__(self, key: ColumnClause[Any]) -> ColumnClause[Any]: ...
 
     @overload
-    def __getitem__(self, key: ColumnElement[Any]) -> ColumnElement[Any]:
-        ...
+    def __getitem__(self, key: ColumnElement[Any]) -> ColumnElement[Any]: ...
 
     @overload
-    def __getitem__(self, key: _ET) -> _ET:
-        ...
+    def __getitem__(self, key: _ET) -> _ET: ...
 
-    def __getitem__(self, key: Any) -> Any:
-        ...
+    def __getitem__(self, key: Any) -> Any: ...
 
 
 class ColumnAdapter(ClauseAdapter):
@@ -1333,12 +1323,10 @@ class ColumnAdapter(ClauseAdapter):
         return ac
 
     @overload
-    def traverse(self, obj: Literal[None]) -> None:
-        ...
+    def traverse(self, obj: Literal[None]) -> None: ...
 
     @overload
-    def traverse(self, obj: _ET) -> _ET:
-        ...
+    def traverse(self, obj: _ET) -> _ET: ...
 
     def traverse(
         self, obj: Optional[ExternallyTraversible]
@@ -1353,8 +1341,7 @@ class ColumnAdapter(ClauseAdapter):
     if TYPE_CHECKING:
 
         @property
-        def visitor_iterator(self) -> Iterator[ColumnAdapter]:
-            ...
+        def visitor_iterator(self) -> Iterator[ColumnAdapter]: ...
 
     adapt_clause = traverse
     adapt_list = ClauseAdapter.copy_and_process
@@ -1440,7 +1427,7 @@ def _offset_or_limit_clause_asint_if_possible(
     if clause is None:
         return None
     if hasattr(clause, "_limit_offset_value"):
-        value = clause._limit_offset_value  # type: ignore
+        value = clause._limit_offset_value
         return util.asint(value)
     else:
         return clause
@@ -1489,13 +1476,11 @@ def _make_slice(
             offset_clause = 0
 
         if start != 0:
-            offset_clause = offset_clause + start  # type: ignore
+            offset_clause = offset_clause + start
 
         if offset_clause == 0:
             offset_clause = None
         else:
-            offset_clause = _offset_or_limit_clause(
-                offset_clause  # type: ignore
-            )
+            offset_clause = _offset_or_limit_clause(offset_clause)
 
-    return limit_clause, offset_clause  # type: ignore
+    return limit_clause, offset_clause

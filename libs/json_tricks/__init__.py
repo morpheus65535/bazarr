@@ -8,7 +8,7 @@ from .comment import strip_comment_line_with_symbol, strip_comments
 from .encoders import TricksEncoder, json_date_time_encode, class_instance_encode, json_complex_encode, \
 	numeric_types_encode, ClassInstanceEncoder, json_set_encode, pandas_encode, nopandas_encode, \
 	numpy_encode, NumpyEncoder, nonumpy_encode, NoNumpyEncoder, fallback_ignore_unknown, pathlib_encode, \
-	bytes_encode
+	bytes_encode, slice_encode
 from .decoders import DuplicateJsonKeyException, TricksPairHook, json_date_time_hook, json_complex_hook, \
 	numeric_types_hook, ClassInstanceHook, json_set_hook, pandas_hook, nopandas_hook, json_numpy_obj_hook, \
 	json_nonumpy_obj_hook, pathlib_hook, json_bytes_hook

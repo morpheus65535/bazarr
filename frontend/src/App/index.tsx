@@ -40,8 +40,8 @@ const App: FunctionComponent = () => {
       showNotification(
         notification.info(
           "Update available",
-          "A new version of Bazarr is ready, restart is required"
-        )
+          "A new version of Bazarr is ready, restart is required",
+        ),
       );
     }
   }, []);

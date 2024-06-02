@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -58,8 +58,8 @@ def markdown_to_html(content):
     """
     Converts specified content from markdown to HTML.
     """
-
-    return markdown(content)
+    return markdown(content, extensions=[
+        'markdown.extensions.nl2br', 'markdown.extensions.tables'])
 
 
 def text_to_html(content):

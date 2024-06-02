@@ -4,7 +4,7 @@
 
     Pygments lexers for Dalvik VM-related languages.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -51,8 +51,10 @@ class SmaliLexer(RegexLexer):
              r'sparse-switch|catchall|catch|line|parameter|local|prologue|'
              r'epilogue|source))', bygroups(Whitespace, Keyword)),
             (r'^([ \t]*)(\.end)( )(field|subannotation|annotation|method|array-data|'
-             'packed-switch|sparse-switch|parameter|local)', bygroups(Whitespace, Keyword, Whitespace, Keyword)),
-            (r'^([ \t]*)(\.restart)( )(local)', bygroups(Whitespace, Keyword, Whitespace, Keyword)),
+             'packed-switch|sparse-switch|parameter|local)',
+             bygroups(Whitespace, Keyword, Whitespace, Keyword)),
+            (r'^([ \t]*)(\.restart)( )(local)',
+             bygroups(Whitespace, Keyword, Whitespace, Keyword)),
         ],
         'access-modifier': [
             (r'(public|private|protected|static|final|synchronized|bridge|'

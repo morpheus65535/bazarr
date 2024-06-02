@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import os
-import io
 import sys
 import subprocess
 import subliminal
@@ -20,6 +19,10 @@ from utilities.backup import restore_from_backup
 
 from app.database import init_db
 
+from literals import (EXIT_CONFIG_CREATE_ERROR, ENV_BAZARR_ROOT_DIR, DIR_BACKUP, DIR_CACHE, DIR_CONFIG, DIR_DB, DIR_LOG,
+                      DIR_RESTORE, EXIT_REQUIREMENTS_ERROR)
+from utilities.central import make_bazarr_dir, restart_bazarr, stop_bazarr
+
 # set start time global variable as epoch
 global startTime
 startTime = time.time()
@@ -37,20 +40,15 @@ if not os.path.exists(args.config_dir):
         os.mkdir(os.path.join(args.config_dir))
     except OSError:
         print("BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?).")
-        exit(2)
+        stop_bazarr(EXIT_CONFIG_CREATE_ERROR)
 
-if not os.path.exists(os.path.join(args.config_dir, 'config')):
-    os.mkdir(os.path.join(args.config_dir, 'config'))
-if not os.path.exists(os.path.join(args.config_dir, 'db')):
-    os.mkdir(os.path.join(args.config_dir, 'db'))
-if not os.path.exists(os.path.join(args.config_dir, 'log')):
-    os.mkdir(os.path.join(args.config_dir, 'log'))
-if not os.path.exists(os.path.join(args.config_dir, 'cache')):
-    os.mkdir(os.path.join(args.config_dir, 'cache'))
-if not os.path.exists(os.path.join(args.config_dir, 'backup')):
-    os.mkdir(os.path.join(args.config_dir, 'backup'))
-if not os.path.exists(os.path.join(args.config_dir, 'restore')):
-    os.mkdir(os.path.join(args.config_dir, 'restore'))
+os.environ[ENV_BAZARR_ROOT_DIR] = os.path.join(args.config_dir)
+make_bazarr_dir(DIR_BACKUP)
+make_bazarr_dir(DIR_CACHE)
+make_bazarr_dir(DIR_CONFIG)
+make_bazarr_dir(DIR_DB)
+make_bazarr_dir(DIR_LOG)
+make_bazarr_dir(DIR_RESTORE)
 
 # set subliminal_patch hearing-impaired extension to use when naming subtitles
 os.environ["SZ_HI_EXTENSION"] = settings.general.hi_extension
@@ -99,19 +97,11 @@ if not args.no_update:
                     subprocess.check_output(pip_command, stderr=subprocess.STDOUT)
                 except subprocess.CalledProcessError as e:
                     logging.exception(f'BAZARR requirements.txt installation result: {e.stdout}')
-                    os._exit(1)
+                    os._exit(EXIT_REQUIREMENTS_ERROR)
                 else:
                     logging.info('BAZARR requirements installed.')
 
-                try:
-                    restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
-                except Exception as e:
-                    logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
-                else:
-                    logging.info('Bazarr is being restarted...')
-                    restart_file.write(str(''))
-                    restart_file.close()
-                    os._exit(0)
+                restart_bazarr()
 
 # change default base_url to ''
 settings.general.base_url = settings.general.base_url.rstrip('/')

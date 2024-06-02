@@ -29,7 +29,7 @@ def character_width(char: str) -> int:
     >>> character_width('\n')
     -1
     """
-    return wcwidth(char)
+    return int(wcwidth(char))
 
 
 def monospaced_width(text: str) -> int:
@@ -48,7 +48,7 @@ def monospaced_width(text: str) -> int:
     >>> len('ちゃぶ台返し')
     6
     >>> monospaced_width('owl\N{SOFT HYPHEN}flavored')
-    12
+    11
     >>> monospaced_width('example\x80')
     -1
 
@@ -71,7 +71,7 @@ def monospaced_width(text: str) -> int:
     #
     # Remove terminal escapes before calculating width, because if they are
     # displayed as intended, they will have zero width.
-    return wcswidth(remove_terminal_escapes(normalize("NFC", text)))
+    return int(wcswidth(remove_terminal_escapes(normalize("NFC", text))))
 
 
 def display_ljust(text, width, fillchar=" "):

@@ -4,7 +4,7 @@
 
     Lexers for various text formats.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -173,7 +173,7 @@ class HttpLexer(RegexLexer):
 
     tokens = {
         'root': [
-            (r'(GET|POST|PUT|DELETE|HEAD|OPTIONS|TRACE|PATCH)( +)([^ ]+)( +)'
+            (r'([a-zA-Z][-_a-zA-Z]+)( +)([^ ]+)( +)'
              r'(HTTP)(/)(1\.[01]|2(?:\.0)?|3)(\r?\n|\Z)',
              bygroups(Name.Function, Text, Name.Namespace, Text,
                       Keyword.Reserved, Operator, Number, Text),
@@ -184,7 +184,7 @@ class HttpLexer(RegexLexer):
              'headers'),
         ],
         'headers': [
-            (r'([^\s:]+)( *)(:)( *)([^\r\n]+)(\r?\n|\Z)', header_callback),
+            (r'([^\s:]+)( *)(:)( *)([^\r\n]*)(\r?\n|\Z)', header_callback),
             (r'([\t ]+)([^\r\n]+)(\r?\n|\Z)', continuous_header_callback),
             (r'\r?\n', Text, 'content')
         ],
@@ -194,8 +194,13 @@ class HttpLexer(RegexLexer):
     }
 
     def analyse_text(text):
-        return text.startswith(('GET /', 'POST /', 'PUT /', 'DELETE /', 'HEAD /',
-                                'OPTIONS /', 'TRACE /', 'PATCH /'))
+        return any (
+            re.search(pattern, text) is not None
+            for pattern in (
+                r'^([a-zA-Z][-_a-zA-Z]+)( +)([^ ]+)( +)(HTTP)(/)(1\.[01]|2(?:\.0)?|3)(\r?\n|\Z)',
+                r'^(HTTP)(/)(1\.[01]|2(?:\.0)?|3)( +)(\d{3})(?:( +)([^\r\n]*))?(\r?\n|\Z)',
+            )
+        )
 
 
 class TodotxtLexer(RegexLexer):

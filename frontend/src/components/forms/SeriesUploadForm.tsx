@@ -23,6 +23,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Button,
   Checkbox,
+  createStyles,
   Divider,
   MantineColor,
   Stack,
@@ -64,7 +65,7 @@ const validator = (file: SubtitleFile): SubtitleValidateResult => {
   } else {
     const { subtitles } = file.episode;
     const existing = subtitles.find(
-      (v) => v.code2 === file.language?.code2 && isString(v.path)
+      (v) => v.code2 === file.language?.code2 && isString(v.path),
     );
     if (existing !== undefined) {
       return {
@@ -85,17 +86,26 @@ interface Props {
   onComplete?: VoidFunction;
 }
 
+const useStyles = createStyles((theme) => {
+  return {
+    wrapper: {
+      overflowWrap: "anywhere",
+    },
+  };
+});
+
 const SeriesUploadForm: FunctionComponent<Props> = ({
   series,
   files,
   onComplete,
 }) => {
   const modals = useModals();
+  const { classes } = useStyles();
   const episodes = useEpisodesBySeriesId(series.sonarrSeriesId);
   const episodeOptions = useSelectorOptions(
     episodes.data ?? [],
     (v) => `(${v.season}x${v.episode}) ${v.title}`,
-    (v) => v.sonarrEpisodeId.toString()
+    (v) => v.sonarrEpisodeId.toString(),
   );
 
   const profile = useLanguageProfileBy(series.profileId);
@@ -103,12 +113,12 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
   const languageOptions = useSelectorOptions(
     languages,
     (v) => v.name,
-    (v) => v.code2
+    (v) => v.code2,
   );
 
   const defaultLanguage = useMemo(
     () => (languages.length > 0 ? languages[0] : null),
-    [languages]
+    [languages],
   );
 
   const form = useForm({
@@ -134,9 +144,9 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
               v.language === null ||
               v.episode === null ||
               v.validateResult === undefined ||
-              v.validateResult.state === "error"
+              v.validateResult.state === "error",
           ) === undefined,
-        "Some files cannot be uploaded, please check"
+        "Some files cannot be uploaded, please check",
       ),
     },
   });
@@ -162,7 +172,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         if (info) {
           item.episode =
             episodes.data?.find(
-              (v) => v.season === info.season && v.episode === info.episode
+              (v) => v.season === info.season && v.episode === info.episode,
             ) ?? item.episode;
         }
         return item;
@@ -320,7 +330,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         },
       },
     ],
-    [action, episodeOptions, languageOptions]
+    [action, episodeOptions, languageOptions],
   );
 
   const { upload } = useEpisodeSubtitleModification();
@@ -335,7 +345,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
 
           if (language === null || episode === null) {
             throw new Error(
-              "Invalid language or episode. This shouldn't happen, please report this bug."
+              "Invalid language or episode. This shouldn't happen, please report this bug.",
             );
           }
 
@@ -358,7 +368,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         modals.closeSelf();
       })}
     >
-      <Stack>
+      <Stack className={classes.wrapper}>
         <SimpleTable columns={columns} data={form.values.files}></SimpleTable>
         <Divider></Divider>
         <Button type="submit">Upload</Button>
@@ -370,7 +380,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
 export const SeriesUploadModal = withModal(
   SeriesUploadForm,
   "upload-series-subtitles",
-  { title: "Upload Subtitles", size: "xl" }
+  { title: "Upload Subtitles", size: "xl" },
 );
 
 export default SeriesUploadForm;

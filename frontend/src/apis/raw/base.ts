@@ -38,16 +38,19 @@ class BaseApi {
   protected post<T = void>(
     path: string,
     formdata?: LooseObject,
-    params?: LooseObject
+    params?: LooseObject,
   ): Promise<AxiosResponse<T>> {
     const form = this.createFormdata(formdata);
-    return client.axios.post(this.prefix + path, form, { params });
+    return client.axios.post(this.prefix + path, form, {
+      params,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    });
   }
 
   protected patch<T = void>(
     path: string,
     formdata?: LooseObject,
-    params?: LooseObject
+    params?: LooseObject,
   ): Promise<AxiosResponse<T>> {
     const form = this.createFormdata(formdata);
     return client.axios.patch(this.prefix + path, form, { params });
@@ -56,7 +59,7 @@ class BaseApi {
   protected delete<T = void>(
     path: string,
     formdata?: LooseObject,
-    params?: LooseObject
+    params?: LooseObject,
   ): Promise<AxiosResponse<T>> {
     const form = this.createFormdata(formdata);
     return client.axios.delete(this.prefix + path, { params, data: form });

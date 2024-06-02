@@ -8,9 +8,9 @@ import platform
 import warnings
 
 from logging.handlers import TimedRotatingFileHandler
+from utilities.central import get_log_file_path
 from pytz_deprecation_shim import PytzUsageWarning
 
-from .get_args import args
 from .config import settings
 
 
@@ -55,34 +55,37 @@ class NoExceptionFormatter(logging.Formatter):
     def formatException(self, record):
         return ''
 
-    
+
 class UnwantedWaitressMessageFilter(logging.Filter):
     def filter(self, record):
-        if settings.general.debug == True:
+        if settings.general.debug:
             # no filtering in debug mode
             return True
-            
-        unwantedMessages = [ 
-            "Exception while serving /api/socket.io/", 
-            ['Session is disconnected', 'Session not found' ],
-            
-            "Exception while serving /api/socket.io/", 
-            ["'Session is disconnected'", "'Session not found'" ],
-            
-            "Exception while serving /api/socket.io/", 
-            ['"Session is disconnected"', '"Session not found"' ]
+
+        unwantedMessages = [
+            "Exception while serving /api/socket.io/",
+            ['Session is disconnected', 'Session not found'],
+
+            "Exception while serving /api/socket.io/",
+            ["'Session is disconnected'", "'Session not found'"],
+
+            "Exception while serving /api/socket.io/",
+            ['"Session is disconnected"', '"Session not found"'],
+
+            "Exception when servicing %r",
+            [],
         ]
-   
-        wanted = True    
+
+        wanted = True
         listLength = len(unwantedMessages)
         for i in range(0, listLength, 2):
             if record.msg == unwantedMessages[i]:
                 exceptionTuple = record.exc_info
-                if exceptionTuple != None:
-                    if str(exceptionTuple[1]) in unwantedMessages[i+1]:
+                if exceptionTuple is not None:
+                    if len(unwantedMessages[i+1]) == 0 or str(exceptionTuple[1]) in unwantedMessages[i+1]:
                         wanted = False
                         break
-        
+
         return wanted
 
 
@@ -91,10 +94,10 @@ def configure_logging(debug=False):
     warnings.simplefilter('ignore', category=PytzUsageWarning)
     # warnings.simplefilter('ignore', category=SAWarning)
 
-    if not debug:
-        log_level = "INFO"
+    if debug:
+        log_level = logging.DEBUG
     else:
-        log_level = "DEBUG"
+        log_level = logging.INFO
 
     logger.handlers = []
 
@@ -106,21 +109,21 @@ def configure_logging(debug=False):
         '%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(module)s:%(lineno)d) - %(message)s')
     ch.setFormatter(cf)
 
-    ch.setLevel(log_level)
+    ch.setLevel(logging.DEBUG)
     logger.addHandler(ch)
 
     # File Logging
     global fh
     if sys.version_info >= (3, 9):
-        fh = PatchedTimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight",
+        fh = PatchedTimedRotatingFileHandler(get_log_file_path(), when="midnight",
                                              interval=1, backupCount=7, delay=True, encoding='utf-8')
     else:
-        fh = TimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight", interval=1,
+        fh = TimedRotatingFileHandler(get_log_file_path(), when="midnight", interval=1,
                                       backupCount=7, delay=True, encoding='utf-8')
     f = FileHandlerFormatter('%(asctime)s|%(levelname)-8s|%(name)-32s|%(message)s|',
                              '%Y-%m-%d %H:%M:%S')
     fh.setFormatter(f)
-    fh.setLevel(log_level)
+    fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
 
     if debug:
@@ -159,7 +162,7 @@ def configure_logging(debug=False):
         logging.getLogger("ga4mp.ga4mp").setLevel(logging.ERROR)
 
     logging.getLogger("waitress").setLevel(logging.ERROR)
-    logging.getLogger("waitress").addFilter(UnwantedWaitressMessageFilter())   
+    logging.getLogger("waitress").addFilter(UnwantedWaitressMessageFilter())
     logging.getLogger("knowit").setLevel(logging.CRITICAL)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)

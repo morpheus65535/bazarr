@@ -4,20 +4,18 @@
 
     Lexer for Crystal.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 import re
 
-from pygments.lexer import ExtendedRegexLexer, include, \
-    bygroups, default, words
-from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
-    Number, Punctuation, Error, Whitespace
+from pygments.lexer import ExtendedRegexLexer, include, bygroups, default, \
+    words, line_re
+from pygments.token import Comment, Operator, Keyword, Name, String, Number, \
+    Punctuation, Error, Whitespace
 
 __all__ = ['CrystalLexer']
-
-line_re = re.compile('.*?\n')
 
 
 CRYSTAL_OPERATORS = [
@@ -34,7 +32,7 @@ class CrystalLexer(ExtendedRegexLexer):
     """
 
     name = 'Crystal'
-    url = 'http://crystal-lang.org'
+    url = 'https://crystal-lang.org'
     aliases = ['cr', 'crystal']
     filenames = ['*.cr']
     mimetypes = ['text/x-crystal']

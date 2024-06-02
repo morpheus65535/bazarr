@@ -1,10 +1,11 @@
 # coding=utf-8
 
+import signal
 import warnings
 import logging
-import os
-import io
 import errno
+from literals import EXIT_INTERRUPT, EXIT_NORMAL, EXIT_PORT_ALREADY_IN_USE_ERROR
+from utilities.central import restart_bazarr, stop_bazarr
 
 from waitress.server import create_server
 from time import sleep
@@ -17,10 +18,7 @@ from .database import close_database
 from .app import create_app
 
 app = create_app()
-ui_bp.register_blueprint(api_bp, url_prefix='/api')
-# Mute UserWarning with flask-restx and Flask >= 2.2.0. Will be raised as an exception in 2.3.0
-# https://github.com/python-restx/flask-restx/issues/485
-warnings.filterwarnings('ignore', message='The setup method ')
+app.register_blueprint(api_bp, url_prefix=base_url.rstrip('/') + '/api')
 app.register_blueprint(ui_bp, url_prefix=base_url.rstrip('/'))
 
 
@@ -37,6 +35,7 @@ class Server:
         self.connected = False
         self.address = str(settings.general.ip)
         self.port = int(args.port) if args.port else int(settings.general.port)
+        self.interrupted = False
 
         while not self.connected:
             sleep(0.1)
@@ -54,17 +53,32 @@ class Server:
                 logging.exception("BAZARR cannot bind to specified IP, trying with default (0.0.0.0)")
                 self.address = '0.0.0.0'
                 self.connected = False
+                super(Server, self).__init__()
             elif error.errno == errno.EADDRINUSE:
-                logging.exception("BAZARR cannot bind to specified TCP port, trying with default (6767)")
-                self.port = '6767'
-                self.connected = False
+                if self.port != '6767':
+                    logging.exception("BAZARR cannot bind to specified TCP port, trying with default (6767)")
+                    self.port = '6767'
+                    self.connected = False
+                    super(Server, self).__init__()
+                else:
+                    logging.exception("BAZARR cannot bind to default TCP port (6767) because it's already in use, "
+                                      "exiting...")
+                    self.shutdown(EXIT_PORT_ALREADY_IN_USE_ERROR)
             else:
                 logging.exception("BAZARR cannot start because of unhandled exception.")
                 self.shutdown()
 
+    def interrupt_handler(self, signum, frame):
+        # print('Server signal interrupt handler called with signal', signum)
+        if not self.interrupted:
+            # ignore user hammering Ctrl-C; we heard you the first time!
+            self.interrupted = True
+            self.shutdown(EXIT_INTERRUPT)
+
     def start(self):
         logging.info(f'BAZARR is started and waiting for request on http://{self.server.effective_host}:'
                      f'{self.server.effective_port}')
+        signal.signal(signal.SIGINT, self.interrupt_handler)
         try:
             self.server.run()
         except (KeyboardInterrupt, SystemExit):
@@ -72,31 +86,19 @@ class Server:
         except Exception:
             pass
 
-    def shutdown(self):
-        try:
-            stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
-        except Exception as e:
-            logging.error(f'BAZARR Cannot create stop file: {repr(e)}')
-        else:
-            logging.info('Bazarr is being shutdown...')
-            stop_file.write(str(''))
-            stop_file.close()
-            close_database()
-            self.server.close()
-            os._exit(0)
+    def close_all(self):
+        print("Closing database...")
+        close_database()
+        print("Closing webserver...")
+        self.server.close()
+
+    def shutdown(self, status=EXIT_NORMAL):
+        self.close_all()
+        stop_bazarr(status, False)
 
     def restart(self):
-        try:
-            restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
-        except Exception as e:
-            logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
-        else:
-            logging.info('Bazarr is being restarted...')
-            restart_file.write(str(''))
-            restart_file.close()
-            close_database()
-            self.server.close()
-            os._exit(0)
+        self.close_all()
+        restart_bazarr()
 
 
 webserver = Server()

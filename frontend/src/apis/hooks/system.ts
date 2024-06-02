@@ -13,14 +13,14 @@ export function useBadges() {
       refetchOnWindowFocus: "always",
       refetchInterval: 1000 * 60,
       staleTime: 1000 * 10,
-    }
+    },
   );
 }
 
 export function useFileSystem(
   type: "bazarr" | "sonarr" | "radarr",
   path: string,
-  enabled: boolean
+  enabled: boolean,
 ) {
   return useQuery(
     [QueryKeys.FileSystem, type, path],
@@ -35,7 +35,7 @@ export function useFileSystem(
     },
     {
       enabled,
-    }
+    },
   );
 }
 
@@ -45,7 +45,7 @@ export function useSystemSettings() {
     () => api.system.settings(),
     {
       staleTime: Infinity,
-    }
+    },
   );
 }
 
@@ -63,7 +63,7 @@ export function useSettingsMutation() {
         client.invalidateQueries([QueryKeys.Wanted]);
         client.invalidateQueries([QueryKeys.Badges]);
       },
-    }
+    },
   );
 }
 
@@ -73,7 +73,7 @@ export function useServerSearch(query: string, enabled: boolean) {
     () => api.system.search(query),
     {
       enabled,
-    }
+    },
   );
 }
 
@@ -94,7 +94,7 @@ export function useDeleteLogs() {
       onSuccess: () => {
         client.invalidateQueries([QueryKeys.System, QueryKeys.Logs]);
       },
-    }
+    },
   );
 }
 
@@ -106,7 +106,7 @@ export function useSystemAnnouncements() {
       refetchOnWindowFocus: "always",
       refetchInterval: 1000 * 60,
       staleTime: 1000 * 10,
-    }
+    },
   );
 }
 
@@ -123,7 +123,7 @@ export function useSystemAnnouncementsAddDismiss() {
         client.invalidateQueries([QueryKeys.System, QueryKeys.Announcements]);
         client.invalidateQueries([QueryKeys.System, QueryKeys.Badges]);
       },
-    }
+    },
   );
 }
 
@@ -135,7 +135,7 @@ export function useSystemTasks() {
       refetchOnWindowFocus: "always",
       refetchInterval: 1000 * 60,
       staleTime: 1000 * 10,
-    }
+    },
   );
 }
 
@@ -149,7 +149,7 @@ export function useRunTask() {
         client.invalidateQueries([QueryKeys.System, QueryKeys.Tasks]);
         client.invalidateQueries([QueryKeys.System, QueryKeys.Backups]);
       },
-    }
+    },
   );
 }
 
@@ -166,7 +166,7 @@ export function useCreateBackups() {
       onSuccess: () => {
         client.invalidateQueries([QueryKeys.System, QueryKeys.Backups]);
       },
-    }
+    },
   );
 }
 
@@ -179,7 +179,7 @@ export function useRestoreBackups() {
       onSuccess: () => {
         client.invalidateQueries([QueryKeys.System, QueryKeys.Backups]);
       },
-    }
+    },
   );
 }
 
@@ -192,7 +192,7 @@ export function useDeleteBackups() {
       onSuccess: () => {
         client.invalidateQueries([QueryKeys.System, QueryKeys.Backups]);
       },
-    }
+    },
   );
 }
 
@@ -218,7 +218,7 @@ export function useSystem() {
         setAuthenticated(false);
         client.clear();
       },
-    }
+    },
   );
 
   const { mutate: login, isLoading: isLoggingIn } = useMutation(
@@ -230,7 +230,7 @@ export function useSystem() {
         // TODO: Hard-coded value
         window.location.replace(Environment.baseUrl);
       },
-    }
+    },
   );
 
   const { mutate: shutdown, isLoading: isShuttingDown } = useMutation(
@@ -240,7 +240,7 @@ export function useSystem() {
       onSuccess: () => {
         client.clear();
       },
-    }
+    },
   );
 
   const { mutate: restart, isLoading: isRestarting } = useMutation(
@@ -250,7 +250,7 @@ export function useSystem() {
       onSuccess: () => {
         client.clear();
       },
-    }
+    },
   );
 
   return useMemo(
@@ -270,6 +270,6 @@ export function useSystem() {
       logout,
       restart,
       shutdown,
-    ]
+    ],
   );
 }

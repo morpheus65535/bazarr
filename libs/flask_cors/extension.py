@@ -8,12 +8,19 @@
     :copyright: (c) 2016 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
+import logging
+from urllib.parse import unquote_plus
 from flask import request
-from .core import *
-try:
-    from urllib.parse import unquote_plus
-except ImportError:
-    from urllib import unquote_plus
+
+from .core import (
+    parse_resources,
+    get_cors_options,
+    get_regexp_pattern,
+    ACL_ORIGIN,
+    try_match,
+    set_cors_headers
+)
+
 
 LOG = logging.getLogger(__name__)
 
@@ -61,7 +68,11 @@ class CORS(object):
     :param origins:
         The origin, or list of origins to allow requests from.
         The origin(s) may be regular expressions, case-sensitive strings,
-        or else an asterisk
+        or else an asterisk.
+
+        :note: origins must include the schema and the port (if not port 80),
+        e.g.,
+        `CORS(app, origins=["http://localhost:8000", "https://example.com"])`.
 
         Default : '*'
     :type origins: list, string or regex
@@ -149,7 +160,7 @@ class CORS(object):
                      for (pattern, opts) in resources
                     ]
 
-        # Create a human readable form of these resources by converting the compiled
+        # Create a human-readable form of these resources by converting the compiled
         # regular expressions into strings.
         resources_human = {get_regexp_pattern(pattern): opts for (pattern,opts) in resources}
         LOG.debug("Configuring CORS with resources: %s", resources_human)

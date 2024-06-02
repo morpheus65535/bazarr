@@ -5,11 +5,10 @@ from decimal import Decimal
 from fractions import Fraction
 from functools import wraps
 from json import JSONEncoder
-from sys import version, stderr
+import sys
 
 from .utils import hashodict, get_module_name_from_object, NoEnumException, NoPandasException, \
 	NoNumpyException, str_type, JsonTricksDeprecation, gzip_compress, filtered_wrapper, is_py3
-
 
 def _fallback_wrapper(encoder):
 	"""
@@ -50,7 +49,7 @@ class TricksEncoder(JSONEncoder):
 		"""
 		if silence_typeerror and not getattr(TricksEncoder, '_deprecated_silence_typeerror'):
 			TricksEncoder._deprecated_silence_typeerror = True
-			stderr.write('TricksEncoder.silence_typeerror is deprecated and may be removed in a future version\n')
+			sys.stderr.write('TricksEncoder.silence_typeerror is deprecated and may be removed in a future version\n')
 		self.obj_encoders = []
 		if obj_encoders:
 			self.obj_encoders = list(obj_encoders)
@@ -97,14 +96,21 @@ def json_date_time_encode(obj, primitives=False):
 			('day', obj.day), ('hour', obj.hour), ('minute', obj.minute),
 			('second', obj.second), ('microsecond', obj.microsecond)])
 		if obj.tzinfo:
-			dct['tzinfo'] = obj.tzinfo.zone
+			if hasattr(obj.tzinfo, 'zone'):
+				dct['tzinfo'] = obj.tzinfo.zone
+			else:
+				dct['tzinfo'] = obj.tzinfo.tzname(None)
+			dct['is_dst'] = bool(obj.dst())
 	elif isinstance(obj, date):
 		dct = hashodict([('__date__', None), ('year', obj.year), ('month', obj.month), ('day', obj.day)])
 	elif isinstance(obj, time):
 		dct = hashodict([('__time__', None), ('hour', obj.hour), ('minute', obj.minute),
 			('second', obj.second), ('microsecond', obj.microsecond)])
 		if obj.tzinfo:
-			dct['tzinfo'] = obj.tzinfo.zone
+			if hasattr(obj.tzinfo, 'zone'):
+				dct['tzinfo'] = obj.tzinfo.zone
+			else:
+				dct['tzinfo'] = obj.tzinfo.tzname(None)
 	elif isinstance(obj, timedelta):
 		if primitives:
 			return obj.total_seconds()
@@ -114,7 +120,7 @@ def json_date_time_encode(obj, primitives=False):
 	else:
 		return obj
 	for key, val in tuple(dct.items()):
-		if not key.startswith('__') and not val:
+		if not key.startswith('__') and not key == 'is_dst' and not val:
 			del dct[key]
 	return dct
 
@@ -162,7 +168,7 @@ def class_instance_encode(obj, primitives=False):
 		if not hasattr(obj, '__new__'):
 			raise TypeError('class "{0:s}" does not have a __new__ method; '.format(obj.__class__) +
 				('perhaps it is an old-style class not derived from `object`; add `object` as a base class to encode it.'
-					if (version[:2] == '2.') else 'this should not happen in Python3'))
+					if (sys.version[:2] == '2.') else 'this should not happen in Python3'))
 		if type(obj) == type(lambda: 0):
 			raise TypeError('instance "{0:}" of class "{1:}" cannot be encoded because it appears to be a lambda or function.'
 				.format(obj, obj.__class__))
@@ -278,6 +284,19 @@ def pathlib_encode(obj, primitives=False):
 
 	return {'__pathlib__': str(obj)}
 
+def slice_encode(obj, primitives=False):
+	if not isinstance(obj, slice):
+		return obj
+
+	if primitives:
+		return [obj.start, obj.stop, obj.step]
+	else:
+		return hashodict((
+			('__slice__', True),
+			('start', obj.start),
+			('stop', obj.stop),
+			('step', obj.step),
+		))
 
 class ClassInstanceEncoder(JSONEncoder):
 	"""
@@ -357,12 +376,16 @@ def numpy_encode(obj, primitives=False, properties=None):
 	:param primitives: If True, arrays are serialized as (nested) lists without meta info.
 	"""
 	from numpy import ndarray, generic
+
 	if isinstance(obj, ndarray):
 		if primitives:
 			return obj.tolist()
 		else:
 			properties = properties or {}
 			use_compact = properties.get('ndarray_compact', None)
+			store_endianness = properties.get('ndarray_store_byteorder', None)
+			assert store_endianness in [None, 'little', 'big', 'suppress'] ,\
+				'property ndarray_store_byteorder should be \'little\', \'big\' or \'suppress\' if provided'
 			json_compression = bool(properties.get('compression', False))
 			if use_compact is None and json_compression and not getattr(numpy_encode, '_warned_compact', False):
 				numpy_encode._warned_compact = True
@@ -377,7 +400,7 @@ def numpy_encode(obj, primitives=False, properties=None):
 				use_compact = obj.size >= use_compact
 			if use_compact:
 				# If the overall json file is compressed, then don't compress the array.
-				data_json = _ndarray_to_bin_str(obj, do_compress=not json_compression)
+				data_json = _ndarray_to_bin_str(obj, do_compress=not json_compression, store_endianness=store_endianness)
 			else:
 				data_json = obj.tolist()
 			dct = hashodict((
@@ -387,6 +410,8 @@ def numpy_encode(obj, primitives=False, properties=None):
 			))
 			if len(obj.shape) > 1:
 				dct['Corder'] = obj.flags['C_CONTIGUOUS']
+			if use_compact and store_endianness != 'suppress':
+				dct['endian'] = store_endianness or sys.byteorder
 			return dct
 	elif isinstance(obj, generic):
 		if NumpyEncoder.SHOW_SCALAR_WARNING:
@@ -396,7 +421,7 @@ def numpy_encode(obj, primitives=False, properties=None):
 	return obj
 
 
-def _ndarray_to_bin_str(array, do_compress):
+def _ndarray_to_bin_str(array, do_compress, store_endianness):
 	"""
 	From ndarray to base64 encoded, gzipped binary data.
 	"""
@@ -405,6 +430,8 @@ def _ndarray_to_bin_str(array, do_compress):
 
 	original_size = array.size * array.itemsize
 	header = 'b64:'
+	if store_endianness in ['little', 'big'] and store_endianness != sys.byteorder:
+		array = array.byteswap(inplace=False)
 	data = array.data
 	if do_compress:
 		small = gzip_compress(data, compresslevel=9)

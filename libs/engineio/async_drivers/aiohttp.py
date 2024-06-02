@@ -84,13 +84,13 @@ class WebSocket(object):  # pragma: no cover
     This wrapper class provides a aiohttp WebSocket interface that is
     somewhat compatible with eventlet's implementation.
     """
-    def __init__(self, handler):
+    def __init__(self, handler, server):
         self.handler = handler
         self._sock = None
 
     async def __call__(self, environ):
         request = environ['aiohttp.request']
-        self._sock = WebSocketResponse()
+        self._sock = WebSocketResponse(max_msg_size=0)
         await self._sock.prepare(request)
 
         self.environ = environ

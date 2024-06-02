@@ -102,7 +102,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
         <Selector
           clearable
           settingKey={defaultUndEmbeddedSubtitlesLang}
-          label="Treat unknown language embedded subtitles track as (changing this will trigger full subtitles indexation using cache)"
+          label="Treat unknown language embedded subtitles track as (changing this will trigger full subtitles indexing using cache)"
           placeholder="Select languages"
           options={undEmbeddedSubtitlesLanguages.map((v) => {
             return { label: v.name, value: v.code2 };
@@ -112,7 +112,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
           }}
         ></Selector>
       </Section>
-      <Section header="Languages Profiles">
+      <Section header="Languages Profile">
         <Table></Table>
       </Section>
       <Section header="Default Settings">
@@ -121,7 +121,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
           settingKey="settings-general-serie_default_enabled"
         ></Check>
         <Message>
-          Apply only to Series added to Bazarr after enabling this option.
+          Will apply only to Series added to Bazarr after enabling this option.
         </Message>
 
         <CollapseBox indent settingKey="settings-general-serie_default_enabled">
@@ -137,7 +137,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
           settingKey="settings-general-movie_default_enabled"
         ></Check>
         <Message>
-          Apply only to Movies added to Bazarr after enabling this option.
+          Will apply only to Movies added to Bazarr after enabling this option.
         </Message>
 
         <CollapseBox indent settingKey="settings-general-movie_default_enabled">

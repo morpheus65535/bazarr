@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -89,7 +89,7 @@ class NotifyMQTT(NotifyBase):
 
     requirements = {
         # Define our required packaging in order to work
-        'packages_required': 'paho-mqtt'
+        'packages_required': 'paho-mqtt < 2.0.0'
     }
 
     # The default descriptive name associated with the Notification

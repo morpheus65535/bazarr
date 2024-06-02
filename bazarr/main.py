@@ -20,6 +20,7 @@ from app.get_args import args  # noqa E402
 from app.check_update import apply_update, check_releases, check_if_new_update  # noqa E402
 from app.config import settings, configure_proxy_func, base_url  # noqa E402
 from init import *  # noqa E402
+import logging  # noqa E402
 
 # Install downloaded update
 if bazarr_version != '':
@@ -40,18 +41,12 @@ from languages.get_languages import load_language_in_db  # noqa E402
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
 from app.server import webserver, app  # noqa E402
 from app.announcements import get_announcements_to_file  # noqa E402
+from utilities.central import stop_bazarr  # noqa E402
+from literals import EXIT_NORMAL  # noqa E402
 
 if args.create_db_revision:
-    try:
-        stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
-    except Exception as e:
-        logging.error(f'BAZARR Cannot create stop file: {repr(e)}')
-    else:
-        create_db_revision(app)
-        logging.info('Bazarr is being shutdown...')
-        stop_file.write(str(''))
-        stop_file.close()
-        os._exit(0)
+    create_db_revision(app)
+    stop_bazarr(EXIT_NORMAL)
 else:
     migrate_db(app)
 

@@ -30,12 +30,18 @@ class SubSyncer:
             self.vad = 'subs_then_webrtc'
         self.log_dir_path = os.path.join(args.config_dir, 'log')
 
-    def sync(self, video_path, srt_path, srt_lang, sonarr_series_id=None, sonarr_episode_id=None, radarr_id=None,
-             reference=None, max_offset_seconds=str(settings.subsync.max_offset_seconds),
-             no_fix_framerate=settings.subsync.no_fix_framerate, gss=settings.subsync.gss):
+    def sync(self, video_path, srt_path, srt_lang,
+             max_offset_seconds, no_fix_framerate, gss, reference=None,
+             sonarr_series_id=None, sonarr_episode_id=None, radarr_id=None):
         self.reference = video_path
         self.srtin = srt_path
-        self.srtout = f'{os.path.splitext(self.srtin)[0]}.synced.srt'
+        if self.srtin.casefold().endswith('.ass'):
+            # try to preserve original subtitle style
+            # ffmpeg will be able to handle this automatically as long as it has the libass filter
+            extension = '.ass'
+        else:
+            extension = '.srt'
+        self.srtout = f'{os.path.splitext(self.srtin)[0]}.synced{extension}'
         self.args = None
 
         ffprobe_exe = get_binary('ffprobe')

@@ -4,7 +4,7 @@
 
     Lexers for automation scripting languages.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -50,8 +50,8 @@ class AutohotkeyLexer(RegexLexer):
         ],
         'incomment': [
             (r'^\s*\*/', Comment.Multiline, '#pop'),
-            (r'[^*/]', Comment.Multiline),
-            (r'[*/]', Comment.Multiline)
+            (r'[^*]+', Comment.Multiline),
+            (r'\*', Comment.Multiline)
         ],
         'incontinuation': [
             (r'^\s*\)', Generic, '#pop'),

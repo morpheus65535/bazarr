@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=no-self-use, pointless-statement, missing-docstring, no-member, len-as-condition
+# pylint: disable=pointless-statement, missing-docstring, no-member, len-as-condition
 
 from ..pattern import StringPattern, RePattern
 from ..processors import ConflictSolver

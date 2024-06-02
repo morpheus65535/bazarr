@@ -67,7 +67,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
       badges.push(
         <ItemBadge key="file-path" icon={faFolder} title="File Path">
           {item.path}
-        </ItemBadge>
+        </ItemBadge>,
       );
 
       badges.push(
@@ -75,14 +75,14 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           <ItemBadge key={BuildKey(idx, "detail", val.text)} icon={val.icon}>
             {val.text}
           </ItemBadge>
-        )) ?? [])
+        )) ?? []),
       );
 
       if (item.tags.length > 0) {
         badges.push(
           <ItemBadge key="tags" icon={faTags} title="Tags">
             {item.tags.join("|")}
-          </ItemBadge>
+          </ItemBadge>,
         );
       }
     }
@@ -101,7 +101,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           {v.name}
         </ItemBadge>
       )) ?? [],
-    [item?.audio_language]
+    [item?.audio_language],
   );
 
   const profile = useLanguageProfileBy(item?.profileId);
@@ -118,7 +118,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           title="Languages Profile"
         >
           {profile.name}
-        </ItemBadge>
+        </ItemBadge>,
       );
 
       badges.push(
@@ -130,7 +130,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           >
             <Language.Text long value={v}></Language.Text>
           </ItemBadge>
-        ))
+        )),
       );
     }
 

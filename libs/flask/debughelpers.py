@@ -1,8 +1,17 @@
+from __future__ import annotations
+
 import typing as t
 
-from .app import Flask
+from jinja2.loaders import BaseLoader
+from werkzeug.routing import RequestRedirect
+
 from .blueprints import Blueprint
 from .globals import request_ctx
+from .sansio.app import App
+
+if t.TYPE_CHECKING:
+    from .sansio.scaffold import Scaffold
+    from .wrappers import Request
 
 
 class UnexpectedUnicodeError(AssertionError, UnicodeError):
@@ -16,7 +25,7 @@ class DebugFilesKeyError(KeyError, AssertionError):
     provide a better error message than just a generic KeyError/BadRequest.
     """
 
-    def __init__(self, request, key):
+    def __init__(self, request: Request, key: str) -> None:
         form_matches = request.form.getlist(key)
         buf = [
             f"You tried to access the file {key!r} in the request.files"
@@ -34,7 +43,7 @@ class DebugFilesKeyError(KeyError, AssertionError):
             )
         self.msg = "".join(buf)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.msg
 
 
@@ -45,8 +54,9 @@ class FormDataRoutingRedirect(AssertionError):
     307 or 308.
     """
 
-    def __init__(self, request):
+    def __init__(self, request: Request) -> None:
         exc = request.routing_exception
+        assert isinstance(exc, RequestRedirect)
         buf = [
             f"A request was sent to '{request.url}', but routing issued"
             f" a redirect to the canonical URL '{exc.new_url}'."
@@ -68,7 +78,7 @@ class FormDataRoutingRedirect(AssertionError):
         super().__init__("".join(buf))
 
 
-def attach_enctype_error_multidict(request):
+def attach_enctype_error_multidict(request: Request) -> None:
     """Patch ``request.files.__getitem__`` to raise a descriptive error
     about ``enctype=multipart/form-data``.
 
@@ -77,8 +87,8 @@ def attach_enctype_error_multidict(request):
     """
     oldcls = request.files.__class__
 
-    class newcls(oldcls):
-        def __getitem__(self, key):
+    class newcls(oldcls):  # type: ignore[valid-type, misc]
+        def __getitem__(self, key: str) -> t.Any:
             try:
                 return super().__getitem__(key)
             except KeyError as e:
@@ -94,7 +104,7 @@ def attach_enctype_error_multidict(request):
     request.files.__class__ = newcls
 
 
-def _dump_loader_info(loader) -> t.Generator:
+def _dump_loader_info(loader: BaseLoader) -> t.Iterator[str]:
     yield f"class: {type(loader).__module__}.{type(loader).__name__}"
     for key, value in sorted(loader.__dict__.items()):
         if key.startswith("_"):
@@ -111,7 +121,17 @@ def _dump_loader_info(loader) -> t.Generator:
         yield f"{key}: {value!r}"
 
 
-def explain_template_loading_attempts(app: Flask, template, attempts) -> None:
+def explain_template_loading_attempts(
+    app: App,
+    template: str,
+    attempts: list[
+        tuple[
+            BaseLoader,
+            Scaffold,
+            tuple[str, str | None, t.Callable[[], bool] | None] | None,
+        ]
+    ],
+) -> None:
     """This should help developers understand what failed"""
     info = [f"Locating template {template!r}:"]
     total_found = 0
@@ -120,7 +140,7 @@ def explain_template_loading_attempts(app: Flask, template, attempts) -> None:
         blueprint = request_ctx.request.blueprint
 
     for idx, (loader, srcobj, triple) in enumerate(attempts):
-        if isinstance(srcobj, Flask):
+        if isinstance(srcobj, App):
             src_info = f"application {srcobj.import_name!r}"
         elif isinstance(srcobj, Blueprint):
             src_info = f"blueprint {srcobj.name!r} ({srcobj.import_name})"

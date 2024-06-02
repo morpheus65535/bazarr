@@ -1,5 +1,5 @@
-# sqlalchemy/__init__.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# __init__.py
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -18,6 +18,7 @@ from .engine import Compiled as Compiled
 from .engine import Connection as Connection
 from .engine import create_engine as create_engine
 from .engine import create_mock_engine as create_mock_engine
+from .engine import create_pool_from_url as create_pool_from_url
 from .engine import CreateEnginePlugin as CreateEnginePlugin
 from .engine import CursorResult as CursorResult
 from .engine import Dialect as Dialect
@@ -54,7 +55,7 @@ from .pool import Pool as Pool
 from .pool import PoolProxiedConnection as PoolProxiedConnection
 from .pool import PoolResetState as PoolResetState
 from .pool import QueuePool as QueuePool
-from .pool import SingletonThreadPool as SingleonThreadPool
+from .pool import SingletonThreadPool as SingletonThreadPool
 from .pool import StaticPool as StaticPool
 from .schema import BaseDDLElement as BaseDDLElement
 from .schema import BLANK_SCHEMA as BLANK_SCHEMA
@@ -72,11 +73,15 @@ from .schema import ForeignKey as ForeignKey
 from .schema import ForeignKeyConstraint as ForeignKeyConstraint
 from .schema import Identity as Identity
 from .schema import Index as Index
+from .schema import insert_sentinel as insert_sentinel
 from .schema import MetaData as MetaData
 from .schema import PrimaryKeyConstraint as PrimaryKeyConstraint
 from .schema import Sequence as Sequence
 from .schema import Table as Table
 from .schema import UniqueConstraint as UniqueConstraint
+from .sql import ColumnExpressionArgument as ColumnExpressionArgument
+from .sql import NotNullable as NotNullable
+from .sql import Nullable as Nullable
 from .sql import SelectLabelStyle as SelectLabelStyle
 from .sql.expression import Alias as Alias
 from .sql.expression import alias as alias
@@ -196,6 +201,8 @@ from .sql.expression import TextClause as TextClause
 from .sql.expression import TextualSelect as TextualSelect
 from .sql.expression import true as true
 from .sql.expression import True_ as True_
+from .sql.expression import try_cast as try_cast
+from .sql.expression import TryCast as TryCast
 from .sql.expression import Tuple as Tuple
 from .sql.expression import tuple_ as tuple_
 from .sql.expression import type_coerce as type_coerce
@@ -262,13 +269,11 @@ from .types import Uuid as Uuid
 from .types import VARBINARY as VARBINARY
 from .types import VARCHAR as VARCHAR
 
-__version__ = "2.0.7"
+__version__ = "2.0.27"
 
 
 def __go(lcls: Any) -> None:
-    from . import util as _sa_util
-
-    _sa_util.preloaded.import_prefix("sqlalchemy")
+    _util.preloaded.import_prefix("sqlalchemy")
 
     from . import exc
 
@@ -276,3 +281,14 @@ def __go(lcls: Any) -> None:
 
 
 __go(locals())
+
+
+def __getattr__(name: str) -> Any:
+    if name == "SingleonThreadPool":
+        _util.warn_deprecated(
+            "SingleonThreadPool was a typo in the v2 series. "
+            "Please use the correct SingletonThreadPool name.",
+            "2.0.24",
+        )
+        return SingletonThreadPool
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

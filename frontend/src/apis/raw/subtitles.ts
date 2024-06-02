@@ -7,7 +7,7 @@ class SubtitlesApi extends BaseApi {
 
   async getRefTracksByEpisodeId(
     subtitlesPath: string,
-    sonarrEpisodeId: number
+    sonarrEpisodeId: number,
   ) {
     const response = await this.get<DataWrapper<Item.RefTracks>>("", {
       subtitlesPath,
@@ -18,7 +18,7 @@ class SubtitlesApi extends BaseApi {
 
   async getRefTracksByMovieId(
     subtitlesPath: string,
-    radarrMovieId?: number | undefined
+    radarrMovieId?: number | undefined,
   ) {
     const response = await this.get<DataWrapper<Item.RefTracks>>("", {
       subtitlesPath,

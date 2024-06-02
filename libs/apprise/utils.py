@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2023, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -31,14 +31,12 @@ import sys
 import json
 import contextlib
 import os
-import hashlib
 import locale
 from itertools import chain
 from os.path import expanduser
 from functools import reduce
 from . import common
 from .logger import logger
-
 from urllib.parse import unquote
 from urllib.parse import quote
 from urllib.parse import urlparse
@@ -70,15 +68,11 @@ def import_module(path, name):
         module = None
 
         logger.debug(
-            'Custom module exception raised from %s (name=%s) %s',
+            'Module exception raised from %s (name=%s) %s',
             path, name, str(e))
 
     return module
 
-
-# Hash of all paths previously scanned so we don't waste effort/overhead doing
-# it again
-PATHS_PREVIOUSLY_SCANNED = set()
 
 # URL Indexing Table for returns via parse_url()
 # The below accepts and scans for:
@@ -95,6 +89,9 @@ VALID_QUERY_RE = re.compile(r'^(?P<path>.*[/\\])(?P<query>[^/\\]+)?$')
 # delimiters used to separate values when content is passed in by string.
 # This is useful when turning a string into a list
 STRING_DELIMITERS = r'[\[\]\;,\s]+'
+
+# String Delimiters without the whitespace
+STRING_DELIMITERS_NO_WS = r'[\[\]\;,]+'
 
 # Pre-Escape content since we reference it so much
 ESCAPED_PATH_SEPARATOR = re.escape('\\/')
@@ -209,6 +206,22 @@ VALID_PYTHON_FILE_RE = re.compile(r'.+\.py(o|c)?$', re.IGNORECASE)
 # validate_regex() utilizes this mapping to track and re-use pre-complied
 # regular expressions
 REGEX_VALIDATE_LOOKUP = {}
+
+
+class Singleton(type):
+    """
+    Our Singleton MetaClass
+    """
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        """
+        instantiate our singleton meta entry
+        """
+        if cls not in cls._instances:
+            # we have not every built an instance before.  Build one now.
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 
 class TemplateType:
@@ -1116,7 +1129,7 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None):
         errors=errors)
 
 
-def parse_list(*args, cast=None):
+def parse_list(*args, cast=None, allow_whitespace=True):
     """
     Take a string list and break it into a delimited
     list of arguments. This funciton also supports
@@ -1143,10 +1156,12 @@ def parse_list(*args, cast=None):
             arg = cast(arg)
 
         if isinstance(arg, str):
-            result += re.split(STRING_DELIMITERS, arg)
+            result += re.split(
+                STRING_DELIMITERS if allow_whitespace
+                else STRING_DELIMITERS_NO_WS, arg)
 
         elif isinstance(arg, (set, list, tuple)):
-            result += parse_list(*arg)
+            result += parse_list(*arg, allow_whitespace=allow_whitespace)
 
     #
     # filter() eliminates any empty entries
@@ -1154,7 +1169,9 @@ def parse_list(*args, cast=None):
     # Since Python v3 returns a filter (iterator) whereas Python v2 returned
     # a list, we need to change it into a list object to remain compatible with
     # both distribution types.
-    return sorted([x for x in filter(bool, list(set(result)))])
+    return sorted([x for x in filter(bool, list(set(result)))]) \
+        if allow_whitespace else sorted(
+            [x.strip() for x in filter(bool, list(set(result))) if x.strip()])
 
 
 def is_exclusive_match(logic, data, match_all=common.MATCH_ALL_TAG,
@@ -1552,142 +1569,6 @@ def remove_suffix(value, suffix):
     Removes a suffix from the end of a string.
     """
     return value[:-len(suffix)] if value.endswith(suffix) else value
-
-
-def module_detection(paths, cache=True):
-    """
-    Iterates over a defined path for apprise decorators to load such as
-    @notify.
-
-    """
-
-    # A simple restriction that we don't allow periods in the filename at all
-    # so it can't be hidden (Linux OS's) and it won't conflict with Python
-    # path naming.  This also prevents us from loading any python file that
-    # starts with an underscore or dash
-    # We allow __init__.py as well
-    module_re = re.compile(
-        r'^(?P<name>[_a-z0-9][a-z0-9._-]+)?(\.py)?$', re.I)
-
-    if isinstance(paths, str):
-        paths = [paths, ]
-
-    if not paths or not isinstance(paths, (tuple, list)):
-        # We're done
-        return None
-
-    def _import_module(path):
-        # Since our plugin name can conflict (as a module) with another
-        # we want to generate random strings to avoid steping on
-        # another's namespace
-        if not (path and VALID_PYTHON_FILE_RE.match(path)):
-            # Ignore file/module type
-            logger.trace('Plugin Scan: Skipping %s', path)
-            return None
-
-        module_name = hashlib.sha1(path.encode('utf-8')).hexdigest()
-        module_pyname = "{prefix}.{name}".format(
-            prefix='apprise.custom.module', name=module_name)
-
-        if module_pyname in common.NOTIFY_CUSTOM_MODULE_MAP:
-            # First clear out existing entries
-            for schema in common.\
-                    NOTIFY_CUSTOM_MODULE_MAP[module_pyname]['notify'] \
-                    .keys():
-                # Remove any mapped modules to this file
-                del common.NOTIFY_SCHEMA_MAP[schema]
-
-            # Reset
-            del common.NOTIFY_CUSTOM_MODULE_MAP[module_pyname]
-
-        # Load our module
-        module = import_module(path, module_pyname)
-        if not module:
-            # No problem, we can't use this object
-            logger.warning('Failed to load custom module: %s', _path)
-            return None
-
-        # Print our loaded modules if any
-        if module_pyname in common.NOTIFY_CUSTOM_MODULE_MAP:
-            logger.debug(
-                'Loaded custom module: %s (name=%s)',
-                _path, module_name)
-
-            for schema, meta in common.\
-                    NOTIFY_CUSTOM_MODULE_MAP[module_pyname]['notify']\
-                    .items():
-
-                logger.info('Loaded custom notification: %s://', schema)
-        else:
-            # The code reaches here if we successfully loaded the Python
-            # module but no hooks/triggers were found. So we can safely
-            # just remove/ignore this entry
-            del sys.modules[module_pyname]
-            return None
-
-        # end of _import_module()
-        return None
-
-    for _path in paths:
-        path = os.path.abspath(os.path.expanduser(_path))
-        if (cache and path in PATHS_PREVIOUSLY_SCANNED) \
-                or not os.path.exists(path):
-            # We're done as we've already scanned this
-            continue
-
-        # Store our path as a way of hashing it has been handled
-        PATHS_PREVIOUSLY_SCANNED.add(path)
-
-        if os.path.isdir(path) and not \
-                os.path.isfile(os.path.join(path, '__init__.py')):
-
-            logger.debug('Scanning for custom plugins in: %s', path)
-            for entry in os.listdir(path):
-                re_match = module_re.match(entry)
-                if not re_match:
-                    # keep going
-                    logger.trace('Plugin Scan: Ignoring %s', entry)
-                    continue
-
-                new_path = os.path.join(path, entry)
-                if os.path.isdir(new_path):
-                    # Update our path
-                    new_path = os.path.join(path, entry, '__init__.py')
-                    if not os.path.isfile(new_path):
-                        logger.trace(
-                            'Plugin Scan: Ignoring %s',
-                            os.path.join(path, entry))
-                        continue
-
-                if not cache or \
-                        (cache and new_path not in PATHS_PREVIOUSLY_SCANNED):
-                    # Load our module
-                    _import_module(new_path)
-
-                    # Add our subdir path
-                    PATHS_PREVIOUSLY_SCANNED.add(new_path)
-        else:
-            if os.path.isdir(path):
-                # This logic is safe to apply because we already validated
-                # the directories state above; update our path
-                path = os.path.join(path, '__init__.py')
-                if cache and path in PATHS_PREVIOUSLY_SCANNED:
-                    continue
-
-                PATHS_PREVIOUSLY_SCANNED.add(path)
-
-            # directly load as is
-            re_match = module_re.match(os.path.basename(path))
-            # must be a match and must have a .py extension
-            if not re_match or not re_match.group(1):
-                # keep going
-                logger.trace('Plugin Scan: Ignoring %s', path)
-                continue
-
-            # Load our module
-            _import_module(path)
-
-        return None
 
 
 def dict_full_update(dict1, dict2):

@@ -8,7 +8,7 @@ from app.config import settings
 from app.database import TableShowsRootfolder, TableShows, database, insert, update, delete, select
 from utilities.path_mappings import path_mappings
 from sonarr.info import url_api_sonarr
-from constants import headers
+from constants import HEADERS
 
 
 def get_sonarr_rootfolder():
@@ -19,7 +19,7 @@ def get_sonarr_rootfolder():
     url_sonarr_api_rootfolder = f"{url_api_sonarr()}rootfolder?apikey={apikey_sonarr}"
 
     try:
-        rootfolder = requests.get(url_sonarr_api_rootfolder, timeout=int(settings.sonarr.http_timeout), verify=False, headers=headers)
+        rootfolder = requests.get(url_sonarr_api_rootfolder, timeout=int(settings.sonarr.http_timeout), verify=False, headers=HEADERS)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get rootfolder from Sonarr. Connection Error.")
         return []
@@ -75,8 +75,8 @@ def check_sonarr_rootfolder():
         if not os.path.isdir(path_mappings.path_replace(root_path)):
             database.execute(
                 update(TableShowsRootfolder)
-                .values(accessible=0, error='This Sonarr root directory does not seems to be accessible by Bazarr. '
-                                            'Please check path mapping.')
+                .values(accessible=0, error='This Sonarr root directory does not seem to be accessible by Bazarr. '
+                                            'Please check path mapping or if directory/drive is online.')
                 .where(TableShowsRootfolder.id == item.id))
         elif not os.access(path_mappings.path_replace(root_path), os.W_OK):
             database.execute(

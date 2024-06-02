@@ -15,11 +15,10 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-import dns.rdtypes.txtbase
 import dns.immutable
+import dns.rdtypes.txtbase
 
 
 @dns.immutable.immutable
 class TXT(dns.rdtypes.txtbase.TXTBase):
-
     """TXT record"""

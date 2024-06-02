@@ -1,9 +1,10 @@
 """
     pygments.lexers.macaulay2
     ~~~~~~~~~~~~~~~~~~~~~~~~~
+
     Lexer for Macaulay2.
 
-    :copyright: Copyright 2006-2022 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -12,7 +13,7 @@ from pygments.token import Comment, Keyword, Name, String, Text
 
 __all__ = ['Macaulay2Lexer']
 
-# Auto-generated for Macaulay2-1.20. Do not modify this file manually.
+# Auto-generated for Macaulay2-1.22. Do not modify this file manually.
 
 M2KEYWORDS = (
     "and",
@@ -68,6 +69,7 @@ M2DATATYPES = (
     "BOLD",
     "Boolean",
     "BR",
+    "BUTTON",
     "CacheFunction",
     "CacheTable",
     "CC",
@@ -88,6 +90,7 @@ M2DATATYPES = (
     "Descent",
     "Describe",
     "Dictionary",
+    "DirectSum",
     "DIV",
     "Divide",
     "DL",
@@ -130,9 +133,11 @@ M2DATATYPES = (
     "Hypertext",
     "HypertextContainer",
     "HypertextParagraph",
+    "HypertextVoid",
     "Ideal",
     "IMG",
     "ImmutableType",
+    "INDENT",
     "IndeterminateNumber",
     "IndexedVariable",
     "IndexedVariableTable",
@@ -140,8 +145,11 @@ M2DATATYPES = (
     "InexactFieldFamily",
     "InexactNumber",
     "InfiniteNumber",
+    "INPUT",
     "IntermediateMarkUpType",
     "ITALIC",
+    "Iterator",
+    "KBD",
     "Keyword",
     "LABEL",
     "LATER",
@@ -173,7 +181,6 @@ M2DATATYPES = (
     "MutableMatrix",
     "Net",
     "NetFile",
-    "NonAssociativeProduct",
     "Nothing",
     "Number",
     "NumberedVerticalList",
@@ -208,6 +215,7 @@ M2DATATYPES = (
     "RowExpression",
     "RR",
     "RRi",
+    "SAMP",
     "SCRIPT",
     "ScriptedFunctor",
     "SelfInitializingType",
@@ -236,6 +244,7 @@ M2DATATYPES = (
     "Tally",
     "Task",
     "TD",
+    "TensorProduct",
     "TestInput",
     "TEX",
     "TH",
@@ -250,6 +259,7 @@ M2DATATYPES = (
     "Type",
     "UL",
     "URL",
+    "VAR",
     "Variety",
     "Vector",
     "VectorExpression",
@@ -328,6 +338,7 @@ M2FUNCTIONS = (
     "ceiling",
     "centerString",
     "chainComplex",
+    "changeBase",
     "char",
     "characters",
     "charAnalyzer",
@@ -399,6 +410,7 @@ M2FUNCTIONS = (
     "deepSplice",
     "default",
     "degree",
+    "degreeGroup",
     "degreeLength",
     "degrees",
     "degreesMonoid",
@@ -618,6 +630,7 @@ M2FUNCTIONS = (
     "isMember",
     "isModule",
     "isMonomialIdeal",
+    "isMutable",
     "isNormal",
     "isOpen",
     "isOutputFile",
@@ -647,6 +660,7 @@ M2FUNCTIONS = (
     "isUnit",
     "isWellDefined",
     "isWeylAlgebra",
+    "iterator",
     "jacobian",
     "jacobianDual",
     "join",
@@ -715,6 +729,7 @@ M2FUNCTIONS = (
     "minimalPresentation",
     "minimalPrimes",
     "minimalReduction",
+    "minimize",
     "minimizeFilename",
     "minors",
     "minPosition",
@@ -748,6 +763,7 @@ M2FUNCTIONS = (
     "newNetFile",
     "newPackage",
     "newRing",
+    "next",
     "nextkey",
     "nextPrime",
     "NNParser",
@@ -1037,6 +1053,7 @@ M2FUNCTIONS = (
     "userSymbols",
     "utf8",
     "utf8check",
+    "utf8substring",
     "validate",
     "value",
     "values",
@@ -1088,6 +1105,7 @@ M2CONSTANTS = (
     "BeforePrint",
     "BeginningMacaulay2",
     "Benchmark",
+    "BernsteinSato",
     "Bertini",
     "BettiCharacters",
     "BGG",
@@ -1097,7 +1115,7 @@ M2CONSTANTS = (
     "BinomialEdgeIdeals",
     "Binomials",
     "BKZ",
-    "BlockMatrix",
+    "blockMatrixForm",
     "Body",
     "BoijSoederberg",
     "Book3264Examples",
@@ -1111,6 +1129,7 @@ M2CONSTANTS = (
     "CannedExample",
     "CatalanConstant",
     "Caveat",
+    "CellularResolutions",
     "Center",
     "Certification",
     "ChainComplexExtras",
@@ -1136,7 +1155,6 @@ M2CONSTANTS = (
     "CohomCalg",
     "CoincidentRootLoci",
     "commandLine",
-    "CompactMatrix",
     "compactMatrixForm",
     "Complement",
     "CompleteIntersection",
@@ -1170,6 +1188,7 @@ M2CONSTANTS = (
     "Default",
     "defaultPrecision",
     "Degree",
+    "DegreeGroup",
     "DegreeLift",
     "DegreeLimit",
     "DegreeMap",
@@ -1193,6 +1212,7 @@ M2CONSTANTS = (
     "docExample",
     "docTemplate",
     "Down",
+    "Dynamic",
     "EagonResolution",
     "EdgeIdeals",
     "edit",
@@ -1236,6 +1256,7 @@ M2CONSTANTS = (
     "Flexible",
     "flush",
     "FollowLinks",
+    "ForeignFunctions",
     "FormalGroupLaws",
     "Format",
     "FourierMotzkin",
@@ -1248,6 +1269,7 @@ M2CONSTANTS = (
     "GenerateAssertions",
     "Generic",
     "GenericInitialIdeal",
+    "GeometricDecomposability",
     "gfanInterface",
     "Givens",
     "GKMVarieties",
@@ -1285,6 +1307,7 @@ M2CONSTANTS = (
     "HighestWeights",
     "Hilbert",
     "HodgeIntegrals",
+    "HolonomicSystems",
     "homeDirectory",
     "HomePage",
     "Homogeneous",
@@ -1321,6 +1344,7 @@ M2CONSTANTS = (
     "Jacobian",
     "Jets",
     "Join",
+    "JSON",
     "Jupyter",
     "K3Carpets",
     "K3Surfaces",
@@ -1364,6 +1388,7 @@ M2CONSTANTS = (
     "MakePDF",
     "MapleInterface",
     "Markov",
+    "MatchingFields",
     "Matroids",
     "maxAllowableThreads",
     "maxExponent",
@@ -1459,6 +1484,7 @@ M2CONSTANTS = (
     "Points",
     "Polyhedra",
     "Polymake",
+    "PolyominoIdeals",
     "Posets",
     "Position",
     "PositivityToricBundles",
@@ -1487,6 +1513,7 @@ M2CONSTANTS = (
     "Prune",
     "PruneComplex",
     "pruningMap",
+    "PseudomonomialPrimaryDecomposition",
     "Pullback",
     "PushForward",
     "Python",
@@ -1546,6 +1573,7 @@ M2CONSTANTS = (
     "RunDirectory",
     "RunExamples",
     "RunExternalM2",
+    "SagbiGbDetection",
     "Saturation",
     "Schubert2",
     "SchurComplexes",
@@ -1593,6 +1621,7 @@ M2CONSTANTS = (
     "stdio",
     "StopBeforeComputation",
     "stopIfError",
+    "StopIteration",
     "StopWithMinimalGenerators",
     "Strategy",
     "Strict",
@@ -1634,9 +1663,11 @@ M2CONSTANTS = (
     "ToricInvariants",
     "ToricTopology",
     "ToricVectorBundles",
+    "Torsion",
     "TotalPairs",
     "Tree",
     "TriangularSets",
+    "Triangulations",
     "Tries",
     "Trim",
     "Triplets",
@@ -1679,6 +1710,7 @@ M2CONSTANTS = (
     "Weights",
     "WeylAlgebra",
     "WeylGroups",
+    "WhitneyStratifications",
     "Wrap",
     "XML"
     )
@@ -1687,7 +1719,7 @@ class Macaulay2Lexer(RegexLexer):
     """Lexer for Macaulay2, a software system for research in algebraic geometry."""
 
     name = 'Macaulay2'
-    url = 'https://faculty.math.illinois.edu/Macaulay2/'
+    url = 'https://macaulay2.com/'
     aliases = ['macaulay2']
     filenames = ['*.m2']
 

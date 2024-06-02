@@ -1,0 +1,26 @@
+{
+    "name": "Bazarr",
+    "short_name": "Bazarr",
+    "description": "Bazarr is a companion application to Sonarr and Radarr. It manages and downloads subtitles based on your requirements.",
+    "start_url": "/",
+    "display": "standalone",
+    "theme_color": "#be4bdb",
+    "background_color": "#ffffff",
+    "icons": [
+        {
+            "src": "/images/android-chrome-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png"
+        },
+        {
+            "src": "/images/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png"
+        },
+        {
+            "src": "/images/mstile-150x150.png",
+            "sizes": "150x150",
+            "type": "image/png"
+        }
+    ]
+}

@@ -1,22 +1,6 @@
 #!/usr/bin/env python
-# -*- coding: UTF-8 -*-
-
-
-class BoxError(Exception):
-    """Non standard dictionary exceptions"""
-
-
-class BoxKeyError(BoxError, KeyError, AttributeError):
-    """Key does not exist"""
-
-
-class BoxTypeError(BoxError, TypeError):
-    """Cannot handle that instance's type"""
-
-
-class BoxValueError(BoxError, ValueError):
-    """Issue doing something with that value"""
-
-
-class BoxWarning(UserWarning):
-    """Here be dragons"""
+class BoxError(Exception):0
+class BoxKeyError(BoxError,KeyError,AttributeError):0
+class BoxTypeError(BoxError,TypeError):0
+class BoxValueError(BoxError,ValueError):0
+class BoxWarning(UserWarning):0

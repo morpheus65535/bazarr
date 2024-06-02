@@ -32,3 +32,7 @@ class TimeoutError(SocketIOError):
 
 class BadNamespaceError(SocketIOError):
     pass
+
+
+class DisconnectedError(SocketIOError):
+    pass

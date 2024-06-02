@@ -1314,6 +1314,14 @@
   release_group: VISIONPLUSHDR1000
   type: movie
 
+? Foo.Bar.2021.DV.2160p.WEB-DL.x265-ASDF
+: title: Foo Bar
+  screen_size: 2160p
+  other: [Dolby Vision]
+  video_codec: H.265
+  release_group: ASDF
+  type: movie
+
 ? How To Steal A Dog.2014.BluRay.1080p.12bit.HEVC.OPUS 5.1-Hn1Dr2.mkv
 : title: How To Steal A Dog
   year: 2014
@@ -1711,6 +1719,20 @@
   release_group: LAZY
   type: movie
 
+? The.Movie.2016.2160p.UHD.BluRay.REMUX.HDR.HEVC.DTS-X-NOGROUP
+: title: The Movie
+  year: 2016
+  screen_size: 2160p
+  source: Ultra HD Blu-ray
+  other:
+  - HDR10
+  - Remux
+  video_codec: H.265
+  video_profile: High Efficiency Video Coding
+  audio_codec: DTS:X
+  release_group: NOGROUP
+  type: movie
+
 ? Test (2013) [WEBDL-1080p] [x264 AC3] [ENG+RU+PT] [NTb].mkv
 : title: Test
   year: 2013
@@ -1857,5 +1879,4 @@
   video_codec: H.264
   release_group: DON
   container: mkv
-  mimetype: video/x-matroska
   type: movie

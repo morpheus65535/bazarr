@@ -37,7 +37,7 @@ function useSearch(query: string) {
           link,
         };
       }) ?? [],
-    [data]
+    [data],
   );
 }
 
@@ -69,7 +69,7 @@ const ResultComponent = forwardRef<HTMLDivElement, ResultCompProps>(
         {value}
       </Anchor>
     );
-  }
+  },
 );
 
 const Search: FunctionComponent = () => {

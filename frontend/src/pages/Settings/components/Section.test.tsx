@@ -17,7 +17,7 @@ describe("Settings section", () => {
     rawRender(
       <Section header="Section Header">
         <Text>{text}</Text>
-      </Section>
+      </Section>,
     );
 
     expect(screen.getByText(header)).toBeDefined();
@@ -29,7 +29,7 @@ describe("Settings section", () => {
     rawRender(
       <Section header="Section Header" hidden>
         <Text>{text}</Text>
-      </Section>
+      </Section>,
     );
 
     expect(screen.getByText(header)).not.toBeVisible();

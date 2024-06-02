@@ -1,5 +1,5 @@
 # orm/session.py
-# Copyright (C) 2005-2023 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -83,6 +83,7 @@ from ..sql import roles
 from ..sql import Select
 from ..sql import TableClause
 from ..sql import visitors
+from ..sql.base import _NoArg
 from ..sql.base import CompileState
 from ..sql.schema import Table
 from ..sql.selectable import ForUpdateArg
@@ -101,6 +102,7 @@ if typing.TYPE_CHECKING:
     from .mapper import Mapper
     from .path_registry import PathRegistry
     from .query import RowReturningQuery
+    from ..engine import CursorResult
     from ..engine import Result
     from ..engine import Row
     from ..engine import RowMapping
@@ -109,6 +111,7 @@ if typing.TYPE_CHECKING:
     from ..engine.interfaces import _CoreAnyExecuteParams
     from ..engine.interfaces import _CoreSingleExecuteParams
     from ..engine.interfaces import _ExecuteOptions
+    from ..engine.interfaces import CoreExecuteOptionsParameter
     from ..engine.result import ScalarResult
     from ..event import _InstanceLevelDispatch
     from ..sql._typing import _ColumnsClauseArgument
@@ -124,8 +127,10 @@ if typing.TYPE_CHECKING:
     from ..sql._typing import _TypedColumnClauseArgument as _TCCA
     from ..sql.base import Executable
     from ..sql.base import ExecutableOption
+    from ..sql.dml import UpdateBase
     from ..sql.elements import ClauseElement
     from ..sql.roles import TypedColumnsClauseRole
+    from ..sql.selectable import ForUpdateParameter
     from ..sql.selectable import TypedReturnsRows
 
 _T = TypeVar("_T", bound=Any)
@@ -141,9 +146,9 @@ __all__ = [
     "object_session",
 ]
 
-_sessions: weakref.WeakValueDictionary[
-    int, Session
-] = weakref.WeakValueDictionary()
+_sessions: weakref.WeakValueDictionary[int, Session] = (
+    weakref.WeakValueDictionary()
+)
 """Weak-referencing dictionary of :class:`.Session` objects.
 """
 
@@ -183,8 +188,7 @@ class _ConnectionCallableProto(Protocol):
         mapper: Optional[Mapper[Any]] = None,
         instance: Optional[object] = None,
         **kw: Any,
-    ) -> Connection:
-        ...
+    ) -> Connection: ...
 
 
 def _state_session(state: InstanceState[Any]) -> Optional[Session]:
@@ -250,10 +254,13 @@ class SessionTransactionState(_StateChangeState):
     COMMITTED = 3
     DEACTIVE = 4
     CLOSED = 5
+    PROVISIONING_CONNECTION = 6
 
 
 # backwards compatibility
-ACTIVE, PREPARED, COMMITTED, DEACTIVE, CLOSED = tuple(SessionTransactionState)
+ACTIVE, PREPARED, COMMITTED, DEACTIVE, CLOSED, PROVISIONING_CONNECTION = tuple(
+    SessionTransactionState
+)
 
 
 class ORMExecuteState(util.MemoizedSlots):
@@ -503,7 +510,8 @@ class ORMExecuteState(util.MemoizedSlots):
 
 
         """
-        return self.bind_arguments.get("mapper", None)
+        mp: Optional[Mapper[Any]] = self.bind_arguments.get("mapper", None)
+        return mp
 
     @property
     def all_mappers(self) -> Sequence[Mapper[Any]]:
@@ -603,7 +611,11 @@ class ORMExecuteState(util.MemoizedSlots):
     ]:
         if not self.is_select:
             return None
-        opts = self.statement._compile_options
+        try:
+            opts = self.statement._compile_options
+        except AttributeError:
+            return None
+
         if opts is not None and opts.isinstance(
             context.ORMCompileState.default_compile_options
         ):
@@ -707,9 +719,14 @@ class ORMExecuteState(util.MemoizedSlots):
                 "This ORM execution is not against a SELECT statement "
                 "so there are no load options."
             )
-        return self.execution_options.get(
+
+        lo: Union[
+            context.QueryContext.default_load_options,
+            Type[context.QueryContext.default_load_options],
+        ] = self.execution_options.get(
             "_sa_orm_load_options", context.QueryContext.default_load_options
         )
+        return lo
 
     @property
     def update_delete_options(
@@ -726,10 +743,14 @@ class ORMExecuteState(util.MemoizedSlots):
                 "This ORM execution is not against an UPDATE or DELETE "
                 "statement so there are no update options."
             )
-        return self.execution_options.get(
+        uo: Union[
+            bulk_persistence.BulkUDCompileState.default_update_options,
+            Type[bulk_persistence.BulkUDCompileState.default_update_options],
+        ] = self.execution_options.get(
             "_sa_orm_update_options",
             bulk_persistence.BulkUDCompileState.default_update_options,
         )
+        return uo
 
     @property
     def _non_compile_orm_options(self) -> Sequence[ORMOption]:
@@ -870,6 +891,12 @@ class SessionTransaction(_StateChange, TransactionalContext):
         self.nested = nested = origin is SessionTransactionOrigin.BEGIN_NESTED
         self.origin = origin
 
+        if session._close_state is _SessionCloseState.CLOSED:
+            raise sa_exc.InvalidRequestError(
+                "This Session has been permanently closed and is unable "
+                "to handle any more transaction requests."
+            )
+
         if nested:
             if not parent:
                 raise sa_exc.InvalidRequestError(
@@ -914,6 +941,12 @@ class SessionTransaction(_StateChange, TransactionalContext):
                 )
         elif state is SessionTransactionState.CLOSED:
             raise sa_exc.ResourceClosedError("This transaction is closed")
+        elif state is SessionTransactionState.PROVISIONING_CONNECTION:
+            raise sa_exc.InvalidRequestError(
+                "This session is provisioning a new connection; concurrent "
+                "operations are not permitted",
+                code="isce",
+            )
         else:
             raise sa_exc.InvalidRequestError(
                 f"This session is in '{state.name.lower()}' state; no "
@@ -933,8 +966,6 @@ class SessionTransaction(_StateChange, TransactionalContext):
         "nested" / SAVEPOINT transaction.  If the
         :attr:`.SessionTransaction.nested` attribute is ``True``, then
         this is a SAVEPOINT, and if ``False``, indicates this a subtransaction.
-
-        .. versionadded:: 1.0.16 - use ._parent for previous versions
 
         """
         return self._parent
@@ -968,16 +999,17 @@ class SessionTransaction(_StateChange, TransactionalContext):
     def _begin(self, nested: bool = False) -> SessionTransaction:
         return SessionTransaction(
             self.session,
-            SessionTransactionOrigin.BEGIN_NESTED
-            if nested
-            else SessionTransactionOrigin.SUBTRANSACTION,
+            (
+                SessionTransactionOrigin.BEGIN_NESTED
+                if nested
+                else SessionTransactionOrigin.SUBTRANSACTION
+            ),
             self,
         )
 
     def _iterate_self_and_parents(
         self, upto: Optional[SessionTransaction] = None
     ) -> Iterable[SessionTransaction]:
-
         current = self
         result: Tuple[SessionTransaction, ...] = ()
         while current:
@@ -1078,9 +1110,8 @@ class SessionTransaction(_StateChange, TransactionalContext):
     def _connection_for_bind(
         self,
         bind: _SessionBind,
-        execution_options: Optional[_ExecuteOptions],
+        execution_options: Optional[CoreExecuteOptionsParameter],
     ) -> Connection:
-
         if bind in self._connections:
             if execution_options:
                 util.warn(
@@ -1089,80 +1120,89 @@ class SessionTransaction(_StateChange, TransactionalContext):
                 )
             return self._connections[bind][0]
 
+        self._state = SessionTransactionState.PROVISIONING_CONNECTION
+
         local_connect = False
         should_commit = True
 
-        if self._parent:
-            conn = self._parent._connection_for_bind(bind, execution_options)
-            if not self.nested:
-                return conn
-        else:
-            if isinstance(bind, engine.Connection):
-                conn = bind
-                if conn.engine in self._connections:
-                    raise sa_exc.InvalidRequestError(
-                        "Session already has a Connection associated for the "
-                        "given Connection's Engine"
-                    )
-            else:
-                conn = bind.connect()
-                local_connect = True
-
         try:
-            if execution_options:
-                conn = conn.execution_options(**execution_options)
-
-            transaction: Transaction
-            if self.session.twophase and self._parent is None:
-                # TODO: shouldn't we only be here if not
-                # conn.in_transaction() ?
-                # if twophase is set and conn.in_transaction(), validate
-                # that it is in fact twophase.
-                transaction = conn.begin_twophase()
-            elif self.nested:
-                transaction = conn.begin_nested()
-            elif conn.in_transaction():
-                join_transaction_mode = self.session.join_transaction_mode
-
-                if join_transaction_mode == "conditional_savepoint":
-                    if conn.in_nested_transaction():
-                        join_transaction_mode = "create_savepoint"
-                    else:
-                        join_transaction_mode = "rollback_only"
-
-                if join_transaction_mode in (
-                    "control_fully",
-                    "rollback_only",
-                ):
-                    if conn.in_nested_transaction():
-                        transaction = conn._get_required_nested_transaction()
-                    else:
-                        transaction = conn._get_required_transaction()
-                    if join_transaction_mode == "rollback_only":
-                        should_commit = False
-                elif join_transaction_mode == "create_savepoint":
-                    transaction = conn.begin_nested()
-                else:
-                    assert False, join_transaction_mode
+            if self._parent:
+                conn = self._parent._connection_for_bind(
+                    bind, execution_options
+                )
+                if not self.nested:
+                    return conn
             else:
-                transaction = conn.begin()
-        except:
-            # connection will not not be associated with this Session;
-            # close it immediately so that it isn't closed under GC
-            if local_connect:
-                conn.close()
-            raise
-        else:
-            bind_is_connection = isinstance(bind, engine.Connection)
+                if isinstance(bind, engine.Connection):
+                    conn = bind
+                    if conn.engine in self._connections:
+                        raise sa_exc.InvalidRequestError(
+                            "Session already has a Connection associated "
+                            "for the given Connection's Engine"
+                        )
+                else:
+                    conn = bind.connect()
+                    local_connect = True
 
-            self._connections[conn] = self._connections[conn.engine] = (
-                conn,
-                transaction,
-                should_commit,
-                not bind_is_connection,
-            )
-            self.session.dispatch.after_begin(self.session, self, conn)
-            return conn
+            try:
+                if execution_options:
+                    conn = conn.execution_options(**execution_options)
+
+                transaction: Transaction
+                if self.session.twophase and self._parent is None:
+                    # TODO: shouldn't we only be here if not
+                    # conn.in_transaction() ?
+                    # if twophase is set and conn.in_transaction(), validate
+                    # that it is in fact twophase.
+                    transaction = conn.begin_twophase()
+                elif self.nested:
+                    transaction = conn.begin_nested()
+                elif conn.in_transaction():
+                    join_transaction_mode = self.session.join_transaction_mode
+
+                    if join_transaction_mode == "conditional_savepoint":
+                        if conn.in_nested_transaction():
+                            join_transaction_mode = "create_savepoint"
+                        else:
+                            join_transaction_mode = "rollback_only"
+
+                    if join_transaction_mode in (
+                        "control_fully",
+                        "rollback_only",
+                    ):
+                        if conn.in_nested_transaction():
+                            transaction = (
+                                conn._get_required_nested_transaction()
+                            )
+                        else:
+                            transaction = conn._get_required_transaction()
+                        if join_transaction_mode == "rollback_only":
+                            should_commit = False
+                    elif join_transaction_mode == "create_savepoint":
+                        transaction = conn.begin_nested()
+                    else:
+                        assert False, join_transaction_mode
+                else:
+                    transaction = conn.begin()
+            except:
+                # connection will not not be associated with this Session;
+                # close it immediately so that it isn't closed under GC
+                if local_connect:
+                    conn.close()
+                raise
+            else:
+                bind_is_connection = isinstance(bind, engine.Connection)
+
+                self._connections[conn] = self._connections[conn.engine] = (
+                    conn,
+                    transaction,
+                    should_commit,
+                    not bind_is_connection,
+                )
+                self.session.dispatch.after_begin(self.session, self, conn)
+                return conn
+        finally:
+            self._state = SessionTransactionState.ACTIVE
 
     def prepare(self) -> None:
         if self._parent is not None or not self.session.twophase:
@@ -1176,7 +1216,6 @@ class SessionTransaction(_StateChange, TransactionalContext):
         (SessionTransactionState.ACTIVE,), SessionTransactionState.PREPARED
     )
     def _prepare_impl(self) -> None:
-
         if self._parent is None or self.nested:
             self.session.dispatch.before_commit(self.session)
 
@@ -1246,7 +1285,6 @@ class SessionTransaction(_StateChange, TransactionalContext):
     def rollback(
         self, _capture_exception: bool = False, _to_root: bool = False
     ) -> None:
-
         stx = self.session._transaction
         assert stx is not None
         if stx is not self:
@@ -1282,7 +1320,6 @@ class SessionTransaction(_StateChange, TransactionalContext):
         sess = self.session
 
         if not rollback_err and not sess._is_clean():
-
             # if items were added, deleted, or mutated
             # here, we need to re-restore the snapshot
             util.warn(
@@ -1310,7 +1347,6 @@ class SessionTransaction(_StateChange, TransactionalContext):
         _StateChangeStates.ANY, SessionTransactionState.CLOSED
     )
     def close(self, invalidate: bool = False) -> None:
-
         if self.nested:
             self.session._nested_transaction = (
                 self._previous_nested_transaction
@@ -1354,8 +1390,17 @@ class SessionTransaction(_StateChange, TransactionalContext):
         return self._state not in (COMMITTED, CLOSED)
 
 
+class _SessionCloseState(Enum):
+    ACTIVE = 1
+    CLOSED = 2
+    CLOSE_IS_RESET = 3
+
+
 class Session(_SessionClassMethods, EventTarget):
     """Manages persistence operations for ORM-mapped objects.
+
+    The :class:`_orm.Session` is **not safe for use in concurrent threads.**.
+    See :ref:`session_faq_threadsafe` for background.
 
     The Session's usage paradigm is described at :doc:`/orm/session`.
 
@@ -1395,6 +1440,7 @@ class Session(_SessionClassMethods, EventTarget):
     twophase: bool
     join_transaction_mode: JoinTransactionMode
     _query_cls: Type[Query[Any]]
+    _close_state: _SessionCloseState
 
     def __init__(
         self,
@@ -1411,8 +1457,9 @@ class Session(_SessionClassMethods, EventTarget):
         query_cls: Optional[Type[Query[Any]]] = None,
         autocommit: Literal[False] = False,
         join_transaction_mode: JoinTransactionMode = "conditional_savepoint",
+        close_resets_only: Union[bool, _NoArg] = _NoArg.NO_ARG,
     ):
-        r"""Construct a new Session.
+        r"""Construct a new :class:`_orm.Session`.
 
         See also the :class:`.sessionmaker` function which is used to
         generate a :class:`.Session`-producing callable with a given
@@ -1586,8 +1633,9 @@ class Session(_SessionClassMethods, EventTarget):
 
             .. tip:: When using SQLite, the SQLite driver included through
                Python 3.11 does not handle SAVEPOINTs correctly in all cases
-               without workarounds. See the section
-               :ref:`pysqlite_serializable` for details on current workarounds.
+               without workarounds. See the sections
+               :ref:`pysqlite_serializable` and :ref:`aiosqlite_serializable`
+               for details on current workarounds.
 
           * ``"control_fully"`` - the :class:`_orm.Session` will take
             control of the given transaction as its own;
@@ -1618,6 +1666,18 @@ class Session(_SessionClassMethods, EventTarget):
 
           .. versionadded:: 2.0.0rc1
 
+        :param close_resets_only: Defaults to ``True``. Determines if
+          the session should reset itself after calling ``.close()``
+          or should pass in a no longer usable state, disabling re-use.
+
+          .. versionadded:: 2.0.22 added flag ``close_resets_only``.
+            A future SQLAlchemy version may change the default value of
+            this flag to ``False``.
+
+          .. seealso::
+
+            :ref:`session_closing` - Detail on the semantics of
+            :meth:`_orm.Session.close` and :meth:`_orm.Session.reset`.
 
         """  # noqa
 
@@ -1650,6 +1710,13 @@ class Session(_SessionClassMethods, EventTarget):
         self.autoflush = autoflush
         self.expire_on_commit = expire_on_commit
         self.enable_baked_queries = enable_baked_queries
+
+        # the idea is that at some point NO_ARG will warn that in the future
+        # the default will switch to close_resets_only=False.
+        if close_resets_only or close_resets_only is _NoArg.NO_ARG:
+            self._close_state = _SessionCloseState.CLOSE_IS_RESET
+        else:
+            self._close_state = _SessionCloseState.ACTIVE
         if (
             join_transaction_mode
             and join_transaction_mode
@@ -1746,7 +1813,6 @@ class Session(_SessionClassMethods, EventTarget):
 
     def _autobegin_t(self, begin: bool = False) -> SessionTransaction:
         if self._transaction is None:
-
             if not begin and not self.autobegin:
                 raise sa_exc.InvalidRequestError(
                     "Autobegin is disabled on this Session; please call "
@@ -1754,9 +1820,11 @@ class Session(_SessionClassMethods, EventTarget):
                 )
             trans = SessionTransaction(
                 self,
-                SessionTransactionOrigin.BEGIN
-                if begin
-                else SessionTransactionOrigin.AUTOBEGIN,
+                (
+                    SessionTransactionOrigin.BEGIN
+                    if begin
+                    else SessionTransactionOrigin.AUTOBEGIN
+                ),
             )
             assert self._transaction is trans
             return trans
@@ -1838,7 +1906,8 @@ class Session(_SessionClassMethods, EventTarget):
 
             :ref:`pysqlite_serializable` - special workarounds required
             with the SQLite driver in order for SAVEPOINT to work
-            correctly.
+            correctly. For asyncio use cases, see the section
+            :ref:`aiosqlite_serializable`.
 
         """
         return self.begin(nested=True)
@@ -1922,7 +1991,7 @@ class Session(_SessionClassMethods, EventTarget):
     def connection(
         self,
         bind_arguments: Optional[_BindArguments] = None,
-        execution_options: Optional[_ExecuteOptions] = None,
+        execution_options: Optional[CoreExecuteOptionsParameter] = None,
     ) -> Connection:
         r"""Return a :class:`_engine.Connection` object corresponding to this
         :class:`.Session` object's transactional state.
@@ -1970,7 +2039,7 @@ class Session(_SessionClassMethods, EventTarget):
     def _connection_for_bind(
         self,
         engine: _SessionBind,
-        execution_options: Optional[_ExecuteOptions] = None,
+        execution_options: Optional[CoreExecuteOptionsParameter] = None,
         **kw: Any,
     ) -> Connection:
         TransactionalContext._trans_ctx_check(self)
@@ -1991,8 +2060,7 @@ class Session(_SessionClassMethods, EventTarget):
         _parent_execute_state: Optional[Any] = None,
         _add_event: Optional[Any] = None,
         _scalar_result: Literal[True] = ...,
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     @overload
     def _execute_internal(
@@ -2005,8 +2073,7 @@ class Session(_SessionClassMethods, EventTarget):
         _parent_execute_state: Optional[Any] = None,
         _add_event: Optional[Any] = None,
         _scalar_result: bool = ...,
-    ) -> Result[Any]:
-        ...
+    ) -> Result[Any]: ...
 
     def _execute_internal(
         self,
@@ -2149,8 +2216,19 @@ class Session(_SessionClassMethods, EventTarget):
         bind_arguments: Optional[_BindArguments] = None,
         _parent_execute_state: Optional[Any] = None,
         _add_event: Optional[Any] = None,
-    ) -> Result[_T]:
-        ...
+    ) -> Result[_T]: ...
+
+    @overload
+    def execute(
+        self,
+        statement: UpdateBase,
+        params: Optional[_CoreAnyExecuteParams] = None,
+        *,
+        execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
+        bind_arguments: Optional[_BindArguments] = None,
+        _parent_execute_state: Optional[Any] = None,
+        _add_event: Optional[Any] = None,
+    ) -> CursorResult[Any]: ...
 
     @overload
     def execute(
@@ -2162,8 +2240,7 @@ class Session(_SessionClassMethods, EventTarget):
         bind_arguments: Optional[_BindArguments] = None,
         _parent_execute_state: Optional[Any] = None,
         _add_event: Optional[Any] = None,
-    ) -> Result[Any]:
-        ...
+    ) -> Result[Any]: ...
 
     def execute(
         self,
@@ -2244,8 +2321,7 @@ class Session(_SessionClassMethods, EventTarget):
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
         **kw: Any,
-    ) -> Optional[_T]:
-        ...
+    ) -> Optional[_T]: ...
 
     @overload
     def scalar(
@@ -2256,8 +2332,7 @@ class Session(_SessionClassMethods, EventTarget):
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
         **kw: Any,
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     def scalar(
         self,
@@ -2294,8 +2369,7 @@ class Session(_SessionClassMethods, EventTarget):
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
         **kw: Any,
-    ) -> ScalarResult[_T]:
-        ...
+    ) -> ScalarResult[_T]: ...
 
     @overload
     def scalars(
@@ -2306,8 +2380,7 @@ class Session(_SessionClassMethods, EventTarget):
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
         **kw: Any,
-    ) -> ScalarResult[Any]:
-        ...
+    ) -> ScalarResult[Any]: ...
 
     def scalars(
         self,
@@ -2360,11 +2433,16 @@ class Session(_SessionClassMethods, EventTarget):
 
         .. tip::
 
-            The :meth:`_orm.Session.close` method **does not prevent the
-            Session from being used again**.   The :class:`_orm.Session` itself
-            does not actually have a distinct "closed" state; it merely means
+            In the default running mode the :meth:`_orm.Session.close`
+            method **does not prevent the Session from being used again**.
+            The :class:`_orm.Session` itself does not actually have a
+            distinct "closed" state; it merely means
             the :class:`_orm.Session` will release all database connections
             and ORM objects.
+
+            Setting the parameter :paramref:`_orm.Session.close_resets_only`
+            to ``False`` will instead make the ``close`` final, meaning that
+            any further action on the session will be forbidden.
 
         .. versionchanged:: 1.4  The :meth:`.Session.close` method does not
            immediately create a new :class:`.SessionTransaction` object;
@@ -2374,10 +2452,39 @@ class Session(_SessionClassMethods, EventTarget):
         .. seealso::
 
             :ref:`session_closing` - detail on the semantics of
-            :meth:`_orm.Session.close`
+            :meth:`_orm.Session.close` and :meth:`_orm.Session.reset`.
+
+            :meth:`_orm.Session.reset` - a similar method that behaves like
+            ``close()`` with  the parameter
+            :paramref:`_orm.Session.close_resets_only` set to ``True``.
 
         """
         self._close_impl(invalidate=False)
+
+    def reset(self) -> None:
+        """Close out the transactional resources and ORM objects used by this
+        :class:`_orm.Session`, resetting the session to its initial state.
+
+        This method provides for same "reset-only" behavior that the
+        :meth:`_orm.Session.close` method has provided historically, where the
+        state of the :class:`_orm.Session` is reset as though the object were
+        brand new, and ready to be used again.
+        This method may then be useful for :class:`_orm.Session` objects
+        which set :paramref:`_orm.Session.close_resets_only` to ``False``,
+        so that "reset only" behavior is still available.
+
+        .. versionadded:: 2.0.22
+
+        .. seealso::
+
+            :ref:`session_closing` - detail on the semantics of
+            :meth:`_orm.Session.close` and :meth:`_orm.Session.reset`.
+
+            :meth:`_orm.Session.close` - a similar method will additionally
+            prevent re-use of the Session when the parameter
+            :paramref:`_orm.Session.close_resets_only` is set to ``False``.
+        """
+        self._close_impl(invalidate=False, is_reset=True)
 
     def invalidate(self) -> None:
         """Close this Session, using connection invalidation.
@@ -2415,7 +2522,9 @@ class Session(_SessionClassMethods, EventTarget):
         """
         self._close_impl(invalidate=True)
 
-    def _close_impl(self, invalidate: bool) -> None:
+    def _close_impl(self, invalidate: bool, is_reset: bool = False) -> None:
+        if not is_reset and self._close_state is _SessionCloseState.ACTIVE:
+            self._close_state = _SessionCloseState.CLOSED
         self.expunge_all()
         if self._transaction is not None:
             for transaction in self._transaction._iterate_self_and_parents():
@@ -2680,14 +2789,12 @@ class Session(_SessionClassMethods, EventTarget):
         )
 
     @overload
-    def query(self, _entity: _EntityType[_O]) -> Query[_O]:
-        ...
+    def query(self, _entity: _EntityType[_O]) -> Query[_O]: ...
 
     @overload
     def query(
         self, _colexpr: TypedColumnsClauseRole[_T]
-    ) -> RowReturningQuery[Tuple[_T]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T]]: ...
 
     # START OVERLOADED FUNCTIONS self.query RowReturningQuery 2-8
 
@@ -2697,14 +2804,12 @@ class Session(_SessionClassMethods, EventTarget):
     @overload
     def query(
         self, __ent0: _TCCA[_T0], __ent1: _TCCA[_T1]
-    ) -> RowReturningQuery[Tuple[_T0, _T1]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1]]: ...
 
     @overload
     def query(
         self, __ent0: _TCCA[_T0], __ent1: _TCCA[_T1], __ent2: _TCCA[_T2]
-    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2]]: ...
 
     @overload
     def query(
@@ -2713,8 +2818,7 @@ class Session(_SessionClassMethods, EventTarget):
         __ent1: _TCCA[_T1],
         __ent2: _TCCA[_T2],
         __ent3: _TCCA[_T3],
-    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3]]: ...
 
     @overload
     def query(
@@ -2724,8 +2828,7 @@ class Session(_SessionClassMethods, EventTarget):
         __ent2: _TCCA[_T2],
         __ent3: _TCCA[_T3],
         __ent4: _TCCA[_T4],
-    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4]]: ...
 
     @overload
     def query(
@@ -2736,8 +2839,7 @@ class Session(_SessionClassMethods, EventTarget):
         __ent3: _TCCA[_T3],
         __ent4: _TCCA[_T4],
         __ent5: _TCCA[_T5],
-    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4, _T5]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4, _T5]]: ...
 
     @overload
     def query(
@@ -2749,8 +2851,7 @@ class Session(_SessionClassMethods, EventTarget):
         __ent4: _TCCA[_T4],
         __ent5: _TCCA[_T5],
         __ent6: _TCCA[_T6],
-    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4, _T5, _T6]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4, _T5, _T6]]: ...
 
     @overload
     def query(
@@ -2763,16 +2864,14 @@ class Session(_SessionClassMethods, EventTarget):
         __ent5: _TCCA[_T5],
         __ent6: _TCCA[_T6],
         __ent7: _TCCA[_T7],
-    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4, _T5, _T6, _T7]]:
-        ...
+    ) -> RowReturningQuery[Tuple[_T0, _T1, _T2, _T3, _T4, _T5, _T6, _T7]]: ...
 
     # END OVERLOADED FUNCTIONS self.query
 
     @overload
     def query(
         self, *entities: _ColumnsClauseArgument[Any], **kwargs: Any
-    ) -> Query[Any]:
-        ...
+    ) -> Query[Any]: ...
 
     def query(
         self, *entities: _ColumnsClauseArgument[Any], **kwargs: Any
@@ -2909,7 +3008,7 @@ class Session(_SessionClassMethods, EventTarget):
         self,
         instance: object,
         attribute_names: Optional[Iterable[str]] = None,
-        with_for_update: Optional[ForUpdateArg] = None,
+        with_for_update: ForUpdateParameter = None,
     ) -> None:
         """Expire and refresh attributes on the given instance.
 
@@ -3188,7 +3287,6 @@ class Session(_SessionClassMethods, EventTarget):
             # prevent against last minute dereferences of the object
             obj = state.obj()
             if obj is not None:
-
                 instance_key = mapper._identity_key_from_state(state)
 
                 if (
@@ -3386,7 +3484,6 @@ class Session(_SessionClassMethods, EventTarget):
     def _delete_impl(
         self, state: InstanceState[Any], obj: object, head: bool
     ) -> None:
-
         if state.key is None:
             if head:
                 raise sa_exc.InvalidRequestError(
@@ -3430,7 +3527,7 @@ class Session(_SessionClassMethods, EventTarget):
         *,
         options: Optional[Sequence[ORMOption]] = None,
         populate_existing: bool = False,
-        with_for_update: Optional[ForUpdateArg] = None,
+        with_for_update: ForUpdateParameter = None,
         identity_token: Optional[Any] = None,
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
@@ -3549,6 +3646,57 @@ class Session(_SessionClassMethods, EventTarget):
             bind_arguments=bind_arguments,
         )
 
+    def get_one(
+        self,
+        entity: _EntityBindKey[_O],
+        ident: _PKIdentityArgument,
+        *,
+        options: Optional[Sequence[ORMOption]] = None,
+        populate_existing: bool = False,
+        with_for_update: ForUpdateParameter = None,
+        identity_token: Optional[Any] = None,
+        execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
+        bind_arguments: Optional[_BindArguments] = None,
+    ) -> _O:
+        """Return exactly one instance based on the given primary key
+        identifier, or raise an exception if not found.
+
+        Raises ``sqlalchemy.orm.exc.NoResultFound`` if the query
+        selects no rows.
+
+        For a detailed documentation of the arguments see the
+        method :meth:`.Session.get`.
+
+        .. versionadded:: 2.0.22
+
+        :return: The object instance.
+
+        .. seealso::
+
+            :meth:`.Session.get` - equivalent method that instead
+              returns ``None`` if no row was found with the provided primary
+              key
+
+        """
+
+        instance = self.get(
+            entity,
+            ident,
+            options=options,
+            populate_existing=populate_existing,
+            with_for_update=with_for_update,
+            identity_token=identity_token,
+            execution_options=execution_options,
+            bind_arguments=bind_arguments,
+        )
+
+        if instance is None:
+            raise sa_exc.NoResultFound(
+                "No row was found when one was required"
+            )
+
+        return instance
+
     def _get_impl(
         self,
         entity: _EntityBindKey[_O],
@@ -3557,12 +3705,11 @@ class Session(_SessionClassMethods, EventTarget):
         *,
         options: Optional[Sequence[ExecutableOption]] = None,
         populate_existing: bool = False,
-        with_for_update: Optional[ForUpdateArg] = None,
+        with_for_update: ForUpdateParameter = None,
         identity_token: Optional[Any] = None,
         execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
         bind_arguments: Optional[_BindArguments] = None,
     ) -> Optional[_O]:
-
         # convert composite types to individual args
         if (
             is_composite_class(primary_key_identity)
@@ -3595,7 +3742,6 @@ class Session(_SessionClassMethods, EventTarget):
             )
 
         if is_dict:
-
             pk_synonyms = mapper._pk_synonyms
 
             if pk_synonyms:
@@ -3606,9 +3752,9 @@ class Session(_SessionClassMethods, EventTarget):
                 if correct_keys:
                     primary_key_identity = dict(primary_key_identity)
                     for k in correct_keys:
-                        primary_key_identity[
-                            pk_synonyms[k]
-                        ] = primary_key_identity[k]
+                        primary_key_identity[pk_synonyms[k]] = (
+                            primary_key_identity[k]
+                        )
 
             try:
                 primary_key_identity = list(
@@ -3632,7 +3778,6 @@ class Session(_SessionClassMethods, EventTarget):
             and not mapper.always_refresh
             and with_for_update is None
         ):
-
             instance = self._identity_lookup(
                 mapper,
                 primary_key_identity,
@@ -3703,10 +3848,6 @@ class Session(_SessionClassMethods, EventTarget):
         mapped with ``cascade="merge"``.
 
         See :ref:`unitofwork_merging` for a detailed discussion of merging.
-
-        .. versionchanged:: 1.1 - :meth:`.Session.merge` will now reconcile
-           pending objects with overlapping primary keys in the same way
-           as persistent.  See :ref:`change_3601` for discussion.
 
         :param instance: Instance to be merged.
         :param load: Boolean, when False, :meth:`.merge` switches into
@@ -4172,7 +4313,6 @@ class Session(_SessionClassMethods, EventTarget):
         )
 
     def _flush(self, objects: Optional[Sequence[object]] = None) -> None:
-
         dirty = self._dirty_states
         if not dirty and not self._deleted and not self._new:
             self.identity_map._modified.clear()
@@ -4832,8 +4972,7 @@ class sessionmaker(_SessionClassMethods, Generic[_S]):
         expire_on_commit: bool = ...,
         info: Optional[_InfoType] = ...,
         **kw: Any,
-    ):
-        ...
+    ): ...
 
     @overload
     def __init__(
@@ -4844,8 +4983,7 @@ class sessionmaker(_SessionClassMethods, Generic[_S]):
         expire_on_commit: bool = ...,
         info: Optional[_InfoType] = ...,
         **kw: Any,
-    ):
-        ...
+    ): ...
 
     def __init__(
         self,
@@ -5078,7 +5216,7 @@ def make_transient_to_detached(instance: object) -> None:
     if state._deleted:
         del state._deleted
     state._commit_all(state.dict)
-    state._expire_attributes(state.dict, state.unloaded_expirable)
+    state._expire_attributes(state.dict, state.unloaded)
 
 
 def object_session(instance: object) -> Optional[Session]:

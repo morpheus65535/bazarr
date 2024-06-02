@@ -115,7 +115,7 @@ export type MultiSelectorProps<T extends string | number> = BaseInput<T[]> &
   GlobalMultiSelectorProps<T>;
 
 export function MultiSelector<T extends string | number>(
-  props: MultiSelectorProps<T>
+  props: MultiSelectorProps<T>,
 ) {
   const { value, update, rest } = useBaseInput(props);
 
@@ -187,7 +187,7 @@ export const Action: FunctionComponent<
 interface FileProps extends BaseInput<string> {}
 
 export const File: FunctionComponent<Override<FileProps, FileBrowserProps>> = (
-  props
+  props,
 ) => {
   const { value, update, rest } = useBaseInput(props);
 
