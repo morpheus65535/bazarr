@@ -223,13 +223,18 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Jimaku.cc",
     description: "Japanese Subtitles Provider",
     message:
-      "You must register and generate and API key.",
+      "API key required. Subtitles are provided by users and therefore have varying degrees of quality and accuracy.",
     inputs: [
       {
         type: "password",
         key: "api_key",
         name: "API key",
       },
+      {
+        type: "switch",
+        key: "enable_archives",
+        name: "Download subtitle archives"
+      }
     ],
   },
   { key: "hosszupuska", description: "Hungarian Subtitles Provider" },
