@@ -4,6 +4,7 @@ import io
 import logging
 import re
 import time
+import traceback
 import urllib.parse
 import rarfile
 import zipfile
@@ -100,16 +101,16 @@ class JimakuProvider(Provider):
         self.session.close()
 
     def query(self, video):
-        series_name = sanitize(video.alternative_series[0] if len(video.alternative_series) > 0 else str(video.series_name))
+        series_name = (video.alternative_series[0] if len(video.alternative_series) > 0 else str(video.series_name)).lower()
 
         # Check if series_name ends with "Sn", if so strip chars as Jimaku only lists seasons by numbers alone
         # If 'n' is 1, completely strip it as first seasons don't have a season number
-        if re.search(r'S\d$', series_name):
+        if re.search(r's\d$', series_name):
             if int(series_name[-1]) == 1:
-                series_name = re.sub(r'S\d$', "",  series_name)
+                series_name = re.sub(r's\d$', "", series_name)
             else:
                 # As shows sometimes have the wrong season number in the title, we'll reassemble it
-                series_name = re.sub(r'S\d$', str(video.season),  series_name)
+                series_name = re.sub(r's\d$', str(video.season), series_name)
 
         # Search for entry
         jimaku_search = self._assemble_jimaku_search_url(video, series_name)
@@ -277,29 +278,18 @@ class JimakuProvider(Provider):
     
     @staticmethod
     @cache
-    def _get_anime_list_map():
-        # We won't use self.session as the endpoint doesnt need our API key
-        response = requests.get(
-            "https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-mini.json",
-            headers={'Content-Type': 'application/json'}
-        )
+    def _webrequest_with_cache(url, headers=None):
+        response = requests.get(url, headers=headers)
         response.raise_for_status()
         
-        return response.json()
-    
-    @staticmethod
-    @cache
-    def _get_tvdb_anidb_map():
-        # We won't use self.session as the endpoint doesnt need our API key
-        response = requests.get(
-            "https://raw.githubusercontent.com/Anime-Lists/anime-lists/master/anime-list.xml"
-        )
-        response.raise_for_status()
-        
-        return response.content
+        try:
+            return response.json()
+        except:
+            return response.content
 
     def _get_tvdb_anidb_mapping(self, video, tvdbid):
-        xml = etree.fromstring(self._get_tvdb_anidb_map())
+        url = "https://raw.githubusercontent.com/Anime-Lists/anime-lists/master/anime-list.xml"
+        xml = etree.fromstring(self._webrequest_with_cache(url))
         animes = xml.findall(
             f".//anime[@tvdbid='{tvdbid}'][@defaulttvdbseason='{video.season}']"
         )
@@ -361,7 +351,8 @@ class JimakuProvider(Provider):
 
         if tag_to_derive_from or derived_anidb_id:
             try:
-                anime_list = self._get_anime_list_map()
+                url = "https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-mini.json"
+                anime_list = self._webrequest_with_cache(url)
                 
                 if derived_anidb_id:
                     mapped_tag = "anidb_id"
@@ -385,7 +376,7 @@ class JimakuProvider(Provider):
                 else:
                     logger.warning(f"Could not find corresponding Anilist ID with '{mapped_tag}': {value_to_use}")
             except Exception as e:
-                logger.error(f"Failed deriving anilist_id: {str(e)}")
+                logger.error(f"Failed deriving anilist_id: {traceback.format_exc()}")
                 
         url = "entries/search"
         if derived_anilist_id:
