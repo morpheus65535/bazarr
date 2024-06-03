@@ -31,13 +31,14 @@ class JimakuSubtitle(Subtitle):
     
     hash_verifiable = False
 
-    def __init__(self, video, subtitle_id, subtitle_url, anilist_id=None):
+    def __init__(self, video, subtitle_id, subtitle_url, release_info, anilist_id=None):
         # Override param 'language' as it could only ever be "ja"
         super(JimakuSubtitle, self).__init__(Language("jpn"))
         
         self.video = video
         self.subtitle_id = subtitle_id
         self.subtitle_url = subtitle_url
+        self.release_info = release_info
         self.anilist_id = anilist_id
         
     @property
@@ -120,6 +121,7 @@ class JimakuProvider(Provider):
         
         # Determine entry
         entry_id = None
+        entry_name = None
         anilist_id = None
         name_is_japanese = self._is_string_japanese(f"series_name")
         
@@ -136,7 +138,8 @@ class JimakuProvider(Provider):
             if entry_property_value is not None:
                 entry_id = entry.get('id')
                 anilist_id = entry.get('anilist_id', None)
-                logger.info(f"Matched entry: ID: '{entry_id}', anilist_id: '{anilist_id}', name: '{entry.get('name')}', english_name: '{entry.get('english_name')}'")
+                entry_name = entry.get('name')
+                logger.info(f"Matched entry: ID: '{entry_id}', anilist_id: '{anilist_id}', name: '{entry_name}', english_name: '{entry.get('english_name')}'")
                 break
             
         if entry_property_value is None:
@@ -181,8 +184,9 @@ class JimakuProvider(Provider):
         for item in sorted_data:
             if not item['name'].endswith(archive_formats_blacklist):
                 subtitle_url = item.get('url')
+                subtitle_filename = item.get('name')
                 subtitle_id = f"{str(anilist_id)}_{episode_number}_{video.release_group}"
-                list_of_subtitles.append(JimakuSubtitle(video, subtitle_id, subtitle_url, anilist_id))
+                list_of_subtitles.append(JimakuSubtitle(video, subtitle_id, subtitle_url, subtitle_filename, anilist_id))
             else:
                 logger.debug(f"> Skipping subtitle of name {item['name']} due to archive blacklist. (enable_archives: {self.enable_archives})")
         
