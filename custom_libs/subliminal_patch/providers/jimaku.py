@@ -138,11 +138,21 @@ class JimakuProvider(Provider):
             return None
         
         # Get a list of subtitles for entry
-        episode_number = video.episode if not self.video_episode_number_override else self.video_episode_number_override
-        url = f"entries/{entry_id}/files?episode={episode_number}"
-        data = self._get_jimaku_response(url)
-        if not data:
-            return None
+        retry_count = 0
+        while True:
+            episode_number = video.episode
+            url = f"entries/{entry_id}/files?episode={episode_number}"
+            data = self._get_jimaku_response(url)
+            
+            # Edge case: When dealing with a cour, episodes could be uploaded with their episode numbers having an offset applied
+            if not data and self.video_episode_number_override and retry_count < 1:
+                episode_number = self.video_episode_number_override
+                logger.warning(f"Found no subtitles for {episode_number}, but will retry with offset-adjusted episode number {self.video_episode_number_override}.")
+                retry_count += 1
+            elif not data:
+                return None
+            else:
+                break
         
         # Filter subtitles
         list_of_subtitles = []
@@ -187,7 +197,7 @@ class JimakuProvider(Provider):
         
         retry_count = 0
         while retry_count < self.api_ratelimit_backoff_limit:
-            retry_count = 0
+            retry_count += 1
             response = self.session.get(url, timeout=10)
             
             if response.status_code == 429:
