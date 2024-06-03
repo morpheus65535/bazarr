@@ -14,6 +14,7 @@ from subliminal.utils import sanitize
 from subliminal.video import Episode, Movie
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.exceptions import TooManyRequests
 from functools import cache
 from subzero.language import Language
 
@@ -68,6 +69,9 @@ class JimakuProvider(Provider):
     video_types = (Episode, Movie)
     api_url = 'https://jimaku.cc/api'
     
+    api_ratelimit_max_delay = 5 # In seconds
+    api_ratelimit_backoff_limit = 3
+    
     languages = {Language.fromietf("ja")}
 
     def __init__(self, api_key=None):
@@ -100,64 +104,11 @@ class JimakuProvider(Provider):
                 # As shows sometimes have the wrong season number in the title, we'll reassemble it
                 series_name = re.sub(r'S\d$', str(video.season),  series_name)
 
-        # Attempt to derive anilist_id
-        derived_anilist_id = None
-        derived_anidb_id = None
-        tag_to_derive_from = ""
-        
-        logger.info(f"Attempting to derive anilist ID...")
-        for tag in ["series_anidb_id", "series_anidb_episode_id", "tvdb_id", "series_tvdb_id"]:
-            candidate = getattr(video, tag, None)
-            
-            if candidate:
-                # Because tvdb assigns a single ID to all seasons of a show, we'll have to use another list to determine the correct AniDB ID
-                if "tvdb" in tag and video.season > 1:
-                    derived_anidb_id = self._get_tvdb_anidb_mapping(candidate, video.season)
-                    logger.info(f"Found AniDB ID '{derived_anidb_id}' for TVDB ID '{candidate}', season '{video.season}'")
-                    break
-                    
-                tag_to_derive_from = tag
-                logger.info(f"Got candidate tag '{tag_to_derive_from}' with value '{candidate}'")
-                break
-
-        if tag_to_derive_from or derived_anidb_id:
-            try:
-                anime_list = self._get_anime_list_map()
-                
-                if derived_anidb_id:
-                    mapped_tag = "anidb_id"
-                    value_to_use = derived_anidb_id
-                else:
-                    # Left: video, right: anime-lists
-                    tag_map = {
-                        "series_anidb_id": "anidb_id",
-                        "series_anidb_episode_id": "anidb_id",
-                        "tvdb_id": "thetvdb_id",
-                        "series_tvdb_id": "thetvdb_id",
-                    }
-                    mapped_tag = tag_map[tag_to_derive_from]
-                    value_to_use = getattr(video, tag_to_derive_from)
-                
-                obj = [obj for obj in anime_list if mapped_tag in obj and str(obj[mapped_tag]) == str(value_to_use)]
-                logger.debug(f"Based on '{mapped_tag}': '{value_to_use}', anime-list matched: {obj}")
-
-                if len(obj) > 0:
-                    derived_anilist_id = obj[0]["anilist_id"]
-                else:
-                    logger.warning(f"Could not find corresponding Anilist ID with '{mapped_tag}': {value_to_use}")
-            except Exception as e:
-                logger.error(f"Failed deriving anilist_id: {str(e)}")
-                
-        url_search_param = None
-        if derived_anilist_id:
-            logger.info(f"Will search for entry based on anilist_id: {derived_anilist_id}")
-            url_search_param = f"anilist_id={derived_anilist_id}"
-        else:
-            logger.info(f"Will search for entry based on series_name: {series_name}")
-            url_search_param = f"query={urllib.parse.quote_plus(series_name)}"
-        
         # Search for entry
-        data = self._get_series_entry(url_search_param)
+        jimaku_search = self._assemble_jimaku_search_url(video, series_name)
+        data = self._get_jimaku_response(jimaku_search['url'])
+        if not data:
+            return None
         
         # Determine entry
         entry_id = None
@@ -165,7 +116,7 @@ class JimakuProvider(Provider):
         name_is_japanese = self._is_string_japanese(f"series_name")
         
         for entry in data:
-            if derived_anilist_id:
+            if jimaku_search['derived_anilist_id']:
                 dict_field = 'anilist_id'
             else:
                 entry_has_jp_name_field = 'japanese_name' in entry
@@ -185,14 +136,9 @@ class JimakuProvider(Provider):
             return None
         
         # Get a list of subtitles for entry
-        url = f"{self.api_url}/entries/{entry_id}/files?episode={episode_number}"
-        response = self.session.get(url, timeout=10)
-        response.raise_for_status()
-
-        data = response.json()
-        logger.debug(f"Length of response on {url}: {len(data)}")
-        if len(data) == 0:
-            logger.error(f"No subtitles have been returned by entry '{entry_id}' for episode number {episode_number}.")
+        url = f"entries/{entry_id}/files?episode={episode_number}"
+        data = self._get_jimaku_response(url)
+        if not data:
             return None
         
         # Filter subtitles
@@ -233,35 +179,33 @@ class JimakuProvider(Provider):
         return False
     
     @cache
-    def _get_series_entry(self, url_param):
-        url = f"{self.api_url}/entries/search?{url_param}"
+    def _get_jimaku_response(self, url_path):
+        url = f"{self.api_url}/{url_path}"
         
-        max_retries = 3; retry_count = 0
-        while retry_count < max_retries:
+        retry_count = 0
+        while retry_count < self.api_ratelimit_backoff_limit:
             retry_count = 0
             response = self.session.get(url, timeout=10)
             
             if response.status_code == 429:
-                # Default: Rratelimit quota replenishes after ~60 seconds
-                reset_time = int(response.headers.get("x-ratelimit-reset", time.time() + 60))
-                current_time = int(time.time())
-                wait_time = reset_time - current_time
+                api_reset_time = float(response.headers.get("x-ratelimit-reset-after", 5))
+                reset_time = self.api_ratelimit_max_delay if api_reset_time > self.api_ratelimit_max_delay else api_reset_time
                 
-                logger.warning(f"Jimaku ratelimit hit, waiting for at least: '{wait_time}' seconds ({retry_count}/{max_retries} tries)")
-                time.sleep(wait_time)
+                logger.warning(f"Jimaku ratelimit hit, waiting for '{reset_time}' seconds ({retry_count}/{self.api_ratelimit_backoff_limit} tries)")
+                time.sleep(reset_time)
             else:
                 response.raise_for_status()
             
             data = response.json()
             logger.debug(f"Length of response on {url}: {len(data)}")
             if len(data) == 0:
-                logger.error(f"Jimaku returned no items for our our query: {url_param}")
+                logger.error(f"Jimaku returned no items for our our query: {url_path}")
                 return None
             else:
                 return data
             
         # Max retries exceeded
-        raise Exception(f"Jimaku ratelimit max backoff limit of {max_retries} reached, aborting.")
+        raise TooManyRequests(f"Jimaku ratelimit max backoff limit of {self.api_ratelimit_backoff_limit} reached, aborting.")
     
     @staticmethod
     @cache
@@ -303,3 +247,72 @@ class JimakuProvider(Provider):
             logger.warning(f"Could not find an AniDB ID for provided TVDB ID and season ({season})!")
         
         return None
+    
+    @cache
+    def _assemble_jimaku_search_url(self, video, series_name):
+        """
+        Return a search URL for the Jimaku API.
+        Will first try to determine an Anilist ID based on properties of the video object.
+        If that fails, will simply assemble a query URL that relies on Jimakus fuzzy search instead.
+        """
+        
+        # Attempt to derive anilist_id
+        derived_anilist_id = None
+        derived_anidb_id = None
+        tag_to_derive_from = ""
+        
+        logger.info(f"Attempting to derive anilist ID...")
+        for tag in ["series_anidb_episode_id", "series_anidb_id", "tvdb_id", "series_tvdb_id"]:
+            candidate = getattr(video, tag, None)
+            
+            if candidate:
+                # Because tvdb assigns a single ID to all seasons of a show, we'll have to use another list to determine the correct AniDB ID
+                if "tvdb" in tag and video.season > 1:
+                    derived_anidb_id = self._get_tvdb_anidb_mapping(candidate, video.season)
+                    logger.info(f"Found AniDB ID '{derived_anidb_id}' for TVDB ID '{candidate}', season '{video.season}'")
+                    break
+                    
+                tag_to_derive_from = tag
+                logger.info(f"Got candidate tag '{tag_to_derive_from}' with value '{candidate}'")
+                break
+
+        if tag_to_derive_from or derived_anidb_id:
+            try:
+                anime_list = self._get_anime_list_map()
+                
+                if derived_anidb_id:
+                    mapped_tag = "anidb_id"
+                    value_to_use = derived_anidb_id
+                else:
+                    # Left: video, right: anime-lists
+                    tag_map = {
+                        "series_anidb_id": "anidb_id",
+                        "series_anidb_episode_id": "anidb_id",
+                        "tvdb_id": "thetvdb_id",
+                        "series_tvdb_id": "thetvdb_id",
+                    }
+                    mapped_tag = tag_map[tag_to_derive_from]
+                    value_to_use = getattr(video, tag_to_derive_from)
+                
+                obj = [obj for obj in anime_list if mapped_tag in obj and str(obj[mapped_tag]) == str(value_to_use)]
+                logger.debug(f"Based on '{mapped_tag}': '{value_to_use}', anime-list matched: {obj}")
+
+                if len(obj) > 0:
+                    derived_anilist_id = obj[0]["anilist_id"]
+                else:
+                    logger.warning(f"Could not find corresponding Anilist ID with '{mapped_tag}': {value_to_use}")
+            except Exception as e:
+                logger.error(f"Failed deriving anilist_id: {str(e)}")
+                
+        url = "entries/search"
+        if derived_anilist_id:
+            logger.info(f"Will search for entry based on anilist_id: {derived_anilist_id}")
+            url = f"{url}?anilist_id={derived_anilist_id}"
+        else:
+            logger.info(f"Will search for entry based on series_name: {series_name}")
+            url = f"{url}?query={urllib.parse.quote_plus(series_name)}"
+            
+        return {
+            'url': url,
+            'derived_anilist_id': derived_anilist_id
+        }
