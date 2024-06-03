@@ -172,8 +172,12 @@ class JimakuProvider(Provider):
                 logger.warning("Archives are disabled, but only archived subtitles have been returned. Will therefore download anyway.")
             else:
                 archive_formats_blacklist += disabled_archives
-            
-        for item in data:
+
+        # Order subtitles to maximize quality
+        # Certain subtitle sources, such as Netflix/WebRip usually yield superior quality over others
+        sorted_data = sorted(data, key=self._subtitle_sorting_key)
+
+        for item in sorted_data:
             if not item['name'].endswith(archive_formats_blacklist):
                 subtitle_url = item.get('url')
                 subtitle_id = f"{str(anilist_id)}_{episode_number}_{video.release_group}"
@@ -226,6 +230,21 @@ class JimakuProvider(Provider):
         else:
             logger.debug("Doesn't seem like an archive")
             return None
+        
+    @staticmethod
+    def _subtitle_sorting_key(file):
+        name = file["name"].lower()
+        is_srt = name.endswith('.srt')
+        
+        # Usually netflix > webrip > amazon, with the rest having the lowest priority
+        sub_sources = ["netflix", "webrip", "amazon"]
+        priority = len(sub_sources)
+        for index, source in enumerate(sub_sources):
+            if source in name:
+                priority = index
+                break
+        
+        return (not is_srt, priority, file["name"])
     
     @cache
     def _get_jimaku_response(self, url_path):
