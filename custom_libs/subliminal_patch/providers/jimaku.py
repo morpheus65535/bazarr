@@ -1,9 +1,12 @@
 from __future__ import absolute_import
 
+import io
 import logging
 import re
 import time
 import urllib.parse
+import rarfile
+import zipfile
 import requests
 import xml.etree.ElementTree as etree
 
@@ -15,6 +18,7 @@ from subliminal.video import Episode, Movie
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.exceptions import TooManyRequests
+from subliminal_patch.providers.utils import get_subtitle_from_archive
 from functools import cache
 from subzero.language import Language
 
@@ -77,12 +81,13 @@ class JimakuProvider(Provider):
     
     languages = {Language.fromietf("ja")}
 
-    def __init__(self, api_key=None):
+    def __init__(self, enable_archives=False, api_key=None):
         if api_key:
             self.api_key = api_key
         else:
             raise ConfigurationError('Missing api_key.')
 
+        self.enable_archives = enable_archives
         self.session = None
 
     def initialize(self):
@@ -156,14 +161,25 @@ class JimakuProvider(Provider):
         
         # Filter subtitles
         list_of_subtitles = []
-        archive_formats = ('.rar', '.zip', '.7z')
+        
+        archive_formats_blacklist = (".7z",) # Unhandled format
+        if not self.enable_archives:
+            disabled_archives = (".zip", ".rar")
+            
+            # Handle shows that only have archives uploaded
+            filter = [item for item in data if not item['name'].endswith(disabled_archives)]
+            if len(filter) == 0:
+                logger.warning("Archives are disabled, but only archived subtitles have been returned. Will therefore download anyway.")
+            else:
+                archive_formats_blacklist += disabled_archives
+            
         for item in data:
-            if not item['name'].endswith(archive_formats):
+            if not item['name'].endswith(archive_formats_blacklist):
                 subtitle_url = item.get('url')
                 subtitle_id = f"{str(anilist_id)}_{episode_number}_{video.release_group}"
                 list_of_subtitles.append(JimakuSubtitle(video, subtitle_id, subtitle_url, anilist_id))
             else:
-                logger.debug(f"> Skipping subtitle of name {item['name']} as it did not pass the archive format filter.")
+                logger.debug(f"> Skipping subtitle of name {item['name']} due to archive blacklist. (enable_archives: {self.enable_archives})")
         
         return list_of_subtitles
 
@@ -179,7 +195,13 @@ class JimakuProvider(Provider):
         target_url = subtitle.subtitle_url
         response = self.session.get(target_url, timeout=10)
         response.raise_for_status()
-        subtitle.content = response.content
+        
+        archive = self._is_archive(response.content)
+        if archive:
+            # ToDo (Maybe): Handle edge case where archives contain episodes with an offset? (e.g. cours)
+            subtitle.content = get_subtitle_from_archive(archive, subtitle.video.episode)
+        else:
+            subtitle.content = response.content
     
     @staticmethod
     def _is_string_japanese(string):
@@ -190,6 +212,20 @@ class JimakuProvider(Provider):
                 '\uFF66' <= char <= '\uFF9D'):   # Half-width Katakana
                 return True
         return False
+    
+    @staticmethod
+    def _is_archive(archive: bytes):
+        archive_stream = io.BytesIO(archive)
+        
+        if rarfile.is_rarfile(archive_stream):
+            logger.debug("Identified rar archive")
+            return rarfile.RarFile(archive_stream)
+        elif zipfile.is_zipfile(archive_stream):
+            logger.debug("Identified zip archive")
+            return zipfile.ZipFile(archive_stream)
+        else:
+            logger.debug("Doesn't seem like an archive")
+            return None
     
     @cache
     def _get_jimaku_response(self, url_path):
