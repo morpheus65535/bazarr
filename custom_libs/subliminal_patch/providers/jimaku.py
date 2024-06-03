@@ -72,6 +72,9 @@ class JimakuProvider(Provider):
     api_ratelimit_max_delay = 5 # In seconds
     api_ratelimit_backoff_limit = 3
     
+    # See _get_tvdb_anidb_mapping()
+    video_episode_number_override = None
+    
     languages = {Language.fromietf("ja")}
 
     def __init__(self, api_key=None):
@@ -93,7 +96,6 @@ class JimakuProvider(Provider):
 
     def query(self, video):
         series_name = sanitize(video.alternative_series[0] if len(video.alternative_series) > 0 else str(video.series_name))
-        episode_number = video.episode
 
         # Check if series_name ends with "Sn", if so strip chars as Jimaku only lists seasons by numbers alone
         # If 'n' is 1, completely strip it as first seasons don't have a season number
@@ -136,6 +138,7 @@ class JimakuProvider(Provider):
             return None
         
         # Get a list of subtitles for entry
+        episode_number = video.episode if not self.video_episode_number_override else self.video_episode_number_override
         url = f"entries/{entry_id}/files?episode={episode_number}"
         data = self._get_jimaku_response(url)
         if not data:
@@ -230,23 +233,34 @@ class JimakuProvider(Provider):
         
         return response.content
 
-    def _get_tvdb_anidb_mapping(self, tvdbid, season=1):
+    def _get_tvdb_anidb_mapping(self, video, tvdbid):
         xml = etree.fromstring(self._get_tvdb_anidb_map())
-        findings = xml.findall(
-            f".//anime[@tvdbid='{tvdbid}'][@defaulttvdbseason='{season}']"
+        animes = xml.findall(
+            f".//anime[@tvdbid='{tvdbid}'][@defaulttvdbseason='{video.season}']"
         )
         
-        if len(findings) > 0:
-            for i, v in enumerate(findings):
-                try:
-                    return v.attrib.get('anidbid')
-                except Exception as e:
-                    logger.debug(f"Error returning on index {i}: {str(e)}")
-                    continue
+        # In order to handle shows with multi-part seasons, we'll have to account for 'episodeoffset'
+        # Cours have their own anidb ID
+        candidate_anime = None
+        is_cour = False
+        for anime in animes:
+            offset = int(anime.get('episodeoffset', 0))
+            print(f"Offset {offset} vs episode {video.episode}")
+            if video.episode > offset:
+                candidate_anime = anime
+                is_cour = offset > 0
+
+        if is_cour:
+            this_offset = int(candidate_anime.get('episodeoffset', 0))
+            episode_number = video.episode - this_offset
+            logger.warning(f"This season appears to be part of a latter cour, the new episode number is: {episode_number} (Offset: {this_offset})")
         else:
-            logger.warning(f"Could not find an AniDB ID for provided TVDB ID and season ({season})!")
-        
-        return None
+            episode_number = video.episode
+
+        return {
+            'anidbid': candidate_anime.get('anidbid'),
+            'episode_number': episode_number
+        }
     
     @cache
     def _assemble_jimaku_search_url(self, video, series_name):
@@ -268,7 +282,11 @@ class JimakuProvider(Provider):
             if candidate:
                 # Because tvdb assigns a single ID to all seasons of a show, we'll have to use another list to determine the correct AniDB ID
                 if "tvdb" in tag and video.season > 1:
-                    derived_anidb_id = self._get_tvdb_anidb_mapping(candidate, video.season)
+                    tvdb_anidb_mapping = self._get_tvdb_anidb_mapping(video, candidate)
+                    derived_anidb_id = tvdb_anidb_mapping['anidbid']
+                    if tvdb_anidb_mapping['episode_number'] != video.episode:
+                        self.video_episode_number_override = tvdb_anidb_mapping['episode_number']
+                    
                     logger.info(f"Found AniDB ID '{derived_anidb_id}' for TVDB ID '{candidate}', season '{video.season}'")
                     break
                     
