@@ -102,7 +102,9 @@ class JimakuProvider(Provider):
         self.session.close()
 
     def query(self, video):
-        series_name = (video.alternative_series[0] if len(video.alternative_series) > 0 else str(video.series_name)).lower()
+        series_name = (
+            video.alternative_series[0] if len(video.alternative_series) > 0 else str(video.series)
+        ).lower()
 
         # Check if series_name ends with "Sn", if so strip chars as Jimaku only lists seasons by numbers alone
         # If 'n' is 1, completely strip it as first seasons don't have a season number
@@ -139,7 +141,11 @@ class JimakuProvider(Provider):
                 entry_id = entry.get('id')
                 anilist_id = entry.get('anilist_id', None)
                 entry_name = entry.get('name')
+                
                 logger.info(f"Matched entry: ID: '{entry_id}', anilist_id: '{anilist_id}', name: '{entry_name}', english_name: '{entry.get('english_name')}'")
+                if entry.get("flags").get("unverified"):
+                    logger.warning(f"This entry '{entry_id}' is unverified, subtitles might be incomplete or have quality issues!")
+                
                 break
             
         if entry_property_value is None:
@@ -182,13 +188,20 @@ class JimakuProvider(Provider):
         sorted_data = sorted(data, key=self._subtitle_sorting_key)
 
         for item in sorted_data:
-            if not item['name'].endswith(archive_formats_blacklist):
-                subtitle_url = item.get('url')
-                subtitle_filename = item.get('name')
+            subtitle_filename = item.get('name')
+            subtitle_filesize = item.get('size')
+            subtitle_url = item.get('url')
+            
+            # Check if file is corrupt; The average file stands at ~20kB, we'll set the threshold at 5kB though 
+            if subtitle_filesize < 5000:
+                logger.warning(f"Skipping possibly corrupt file '{subtitle_filename}': Filesize is just {subtitle_filesize} bytes.")
+                continue
+            
+            if not subtitle_filename.endswith(archive_formats_blacklist):
                 subtitle_id = f"{str(anilist_id)}_{episode_number}_{video.release_group}"
                 list_of_subtitles.append(JimakuSubtitle(video, subtitle_id, subtitle_url, subtitle_filename, anilist_id))
             else:
-                logger.debug(f"> Skipping subtitle of name {item['name']} due to archive blacklist. (enable_archives: {self.enable_archives})")
+                logger.debug(f"> Skipping subtitle of name '{subtitle_filename}' due to archive blacklist. (enable_archives: {self.enable_archives})")
         
         return list_of_subtitles
 
@@ -209,6 +222,9 @@ class JimakuProvider(Provider):
         if archive:
             # ToDo (Maybe): Handle edge case where archives contain episodes with an offset? (e.g. cours)
             subtitle.content = get_subtitle_from_archive(archive, subtitle.video.episode)
+        elif not archive and subtitle.subtitle_url.endswith(('.zip', '.rar')):
+            logger.warning("Archive seems not to be an archive! File possibly corrupt? Skipping.")
+            return None
         else:
             subtitle.content = response.content
     
