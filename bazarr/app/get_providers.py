@@ -287,7 +287,8 @@ def get_providers_auth():
         },
         'jimaku': {
             'api_key': settings.jimaku.api_key,
-            'enable_archives': settings.jimaku.enable_archives
+            'enable_archives': settings.jimaku.enable_archives,
+            'enable_ai_subs': settings.jimaku.enable_ai_subs,
         },
         'ktuvit': {
             'email': settings.ktuvit.email,
