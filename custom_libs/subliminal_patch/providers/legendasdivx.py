@@ -327,7 +327,7 @@ class LegendasdivxProvider(Provider):
                     query=querytext,
                     season=video.season,
                     episode=video.episode,
-                    imdbid=video.series_imdb_id.replace('tt', ''),
+                    imdbid=video.series_imdb_id.replace('tt', '') if video.series_imdb_id else None,
                     op=op,
                     d_op=d_op,
             )
@@ -358,7 +358,7 @@ class LegendasdivxProvider(Provider):
                         querytext = re.sub(r"(e|E)(\d{2})", "", querytext)
                         # sleep for a 1 second before another request
                         sleep(1)
-                        res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
+                        res = self.session.get(search_url, allow_redirects=False)
                         res.raise_for_status()
                         if res.status_code == 200 and "<!--pesquisas:" in res.text:
                             searches_count_groups = re.search(r'<!--pesquisas: (\d*)-->', res.text)
@@ -429,7 +429,7 @@ class LegendasdivxProvider(Provider):
             if num_pages > 1:
                 for num_page in range(2, num_pages + 1):
                     sleep(1) # another 1 sec before requesting...
-                    _search_next = self.searchurl.format(query=querytext) + "&page={0}".format(str(num_page))
+                    _search_next = search_url + "&page={0}".format(str(num_page))
                     logger.debug("Legendasdivx.pt :: Moving on to next page: %s", _search_next)
                     # sleep for a 1 second before another request
                     sleep(1)
