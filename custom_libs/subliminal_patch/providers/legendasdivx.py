@@ -115,6 +115,11 @@ class LegendasdivxSubtitle(Subtitle):
                 matches.update(['season'])
             if video.episode and 'e{:02d}'.format(video.episode) in description:
                 matches.update(['episode'])
+            # All the search is already based on the series_imdb_id when present in the video and controlled via the
+            # the legendasdivx backend it, so if there is a result, it matches, either inside of a pack or a specific
+            # series and episode, so we can assume the season and episode matches.
+            if video.series_imdb_id:
+                matches.update(['series', 'series_imdb_id', 'season', 'episode'])
 
         # release_group
         if video.release_group and sanitize_release_group(video.release_group) in sanitize_release_group(description):
