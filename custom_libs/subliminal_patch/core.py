@@ -946,8 +946,8 @@ def _search_external_subtitles(path, languages=None, only_one=False, match_stric
             lambda m: "" if str(m.group(1)).lower() in FULL_LANGUAGE_LIST else m.group(0), p_root)
 
         p_root_lower = p_root_bare.lower()
-
-        filename_matches = p_root_lower == fn_no_ext_lower
+        # comparing to both unicode normalization forms to prevent broking stuff and improve indexing on some platforms.
+        filename_matches = fn_no_ext_lower in [p_root_lower, unicodedata.normalize('NFC', p_root_lower)]
         filename_contains = p_root_lower in fn_no_ext_lower
 
         if not filename_matches:
