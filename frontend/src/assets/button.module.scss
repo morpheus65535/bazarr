@@ -10,6 +10,8 @@
     }
   }
   .root:disabled {
-    color: var(--mantine-color-dark-9);
+    @include dark {
+      color: var(--mantine-color-dark-9);
+    }
   }
 }
