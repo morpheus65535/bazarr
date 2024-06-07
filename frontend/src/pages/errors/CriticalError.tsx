@@ -1,8 +1,8 @@
-import { Reload } from "@/utilities";
+import { FunctionComponent } from "react";
+import { Alert, Container, Text } from "@mantine/core";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Alert, Container, Text } from "@mantine/core";
-import { FunctionComponent } from "react";
+import { Reload } from "@/utilities";
 
 interface Props {
   message: string;

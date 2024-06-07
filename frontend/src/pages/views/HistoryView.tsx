@@ -1,8 +1,8 @@
-import { UsePaginationQueryResult } from "@/apis/queries/hooks";
-import { QueryPageTable } from "@/components";
+import { Column } from "react-table";
 import { Container } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
-import { Column } from "react-table";
+import { UsePaginationQueryResult } from "@/apis/queries/hooks";
+import { QueryPageTable } from "@/components";
 
 interface Props<T extends History.Base> {
   name: string;

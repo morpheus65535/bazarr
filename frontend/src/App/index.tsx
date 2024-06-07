@@ -1,16 +1,16 @@
+import { FunctionComponent, useEffect, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import { AppShell } from "@mantine/core";
+import { useWindowEvent } from "@mantine/hooks";
+import { showNotification } from "@mantine/notifications";
 import AppNavbar from "@/App/Navbar";
-import { RouterNames } from "@/Router/RouterNames";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import NavbarProvider from "@/contexts/Navbar";
 import OnlineProvider from "@/contexts/Online";
 import { notification } from "@/modules/task";
 import CriticalError from "@/pages/errors/CriticalError";
+import { RouterNames } from "@/Router/RouterNames";
 import { Environment } from "@/utilities";
-import { AppShell } from "@mantine/core";
-import { useWindowEvent } from "@mantine/hooks";
-import { showNotification } from "@mantine/notifications";
-import { FunctionComponent, useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
 import AppHeader from "./Header";
 import styleVars from "@/assets/_variables.module.scss";
 

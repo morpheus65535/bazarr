@@ -1,6 +1,6 @@
 import { useQuery } from "react-query";
-import { QueryKeys } from "../queries/keys";
-import api from "../raw";
+import { QueryKeys } from "@/apis/queries/keys";
+import api from "@/apis/raw";
 
 export function useHistoryStats(
   time: History.TimeFrameOptions,

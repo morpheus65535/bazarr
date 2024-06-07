@@ -1,14 +1,4 @@
-import { useSystem, useSystemSettings } from "@/apis/hooks";
-import { Action, Search } from "@/components";
-import { useNavbar } from "@/contexts/Navbar";
-import { useIsOnline } from "@/contexts/Online";
-import { Environment, useGotoHomepage } from "@/utilities";
-import {
-  faArrowRotateLeft,
-  faGear,
-  faPowerOff,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FunctionComponent } from "react";
 import {
   Anchor,
   AppShell,
@@ -19,7 +9,17 @@ import {
   Group,
   Menu,
 } from "@mantine/core";
-import { FunctionComponent } from "react";
+import {
+  faArrowRotateLeft,
+  faGear,
+  faPowerOff,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useSystem, useSystemSettings } from "@/apis/hooks";
+import { Action, Search } from "@/components";
+import { useNavbar } from "@/contexts/Navbar";
+import { useIsOnline } from "@/contexts/Online";
+import { Environment, useGotoHomepage } from "@/utilities";
 import styles from "./Header.module.scss";
 
 const AppHeader: FunctionComponent = () => {

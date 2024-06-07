@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import "@testing-library/jest-dom";
 import { vitest } from "vitest";
+import "@testing-library/jest-dom";
 
 // From https://stackoverflow.com/questions/39830580/jest-test-fails-typeerror-window-matchmedia-is-not-a-function
 Object.defineProperty(window, "matchMedia", {

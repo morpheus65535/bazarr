@@ -1,9 +1,9 @@
+import { cleanNotifications, showNotification } from "@mantine/notifications";
 import queryClient from "@/apis/queries";
 import { QueryKeys } from "@/apis/queries/keys";
+import { notification, task } from "@/modules/task";
 import { LOG } from "@/utilities/console";
 import { setCriticalError, setOnlineStatus } from "@/utilities/event";
-import { cleanNotifications, showNotification } from "@mantine/notifications";
-import { notification, task } from "../task";
 
 export function createDefaultReducer(): SocketIO.Reducer[] {
   return [

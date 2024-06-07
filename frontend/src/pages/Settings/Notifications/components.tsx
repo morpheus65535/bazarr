@@ -1,9 +1,5 @@
-import api from "@/apis/raw";
-import { Selector } from "@/components";
-import MutateButton from "@/components/async/MutateButton";
-import { useModals, withModal } from "@/modules/modals";
-import { BuildKey, useSelectorOptions } from "@/utilities";
-import FormUtils from "@/utilities/form";
+import { FunctionComponent, useCallback, useMemo } from "react";
+import { useMutation } from "react-query";
 import {
   Button,
   Divider,
@@ -14,11 +10,18 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { isObject } from "lodash";
-import { FunctionComponent, useCallback, useMemo } from "react";
-import { useMutation } from "react-query";
-import { Card } from "../components";
-import { notificationsKey } from "../keys";
-import { useSettingValue, useUpdateArray } from "../utilities/hooks";
+import api from "@/apis/raw";
+import { Selector } from "@/components";
+import MutateButton from "@/components/async/MutateButton";
+import { useModals, withModal } from "@/modules/modals";
+import { Card } from "@/pages/Settings/components";
+import { notificationsKey } from "@/pages/Settings/keys";
+import {
+  useSettingValue,
+  useUpdateArray,
+} from "@/pages/Settings/utilities/hooks";
+import { BuildKey, useSelectorOptions } from "@/utilities";
+import FormUtils from "@/utilities/form";
 
 const notificationHook = (notifications: Settings.NotificationInfo[]) => {
   return notifications.map((info) => JSON.stringify(info));

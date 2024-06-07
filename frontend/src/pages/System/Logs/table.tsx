@@ -1,5 +1,5 @@
-import { Action, PageTable } from "@/components";
-import { useModals } from "@/modules/modals";
+import { FunctionComponent, useMemo } from "react";
+import { Column } from "react-table";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faBug,
@@ -10,8 +10,8 @@ import {
   faQuestion,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
+import { Action, PageTable } from "@/components";
+import { useModals } from "@/modules/modals";
 import SystemLogModal from "./modal";
 
 interface Props {

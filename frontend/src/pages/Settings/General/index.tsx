@@ -1,12 +1,11 @@
-import { Environment, toggleState } from "@/utilities";
+import { FunctionComponent, useState } from "react";
+import { Box, Group as MantineGroup, Text as MantineText } from "@mantine/core";
+import { useClipboard } from "@mantine/hooks";
 import {
   faCheck,
   faClipboard,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
-import { Box, Group as MantineGroup, Text as MantineText } from "@mantine/core";
-import { useClipboard } from "@mantine/hooks";
-import { FunctionComponent, useState } from "react";
 import {
   Action,
   Check,
@@ -20,7 +19,8 @@ import {
   Section,
   Selector,
   Text,
-} from "../components";
+} from "@/pages/Settings/components";
+import { Environment, toggleState } from "@/utilities";
 import { branchOptions, proxyOptions, securityOptions } from "./options";
 
 const characters = "abcdef0123456789";
