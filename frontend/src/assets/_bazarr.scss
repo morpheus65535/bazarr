@@ -1,0 +1,40 @@
+$color-brand-0: #f8f0fc;
+$color-brand-1: #f3d9fa;
+$color-brand-2: #eebefa;
+$color-brand-3: #e599f7;
+$color-brand-4: #da77f2;
+$color-brand-5: #cc5de8;
+$color-brand-6: #be4bdb;
+$color-brand-7: #ae3ec9;
+$color-brand-8: #9c36b5;
+$color-brand-9: #862e9c;
+
+$header-height: 64px;
+
+:global {
+  .table-long-break {
+    overflow-wrap: anywhere;
+  }
+
+  .table-primary {
+    display: inline-block;
+
+    font-size: var(--mantine-font-size-sm);
+
+    @include smaller-than($mantine-breakpoint-sm) {
+      min-width: 12rem;
+    }
+  }
+
+  .table-no-wrap {
+    white-space: nowrap;
+  }
+
+  .table-select {
+    display: inline-block;
+
+    @include smaller-than($mantine-breakpoint-sm) {
+      min-width: 10rem;
+    }
+  }
+}

@@ -90,7 +90,7 @@ const NotificationForm: FunctionComponent<Props> = ({
           ></Textarea>
         </div>
         <Divider></Divider>
-        <Group position="right">
+        <Group justify="right">
           <MutateButton mutation={test} args={() => form.values.url}>
             Test
           </MutateButton>

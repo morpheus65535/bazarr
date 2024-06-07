@@ -86,7 +86,7 @@ const SystemLogsView: FunctionComponent = () => {
     <Container fluid px={0}>
       <QueryOverlay result={logs}>
         <Toolbox>
-          <Group spacing="xs">
+          <Group gap="xs">
             <Toolbox.Button
               loading={isFetching}
               icon={faSync}
@@ -108,7 +108,7 @@ const SystemLogsView: FunctionComponent = () => {
               loading={isLoading}
               icon={faFilter}
               onClick={openFilterModal}
-              rightIcon={
+              rightSection={
                 suffix() !== "" ? (
                   <Badge size="xs" radius="sm">
                     {suffix()}

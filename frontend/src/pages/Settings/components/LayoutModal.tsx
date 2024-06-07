@@ -74,7 +74,7 @@ const LayoutModal: FunctionComponent<Props> = (props) => {
           <Space h="md" />
           <Divider></Divider>
           <Space h="md" />
-          <Group position="right">
+          <Group justify="right">
             <Button
               type="submit"
               disabled={totalStagedCount === 0}

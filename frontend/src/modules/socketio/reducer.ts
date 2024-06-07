@@ -27,7 +27,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
       update: (msg) => {
         msg
           .map((message) => notification.info("Notification", message))
-          .forEach(showNotification);
+          .forEach((data) => showNotification(data));
       },
     },
     {

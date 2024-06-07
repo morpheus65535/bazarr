@@ -6,7 +6,6 @@ import { AudioList } from "@/components/bazarr";
 import { EpisodeHistoryModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
 import { useModals } from "@/modules/modals";
-import { useTableStyles } from "@/styles";
 import { BuildKey, filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
@@ -92,7 +91,7 @@ const Table: FunctionComponent<Props> = ({
       {
         accessor: "season",
         Cell: (row) => {
-          return <Text>Season {row.value}</Text>;
+          return <Text span>Season {row.value}</Text>;
         },
       },
       {
@@ -103,11 +102,9 @@ const Table: FunctionComponent<Props> = ({
         Header: "Title",
         accessor: "title",
         Cell: ({ value, row }) => {
-          const { classes } = useTableStyles();
-
           return (
             <TextPopover text={row.original.sceneName}>
-              <Text className={classes.primary}>{value}</Text>
+              <Text className="table-primary">{value}</Text>
             </TextPopover>
           );
         },
@@ -156,7 +153,7 @@ const Table: FunctionComponent<Props> = ({
           }, [episode, seriesId]);
 
           return (
-            <Group spacing="xs" noWrap>
+            <Group gap="xs" wrap="nowrap">
               {elements}
             </Group>
           );
@@ -168,7 +165,7 @@ const Table: FunctionComponent<Props> = ({
         Cell: ({ row }) => {
           const modals = useModals();
           return (
-            <Group spacing="xs" noWrap>
+            <Group gap="xs" wrap="nowrap">
               <Action
                 label="Manual Search"
                 disabled={disabled}

@@ -52,7 +52,7 @@ const Authentication: FunctionComponent = () => {
                 {...form.getInputProps("password")}
               ></PasswordInput>
               <Divider></Divider>
-              <Button fullWidth uppercase type="submit">
+              <Button fullWidth tt="uppercase" type="submit">
                 Login
               </Button>
             </Stack>

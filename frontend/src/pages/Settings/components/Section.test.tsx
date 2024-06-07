@@ -1,4 +1,4 @@
-import { rawRender, screen } from "@/tests";
+import { render, screen } from "@/tests";
 import { Text } from "@mantine/core";
 import { describe, it } from "vitest";
 import { Section } from "./Section";
@@ -6,7 +6,7 @@ import { Section } from "./Section";
 describe("Settings section", () => {
   const header = "Section Header";
   it("should show header", () => {
-    rawRender(<Section header="Section Header"></Section>);
+    render(<Section header="Section Header"></Section>);
 
     expect(screen.getByText(header)).toBeDefined();
     expect(screen.getByRole("separator")).toBeDefined();
@@ -14,7 +14,7 @@ describe("Settings section", () => {
 
   it("should show children", () => {
     const text = "Section Child";
-    rawRender(
+    render(
       <Section header="Section Header">
         <Text>{text}</Text>
       </Section>,
@@ -26,7 +26,7 @@ describe("Settings section", () => {
 
   it("should work with hidden", () => {
     const text = "Section Child";
-    rawRender(
+    render(
       <Section header="Section Header" hidden>
         <Text>{text}</Text>
       </Section>,

@@ -55,15 +55,17 @@ const FrameRateForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       })}
     >
       <Stack>
-        <Group spacing="xs" grow>
+        <Group gap="xs" grow>
           <NumberInput
             placeholder="From"
-            precision={2}
+            decimalScale={2}
+            fixedDecimalScale
             {...form.getInputProps("from")}
           ></NumberInput>
           <NumberInput
             placeholder="To"
-            precision={2}
+            decimalScale={2}
+            fixedDecimalScale
             {...form.getInputProps("to")}
           ></NumberInput>
         </Group>

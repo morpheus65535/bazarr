@@ -12,7 +12,7 @@ export const Message: FunctionComponent<Props> = ({
   children,
 }) => {
   return (
-    <Text size="sm" color={type === "info" ? "dimmed" : "yellow"} my={0}>
+    <Text size="sm" c={type === "info" ? "dimmed" : "yellow"} my={0}>
       {children}
     </Text>
   );

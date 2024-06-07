@@ -53,7 +53,9 @@ import Redirector from "./Redirector";
 import { RouterNames } from "./RouterNames";
 import { CustomRouteObject } from "./type";
 
-const HistoryStats = lazy(() => import("@/pages/History/Statistics"));
+const HistoryStats = lazy(
+  () => import("@/pages/History/Statistics/HistoryStats"),
+);
 const SystemStatusView = lazy(() => import("@/pages/System/Status"));
 
 function useRoutes(): CustomRouteObject[] {

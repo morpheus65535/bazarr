@@ -70,7 +70,7 @@ const Table: FunctionComponent = () => {
           const items = row.value;
           const cutoff = row.row.original.cutoff;
           return (
-            <Group spacing="xs" noWrap>
+            <Group gap="xs" wrap="nowrap">
               {items.map((v) => {
                 const isCutoff = v.id === cutoff || cutoff === anyCutoff;
                 return (
@@ -128,7 +128,7 @@ const Table: FunctionComponent = () => {
         Cell: ({ row }) => {
           const profile = row.original;
           return (
-            <Group spacing="xs" noWrap>
+            <Group gap="xs" wrap="nowrap">
               <Action
                 label="Edit Profile"
                 icon={faWrench}
@@ -163,7 +163,6 @@ const Table: FunctionComponent = () => {
       <Button
         fullWidth
         disabled={!canAdd}
-        color="light"
         onClick={() => {
           const profile = {
             profileId: nextProfileId,

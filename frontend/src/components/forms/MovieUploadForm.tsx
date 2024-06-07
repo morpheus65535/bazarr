@@ -1,7 +1,6 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { TaskGroup, task } from "@/modules/task";
-import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import FormUtils from "@/utilities/form";
 import {
@@ -19,7 +18,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Button,
   Checkbox,
-  createStyles,
   Divider,
   MantineColor,
   Stack,
@@ -79,21 +77,12 @@ interface Props {
   onComplete?: () => void;
 }
 
-const useStyles = createStyles((theme) => {
-  return {
-    wrapper: {
-      overflowWrap: "anywhere",
-    },
-  };
-});
-
 const MovieUploadForm: FunctionComponent<Props> = ({
   files,
   movie,
   onComplete,
 }) => {
   const modals = useModals();
-  const { classes } = useStyles();
 
   const profile = useLanguageProfileBy(movie.profileId);
 
@@ -187,7 +176,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
 
           return (
             <TextPopover text={value?.messages}>
-              <Text color={color} inline>
+              <Text c={color} inline>
                 <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
               </Text>
             </TextPopover>
@@ -199,9 +188,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         id: "filename",
         accessor: "file",
         Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-
-          return <Text className={classes.primary}>{value.name}</Text>;
+          return <Text className="table-primary">{value.name}</Text>;
         },
       },
       {
@@ -236,11 +223,10 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         Header: "Language",
         accessor: "language",
         Cell: ({ row: { original, index }, value }) => {
-          const { classes } = useTableStyles();
           return (
             <Selector
               {...languageOptions}
-              className={classes.select}
+              className="table-long-break"
               value={value}
               onChange={(item) => {
                 action.mutate(index, { ...original, language: item });
@@ -289,7 +275,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         modals.closeSelf();
       })}
     >
-      <Stack className={classes.wrapper}>
+      <Stack className="table-long-break">
         <SimpleTable columns={columns} data={form.values.files}></SimpleTable>
         <Divider></Divider>
         <Button type="submit">Upload</Button>

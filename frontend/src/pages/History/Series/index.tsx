@@ -9,7 +9,6 @@ import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
 import TextPopover from "@/components/TextPopover";
 import HistoryView from "@/pages/views/HistoryView";
-import { useTableStyles } from "@/styles";
 import {
   faFileExcel,
   faInfoCircle,
@@ -32,11 +31,10 @@ const SeriesHistoryView: FunctionComponent = () => {
         Header: "Series",
         accessor: "seriesTitle",
         Cell: (row) => {
-          const { classes } = useTableStyles();
           const target = `/series/${row.row.original.sonarrSeriesId}`;
 
           return (
-            <Anchor className={classes.primary} component={Link} to={target}>
+            <Anchor className="table-primary" component={Link} to={target}>
               {row.value}
             </Anchor>
           );
@@ -50,8 +48,7 @@ const SeriesHistoryView: FunctionComponent = () => {
         Header: "Title",
         accessor: "episodeTitle",
         Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-          return <Text className={classes.noWrap}>{value}</Text>;
+          return <Text className="table-no-wrap">{value}</Text>;
         },
       },
       {
