@@ -52,7 +52,7 @@ export const Subtitle: FunctionComponent<Props> = ({
   const ctx = (
     <Badge
       color={color}
-      variant={color}
+      variant={disabled ? "disabled" : ""}
       style={{ cursor: disabled ? "default" : "pointer" }}
     >
       <Language.Text value={subtitle} long={false}></Language.Text>

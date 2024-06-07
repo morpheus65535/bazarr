@@ -1,8 +1,8 @@
 .root {
   background-color: var(--mantine-color-grape-light);
 
-  &[data-variant="gray"] {
-    background-color: var(--mantine-color-gray-light);
+  &[data-variant="disabled"] {
+    background-color: rgba(52, 58, 64, 0.2);
   }
 
   @include light {
@@ -14,7 +14,7 @@
       color: var(--mantine-color-primary);
     }
 
-    &[data-variant="gray"] {
+    &[data-variant="disabled"] {
       background-color: rgb(248, 249, 250);
       color: rgb(134, 142, 150);
     }
