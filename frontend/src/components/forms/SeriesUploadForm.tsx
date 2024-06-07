@@ -5,7 +5,6 @@ import {
 } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
-import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import FormUtils from "@/utilities/form";
 import {
@@ -23,7 +22,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Button,
   Checkbox,
-  createStyles,
   Divider,
   MantineColor,
   Stack,
@@ -86,21 +84,12 @@ interface Props {
   onComplete?: VoidFunction;
 }
 
-const useStyles = createStyles((theme) => {
-  return {
-    wrapper: {
-      overflowWrap: "anywhere",
-    },
-  };
-});
-
 const SeriesUploadForm: FunctionComponent<Props> = ({
   series,
   files,
   onComplete,
 }) => {
   const modals = useModals();
-  const { classes } = useStyles();
   const episodes = useEpisodesBySeriesId(series.sonarrSeriesId);
   const episodeOptions = useSelectorOptions(
     episodes.data ?? [],
@@ -225,8 +214,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         id: "filename",
         accessor: "file",
         Cell: ({ value: { name } }) => {
-          const { classes } = useTableStyles();
-          return <Text className={classes.primary}>{name}</Text>;
+          return <Text className="table-primary">{name}</Text>;
         },
       },
       {
@@ -283,11 +271,10 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         ),
         accessor: "language",
         Cell: ({ row: { original, index }, value }) => {
-          const { classes } = useTableStyles();
           return (
             <Selector
               {...languageOptions}
-              className={classes.select}
+              className="table-select"
               value={value}
               onChange={(item) => {
                 action.mutate(index, { ...original, language: item });
@@ -301,12 +288,11 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         Header: "Episode",
         accessor: "episode",
         Cell: ({ value, row }) => {
-          const { classes } = useTableStyles();
           return (
             <Selector
               {...episodeOptions}
               searchable
-              className={classes.select}
+              className="table-select"
               value={value}
               onChange={(item) => {
                 action.mutate(row.index, { ...row.original, episode: item });
@@ -368,7 +354,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         modals.closeSelf();
       })}
     >
-      <Stack className={classes.wrapper}>
+      <Stack className="table-long-break">
         <SimpleTable columns={columns} data={form.values.files}></SimpleTable>
         <Divider></Divider>
         <Button type="submit">Upload</Button>

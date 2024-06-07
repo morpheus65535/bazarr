@@ -1,7 +1,12 @@
 import { useFileSystem } from "@/apis/hooks";
 import { faFolder } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Autocomplete, AutocompleteProps } from "@mantine/core";
+import {
+  Autocomplete,
+  AutocompleteProps,
+  ComboboxItem,
+  OptionsFilter,
+} from "@mantine/core";
 import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
 
 // TODO: use fortawesome icons
@@ -75,24 +80,28 @@ export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
 
   const ref = useRef<HTMLInputElement>(null);
 
+  const optionsFilter: OptionsFilter = ({ options, search }) => {
+    return (options as ComboboxItem[]).filter((option) => {
+      if (search === backKey) {
+        return true;
+      }
+
+      return option.value.includes(search);
+    });
+  };
+
   return (
     <Autocomplete
       {...props}
       ref={ref}
-      icon={<FontAwesomeIcon icon={faFolder}></FontAwesomeIcon>}
+      leftSection={<FontAwesomeIcon icon={faFolder}></FontAwesomeIcon>}
       placeholder="Click to start"
       data={data}
       value={value}
       // Temporary solution of infinite dropdown items, fix later
       limit={NaN}
       maxDropdownHeight={240}
-      filter={(value, item) => {
-        if (item.value === backKey) {
-          return true;
-        } else {
-          return item.value.includes(value);
-        }
-      }}
+      filter={optionsFilter}
       onChange={(val) => {
         if (val !== backKey) {
           setValue(val);

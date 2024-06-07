@@ -1,4 +1,4 @@
-import { rawRender, RenderOptions, screen } from "@/tests";
+import { render, RenderOptions, screen } from "@/tests";
 import { useForm } from "@mantine/form";
 import { FunctionComponent, PropsWithChildren, ReactElement } from "react";
 import { describe, it } from "vitest";
@@ -18,7 +18,7 @@ const FormSupport: FunctionComponent<PropsWithChildren> = ({ children }) => {
 const formRender = (
   ui: ReactElement,
   options?: Omit<RenderOptions, "wrapper">,
-) => rawRender(ui, { wrapper: FormSupport, ...options });
+) => render(<FormSupport>{ui}</FormSupport>);
 
 describe("Settings form", () => {
   describe("number component", () => {

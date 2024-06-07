@@ -36,13 +36,8 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
 
   const profileOptions = useSelectorOptions(profiles ?? [], (v) => v.name);
 
-  const profileOptionsWithAction = useMemo<
-    SelectorOption<Language.Profile | null>[]
-  >(
-    () => [
-      { label: "Clear", value: null, group: "Action" },
-      ...profileOptions.options,
-    ],
+  const profileOptionsWithAction = useMemo<SelectorOption<Language.Profile>[]>(
+    () => [...profileOptions.options],
     [profileOptions.options],
   );
 
@@ -82,6 +77,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
     },
     [selections],
   );
+
   return (
     <Container fluid px={0}>
       <Toolbox>

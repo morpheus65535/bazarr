@@ -6,7 +6,6 @@ import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
-import { useTableStyles } from "@/styles";
 import { BuildKey } from "@/utilities";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
@@ -35,10 +34,9 @@ const MovieView: FunctionComponent = () => {
         Header: "Name",
         accessor: "title",
         Cell: ({ row, value }) => {
-          const { classes } = useTableStyles();
           const target = `/movies/${row.original.radarrId}`;
           return (
-            <Anchor className={classes.primary} component={Link} to={target}>
+            <Anchor className="table-primary" component={Link} to={target}>
               {value}
             </Anchor>
           );

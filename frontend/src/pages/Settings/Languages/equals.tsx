@@ -355,7 +355,7 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
   return (
     <>
       <SimpleTable data={equals} columns={columns}></SimpleTable>
-      <Button fullWidth disabled={!canAdd} color="light" onClick={add}>
+      <Button fullWidth disabled={!canAdd} onClick={add}>
         {canAdd ? "Add Equal" : "No Enabled Languages"}
       </Button>
     </>

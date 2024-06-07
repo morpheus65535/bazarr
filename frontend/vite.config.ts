@@ -31,6 +31,16 @@ export default defineConfig(async ({ mode, command }) => {
         enableBuild: false,
       }),
     ],
+    css: {
+      preprocessorOptions: {
+        scss: {
+          additionalData: `
+            @import "./src/assets/_mantine";
+            @import "./src/assets/_bazarr";
+          `,
+        },
+      },
+    },
     base: "./",
     resolve: {
       alias: {
