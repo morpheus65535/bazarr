@@ -9,4 +9,7 @@
       color: var(--mantine-color-red-0);
     }
   }
+  .root:disabled {
+    color: var(--mantine-color-dark-9);
+  }
 }
