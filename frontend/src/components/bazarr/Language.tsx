@@ -49,7 +49,7 @@ type LanguageListProps = {
 
 const LanguageList: FunctionComponent<LanguageListProps> = ({ value }) => {
   return (
-    <Group spacing="xs">
+    <Group gap="xs">
       {value.map((v) => (
         <Badge key={BuildKey(v.code2, v.code2, v.hi)}>{v.name}</Badge>
       ))}

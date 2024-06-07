@@ -4,7 +4,6 @@ import { Action, SimpleTable } from "@/components";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import { task, TaskGroup } from "@/modules/task";
-import { useTableStyles } from "@/styles";
 import { filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faEllipsis, faSearch } from "@fortawesome/free-solid-svg-icons";
@@ -40,17 +39,17 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         Header: "Subtitle Path",
         accessor: "path",
         Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-
           const props: TextProps = {
-            className: classes.primary,
+            className: "table-primary",
           };
 
           if (isSubtitleTrack(value)) {
-            return <Text {...props}>Video File Subtitle Track</Text>;
+            return (
+              <Text className="table-primary">Video File Subtitle Track</Text>
+            );
           } else if (isSubtitleMissing(value)) {
             return (
-              <Text {...props} color="dimmed">
+              <Text {...props} c="dimmed">
                 {value}
               </Text>
             );

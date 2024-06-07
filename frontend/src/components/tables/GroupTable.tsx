@@ -1,6 +1,6 @@
 import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Text } from "@mantine/core";
+import { Box, Text, Table } from "@mantine/core";
 import {
   Cell,
   HeaderGroup,
@@ -29,8 +29,8 @@ function renderRow<T extends object>(row: Row<T>) {
     if (cell) {
       const rotation = row.isExpanded ? 90 : undefined;
       return (
-        <tr {...row.getRowProps()}>
-          <td {...cell.getCellProps()} colSpan={row.cells.length}>
+        <Table.Tr {...row.getRowProps()}>
+          <Table.Td {...cell.getCellProps()} colSpan={row.cells.length}>
             <Text {...row.getToggleRowExpandedProps()} p={2}>
               {cell.render("Cell")}
               <Box component="span" mx={12}>
@@ -40,21 +40,23 @@ function renderRow<T extends object>(row: Row<T>) {
                 ></FontAwesomeIcon>
               </Box>
             </Text>
-          </td>
-        </tr>
+          </Table.Td>
+        </Table.Tr>
       );
     } else {
       return null;
     }
   } else {
     return (
-      <tr {...row.getRowProps()}>
+      <Table.Tr {...row.getRowProps()}>
         {row.cells
           .filter((cell) => !cell.isPlaceholder)
           .map((cell) => (
-            <td {...cell.getCellProps()}>{renderCell(cell, row)}</td>
+            <Table.Td {...cell.getCellProps()}>
+              {renderCell(cell, row)}
+            </Table.Td>
           ))}
-      </tr>
+      </Table.Tr>
     );
   }
 }
@@ -64,7 +66,9 @@ function renderHeaders<T extends object>(
 ): JSX.Element[] {
   return headers
     .filter((col) => !col.isGrouped)
-    .map((col) => <th {...col.getHeaderProps()}>{col.render("Header")}</th>);
+    .map((col) => (
+      <Table.Th {...col.getHeaderProps()}>{col.render("Header")}</Table.Th>
+    ));
 }
 
 type Props<T extends object> = Omit<

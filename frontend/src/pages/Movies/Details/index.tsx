@@ -123,7 +123,7 @@ const MovieDetailView: FunctionComponent = () => {
           <DropContent></DropContent>
         </Dropzone.FullScreen>
         <Toolbox>
-          <Group spacing="xs">
+          <Group gap="xs">
             <Toolbox.Button
               icon={faSync}
               disabled={hasTask}
@@ -168,7 +168,7 @@ const MovieDetailView: FunctionComponent = () => {
               Manual
             </Toolbox.Button>
           </Group>
-          <Group spacing="xs">
+          <Group gap="xs">
             <Toolbox.Button
               disabled={!allowEdit || movie.profileId === null || hasTask}
               icon={faCloudUploadAlt}
@@ -205,7 +205,7 @@ const MovieDetailView: FunctionComponent = () => {
               </Menu.Target>
               <Menu.Dropdown>
                 <Menu.Item
-                  icon={<FontAwesomeIcon icon={faToolbox} />}
+                  leftSection={<FontAwesomeIcon icon={faToolbox} />}
                   onClick={() => {
                     if (movie) {
                       modals.openContextModal(SubtitleToolsModal, {
@@ -217,7 +217,7 @@ const MovieDetailView: FunctionComponent = () => {
                   Mass Edit
                 </Menu.Item>
                 <Menu.Item
-                  icon={<FontAwesomeIcon icon={faHistory} />}
+                  leftSection={<FontAwesomeIcon icon={faHistory} />}
                   onClick={() => {
                     if (movie) {
                       modals.openContextModal(MovieHistoryModal, { movie });

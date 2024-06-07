@@ -46,7 +46,7 @@ function Row(props: InfoProps): JSX.Element {
   return (
     <Grid columns={10}>
       <Grid.Col span={2}>
-        <Text size="sm" align="right" weight="bold">
+        <Text size="sm" ta="right" fw="bold">
           {title}
         </Text>
       </Grid.Col>
@@ -85,9 +85,12 @@ const InfoContainer: FunctionComponent<
   return (
     <Stack>
       <Divider
-        labelProps={{ size: "medium", weight: "bold" }}
         labelPosition="left"
-        label={title}
+        label={
+          <Text size="md" fw="bold">
+            {title}
+          </Text>
+        }
       ></Divider>
       {children}
       <Space />

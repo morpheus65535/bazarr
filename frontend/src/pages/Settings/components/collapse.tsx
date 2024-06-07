@@ -31,7 +31,7 @@ const CollapseBox: FunctionComponent<Props> = ({
 
   return (
     <Collapse in={open} pl={indent ? "md" : undefined}>
-      <Stack spacing="xs">{children}</Stack>
+      <Stack gap="xs">{children}</Stack>
     </Collapse>
   );
 };

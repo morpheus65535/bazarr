@@ -56,7 +56,7 @@ export const URLTestButton: FunctionComponent<{
   }, [address, port, url, apikey, ssl]);
 
   return (
-    <Button onClick={click} color={color} title={title}>
+    <Button autoContrast onClick={click} variant={color} title={title}>
       {title}
     </Button>
   );
@@ -107,7 +107,7 @@ export const ProviderTestButton: FunctionComponent<{
   }, [testUrl]);
 
   return (
-    <Button onClick={click} color={color} title={title}>
+    <Button onClick={click} variant={color} title={title}>
       {title}
     </Button>
   );

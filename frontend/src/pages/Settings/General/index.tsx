@@ -4,7 +4,7 @@ import {
   faClipboard,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
-import { Group as MantineGroup, Text as MantineText } from "@mantine/core";
+import { Box, Group as MantineGroup, Text as MantineText } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
 import { FunctionComponent, useState } from "react";
 import {
@@ -54,7 +54,7 @@ const SettingsGeneralView: FunctionComponent = () => {
         ></Number>
         <Text
           label="Base URL"
-          icon="/"
+          leftSection="/"
           settingKey="settings-general-base_url"
           settingOptions={{
             onLoaded: (s) => s.general.base_url?.slice(1) ?? "",
@@ -87,7 +87,7 @@ const SettingsGeneralView: FunctionComponent = () => {
           rightSectionWidth={95}
           rightSectionProps={{ style: { justifyContent: "flex-end" } }}
           rightSection={
-            <MantineGroup spacing="xs" mx="xs" position="right">
+            <MantineGroup gap="xs" mx="xs" justify="right">
               {
                 // Clipboard API is only available in secure contexts See: https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API#interfaces
                 window.isSecureContext && (
@@ -204,13 +204,12 @@ const SettingsGeneralView: FunctionComponent = () => {
         <Number
           label="Retention"
           settingKey="settings-backup-retention"
-          styles={{
-            rightSection: { width: "4rem", justifyContent: "flex-end" },
-          }}
           rightSection={
-            <MantineText size="xs" px="sm" color="dimmed">
-              Days
-            </MantineText>
+            <Box w="4rem" style={{ justifyContent: "flex-end" }}>
+              <MantineText size="xs" px="sm" c="dimmed">
+                Days
+              </MantineText>
+            </Box>
           }
         ></Number>
       </Section>

@@ -133,7 +133,7 @@ class TaskDispatcher {
 
   public removeProgress(ids: string[]) {
     setTimeout(
-      () => ids.forEach(hideNotification),
+      () => ids.forEach((id) => hideNotification(id)),
       notification.PROGRESS_TIMEOUT,
     );
   }

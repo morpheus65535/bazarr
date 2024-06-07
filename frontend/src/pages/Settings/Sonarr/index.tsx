@@ -32,7 +32,7 @@ const SettingsSonarrView: FunctionComponent = () => {
           <Number label="Port" settingKey="settings-sonarr-port"></Number>
           <Text
             label="Base URL"
-            icon="/"
+            leftSection="/"
             settingKey="settings-sonarr-base_url"
             settingOptions={{
               onLoaded: (s) => s.sonarr.base_url?.slice(1) ?? "",

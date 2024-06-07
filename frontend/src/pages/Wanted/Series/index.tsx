@@ -6,7 +6,6 @@ import {
 import Language from "@/components/bazarr/Language";
 import { TaskGroup, task } from "@/modules/task";
 import WantedView from "@/pages/views/WantedView";
-import { useTableStyles } from "@/styles";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -23,9 +22,8 @@ const WantedSeriesView: FunctionComponent = () => {
         accessor: "seriesTitle",
         Cell: (row) => {
           const target = `/series/${row.row.original.sonarrSeriesId}`;
-          const { classes } = useTableStyles();
           return (
-            <Anchor className={classes.primary} component={Link} to={target}>
+            <Anchor className="table-primary" component={Link} to={target}>
               {row.value}
             </Anchor>
           );
@@ -49,7 +47,7 @@ const WantedSeriesView: FunctionComponent = () => {
           const { download } = useEpisodeSubtitleModification();
 
           return (
-            <Group spacing="sm">
+            <Group gap="sm">
               {value.map((item, idx) => (
                 <Badge
                   color={download.isLoading ? "gray" : undefined}

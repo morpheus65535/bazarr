@@ -1,6 +1,5 @@
 import { withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
-import { useTableStyles } from "@/styles";
 import { GetItemId } from "@/utilities";
 import {
   faCaretDown,
@@ -31,9 +30,7 @@ type SupportType = Item.Movie | Item.Episode;
 
 interface Props<T extends SupportType> {
   download: (item: T, result: SearchResultType) => Promise<void>;
-  query: (
-    id?: number,
-  ) => UseQueryResult<SearchResultType[] | undefined, unknown>;
+  query: (id?: number) => UseQueryResult<SearchResultType[] | undefined>;
   item: T;
 }
 
@@ -50,7 +47,8 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
 
   const search = useCallback(() => {
     setSearchStarted(true);
-    results.refetch();
+
+    void results.refetch();
   }, [results]);
 
   const columns = useMemo<Column<SearchResultType>[]>(
@@ -59,8 +57,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         Header: "Score",
         accessor: "score",
         Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-          return <Text className={classes.noWrap}>{value}%</Text>;
+          return <Text className="table-no-wrap">{value}%</Text>;
         },
       },
       {
@@ -84,13 +81,12 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         Header: "Provider",
         accessor: "provider",
         Cell: (row) => {
-          const { classes } = useTableStyles();
           const value = row.value;
           const { url } = row.row.original;
           if (url) {
             return (
               <Anchor
-                className={classes.noWrap}
+                className="table-no-wrap"
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -107,7 +103,6 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         Header: "Release",
         accessor: "release_info",
         Cell: ({ value }) => {
-          const { classes } = useTableStyles();
           const [open, setOpen] = useState(false);
 
           const items = useMemo(
@@ -116,12 +111,12 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
           );
 
           if (value.length === 0) {
-            return <Text color="dimmed">Cannot get release info</Text>;
+            return <Text c="dimmed">Cannot get release info</Text>;
           }
 
           return (
-            <Stack spacing={0} onClick={() => setOpen((o) => !o)}>
-              <Text className={classes.primary}>
+            <Stack gap={0} onClick={() => setOpen((o) => !o)}>
+              <Text className="table-primary" span>
                 {value[0]}
                 {value.length > 1 && (
                   <FontAwesomeIcon
@@ -141,8 +136,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         Header: "Uploader",
         accessor: "uploader",
         Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-          return <Text className={classes.noWrap}>{value ?? "-"}</Text>;
+          return <Text className="table-no-wrap">{value ?? "-"}</Text>;
         },
       },
       {

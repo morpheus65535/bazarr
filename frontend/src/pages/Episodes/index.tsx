@@ -125,7 +125,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
           <DropContent></DropContent>
         </Dropzone.FullScreen>
         <Toolbox>
-          <Group spacing="xs">
+          <Group gap="xs">
             <Toolbox.Button
               icon={faSync}
               disabled={!available || hasTask}
@@ -160,7 +160,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
               Search
             </Toolbox.Button>
           </Group>
-          <Group spacing="xs">
+          <Group gap="xs">
             <Toolbox.Button
               disabled={
                 series === undefined ||

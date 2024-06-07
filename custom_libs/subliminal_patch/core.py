@@ -946,8 +946,8 @@ def _search_external_subtitles(path, languages=None, only_one=False, match_stric
             lambda m: "" if str(m.group(1)).lower() in FULL_LANGUAGE_LIST else m.group(0), p_root)
 
         p_root_lower = p_root_bare.lower()
-
-        filename_matches = p_root_lower == fn_no_ext_lower
+        # comparing to both unicode normalization forms to prevent broking stuff and improve indexing on some platforms.
+        filename_matches = fn_no_ext_lower in [p_root_lower, unicodedata.normalize('NFC', p_root_lower)]
         filename_contains = p_root_lower in fn_no_ext_lower
 
         if not filename_matches:
@@ -1193,7 +1193,7 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
         must_remove_hi = 'remove_HI' in subtitle.mods
 
         # check content
-        if subtitle.content is None:
+        if subtitle.content is None or subtitle.text is None:
             logger.error('Skipping subtitle %r: no content', subtitle)
             continue
 
@@ -1203,7 +1203,7 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             continue
 
         # create subtitle path
-        if bool(re.search(HI_REGEX, subtitle.text)):
+        if subtitle.text and bool(re.search(HI_REGEX, subtitle.text)):
             subtitle.language.hi = True
         subtitle_path = get_subtitle_path(file_path, None if single else subtitle.language,
                                           forced_tag=subtitle.language.forced,

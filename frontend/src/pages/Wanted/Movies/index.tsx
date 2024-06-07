@@ -39,7 +39,7 @@ const WantedMoviesView: FunctionComponent = () => {
           const { download } = useMovieSubtitleModification();
 
           return (
-            <Group spacing="sm">
+            <Group gap="sm">
               {value.map((item, idx) => (
                 <Badge
                   color={download.isLoading ? "gray" : undefined}
