@@ -161,7 +161,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
               <Action
                 label="Subtitle Actions"
                 disabled={isSubtitleTrack(path)}
-                color="dark"
+                variant="dark"
                 icon={faEllipsis}
               ></Action>
             </SubtitleToolsMenu>

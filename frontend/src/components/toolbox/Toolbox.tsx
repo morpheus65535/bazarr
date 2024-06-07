@@ -10,7 +10,7 @@ declare type ToolboxComp = FunctionComponent<PropsWithChildren> & {
 
 const Toolbox: ToolboxComp = ({ children }) => {
   return (
-    <Group p={12} justify="apart" className={styles.group}>
+    <Group p={12} justify="space-between" className={styles.group}>
       {children}
     </Group>
   );
