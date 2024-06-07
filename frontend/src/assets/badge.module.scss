@@ -1,8 +1,17 @@
 .root {
   background-color: var(--mantine-color-grape-light);
 
+  &[data-variant="gray"] {
+    background-color: var(--mantine-color-gray-light);
+  }
+
   @include light {
-    color: var(--mantine-color-dark-filled);
+    color: var(--mantine-color-primary);
     background-color: var(--mantine-color-grape-light);
+
+    &[data-variant="gray"] {
+      background-color: rgb(248, 249, 250);
+      color: rgb(134, 142, 150);
+    }
   }
 }

@@ -50,7 +50,11 @@ export const Subtitle: FunctionComponent<Props> = ({
   }, [episodeId, subtitle.code2, subtitle.path]);
 
   const ctx = (
-    <Badge color={color}>
+    <Badge
+      color={color}
+      variant={color}
+      style={{ cursor: disabled ? "default" : "pointer" }}
+    >
       <Language.Text value={subtitle} long={false}></Language.Text>
     </Badge>
   );
