@@ -19,7 +19,7 @@ type SearchResultItem = {
 
 function useSearch(query: string) {
   const debouncedQuery = useDebouncedValue(query, 500);
-  const { data } = useServerSearch(debouncedQuery, debouncedQuery.length > 0);
+  const { data } = useServerSearch(debouncedQuery, debouncedQuery.length >= 0);
 
   return useMemo<SearchResultItem[]>(
     () =>
@@ -32,7 +32,6 @@ function useSearch(query: string) {
         } else {
           throw new Error("Unknown search result");
         }
-
         return {
           value: `${v.title} (${v.year})`,
           link,
@@ -92,6 +91,8 @@ const Search: FunctionComponent = () => {
       size="sm"
       data={results}
       value={query}
+      scrollAreaProps={{ type: "auto" }}
+      maxDropdownHeight={400}
       onChange={setQuery}
       onBlur={() => setQuery("")}
       filter={optionsFilter}
