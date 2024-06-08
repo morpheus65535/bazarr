@@ -1,14 +1,14 @@
 import re
 import warnings
-from typing import List
+from typing import List, Sequence, Optional, TextIO, Any, Tuple
 
-import pysubs2
-from .formatbase import FormatBase
-from .ssaevent import SSAEvent
-from .ssastyle import SSAStyle
+from .base import FormatBase
+from ..ssaevent import SSAEvent
+from ..ssastyle import SSAStyle
 from .substation import parse_tags
-from .exceptions import ContentNotUsable
-from .time import ms_to_times, make_time, TIMESTAMP, timestamp_to_ms
+from ..time import ms_to_times, make_time, TIMESTAMP, timestamp_to_ms
+from ..ssafile import SSAFile
+
 
 #: Largest timestamp allowed in SubRip, ie. 99:59:59,999.
 MAX_REPRESENTABLE_TIME = make_time(h=100) - 1
@@ -30,11 +30,11 @@ class SubripFormat(FormatBase):
         return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
     @staticmethod
-    def timestamp_to_ms(groups):
+    def timestamp_to_ms(groups: Sequence[str]) -> int:
         return timestamp_to_ms(groups)
 
     @classmethod
-    def guess_format(cls, text):
+    def guess_format(cls, text: str) -> Optional[str]:
         """See :meth:`pysubs2.formats.FormatBase.guess_format()`"""
         if "[Script Info]" in text or "[V4+ Styles]" in text:
             # disambiguation vs. SSA/ASS
@@ -48,8 +48,11 @@ class SubripFormat(FormatBase):
             if len(cls.TIMESTAMP.findall(line)) == 2:
                 return "srt"
 
+        return None
+
     @classmethod
-    def from_file(cls, subs, fp, format_, keep_html_tags=False, keep_unknown_html_tags=False, **kwargs):
+    def from_file(cls, subs: "SSAFile", fp: TextIO, format_: str, keep_html_tags: bool = False,
+                  keep_unknown_html_tags: bool = False, **kwargs: Any) -> None:
         """
         See :meth:`pysubs2.formats.FormatBase.from_file()`
 
@@ -70,8 +73,8 @@ class SubripFormat(FormatBase):
                 If False, these other HTML tags will be stripped from output
                 (in the previous example, you would get only ``example {\\i1}text{\\i0}``).
         """
-        timestamps = [] # (start, end)
-        following_lines = [] # contains lists of lines following each timestamp
+        timestamps: List[Tuple[int, int]] = [] # (start, end)
+        following_lines: List[List[str]] = [] # contains lists of lines following each timestamp
 
         for line in fp:
             stamps = cls.TIMESTAMP.findall(line)
@@ -83,7 +86,7 @@ class SubripFormat(FormatBase):
                 if timestamps:
                     following_lines[-1].append(line)
 
-        def prepare_text(lines):
+        def prepare_text(lines: List[str]) -> str:
             # Handle the "happy" empty subtitle case, which is timestamp line followed by blank line(s)
             # followed by number line and timestamp line of the next subtitle. Fixes issue #11.
             if (len(lines) >= 2
@@ -108,11 +111,13 @@ class SubripFormat(FormatBase):
             s = re.sub(r"\n", r"\\N", s) # convert newlines
             return s
 
-        subs.events = [SSAEvent(start=start, end=end, text=prepare_text(lines))
-                       for (start, end), lines in zip(timestamps, following_lines)]
+        for (start, end), lines in zip(timestamps, following_lines):
+            e = SSAEvent(start=start, end=end, text=prepare_text(lines))
+            subs.append(e)
 
     @classmethod
-    def to_file(cls, subs, fp, format_, apply_styles=True, keep_ssa_tags=False, **kwargs):
+    def to_file(cls, subs: "SSAFile", fp: TextIO, format_: str, apply_styles: bool = True,
+                keep_ssa_tags: bool = False, **kwargs: Any) -> None:
         """
         See :meth:`pysubs2.formats.FormatBase.to_file()`
 
@@ -134,7 +139,7 @@ class SubripFormat(FormatBase):
                 is SRT which doesn't use line styles - this shouldn't be much
                 of an issue in practice.)
         """
-        def prepare_text(text: str, style: SSAStyle):
+        def prepare_text(text: str, style: SSAStyle) -> str:
             text = text.replace(r"\h", " ")
             text = text.replace(r"\n", "\n")
             text = text.replace(r"\N", "\n")
@@ -145,24 +150,20 @@ class SubripFormat(FormatBase):
             else:
                 for fragment, sty in parse_tags(text, style, subs.styles):
                     if apply_styles:
-                        if sty.italic: fragment = f"<i>{fragment}</i>"
-                        if sty.underline: fragment = f"<u>{fragment}</u>"
-                        if sty.strikeout: fragment = f"<s>{fragment}</s>"
-                    if sty.drawing: raise ContentNotUsable
+                        if sty.italic:
+                            fragment = f"<i>{fragment}</i>"
+                        if sty.underline:
+                            fragment = f"<u>{fragment}</u>"
+                        if sty.strikeout:
+                            fragment = f"<s>{fragment}</s>"
                     body.append(fragment)
 
             return re.sub("\n+", "\n", "".join(body).strip())
 
-        visible_lines = cls._get_visible_lines(subs)
-
-        lineno = 1
-        for line in visible_lines:
+        for lineno, line in enumerate(cls._get_visible_lines(subs), 1):
             start = cls.ms_to_timestamp(line.start)
             end = cls.ms_to_timestamp(line.end)
-            try:
-                text = prepare_text(line.text, subs.styles.get(line.style, SSAStyle.DEFAULT_STYLE))
-            except ContentNotUsable:
-                continue
+            text = prepare_text(line.text, subs.styles.get(line.style, SSAStyle.DEFAULT_STYLE))
 
             print(lineno, file=fp)
             print(start, "-->", end, file=fp)
@@ -170,6 +171,5 @@ class SubripFormat(FormatBase):
             lineno += 1
 
     @classmethod
-    def _get_visible_lines(cls, subs: "pysubs2.SSAFile") -> List["pysubs2.SSAEvent"]:
-        visible_lines = [line for line in subs if not line.is_comment]
-        return visible_lines
+    def _get_visible_lines(cls, subs: "SSAFile") -> List[SSAEvent]:
+        return subs.get_text_events()

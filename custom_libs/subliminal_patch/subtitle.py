@@ -13,7 +13,7 @@ import pysrt
 import pysubs2
 from bs4 import UnicodeDammit
 from pysubs2 import SSAStyle
-from pysubs2.subrip import parse_tags, MAX_REPRESENTABLE_TIME
+from pysubs2.formats.subrip import parse_tags, MAX_REPRESENTABLE_TIME
 from pysubs2.time import ms_to_times
 from subzero.modification import SubtitleModifications
 from subzero.language import Language

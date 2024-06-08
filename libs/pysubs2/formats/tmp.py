@@ -1,11 +1,14 @@
 import re
 import warnings
+from typing import Optional, TextIO, Any
 
-from .formatbase import FormatBase
-from .ssaevent import SSAEvent
-from .ssastyle import SSAStyle
+from .base import FormatBase
+from ..ssaevent import SSAEvent
+from ..ssastyle import SSAStyle
 from .substation import parse_tags
-from .time import ms_to_times, make_time, TIMESTAMP_SHORT, timestamp_to_ms
+from ..time import ms_to_times, make_time, TIMESTAMP_SHORT, timestamp_to_ms
+from ..ssafile import SSAFile
+
 
 #: Pattern that matches TMP line
 TMP_LINE = re.compile(r"(\d{1,2}:\d{2}:\d{2}):(.+)")
@@ -29,7 +32,7 @@ class TmpFormat(FormatBase):
         return f"{h:02d}:{m:02d}:{s:02d}"
 
     @classmethod
-    def guess_format(cls, text):
+    def guess_format(cls, text: str) -> Optional[str]:
         """See :meth:`pysubs2.formats.FormatBase.guess_format()`"""
         if "[Script Info]" in text or "[V4+ Styles]" in text:
             # disambiguation vs. SSA/ASS
@@ -39,14 +42,16 @@ class TmpFormat(FormatBase):
             if TMP_LINE.match(line) and len(TMP_LINE.findall(line)) == 1:
                 return "tmp"
 
+        return None
+
     @classmethod
-    def from_file(cls, subs, fp, format_, **kwargs):
+    def from_file(cls, subs: "SSAFile", fp: TextIO, format_: str, **kwargs: Any) -> None:
         """See :meth:`pysubs2.formats.FormatBase.from_file()`"""
         events = []
 
-        def prepare_text(text):
+        def prepare_text(text: str) -> str:
             text = text.replace("|", r"\N")  # convert newlines
-            text = re.sub(r"< *u *>", "{\\\\u1}", text) # not r" for Python 2.7 compat, triggers unicodeescape
+            text = re.sub(r"< *u *>", r"{\\u1}", text)
             text = re.sub(r"< */? *[a-zA-Z][^>]*>", "", text) # strip other HTML tags
             return text
 
@@ -56,7 +61,9 @@ class TmpFormat(FormatBase):
                 continue
 
             start, text = match.groups()
-            start = timestamp_to_ms(TIMESTAMP_SHORT.match(start).groups())
+            match2 = TIMESTAMP_SHORT.match(start)
+            assert match2 is not None, "TMP_LINE contains TIMESTAMP_SHORT"
+            start = timestamp_to_ms(match2.groups())
 
             # Unfortunately, end timestamp is not given; try to estimate something reasonable:
             # start + 500 ms + 67 ms/character (15 chars per second)
@@ -72,7 +79,7 @@ class TmpFormat(FormatBase):
         subs.events = events
 
     @classmethod
-    def to_file(cls, subs, fp, format_, apply_styles=True, **kwargs):
+    def to_file(cls, subs: "SSAFile", fp: TextIO, format_: str, apply_styles: bool = True, **kwargs: Any) -> None:
         """
         See :meth:`pysubs2.formats.FormatBase.to_file()`
 
@@ -82,28 +89,24 @@ class TmpFormat(FormatBase):
             apply_styles: If False, do not write any styling.
 
         """
-        def prepare_text(text, style):
+        def prepare_text(text: str, style: SSAStyle) -> str:
             body = []
-            skip = False
             for fragment, sty in parse_tags(text, style, subs.styles):
                 fragment = fragment.replace(r"\h", " ")
                 fragment = fragment.replace(r"\n", "\n")
                 fragment = fragment.replace(r"\N", "\n")
                 if apply_styles:
-                    if sty.italic: fragment = f"<i>{fragment}</i>"
-                    if sty.underline: fragment = f"<u>{fragment}</u>"
-                    if sty.strikeout: fragment = f"<s>{fragment}</s>"
-                if sty.drawing: skip = True
+                    if sty.italic:
+                        fragment = f"<i>{fragment}</i>"
+                    if sty.underline:
+                        fragment = f"<u>{fragment}</u>"
+                    if sty.strikeout:
+                        fragment = f"<s>{fragment}</s>"
                 body.append(fragment)
 
-            if skip:
-                return ""
-            else:
-                return re.sub("\n+", "\n", "".join(body).strip())
+            return re.sub("\n+", "\n", "".join(body).strip())
 
-        visible_lines = (line for line in subs if not line.is_comment)
-
-        for line in visible_lines:
+        for line in subs.get_text_events():
             start = cls.ms_to_timestamp(line.start)
             text = prepare_text(line.text, subs.styles.get(line.style, SSAStyle.DEFAULT_STYLE))
 
