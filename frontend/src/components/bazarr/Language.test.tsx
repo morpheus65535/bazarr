@@ -1,5 +1,5 @@
-import { render, screen } from "@/tests";
 import { describe, it } from "vitest";
+import { render, screen } from "@/tests";
 import { Language } from ".";
 
 describe("Language text", () => {

@@ -1,23 +1,23 @@
 /* eslint-disable camelcase */
+import { FunctionComponent, useMemo } from "react";
+import { Column } from "react-table";
+import { Badge, Center, Text } from "@mantine/core";
+import { faFileExcel, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   useEpisodeAddBlacklist,
   useEpisodeHistory,
   useMovieAddBlacklist,
   useMovieHistory,
 } from "@/apis/hooks";
+import { PageTable } from "@/components";
+import MutateAction from "@/components/async/MutateAction";
+import QueryOverlay from "@/components/async/QueryOverlay";
+import { HistoryIcon } from "@/components/bazarr";
+import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
+import TextPopover from "@/components/TextPopover";
 import { withModal } from "@/modules/modals";
-import { faFileExcel, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Badge, Center, Text } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
-import { PageTable } from "..";
-import TextPopover from "../TextPopover";
-import MutateAction from "../async/MutateAction";
-import QueryOverlay from "../async/QueryOverlay";
-import { HistoryIcon } from "../bazarr";
-import Language from "../bazarr/Language";
 
 interface MovieHistoryViewProps {
   movie: Item.Movie;

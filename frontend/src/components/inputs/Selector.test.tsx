@@ -1,6 +1,6 @@
-import { render, screen } from "@/tests";
 import userEvent from "@testing-library/user-event";
 import { describe, it, vitest } from "vitest";
+import { render, screen } from "@/tests";
 import { Selector, SelectorOption } from "./Selector";
 
 const selectorName = "Test Selections";

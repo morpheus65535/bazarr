@@ -4,9 +4,9 @@ import {
   useQuery,
   useQueryClient,
 } from "react-query";
-import { usePaginationQuery } from "../queries/hooks";
-import { QueryKeys } from "../queries/keys";
-import api from "../raw";
+import { usePaginationQuery } from "@/apis/queries/hooks";
+import { QueryKeys } from "@/apis/queries/keys";
+import api from "@/apis/raw";
 
 function cacheSeries(client: QueryClient, series: Item.Series[]) {
   series.forEach((item) => {

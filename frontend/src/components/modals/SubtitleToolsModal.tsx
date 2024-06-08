@@ -1,12 +1,12 @@
+import { FunctionComponent, useMemo, useState } from "react";
+import { Column, useRowSelect } from "react-table";
+import { Badge, Button, Divider, Group, Stack, Text } from "@mantine/core";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import { SimpleTable } from "@/components/tables";
 import { useCustomSelection } from "@/components/tables/plugins";
 import { withModal } from "@/modules/modals";
 import { isMovie } from "@/utilities";
-import { Badge, Button, Divider, Group, Stack, Text } from "@mantine/core";
-import { FunctionComponent, useMemo, useState } from "react";
-import { Column, useRowSelect } from "react-table";
 
 type SupportType = Item.Episode | Item.Movie;
 

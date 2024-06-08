@@ -1,6 +1,6 @@
-import { render, screen } from "@/tests";
 import { Text } from "@mantine/core";
 import { describe, it } from "vitest";
+import { render, screen } from "@/tests";
 import Layout from "./Layout";
 
 describe("Settings layout", () => {

@@ -1,7 +1,7 @@
-import { SimpleTable } from "@/components";
-import { Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
+import { Text } from "@mantine/core";
+import { SimpleTable } from "@/components";
 
 interface Props {
   health: readonly System.Health[];

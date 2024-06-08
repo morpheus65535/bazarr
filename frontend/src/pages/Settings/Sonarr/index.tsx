@@ -1,5 +1,5 @@
-import { Code } from "@mantine/core";
 import { FunctionComponent } from "react";
+import { Code } from "@mantine/core";
 import {
   Check,
   Chips,
@@ -14,9 +14,9 @@ import {
   Slider,
   Text,
   URLTestButton,
-} from "../components";
-import { seriesEnabledKey } from "../keys";
-import { seriesTypeOptions } from "../options";
+} from "@/pages/Settings/components";
+import { seriesEnabledKey } from "@/pages/Settings/keys";
+import { seriesTypeOptions } from "@/pages/Settings/options";
 import { timeoutOptions } from "./options";
 
 const SettingsSonarrView: FunctionComponent = () => {

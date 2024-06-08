@@ -1,5 +1,5 @@
 import { useIsMutating } from "react-query";
-import { QueryKeys } from "../queries/keys";
+import { QueryKeys } from "@/apis/queries/keys";
 
 export function useIsAnyActionRunning() {
   return useIsMutating([QueryKeys.Actions]) > 0;

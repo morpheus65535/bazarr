@@ -1,5 +1,5 @@
-import { usePageSize } from "@/utilities/storage";
 import { Hooks, TableOptions } from "react-table";
+import { usePageSize } from "@/utilities/storage";
 
 const pluginName = "useLocalSettings";
 

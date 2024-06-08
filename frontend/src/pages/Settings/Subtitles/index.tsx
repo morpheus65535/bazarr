@@ -1,5 +1,5 @@
-import { Code, Space, Table } from "@mantine/core";
 import { FunctionComponent } from "react";
+import { Code, Space, Table } from "@mantine/core";
 import {
   Check,
   CollapseBox,
@@ -10,11 +10,11 @@ import {
   Selector,
   Slider,
   Text,
-} from "../components";
+} from "@/pages/Settings/components";
 import {
   SubzeroColorModification,
   SubzeroModification,
-} from "../utilities/modifications";
+} from "@/pages/Settings/utilities/modifications";
 import {
   adaptiveSearchingDelayOption,
   adaptiveSearchingDeltaOption,

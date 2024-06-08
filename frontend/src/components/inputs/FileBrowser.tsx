@@ -1,13 +1,13 @@
-import { useFileSystem } from "@/apis/hooks";
-import { faFolder } from "@fortawesome/free-regular-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
 import {
   Autocomplete,
   AutocompleteProps,
   ComboboxItem,
   OptionsFilter,
 } from "@mantine/core";
-import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
+import { faFolder } from "@fortawesome/free-regular-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useFileSystem } from "@/apis/hooks";
 
 // TODO: use fortawesome icons
 const backKey = "⏎ Back";

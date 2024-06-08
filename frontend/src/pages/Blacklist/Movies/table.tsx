@@ -1,13 +1,13 @@
+import { FunctionComponent, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { Column } from "react-table";
+import { Anchor, Text } from "@mantine/core";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useMovieDeleteBlacklist } from "@/apis/hooks";
 import { PageTable } from "@/components";
 import MutateAction from "@/components/async/MutateAction";
 import Language from "@/components/bazarr/Language";
 import TextPopover from "@/components/TextPopover";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { Anchor, Text } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Column } from "react-table";
 
 interface Props {
   blacklist: readonly Blacklist.Movie[];

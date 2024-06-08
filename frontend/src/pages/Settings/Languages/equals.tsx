@@ -1,3 +1,8 @@
+import { FunctionComponent, useCallback, useMemo } from "react";
+import { Column } from "react-table";
+import { Button, Checkbox } from "@mantine/core";
+import { faEquals, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useLanguages } from "@/apis/hooks";
 import { Action, SimpleTable } from "@/components";
 import LanguageSelector from "@/components/bazarr/LanguageSelector";
@@ -5,11 +10,6 @@ import { languageEqualsKey } from "@/pages/Settings/keys";
 import { useFormActions } from "@/pages/Settings/utilities/FormValues";
 import { useSettingValue } from "@/pages/Settings/utilities/hooks";
 import { LOG } from "@/utilities/console";
-import { faEquals, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Checkbox } from "@mantine/core";
-import { FunctionComponent, useCallback, useMemo } from "react";
-import { Column } from "react-table";
 
 interface GenericEqualTarget<T> {
   content: T;

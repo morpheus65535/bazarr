@@ -1,6 +1,6 @@
-import { uiPageSizeKey } from "@/utilities/storage";
 import { FunctionComponent } from "react";
-import { Layout, Section, Selector } from "../components";
+import { Layout, Section, Selector } from "@/pages/Settings/components";
+import { uiPageSizeKey } from "@/utilities/storage";
 import { colorSchemeOptions, pageSizeOptions } from "./options";
 
 const SettingsUIView: FunctionComponent = () => {

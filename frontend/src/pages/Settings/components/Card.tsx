@@ -1,7 +1,7 @@
+import { FunctionComponent } from "react";
+import { Center, Stack, Text, UnstyledButton } from "@mantine/core";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Center, Stack, Text, UnstyledButton } from "@mantine/core";
-import { FunctionComponent } from "react";
 import styles from "./Card.module.scss";
 
 interface CardProps {
