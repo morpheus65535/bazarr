@@ -1,17 +1,17 @@
+import { FunctionComponent, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { Column } from "react-table";
+import { Anchor, Container, Progress } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
+import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
+import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
 import { Action } from "@/components";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
-import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
-import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Container, Progress } from "@mantine/core";
-import { useDocumentTitle } from "@mantine/hooks";
-import { FunctionComponent, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Column } from "react-table";
 
 const SeriesView: FunctionComponent = () => {
   const mutation = useSeriesModification();

@@ -1,5 +1,5 @@
-import { Text } from "@mantine/core";
 import { FunctionComponent, PropsWithChildren } from "react";
+import { Text } from "@mantine/core";
 
 interface MessageProps {
   type?: "warning" | "info";

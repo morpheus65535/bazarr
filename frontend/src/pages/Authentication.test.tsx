@@ -1,5 +1,5 @@
-import { render, screen } from "@/tests";
 import { describe, it } from "vitest";
+import { render, screen } from "@/tests";
 import Authentication from "./Authentication";
 
 describe("Authentication", () => {

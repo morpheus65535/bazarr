@@ -1,10 +1,10 @@
+import { FunctionComponent } from "react";
+import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
+import { useForm } from "@mantine/form";
 import { useSubtitleAction } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import FormUtils from "@/utilities/form";
-import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { FunctionComponent } from "react";
 
 const TaskName = "Changing Frame Rate";
 

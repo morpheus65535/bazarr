@@ -1,6 +1,6 @@
-import { SimpleTable } from "@/components";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
+import { SimpleTable } from "@/components";
 
 interface Props {
   providers: readonly System.Provider[];

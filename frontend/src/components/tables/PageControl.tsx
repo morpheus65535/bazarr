@@ -1,6 +1,6 @@
-import { useIsLoading } from "@/contexts";
-import { Group, Pagination, Text } from "@mantine/core";
 import { FunctionComponent, useEffect } from "react";
+import { Group, Pagination, Text } from "@mantine/core";
+import { useIsLoading } from "@/contexts";
 interface Props {
   count: number;
   index: number;

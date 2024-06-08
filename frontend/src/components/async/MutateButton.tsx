@@ -1,6 +1,6 @@
-import { Button, ButtonProps } from "@mantine/core";
 import { useCallback, useState } from "react";
 import { UseMutationResult } from "react-query";
+import { Button, ButtonProps } from "@mantine/core";
 
 type MutateButtonProps<DATA, VAR> = Omit<
   ButtonProps,

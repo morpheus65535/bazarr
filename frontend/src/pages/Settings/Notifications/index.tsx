@@ -1,6 +1,6 @@
-import { Anchor, Blockquote, Text } from "@mantine/core";
 import { FunctionComponent } from "react";
-import { Check, Layout, Message, Section } from "../components";
+import { Anchor, Blockquote, Text } from "@mantine/core";
+import { Check, Layout, Message, Section } from "@/pages/Settings/components";
 import { NotificationView } from "./components";
 
 const SettingsNotificationsView: FunctionComponent = () => {

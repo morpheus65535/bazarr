@@ -1,5 +1,3 @@
-import { AllProviders } from "@/providers";
-import { render, RenderOptions } from "@testing-library/react";
 import {
   FunctionComponent,
   PropsWithChildren,
@@ -11,6 +9,8 @@ import {
   RouteObject,
   RouterProvider,
 } from "react-router-dom";
+import { render, RenderOptions } from "@testing-library/react";
+import { AllProviders } from "@/providers";
 
 const AllProvidersWithStrictMode: FunctionComponent<PropsWithChildren> = ({
   children,

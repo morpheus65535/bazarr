@@ -1,8 +1,8 @@
-import { useIsLoading } from "@/contexts";
-import { usePageSize } from "@/utilities/storage";
-import { Box, Skeleton, Table, Text } from "@mantine/core";
 import { ReactNode, useMemo } from "react";
 import { HeaderGroup, Row, TableInstance } from "react-table";
+import { Box, Skeleton, Table, Text } from "@mantine/core";
+import { useIsLoading } from "@/contexts";
+import { usePageSize } from "@/utilities/storage";
 import styles from "./BaseTable.module.scss";
 
 export type BaseTableProps<T extends object> = TableInstance<T> & {

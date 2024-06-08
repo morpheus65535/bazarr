@@ -1,16 +1,12 @@
-import { Action } from "@/components";
-import { useNavbar } from "@/contexts/Navbar";
-import { useRouteItems } from "@/Router";
-import { CustomRouteObject, Route } from "@/Router/type";
-import { BuildKey, pathJoin } from "@/utilities";
-import { LOG } from "@/utilities/console";
-import {
-  faHeart,
-  faMoon,
-  faSun,
-  IconDefinition,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, {
+  createContext,
+  FunctionComponent,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { matchPath, NavLink, RouteObject, useLocation } from "react-router-dom";
 import {
   Anchor,
   AppShell,
@@ -24,16 +20,20 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import { useHover } from "@mantine/hooks";
+import {
+  faHeart,
+  faMoon,
+  faSun,
+  IconDefinition,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import React, {
-  createContext,
-  FunctionComponent,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { matchPath, NavLink, RouteObject, useLocation } from "react-router-dom";
+import { Action } from "@/components";
+import { useNavbar } from "@/contexts/Navbar";
+import { useRouteItems } from "@/Router";
+import { CustomRouteObject, Route } from "@/Router/type";
+import { BuildKey, pathJoin } from "@/utilities";
+import { LOG } from "@/utilities/console";
 import styles from "./Navbar.module.scss";
 
 const Selection = createContext<{

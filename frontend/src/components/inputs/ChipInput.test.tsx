@@ -1,6 +1,6 @@
-import { render, screen } from "@/tests";
 import userEvent from "@testing-library/user-event";
 import { describe, it, vitest } from "vitest";
+import { render, screen } from "@/tests";
 import ChipInput from "./ChipInput";
 
 describe("ChipInput", () => {

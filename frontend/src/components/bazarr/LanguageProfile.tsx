@@ -1,5 +1,5 @@
-import { useLanguageProfiles } from "@/apis/hooks";
 import { FunctionComponent, useMemo } from "react";
+import { useLanguageProfiles } from "@/apis/hooks";
 
 interface Props {
   index: number | null;

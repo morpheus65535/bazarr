@@ -1,9 +1,9 @@
-import { Environment } from "@/utilities";
-import { setAuthenticated } from "@/utilities/event";
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { QueryKeys } from "../queries/keys";
-import api from "../raw";
+import { QueryKeys } from "@/apis/queries/keys";
+import api from "@/apis/raw";
+import { Environment } from "@/utilities";
+import { setAuthenticated } from "@/utilities/event";
 
 export function useBadges() {
   return useQuery(

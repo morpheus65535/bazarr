@@ -1,7 +1,7 @@
-import { render } from "@/tests";
 import { describe } from "vitest";
-import MovieView from ".";
+import { render } from "@/tests";
 import MovieMassEditor from "./Editor";
+import MovieView from ".";
 
 describe("Movies page", () => {
   it("should render", () => {

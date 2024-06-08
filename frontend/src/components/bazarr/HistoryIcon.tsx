@@ -1,3 +1,5 @@
+import { FunctionComponent } from "react";
+import { Tooltip } from "@mantine/core";
 import {
   faClock,
   faClosedCaptioning,
@@ -9,8 +11,6 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Tooltip } from "@mantine/core";
-import { FunctionComponent } from "react";
 
 enum HistoryAction {
   Delete = 0,

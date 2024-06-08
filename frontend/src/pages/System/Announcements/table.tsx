@@ -1,10 +1,10 @@
+import { FunctionComponent, useMemo } from "react";
+import { Column } from "react-table";
+import { Anchor, Text } from "@mantine/core";
+import { faWindowClose } from "@fortawesome/free-solid-svg-icons";
 import { useSystemAnnouncementsAddDismiss } from "@/apis/hooks";
 import { SimpleTable } from "@/components";
 import { MutateAction } from "@/components/async";
-import { faWindowClose } from "@fortawesome/free-solid-svg-icons";
-import { Anchor, Text } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
 
 interface Props {
   announcements: readonly System.Announcements[];

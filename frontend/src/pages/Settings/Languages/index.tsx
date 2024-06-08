@@ -1,6 +1,5 @@
-import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
-import { useEnabledLanguages } from "@/utilities/languages";
 import { FunctionComponent } from "react";
+import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 import {
   Check,
   CollapseBox,
@@ -8,14 +7,15 @@ import {
   Message,
   Section,
   Selector,
-} from "../components";
+} from "@/pages/Settings/components";
 import {
   defaultUndAudioLang,
   defaultUndEmbeddedSubtitlesLang,
   enabledLanguageKey,
   languageProfileKey,
-} from "../keys";
-import { useSettingValue } from "../utilities/hooks";
+} from "@/pages/Settings/keys";
+import { useSettingValue } from "@/pages/Settings/utilities/hooks";
+import { useEnabledLanguages } from "@/utilities/languages";
 import { LanguageSelector, ProfileSelector } from "./components";
 import EqualsTable from "./equals";
 import Table from "./table";
