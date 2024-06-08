@@ -9,6 +9,7 @@
       color: var(--mantine-color-red-0);
     }
   }
+
   .root:disabled {
     @include dark {
       color: var(--mantine-color-dark-9);
