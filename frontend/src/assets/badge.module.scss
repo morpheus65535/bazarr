@@ -1,22 +1,38 @@
 .root {
-  background-color: var(--mantine-color-grape-light);
+  background-color: transparentize($color-brand-6, 0.8);
+
+  &[data-variant="warning"] {
+    color: lighten($color-warning-2, 1);
+    background-color: transparentize($color-warning-6, 0.8);
+  }
+
+  &[data-variant="highlight"] {
+    color: lighten($color-highlight-2, 1);
+    background-color: transparentize($color-highlight-5, 0.8);
+  }
 
   &[data-variant="disabled"] {
-    background-color: rgba(52, 58, 64, 0.2);
+    color: lighten($color-disabled-0, 1);
+    background-color: transparentize($color-disabled-7, 0.8);
   }
 
   @include light {
-    color: var(--mantine-color-primary);
-    background-color: var(--mantine-color-grape-light);
+    color: $color-brand-6;
+    background-color: transparentize($color-brand-3, 0.8);
 
-    &[data-variant="brand"] {
-      background-color: $color-brand-6;
-      color: var(--mantine-color-primary);
+    &[data-variant="warning"] {
+      color: darken($color-warning-7, 1);
+      background-color: transparentize($color-warning-6, 0.8);
     }
 
     &[data-variant="disabled"] {
-      background-color: rgb(248, 249, 250);
-      color: rgb(134, 142, 150);
+      color: darken($color-disabled-6, 1);
+      background-color: transparentize($color-disabled-4, 0.8);
+    }
+
+    &[data-variant="highlight"] {
+      color: darken($color-highlight-6, 1);
+      background-color: transparentize($color-highlight-5, 0.8);
     }
   }
 }
