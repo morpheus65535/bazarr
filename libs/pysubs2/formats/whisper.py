@@ -5,9 +5,9 @@ See https://github.com/openai/whisper
 
 """
 
-from .ssaevent import SSAEvent
-from .ssafile import SSAFile
-from .time import make_time
+from ..ssaevent import SSAEvent
+from ..ssafile import SSAFile
+from ..time import make_time
 from typing import Union, List, Dict, Any
 
 

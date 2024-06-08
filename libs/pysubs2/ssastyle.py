@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, Any, ClassVar
+from typing import Dict, Any, ClassVar, FrozenSet
 import dataclasses
 
 from .common import Color, Alignment
@@ -23,7 +23,7 @@ class SSAStyle:
     DEFAULT_STYLE: ClassVar["SSAStyle"] = None  # type: ignore[assignment]
 
     @property
-    def FIELDS(self):
+    def FIELDS(self) -> FrozenSet[str]:
         """All fields in SSAStyle."""
         warnings.warn("Deprecated in 1.2.0 - it's a dataclass now", DeprecationWarning)
         return frozenset(field.name for field in dataclasses.fields(self))
@@ -66,7 +66,7 @@ class SSAStyle:
         # dataclasses.asdict() would recursively dictify Color objects, which we don't want
         return {field.name: getattr(self, field.name) for field in dataclasses.fields(self)}
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<SSAStyle {self.fontsize!r}px" \
                f"{' bold' if self.bold else ''}" \
                f"{' italic' if self.italic else ''}" \

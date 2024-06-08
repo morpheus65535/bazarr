@@ -1,6 +1,5 @@
-from typing import Optional
-import io
-import pysubs2
+from typing import Optional, Any, TextIO
+from ..ssafile import SSAFile
 
 
 class FormatBase:
@@ -19,7 +18,7 @@ class FormatBase:
 
     """
     @classmethod
-    def from_file(cls, subs: "pysubs2.SSAFile", fp: io.TextIOBase, format_: str, **kwargs):
+    def from_file(cls, subs: "SSAFile", fp: TextIO, format_: str, **kwargs: Any) -> None:
         """
         Load subtitle file into an empty SSAFile.
 
@@ -42,7 +41,7 @@ class FormatBase:
         raise NotImplementedError("Parsing is not supported for this format")
 
     @classmethod
-    def to_file(cls, subs: "pysubs2.SSAFile", fp: io.TextIOBase, format_: str, **kwargs):
+    def to_file(cls, subs: "SSAFile", fp: TextIO, format_: str, **kwargs: Any) -> None:
         """
         Write SSAFile into a file.
 
