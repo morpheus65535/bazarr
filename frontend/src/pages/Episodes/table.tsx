@@ -1,21 +1,3 @@
-import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
-import { useShowOnlyDesired } from "@/apis/hooks/site";
-import { Action, GroupTable } from "@/components";
-import TextPopover from "@/components/TextPopover";
-import { AudioList } from "@/components/bazarr";
-import { EpisodeHistoryModal } from "@/components/modals";
-import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
-import { useModals } from "@/modules/modals";
-import { BuildKey, filterSubtitleBy } from "@/utilities";
-import { useProfileItemsToLanguages } from "@/utilities/languages";
-import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
-import {
-  faBookmark,
-  faHistory,
-  faUser,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Group, Text } from "@mantine/core";
 import {
   FunctionComponent,
   useCallback,
@@ -24,6 +6,24 @@ import {
   useRef,
 } from "react";
 import { Column, TableInstance } from "react-table";
+import { Group, Text } from "@mantine/core";
+import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
+import {
+  faBookmark,
+  faHistory,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
+import { useShowOnlyDesired } from "@/apis/hooks/site";
+import { Action, GroupTable } from "@/components";
+import { AudioList } from "@/components/bazarr";
+import { EpisodeHistoryModal } from "@/components/modals";
+import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
+import TextPopover from "@/components/TextPopover";
+import { useModals } from "@/modules/modals";
+import { BuildKey, filterSubtitleBy } from "@/utilities";
+import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { Subtitle } from "./components";
 
 interface Props {
@@ -169,7 +169,7 @@ const Table: FunctionComponent<Props> = ({
               <Action
                 label="Manual Search"
                 disabled={disabled}
-                color="dark"
+                variant="dark"
                 onClick={() => {
                   modals.openContextModal(EpisodeSearchModal, {
                     item: row.original,
@@ -182,7 +182,7 @@ const Table: FunctionComponent<Props> = ({
               <Action
                 label="History"
                 disabled={disabled}
-                color="dark"
+                variant="dark"
                 onClick={() => {
                   modals.openContextModal(
                     EpisodeHistoryModal,

@@ -1,10 +1,10 @@
+import { Column } from "react-table";
+import { Container } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { useIsAnyActionRunning } from "@/apis/hooks";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { QueryPageTable, Toolbox } from "@/components";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import { Container } from "@mantine/core";
-import { useDocumentTitle } from "@mantine/hooks";
-import { Column } from "react-table";
 
 interface Props<T extends Wanted.Base> {
   name: string;

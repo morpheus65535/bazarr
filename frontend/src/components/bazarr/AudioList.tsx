@@ -1,6 +1,6 @@
-import { BuildKey } from "@/utilities";
-import { Badge, BadgeProps, Group, GroupProps } from "@mantine/core";
 import { FunctionComponent } from "react";
+import { Badge, BadgeProps, Group, GroupProps } from "@mantine/core";
+import { BuildKey } from "@/utilities";
 
 export type AudioListProps = GroupProps & {
   audios: Language.Info[];

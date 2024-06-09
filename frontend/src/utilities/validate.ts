@@ -1,5 +1,5 @@
-import { isNumber, isString } from "lodash";
 import { ReactText } from "react";
+import { isNumber, isString } from "lodash";
 
 export function isReactText(v: unknown): v is ReactText {
   return isString(v) || isNumber(v);

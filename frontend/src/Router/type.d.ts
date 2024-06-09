@@ -1,5 +1,5 @@
-import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { RouteObject } from "react-router-dom";
+import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 
 declare namespace Route {
   export type Item = {

@@ -1,13 +1,24 @@
 @layer mantine {
   .root {
+    background-color: transparent;
+
     &[data-variant="light"] {
       color: var(--mantine-color-dark-0);
+    }
+
+    &[data-variant="dark"] {
+      --ai-bg: transparent;
+      --ai-hover: darken(var(--mantine-color-grape-light), 0.2);
     }
 
     @include light {
       &[data-variant="light"] {
         background-color: var(--mantine-color-gray-1);
         color: var(--mantine-color-dark-2);
+      }
+
+      &[data-variant="dark"] {
+        --ai-color: var(--mantine-color-dark-filled);
       }
     }
   }

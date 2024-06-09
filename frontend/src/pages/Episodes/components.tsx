@@ -1,9 +1,9 @@
+import { FunctionComponent, useMemo, useState } from "react";
+import { Badge, MantineColor, Tooltip } from "@mantine/core";
 import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import { task, TaskGroup } from "@/modules/task";
-import { Badge, MantineColor, Tooltip } from "@mantine/core";
-import { FunctionComponent, useMemo, useState } from "react";
 
 interface Props {
   seriesId: number;
@@ -24,13 +24,13 @@ export const Subtitle: FunctionComponent<Props> = ({
 
   const disabled = subtitle.path === null;
 
-  const color: MantineColor | undefined = useMemo(() => {
+  const variant: MantineColor | undefined = useMemo(() => {
     if (opened && !disabled) {
-      return "cyan";
+      return "highlight";
     } else if (missing) {
-      return "yellow";
+      return "warning";
     } else if (disabled) {
-      return "gray";
+      return "disabled";
     }
   }, [disabled, missing, opened]);
 
@@ -50,7 +50,7 @@ export const Subtitle: FunctionComponent<Props> = ({
   }, [episodeId, subtitle.code2, subtitle.path]);
 
   const ctx = (
-    <Badge color={color}>
+    <Badge variant={variant}>
       <Language.Text value={subtitle} long={false}></Language.Text>
     </Badge>
   );

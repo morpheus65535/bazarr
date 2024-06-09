@@ -1,18 +1,18 @@
-import { Action, SimpleTable } from "@/components";
-import {
-  ProfileEditModal,
-  anyCutoff,
-} from "@/components/forms/ProfileEditForm";
-import { useModals } from "@/modules/modals";
-import { BuildKey, useArrayAction } from "@/utilities";
-import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
-import { Badge, Button, Group } from "@mantine/core";
-import { cloneDeep } from "lodash";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
+import { Badge, Button, Group } from "@mantine/core";
+import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
+import { cloneDeep } from "lodash";
+import { Action, SimpleTable } from "@/components";
+import {
+  anyCutoff,
+  ProfileEditModal,
+} from "@/components/forms/ProfileEditForm";
+import { useModals } from "@/modules/modals";
+import { languageProfileKey } from "@/pages/Settings/keys";
+import { useFormActions } from "@/pages/Settings/utilities/FormValues";
+import { BuildKey, useArrayAction } from "@/utilities";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
-import { languageProfileKey } from "../keys";
-import { useFormActions } from "../utilities/FormValues";
 
 const Table: FunctionComponent = () => {
   const profiles = useLatestProfiles();

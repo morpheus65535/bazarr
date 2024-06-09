@@ -1,15 +1,7 @@
-import {
-  useHistoryStats,
-  useLanguages,
-  useSystemProviders,
-} from "@/apis/hooks";
-import { Selector, Toolbox } from "@/components";
-import { QueryOverlay } from "@/components/async";
-import { useSelectorOptions } from "@/utilities";
+import { FunctionComponent, useMemo, useState } from "react";
 import { Box, Container, SimpleGrid, useMantineTheme } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { merge } from "lodash";
-import { FunctionComponent, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -20,6 +12,14 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  useHistoryStats,
+  useLanguages,
+  useSystemProviders,
+} from "@/apis/hooks";
+import { Selector, Toolbox } from "@/components";
+import { QueryOverlay } from "@/components/async";
+import { useSelectorOptions } from "@/utilities";
 import { actionOptions, timeFrameOptions } from "./options";
 import styles from "./HistoryStats.module.scss";
 

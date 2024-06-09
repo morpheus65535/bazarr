@@ -1,4 +1,21 @@
-import { RouterNames } from "@/Router/RouterNames";
+import { FunctionComponent, useCallback, useRef } from "react";
+import { Navigate, useParams } from "react-router-dom";
+import { Container, Group, Menu, Stack } from "@mantine/core";
+import { Dropzone } from "@mantine/dropzone";
+import { useDocumentTitle } from "@mantine/hooks";
+import { showNotification } from "@mantine/notifications";
+import {
+  faCloudUploadAlt,
+  faEllipsis,
+  faHistory,
+  faSearch,
+  faSync,
+  faToolbox,
+  faUser,
+  faWrench,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { isNumber } from "lodash";
 import {
   useDownloadMovieSubtitles,
   useIsMovieActionRunning,
@@ -16,27 +33,10 @@ import { MovieUploadModal } from "@/components/forms/MovieUploadForm";
 import { MovieHistoryModal, SubtitleToolsModal } from "@/components/modals";
 import { MovieSearchModal } from "@/components/modals/ManualSearchModal";
 import { useModals } from "@/modules/modals";
-import { TaskGroup, notification, task } from "@/modules/task";
+import { notification, task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
+import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
-import {
-  faCloudUploadAlt,
-  faEllipsis,
-  faHistory,
-  faSearch,
-  faSync,
-  faToolbox,
-  faUser,
-  faWrench,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Container, Group, Menu, Stack } from "@mantine/core";
-import { Dropzone } from "@mantine/dropzone";
-import { useDocumentTitle } from "@mantine/hooks";
-import { showNotification } from "@mantine/notifications";
-import { isNumber } from "lodash";
-import { FunctionComponent, useCallback, useRef } from "react";
-import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
 
 const MovieDetailView: FunctionComponent = () => {
@@ -198,7 +198,6 @@ const MovieDetailView: FunctionComponent = () => {
               <Menu.Target>
                 <Action
                   label="More Actions"
-                  color="dark"
                   icon={faEllipsis}
                   disabled={hasTask}
                 />

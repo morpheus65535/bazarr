@@ -1,5 +1,5 @@
-import { Group } from "@mantine/core";
 import { FunctionComponent, PropsWithChildren } from "react";
+import { Group } from "@mantine/core";
 import ToolboxButton, { ToolboxMutateButton } from "./Button";
 import styles from "./Toolbox.module.scss";
 
@@ -10,7 +10,7 @@ declare type ToolboxComp = FunctionComponent<PropsWithChildren> & {
 
 const Toolbox: ToolboxComp = ({ children }) => {
   return (
-    <Group p={12} justify="apart" className={styles.group}>
+    <Group p={12} justify="space-between" className={styles.group}>
       {children}
     </Group>
   );

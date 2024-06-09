@@ -1,23 +1,4 @@
-import { Language } from "@/components/bazarr";
-import { BuildKey } from "@/utilities";
-import {
-  useLanguageProfileBy,
-  useProfileItemsToLanguages,
-} from "@/utilities/languages";
-import {
-  faFolder,
-  faBookmark as farBookmark,
-} from "@fortawesome/free-regular-svg-icons";
-import {
-  IconDefinition,
-  faBookmark,
-  faClone,
-  faLanguage,
-  faMusic,
-  faStream,
-  faTags,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FunctionComponent, useMemo } from "react";
 import {
   BackgroundImage,
   Badge,
@@ -32,7 +13,26 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
+import {
+  faBookmark as farBookmark,
+  faFolder,
+} from "@fortawesome/free-regular-svg-icons";
+import {
+  faBookmark,
+  faClone,
+  faLanguage,
+  faMusic,
+  faStream,
+  faTags,
+  IconDefinition,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Language } from "@/components/bazarr";
+import { BuildKey } from "@/utilities";
+import {
+  useLanguageProfileBy,
+  useProfileItemsToLanguages,
+} from "@/utilities/languages";
 
 interface Props {
   item: Item.Base | null;
@@ -132,7 +132,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           flexWrap: "nowrap",
         }}
       >
-        <Grid.Col span={3} hiddenFrom="sm">
+        <Grid.Col span={3} visibleFrom="sm">
           <Image
             src={item?.poster}
             mx="auto"
