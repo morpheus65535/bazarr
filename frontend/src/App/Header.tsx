@@ -52,7 +52,7 @@ const AppHeader: FunctionComponent = () => {
             size="sm"
             hiddenFrom="sm"
           ></Burger>
-          <Badge size="lg" radius="sm">
+          <Badge size="lg" radius="sm" variant="brand">
             Bazarr
           </Badge>
         </Group>

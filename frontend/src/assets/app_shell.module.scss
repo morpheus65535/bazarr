@@ -1,5 +1,7 @@
-.main {
-  @include dark {
-    background-color: rgb(26, 27, 30);
+@layer mantine {
+  .main {
+    @include dark {
+      background-color: var(--mantine-color-dark-8);
+    }
   }
 }
