@@ -1,8 +1,40 @@
-.root {
-  background-color: var(--mantine-color-grape-light);
+@layer mantine {
+  .root {
+    background-color: transparentize($color-brand-6, 0.8);
 
-  @include light {
-    color: var(--mantine-color-dark-filled);
-    background-color: var(--mantine-color-grape-light);
+    &[data-variant="warning"] {
+      color: lighten($color-warning-2, 1);
+      background-color: transparentize($color-warning-6, 0.8);
+    }
+
+    &[data-variant="highlight"] {
+      color: lighten($color-highlight-2, 1);
+      background-color: transparentize($color-highlight-5, 0.8);
+    }
+
+    &[data-variant="disabled"] {
+      color: lighten($color-disabled-0, 1);
+      background-color: transparentize($color-disabled-7, 0.8);
+    }
+
+    @include light {
+      color: $color-brand-6;
+      background-color: transparentize($color-brand-3, 0.8);
+
+      &[data-variant="warning"] {
+        color: darken($color-warning-7, 1);
+        background-color: transparentize($color-warning-6, 0.8);
+      }
+
+      &[data-variant="disabled"] {
+        color: darken($color-disabled-6, 1);
+        background-color: transparentize($color-disabled-4, 0.8);
+      }
+
+      &[data-variant="highlight"] {
+        color: darken($color-highlight-6, 1);
+        background-color: transparentize($color-highlight-5, 0.8);
+      }
+    }
   }
 }

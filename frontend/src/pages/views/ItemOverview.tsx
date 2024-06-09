@@ -132,7 +132,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           flexWrap: "nowrap",
         }}
       >
-        <Grid.Col span={3} hiddenFrom="sm">
+        <Grid.Col span={3} visibleFrom="sm">
           <Image
             src={item?.poster}
             mx="auto"

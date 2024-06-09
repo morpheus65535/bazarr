@@ -24,13 +24,13 @@ export const Subtitle: FunctionComponent<Props> = ({
 
   const disabled = subtitle.path === null;
 
-  const color: MantineColor | undefined = useMemo(() => {
+  const variant: MantineColor | undefined = useMemo(() => {
     if (opened && !disabled) {
-      return "cyan";
+      return "highlight";
     } else if (missing) {
-      return "yellow";
+      return "warning";
     } else if (disabled) {
-      return "gray";
+      return "disabled";
     }
   }, [disabled, missing, opened]);
 
@@ -50,7 +50,7 @@ export const Subtitle: FunctionComponent<Props> = ({
   }, [episodeId, subtitle.code2, subtitle.path]);
 
   const ctx = (
-    <Badge color={color}>
+    <Badge variant={variant}>
       <Language.Text value={subtitle} long={false}></Language.Text>
     </Badge>
   );

@@ -198,7 +198,6 @@ const MovieDetailView: FunctionComponent = () => {
               <Menu.Target>
                 <Action
                   label="More Actions"
-                  color="dark"
                   icon={faEllipsis}
                   disabled={hasTask}
                 />
