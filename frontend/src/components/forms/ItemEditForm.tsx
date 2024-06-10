@@ -1,7 +1,7 @@
 import { FunctionComponent, useMemo } from "react";
-import { UseMutationResult } from "react-query";
 import { Button, Divider, Group, LoadingOverlay, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { UseMutationResult } from "@tanstack/react-query";
 import { useLanguageProfiles } from "@/apis/hooks";
 import { MultiSelector, Selector } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";

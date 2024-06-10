@@ -1,5 +1,4 @@
 import { FunctionComponent, useCallback, useMemo } from "react";
-import { useMutation } from "react-query";
 import {
   Button,
   Divider,
@@ -9,6 +8,7 @@ import {
   Textarea,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { useMutation } from "@tanstack/react-query";
 import { isObject } from "lodash";
 import api from "@/apis/raw";
 import { Selector } from "@/components";

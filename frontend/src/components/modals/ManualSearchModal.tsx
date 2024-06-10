@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from "react";
-import { UseQueryResult } from "react-query";
 import { Column } from "react-table";
 import {
   Alert,
@@ -18,6 +17,7 @@ import {
   faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { UseQueryResult } from "@tanstack/react-query";
 import { isString } from "lodash";
 import { Action, PageTable } from "@/components";
 import Language from "@/components/bazarr/Language";

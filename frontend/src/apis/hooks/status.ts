@@ -1,4 +1,4 @@
-import { useIsMutating } from "react-query";
+import { useIsMutating } from "@tanstack/react-query";
 import { QueryKeys } from "@/apis/queries/keys";
 
 export function useIsAnyActionRunning() {

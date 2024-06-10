@@ -4,7 +4,7 @@ import {
   useQuery,
   useQueryClient,
   UseQueryResult,
-} from "react-query";
+} from "@tanstack/react-query";
 import { GetItemId, useOnValueChange } from "@/utilities";
 import { usePageSize } from "@/utilities/storage";
 import { QueryKeys } from "./keys";
