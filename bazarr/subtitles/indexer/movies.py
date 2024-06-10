@@ -182,7 +182,9 @@ def list_missing_subtitles_movies(no=None, send_event=True):
                         if any(x['code2'] == language['language'] for x in get_audio_profile_languages(
                                 movie_subtitles.audio_language)):
                             continue
-                    desired_subtitles_list.append([language['language'], language['forced'], language['hi']])
+                    desired_subtitles_list.append({'language': language['language'],
+                                                   'forced': language['forced'],
+                                                   'hi': language['hi']})
 
             # get existing subtitles
             actual_subtitles_list = []
@@ -204,7 +206,9 @@ def list_missing_subtitles_movies(no=None, send_event=True):
                         elif subtitles[1] == 'hi':
                             forced = False
                             hi = True
-                    actual_subtitles_list.append([lang, str(forced), str(hi)])
+                    actual_subtitles_list.append({'language': lang,
+                                                  'forced': str(forced),
+                                                  'hi': str(hi)})
 
             # check if cutoff is reached and skip any further check
             cutoff_met = False
@@ -229,24 +233,34 @@ def list_missing_subtitles_movies(no=None, send_event=True):
                 # get difference between desired and existing subtitles
                 missing_subtitles_list = []
                 for item in desired_subtitles_list:
-                    if item not in actual_subtitles_list:
-                        missing_subtitles_list.append(item)
-
-                # remove missing that have forced or hi subtitles for this language in existing
-                for item in actual_subtitles_list:
-                    if item[2] == 'True':
-                        try:
-                            missing_subtitles_list.remove([item[0], 'False', 'False'])
-                        except ValueError:
-                            pass
+                    if item['forced'] == 'True':
+                        desired_item = {'language': item['language'], 'forced': item['forced'], 'hi': 'False'}
+                        if desired_item not in actual_subtitles_list:
+                            missing_subtitles_list.append(desired_item)
+                    elif item['hi'] == 'never':
+                        desired_item = {'language': item['language'], 'forced': item['forced'], 'hi': 'False'}
+                        if desired_item not in actual_subtitles_list:
+                            missing_subtitles_list.append(desired_item)
+                    elif item['hi'] == 'only':
+                        desired_item = {'language': item['language'], 'forced': item['forced'], 'hi': 'True'}
+                        if desired_item not in actual_subtitles_list:
+                            missing_subtitles_list.append(desired_item)
+                    elif item['hi'] == 'also':
+                        desired_items = [{'language': item['language'], 'forced': item['forced'], 'hi': 'True'},
+                                         {'language': item['language'], 'forced': item['forced'], 'hi': 'False'}]
+                        if [x for x in desired_items if x in actual_subtitles_list]:
+                            continue
+                        else:
+                            for desired_item in desired_items:
+                                missing_subtitles_list.append(desired_item)
 
                 # make the missing languages list looks like expected
                 missing_subtitles_output_list = []
                 for item in missing_subtitles_list:
-                    lang = item[0]
-                    if item[1] == 'True':
+                    lang = item['language']
+                    if item['forced'] == 'True':
                         lang += ':forced'
-                    elif item[2] == 'True':
+                    elif item['hi'] == 'True':
                         lang += ':hi'
                     missing_subtitles_output_list.append(lang)
 
