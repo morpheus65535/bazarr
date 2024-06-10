@@ -19,7 +19,7 @@ const SystemLogsView: FunctionComponent = () => {
   const logs = useSystemLogs();
   const { isFetching, data, refetch } = logs;
 
-  const { mutate, isLoading } = useDeleteLogs();
+  const { mutate, isPending } = useDeleteLogs();
 
   const download = useCallback(() => {
     window.open(`${Environment.baseUrl}/bazarr.log`);
@@ -98,14 +98,14 @@ const SystemLogsView: FunctionComponent = () => {
               Download
             </Toolbox.Button>
             <Toolbox.Button
-              loading={isLoading}
+              loading={isPending}
               icon={faTrash}
               onClick={() => mutate()}
             >
               Empty
             </Toolbox.Button>
             <Toolbox.Button
-              loading={isLoading}
+              loading={isPending}
               icon={faFilter}
               onClick={openFilterModal}
               rightSection={

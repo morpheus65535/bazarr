@@ -63,7 +63,9 @@ const NotificationForm: FunctionComponent<Props> = ({
     },
   });
 
-  const test = useMutation((url: string) => api.system.testNotification(url));
+  const test = useMutation({
+    mutationFn: (url: string) => api.system.testNotification(url),
+  });
 
   return (
     <form

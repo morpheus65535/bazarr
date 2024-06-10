@@ -21,7 +21,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
   onCancel,
 }) => {
   const { data, isFetching } = useLanguageProfiles();
-  const { isLoading, mutate } = mutation;
+  const { isPending, mutate } = mutation;
   const modals = useModals();
 
   const profileOptions = useSelectorOptions(
@@ -47,7 +47,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
     (v) => v.code2,
   );
 
-  const isOverlayVisible = isLoading || isFetching || item === null;
+  const isOverlayVisible = isPending || isFetching || item === null;
 
   return (
     <form
