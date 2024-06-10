@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { cond } from "lodash";
 import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
 import ChipInput from "@/components/inputs/ChipInput";
 import { useModals, withModal } from "@/modules/modals";
@@ -87,16 +88,14 @@ const ProfileEditForm: FunctionComponent<Props> = ({
   const itemCutoffOptions = useSelectorOptions(
     form.values.items,
     (v) => {
-      const suffix =
-        v.hi === "only"
-          ? ":hi"
-          : v.hi === "never"
-            ? ":normal"
-            : v.forced === "True"
-              ? ":forced"
-              : "";
+      const suffix = cond([
+        [(v: { forced: string; hi: string }) => v.hi === "only", () => ":hi"],
+        [(v) => v.hi === "never", () => ":normal"],
+        [(v) => v.forced === "True", () => ":forced"],
+        [() => true, () => ""],
+      ]);
 
-      return v.language + suffix;
+      return v.language + suffix(v);
     },
     (v) => String(v.id),
   );
