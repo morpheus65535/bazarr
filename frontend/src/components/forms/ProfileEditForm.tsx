@@ -88,7 +88,13 @@ const ProfileEditForm: FunctionComponent<Props> = ({
     form.values.items,
     (v) => {
       const suffix =
-        v.hi === "only" ? ":hi" : v.forced === "True" ? ":forced" : "";
+        v.hi === "only"
+          ? ":hi"
+          : v.hi === "never"
+            ? ":normal"
+            : v.forced === "True"
+              ? ":forced"
+              : "";
 
       return v.language + suffix;
     },

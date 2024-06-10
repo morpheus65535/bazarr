@@ -196,8 +196,8 @@ const ItemBadge: FunctionComponent<ItemProps> = ({ cutoff, item }) => {
     let result = item.language;
     if (item.hi === "only") {
       result += ":HI";
-    } else if (item.hi === "also") {
-      result += " | " + result + ":HI";
+    } else if (item.hi === "never") {
+      result += ":Normal";
     } else if (item.forced === "True") {
       result += ":Forced";
     }
