@@ -38,7 +38,7 @@ jobs:
       - name: Setup NodeJS
         uses: actions/setup-node@v4
         with:
-          node-version: "lts/*"
+          node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
 
       - name: Install Global Tools
         run: npm install -g release-it auto-changelog
