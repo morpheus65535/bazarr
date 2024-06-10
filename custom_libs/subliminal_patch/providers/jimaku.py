@@ -15,7 +15,7 @@ from requests import Session
 from subliminal import __short_version__
 from subliminal.exceptions import ConfigurationError
 from subliminal.utils import sanitize
-from subliminal.video import Episode
+from subliminal.video import Episode, Movie
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.exceptions import APIThrottled
@@ -48,27 +48,33 @@ class JimakuSubtitle(Subtitle):
     def get_matches(self, video):
         matches = set()
         
+        # Specific matches
         if isinstance(video, Episode):
-            # series name
             if sanitize(video.series) and sanitize(self.video.series) in (
                     sanitize(name) for name in [video.series] + video.alternative_series):
                 matches.add('series')
             
-            # season
             if video.season and self.video.season is None or video.season and video.season == self.video.season:
-                matches.add('season')            
-
-            # year
-            if video.original_series and self.video.year is None or video.year and video.year == self.video.year:
-                matches.add('year')
+                matches.add('season')
+        elif isinstance(video, Movie):
+            if sanitize(video.title) and sanitize(self.video.title) in (
+                    sanitize(name) for name in [video.title] + video.alternative_titles):
+                matches.add('title')
         else:
             raise ValueError(f"Unhandled instance of argument 'video': {type(video)}")
+
+        # General matches
+        if video.year and video.year == self.video.year:
+            matches.add('year')
+
+        video_type = 'movie' if isinstance(video, Movie) else 'episode'
+        matches.add(video_type)
 
         return matches
 
 class JimakuProvider(Provider):
     '''Jimaku Provider.'''
-    video_types = (Episode, )
+    video_types = (Episode, Movie)
     api_url = 'https://jimaku.cc/api'
     
     api_ratelimit_max_delay_seconds = 5
@@ -99,21 +105,24 @@ class JimakuProvider(Provider):
         self.session.close()
 
     def _query(self, video):
-        series_name = (
-            video.alternative_series[0] if len(video.alternative_series) > 0 else str(video.series)
-        ).lower()
-
-        # Check if series_name ends with "Sn", if so strip chars as Jimaku only lists seasons by numbers alone
-        # If 'n' is 1, completely strip it as first seasons don't have a season number
-        if re.search(r's\d$', series_name):
-            if int(series_name[-1]) == 1:
-                series_name = re.sub(r's\d$', "", series_name)
-            else:
-                # As shows sometimes have the wrong season number in the title, we'll reassemble it
-                series_name = re.sub(r's\d$', str(video.season), series_name)
+        if isinstance(video, Movie):
+            media_name = video.title
+        elif isinstance(video, Episode):
+            media_name = (
+                video.alternative_series[0] if len(video.alternative_series) > 0 else str(video.series)
+            ).lower()
+            
+            # Check if media_name ends with "Sn", if so strip chars as Jimaku only lists seasons by numbers alone
+            # If 'n' is 1, completely strip it as first seasons don't have a season number
+            if re.search(r's\d$', media_name):
+                if int(media_name[-1]) == 1:
+                    media_name = re.sub(r's\d$', "", media_name)
+                else:
+                    # As shows sometimes have the wrong season number in the title, we'll reassemble it
+                    media_name = re.sub(r's\d$', str(video.season), media_name)
 
         # Search for entry
-        jimaku_search = self._assemble_jimaku_search_url(video, series_name)
+        jimaku_search = self._assemble_jimaku_search_url(video, media_name)
         data = self._get_jimaku_response(jimaku_search['url'])
         if not data:
             return None
@@ -122,7 +131,7 @@ class JimakuProvider(Provider):
         entry_id = None
         entry_name = None
         anilist_id = None
-        name_is_japanese = self._is_string_japanese(f"series_name")
+        name_is_japanese = self._is_string_japanese(f"{media_name}")
         
         for entry in data:
             if jimaku_search['derived_anilist_id']:
@@ -150,15 +159,21 @@ class JimakuProvider(Provider):
             return None
         
         # Get a list of subtitles for entry
+        if isinstance(video, Episode):
+            episode_number = video.episode
+        
         retry_count = 0
         while retry_count <= 1:
             retry_count += 1
-            episode_number = video.episode
-            url = f"entries/{entry_id}/files?episode={episode_number}"
+            
+            if isinstance(video, Episode):
+                url = f"entries/{entry_id}/files?episode={episode_number}"
+            else:
+                url = f"entries/{entry_id}/files"
             data = self._get_jimaku_response(url)
             
             # Edge case: When dealing with a cour, episodes could be uploaded with their episode numbers having an offset applied
-            if not data and self.video_episode_number_override and retry_count < 1:
+            if not data and isinstance(video, Episode) and self.video_episode_number_override and retry_count < 1:
                 logger.warning(f"Found no subtitles for {episode_number}, but will retry with offset-adjusted episode number {self.video_episode_number_override}.")
                 episode_number = self.video_episode_number_override
             elif not data:
@@ -199,7 +214,9 @@ class JimakuProvider(Provider):
                 continue
             
             if not subtitle_filename.endswith(archive_formats_blacklist):
-                subtitle_id = f"{str(anilist_id)}_{episode_number}_{video.release_group}"
+                number = episode_number if isinstance(video, Episode) else 0
+                subtitle_id = f"{str(anilist_id)}_{number}_{video.release_group}"
+                
                 list_of_subtitles.append(JimakuSubtitle(video, subtitle_id, subtitle_url, subtitle_filename, anilist_id))
             else:
                 logger.debug(f"> Skipping subtitle of name '{subtitle_filename}' due to archive blacklist. (enable_archives: {self.enable_archives})")
@@ -338,7 +355,7 @@ class JimakuProvider(Provider):
         }
     
     @cache
-    def _assemble_jimaku_search_url(self, video, series_name):
+    def _assemble_jimaku_search_url(self, video, media_name):
         """
         Return a search URL for the Jimaku API.
         Will first try to determine an Anilist ID based on properties of the video object.
@@ -351,12 +368,20 @@ class JimakuProvider(Provider):
         tag_to_derive_from = ""
         
         logger.info(f"Attempting to derive anilist ID...")
-        for tag in ["series_anidb_episode_id", "series_anidb_id", "tvdb_id", "series_tvdb_id"]:
+        
+        tag_list = ["imdb_id"] if isinstance(video, Movie) else [
+            "series_anidb_episode_id",
+            "series_anidb_id",
+            "tvdb_id",
+            "series_tvdb_id"
+        ]
+        
+        for tag in tag_list:
             candidate = getattr(video, tag, None)
             
             if candidate:
                 # Because tvdb assigns a single ID to all seasons of a show, we'll have to use another list to determine the correct AniDB ID
-                if "tvdb" in tag and video.season > 1:
+                if isinstance(video, Episode) and "tvdb" in tag and video.season > 1:
                     tvdb_anidb_mapping = self._get_tvdb_anidb_mapping(video, candidate)
                     derived_anidb_id = tvdb_anidb_mapping['anidbid']
                     if tvdb_anidb_mapping['episode_number'] != video.episode:
@@ -378,14 +403,15 @@ class JimakuProvider(Provider):
                     mapped_tag = "anidb_id"
                     value_to_use = derived_anidb_id
                 else:
-                    # Left: video, right: anime-lists
+                    # video <-> anime-lists
                     tag_map = {
                         "series_anidb_id": "anidb_id",
                         "series_anidb_episode_id": "anidb_id",
                         "tvdb_id": "thetvdb_id",
                         "series_tvdb_id": "thetvdb_id",
                     }
-                    mapped_tag = tag_map[tag_to_derive_from]
+
+                    mapped_tag = tag_map.get(tag_to_derive_from, tag_to_derive_from)
                     value_to_use = getattr(video, tag_to_derive_from)
                 
                 obj = [obj for obj in anime_list if mapped_tag in obj and str(obj[mapped_tag]) == str(value_to_use)]
@@ -403,8 +429,8 @@ class JimakuProvider(Provider):
             logger.info(f"Will search for entry based on anilist_id: {derived_anilist_id}")
             url = f"{url}?anilist_id={derived_anilist_id}"
         else:
-            logger.info(f"Will search for entry based on series_name: {series_name}")
-            url = f"{url}?query={urllib.parse.quote_plus(series_name)}"
+            logger.info(f"Will search for entry based on media_name: {media_name}")
+            url = f"{url}?query={urllib.parse.quote_plus(media_name)}"
             
         return {
             'url': url,
