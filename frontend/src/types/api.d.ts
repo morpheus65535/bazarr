@@ -28,7 +28,7 @@ declare namespace Language {
     id: number;
     audio_exclude: PythonBoolean;
     forced: PythonBoolean;
-    hi: PythonBoolean;
+    hi: "never" | "also" | "only";
     language: CodeType;
   }
 
