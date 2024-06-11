@@ -20,7 +20,7 @@ except ImportError:
     except ImportError:
         import xml.etree.ElementTree as etree
 
-refined_providers = {'animetosho'}
+refined_providers = {'animetosho', 'jimaku'}
 
 api_url = 'http://api.anidb.net:9001/httpapi'
 
@@ -214,3 +214,4 @@ def refine_anidb_ids(video):
 
     video.series_anidb_id = anidb_series_id
     video.series_anidb_episode_id = anidb_episode_id
+    video.series_anidb_episode_no = anidb_episode_no
