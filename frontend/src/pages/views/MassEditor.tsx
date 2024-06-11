@@ -51,11 +51,20 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
 
   const { mutateAsync } = mutation;
 
+  /**
+   * Submit the form that contains the series id and the respective profile id set in chunks to prevent payloads too
+   * large when we have a high amount of series or movies being applied the profile. The chunks are executed in order
+   * since there are no much benefit on executing in parallel, also parallelism could result in high load on the server
+   * side if not throttled properly.
+   */
   const save = useCallback(() => {
+    const chunkSize = 1000;
+
     const form: FormType.ModifyItem = {
       id: [],
       profileid: [],
     };
+
     dirties.forEach((v) => {
       const id = GetItemId(v);
       if (id) {
@@ -63,7 +72,25 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
         form.profileid.push(v.profileId);
       }
     });
-    return mutateAsync(form);
+
+    const mutateInChunks = async (
+      ids: number[],
+      profileIds: (number | null)[],
+    ) => {
+      if (ids.length === 0) return;
+
+      const chunkIds = ids.slice(0, chunkSize);
+      const chunkProfileIds = profileIds.slice(0, chunkSize);
+
+      await mutateAsync({
+        id: chunkIds,
+        profileid: chunkProfileIds,
+      });
+
+      await mutateInChunks(ids.slice(chunkSize), profileIds.slice(chunkSize));
+    };
+
+    return mutateInChunks(form.id, form.profileid);
   }, [dirties, mutateAsync]);
 
   const setProfiles = useCallback(
