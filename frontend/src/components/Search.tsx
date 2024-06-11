@@ -1,16 +1,10 @@
 import { FunctionComponent, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  Anchor,
-  Autocomplete,
-  ComboboxItem,
-  OptionsFilter,
-} from "@mantine/core";
+import { useNavigate } from "react-router-dom";
+import { Autocomplete, ComboboxItem, OptionsFilter, Text } from "@mantine/core";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useServerSearch } from "@/apis/hooks";
 import { useDebouncedValue } from "@/utilities";
-import styles from "./Search.module.scss";
 
 type SearchResultItem = {
   value: string;
@@ -57,21 +51,8 @@ const optionsFilter: OptionsFilter = ({ options, search }) => {
   });
 };
 
-const ResultComponent = ({ name, link }: { name: string; link: string }) => {
-  return (
-    <Anchor
-      component={Link}
-      to={link}
-      underline="never"
-      className={styles.result}
-      p="sm"
-    >
-      {name}
-    </Anchor>
-  );
-};
-
 const Search: FunctionComponent = () => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
 
   const results = useSearch(query);
@@ -79,14 +60,7 @@ const Search: FunctionComponent = () => {
   return (
     <Autocomplete
       leftSection={<FontAwesomeIcon icon={faSearch} />}
-      renderOption={(input) => (
-        <ResultComponent
-          name={input.option.value}
-          link={
-            results.find((a) => a.value === input.option.value)?.link || "/"
-          }
-        />
-      )}
+      renderOption={(input) => <Text p="xs">{input.option.value}</Text>}
       placeholder="Search"
       size="sm"
       data={results}
@@ -96,6 +70,9 @@ const Search: FunctionComponent = () => {
       onChange={setQuery}
       onBlur={() => setQuery("")}
       filter={optionsFilter}
+      onOptionSubmit={(option) =>
+        navigate(results.find((a) => a.value === option)?.link || "/")
+      }
     ></Autocomplete>
   );
 };

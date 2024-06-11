@@ -1,9 +1,0 @@
-.result {
-  @include light {
-    color: var(--mantine-color-dark-8);
-  }
-
-  @include dark {
-    color: var(--mantine-color-gray-1);
-  }
-}
