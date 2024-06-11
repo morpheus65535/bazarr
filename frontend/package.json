@@ -32,7 +32,7 @@
     "@fortawesome/free-brands-svg-icons": "^6.5.2",
     "@fortawesome/free-regular-svg-icons": "^6.5.2",
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
-    "@fortawesome/react-fontawesome": "^0.2.0",
+    "@fortawesome/react-fontawesome": "^0.2.2",
     "@tanstack/react-query-devtools": "^5.40.1",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^15.0.5",
