@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
-import { UseMutationResult } from "react-query";
 import { useNavigate } from "react-router-dom";
 import { Column, useRowSelect } from "react-table";
 import { Box, Container } from "@mantine/core";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
+import { UseMutationResult } from "@tanstack/react-query";
 import { uniqBy } from "lodash";
 import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
 import { SimpleTable, Toolbox } from "@/components";

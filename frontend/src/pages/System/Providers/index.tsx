@@ -12,7 +12,7 @@ const SystemProvidersView: FunctionComponent = () => {
 
   const { isFetching, data, refetch } = providers;
 
-  const { mutate: reset, isLoading: isResetting } = useResetProvider();
+  const { mutate: reset, isPending: isResetting } = useResetProvider();
 
   useDocumentTitle("Providers - Bazarr (System)");
 
