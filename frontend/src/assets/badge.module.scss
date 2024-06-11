@@ -35,6 +35,11 @@
         color: darken($color-highlight-6, 1);
         background-color: transparentize($color-highlight-5, 0.8);
       }
+
+      &[data-variant="light"] {
+        color: var(--mantine-color-black);
+        background-color: var(--mantine-color-gray-5);
+      }
     }
   }
 }
