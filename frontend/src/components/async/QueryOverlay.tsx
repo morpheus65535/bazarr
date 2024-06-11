@@ -1,6 +1,6 @@
 import { FunctionComponent, ReactNode } from "react";
-import { UseQueryResult } from "react-query";
 import { LoadingOverlay } from "@mantine/core";
+import { UseQueryResult } from "@tanstack/react-query";
 import { LoadingProvider } from "@/contexts";
 
 interface QueryOverlayProps {

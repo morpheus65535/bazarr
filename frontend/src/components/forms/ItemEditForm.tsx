@@ -1,7 +1,7 @@
 import { FunctionComponent, useMemo } from "react";
-import { UseMutationResult } from "react-query";
 import { Button, Divider, Group, LoadingOverlay, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { UseMutationResult } from "@tanstack/react-query";
 import { useLanguageProfiles } from "@/apis/hooks";
 import { MultiSelector, Selector } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
@@ -21,7 +21,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
   onCancel,
 }) => {
   const { data, isFetching } = useLanguageProfiles();
-  const { isLoading, mutate } = mutation;
+  const { isPending, mutate } = mutation;
   const modals = useModals();
 
   const profileOptions = useSelectorOptions(
@@ -47,7 +47,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
     (v) => v.code2,
   );
 
-  const isOverlayVisible = isLoading || isFetching || item === null;
+  const isOverlayVisible = isPending || isFetching || item === null;
 
   return (
     <form

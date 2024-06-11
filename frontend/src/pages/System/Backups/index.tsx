@@ -10,7 +10,7 @@ import Table from "./table";
 const SystemBackupsView: FunctionComponent = () => {
   const backups = useSystemBackups();
 
-  const { mutate: backup, isLoading: isResetting } = useCreateBackups();
+  const { mutate: backup, isPending: isResetting } = useCreateBackups();
 
   useDocumentTitle("Backups - Bazarr (System)");
 

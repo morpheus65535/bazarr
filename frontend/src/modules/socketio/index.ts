@@ -1,4 +1,4 @@
-import { onlineManager } from "react-query";
+import { onlineManager } from "@tanstack/react-query";
 import { debounce, forIn, remove, uniq } from "lodash";
 import { io, Socket } from "socket.io-client";
 import { Environment, isDevEnv, isTestEnv } from "@/utilities";

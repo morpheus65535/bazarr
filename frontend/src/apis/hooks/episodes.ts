@@ -1,9 +1,10 @@
+import { useEffect } from "react";
 import {
   QueryClient,
   useMutation,
   useQuery,
   useQueryClient,
-} from "react-query";
+} from "@tanstack/react-query";
 import { usePaginationQuery } from "@/apis/queries/hooks";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
@@ -26,28 +27,36 @@ const cacheEpisodes = (client: QueryClient, episodes: Item.Episode[]) => {
 
 export function useEpisodesByIds(ids: number[]) {
   const client = useQueryClient();
-  return useQuery(
-    [QueryKeys.Series, QueryKeys.Episodes, ids],
-    () => api.episodes.byEpisodeId(ids),
-    {
-      onSuccess: (data) => {
-        cacheEpisodes(client, data);
-      },
-    },
-  );
+
+  const query = useQuery({
+    queryKey: [QueryKeys.Series, QueryKeys.Episodes, ids],
+    queryFn: () => api.episodes.byEpisodeId(ids),
+  });
+
+  useEffect(() => {
+    if (query.isSuccess && query.data) {
+      cacheEpisodes(client, query.data);
+    }
+  }, [query.isSuccess, query.data, client]);
+
+  return query;
 }
 
 export function useEpisodesBySeriesId(id: number) {
   const client = useQueryClient();
-  return useQuery(
-    [QueryKeys.Series, id, QueryKeys.Episodes, QueryKeys.All],
-    () => api.episodes.bySeriesId([id]),
-    {
-      onSuccess: (data) => {
-        cacheEpisodes(client, data);
-      },
-    },
-  );
+
+  const query = useQuery({
+    queryKey: [QueryKeys.Series, id, QueryKeys.Episodes, QueryKeys.All],
+    queryFn: () => api.episodes.bySeriesId([id]),
+  });
+
+  useEffect(() => {
+    if (query.isSuccess && query.data) {
+      cacheEpisodes(client, query.data);
+    }
+  }, [query.isSuccess, query.data, client]);
+
+  return query;
 }
 
 export function useEpisodeWantedPagination() {
@@ -57,17 +66,18 @@ export function useEpisodeWantedPagination() {
 }
 
 export function useEpisodeBlacklist() {
-  return useQuery(
-    [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
-    () => api.episodes.blacklist(),
-  );
+  return useQuery({
+    queryKey: [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
+    queryFn: () => api.episodes.blacklist(),
+  });
 }
 
 export function useEpisodeAddBlacklist() {
   const client = useQueryClient();
-  return useMutation(
-    [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
-    (param: {
+  return useMutation({
+    mutationKey: [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
+
+    mutationFn: (param: {
       seriesId: number;
       episodeId: number;
       form: FormType.AddBlacklist;
@@ -75,35 +85,32 @@ export function useEpisodeAddBlacklist() {
       const { seriesId, episodeId, form } = param;
       return api.episodes.addBlacklist(seriesId, episodeId, form);
     },
-    {
-      onSuccess: (_, { seriesId, episodeId }) => {
-        client.invalidateQueries([
-          QueryKeys.Series,
-          QueryKeys.Episodes,
-          QueryKeys.Blacklist,
-        ]);
-        client.invalidateQueries([QueryKeys.Series, seriesId]);
-      },
+
+    onSuccess: (_, { seriesId }) => {
+      client.invalidateQueries({
+        queryKey: [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
+      });
+      client.invalidateQueries({
+        queryKey: [QueryKeys.Series, seriesId],
+      });
     },
-  );
+  });
 }
 
 export function useEpisodeDeleteBlacklist() {
   const client = useQueryClient();
-  return useMutation(
-    [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
-    (param: { all?: boolean; form?: FormType.DeleteBlacklist }) =>
+  return useMutation({
+    mutationKey: [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
+
+    mutationFn: (param: { all?: boolean; form?: FormType.DeleteBlacklist }) =>
       api.episodes.deleteBlacklist(param.all, param.form),
-    {
-      onSuccess: (_, param) => {
-        client.invalidateQueries([
-          QueryKeys.Series,
-          QueryKeys.Episodes,
-          QueryKeys.Blacklist,
-        ]);
-      },
+
+    onSuccess: (_) => {
+      client.invalidateQueries({
+        queryKey: [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
+      });
     },
-  );
+  });
 }
 
 export function useEpisodeHistoryPagination() {
@@ -115,12 +122,20 @@ export function useEpisodeHistoryPagination() {
 }
 
 export function useEpisodeHistory(episodeId?: number) {
-  return useQuery(
-    [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.History, episodeId],
-    () => {
+  return useQuery({
+    queryKey: [
+      QueryKeys.Series,
+      QueryKeys.Episodes,
+      QueryKeys.History,
+      episodeId,
+    ],
+
+    queryFn: () => {
       if (episodeId) {
         return api.episodes.historyBy(episodeId);
       }
+
+      return [];
     },
-  );
+  });
 }

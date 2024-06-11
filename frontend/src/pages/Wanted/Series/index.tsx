@@ -50,7 +50,7 @@ const WantedSeriesView: FunctionComponent = () => {
             <Group gap="sm">
               {value.map((item, idx) => (
                 <Badge
-                  color={download.isLoading ? "gray" : undefined}
+                  color={download.isPending ? "gray" : undefined}
                   leftSection={<FontAwesomeIcon icon={faSearch} />}
                   key={BuildKey(idx, item.code2)}
                   style={{ cursor: "pointer" }}
