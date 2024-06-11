@@ -81,7 +81,7 @@ class JimakuProvider(Provider):
     api_ratelimit_backoff_limit = 3
     
     # See _get_tvdb_anidb_mapping()
-    video_episode_number_override = None
+    episode_number_override = False
     
     languages = {Language.fromietf("ja")}
 
@@ -108,9 +108,7 @@ class JimakuProvider(Provider):
         if isinstance(video, Movie):
             media_name = video.title
         elif isinstance(video, Episode):
-            media_name = (
-                video.alternative_series[0] if len(video.alternative_series) > 0 else str(video.series)
-            ).lower()
+            media_name = video.series.lower()
             
             # Check if media_name ends with "Sn", if so strip chars as Jimaku only lists seasons by numbers alone
             # If 'n' is 1, completely strip it as first seasons don't have a season number
@@ -173,9 +171,9 @@ class JimakuProvider(Provider):
             data = self._get_jimaku_response(url)
             
             # Edge case: When dealing with a cour, episodes could be uploaded with their episode numbers having an offset applied
-            if not data and isinstance(video, Episode) and self.video_episode_number_override and retry_count < 1:
-                logger.warning(f"Found no subtitles for {episode_number}, but will retry with offset-adjusted episode number {self.video_episode_number_override}.")
-                episode_number = self.video_episode_number_override
+            if not data and isinstance(video, Episode) and self.episode_number_override and retry_count < 1:
+                logger.warning(f"Found no subtitles for {episode_number}, but will retry with offset-adjusted episode number {video.series_series_anidb_episode_no}.")
+                episode_number = video.series_series_anidb_episode_no
             elif not data:
                 return None
         
@@ -323,36 +321,6 @@ class JimakuProvider(Provider):
             return response.json()
         except:
             return response.content
-
-    def _get_tvdb_anidb_mapping(self, video, tvdbid):
-        url = "https://raw.githubusercontent.com/Anime-Lists/anime-lists/master/anime-list.xml"
-        xml = etree.fromstring(self._webrequest_with_cache(url))
-        animes = xml.findall(
-            f".//anime[@tvdbid='{tvdbid}'][@defaulttvdbseason='{video.season}']"
-        )
-        
-        # In order to handle shows with multi-part seasons, we'll have to account for 'episodeoffset'
-        # Cours have their own anidb ID
-        candidate_anime = None
-        is_cour = False
-        for anime in animes:
-            offset = int(anime.get('episodeoffset', 0))
-            print(f"Offset {offset} vs episode {video.episode}")
-            if video.episode > offset:
-                candidate_anime = anime
-                is_cour = offset > 0
-
-        if is_cour:
-            this_offset = int(candidate_anime.get('episodeoffset', 0))
-            episode_number = video.episode - this_offset
-            logger.warning(f"This season appears to be part of a latter cour, the new episode number is: {episode_number} (Offset: {this_offset})")
-        else:
-            episode_number = video.episode
-
-        return {
-            'anidbid': candidate_anime.get('anidbid'),
-            'episode_number': episode_number
-        }
     
     @cache
     def _assemble_jimaku_search_url(self, video, media_name):
@@ -366,29 +334,21 @@ class JimakuProvider(Provider):
         derived_anilist_id = None
         derived_anidb_id = None
         tag_to_derive_from = ""
-        
-        logger.info(f"Attempting to derive anilist ID...")
-        
         tag_list = ["imdb_id"] if isinstance(video, Movie) else [
-            "series_anidb_episode_id",
             "series_anidb_id",
             "tvdb_id",
             "series_tvdb_id"
         ]
         
+        logger.info(f"Attempting to derive anilist ID...")
         for tag in tag_list:
             candidate = getattr(video, tag, None)
             
             if candidate:
                 # Because tvdb assigns a single ID to all seasons of a show, we'll have to use another list to determine the correct AniDB ID
                 if isinstance(video, Episode) and "tvdb" in tag and video.season > 1:
-                    tvdb_anidb_mapping = self._get_tvdb_anidb_mapping(video, candidate)
-                    derived_anidb_id = tvdb_anidb_mapping['anidbid']
-                    if tvdb_anidb_mapping['episode_number'] != video.episode:
-                        self.video_episode_number_override = tvdb_anidb_mapping['episode_number']
-                    
-                    logger.info(f"Found AniDB ID '{derived_anidb_id}' for TVDB ID '{candidate}', season '{video.season}'")
-                    break
+                    if video.series_anidb_episode_no != None and video.series_anidb_episode_no != video.episode:
+                        self.episode_number_override = True
                     
                 tag_to_derive_from = tag
                 logger.info(f"Got candidate tag '{tag_to_derive_from}' with value '{candidate}'")

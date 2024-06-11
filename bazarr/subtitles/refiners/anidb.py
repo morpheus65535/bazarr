@@ -18,7 +18,7 @@ except ImportError:
     except ImportError:
         import xml.etree.ElementTree as etree
 
-refined_providers = {'animetosho'}
+refined_providers = {'animetosho', 'jimaku'}
 
 api_url = 'http://api.anidb.net:9001/httpapi'
 
@@ -82,7 +82,7 @@ class AniDBClient(object):
 
         episodes = etree.fromstring(self.get_episodes(series_id))
 
-        return series_id, int(episodes.find(f".//episode[epno='{episode_no}']").attrib.get('id'))
+        return series_id, int(episodes.find(f".//episode[epno='{episode_no}']").attrib.get('id')), episode_no
 
     @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
     def get_episodes(self, series_id):
@@ -129,7 +129,7 @@ def refine_anidb_ids(video):
 
     season = video.season if video.season else 0
 
-    anidb_series_id, anidb_episode_id = anidb_client.get_series_episodes_ids(video.series_tvdb_id, season, video.episode)
+    anidb_series_id, anidb_episode_id, anidb_episode_no = anidb_client.get_series_episodes_ids(video.series_tvdb_id, season, video.episode)
 
     if not anidb_episode_id:
         logging.error(f'Could not find anime series {video.series}')
@@ -138,3 +138,4 @@ def refine_anidb_ids(video):
 
     video.series_anidb_id = anidb_series_id
     video.series_anidb_episode_id = anidb_episode_id
+    video.series_anidb_episode_no = anidb_episode_no
