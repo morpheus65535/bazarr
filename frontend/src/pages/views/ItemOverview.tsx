@@ -200,8 +200,8 @@ const ItemBadge: FunctionComponent<ItemBadgeProps> = ({
 }) => (
   <Badge
     leftSection={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
+    variant="light"
     radius="sm"
-    color="dark"
     size="sm"
     style={{ textTransform: "none" }}
     aria-label={title}
