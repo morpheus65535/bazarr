@@ -112,8 +112,8 @@ class JimakuProvider(Provider):
             
             # With entries that have a season larger than 1, Jimaku appends the corresponding season number to the name.
             # We'll reassemble media_name here to account for cases where we can only search by name alone.
-            season_addendum = str(video.season) if video.season > 1 else " "
-            media_name = f"{media_name} {season_addendum}"
+            season_addendum = str(video.season) if video.season > 1 else None
+            media_name = f"{media_name} {season_addendum}" if season_addendum else media_name
 
         # Search for entry
         url = self._assemble_jimaku_search_url(video, media_name)
@@ -182,8 +182,8 @@ class JimakuProvider(Provider):
                         logger.warning(f"Skipping AI generated subtitle '{subtitle_filename}'")
                         continue
             
-            # Check if file is corrupt; The average file stands at ~20kB, we'll set the threshold at 5kB though 
-            if subtitle_filesize < 5000:
+            # Check if file is obviously corrupt
+            if subtitle_filesize < 500:
                 logger.warning(f"Skipping possibly corrupt file '{subtitle_filename}': Filesize is just {subtitle_filesize} bytes.")
                 continue
             
