@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import {
   ComboboxItem,
-  ComboboxParsedItemGroup,
+  ComboboxItemGroup,
   MultiSelect,
   MultiSelectProps,
   Select,
@@ -35,9 +35,14 @@ function DefaultKeyBuilder<T>(value: T) {
   }
 }
 
+export interface GroupedSelectorOptions<T> {
+  group: string;
+  items: SelectorOption<T>[];
+}
+
 export type GroupedSelectorProps<T> = Override<
   {
-    options: ComboboxParsedItemGroup[];
+    options: ComboboxItemGroup[];
     getkey?: (value: T) => string;
   },
   Omit<SelectProps, "data">

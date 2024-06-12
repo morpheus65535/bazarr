@@ -9,18 +9,17 @@ import {
   useRefTracksByMovieId,
   useSubtitleAction,
 } from "@/apis/hooks";
-import { GroupedSelector, Selector } from "@/components/inputs";
+import {
+  GroupedSelector,
+  GroupedSelectorOptions,
+  Selector,
+} from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/Subtitles/options";
 import { toPython } from "@/utilities";
 
 const TaskName = "Syncing Subtitle";
-
-interface SelectOptions {
-  group: string;
-  items: { value: string; label: string }[];
-}
 
 function useReferencedSubtitles(
   mediaType: "episode" | "movie",
@@ -41,13 +40,13 @@ function useReferencedSubtitles(
 
   const mediaData = mediaType === "episode" ? episodeData : movieData;
 
-  const subtitles: SelectOptions[] = [];
+  const subtitles: GroupedSelectorOptions<string>[] = [];
 
   if (!mediaData.data) {
     return [];
   } else {
     if (mediaData.data.audio_tracks.length > 0) {
-      const embeddedAudioGroup: SelectOptions = {
+      const embeddedAudioGroup: GroupedSelectorOptions<string> = {
         group: "Embedded audio tracks",
         items: [],
       };
@@ -63,7 +62,7 @@ function useReferencedSubtitles(
     }
 
     if (mediaData.data.embedded_subtitles_tracks.length > 0) {
-      const embeddedSubtitlesTrackGroup: SelectOptions = {
+      const embeddedSubtitlesTrackGroup: GroupedSelectorOptions<string> = {
         group: "Embedded subtitles tracks",
         items: [],
       };
@@ -79,7 +78,7 @@ function useReferencedSubtitles(
     }
 
     if (mediaData.data.external_subtitles_tracks.length > 0) {
-      const externalSubtitlesFilesGroup: SelectOptions = {
+      const externalSubtitlesFilesGroup: GroupedSelectorOptions<string> = {
         group: "External Subtitles files",
         items: [],
       };
@@ -127,11 +126,7 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
   const mediaId = selections[0].id;
   const subtitlesPath = selections[0].path;
 
-  const subtitles: SelectOptions[] = useReferencedSubtitles(
-    mediaType,
-    mediaId,
-    subtitlesPath,
-  );
+  const subtitles = useReferencedSubtitles(mediaType, mediaId, subtitlesPath);
 
   const form = useForm<FormValues>({
     initialValues: {

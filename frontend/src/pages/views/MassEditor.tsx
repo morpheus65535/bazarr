@@ -4,10 +4,14 @@ import { Column, useRowSelect } from "react-table";
 import { Box, Container } from "@mantine/core";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
 import { UseMutationResult } from "@tanstack/react-query";
-import { uniqBy } from "lodash";
+import { get, uniqBy } from "lodash";
 import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
-import { SimpleTable, Toolbox } from "@/components";
-import { Selector, SelectorOption } from "@/components/inputs";
+import {
+  GroupedSelector,
+  GroupedSelectorOptions,
+  SimpleTable,
+  Toolbox,
+} from "@/components";
 import { useCustomSelection } from "@/components/tables/plugins";
 import { GetItemId, useSelectorOptions } from "@/utilities";
 
@@ -36,10 +40,26 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
 
   const profileOptions = useSelectorOptions(profiles ?? [], (v) => v.name);
 
-  const profileOptionsWithAction = useMemo<SelectorOption<Language.Profile>[]>(
-    () => [...profileOptions.options],
-    [profileOptions.options],
-  );
+  const profileOptionsWithAction = useMemo<
+    GroupedSelectorOptions<string>[]
+  >(() => {
+    return [
+      {
+        group: "Actions",
+        items: [{ label: "Clear", value: "", profileId: null }],
+      },
+      {
+        group: "Profiles",
+        items: profileOptions.options.map((a) => {
+          return {
+            value: a.value.name,
+            label: a.label,
+            profileId: a.value.profileId,
+          };
+        }),
+      },
+    ];
+  }, [profileOptions.options]);
 
   const getKey = useCallback((value: Language.Profile | null) => {
     if (value) {
@@ -94,8 +114,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
   }, [dirties, mutateAsync]);
 
   const setProfiles = useCallback(
-    (profile: Language.Profile | null) => {
-      const id = profile?.profileId ?? null;
+    (id: number | null) => {
       const newItems = selections.map((v) => ({ ...v, profileId: id }));
 
       setDirties((dirty) => {
@@ -109,14 +128,18 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
     <Container fluid px={0}>
       <Toolbox>
         <Box>
-          <Selector
-            allowDeselect
+          <GroupedSelector
             placeholder="Change Profile"
+            withCheckIcon={false}
             options={profileOptionsWithAction}
             getkey={getKey}
             disabled={selections.length === 0}
-            onChange={setProfiles}
-          ></Selector>
+            onChange={(value, item) => {
+              const profileId = get(item, "profileId", null) as number | null;
+
+              setProfiles(profileId);
+            }}
+          ></GroupedSelector>
         </Box>
         <Box>
           <Toolbox.Button icon={faUndo} onClick={onEnded}>
