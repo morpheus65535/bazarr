@@ -131,7 +131,6 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
       <Toolbox>
         <Box>
           <GroupedSelector
-            selectable={false}
             onClick={() => combobox.openDropdown()}
             onDropdownClose={() => {
               combobox.resetSelectedOption();

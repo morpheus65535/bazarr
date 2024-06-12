@@ -6,7 +6,6 @@ import {
   MultiSelectProps,
   Select,
   SelectProps,
-  useCombobox,
 } from "@mantine/core";
 import { isNull, isUndefined, noop } from "lodash";
 import { LOG } from "@/utilities/console";
@@ -45,7 +44,6 @@ export type GroupedSelectorProps<T> = Override<
   {
     options: ComboboxItemGroup[];
     getkey?: (value: T) => string;
-    selectable?: boolean;
   },
   Omit<SelectProps, "data">
 >;
@@ -54,26 +52,13 @@ export function GroupedSelector<T>({
   value,
   options,
   getkey = DefaultKeyBuilder,
-  selectable = true,
   onOptionSubmit = noop,
   ...select
 }: GroupedSelectorProps<T>) {
-  const combobox = useCombobox({});
-
-  const props = selectable
-    ? undefined
-    : {
-        store: combobox,
-        onOptionSubmit: () => {
-          combobox.resetSelectedOption();
-        },
-      };
-
   return (
     <Select
-      onClick={() => combobox.openDropdown()}
       data-testid="input-selector"
-      comboboxProps={{ withinPortal: true, ...props }}
+      comboboxProps={{ withinPortal: true }}
       data={options}
       {...select}
     ></Select>
