@@ -162,8 +162,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
             <Action
               label="Download"
               icon={faDownload}
-              color="brand"
-              variant="light"
+              c="brand"
               disabled={item === null}
               onClick={() => {
                 if (!item) return;

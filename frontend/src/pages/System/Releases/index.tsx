@@ -21,7 +21,7 @@ const SystemReleasesView: FunctionComponent = () => {
   useDocumentTitle("Releases - Bazarr (System)");
 
   return (
-    <Container size={600} py={12}>
+    <Container size="md" py={12}>
       <QueryOverlay result={releases}>
         <Stack gap="lg">
           {data?.map((v, idx) => (

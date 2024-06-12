@@ -1,7 +1,6 @@
 import { FunctionComponent, PropsWithChildren } from "react";
 import {
   ActionIcon,
-  AppShell,
   Badge,
   Button,
   createTheme,
@@ -13,7 +12,6 @@ import "@mantine/core/styles.layer.css";
 import "@mantine/notifications/styles.layer.css";
 import styleVars from "@/assets/_variables.module.scss";
 import actionIconClasses from "@/assets/action_icon.module.scss";
-import appShellClasses from "@/assets/app_shell.module.scss";
 import badgeClasses from "@/assets/badge.module.scss";
 import buttonClasses from "@/assets/button.module.scss";
 import paginationClasses from "@/assets/pagination.module.scss";
@@ -38,9 +36,6 @@ const themeProvider = createTheme({
   components: {
     ActionIcon: ActionIcon.extend({
       classNames: actionIconClasses,
-    }),
-    AppShell: AppShell.extend({
-      classNames: appShellClasses,
     }),
     Badge: Badge.extend({
       classNames: badgeClasses,
