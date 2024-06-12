@@ -223,7 +223,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Jimaku.cc",
     description: "Japanese Subtitles Provider",
     message:
-      "API key required. Subtitles are provided by users and therefore have varying degrees of quality and accuracy.",
+      "API key required. Enable AniDB integration for better series matching accuracy. Subtitles are provided by users and therefore have varying degrees of quality and accuracy.",
     inputs: [
       {
         type: "password",

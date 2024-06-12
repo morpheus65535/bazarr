@@ -130,7 +130,7 @@ class Episode(Video):
     """
     def __init__(self, name, series, season, episode, title=None, year=None, original_series=True, tvdb_id=None,
                  series_tvdb_id=None, series_imdb_id=None, alternative_series=None, series_anidb_id=None,
-                 series_anidb_episode_id=None, **kwargs):
+                 series_anidb_episode_id=None, anilist_id=None, **kwargs):
         super(Episode, self).__init__(name, **kwargs)
 
         #: Series of the episode
@@ -163,8 +163,10 @@ class Episode(Video):
         #: Alternative names of the series
         self.alternative_series = alternative_series or []
 
+        #: Anime specific information
         self.series_anidb_episode_id = series_anidb_episode_id
         self.series_anidb_id = series_anidb_id
+        self.anilist_id = anilist_id
 
     @classmethod
     def fromguess(cls, name, guess):
@@ -207,10 +209,11 @@ class Movie(Video):
     :param str title: title of the movie.
     :param int year: year of the movie.
     :param list alternative_titles: alternative titles of the movie
+    :param int anilist_id: AniList ID of movie (if Anime)
     :param \*\*kwargs: additional parameters for the :class:`Video` constructor.
 
     """
-    def __init__(self, name, title, year=None, alternative_titles=None, **kwargs):
+    def __init__(self, name, title, year=None, alternative_titles=None, anilist_id=None, **kwargs):
         super(Movie, self).__init__(name, **kwargs)
 
         #: Title of the movie
@@ -221,6 +224,9 @@ class Movie(Video):
 
         #: Alternative titles of the movie
         self.alternative_titles = alternative_titles or []
+        
+        #: AniList ID of the movie
+        self.anilist_id = anilist_id
 
     @classmethod
     def fromguess(cls, name, guess):
