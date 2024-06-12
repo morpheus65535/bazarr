@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Column, useRowSelect } from "react-table";
-import { Box, Container } from "@mantine/core";
+import { Box, Container, useCombobox } from "@mantine/core";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
 import { UseMutationResult } from "@tanstack/react-query";
-import { get, uniqBy } from "lodash";
+import { uniqBy } from "lodash";
 import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
 import {
   GroupedSelector,
@@ -52,7 +52,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
         group: "Profiles",
         items: profileOptions.options.map((a) => {
           return {
-            value: a.value.name,
+            value: a.value.profileId.toString(),
             label: a.label,
             profileId: a.value.profileId,
           };
@@ -124,20 +124,28 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
     [selections],
   );
 
+  const combobox = useCombobox();
+
   return (
     <Container fluid px={0}>
       <Toolbox>
         <Box>
           <GroupedSelector
+            selectable={false}
+            onClick={() => combobox.openDropdown()}
+            onDropdownClose={() => {
+              combobox.resetSelectedOption();
+            }}
             placeholder="Change Profile"
             withCheckIcon={false}
             options={profileOptionsWithAction}
             getkey={getKey}
             disabled={selections.length === 0}
-            onChange={(value, item) => {
-              const profileId = get(item, "profileId", null) as number | null;
-
-              setProfiles(profileId);
+            comboboxProps={{
+              store: combobox,
+              onOptionSubmit: (value) => {
+                setProfiles(value ? +value : null);
+              },
             }}
           ></GroupedSelector>
         </Box>
