@@ -93,9 +93,8 @@ const SettingsGeneralView: FunctionComponent = () => {
                 window.isSecureContext && (
                   <Action
                     label="Copy API Key"
-                    variant="light"
                     settingKey={settingApiKey}
-                    color={copied ? "green" : undefined}
+                    c={copied ? "green" : undefined}
                     icon={copied ? faCheck : faClipboard}
                     onClick={(update, value) => {
                       if (value) {
@@ -108,9 +107,8 @@ const SettingsGeneralView: FunctionComponent = () => {
               }
               <Action
                 label="Regenerate"
-                variant="light"
                 settingKey={settingApiKey}
-                color="red"
+                c="red"
                 icon={faSync}
                 onClick={(update) => {
                   update(generateApiKey());

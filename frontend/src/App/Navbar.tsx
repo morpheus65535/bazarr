@@ -130,8 +130,7 @@ const AppNavbar: FunctionComponent = () => {
           <Group gap="xs">
             <Action
               label="Change Theme"
-              color={dark ? "yellow" : "indigo"}
-              variant="subtle"
+              c={dark ? "yellow" : "indigo"}
               onClick={() => toggleColorScheme()}
               icon={dark ? faSun : faMoon}
             ></Action>
@@ -139,12 +138,7 @@ const AppNavbar: FunctionComponent = () => {
               href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
               target="_blank"
             >
-              <Action
-                label="Donate"
-                icon={faHeart}
-                variant="subtle"
-                color="red"
-              ></Action>
+              <Action label="Donate" icon={faHeart} c="red"></Action>
             </Anchor>
           </Group>
         </AppShell.Section>

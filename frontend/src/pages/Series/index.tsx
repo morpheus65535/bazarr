@@ -87,7 +87,6 @@ const SeriesView: FunctionComponent = () => {
             <Action
               label="Edit Series"
               tooltip={{ position: "left" }}
-              variant="light"
               onClick={() =>
                 modals.openContextModal(
                   ItemEditModal,

@@ -133,7 +133,6 @@ const Table: FunctionComponent = () => {
                 label="Edit Profile"
                 icon={faWrench}
                 c="gray"
-                variant="dark"
                 onClick={() => {
                   modals.openContextModal(ProfileEditModal, {
                     languages,
@@ -144,7 +143,6 @@ const Table: FunctionComponent = () => {
               ></Action>
               <Action
                 label="Remove"
-                variant="dark"
                 icon={faTrash}
                 c="red"
                 onClick={() => action.remove(row.index)}
