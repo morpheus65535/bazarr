@@ -342,7 +342,7 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
             <Action
               label="Remove"
               icon={faTrash}
-              color="red"
+              c="red"
               onClick={() => remove(row.index)}
             ></Action>
           );

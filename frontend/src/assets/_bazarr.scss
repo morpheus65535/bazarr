@@ -74,3 +74,9 @@ $header-height: 64px;
     }
   }
 }
+
+:root {
+  @include dark {
+    --mantine-color-body: var(--mantine-color-dark-8);
+  }
+}

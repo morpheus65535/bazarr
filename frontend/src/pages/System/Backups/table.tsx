@@ -81,7 +81,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
           return (
             <Action
               label="Delete"
-              color="red"
+              c="red"
               onClick={() =>
                 modals.openConfirmModal({
                   title: "Delete Backup",
