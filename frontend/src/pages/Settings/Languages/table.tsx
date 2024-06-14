@@ -2,7 +2,7 @@ import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { Badge, Button, Group } from "@mantine/core";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
-import { cloneDeep, cond } from "lodash";
+import { cloneDeep } from "lodash";
 import { Action, SimpleTable } from "@/components";
 import {
   anyCutoff,
@@ -194,14 +194,14 @@ interface ItemProps {
 
 const ItemBadge: FunctionComponent<ItemProps> = ({ cutoff, item }) => {
   const text = useMemo(() => {
-    const suffix = cond([
-      [(v: { forced: string; hi: string }) => v.hi === "only", () => ":HI"],
-      [(v) => v.hi === "never", () => ":Normal"],
-      [(v) => v.forced === "True", () => ":Forced"],
-      [() => true, () => ""],
-    ]);
-    return item.language + suffix(item);
-  }, [item]);
+    let result = item.language;
+    if (item.hi === "True") {
+      result += ":HI";
+    } else if (item.forced === "True") {
+      result += ":Forced";
+    }
+    return result;
+  }, [item.hi, item.forced, item.language]);
   return (
     <Badge
       title={cutoff ? "Ignore others if this one is available" : undefined}

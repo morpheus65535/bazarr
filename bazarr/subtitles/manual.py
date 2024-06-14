@@ -31,9 +31,9 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
 
     pool = _get_pool(media_type, profile_id)
 
-    language_set, original_format = _get_language_obj(profile_id=profile_id)
-    also_forced = any([x.forced for x in language_set])
-    forced_required = all([x.forced for x in language_set])
+    language_set, initial_language_set, original_format = _get_language_obj(profile_id=profile_id)
+    also_forced = any([x.forced for x in initial_language_set])
+    forced_required = all([x.forced for x in initial_language_set])
     compute_score = ComputeScore(get_scores())
     _set_forced_providers(pool=pool, also_forced=also_forced, forced_required=forced_required)
 
@@ -57,10 +57,6 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
             minimum_score_movie = settings.general.minimum_score_movie
 
             for s in subtitles[video]:
-                if s.language not in language_set:
-                    # HI may not be matching what was requested
-                    continue
-
                 try:
                     matches = s.get_matches(video)
                 except AttributeError:
@@ -79,14 +75,31 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
                             logging.debug("BAZARR Ignoring invalid subtitles")
                         continue
 
+                initial_hi = None
+                initial_hi_match = False
+                for language in initial_language_set:
+                    if s.language.basename == language.basename and \
+                            s.language.forced == language.forced and \
+                            s.language.hi == language.hi:
+                        initial_hi = language.hi
+                        initial_hi_match = True
+                        break
+                if not initial_hi_match:
+                    initial_hi = None
+
                 _, max_score, scores = _get_scores(media_type, minimum_score_movie, minimum_score)
-                score, score_without_hash = compute_score(matches, s, video, hearing_impaired=s.language.hi)
+                score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
                 if 'hash' not in matches:
                     not_matched = scores - matches
                     s.score = score_without_hash
                 else:
                     s.score = score
                     not_matched = set()
+
+                if s.hearing_impaired == initial_hi:
+                    matches.add('hearing_impaired')
+                else:
+                    not_matched.add('hearing_impaired')
 
                 releases = []
                 if hasattr(s, 'release_info'):
@@ -202,6 +215,7 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
 
 
 def _get_language_obj(profile_id):
+    initial_language_set = set()
     language_set = set()
 
     profile = get_profiles_list(profile_id=int(profile_id))
@@ -218,13 +232,22 @@ def _get_language_obj(profile_id):
         lang_obj = _get_lang_obj(lang)
 
         if forced == "True":
-            language_set.add(Language.rebuild(lang_obj, forced=True))
-        elif hi == "only":
-            language_set.add(Language.rebuild(lang_obj, hi=True))
-        elif hi == "also":
-            language_set.add(lang_obj)
-            language_set.add(Language.rebuild(lang_obj, hi=True))
-        else:
-            language_set.add(lang_obj)
+            lang_obj = Language.rebuild(lang_obj, forced=True)
 
-    return language_set, original_format
+        if hi == "True":
+            lang_obj = Language.rebuild(lang_obj, hi=True)
+
+        initial_language_set.add(lang_obj)
+
+    language_set = initial_language_set.copy()
+    for language in language_set.copy():
+        lang_obj_for_hi = language
+        if not language.forced and not language.hi:
+            lang_obj_hi = Language.rebuild(lang_obj_for_hi, hi=True)
+        elif not language.forced and language.hi:
+            lang_obj_hi = Language.rebuild(lang_obj_for_hi, hi=False)
+        else:
+            continue
+        language_set.add(lang_obj_hi)
+
+    return language_set, initial_language_set, original_format

@@ -33,7 +33,7 @@ export function useProfileItemsToLanguages(profile?: Language.Profile) {
       profile?.items.map<Language.Info>(({ language: code, hi, forced }) => {
         const name = data?.find((v) => v.code2 === code)?.name ?? "";
         return {
-          hi: hi === "only",
+          hi: hi === "True",
           forced: forced === "True",
           code2: code,
           name,

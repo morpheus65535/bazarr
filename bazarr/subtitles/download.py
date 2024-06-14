@@ -41,6 +41,10 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     providers = pool.providers
 
     language_set = _get_language_obj(languages=languages)
+    hi_required = "force HI" if any([x.hi for x in language_set]) else False
+    also_forced = any([x.forced for x in language_set])
+    forced_required = all([x.forced for x in language_set])
+    _set_forced_providers(pool=pool, also_forced=also_forced, forced_required=forced_required)
 
     video = get_video(force_unicode(path), title, sceneName, providers=providers, media_type=media_type)
 
@@ -56,9 +60,6 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
             if forced_minimum_score:
                 min_score = int(forced_minimum_score) + 1
             for language in language_set:
-                # check if language appears more than one time which means that the languages profile requires normal
-                # and hi subtitles (also)
-                also_hi = len(set([x.hi for x in language_set if x.alpha3 == language.alpha3 and not x.forced])) > 1
                 # confirm if language is still missing or if cutoff has been reached
                 if check_if_still_required and language not in check_missing_languages(path, media_type):
                     # cutoff has been reached
@@ -66,13 +67,11 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                   f"has been reached during this search.")
                     continue
                 else:
-                    hi_required = "force HI" if language.hi else "force non-HI"
-                    _set_forced_providers(pool=pool, also_forced=language.forced, forced_required=language.forced)
                     downloaded_subtitles = download_best_subtitles(videos={video},
                                                                    languages={language},
                                                                    pool_instance=pool,
                                                                    min_score=int(min_score),
-                                                                   hearing_impaired=False if also_hi else hi_required,
+                                                                   hearing_impaired=hi_required,
                                                                    compute_score=ComputeScore(get_scores()))
 
                 if downloaded_subtitles:
