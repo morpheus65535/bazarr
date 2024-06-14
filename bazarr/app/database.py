@@ -513,10 +513,10 @@ def upgrade_languages_profile_hi_values():
             .all():
         items = json.loads(languages_profile.items)
         for language in items:
-            if language['hi'] == "only":
-                language['hi'] = "True"
-            elif language['hi'] == "also":
-                language['hi'] = "False"
+            if language['hi'] == "True":
+                language['hi'] = "only"
+            elif language['hi'] == "False":
+                language['hi'] = "also"
         database.execute(
             update(TableLanguagesProfiles)
             .values({"items": json.dumps(items)})

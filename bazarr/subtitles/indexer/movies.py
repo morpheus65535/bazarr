@@ -233,18 +233,26 @@ def list_missing_subtitles_movies(no=None, send_event=True):
                 # get difference between desired and existing subtitles
                 missing_subtitles_list = []
                 for item in desired_subtitles_list:
-                    if item not in actual_subtitles_list:
-                        missing_subtitles_list.append(item)
-
-                    # remove missing that have forced or hi subtitles for this language in existing
-                for item in actual_subtitles_list:
-                    if item['hi'] == 'True':
-                        try:
-                            missing_subtitles_list.remove({'language': item['language'],
-                                                           'forced': 'False',
-                                                           'hi': 'False'})
-                        except ValueError:
-                            pass
+                    if item['forced'] == 'True':
+                        desired_item = {'language': item['language'], 'forced': item['forced'], 'hi': 'False'}
+                        if desired_item not in actual_subtitles_list:
+                            missing_subtitles_list.append(desired_item)
+                    elif item['hi'] == 'never':
+                        desired_item = {'language': item['language'], 'forced': item['forced'], 'hi': 'False'}
+                        if desired_item not in actual_subtitles_list:
+                            missing_subtitles_list.append(desired_item)
+                    elif item['hi'] == 'only':
+                        desired_item = {'language': item['language'], 'forced': item['forced'], 'hi': 'True'}
+                        if desired_item not in actual_subtitles_list:
+                            missing_subtitles_list.append(desired_item)
+                    elif item['hi'] == 'also':
+                        desired_items = [{'language': item['language'], 'forced': item['forced'], 'hi': 'True'},
+                                         {'language': item['language'], 'forced': item['forced'], 'hi': 'False'}]
+                        if [x for x in desired_items if x in actual_subtitles_list]:
+                            continue
+                        else:
+                            for desired_item in desired_items:
+                                missing_subtitles_list.append(desired_item)
 
                 # make the missing languages list looks like expected
                 missing_subtitles_output_list = []
