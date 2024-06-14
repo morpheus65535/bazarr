@@ -12,7 +12,6 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { cond } from "lodash";
 import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
 import ChipInput from "@/components/inputs/ChipInput";
 import { useModals, withModal } from "@/modules/modals";
@@ -31,7 +30,7 @@ const defaultCutoffOptions: SelectorOption<Language.ProfileItem>[] = [
       // eslint-disable-next-line camelcase
       audio_exclude: "False",
       forced: "False",
-      hi: "also",
+      hi: "False",
       language: "any",
     },
   },
@@ -39,16 +38,12 @@ const defaultCutoffOptions: SelectorOption<Language.ProfileItem>[] = [
 
 const subtitlesTypeOptions: SelectorOption<string>[] = [
   {
-    label: "Normal only",
-    value: "never",
-  },
-  {
-    label: "Hearing-impaired only",
-    value: "only",
-  },
-  {
     label: "Normal or hearing-impaired",
-    value: "also",
+    value: "normal",
+  },
+  {
+    label: "Hearing-impaired required",
+    value: "hi",
   },
   {
     label: "Forced (foreign part only)",
@@ -88,14 +83,10 @@ const ProfileEditForm: FunctionComponent<Props> = ({
   const itemCutoffOptions = useSelectorOptions(
     form.values.items,
     (v) => {
-      const suffix = cond([
-        [(v: { forced: string; hi: string }) => v.hi === "only", () => ":hi"],
-        [(v) => v.hi === "never", () => ":normal"],
-        [(v) => v.forced === "True", () => ":forced"],
-        [() => true, () => ""],
-      ]);
+      const suffix =
+        v.hi === "True" ? ":hi" : v.forced === "True" ? ":forced" : "";
 
-      return v.language + suffix(v);
+      return v.language + suffix;
     },
     (v) => String(v.id),
   );
@@ -145,7 +136,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         language,
         // eslint-disable-next-line camelcase
         audio_exclude: "False",
-        hi: "also",
+        hi: "False",
         forced: "False",
       };
 
@@ -193,8 +184,10 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           const selectValue = useMemo(() => {
             if (item.forced === "True") {
               return "forced";
+            } else if (item.hi === "True") {
+              return "hi";
             } else {
-              return item.hi;
+              return "normal";
             }
           }, [item.forced, item.hi]);
 
@@ -206,9 +199,9 @@ const ProfileEditForm: FunctionComponent<Props> = ({
                 if (value) {
                   action.mutate(index, {
                     ...item,
-                    hi: value,
+                    hi: value === "hi" ? "True" : "False",
                     forced: value === "forced" ? "True" : "False",
-                  } as Language.ProfileItem);
+                  });
                 }
               }}
             ></Select>
