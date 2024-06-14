@@ -4,7 +4,7 @@ import {
   useQuery,
   useQueryClient,
   UseQueryResult,
-} from "react-query";
+} from "@tanstack/react-query";
 import { GetItemId, useOnValueChange } from "@/utilities";
 import { usePageSize } from "@/utilities/storage";
 import { QueryKeys } from "./keys";
@@ -39,30 +39,30 @@ export function usePaginationQuery<
 
   const start = page * pageSize;
 
-  const results = useQuery(
-    [...queryKey, QueryKeys.Range, { start, size: pageSize }],
-    () => {
+  const results = useQuery({
+    queryKey: [...queryKey, QueryKeys.Range, { start, size: pageSize }],
+
+    queryFn: () => {
       const param: Parameter.Range = {
         start,
         length: pageSize,
       };
       return queryFn(param);
     },
-    {
-      onSuccess: ({ data }) => {
-        if (cacheIndividual) {
-          data.forEach((item) => {
-            const id = GetItemId(item);
-            if (id) {
-              client.setQueryData([...queryKey, id], item);
-            }
-          });
-        }
-      },
-    },
-  );
+  });
 
   const { data } = results;
+
+  useEffect(() => {
+    if (results.isSuccess && results.data && cacheIndividual) {
+      results.data.data.forEach((item) => {
+        const id = GetItemId(item);
+        if (id) {
+          client.setQueryData([...queryKey, id], item);
+        }
+      });
+    }
+  }, [results.isSuccess, results.data, client, cacheIndividual, queryKey]);
 
   const totalCount = data?.total ?? 0;
   const pageCount = Math.ceil(totalCount / pageSize);

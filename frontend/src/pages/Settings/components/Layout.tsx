@@ -25,7 +25,7 @@ const Layout: FunctionComponent<Props> = (props) => {
   const { children, name } = props;
 
   const { data: settings, isLoading, isRefetching } = useSystemSettings();
-  const { mutate, isLoading: isMutating } = useSettingsMutation();
+  const { mutate, isPending: isMutating } = useSettingsMutation();
 
   const form = useForm<FormValues>({
     initialValues: {

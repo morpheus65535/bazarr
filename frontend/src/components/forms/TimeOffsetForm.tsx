@@ -74,6 +74,7 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
           <Button
             color="gray"
             variant="filled"
+            style={{ overflow: "visible" }}
             onClick={() =>
               form.setValues((f) => ({ ...f, positive: !f.positive }))
             }

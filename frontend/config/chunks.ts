@@ -1,10 +1,11 @@
+// eslint-disable-next-line no-restricted-imports
 import { dependencies } from "../package.json";
 
 const vendors = [
   "react",
   "react-router-dom",
   "react-dom",
-  "react-query",
+  "@tanstack/react-query",
   "axios",
   "socket.io-client",
 ];

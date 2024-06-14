@@ -269,6 +269,7 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
   return (
     <QueryOverlay result={history}>
       <PageTable
+        autoScroll={false}
         tableStyles={{ emptyText: "No history found", placeholder: 5 }}
         columns={columns}
         data={data ?? []}

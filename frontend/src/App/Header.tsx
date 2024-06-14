@@ -64,10 +64,9 @@ const AppHeader: FunctionComponent = () => {
                 label="System"
                 tooltip={{ position: "left", openDelay: 2000 }}
                 loading={offline}
-                color={offline ? "yellow" : undefined}
+                c={offline ? "yellow" : undefined}
                 icon={faGear}
                 size="lg"
-                variant="light"
               ></Action>
             </Menu.Target>
             <Menu.Dropdown>

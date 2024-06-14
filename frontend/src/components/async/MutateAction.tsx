@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { UseMutationResult } from "react-query";
+import { UseMutationResult } from "@tanstack/react-query";
 import { Action } from "@/components/inputs";
 import { ActionProps } from "@/components/inputs/Action";
 

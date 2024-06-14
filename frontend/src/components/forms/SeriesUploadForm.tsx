@@ -309,7 +309,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
             <Action
               label="Remove"
               icon={faTrash}
-              color="red"
+              c="red"
               onClick={() => action.remove(index)}
             ></Action>
           );

@@ -1,13 +1,13 @@
 import { useCallback, useMemo, useRef } from "react";
 import {
   ComboboxItem,
-  ComboboxParsedItemGroup,
+  ComboboxItemGroup,
   MultiSelect,
   MultiSelectProps,
   Select,
   SelectProps,
 } from "@mantine/core";
-import { isNull, isUndefined } from "lodash";
+import { isNull, isUndefined, noop } from "lodash";
 import { LOG } from "@/utilities/console";
 
 export type SelectorOption<T> = Override<
@@ -35,9 +35,14 @@ function DefaultKeyBuilder<T>(value: T) {
   }
 }
 
+export interface GroupedSelectorOptions<T> {
+  group: string;
+  items: SelectorOption<T>[];
+}
+
 export type GroupedSelectorProps<T> = Override<
   {
-    options: ComboboxParsedItemGroup[];
+    options: ComboboxItemGroup[];
     getkey?: (value: T) => string;
   },
   Omit<SelectProps, "data">
@@ -47,6 +52,7 @@ export function GroupedSelector<T>({
   value,
   options,
   getkey = DefaultKeyBuilder,
+  onOptionSubmit = noop,
   ...select
 }: GroupedSelectorProps<T>) {
   return (

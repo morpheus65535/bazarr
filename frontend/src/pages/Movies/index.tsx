@@ -87,7 +87,6 @@ const MovieView: FunctionComponent = () => {
             <Action
               label="Edit Movie"
               tooltip={{ position: "left" }}
-              variant="light"
               onClick={() =>
                 modals.openContextModal(
                   ItemEditModal,

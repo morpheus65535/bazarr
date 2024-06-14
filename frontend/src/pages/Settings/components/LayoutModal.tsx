@@ -28,7 +28,7 @@ const LayoutModal: FunctionComponent<Props> = (props) => {
   const { children, callbackModal } = props;
 
   const { data: settings, isLoading, isRefetching } = useSystemSettings();
-  const { mutate, isLoading: isMutating } = useSettingsMutation();
+  const { mutate, isPending: isMutating } = useSettingsMutation();
 
   const form = useForm<FormValues>({
     initialValues: {
