@@ -515,7 +515,7 @@ def upgrade_languages_profile_hi_values():
         for language in items:
             if language['hi'] == "only":
                 language['hi'] = "True"
-            elif language['hi'] == "also":
+            elif language['hi'] in ["also", "never"]:
                 language['hi'] = "False"
         database.execute(
             update(TableLanguagesProfiles)
