@@ -121,7 +121,9 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
         if not media_data:
             return references_dict
 
-        data = parse_video_metadata(media_data.path, media_data.file_size, media_data.episode_file_id, None,
+        mapped_path = path_mappings.path_replace(media_data.path)
+
+        data = parse_video_metadata(mapped_path, media_data.file_size, media_data.episode_file_id, None,
                                     use_cache=True)
     elif radarr_movie_id:
         media_data = database.execute(
@@ -132,7 +134,9 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
         if not media_data:
             return references_dict
 
-        data = parse_video_metadata(media_data.path, media_data.file_size, None, media_data.movie_file_id,
+        mapped_path = path_mappings.path_replace_movie(media_data.path)
+
+        data = parse_video_metadata(mapped_path, media_data.file_size, None, media_data.movie_file_id,
                                     use_cache=True)
 
     if not data:
