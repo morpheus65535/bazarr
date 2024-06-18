@@ -13,7 +13,7 @@ import xml.etree.ElementTree as etree
 
 from requests import Session
 from subliminal import __short_version__
-from subliminal.exceptions import ConfigurationError
+from subliminal.exceptions import ConfigurationError, AuthenticationError
 from subliminal.utils import sanitize
 from subliminal.video import Episode, Movie
 from subliminal_patch.providers import Provider
@@ -79,6 +79,8 @@ class JimakuProvider(Provider):
     
     api_ratelimit_max_delay_seconds = 5
     api_ratelimit_backoff_limit = 3
+    
+    corrupted_file_size_threshold = 500
     
     # See _get_tvdb_anidb_mapping()
     episode_number_override = False
@@ -169,21 +171,24 @@ class JimakuProvider(Provider):
 
         # Order subtitles to maximize quality
         # Certain subtitle sources, such as Netflix/WebRip usually yield superior quality over others
-        sorted_data = sorted(data, key=self._subtitle_sorting_key)
+        try:
+            data = sorted(data, key=self._subtitle_sorting_key)
+        except Exception as e:
+            logger.warn(f"An error occurred while sorting subtitles: {e}")
 
-        for item in sorted_data:
+        for item in data:
             subtitle_filename = item.get('name')
-            subtitle_filesize = item.get('size')
             subtitle_url = item.get('url')
-            
+
             if not self.enable_ai_subs:
                 for ai_keyword in ["generated", "whisper"]:
                     if re.search(r'\b' + re.escape(ai_keyword) + r'\b', subtitle_filename.lower()):
                         logger.warning(f"Skipping AI generated subtitle '{subtitle_filename}'")
                         continue
             
-            # Check if file is obviously corrupt
-            if subtitle_filesize < 500:
+            # Check if file is obviously corrupt. If no size is returned, assume OK
+            subtitle_filesize = item.get('size', self.corrupted_file_size_threshold)
+            if subtitle_filesize < self.corrupted_file_size_threshold:
                 logger.warning(f"Skipping possibly corrupt file '{subtitle_filename}': Filesize is just {subtitle_filesize} bytes.")
                 continue
             
@@ -235,18 +240,18 @@ class JimakuProvider(Provider):
         
     @staticmethod
     def _subtitle_sorting_key(file):
-        name = file["name"].lower()
-        is_srt = name.endswith('.srt')
+        filename = file.get('name')
+        is_srt = filename.lower().endswith('.srt')
         
         # Usually netflix > webrip > amazon, with the rest having the lowest priority
         sub_sources = ["netflix", "webrip", "amazon"]
         priority = len(sub_sources)
         for index, source in enumerate(sub_sources):
-            if source in name:
+            if source in filename.lower():
                 priority = index
                 break
         
-        return (not is_srt, priority, file["name"])
+        return (not is_srt, priority, filename)
     
     @cache
     def _get_jimaku_response(self, url_path):
@@ -263,13 +268,18 @@ class JimakuProvider(Provider):
                 
                 logger.warning(f"Jimaku ratelimit hit, waiting for '{reset_time}' seconds ({retry_count}/{self.api_ratelimit_backoff_limit} tries)")
                 time.sleep(reset_time)
-            else:
-                response.raise_for_status()
+            elif response.status_code == 401:
+                raise AuthenticationError("Unauthorized. API key possibly invalid?")
+            
+            response.raise_for_status()
             
             data = response.json()
             logger.debug(f"Length of response on {url}: {len(data)}")
             if len(data) == 0:
                 logger.error(f"Jimaku returned no items for our our query: {url_path}")
+                return None
+            elif 'error' in data:
+                logger.error(f"Jimaku returned an error for our query.\nMessage: '{data.get('error')}', Code: '{data.get('code')}'")
                 return None
             else:
                 return data
