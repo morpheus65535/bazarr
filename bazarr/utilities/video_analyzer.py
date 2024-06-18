@@ -213,6 +213,25 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
 
 
 def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
+    """
+    This function return the video file properties as parsed by knowit using ffprobe or mediainfo using the cached
+    value by default.
+
+    @type file: string
+    @param file: Properly mapped path of a video file
+    @type file_size: int
+    @param file_size: File size in bytes of the video file
+    @type episode_file_id: int or None
+    @param episode_file_id: episode ID of the video file from Sonarr (or None if it's a movie)
+    @type movie_file_id: int or None
+    @param movie_file_id: movie ID of the video file from Radarr (or None if it's an episode)
+    @type use_cache: bool
+    @param use_cache:
+
+    @rtype: dict or None
+    @return: return a dictionary including the video file properties as parsed by ffprobe or mediainfo
+    """
+
     # Define default data keys value
     data = {
         "ffprobe": {},
@@ -228,12 +247,12 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
         if episode_file_id:
             cache_key = database.execute(
                 select(TableEpisodes.ffprobe_cache)
-                .where(TableEpisodes.path == path_mappings.path_replace_reverse(file))) \
+                .where(TableEpisodes.episode_file_id == episode_file_id)) \
                 .first()
         elif movie_file_id:
             cache_key = database.execute(
                 select(TableMovies.ffprobe_cache)
-                .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file))) \
+                .where(TableMovies.movie_file_id == movie_file_id)) \
                 .first()
         else:
             cache_key = None
@@ -243,6 +262,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
             # Unpickle ffprobe cache
             cached_value = pickle.loads(cache_key.ffprobe_cache)
         except Exception:
+            # No cached value available, we'll parse the file
             pass
         else:
             # Check if file size and file id matches and if so, we return the cached value if available for the
@@ -291,19 +311,19 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     else:
         logging.error("BAZARR require ffmpeg/ffprobe or mediainfo, please install it and make sure to choose it in "
                       "Settings-->Subtitles.")
-        return
+        return None
 
     # we write to db the result and return the newly cached ffprobe dict
     if episode_file_id:
         database.execute(
             update(TableEpisodes)
             .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(file)))
+            .where(TableEpisodes.episode_file_id == episode_file_id))
     elif movie_file_id:
         database.execute(
             update(TableMovies)
             .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file)))
+            .where(TableMovies.movie_file_id == movie_file_id))
     return data
 
 
