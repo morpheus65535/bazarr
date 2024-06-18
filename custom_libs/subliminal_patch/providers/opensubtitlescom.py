@@ -218,7 +218,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
         try:
             self.token = r.json()['token']
-        except (ValueError, JSONDecodeError):
+        except (ValueError, JSONDecodeError, AttributeError):
             log_request_response(r)
             raise ProviderError("Cannot get token from provider login response")
         else:
