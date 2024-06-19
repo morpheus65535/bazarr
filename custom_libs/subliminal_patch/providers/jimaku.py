@@ -9,7 +9,6 @@ import urllib.parse
 import rarfile
 import zipfile
 import requests
-import xml.etree.ElementTree as etree
 
 from requests import Session
 from subliminal import __short_version__
@@ -75,14 +74,13 @@ class JimakuSubtitle(Subtitle):
 class JimakuProvider(Provider):
     '''Jimaku Provider.'''
     video_types = (Episode, Movie)
-    api_url = 'https://jimaku.cc/api'
     
+    api_url = 'https://jimaku.cc/api'
     api_ratelimit_max_delay_seconds = 5
     api_ratelimit_backoff_limit = 3
     
     corrupted_file_size_threshold = 500
     
-    # See _get_tvdb_anidb_mapping()
     episode_number_override = False
     
     languages = {Language.fromietf("ja")}
@@ -150,8 +148,8 @@ class JimakuProvider(Provider):
             
             # Edge case: When dealing with a cour, episodes could be uploaded with their episode numbers having an offset applied
             if not data and isinstance(video, Episode) and self.episode_number_override and retry_count < 1:
-                logger.warning(f"Found no subtitles for {episode_number}, but will retry with offset-adjusted episode number {video.series_series_anidb_episode_no}.")
-                episode_number = video.series_series_anidb_episode_no
+                logger.warning(f"Found no subtitles for {episode_number}, but will retry with offset-adjusted episode number {video.series_anidb_episode_no}.")
+                episode_number = video.series_anidb_episode_no
             elif not data:
                 return None
         
@@ -269,7 +267,7 @@ class JimakuProvider(Provider):
                 logger.warning(f"Jimaku ratelimit hit, waiting for '{reset_time}' seconds ({retry_count}/{self.api_ratelimit_backoff_limit} tries)")
                 time.sleep(reset_time)
             elif response.status_code == 401:
-                raise AuthenticationError("Unauthorized. API key possibly invalid?")
+                raise AuthenticationError("Unauthorized. API key possibly invalid")
             
             response.raise_for_status()
             
