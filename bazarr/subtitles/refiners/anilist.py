@@ -7,7 +7,7 @@ from collections import namedtuple
 from datetime import timedelta
 
 from app.config import settings
-from subliminal import Episode, Movie, region
+from subliminal import Episode, region
 
 logger = logging.getLogger(__name__)
 refined_providers = {'jimaku'}
@@ -28,7 +28,6 @@ class AniListClient(object):
         r.raise_for_status()
         return r.json()
 
-    #@region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
     def get_series_id(self, candidate_id_name, candidate_id_value):
         anime_list = self.get_series_mappings()
         

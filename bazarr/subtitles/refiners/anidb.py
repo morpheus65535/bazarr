@@ -113,7 +113,7 @@ class AniDBClient(object):
         series_id, episode_no = self.get_series_id(mappings, season, tvdb_series_id, episode)
 
         if not series_id:
-            return None, None
+            return None, None, None
 
         episodes = etree.fromstring(self.get_episodes(series_id))
 
