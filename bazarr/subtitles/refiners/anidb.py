@@ -129,7 +129,15 @@ def refine_anidb_ids(video):
 
     season = video.season if video.season else 0
 
-    anidb_series_id, anidb_episode_id, anidb_episode_no = anidb_client.get_series_episodes_ids(video.series_tvdb_id, season, video.episode)
+    series_episode_ids = anidb_client.get_series_episodes_ids(video.series_tvdb_id, season, video.episode)
+
+    # Account for region-cache having stored outdated code of get_series_episodes_ids()
+    if len(series_episode_ids) == 3:
+        anidb_series_id, anidb_episode_id, anidb_episode_no = series_episode_ids
+    else:
+        logging.warn("Could not determine actual episode number of this video due to region-cache.")
+        anidb_series_id, anidb_episode_id = series_episode_ids
+        anidb_episode_no = None
 
     if not anidb_episode_id:
         logging.error(f'Could not find anime series {video.series}')
