@@ -325,9 +325,9 @@ class LegendasdivxProvider(Provider):
 
             search_url = _searchurl.format(
                     query=querytext,
-                    season=video.season,
-                    episode=video.episode,
-                    imdbid=video.series_imdb_id.replace('tt', '') if video.series_imdb_id else None,
+                    season='' if isinstance(video, Movie) else video.season,
+                    episode='' if isinstance(video, Movie) else video.episode,
+                    imdbid='' if isinstance(video, Movie) else video.series_imdb_id.replace('tt', '') if video.series_imdb_id else None,
                     op=op,
                     d_op=d_op,
             )
