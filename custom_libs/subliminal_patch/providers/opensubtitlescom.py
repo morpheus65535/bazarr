@@ -543,10 +543,6 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             elif status_code == 429:
                 log_request_response(response)
                 raise TooManyRequests()
-            elif status_code == 500:
-                logger.debug("Server side exception raised while downloading from opensubtitles.com website. They "
-                              "should mitigate this soon.")
-                return None
             elif status_code == 502:
                 # this one should deal with Bad Gateway issue on their side.
                 raise APIThrottled()
