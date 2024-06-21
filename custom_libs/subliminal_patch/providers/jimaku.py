@@ -19,6 +19,7 @@ from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.providers.utils import get_subtitle_from_archive
+from guessit import guessit
 from functools import cache
 from subzero.language import Language
 
@@ -30,15 +31,15 @@ class JimakuSubtitle(Subtitle):
     
     hash_verifiable = False
 
-    def __init__(self, video, subtitle_id, subtitle_url, release_info, anilist_id=None):
+    def __init__(self, video, subtitle_id, subtitle_url, subtitle_filename):
         # Override param 'language' as it could only ever be "ja"
         super(JimakuSubtitle, self).__init__(Language("jpn"))
         
         self.video = video
         self.subtitle_id = subtitle_id
         self.subtitle_url = subtitle_url
-        self.release_info = release_info
-        self.anilist_id = anilist_id
+        self.subtitle_filename = subtitle_filename
+        self.release_info = subtitle_filename
         
     @property
     def id(self):
@@ -47,7 +48,7 @@ class JimakuSubtitle(Subtitle):
     def get_matches(self, video):
         matches = set()
         
-        # Specific matches
+        # Episode/Movie specific matches
         if isinstance(video, Episode):
             if sanitize(video.series) and sanitize(self.video.series) in (
                     sanitize(name) for name in [video.series] + video.alternative_series):
@@ -68,6 +69,14 @@ class JimakuSubtitle(Subtitle):
 
         video_type = 'movie' if isinstance(video, Movie) else 'episode'
         matches.add(video_type)
+        
+        guess = guessit(self.subtitle_filename, {'type': video_type})
+        logger.debug(f"Guessit: {guess}")
+        for g in guess:
+            if g[0] == "release_group" or "source":
+                if video.release_group == g[1]:
+                    matches.add('release_group')
+                    break
 
         return matches
 
@@ -167,13 +176,6 @@ class JimakuProvider(Provider):
             else:
                 archive_formats_blacklist += disabled_archives
 
-        # Order subtitles to maximize quality
-        # Certain subtitle sources, such as Netflix/WebRip usually yield superior quality over others
-        try:
-            data = sorted(data, key=self._subtitle_sorting_key)
-        except Exception as e:
-            logger.warn(f"An error occurred while sorting subtitles: {e}")
-
         for item in data:
             subtitle_filename = item.get('name')
             subtitle_url = item.get('url')
@@ -193,7 +195,7 @@ class JimakuProvider(Provider):
                 number = episode_number if isinstance(video, Episode) else 0
                 subtitle_id = f"{str(anilist_id)}_{number}_{video.release_group}"
                 
-                list_of_subtitles.append(JimakuSubtitle(video, subtitle_id, subtitle_url, subtitle_filename, anilist_id))
+                list_of_subtitles.append(JimakuSubtitle(video, subtitle_id, subtitle_url, subtitle_filename))
             else:
                 logger.debug(f"> Skipping subtitle of name '{subtitle_filename}' due to archive blacklist. (enable_archives: {self.enable_archives})")
         
@@ -234,21 +236,6 @@ class JimakuProvider(Provider):
         else:
             logger.debug("Doesn't seem like an archive")
             return None
-        
-    @staticmethod
-    def _subtitle_sorting_key(file):
-        filename = file.get('name')
-        is_srt = filename.lower().endswith('.srt')
-        
-        # Usually netflix > webrip > amazon, with the rest having the lowest priority
-        sub_sources = ["netflix", "webrip", "amazon"]
-        priority = len(sub_sources)
-        for index, source in enumerate(sub_sources):
-            if source in filename.lower():
-                priority = index
-                break
-        
-        return (not is_srt, priority, filename)
     
     @cache
     def _get_jimaku_response(self, url_path):
