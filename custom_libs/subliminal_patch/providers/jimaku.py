@@ -179,10 +179,9 @@ class JimakuProvider(Provider):
             subtitle_url = item.get('url')
 
             if not self.enable_ai_subs:
-                for ai_keyword in ["generated", "whisper"]:
-                    if re.search(r'\b' + re.escape(ai_keyword) + r'\b', subtitle_filename.lower()):
-                        logger.warning(f"Skipping AI generated subtitle '{subtitle_filename}'")
-                        continue
+                if "whisperai" in subtitle_filename.lower():
+                    logger.warning(f"Skipping AI generated subtitle '{subtitle_filename}'")
+                    continue
             
             # Check if file is obviously corrupt. If no size is returned, assume OK
             subtitle_filesize = item.get('size', self.corrupted_file_size_threshold)
