@@ -138,7 +138,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
         series_id = episode_metadata.sonarrSeriesId
         episode_id = episode_metadata.sonarrEpisodeId
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, percent_score=100,
-                       sonarr_series_id=episode_metadata.sonarrSeriesId, forced=forced,
+                       sonarr_series_id=episode_metadata.sonarrSeriesId, forced=forced, hi=hi,
                        sonarr_episode_id=episode_metadata.sonarrEpisodeId)
     else:
         if not movie_metadata:
@@ -146,7 +146,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
         series_id = ""
         episode_id = movie_metadata.radarrId
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, percent_score=100,
-                       radarr_id=movie_metadata.radarrId, forced=forced)
+                       radarr_id=movie_metadata.radarrId, forced=forced, hi=hi)
 
     if use_postprocessing:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,

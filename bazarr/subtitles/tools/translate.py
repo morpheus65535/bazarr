@@ -94,10 +94,10 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
                                     downloaded_language_code2=to_lang,
                                     downloaded_provider=None,
                                     score=None,
-                                    forced=None,
+                                    forced=forced,
                                     subtitle_id=None,
                                     reversed_subtitles_path=dest_srt_file,
-                                    hearing_impaired=None)
+                                    hearing_impaired=hi)
 
     if media_type == 'series':
         history_log(action=6, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id, result=result)
