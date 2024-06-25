@@ -11,19 +11,28 @@ export const divisorSecond = 1;
 export const formatTime = (
   timeInSeconds: number,
   formats: TimeFormat[],
-): string =>
-  formats.reduce(
-    (formattedTime: string, { unit, divisor }: TimeFormat, index: number) => {
-      const timeValue: number =
-        index === 0
-          ? Math.floor(timeInSeconds / divisor)
-          : Math.floor(timeInSeconds / divisor) % 60;
-      return (
+): string => {
+  return formats.reduce(
+    (
+      { formattedTime, remainingSeconds },
+      { unit, divisor }: TimeFormat,
+      index: number,
+    ) => {
+      const timeValue = Math.floor(remainingSeconds / divisor);
+
+      const seconds = remainingSeconds % divisor;
+
+      const time =
         formattedTime +
         (index === 0
           ? `${timeValue}${unit} `
-          : `${timeValue.toString().padStart(2, "0")}${index < formats.length - 1 ? ":" : ""}`)
-      );
+          : `${timeValue.toString().padStart(2, "0")}${index < formats.length - 1 ? ":" : ""}`);
+
+      return {
+        formattedTime: time,
+        remainingSeconds: seconds,
+      };
     },
-    "",
-  );
+    { formattedTime: "", remainingSeconds: timeInSeconds },
+  ).formattedTime;
+};
