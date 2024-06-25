@@ -127,6 +127,8 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
           type: s.type,
           language: s.language,
           path: s.path,
+          hi: s.hi,
+          forced: s.forced,
         };
         task.create(s.path, name, mutateAsync, { action, form });
       });

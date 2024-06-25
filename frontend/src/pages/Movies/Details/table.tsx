@@ -9,7 +9,7 @@ import { Action, SimpleTable } from "@/components";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import { task, TaskGroup } from "@/modules/task";
-import { filterSubtitleBy } from "@/utilities";
+import { filterSubtitleBy, toPython } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 
 const missingText = "Missing Subtitles";
@@ -95,11 +95,13 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                 path,
                 id: movie.radarrId,
                 language: code2,
+                forced: toPython(forced),
+                hi: toPython(hi),
               });
             }
 
             return list;
-          }, [code2, path]);
+          }, [code2, path, forced, hi]);
 
           if (movie === null) {
             return null;
