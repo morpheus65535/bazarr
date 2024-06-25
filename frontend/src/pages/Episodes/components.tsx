@@ -4,6 +4,7 @@ import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import { task, TaskGroup } from "@/modules/task";
+import { toPython } from "@/utilities";
 
 interface Props {
   seriesId: number;
@@ -43,11 +44,13 @@ export const Subtitle: FunctionComponent<Props> = ({
         type: "episode",
         language: subtitle.code2,
         path: subtitle.path,
+        forced: toPython(subtitle.forced),
+        hi: toPython(subtitle.hi),
       });
     }
 
     return list;
-  }, [episodeId, subtitle.code2, subtitle.path]);
+  }, [episodeId, subtitle.code2, subtitle.path, subtitle.forced, subtitle.hi]);
 
   const ctx = (
     <Badge variant={variant}>
