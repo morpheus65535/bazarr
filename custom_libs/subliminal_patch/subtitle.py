@@ -357,7 +357,7 @@ class Subtitle(Subtitle_):
                 fragment = fragment.replace(r"\n", u"\n")
                 fragment = fragment.replace(r"\N", u"\n")
                 if sty.drawing:
-                    raise pysubs2.ContentNotUsable
+                    return None
 
                 if format == "srt":
                     if sty.italic:
@@ -390,9 +390,10 @@ class Subtitle(Subtitle_):
         for i, line in enumerate(visible_lines, 1):
             start = ms_to_timestamp(line.start, mssep=mssep)
             end = ms_to_timestamp(line.end, mssep=mssep)
-            try:
-                text = prepare_text(line.text, sub.styles.get(line.style, SSAStyle.DEFAULT_STYLE))
-            except pysubs2.ContentNotUsable:
+
+            text = prepare_text(line.text, sub.styles.get(line.style, SSAStyle.DEFAULT_STYLE))
+
+            if text is None:
                 continue
 
             out.append(u"%d\n" % i)
