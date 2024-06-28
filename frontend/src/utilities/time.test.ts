@@ -30,7 +30,7 @@ describe("formatTime", () => {
       { unit: "s", divisor: divisorSecond },
     ]);
 
-    expect(formattedTime).toBe("581d 25:27:41");
+    expect(formattedTime).toBe("581d 01:27:41");
   });
 
   it("should format time day hour minute", () => {

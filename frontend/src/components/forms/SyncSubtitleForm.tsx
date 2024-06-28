@@ -17,7 +17,7 @@ import {
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/Subtitles/options";
-import { toPython } from "@/utilities";
+import { fromPython, toPython } from "@/utilities";
 
 const TaskName = "Syncing Subtitle";
 
@@ -109,6 +109,8 @@ interface FormValues {
   maxOffsetSeconds?: string;
   noFixFramerate: boolean;
   gss: boolean;
+  hi?: boolean;
+  forced?: boolean;
 }
 
 const SyncSubtitleForm: FunctionComponent<Props> = ({
@@ -122,9 +124,7 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
   const { mutateAsync } = useSubtitleAction();
   const modals = useModals();
 
-  const mediaType = selections[0].type;
-  const mediaId = selections[0].id;
-  const subtitlesPath = selections[0].path;
+  const subtitle = selections[0];
 
   const subtitles = useReferencedSubtitles(mediaType, mediaId, subtitlesPath);
 
@@ -132,6 +132,8 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
     initialValues: {
       noFixFramerate: false,
       gss: false,
+      hi: fromPython(subtitle.hi),
+      forced: fromPython(subtitle.forced),
     },
   });
 
