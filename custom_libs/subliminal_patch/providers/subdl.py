@@ -187,23 +187,46 @@ class SubdlProvider(ProviderRetryMixin, Provider):
 
         if len(result['subtitles']):
             for item in result['subtitles']:
-                subtitle = SubdlSubtitle(
-                    language=Language.fromsubdl(item['language']),
-                    forced=any(x in item.get('comment', '').lower() for x in ['forced', 'foreign']),
-                    hearing_impaired="_HI_" in item.get('name', ''),
-                    page_link=urljoin("https://subdl.com", item.get('subtitlePage', '')),
-                    download_link=item['url'],
-                    file_id=item['name'],
-                    release_names=item.get('releases', []),
-                    uploader=item.get('author', ''),
-                    season=item.get('season', None),
-                    episode=item.get('episode', None),
-                )
-                subtitle.get_matches(self.video)
-                if subtitle.language in languages:  # make sure only matching forced or normal/HI subtitles are returned
-                    subtitles.append(subtitle)
+                if item.get('episode_from', False) == item.get('episode_end', False):  # ignore season packs
+                    subtitle = SubdlSubtitle(
+                        language=Language.fromsubdl(item['language']),
+                        forced=any(x in item.get('comment', '').lower() for x in ['forced', 'foreign']),
+                        hearing_impaired=item.get('hi', False) or self._is_hi(item),
+                        page_link=urljoin("https://subdl.com", item.get('subtitlePage', '')),
+                        download_link=item['url'],
+                        file_id=item['name'],
+                        release_names=item.get('releases', []),
+                        uploader=item.get('author', ''),
+                        season=item.get('season', None),
+                        episode=item.get('episode', None),
+                    )
+                    subtitle.get_matches(self.video)
+                    if subtitle.language in languages:  # make sure only desired subtitles variants are returned
+                        subtitles.append(subtitle)
 
         return subtitles
+
+    @staticmethod
+    def _is_hi(item):
+        # Comments include specific mention of removed or non HI
+        non_hi_tag = ['hi remove', 'non hi', 'nonhi', 'non-hi', 'non-sdh', 'non sdh', 'nonsdh', 'sdh remove']
+        for tag in non_hi_tag:
+            if tag in item.get('comment', '').lower():
+                return False
+
+        # Archive filename include _HI_
+        if '_hi_' in item.get('name', '').lower():
+            return True
+
+        # Comments or release names include some specific strings
+        hi_keys = [item.get('comment', '').lower(), [x.lower() for x in item.get('releases', [])]]
+        hi_tag = ['_hi_', ' hi ', '.hi.', 'hi ', ' hi', 'sdh', '𝓢𝓓𝓗']
+        for key in hi_keys:
+            if any(x in key for x in hi_tag):
+                return True
+
+        # nothing match so we consider it as non-HI
+        return False
 
     def list_subtitles(self, video, languages):
         return self.query(languages, video)
