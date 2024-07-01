@@ -9,7 +9,7 @@ from requests.exceptions import HTTPError
 
 from app.config import settings
 from subliminal import Episode, region
-from subliminal.cache import SHOW_EXPIRATION_TIME
+from subliminal.cache import REFINER_EXPIRATION_TIME
 from subliminal_patch.exceptions import TooManyRequests
 
 try:
@@ -25,7 +25,6 @@ refined_providers = {'animetosho'}
 api_url = 'http://api.anidb.net:9001/httpapi'
 
 cache_key_refiner = "anidb_refiner"
-cache_key_series_air_date = "anidb_series_{}_next_air_date"
 
 # Soft Limit for amount of requests per day
 daily_limit_request_count = 200
@@ -100,16 +99,11 @@ class AniDBClient(object):
         if not series_id:
             return None, None
 
-        next_episode_air_date = region.get(cache_key_series_air_date.format(series_id))
-
-        if next_episode_air_date and next_episode_air_date.date() < datetime.now().date():
-            episodes = etree.fromstring(self.get_episodes.refresh(self, series_id))
-        else:
-            episodes = etree.fromstring(self.get_episodes(series_id))
+        episodes = etree.fromstring(self.get_episodes(series_id))
 
         return series_id, int(episodes.find(f".//episode[epno='{episode_no}']").attrib.get('id'))
 
-    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
+    @region.cache_on_arguments(expiration_time=REFINER_EXPIRATION_TIME)
     def get_episodes(self, series_id):
         if self.daily_api_request_count >= 200:
             raise TooManyRequests('Daily API request limit exceeded')
@@ -141,27 +135,7 @@ class AniDBClient(object):
         if not episode_elements:
             raise ValueError
 
-        next_episode_air_date = self.get_next_episode_air_date(episode_elements, xml_root.find('enddate'))
-
-        region.set(cache_key_series_air_date.format(series_id), next_episode_air_date)
-
         return etree.tostring(episode_elements, encoding='utf8', method='xml')
-
-    @staticmethod
-    def get_next_episode_air_date(episodes, end_date):
-        current_date = datetime.today()
-
-        # Completed series won't have a next episode air date
-        if current_date.date() >= datetime.strptime(end_date.text, "%Y-%m-%d").date():
-            return None
-
-        for episode in episodes:
-            airdate = datetime.strptime(episode.find('airdate').text, "%Y-%m-%d")
-
-            if airdate.date() > current_date.date():
-                return airdate
-
-        return None
 
     def increment_daily_quota(self):
         daily_quota = self.daily_api_request_count + 1
