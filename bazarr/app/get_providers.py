@@ -322,6 +322,9 @@ def get_providers_auth():
         },
         "animetosho": {
             'search_threshold': settings.animetosho.search_threshold,
+        },
+        "subdl": {
+            'api_key': settings.subdl.api_key,
         }
     }
 
