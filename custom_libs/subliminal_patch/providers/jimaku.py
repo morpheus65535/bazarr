@@ -4,7 +4,6 @@ import io
 import logging
 import re
 import time
-import urllib.parse
 import rarfile
 import zipfile
 import requests
@@ -18,6 +17,7 @@ from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.providers.utils import get_subtitle_from_archive
+from urllib.parse import urlencode, urljoin
 from guessit import guessit
 from functools import cache
 from subzero.language import Language
@@ -276,8 +276,7 @@ class JimakuProvider(Provider):
                 return None
             else:
                 return data
-            
-        # Max retries exceeded
+
         raise APIThrottled(f"Jimaku ratelimit max backoff limit of {self.api_ratelimit_backoff_limit} reached, aborting.")
     
     @staticmethod
@@ -344,24 +343,26 @@ class JimakuProvider(Provider):
             return [Language("jpn")]
     
     @cache
-    def _assemble_jimaku_search_url(self, video, media_name):
+    def _assemble_jimaku_search_url(self, video, media_name, additional_params={}):
         """
         Return a search URL for the Jimaku API.
-        Will first try to determine an Anilist ID based on properties of the video object.
-        If that fails, will simply assemble a query URL that relies on Jimakus fuzzy search instead.
         """
                        
-        url = "entries/search"
+        endpoint = "entries/search"
         anilist_id = video.anilist_id
         
+        params = set()
         if anilist_id:
             logger.info(f"Will search for entry based on anilist_id: {anilist_id}")
-            url = f"{url}?anilist_id={anilist_id}"
+            params = {'anilist_id': anilist_id}
         else:
-            if self.enable_name_search_fallback:
+            if self.enable_name_search_fallback or isinstance(video, Movie):
                 logger.info(f"Will search for entry based on media_name: {media_name}")
-                url = f"{url}?query={urllib.parse.quote_plus(media_name)}"
+                params = {'query': media_name}
             else:
                 return None
             
-        return url
+        if additional_params and isinstance(additional_params, set):
+            params.add(additional_params)
+        
+        return urljoin(endpoint, '?' + urlencode(params))
