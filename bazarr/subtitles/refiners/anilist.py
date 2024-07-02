@@ -53,7 +53,7 @@ def refine_from_anilist(path, video):
         season = video.season if video.season else 0
         if season > 1 and not video.series_anidb_id:
             logger.error(
-                f"Will not refine '{video.series}' as it only has a TVDB ID, but its season ({season}) is higher than 1.",
+                f"Will not refine '{video.series}' as it only has a TVDB ID, but its season ({season}) is higher than 1." +
                 "\nSuch IDs are not unique to each season; To allow refinement for this series, you must enable AniDB integration."
             )
             return
