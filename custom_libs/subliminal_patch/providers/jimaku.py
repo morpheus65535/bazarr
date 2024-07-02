@@ -92,12 +92,13 @@ class JimakuProvider(Provider):
     
     languages = {Language.fromietf("ja")}
 
-    def __init__(self, enable_archives, enable_ai_subs, api_key):
+    def __init__(self, enable_name_search_fallback, enable_archives, enable_ai_subs, api_key):
         if api_key:
             self.api_key = api_key
         else:
             raise ConfigurationError('Missing api_key.')
 
+        self.enable_name_search_fallback = enable_name_search_fallback
         self.enable_archives = enable_archives
         self.enable_ai_subs = enable_ai_subs
         self.session = None
@@ -123,7 +124,11 @@ class JimakuProvider(Provider):
             media_name = f"{media_name} {season_addendum}" if season_addendum else media_name
 
         # Search for entry
-        url = self._assemble_jimaku_search_url(video, media_name)        
+        url = self._assemble_jimaku_search_url(video, media_name)
+        if not url:
+            logger.error(f"Skipping '{media_name}': Got no AniList ID and fuzzy matching using name is disabled.")
+            return None
+        
         data = self._get_jimaku_response(url)
         if not data:
             return None
@@ -337,11 +342,15 @@ class JimakuProvider(Provider):
                        
         url = "entries/search"
         anilist_id = video.anilist_id
+        
         if anilist_id:
             logger.info(f"Will search for entry based on anilist_id: {anilist_id}")
             url = f"{url}?anilist_id={anilist_id}"
         else:
-            logger.info(f"Will search for entry based on media_name: {media_name}")
-            url = f"{url}?query={urllib.parse.quote_plus(media_name)}"
+            if self.enable_name_search_fallback:
+                logger.info(f"Will search for entry based on media_name: {media_name}")
+                url = f"{url}?query={urllib.parse.quote_plus(media_name)}"
+            else:
+                return None
             
         return url

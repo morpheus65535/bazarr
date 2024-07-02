@@ -223,7 +223,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Jimaku.cc",
     description: "Japanese Subtitles Provider",
     message:
-      "API key required. Enable AniDB integration for better series matching accuracy. Subtitles are provided by users and therefore have varying degrees of quality and accuracy.",
+      "API key required. Enable AniDB integration for better series matching accuracy. Subtitles stem from various sources and might have quality/timing issues.",
     inputs: [
       {
         type: "password",
@@ -233,12 +233,17 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "switch",
         key: "enable_archives",
-        name: "Download subtitle archives"
+        name: "Download archived subtitles"
       },
       {
         type: "switch",
         key: "enable_ai_subs",
         name: "Download AI generated subs"
+      },
+      {
+        type: "switch",
+        key: "enable_name_search_fallback",
+        name: "Search by name if AniDB integration is unavailable (Less accurate)"
       }
     ],
   },
