@@ -124,10 +124,10 @@ class JimakuProvider(Provider):
             media_name = f"{media_name} {season_addendum}" if season_addendum else media_name
 
         # Search for entry
-        searching_for_entry_attempts = 1
+        searching_for_entry_attempts = 0
         additional_url_params = {}
-        while searching_for_entry_attempts <= 2:
-            searching_for_entry_attempts += 1   
+        while searching_for_entry_attempts < 2:
+            searching_for_entry_attempts += 1
             url = self._assemble_jimaku_search_url(video, media_name, additional_url_params)
             if not url:
                 logger.error(f"Skipping '{media_name}': Got no AniList ID and fuzzy matching using name is disabled.")
@@ -138,7 +138,7 @@ class JimakuProvider(Provider):
             if not data:
                 if searching_for_entry and searching_for_entry_attempts < 2:
                     logger.info("Maybe this is live action media? Will retry search without anime parameter...")
-                    additional_url_params = {'anime': False}
+                    additional_url_params = {'anime': "false"}
                 else:
                     return None
 
@@ -356,7 +356,6 @@ class JimakuProvider(Provider):
         else:
             return [Language("jpn")]
     
-    @cache
     def _assemble_jimaku_search_url(self, video, media_name, additional_params={}):
         """
         Return a search URL for the Jimaku API.
@@ -365,18 +364,17 @@ class JimakuProvider(Provider):
         endpoint = "entries/search"
         anilist_id = video.anilist_id
         
-        params = set()
+        params = {}
         if anilist_id:
-            logger.info(f"Will search for entry based on anilist_id: {anilist_id}")
             params = {'anilist_id': anilist_id}
         else:
             if self.enable_name_search_fallback or isinstance(video, Movie):
-                logger.info(f"Will search for entry based on media_name: {media_name}")
                 params = {'query': media_name}
             else:
                 return None
             
-        if additional_params and isinstance(additional_params, set):
-            params.add(additional_params)
+        if additional_params:
+            params.update(additional_params)
         
+        logger.info(f"Will search for entry based on params: {params}")
         return urljoin(endpoint, '?' + urlencode(params))
