@@ -4,7 +4,6 @@ import io
 import logging
 import re
 import time
-import traceback
 import urllib.parse
 import rarfile
 import zipfile
@@ -31,9 +30,8 @@ class JimakuSubtitle(Subtitle):
     
     hash_verifiable = False
 
-    def __init__(self, video, subtitle_id, subtitle_url, subtitle_filename):
-        # Override param 'language' as it could only ever be "ja"
-        super(JimakuSubtitle, self).__init__(Language("jpn"))
+    def __init__(self, language, video, subtitle_id, subtitle_url, subtitle_filename):
+        super(JimakuSubtitle, self).__init__(language)
         
         self.video = video
         self.subtitle_id = subtitle_id
@@ -182,8 +180,13 @@ class JimakuProvider(Provider):
 
             if not self.enable_ai_subs:
                 if "whisperai" in subtitle_filename.lower():
-                    logger.warning(f"Skipping AI generated subtitle '{subtitle_filename}'")
+                    logger.warning(f"Skipping subtitle '{subtitle_filename}' as it's suspected of being AI generated.")
                     continue
+            
+            sub_languages = self._try_determine_subtitle_languages(subtitle_filename)
+            if len(sub_languages) > 1:
+                logger.warning(f"Skipping subtitle '{subtitle_filename}' as it's suspected of containing multiple languages.")
+                continue
             
             # Check if file is obviously corrupt. If no size is returned, assume OK
             subtitle_filesize = item.get('size', self.corrupted_file_size_threshold)
@@ -195,7 +198,8 @@ class JimakuProvider(Provider):
                 number = episode_number if isinstance(video, Episode) else 0
                 subtitle_id = f"{str(anilist_id)}_{number}_{video.release_group}"
                 
-                list_of_subtitles.append(JimakuSubtitle(video, subtitle_id, subtitle_url, subtitle_filename))
+                lang = sub_languages[0]
+                list_of_subtitles.append(JimakuSubtitle(lang, video, subtitle_id, subtitle_url, subtitle_filename))
             else:
                 logger.debug(f"> Skipping subtitle of name '{subtitle_filename}' due to archive blacklist. (enable_archives: {self.enable_archives})")
         
@@ -281,6 +285,46 @@ class JimakuProvider(Provider):
             return response.json()
         except:
             return response.content
+        
+    @staticmethod
+    def _try_determine_subtitle_languages(filename):
+        # This is more like a guess and not a 100% fool-proof way of detecting multi-lang subs:
+        # It assumes that language codes, if present, are in the last metadata group of the subs filename.
+        # If such codes are not present, then we'll assume the sub is Japanese only.
+        
+        dot_delimit = filename.split(".")
+        bracket_delimit = re.split(r'[\[\]\(\)]+', filename)
+
+        if len(dot_delimit) > 2:
+            candidates = re.split(r'[,\- ]+', dot_delimit[-2])
+        elif len(bracket_delimit) > 2:
+            candidates = re.split(r'[,\- ]+', bracket_delimit[-2])
+                
+        languages = list()
+        for candidate in candidates:
+            # Sometimes, language codes can have additional info such as 'cc' or 'sdh'. For example: "ja[cc]"
+            if len(dot_delimit) > 2 and any(c in candidate for c in '[]()'):
+                candidate = re.split(r'[\[\]\(\)]+', candidate)[0]
+                
+            try:
+                candidate = "ja" if candidate.lower() == "jp" else candidate.lower()
+                if len(candidate) > 2:
+                    languages += [Language(candidate)]
+                else:
+                    languages += [Language.fromietf(candidate)]
+            except:
+                pass
+        
+        logger.debug(f"Detected the following languages for '{filename}': {languages}")
+        
+        if len(languages) > 1:
+            # Sometimes a metadata group that actually contains info about codecs gets processed as valid languages.
+            # To prevent false positives, we'll check if Japanese language codes are in the processed languages list.
+            # If not, then it's likely that we didn't actually match language codes -> Assume Japanese only subtitle.
+            contains_jpn = any([l for l in languages if l.alpha3 == "jpn"])
+            return languages if contains_jpn else [Language("jpn")]
+        else:
+            return [Language("jpn")]
     
     @cache
     def _assemble_jimaku_search_url(self, video, media_name):
