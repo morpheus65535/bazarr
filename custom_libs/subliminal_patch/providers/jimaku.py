@@ -300,20 +300,31 @@ class JimakuProvider(Provider):
         dot_delimit = filename.split(".")
         bracket_delimit = re.split(r'[\[\]\(\)]+', filename)
 
-        candidates = list()
+        candidate_list = list()
         if len(dot_delimit) > 2:
-            candidates = re.split(r'[,\- ]+', dot_delimit[-2])
+            candidate_list = dot_delimit[-2]
         elif len(bracket_delimit) > 2:
-            candidates = re.split(r'[,\- ]+', bracket_delimit[-2])
-                
+            candidate_list = bracket_delimit[-2]
+        
+        candidates = [] if len(candidate_list) == 0 else re.split(r'[,\-\+ ]+', candidate_list)
+        
         languages = list()
         for candidate in candidates:
+            candidate = candidate.lower()
             # Sometimes, language codes can have additional info such as 'cc' or 'sdh'. For example: "ja[cc]"
             if len(dot_delimit) > 2 and any(c in candidate for c in '[]()'):
                 candidate = re.split(r'[\[\]\(\)]+', candidate)[0]
-                
+
             try:
-                candidate = "ja" if candidate.lower() == "jp" else candidate.lower()
+                lang_map = {
+                    "jp": "ja",
+                    "chs": "zho",
+                    "cht": "zho",
+                    "zhi": "zho",
+                    "cn": "zho"
+                }
+                
+                candidate = lang_map[candidate] if candidate in lang_map else candidate
                 if len(candidate) > 2:
                     languages += [Language(candidate)]
                 else:
