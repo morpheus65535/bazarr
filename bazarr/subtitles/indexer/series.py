@@ -41,12 +41,8 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                                                               use_cache=use_cache)
                     for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                         try:
-                            if (settings.general.ignore_pgs_subs and subtitle_codec.lower() == "pgs") or \
-                                    (settings.general.ignore_vobsub_subs and subtitle_codec.lower() ==
-                                     "vobsub") or \
-                                    (settings.general.ignore_ass_subs and subtitle_codec.lower() ==
-                                     "ass"):
-                                logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
+                            if any(subtitle_codec.lower() == sub_codec for sub_codec in settings.general.ignored_subs):
+                                logging.debug(f"BAZARR skipping {subtitle_codec} sub for language: {alpha2_from_alpha3(subtitle_language)}")
                                 continue
 
                             if alpha2_from_alpha3(subtitle_language) is not None:

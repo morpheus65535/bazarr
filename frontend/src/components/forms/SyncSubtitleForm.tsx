@@ -126,10 +126,6 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
 
   const subtitle = selections[0];
 
-  const mediaType = subtitle.type;
-  const mediaId = subtitle.id;
-  const subtitlesPath = subtitle.path;
-
   const subtitles = useReferencedSubtitles(mediaType, mediaId, subtitlesPath);
 
   const form = useForm<FormValues>({
