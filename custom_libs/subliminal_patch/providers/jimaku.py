@@ -261,10 +261,11 @@ class JimakuProvider(Provider):
                 
                 logger.warning(f"Jimaku ratelimit hit, waiting for '{reset_time}' seconds ({retry_count}/{self.api_ratelimit_backoff_limit} tries)")
                 time.sleep(reset_time)
+                continue
             elif response.status_code == 401:
                 raise AuthenticationError("Unauthorized. API key possibly invalid")
-            
-            response.raise_for_status()
+            else:
+                response.raise_for_status()
             
             data = response.json()
             logger.debug(f"Length of response on {url}: {len(data)}")
