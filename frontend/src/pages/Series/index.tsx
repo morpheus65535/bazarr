@@ -1,11 +1,11 @@
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Column } from "react-table";
 import { Anchor, Container, Progress } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ColumnDef } from "@tanstack/react-table";
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
 import { Action } from "@/components";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
@@ -18,42 +18,51 @@ const SeriesView: FunctionComponent = () => {
 
   const query = useSeriesPagination();
 
-  const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
+  const modals = useModals();
+
+  const columns = useMemo<ColumnDef<Item.Series>[]>(
     () => [
       {
-        accessor: "monitored",
-        Cell: ({ value }) => (
+        id: "monitored",
+        cell: ({
+          row: {
+            original: { monitored },
+          },
+        }) => (
           <FontAwesomeIcon
-            title={value ? "monitored" : "unmonitored"}
-            icon={value ? faBookmark : farBookmark}
+            title={monitored ? "monitored" : "unmonitored"}
+            icon={monitored ? faBookmark : farBookmark}
           ></FontAwesomeIcon>
         ),
       },
       {
-        Header: "Name",
-        accessor: "title",
-        Cell: ({ row, value }) => {
-          const target = `/series/${row.original.sonarrSeriesId}`;
+        header: "Name",
+        accessorKey: "title",
+        cell: ({ row: { original } }) => {
+          const target = `/series/${original.sonarrSeriesId}`;
           return (
             <Anchor className="table-primary" component={Link} to={target}>
-              {value}
+              {original.title}
             </Anchor>
           );
         },
       },
       {
-        Header: "Languages Profile",
-        accessor: "profileId",
-        Cell: ({ value }) => {
+        header: "Languages Profile",
+        accessorKey: "profileId",
+        cell: ({ row: { original } }) => {
           return (
-            <LanguageProfileName index={value} empty=""></LanguageProfileName>
+            <LanguageProfileName
+              index={original.profileId}
+              empty=""
+            ></LanguageProfileName>
           );
         },
       },
       {
-        Header: "Episodes",
-        accessor: "episodeFileCount",
-        Cell: (row) => {
+        header: "Episodes",
+        accessorKey: "episodeFileCount",
+        cell: (row) => {
           const { episodeFileCount, episodeMissingCount, profileId, title } =
             row.row.original;
           let progress = 0;
@@ -80,9 +89,8 @@ const SeriesView: FunctionComponent = () => {
         },
       },
       {
-        accessor: "sonarrSeriesId",
-        Cell: ({ row: { original } }) => {
-          const modals = useModals();
+        id: "sonarrSeriesId",
+        cell: ({ row: { original } }) => {
           return (
             <Action
               label="Edit Series"
@@ -105,7 +113,7 @@ const SeriesView: FunctionComponent = () => {
         },
       },
     ],
-    [mutation],
+    [mutation, modals],
   );
 
   useDocumentTitle("Series - Bazarr");

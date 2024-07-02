@@ -1,5 +1,4 @@
-import { FunctionComponent, useCallback, useMemo } from "react";
-import { Column } from "react-table";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
 import {
   Accordion,
   Button,
@@ -12,8 +11,10 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
+import { ColumnDef } from "@tanstack/react-table";
+import { Action, Selector, SelectorOption } from "@/components";
 import ChipInput from "@/components/inputs/ChipInput";
+import NewSimpleTable from "@/components/tables/NewSimpleTable";
 import { useModals, withModal } from "@/modules/modals";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
@@ -145,76 +146,88 @@ const ProfileEditForm: FunctionComponent<Props> = ({
     }
   }, [form, languages]);
 
-  const columns = useMemo<Column<Language.ProfileItem>[]>(
+  const LanguageCell = React.memo(
+    ({ item, index }: { item: Language.ProfileItem; index: number }) => {
+      const code = useMemo(
+        () =>
+          languageOptions.options.find((l) => l.value.code2 === item.language)
+            ?.value ?? null,
+        [item.language],
+      );
+
+      return (
+        <Selector
+          {...languageOptions}
+          className="table-select"
+          value={code}
+          onChange={(value) => {
+            if (value) {
+              item.language = value.code2;
+              action.mutate(index, { ...item, language: value.code2 });
+            }
+          }}
+        ></Selector>
+      );
+    },
+  );
+
+  const SubtitleTypeCell = React.memo(
+    ({ item, index }: { item: Language.ProfileItem; index: number }) => {
+      const selectValue = useMemo(() => {
+        if (item.forced === "True") {
+          return "forced";
+        } else if (item.hi === "True") {
+          return "hi";
+        } else {
+          return "normal";
+        }
+      }, [item.forced, item.hi]);
+
+      return (
+        <Select
+          value={selectValue}
+          data={subtitlesTypeOptions}
+          onChange={(value) => {
+            if (value) {
+              action.mutate(index, {
+                ...item,
+                hi: value === "hi" ? "True" : "False",
+                forced: value === "forced" ? "True" : "False",
+              });
+            }
+          }}
+        ></Select>
+      );
+    },
+  );
+
+  const columns = useMemo<ColumnDef<Language.ProfileItem>[]>(
     () => [
       {
-        Header: "ID",
-        accessor: "id",
+        header: "ID",
+        accessorKey: "id",
       },
       {
-        Header: "Language",
-        accessor: "language",
-        Cell: ({ value: code, row: { original: item, index } }) => {
-          const language = useMemo(
-            () =>
-              languageOptions.options.find((l) => l.value.code2 === code)
-                ?.value ?? null,
-            [code],
-          );
-
-          return (
-            <Selector
-              {...languageOptions}
-              className="table-select"
-              value={language}
-              onChange={(value) => {
-                if (value) {
-                  item.language = value.code2;
-                  action.mutate(index, { ...item, language: value.code2 });
-                }
-              }}
-            ></Selector>
-          );
+        header: "Language",
+        accessorKey: "language",
+        cell: ({ row: { original: item, index } }) => {
+          return <LanguageCell item={item} index={index} />;
         },
       },
       {
-        Header: "Subtitles Type",
-        accessor: "forced",
-        Cell: ({ row: { original: item, index }, value }) => {
-          const selectValue = useMemo(() => {
-            if (item.forced === "True") {
-              return "forced";
-            } else if (item.hi === "True") {
-              return "hi";
-            } else {
-              return "normal";
-            }
-          }, [item.forced, item.hi]);
-
-          return (
-            <Select
-              value={selectValue}
-              data={subtitlesTypeOptions}
-              onChange={(value) => {
-                if (value) {
-                  action.mutate(index, {
-                    ...item,
-                    hi: value === "hi" ? "True" : "False",
-                    forced: value === "forced" ? "True" : "False",
-                  });
-                }
-              }}
-            ></Select>
-          );
+        header: "Subtitles Type",
+        accessorKey: "forced",
+        cell: ({ row: { original: item, index } }) => {
+          return <SubtitleTypeCell item={item} index={index} />;
         },
       },
       {
-        Header: "Exclude If Matching Audio",
-        accessor: "audio_exclude",
-        Cell: ({ row: { original: item, index }, value }) => {
+        header: "Exclude If Matching Audio",
+        accessorKey: "audio_exclude",
+        cell: ({ row: { original: item, index } }) => {
           return (
             <Checkbox
-              checked={value === "True"}
+              checked={item.audio_exclude === "True"}
               onChange={({ currentTarget: { checked } }) => {
                 action.mutate(index, {
                   ...item,
@@ -228,8 +241,8 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       },
       {
         id: "action",
-        accessor: "id",
-        Cell: ({ row }) => {
+        accessorKey: "id",
+        cell: ({ row }) => {
           return (
             <Action
               label="Remove"
@@ -241,7 +254,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         },
       },
     ],
-    [action, languageOptions],
+    [action, LanguageCell, SubtitleTypeCell],
   );
 
   return (
@@ -263,10 +276,10 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           <Accordion.Item value="Languages">
             <Stack>
               {form.errors.items}
-              <SimpleTable
+              <NewSimpleTable
                 columns={columns}
                 data={form.values.items}
-              ></SimpleTable>
+              ></NewSimpleTable>
               <Button fullWidth onClick={addItem}>
                 Add Language
               </Button>

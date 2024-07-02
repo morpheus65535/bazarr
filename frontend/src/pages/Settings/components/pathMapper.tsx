@@ -1,10 +1,11 @@
 import { FunctionComponent, useCallback, useMemo } from "react";
-import { Column } from "react-table";
 import { Button } from "@mantine/core";
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ColumnDef } from "@tanstack/react-table";
 import { capitalize } from "lodash";
-import { Action, FileBrowser, SimpleTable } from "@/components";
+import { Action, FileBrowser } from "@/components";
+import NewSimpleTable from "@/components/tables/NewSimpleTable";
 import {
   moviesEnabledKey,
   pathMappingsKey,
@@ -78,16 +79,16 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
     updateRow(fn(data));
   });
 
-  const columns = useMemo<Column<PathMappingItem>[]>(
+  const columns = useMemo<ColumnDef<PathMappingItem>[]>(
     () => [
       {
-        Header: capitalize(type),
-        accessor: "from",
-        Cell: ({ value, row: { original, index } }) => {
+        header: capitalize(type),
+        accessorKey: "from",
+        cell: ({ row: { original, index } }) => {
           return (
             <FileBrowser
               type={type}
-              defaultValue={value}
+              defaultValue={original.from}
               onChange={(path) => {
                 action.mutate(index, { ...original, from: path });
               }}
@@ -97,17 +98,17 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       },
       {
         id: "arrow",
-        Cell: () => (
+        cell: () => (
           <FontAwesomeIcon icon={faArrowCircleRight}></FontAwesomeIcon>
         ),
       },
       {
-        Header: "Bazarr",
-        accessor: "to",
-        Cell: ({ value, row: { original, index } }) => {
+        header: "Bazarr",
+        accessorKey: "to",
+        cell: ({ row: { original, index } }) => {
           return (
             <FileBrowser
-              defaultValue={value}
+              defaultValue={original.to}
               type="bazarr"
               onChange={(path) => {
                 action.mutate(index, { ...original, to: path });
@@ -118,8 +119,8 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       },
       {
         id: "action",
-        accessor: "to",
-        Cell: ({ row: { index } }) => {
+        accessorKey: "to",
+        cell: ({ row: { index } }) => {
           return (
             <Action
               label="Remove"
@@ -136,11 +137,11 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
   if (enabled) {
     return (
       <>
-        <SimpleTable
+        <NewSimpleTable
           tableStyles={{ emptyText: "No mapping" }}
           columns={columns}
           data={data}
-        ></SimpleTable>
+        ></NewSimpleTable>
         <Button fullWidth onClick={addRow}>
           Add
         </Button>

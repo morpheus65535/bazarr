@@ -1,9 +1,9 @@
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Column } from "react-table";
 import { Anchor, Badge, Group } from "@mantine/core";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ColumnDef } from "@tanstack/react-table";
 import {
   useEpisodeSubtitleModification,
   useEpisodeWantedPagination,
@@ -15,40 +15,51 @@ import WantedView from "@/pages/views/WantedView";
 import { BuildKey } from "@/utilities";
 
 const WantedSeriesView: FunctionComponent = () => {
-  const columns: Column<Wanted.Episode>[] = useMemo<Column<Wanted.Episode>[]>(
+  const { download } = useEpisodeSubtitleModification();
+
+  const columns = useMemo<ColumnDef<Wanted.Episode>[]>(
     () => [
       {
-        Header: "Name",
-        accessor: "seriesTitle",
-        Cell: (row) => {
-          const target = `/series/${row.row.original.sonarrSeriesId}`;
+        header: "Name",
+        accessorKey: "seriesTitle",
+        cell: ({
+          row: {
+            original: { sonarrSeriesId, seriesTitle },
+          },
+        }) => {
+          const target = `/series/${sonarrSeriesId}`;
           return (
             <Anchor className="table-primary" component={Link} to={target}>
-              {row.value}
+              {seriesTitle}
             </Anchor>
           );
         },
       },
       {
-        Header: "Episode",
-        accessor: "episode_number",
+        header: "Episode",
+        accessorKey: "episode_number",
       },
       {
-        accessor: "episodeTitle",
+        accessorKey: "episodeTitle",
       },
       {
-        Header: "Missing",
-        accessor: "missing_subtitles",
-        Cell: ({ row, value }) => {
-          const wanted = row.original;
-          const seriesId = wanted.sonarrSeriesId;
-          const episodeId = wanted.sonarrEpisodeId;
-
-          const { download } = useEpisodeSubtitleModification();
+        header: "Missing",
+        accessorKey: "missing_subtitles",
+        cell: ({
+          row: {
+            original: {
+              sonarrSeriesId,
+              sonarrEpisodeId,
+              missing_subtitles: missingSubtitles,
+            },
+          },
+        }) => {
+          const seriesId = sonarrSeriesId;
+          const episodeId = sonarrEpisodeId;
 
           return (
             <Group gap="sm">
-              {value.map((item, idx) => (
+              {missingSubtitles.map((item, idx) => (
                 <Badge
                   color={download.isPending ? "gray" : undefined}
                   leftSection={<FontAwesomeIcon icon={faSearch} />}
@@ -79,7 +90,7 @@ const WantedSeriesView: FunctionComponent = () => {
         },
       },
     ],
-    [],
+    [download],
   );
 
   const { mutateAsync } = useSeriesAction();

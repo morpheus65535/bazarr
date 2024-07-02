@@ -1,11 +1,12 @@
 import { FunctionComponent, useCallback, useMemo } from "react";
-import { Column } from "react-table";
 import { Button, Checkbox } from "@mantine/core";
 import { faEquals, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ColumnDef } from "@tanstack/react-table";
 import { useLanguages } from "@/apis/hooks";
-import { Action, SimpleTable } from "@/components";
+import { Action } from "@/components";
 import LanguageSelector from "@/components/bazarr/LanguageSelector";
+import NewSimpleTable from "@/components/tables/NewSimpleTable";
 import { languageEqualsKey } from "@/pages/Settings/keys";
 import { useFormActions } from "@/pages/Settings/utilities/FormValues";
 import { useSettingValue } from "@/pages/Settings/utilities/hooks";
@@ -196,22 +197,22 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
     [equals, setEquals],
   );
 
-  const columns = useMemo<Column<LanguageEqualData>[]>(
+  const columns = useMemo<ColumnDef<LanguageEqualData>[]>(
     () => [
       {
-        Header: "Source",
+        header: "Source",
         id: "source-lang",
-        accessor: "source",
-        Cell: ({ value: { content }, row }) => {
+        accessorKey: "source",
+        cell: ({ row: { original, index } }) => {
           return (
             <LanguageSelector
               enabled
-              value={content}
+              value={original.source.content}
               onChange={(result) => {
                 if (result !== null) {
-                  update(row.index, {
-                    ...row.original,
-                    source: { ...row.original.source, content: result },
+                  update(index, {
+                    ...original,
+                    source: { ...original.source, content: result },
                   });
                 }
               }}
@@ -221,12 +222,11 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
       },
       {
         id: "source-hi",
-        accessor: "source",
-        Cell: ({ value: { hi }, row }) => {
+        cell: ({ row }) => {
           return (
             <Checkbox
               label="HI"
-              checked={hi}
+              checked={row.original.source.hi}
               onChange={({ currentTarget: { checked } }) => {
                 update(row.index, {
                   ...row.original,
@@ -243,12 +243,11 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
       },
       {
         id: "source-forced",
-        accessor: "source",
-        Cell: ({ value: { forced }, row }) => {
+        cell: ({ row }) => {
           return (
             <Checkbox
               label="Forced"
-              checked={forced}
+              checked={row.original.source.forced}
               onChange={({ currentTarget: { checked } }) => {
                 update(row.index, {
                   ...row.original,
@@ -265,19 +264,18 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
       },
       {
         id: "equal-icon",
-        Cell: () => {
+        cell: () => {
           return <FontAwesomeIcon icon={faEquals} />;
         },
       },
       {
-        Header: "Target",
+        header: "Target",
         id: "target-lang",
-        accessor: "target",
-        Cell: ({ value: { content }, row }) => {
+        cell: ({ row }) => {
           return (
             <LanguageSelector
               enabled
-              value={content}
+              value={row.original.target.content}
               onChange={(result) => {
                 if (result !== null) {
                   update(row.index, {
@@ -292,12 +290,11 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
       },
       {
         id: "target-hi",
-        accessor: "target",
-        Cell: ({ value: { hi }, row }) => {
+        cell: ({ row }) => {
           return (
             <Checkbox
               label="HI"
-              checked={hi}
+              checked={row.original.target.hi}
               onChange={({ currentTarget: { checked } }) => {
                 update(row.index, {
                   ...row.original,
@@ -314,12 +311,11 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
       },
       {
         id: "target-forced",
-        accessor: "target",
-        Cell: ({ value: { forced }, row }) => {
+        cell: ({ row }) => {
           return (
             <Checkbox
               label="Forced"
-              checked={forced}
+              checked={row.original.target.forced}
               onChange={({ currentTarget: { checked } }) => {
                 update(row.index, {
                   ...row.original,
@@ -336,8 +332,7 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
       },
       {
         id: "action",
-        accessor: "target",
-        Cell: ({ row }) => {
+        cell: ({ row }) => {
           return (
             <Action
               label="Remove"
@@ -354,7 +349,7 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
 
   return (
     <>
-      <SimpleTable data={equals} columns={columns}></SimpleTable>
+      <NewSimpleTable data={equals} columns={columns}></NewSimpleTable>
       <Button fullWidth disabled={!canAdd} onClick={add}>
         {canAdd ? "Add Equal" : "No Enabled Languages"}
       </Button>
