@@ -33,7 +33,6 @@ class AniListClient(object):
         
         tag_map = {
             "series_anidb_id": "anidb_id",
-            "series_tvdb_id": "thetvdb_id",
             "imdb_id": "imdb_id"
         }
         mapped_tag = tag_map.get(candidate_id_name, candidate_id_name)        
@@ -50,12 +49,8 @@ class AniListClient(object):
 def refine_from_anilist(path, video):
     # Safety checks
     if isinstance(video, Episode):
-        season = video.season if video.season else 0
-        if season > 1 and not video.series_anidb_id:
-            logger.error(
-                f"Will not refine '{video.series}' as it only has a TVDB ID, but its season ({season}) is higher than 1." +
-                "\nSuch IDs are not unique to each season; To allow refinement for this series, you must enable AniDB integration."
-            )
+        if not video.series_anidb_id:
+            logger.error(f"Will not refine '{video.series}' as it does not have an AniDB ID. Refinement has possibly failed.")
             return
 
     if refined_providers.intersection(settings.general.enabled_providers) and video.anilist_id is None:
@@ -65,11 +60,7 @@ def refine_anilist_ids(video):
     anilist_client = AniListClient()
     
     if isinstance(video, Episode):
-        season = video.season if video.season else 0
-        if season > 1:
-            candidate_id_name = "series_anidb_id"
-        else:
-            candidate_id_name = "series_tvdb_id"
+        candidate_id_name = "series_anidb_id"
     else:
         candidate_id_name = "imdb_id"
         
