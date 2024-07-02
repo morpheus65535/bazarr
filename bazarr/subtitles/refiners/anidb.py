@@ -22,6 +22,8 @@ except ImportError:
 
 refined_providers = {'animetosho', 'jimaku'}
 
+logger = logging.getLogger(__name__)
+
 api_url = 'http://api.anidb.net:9001/httpapi'
 
 cache_key_refiner = "anidb_refiner"
@@ -40,6 +42,10 @@ class AniDBClient(object):
     @property
     def is_throttled(self):
         return self.cache and self.cache.get('is_throttled')
+    
+    @property
+    def has_api_credentials(self):
+        return self.api_client_key != '' or None
 
     @property
     def daily_api_request_count(self):
@@ -62,7 +68,9 @@ class AniDBClient(object):
         return r.content
 
     @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
-    def get_series_id(self, mappings, tvdb_series_season, tvdb_series_id, episode):
+    def get_series_and_episode_info(self, tvdb_series_id, tvdb_series_season, episode):
+        mappings = etree.fromstring(self.get_series_mappings())
+        
         # Enrich the collection of anime with the episode offset
         animes = [
             self.AnimeInfo(anime, int(anime.attrib.get('episodeoffset', 0)))
@@ -107,13 +115,9 @@ class AniDBClient(object):
         return anidb_id, episode - offset
 
     @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
-    def get_series_episodes_ids(self, tvdb_series_id, season, episode):
-        mappings = etree.fromstring(self.get_series_mappings())
-
-        series_id, episode_no = self.get_series_id(mappings, season, tvdb_series_id, episode)
-
+    def get_episode_ids(self, series_id, episode_no):
         if not series_id:
-            return None, None, None
+            return None
 
         episodes = etree.fromstring(self.get_episodes(series_id))
 
@@ -177,7 +181,7 @@ class AniDBClient(object):
 
 def refine_from_anidb(path, video):
     if not isinstance(video, Episode) or not video.series_tvdb_id:
-        logging.debug(f'Video is not an Anime TV series, skipping refinement for {video}')
+        logger.debug(f'Video is not an Anime TV series, skipping refinement for {video}')
 
         return
 
@@ -190,27 +194,31 @@ def refine_anidb_ids(video):
 
     season = video.season if video.season else 0
 
-    if anidb_client.is_throttled:
-        logging.warning(f'API daily limit reached. Skipping refinement for {video.series}')
-
+    anidb_series_id, anidb_episode_no = anidb_client.get_series_and_episode_info(
+        video.series_tvdb_id,
+        season,
+        video.episode,
+    )
+    
+    if not anidb_series_id:
+        logger.error(f'Could not find anime series {video.series}')
         return video
-
-    try:
-        anidb_series_id, anidb_episode_id = anidb_client.get_series_episodes_ids(
-            video.series_tvdb_id,
-            season, video.episode,
-        )
-    except TooManyRequests:
-        logging.error(f'API daily limit reached while refining {video.series}')
-
-        anidb_client.mark_as_throttled()
-
-        return video
-
-    if not anidb_episode_id:
-        logging.error(f'Could not find anime series {video.series}')
-
-        return video
+    
+    anidb_episode_id = None
+    if anidb_client.has_api_credentials:
+        if anidb_client.is_throttled:
+            logger.warning(f'API daily limit reached. Skipping episode ID refinement for {video.series}')
+        else:
+            try:
+                anidb_episode_id = anidb_client.get_episode_ids(
+                    anidb_series_id,
+                    anidb_episode_no
+                )
+            except TooManyRequests:
+                logger.error(f'API daily limit reached while refining {video.series}')
+                anidb_client.mark_as_throttled()
+    else:
+        logger.warn(f'AniDB API credentials not fully set up, will not refine episode IDs for {video.series}')
 
     video.series_anidb_id = anidb_series_id
     video.series_anidb_episode_id = anidb_episode_id
