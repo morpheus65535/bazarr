@@ -218,6 +218,35 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
   },
+  {
+    key: "jimaku",
+    name: "Jimaku.cc",
+    description: "Japanese Subtitles Provider",
+    message:
+      "API key required. Subtitles stem from various sources and might have quality/timing issues.",
+    inputs: [
+      {
+        type: "password",
+        key: "api_key",
+        name: "API key",
+      },
+      {
+        type: "switch",
+        key: "enable_archives",
+        name: "Download archived subtitles"
+      },
+      {
+        type: "switch",
+        key: "enable_ai_subs",
+        name: "Download AI generated subs"
+      },
+      {
+        type: "switch",
+        key: "enable_name_search_fallback",
+        name: "Search by name no AniList ID was determined (Less accurate)"
+      }
+    ],
+  },
   { key: "hosszupuska", description: "Hungarian Subtitles Provider" },
   {
     key: "karagarga",
