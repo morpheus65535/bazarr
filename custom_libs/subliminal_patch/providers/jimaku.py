@@ -123,7 +123,7 @@ class JimakuProvider(Provider):
             media_name = f"{media_name} {season_addendum}" if season_addendum else media_name
 
         # Search for entry
-        url = self._assemble_jimaku_search_url(video, media_name)
+        url = self._assemble_jimaku_search_url(video, media_name)        
         data = self._get_jimaku_response(url)
         if not data:
             return None
@@ -295,6 +295,7 @@ class JimakuProvider(Provider):
         dot_delimit = filename.split(".")
         bracket_delimit = re.split(r'[\[\]\(\)]+', filename)
 
+        candidates = list()
         if len(dot_delimit) > 2:
             candidates = re.split(r'[,\- ]+', dot_delimit[-2])
         elif len(bracket_delimit) > 2:
