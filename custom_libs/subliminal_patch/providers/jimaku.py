@@ -325,9 +325,12 @@ class JimakuProvider(Provider):
                 
                 candidate = lang_map[candidate] if candidate in lang_map else candidate
                 if len(candidate) > 2:
-                    languages += [Language(candidate)]
+                    language = Language(candidate)
                 else:
-                    languages += [Language.fromietf(candidate)]
+                    language = Language.fromietf(candidate)
+                    
+                if not any(l.alpha3 == language.alpha3 for l in languages):
+                    languages.append([language])
             except:
                 pass
         
@@ -338,6 +341,7 @@ class JimakuProvider(Provider):
             # To prevent false positives, we'll check if Japanese language codes are in the processed languages list.
             # If not, then it's likely that we didn't actually match language codes -> Assume Japanese only subtitle.
             contains_jpn = any([l for l in languages if l.alpha3 == "jpn"])
+            
             return languages if contains_jpn else [Language("jpn")]
         else:
             return [Language("jpn")]
