@@ -124,14 +124,23 @@ class JimakuProvider(Provider):
             media_name = f"{media_name} {season_addendum}" if season_addendum else media_name
 
         # Search for entry
-        url = self._assemble_jimaku_search_url(video, media_name)
-        if not url:
-            logger.error(f"Skipping '{media_name}': Got no AniList ID and fuzzy matching using name is disabled.")
-            return None
-        
-        data = self._get_jimaku_response(url)
-        if not data:
-            return None
+        searching_for_entry_attempts = 1
+        additional_url_params = {}
+        while searching_for_entry_attempts <= 2:
+            searching_for_entry_attempts += 1   
+            url = self._assemble_jimaku_search_url(video, media_name, additional_url_params)
+            if not url:
+                logger.error(f"Skipping '{media_name}': Got no AniList ID and fuzzy matching using name is disabled.")
+                return None
+            
+            searching_for_entry = "query" in url
+            data = self._get_jimaku_response(url)
+            if not data:
+                if searching_for_entry and searching_for_entry_attempts < 2:
+                    logger.info("Maybe this is live action media? Will retry search without anime parameter...")
+                    additional_url_params = {'anime': False}
+                else:
+                    return None
 
         # We only go for the first entry
         entry = data[0]
@@ -270,7 +279,7 @@ class JimakuProvider(Provider):
             data = response.json()
             logger.debug(f"Length of response on {url}: {len(data)}")
             if len(data) == 0:
-                logger.error(f"Jimaku returned no items for our our query: {url_path}")
+                logger.error(f"Jimaku returned no items for our our query: {url_path}")                
                 return None
             elif 'error' in data:
                 logger.error(f"Jimaku returned an error for our query.\nMessage: '{data.get('error')}', Code: '{data.get('code')}'")
