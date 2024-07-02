@@ -241,7 +241,6 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       },
       {
         id: "action",
-        accessorKey: "id",
         cell: ({ row }) => {
           return (
             <Action

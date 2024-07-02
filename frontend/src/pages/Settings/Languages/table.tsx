@@ -1,13 +1,14 @@
 import { FunctionComponent, useCallback, useMemo } from "react";
-import { Column } from "react-table";
 import { Badge, Button, Group } from "@mantine/core";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
+import { ColumnDef } from "@tanstack/react-table";
 import { cloneDeep } from "lodash";
-import { Action, SimpleTable } from "@/components";
+import { Action } from "@/components";
 import {
   anyCutoff,
   ProfileEditModal,
 } from "@/components/forms/ProfileEditForm";
+import NewSimpleTable from "@/components/tables/NewSimpleTable";
 import { useModals } from "@/modules/modals";
 import { languageProfileKey } from "@/pages/Settings/keys";
 import { useFormActions } from "@/pages/Settings/utilities/FormValues";
@@ -40,6 +41,7 @@ const Table: FunctionComponent = () => {
   const updateProfile = useCallback(
     (profile: Language.Profile) => {
       const list = [...profiles];
+
       const idx = list.findIndex((v) => v.profileId === profile.profileId);
 
       if (idx !== -1) {
@@ -57,18 +59,20 @@ const Table: FunctionComponent = () => {
     submitProfiles(fn(list));
   });
 
-  const columns = useMemo<Column<Language.Profile>[]>(
+  const columns = useMemo<ColumnDef<Language.Profile>[]>(
     () => [
       {
-        Header: "Name",
-        accessor: "name",
+        header: "Name",
+        accessorKey: "name",
       },
       {
-        Header: "Languages",
-        accessor: "items",
-        Cell: (row) => {
-          const items = row.value;
-          const cutoff = row.row.original.cutoff;
+        header: "Languages",
+        accessorKey: "items",
+        cell: ({
+          row: {
+            original: { items, cutoff },
+          },
+        }) => {
           return (
             <Group gap="xs" wrap="nowrap">
               {items.map((v) => {
@@ -82,16 +86,19 @@ const Table: FunctionComponent = () => {
         },
       },
       {
-        Header: "Must contain",
-        accessor: "mustContain",
-        Cell: (row) => {
-          const items = row.value;
-          if (!items) {
+        header: "Must contain",
+        accessorKey: "mustContain",
+        cell: ({
+          row: {
+            original: { mustContain },
+          },
+        }) => {
+          if (!mustContain) {
             return null;
           }
           return (
             <>
-              {items.map((v, idx) => {
+              {mustContain.map((v, idx) => {
                 return (
                   <Badge key={BuildKey(idx, v)} color="gray">
                     {v}
@@ -103,16 +110,19 @@ const Table: FunctionComponent = () => {
         },
       },
       {
-        Header: "Must not contain",
-        accessor: "mustNotContain",
-        Cell: (row) => {
-          const items = row.value;
-          if (!items) {
+        header: "Must not contain",
+        accessorKey: "mustNotContain",
+        cell: ({
+          row: {
+            original: { mustNotContain },
+          },
+        }) => {
+          if (!mustNotContain) {
             return null;
           }
           return (
             <>
-              {items.map((v, idx) => {
+              {mustNotContain.map((v, idx) => {
                 return (
                   <Badge key={BuildKey(idx, v)} color="gray">
                     {v}
@@ -124,8 +134,8 @@ const Table: FunctionComponent = () => {
         },
       },
       {
-        accessor: "profileId",
-        Cell: ({ row }) => {
+        id: "profileId",
+        cell: ({ row }) => {
           const profile = row.original;
           return (
             <Group gap="xs" wrap="nowrap">
@@ -160,7 +170,7 @@ const Table: FunctionComponent = () => {
 
   return (
     <>
-      <SimpleTable columns={columns} data={profiles}></SimpleTable>
+      <NewSimpleTable columns={columns} data={[...profiles]}></NewSimpleTable>
       <Button
         fullWidth
         disabled={!canAdd}
