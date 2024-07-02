@@ -1,12 +1,12 @@
+import { FunctionComponent } from "react";
+import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSubtitleAction } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import FormUtils from "@/utilities/form";
-import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { FunctionComponent } from "react";
 
 const TaskName = "Changing Time";
 
@@ -70,10 +70,11 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       })}
     >
       <Stack>
-        <Group align="end" spacing="xs" noWrap>
+        <Group align="end" gap="xs" wrap="nowrap">
           <Button
             color="gray"
             variant="filled"
+            style={{ overflow: "visible" }}
             onClick={() =>
               form.setValues((f) => ({ ...f, positive: !f.positive }))
             }

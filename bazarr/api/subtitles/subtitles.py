@@ -114,6 +114,8 @@ class Subtitles(Resource):
         subtitles_path = args.get('path')
         media_type = args.get('type')
         id = args.get('id')
+        forced = True if args.get('forced') == 'True' else False
+        hi = True if args.get('hi') == 'True' else False
 
         if not os.path.exists(subtitles_path):
             return 'Subtitles file not found. Path mapping issue?', 500
@@ -144,6 +146,8 @@ class Subtitles(Resource):
                 'video_path': video_path,
                 'srt_path': subtitles_path,
                 'srt_lang': language,
+                'hi': hi,
+                'forced': forced,
                 'reference': args.get('reference') if args.get('reference') not in empty_values else video_path,
                 'max_offset_seconds': args.get('max_offset_seconds') if args.get('max_offset_seconds') not in
                 empty_values else str(settings.subsync.max_offset_seconds),
@@ -167,8 +171,6 @@ class Subtitles(Resource):
         elif action == 'translate':
             from_language = subtitles_lang_from_filename(subtitles_path)
             dest_language = language
-            forced = True if args.get('forced') == 'true' else False
-            hi = True if args.get('hi') == 'true' else False
             try:
                 translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
                                          from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,

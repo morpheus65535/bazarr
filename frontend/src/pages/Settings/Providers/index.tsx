@@ -1,6 +1,5 @@
-import { antiCaptchaOption } from "@/pages/Settings/Providers/options";
-import { Anchor } from "@mantine/core";
 import { FunctionComponent } from "react";
+import { Anchor } from "@mantine/core";
 import {
   CollapseBox,
   Layout,
@@ -9,7 +8,8 @@ import {
   Section,
   Selector,
   Text,
-} from "../components";
+} from "@/pages/Settings/components";
+import { antiCaptchaOption } from "@/pages/Settings/Providers/options";
 import { ProviderView } from "./components";
 import { IntegrationList, ProviderList } from "./list";
 

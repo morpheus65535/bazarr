@@ -1,5 +1,5 @@
-import { render } from "@/tests";
 import { describe, it } from "vitest";
+import { render } from "@/tests";
 import App from ".";
 
 describe("App", () => {

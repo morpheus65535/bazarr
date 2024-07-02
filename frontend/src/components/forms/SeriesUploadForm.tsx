@@ -1,17 +1,14 @@
+import { FunctionComponent, useEffect, useMemo } from "react";
+import { Column } from "react-table";
 import {
-  useEpisodesBySeriesId,
-  useEpisodeSubtitleModification,
-  useSubtitleInfos,
-} from "@/apis/hooks";
-import { useModals, withModal } from "@/modules/modals";
-import { task, TaskGroup } from "@/modules/task";
-import { useTableStyles } from "@/styles";
-import { useArrayAction, useSelectorOptions } from "@/utilities";
-import FormUtils from "@/utilities/form";
-import {
-  useLanguageProfileBy,
-  useProfileItemsToLanguages,
-} from "@/utilities/languages";
+  Button,
+  Checkbox,
+  Divider,
+  MantineColor,
+  Stack,
+  Text,
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
 import {
   faCheck,
   faCircleNotch,
@@ -20,22 +17,23 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  Button,
-  Checkbox,
-  createStyles,
-  Divider,
-  MantineColor,
-  Stack,
-  Text,
-} from "@mantine/core";
-import { useForm } from "@mantine/form";
 import { isString } from "lodash";
-import { FunctionComponent, useEffect, useMemo } from "react";
-import { Column } from "react-table";
-import { Action, Selector } from "../inputs";
-import { SimpleTable } from "../tables";
-import TextPopover from "../TextPopover";
+import {
+  useEpisodesBySeriesId,
+  useEpisodeSubtitleModification,
+  useSubtitleInfos,
+} from "@/apis/hooks";
+import { Action, Selector } from "@/components/inputs";
+import { SimpleTable } from "@/components/tables";
+import TextPopover from "@/components/TextPopover";
+import { useModals, withModal } from "@/modules/modals";
+import { task, TaskGroup } from "@/modules/task";
+import { useArrayAction, useSelectorOptions } from "@/utilities";
+import FormUtils from "@/utilities/form";
+import {
+  useLanguageProfileBy,
+  useProfileItemsToLanguages,
+} from "@/utilities/languages";
 
 type SubtitleFile = {
   file: File;
@@ -86,21 +84,12 @@ interface Props {
   onComplete?: VoidFunction;
 }
 
-const useStyles = createStyles((theme) => {
-  return {
-    wrapper: {
-      overflowWrap: "anywhere",
-    },
-  };
-});
-
 const SeriesUploadForm: FunctionComponent<Props> = ({
   series,
   files,
   onComplete,
 }) => {
   const modals = useModals();
-  const { classes } = useStyles();
   const episodes = useEpisodesBySeriesId(series.sonarrSeriesId);
   const episodeOptions = useSelectorOptions(
     episodes.data ?? [],
@@ -225,8 +214,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         id: "filename",
         accessor: "file",
         Cell: ({ value: { name } }) => {
-          const { classes } = useTableStyles();
-          return <Text className={classes.primary}>{name}</Text>;
+          return <Text className="table-primary">{name}</Text>;
         },
       },
       {
@@ -283,11 +271,10 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         ),
         accessor: "language",
         Cell: ({ row: { original, index }, value }) => {
-          const { classes } = useTableStyles();
           return (
             <Selector
               {...languageOptions}
-              className={classes.select}
+              className="table-select"
               value={value}
               onChange={(item) => {
                 action.mutate(index, { ...original, language: item });
@@ -301,12 +288,11 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         Header: "Episode",
         accessor: "episode",
         Cell: ({ value, row }) => {
-          const { classes } = useTableStyles();
           return (
             <Selector
               {...episodeOptions}
               searchable
-              className={classes.select}
+              className="table-select"
               value={value}
               onChange={(item) => {
                 action.mutate(row.index, { ...row.original, episode: item });
@@ -323,7 +309,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
             <Action
               label="Remove"
               icon={faTrash}
-              color="red"
+              c="red"
               onClick={() => action.remove(index)}
             ></Action>
           );
@@ -368,7 +354,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         modals.closeSelf();
       })}
     >
-      <Stack className={classes.wrapper}>
+      <Stack className="table-long-break">
         <SimpleTable columns={columns} data={form.values.files}></SimpleTable>
         <Divider></Divider>
         <Button type="submit">Upload</Button>

@@ -1,5 +1,4 @@
-import { useSystem } from "@/apis/hooks";
-import { Environment } from "@/utilities";
+import { FunctionComponent } from "react";
 import {
   Avatar,
   Button,
@@ -11,7 +10,8 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { FunctionComponent } from "react";
+import { useSystem } from "@/apis/hooks";
+import { Environment } from "@/utilities";
 
 const Authentication: FunctionComponent = () => {
   const { login } = useSystem();
@@ -52,7 +52,7 @@ const Authentication: FunctionComponent = () => {
                 {...form.getInputProps("password")}
               ></PasswordInput>
               <Divider></Divider>
-              <Button fullWidth uppercase type="submit">
+              <Button fullWidth tt="uppercase" type="submit">
                 Login
               </Button>
             </Stack>

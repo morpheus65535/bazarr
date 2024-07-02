@@ -165,6 +165,9 @@ def apply_update():
                             parent_dir = os.path.dirname(file_path)
                             os.makedirs(parent_dir, exist_ok=True)
                             if not os.path.isdir(file_path):
+                                if os.path.exists(file_path):
+                                    # remove the file first to handle case-insensitive file systems
+                                    os.remove(file_path)
                                 with open(file_path, 'wb+') as f:
                                     f.write(archive.read(file))
             except Exception:

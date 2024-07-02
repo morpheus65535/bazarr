@@ -1,10 +1,5 @@
-import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
-import { useModals, withModal } from "@/modules/modals";
-import { useTableStyles } from "@/styles";
-import { useArrayAction, useSelectorOptions } from "@/utilities";
-import { LOG } from "@/utilities/console";
-import FormUtils from "@/utilities/form";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FunctionComponent, useCallback, useMemo } from "react";
+import { Column } from "react-table";
 import {
   Accordion,
   Button,
@@ -16,9 +11,14 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { FunctionComponent, useCallback, useMemo } from "react";
-import { Column } from "react-table";
-import ChipInput from "../inputs/ChipInput";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
+import ChipInput from "@/components/inputs/ChipInput";
+import { useModals, withModal } from "@/modules/modals";
+import { useArrayAction, useSelectorOptions } from "@/utilities";
+import { LOG } from "@/utilities/console";
+import FormUtils from "@/utilities/form";
+import styles from "./ProfileEditForm.module.scss";
 
 export const anyCutoff = 65535;
 
@@ -162,12 +162,10 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             [code],
           );
 
-          const { classes } = useTableStyles();
-
           return (
             <Selector
               {...languageOptions}
-              className={classes.select}
+              className="table-select"
               value={language}
               onChange={(value) => {
                 if (value) {
@@ -236,7 +234,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             <Action
               label="Remove"
               icon={faTrash}
-              color="red"
+              c="red"
               onClick={() => action.remove(row.index)}
             ></Action>
           );
@@ -260,13 +258,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           multiple
           chevronPosition="right"
           defaultValue={["Languages"]}
-          styles={(theme) => ({
-            content: {
-              [theme.fn.smallerThan("md")]: {
-                padding: 0,
-              },
-            },
-          })}
+          className={styles.content}
         >
           <Accordion.Item value="Languages">
             <Stack>
@@ -275,7 +267,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
                 columns={columns}
                 data={form.values.items}
               ></SimpleTable>
-              <Button fullWidth color="light" onClick={addItem}>
+              <Button fullWidth onClick={addItem}>
                 Add Language
               </Button>
               <Selector

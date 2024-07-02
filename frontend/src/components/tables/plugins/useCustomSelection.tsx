@@ -1,16 +1,16 @@
-import { Checkbox as MantineCheckbox } from "@mantine/core";
 import { forwardRef, useEffect, useRef } from "react";
 import {
   CellProps,
   Column,
   ColumnInstance,
+  ensurePluginOrder,
   HeaderProps,
   Hooks,
   MetaBase,
   TableInstance,
   TableToggleCommonProps,
-  ensurePluginOrder,
 } from "react-table";
+import { Checkbox as MantineCheckbox } from "@mantine/core";
 
 const pluginName = "useCustomSelection";
 

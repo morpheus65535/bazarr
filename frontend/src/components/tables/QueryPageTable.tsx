@@ -1,7 +1,7 @@
+import { useEffect } from "react";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { LoadingProvider } from "@/contexts";
 import { ScrollToTop } from "@/utilities";
-import { useEffect } from "react";
 import PageControl from "./PageControl";
 import SimpleTable, { SimpleTableProps } from "./SimpleTable";
 

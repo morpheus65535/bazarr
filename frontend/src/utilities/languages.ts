@@ -1,5 +1,5 @@
-import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 import { useMemo } from "react";
+import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 
 export function useLanguageProfileBy(id: number | null | undefined) {
   const { data } = useLanguageProfiles();

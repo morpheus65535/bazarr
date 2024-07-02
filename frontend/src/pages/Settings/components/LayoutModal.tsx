@@ -1,7 +1,4 @@
-import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
-import { LoadingProvider } from "@/contexts";
-import { useOnValueChange } from "@/utilities";
-import { LOG } from "@/utilities/console";
+import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
 import {
   Button,
   Container,
@@ -11,9 +8,16 @@ import {
   Space,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
-import { FormContext, FormValues, runHooks } from "../utilities/FormValues";
-import { SettingsProvider } from "../utilities/SettingsProvider";
+import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
+import { LoadingProvider } from "@/contexts";
+import {
+  FormContext,
+  FormValues,
+  runHooks,
+} from "@/pages/Settings/utilities/FormValues";
+import { SettingsProvider } from "@/pages/Settings/utilities/SettingsProvider";
+import { useOnValueChange } from "@/utilities";
+import { LOG } from "@/utilities/console";
 
 interface Props {
   children: ReactNode;
@@ -24,7 +28,7 @@ const LayoutModal: FunctionComponent<Props> = (props) => {
   const { children, callbackModal } = props;
 
   const { data: settings, isLoading, isRefetching } = useSystemSettings();
-  const { mutate, isLoading: isMutating } = useSettingsMutation();
+  const { mutate, isPending: isMutating } = useSettingsMutation();
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -74,7 +78,7 @@ const LayoutModal: FunctionComponent<Props> = (props) => {
           <Space h="md" />
           <Divider></Divider>
           <Space h="md" />
-          <Group position="right">
+          <Group justify="right">
             <Button
               type="submit"
               disabled={totalStagedCount === 0}

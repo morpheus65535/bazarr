@@ -1,0 +1,9 @@
+.header {
+  @include light {
+    color: var(--mantine-color-gray-0);
+  }
+
+  @include dark {
+    color: var(--mantine-color-dark-0);
+  }
+}

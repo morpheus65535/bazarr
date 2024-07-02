@@ -1,5 +1,5 @@
 import { SelectorOption } from "@/components";
-import { ProviderList } from "../Providers/list";
+import { ProviderList } from "@/pages/Settings/Providers/list";
 
 export const hiExtensionOptions: SelectorOption<string>[] = [
   {

@@ -1,15 +1,10 @@
-import { useServerSearch } from "@/apis/hooks";
-import { useDebouncedValue } from "@/utilities";
+import { FunctionComponent, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Autocomplete, ComboboxItem, OptionsFilter, Text } from "@mantine/core";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  Anchor,
-  Autocomplete,
-  createStyles,
-  SelectItemProps,
-} from "@mantine/core";
-import { forwardRef, FunctionComponent, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useServerSearch } from "@/apis/hooks";
+import { useDebouncedValue } from "@/utilities";
 
 type SearchResultItem = {
   value: string;
@@ -18,7 +13,7 @@ type SearchResultItem = {
 
 function useSearch(query: string) {
   const debouncedQuery = useDebouncedValue(query, 500);
-  const { data } = useServerSearch(debouncedQuery, debouncedQuery.length > 0);
+  const { data } = useServerSearch(debouncedQuery, debouncedQuery.length >= 0);
 
   return useMemo<SearchResultItem[]>(
     () =>
@@ -31,7 +26,6 @@ function useSearch(query: string) {
         } else {
           throw new Error("Unknown search result");
         }
-
         return {
           value: `${v.title} (${v.year})`,
           link,
@@ -41,59 +35,43 @@ function useSearch(query: string) {
   );
 }
 
-const useStyles = createStyles((theme) => {
-  return {
-    result: {
-      color:
-        theme.colorScheme === "light"
-          ? theme.colors.dark[8]
-          : theme.colors.gray[1],
-    },
-  };
-});
+const optionsFilter: OptionsFilter = ({ options, search }) => {
+  const lowercaseSearch = search.toLowerCase();
+  const trimmedSearch = search.trim();
 
-type ResultCompProps = SelectItemProps & SearchResultItem;
-
-const ResultComponent = forwardRef<HTMLDivElement, ResultCompProps>(
-  ({ link, value }, ref) => {
-    const styles = useStyles();
-
+  return (options as ComboboxItem[]).filter((option) => {
     return (
-      <Anchor
-        component={Link}
-        to={link}
-        underline={false}
-        className={styles.classes.result}
-        p="sm"
-      >
-        {value}
-      </Anchor>
+      option.value.toLowerCase().includes(lowercaseSearch) ||
+      option.value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .includes(trimmedSearch)
     );
-  },
-);
+  });
+};
 
 const Search: FunctionComponent = () => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
 
   const results = useSearch(query);
 
   return (
     <Autocomplete
-      icon={<FontAwesomeIcon icon={faSearch} />}
-      itemComponent={ResultComponent}
+      leftSection={<FontAwesomeIcon icon={faSearch} />}
+      renderOption={(input) => <Text p="xs">{input.option.value}</Text>}
       placeholder="Search"
       size="sm"
       data={results}
       value={query}
+      scrollAreaProps={{ type: "auto" }}
+      maxDropdownHeight={400}
       onChange={setQuery}
       onBlur={() => setQuery("")}
-      filter={(value, item) =>
-        item.value.toLowerCase().includes(value.toLowerCase().trim()) ||
-        item.value
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .includes(value.trim())
+      filter={optionsFilter}
+      onOptionSubmit={(option) =>
+        navigate(results.find((a) => a.value === option)?.link || "/")
       }
     ></Autocomplete>
   );

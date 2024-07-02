@@ -158,8 +158,9 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
         subtitle.language.forced = True
     else:
         subtitle.language.forced = False
-    if use_original_format == 'True':
-        subtitle.use_original_format = use_original_format
+    if use_original_format in ("1", "True"):
+        subtitle.use_original_format = True
+
     subtitle.mods = get_array_from(settings.general.subzero_mods)
     video = get_video(force_unicode(path), title, sceneName, providers={provider}, media_type=media_type)
     if video:

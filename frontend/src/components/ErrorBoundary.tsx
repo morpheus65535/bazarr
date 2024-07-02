@@ -1,5 +1,5 @@
-import UIError from "@/pages/errors/UIError";
 import { Component, PropsWithChildren } from "react";
+import UIError from "@/pages/errors/UIError";
 
 interface State {
   error: Error | null;

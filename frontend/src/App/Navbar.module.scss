@@ -1,0 +1,56 @@
+.anchor {
+  border-color: var(--mantine-color-gray-5);
+  text-decoration: none;
+
+  @include dark {
+    border-color: var(--mantine-color-dark-5);
+  }
+
+  &.active {
+    border-left: 2px solid $color-brand-4;
+    background-color: var(--mantine-color-gray-1);
+
+    @include dark {
+      border-left: 2px solid $color-brand-8;
+      background-color: var(--mantine-color-dark-8);
+    }
+  }
+
+  &.hover {
+    background-color: var(--mantine-color-gray-0);
+
+    @include dark {
+      background-color: var(--mantine-color-dark-7);
+    }
+  }
+}
+
+.badge {
+  margin-left: auto;
+  text-decoration: none;
+  box-shadow: var(--mantine-shadow-xs);
+}
+
+.icon {
+  width: 1.4rem;
+  margin-right: var(--mantine-spacing-xs);
+}
+
+.nav {
+  background-color: var(--mantine-color-gray-2);
+
+  @include dark {
+    background-color: var(--mantine-color-dark-8);
+  }
+}
+
+.text {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  color: var(--mantine-color-gray-8);
+
+  @include dark {
+    color: var(--mantine-color-gray-5);
+  }
+}

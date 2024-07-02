@@ -1,22 +1,3 @@
-import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
-import { useShowOnlyDesired } from "@/apis/hooks/site";
-import { Action, GroupTable } from "@/components";
-import TextPopover from "@/components/TextPopover";
-import { AudioList } from "@/components/bazarr";
-import { EpisodeHistoryModal } from "@/components/modals";
-import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
-import { useModals } from "@/modules/modals";
-import { useTableStyles } from "@/styles";
-import { BuildKey, filterSubtitleBy } from "@/utilities";
-import { useProfileItemsToLanguages } from "@/utilities/languages";
-import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
-import {
-  faBookmark,
-  faHistory,
-  faUser,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Group, Text } from "@mantine/core";
 import {
   FunctionComponent,
   useCallback,
@@ -25,6 +6,24 @@ import {
   useRef,
 } from "react";
 import { Column, TableInstance } from "react-table";
+import { Group, Text } from "@mantine/core";
+import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
+import {
+  faBookmark,
+  faHistory,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
+import { useShowOnlyDesired } from "@/apis/hooks/site";
+import { Action, GroupTable } from "@/components";
+import { AudioList } from "@/components/bazarr";
+import { EpisodeHistoryModal } from "@/components/modals";
+import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
+import TextPopover from "@/components/TextPopover";
+import { useModals } from "@/modules/modals";
+import { BuildKey, filterSubtitleBy } from "@/utilities";
+import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { Subtitle } from "./components";
 
 interface Props {
@@ -92,7 +91,7 @@ const Table: FunctionComponent<Props> = ({
       {
         accessor: "season",
         Cell: (row) => {
-          return <Text>Season {row.value}</Text>;
+          return <Text span>Season {row.value}</Text>;
         },
       },
       {
@@ -103,11 +102,9 @@ const Table: FunctionComponent<Props> = ({
         Header: "Title",
         accessor: "title",
         Cell: ({ value, row }) => {
-          const { classes } = useTableStyles();
-
           return (
             <TextPopover text={row.original.sceneName}>
-              <Text className={classes.primary}>{value}</Text>
+              <Text className="table-primary">{value}</Text>
             </TextPopover>
           );
         },
@@ -156,7 +153,7 @@ const Table: FunctionComponent<Props> = ({
           }, [episode, seriesId]);
 
           return (
-            <Group spacing="xs" noWrap>
+            <Group gap="xs" wrap="nowrap">
               {elements}
             </Group>
           );
@@ -168,11 +165,10 @@ const Table: FunctionComponent<Props> = ({
         Cell: ({ row }) => {
           const modals = useModals();
           return (
-            <Group spacing="xs" noWrap>
+            <Group gap="xs" wrap="nowrap">
               <Action
                 label="Manual Search"
                 disabled={disabled}
-                color="dark"
                 onClick={() => {
                   modals.openContextModal(EpisodeSearchModal, {
                     item: row.original,
@@ -185,7 +181,6 @@ const Table: FunctionComponent<Props> = ({
               <Action
                 label="History"
                 disabled={disabled}
-                color="dark"
                 onClick={() => {
                   modals.openContextModal(
                     EpisodeHistoryModal,

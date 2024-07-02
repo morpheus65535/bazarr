@@ -1,0 +1,18 @@
+@layer mantine {
+  .root {
+    @include dark {
+      color: var(--mantine-color-dark-0);
+    }
+
+    &[data-variant="danger"] {
+      background-color: var(--mantine-color-red-9);
+      color: var(--mantine-color-red-0);
+    }
+  }
+
+  .root:disabled {
+    @include dark {
+      color: var(--mantine-color-dark-9);
+    }
+  }
+}

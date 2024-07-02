@@ -1,0 +1,82 @@
+$color-brand-0: #f8f0fc;
+$color-brand-1: #f3d9fa;
+$color-brand-2: #eebefa;
+$color-brand-3: #e599f7;
+$color-brand-4: #da77f2;
+$color-brand-5: #cc5de8;
+$color-brand-6: #be4bdb;
+$color-brand-7: #ae3ec9;
+$color-brand-8: #9c36b5;
+$color-brand-9: #862e9c;
+
+// Based on Mantine Cyan
+$color-highlight-0: #e3fafc;
+$color-highlight-1: #c5f6fa;
+$color-highlight-2: #99e9f2;
+$color-highlight-3: #66d9e8;
+$color-highlight-4: #3bc9db;
+$color-highlight-5: #22b8cf;
+$color-highlight-6: #15aabf;
+$color-highlight-7: #1098ad;
+$color-highlight-8: #0c8599;
+$color-highlight-9: #0b7285;
+
+// Based on Mantine Yellow
+$color-warning-0: #fff9db;
+$color-warning-1: #fff3bf;
+$color-warning-2: #ffec99;
+$color-warning-3: #ffe066;
+$color-warning-4: #ffd43b;
+$color-warning-5: #fcc419;
+$color-warning-6: #fab005;
+$color-warning-7: #f59f00;
+$color-warning-8: #f08c00;
+$color-warning-9: #e67700;
+
+// Based on Mantine Gray
+$color-disabled-0: #f8f9fa;
+$color-disabled-1: #f1f3f5;
+$color-disabled-2: #e9ecef;
+$color-disabled-3: #dee2e6;
+$color-disabled-4: #ced4da;
+$color-disabled-5: #adb5bd;
+$color-disabled-6: #868e96;
+$color-disabled-7: #495057;
+$color-disabled-8: #343a40;
+$color-disabled-9: #212529;
+
+$header-height: 64px;
+
+:global {
+  .table-long-break {
+    overflow-wrap: anywhere;
+  }
+
+  .table-primary {
+    display: inline-block;
+
+    font-size: var(--mantine-font-size-sm);
+
+    @include smaller-than($mantine-breakpoint-sm) {
+      min-width: 12rem;
+    }
+  }
+
+  .table-no-wrap {
+    white-space: nowrap;
+  }
+
+  .table-select {
+    display: inline-block;
+
+    @include smaller-than($mantine-breakpoint-sm) {
+      min-width: 10rem;
+    }
+  }
+}
+
+:root {
+  @include dark {
+    --mantine-color-body: var(--mantine-color-dark-8);
+  }
+}

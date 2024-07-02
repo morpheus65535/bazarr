@@ -1,11 +1,11 @@
-import { ScrollToTop } from "@/utilities";
-import { usePageSize } from "@/utilities/storage";
 import { useEffect } from "react";
 import { usePagination, useTable } from "react-table";
+import { ScrollToTop } from "@/utilities";
+import { usePageSize } from "@/utilities/storage";
 import BaseTable from "./BaseTable";
 import PageControl from "./PageControl";
-import { SimpleTableProps } from "./SimpleTable";
 import { useDefaultSettings } from "./plugins";
+import { SimpleTableProps } from "./SimpleTable";
 
 type Props<T extends object> = SimpleTableProps<T> & {
   autoScroll?: boolean;

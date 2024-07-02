@@ -1,6 +1,6 @@
-import { LOG } from "@/utilities/console";
-import type { UseFormReturnType } from "@mantine/form";
 import { createContext, useCallback, useContext, useRef } from "react";
+import type { UseFormReturnType } from "@mantine/form";
+import { LOG } from "@/utilities/console";
 
 export const FormContext = createContext<UseFormReturnType<FormValues> | null>(
   null,

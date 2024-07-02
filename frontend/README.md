@@ -2,8 +2,11 @@
 
 ## Dependencies
 
-- [Node.js](https://nodejs.org/)
+- Either [Node.js](https://nodejs.org/) installed manually or using [Node Version Manager](https://github.com/nvm-sh/nvm)
 - npm (included in Node.js)
+
+> The recommended Node version to use and maintained is managed on the `.nvmrc` file. You can either install manually
+> or use `nvm install` followed by `nvm use`.
 
 ## Getting Started
 

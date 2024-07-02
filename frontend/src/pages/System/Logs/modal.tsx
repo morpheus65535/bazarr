@@ -1,6 +1,6 @@
-import { withModal } from "@/modules/modals";
-import { Code, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
+import { Code, Text } from "@mantine/core";
+import { withModal } from "@/modules/modals";
 
 interface Props {
   stack: string;

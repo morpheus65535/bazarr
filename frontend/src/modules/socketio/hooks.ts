@@ -1,6 +1,6 @@
 import { useEffect } from "react";
+import { LOG } from "@/utilities/console";
 import Socketio from ".";
-import { LOG } from "../../utilities/console";
 
 export function useSocketIOReducer(reducer: SocketIO.Reducer) {
   useEffect(() => {

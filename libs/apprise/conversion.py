@@ -29,7 +29,7 @@
 import re
 from markdown import markdown
 from .common import NotifyFormat
-from .url import URLBase
+from .URLBase import URLBase
 
 from html.parser import HTMLParser
 

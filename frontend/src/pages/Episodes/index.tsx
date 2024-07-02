@@ -1,4 +1,26 @@
-import { RouterNames } from "@/Router/RouterNames";
+import {
+  FunctionComponent,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Navigate, useParams } from "react-router-dom";
+import { Container, Group, Stack } from "@mantine/core";
+import { Dropzone } from "@mantine/dropzone";
+import { useDocumentTitle } from "@mantine/hooks";
+import { showNotification } from "@mantine/notifications";
+import {
+  faAdjust,
+  faBriefcase,
+  faCircleChevronDown,
+  faCircleChevronRight,
+  faCloudUploadAlt,
+  faHdd,
+  faSearch,
+  faSync,
+  faWrench,
+} from "@fortawesome/free-solid-svg-icons";
 import {
   useEpisodesBySeriesId,
   useIsAnyActionRunning,
@@ -12,32 +34,10 @@ import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { SeriesUploadModal } from "@/components/forms/SeriesUploadForm";
 import { SubtitleToolsModal } from "@/components/modals";
 import { useModals } from "@/modules/modals";
-import { TaskGroup, notification, task } from "@/modules/task";
+import { notification, task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
+import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
-import {
-  faAdjust,
-  faBriefcase,
-  faCircleChevronDown,
-  faCircleChevronRight,
-  faCloudUploadAlt,
-  faHdd,
-  faSearch,
-  faSync,
-  faWrench,
-} from "@fortawesome/free-solid-svg-icons";
-import { Container, Group, Stack } from "@mantine/core";
-import { Dropzone } from "@mantine/dropzone";
-import { useDocumentTitle } from "@mantine/hooks";
-import { showNotification } from "@mantine/notifications";
-import {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
 
 const SeriesEpisodesView: FunctionComponent = () => {
@@ -125,7 +125,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
           <DropContent></DropContent>
         </Dropzone.FullScreen>
         <Toolbox>
-          <Group spacing="xs">
+          <Group gap="xs">
             <Toolbox.Button
               icon={faSync}
               disabled={!available || hasTask}
@@ -160,7 +160,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
               Search
             </Toolbox.Button>
           </Group>
-          <Group spacing="xs">
+          <Group gap="xs">
             <Toolbox.Button
               disabled={
                 series === undefined ||

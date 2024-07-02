@@ -1,5 +1,5 @@
-import { Text } from "@mantine/core";
 import { FunctionComponent, PropsWithChildren } from "react";
+import { Text } from "@mantine/core";
 
 interface MessageProps {
   type?: "warning" | "info";
@@ -12,7 +12,7 @@ export const Message: FunctionComponent<Props> = ({
   children,
 }) => {
   return (
-    <Text size="sm" color={type === "info" ? "dimmed" : "yellow"} my={0}>
+    <Text size="sm" c={type === "info" ? "dimmed" : "yellow"} my={0}>
       {children}
     </Text>
   );

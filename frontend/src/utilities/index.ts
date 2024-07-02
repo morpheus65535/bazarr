@@ -1,5 +1,5 @@
-import { difference, differenceWith } from "lodash";
 import { Dispatch } from "react";
+import { difference, differenceWith } from "lodash";
 import { isEpisode, isMovie, isSeries } from "./validate";
 
 export function toggleState(
@@ -57,6 +57,10 @@ export function filterSubtitleBy(
     );
     return difference(subtitles, result);
   }
+}
+
+export function fromPython(value: PythonBoolean | undefined): boolean {
+  return value === "True";
 }
 
 export function toPython(value: boolean): PythonBoolean {

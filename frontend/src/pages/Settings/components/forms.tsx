@@ -1,7 +1,20 @@
+import { FunctionComponent, ReactNode, ReactText } from "react";
 import {
+  Input,
+  NumberInput,
+  NumberInputProps,
+  PasswordInput,
+  PasswordInputProps,
+  Slider as MantineSlider,
+  SliderProps as MantineSliderProps,
+  Switch,
+  TextInput,
+  TextInputProps,
+} from "@mantine/core";
+import {
+  Action as GlobalAction,
   FileBrowser,
   FileBrowserProps,
-  Action as GlobalAction,
   MultiSelector as GlobalMultiSelector,
   MultiSelectorProps as GlobalMultiSelectorProps,
   Selector as GlobalSelector,
@@ -9,21 +22,8 @@ import {
 } from "@/components";
 import { ActionProps as GlobalActionProps } from "@/components/inputs/Action";
 import ChipInput, { ChipInputProps } from "@/components/inputs/ChipInput";
+import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
 import { useSliderMarks } from "@/utilities";
-import {
-  Input,
-  Slider as MantineSlider,
-  SliderProps as MantineSliderProps,
-  NumberInput,
-  NumberInputProps,
-  PasswordInput,
-  PasswordInputProps,
-  Switch,
-  TextInput,
-  TextInputProps,
-} from "@mantine/core";
-import { FunctionComponent, ReactNode, ReactText } from "react";
-import { BaseInput, useBaseInput } from "../utilities/hooks";
 
 export type NumberProps = BaseInput<number> & NumberInputProps;
 
@@ -38,6 +38,11 @@ export const Number: FunctionComponent<NumberProps> = (props) => {
         if (val === "") {
           val = 0;
         }
+
+        if (typeof val === "string") {
+          return update(+val);
+        }
+
         update(val);
       }}
     ></NumberInput>

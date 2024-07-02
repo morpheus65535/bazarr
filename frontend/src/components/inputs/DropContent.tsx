@@ -1,27 +1,17 @@
+import { FunctionComponent } from "react";
+import { Group, Stack, Text } from "@mantine/core";
+import { Dropzone } from "@mantine/dropzone";
 import {
   faArrowUp,
   faFileCirclePlus,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Group, Stack, Text, createStyles } from "@mantine/core";
-import { Dropzone } from "@mantine/dropzone";
-import { FunctionComponent } from "react";
-
-const useStyle = createStyles((theme) => {
-  return {
-    container: {
-      pointerEvents: "none",
-      minHeight: 220,
-    },
-  };
-});
+import styles from "./DropContent.module.scss";
 
 export const DropContent: FunctionComponent = () => {
-  const { classes } = useStyle();
-
   return (
-    <Group position="center" spacing="xl" className={classes.container}>
+    <Group justify="center" gap="xl" className={styles.container}>
       <Dropzone.Idle>
         <FontAwesomeIcon icon={faFileCirclePlus} size="2x" />
       </Dropzone.Idle>
@@ -31,9 +21,9 @@ export const DropContent: FunctionComponent = () => {
       <Dropzone.Reject>
         <FontAwesomeIcon icon={faXmark} size="2x" />
       </Dropzone.Reject>
-      <Stack spacing={0}>
+      <Stack gap={0}>
         <Text size="lg">Upload Subtitles</Text>
-        <Text color="dimmed" size="sm">
+        <Text c="dimmed" size="sm">
           Attach as many files as you like, you will need to select file
           metadata before uploading
         </Text>

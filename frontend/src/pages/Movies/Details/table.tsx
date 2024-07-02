@@ -1,17 +1,16 @@
+import { FunctionComponent, useMemo } from "react";
+import { Column } from "react-table";
+import { Badge, Text, TextProps } from "@mantine/core";
+import { faEllipsis, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { isString } from "lodash";
 import { useMovieSubtitleModification } from "@/apis/hooks";
 import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action, SimpleTable } from "@/components";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import { task, TaskGroup } from "@/modules/task";
-import { useTableStyles } from "@/styles";
-import { filterSubtitleBy } from "@/utilities";
+import { filterSubtitleBy, toPython } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
-import { faEllipsis, faSearch } from "@fortawesome/free-solid-svg-icons";
-import { Badge, Text, TextProps } from "@mantine/core";
-import { isString } from "lodash";
-import { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
 
 const missingText = "Missing Subtitles";
 
@@ -40,17 +39,17 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         Header: "Subtitle Path",
         accessor: "path",
         Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-
           const props: TextProps = {
-            className: classes.primary,
+            className: "table-primary",
           };
 
           if (isSubtitleTrack(value)) {
-            return <Text {...props}>Video File Subtitle Track</Text>;
+            return (
+              <Text className="table-primary">Video File Subtitle Track</Text>
+            );
           } else if (isSubtitleMissing(value)) {
             return (
-              <Text {...props} color="dimmed">
+              <Text {...props} c="dimmed">
                 {value}
               </Text>
             );
@@ -96,11 +95,13 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                 path,
                 id: movie.radarrId,
                 language: code2,
+                forced: toPython(forced),
+                hi: toPython(hi),
               });
             }
 
             return list;
-          }, [code2, path]);
+          }, [code2, path, forced, hi]);
 
           if (movie === null) {
             return null;
@@ -162,7 +163,6 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
               <Action
                 label="Subtitle Actions"
                 disabled={isSubtitleTrack(path)}
-                color="dark"
                 icon={faEllipsis}
               ></Action>
             </SubtitleToolsMenu>

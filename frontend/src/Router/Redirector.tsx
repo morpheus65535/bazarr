@@ -1,7 +1,7 @@
-import { useSystemSettings } from "@/apis/hooks";
-import { LoadingOverlay } from "@mantine/core";
 import { FunctionComponent, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { LoadingOverlay } from "@mantine/core";
+import { useSystemSettings } from "@/apis/hooks";
 
 const Redirector: FunctionComponent = () => {
   const { data } = useSystemSettings();

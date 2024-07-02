@@ -1,12 +1,12 @@
-import ThemeProvider from "@/App/theme";
-import queryClient from "@/apis/queries";
-import { ModalsProvider } from "@/modules/modals";
-import "@fontsource/roboto/300.css";
-import { Notifications } from "@mantine/notifications";
 import { FunctionComponent, PropsWithChildren } from "react";
-import { QueryClientProvider } from "react-query";
-import { ReactQueryDevtools } from "react-query/devtools";
+import { Notifications } from "@mantine/notifications";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import queryClient from "@/apis/queries";
+import ThemeProvider from "@/App/ThemeProvider";
+import { ModalsProvider } from "@/modules/modals";
 import { Environment } from "./utilities";
+import "@fontsource/roboto/300.css";
 
 export const AllProviders: FunctionComponent<PropsWithChildren> = ({
   children,

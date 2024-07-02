@@ -1,8 +1,8 @@
-import { useSystemAnnouncements } from "@/apis/hooks";
-import { QueryOverlay } from "@/components/async";
+import { FunctionComponent } from "react";
 import { Container } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
-import { FunctionComponent } from "react";
+import { useSystemAnnouncements } from "@/apis/hooks";
+import { QueryOverlay } from "@/components/async";
 import Table from "./table";
 
 const SystemAnnouncementsView: FunctionComponent = () => {

@@ -1,11 +1,10 @@
+import { FunctionComponent, useMemo } from "react";
+import { Column } from "react-table";
+import { Anchor, Text } from "@mantine/core";
+import { faWindowClose } from "@fortawesome/free-solid-svg-icons";
 import { useSystemAnnouncementsAddDismiss } from "@/apis/hooks";
 import { SimpleTable } from "@/components";
 import { MutateAction } from "@/components/async";
-import { useTableStyles } from "@/styles";
-import { faWindowClose } from "@fortawesome/free-solid-svg-icons";
-import { Anchor, Text } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
 
 interface Props {
   announcements: readonly System.Announcements[];
@@ -20,16 +19,14 @@ const Table: FunctionComponent<Props> = ({ announcements }) => {
         Header: "Since",
         accessor: "timestamp",
         Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-          return <Text className={classes.primary}>{value}</Text>;
+          return <Text className="table-primary">{value}</Text>;
         },
       },
       {
         Header: "Announcement",
         accessor: "text",
         Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-          return <Text className={classes.primary}>{value}</Text>;
+          return <Text className="table-primary">{value}</Text>;
         },
       },
       {

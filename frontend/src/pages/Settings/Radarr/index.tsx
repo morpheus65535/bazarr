@@ -1,5 +1,5 @@
-import { Code } from "@mantine/core";
 import { FunctionComponent } from "react";
+import { Code } from "@mantine/core";
 import {
   Check,
   Chips,
@@ -13,8 +13,8 @@ import {
   Slider,
   Text,
   URLTestButton,
-} from "../components";
-import { moviesEnabledKey } from "../keys";
+} from "@/pages/Settings/components";
+import { moviesEnabledKey } from "@/pages/Settings/keys";
 import { timeoutOptions } from "./options";
 
 const SettingsRadarrView: FunctionComponent = () => {
@@ -30,7 +30,7 @@ const SettingsRadarrView: FunctionComponent = () => {
           <Number label="Port" settingKey="settings-radarr-port"></Number>
           <Text
             label="Base URL"
-            icon="/"
+            leftSection="/"
             settingKey="settings-radarr-base_url"
             settingOptions={{
               onLoaded: (s) => s.radarr.base_url?.slice(1) ?? "",

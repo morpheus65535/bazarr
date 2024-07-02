@@ -1,0 +1,9 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - $header-height);
+}
+
+.chart {
+  height: 90%;
+}

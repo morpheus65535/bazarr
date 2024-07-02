@@ -1,11 +1,10 @@
+import { FunctionComponent, useMemo } from "react";
+import { Column, useSortBy } from "react-table";
+import { Text } from "@mantine/core";
+import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import { useRunTask } from "@/apis/hooks";
 import { SimpleTable } from "@/components";
 import MutateAction from "@/components/async/MutateAction";
-import { useTableStyles } from "@/styles";
-import { faPlay } from "@fortawesome/free-solid-svg-icons";
-import { Text } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
-import { Column, useSortBy } from "react-table";
 
 interface Props {
   tasks: readonly System.Task[];
@@ -18,16 +17,14 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
         Header: "Name",
         accessor: "name",
         Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-          return <Text className={classes.primary}>{value}</Text>;
+          return <Text className="table-primary">{value}</Text>;
         },
       },
       {
         Header: "Interval",
         accessor: "interval",
         Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-          return <Text className={classes.noWrap}>{value}</Text>;
+          return <Text className="table-no-wrap">{value}</Text>;
         },
       },
       {

@@ -1,5 +1,3 @@
-import { SelectorOption, SelectorProps } from "@/components";
-import { SliderProps } from "@mantine/core";
 import {
   Dispatch,
   useCallback,
@@ -9,6 +7,8 @@ import {
   useState,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import { SliderProps } from "@mantine/core";
+import { SelectorOption, SelectorProps } from "@/components";
 
 export function useGotoHomepage() {
   const navigate = useNavigate();

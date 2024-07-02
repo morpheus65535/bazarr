@@ -1,7 +1,7 @@
-import api from "@/apis/raw";
-import { Button } from "@mantine/core";
 import { FunctionComponent, useCallback, useEffect, useState } from "react";
-import { useSettingValue } from "../utilities/hooks";
+import { Button } from "@mantine/core";
+import api from "@/apis/raw";
+import { useSettingValue } from "@/pages/Settings/utilities/hooks";
 
 export const URLTestButton: FunctionComponent<{
   category: "sonarr" | "radarr";
@@ -56,7 +56,7 @@ export const URLTestButton: FunctionComponent<{
   }, [address, port, url, apikey, ssl]);
 
   return (
-    <Button onClick={click} color={color} title={title}>
+    <Button autoContrast onClick={click} variant={color} title={title}>
       {title}
     </Button>
   );
@@ -107,7 +107,7 @@ export const ProviderTestButton: FunctionComponent<{
   }, [testUrl]);
 
   return (
-    <Button onClick={click} color={color} title={title}>
+    <Button onClick={click} variant={color} title={title}>
       {title}
     </Button>
   );

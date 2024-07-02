@@ -3,6 +3,7 @@
 # only methods can be specified here that do not cause other moudules to be loaded
 # for other methods that use settings, etc., use utilities/helper.py
 
+import contextlib
 import logging
 import os
 from pathlib import Path
@@ -53,4 +54,8 @@ def restart_bazarr():
     except Exception as e:
         logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
     logging.info('Bazarr is being restarted...')
-    raise SystemExit(EXIT_NORMAL)
+
+    # Wrap the SystemExit for a graceful restart. The SystemExit still performs the cleanup but the traceback is omitted
+    # preventing to throw the exception to the caller but still terminates the Python process with the desired Exit Code
+    with contextlib.suppress(SystemExit):
+        raise SystemExit(EXIT_NORMAL)

@@ -1,14 +1,13 @@
+import { FunctionComponent, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { Column } from "react-table";
+import { Anchor, Text } from "@mantine/core";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useEpisodeDeleteBlacklist } from "@/apis/hooks";
 import { PageTable } from "@/components";
 import MutateAction from "@/components/async/MutateAction";
 import Language from "@/components/bazarr/Language";
 import TextPopover from "@/components/TextPopover";
-import { useTableStyles } from "@/styles";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { Anchor, Text } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Column } from "react-table";
 
 interface Props {
   blacklist: readonly Blacklist.Episode[];
@@ -21,10 +20,9 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         Header: "Series",
         accessor: "seriesTitle",
         Cell: (row) => {
-          const { classes } = useTableStyles();
           const target = `/series/${row.row.original.sonarrSeriesId}`;
           return (
-            <Anchor className={classes.primary} component={Link} to={target}>
+            <Anchor className="table-primary" component={Link} to={target}>
               {row.value}
             </Anchor>
           );

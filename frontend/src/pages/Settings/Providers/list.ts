@@ -1,5 +1,5 @@
-import { SelectorOption } from "@/components";
 import { ReactText } from "react";
+import { SelectorOption } from "@/components";
 
 type Input<T, N> = {
   type: N;

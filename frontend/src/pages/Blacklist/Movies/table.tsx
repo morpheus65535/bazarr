@@ -1,14 +1,13 @@
+import { FunctionComponent, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { Column } from "react-table";
+import { Anchor, Text } from "@mantine/core";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useMovieDeleteBlacklist } from "@/apis/hooks";
 import { PageTable } from "@/components";
 import MutateAction from "@/components/async/MutateAction";
 import Language from "@/components/bazarr/Language";
 import TextPopover from "@/components/TextPopover";
-import { useTableStyles } from "@/styles";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { Anchor, Text } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Column } from "react-table";
 
 interface Props {
   blacklist: readonly Blacklist.Movie[];
@@ -22,9 +21,8 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         accessor: "title",
         Cell: (row) => {
           const target = `/movies/${row.row.original.radarrId}`;
-          const { classes } = useTableStyles();
           return (
-            <Anchor className={classes.primary} component={Link} to={target}>
+            <Anchor className="table-primary" component={Link} to={target}>
               {row.value}
             </Anchor>
           );
