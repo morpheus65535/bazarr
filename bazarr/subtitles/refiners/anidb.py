@@ -4,11 +4,13 @@
 import logging
 import requests
 from collections import namedtuple
-from datetime import timedelta
+from datetime import datetime, timedelta
 from requests.exceptions import HTTPError
 
 from app.config import settings
 from subliminal import Episode, region
+from subliminal.cache import REFINER_EXPIRATION_TIME
+from subliminal_patch.exceptions import TooManyRequests
 
 try:
     from lxml import etree
@@ -22,12 +24,29 @@ refined_providers = {'animetosho'}
 
 api_url = 'http://api.anidb.net:9001/httpapi'
 
+cache_key_refiner = "anidb_refiner"
+
+# Soft Limit for amount of requests per day
+daily_limit_request_count = 200
+
 
 class AniDBClient(object):
     def __init__(self, api_client_key=None, api_client_ver=1, session=None):
         self.session = session or requests.Session()
         self.api_client_key = api_client_key
         self.api_client_ver = api_client_ver
+        self.cache = region.get(cache_key_refiner, expiration_time=timedelta(days=1).total_seconds())
+
+    @property
+    def is_throttled(self):
+        return self.cache and self.cache.get('is_throttled')
+
+    @property
+    def daily_api_request_count(self):
+        if not self.cache:
+            return 0
+
+        return self.cache.get('daily_api_request_count', 0)
 
     AnimeInfo = namedtuple('AnimeInfo', ['anime', 'episode_offset'])
 
@@ -84,8 +103,11 @@ class AniDBClient(object):
 
         return series_id, int(episodes.find(f".//episode[epno='{episode_no}']").attrib.get('id'))
 
-    @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
+    @region.cache_on_arguments(expiration_time=REFINER_EXPIRATION_TIME)
     def get_episodes(self, series_id):
+        if self.daily_api_request_count >= 200:
+            raise TooManyRequests('Daily API request limit exceeded')
+
         r = self.session.get(
             api_url,
             params={
@@ -102,9 +124,11 @@ class AniDBClient(object):
 
         response_code = xml_root.attrib.get('code')
         if response_code == '500':
-            raise HTTPError('AniDB API Abuse detected. Banned status.')
+            raise TooManyRequests('AniDB API Abuse detected. Banned status.')
         elif response_code == '302':
             raise HTTPError('AniDB API Client error. Client is disabled or does not exists.')
+
+        self.increment_daily_quota()
 
         episode_elements = xml_root.find('episodes')
 
@@ -112,6 +136,22 @@ class AniDBClient(object):
             raise ValueError
 
         return etree.tostring(episode_elements, encoding='utf8', method='xml')
+
+    def increment_daily_quota(self):
+        daily_quota = self.daily_api_request_count + 1
+
+        if not self.cache:
+            region.set(cache_key_refiner, {'daily_api_request_count': daily_quota})
+
+            return
+
+        self.cache['daily_api_request_count'] = daily_quota
+
+        region.set(cache_key_refiner, self.cache)
+
+    @staticmethod
+    def mark_as_throttled():
+        region.set(cache_key_refiner, {'is_throttled': True})
 
 
 def refine_from_anidb(path, video):
@@ -129,7 +169,22 @@ def refine_anidb_ids(video):
 
     season = video.season if video.season else 0
 
-    anidb_series_id, anidb_episode_id = anidb_client.get_series_episodes_ids(video.series_tvdb_id, season, video.episode)
+    if anidb_client.is_throttled:
+        logging.warning(f'API daily limit reached. Skipping refinement for {video.series}')
+
+        return video
+
+    try:
+        anidb_series_id, anidb_episode_id = anidb_client.get_series_episodes_ids(
+            video.series_tvdb_id,
+            season, video.episode,
+        )
+    except TooManyRequests:
+        logging.error(f'API daily limit reached while refining {video.series}')
+
+        anidb_client.mark_as_throttled()
+
+        return video
 
     if not anidb_episode_id:
         logging.error(f'Could not find anime series {video.series}')
