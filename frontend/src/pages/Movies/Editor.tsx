@@ -1,6 +1,6 @@
 import { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
 import { useDocumentTitle } from "@mantine/hooks";
+import { ColumnDef } from "@tanstack/react-table";
 import { useMovieModification, useMovies } from "@/apis/hooks";
 import { QueryOverlay } from "@/components/async";
 import { AudioList } from "@/components/bazarr";
@@ -11,24 +11,32 @@ const MovieMassEditor: FunctionComponent = () => {
   const query = useMovies();
   const mutation = useMovieModification();
 
-  const columns = useMemo<Column<Item.Movie>[]>(
+  const columns = useMemo<ColumnDef<Item.Movie>[]>(
     () => [
       {
-        Header: "Name",
-        accessor: "title",
+        header: "Name",
+        accessorKey: "title",
       },
       {
-        Header: "Audio",
-        accessor: "audio_language",
-        Cell: ({ value }) => {
-          return <AudioList audios={value}></AudioList>;
+        header: "Audio",
+        accessorKey: "audio_language",
+        cell: ({
+          row: {
+            original: { audio_language: audioLanguage },
+          },
+        }) => {
+          return <AudioList audios={audioLanguage}></AudioList>;
         },
       },
       {
-        Header: "Languages Profile",
-        accessor: "profileId",
-        Cell: ({ value }) => {
-          return <LanguageProfileName index={value}></LanguageProfileName>;
+        header: "Languages Profile",
+        accessorKey: "profileId",
+        cell: ({
+          row: {
+            original: { profileId },
+          },
+        }) => {
+          return <LanguageProfileName index={profileId}></LanguageProfileName>;
         },
       },
     ],

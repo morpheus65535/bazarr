@@ -1,6 +1,7 @@
-import { MutableRefObject } from "react";
+import { MutableRefObject, useEffect, useMemo } from "react";
 import {
   getCoreRowModel,
+  Row,
   Table,
   TableOptions,
   useReactTable,
@@ -16,12 +17,13 @@ export type NewSimpleTableProps<T extends object> = Omit<
 > & {
   instanceRef?: MutableRefObject<Table<T> | null>;
   tableStyles?: NewTableStyleProps<T>;
+  onRowSelectionChanged?: (selectedRows: Row<T>[]) => void;
 };
 
 export default function NewSimpleTable<T extends object>(
   props: NewSimpleTableProps<T>,
 ) {
-  const { instanceRef, tableStyles, ...options } = props;
+  const { instanceRef, tableStyles, onRowSelectionChanged, ...options } = props;
 
   const pageSize = usePageSize();
 
@@ -36,6 +38,13 @@ export default function NewSimpleTable<T extends object>(
   if (instanceRef) {
     instanceRef.current = instance;
   }
+
+  const selectedRows = instance.getSelectedRowModel().rows;
+  const memoizedRows = useMemo(() => selectedRows, [selectedRows]);
+
+  useEffect(() => {
+    onRowSelectionChanged?.(memoizedRows);
+  }, [onRowSelectionChanged, memoizedRows]);
 
   return (
     <NewBaseTable tableStyles={tableStyles} instance={instance}></NewBaseTable>
