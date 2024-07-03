@@ -1,4 +1,5 @@
 import { FunctionComponent, useMemo } from "react";
+import { Checkbox } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMovieModification, useMovies } from "@/apis/hooks";
@@ -13,6 +14,29 @@ const MovieMassEditor: FunctionComponent = () => {
 
   const columns = useMemo<ColumnDef<Item.Movie>[]>(
     () => [
+      {
+        id: "selection",
+        header: ({ table }) => {
+          return (
+            <Checkbox
+              id="table-header-selection"
+              indeterminate={table.getIsSomeRowsSelected()}
+              checked={table.getIsAllRowsSelected()}
+              onChange={table.getToggleAllRowsSelectedHandler()}
+            ></Checkbox>
+          );
+        },
+        cell: ({ row: { index, getIsSelected, getToggleSelectedHandler } }) => {
+          return (
+            <Checkbox
+              id={`table-cell-${index}`}
+              checked={getIsSelected()}
+              onChange={getToggleSelectedHandler()}
+              onClick={getToggleSelectedHandler()}
+            ></Checkbox>
+          );
+        },
+      },
       {
         header: "Name",
         accessorKey: "title",
