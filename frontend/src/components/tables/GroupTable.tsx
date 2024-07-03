@@ -71,11 +71,17 @@ function renderRow<T extends object>(row: Row<T>) {
 function renderHeaders<T extends object>(
   headers: Header<T, unknown>[],
 ): React.JSX.Element[] {
-  return headers.map((header) => (
-    <Table.Th key={header.id}>
-      {flexRender(header.column.columnDef.header, header.getContext())}
-    </Table.Th>
-  ));
+  return headers.map((header) => {
+    if (header.column.getIsGrouped()) {
+      return <></>;
+    }
+
+    return (
+      <Table.Th key={header.id} colSpan={header.colSpan}>
+        {flexRender(header.column.columnDef.header, header.getContext())}
+      </Table.Th>
+    );
+  });
 }
 
 type Props<T extends object> = Omit<
