@@ -72,6 +72,10 @@ class JimakuSubtitle(Subtitle):
                 if video.release_group == g[1]:
                     matches.add('release_group')
                     break
+                
+        # Prioritize .srt by misusing the audio_codec match
+        if self.subtitle_filename.endswith(".srt"):
+            matches.add('audio_codec')
 
         return matches
 
@@ -136,6 +140,8 @@ class JimakuProvider(Provider):
                     additional_url_params = {'anime': "false"}
                 else:
                     return None
+            else:
+                break
 
         # We only go for the first entry
         entry = data[0]
