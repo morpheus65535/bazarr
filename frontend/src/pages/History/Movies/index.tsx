@@ -23,7 +23,7 @@ const MoviesHistoryView: FunctionComponent = () => {
   const columns = useMemo<ColumnDef<History.Movie>[]>(
     () => [
       {
-        accessorKey: "action",
+        id: "action",
         cell: ({ row }) => (
           <HistoryIcon action={row.original.action}></HistoryIcon>
         ),

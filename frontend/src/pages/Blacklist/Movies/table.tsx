@@ -73,7 +73,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         },
       },
       {
-        accessorKey: "subs_id",
+        id: "subs_id",
         cell: ({
           row: {
             original: { subs_id: subsId, provider },
