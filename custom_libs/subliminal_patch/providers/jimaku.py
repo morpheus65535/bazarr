@@ -20,7 +20,7 @@ from subliminal_patch.providers.utils import get_subtitle_from_archive
 from urllib.parse import urlencode, urljoin
 from guessit import guessit
 from functools import cache
-from subzero.language import Language
+from subzero.language import Language, FULL_LANGUAGE_LIST
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +57,6 @@ class JimakuSubtitle(Subtitle):
             if sanitize(video.title) and sanitize(self.video.title) in (
                     sanitize(name) for name in [video.title] + video.alternative_titles):
                 matches.add('title')
-        else:
-            raise ValueError(f"Unhandled instance of argument 'video': {type(video)}")
 
         # General matches
         if video.year and video.year == self.video.year:
@@ -211,9 +209,7 @@ class JimakuProvider(Provider):
                 continue
             
             if not subtitle_filename.endswith(archive_formats_blacklist):
-                number = episode_number if isinstance(video, Episode) else 0
-                
-                lang = sub_languages[0]
+                lang = sub_languages[0] if len(sub_languages) > 1 else Language("jpn")
                 list_of_subtitles.append(JimakuSubtitle(lang, video, subtitle_url, subtitle_filename))
             else:
                 logger.debug(f"> Skipping subtitle of name '{subtitle_filename}' due to archive blacklist. (enable_archives: {self.enable_archives})")
@@ -305,7 +301,8 @@ class JimakuProvider(Provider):
     def _try_determine_subtitle_languages(filename):
         # This is more like a guess and not a 100% fool-proof way of detecting multi-lang subs:
         # It assumes that language codes, if present, are in the last metadata group of the subs filename.
-        # If such codes are not present, then we'll assume the sub is Japanese only.
+        # If such codes are not present, or we failed to match any at all, then we'll just assume that the sub is purely Japanese.
+        default_language = Language("jpn")
         
         dot_delimit = filename.split(".")
         bracket_delimit = re.split(r'[\[\]\(\)]+', filename)
@@ -318,15 +315,31 @@ class JimakuProvider(Provider):
         
         candidates = [] if len(candidate_list) == 0 else re.split(r'[,\-\+ ]+', candidate_list)
         
+        # Discard match group if any candidate...
+        # ...contains any numbers, as the group is likely encoding information
+        if any(re.compile(r'\d').search(string) for string in candidates):
+            return [default_language]
+        # ...is >= 5 chars long, as the group is likely other unrelated metadata
+        if any(len(string) >= 5 for string in candidates):
+            return [default_language]
+        
         languages = list()
         for candidate in candidates:
             candidate = candidate.lower()
+            
+            # Sometimes, languages are hidden in 4 character blocks, i.e. "JPSC"
+            if len(candidate) == 4:
+                for addendum in [candidate[:2], candidate[2:]]:
+                    candidates.append(addendum)
+                continue
+            
             # Sometimes, language codes can have additional info such as 'cc' or 'sdh'. For example: "ja[cc]"
             if len(dot_delimit) > 2 and any(c in candidate for c in '[]()'):
                 candidate = re.split(r'[\[\]\(\)]+', candidate)[0]
 
+            language = None
             try:
-                lang_map = {
+                language_squash = {
                     "jp": "ja",
                     "chs": "zho",
                     "cht": "zho",
@@ -334,18 +347,24 @@ class JimakuProvider(Provider):
                     "cn": "zho"
                 }
                 
-                candidate = lang_map[candidate] if candidate in lang_map else candidate
+                candidate = language_squash[candidate] if candidate in language_squash else candidate
                 if len(candidate) > 2:
                     language = Language(candidate)
                 else:
                     language = Language.fromietf(candidate)
                     
-                if not any(l.alpha3 == language.alpha3 for l in languages):
-                    languages.append([language])
+                languages.append(language)
             except:
-                pass
-        
-        logger.debug(f"Detected the following languages for '{filename}': {languages}")
+                if candidate in FULL_LANGUAGE_LIST:
+                    # Use a random language as a dummy, but for added security check if JPN is included
+                    if candidate in FULL_LANGUAGE_LIST:
+                        language = Language("zul")
+                        if not any(l.alpha3 == default_language[0].alpha3 for l in languages):
+                            languages.append(language)
+
+            if len(languages) != 0:
+                if not any(l.alpha3 == language.alpha3 for l in languages):
+                    languages.append(language)
         
         if len(languages) > 1:
             # Sometimes a metadata group that actually contains info about codecs gets processed as valid languages.
@@ -355,7 +374,7 @@ class JimakuProvider(Provider):
             
             return languages if contains_jpn else [Language("jpn")]
         else:
-            return [Language("jpn")]
+            return [default_language]
     
     def _assemble_jimaku_search_url(self, video, media_name, additional_params={}):
         """
