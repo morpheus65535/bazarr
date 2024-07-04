@@ -6,24 +6,33 @@ import {
   TableOptions,
   useReactTable,
 } from "@tanstack/react-table";
-import NewBaseTable from "@/components/tables/NewBaseTable";
+import NewBaseTable, {
+  NewTableStyleProps,
+} from "@/components/tables/NewBaseTable";
 import { ScrollToTop } from "@/utilities";
 import { usePageSize } from "@/utilities/storage";
 import PageControl from "./PageControl";
 
 type Props<T extends object> = Omit<TableOptions<T>, "getCoreRowModel"> & {
   instanceRef?: MutableRefObject<Table<T> | null>;
+  tableStyles?: NewTableStyleProps<T>;
   autoScroll?: boolean;
 };
 
 export default function NewPageTable<T extends object>(props: Props<T>) {
   const { instanceRef, autoScroll, ...options } = props;
 
+  const pageSize = usePageSize();
+
   const instance = useReactTable({
     ...options,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    pageCount: usePageSize(),
+    initialState: {
+      pagination: {
+        pageSize: pageSize,
+      },
+    },
   });
 
   if (instanceRef) {
@@ -47,7 +56,7 @@ export default function NewPageTable<T extends object>(props: Props<T>) {
       <PageControl
         count={instance.getPageCount()}
         index={state.pagination.pageIndex}
-        size={state.pagination.pageSize}
+        size={pageSize}
         total={instance.getRowCount()}
         goto={instance.setPageIndex}
       ></PageControl>
