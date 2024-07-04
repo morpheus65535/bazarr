@@ -35,6 +35,8 @@ class Video(Video_):
         info_url=None,
         series_anidb_id=None,
         series_anidb_episode_id=None,
+        series_anidb_season_episode_offset=None,
+        series_anilist_id=None,
         **kwargs
     ):
         super(Video, self).__init__(
@@ -61,3 +63,5 @@ class Video(Video_):
         self.info_url = info_url
         self.series_anidb_series_id = series_anidb_id,
         self.series_anidb_episode_id = series_anidb_episode_id,
+        self.series_anidb_season_episode_offset = series_anidb_season_episode_offset,
+        self.series_anilist_id = series_anilist_id

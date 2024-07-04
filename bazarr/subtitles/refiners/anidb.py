@@ -68,7 +68,7 @@ class AniDBClient(object):
         return r.content
 
     @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
-    def get_series_and_episode_info(self, tvdb_series_id, tvdb_series_season, episode):
+    def get_show_information(self, tvdb_series_id, tvdb_series_season, episode):
         mappings = etree.fromstring(self.get_series_mappings())
         
         # Enrich the collection of anime with the episode offset
@@ -80,15 +80,14 @@ class AniDBClient(object):
         ]
 
         if not animes:
-            return None, None
+            return None, None, None
 
         # Sort the anime by offset in ascending order
         animes.sort(key=lambda a: a.episode_offset)
 
         # Different from Tvdb, Anidb have different ids for the Parts of a season
-        anidb_id = None
-        offset = 0
-
+        anime, episode_offset = animes[0]
+        anidb_id = int(anime.attrib.get('anidbid'))
         for index, anime_info in enumerate(animes):
             anime, episode_offset = anime_info
 
@@ -112,7 +111,7 @@ class AniDBClient(object):
                 anidb_id = int(anime.attrib.get('anidbid'))
                 offset = episode_offset
 
-        return anidb_id, episode - offset
+        return anidb_id, episode - offset, offset
 
     @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
     def get_episode_ids(self, series_id, episode_no):
@@ -194,7 +193,7 @@ def refine_anidb_ids(video):
 
     season = video.season if video.season else 0
 
-    anidb_series_id, anidb_episode_no = anidb_client.get_series_and_episode_info(
+    anidb_series_id, anidb_episode_no, anidb_season_episode_offset = anidb_client.get_show_information(
         video.series_tvdb_id,
         season,
         video.episode,
@@ -223,3 +222,4 @@ def refine_anidb_ids(video):
     video.series_anidb_id = anidb_series_id
     video.series_anidb_episode_id = anidb_episode_id
     video.series_anidb_episode_no = anidb_episode_no
+    video.series_anidb_season_episode_offset = anidb_season_episode_offset

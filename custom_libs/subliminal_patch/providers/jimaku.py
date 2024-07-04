@@ -362,7 +362,7 @@ class JimakuProvider(Provider):
         """
                        
         endpoint = "entries/search"
-        anilist_id = video.anilist_id
+        anilist_id = video.series_anilist_id
         
         params = {}
         if anilist_id:
