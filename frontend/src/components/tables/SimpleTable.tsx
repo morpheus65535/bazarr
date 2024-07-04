@@ -45,13 +45,17 @@ export default function SimpleTable<T extends object>(
   }
 
   const selectedRows = instance.getSelectedRowModel().rows;
+
   const memoizedRows = useMemo(() => selectedRows, [selectedRows]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const memoizedRowSelectionChanged = useMemo(() => onRowSelectionChanged, []);
 
   const isAllRowsExpanded = instance.getIsAllRowsExpanded();
 
   useEffect(() => {
-    onRowSelectionChanged?.(memoizedRows);
-  }, [onRowSelectionChanged, memoizedRows]);
+    memoizedRowSelectionChanged?.(memoizedRows);
+  }, [memoizedRowSelectionChanged, memoizedRows]);
 
   useEffect(() => {
     onAllRowsExpandedChanged?.(isAllRowsExpanded);

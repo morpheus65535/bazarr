@@ -165,9 +165,9 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
         columns={columns}
         data={data}
         enableRowSelection
-        onRowSelectionChanged={(row) =>
-          setSelections(row.map((r) => r.original))
-        }
+        onRowSelectionChanged={(row) => {
+          setSelections(row.map((r) => r.original));
+        }}
       ></SimpleTable>
     </Container>
   );

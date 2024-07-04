@@ -12,6 +12,8 @@ const MovieMassEditor: FunctionComponent = () => {
   const query = useMovies();
   const mutation = useMovieModification();
 
+  useDocumentTitle("Movies - Bazarr (Mass Editor)");
+
   const columns = useMemo<ColumnDef<Item.Movie>[]>(
     () => [
       {
@@ -66,8 +68,6 @@ const MovieMassEditor: FunctionComponent = () => {
     ],
     [],
   );
-
-  useDocumentTitle("Movies - Bazarr (Mass Editor)");
 
   return (
     <QueryOverlay result={query}>
