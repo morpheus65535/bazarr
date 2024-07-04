@@ -233,7 +233,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "switch",
         key: "enable_archives",
-        name: "Download archived subtitles"
+        name: "Index subtitle archives"
       },
       {
         type: "switch",

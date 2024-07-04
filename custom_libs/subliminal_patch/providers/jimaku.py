@@ -30,18 +30,17 @@ class JimakuSubtitle(Subtitle):
     
     hash_verifiable = False
 
-    def __init__(self, language, video, subtitle_id, subtitle_url, subtitle_filename):
-        super(JimakuSubtitle, self).__init__(language)
+    def __init__(self, language, video, subtitle_url, subtitle_filename):
+        super(JimakuSubtitle, self).__init__(language, page_link=subtitle_url)
         
         self.video = video
-        self.subtitle_id = subtitle_id
         self.subtitle_url = subtitle_url
         self.subtitle_filename = subtitle_filename
         self.release_info = subtitle_filename
         
     @property
     def id(self):
-        return self.subtitle_id
+        return self.subtitle_url
 
     def get_matches(self, video):
         matches = set()
@@ -213,10 +212,9 @@ class JimakuProvider(Provider):
             
             if not subtitle_filename.endswith(archive_formats_blacklist):
                 number = episode_number if isinstance(video, Episode) else 0
-                subtitle_id = f"{str(anilist_id)}_{number}_{video.release_group}"
                 
                 lang = sub_languages[0]
-                list_of_subtitles.append(JimakuSubtitle(lang, video, subtitle_id, subtitle_url, subtitle_filename))
+                list_of_subtitles.append(JimakuSubtitle(lang, video, subtitle_url, subtitle_filename))
             else:
                 logger.debug(f"> Skipping subtitle of name '{subtitle_filename}' due to archive blacklist. (enable_archives: {self.enable_archives})")
         
