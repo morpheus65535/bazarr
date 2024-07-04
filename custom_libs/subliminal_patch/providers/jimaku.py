@@ -88,8 +88,6 @@ class JimakuProvider(Provider):
     
     corrupted_file_size_threshold = 500
     
-    episode_number_override = False
-    
     languages = {Language.fromietf("ja")}
 
     def __init__(self, enable_name_search_fallback, enable_archives, enable_ai_subs, api_key):
@@ -154,25 +152,30 @@ class JimakuProvider(Provider):
             logger.warning(f"This entry '{entry_id}' is unverified, subtitles might be incomplete or have quality issues!")    
         
         # Get a list of subtitles for entry
-        if isinstance(video, Episode):
-            episode_number = video.episode
+        episode_number = video.episode if "episode" in dir(video) else 0
         
         retry_count = 0
         while retry_count <= 1:
             retry_count += 1
             
-            if isinstance(video, Episode):
-                url = f"entries/{entry_id}/files?episode={episode_number}"
-            else:
-                url = f"entries/{entry_id}/files"
+            addendum = f"?episode={episode_number}" if isinstance(video, Episode) else ""
+            url = f"entries/{entry_id}/files{addendum}"
             data = self._get_jimaku_response(url)
             
             # Edge case: When dealing with a cour, episodes could be uploaded with their episode numbers having an offset applied
-            if not data and isinstance(video, Episode) and self.episode_number_override and retry_count < 1:
-                logger.warning(f"Found no subtitles for {episode_number}, but will retry with offset-adjusted episode number {video.series_anidb_episode_no}.")
-                episode_number = video.series_anidb_episode_no
-            elif not data:
-                return None
+            if isinstance(video, Episode) and video.series_anidb_season_episode_offset:
+                has_offset = video.series_anidb_season_episode_offset > 0
+                if not data and has_offset and retry_count <= 1:
+                    adjusted_ep_num = episode_number + video.series_anidb_season_episode_offset
+                    logger.warning(f"Found no subtitles for episode number {episode_number}, but will retry with offset-adjusted episode number {adjusted_ep_num}.")
+                    episode_number = adjusted_ep_num
+                else:
+                    break
+            else:
+                break
+            
+        if not data:
+            return None
         
         # Filter subtitles
         list_of_subtitles = []
