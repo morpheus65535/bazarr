@@ -1,6 +1,6 @@
 import { FunctionComponent, useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import NewSimpleTable from "@/components/tables/NewSimpleTable";
+import SimpleTable from "@/components/tables/SimpleTable";
 
 interface Props {
   providers: System.Provider[];
@@ -25,9 +25,7 @@ const Table: FunctionComponent<Props> = (props) => {
     [],
   );
 
-  return (
-    <NewSimpleTable columns={columns} data={props.providers}></NewSimpleTable>
-  );
+  return <SimpleTable columns={columns} data={props.providers}></SimpleTable>;
 };
 
 export default Table;

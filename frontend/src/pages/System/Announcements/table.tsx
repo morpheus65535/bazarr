@@ -4,7 +4,7 @@ import { faWindowClose } from "@fortawesome/free-solid-svg-icons";
 import { ColumnDef } from "@tanstack/react-table";
 import { useSystemAnnouncementsAddDismiss } from "@/apis/hooks";
 import { MutateAction } from "@/components/async";
-import NewSimpleTable from "@/components/tables/NewSimpleTable";
+import SimpleTable from "@/components/tables/SimpleTable";
 
 interface Props {
   announcements: System.Announcements[];
@@ -80,11 +80,11 @@ const Table: FunctionComponent<Props> = ({ announcements }) => {
   );
 
   return (
-    <NewSimpleTable
+    <SimpleTable
       columns={columns}
       data={announcements}
       tableStyles={{ emptyText: "No announcements for now, come back later!" }}
-    ></NewSimpleTable>
+    ></SimpleTable>
   );
 };
 

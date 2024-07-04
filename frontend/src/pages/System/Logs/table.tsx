@@ -11,7 +11,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
 import { Action } from "@/components";
-import NewPageTable from "@/components/tables/NewPageTable";
+import PageTable from "@/components/tables/PageTable";
 import { useModals } from "@/modules/modals";
 import SystemLogModal from "./modal";
 
@@ -83,7 +83,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
 
   return (
     <>
-      <NewPageTable columns={columns} data={logs}></NewPageTable>
+      <PageTable columns={columns} data={logs}></PageTable>
     </>
   );
 };

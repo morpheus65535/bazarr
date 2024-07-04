@@ -7,7 +7,7 @@ import { ColumnDef, Table } from "@tanstack/react-table";
 import { uniqBy } from "lodash";
 import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
 import { GroupedSelector, GroupedSelectorOptions, Toolbox } from "@/components";
-import NewSimpleTable from "@/components/tables/NewSimpleTable";
+import SimpleTable from "@/components/tables/SimpleTable";
 import { GetItemId, useSelectorOptions } from "@/utilities";
 
 interface MassEditorProps<T extends Item.Base = Item.Base> {
@@ -160,7 +160,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
           </Toolbox.MutateButton>
         </Box>
       </Toolbox>
-      <NewSimpleTable
+      <SimpleTable
         instanceRef={tableRef}
         columns={columns}
         data={data}
@@ -168,7 +168,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
         onRowSelectionChanged={(row) =>
           setSelections(row.map((r) => r.original))
         }
-      ></NewSimpleTable>
+      ></SimpleTable>
     </Container>
   );
 }

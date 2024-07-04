@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
 import { capitalize } from "lodash";
 import { Action, FileBrowser } from "@/components";
-import NewSimpleTable from "@/components/tables/NewSimpleTable";
+import SimpleTable from "@/components/tables/SimpleTable";
 import {
   moviesEnabledKey,
   pathMappingsKey,
@@ -137,11 +137,11 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
   if (enabled) {
     return (
       <>
-        <NewSimpleTable
+        <SimpleTable
           tableStyles={{ emptyText: "No mapping" }}
           columns={columns}
           data={data}
-        ></NewSimpleTable>
+        ></SimpleTable>
         <Button fullWidth onClick={addRow}>
           Add
         </Button>

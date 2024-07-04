@@ -24,7 +24,7 @@ import {
   useSubtitleInfos,
 } from "@/apis/hooks";
 import { Action, Selector } from "@/components/inputs";
-import NewSimpleTable from "@/components/tables/NewSimpleTable";
+import SimpleTable from "@/components/tables/SimpleTable";
 import TextPopover from "@/components/TextPopover";
 import { useModals, withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
@@ -372,10 +372,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
       })}
     >
       <Stack className="table-long-break">
-        <NewSimpleTable
-          columns={columns}
-          data={form.values.files}
-        ></NewSimpleTable>
+        <SimpleTable columns={columns} data={form.values.files}></SimpleTable>
         <Divider></Divider>
         <Button type="submit">Upload</Button>
       </Stack>

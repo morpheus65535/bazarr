@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Fragment } from "react";
 import { Box, Table, Text } from "@mantine/core";
 import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -10,9 +10,7 @@ import {
   Header,
   Row,
 } from "@tanstack/react-table";
-import NewSimpleTable, {
-  NewSimpleTableProps,
-} from "@/components/tables/NewSimpleTable";
+import SimpleTable, { SimpleTableProps } from "@/components/tables/SimpleTable";
 
 function renderCell<T extends object = object>(
   cell: Cell<T, unknown>,
@@ -73,7 +71,7 @@ function renderHeaders<T extends object>(
 ): React.JSX.Element[] {
   return headers.map((header) => {
     if (header.column.getIsGrouped()) {
-      return <></>;
+      return <Fragment key={header.id}></Fragment>;
     }
 
     return (
@@ -85,20 +83,20 @@ function renderHeaders<T extends object>(
 }
 
 type Props<T extends object> = Omit<
-  NewSimpleTableProps<T>,
+  SimpleTableProps<T>,
   "headersRenderer" | "rowRenderer"
 >;
 
 function GroupTable<T extends object = object>(props: Props<T>) {
   return (
-    <NewSimpleTable
+    <SimpleTable
       {...props}
       enableGrouping
       enableExpanding
       getGroupedRowModel={getGroupedRowModel()}
       getExpandedRowModel={getExpandedRowModel()}
       tableStyles={{ headersRenderer: renderHeaders, rowRenderer: renderRow }}
-    ></NewSimpleTable>
+    ></SimpleTable>
   );
 }
 

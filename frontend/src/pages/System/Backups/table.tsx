@@ -4,7 +4,7 @@ import { faHistory, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { ColumnDef } from "@tanstack/react-table";
 import { useDeleteBackups, useRestoreBackups } from "@/apis/hooks";
 import { Action } from "@/components";
-import NewPageTable from "@/components/tables/NewPageTable";
+import PageTable from "@/components/tables/PageTable";
 import { useModals } from "@/modules/modals";
 import { Environment } from "@/utilities";
 
@@ -127,7 +127,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
     [modals, remove, restore],
   );
 
-  return <NewPageTable columns={columns} data={backups}></NewPageTable>;
+  return <PageTable columns={columns} data={backups}></PageTable>;
 };
 
 export default Table;

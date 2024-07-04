@@ -1,55 +1,62 @@
-import { useEffect } from "react";
-import { usePagination, useTable } from "react-table";
+import { MutableRefObject, useEffect } from "react";
+import {
+  getCoreRowModel,
+  getPaginationRowModel,
+  Table,
+  TableOptions,
+  useReactTable,
+} from "@tanstack/react-table";
+import BaseTable, { TableStyleProps } from "@/components/tables/BaseTable";
 import { ScrollToTop } from "@/utilities";
 import { usePageSize } from "@/utilities/storage";
-import BaseTable from "./BaseTable";
 import PageControl from "./PageControl";
-import { useDefaultSettings } from "./plugins";
-import { SimpleTableProps } from "./SimpleTable";
 
-type Props<T extends object> = SimpleTableProps<T> & {
+type Props<T extends object> = Omit<TableOptions<T>, "getCoreRowModel"> & {
+  instanceRef?: MutableRefObject<Table<T> | null>;
+  tableStyles?: TableStyleProps<T>;
   autoScroll?: boolean;
 };
 
-const tablePlugins = [useDefaultSettings, usePagination];
-
 export default function PageTable<T extends object>(props: Props<T>) {
-  const { autoScroll = true, plugins, instanceRef, ...options } = props;
+  const { instanceRef, autoScroll, ...options } = props;
 
-  const instance = useTable(
-    options,
-    useDefaultSettings,
-    ...tablePlugins,
-    ...(plugins ?? []),
-  );
+  const pageSize = usePageSize();
 
-  // use page size as specified in UI settings
-  instance.state.pageSize = usePageSize();
+  const instance = useReactTable({
+    ...options,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: pageSize,
+      },
+    },
+  });
 
   if (instanceRef) {
     instanceRef.current = instance;
   }
+
+  const pageIndex = instance.getState().pagination.pageIndex;
 
   // Scroll to top when page is changed
   useEffect(() => {
     if (autoScroll) {
       ScrollToTop();
     }
-  }, [instance.state.pageIndex, autoScroll]);
+  }, [pageIndex, autoScroll]);
+
+  const state = instance.getState();
 
   return (
     <>
-      <BaseTable
-        {...options}
-        {...instance}
-        plugins={[...tablePlugins, ...(plugins ?? [])]}
-      ></BaseTable>
+      <BaseTable {...options} instance={instance}></BaseTable>
       <PageControl
-        count={instance.pageCount}
-        index={instance.state.pageIndex}
-        size={instance.state.pageSize}
-        total={instance.rows.length}
-        goto={instance.gotoPage}
+        count={instance.getPageCount()}
+        index={state.pagination.pageIndex}
+        size={pageSize}
+        total={instance.getRowCount()}
+        goto={instance.setPageIndex}
       ></PageControl>
     </>
   );

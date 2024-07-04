@@ -1,7 +1,7 @@
 import { FunctionComponent, useMemo } from "react";
 import { Text } from "@mantine/core";
 import { ColumnDef } from "@tanstack/react-table";
-import NewSimpleTable from "@/components/tables/NewSimpleTable";
+import SimpleTable from "@/components/tables/SimpleTable";
 
 interface Props {
   health: System.Health[];
@@ -37,11 +37,11 @@ const Table: FunctionComponent<Props> = ({ health }) => {
   );
 
   return (
-    <NewSimpleTable
+    <SimpleTable
       columns={columns}
       data={health}
       tableStyles={{ emptyText: "No issues with your configuration" }}
-    ></NewSimpleTable>
+    ></SimpleTable>
   );
 };
 

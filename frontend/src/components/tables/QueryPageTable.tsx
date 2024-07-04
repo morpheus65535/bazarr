@@ -1,13 +1,11 @@
 import { useEffect } from "react";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
-import NewSimpleTable, {
-  NewSimpleTableProps,
-} from "@/components/tables/NewSimpleTable";
+import SimpleTable, { SimpleTableProps } from "@/components/tables/SimpleTable";
 import { LoadingProvider } from "@/contexts";
 import { ScrollToTop } from "@/utilities";
 import PageControl from "./PageControl";
 
-type Props<T extends object> = Omit<NewSimpleTableProps<T>, "data"> & {
+type Props<T extends object> = Omit<SimpleTableProps<T>, "data"> & {
   query: UsePaginationQueryResult<T>;
 };
 
@@ -26,7 +24,7 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
 
   return (
     <LoadingProvider value={isPageLoading}>
-      <NewSimpleTable {...remain} data={data.data}></NewSimpleTable>
+      <SimpleTable {...remain} data={data.data}></SimpleTable>
       <PageControl
         count={pageCount}
         index={page}

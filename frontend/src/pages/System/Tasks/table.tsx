@@ -4,7 +4,7 @@ import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import { ColumnDef, getSortedRowModel } from "@tanstack/react-table";
 import { useRunTask } from "@/apis/hooks";
 import MutateAction from "@/components/async/MutateAction";
-import NewSimpleTable from "@/components/tables/NewSimpleTable";
+import SimpleTable from "@/components/tables/SimpleTable";
 
 interface Props {
   tasks: System.Task[];
@@ -65,13 +65,13 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
   );
 
   return (
-    <NewSimpleTable
+    <SimpleTable
       initialState={{ sorting: [{ id: "name", desc: false }] }}
       columns={columns}
       data={tasks}
       enableSorting
       getSortedRowModel={getSortedRowModel()}
-    ></NewSimpleTable>
+    ></SimpleTable>
   );
 };
 

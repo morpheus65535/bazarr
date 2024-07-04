@@ -6,7 +6,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { useLanguages } from "@/apis/hooks";
 import { Action } from "@/components";
 import LanguageSelector from "@/components/bazarr/LanguageSelector";
-import NewSimpleTable from "@/components/tables/NewSimpleTable";
+import SimpleTable from "@/components/tables/SimpleTable";
 import { languageEqualsKey } from "@/pages/Settings/keys";
 import { useFormActions } from "@/pages/Settings/utilities/FormValues";
 import { useSettingValue } from "@/pages/Settings/utilities/hooks";
@@ -349,7 +349,7 @@ const EqualsTable: FunctionComponent<EqualsTableProps> = () => {
 
   return (
     <>
-      <NewSimpleTable data={equals} columns={columns}></NewSimpleTable>
+      <SimpleTable data={equals} columns={columns}></SimpleTable>
       <Button fullWidth disabled={!canAdd} onClick={add}>
         {canAdd ? "Add Equal" : "No Enabled Languages"}
       </Button>

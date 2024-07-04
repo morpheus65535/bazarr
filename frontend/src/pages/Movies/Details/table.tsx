@@ -8,7 +8,7 @@ import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action } from "@/components";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
-import NewSimpleTable from "@/components/tables/NewSimpleTable";
+import SimpleTable from "@/components/tables/SimpleTable";
 import { task, TaskGroup } from "@/modules/task";
 import { filterSubtitleBy, toPython } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
@@ -194,11 +194,11 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
   }, [movie, onlyDesired, profileItems]);
 
   return (
-    <NewSimpleTable
+    <SimpleTable
       columns={columns}
       data={data}
       tableStyles={{ emptyText: "No subtitles found for this movie" }}
-    ></NewSimpleTable>
+    ></SimpleTable>
   );
 };
 

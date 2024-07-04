@@ -6,7 +6,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { useMovieDeleteBlacklist } from "@/apis/hooks";
 import MutateAction from "@/components/async/MutateAction";
 import Language from "@/components/bazarr/Language";
-import NewPageTable from "@/components/tables/NewPageTable";
+import PageTable from "@/components/tables/PageTable";
 import TextPopover from "@/components/TextPopover";
 
 interface Props {
@@ -101,11 +101,11 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
     [remove],
   );
   return (
-    <NewPageTable
+    <PageTable
       tableStyles={{ emptyText: "No blacklisted movies subtitles" }}
       columns={columns}
       data={blacklist}
-    ></NewPageTable>
+    ></PageTable>
   );
 };
 

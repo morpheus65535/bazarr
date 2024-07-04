@@ -15,7 +15,7 @@ import QueryOverlay from "@/components/async/QueryOverlay";
 import { HistoryIcon } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
-import NewPageTable from "@/components/tables/NewPageTable";
+import PageTable from "@/components/tables/PageTable";
 import TextPopover from "@/components/TextPopover";
 import { withModal } from "@/modules/modals";
 
@@ -152,11 +152,11 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
 
   return (
     <QueryOverlay result={history}>
-      <NewPageTable
+      <PageTable
         columns={columns}
         data={data ?? []}
         tableStyles={{ emptyText: "No history found" }}
-      ></NewPageTable>
+      ></PageTable>
     </QueryOverlay>
   );
 };
@@ -312,12 +312,12 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
 
   return (
     <QueryOverlay result={history}>
-      <NewPageTable
+      <PageTable
         autoScroll={false}
         tableStyles={{ emptyText: "No history found", placeholder: 5 }}
         columns={columns}
         data={data ?? []}
-      ></NewPageTable>
+      ></PageTable>
     </QueryOverlay>
   );
 };

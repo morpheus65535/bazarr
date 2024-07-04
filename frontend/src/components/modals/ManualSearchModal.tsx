@@ -22,7 +22,7 @@ import { isString } from "lodash";
 import { Action } from "@/components";
 import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
-import NewPageTable from "@/components/tables/NewPageTable";
+import PageTable from "@/components/tables/PageTable";
 import { withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
 import { GetItemId } from "@/utilities";
@@ -233,12 +233,12 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         <Code hidden={!bSceneNameAvailable}>{item?.sceneName}</Code>
       </Alert>
       <Collapse in={haveResult && !results.isFetching}>
-        <NewPageTable
+        <PageTable
           autoScroll={false}
           tableStyles={{ emptyText: "No result", placeholder: 10 }}
           columns={columns}
           data={results.data ?? []}
-        ></NewPageTable>
+        ></PageTable>
       </Collapse>
       <Divider></Divider>
       <Button loading={results.isFetching} fullWidth onClick={search}>

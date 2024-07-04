@@ -14,7 +14,7 @@ import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { ColumnDef } from "@tanstack/react-table";
 import { Action, Selector, SelectorOption } from "@/components";
 import ChipInput from "@/components/inputs/ChipInput";
-import NewSimpleTable from "@/components/tables/NewSimpleTable";
+import SimpleTable from "@/components/tables/SimpleTable";
 import { useModals, withModal } from "@/modules/modals";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
@@ -275,10 +275,10 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           <Accordion.Item value="Languages">
             <Stack>
               {form.errors.items}
-              <NewSimpleTable
+              <SimpleTable
                 columns={columns}
                 data={form.values.items}
-              ></NewSimpleTable>
+              ></SimpleTable>
               <Button fullWidth onClick={addItem}>
                 Add Language
               </Button>

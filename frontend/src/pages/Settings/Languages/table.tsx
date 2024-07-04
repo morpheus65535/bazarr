@@ -8,7 +8,7 @@ import {
   anyCutoff,
   ProfileEditModal,
 } from "@/components/forms/ProfileEditForm";
-import NewSimpleTable from "@/components/tables/NewSimpleTable";
+import SimpleTable from "@/components/tables/SimpleTable";
 import { useModals } from "@/modules/modals";
 import { languageProfileKey } from "@/pages/Settings/keys";
 import { useFormActions } from "@/pages/Settings/utilities/FormValues";
@@ -170,7 +170,7 @@ const Table: FunctionComponent = () => {
 
   return (
     <>
-      <NewSimpleTable columns={columns} data={[...profiles]}></NewSimpleTable>
+      <SimpleTable columns={columns} data={[...profiles]}></SimpleTable>
       <Button
         fullWidth
         disabled={!canAdd}

@@ -11,7 +11,7 @@ import {
 import { ColumnDef } from "@tanstack/react-table";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
-import NewSimpleTable from "@/components/tables/NewSimpleTable";
+import SimpleTable from "@/components/tables/SimpleTable";
 import { withModal } from "@/modules/modals";
 import { isMovie } from "@/utilities";
 
@@ -132,7 +132,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
 
   return (
     <Stack>
-      <NewSimpleTable
+      <SimpleTable
         tableStyles={{ emptyText: "No external subtitles found" }}
         enableRowSelection={(row) => CanSelectSubtitle(row.original)}
         onRowSelectionChanged={(rows) =>
@@ -140,7 +140,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
         }
         columns={columns}
         data={data}
-      ></NewSimpleTable>
+      ></SimpleTable>
       <Divider></Divider>
       <Group>
         <SubtitleToolsMenu selections={selections}>
