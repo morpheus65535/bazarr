@@ -36,8 +36,8 @@ export default defineConfig(async ({ mode, command }) => {
       VitePWA({
         registerType: "autoUpdate",
         includeAssets: [
-          "images/favicon.ico",
-          "images/apple-touch-icon-180x180.png",
+          "/images/favicon.ico",
+          "/images/apple-touch-icon-180x180.png",
         ],
         manifest: {
           name: "Bazarr",
@@ -47,45 +47,45 @@ export default defineConfig(async ({ mode, command }) => {
           theme_color: "#be4bdb",
           icons: [
             {
-              src: "public/images/pwa-64x64.png",
+              src: "/images/pwa-64x64.png",
               sizes: "64x64",
               type: "image/png",
             },
             {
-              src: "public/images/pwa-192x192.png",
+              src: "/images/pwa-192x192.png",
               sizes: "192x192",
               type: "image/png",
             },
             {
-              src: "public/images/pwa-512x512.png",
+              src: "/images/pwa-512x512.png",
               sizes: "512x512",
               type: "image/png",
             },
           ],
           screenshots: [
             {
-              src: "public/images/pwa-wide-series-list.jpeg",
+              src: "/images/pwa-wide-series-list.jpeg",
               sizes: "1447x1060",
               label: "Series List",
               form_factor: "wide",
               type: "image/jpeg",
             },
             {
-              src: "public/images/pwa-wide-series-overview.jpeg",
+              src: "/images/pwa-wide-series-overview.jpeg",
               sizes: "1447x1060",
               label: "Series Overview",
               form_factor: "wide",
               type: "image/jpeg",
             },
             {
-              src: "public/images/pwa-narrow-series-list.jpeg",
+              src: "/images/pwa-narrow-series-list.jpeg",
               sizes: "491x973",
               label: "Series List",
               form_factor: "narrow",
               type: "image/jpeg",
             },
             {
-              src: "public/images/pwa-narrow-series-overview.jpeg",
+              src: "/images/pwa-narrow-series-overview.jpeg",
               sizes: "491x973",
               label: "Series Overview",
               form_factor: "narrow",

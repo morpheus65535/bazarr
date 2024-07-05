@@ -82,6 +82,7 @@
     "format": "prettier -w .",
     "pwa-assets:generate": "pwa-assets-generator --preset minimal-2023 public/images/logo128.png",
     "prepare": "cd .. && husky frontend/.husky",
+    "preview": "vite preview",
     "start": "vite",
     "test": "vitest",
     "test:ui": "vitest --ui"
