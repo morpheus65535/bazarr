@@ -24,7 +24,7 @@ guessit==3.8.0
 h11==0.14.0
 inflect==7.0.0
 jsonschema<=4.17.3  # newer version require other compiled dependency
-knowit==0.5.2
+knowit==0.5.3
 Mako==1.3.2
 pycountry==23.12.11
 pyrsistent==0.20.0

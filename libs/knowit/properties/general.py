@@ -81,7 +81,11 @@ class Language(Property[babelfish.Language]):
         """Handle languages."""
         try:
             if len(value) == 3:
-                return babelfish.Language.fromalpha3b(value)
+                try:
+                    return babelfish.Language.fromalpha3b(value)
+                except babelfish.Error:
+                    # Try alpha3t if alpha3b fails
+                    return babelfish.Language.fromalpha3t(value)
 
             return babelfish.Language.fromietf(value)
         except (babelfish.Error, ValueError):
