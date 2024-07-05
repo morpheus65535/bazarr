@@ -129,7 +129,9 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         m={0}
         style={{
           backgroundColor: "rgba(0,0,0,0.7)",
-          flexWrap: "nowrap",
+        }}
+        styles={{
+          inner: { flexWrap: "nowrap" },
         }}
       >
         <Grid.Col span={3} visibleFrom="sm">
