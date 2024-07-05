@@ -172,6 +172,7 @@ class TableHistory(Base):
     video_path = mapped_column(Text)
     matched = mapped_column(Text)
     not_matched = mapped_column(Text)
+    upgradedFromId = mapped_column(Integer, ForeignKey('table_history.id'))
 
 
 class TableHistoryMovie(Base):
@@ -190,6 +191,7 @@ class TableHistoryMovie(Base):
     video_path = mapped_column(Text)
     matched = mapped_column(Text)
     not_matched = mapped_column(Text)
+    upgradedFromId = mapped_column(Integer, ForeignKey('table_history_movie.id'))
 
 
 class TableLanguagesProfiles(Base):
@@ -202,6 +204,7 @@ class TableLanguagesProfiles(Base):
     name = mapped_column(Text, nullable=False)
     mustContain = mapped_column(Text)
     mustNotContain = mapped_column(Text)
+    tag = mapped_column(Text)
 
 
 class TableMovies(Base):
