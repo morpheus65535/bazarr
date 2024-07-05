@@ -1,5 +1,4 @@
 import { FunctionComponent, useEffect, useMemo } from "react";
-import { Column } from "react-table";
 import {
   Button,
   Checkbox,
@@ -17,10 +16,11 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ColumnDef } from "@tanstack/react-table";
 import { isString } from "lodash";
 import { useMovieSubtitleModification } from "@/apis/hooks";
 import { Action, Selector } from "@/components/inputs";
-import { SimpleTable } from "@/components/tables";
+import SimpleTable from "@/components/tables/SimpleTable";
 import TextPopover from "@/components/TextPopover";
 import { useModals, withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
@@ -143,61 +143,77 @@ const MovieUploadForm: FunctionComponent<Props> = ({
     });
   });
 
-  const columns = useMemo<Column<SubtitleFile>[]>(
+  const ValidateResultCell = ({
+    validateResult,
+  }: {
+    validateResult: SubtitleValidateResult | undefined;
+  }) => {
+    const icon = useMemo(() => {
+      switch (validateResult?.state) {
+        case "valid":
+          return faCheck;
+        case "warning":
+          return faInfoCircle;
+        case "error":
+          return faTimes;
+        default:
+          return faCircleNotch;
+      }
+    }, [validateResult?.state]);
+
+    const color = useMemo<MantineColor | undefined>(() => {
+      switch (validateResult?.state) {
+        case "valid":
+          return "green";
+        case "warning":
+          return "yellow";
+        case "error":
+          return "red";
+        default:
+          return undefined;
+      }
+    }, [validateResult?.state]);
+
+    return (
+      <TextPopover text={validateResult?.messages}>
+        <Text c={color} inline>
+          <FontAwesomeIcon icon={icon} />
+        </Text>
+      </TextPopover>
+    );
+  };
+
+  const columns = useMemo<ColumnDef<SubtitleFile>[]>(
     () => [
       {
-        accessor: "validateResult",
-        Cell: ({ cell: { value } }) => {
-          const icon = useMemo(() => {
-            switch (value?.state) {
-              case "valid":
-                return faCheck;
-              case "warning":
-                return faInfoCircle;
-              case "error":
-                return faTimes;
-              default:
-                return faCircleNotch;
-            }
-          }, [value?.state]);
-
-          const color = useMemo<MantineColor | undefined>(() => {
-            switch (value?.state) {
-              case "valid":
-                return "green";
-              case "warning":
-                return "yellow";
-              case "error":
-                return "red";
-              default:
-                return undefined;
-            }
-          }, [value?.state]);
-
-          return (
-            <TextPopover text={value?.messages}>
-              <Text c={color} inline>
-                <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
-              </Text>
-            </TextPopover>
-          );
+        id: "validateResult",
+        cell: ({
+          row: {
+            original: { validateResult },
+          },
+        }) => {
+          return <ValidateResultCell validateResult={validateResult} />;
         },
       },
       {
-        Header: "File",
+        header: "File",
         id: "filename",
-        accessor: "file",
-        Cell: ({ value }) => {
-          return <Text className="table-primary">{value.name}</Text>;
+        accessorKey: "file",
+        cell: ({
+          row: {
+            original: { file },
+          },
+        }) => {
+          return <Text className="table-primary">{file.name}</Text>;
         },
       },
       {
-        Header: "Forced",
-        accessor: "forced",
-        Cell: ({ row: { original, index }, value }) => {
+        header: "Forced",
+        accessorKey: "forced",
+        cell: ({ row: { original, index } }) => {
           return (
             <Checkbox
-              checked={value}
+              checked={original.forced}
               onChange={({ currentTarget: { checked } }) => {
                 action.mutate(index, { ...original, forced: checked });
               }}
@@ -206,12 +222,12 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         },
       },
       {
-        Header: "HI",
-        accessor: "hi",
-        Cell: ({ row: { original, index }, value }) => {
+        header: "HI",
+        accessorKey: "hi",
+        cell: ({ row: { original, index } }) => {
           return (
             <Checkbox
-              checked={value}
+              checked={original.hi}
               onChange={({ currentTarget: { checked } }) => {
                 action.mutate(index, { ...original, hi: checked });
               }}
@@ -220,14 +236,14 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         },
       },
       {
-        Header: "Language",
-        accessor: "language",
-        Cell: ({ row: { original, index }, value }) => {
+        header: "Language",
+        accessorKey: "language",
+        cell: ({ row: { original, index } }) => {
           return (
             <Selector
               {...languageOptions}
               className="table-long-break"
-              value={value}
+              value={original.language}
               onChange={(item) => {
                 action.mutate(index, { ...original, language: item });
               }}
@@ -237,8 +253,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
       },
       {
         id: "action",
-        accessor: "file",
-        Cell: ({ row: { index } }) => {
+        cell: ({ row: { index } }) => {
           return (
             <Action
               label="Remove"

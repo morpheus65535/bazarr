@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
+import SimpleTable, { SimpleTableProps } from "@/components/tables/SimpleTable";
 import { LoadingProvider } from "@/contexts";
 import { ScrollToTop } from "@/utilities";
 import PageControl from "./PageControl";
-import SimpleTable, { SimpleTableProps } from "./SimpleTable";
 
 type Props<T extends object> = Omit<SimpleTableProps<T>, "data"> & {
   query: UsePaginationQueryResult<T>;

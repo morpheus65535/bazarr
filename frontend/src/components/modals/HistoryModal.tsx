@@ -1,21 +1,21 @@
 /* eslint-disable camelcase */
 import { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
 import { Badge, Center, Text } from "@mantine/core";
 import { faFileExcel, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ColumnDef } from "@tanstack/react-table";
 import {
   useEpisodeAddBlacklist,
   useEpisodeHistory,
   useMovieAddBlacklist,
   useMovieHistory,
 } from "@/apis/hooks";
-import { PageTable } from "@/components";
 import MutateAction from "@/components/async/MutateAction";
 import QueryOverlay from "@/components/async/QueryOverlay";
 import { HistoryIcon } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
+import PageTable from "@/components/tables/PageTable";
 import TextPopover from "@/components/TextPopover";
 import { withModal } from "@/modules/modals";
 
@@ -30,24 +30,34 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
 
   const { data } = history;
 
-  const columns = useMemo<Column<History.Movie>[]>(
+  const addMovieToBlacklist = useMovieAddBlacklist();
+
+  const columns = useMemo<ColumnDef<History.Movie>[]>(
     () => [
       {
-        accessor: "action",
-        Cell: (row) => (
+        id: "action",
+        cell: ({
+          row: {
+            original: { action },
+          },
+        }) => (
           <Center>
-            <HistoryIcon action={row.value}></HistoryIcon>
+            <HistoryIcon action={action}></HistoryIcon>
           </Center>
         ),
       },
       {
-        Header: "Language",
-        accessor: "language",
-        Cell: ({ value }) => {
-          if (value) {
+        header: "Language",
+        accessorKey: "language",
+        cell: ({
+          row: {
+            original: { language },
+          },
+        }) => {
+          if (language) {
             return (
               <Badge>
-                <Language.Text value={value} long></Language.Text>
+                <Language.Text value={language} long></Language.Text>
               </Badge>
             );
           } else {
@@ -56,17 +66,20 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
         },
       },
       {
-        Header: "Provider",
-        accessor: "provider",
+        header: "Provider",
+        accessorKey: "provider",
       },
       {
-        Header: "Score",
-        accessor: "score",
+        header: "Score",
+        accessorKey: "score",
       },
       {
-        accessor: "matches",
-        Cell: (row) => {
-          const { matches, dont_matches: dont } = row.row.original;
+        id: "matches",
+        cell: ({
+          row: {
+            original: { matches, dont_matches: dont },
+          },
+        }) => {
           if (matches.length || dont.length) {
             return (
               <StateIcon
@@ -81,31 +94,42 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
         },
       },
       {
-        Header: "Date",
-        accessor: "timestamp",
-        Cell: ({ value, row }) => {
+        header: "Date",
+        accessorKey: "timestamp",
+        cell: ({
+          row: {
+            original: { timestamp, parsed_timestamp: parsedTimestamp },
+          },
+        }) => {
           return (
-            <TextPopover text={row.original.parsed_timestamp}>
-              <Text>{value}</Text>
+            <TextPopover text={parsedTimestamp}>
+              <Text>{timestamp}</Text>
             </TextPopover>
           );
         },
       },
       {
         // Actions
-        accessor: "blacklisted",
-        Cell: ({ row, value }) => {
-          const add = useMovieAddBlacklist();
-          const { radarrId, provider, subs_id, language, subtitles_path } =
-            row.original;
-
+        id: "blacklisted",
+        cell: ({
+          row: {
+            original: {
+              blacklisted,
+              radarrId,
+              provider,
+              subs_id,
+              language,
+              subtitles_path,
+            },
+          },
+        }) => {
           if (subs_id && provider && language) {
             return (
               <MutateAction
                 label="Add to Blacklist"
-                disabled={value}
+                disabled={blacklisted}
                 icon={faFileExcel}
-                mutation={add}
+                mutation={addMovieToBlacklist}
                 args={() => ({
                   id: radarrId,
                   form: {
@@ -123,7 +147,7 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
         },
       },
     ],
-    [],
+    [addMovieToBlacklist],
   );
 
   return (
@@ -153,24 +177,34 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
 
   const { data } = history;
 
-  const columns = useMemo<Column<History.Episode>[]>(
+  const addEpisodeToBlacklist = useEpisodeAddBlacklist();
+
+  const columns = useMemo<ColumnDef<History.Episode>[]>(
     () => [
       {
-        accessor: "action",
-        Cell: (row) => (
+        id: "action",
+        cell: ({
+          row: {
+            original: { action },
+          },
+        }) => (
           <Center>
-            <HistoryIcon action={row.value}></HistoryIcon>
+            <HistoryIcon action={action}></HistoryIcon>
           </Center>
         ),
       },
       {
-        Header: "Language",
-        accessor: "language",
-        Cell: ({ value }) => {
-          if (value) {
+        header: "Language",
+        accessorKey: "language",
+        cell: ({
+          row: {
+            original: { language },
+          },
+        }) => {
+          if (language) {
             return (
               <Badge>
-                <Language.Text value={value} long></Language.Text>
+                <Language.Text value={language} long></Language.Text>
               </Badge>
             );
           } else {
@@ -179,16 +213,16 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
         },
       },
       {
-        Header: "Provider",
-        accessor: "provider",
+        header: "Provider",
+        accessorKey: "provider",
       },
       {
-        Header: "Score",
-        accessor: "score",
+        header: "Score",
+        accessorKey: "score",
       },
       {
-        accessor: "matches",
-        Cell: (row) => {
+        id: "matches",
+        cell: (row) => {
           const { matches, dont_matches: dont } = row.row.original;
           if (matches.length || dont.length) {
             return (
@@ -204,21 +238,29 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
         },
       },
       {
-        Header: "Date",
-        accessor: "timestamp",
-        Cell: ({ row, value }) => {
+        header: "Date",
+        accessorKey: "timestamp",
+        cell: ({
+          row: {
+            original: { timestamp, parsed_timestamp: parsedTimestamp },
+          },
+        }) => {
           return (
-            <TextPopover text={row.original.parsed_timestamp}>
-              <Text>{value}</Text>
+            <TextPopover text={parsedTimestamp}>
+              <Text>{timestamp}</Text>
             </TextPopover>
           );
         },
       },
       {
-        accessor: "description",
-        Cell: ({ value }) => {
+        id: "description",
+        cell: ({
+          row: {
+            original: { description },
+          },
+        }) => {
           return (
-            <TextPopover text={value}>
+            <TextPopover text={description}>
               <FontAwesomeIcon size="sm" icon={faInfoCircle}></FontAwesomeIcon>
             </TextPopover>
           );
@@ -226,25 +268,27 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
       },
       {
         // Actions
-        accessor: "blacklisted",
-        Cell: ({ row, value }) => {
-          const {
-            sonarrEpisodeId,
-            sonarrSeriesId,
-            provider,
-            subs_id,
-            language,
-            subtitles_path,
-          } = row.original;
-          const add = useEpisodeAddBlacklist();
-
+        id: "blacklisted",
+        cell: ({
+          row: {
+            original: {
+              blacklisted,
+              sonarrEpisodeId,
+              sonarrSeriesId,
+              provider,
+              subs_id,
+              language,
+              subtitles_path,
+            },
+          },
+        }) => {
           if (subs_id && provider && language) {
             return (
               <MutateAction
                 label="Add to Blacklist"
-                disabled={value}
+                disabled={blacklisted}
                 icon={faFileExcel}
-                mutation={add}
+                mutation={addEpisodeToBlacklist}
                 args={() => ({
                   seriesId: sonarrSeriesId,
                   episodeId: sonarrEpisodeId,
@@ -263,7 +307,7 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
         },
       },
     ],
-    [],
+    [addEpisodeToBlacklist],
   );
 
   return (

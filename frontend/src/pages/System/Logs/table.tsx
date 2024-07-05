@@ -1,5 +1,4 @@
 import { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faBug,
@@ -10,12 +9,14 @@ import {
   faQuestion,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Action, PageTable } from "@/components";
+import { ColumnDef } from "@tanstack/react-table";
+import { Action } from "@/components";
+import PageTable from "@/components/tables/PageTable";
 import { useModals } from "@/modules/modals";
 import SystemLogModal from "./modal";
 
 interface Props {
-  logs: readonly System.Log[];
+  logs: System.Log[];
 }
 
 function mapTypeToIcon(type: System.LogType): IconDefinition {
@@ -34,33 +35,40 @@ function mapTypeToIcon(type: System.LogType): IconDefinition {
 }
 
 const Table: FunctionComponent<Props> = ({ logs }) => {
-  const columns: Column<System.Log>[] = useMemo<Column<System.Log>[]>(
+  const modals = useModals();
+
+  const columns = useMemo<ColumnDef<System.Log>[]>(
     () => [
       {
-        accessor: "type",
-        Cell: (row) => (
-          <FontAwesomeIcon icon={mapTypeToIcon(row.value)}></FontAwesomeIcon>
-        ),
+        accessorKey: "type",
+        cell: ({
+          row: {
+            original: { type },
+          },
+        }) => <FontAwesomeIcon icon={mapTypeToIcon(type)}></FontAwesomeIcon>,
       },
       {
         Header: "Message",
-        accessor: "message",
+        accessorKey: "message",
       },
       {
         Header: "Date",
-        accessor: "timestamp",
+        accessorKey: "timestamp",
       },
       {
-        accessor: "exception",
-        Cell: ({ value }) => {
-          const modals = useModals();
-          if (value) {
+        accessorKey: "exception",
+        cell: ({
+          row: {
+            original: { exception },
+          },
+        }) => {
+          if (exception) {
             return (
               <Action
                 label="Detail"
                 icon={faLayerGroup}
                 onClick={() =>
-                  modals.openContextModal(SystemLogModal, { stack: value })
+                  modals.openContextModal(SystemLogModal, { stack: exception })
                 }
               ></Action>
             );
@@ -70,7 +78,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
         },
       },
     ],
-    [],
+    [modals],
   );
 
   return (

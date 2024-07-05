@@ -21,6 +21,7 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
+import { Table as TableInstance } from "@tanstack/table-core/build/lib/types";
 import {
   useEpisodesBySeriesId,
   useIsAnyActionRunning,
@@ -41,12 +42,6 @@ import { useLanguageProfileBy } from "@/utilities/languages";
 import Table from "./table";
 
 const SeriesEpisodesView: FunctionComponent = () => {
-  const [state, setState] = useState({
-    expand: false,
-    buttonText: "Expand All",
-    initial: true,
-  });
-
   const params = useParams();
   const id = Number.parseInt(params.id as string);
 
@@ -102,17 +97,17 @@ const SeriesEpisodesView: FunctionComponent = () => {
 
   useDocumentTitle(`${series?.title ?? "Unknown Series"} - Bazarr (Series)`);
 
+  const tableRef = useRef<TableInstance<Item.Episode> | null>(null);
+
+  const [isAllRowExpanded, setIsAllRowExpanded] = useState(
+    tableRef?.current?.getIsAllRowsExpanded(),
+  );
+
   const openDropzone = useRef<VoidFunction>(null);
 
   if (isNaN(id) || (isFetched && !series)) {
     return <Navigate to={RouterNames.NotFound}></Navigate>;
   }
-
-  const toggleState = () => {
-    state.expand
-      ? setState({ expand: false, buttonText: "Expand All", initial: false })
-      : setState({ expand: true, buttonText: "Collapse All", initial: false });
-  };
 
   return (
     <Container px={0} fluid>
@@ -210,12 +205,14 @@ const SeriesEpisodesView: FunctionComponent = () => {
               Edit Series
             </Toolbox.Button>
             <Toolbox.Button
-              icon={state.expand ? faCircleChevronRight : faCircleChevronDown}
+              icon={
+                isAllRowExpanded ? faCircleChevronRight : faCircleChevronDown
+              }
               onClick={() => {
-                toggleState();
+                tableRef.current?.toggleAllRowsExpanded();
               }}
             >
-              {state.buttonText}
+              {isAllRowExpanded ? "Collapse All" : "Expand All"}
             </Toolbox.Button>
           </Group>
         </Toolbox>
@@ -223,11 +220,11 @@ const SeriesEpisodesView: FunctionComponent = () => {
           <ItemOverview item={series ?? null} details={details}></ItemOverview>
           <QueryOverlay result={episodesQuery}>
             <Table
-              expand={state.expand}
-              initial={state.initial}
+              ref={tableRef}
               episodes={episodes ?? null}
               profile={profile}
               disabled={hasTask || !series || series.profileId === null}
+              onAllRowsExpandedChanged={setIsAllRowExpanded}
             ></Table>
           </QueryOverlay>
         </Stack>

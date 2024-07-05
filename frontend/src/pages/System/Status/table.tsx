@@ -1,27 +1,35 @@
 import { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
 import { Text } from "@mantine/core";
-import { SimpleTable } from "@/components";
+import { ColumnDef } from "@tanstack/react-table";
+import SimpleTable from "@/components/tables/SimpleTable";
 
 interface Props {
-  health: readonly System.Health[];
+  health: System.Health[];
 }
 
 const Table: FunctionComponent<Props> = ({ health }) => {
-  const columns: Column<System.Health>[] = useMemo<Column<System.Health>[]>(
+  const columns = useMemo<ColumnDef<System.Health>[]>(
     () => [
       {
-        Header: "Object",
-        accessor: "object",
-        Cell: ({ value }) => {
-          return <Text className="table-no-wrap">{value}</Text>;
+        header: "Object",
+        accessorKey: "object",
+        cell: ({
+          row: {
+            original: { object },
+          },
+        }) => {
+          return <Text className="table-no-wrap">{object}</Text>;
         },
       },
       {
-        Header: "Issue",
-        accessor: "issue",
-        Cell: ({ value }) => {
-          return <Text className="table-primary">{value}</Text>;
+        header: "Issue",
+        accessorKey: "issue",
+        cell: ({
+          row: {
+            original: { issue },
+          },
+        }) => {
+          return <Text className="table-primary">{issue}</Text>;
         },
       },
     ],

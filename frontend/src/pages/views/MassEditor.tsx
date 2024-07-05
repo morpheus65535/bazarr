@@ -1,22 +1,17 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Column, useRowSelect } from "react-table";
 import { Box, Container, useCombobox } from "@mantine/core";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
 import { UseMutationResult } from "@tanstack/react-query";
+import { ColumnDef, Table } from "@tanstack/react-table";
 import { uniqBy } from "lodash";
 import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
-import {
-  GroupedSelector,
-  GroupedSelectorOptions,
-  SimpleTable,
-  Toolbox,
-} from "@/components";
-import { useCustomSelection } from "@/components/tables/plugins";
+import { GroupedSelector, GroupedSelectorOptions, Toolbox } from "@/components";
+import SimpleTable from "@/components/tables/SimpleTable";
 import { GetItemId, useSelectorOptions } from "@/utilities";
 
 interface MassEditorProps<T extends Item.Base = Item.Base> {
-  columns: Column<T>[];
+  columns: ColumnDef<T>[];
   data: T[];
   mutation: UseMutationResult<void, unknown, FormType.ModifyItem>;
 }
@@ -28,6 +23,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
   const [dirties, setDirties] = useState<T[]>([]);
   const hasTask = useIsAnyMutationRunning();
   const { data: profiles } = useLanguageProfiles();
+  const tableRef = useRef<Table<T>>(null);
 
   const navigate = useNavigate();
 
@@ -120,6 +116,8 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
       setDirties((dirty) => {
         return uniqBy([...newItems, ...dirty], GetItemId);
       });
+
+      tableRef.current?.toggleAllRowsSelected(false);
     },
     [selections],
   );
@@ -163,10 +161,13 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
         </Box>
       </Toolbox>
       <SimpleTable
+        instanceRef={tableRef}
         columns={columns}
         data={data}
-        onSelect={setSelections}
-        plugins={[useRowSelect, useCustomSelection]}
+        enableRowSelection
+        onRowSelectionChanged={(row) => {
+          setSelections(row.map((r) => r.original));
+        }}
       ></SimpleTable>
     </Container>
   );

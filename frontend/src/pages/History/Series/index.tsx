@@ -1,7 +1,6 @@
 /* eslint-disable camelcase */
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Column } from "react-table";
 import { Anchor, Badge, Text } from "@mantine/core";
 import {
   faFileExcel,
@@ -9,6 +8,7 @@ import {
   faRecycle,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ColumnDef } from "@tanstack/react-table";
 import {
   useEpisodeAddBlacklist,
   useEpisodeHistoryPagination,
@@ -21,44 +21,60 @@ import TextPopover from "@/components/TextPopover";
 import HistoryView from "@/pages/views/HistoryView";
 
 const SeriesHistoryView: FunctionComponent = () => {
-  const columns: Column<History.Episode>[] = useMemo<Column<History.Episode>[]>(
+  const addToBlacklist = useEpisodeAddBlacklist();
+
+  const columns = useMemo<ColumnDef<History.Episode>[]>(
     () => [
       {
-        accessor: "action",
-        Cell: ({ value }) => <HistoryIcon action={value}></HistoryIcon>,
+        id: "action",
+        cell: ({ row: { original } }) => (
+          <HistoryIcon action={original.action}></HistoryIcon>
+        ),
       },
       {
-        Header: "Series",
-        accessor: "seriesTitle",
-        Cell: (row) => {
-          const target = `/series/${row.row.original.sonarrSeriesId}`;
+        header: "Series",
+        accessorKey: "seriesTitle",
+        cell: ({
+          row: {
+            original: { seriesTitle, sonarrSeriesId },
+          },
+        }) => {
+          const target = `/series/${sonarrSeriesId}`;
 
           return (
             <Anchor className="table-primary" component={Link} to={target}>
-              {row.value}
+              {seriesTitle}
             </Anchor>
           );
         },
       },
       {
-        Header: "Episode",
-        accessor: "episode_number",
+        header: "Episode",
+        accessorKey: "episode_number",
       },
       {
-        Header: "Title",
-        accessor: "episodeTitle",
-        Cell: ({ value }) => {
-          return <Text className="table-no-wrap">{value}</Text>;
+        header: "Title",
+        accessorKey: "episodeTitle",
+        cell: ({
+          row: {
+            original: { episodeTitle },
+          },
+        }) => {
+          return <Text className="table-no-wrap">{episodeTitle}</Text>;
         },
       },
       {
-        Header: "Language",
-        accessor: "language",
-        Cell: ({ value }) => {
-          if (value) {
+        header: "Language",
+        accessorKey: "language",
+        cell: ({
+          row: {
+            original: { language },
+          },
+        }) => {
+          if (language) {
             return (
               <Badge color="secondary">
-                <Language.Text value={value} long></Language.Text>
+                <Language.Text value={language} long></Language.Text>
               </Badge>
             );
           } else {
@@ -67,13 +83,13 @@ const SeriesHistoryView: FunctionComponent = () => {
         },
       },
       {
-        Header: "Score",
-        accessor: "score",
+        header: "Score",
+        accessorKey: "score",
       },
       {
-        Header: "Match",
-        accessor: "matches",
-        Cell: (row) => {
+        header: "Match",
+        accessorKey: "matches",
+        cell: (row) => {
           const { matches, dont_matches: dont } = row.row.original;
           if (matches.length || dont.length) {
             return (
@@ -89,13 +105,17 @@ const SeriesHistoryView: FunctionComponent = () => {
         },
       },
       {
-        Header: "Date",
-        accessor: "timestamp",
-        Cell: (row) => {
-          if (row.value) {
+        header: "Date",
+        accessorKey: "timestamp",
+        cell: ({
+          row: {
+            original: { timestamp, parsed_timestamp },
+          },
+        }) => {
+          if (timestamp) {
             return (
-              <TextPopover text={row.row.original.parsed_timestamp}>
-                <Text>{row.value}</Text>
+              <TextPopover text={parsed_timestamp}>
+                <Text>{timestamp}</Text>
               </TextPopover>
             );
           } else {
@@ -104,21 +124,29 @@ const SeriesHistoryView: FunctionComponent = () => {
         },
       },
       {
-        Header: "Info",
-        accessor: "description",
-        Cell: ({ row, value }) => {
+        header: "Info",
+        accessorKey: "description",
+        cell: ({
+          row: {
+            original: { description },
+          },
+        }) => {
           return (
-            <TextPopover text={value}>
+            <TextPopover text={description}>
               <FontAwesomeIcon size="sm" icon={faInfoCircle}></FontAwesomeIcon>
             </TextPopover>
           );
         },
       },
       {
-        Header: "Upgrade",
-        accessor: "upgradable",
-        Cell: (row) => {
-          if (row.value) {
+        header: "Upgrade",
+        accessorKey: "upgradable",
+        cell: ({
+          row: {
+            original: { upgradable },
+          },
+        }) => {
+          if (upgradable) {
             return (
               <TextPopover text="This Subtitle File Is Eligible For An Upgrade.">
                 <FontAwesomeIcon size="sm" icon={faRecycle}></FontAwesomeIcon>
@@ -130,9 +158,9 @@ const SeriesHistoryView: FunctionComponent = () => {
         },
       },
       {
-        Header: "Blacklist",
-        accessor: "blacklisted",
-        Cell: ({ row, value }) => {
+        header: "Blacklist",
+        accessorKey: "blacklisted",
+        cell: ({ row }) => {
           const {
             sonarrEpisodeId,
             sonarrSeriesId,
@@ -140,16 +168,15 @@ const SeriesHistoryView: FunctionComponent = () => {
             subs_id,
             language,
             subtitles_path,
+            blacklisted,
           } = row.original;
-          const add = useEpisodeAddBlacklist();
-
           if (subs_id && provider && language) {
             return (
               <MutateAction
                 label="Add to Blacklist"
-                disabled={value}
+                disabled={blacklisted}
                 icon={faFileExcel}
-                mutation={add}
+                mutation={addToBlacklist}
                 args={() => ({
                   seriesId: sonarrSeriesId,
                   episodeId: sonarrEpisodeId,
@@ -168,7 +195,7 @@ const SeriesHistoryView: FunctionComponent = () => {
         },
       },
     ],
-    [],
+    [addToBlacklist],
   );
 
   const query = useEpisodeHistoryPagination();
