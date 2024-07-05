@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 /// <reference types="vitest" />
 /// <reference types="vite/client" />
 /// <reference types="node" />
@@ -6,6 +8,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import { defineConfig, loadEnv } from "vite";
 import checker from "vite-plugin-checker";
+import { VitePWA } from "vite-plugin-pwa";
 import chunks from "./config/chunks";
 import overrideEnv from "./config/configReader";
 
@@ -29,6 +32,70 @@ export default defineConfig(async ({ mode, command }) => {
           lintCommand: "eslint --ext .ts,.tsx src",
         },
         enableBuild: false,
+      }),
+      VitePWA({
+        registerType: "autoUpdate",
+        includeAssets: [
+          "/images/favicon.ico",
+          "/images/apple-touch-icon-180x180.png",
+        ],
+        manifest: {
+          name: "Bazarr",
+          short_name: "Bazarr",
+          description:
+            "Bazarr is a companion application to Sonarr and Radarr. It manages and downloads subtitles based on your requirements.",
+          theme_color: "#be4bdb",
+          icons: [
+            {
+              src: "/images/pwa-64x64.png",
+              sizes: "64x64",
+              type: "image/png",
+            },
+            {
+              src: "/images/pwa-192x192.png",
+              sizes: "192x192",
+              type: "image/png",
+            },
+            {
+              src: "/images/pwa-512x512.png",
+              sizes: "512x512",
+              type: "image/png",
+            },
+          ],
+          screenshots: [
+            {
+              src: "/images/pwa-wide-series-list.jpeg",
+              sizes: "1447x1060",
+              label: "Series List",
+              form_factor: "wide",
+              type: "image/jpeg",
+            },
+            {
+              src: "/images/pwa-wide-series-overview.jpeg",
+              sizes: "1447x1060",
+              label: "Series Overview",
+              form_factor: "wide",
+              type: "image/jpeg",
+            },
+            {
+              src: "/images/pwa-narrow-series-list.jpeg",
+              sizes: "491x973",
+              label: "Series List",
+              form_factor: "narrow",
+              type: "image/jpeg",
+            },
+            {
+              src: "/images/pwa-narrow-series-overview.jpeg",
+              sizes: "491x973",
+              label: "Series Overview",
+              form_factor: "narrow",
+              type: "image/jpeg",
+            },
+          ],
+        },
+        devOptions: {
+          enabled: mode === "development",
+        },
       }),
     ],
     css: {
