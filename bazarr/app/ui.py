@@ -20,9 +20,10 @@ from .config import settings, base_url
 from .database import System
 from .get_args import args
 
+frontend_build_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
+
 ui_bp = Blueprint('ui', __name__,
-                  template_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                                               'frontend', 'build'),
+                  template_folder=frontend_build_path,
                   static_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend',
                                              'build', 'assets'),
                   static_url_path='/assets')
@@ -38,13 +39,15 @@ static_bp = Blueprint('images', __name__, static_folder=static_directory, static
 
 ui_bp.register_blueprint(static_bp)
 
-
 mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
 mimetypes.add_type('font/woff2', '.woff2')
 mimetypes.add_type('image/svg+xml', '.svg')
 mimetypes.add_type('image/png', '.png')
 mimetypes.add_type('image/x-icon', '.ico')
+mimetypes.add_type('application/manifest+json', '.webmanifest')
+
+pwa_assets = ['registerSW.js', 'manifest.webmanifest', 'sw.js']
 
 
 def check_login(actual_method):
@@ -69,6 +72,10 @@ def catch_all(path):
     if path.startswith('login') and settings.auth.type not in ['basic', 'form']:
         # login page has been accessed when no authentication is enabled
         return redirect(base_url or "/", code=302)
+
+    # PWA Assets are returned from frontend root folder
+    if path in pwa_assets:
+        return send_file(frontend_build_path + '/' + path)
 
     auth = True
     if settings.auth.type == 'basic':
@@ -160,6 +167,31 @@ def swaggerui_static(filename):
         return send_file(fullpath)
 
 
+# @ui_bp.route('/registerSW.js', methods=['GET'])
+# def service_worker():
+#     foo_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
+#
+#     return send_file(foo_folder+'/registerSW.js')
+#
+# @ui_bp.route('/workbox-3e911b1d.js', methods=['GET'])
+# def wb():
+#     foo_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
+#
+#     return send_file(foo_folder+'/workbox-3e911b1d.js')
+#
+# @ui_bp.route('/sw.js', methods=['GET'])
+# def sw():
+#     foo_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
+#
+#     return send_file(foo_folder+'/sw.js' )
+#
+# @ui_bp.route('/manifest.webmanifest', methods=['GET'])
+# def manifest():
+#     foo_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
+#
+#     return send_file(foo_folder+'/manifest.webmanifest')
+
+
 def configured():
     System.update({System.configured: '1'}).execute()
 
@@ -186,7 +218,8 @@ def proxy(protocol, url):
         elif result.status_code == 401:
             return dict(status=False, error='Access Denied. Check API key.', code=result.status_code)
         elif result.status_code == 404:
-            return dict(status=False, error='Cannot get version. Maybe unsupported legacy API call?', code=result.status_code)
+            return dict(status=False, error='Cannot get version. Maybe unsupported legacy API call?',
+                        code=result.status_code)
         elif 300 <= result.status_code <= 399:
             return dict(status=False, error='Wrong URL Base.', code=result.status_code)
         else:
