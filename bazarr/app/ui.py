@@ -167,31 +167,6 @@ def swaggerui_static(filename):
         return send_file(fullpath)
 
 
-# @ui_bp.route('/registerSW.js', methods=['GET'])
-# def service_worker():
-#     foo_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
-#
-#     return send_file(foo_folder+'/registerSW.js')
-#
-# @ui_bp.route('/workbox-3e911b1d.js', methods=['GET'])
-# def wb():
-#     foo_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
-#
-#     return send_file(foo_folder+'/workbox-3e911b1d.js')
-#
-# @ui_bp.route('/sw.js', methods=['GET'])
-# def sw():
-#     foo_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
-#
-#     return send_file(foo_folder+'/sw.js' )
-#
-# @ui_bp.route('/manifest.webmanifest', methods=['GET'])
-# def manifest():
-#     foo_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
-#
-#     return send_file(foo_folder+'/manifest.webmanifest')
-
-
 def configured():
     System.update({System.configured: '1'}).execute()
 
