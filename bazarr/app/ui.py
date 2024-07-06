@@ -75,7 +75,7 @@ def catch_all(path):
 
     # PWA Assets are returned from frontend root folder
     if path in pwa_assets:
-        return send_file(frontend_build_path + '/' + path)
+        return send_file(os.path.join(frontend_build_path, path))
 
     auth = True
     if settings.auth.type == 'basic':
