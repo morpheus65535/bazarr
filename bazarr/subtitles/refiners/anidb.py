@@ -87,8 +87,7 @@ class AniDBClient(object):
         animes.sort(key=lambda a: a.episode_offset)
 
         # Different from Tvdb, Anidb have different ids for the Parts of a season
-        anime, episode_offset = animes[0]
-        anidb_id = int(anime.attrib.get('anidbid'))
+        anidb_id = int(animes[0][0].attrib.get('anidbid'))
         for index, anime_info in enumerate(animes):
             anime, episode_offset = anime_info
 
