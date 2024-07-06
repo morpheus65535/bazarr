@@ -74,7 +74,7 @@ def catch_all(path):
         return redirect(base_url or "/", code=302)
 
     # PWA Assets are returned from frontend root folder
-    if path in pwa_assets:
+    if path in pwa_assets or path.startswith('workbox-'):
         return send_file(os.path.join(frontend_build_path, path))
 
     auth = True
