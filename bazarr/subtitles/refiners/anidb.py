@@ -21,6 +21,7 @@ except ImportError:
         import xml.etree.ElementTree as etree
 
 refined_providers = {'animetosho', 'jimaku'}
+providers_requiring_anidb_api = {'animetosho'}
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ class AniDBClient(object):
     
     @property
     def has_api_credentials(self):
-        return self.api_client_key != '' or None
+        return self.api_client_key != '' and self.api_client_key is not None
 
     @property
     def daily_api_request_count(self):
@@ -217,7 +218,9 @@ def refine_anidb_ids(video):
                 logger.error(f'API daily limit reached while refining {video.series}')
                 anidb_client.mark_as_throttled()
     else:
-        logger.warn(f'AniDB API credentials not fully set up, will not refine episode IDs for {video.series}')
+        intersect = providers_requiring_anidb_api.intersection(settings.general.enabled_providers)
+        if len(intersect) >= 1:
+            logger.warn(f'AniDB API credentials are not fully set up, the following providers may not work: {intersect}')
 
     video.series_anidb_id = anidb_series_id
     video.series_anidb_episode_id = anidb_episode_id
