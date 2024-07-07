@@ -130,7 +130,8 @@ class Episode(Video):
     """
     def __init__(self, name, series, season, episode, title=None, year=None, original_series=True, tvdb_id=None,
                  series_tvdb_id=None, series_imdb_id=None, alternative_series=None, series_anidb_id=None,
-                 series_anidb_episode_id=None, series_anidb_season_episode_offset=None, series_anilist_id=None, **kwargs):
+                 series_anidb_episode_id=None, series_anidb_season_episode_offset=None,
+                 series_anilist_id=None, series_anilist_episode_offset=None, **kwargs):
         super(Episode, self).__init__(name, **kwargs)
 
         #: Series of the episode
@@ -168,6 +169,7 @@ class Episode(Video):
         self.series_anidb_id = series_anidb_id
         self.series_anidb_season_episode_offset = series_anidb_season_episode_offset
         self.series_anilist_id = series_anilist_id
+        self.series_anilist_episode_offset = series_anilist_episode_offset
 
     @classmethod
     def fromguess(cls, name, guess):

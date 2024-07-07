@@ -155,30 +155,36 @@ class JimakuProvider(Provider):
             logger.warning(f"This entry '{entry_id}' is unverified, subtitles might be incomplete or have quality issues!")    
         
         # Get a list of subtitles for entry
-        episode_number = video.episode if "episode" in dir(video) else 0
-        url_params = {'episode': episode_number} if isinstance(video, Episode) else {}
-        only_look_for_archives = False # <- TEMPORARY
+        episode_number = video.episode if "episode" in dir(video) else None
+        only_look_for_archives = False
         
         retry_count = 0
         while retry_count <= 1:
             retry_count += 1
-            
+
             url = f"entries/{entry_id}/files"
+            url_params = {'episode': episode_number} if isinstance(video, Episode) else {}
             data = self._do_jimaku_request(url, url_params)
             
-            # Edge case: When dealing with a cour, episodes could be uploaded with their episode numbers having an offset applied
             if not data:
                 if isinstance(video, Episode) and retry_count <= 1:
-                    has_offset = video.series_anidb_season_episode_offset > 0
+                    # Edge case: When dealing with a cour, episodes could be uploaded with their episode numbers having an offset applied
+                    offset_value = 0
+                    if video.series_anilist_episode_offset:
+                        offset_value = video.series_anilist_episode_offset
+                    # Fallback, if anilist refiner was unable to compute an offset
+                    elif video.series_anidb_season_episode_offset:
+                        offset_value = video.series_anidb_season_episode_offset
+
+                    has_offset = offset_value > 0
                     if has_offset:
-                        adjusted_ep_num = episode_number + video.series_anidb_season_episode_offset
+                        adjusted_ep_num = episode_number + offset_value
                         logger.warning(f"Found no subtitles for episode number {episode_number}, but will retry with offset-adjusted episode number {adjusted_ep_num}.")
                         episode_number = adjusted_ep_num
                     else:
+                        # The entry might only have archives uploaded
                         logger.warning(f"Found no subtitles for episode number {episode_number}, but will retry without 'episode' parameter.")
                         url_params = {}
-                        
-                        # TEMPORARY: As long as we dont have absolute episode numbering, only focus on archives
                         only_look_for_archives = True
                 else:
                     return None
@@ -262,7 +268,7 @@ class JimakuProvider(Provider):
             logger.debug("Doesn't seem like an archive")
             return None
     
-    @cache
+    #@cache
     def _do_jimaku_request(self, url_path, url_params={}):
         url = urljoin(f"{self.api_url}/{url_path}", '?' + urlencode(url_params))
         logger.debug(f"get_jimaku_response: url, params: {url}, {url_params}")
@@ -287,7 +293,7 @@ class JimakuProvider(Provider):
             data = response.json()
             logger.debug(f"Length of response on {url}: {len(data)}")
             if len(data) == 0:
-                logger.error(f"Jimaku returned no items for our our query: {url_path}")                
+                logger.error(f"Jimaku returned no items for our our query: {url}")                
                 return None
             elif 'error' in data:
                 logger.error(f"Jimaku returned an error for our query.\nMessage: '{data.get('error')}', Code: '{data.get('code')}'")
