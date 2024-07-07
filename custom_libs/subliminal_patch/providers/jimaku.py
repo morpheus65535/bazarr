@@ -362,7 +362,6 @@ class JimakuProvider(Provider):
             if len(dot_delimit) > 2 and any(c in candidate for c in '[]()'):
                 candidate = re.split(r'[\[\]\(\)]+', candidate)[0]
 
-            language = None
             try:
                 language_squash = {
                     "jp": "ja",
@@ -378,14 +377,13 @@ class JimakuProvider(Provider):
                     language = Language(candidate)
                 else:
                     language = Language.fromietf(candidate)
+                    
+                if not any(l.alpha3 == language.alpha3 for l in languages):
+                    languages.append(language)
             except:
                 if candidate in FULL_LANGUAGE_LIST:
                     # Create a dummy for the unknown language
                     languages.append(Language("zul"))
-
-            # Do not add duplicate languages
-            if Language is not None and not any(l.alpha3 == language.alpha3 for l in languages):
-                languages.append(language)
         
         if len(languages) > 1:
             # Sometimes a metadata group that actually contains info about codecs gets processed as valid languages.
