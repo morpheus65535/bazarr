@@ -8,7 +8,8 @@ from collections import namedtuple
 from datetime import timedelta
 
 from app.config import settings
-from subliminal import Episode, region
+from subliminal import Episode, region, __short_version__
+from subliminal.cache import REFINER_EXPIRATION_TIME
 
 logger = logging.getLogger(__name__)
 refined_providers = {'jimaku'}
@@ -19,13 +20,9 @@ class AniListClient(object):
     
     anilist_api_query_template = '''
 query ($id: Int) {
-  Media(id: $id) {
+  Media(id: $id, type: ANIME) {
     id
     episodes
-    type
-    title {
-      english
-    }
     relations {
       edges {
         relationType
@@ -39,14 +36,16 @@ query ($id: Int) {
 }
 '''
     
-    def __init__(self, session=None):
+    def __init__(self, session=None, timeout=10):
         self.session = session or requests.Session()
+        self.session.timeout = timeout
+        self.session.headers['Content-Type'] = 'application/json'
+        self.session.headers['User-Agent'] = 'Subliminal/%s' % __short_version__
     
     @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
     def get_series_mappings(self):
         r = self.session.get(
-            'https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-mini.json',
-            timeout=10
+            'https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-mini.json'
         )
 
         r.raise_for_status()
@@ -70,7 +69,7 @@ query ($id: Int) {
             logger.debug(f"Could not find corresponding AniList ID with '{mapped_tag}': {candidate_id_value}")
             return None
     
-    @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
+    @region.cache_on_arguments(expiration_time=REFINER_EXPIRATION_TIME)
     def _query_anilist_api_for_entry(self, anilist_id):
         url = 'https://graphql.anilist.co'
         response = self.session.post(
@@ -99,21 +98,17 @@ query ($id: Int) {
         media = data["data"]["Media"]
         
         episodes = media["episodes"]
-        title = media["title"]["english"]
         
         # Only select actual seasons; no OVAs etc.
+        # We also only care about prequels (top-down)
         relevant_edges = [x for x in media["relations"]["edges"] if x["node"]["format"] == "TV"]
-        
-        # Further only filter for sequels and prequels
-        # Also, we only want to start from prequels as to not make uneccessary API calls
-        type_filter = ["SEQUEL", "PREQUEL"] if not self.initial_anilist_id == media["id"] else ["PREQUEL"]
-        relevant_edges = [x for x in relevant_edges if x["relationType"] in type_filter]
+        relevant_edges = [x for x in relevant_edges if x["relationType"] == "PREQUEL"]
         
         if len(relevant_edges) > 0:
             for edge in relevant_edges:
                 relations_ids.append(edge["node"]["id"])
 
-        return episodes, title, relations_ids
+        return episodes, relations_ids
 
     def compute_episode_offsets(self, start_id):
         self.initial_anilist_id = start_id
@@ -128,12 +123,11 @@ query ($id: Int) {
                 continue
             
             data = self._query_anilist_api_for_entry(current_id)
-            episodes, name, ids = self._process_anilist_entry(data)
+            episodes, ids = self._process_anilist_entry(data)
             
             processed_ids.add(current_id)
             entries.append({
                 "id": current_id,
-                "name": name,
                 "episodes": episodes
             })
             
@@ -178,6 +172,7 @@ def refine_anilist_ids(video):
     # Compute episode offsets
     try:
         offsets = anilist_client.compute_episode_offsets(anilist_id)
+        logger.debug(f"Episode offsets for this AniList ID ({anilist_id}): {offsets}")
         video.series_anilist_episode_offset = next(
             item for item in offsets if item["id"] == anilist_id
         )["offset"]
