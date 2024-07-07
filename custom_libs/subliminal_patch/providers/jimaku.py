@@ -172,10 +172,7 @@ class JimakuProvider(Provider):
                     # Vice versa, users may have media files with absolute episode numbering, but the subs on Jimaku follow the Season/Episode format
                     
                     offset_value = 0
-                    if video.series_anilist_episode_offset:
-                        offset_value = video.series_anilist_episode_offset
-                    # Fallback, if anilist refiner was unable to compute an offset
-                    elif video.series_anidb_season_episode_offset:
+                    if video.series_anidb_season_episode_offset:
                         offset_value = video.series_anidb_season_episode_offset
 
                     has_offset = offset_value > 0

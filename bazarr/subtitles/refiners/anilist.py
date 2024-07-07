@@ -9,34 +9,11 @@ from datetime import timedelta
 
 from app.config import settings
 from subliminal import Episode, region, __short_version__
-from subliminal.cache import REFINER_EXPIRATION_TIME
 
 logger = logging.getLogger(__name__)
 refined_providers = {'jimaku'}
 
-class AniListClient(object):
-    api_ratelimit_backoff_limit = 3
-    max_api_reset_time = 5
-    
-    anilist_api_query_template = '''
-query ($id: Int) {
-  Media(id: $id, type: ANIME) {
-    id
-    format
-    episodes
-    relations {
-      edges {
-        relationType
-        node {
-          id
-          format
-        }
-      }
-    }
-  }
-}
-'''
-    
+class AniListClient(object):    
     def __init__(self, session=None, timeout=10):
         self.session = session or requests.Session()
         self.session.timeout = timeout
@@ -69,81 +46,6 @@ query ($id: Int) {
         else:
             logger.debug(f"Could not find corresponding AniList ID with '{mapped_tag}': {candidate_id_value}")
             return None
-    
-    @region.cache_on_arguments(expiration_time=REFINER_EXPIRATION_TIME)
-    def _query_anilist_api(self, anilist_id):
-        url = 'https://graphql.anilist.co'
-        response = self.session.post(
-            url,
-            json = {
-                'query': self.anilist_api_query_template,
-                'variables': {'id': anilist_id}
-            }
-        )
-    
-        retry_count = 0
-        while retry_count < self.api_ratelimit_backoff_limit:
-            retry_count += 1
-            if response.status_code == 429:
-                api_reset_time = float(response.headers.get("Retry-After", 5))
-                reset_time = self.max_api_reset_time if api_reset_time > 5 else self.max_api_reset_time
-                
-                time.sleep(reset_time)
-            else:
-                response.raise_for_status()
-            
-            return response.json()
-
-    def _process_anilist_entry(self, data):
-        relations_ids = []
-        media = data["data"]["Media"]
-        
-        episodes = media["episodes"]
-        format = media.get("format", "unknown")
-        
-        # Only select actual seasons and OVAs
-        # We also only care about prequels (process shows top-down) and OVAs
-        relevant_edges = [x for x in media["relations"]["edges"] if x["node"]["format"] in ["TV", "OVA"]]
-        relevant_edges = [x for x in relevant_edges if x["relationType"] in ["PREQUEL", "SIDE_STORY"]]
-        
-        if len(relevant_edges) > 0:
-            for edge in relevant_edges:
-                relations_ids.append(edge["node"]["id"])
-
-        return episodes, format, relations_ids
-
-    def compute_episode_offsets(self, start_id):
-        self.initial_anilist_id = start_id
-        
-        entries, processed_ids = [], []
-        ids_to_query = [self.initial_anilist_id]
-        
-        while ids_to_query:
-            current_id = ids_to_query.pop(0)
-            if current_id in processed_ids:
-                continue
-            
-            data = self._query_anilist_api(current_id)
-            episodes, format, ids = self._process_anilist_entry(data)
-            
-            processed_ids.append(current_id)
-            entries.append({
-                "id": current_id,
-                "format": format,
-                "episodes": episodes
-            })
-            
-            ids_to_query.extend(ids)
-        
-        # Sort IDs in ascending order als lowest ID = first season
-        entries = sorted(entries, key=lambda x: x['id'])
-        
-        offset = 0
-        for entry in entries:
-            entry["offset"] = offset
-            offset += entry["episodes"]
-            
-        return entries
 
 def refine_from_anilist(path, video):
     # Safety checks
@@ -171,15 +73,5 @@ def refine_anilist_ids(video):
     anilist_id = anilist_client.get_series_id(candidate_id_name, candidate_id_value)
     if not anilist_id:
         return video
-    
-    # Compute episode offsets
-    try:
-        offsets = anilist_client.compute_episode_offsets(anilist_id)
-        logger.debug(f"Episode offsets for this AniList ID ({anilist_id}): {offsets}")
-        video.series_anilist_episode_offset = next(
-            item for item in offsets if item["id"] == anilist_id
-        )["offset"]
-    except Exception as e:
-        logger.warning(f"Could not compute episode offsets: {str(e)}")
 
     video.series_anilist_id = anilist_id
