@@ -195,6 +195,8 @@ class JimakuProvider(Provider):
                         only_look_for_archives = True
                 else:
                     return None
+            else:
+                break
         
         # Filter subtitles
         list_of_subtitles = []
