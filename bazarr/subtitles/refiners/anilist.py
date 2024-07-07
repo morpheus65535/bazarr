@@ -22,6 +22,7 @@ class AniListClient(object):
 query ($id: Int) {
   Media(id: $id, type: ANIME) {
     id
+    format
     episodes
     relations {
       edges {
@@ -70,7 +71,7 @@ query ($id: Int) {
             return None
     
     @region.cache_on_arguments(expiration_time=REFINER_EXPIRATION_TIME)
-    def _query_anilist_api_for_entry(self, anilist_id):
+    def _query_anilist_api(self, anilist_id):
         url = 'https://graphql.anilist.co'
         response = self.session.post(
             url,
@@ -98,17 +99,18 @@ query ($id: Int) {
         media = data["data"]["Media"]
         
         episodes = media["episodes"]
+        format = media.get("format", "unknown")
         
-        # Only select actual seasons; no OVAs etc.
-        # We also only care about prequels (top-down)
-        relevant_edges = [x for x in media["relations"]["edges"] if x["node"]["format"] == "TV"]
-        relevant_edges = [x for x in relevant_edges if x["relationType"] == "PREQUEL"]
+        # Only select actual seasons and OVAs
+        # We also only care about prequels (process shows top-down) and OVAs
+        relevant_edges = [x for x in media["relations"]["edges"] if x["node"]["format"] in ["TV", "OVA"]]
+        relevant_edges = [x for x in relevant_edges if x["relationType"] in ["PREQUEL", "SIDE_STORY"]]
         
         if len(relevant_edges) > 0:
             for edge in relevant_edges:
                 relations_ids.append(edge["node"]["id"])
 
-        return episodes, relations_ids
+        return episodes, format, relations_ids
 
     def compute_episode_offsets(self, start_id):
         self.initial_anilist_id = start_id
@@ -121,12 +123,13 @@ query ($id: Int) {
             if current_id in processed_ids:
                 continue
             
-            data = self._query_anilist_api_for_entry(current_id)
-            episodes, ids = self._process_anilist_entry(data)
+            data = self._query_anilist_api(current_id)
+            episodes, format, ids = self._process_anilist_entry(data)
             
             processed_ids.append(current_id)
             entries.append({
                 "id": current_id,
+                "format": format,
                 "episodes": episodes
             })
             
