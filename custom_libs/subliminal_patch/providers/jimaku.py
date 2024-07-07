@@ -380,7 +380,7 @@ class JimakuProvider(Provider):
                             languages.append(language)
 
             if len(languages) != 0:
-                if not any(l.alpha3 == language.alpha3 for l in languages):
+                if not any(l is not None and l.alpha3 == language.alpha3 for l in languages):
                     languages.append(language)
         
         if len(languages) > 1:
