@@ -169,6 +169,8 @@ class JimakuProvider(Provider):
             if not data:
                 if isinstance(video, Episode) and retry_count <= 1:
                     # Edge case: When dealing with a cour, episodes could be uploaded with their episode numbers having an offset applied
+                    # Vice versa, users may have media files with absolute episode numbering, but the subs on Jimaku follow the Season/Episode format
+                    
                     offset_value = 0
                     if video.series_anilist_episode_offset:
                         offset_value = video.series_anilist_episode_offset
@@ -178,8 +180,13 @@ class JimakuProvider(Provider):
 
                     has_offset = offset_value > 0
                     if has_offset:
-                        adjusted_ep_num = episode_number + offset_value
-                        logger.warning(f"Found no subtitles for episode number {episode_number}, but will retry with offset-adjusted episode number {adjusted_ep_num}.")
+                        reverse_offset = episode_number > offset_value
+                        if reverse_offset:
+                            adjusted_ep_num = episode_number - offset_value
+                        else:
+                            adjusted_ep_num = episode_number + offset_value
+                            
+                        logger.warning(f"Found no subtitles for episode number {episode_number}, but will retry with offset-adjusted episode number {adjusted_ep_num} (reversed: {reverse_offset})")
                         url_params = {'episode': adjusted_ep_num}
                     else:
                         # The entry might only have archives uploaded
