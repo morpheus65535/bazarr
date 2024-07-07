@@ -190,7 +190,7 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                 if item.get('episode_from', False) == item.get('episode_end', False):  # ignore season packs
                     subtitle = SubdlSubtitle(
                         language=Language.fromsubdl(item['language']),
-                        forced=any(x in item.get('comment', '').lower() for x in ['forced', 'foreign']),
+                        forced=self._is_forced(item),
                         hearing_impaired=item.get('hi', False) or self._is_hi(item),
                         page_link=urljoin("https://subdl.com", item.get('subtitlePage', '')),
                         download_link=item['url'],
@@ -226,6 +226,17 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                 return True
 
         # nothing match so we consider it as non-HI
+        return False
+
+    @staticmethod
+    def _is_forced(item):
+        # Comments include specific mention of forced subtitles
+        forced_tags = ['forced', 'foreign']
+        for tag in forced_tags:
+            if tag in item.get('comment', '').lower():
+                return True
+
+        # nothing match so we consider it as normal subtitles
         return False
 
     def list_subtitles(self, video, languages):
