@@ -1,5 +1,4 @@
 import { FunctionComponent, useEffect, useMemo } from "react";
-import { Column } from "react-table";
 import {
   Button,
   Checkbox,
@@ -17,6 +16,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ColumnDef } from "@tanstack/react-table";
 import { isString } from "lodash";
 import {
   useEpisodesBySeriesId,
@@ -24,7 +24,7 @@ import {
   useSubtitleInfos,
 } from "@/apis/hooks";
 import { Action, Selector } from "@/components/inputs";
-import { SimpleTable } from "@/components/tables";
+import SimpleTable from "@/components/tables/SimpleTable";
 import TextPopover from "@/components/TextPopover";
 import { useModals, withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
@@ -169,61 +169,79 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
     }
   }, [action, episodes.data, infos.data]);
 
-  const columns = useMemo<Column<SubtitleFile>[]>(
+  const ValidateResultCell = ({
+    validateResult,
+  }: {
+    validateResult: SubtitleValidateResult | undefined;
+  }) => {
+    const icon = useMemo(() => {
+      switch (validateResult?.state) {
+        case "valid":
+          return faCheck;
+        case "warning":
+          return faInfoCircle;
+        case "error":
+          return faTimes;
+        default:
+          return faCircleNotch;
+      }
+    }, [validateResult?.state]);
+
+    const color = useMemo<MantineColor | undefined>(() => {
+      switch (validateResult?.state) {
+        case "valid":
+          return "green";
+        case "warning":
+          return "yellow";
+        case "error":
+          return "red";
+        default:
+          return undefined;
+      }
+    }, [validateResult?.state]);
+
+    return (
+      <TextPopover text={validateResult?.messages}>
+        <Text c={color} inline>
+          <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
+        </Text>
+      </TextPopover>
+    );
+  };
+
+  const columns = useMemo<ColumnDef<SubtitleFile>[]>(
     () => [
       {
-        accessor: "validateResult",
-        Cell: ({ cell: { value } }) => {
-          const icon = useMemo(() => {
-            switch (value?.state) {
-              case "valid":
-                return faCheck;
-              case "warning":
-                return faInfoCircle;
-              case "error":
-                return faTimes;
-              default:
-                return faCircleNotch;
-            }
-          }, [value?.state]);
-
-          const color = useMemo<MantineColor | undefined>(() => {
-            switch (value?.state) {
-              case "valid":
-                return "green";
-              case "warning":
-                return "yellow";
-              case "error":
-                return "red";
-              default:
-                return undefined;
-            }
-          }, [value?.state]);
-
-          return (
-            <TextPopover text={value?.messages}>
-              <Text color={color} inline>
-                <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
-              </Text>
-            </TextPopover>
-          );
+        id: "validateResult",
+        cell: ({
+          row: {
+            original: { validateResult },
+          },
+        }) => {
+          return <ValidateResultCell validateResult={validateResult} />;
         },
       },
       {
-        Header: "File",
+        header: "File",
         id: "filename",
-        accessor: "file",
-        Cell: ({ value: { name } }) => {
+        accessorKey: "file",
+        cell: ({
+          row: {
+            original: {
+              file: { name },
+            },
+          },
+        }) => {
           return <Text className="table-primary">{name}</Text>;
         },
       },
       {
-        Header: "Forced",
-        accessor: "forced",
-        Cell: ({ row: { original, index }, value }) => {
+        header: "Forced",
+        accessorKey: "forced",
+        cell: ({ row: { original, index } }) => {
           return (
             <Checkbox
-              checked={value}
+              checked={original.forced}
               onChange={({ currentTarget: { checked } }) => {
                 action.mutate(index, {
                   ...original,
@@ -236,12 +254,12 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         },
       },
       {
-        Header: "HI",
-        accessor: "hi",
-        Cell: ({ row: { original, index }, value }) => {
+        header: "HI",
+        accessorKey: "hi",
+        cell: ({ row: { original, index } }) => {
           return (
             <Checkbox
-              checked={value}
+              checked={original.hi}
               onChange={({ currentTarget: { checked } }) => {
                 action.mutate(index, {
                   ...original,
@@ -254,7 +272,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         },
       },
       {
-        Header: (
+        header: () => (
           <Selector
             {...languageOptions}
             value={null}
@@ -269,13 +287,13 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
             }}
           ></Selector>
         ),
-        accessor: "language",
-        Cell: ({ row: { original, index }, value }) => {
+        accessorKey: "language",
+        cell: ({ row: { original, index } }) => {
           return (
             <Selector
               {...languageOptions}
               className="table-select"
-              value={value}
+              value={original.language}
               onChange={(item) => {
                 action.mutate(index, { ...original, language: item });
               }}
@@ -285,17 +303,17 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
       },
       {
         id: "episode",
-        Header: "Episode",
-        accessor: "episode",
-        Cell: ({ value, row }) => {
+        header: "Episode",
+        accessorKey: "episode",
+        cell: ({ row: { original, index } }) => {
           return (
             <Selector
               {...episodeOptions}
               searchable
               className="table-select"
-              value={value}
+              value={original.episode}
               onChange={(item) => {
-                action.mutate(row.index, { ...row.original, episode: item });
+                action.mutate(index, { ...original, episode: item });
               }}
             ></Selector>
           );
@@ -303,8 +321,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
       },
       {
         id: "action",
-        accessor: "file",
-        Cell: ({ row: { index } }) => {
+        cell: ({ row: { index } }) => {
           return (
             <Action
               label="Remove"

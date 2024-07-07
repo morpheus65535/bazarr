@@ -1,5 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
-import { Column } from "react-table";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Alert,
   Anchor,
@@ -18,10 +17,12 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { UseQueryResult } from "@tanstack/react-query";
+import { ColumnDef } from "@tanstack/react-table";
 import { isString } from "lodash";
-import { Action, PageTable } from "@/components";
+import { Action } from "@/components";
 import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
+import PageTable from "@/components/tables/PageTable";
 import { withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
 import { GetItemId } from "@/utilities";
@@ -51,23 +52,63 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
     void results.refetch();
   }, [results]);
 
-  const columns = useMemo<Column<SearchResultType>[]>(
+  const ReleaseInfoCell = React.memo(
+    ({ releaseInfo }: { releaseInfo: string[] }) => {
+      const [open, setOpen] = useState(false);
+
+      const items = useMemo(
+        () => releaseInfo.slice(1).map((v, idx) => <Text key={idx}>{v}</Text>),
+        [releaseInfo],
+      );
+
+      if (releaseInfo.length === 0) {
+        return <Text c="dimmed">Cannot get release info</Text>;
+      }
+
+      return (
+        <Stack gap={0} onClick={() => setOpen((o) => !o)}>
+          <Text className="table-primary" span>
+            {releaseInfo[0]}
+            {releaseInfo.length > 1 && (
+              <FontAwesomeIcon
+                icon={faCaretDown}
+                rotation={open ? 180 : undefined}
+              ></FontAwesomeIcon>
+            )}
+          </Text>
+          <Collapse in={open}>
+            <>{items}</>
+          </Collapse>
+        </Stack>
+      );
+    },
+  );
+
+  const columns = useMemo<ColumnDef<SearchResultType>[]>(
     () => [
       {
-        Header: "Score",
-        accessor: "score",
-        Cell: ({ value }) => {
-          return <Text className="table-no-wrap">{value}%</Text>;
+        header: "Score",
+        accessorKey: "score",
+        cell: ({
+          row: {
+            original: { score },
+          },
+        }) => {
+          return <Text className="table-no-wrap">{score}%</Text>;
         },
       },
       {
-        Header: "Language",
-        accessor: "language",
-        Cell: ({ row: { original }, value }) => {
+        header: "Language",
+        accessorKey: "language",
+        cell: ({
+          row: {
+            original: { language, hearing_impaired: hi, forced },
+          },
+        }) => {
           const lang: Language.Info = {
-            code2: value,
-            hi: original.hearing_impaired === "True",
-            forced: original.forced === "True",
+            code2: language,
+            hi: hi === "True",
+            forced: forced === "True",
             name: "",
           };
           return (
@@ -78,11 +119,15 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         },
       },
       {
-        Header: "Provider",
-        accessor: "provider",
-        Cell: (row) => {
-          const value = row.value;
-          const { url } = row.row.original;
+        header: "Provider",
+        accessorKey: "provider",
+        cell: ({
+          row: {
+            original: { provider, url },
+          },
+        }) => {
+          const value = provider;
+
           if (url) {
             return (
               <Anchor
@@ -100,49 +145,31 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         },
       },
       {
-        Header: "Release",
-        accessor: "release_info",
-        Cell: ({ value }) => {
-          const [open, setOpen] = useState(false);
-
-          const items = useMemo(
-            () => value.slice(1).map((v, idx) => <Text key={idx}>{v}</Text>),
-            [value],
-          );
-
-          if (value.length === 0) {
-            return <Text c="dimmed">Cannot get release info</Text>;
-          }
-
-          return (
-            <Stack gap={0} onClick={() => setOpen((o) => !o)}>
-              <Text className="table-primary" span>
-                {value[0]}
-                {value.length > 1 && (
-                  <FontAwesomeIcon
-                    icon={faCaretDown}
-                    rotation={open ? 180 : undefined}
-                  ></FontAwesomeIcon>
-                )}
-              </Text>
-              <Collapse in={open}>
-                <>{items}</>
-              </Collapse>
-            </Stack>
-          );
+        header: "Release",
+        accessorKey: "release_info",
+        cell: ({
+          row: {
+            original: { release_info: releaseInfo },
+          },
+        }) => {
+          return <ReleaseInfoCell releaseInfo={releaseInfo} />;
         },
       },
       {
-        Header: "Uploader",
-        accessor: "uploader",
-        Cell: ({ value }) => {
-          return <Text className="table-no-wrap">{value ?? "-"}</Text>;
+        header: "Uploader",
+        accessorKey: "uploader",
+        cell: ({
+          row: {
+            original: { uploader },
+          },
+        }) => {
+          return <Text className="table-no-wrap">{uploader ?? "-"}</Text>;
         },
       },
       {
-        Header: "Match",
-        accessor: "matches",
-        Cell: (row) => {
+        header: "Match",
+        accessorKey: "matches",
+        cell: (row) => {
           const { matches, dont_matches: dont } = row.row.original;
           return (
             <StateIcon
@@ -154,9 +181,9 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         },
       },
       {
-        Header: "Get",
-        accessor: "subtitle",
-        Cell: ({ row }) => {
+        header: "Get",
+        accessorKey: "subtitle",
+        cell: ({ row }) => {
           const result = row.original;
           return (
             <Action
@@ -180,7 +207,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         },
       },
     ],
-    [download, item],
+    [download, item, ReleaseInfoCell],
   );
 
   const bSceneNameAvailable =

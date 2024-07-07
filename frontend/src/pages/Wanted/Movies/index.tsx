@@ -1,9 +1,9 @@
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Column } from "react-table";
 import { Anchor, Badge, Group } from "@mantine/core";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ColumnDef } from "@tanstack/react-table";
 import {
   useMovieAction,
   useMovieSubtitleModification,
@@ -15,32 +15,37 @@ import WantedView from "@/pages/views/WantedView";
 import { BuildKey } from "@/utilities";
 
 const WantedMoviesView: FunctionComponent = () => {
-  const columns: Column<Wanted.Movie>[] = useMemo<Column<Wanted.Movie>[]>(
+  const { download } = useMovieSubtitleModification();
+
+  const columns = useMemo<ColumnDef<Wanted.Movie>[]>(
     () => [
       {
-        Header: "Name",
+        header: "Name",
         accessor: "title",
-        Cell: (row) => {
-          const target = `/movies/${row.row.original.radarrId}`;
+        cell: ({
+          row: {
+            original: { title, radarrId },
+          },
+        }) => {
+          const target = `/movies/${radarrId}`;
           return (
             <Anchor component={Link} to={target}>
-              {row.value}
+              {title}
             </Anchor>
           );
         },
       },
       {
-        Header: "Missing",
+        header: "Missing",
         accessor: "missing_subtitles",
-        Cell: ({ row, value }) => {
-          const wanted = row.original;
-          const { radarrId } = wanted;
-
-          const { download } = useMovieSubtitleModification();
-
+        cell: ({
+          row: {
+            original: { radarrId, missing_subtitles: missingSubtitles },
+          },
+        }) => {
           return (
             <Group gap="sm">
-              {value.map((item, idx) => (
+              {missingSubtitles.map((item, idx) => (
                 <Badge
                   color={download.isPending ? "gray" : undefined}
                   leftSection={<FontAwesomeIcon icon={faSearch} />}
@@ -70,7 +75,7 @@ const WantedMoviesView: FunctionComponent = () => {
         },
       },
     ],
-    [],
+    [download],
   );
 
   const { mutateAsync } = useMovieAction();

@@ -1,14 +1,14 @@
-import { Column } from "react-table";
 import { Container } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { ColumnDef } from "@tanstack/react-table";
 import { useIsAnyActionRunning } from "@/apis/hooks";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { QueryPageTable, Toolbox } from "@/components";
 
 interface Props<T extends Wanted.Base> {
   name: string;
-  columns: Column<T>[];
+  columns: ColumnDef<T>[];
   query: UsePaginationQueryResult<T>;
   searchAll: () => Promise<void>;
 }

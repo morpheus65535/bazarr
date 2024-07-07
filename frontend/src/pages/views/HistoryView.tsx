@@ -1,13 +1,13 @@
-import { Column } from "react-table";
 import { Container } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
+import { ColumnDef } from "@tanstack/react-table";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { QueryPageTable } from "@/components";
 
 interface Props<T extends History.Base> {
   name: string;
   query: UsePaginationQueryResult<T>;
-  columns: Column<T>[];
+  columns: ColumnDef<T>[];
 }
 
 function HistoryView<T extends History.Base = History.Base>({

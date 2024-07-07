@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import {
   BackgroundImage,
   Badge,
@@ -12,6 +12,7 @@ import {
   Stack,
   Text,
   Title,
+  Tooltip,
 } from "@mantine/core";
 import {
   faBookmark as farBookmark,
@@ -43,12 +44,18 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   const { item, details } = props;
 
   const detailBadges = useMemo(() => {
-    const badges: (JSX.Element | null)[] = [];
+    const badges: (React.JSX.Element | null)[] = [];
 
     if (item) {
       badges.push(
         <ItemBadge key="file-path" icon={faFolder} title="File Path">
-          {item.path}
+          <Tooltip
+            label={item.path}
+            multiline
+            style={{ overflowWrap: "anywhere" }}
+          >
+            <span>{item.path}</span>
+          </Tooltip>
         </ItemBadge>,
       );
 
@@ -90,7 +97,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   const profileItems = useProfileItemsToLanguages(profile);
 
   const languageBadges = useMemo(() => {
-    const badges: (JSX.Element | null)[] = [];
+    const badges: (React.JSX.Element | null)[] = [];
 
     if (profile) {
       badges.push(
@@ -129,7 +136,9 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         m={0}
         style={{
           backgroundColor: "rgba(0,0,0,0.7)",
-          flexWrap: "nowrap",
+        }}
+        styles={{
+          inner: { flexWrap: "nowrap" },
         }}
       >
         <Grid.Col span={3} visibleFrom="sm">
@@ -140,7 +149,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             fallbackSrc="https://placehold.co/250x250?text=Placeholder"
           ></Image>
         </Grid.Col>
-        <Grid.Col span={8} maw="100%">
+        <Grid.Col span={8} maw="100%" style={{ overflow: "hidden" }}>
           <Stack align="flex-start" gap="xs" mx={6}>
             <Group align="flex-start" wrap="nowrap" maw="100%">
               <Title my={0}>

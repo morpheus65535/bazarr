@@ -1,11 +1,11 @@
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Column } from "react-table";
 import { Anchor, Badge, Container } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ColumnDef } from "@tanstack/react-table";
 import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
 import { Action } from "@/components";
 import { AudioList } from "@/components/bazarr";
@@ -17,55 +17,81 @@ import ItemView from "@/pages/views/ItemView";
 import { BuildKey } from "@/utilities";
 
 const MovieView: FunctionComponent = () => {
+  const modifyMovie = useMovieModification();
+
+  const modals = useModals();
+
   const query = useMoviesPagination();
 
-  const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
+  const columns = useMemo<ColumnDef<Item.Movie>[]>(
     () => [
       {
-        accessor: "monitored",
-        Cell: ({ value }) => (
+        id: "monitored",
+        cell: ({
+          row: {
+            original: { monitored },
+          },
+        }) => (
           <FontAwesomeIcon
-            title={value ? "monitored" : "unmonitored"}
-            icon={value ? faBookmark : farBookmark}
+            title={monitored ? "monitored" : "unmonitored"}
+            icon={monitored ? faBookmark : farBookmark}
           ></FontAwesomeIcon>
         ),
       },
       {
-        Header: "Name",
-        accessor: "title",
-        Cell: ({ row, value }) => {
-          const target = `/movies/${row.original.radarrId}`;
+        header: "Name",
+        accessorKey: "title",
+        cell: ({
+          row: {
+            original: { title, radarrId },
+          },
+        }) => {
+          const target = `/movies/${radarrId}`;
           return (
             <Anchor className="table-primary" component={Link} to={target}>
-              {value}
+              {title}
             </Anchor>
           );
         },
       },
       {
-        Header: "Audio",
-        accessor: "audio_language",
-        Cell: ({ value }) => {
-          return <AudioList audios={value}></AudioList>;
+        header: "Audio",
+        accessorKey: "audio_language",
+        cell: ({
+          row: {
+            original: { audio_language: audioLanguage },
+          },
+        }) => {
+          return <AudioList audios={audioLanguage}></AudioList>;
         },
       },
       {
-        Header: "Languages Profile",
-        accessor: "profileId",
-        Cell: ({ value }) => {
+        header: "Languages Profile",
+        accessorKey: "profileId",
+        cell: ({
+          row: {
+            original: { profileId },
+          },
+        }) => {
           return (
-            <LanguageProfileName index={value} empty=""></LanguageProfileName>
+            <LanguageProfileName
+              index={profileId}
+              empty=""
+            ></LanguageProfileName>
           );
         },
       },
       {
-        Header: "Missing Subtitles",
-        accessor: "missing_subtitles",
-        Cell: (row) => {
-          const missing = row.value;
+        header: "Missing Subtitles",
+        accessorKey: "missing_subtitles",
+        cell: ({
+          row: {
+            original: { missing_subtitles: missingSubtitles },
+          },
+        }) => {
           return (
             <>
-              {missing.map((v) => (
+              {missingSubtitles.map((v) => (
                 <Badge
                   mr="xs"
                   color="yellow"
@@ -79,10 +105,8 @@ const MovieView: FunctionComponent = () => {
         },
       },
       {
-        accessor: "radarrId",
-        Cell: ({ row }) => {
-          const modals = useModals();
-          const mutation = useMovieModification();
+        id: "radarrId",
+        cell: ({ row }) => {
           return (
             <Action
               label="Edit Movie"
@@ -91,7 +115,7 @@ const MovieView: FunctionComponent = () => {
                 modals.openContextModal(
                   ItemEditModal,
                   {
-                    mutation,
+                    mutation: modifyMovie,
                     item: row.original,
                   },
                   {
@@ -105,7 +129,7 @@ const MovieView: FunctionComponent = () => {
         },
       },
     ],
-    [],
+    [modals, modifyMovie],
   );
 
   useDocumentTitle("Movies - Bazarr");

@@ -305,9 +305,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     # or if we have mediainfo available
     elif mediainfo_path:
         try:
-            # disabling mediainfo path temporarily until issue with knowit is fixed.
-            # data["mediainfo"] = know(video_path=file, context={"provider": "mediainfo", "mediainfo": mediainfo_path})
-            data["mediainfo"] = know(video_path=file, context={"provider": "mediainfo"})
+            data["mediainfo"] = know(video_path=file, context={"provider": "mediainfo", "mediainfo": mediainfo_path})
         except KnowitException as e:
             logging.error(f"BAZARR mediainfo cannot analyze this video file {file}. Could it be corrupted? {e}")
             return None

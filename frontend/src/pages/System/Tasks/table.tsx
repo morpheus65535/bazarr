@@ -1,48 +1,59 @@
 import { FunctionComponent, useMemo } from "react";
-import { Column, useSortBy } from "react-table";
 import { Text } from "@mantine/core";
 import { faPlay } from "@fortawesome/free-solid-svg-icons";
+import { ColumnDef, getSortedRowModel } from "@tanstack/react-table";
 import { useRunTask } from "@/apis/hooks";
-import { SimpleTable } from "@/components";
 import MutateAction from "@/components/async/MutateAction";
+import SimpleTable from "@/components/tables/SimpleTable";
 
 interface Props {
-  tasks: readonly System.Task[];
+  tasks: System.Task[];
 }
 
 const Table: FunctionComponent<Props> = ({ tasks }) => {
-  const columns: Column<System.Task>[] = useMemo<Column<System.Task>[]>(
+  const runTask = useRunTask();
+
+  const columns: ColumnDef<System.Task>[] = useMemo<ColumnDef<System.Task>[]>(
     () => [
       {
-        Header: "Name",
+        header: "Name",
         accessor: "name",
-        Cell: ({ value }) => {
-          return <Text className="table-primary">{value}</Text>;
+        cell: ({
+          row: {
+            original: { name },
+          },
+        }) => {
+          return <Text className="table-primary">{name}</Text>;
         },
       },
       {
-        Header: "Interval",
+        header: "Interval",
         accessor: "interval",
-        Cell: ({ value }) => {
-          return <Text className="table-no-wrap">{value}</Text>;
+        cell: ({
+          row: {
+            original: { interval },
+          },
+        }) => {
+          return <Text className="table-no-wrap">{interval}</Text>;
         },
       },
       {
-        Header: "Next Execution",
+        header: "Next Execution",
         accessor: "next_run_in",
       },
       {
-        Header: "Run",
+        header: "Run",
         accessor: "job_running",
-        Cell: ({ row, value }) => {
-          const { job_id: jobId } = row.original;
-          const runTask = useRunTask();
-
+        cell: ({
+          row: {
+            original: { job_id: jobId, job_running: jobRunning },
+          },
+        }) => {
           return (
             <MutateAction
               label="Run Job"
               icon={faPlay}
-              iconProps={{ spin: value }}
+              iconProps={{ spin: jobRunning }}
               mutation={runTask}
               args={() => jobId}
             ></MutateAction>
@@ -50,15 +61,16 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
         },
       },
     ],
-    [],
+    [runTask],
   );
 
   return (
     <SimpleTable
-      initialState={{ sortBy: [{ id: "name", desc: false }] }}
+      initialState={{ sorting: [{ id: "name", desc: false }] }}
       columns={columns}
       data={tasks}
-      plugins={[useSortBy]}
+      enableSorting
+      getSortedRowModel={getSortedRowModel()}
     ></SimpleTable>
   );
 };
