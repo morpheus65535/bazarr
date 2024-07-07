@@ -156,6 +156,7 @@ class JimakuProvider(Provider):
         
         # Get a list of subtitles for entry
         episode_number = video.episode if "episode" in dir(video) else None
+        url_params = {'episode': episode_number} if isinstance(video, Episode) else {}
         only_look_for_archives = False
         
         retry_count = 0
@@ -163,7 +164,6 @@ class JimakuProvider(Provider):
             retry_count += 1
 
             url = f"entries/{entry_id}/files"
-            url_params = {'episode': episode_number} if isinstance(video, Episode) else {}
             data = self._do_jimaku_request(url, url_params)
             
             if not data:
@@ -180,7 +180,7 @@ class JimakuProvider(Provider):
                     if has_offset:
                         adjusted_ep_num = episode_number + offset_value
                         logger.warning(f"Found no subtitles for episode number {episode_number}, but will retry with offset-adjusted episode number {adjusted_ep_num}.")
-                        episode_number = adjusted_ep_num
+                        url_params = {'episode': adjusted_ep_num}
                     else:
                         # The entry might only have archives uploaded
                         logger.warning(f"Found no subtitles for episode number {episode_number}, but will retry without 'episode' parameter.")
