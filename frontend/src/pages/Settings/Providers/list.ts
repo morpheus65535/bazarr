@@ -372,6 +372,15 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   { key: "subdivx", description: "LATAM Spanish / Spanish Subtitles Provider" },
   {
+    key: "subdl",
+    inputs: [
+      {
+        type: "text",
+        key: "api_key",
+      },
+    ],
+  },
+  {
     key: "subf2m",
     name: "subf2m.co",
     inputs: [
