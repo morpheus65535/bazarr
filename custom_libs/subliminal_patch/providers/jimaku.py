@@ -219,7 +219,7 @@ class JimakuProvider(Provider):
             subtitle_url = item.get('url')
 
             if not self.enable_ai_subs:
-                if "whisperai" in subtitle_filename.lower():
+                if re.match(r'(\(|\[).*(whisper|whisperai).*(\)|\])', subtitle_filename.lower()):
                     logger.warning(f"Skipping subtitle '{subtitle_filename}' as it's suspected of being AI generated.")
                     continue
             
