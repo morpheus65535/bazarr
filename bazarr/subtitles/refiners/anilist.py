@@ -73,7 +73,7 @@ query ($id: Int) {
     @region.cache_on_arguments(expiration_time=timedelta(days=1).total_seconds())
     def _query_anilist_api_for_entry(self, anilist_id):
         url = 'https://graphql.anilist.co'
-        response = requests.post(
+        response = self.session.post(
             url,
             json = {
                 'query': self.anilist_api_query_template,
