@@ -113,9 +113,8 @@ query ($id: Int) {
     def compute_episode_offsets(self, start_id):
         self.initial_anilist_id = start_id
         
-        entries = []
+        entries, processed_ids = [], []
         ids_to_query = [self.initial_anilist_id]
-        processed_ids = set()
         
         while ids_to_query:
             current_id = ids_to_query.pop(0)
@@ -125,7 +124,7 @@ query ($id: Int) {
             data = self._query_anilist_api_for_entry(current_id)
             episodes, ids = self._process_anilist_entry(data)
             
-            processed_ids.add(current_id)
+            processed_ids.append(current_id)
             entries.append({
                 "id": current_id,
                 "episodes": episodes
@@ -133,6 +132,7 @@ query ($id: Int) {
             
             ids_to_query.extend(ids)
         
+        # Sort IDs in ascending order als lowest ID = first season
         entries = sorted(entries, key=lambda x: x['id'])
         
         offset = 0
