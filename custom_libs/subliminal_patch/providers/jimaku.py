@@ -339,7 +339,7 @@ class JimakuProvider(Provider):
         elif len(bracket_delimit) > 2:
             candidate_list = bracket_delimit[-2]
         
-        candidates = [] if len(candidate_list) == 0 else re.split(r'[,\-\+ ]+', candidate_list)
+        candidates = [] if len(candidate_list) == 0 else re.split(r'[,\-\+\& ]+', candidate_list)
         
         # Discard match group if any candidate...
         # ...contains any numbers, as the group is likely encoding information
@@ -352,6 +352,8 @@ class JimakuProvider(Provider):
         languages = list()
         for candidate in candidates:
             candidate = candidate.lower()
+            if candidate in ["ass", "srt"]:
+                continue
             
             # Sometimes, languages are hidden in 4 character blocks, i.e. "JPSC"
             if len(candidate) == 4:
@@ -367,6 +369,7 @@ class JimakuProvider(Provider):
             try:
                 language_squash = {
                     "jp": "ja",
+                    "jap": "ja",
                     "chs": "zho",
                     "cht": "zho",
                     "zhi": "zho",
@@ -378,19 +381,14 @@ class JimakuProvider(Provider):
                     language = Language(candidate)
                 else:
                     language = Language.fromietf(candidate)
-                    
-                languages.append(language)
             except:
                 if candidate in FULL_LANGUAGE_LIST:
-                    # Use a random language as a dummy, but for added security check if JPN is included
-                    if candidate in FULL_LANGUAGE_LIST:
-                        language = Language("zul")
-                        if not any(l.alpha3 == default_language[0].alpha3 for l in languages):
-                            languages.append(language)
+                    # Create a dummy for the unknown language
+                    languages.append(Language("zul"))
 
-            if len(languages) != 0:
-                if not any(l is not None and l.alpha3 == language.alpha3 for l in languages):
-                    languages.append(language)
+            # Do not add duplicate languages
+            if Language is not None and not any(l.alpha3 == language.alpha3 for l in languages):
+                languages.append(language)
         
         if len(languages) > 1:
             # Sometimes a metadata group that actually contains info about codecs gets processed as valid languages.
