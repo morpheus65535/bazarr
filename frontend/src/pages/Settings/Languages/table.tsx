@@ -66,6 +66,10 @@ const Table: FunctionComponent = () => {
         accessorKey: "name",
       },
       {
+        header: "Tag",
+        accessorKey: "tag",
+      },
+      {
         header: "Languages",
         accessorKey: "items",
         cell: ({
