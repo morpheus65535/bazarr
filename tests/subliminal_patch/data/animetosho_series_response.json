@@ -1,0 +1,232 @@
+{
+    "title": "[EMBER] Ore dake Level Up na Ken S01E12 [1080p] [HEVC WEBRip] (Solo Leveling)",
+    "timestamp": 1711853493,
+    "status": "complete",
+    "tosho_id": null,
+    "nyaa_id": 1796835,
+    "nyaa_subdom": null,
+    "anidex_id": null,
+    "comment": "",
+    "is_dupe": false,
+    "deleted": false,
+    "torrent_url": "https://animetosho.org/storage/torrent/f9670720a5142ec31aa8e3715745f1392e3ffd5b/%5BEMBER%5D%20Solo%20Leveling%20-%2012.torrent",
+    "torrent_name": "[EMBER] Solo Leveling - 12.mkv",
+    "info_hash": "f9670720a5142ec31aa8e3715745f1392e3ffd5b",
+    "info_hash_v2": null,
+    "magnet_uri": "magnet:?xt=urn:btih:7FTQOIFFCQXMGGVI4NYVORPRHEXD77K3&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&dn=%5BEMBER%5D%20Ore%20dake%20Level%20Up%20na%20Ken%20S01E12%20%5B1080p%5D%20%5BHEVC%20WEBRip%5D%20%28Solo%20Leveling%29",
+    "nzb_url": "https://animetosho.org/storage/nzbs/0009490e/%5BEMBER%5D%20Solo%20Leveling%20-%2012.nzb",
+    "anidb_aid": 17495,
+    "anidb_eid": 277518,
+    "anidb_fid": null,
+    "article_url": null,
+    "article_title": null,
+    "website_url": null,
+    "total_size": 369572311,
+    "num_files": 1,
+    "primary_file_id": 1154190,
+    "files": [
+        {
+            "id": 1154190,
+            "is_archive": false,
+            "filename": "[EMBER] Solo Leveling - 12.mkv",
+            "size": 369572311,
+            "processed": true,
+            "crc32": "cc8c36bc",
+            "md5": "07306f34a7cc9d25c2ec8a3b7d0b573a",
+            "sha1": "d79665531066b24439b0ef421074e6445d8b25a6",
+            "sha256": "0df3ec5424233bdb75ff33077b196e515455152a76ab5d4eab7a63cdcbb8c917",
+            "ed2k": "c0359507e7da148750279ff229cb9fbf",
+            "bt2": "b4526e074a41981e73cdcd13b9142a4a774bd15ff641b5cf114ace527268d213",
+            "vidframe_timestamps": [
+                15000,
+                354000,
+                693000,
+                1032000,
+                1371000
+            ],
+            "file_info_type": "mediainfo",
+            "file_info": "General\nUnique ID                                : 196382376391031659169980002506916611524 (0x93BDDEB35938CEE294C45B12E5A5C5C4)\nComplete name                            : [EMBER] Solo Leveling - 12.mkv\nFormat                                   : Matroska\nFormat version                           : Version 4\nFile size                                : 352 MiB\nDuration                                 : 23 min 40 s\nOverall bit rate                         : 2 082 kb/s\nFrame rate                               : 23.976 FPS\nMovie name                               : S01E12-Arise\nEncoded date                             : 2024-03-31 02:15:23 UTC\nWriting application                      : mkvmerge v69.0.0 ('Day And Age') 64-bit\nWriting library                          : libebml v1.4.2 + libmatroska v1.6.4\nCover                                    : Yes\nAttachments                              : cover.jpg / Roboto-Medium.ttf / Roboto-MediumItalic.ttf / arial.ttf / arialbd.ttf / comic.ttf / comicbd.ttf / times.ttf / timesbd.ttf / trebuc.ttf / trebucbd.ttf / verdana.ttf / verdanab.ttf / CONSOLA.TTF / CONSOLAB.TTF\n\nVideo\nID                                       : 1\nFormat                                   : HEVC\nFormat/Info                              : High Efficiency Video Coding\nFormat profile                           : Main 10@L4@High\nCodec ID                                 : V_MPEGH/ISO/HEVC\nDuration                                 : 23 min 40 s\nBit rate                                 : 1 914 kb/s\nWidth                                    : 1 920 pixels\nHeight                                   : 1 080 pixels\nDisplay aspect ratio                     : 16:9\nFrame rate mode                          : Constant\nFrame rate                               : 23.976 (24000/1001) FPS\nColor space                              : YUV\nChroma subsampling                       : 4:2:0\nBit depth                                : 10 bits\nBits/(Pixel*Frame)                       : 0.038\nStream size                              : 324 MiB (92%)\nTitle                                    : Presented By EMBER\nWriting library                          : x265 2.4+14-bc0e9bd7c08f5ddc:[Windows][GCC 6.3.0][64 bit] 10bit: KG7x [x265.ru]\nEncoding settings                        : cpuid=1173503 / frame-threads=3 / numa-pools=8 / wpp / no-pmode / no-pme / no-psnr / no-ssim / log-level=2 / input-csp=1 / input-res=1920x1080 / interlace=0 / total-frames=0 / level-idc=40 / high-tier=1 / uhd-bd=0 / ref=4 / no-allow-non-conformance / no-repeat-headers / annexb / no-aud / no-hrd / info / hash=0 / no-temporal-layers / open-gop / min-keyint=23 / keyint=250 / bframes=8 / b-adapt=2 / b-pyramid / bframe-bias=0 / rc-lookahead=70 / lookahead-slices=4 / scenecut=40 / no-intra-refresh / ctu=64 / min-cu-size=8 / rect / no-amp / max-tu-size=32 / tu-inter-depth=2 / tu-intra-depth=2 / limit-tu=4 / rdoq-level=2 / dynamic-rd=0.00 / no-ssim-rd / signhide / no-tskip / nr-intra=0 / nr-inter=0 / no-constrained-intra / no-strong-intra-smoothing / max-merge=3 / limit-refs=3 / limit-modes / me=3 / subme=3 / merange=57 / temporal-mvp / weightp / no-weightb / no-analyze-src-pics / deblock=1:1 / no-sao / no-sao-non-deblock / rd=4 / no-early-skip / rskip / no-fast-intra / no-tskip-fast / no-cu-lossless / no-b-intra / rdpenalty=0 / psy-rd=1.20 / psy-rdoq=2.00 / no-rd-refine / analysis-mode=0 / no-lossless / cbqpoffs=0 / crqpoffs=0 / rc=crf / crf=23.0 / qcomp=0.60 / qpstep=4 / stats-write=0 / stats-read=0 / vbv-maxrate=30000 / vbv-bufsize=30000 / vbv-init=0.9 / crf-max=0.0 / crf-min=0.0 / ipratio=1.40 / pbratio=1.30 / aq-mode=3 / aq-strength=0.70 / cutree / zone-count=0 / no-strict-cbr / qg-size=32 / no-rc-grain / qpmax=69 / qpmin=0 / sar=0 / overscan=0 / videoformat=5 / range=0 / colorprim=1 / transfer=1 / colormatrix=1 / chromaloc=0 / display-window=0 / max-cll=0,0 / min-luma=0 / max-luma=1023 / log2-max-poc-lsb=8 / vui-timing-info / vui-hrd-info / slices=1 / opt-qp-pps / opt-ref-list-length-pps / no-multi-pass-opt-rps / scenecut-bias=0.05 / no-opt-cu-delta-qp / no-aq-motion / no-hdr / no-hdr-opt / no-dhdr10-opt / refine-level=5 / no-limit-sao / ctu-info=0\nDefault                                  : Yes\nForced                                   : No\nColor range                              : Limited\nColor primaries                          : BT.709\nTransfer characteristics                 : BT.709\nMatrix coefficients                      : BT.709\n\nAudio\nID                                       : 2\nFormat                                   : AAC LC\nFormat/Info                              : Advanced Audio Codec Low Complexity\nCodec ID                                 : A_AAC-2\nDuration                                 : 23 min 40 s\nBit rate                                 : 128 kb/s\nChannel(s)                               : 2 channels\nChannel layout                           : L R\nSampling rate                            : 44.1 kHz\nFrame rate                               : 43.066 FPS (1024 SPF)\nCompression mode                         : Lossy\nStream size                              : 21.7 MiB (6%)\nLanguage                                 : Japanese\nDefault                                  : Yes\nForced                                   : No\n\nText\nID                                       : 3\nFormat                                   : ASS\nCodec ID                                 : S_TEXT/ASS\nCodec ID/Info                            : Advanced Sub Station Alpha\nDuration                                 : 23 min 20 s\nBit rate                                 : 98 b/s\nFrame rate                               : 0.168 FPS\nCount of elements                        : 235\nCompression mode                         : Lossless\nStream size                              : 16.8 KiB (0%)\nLanguage                                 : English\nDefault                                  : Yes\nForced                                   : No\n\nMenu\n00:00:00.000                             : en:Intro\n00:02:00.000                             : en:OP\n00:03:30.000                             : en:Main EP\n00:21:42.000                             : en:ED\n00:23:12.000                             : en:Extra",
+            "attachments": [
+                {
+                    "id": 268579,
+                    "filename": "arial.ttf",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 892680
+                },
+                {
+                    "id": 624527,
+                    "filename": "arialbd.ttf",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 854584
+                },
+                {
+                    "id": 1962029,
+                    "filename": "chapters.xml",
+                    "type": "xmlmeta",
+                    "info": {
+                        "meta": "chapters"
+                    },
+                    "size": 1874
+                },
+                {
+                    "id": 9973,
+                    "filename": "comic.ttf",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 240588
+                },
+                {
+                    "id": 13424,
+                    "filename": "comicbd.ttf",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 224404
+                },
+                {
+                    "id": 727768,
+                    "filename": "CONSOLA.TTF",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 358460
+                },
+                {
+                    "id": 183919,
+                    "filename": "CONSOLAB.TTF",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 368720
+                },
+                {
+                    "id": 1900106,
+                    "filename": "cover.jpg",
+                    "type": "other",
+                    "info": {
+                        "mime": "image/jpeg"
+                    },
+                    "size": 178243
+                },
+                {
+                    "id": 1066790,
+                    "filename": "Roboto-Medium.ttf",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 351704
+                },
+                {
+                    "id": 1066791,
+                    "filename": "Roboto-MediumItalic.ttf",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 378412
+                },
+                {
+                    "id": 1962028,
+                    "filename": "tags.xml",
+                    "type": "xmlmeta",
+                    "info": {
+                        "meta": "tags"
+                    },
+                    "size": 2698
+                },
+                {
+                    "id": 653220,
+                    "filename": "times.ttf",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 975228
+                },
+                {
+                    "id": 653221,
+                    "filename": "timesbd.ttf",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 980120
+                },
+                {
+                    "id": 1961547,
+                    "filename": "track3.eng.ass",
+                    "type": "subtitle",
+                    "info": {
+                        "number": 3,
+                        "codec": "ASS",
+                        "lang": "eng",
+                        "default": 1,
+                        "enabled": 1,
+                        "forced": 0,
+                        "trackid": 2,
+                        "tracknum": 3
+                    },
+                    "size": 25988
+                },
+                {
+                    "id": 71778,
+                    "filename": "trebuc.ttf",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 218432
+                },
+                {
+                    "id": 16207,
+                    "filename": "trebucbd.ttf",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 206776
+                },
+                {
+                    "id": 1149,
+                    "filename": "verdana.ttf",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 240456
+                },
+                {
+                    "id": 8678,
+                    "filename": "verdanab.ttf",
+                    "type": "other",
+                    "info": {
+                        "mime": "application/x-truetype-font"
+                    },
+                    "size": 208456
+                }
+            ],
+            "links": {
+                "ClickNUpload": "https://clicknupload.red/ydok51qdzjr7",
+                "DailyUploads": "https://dailyuploads.net/nksc253gopcq",
+                "DownloadGG": "https://download.gg/file-18642810_87ce8be6abbb74f6",
+                "GoFile": "https://gofile.io/d/XgPwnN",
+                "KrakenFiles": "https://krakenfiles.com/view/9lJPP2MvAt/file.html",
+                "MdiaLoad": "https://down.mdiaload.com/t9w39f21ad9o",
+                "MultiUp": "https://multiup.io/download/b7958d691eb0b38477acdb63db00cca6/%5BEMBER%5D%20Solo%20Leveling%20-%2012.mkv",
+                "Uppit": "http://uppit.com/g58333gdg3ei"
+            }
+        }
+    ]
+}

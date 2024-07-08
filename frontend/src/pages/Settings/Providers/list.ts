@@ -1,5 +1,5 @@
-import { SelectorOption } from "@/components";
 import { ReactText } from "react";
+import { SelectorOption } from "@/components";
 
 type Input<T, N> = {
   type: N;
@@ -63,6 +63,21 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         name: "VIP",
       },
     ],
+  },
+  {
+    key: "animetosho",
+    name: "Anime Tosho",
+    description:
+      "Anime Tosho is a free, completely automated service which mirrors most torrents posted on TokyoTosho's anime category, Nyaa.si's English translated anime category and AniDex's anime category.",
+    inputs: [
+      {
+        type: "text",
+        key: "search_threshold",
+        defaultValue: 6,
+        name: "Search Threshold. Increase if you often cannot find subtitles for your Anime. Note that increasing the value will decrease the performance of the search for each Episode.",
+      },
+    ],
+    message: "Requires AniDB Integration.",
   },
   {
     key: "argenteam_dump",
@@ -357,9 +372,17 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   { key: "subdivx", description: "LATAM Spanish / Spanish Subtitles Provider" },
   {
+    key: "subdl",
+    inputs: [
+      {
+        type: "text",
+        key: "api_key",
+      },
+    ],
+  },
+  {
     key: "subf2m",
     name: "subf2m.co",
-    description: "Subscene Alternative Provider",
     inputs: [
       {
         type: "switch",
@@ -390,20 +413,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Subs4Series",
     description:
       "Greek Subtitles Provider.\nRequires anti-captcha provider to solve captchas for each download.",
-  },
-  {
-    key: "subscene",
-    inputs: [
-      {
-        type: "text",
-        key: "username",
-      },
-      {
-        type: "password",
-        key: "password",
-      },
-    ],
-    description: "Broken, may not work for some. Use subf2m instead.",
   },
   { key: "subscenter", description: "Hebrew Subtitles Provider" },
   {
@@ -536,5 +545,26 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "zimuku",
     name: "Zimuku",
     description: "Chinese Subtitles Provider. Anti-captcha required.",
+  },
+];
+
+export const IntegrationList: Readonly<ProviderInfo[]> = [
+  {
+    key: "anidb",
+    name: "AniDB",
+    description:
+      "AniDB is non-profit database of anime information that is freely open to the public.",
+    inputs: [
+      {
+        type: "text",
+        key: "api_client",
+        name: "API Client",
+      },
+      {
+        type: "text",
+        key: "api_client_ver",
+        name: "API Client Version",
+      },
+    ],
   },
 ];

@@ -1,17 +1,17 @@
+import React, { FunctionComponent, useMemo } from "react";
+import { Badge, Text, TextProps } from "@mantine/core";
+import { faEllipsis, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { ColumnDef } from "@tanstack/react-table";
+import { isString } from "lodash";
 import { useMovieSubtitleModification } from "@/apis/hooks";
 import { useShowOnlyDesired } from "@/apis/hooks/site";
-import { Action, SimpleTable } from "@/components";
+import { Action } from "@/components";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
+import SimpleTable from "@/components/tables/SimpleTable";
 import { task, TaskGroup } from "@/modules/task";
-import { useTableStyles } from "@/styles";
-import { filterSubtitleBy } from "@/utilities";
+import { filterSubtitleBy, toPython } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
-import { faEllipsis, faSearch } from "@fortawesome/free-solid-svg-icons";
-import { Badge, Text, TextProps } from "@mantine/core";
-import { isString } from "lodash";
-import { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
 
 const missingText = "Missing Subtitles";
 
@@ -34,35 +34,125 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
 
   const profileItems = useProfileItemsToLanguages(profile);
 
-  const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
+  const { download, remove } = useMovieSubtitleModification();
+
+  const CodeCell = React.memo(({ item }: { item: Subtitle }) => {
+    const { code2, path, hi, forced } = item;
+
+    const selections = useMemo(() => {
+      const list: FormType.ModifySubtitle[] = [];
+
+      if (path && !isSubtitleMissing(path) && movie !== null) {
+        list.push({
+          type: "movie",
+          path,
+          id: movie.radarrId,
+          language: code2,
+          forced: toPython(forced),
+          hi: toPython(hi),
+        });
+      }
+
+      return list;
+    }, [code2, path, forced, hi]);
+
+    if (movie === null) {
+      return null;
+    }
+
+    const { radarrId } = movie;
+
+    if (isSubtitleMissing(path)) {
+      return (
+        <Action
+          label="Search Subtitle"
+          icon={faSearch}
+          disabled={disabled}
+          onClick={() => {
+            task.create(
+              movie.title,
+              TaskGroup.SearchSubtitle,
+              download.mutateAsync,
+              {
+                radarrId,
+                form: {
+                  language: code2,
+                  forced,
+                  hi,
+                },
+              },
+            );
+          }}
+        ></Action>
+      );
+    }
+
+    return (
+      <SubtitleToolsMenu
+        selections={selections}
+        onAction={(action) => {
+          if (action === "delete" && path) {
+            task.create(
+              movie.title,
+              TaskGroup.DeleteSubtitle,
+              remove.mutateAsync,
+              {
+                radarrId,
+                form: {
+                  language: code2,
+                  forced,
+                  hi,
+                  path,
+                },
+              },
+            );
+          } else if (action === "search") {
+            throw new Error("This shouldn't happen, please report the bug");
+          }
+        }}
+      >
+        <Action
+          label="Subtitle Actions"
+          disabled={isSubtitleTrack(path)}
+          icon={faEllipsis}
+        ></Action>
+      </SubtitleToolsMenu>
+    );
+  });
+
+  const columns = useMemo<ColumnDef<Subtitle>[]>(
     () => [
       {
-        Header: "Subtitle Path",
-        accessor: "path",
-        Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-
+        header: "Subtitle Path",
+        accessorKey: "path",
+        cell: ({
+          row: {
+            original: { path },
+          },
+        }) => {
           const props: TextProps = {
-            className: classes.primary,
+            className: "table-primary",
           };
 
-          if (isSubtitleTrack(value)) {
-            return <Text {...props}>Video File Subtitle Track</Text>;
-          } else if (isSubtitleMissing(value)) {
+          if (isSubtitleTrack(path)) {
             return (
-              <Text {...props} color="dimmed">
-                {value}
+              <Text className="table-primary">Video File Subtitle Track</Text>
+            );
+          } else if (isSubtitleMissing(path)) {
+            return (
+              <Text {...props} c="dimmed">
+                {path}
               </Text>
             );
           } else {
-            return <Text {...props}>{value}</Text>;
+            return <Text {...props}>{path}</Text>;
           }
         },
       },
       {
-        Header: "Language",
-        accessor: "name",
-        Cell: ({ row }) => {
+        header: "Language",
+        accessorKey: "name",
+        cell: ({ row }) => {
           if (row.original.path === missingText) {
             return (
               <Badge color="primary">
@@ -79,98 +169,13 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         },
       },
       {
-        accessor: "code2",
-        Cell: ({ row }) => {
-          const {
-            original: { code2, path, hi, forced },
-          } = row;
-
-          const { download, remove } = useMovieSubtitleModification();
-
-          const selections = useMemo(() => {
-            const list: FormType.ModifySubtitle[] = [];
-
-            if (path && !isSubtitleMissing(path) && movie !== null) {
-              list.push({
-                type: "movie",
-                path,
-                id: movie.radarrId,
-                language: code2,
-              });
-            }
-
-            return list;
-          }, [code2, path]);
-
-          if (movie === null) {
-            return null;
-          }
-
-          const { radarrId } = movie;
-
-          if (isSubtitleMissing(path)) {
-            return (
-              <Action
-                label="Search Subtitle"
-                icon={faSearch}
-                disabled={disabled}
-                onClick={() => {
-                  task.create(
-                    movie.title,
-                    TaskGroup.SearchSubtitle,
-                    download.mutateAsync,
-                    {
-                      radarrId,
-                      form: {
-                        language: code2,
-                        forced,
-                        hi,
-                      },
-                    },
-                  );
-                }}
-              ></Action>
-            );
-          }
-
-          return (
-            <SubtitleToolsMenu
-              selections={selections}
-              onAction={(action) => {
-                if (action === "delete" && path) {
-                  task.create(
-                    movie.title,
-                    TaskGroup.DeleteSubtitle,
-                    remove.mutateAsync,
-                    {
-                      radarrId,
-                      form: {
-                        language: code2,
-                        forced,
-                        hi,
-                        path,
-                      },
-                    },
-                  );
-                } else if (action === "search") {
-                  throw new Error(
-                    "This shouldn't happen, please report the bug",
-                  );
-                }
-              }}
-            >
-              <Action
-                label="Subtitle Actions"
-                disabled={isSubtitleTrack(path)}
-                color="dark"
-                icon={faEllipsis}
-              ></Action>
-            </SubtitleToolsMenu>
-          );
+        id: "code2",
+        cell: ({ row: { original } }) => {
+          return <CodeCell item={original} />;
         },
       },
     ],
-    [movie, disabled],
+    [CodeCell],
   );
 
   const data: Subtitle[] = useMemo(() => {

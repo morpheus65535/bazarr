@@ -1,65 +1,77 @@
-import { useEpisodeDeleteBlacklist } from "@/apis/hooks";
-import { PageTable } from "@/components";
-import MutateAction from "@/components/async/MutateAction";
-import Language from "@/components/bazarr/Language";
-import TextPopover from "@/components/TextPopover";
-import { useTableStyles } from "@/styles";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { Anchor, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Column } from "react-table";
+import { Anchor, Text } from "@mantine/core";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { ColumnDef } from "@tanstack/react-table";
+import { useEpisodeDeleteBlacklist } from "@/apis/hooks";
+import MutateAction from "@/components/async/MutateAction";
+import Language from "@/components/bazarr/Language";
+import PageTable from "@/components/tables/PageTable";
+import TextPopover from "@/components/TextPopover";
 
 interface Props {
-  blacklist: readonly Blacklist.Episode[];
+  blacklist: Blacklist.Episode[];
 }
 
 const Table: FunctionComponent<Props> = ({ blacklist }) => {
-  const columns = useMemo<Column<Blacklist.Episode>[]>(
+  const removeFromBlacklist = useEpisodeDeleteBlacklist();
+
+  const columns = useMemo<ColumnDef<Blacklist.Episode>[]>(
     () => [
       {
-        Header: "Series",
-        accessor: "seriesTitle",
-        Cell: (row) => {
-          const { classes } = useTableStyles();
-          const target = `/series/${row.row.original.sonarrSeriesId}`;
+        header: "Series",
+        accessorKey: "seriesTitle",
+        cell: ({
+          row: {
+            original: { sonarrSeriesId, seriesTitle },
+          },
+        }) => {
+          const target = `/series/${sonarrSeriesId}`;
           return (
-            <Anchor className={classes.primary} component={Link} to={target}>
-              {row.value}
+            <Anchor className="table-primary" component={Link} to={target}>
+              {seriesTitle}
             </Anchor>
           );
         },
       },
       {
-        Header: "Episode",
-        accessor: "episode_number",
+        header: "Episode",
+        accessorKey: "episode_number",
       },
       {
-        accessor: "episodeTitle",
+        id: "episodeTitle",
       },
       {
-        Header: "Language",
-        accessor: "language",
-        Cell: ({ value }) => {
-          if (value) {
-            return <Language.Text value={value} long></Language.Text>;
+        header: "Language",
+        accessorKey: "language",
+        cell: ({
+          row: {
+            original: { language },
+          },
+        }) => {
+          if (language) {
+            return <Language.Text value={language} long></Language.Text>;
           } else {
             return null;
           }
         },
       },
       {
-        Header: "Provider",
-        accessor: "provider",
+        header: "Provider",
+        accessorKey: "provider",
       },
       {
-        Header: "Date",
-        accessor: "timestamp",
-        Cell: (row) => {
-          if (row.value) {
+        header: "Date",
+        accessorKey: "timestamp",
+        cell: ({
+          row: {
+            original: { timestamp, parsed_timestamp: parsedTimestamp },
+          },
+        }) => {
+          if (timestamp) {
             return (
-              <TextPopover text={row.row.original.parsed_timestamp}>
-                <Text>{row.value}</Text>
+              <TextPopover text={parsedTimestamp}>
+                <Text>{timestamp}</Text>
               </TextPopover>
             );
           } else {
@@ -68,22 +80,24 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         },
       },
       {
-        accessor: "subs_id",
-        Cell: ({ row, value }) => {
-          const remove = useEpisodeDeleteBlacklist();
-
+        id: "subs_id",
+        cell: ({
+          row: {
+            original: { subs_id: subsId, provider },
+          },
+        }) => {
           return (
             <MutateAction
               label="Remove from Blacklist"
               noReset
               icon={faTrash}
-              mutation={remove}
+              mutation={removeFromBlacklist}
               args={() => ({
                 all: false,
                 form: {
-                  provider: row.original.provider,
+                  provider: provider,
                   // eslint-disable-next-line camelcase
-                  subs_id: value,
+                  subs_id: subsId,
                 },
               })}
             ></MutateAction>
@@ -91,7 +105,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         },
       },
     ],
-    [],
+    [removeFromBlacklist],
   );
   return (
     <PageTable

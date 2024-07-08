@@ -5,7 +5,7 @@ import logging
 
 from app.config import settings
 from sonarr.info import url_api_sonarr
-from constants import headers
+from constants import HEADERS
 
 
 def browse_sonarr_filesystem(path='#'):
@@ -15,7 +15,7 @@ def browse_sonarr_filesystem(path='#'):
                                  f"includeFiles=false&apikey={settings.sonarr.apikey}")
     try:
         r = requests.get(url_sonarr_api_filesystem, timeout=int(settings.sonarr.http_timeout), verify=False,
-                         headers=headers)
+                         headers=HEADERS)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")

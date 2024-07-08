@@ -49,6 +49,8 @@ SUBTITLE_EXTENSIONS = ('.srt', '.sub', '.smi', '.txt', '.ssa', '.ass', '.mpl', '
 
 _POOL_LIFETIME = datetime.timedelta(hours=12)
 
+HI_REGEX = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}](?<!{\\an\d})')
+
 
 def remove_crap_from_fn(fn):
     # in case of the second regex part, the legit release group name will be in group(2), if it's followed by [string]
@@ -539,6 +541,7 @@ class SZProviderPool(ProviderPool):
         use_hearing_impaired = hearing_impaired in ("prefer", "force HI")
 
         is_episode = isinstance(video, Episode)
+        max_score = sum(val for key, val in compute_score._scores['episode' if is_episode else 'movie'].items() if key != "hash")
 
         # sort subtitles by score
         unsorted_subtitles = []
@@ -570,7 +573,9 @@ class SZProviderPool(ProviderPool):
         for subtitle, score, score_without_hash, matches, orig_matches in scored_subtitles:
             # check score
             if score < min_score:
-                logger.info('%r: Score %d is below min_score (%d)', subtitle, score, min_score)
+                min_score_in_percent = round(min_score * 100 / max_score, 2) if min_score > 0 else 0
+                logger.info('%r: Score %d is below min_score: %d out of %d (or %r%%)',
+                            subtitle, score, min_score, max_score, min_score_in_percent)
                 break
 
             # stop when all languages are downloaded
@@ -941,8 +946,8 @@ def _search_external_subtitles(path, languages=None, only_one=False, match_stric
             lambda m: "" if str(m.group(1)).lower() in FULL_LANGUAGE_LIST else m.group(0), p_root)
 
         p_root_lower = p_root_bare.lower()
-
-        filename_matches = p_root_lower == fn_no_ext_lower
+        # comparing to both unicode normalization forms to prevent broking stuff and improve indexing on some platforms.
+        filename_matches = fn_no_ext_lower in [p_root_lower, unicodedata.normalize('NFC', p_root_lower)]
         filename_contains = p_root_lower in fn_no_ext_lower
 
         if not filename_matches:
@@ -1054,7 +1059,7 @@ def list_supported_video_types(pool_class, **kwargs):
 
 
 def download_subtitles(subtitles, pool_class=ProviderPool, **kwargs):
-    """Download :attr:`~subliminal.subtitle.Subtitle.content` of `subtitles`.
+    r"""Download :attr:`~subliminal.subtitle.Subtitle.content` of `subtitles`.
 
     :param subtitles: subtitles to download.
     :type subtitles: list of :class:`~subliminal.subtitle.Subtitle`
@@ -1071,7 +1076,7 @@ def download_subtitles(subtitles, pool_class=ProviderPool, **kwargs):
 
 def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=False, only_one=False, compute_score=None,
                             pool_class=ProviderPool, throttle_time=0, **kwargs):
-    """List and download the best matching subtitles.
+    r"""List and download the best matching subtitles.
 
     The `videos` must pass the `languages` and `undefined` (`only_one`) checks of :func:`check_video`.
 
@@ -1188,7 +1193,7 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
         must_remove_hi = 'remove_HI' in subtitle.mods
 
         # check content
-        if subtitle.content is None:
+        if subtitle.content is None or subtitle.text is None:
             logger.error('Skipping subtitle %r: no content', subtitle)
             continue
 
@@ -1198,6 +1203,8 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             continue
 
         # create subtitle path
+        if subtitle.text and bool(re.search(HI_REGEX, subtitle.text)):
+            subtitle.language.hi = True
         subtitle_path = get_subtitle_path(file_path, None if single else subtitle.language,
                                           forced_tag=subtitle.language.forced,
                                           hi_tag=False if must_remove_hi else subtitle.language.hi, tags=tags)
@@ -1242,7 +1249,7 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
 
 
 def refine(video, episode_refiners=None, movie_refiners=None, **kwargs):
-    """Refine a video using :ref:`refiners`.
+    r"""Refine a video using :ref:`refiners`.
 
     patch: add traceback logging
 

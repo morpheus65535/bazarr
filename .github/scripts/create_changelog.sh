@@ -10,5 +10,5 @@ latest_verion=$(git describe --tags --abbrev=0)
 if [[ $RELEASE_MASTER -eq 1 ]]; then
   auto-changelog --stdout -t changelog-master.hbs --starting-version "$master_version" --commit-limit 3
 else
-  auto-changelog --stdout --starting-version "$latest_verion" --unreleased-only --commit-limit 0
+  auto-changelog --stdout --starting-version "$latest_verion" --unreleased-only --commit-limit false
 fi

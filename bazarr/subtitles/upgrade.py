@@ -69,14 +69,12 @@ def upgrade_subtitles():
             .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)
             .join(episodes_to_upgrade, onclause=TableHistory.id == episodes_to_upgrade.c.id, isouter=True)
             .where(episodes_to_upgrade.c.id.is_not(None)))
-            .all() if _language_still_desired(x.language, x.profileId)]
+            .all() if _language_still_desired(x.language, x.profileId) and
+            x.subtitles_path in x.external_subtitles and
+            x.video_path == x.path
+        ]
 
         for item in episodes_data:
-            if item['upgradable']:
-                if item['subtitles_path'] not in item['external_subtitles'] or \
-                        not item['video_path'] == item['path']:
-                    item.update({"upgradable": False})
-
             del item['path']
             del item['external_subtitles']
 
@@ -110,7 +108,9 @@ def upgrade_subtitles():
                                              episode['seriesTitle'],
                                              'series',
                                              forced_minimum_score=int(episode['score']),
-                                             is_upgrade=True))
+                                             is_upgrade=True,
+                                             previous_subtitles_to_delete=path_mappings.path_replace(
+                                                 episode['subtitles_path'])))
 
             if result:
                 if isinstance(result, list) and len(result):
@@ -154,14 +154,12 @@ def upgrade_subtitles():
             .join(TableMovies, onclause=TableHistoryMovie.radarrId == TableMovies.radarrId)
             .join(movies_to_upgrade, onclause=TableHistoryMovie.id == movies_to_upgrade.c.id, isouter=True)
             .where(movies_to_upgrade.c.id.is_not(None)))
-            .all() if _language_still_desired(x.language, x.profileId)]
+            .all() if _language_still_desired(x.language, x.profileId) and
+            x.subtitles_path in x.external_subtitles and
+            x.video_path == x.path
+        ]
 
         for item in movies_data:
-            if item['upgradable']:
-                if item['subtitles_path'] not in item['external_subtitles'] or \
-                        not item['video_path'] == item['path']:
-                    item.update({"upgradable": False})
-
             del item['path']
             del item['external_subtitles']
 
@@ -195,7 +193,9 @@ def upgrade_subtitles():
                                              movie['title'],
                                              'movie',
                                              forced_minimum_score=int(movie['score']),
-                                             is_upgrade=True))
+                                             is_upgrade=True,
+                                             previous_subtitles_to_delete=path_mappings.path_replace_movie(
+                                                 movie['subtitles_path'])))
             if result:
                 if isinstance(result, list) and len(result):
                     result = result[0]

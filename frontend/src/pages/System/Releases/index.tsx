@@ -1,6 +1,4 @@
-import { useSystemReleases } from "@/apis/hooks";
-import { QueryOverlay } from "@/components/async";
-import { BuildKey } from "@/utilities";
+import { FunctionComponent, useMemo } from "react";
 import {
   Badge,
   Card,
@@ -12,7 +10,9 @@ import {
   Text,
 } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
-import { FunctionComponent, useMemo } from "react";
+import { useSystemReleases } from "@/apis/hooks";
+import { QueryOverlay } from "@/components/async";
+import { BuildKey } from "@/utilities";
 
 const SystemReleasesView: FunctionComponent = () => {
   const releases = useSystemReleases();
@@ -21,9 +21,9 @@ const SystemReleasesView: FunctionComponent = () => {
   useDocumentTitle("Releases - Bazarr (System)");
 
   return (
-    <Container size={600} py={12}>
+    <Container size="md" py={12}>
       <QueryOverlay result={releases}>
-        <Stack spacing="lg">
+        <Stack gap="lg">
           {data?.map((v, idx) => (
             <ReleaseCard key={BuildKey(idx, v.date)} {...v}></ReleaseCard>
           ))}
@@ -47,7 +47,7 @@ const ReleaseCard: FunctionComponent<ReleaseInfo> = ({
   return (
     <Card shadow="md" p="lg">
       <Group>
-        <Text weight="bold">{name}</Text>
+        <Text fw="bold">{name}</Text>
         <Badge color="blue">{date}</Badge>
         <Badge color={prerelease ? "yellow" : "green"}>
           {prerelease ? "Development" : "Master"}

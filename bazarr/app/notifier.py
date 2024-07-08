@@ -1,6 +1,6 @@
 # coding=utf-8
 
-import apprise
+from apprise import Apprise, AppriseAsset
 import logging
 
 from .database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies, database, insert, delete, select
@@ -8,7 +8,7 @@ from .database import TableSettingsNotifier, TableEpisodes, TableShows, TableMov
 
 def update_notifier():
     # define apprise object
-    a = apprise.Apprise()
+    a = Apprise()
 
     # Retrieve all the details
     results = a.details()
@@ -70,9 +70,9 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     if not episode:
         return
 
-    asset = apprise.AppriseAsset(async_mode=False)
+    asset = AppriseAsset(async_mode=False)
 
-    apobj = apprise.Apprise(asset=asset)
+    apobj = Apprise(asset=asset)
 
     for provider in providers:
         if provider.url is not None:
@@ -101,9 +101,9 @@ def send_notifications_movie(radarr_id, message):
     else:
         movie_year = ''
 
-    asset = apprise.AppriseAsset(async_mode=False)
+    asset = AppriseAsset(async_mode=False)
 
-    apobj = apprise.Apprise(asset=asset)
+    apobj = Apprise(asset=asset)
 
     for provider in providers:
         if provider.url is not None:

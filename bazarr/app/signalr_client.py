@@ -12,7 +12,7 @@ from signalrcore.hub_connection_builder import HubConnectionBuilder
 from collections import deque
 from time import sleep
 
-from constants import headers
+from constants import HEADERS
 from app.event_handler import event_stream
 from sonarr.sync.episodes import sync_episodes, sync_one_episode
 from sonarr.sync.series import update_series, update_one_series
@@ -39,7 +39,7 @@ class SonarrSignalrClientLegacy:
         self.session = Session()
         self.session.timeout = 60
         self.session.verify = False
-        self.session.headers = headers
+        self.session.headers = HEADERS
         self.connection = None
         self.connected = False
 
@@ -162,7 +162,7 @@ class SonarrSignalrClient:
             .with_url(f"{url_sonarr()}/signalr/messages?access_token={self.apikey_sonarr}",
                       options={
                           "verify_ssl": False,
-                          "headers": headers
+                          "headers": HEADERS
                       }) \
             .with_automatic_reconnect({
                 "type": "raw",
@@ -229,7 +229,7 @@ class RadarrSignalrClient:
             .with_url(f"{url_radarr()}/signalr/messages?access_token={self.apikey_radarr}",
                       options={
                           "verify_ssl": False,
-                          "headers": headers
+                          "headers": HEADERS
                       }) \
             .with_automatic_reconnect({
                 "type": "raw",

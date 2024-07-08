@@ -29,6 +29,7 @@ from dogpile.cache.api import NO_VALUE
 
 logger = logging.getLogger(__name__)
 
+
 class LegendasdivxSubtitle(Subtitle):
     """Legendasdivx Subtitle."""
     provider_name = 'legendasdivx'
@@ -69,10 +70,12 @@ class LegendasdivxSubtitle(Subtitle):
             self.wrong_fps = True
 
             if self.skip_wrong_fps:
-                logger.debug("Legendasdivx :: Skipping subtitle due to FPS mismatch (expected: %s, got: %s)", video.fps, self.sub_frame_rate)
+                logger.debug("Legendasdivx :: Skipping subtitle due to FPS mismatch (expected: %s, got: %s)", video.fps,
+                             self.sub_frame_rate)
                 # not a single match :)
                 return set()
-            logger.debug("Legendasdivx :: Frame rate mismatch (expected: %s, got: %s, but continuing...)", video.fps, self.sub_frame_rate)
+            logger.debug("Legendasdivx :: Frame rate mismatch (expected: %s, got: %s, but continuing...)", video.fps,
+                         self.sub_frame_rate)
 
         description = sanitize(self.description)
 
@@ -112,6 +115,11 @@ class LegendasdivxSubtitle(Subtitle):
                 matches.update(['season'])
             if video.episode and 'e{:02d}'.format(video.episode) in description:
                 matches.update(['episode'])
+            # All the search is already based on the series_imdb_id when present in the video and controlled via the
+            # the legendasdivx backend it, so if there is a result, it matches, either inside of a pack or a specific
+            # series and episode, so we can assume the season and episode matches.
+            if video.series_imdb_id:
+                matches.update(['series', 'series_imdb_id', 'season', 'episode'])
 
         # release_group
         if video.release_group and sanitize_release_group(video.release_group) in sanitize_release_group(description):
@@ -120,6 +128,7 @@ class LegendasdivxSubtitle(Subtitle):
         matches |= guess_matches(video, guessit(description, {"type": type_}))
 
         return matches
+
 
 class LegendasdivxProvider(Provider):
     """Legendasdivx Provider."""
@@ -135,7 +144,7 @@ class LegendasdivxProvider(Provider):
         'Referer': 'https://www.legendasdivx.pt'
     }
     loginpage = site + '/forum/ucp.php?mode=login'
-    searchurl = site + '/modules.php?name=Downloads&file=jz&d_op=search&op=_jz00&query={query}'
+    searchurl = site + '/modules.php?name=Downloads&file=jz&d_op={d_op}&op={op}&query={query}&temporada={season}&episodio={episode}&imdb={imdbid}'
     download_link = site + '/modules.php{link}'
 
     def __init__(self, username, password, skip_wrong_fps=True):
@@ -186,7 +195,8 @@ class LegendasdivxProvider(Provider):
             res = self.session.post(self.loginpage, data)
             res.raise_for_status()
             # make sure we're logged in
-            logger.debug('Legendasdivx.pt :: Logged in successfully: PHPSESSID: %s', self.session.cookies.get_dict()['PHPSESSID'])
+            logger.debug('Legendasdivx.pt :: Logged in successfully: PHPSESSID: %s',
+                         self.session.cookies.get_dict()['PHPSESSID'])
             cj = self.session.cookies.copy()
             store_cks = ("PHPSESSID", "phpbb3_2z8zs_sid", "phpbb3_2z8zs_k", "phpbb3_2z8zs_u", "lang")
             for cn in iter(self.session.cookies.keys()):
@@ -252,7 +262,7 @@ class LegendasdivxProvider(Provider):
                 continue
 
             # get subtitle uploader
-            sub_header = _subbox.find("div", {"class" :"sub_header"})
+            sub_header = _subbox.find("div", {"class": "sub_header"})
             uploader = sub_header.find("a").text if sub_header else 'anonymous'
 
             exact_match = False
@@ -278,12 +288,24 @@ class LegendasdivxProvider(Provider):
 
         subtitles = []
 
+        # Set the default search criteria
+        d_op = 'search'
+        op = '_jz00'
+
+        lang_filter_key = 'form_cat'
+
         if isinstance(video, Movie):
             querytext = video.imdb_id if video.imdb_id else video.title
-
         if isinstance(video, Episode):
-            querytext = '%22{}%20S{:02d}E{:02d}%22'.format(video.series, video.season, video.episode)
-            querytext = quote(querytext.lower())
+            # Overwrite the parameters to refine via imdb_id
+            if video.series_imdb_id:
+                querytext = '&faz=pesquisa_episodio'
+                lang_filter_key = 'idioma'
+                d_op = 'jz_00'
+                op = ''
+            else:
+                querytext = '%22{}%22%20S{:02d}E{:02d}'.format(video.series, video.season, video.episode)
+                querytext = quote(querytext.lower())
 
         # language query filter
         if not isinstance(languages, (tuple, list, set)):
@@ -293,13 +315,22 @@ class LegendasdivxProvider(Provider):
             logger.debug("Legendasdivx.pt :: searching for %s subtitles.", language)
             language_id = language.opensubtitles
             if 'por' in language_id:
-                lang_filter = '&form_cat=28'
+                lang_filter = '&{}=28'.format(lang_filter_key)
             elif 'pob' in language_id:
-                lang_filter = '&form_cat=29'
+                lang_filter = '&{}=29'.format(lang_filter_key)
             else:
                 lang_filter = ''
 
             querytext = querytext + lang_filter if lang_filter else querytext
+
+            search_url = _searchurl.format(
+                    query=querytext,
+                    season='' if isinstance(video, Movie) else video.season,
+                    episode='' if isinstance(video, Movie) else video.episode,
+                    imdbid='' if isinstance(video, Movie) else video.series_imdb_id.replace('tt', '') if video.series_imdb_id else None,
+                    op=op,
+                    d_op=d_op,
+            )
 
             try:
                 # sleep for a 1 second before another request
@@ -307,7 +338,7 @@ class LegendasdivxProvider(Provider):
                 searchLimitReached = False
                 self.headers['Referer'] = self.site + '/index.php'
                 self.session.headers.update(self.headers)
-                res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
+                res = self.session.get(search_url, allow_redirects=False)
                 res.raise_for_status()
                 if res.status_code == 200 and "<!--pesquisas:" in res.text:
                     searches_count_groups = re.search(r'<!--pesquisas: (\d*)-->', res.text)
@@ -324,10 +355,10 @@ class LegendasdivxProvider(Provider):
                     # for series, if no results found, try again just with series and season (subtitle packs)
                     if isinstance(video, Episode):
                         logger.debug("Legendasdivx.pt :: trying again with just series and season on query.")
-                        querytext = re.sub("(e|E)(\d{2})", "", querytext)
+                        querytext = re.sub(r"(e|E)(\d{2})", "", querytext)
                         # sleep for a 1 second before another request
                         sleep(1)
-                        res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
+                        res = self.session.get(search_url, allow_redirects=False)
                         res.raise_for_status()
                         if res.status_code == 200 and "<!--pesquisas:" in res.text:
                             searches_count_groups = re.search(r'<!--pesquisas: (\d*)-->', res.text)
@@ -340,9 +371,11 @@ class LegendasdivxProvider(Provider):
                                     if searches_count >= self.SAFE_SEARCH_LIMIT:
                                         searchLimitReached = True
                         if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
-                            logger.warning('Legendasdivx.pt :: query {0} return no results for language {1}(for series and season only).'.format(querytext, language_id))
+                            logger.warning(
+                                'Legendasdivx.pt :: query {0} return no results for language {1}(for series and season only).'.format(
+                                    querytext, language_id))
                             continue
-                if res.status_code == 302: # got redirected to login page.
+                if res.status_code == 302:  # got redirected to login page.
                     # seems that our session cookies are no longer valid... clean them from cache
                     region.delete("legendasdivx_cookies2")
                     logger.debug("Legendasdivx.pt :: Logging in again. Cookies have expired!")
@@ -350,7 +383,7 @@ class LegendasdivxProvider(Provider):
                     self.login()
                     # sleep for a 1 second before another request
                     sleep(1)
-                    res = self.session.get(_searchurl.format(query=querytext))
+                    res = self.session.get(search_url, allow_redirects=False)
                     res.raise_for_status()
                     if res.status_code == 200 and "<!--pesquisas:" in res.text:
                         searches_count_groups = re.search(r'<!--pesquisas: (\d*)-->', res.text)
@@ -394,9 +427,9 @@ class LegendasdivxProvider(Provider):
 
             # more pages?
             if num_pages > 1:
-                for num_page in range(2, num_pages+1):
+                for num_page in range(2, num_pages + 1):
                     sleep(1) # another 1 sec before requesting...
-                    _search_next = self.searchurl.format(query=querytext) + "&page={0}".format(str(num_page))
+                    _search_next = search_url + "&page={0}".format(str(num_page))
                     logger.debug("Legendasdivx.pt :: Moving on to next page: %s", _search_next)
                     # sleep for a 1 second before another request
                     sleep(1)
@@ -409,7 +442,7 @@ class LegendasdivxProvider(Provider):
 
     def list_subtitles(self, video, languages):
         return self.query(video, languages)
-    
+
     @reinitialize_on_error((RequestException,), attempts=1)
     def download_subtitle(self, subtitle):
 
@@ -478,7 +511,8 @@ class LegendasdivxProvider(Provider):
             if isinstance(subtitle.video, Episode):
                 if all(key in _guess for key in ('season', 'episode')):
                     logger.debug("Legendasdivx.pt :: guessing %s", name)
-                    logger.debug("Legendasdivx.pt :: subtitle S%sE%s video S%sE%s", _guess['season'], _guess['episode'], subtitle.video.season, subtitle.video.episode)
+                    logger.debug("Legendasdivx.pt :: subtitle S%sE%s video S%sE%s", _guess['season'], _guess['episode'],
+                                 subtitle.video.season, subtitle.video.episode)
 
                     if subtitle.video.episode != _guess['episode'] or subtitle.video.season != _guess['season']:
                         logger.debug('Legendasdivx.pt :: subtitle does not match video, skipping')

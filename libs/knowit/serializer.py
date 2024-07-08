@@ -143,7 +143,7 @@ def format_duration(
     seconds = int(seconds - (minutes * 60))
     if profile == 'human':
         if hours > 0:
-            return f'{hours} hours {minutes:02d} minutes { seconds:02d} seconds'
+            return f'{hours} hours {minutes:02d} minutes {seconds:02d} seconds'
         if minutes > 0:
             return f'{minutes} minutes {seconds:02d} seconds'
         return f'{seconds} seconds'

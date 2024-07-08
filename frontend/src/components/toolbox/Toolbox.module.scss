@@ -1,0 +1,9 @@
+.group {
+  @include light {
+    background-color: var(--mantine-color-gray-3);
+  }
+
+  @include dark {
+    background-color: var(--mantine-color-dark-5);
+  }
+}

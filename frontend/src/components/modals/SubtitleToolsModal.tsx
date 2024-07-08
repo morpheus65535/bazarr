@@ -1,12 +1,19 @@
+import { FunctionComponent, useMemo, useState } from "react";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Divider,
+  Group,
+  Stack,
+  Text,
+} from "@mantine/core";
+import { ColumnDef } from "@tanstack/react-table";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
-import { SimpleTable } from "@/components/tables";
-import { useCustomSelection } from "@/components/tables/plugins";
+import SimpleTable from "@/components/tables/SimpleTable";
 import { withModal } from "@/modules/modals";
 import { isMovie } from "@/utilities";
-import { Badge, Button, Divider, Group, Stack, Text } from "@mantine/core";
-import { FunctionComponent, useMemo, useState } from "react";
-import { Column, useRowSelect } from "react-table";
 
 type SupportType = Item.Episode | Item.Movie;
 
@@ -35,24 +42,53 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
 }) => {
   const [selections, setSelections] = useState<TableColumnType[]>([]);
 
-  const columns: Column<TableColumnType>[] = useMemo<Column<TableColumnType>[]>(
+  const columns = useMemo<ColumnDef<TableColumnType>[]>(
     () => [
       {
-        Header: "Language",
-        accessor: "raw_language",
-        Cell: ({ value }) => (
+        id: "selection",
+        header: ({ table }) => {
+          return (
+            <Checkbox
+              id="table-header-selection"
+              indeterminate={table.getIsSomeRowsSelected()}
+              checked={table.getIsAllRowsSelected()}
+              onChange={table.getToggleAllRowsSelectedHandler()}
+            ></Checkbox>
+          );
+        },
+        cell: ({ row: { index, getIsSelected, getToggleSelectedHandler } }) => {
+          return (
+            <Checkbox
+              id={`table-cell-${index}`}
+              checked={getIsSelected()}
+              onChange={getToggleSelectedHandler()}
+              onClick={getToggleSelectedHandler()}
+            ></Checkbox>
+          );
+        },
+      },
+      {
+        header: "Language",
+        accessorKey: "raw_language",
+        cell: ({
+          row: {
+            original: { raw_language: rawLanguage },
+          },
+        }) => (
           <Badge color="secondary">
-            <Language.Text value={value} long></Language.Text>
+            <Language.Text value={rawLanguage} long></Language.Text>
           </Badge>
         ),
       },
       {
         id: "file",
-        Header: "File",
-        accessor: "path",
-        Cell: ({ value }) => {
-          const path = value;
-
+        header: "File",
+        accessorKey: "path",
+        cell: ({
+          row: {
+            original: { path },
+          },
+        }) => {
           let idx = path.lastIndexOf("/");
 
           if (idx === -1) {
@@ -94,16 +130,15 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
     [payload],
   );
 
-  const plugins = [useRowSelect, useCustomSelection];
-
   return (
     <Stack>
       <SimpleTable
         tableStyles={{ emptyText: "No external subtitles found" }}
-        plugins={plugins}
+        enableRowSelection={(row) => CanSelectSubtitle(row.original)}
+        onRowSelectionChanged={(rows) =>
+          setSelections(rows.map((r) => r.original))
+        }
         columns={columns}
-        onSelect={setSelections}
-        canSelect={CanSelectSubtitle}
         data={data}
       ></SimpleTable>
       <Divider></Divider>

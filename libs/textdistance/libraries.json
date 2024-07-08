@@ -1,0 +1,80 @@
+{
+  "DamerauLevenshtein": [
+    [
+      "rapidfuzz.distance.OSA",
+      "distance"
+    ],
+    [
+      "rapidfuzz.distance.DamerauLevenshtein",
+      "distance"
+    ],
+    [
+      "jellyfish",
+      "damerau_levenshtein_distance"
+    ],
+    [
+      "pyxdameraulevenshtein",
+      "damerau_levenshtein_distance"
+    ]
+  ],
+  "Hamming": [
+    [
+      "Levenshtein",
+      "hamming"
+    ],
+    [
+      "rapidfuzz.distance.Hamming",
+      "distance"
+    ],
+    [
+      "jellyfish",
+      "hamming_distance"
+    ],
+    [
+      "distance",
+      "hamming"
+    ]
+  ],
+  "Jaro": [
+    [
+      "rapidfuzz.distance.Jaro",
+      "similarity"
+    ],
+    [
+      "jellyfish",
+      "jaro_similarity"
+    ]
+  ],
+  "JaroWinkler": [
+    [
+      "rapidfuzz.distance.JaroWinkler",
+      "similarity"
+    ],
+    [
+      "jellyfish",
+      "jaro_winkler_similarity"
+    ]
+  ],
+  "Levenshtein": [
+    [
+      "rapidfuzz.distance.Levenshtein",
+      "distance"
+    ],
+    [
+      "Levenshtein",
+      "distance"
+    ],
+    [
+      "jellyfish",
+      "levenshtein_distance"
+    ],
+    [
+      "pylev",
+      "levenshtein"
+    ],
+    [
+      "distance",
+      "levenshtein"
+    ]
+  ]
+}

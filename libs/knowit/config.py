@@ -2,8 +2,12 @@ import os
 import typing
 from logging import NullHandler, getLogger
 
-from pkg_resources import resource_stream
 import yaml
+
+try:
+    from importlib.resources import files
+except ImportError:
+    from importlib_resources import files  # type: ignore[assignment,no-redef,import-not-found]
 
 from knowit.serializer import get_yaml_loader
 
@@ -28,7 +32,8 @@ class Config:
     def build(cls, path: typing.Optional[typing.Union[str, os.PathLike]] = None) -> 'Config':
         """Build config instance."""
         loader = get_yaml_loader()
-        with resource_stream('knowit', 'defaults.yml') as stream:
+        config_file = files(__package__).joinpath('defaults.yml')
+        with config_file.open('rb') as stream:
             cfgs = [yaml.load(stream, Loader=loader)]
 
         if path:

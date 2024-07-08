@@ -9,8 +9,8 @@ from subliminal_patch import core
 from subzero.language import Language
 from charset_normalizer import detect
 
+from constants import MAXIMUM_SUBTITLE_SIZE
 from app.config import settings
-from constants import hi_regex
 from utilities.path_mappings import path_mappings
 
 
@@ -68,7 +68,7 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                 forced = True if os.path.splitext(os.path.splitext(subtitle)[0])[1] == '.forced' else False
 
                 # to improve performance, skip detection of files larger that 1M
-                if os.path.getsize(subtitle_path) > 1 * 1024 * 1024:
+                if os.path.getsize(subtitle_path) > MAXIMUM_SUBTITLE_SIZE:
                     logging.debug(f"BAZARR subtitles file is too large to be text based. Skipping this file: "
                                   f"{subtitle_path}")
                     continue
@@ -119,7 +119,7 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
             # check if file exist:
             if os.path.exists(subtitle_path) and os.path.splitext(subtitle_path)[1] in core.SUBTITLE_EXTENSIONS:
                 # to improve performance, skip detection of files larger that 1M
-                if os.path.getsize(subtitle_path) > 1 * 1024 * 1024:
+                if os.path.getsize(subtitle_path) > MAXIMUM_SUBTITLE_SIZE:
                     logging.debug(f"BAZARR subtitles file is too large to be text based. Skipping this file: "
                                   f"{subtitle_path}")
                     continue
@@ -136,6 +136,6 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                     continue
                 text = text.decode(encoding)
 
-                if bool(re.search(hi_regex, text)):
+                if bool(re.search(core.HI_REGEX, text)):
                     subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
     return subtitles

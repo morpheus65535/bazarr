@@ -1,12 +1,13 @@
+import { useEffect } from "react";
 import {
   QueryClient,
   useMutation,
   useQuery,
   useQueryClient,
-} from "react-query";
-import { usePaginationQuery } from "../queries/hooks";
-import { QueryKeys } from "../queries/keys";
-import api from "../raw";
+} from "@tanstack/react-query";
+import { usePaginationQuery } from "@/apis/queries/hooks";
+import { QueryKeys } from "@/apis/queries/keys";
+import api from "@/apis/raw";
 
 const cacheMovies = (client: QueryClient, movies: Item.Movie[]) => {
   movies.forEach((item) => {
@@ -16,31 +17,47 @@ const cacheMovies = (client: QueryClient, movies: Item.Movie[]) => {
 
 export function useMoviesByIds(ids: number[]) {
   const client = useQueryClient();
-  return useQuery([QueryKeys.Movies, ...ids], () => api.movies.movies(ids), {
-    onSuccess: (data) => {
-      cacheMovies(client, data);
-    },
+
+  const query = useQuery({
+    queryKey: [QueryKeys.Movies, ...ids],
+    queryFn: () => api.movies.movies(ids),
   });
+
+  useEffect(() => {
+    if (query.isSuccess && query.data) {
+      cacheMovies(client, query.data);
+    }
+  }, [query.isSuccess, query.data, client]);
+
+  return query;
 }
 
 export function useMovieById(id: number) {
-  return useQuery([QueryKeys.Movies, id], async () => {
-    const response = await api.movies.movies([id]);
-    return response.length > 0 ? response[0] : undefined;
+  return useQuery({
+    queryKey: [QueryKeys.Movies, id],
+
+    queryFn: async () => {
+      const response = await api.movies.movies([id]);
+      return response.length > 0 ? response[0] : undefined;
+    },
   });
 }
 
 export function useMovies() {
   const client = useQueryClient();
-  return useQuery(
-    [QueryKeys.Movies, QueryKeys.All],
-    () => api.movies.movies(),
-    {
-      onSuccess: (data) => {
-        cacheMovies(client, data);
-      },
-    },
-  );
+
+  const query = useQuery({
+    queryKey: [QueryKeys.Movies, QueryKeys.All],
+    queryFn: () => api.movies.movies(),
+  });
+
+  useEffect(() => {
+    if (query.isSuccess && query.data) {
+      cacheMovies(client, query.data);
+    }
+  }, [query.isSuccess, query.data, client]);
+
+  return query;
 }
 
 export function useMoviesPagination() {
@@ -51,32 +68,36 @@ export function useMoviesPagination() {
 
 export function useMovieModification() {
   const client = useQueryClient();
-  return useMutation(
-    [QueryKeys.Movies],
-    (form: FormType.ModifyItem) => api.movies.modify(form),
-    {
-      onSuccess: (_, form) => {
-        form.id.forEach((v) => {
-          client.invalidateQueries([QueryKeys.Movies, v]);
+  return useMutation({
+    mutationKey: [QueryKeys.Movies],
+    mutationFn: (form: FormType.ModifyItem) => api.movies.modify(form),
+
+    onSuccess: (_, form) => {
+      form.id.forEach((v) => {
+        client.invalidateQueries({
+          queryKey: [QueryKeys.Movies, v],
         });
-        // TODO: query less
-        client.invalidateQueries([QueryKeys.Movies]);
-      },
+      });
+      // TODO: query less
+      client.invalidateQueries({
+        queryKey: [QueryKeys.Movies],
+      });
     },
-  );
+  });
 }
 
 export function useMovieAction() {
   const client = useQueryClient();
-  return useMutation(
-    [QueryKeys.Actions, QueryKeys.Movies],
-    (form: FormType.MoviesAction) => api.movies.action(form),
-    {
-      onSuccess: () => {
-        client.invalidateQueries([QueryKeys.Movies]);
-      },
+  return useMutation({
+    mutationKey: [QueryKeys.Actions, QueryKeys.Movies],
+    mutationFn: (form: FormType.MoviesAction) => api.movies.action(form),
+
+    onSuccess: () => {
+      client.invalidateQueries({
+        queryKey: [QueryKeys.Movies],
+      });
     },
-  );
+  });
 }
 
 export function useMovieWantedPagination() {
@@ -86,40 +107,48 @@ export function useMovieWantedPagination() {
 }
 
 export function useMovieBlacklist() {
-  return useQuery([QueryKeys.Movies, QueryKeys.Blacklist], () =>
-    api.movies.blacklist(),
-  );
+  return useQuery({
+    queryKey: [QueryKeys.Movies, QueryKeys.Blacklist],
+
+    queryFn: () => api.movies.blacklist(),
+  });
 }
 
 export function useMovieAddBlacklist() {
   const client = useQueryClient();
-  return useMutation(
-    [QueryKeys.Movies, QueryKeys.Blacklist],
-    (param: { id: number; form: FormType.AddBlacklist }) => {
+  return useMutation({
+    mutationKey: [QueryKeys.Movies, QueryKeys.Blacklist],
+
+    mutationFn: (param: { id: number; form: FormType.AddBlacklist }) => {
       const { id, form } = param;
       return api.movies.addBlacklist(id, form);
     },
-    {
-      onSuccess: (_, { id }) => {
-        client.invalidateQueries([QueryKeys.Movies, QueryKeys.Blacklist]);
-        client.invalidateQueries([QueryKeys.Movies, id]);
-      },
+
+    onSuccess: (_, { id }) => {
+      client.invalidateQueries({
+        queryKey: [QueryKeys.Movies, QueryKeys.Blacklist],
+      });
+      client.invalidateQueries({
+        queryKey: [QueryKeys.Movies, id],
+      });
     },
-  );
+  });
 }
 
 export function useMovieDeleteBlacklist() {
   const client = useQueryClient();
-  return useMutation(
-    [QueryKeys.Movies, QueryKeys.Blacklist],
-    (param: { all?: boolean; form?: FormType.DeleteBlacklist }) =>
+  return useMutation({
+    mutationKey: [QueryKeys.Movies, QueryKeys.Blacklist],
+
+    mutationFn: (param: { all?: boolean; form?: FormType.DeleteBlacklist }) =>
       api.movies.deleteBlacklist(param.all, param.form),
-    {
-      onSuccess: (_, param) => {
-        client.invalidateQueries([QueryKeys.Movies, QueryKeys.Blacklist]);
-      },
+
+    onSuccess: (_, param) => {
+      client.invalidateQueries({
+        queryKey: [QueryKeys.Movies, QueryKeys.Blacklist],
+      });
     },
-  );
+  });
 }
 
 export function useMovieHistoryPagination() {
@@ -131,9 +160,15 @@ export function useMovieHistoryPagination() {
 }
 
 export function useMovieHistory(radarrId?: number) {
-  return useQuery([QueryKeys.Movies, QueryKeys.History, radarrId], () => {
-    if (radarrId) {
-      return api.movies.historyBy(radarrId);
-    }
+  return useQuery({
+    queryKey: [QueryKeys.Movies, QueryKeys.History, radarrId],
+
+    queryFn: () => {
+      if (radarrId) {
+        return api.movies.historyBy(radarrId);
+      }
+
+      return [];
+    },
   });
 }

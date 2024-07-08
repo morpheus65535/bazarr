@@ -18,7 +18,7 @@ from app.config import get_scores, settings, get_array_from
 from utilities.helper import get_target_folder, force_unicode
 from app.database import get_profiles_list
 
-from .pool import update_pools, _get_pool, _init_pool
+from .pool import update_pools, _get_pool
 from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
 from .processing import process_subtitle
 
@@ -46,21 +46,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
         try:
             if providers:
                 subtitles = list_all_subtitles([video], language_set, pool)
-
-                if 'subscene' in providers:
-                    s_pool = _init_pool("movie", profile_id, {"subscene"})
-
-                    subscene_language_set = set()
-                    for language in language_set:
-                        if language.forced:
-                            subscene_language_set.add(language)
-                    if len(subscene_language_set):
-                        s_pool.provider_configs.update({"subscene": {"only_foreign": True}})
-                        subtitles_subscene = list_all_subtitles([video], subscene_language_set, s_pool)
-                        s_pool.provider_configs.update({"subscene": {"only_foreign": False}})
-                        subtitles[video] += subtitles_subscene[video]
             else:
-                subtitles = []
                 logging.info("BAZARR All providers are throttled")
                 return 'All providers are throttled'
         except Exception:
@@ -172,8 +158,9 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
         subtitle.language.forced = True
     else:
         subtitle.language.forced = False
-    if use_original_format == 'True':
-        subtitle.use_original_format = use_original_format
+    if use_original_format in ("1", "True"):
+        subtitle.use_original_format = True
+
     subtitle.mods = get_array_from(settings.general.subzero_mods)
     video = get_video(force_unicode(path), title, sceneName, providers={provider}, media_type=media_type)
     if video:

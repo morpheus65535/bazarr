@@ -30,8 +30,8 @@ class SubSyncer:
             self.vad = 'subs_then_webrtc'
         self.log_dir_path = os.path.join(args.config_dir, 'log')
 
-    def sync(self, video_path, srt_path, srt_lang, 
-             max_offset_seconds, no_fix_framerate, gss, reference=None, 
+    def sync(self, video_path, srt_path, srt_lang, hi, forced,
+             max_offset_seconds, no_fix_framerate, gss, reference=None,
              sonarr_series_id=None, sonarr_episode_id=None, radarr_id=None):
         self.reference = video_path
         self.srtin = srt_path
@@ -118,10 +118,10 @@ class SubSyncer:
                                                     downloaded_language_code2=srt_lang,
                                                     downloaded_provider=None,
                                                     score=None,
-                                                    forced=None,
+                                                    forced=forced,
                                                     subtitle_id=None,
                                                     reversed_subtitles_path=srt_path,
-                                                    hearing_impaired=None)
+                                                    hearing_impaired=hi)
 
                     if sonarr_episode_id:
                         history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,

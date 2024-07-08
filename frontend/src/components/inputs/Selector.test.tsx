@@ -1,6 +1,6 @@
-import { rawRender, screen } from "@/tests";
 import userEvent from "@testing-library/user-event";
 import { describe, it, vitest } from "vitest";
+import { render, screen } from "@/tests";
 import { Selector, SelectorOption } from "./Selector";
 
 const selectorName = "Test Selections";
@@ -18,20 +18,17 @@ const testOptions: SelectorOption<string>[] = [
 describe("Selector", () => {
   describe("options", () => {
     it("should work with the SelectorOption", () => {
-      rawRender(
-        <Selector name={selectorName} options={testOptions}></Selector>,
-      );
+      render(<Selector name={selectorName} options={testOptions}></Selector>);
 
-      // TODO: selectorName
-      expect(screen.getByRole("searchbox")).toBeDefined();
+      testOptions.forEach((o) => {
+        expect(screen.getByText(o.label)).toBeDefined();
+      });
     });
 
     it("should display when clicked", async () => {
-      rawRender(
-        <Selector name={selectorName} options={testOptions}></Selector>,
-      );
+      render(<Selector name={selectorName} options={testOptions}></Selector>);
 
-      const element = screen.getByRole("searchbox");
+      const element = screen.getByTestId("input-selector");
 
       await userEvent.click(element);
 
@@ -44,7 +41,7 @@ describe("Selector", () => {
 
     it("shouldn't show default value", async () => {
       const option = testOptions[0];
-      rawRender(
+      render(
         <Selector
           name={selectorName}
           options={testOptions}
@@ -57,7 +54,7 @@ describe("Selector", () => {
 
     it("shouldn't show value", async () => {
       const option = testOptions[0];
-      rawRender(
+      render(
         <Selector
           name={selectorName}
           options={testOptions}
@@ -75,7 +72,7 @@ describe("Selector", () => {
       const mockedFn = vitest.fn((value: string | null) => {
         expect(value).toEqual(clickedOption.value);
       });
-      rawRender(
+      render(
         <Selector
           name={selectorName}
           options={testOptions}
@@ -83,13 +80,13 @@ describe("Selector", () => {
         ></Selector>,
       );
 
-      const element = screen.getByRole("searchbox");
+      const element = screen.getByTestId("input-selector");
 
       await userEvent.click(element);
 
       await userEvent.click(screen.getByText(clickedOption.label));
 
-      expect(mockedFn).toBeCalled();
+      expect(mockedFn).toHaveBeenCalled();
     });
   });
 
@@ -115,7 +112,7 @@ describe("Selector", () => {
       const mockedFn = vitest.fn((value: { name: string } | null) => {
         expect(value).toEqual(clickedOption.value);
       });
-      rawRender(
+      render(
         <Selector
           name={selectorName}
           options={objectOptions}
@@ -124,20 +121,20 @@ describe("Selector", () => {
         ></Selector>,
       );
 
-      const element = screen.getByRole("searchbox");
+      const element = screen.getByTestId("input-selector");
 
       await userEvent.click(element);
 
       await userEvent.click(screen.getByText(clickedOption.label));
 
-      expect(mockedFn).toBeCalled();
+      expect(mockedFn).toHaveBeenCalled();
     });
   });
 
   describe("placeholder", () => {
     it("should show when no selection", () => {
       const placeholder = "Empty Selection";
-      rawRender(
+      render(
         <Selector
           name={selectorName}
           options={testOptions}

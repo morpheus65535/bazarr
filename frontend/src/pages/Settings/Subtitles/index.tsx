@@ -1,5 +1,5 @@
-import { Code, Space, Table } from "@mantine/core";
 import { FunctionComponent } from "react";
+import { Code, Space, Table } from "@mantine/core";
 import {
   Check,
   CollapseBox,
@@ -10,11 +10,11 @@ import {
   Selector,
   Slider,
   Text,
-} from "../components";
+} from "@/pages/Settings/components";
 import {
   SubzeroColorModification,
   SubzeroModification,
-} from "../utilities/modifications";
+} from "@/pages/Settings/utilities/modifications";
 import {
   adaptiveSearchingDelayOption,
   adaptiveSearchingDeltaOption,
@@ -409,8 +409,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           settingKey="settings-subsync-use_subsync"
         ></Check>
         <Message>
-          Enable automatic subtitles synchronization after downloading a
-          subtitle.
+          Enable automatic synchronization after downloading subtitles.
         </Message>
         <CollapseBox indent settingKey="settings-subsync-use_subsync">
           <MultiSelector
@@ -502,7 +501,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             label="Command"
             settingKey="settings-general-postprocessing_cmd"
           ></Text>
-          <Table highlightOnHover fontSize="sm">
+          <Table highlightOnHover fs="sm">
             <tbody>{commandOptionElements}</tbody>
           </Table>
         </CollapseBox>

@@ -208,8 +208,11 @@ class EmbeddedSubtitlesProvider(Provider):
             except Exception as error:
                 logger.debug("'%s' raised running modifier", error)
 
-        with open(path, "rb") as sub:
-            subtitle.content = sub.read()
+        if os.path.exists(path):
+            with open(path, "rb") as sub:
+                subtitle.content = sub.read()
+        else:
+            logger.error("%s not found in filesystem", path)
 
     def _get_subtitle_path(self, subtitle: EmbeddedSubtitle):
         container = subtitle.container
@@ -379,7 +382,7 @@ def _clean_ass_subtitles(path, output_path):
 
     logger.debug("Cleaned lines: %d", abs(len(lines) - len(clean_lines)))
 
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8", errors="ignore") as f:
         f.writelines(clean_lines)
         logger.debug("Lines written to output path: %s", output_path)
 

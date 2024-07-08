@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from json import JSONDecodeError
+from requests.exceptions import JSONDecodeError
 import logging
 import random
 import re
@@ -126,7 +126,7 @@ class SubdivxSubtitlesProvider(Provider):
         titles = [video.series if episode else video.title]
 
         try:
-            titles.extend(video.alternative_titles)
+            titles.extend(video.alternative_series if episode else video.alternative_titles)
         except:
             pass
         else:
@@ -138,6 +138,7 @@ class SubdivxSubtitlesProvider(Provider):
             # TODO: cache pack queries (TV SHOW S01).
             # Too many redundant server calls.
             for title in titles:
+                title = _series_sanitizer(title)
                 for query in (
                     f"{title} S{video.season:02}E{video.episode:02}",
                     f"{title} S{video.season:02}",
@@ -297,20 +298,31 @@ def _check_episode(video, title):
     ) and season_num == video.season
 
     series_title = _SERIES_RE.sub("", title).strip()
+    series_title = _series_sanitizer(series_title)
 
-    distance = abs(len(series_title) - len(video.series))
+    for video_series_title in [video.series] + video.alternative_series:
+        video_series_title = _series_sanitizer(video_series_title)
+        distance = abs(len(series_title) - len(video_series_title))
 
-    series_matched = distance < 4 and ep_matches
+        series_matched = (distance < 4 or video_series_title in series_title) and ep_matches
 
-    logger.debug(
-        "Series matched? %s [%s -> %s] [title distance: %d]",
-        series_matched,
-        video,
-        title,
-        distance,
-    )
+        logger.debug(
+            "Series matched? %s [%s -> %s] [title distance: %d]",
+            series_matched,
+            video_series_title,
+            series_title,
+            distance,
+        )
 
-    return series_matched
+        if series_matched:
+            return True
+    return False
+
+
+def _series_sanitizer(title):
+    title = re.sub(r"\'|\.+", '', title)  # remove single quote and dot
+    title = re.sub(r"\W+", ' ', title)  # replace by a space anything other than a letter, digit or underscore
+    return re.sub(r"([A-Z])\s(?=[A-Z]\b)", '', title).strip()  # Marvels Agent of S.H.I.E.L.D
 
 
 def _check_movie(video, title):

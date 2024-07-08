@@ -1,52 +1,70 @@
-import { Selector } from "@/components";
-import { useModals, withModal } from "@/modules/modals";
-import { BuildKey, useSelectorOptions } from "@/utilities";
-import { ASSERT } from "@/utilities/console";
-import {
-  Button,
-  Divider,
-  Group,
-  Text as MantineText,
-  SimpleGrid,
-  Stack,
-} from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { capitalize } from "lodash";
 import {
   FunctionComponent,
-  forwardRef,
   useCallback,
   useMemo,
   useRef,
   useState,
 } from "react";
 import {
+  AutocompleteProps,
+  Button,
+  Divider,
+  Group,
+  SimpleGrid,
+  Stack,
+  Text as MantineText,
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { capitalize } from "lodash";
+import { Selector } from "@/components";
+import { useModals, withModal } from "@/modules/modals";
+import {
   Card,
   Check,
   Chips,
-  Selector as GlobalSelector,
   Message,
   Password,
   ProviderTestButton,
+  Selector as GlobalSelector,
   Text,
-} from "../components";
+} from "@/pages/Settings/components";
 import {
   FormContext,
   FormValues,
   runHooks,
   useFormActions,
   useStagedValues,
-} from "../utilities/FormValues";
-import { SettingsProvider, useSettings } from "../utilities/SettingsProvider";
-import { useSettingValue } from "../utilities/hooks";
-import { ProviderInfo, ProviderList } from "./list";
+} from "@/pages/Settings/utilities/FormValues";
+import { useSettingValue } from "@/pages/Settings/utilities/hooks";
+import {
+  SettingsProvider,
+  useSettings,
+} from "@/pages/Settings/utilities/SettingsProvider";
+import { BuildKey, useSelectorOptions } from "@/utilities";
+import { ASSERT } from "@/utilities/console";
+import { ProviderInfo } from "./list";
 
-const ProviderKey = "settings-general-enabled_providers";
+type SettingsKey =
+  | "settings-general-enabled_providers"
+  | "settings-general-enabled_integrations";
 
-export const ProviderView: FunctionComponent = () => {
+interface ProviderViewProps {
+  availableOptions: Readonly<ProviderInfo[]>;
+  settingsKey: SettingsKey;
+}
+
+interface ProviderSelect {
+  value: string;
+  payload: ProviderInfo;
+}
+
+export const ProviderView: FunctionComponent<ProviderViewProps> = ({
+  availableOptions,
+  settingsKey,
+}) => {
   const settings = useSettings();
   const staged = useStagedValues();
-  const providers = useSettingValue<string[]>(ProviderKey);
+  const providers = useSettingValue<string[]>(settingsKey);
 
   const { update } = useFormActions();
 
@@ -61,17 +79,27 @@ export const ProviderView: FunctionComponent = () => {
           staged,
           settings,
           onChange: update,
+          availableOptions: availableOptions,
+          settingsKey: settingsKey,
         });
       }
     },
-    [modals, providers, settings, staged, update],
+    [
+      modals,
+      providers,
+      settings,
+      staged,
+      update,
+      availableOptions,
+      settingsKey,
+    ],
   );
 
   const cards = useMemo(() => {
     if (providers) {
       return providers
         .flatMap((v) => {
-          const item = ProviderList.find((inn) => inn.key === v);
+          const item = availableOptions.find((inn) => inn.key === v);
           if (item) {
             return item;
           } else {
@@ -89,7 +117,7 @@ export const ProviderView: FunctionComponent = () => {
     } else {
       return [];
     }
-  }, [providers, select]);
+  }, [providers, select, availableOptions]);
 
   return (
     <SimpleGrid cols={3}>
@@ -106,19 +134,20 @@ interface ProviderToolProps {
   staged: LooseObject;
   settings: Settings;
   onChange: (v: LooseObject) => void;
+  availableOptions: Readonly<ProviderInfo[]>;
+  settingsKey: Readonly<SettingsKey>;
 }
 
-const SelectItem = forwardRef<
-  HTMLDivElement,
-  { payload: ProviderInfo; label: string }
->(({ payload: { description }, label, ...other }, ref) => {
+const SelectItem: AutocompleteProps["renderOption"] = ({ option }) => {
+  const provider = option as ProviderSelect;
+
   return (
-    <Stack spacing={1} ref={ref} {...other}>
-      <MantineText size="md">{label}</MantineText>
-      <MantineText size="xs">{description}</MantineText>
+    <Stack gap={1}>
+      <MantineText size="md">{provider.value}</MantineText>
+      <MantineText size="xs">{provider.payload.description}</MantineText>
     </Stack>
   );
-});
+};
 
 const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   payload,
@@ -126,6 +155,8 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   staged,
   settings,
   onChange,
+  availableOptions,
+  settingsKey,
 }) => {
   const modals = useModals();
 
@@ -147,11 +178,11 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
       if (idx !== -1) {
         const newProviders = [...enabledProviders];
         newProviders.splice(idx, 1);
-        onChangeRef.current({ [ProviderKey]: newProviders });
+        onChangeRef.current({ [settingsKey]: newProviders });
         modals.closeAll();
       }
     }
-  }, [payload, enabledProviders, modals]);
+  }, [payload, enabledProviders, modals, settingsKey]);
 
   const submit = useCallback(
     (values: FormValues) => {
@@ -161,8 +192,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
 
         // Add this provider if not exist
         if (enabledProviders.find((v) => v === info.key) === undefined) {
-          const newProviders = [...enabledProviders, info.key];
-          changes[ProviderKey] = newProviders;
+          changes[settingsKey] = [...enabledProviders, info.key];
         }
 
         // Apply submit hooks
@@ -172,7 +202,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
         modals.closeAll();
       }
     },
-    [info, enabledProviders, modals],
+    [info, enabledProviders, modals, settingsKey],
   );
 
   const canSave = info !== null;
@@ -188,18 +218,18 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     }
   }, []);
 
-  const availableOptions = useMemo(
+  const options = useMemo(
     () =>
-      ProviderList.filter(
+      availableOptions.filter(
         (v) =>
           enabledProviders?.find((p) => p === v.key && p !== info?.key) ===
           undefined,
       ),
-    [info?.key, enabledProviders],
+    [info?.key, enabledProviders, availableOptions],
   );
 
-  const options = useSelectorOptions(
-    availableOptions,
+  const selectorOptions = useSelectorOptions(
+    options,
     (v) => v.name ?? capitalize(v.key),
   );
 
@@ -275,21 +305,21 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
       }
     });
 
-    return <Stack spacing="xs">{elements}</Stack>;
+    return <Stack gap="xs">{elements}</Stack>;
   }, [info]);
 
   return (
     <SettingsProvider value={settings}>
       <FormContext.Provider value={form}>
         <Stack>
-          <Stack spacing="xs">
+          <Stack gap="xs">
             <Selector
               data-autofocus
               searchable
               placeholder="Click to Select a Provider"
-              itemComponent={SelectItem}
+              renderOption={SelectItem}
               disabled={payload !== null}
-              {...options}
+              {...selectorOptions}
               value={info}
               onChange={onSelect}
             ></Selector>
@@ -300,7 +330,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
             </div>
           </Stack>
           <Divider></Divider>
-          <Group position="right">
+          <Group justify="right">
             <Button hidden={!payload} color="red" onClick={deletePayload}>
               Delete
             </Button>

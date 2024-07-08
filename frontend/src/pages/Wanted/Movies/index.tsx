@@ -1,48 +1,53 @@
+import { FunctionComponent, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { Anchor, Badge, Group } from "@mantine/core";
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ColumnDef } from "@tanstack/react-table";
 import {
   useMovieAction,
   useMovieSubtitleModification,
   useMovieWantedPagination,
 } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
-import { TaskGroup, task } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import WantedView from "@/pages/views/WantedView";
 import { BuildKey } from "@/utilities";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Badge, Group } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Column } from "react-table";
 
 const WantedMoviesView: FunctionComponent = () => {
-  const columns: Column<Wanted.Movie>[] = useMemo<Column<Wanted.Movie>[]>(
+  const { download } = useMovieSubtitleModification();
+
+  const columns = useMemo<ColumnDef<Wanted.Movie>[]>(
     () => [
       {
-        Header: "Name",
+        header: "Name",
         accessor: "title",
-        Cell: (row) => {
-          const target = `/movies/${row.row.original.radarrId}`;
+        cell: ({
+          row: {
+            original: { title, radarrId },
+          },
+        }) => {
+          const target = `/movies/${radarrId}`;
           return (
             <Anchor component={Link} to={target}>
-              {row.value}
+              {title}
             </Anchor>
           );
         },
       },
       {
-        Header: "Missing",
+        header: "Missing",
         accessor: "missing_subtitles",
-        Cell: ({ row, value }) => {
-          const wanted = row.original;
-          const { radarrId } = wanted;
-
-          const { download } = useMovieSubtitleModification();
-
+        cell: ({
+          row: {
+            original: { radarrId, missing_subtitles: missingSubtitles },
+          },
+        }) => {
           return (
-            <Group spacing="sm">
-              {value.map((item, idx) => (
+            <Group gap="sm">
+              {missingSubtitles.map((item, idx) => (
                 <Badge
-                  color={download.isLoading ? "gray" : undefined}
+                  color={download.isPending ? "gray" : undefined}
                   leftSection={<FontAwesomeIcon icon={faSearch} />}
                   key={BuildKey(idx, item.code2)}
                   style={{ cursor: "pointer" }}
@@ -70,7 +75,7 @@ const WantedMoviesView: FunctionComponent = () => {
         },
       },
     ],
-    [],
+    [download],
   );
 
   const { mutateAsync } = useMovieAction();

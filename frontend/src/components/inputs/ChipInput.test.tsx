@@ -1,6 +1,6 @@
-import { rawRender, screen } from "@/tests";
 import userEvent from "@testing-library/user-event";
 import { describe, it, vitest } from "vitest";
+import { render, screen } from "@/tests";
 import ChipInput from "./ChipInput";
 
 describe("ChipInput", () => {
@@ -8,7 +8,7 @@ describe("ChipInput", () => {
 
   // TODO: Support default value
   it.skip("should works with default value", () => {
-    rawRender(<ChipInput defaultValue={existedValues}></ChipInput>);
+    render(<ChipInput defaultValue={existedValues}></ChipInput>);
 
     existedValues.forEach((value) => {
       expect(screen.getByText(value)).toBeDefined();
@@ -16,7 +16,7 @@ describe("ChipInput", () => {
   });
 
   it("should works with value", () => {
-    rawRender(<ChipInput value={existedValues}></ChipInput>);
+    render(<ChipInput value={existedValues}></ChipInput>);
 
     existedValues.forEach((value) => {
       expect(screen.getByText(value)).toBeDefined();
@@ -29,9 +29,7 @@ describe("ChipInput", () => {
       expect(values).toContain(typedValue);
     });
 
-    rawRender(
-      <ChipInput value={existedValues} onChange={mockedFn}></ChipInput>,
-    );
+    render(<ChipInput value={existedValues} onChange={mockedFn}></ChipInput>);
 
     const element = screen.getByRole("searchbox");
 
