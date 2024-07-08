@@ -54,7 +54,7 @@ def refine_from_anilist(path, video):
             logger.error(f"Will not refine '{video.series}' as it does not have an AniDB ID.")
             return
 
-    if refined_providers.intersection(settings.general.enabled_providers) and video.series_anilist_id is None:
+    if refined_providers.intersection(settings.general.enabled_providers) and video.anilist_id is None:
         refine_anilist_ids(video)
 
 def refine_anilist_ids(video):
@@ -74,4 +74,4 @@ def refine_anilist_ids(video):
     if not anilist_id:
         return video
 
-    video.series_anilist_id = anilist_id
+    video.anilist_id = anilist_id
