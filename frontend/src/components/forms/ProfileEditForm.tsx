@@ -279,7 +279,11 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           className={styles.evenly}
         >
           <TextInput label="Name" {...form.getInputProps("name")}></TextInput>
-          <TextInput label="Tag" {...form.getInputProps("tag")}></TextInput>
+          <TextInput
+            label="Tag"
+            {...form.getInputProps("tag")}
+            style={{ display: "none" }}
+          ></TextInput>
         </Flex>
         <Accordion
           multiple
