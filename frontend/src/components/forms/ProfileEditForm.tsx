@@ -275,7 +275,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       <Stack>
         <Flex
           direction={{ base: "column", sm: "row" }}
-          gap={{ base: "sm" }}
+          gap="sm"
           className={styles.evenly}
         >
           <TextInput label="Name" {...form.getInputProps("name")}></TextInput>
