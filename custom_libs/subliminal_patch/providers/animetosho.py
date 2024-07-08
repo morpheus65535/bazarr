@@ -141,7 +141,8 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
                 for subtitle_file in subtitle_files:
                     hex_id = format(subtitle_file['id'], '08x')
 
-                    lang = Language.fromalpha3b(subtitle_file['info']['lang'])
+                    # Animetosho assumes missing languages as english as fallback when not specified.
+                    lang = Language.fromalpha3b(subtitle_file['info'].get('lang', 'en'))
 
                     # For Portuguese and Portuguese Brazilian they both share the same code, the name is the only
                     # identifier AnimeTosho provides. Also, some subtitles does not have name, in this case it could
