@@ -3,6 +3,7 @@ import {
   Accordion,
   Button,
   Checkbox,
+  Flex,
   Select,
   Stack,
   Switch,
@@ -72,9 +73,16 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         (value) => value.length > 0,
         "Must have a name",
       ),
+      tag: FormUtils.validation((value) => {
+        if (!value) {
+          return true;
+        }
+
+        return /^[a-z_0-9-]+$/.test(value);
+      }, "Only lowercase alphanumeric characters, underscores (_) and hyphens (-) are allowed"),
       items: FormUtils.validation(
         (value) => value.length > 0,
-        "Must contain at lease 1 language",
+        "Must contain at least 1 language",
       ),
     },
   });
@@ -265,7 +273,14 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       })}
     >
       <Stack>
-        <TextInput label="Name" {...form.getInputProps("name")}></TextInput>
+        <Flex
+          direction={{ base: "column", sm: "row" }}
+          gap={{ base: "sm" }}
+          className={styles.evenly}
+        >
+          <TextInput label="Name" {...form.getInputProps("name")}></TextInput>
+          <TextInput label="Tag" {...form.getInputProps("tag")}></TextInput>
+        </Flex>
         <Accordion
           multiple
           chevronPosition="right"
@@ -274,7 +289,6 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         >
           <Accordion.Item value="Languages">
             <Stack>
-              {form.errors.items}
               <SimpleTable
                 columns={columns}
                 data={form.values.items}
@@ -282,6 +296,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
               <Button fullWidth onClick={addItem}>
                 Add Language
               </Button>
+              <Text c="var(--mantine-color-error)">{form.errors.items}</Text>
               <Selector
                 clearable
                 label="Cutoff"

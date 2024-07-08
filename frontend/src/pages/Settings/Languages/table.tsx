@@ -178,6 +178,7 @@ const Table: FunctionComponent = () => {
           const profile = {
             profileId: nextProfileId,
             name: "",
+            tag: "",
             items: [],
             cutoff: null,
             mustContain: [],

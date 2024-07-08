@@ -34,6 +34,7 @@ declare namespace Language {
 
   interface Profile {
     name: string;
+    tag: string;
     profileId: number;
     cutoff: number | null;
     items: ProfileItem[];
