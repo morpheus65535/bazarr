@@ -130,7 +130,8 @@ class SubdlProvider(ProviderRetryMixin, Provider):
             imdb_id = self.video.imdb_id
 
         # be sure to remove duplicates using list(set())
-        langs_list = sorted(list(set([lang.basename.upper() for lang in languages])))
+        langs_list = sorted(list(set([language_converters['subdl'].to_subdl[(lang.alpha3, lang.country, lang.script)]
+                                      for lang in languages])))
 
         langs = ','.join(langs_list)
         logger.debug(f'Searching for those languages: {langs}')
