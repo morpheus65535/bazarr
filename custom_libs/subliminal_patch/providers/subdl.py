@@ -27,8 +27,6 @@ retry_timeout = 5
 
 language_converters.register('subdl = subliminal_patch.converters.subdl:SubdlConverter')
 
-supported_languages = list(language_converters['subdl'].to_subdl.keys())
-
 
 class SubdlSubtitle(Subtitle):
     provider_name = 'subdl'
@@ -91,7 +89,7 @@ class SubdlProvider(ProviderRetryMixin, Provider):
     """Subdl Provider"""
     server_hostname = 'api.subdl.com'
 
-    languages = {Language(*lang) for lang in supported_languages}
+    languages = {Language(*lang) for lang in list(language_converters['subdl'].to_subdl.keys())}
     languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
     languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
@@ -130,8 +128,8 @@ class SubdlProvider(ProviderRetryMixin, Provider):
             imdb_id = self.video.imdb_id
 
         # be sure to remove duplicates using list(set())
-        langs_list = sorted(list(set([language_converters['subdl'].to_subdl[(lang.alpha3, lang.country, lang.script)]
-                                      for lang in languages])))
+        langs_list = sorted(list(set([language_converters['subdl'].convert(lang.alpha3, lang.country, lang.script) for
+                                      lang in languages])))
 
         langs = ','.join(langs_list)
         logger.debug(f'Searching for those languages: {langs}')
