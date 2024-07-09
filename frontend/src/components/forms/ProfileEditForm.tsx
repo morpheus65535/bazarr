@@ -279,7 +279,15 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           className={styles.evenly}
         >
           <TextInput label="Name" {...form.getInputProps("name")}></TextInput>
-          <TextInput label="Tag" {...form.getInputProps("tag")}></TextInput>
+          <TextInput
+            label="Tag"
+            {...form.getInputProps("tag")}
+            onBlur={() =>
+              form.setFieldValue("tag", (prev) =>
+                prev.toLowerCase().trim().replace(/\s+/g, "_"),
+              )
+            }
+          ></TextInput>
         </Flex>
         <Accordion
           multiple
