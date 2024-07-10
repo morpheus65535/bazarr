@@ -238,7 +238,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "switch",
         key: "enable_name_search_fallback",
-        name: "Search by name no AniList ID was determined (Less accurate)"
+        name: "Search by name if no AniList ID was determined (Less accurate)"
+      },
+      {
+        type: "switch",
+        key: "enable_archive_fallback",
+        name: "Include archives if no uncompressed subtitles were found (Less accurate)"
       }
     ],
   },
