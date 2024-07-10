@@ -25,7 +25,7 @@ const TextPopover: FunctionComponent<TextPopoverProps> = ({
       opened={hovered}
       label={text}
       {...tooltip}
-      style={{ textWrap: "pretty" }}
+      style={{ textWrap: "wrap" }}
     >
       <div ref={ref}>{children}</div>
     </Tooltip>

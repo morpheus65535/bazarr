@@ -192,4 +192,8 @@ _extra_languages = {
         "matches": ("pt-br", "pob", "pb", "brazilian", "brasil", "brazil"),
         "language_args": ("por", "BR"),
     },
+    "fil": {
+        "matches": ("fil", "filipino"),
+        "language_args": ("tgl", "PH"),
+    },
 }

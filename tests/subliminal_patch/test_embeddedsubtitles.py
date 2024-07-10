@@ -107,6 +107,13 @@ def fake_streams():
                 "tags": {"language": "eng", "title": "English"},
             }
         ),
+        "tg": FFprobeSubtitleStream(
+            {
+                "index": 3,
+                "codec_name": "subrip",
+                "tags": {"language": "fil", "title": "Filipino"},
+            }
+        ),
         "es_hi": FFprobeSubtitleStream(
             {
                 "index": 3,
@@ -190,6 +197,18 @@ def test_list_subtitles_hi_fallback_one_stream(
         subs = provider.list_subtitles(video_single_language, {language})
         assert subs[0].language == Language("eng", hi=False)
         assert subs[0].hearing_impaired == False
+
+
+def test_list_subtitles_custom_language_from_fese(
+    video_single_language, fake_streams, mocker
+):
+    with EmbeddedSubtitlesProvider(hi_fallback=True) as provider:
+        language = Language("tgl", "PH")
+        mocker.patch(
+            "subliminal_patch.providers.embeddedsubtitles._MemoizedFFprobeVideoContainer.get_subtitles",
+            return_value=[fake_streams["tg"]],
+        )
+        assert provider.list_subtitles(video_single_language, {language})
 
 
 def test_list_subtitles_hi_fallback_multiple_streams(
