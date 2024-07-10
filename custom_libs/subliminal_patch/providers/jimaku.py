@@ -283,7 +283,7 @@ class JimakuProvider(Provider):
         else:
             subtitle.content = response.content
     
-    @region.cache_on_arguments(expiration_time=timedelta(hours=4).total_seconds())
+    @region.cache_on_arguments(expiration_time=timedelta(minutes=10).total_seconds())
     def _do_jimaku_request(self, url_path, url_params={}):
         url = urljoin(f"{self.api_url}/{url_path}", '?' + urlencode(url_params))
         
