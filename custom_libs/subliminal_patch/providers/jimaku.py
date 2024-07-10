@@ -1,25 +1,22 @@
 from __future__ import absolute_import
 
-import io
+from datetime import timedelta
 import logging
 import re
 import time
-import rarfile
-import zipfile
 import requests
 
 from requests import Session
-from subliminal import __short_version__
-from subliminal.exceptions import ConfigurationError, AuthenticationError
+from subliminal import region, __short_version__
+from subliminal.exceptions import ConfigurationError, AuthenticationError, ServiceUnavailable
 from subliminal.utils import sanitize
 from subliminal.video import Episode, Movie
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.exceptions import APIThrottled
-from subliminal_patch.providers.utils import get_subtitle_from_archive
+from subliminal_patch.providers.utils import get_subtitle_from_archive, get_archive_from_bytes
 from urllib.parse import urlencode, urljoin
 from guessit import guessit
-from functools import cache
 from subzero.language import Language, FULL_LANGUAGE_LIST
 
 logger = logging.getLogger(__name__)
@@ -29,6 +26,9 @@ unhandled_formats = (".7z",)
 
 accepted_archive_formats = (".zip", ".rar")
 full_archive_formats_list = unhandled_formats + accepted_archive_formats
+
+class JimakuNoEntries(Exception):
+    pass
 
 class JimakuSubtitle(Subtitle):
     '''Jimaku Subtitle.'''
@@ -140,7 +140,11 @@ class JimakuProvider(Provider):
                 return None
             
             searching_for_entry = "query" in url
-            data = self._do_jimaku_request(url)
+            try:
+                data = self._do_jimaku_request(url)
+            except JimakuNoEntries:
+                data = None
+
             if not data:
                 if searching_for_entry and searching_for_entry_attempts < 2:
                     logger.info("Maybe this is live action media? Will retry search without anime parameter...")
@@ -265,7 +269,7 @@ class JimakuProvider(Provider):
         response.raise_for_status()
         
         if subtitle.is_archive:
-            archive = self._is_archive(response.content)
+            archive = get_archive_from_bytes(response.content)
             if archive:
                 if isinstance(subtitle.video, Episode):
                     subtitle.content = get_subtitle_from_archive(
@@ -277,27 +281,13 @@ class JimakuProvider(Provider):
                     subtitle.content = get_subtitle_from_archive(
                         archive
                     )
-            elif not archive:
+            else:
                 logger.warning("Archive seems to not be an archive! File possibly corrupt?")
                 return None
         else:
             subtitle.content = response.content
     
-    @staticmethod
-    def _is_archive(archive: bytes):
-        archive_stream = io.BytesIO(archive)
-        
-        if rarfile.is_rarfile(archive_stream):
-            logger.debug("Identified rar archive")
-            return rarfile.RarFile(archive_stream)
-        elif zipfile.is_zipfile(archive_stream):
-            logger.debug("Identified zip archive")
-            return zipfile.ZipFile(archive_stream)
-        else:
-            logger.debug("Doesn't seem like an archive")
-            return None
-    
-    #@cache
+    @region.cache_on_arguments(expiration_time=timedelta(hours=4).total_seconds())
     def _do_jimaku_request(self, url_path, url_params={}):
         url = urljoin(f"{self.api_url}/{url_path}", '?' + urlencode(url_params))
         logger.debug(f"get_jimaku_response: url, params: {url}, {url_params}")
@@ -323,17 +313,16 @@ class JimakuProvider(Provider):
             logger.debug(f"Length of response on {url}: {len(data)}")
             if len(data) == 0:
                 logger.error(f"Jimaku returned no items for our our query: {url}")                
-                return None
+                raise JimakuNoEntries()
             elif 'error' in data:
-                logger.error(f"Jimaku returned an error for our query.\nMessage: '{data.get('error')}', Code: '{data.get('code')}'")
-                return None
+                raise ServiceUnavailable(f"Jimaku returned an error: '{data.get('error')}', Code: '{data.get('code')}'")
             else:
                 return data
 
         raise APIThrottled(f"Jimaku ratelimit max backoff limit of {self.api_ratelimit_backoff_limit} reached, aborting")
     
     @staticmethod
-    @cache
+    @region.cache_on_arguments(expiration_time=timedelta(hours=4).total_seconds())
     def _webrequest_with_cache(url, headers=None):
         response = requests.get(url, headers=headers)
         response.raise_for_status()
