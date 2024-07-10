@@ -232,11 +232,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
       {
         type: "switch",
-        key: "enable_archives",
-        name: "Index subtitle archives"
-      },
-      {
-        type: "switch",
         key: "enable_ai_subs",
         name: "Download AI generated subs"
       },

@@ -288,7 +288,6 @@ def get_providers_auth():
         'jimaku': {
             'api_key': settings.jimaku.api_key,
             'enable_name_search_fallback': settings.jimaku.enable_name_search_fallback,
-            'enable_archives': settings.jimaku.enable_archives,
             'enable_ai_subs': settings.jimaku.enable_ai_subs,
         },
         'ktuvit': {

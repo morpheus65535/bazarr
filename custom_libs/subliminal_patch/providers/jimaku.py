@@ -24,23 +24,27 @@ from subzero.language import Language, FULL_LANGUAGE_LIST
 
 logger = logging.getLogger(__name__)
 
+archive_formats_blacklist = (".7z",) # Unhandled formats
+accepted_archive_formats = (".zip", ".rar")
+
 class JimakuSubtitle(Subtitle):
     '''Jimaku Subtitle.'''
     provider_name = 'jimaku'
     
     hash_verifiable = False
 
-    def __init__(self, language, video, subtitle_url, subtitle_filename):
-        super(JimakuSubtitle, self).__init__(language, page_link=subtitle_url)
+    def __init__(self, language, video, download_url, filename):
+        super(JimakuSubtitle, self).__init__(language, page_link=download_url)
         
         self.video = video
-        self.subtitle_url = subtitle_url
-        self.subtitle_filename = subtitle_filename
-        self.release_info = subtitle_filename
+        self.download_url = download_url
+        self.filename = filename
+        self.release_info = filename
+        self.is_archive = filename.endswith(accepted_archive_formats)
         
     @property
     def id(self):
-        return self.subtitle_url
+        return self.download_url
 
     def get_matches(self, video):
         matches = set()
@@ -65,7 +69,7 @@ class JimakuSubtitle(Subtitle):
         video_type = 'movie' if isinstance(video, Movie) else 'episode'
         matches.add(video_type)
         
-        guess = guessit(self.subtitle_filename, {'type': video_type})
+        guess = guessit(self.filename, {'type': video_type})
         logger.debug(f"Guessit: {guess}")
         for g in guess:
             if g[0] == "release_group" or "source":
@@ -74,7 +78,7 @@ class JimakuSubtitle(Subtitle):
                     break
                 
         # Prioritize .srt by misusing the audio_codec match
-        if self.subtitle_filename.endswith(".srt"):
+        if self.filename.endswith(".srt"):
             matches.add('audio_codec')
 
         return matches
@@ -91,14 +95,13 @@ class JimakuProvider(Provider):
     
     languages = {Language.fromietf("ja")}
 
-    def __init__(self, enable_name_search_fallback, enable_archives, enable_ai_subs, api_key):
+    def __init__(self, enable_name_search_fallback, enable_ai_subs, api_key):
         if api_key:
             self.api_key = api_key
         else:
             raise ConfigurationError('Missing api_key.')
 
         self.enable_name_search_fallback = enable_name_search_fallback
-        self.enable_archives = enable_archives
         self.enable_ai_subs = enable_ai_subs
         self.session = None
 
@@ -197,45 +200,42 @@ class JimakuProvider(Provider):
         
         # Filter subtitles
         list_of_subtitles = []
-
-        archive_formats_blacklist = (".7z",) # Unhandled formats; This list will always match
-        additional_archive_formats = (".zip", ".rar")
-        if not self.enable_archives and not only_look_for_archives:
-            # Handle shows that only have archives uploaded
-            filter = [item for item in data if not item['name'].endswith(additional_archive_formats)]
-            if len(filter) == 0:
-                logger.warning("Archives are disabled, but only archived subtitles have been returned. Will therefore download those anyway.")
-            else:
-                archive_formats_blacklist += additional_archive_formats
+        
+        # Detect only archives being uploaded
+        full_archive_blacklist = archive_formats_blacklist + accepted_archive_formats
+        only_archives = [item for item in data if not item['name'].endswith(full_archive_blacklist)]
+        only_subs = [item for item in data if not item['name'].endswith(full_archive_blacklist)]
+        if len(only_archives) > 0 and len(only_subs) == 0:
+            logger.warning("Have only found archived subtitles.")
+                
         elif only_look_for_archives:
-            data = [item for item in data if item['name'].endswith(additional_archive_formats)]
-            logger.warning(f"Will only match archives: {data}")
+            data = [item for item in data if item['name'].endswith(accepted_archive_formats)]
 
         for item in data:
-            subtitle_filename = item.get('name')
-            subtitle_url = item.get('url')
+            filename = item.get('name')
+            download_url = item.get('url')
 
             if not self.enable_ai_subs:
-                if re.match(r'(\(|\[).*(whisper|whisperai).*(\)|\])', subtitle_filename.lower()):
-                    logger.warning(f"Skipping subtitle '{subtitle_filename}' as it's suspected of being AI generated.")
+                if re.match(r'(\(|\[).*(whisper|whisperai).*(\)|\])', filename.lower()):
+                    logger.warning(f"Skipping subtitle '{filename}' as it's suspected of being AI generated.")
                     continue
             
-            sub_languages = self._try_determine_subtitle_languages(subtitle_filename)
+            sub_languages = self._try_determine_subtitle_languages(filename)
             if len(sub_languages) > 1:
-                logger.warning(f"Skipping subtitle '{subtitle_filename}' as it's suspected of containing multiple languages.")
+                logger.warning(f"Skipping subtitle '{filename}' as it's suspected of containing multiple languages.")
                 continue
             
             # Check if file is obviously corrupt. If no size is returned, assume OK
-            subtitle_filesize = item.get('size', self.corrupted_file_size_threshold)
-            if subtitle_filesize < self.corrupted_file_size_threshold:
-                logger.warning(f"Skipping possibly corrupt file '{subtitle_filename}': Filesize is just {subtitle_filesize} bytes.")
+            filesize = item.get('size', self.corrupted_file_size_threshold)
+            if filesize < self.corrupted_file_size_threshold:
+                logger.warning(f"Skipping possibly corrupt file '{filename}': Filesize is just {filesize} bytes.")
                 continue
             
-            if not subtitle_filename.endswith(archive_formats_blacklist):
+            if not filename.endswith(archive_formats_blacklist):
                 lang = sub_languages[0] if len(sub_languages) > 1 else Language("jpn")
-                list_of_subtitles.append(JimakuSubtitle(lang, video, subtitle_url, subtitle_filename))
+                list_of_subtitles.append(JimakuSubtitle(lang, video, download_url, filename))
             else:
-                logger.debug(f"> Skipping subtitle of name '{subtitle_filename}' due to archive blacklist. (enable_archives: {self.enable_archives})")
+                logger.debug(f"Skipping archive '{filename}' as it's not a supported format.")
         
         return list_of_subtitles
 
@@ -247,16 +247,17 @@ class JimakuProvider(Provider):
         return [s for s in subtitles]
 
     def download_subtitle(self, subtitle: JimakuSubtitle):
-        target_url = subtitle.subtitle_url
+        target_url = subtitle.download_url
         response = self.session.get(target_url, timeout=10)
         response.raise_for_status()
         
-        archive = self._is_archive(response.content)
-        if archive:
-            subtitle.content = get_subtitle_from_archive(archive, subtitle.video.episode)
-        elif not archive and subtitle.subtitle_url.endswith(('.zip', '.rar')):
-            logger.warning("Archive seems not to be an archive! File possibly corrupt? Skipping.")
-            return None
+        if subtitle.is_archive:
+            archive = self._is_archive(response.content)
+            if archive:
+                subtitle.content = get_subtitle_from_archive(archive, subtitle.video.episode)
+            elif not archive:
+                logger.warning("Archive seems to not be an archive! File possibly corrupt?")
+                return None
         else:
             subtitle.content = response.content
     
