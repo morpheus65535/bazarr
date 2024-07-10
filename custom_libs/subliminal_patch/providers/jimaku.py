@@ -4,7 +4,6 @@ from datetime import timedelta
 import logging
 import re
 import time
-import requests
 
 from requests import Session
 from subliminal import region, __short_version__
@@ -22,10 +21,8 @@ from subzero.language import Language, FULL_LANGUAGE_LIST
 logger = logging.getLogger(__name__)
 
 # Unhandled formats, such files will always get filtered out
-unhandled_formats = (".7z",)
-
+unhandled_archive_formats = (".7z",)
 accepted_archive_formats = (".zip", ".rar")
-full_archive_formats_list = unhandled_formats + accepted_archive_formats
 
 class JimakuNoEntries(Exception):
     pass
@@ -80,7 +77,7 @@ class JimakuSubtitle(Subtitle):
                     matches.add('release_group')
                     break
                 
-        # Prioritize .srt by misusing the audio_codec match
+        # Prioritize .srt by repurposing the audio_codec match
         if self.filename.endswith(".srt"):
             matches.add('audio_codec')
 
@@ -181,7 +178,6 @@ class JimakuProvider(Provider):
                 if isinstance(video, Episode) and retry_count <= 1:
                     # Edge case: When dealing with a cour, episodes could be uploaded with their episode numbers having an offset applied
                     # Vice versa, users may have media files with absolute episode numbering, but the subs on Jimaku follow the Season/Episode format
-                    
                     offset_value = 0
                     if video.series_anidb_season_episode_offset:
                         offset_value = video.series_anidb_season_episode_offset
@@ -209,11 +205,11 @@ class JimakuProvider(Provider):
         # Filter subtitles
         list_of_subtitles = []
         
-        data = [item for item in data if not item['name'].endswith(unhandled_formats)]
+        data = [item for item in data if not item['name'].endswith(unhandled_archive_formats)]
         
         # Detect only archives being uploaded
-        archive_entries = [item for item in data if item['name'].endswith(full_archive_formats_list)]
-        subtitle_entries = [item for item in data if not item['name'].endswith(full_archive_formats_list)]
+        archive_entries = [item for item in data if item['name'].endswith(accepted_archive_formats)]
+        subtitle_entries = [item for item in data if not item['name'].endswith(accepted_archive_formats)]
         has_only_archives = len(archive_entries) > 0 and len(subtitle_entries) == 0
         if has_only_archives:
             logger.warning("Have only found archived subtitles. Matching might be inaccurate!")
@@ -224,9 +220,8 @@ class JimakuProvider(Provider):
         for item in data:
             filename = item.get('name')
             download_url = item.get('url')
-            is_archive = filename.endswith(full_archive_formats_list)
+            is_archive = filename.endswith(accepted_archive_formats)
             
-            # For Jimaku, the subtitle matcher for archived subs generally produces poor matches.
             # Archives will still be considered if they're the only files available, as is mostly the case for movies.
             if is_archive and not has_only_archives and not self.download_archives:
                 logger.warning(f"Skipping archive '{filename}' because normal subtitles are available instead")
@@ -249,7 +244,7 @@ class JimakuProvider(Provider):
                 logger.warning(f"Skipping possibly corrupt file '{filename}': Filesize is just {filesize} bytes")
                 continue
             
-            if not filename.endswith(unhandled_formats):
+            if not filename.endswith(unhandled_archive_formats):
                 lang = sub_languages[0] if len(sub_languages) > 1 else Language("jpn")
                 list_of_subtitles.append(JimakuSubtitle(lang, video, download_url, filename))
             else:
@@ -291,7 +286,6 @@ class JimakuProvider(Provider):
     @region.cache_on_arguments(expiration_time=timedelta(hours=4).total_seconds())
     def _do_jimaku_request(self, url_path, url_params={}):
         url = urljoin(f"{self.api_url}/{url_path}", '?' + urlencode(url_params))
-        logger.debug(f"get_jimaku_response: url, params: {url}, {url_params}")
         
         retry_count = 0
         while retry_count < self.api_ratelimit_backoff_limit:
@@ -321,17 +315,6 @@ class JimakuProvider(Provider):
                 return data
 
         raise APIThrottled(f"Jimaku ratelimit max backoff limit of {self.api_ratelimit_backoff_limit} reached, aborting")
-    
-    @staticmethod
-    @region.cache_on_arguments(expiration_time=timedelta(hours=4).total_seconds())
-    def _webrequest_with_cache(url, headers=None):
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        
-        try:
-            return response.json()
-        except:
-            return response.content
         
     @staticmethod
     def _try_determine_subtitle_languages(filename):
@@ -408,11 +391,7 @@ class JimakuProvider(Provider):
         else:
             return [default_language]
     
-    def _assemble_jimaku_search_url(self, video, media_name, additional_params={}):
-        """
-        Return a search URL for the Jimaku API.
-        """
-                       
+    def _assemble_jimaku_search_url(self, video, media_name, additional_params={}):                       
         endpoint = "entries/search"
         anilist_id = video.anilist_id
         
