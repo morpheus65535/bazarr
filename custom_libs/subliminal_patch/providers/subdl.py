@@ -147,7 +147,9 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                                                  ('subs_per_page', 30),
                                                  ('type', 'tv'),
                                                  ('comment', 1),
-                                                 ('releases', 1)),
+                                                 ('releases', 1),
+                                                 ('bazarr', 1)),  # this argument filter incompatible image based or
+                                         # txt subtitles
                                          timeout=30),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
@@ -162,7 +164,9 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                                                  ('subs_per_page', 30),
                                                  ('type', 'movie'),
                                                  ('comment', 1),
-                                                 ('releases', 1)),
+                                                 ('releases', 1),
+                                                 ('bazarr', 1)),  # this argument filter incompatible image based or
+                                         # txt subtitles
                                          timeout=30),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
