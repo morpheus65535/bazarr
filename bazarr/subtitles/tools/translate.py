@@ -44,7 +44,7 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
     subs = pysubs2.load(source_srt_file, encoding='utf-8')
     subs.remove_miscellaneous_events()
     lines_list = [x.plaintext for x in subs]
-    joined_lines_str = '\n\n\n'.join(lines_list)
+    joined_lines_str = '\n\n'.join(lines_list)
 
     logging.debug(f'BAZARR splitting subtitles into {max_characters} characters blocks')
     lines_block_list = []
