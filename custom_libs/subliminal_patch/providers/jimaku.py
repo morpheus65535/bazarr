@@ -233,7 +233,8 @@ class JimakuProvider(Provider):
                 continue
 
             if not self.enable_ai_subs:
-                if re.match(r'(\(|\[)(whisper|whisperai)(\)|\])|whisperai', filename.lower()):
+                p = re.compile(r'[\[\(]?(whisperai)[\]\)]?|[\[\(]whisper[\]\)]', re.IGNORECASE)
+                if p.search(filename):
                     logger.warning(f"Skipping subtitle '{filename}' as it's suspected of being AI generated")
                     continue
             
