@@ -65,25 +65,17 @@ const SeriesView: FunctionComponent = () => {
         cell: (row) => {
           const { episodeFileCount, episodeMissingCount, profileId, title } =
             row.row.original;
-          let progress = 0;
-          let label = "";
-          if (episodeFileCount === 0 || !profileId) {
-            progress = 0.0;
-          } else {
-            progress = (1.0 - episodeMissingCount / episodeFileCount) * 100.0;
-            label = `${
-              episodeFileCount - episodeMissingCount
-            }/${episodeFileCount}`;
-          }
 
+          const label = `${episodeFileCount - episodeMissingCount}/${episodeFileCount}`;
           return (
             <Progress.Root key={title} size="xl">
               <Progress.Section
-                value={progress}
+                value={episodeFileCount === 0 || !profileId ? 0 : (1.0 - episodeMissingCount / episodeFileCount) * 100.0}
                 color={episodeMissingCount === 0 ? "brand" : "yellow"}
               >
                 <Progress.Label>{label}</Progress.Label>
               </Progress.Section>
+              {episodeMissingCount === episodeFileCount && <label className={'table-progress-label'}>{label}</label>}
             </Progress.Root>
           );
         },

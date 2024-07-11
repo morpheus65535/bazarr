@@ -52,6 +52,17 @@ $header-height: 64px;
     overflow-wrap: anywhere;
   }
 
+  .table-progress-label {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgb(232, 230, 227);
+    line-height: 1.55;
+    font-size: calc(1rem * 0.65);
+    font-weight: 700;
+  }
+
   .table-primary {
     display: inline-block;
 
