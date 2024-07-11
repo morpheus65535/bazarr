@@ -28,6 +28,11 @@ def trace(message):
         logging.debug(FEATURE_PREFIX + message)
 
 
+def get_language_profiles():
+    return database.execute(
+        select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.name, TableLanguagesProfiles.tag)).all()
+
+
 def update_all_movies():
     movies_full_scan_subtitles()
     logging.info('BAZARR All existing movie subtitles indexed from disk.')
@@ -108,6 +113,7 @@ def update_movies(send_event=True):
     else:
         audio_profiles = get_profile_list()
         tagsDict = get_tags()
+        language_profiles = get_language_profiles()
 
         # Get movies data from radarr
         movies = get_movies_from_radarr_api(apikey_radarr=apikey_radarr)
@@ -178,6 +184,7 @@ def update_movies(send_event=True):
                             if str(movie['tmdbId']) in current_movies_id_db:
                                 parsed_movie = movieParser(movie, action='update',
                                                            tags_dict=tagsDict,
+                                                           language_profiles=language_profiles,
                                                            movie_default_profile=movie_default_profile,
                                                            audio_profiles=audio_profiles)
                                 if not any([parsed_movie.items() <= x for x in current_movies_db_kv]):
@@ -186,6 +193,7 @@ def update_movies(send_event=True):
                             else:
                                 parsed_movie = movieParser(movie, action='insert',
                                                            tags_dict=tagsDict,
+                                                           language_profiles=language_profiles,
                                                            movie_default_profile=movie_default_profile,
                                                            audio_profiles=audio_profiles)
                                 add_movie(parsed_movie, send_event)
@@ -247,6 +255,7 @@ def update_one_movie(movie_id, action, defer_search=False):
 
     audio_profiles = get_profile_list()
     tagsDict = get_tags()
+    language_profiles = get_language_profiles()
 
     try:
         # Get movie data from radarr api
@@ -256,10 +265,10 @@ def update_one_movie(movie_id, action, defer_search=False):
             return
         else:
             if action == 'updated' and existing_movie:
-                movie = movieParser(movie_data, action='update', tags_dict=tagsDict,
+                movie = movieParser(movie_data, action='update', tags_dict=tagsDict, language_profiles=language_profiles,
                                     movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
             elif action == 'updated' and not existing_movie:
-                movie = movieParser(movie_data, action='insert', tags_dict=tagsDict,
+                movie = movieParser(movie_data, action='insert', tags_dict=tagsDict, language_profiles=language_profiles,
                                     movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
     except Exception:
         logging.exception('BAZARR cannot get movie returned by SignalR feed from Radarr API.')

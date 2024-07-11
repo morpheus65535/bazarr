@@ -11,7 +11,17 @@ from utilities.path_mappings import path_mappings
 from .converter import RadarrFormatAudioCodec, RadarrFormatVideoCodec
 
 
-def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles):
+def get_matching_profile(tags, language_profiles):
+    matching_profile = None
+    if len(tags) > 0:
+        for _, tuple in enumerate(language_profiles):
+            if tuple[2] in tags:
+                matching_profile = tuple[0]
+                break
+    return matching_profile
+
+
+def movieParser(movie, action, tags_dict, language_profiles, movie_default_profile, audio_profiles):
     if 'movieFile' in movie:
         try:
             overview = str(movie['overview'])
@@ -139,6 +149,11 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
         if action == 'insert':
             parsed_movie['subtitles'] = '[]'
             parsed_movie['profileId'] = movie_default_profile
+
+        if settings.general.movie_tag_enabled:
+            tag_profile = get_matching_profile(tags, language_profiles)
+            if tag_profile:
+                parsed_movie['profileId'] = tag_profile
 
         return parsed_movie
 
