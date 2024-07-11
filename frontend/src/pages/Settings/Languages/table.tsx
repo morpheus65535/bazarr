@@ -66,6 +66,10 @@ const Table: FunctionComponent = () => {
         accessorKey: "name",
       },
       {
+        header: "Tag",
+        accessorKey: "tag",
+      },
+      {
         header: "Languages",
         accessorKey: "items",
         cell: ({
@@ -178,6 +182,7 @@ const Table: FunctionComponent = () => {
           const profile = {
             profileId: nextProfileId,
             name: "",
+            tag: undefined,
             items: [],
             cutoff: null,
             mustContain: [],
