@@ -88,6 +88,8 @@ validators = [
     Validator('general.use_sonarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.path_mappings_movie', must_exist=True, default=[], is_type_of=list),
+    Validator('general.serie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.movie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.serie_default_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.serie_default_profile', must_exist=True, default='', is_type_of=(int, str)),
     Validator('general.movie_default_enabled', must_exist=True, default=False, is_type_of=bool),
