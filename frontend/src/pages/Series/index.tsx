@@ -70,19 +70,29 @@ const SeriesView: FunctionComponent = () => {
           return (
             <Progress.Root key={title} size="xl">
               <Progress.Section
-                value={episodeFileCount === 0 || !profileId ? 0 : (1.0 - episodeMissingCount / episodeFileCount) * 100.0}
+                value={
+                  episodeFileCount === 0 || !profileId
+                    ? 0
+                    : (1.0 - episodeMissingCount / episodeFileCount) * 100.0
+                }
                 color={episodeMissingCount === 0 ? "brand" : "yellow"}
               >
                 <Progress.Label>{label}</Progress.Label>
               </Progress.Section>
-              {episodeMissingCount === episodeFileCount && <Progress.Label styles={{
-                label: {
-                  position: 'absolute',
-                  top: '3px',
-                  left: '50%',
-                  transform: 'translateX(-50%)'
-                }
-              }}>{label}</Progress.Label>}
+              {episodeMissingCount === episodeFileCount && (
+                <Progress.Label
+                  styles={{
+                    label: {
+                      position: "absolute",
+                      top: "3px",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                    },
+                  }}
+                >
+                  {label}
+                </Progress.Label>
+              )}
             </Progress.Root>
           );
         },
