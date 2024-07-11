@@ -75,7 +75,14 @@ const SeriesView: FunctionComponent = () => {
               >
                 <Progress.Label>{label}</Progress.Label>
               </Progress.Section>
-              {episodeMissingCount === episodeFileCount && <label className={'table-progress-label'}>{label}</label>}
+              {episodeMissingCount === episodeFileCount && <Progress.Label styles={{
+                label: {
+                  position: 'absolute',
+                  top: '3px',
+                  left: '50%',
+                  transform: 'translateX(-50%)'
+                }
+              }}>{label}</Progress.Label>}
             </Progress.Root>
           );
         },
