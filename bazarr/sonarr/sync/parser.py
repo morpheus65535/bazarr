@@ -15,9 +15,9 @@ from .converter import SonarrFormatVideoCodec, SonarrFormatAudioCodec
 def get_matching_profile(tags, language_profiles):
     matching_profile = None
     if len(tags) > 0:
-        for _, tuple in enumerate(language_profiles):
-            if tuple[2] in tags:
-                matching_profile = tuple[0]
+        for profileId, name, tag in language_profiles:
+            if tag in tags:
+                matching_profile = profileId
                 break
     return matching_profile
 
