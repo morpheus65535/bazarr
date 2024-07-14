@@ -17,8 +17,7 @@ from .mixins import ProviderRetryMixin
 from subliminal_patch.subtitle import Subtitle
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.providers import Provider
-from subliminal_patch.subtitle import guess_matches
-from guessit import guessit
+from subliminal_patch.providers import utils
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +56,6 @@ class SubdlSubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
-        type_ = "movie" if isinstance(video, Movie) else "episode"
 
         # handle movies and series separately
         if isinstance(video, Episode):
@@ -77,8 +75,7 @@ class SubdlSubtitle(Subtitle):
             # imdb
             matches.add('imdb_id')
 
-        # other properties
-        matches |= guess_matches(video, guessit(self.release_info, {"type": type_}))
+        utils.update_matches(matches, video, self.release_info)
 
         self.matches = matches
 
