@@ -7,6 +7,7 @@ import time
 
 from requests import Session
 from subliminal import region, __short_version__
+from subliminal.cache import REFINER_EXPIRATION_TIME
 from subliminal.exceptions import ConfigurationError, AuthenticationError, ServiceUnavailable
 from subliminal.utils import sanitize
 from subliminal.video import Episode, Movie
@@ -23,9 +24,6 @@ logger = logging.getLogger(__name__)
 # Unhandled formats, such files will always get filtered out
 unhandled_archive_formats = (".7z",)
 accepted_archive_formats = (".zip", ".rar")
-
-class JimakuNoEntries(Exception):
-    pass
 
 class JimakuSubtitle(Subtitle):
     '''Jimaku Subtitle.'''
@@ -133,14 +131,10 @@ class JimakuProvider(Provider):
             searching_for_entry_attempts += 1
             url = self._assemble_jimaku_search_url(video, media_name, additional_url_params)
             if not url:
-                logger.error(f"Skipping '{media_name}': Got no AniList ID and fuzzy matching using name is disabled")
                 return None
             
             searching_for_entry = "query" in url
-            try:
-                data = self._do_jimaku_request(url)
-            except JimakuNoEntries:
-                data = None
+            data = self._search_for_entry(url)
 
             if not data:
                 if searching_for_entry and searching_for_entry_attempts < 2:
@@ -172,7 +166,7 @@ class JimakuProvider(Provider):
             retry_count += 1
 
             url = f"entries/{entry_id}/files"
-            data = self._do_jimaku_request(url, url_params)
+            data = self._search_for_subtitles(url, url_params)
             
             if not data:
                 if isinstance(video, Episode) and retry_count <= 1:
@@ -283,7 +277,6 @@ class JimakuProvider(Provider):
         else:
             subtitle.content = response.content
     
-    @region.cache_on_arguments(expiration_time=timedelta(minutes=10).total_seconds())
     def _do_jimaku_request(self, url_path, url_params={}):
         url = urljoin(f"{self.api_url}/{url_path}", '?' + urlencode(url_params))
         
@@ -308,14 +301,23 @@ class JimakuProvider(Provider):
             logger.debug(f"Length of response on {url}: {len(data)}")
             if len(data) == 0:
                 logger.error(f"Jimaku returned no items for our our query: {url}")                
-                raise JimakuNoEntries()
+                return None
             elif 'error' in data:
                 raise ServiceUnavailable(f"Jimaku returned an error: '{data.get('error')}', Code: '{data.get('code')}'")
             else:
                 return data
 
         raise APIThrottled(f"Jimaku ratelimit max backoff limit of {self.api_ratelimit_backoff_limit} reached, aborting")
-        
+    
+    # Wrapper functions to indirectly call _do_jimaku_request with different cache configs
+    @region.cache_on_arguments(expiration_time=REFINER_EXPIRATION_TIME)
+    def _search_for_entry(self, url_path, url_params={}):
+        return self._do_jimaku_request(url_path, url_params)
+
+    @region.cache_on_arguments(expiration_time=timedelta(minutes=10).total_seconds())
+    def _search_for_subtitles(self, url_path, url_params={}):
+        return self._do_jimaku_request(url_path, url_params)
+    
     @staticmethod
     def _try_determine_subtitle_languages(filename):
         # This is more like a guess and not a 100% fool-proof way of detecting multi-lang subs:
@@ -391,7 +393,7 @@ class JimakuProvider(Provider):
         else:
             return [default_language]
     
-    def _assemble_jimaku_search_url(self, video, media_name, additional_params={}):                       
+    def _assemble_jimaku_search_url(self, video, media_name, additional_params={}):
         endpoint = "entries/search"
         anilist_id = video.anilist_id
         
@@ -402,6 +404,7 @@ class JimakuProvider(Provider):
             if self.enable_name_search_fallback or isinstance(video, Movie):
                 params = {'query': media_name}
             else:
+                logger.error(f"Skipping '{media_name}': Got no AniList ID and fuzzy matching using name is disabled")
                 return None
             
         if additional_params:
