@@ -164,13 +164,11 @@ class JimakuProvider(Provider):
         
         retry_count = 0
         while retry_count <= 1:
-            retry_count += 1
-
             url = f"entries/{entry_id}/files"
             data = self._search_for_subtitles(url, url_params)
             
             if not data:
-                if isinstance(video, Episode) and retry_count <= 1:
+                if isinstance(video, Episode) and retry_count < 1:
                     # Edge case: When dealing with a cour, episodes could be uploaded with their episode numbers having an offset applied
                     # Vice versa, users may have media files with absolute episode numbering, but the subs on Jimaku follow the Season/Episode format
                     offset_value = 0
@@ -194,6 +192,8 @@ class JimakuProvider(Provider):
                         only_look_for_archives = True
                 else:
                     return None
+                
+                retry_count += 1
             else:
                 break
         
@@ -283,12 +283,12 @@ class JimakuProvider(Provider):
         
         retry_count = 0
         while retry_count < self.api_ratelimit_backoff_limit:
-            retry_count += 1
             response = self.session.get(url, timeout=10)
             
             if response.status_code == 429:
                 api_reset_time = float(response.headers.get("x-ratelimit-reset-after", 5))
                 reset_time = self.api_ratelimit_max_delay_seconds if api_reset_time > self.api_ratelimit_max_delay_seconds else api_reset_time
+                retry_count += 1
                 
                 logger.warning(f"Jimaku ratelimit hit, waiting for '{reset_time}' seconds ({retry_count}/{self.api_ratelimit_backoff_limit} tries)")
                 time.sleep(reset_time)
