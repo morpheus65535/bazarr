@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from datetime import timedelta
 import logging
+import os
 import re
 import time
 
@@ -106,9 +107,9 @@ class JimakuProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = 'Subliminal/%s' % __short_version__
         self.session.headers['Content-Type'] = 'application/json'
         self.session.headers['Authorization'] = self.api_key
+        self.session.headers['User-Agent'] = os.environ.get("SZ_USER_AGENT")
 
     def terminate(self):
         self.session.close()
