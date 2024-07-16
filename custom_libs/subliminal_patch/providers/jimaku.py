@@ -144,6 +144,9 @@ class JimakuProvider(Provider):
                 else:
                     return None
             else:
+                if isinstance(video, Episode):
+                    # Movies don't seem reliably flagged as such, so we'll only filter for Episodes
+                    data = [x for x in data if x["flags"]["movie"] == False]
                 break
 
         # We only go for the first entry
@@ -162,34 +165,32 @@ class JimakuProvider(Provider):
         url_params = {'episode': episode_number} if isinstance(video, Episode) else {}
         only_look_for_archives = False
         
+        has_offset = isinstance(video, Episode) and video.series_anidb_season_episode_offset is not None
+
         retry_count = 0
         while retry_count <= 1:
+            # Account for positive episode offset first
+            if isinstance(video, Episode) and retry_count < 1:
+                if video.season > 1 and has_offset:
+                    offset_value = video.series_anidb_season_episode_offset
+                    offset_value = offset_value if offset_value > 0 else -offset_value
+
+                    if episode_number < offset_value:
+                        adjusted_ep_num = episode_number + offset_value
+                        logger.warning(f"Will try using adjusted episode number {adjusted_ep_num} first")
+                        url_params = {'episode': adjusted_ep_num}
+
             url = f"entries/{entry_id}/files"
             data = self._search_for_subtitles(url, url_params)
             
             if not data:
-                if isinstance(video, Episode) and retry_count < 1:
-                    # Edge case: When dealing with a cour, episodes could be uploaded with their episode numbers having an offset applied
-                    # Vice versa, users may have media files with absolute episode numbering, but the subs on Jimaku follow the Season/Episode format
-                    offset_value = 0
-                    if video.series_anidb_season_episode_offset:
-                        offset_value = video.series_anidb_season_episode_offset
-
-                    has_offset = offset_value > 0
-                    if has_offset:
-                        reverse_offset = episode_number > offset_value
-                        if reverse_offset:
-                            adjusted_ep_num = episode_number - offset_value
-                        else:
-                            adjusted_ep_num = episode_number + offset_value
-                            
-                        logger.warning(f"Found no subtitles for episode number {episode_number}, but will retry with offset-adjusted episode number {adjusted_ep_num} (reversed: {reverse_offset})")
-                        url_params = {'episode': adjusted_ep_num}
-                    else:
-                        # The entry might only have archives uploaded
-                        logger.warning(f"Found no subtitles for episode number {episode_number}, but will retry without 'episode' parameter")
-                        url_params = {}
-                        only_look_for_archives = True
+                if isinstance(video, Episode) and has_offset and retry_count < 1:
+                    logger.warning(f"Found no subtitles for adjusted episode number, but will retry with normal episode number {episode_number}")
+                    url_params = {'episode': episode_number}
+                elif isinstance(video, Episode) and retry_count < 1:
+                    logger.warning(f"Found no subtitles for episode number {episode_number}, but will retry without 'episode' parameter")
+                    url_params = {}
+                    only_look_for_archives = True
                 else:
                     return None
                 
