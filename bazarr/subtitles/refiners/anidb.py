@@ -83,9 +83,9 @@ class AniDBClient(object):
 
         for index, anime_info in enumerate(animes):
             anime, episode_offset = anime_info
-            anidb_id = int(anime.attrib.get('anidbid'))
+
             if episode > episode_offset:
-                anidb_id = anidb_id
+                anidb_id = int(anime.attrib.get('anidbid'))
                 offset = episode_offset
 
         return anidb_id, episode - offset
@@ -101,7 +101,12 @@ class AniDBClient(object):
 
         episodes = etree.fromstring(self.get_episodes(series_id))
 
-        return series_id, int(episodes.find(f".//episode[epno='{episode_no}']").attrib.get('id'))
+        episode = episodes.find(f".//episode[epno='{episode_no}']")
+
+        if not episode:
+            return series_id, None
+
+        return series_id, int(episode.attrib.get('id'))
 
     @region.cache_on_arguments(expiration_time=REFINER_EXPIRATION_TIME)
     def get_episodes(self, series_id):
