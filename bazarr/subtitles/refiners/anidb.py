@@ -80,36 +80,38 @@ class AniDBClient(object):
             )
         ]
 
+        is_special_entry = False
         if not animes:
-            return None, None, None
+            # Some entries will store TVDB seasons in a nested mapping list, identifiable by the value 'a' as the season
+            special_entries = mappings.findall(
+                f".//anime[@tvdbid='{tvdb_series_id}'][@defaulttvdbseason='a']"
+            )
 
-        # Sort the anime by offset in ascending order
-        animes.sort(key=lambda a: a.episode_offset)
+            if not special_entries:
+                return None, None, None
 
-        # Different from Tvdb, Anidb have different ids for the Parts of a season
-        anidb_id = None
-        for index, anime_info in enumerate(animes):
-            anime, episode_offset = anime_info
+            is_special_entry = True
+            for special_entry in special_entries:
+                mapping_list = special_entry.findall(f".//mapping[@tvdbseason='{tvdb_series_season}']")
+                if len(mapping_list) > 0:
+                    anidb_id = int(special_entry.attrib.get('anidbid'))
+                    for map in mapping_list:
+                        offset = int(map.attrib.get('offset'), 0)
 
-            mapping_list = anime.find('mapping-list')
+        if not is_special_entry:
+            # Sort the anime by offset in ascending order
+            animes.sort(key=lambda a: a.episode_offset)
 
-            # Handle mapping list for Specials
-            if mapping_list:
-                for mapping in mapping_list.findall("mapping"):
-                    # Mapping values are usually like ;1-1;2-1;3-1;
-                    for episode_ref in mapping.text.split(';'):
-                        if not episode_ref:
-                            continue
+            # Different from Tvdb, Anidb have different ids for the Parts of a season
+            anidb_id = None
+            offset = 0
 
-                        anidb_episode, tvdb_episode = map(int, episode_ref.split('-'))
-                        if tvdb_episode == episode:
-                            anidb_id = int(anime.attrib.get('anidbid'))
+            for index, anime_info in enumerate(animes):
+                anime, episode_offset = anime_info
 
-                            return anidb_id, anidb_episode
-
-            if episode > episode_offset:
-                anidb_id = int(anime.attrib.get('anidbid'))
-                offset = episode_offset
+                if episode > episode_offset:
+                    anidb_id = int(anime.attrib.get('anidbid'))
+                    offset = episode_offset
 
         return anidb_id, episode - offset, offset
 
