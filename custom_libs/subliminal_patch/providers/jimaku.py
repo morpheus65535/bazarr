@@ -92,6 +92,8 @@ class JimakuProvider(Provider):
     
     corrupted_file_size_threshold = 500
     
+    cache_region_key = "jimaku_global_ratelimit"
+    
     languages = {Language.fromietf("ja")}
 
     def __init__(self, enable_name_search_fallback, enable_archives_fallback, enable_ai_subs, api_key):
@@ -104,6 +106,19 @@ class JimakuProvider(Provider):
         self.download_archives = enable_archives_fallback
         self.enable_ai_subs = enable_ai_subs
         self.session = None
+        self.cache = region.get(
+            self.cache_region_key,
+            expiration_time=timedelta(minutes=10).total_seconds()
+        )
+        
+    @property
+    def api_global_ratelimit_count(self):
+        if not self.cache:
+            return 1
+        
+        c = self.cache.get('api_ratelimit_try', 1)
+        logger.debug("api_ratelimit_try:", c)
+        return c
 
     def initialize(self):
         self.session = Session()
@@ -286,16 +301,15 @@ class JimakuProvider(Provider):
     def _do_jimaku_request(self, url_path, url_params={}):
         url = urljoin(f"{self.api_url}/{url_path}", '?' + urlencode(url_params))
         
-        retry_count = 0
-        while retry_count < self.api_ratelimit_backoff_limit:
+        while self.api_global_ratelimit_count < self.api_ratelimit_backoff_limit:
             response = self.session.get(url, timeout=10)
             
             if response.status_code == 429:
                 api_reset_time = float(response.headers.get("x-ratelimit-reset-after", 5))
                 reset_time = self.api_ratelimit_max_delay_seconds if api_reset_time > self.api_ratelimit_max_delay_seconds else api_reset_time
-                retry_count += 1
+                self._update_global_rate_limit()
                 
-                logger.warning(f"Jimaku ratelimit hit, waiting for '{reset_time}' seconds ({retry_count}/{self.api_ratelimit_backoff_limit} tries)")
+                logger.warning(f"Jimaku ratelimit hit, waiting for '{reset_time}' seconds ({self.api_global_ratelimit_count}/{self.api_ratelimit_backoff_limit} tries)")
                 time.sleep(reset_time)
                 continue
             elif response.status_code == 401:
@@ -320,9 +334,16 @@ class JimakuProvider(Provider):
     def _search_for_entry(self, url_path, url_params={}):
         return self._do_jimaku_request(url_path, url_params)
 
-    @region.cache_on_arguments(expiration_time=timedelta(minutes=10).total_seconds())
+    @region.cache_on_arguments(expiration_time=timedelta(minutes=1).total_seconds())
     def _search_for_subtitles(self, url_path, url_params={}):
         return self._do_jimaku_request(url_path, url_params)
+    
+    def _update_global_rate_limit(self):
+        if not self.cache:
+            region.set(self.cache_region_key, {'api_ratelimit_try': 1})
+            return
+        
+        self.cache['api_ratelimit_try'] = self.api_global_ratelimit_count + 1
     
     @staticmethod
     def _try_determine_subtitle_languages(filename):
