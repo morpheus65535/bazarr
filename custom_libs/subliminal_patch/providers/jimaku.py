@@ -94,14 +94,14 @@ class JimakuProvider(Provider):
     
     languages = {Language.fromietf("ja")}
 
-    def __init__(self, enable_name_search_fallback, enable_archive_fallback, enable_ai_subs, api_key):
+    def __init__(self, enable_name_search_fallback, enable_archives_fallback, enable_ai_subs, api_key):
         if api_key:
             self.api_key = api_key
         else:
             raise ConfigurationError('Missing api_key.')
 
         self.enable_name_search_fallback = enable_name_search_fallback
-        self.download_archives = enable_archive_fallback
+        self.download_archives = enable_archives_fallback
         self.enable_ai_subs = enable_ai_subs
         self.session = None
 
@@ -168,6 +168,7 @@ class JimakuProvider(Provider):
         has_offset = isinstance(video, Episode) and video.series_anidb_season_episode_offset is not None
 
         retry_count = 0
+        adjusted_ep_num = None
         while retry_count <= 1:
             # Account for positive episode offset first
             if isinstance(video, Episode) and retry_count < 1:
@@ -196,6 +197,9 @@ class JimakuProvider(Provider):
                 
                 retry_count += 1
             else:
+                if adjusted_ep_num:
+                    video.episode = adjusted_ep_num
+                    logger.debug(f"This videos episode attribute has been updated to: {video.episode}")
                 break
         
         # Filter subtitles
@@ -208,7 +212,7 @@ class JimakuProvider(Provider):
         subtitle_entries = [item for item in data if not item['name'].endswith(accepted_archive_formats)]
         has_only_archives = len(archive_entries) > 0 and len(subtitle_entries) == 0
         if has_only_archives:
-            logger.warning("Have only found archived subtitles. Matching might be inaccurate!")
+            logger.warning("Have only found archived subtitles")
                 
         elif only_look_for_archives:
             data = [item for item in data if item['name'].endswith(accepted_archive_formats)]

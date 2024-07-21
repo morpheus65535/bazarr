@@ -304,7 +304,7 @@ validators = [
     # jimaku section
     Validator('jimaku.api_key', must_exist=True, default='', is_type_of=str),
     Validator('jimaku.enable_name_search_fallback', must_exist=True, default=True, is_type_of=bool),
-    Validator('jimaku.enable_archive_fallback', must_exist=True, default=False, is_type_of=bool),
+    Validator('jimaku.enable_archives_fallback', must_exist=True, default=False, is_type_of=bool),
     Validator('jimaku.enable_ai_subs', must_exist=True, default=False, is_type_of=bool),
 
     # titlovi section

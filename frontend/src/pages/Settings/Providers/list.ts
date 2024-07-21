@@ -242,8 +242,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
       {
         type: "switch",
-        key: "enable_archive_fallback",
-        name: "Include archives if no uncompressed subtitles were found (Less accurate)"
+        key: "enable_archives_fallback",
+        name: "Include archives if no uncompressed subtitles were found"
       }
     ],
   },
