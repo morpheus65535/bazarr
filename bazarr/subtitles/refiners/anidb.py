@@ -96,7 +96,7 @@ class AniDBClient(object):
                 if len(mapping_list) > 0:
                     anidb_id = int(special_entry.attrib.get('anidbid'))
                     for map in mapping_list:
-                        offset = int(map.attrib.get('offset'), 0)
+                        offset = int(map.attrib.get('offset', 0))
 
         if not is_special_entry:
             # Sort the anime by offset in ascending order
