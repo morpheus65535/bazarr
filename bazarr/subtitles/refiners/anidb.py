@@ -84,6 +84,22 @@ class AniDBClient(object):
         for index, anime_info in enumerate(animes):
             anime, episode_offset = anime_info
 
+            mapping_list = anime.find('mapping-list')
+
+            # Handle mapping list for Specials
+            if mapping_list:
+                for mapping in mapping_list.findall("mapping"):
+                    # Mapping values are usually like ;1-1;2-1;3-1;
+                    for episode_ref in mapping.text.split(';'):
+                        if not episode_ref:
+                            continue
+
+                        anidb_episode, tvdb_episode = map(int, episode_ref.split('-'))
+                        if tvdb_episode == episode:
+                            anidb_id = int(anime.attrib.get('anidbid'))
+
+                            return anidb_id, anidb_episode
+
             if episode > episode_offset:
                 anidb_id = int(anime.attrib.get('anidbid'))
                 offset = episode_offset
