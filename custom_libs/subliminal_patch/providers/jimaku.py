@@ -89,7 +89,6 @@ class JimakuProvider(Provider):
     api_url = 'https://jimaku.cc/api'
     api_ratelimit_max_delay_seconds = 5
     api_ratelimit_backoff_limit = 3
-    api_global_ratelimit_retries = 1
     
     corrupted_file_size_threshold = 500
     
@@ -287,15 +286,15 @@ class JimakuProvider(Provider):
     def _do_jimaku_request(self, url_path, url_params={}):
         url = urljoin(f"{self.api_url}/{url_path}", '?' + urlencode(url_params))
         
-        while JimakuProvider.api_global_ratelimit_retries <= self.api_ratelimit_backoff_limit:
+        retry_count = 0
+        while retry_count < self.api_ratelimit_backoff_limit:
             response = self.session.get(url, timeout=10)
             
             if response.status_code == 429:
-                api_reset_time = float(response.headers.get("x-ratelimit-reset-after", 5))
-                reset_time = self.api_ratelimit_max_delay_seconds if api_reset_time > self.api_ratelimit_max_delay_seconds else api_reset_time
+                reset_time = 5
+                retry_count + 1
                 
-                logger.warning(f"Jimaku ratelimit hit, waiting for '{reset_time}' seconds ({JimakuProvider.api_global_ratelimit_retries}/{self.api_ratelimit_backoff_limit} tries)")
-                JimakuProvider.api_global_ratelimit_retries += 1
+                logger.warning(f"Jimaku ratelimit hit, waiting for '{reset_time}' seconds ({retry_count}/{self.api_ratelimit_backoff_limit} tries)")
                 time.sleep(reset_time)
                 continue
             elif response.status_code == 401:
@@ -313,7 +312,6 @@ class JimakuProvider(Provider):
             else:
                 return data
 
-        JimakuProvider.api_global_ratelimit_retries = 1
         raise APIThrottled(f"Jimaku ratelimit max backoff limit of {self.api_ratelimit_backoff_limit} reached, aborting")
     
     # Wrapper functions to indirectly call _do_jimaku_request with different cache configs
