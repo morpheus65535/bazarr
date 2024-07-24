@@ -69,7 +69,6 @@ class JimakuSubtitle(Subtitle):
         matches.add(video_type)
         
         guess = guessit(self.filename, {'type': video_type})
-        logger.debug(f"Guessit: {guess}")
         for g in guess:
             if g[0] == "release_group" or "source":
                 if video.release_group == g[1]:
@@ -94,14 +93,14 @@ class JimakuProvider(Provider):
     
     languages = {Language.fromietf("ja")}
 
-    def __init__(self, enable_name_search_fallback, enable_archives_fallback, enable_ai_subs, api_key):
+    def __init__(self, enable_name_search_fallback, enable_archives_download, enable_ai_subs, api_key):
         if api_key:
             self.api_key = api_key
         else:
             raise ConfigurationError('Missing api_key.')
 
         self.enable_name_search_fallback = enable_name_search_fallback
-        self.download_archives = enable_archives_fallback
+        self.download_archives = enable_archives_download
         self.enable_ai_subs = enable_ai_subs
         self.session = None
 
@@ -223,7 +222,7 @@ class JimakuProvider(Provider):
             is_archive = filename.endswith(accepted_archive_formats)
             
             # Archives will still be considered if they're the only files available, as is mostly the case for movies.
-            if is_archive and not has_only_archives and not self.download_archives:
+            if is_archive and not has_only_archives and not self.download_archives: 
                 logger.warning(f"Skipping archive '{filename}' because normal subtitles are available instead")
                 continue
 

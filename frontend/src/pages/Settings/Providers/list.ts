@@ -232,19 +232,19 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
       {
         type: "switch",
-        key: "enable_ai_subs",
-        name: "Download AI generated subs"
-      },
-      {
-        type: "switch",
         key: "enable_name_search_fallback",
-        name: "Search by name if no AniList ID was determined (Less accurate)"
+        name: "Search by name if no AniList ID was determined (Less accurate, required for live action)"
       },
       {
         type: "switch",
-        key: "enable_archives_fallback",
-        name: "Include archives if no uncompressed subtitles were found"
-      }
+        key: "enable_archives_download",
+        name: "Also consider archives alongside uncompressed subtitles"
+      },
+      {
+        type: "switch",
+        key: "enable_ai_subs",
+        name: "Download AI generated subtitles"
+      },
     ],
   },
   { key: "hosszupuska", description: "Hungarian Subtitles Provider" },
