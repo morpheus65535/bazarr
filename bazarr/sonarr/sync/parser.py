@@ -12,7 +12,17 @@ from sonarr.info import get_sonarr_info
 from .converter import SonarrFormatVideoCodec, SonarrFormatAudioCodec
 
 
-def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles):
+def get_matching_profile(tags, language_profiles):
+    matching_profile = None
+    if len(tags) > 0:
+        for profileId, name, tag in language_profiles:
+            if tag in tags:
+                matching_profile = profileId
+                break
+    return matching_profile
+
+
+def seriesParser(show, action, tags_dict, language_profiles, serie_default_profile, audio_profiles):
     overview = show['overview'] if 'overview' in show else ''
     poster = ''
     fanart = ''
@@ -42,39 +52,33 @@ def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles)
             else:
                 audio_language = []
 
-    if action == 'update':
-        return {'title': show["title"],
-                'path': show["path"],
-                'tvdbId': int(show["tvdbId"]),
-                'sonarrSeriesId': int(show["id"]),
-                'overview': overview,
-                'poster': poster,
-                'fanart': fanart,
-                'audio_language': str(audio_language),
-                'sortTitle': show['sortTitle'],
-                'year': str(show['year']),
-                'alternativeTitles': alternate_titles,
-                'tags': str(tags),
-                'seriesType': show['seriesType'],
-                'imdbId': imdbId,
-                'monitored': str(bool(show['monitored']))}
-    else:
-        return {'title': show["title"],
-                'path': show["path"],
-                'tvdbId': show["tvdbId"],
-                'sonarrSeriesId': show["id"],
-                'overview': overview,
-                'poster': poster,
-                'fanart': fanart,
-                'audio_language': str(audio_language),
-                'sortTitle': show['sortTitle'],
-                'year': str(show['year']),
-                'alternativeTitles': alternate_titles,
-                'tags': str(tags),
-                'seriesType': show['seriesType'],
-                'imdbId': imdbId,
-                'profileId': serie_default_profile,
-                'monitored': str(bool(show['monitored']))}
+    parsed_series = {
+                    'title': show["title"],
+                    'path': show["path"],
+                    'tvdbId': int(show["tvdbId"]),
+                    'sonarrSeriesId': int(show["id"]),
+                    'overview': overview,
+                    'poster': poster,
+                    'fanart': fanart,
+                    'audio_language': str(audio_language),
+                    'sortTitle': show['sortTitle'],
+                    'year': str(show['year']),
+                    'alternativeTitles': alternate_titles,
+                    'tags': str(tags),
+                    'seriesType': show['seriesType'],
+                    'imdbId': imdbId,
+                    'monitored': str(bool(show['monitored']))
+                    }
+
+    if action == 'insert':
+        parsed_series['profileId'] = serie_default_profile
+    
+    if settings.general.serie_tag_enabled:
+        tag_profile = get_matching_profile(tags, language_profiles)
+        if tag_profile:
+            parsed_series['profileId'] = tag_profile
+    
+    return parsed_series
 
 
 def profile_id_to_language(id_, profiles):

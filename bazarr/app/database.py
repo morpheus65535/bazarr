@@ -379,6 +379,7 @@ def update_profile_id_list():
         'mustContain': ast.literal_eval(x.mustContain) if x.mustContain else [],
         'mustNotContain': ast.literal_eval(x.mustNotContain) if x.mustNotContain else [],
         'originalFormat': x.originalFormat,
+        'tag': x.tag,
     } for x in database.execute(
         select(TableLanguagesProfiles.profileId,
                TableLanguagesProfiles.name,
@@ -386,7 +387,8 @@ def update_profile_id_list():
                TableLanguagesProfiles.items,
                TableLanguagesProfiles.mustContain,
                TableLanguagesProfiles.mustNotContain,
-               TableLanguagesProfiles.originalFormat))
+               TableLanguagesProfiles.originalFormat,
+               TableLanguagesProfiles.tag))
         .all()
     ]
 
@@ -421,7 +423,7 @@ def get_profile_cutoff(profile_id):
     if profile_id and profile_id != 'null':
         cutoff_language = []
         for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat = profile.values()
+            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat, tag = profile.values()
             if cutoff:
                 if profileId == int(profile_id):
                     for item in items:
@@ -511,7 +513,8 @@ def upgrade_languages_profile_hi_values():
                 TableLanguagesProfiles.items,
                 TableLanguagesProfiles.mustContain,
                 TableLanguagesProfiles.mustNotContain,
-                TableLanguagesProfiles.originalFormat)
+                TableLanguagesProfiles.originalFormat,
+                TableLanguagesProfiles.tag)
             ))\
             .all():
         items = json.loads(languages_profile.items)

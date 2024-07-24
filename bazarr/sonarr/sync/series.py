@@ -26,6 +26,11 @@ def trace(message):
         logging.debug(FEATURE_PREFIX + message)
 
 
+def get_language_profiles():
+    return database.execute(
+        select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.name, TableLanguagesProfiles.tag)).all()
+
+
 def get_series_monitored_table():
     series_monitored = database.execute(
         select(TableShows.tvdbId, TableShows.monitored))\
@@ -58,6 +63,7 @@ def update_series(send_event=True):
 
     audio_profiles = get_profile_list()
     tagsDict = get_tags()
+    language_profiles = get_language_profiles()
 
     # Get shows data from Sonarr
     series = get_series_from_sonarr_api(apikey_sonarr=apikey_sonarr)
@@ -111,6 +117,7 @@ def update_series(send_event=True):
 
             if show['id'] in current_shows_db:
                 updated_series = seriesParser(show, action='update', tags_dict=tagsDict,
+                                              language_profiles=language_profiles,
                                               serie_default_profile=serie_default_profile,
                                               audio_profiles=audio_profiles)
 
@@ -132,6 +139,7 @@ def update_series(send_event=True):
                     event_stream(type='series', payload=show['id'])
             else:
                 added_series = seriesParser(show, action='insert', tags_dict=tagsDict,
+                                            language_profiles=language_profiles,
                                             serie_default_profile=serie_default_profile,
                                             audio_profiles=audio_profiles)
 
@@ -203,7 +211,7 @@ def update_one_series(series_id, action):
 
     audio_profiles = get_profile_list()
     tagsDict = get_tags()
-
+    language_profiles = get_language_profiles()
     try:
         # Get series data from sonarr api
         series = None
@@ -215,10 +223,12 @@ def update_one_series(series_id, action):
         else:
             if action == 'updated' and existing_series:
                 series = seriesParser(series_data[0], action='update', tags_dict=tagsDict,
+                                      language_profiles=language_profiles,
                                       serie_default_profile=serie_default_profile,
                                       audio_profiles=audio_profiles)
             elif action == 'updated' and not existing_series:
                 series = seriesParser(series_data[0], action='insert', tags_dict=tagsDict,
+                                      language_profiles=language_profiles,
                                       serie_default_profile=serie_default_profile,
                                       audio_profiles=audio_profiles)
     except Exception:

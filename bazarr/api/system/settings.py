@@ -73,6 +73,7 @@ class SystemSettings(Resource):
                             mustNotContain=str(item['mustNotContain']),
                             originalFormat=int(item['originalFormat']) if item['originalFormat'] not in None_Keys else
                             None,
+                            tag=item['tag'] if 'tag' in item else None,
                         )
                         .where(TableLanguagesProfiles.profileId == item['profileId']))
                     existing.remove(item['profileId'])
@@ -89,6 +90,7 @@ class SystemSettings(Resource):
                             mustNotContain=str(item['mustNotContain']),
                             originalFormat=int(item['originalFormat']) if item['originalFormat'] not in None_Keys else
                             None,
+                            tag=item['tag'] if 'tag' in item else None,
                         ))
             for profileId in existing:
                 # Remove deleted profiles
