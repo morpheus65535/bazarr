@@ -95,8 +95,7 @@ class AniDBClient(object):
                 mapping_list = special_entry.findall(f".//mapping[@tvdbseason='{tvdb_series_season}']")
                 if len(mapping_list) > 0:
                     anidb_id = int(special_entry.attrib.get('anidbid'))
-                    for mapping_entry in mapping_list:
-                        offset = int(mapping_entry.attrib.get('offset', 0))
+                    offset = int(mapping_list[0].attrib.get('offset', 0))
 
         if not is_special_entry:
             # Sort the anime by offset in ascending order
