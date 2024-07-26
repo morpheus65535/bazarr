@@ -142,11 +142,6 @@ class JimakuProvider(Provider):
                     additional_url_params = {'anime': "false"}
                 else:
                     return None
-            else:
-                if isinstance(video, Episode):
-                    # Movies don't seem reliably flagged as such, so we'll only filter for Episodes
-                    data = [x for x in data if x["flags"]["movie"] == False]
-                break
 
         # We only go for the first entry
         entry = data[0]
@@ -154,14 +149,18 @@ class JimakuProvider(Provider):
         entry_id = entry.get('id')
         anilist_id = entry.get('anilist_id', None)
         entry_name = entry.get('name')
+        is_movie = entry['flags']['movie']
         
-        logger.info(f"Matched entry: ID: '{entry_id}', anilist_id: '{anilist_id}', name: '{entry_name}', english_name: '{entry.get('english_name')}'")
+        if isinstance(video, Episode) and is_movie:
+            logger.warn("Bazarr thinks this is a series, but Jimaku says this is a movie! Will treat as movie...")
+        
+        logger.info(f"Matched entry: ID: '{entry_id}', anilist_id: '{anilist_id}', name: '{entry_name}', english_name: '{entry.get('english_name')}', movie: {is_movie}")
         if entry.get("flags").get("unverified"):
             logger.warning(f"This entry '{entry_id}' is unverified, subtitles might be incomplete or have quality issues!")    
         
         # Get a list of subtitles for entry
         episode_number = video.episode if "episode" in dir(video) else None
-        url_params = {'episode': episode_number} if isinstance(video, Episode) else {}
+        url_params = {'episode': episode_number} if not is_movie else {}
         only_look_for_archives = False
         
         has_offset = isinstance(video, Episode) and video.series_anidb_season_episode_offset is not None
@@ -170,7 +169,7 @@ class JimakuProvider(Provider):
         adjusted_ep_num = None
         while retry_count <= 1:
             # Account for positive episode offset first
-            if isinstance(video, Episode) and retry_count < 1:
+            if not is_movie and retry_count < 1:
                 if video.season > 1 and has_offset:
                     offset_value = video.series_anidb_season_episode_offset
                     offset_value = offset_value if offset_value > 0 else -offset_value
@@ -184,10 +183,10 @@ class JimakuProvider(Provider):
             data = self._search_for_subtitles(url, url_params)
             
             if not data:
-                if isinstance(video, Episode) and has_offset and retry_count < 1:
+                if not is_movie and has_offset and retry_count < 1:
                     logger.warning(f"Found no subtitles for adjusted episode number, but will retry with normal episode number {episode_number}")
                     url_params = {'episode': episode_number}
-                elif isinstance(video, Episode) and retry_count < 1:
+                elif not is_movie and retry_count < 1:
                     logger.warning(f"Found no subtitles for episode number {episode_number}, but will retry without 'episode' parameter")
                     url_params = {}
                     only_look_for_archives = True
