@@ -65,7 +65,7 @@ def _get_matching_sub(
         guess = guessit(sub_name, options=guess_options)
 
         matched_episode_num = guess.get("episode")
-        if matched_episode_num:
+        if not matched_episode_num:
             logger.debug("No episode number found in file: %s", sub_name)
 
         if episode_title is not None:
