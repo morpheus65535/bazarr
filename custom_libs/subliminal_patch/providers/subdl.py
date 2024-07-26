@@ -181,7 +181,8 @@ class SubdlProvider(ProviderRetryMixin, Provider):
         result = res.json()
 
         if ('success' in result and not result['success']) or ('status' in result and not result['status']):
-            raise ProviderError(result['error'])
+            logger.debug(result["error"])
+            return []
 
         logger.debug(f"Query returned {len(result['subtitles'])} subtitles")
 
