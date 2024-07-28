@@ -151,7 +151,7 @@ class JimakuProvider(Provider):
         entry_id = entry.get('id')
         anilist_id = entry.get('anilist_id', None)
         entry_name = entry.get('name')
-        is_movie = entry.get('flags').get('movie')
+        is_movie = entry.get('flags', {}).get('movie', False)
         
         if isinstance(video, Episode) and is_movie:
             logger.warn("Bazarr thinks this is a series, but Jimaku says this is a movie! May not be able to match subtitles...")
