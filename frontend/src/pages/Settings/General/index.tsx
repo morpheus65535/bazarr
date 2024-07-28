@@ -43,10 +43,10 @@ const SettingsGeneralView: FunctionComponent = () => {
       <Section header="Host">
         <Text
           label="Address"
-          placeholder="0.0.0.0"
+          placeholder="*"
           settingKey="settings-general-ip"
         ></Text>
-        <Message>Valid IPv4 address or '0.0.0.0' for all interfaces</Message>
+        <Message>Valid IP address or '*' for all interfaces</Message>
         <Number
           label="Port"
           placeholder="6767"
