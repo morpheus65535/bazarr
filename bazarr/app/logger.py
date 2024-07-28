@@ -58,9 +58,12 @@ class NoExceptionFormatter(logging.Formatter):
 
 class UnwantedWaitressMessageFilter(logging.Filter):
     def filter(self, record):
-        if settings.general.debug:
-            # no filtering in debug mode
+        if settings.general.debug or "BAZARR" in record.msg:
+            # no filtering in debug mode or if originating from us
             return True
+
+        if record.level != loggin.ERROR:
+            return False
 
         unwantedMessages = [
             "Exception while serving /api/socket.io/",
@@ -161,7 +164,7 @@ def configure_logging(debug=False):
         logging.getLogger("websocket").setLevel(logging.CRITICAL)
         logging.getLogger("ga4mp.ga4mp").setLevel(logging.ERROR)
 
-    logging.getLogger("waitress").setLevel(logging.ERROR)
+    logging.getLogger("waitress").setLevel(logging.INFO)
     logging.getLogger("waitress").addFilter(UnwantedWaitressMessageFilter())
     logging.getLogger("knowit").setLevel(logging.CRITICAL)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)

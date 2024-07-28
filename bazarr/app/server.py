@@ -76,8 +76,7 @@ class Server:
             self.shutdown(EXIT_INTERRUPT)
 
     def start(self):
-        logging.info(f'BAZARR is started and waiting for request on http://{self.server.effective_host}:'
-                     f'{self.server.effective_port}')
+        self.server.print_listen("BAZARR is started and waiting for requests on: http://{}:{}")
         signal.signal(signal.SIGINT, self.interrupt_handler)
         try:
             self.server.run()
