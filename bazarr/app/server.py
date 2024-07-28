@@ -50,7 +50,7 @@ class Server:
             self.connected = True
         except OSError as error:
             if error.errno == errno.EADDRNOTAVAIL:
-                logging.exception("BAZARR cannot bind to specified IP, trying with default (0.0.0.0)")
+                logging.exception("BAZARR cannot bind to specified IP, trying with 0.0.0.0")
                 self.address = '0.0.0.0'
                 self.connected = False
                 super(Server, self).__init__()
