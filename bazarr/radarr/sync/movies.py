@@ -64,7 +64,7 @@ def update_movie(updated_movie, send_event):
 def get_movie_monitored_status(movie_id):
     existing_movie_monitored = database.execute(
         select(TableMovies.monitored)
-        .where(TableMovies.tmdbId == movie_id))\
+        .where(TableMovies.tmdbId == str(movie_id)))\
         .first()
     if existing_movie_monitored is None:
         return True
