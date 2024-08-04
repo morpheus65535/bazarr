@@ -1,4 +1,5 @@
 # coding=utf-8
+from copy import deepcopy
 import six
 import json
 import re
@@ -1204,6 +1205,10 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
 
         # create subtitle path
         if subtitle.text and bool(re.search(HI_REGEX, subtitle.text)):
+            # language needs to be cloned because it is actually a reference to the provider language object
+            # if a new copy is not created then all subsequent subtitles for this provider will incorrectly require HI
+            # at least until Bazarr is restarted and / or the provider language object is recreated somehow
+            subtitle.language = deepcopy(subtitle.language)
             subtitle.language.hi = True
         subtitle_path = get_subtitle_path(file_path, None if single else subtitle.language,
                                           forced_tag=subtitle.language.forced,
