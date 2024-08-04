@@ -110,8 +110,6 @@ def run_migrations_online():
             elif bind.engine.name == 'postgresql':
                 bind.execute(text("SET CONSTRAINTS ALL IMMEDIATE;"))
 
-            bind.close()
-
 
 if context.is_offline_mode():
     run_migrations_offline()
