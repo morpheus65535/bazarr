@@ -285,6 +285,12 @@ def get_providers_auth():
             'username': settings.titlovi.username,
             'password': settings.titlovi.password,
         },
+        'jimaku': {
+            'api_key': settings.jimaku.api_key,
+            'enable_name_search_fallback': settings.jimaku.enable_name_search_fallback,
+            'enable_archives_download': settings.jimaku.enable_archives_download,
+            'enable_ai_subs': settings.jimaku.enable_ai_subs,
+        },
         'ktuvit': {
             'email': settings.ktuvit.email,
             'hashed_password': settings.ktuvit.hashed_password,
