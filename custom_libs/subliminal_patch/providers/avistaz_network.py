@@ -5,7 +5,7 @@ from random import randint
 
 import pycountry
 from requests.cookies import RequestsCookieJar
-from subliminal.exceptions import AuthenticationError
+from subliminal.exceptions import AuthenticationError, ProviderError
 from subliminal.providers import ParserBeautifulSoup
 from subliminal_patch.http import RetryingCFSession
 from subliminal_patch.pitcher import store_verification
@@ -357,7 +357,7 @@ class AvistazNetworkProviderBase(Provider):
                               .select_one('#content-area > div.block > div.table-responsive > table > tbody'))
 
         if release_data_table is None:
-            raise Exception('Unexpected HTML page layout - no release data table found')
+            raise ProviderError('Unexpected HTML page layout - no release data table found')
 
         rows = {}
         for tr in release_data_table.find_all('tr', recursive=False):
