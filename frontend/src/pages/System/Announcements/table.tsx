@@ -19,7 +19,7 @@ const Table: FunctionComponent<Props> = ({ announcements }) => {
     () => [
       {
         header: "Since",
-        accessor: "timestamp",
+        accessorKey: "timestamp",
         cell: ({
           row: {
             original: { timestamp },
@@ -30,7 +30,7 @@ const Table: FunctionComponent<Props> = ({ announcements }) => {
       },
       {
         header: "Announcement",
-        accessor: "text",
+        accessorKey: "text",
         cell: ({
           row: {
             original: { text },
@@ -41,7 +41,7 @@ const Table: FunctionComponent<Props> = ({ announcements }) => {
       },
       {
         header: "More Info",
-        accessor: "link",
+        accessorKey: "link",
         cell: ({
           row: {
             original: { link },
@@ -56,7 +56,7 @@ const Table: FunctionComponent<Props> = ({ announcements }) => {
       },
       {
         header: "Dismiss",
-        accessor: "hash",
+        accessorKey: "hash",
         cell: ({
           row: {
             original: { dismissible, hash },

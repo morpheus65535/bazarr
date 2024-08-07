@@ -17,7 +17,7 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
     () => [
       {
         header: "Name",
-        accessor: "name",
+        accessorKey: "name",
         cell: ({
           row: {
             original: { name },
@@ -28,7 +28,7 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
       },
       {
         header: "Interval",
-        accessor: "interval",
+        accessorKey: "interval",
         cell: ({
           row: {
             original: { interval },
@@ -39,11 +39,11 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
       },
       {
         header: "Next Execution",
-        accessor: "next_run_in",
+        accessorKey: "next_run_in",
       },
       {
         header: "Run",
-        accessor: "job_running",
+        accessorKey: "job_running",
         cell: ({
           row: {
             original: { job_id: jobId, job_running: jobRunning },
