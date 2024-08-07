@@ -1,5 +1,11 @@
 import { FunctionComponent } from "react";
-import { Center, Stack, Text, UnstyledButton } from "@mantine/core";
+import {
+  Center,
+  MantineStyleProp,
+  Stack,
+  Text,
+  UnstyledButton,
+} from "@mantine/core";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import TextPopover from "@/components/TextPopover";
@@ -11,6 +17,7 @@ interface CardProps {
   lineClamp?: number | undefined;
   onClick?: () => void;
   plus?: boolean;
+  titleStyles?: MantineStyleProp | undefined;
 }
 
 export const Card: FunctionComponent<CardProps> = ({
@@ -19,6 +26,7 @@ export const Card: FunctionComponent<CardProps> = ({
   plus,
   onClick,
   lineClamp,
+  titleStyles,
 }) => {
   return (
     <UnstyledButton p="lg" onClick={onClick} className={styles.card}>
@@ -27,8 +35,10 @@ export const Card: FunctionComponent<CardProps> = ({
           <FontAwesomeIcon size="2x" icon={faPlus}></FontAwesomeIcon>
         </Center>
       ) : (
-        <Stack h="100%" gap={0} align="flex-start">
-          <Text fw="bold">{header}</Text>
+        <Stack h="100%" gap={0}>
+          <Text fw="bold" style={titleStyles}>
+            {header}
+          </Text>
           <TextPopover text={description}>
             <Text hidden={description === undefined} lineClamp={lineClamp}>
               {description}
