@@ -112,6 +112,7 @@ export const ProviderView: FunctionComponent<ProviderViewProps> = ({
             header={v.name ?? capitalize(v.key)}
             description={v.description}
             onClick={() => select(v)}
+            lineClamp={2}
           ></Card>
         ));
     } else {
