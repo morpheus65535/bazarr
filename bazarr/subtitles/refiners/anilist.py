@@ -13,6 +13,7 @@ from subliminal import Episode, region, __short_version__
 logger = logging.getLogger(__name__)
 refined_providers = {'jimaku'}
 
+
 class AniListClient(object):    
     def __init__(self, session=None, timeout=10):
         self.session = session or requests.Session()
@@ -47,15 +48,16 @@ class AniListClient(object):
             logger.debug(f"Could not find corresponding AniList ID with '{mapped_tag}': {candidate_id_value}")
             return None
 
+
 def refine_from_anilist(path, video):
     # Safety checks
     if isinstance(video, Episode):
         if not video.series_anidb_id:
-            logger.error(f"Will not refine '{video.series}' as it does not have an AniDB ID.")
             return
 
     if refined_providers.intersection(settings.general.enabled_providers) and video.anilist_id is None:
         refine_anilist_ids(video)
+
 
 def refine_anilist_ids(video):
     anilist_client = AniListClient()
