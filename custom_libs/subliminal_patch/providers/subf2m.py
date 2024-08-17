@@ -220,7 +220,7 @@ class Subf2mProvider(Provider):
 
         results = []
         for result in self._gen_results(title):
-            text = result.text.lower()
+            text = result.text.strip().lower()
             match = self._movie_title_regex.match(text)
             if not match:
                 continue
@@ -254,7 +254,7 @@ class Subf2mProvider(Provider):
 
         results = []
         for result in self._gen_results(title):
-            text = result.text.lower()
+            text = result.text.strip().lower()
 
             match = self._tv_show_title_regex.match(text)
             if not match:
