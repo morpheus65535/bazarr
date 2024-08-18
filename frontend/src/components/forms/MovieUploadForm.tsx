@@ -90,7 +90,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
   const languageOptions = useSelectorOptions(
     languages,
     (v) => v.name,
-    (v) => v.code2,
+    (v) => v.code2 ?? "",
   );
 
   const defaultLanguage = useMemo(
@@ -282,7 +282,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
 
           task.create(file.name, TaskGroup.UploadSubtitle, upload.mutateAsync, {
             radarrId,
-            form: { file, language: language.code2, hi, forced },
+            form: { file, language: language.code2 ?? "", hi, forced },
           });
         });
 

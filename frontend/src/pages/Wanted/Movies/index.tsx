@@ -59,7 +59,7 @@ const WantedMoviesView: FunctionComponent = () => {
                       {
                         radarrId,
                         form: {
-                          language: item.code2,
+                          language: item.code2 ?? "",
                           hi: item.hi,
                           forced: item.forced,
                         },

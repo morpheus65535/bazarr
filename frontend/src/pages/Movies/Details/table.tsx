@@ -47,7 +47,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           type: "movie",
           path,
           id: movie.radarrId,
-          language: code2,
+          language: code2 ?? "",
           forced: toPython(forced),
           hi: toPython(hi),
         });
@@ -76,7 +76,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
               {
                 radarrId,
                 form: {
-                  language: code2,
+                  language: code2 ?? "",
                   forced,
                   hi,
                 },
@@ -99,7 +99,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
               {
                 radarrId,
                 form: {
-                  language: code2,
+                  language: code2 ?? "",
                   forced,
                   hi,
                   path,

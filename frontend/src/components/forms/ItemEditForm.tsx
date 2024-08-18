@@ -44,7 +44,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
   const options = useSelectorOptions(
     item?.audio_language ?? [],
     (v) => v.name,
-    (v) => v.code2,
+    (v) => v.code2 ?? "",
   );
 
   const isOverlayVisible = isPending || isFetching || item === null;

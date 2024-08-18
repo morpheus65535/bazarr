@@ -102,7 +102,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
   const languageOptions = useSelectorOptions(
     languages,
     (v) => v.name,
-    (v) => v.code2,
+    (v) => v.code2 ?? "",
   );
 
   const defaultLanguage = useMemo(
@@ -360,7 +360,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
             episodeId,
             form: {
               file,
-              language: code2,
+              language: code2 ?? "",
               hi,
               forced,
             },

@@ -65,7 +65,9 @@ export function decodeEqualData(
   };
 }
 
-function encodeEqualTarget(data: GenericEqualTarget<Language.Server>): string {
+function encodeEqualTarget(
+  data: GenericEqualTarget<Language.Server>,
+): string | null {
   let text = data.content.code3;
   if (data.hi) {
     text += "@hi";

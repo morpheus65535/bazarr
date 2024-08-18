@@ -11,7 +11,7 @@ describe("Language text", () => {
   it("should show short text", () => {
     render(<Language.Text value={testLanguage}></Language.Text>);
 
-    expect(screen.getByText(testLanguage.code2)).toBeDefined();
+    expect(screen.getByText(testLanguage.code2 ?? "")).toBeDefined();
   });
 
   it("should show long text", () => {

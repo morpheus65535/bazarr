@@ -92,7 +92,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
             label="Treat unknown language audio track as (changing this will trigger missing subtitles calculation)"
             placeholder="Select languages"
             options={undAudioLanguages.map((v) => {
-              return { label: v.name, value: v.code2 };
+              return { label: v.name, value: v.code2 ?? "" };
             })}
             settingOptions={{
               onSubmit: (v) => (v === null ? "" : v),
@@ -105,7 +105,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
           label="Treat unknown language embedded subtitles track as (changing this will trigger full subtitles indexing using cache)"
           placeholder="Select languages"
           options={undEmbeddedSubtitlesLanguages.map((v) => {
-            return { label: v.name, value: v.code2 };
+            return { label: v.name, value: v.code2 ?? "" };
           })}
           settingOptions={{
             onSubmit: (v) => (v === null ? "" : v),

@@ -63,7 +63,7 @@ const WantedSeriesView: FunctionComponent = () => {
                 <Badge
                   color={download.isPending ? "gray" : undefined}
                   leftSection={<FontAwesomeIcon icon={faSearch} />}
-                  key={BuildKey(idx, item.code2)}
+                  key={BuildKey(idx, item.code2 ?? "")}
                   style={{ cursor: "pointer" }}
                   onClick={() => {
                     task.create(
@@ -74,7 +74,7 @@ const WantedSeriesView: FunctionComponent = () => {
                         seriesId,
                         episodeId,
                         form: {
-                          language: item.code2,
+                          language: item.code2 ?? "",
                           hi: item.hi,
                           forced: item.forced,
                         },

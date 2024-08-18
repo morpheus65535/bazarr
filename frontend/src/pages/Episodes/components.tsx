@@ -42,7 +42,7 @@ export const Subtitle: FunctionComponent<Props> = ({
       list.push({
         id: episodeId,
         type: "episode",
-        language: subtitle.code2,
+        language: subtitle.code2 ?? "",
         path: subtitle.path,
         forced: toPython(subtitle.forced),
         hi: toPython(subtitle.hi),
@@ -80,7 +80,7 @@ export const Subtitle: FunctionComponent<Props> = ({
               seriesId,
               episodeId,
               form: {
-                language: subtitle.code2,
+                language: subtitle.code2 ?? "",
                 hi: subtitle.hi,
                 forced: subtitle.forced,
               },
@@ -95,7 +95,7 @@ export const Subtitle: FunctionComponent<Props> = ({
               seriesId,
               episodeId,
               form: {
-                language: subtitle.code2,
+                language: subtitle.code2 ?? "",
                 hi: subtitle.hi,
                 forced: subtitle.forced,
                 path: subtitle.path,

@@ -9,7 +9,7 @@ interface Badge {
 }
 
 declare namespace Language {
-  type CodeType = string;
+  type CodeType = string | null;
   interface Server {
     code2: CodeType;
     code3: CodeType;

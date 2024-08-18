@@ -116,7 +116,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
               {
                 id,
                 type,
-                language: v.code2,
+                language: v.code2 ?? "",
                 path: v.path,
                 // eslint-disable-next-line camelcase
                 raw_language: v,
