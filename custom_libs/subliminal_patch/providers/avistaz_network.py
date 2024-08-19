@@ -318,7 +318,7 @@ class AvistazNetworkProviderBase(Provider):
             release_name = release['Title'].get_text().strip()
             lang = lookup_lang(subtitle_cols['Language'].get_text().strip())
             download_link = subtitle_cols['Download'].a['href']
-            uploader_name = subtitle_cols['Uploader'].get_text().strip()
+            uploader_name = subtitle_cols['Uploader'].get_text().strip() if 'Uploader' in subtitle_cols else None
 
             if lang not in languages:
                 continue
