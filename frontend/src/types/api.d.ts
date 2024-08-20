@@ -10,6 +10,8 @@ interface Badge {
 
 declare namespace Language {
   type CodeType = string;
+  type NullableCodeType = string | null;
+
   interface Server {
     code2: CodeType;
     code3: CodeType;
@@ -19,6 +21,13 @@ declare namespace Language {
 
   interface Info {
     code2: CodeType;
+    name: string;
+    hi?: boolean;
+    forced?: boolean;
+  }
+
+  interface NullableCodeInfo {
+    code2: NullableCodeType;
     name: string;
     hi?: boolean;
     forced?: boolean;
@@ -124,7 +133,7 @@ interface TitleType {
 }
 
 interface AudioLanguageType {
-  audio_language: Language.Info[];
+  audio_language: Language.NullableCodeInfo[];
 }
 
 interface ItemHistoryType {
