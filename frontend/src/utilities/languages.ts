@@ -51,3 +51,7 @@ export function useLanguageFromCode3(code3: string) {
     [data, code3],
   );
 }
+
+export const normalizeAudioLanguage = (name: string) => {
+  return name === "Chinese Simplified" ? "Chinese" : name;
+};

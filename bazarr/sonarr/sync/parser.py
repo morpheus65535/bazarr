@@ -5,6 +5,7 @@ import os
 from app.config import settings
 from app.database import TableShows, database, select
 from constants import MINIMUM_VIDEO_SIZE
+from languages.get_languages import audio_language_from_alpha2
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import embedded_audio_reader
 from sonarr.info import get_sonarr_info
@@ -115,13 +116,13 @@ def episodeParser(episode):
                             item = episode['episodeFile']['language']
                             if isinstance(item, dict):
                                 if 'name' in item:
-                                    audio_language.append(item['name'])
+                                    audio_language.append(audio_language_from_alpha2(item['name']))
                         elif 'languages' in episode['episodeFile'] and len(episode['episodeFile']['languages']):
                             items = episode['episodeFile']['languages']
                             if isinstance(items, list):
                                 for item in items:
                                     if 'name' in item:
-                                        audio_language.append(item['name'])
+                                        audio_language.append(audio_language_from_alpha2(item['name']))
                         else:
                             audio_language = database.execute(
                                 select(TableShows.audio_language)

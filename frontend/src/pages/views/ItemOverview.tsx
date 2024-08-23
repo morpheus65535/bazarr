@@ -31,6 +31,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Language } from "@/components/bazarr";
 import { BuildKey } from "@/utilities";
 import {
+  normalizeAudioLanguage,
   useLanguageProfileBy,
   useProfileItemsToLanguages,
 } from "@/utilities/languages";
@@ -87,7 +88,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           icon={faMusic}
           title="Audio Language"
         >
-          {v.name}
+          {normalizeAudioLanguage(v.name)}
         </ItemBadge>
       )) ?? [],
     [item?.audio_language],
