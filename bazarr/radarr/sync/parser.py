@@ -3,7 +3,7 @@
 import os
 
 from app.config import settings
-from languages.get_languages import language_from_alpha2
+from languages.get_languages import audio_language_from_alpha2
 from radarr.info import get_radarr_info
 from utilities.video_analyzer import embedded_audio_reader
 from utilities.path_mappings import path_mappings
@@ -117,9 +117,7 @@ def movieParser(movie, action, tags_dict, language_profiles, movie_default_profi
                     for item in movie['movieFile']['languages']:
                         if isinstance(item, dict):
                             if 'name' in item:
-                                language = item['name']
-                                if item['name'] == 'Portuguese (Brazil)':
-                                    language = language_from_alpha2('pb')
+                                language = audio_language_from_alpha2(item['name'])
                                 audio_language.append(language)
 
         tags = [d['label'] for d in tags_dict if d['id'] in movie['tags']]
