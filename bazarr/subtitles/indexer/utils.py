@@ -136,6 +136,6 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                     continue
                 text = text.decode(encoding)
 
-                if bool(re.search(core.HI_REGEX, text)):
+                if core.parse_for_hi_regex(subtitle_text=text, alpha3_language=language.alpha3):
                     subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
     return subtitles
