@@ -160,13 +160,25 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
 };
 
 type ChipsProp = BaseInput<string[]> &
-  Omit<ChipInputProps, "onChange" | "data">;
+  Omit<ChipInputProps, "onChange" | "data"> & {
+    sanitizeFn?: (values: string[] | null) => string[] | undefined;
+  };
 
 export const Chips: FunctionComponent<ChipsProp> = (props) => {
   const { value, update, rest } = useBaseInput(props);
 
+  const handleChange = (value: string[] | null) => {
+    const sanitizedValues = props.sanitizeFn?.(value) ?? value;
+
+    update(sanitizedValues || null);
+  };
+
   return (
-    <ChipInput {...rest} value={value ?? []} onChange={update}></ChipInput>
+    <ChipInput
+      {...rest}
+      value={value ?? []}
+      onChange={handleChange}
+    ></ChipInput>
   );
 };
 
