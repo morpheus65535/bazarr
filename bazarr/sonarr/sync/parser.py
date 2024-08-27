@@ -79,8 +79,9 @@ def seriesParser(show, action, tags_dict, language_profiles, serie_default_profi
         if tag_profile:
             parsed_series['profileId'] = tag_profile
         remove_profile_tags_list = settings.general.remove_profile_tags
-        if set(tags) & set(remove_profile_tags_list):
-            parsed_series['profileId'] = None
+        if len(remove_profile_tags_list) > 0:
+            if set(tags) & set(remove_profile_tags_list):
+                parsed_series['profileId'] = None
 
     return parsed_series
 
