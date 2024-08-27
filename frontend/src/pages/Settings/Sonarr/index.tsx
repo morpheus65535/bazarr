@@ -56,6 +56,11 @@ const SettingsSonarrView: FunctionComponent = () => {
           <Chips
             label="Excluded Tags"
             settingKey="settings-sonarr-excluded_tags"
+            sanitizeFn={(values: string[] | null) =>
+              values?.map((item) =>
+                item.replace(/[^a-z0-9_-]/gi, "").toLowerCase(),
+              )
+            }
           ></Chips>
           <Message>
             Episodes from series with those tags (case sensitive) in Sonarr will

@@ -37,6 +37,12 @@ def validate_ip_address(ip_string):
     except ValueError:
         return False
 
+def validate_tags(tags):
+    if not tags:
+        return True
+
+    return all(re.match( r'^[a-z0-9_-]+$', item) for item in tags)
+
 
 ONE_HUNDRED_YEARS_IN_MINUTES = 52560000
 ONE_HUNDRED_YEARS_IN_HOURS = 876000
@@ -178,7 +184,7 @@ validators = [
     Validator('sonarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('sonarr.series_sync', must_exist=True, default=60, is_type_of=int,
               is_in=[15, 60, 180, 360, 720, 1440, 10080, ONE_HUNDRED_YEARS_IN_MINUTES]),
-    Validator('sonarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
+    Validator('sonarr.excluded_tags', must_exist=True, default=[], is_type_of=list, condition=validate_tags),
     Validator('sonarr.excluded_series_types', must_exist=True, default=[], is_type_of=list),
     Validator('sonarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
     Validator('sonarr.exclude_season_zero', must_exist=True, default=False, is_type_of=bool),
@@ -201,7 +207,7 @@ validators = [
     Validator('radarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('radarr.movies_sync', must_exist=True, default=60, is_type_of=int,
               is_in=[15, 60, 180, 360, 720, 1440, 10080, ONE_HUNDRED_YEARS_IN_MINUTES]),
-    Validator('radarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
+    Validator('radarr.excluded_tags', must_exist=True, default=[], is_type_of=list, condition=validate_tags),
     Validator('radarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
     Validator('radarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
     Validator('radarr.sync_only_monitored_movies', must_exist=True, default=False, is_type_of=bool),

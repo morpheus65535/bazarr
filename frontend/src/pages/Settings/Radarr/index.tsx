@@ -54,6 +54,11 @@ const SettingsRadarrView: FunctionComponent = () => {
           <Chips
             label="Excluded Tags"
             settingKey="settings-radarr-excluded_tags"
+            sanitizeFn={(values: string[] | null) =>
+              values?.map((item) =>
+                item.replace(/[^a-z0-9_-]/gi, "").toLowerCase(),
+              )
+            }
           ></Chips>
           <Message>
             Movies with those tags (case sensitive) in Radarr will be excluded
