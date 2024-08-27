@@ -15,7 +15,6 @@ type MutateButtonProps<DATA, VAR> = Omit<
 
 function MutateButton<DATA, VAR>({
   mutation,
-  noReset,
   onSuccess,
   onError,
   args,

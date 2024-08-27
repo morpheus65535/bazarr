@@ -54,22 +54,27 @@ export function useSettingsMutation() {
     mutationFn: (data: LooseObject) => api.system.updateSettings(data),
 
     onSuccess: () => {
-      client.invalidateQueries({
+      void client.invalidateQueries({
         queryKey: [QueryKeys.System],
       });
-      client.invalidateQueries({
+
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Series],
       });
-      client.invalidateQueries({
+
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Episodes],
       });
-      client.invalidateQueries({
+
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Movies],
       });
-      client.invalidateQueries({
+
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Wanted],
       });
-      client.invalidateQueries({
+
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Badges],
       });
     },
@@ -101,7 +106,7 @@ export function useDeleteLogs() {
     mutationFn: () => api.system.deleteLogs(),
 
     onSuccess: () => {
-      client.invalidateQueries({
+      void client.invalidateQueries({
         queryKey: [QueryKeys.System, QueryKeys.Logs],
       });
     },
@@ -128,11 +133,12 @@ export function useSystemAnnouncementsAddDismiss() {
       return api.system.addAnnouncementsDismiss(hash);
     },
 
-    onSuccess: (_, { hash }) => {
-      client.invalidateQueries({
+    onSuccess: () => {
+      void client.invalidateQueries({
         queryKey: [QueryKeys.System, QueryKeys.Announcements],
       });
-      client.invalidateQueries({
+
+      void client.invalidateQueries({
         queryKey: [QueryKeys.System, QueryKeys.Badges],
       });
     },
@@ -156,10 +162,11 @@ export function useRunTask() {
     mutationFn: (id: string) => api.system.runTask(id),
 
     onSuccess: () => {
-      client.invalidateQueries({
+      void client.invalidateQueries({
         queryKey: [QueryKeys.System, QueryKeys.Tasks],
       });
-      client.invalidateQueries({
+
+      void client.invalidateQueries({
         queryKey: [QueryKeys.System, QueryKeys.Backups],
       });
     },
@@ -180,7 +187,7 @@ export function useCreateBackups() {
     mutationFn: () => api.system.createBackups(),
 
     onSuccess: () => {
-      client.invalidateQueries({
+      void client.invalidateQueries({
         queryKey: [QueryKeys.System, QueryKeys.Backups],
       });
     },
@@ -194,7 +201,7 @@ export function useRestoreBackups() {
     mutationFn: (filename: string) => api.system.restoreBackups(filename),
 
     onSuccess: () => {
-      client.invalidateQueries({
+      void client.invalidateQueries({
         queryKey: [QueryKeys.System, QueryKeys.Backups],
       });
     },
@@ -208,7 +215,7 @@ export function useDeleteBackups() {
     mutationFn: (filename: string) => api.system.deleteBackups(filename),
 
     onSuccess: () => {
-      client.invalidateQueries({
+      void client.invalidateQueries({
         queryKey: [QueryKeys.System, QueryKeys.Backups],
       });
     },

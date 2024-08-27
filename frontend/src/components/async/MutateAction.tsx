@@ -16,7 +16,6 @@ type MutateActionProps<DATA, VAR> = Omit<
 
 function MutateAction<DATA, VAR>({
   mutation,
-  noReset,
   onSuccess,
   onError,
   args,
