@@ -1,4 +1,5 @@
 import { FunctionComponent } from "react";
+import { Text as MantineText } from "@mantine/core";
 import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 import {
   Check,
@@ -129,7 +130,10 @@ const SettingsLanguagesView: FunctionComponent = () => {
           matching tag is removed from Sonarr/Radarr, Bazarr will NOT remove the
           show's existing language profile for that reason. But if you wish to
           have language profiles removed automatically by tag value, simply
-          enter a list of one or more tags in the <b>Remove Profile Tags</b>
+          enter a list of one or more tags in the{" "}
+          <MantineText fw={700} span>
+            Remove Profile Tags
+          </MantineText>{" "}
           entry list below. If your video tag matches one of the tags in that
           list, then Bazarr will remove the language profile for that video. If
           there is a conflict between profile selection and profile removal,
