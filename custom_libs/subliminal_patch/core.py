@@ -1213,7 +1213,10 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             continue
 
         # create subtitle path
-        if subtitle.text and parse_for_hi_regex(subtitle_text=subtitle.text, alpha3_language=subtitle.language.alpha3):
+        if subtitle.text and parse_for_hi_regex(subtitle_text=subtitle.text,
+                                                alpha3_language=subtitle.language.alpha3 if
+                                                (hasattr(subtitle, 'language') and hasattr(subtitle.language, 'alpha3'))
+                                                else None):
             subtitle.language.hi = True
         subtitle_path = get_subtitle_path(file_path, None if single else subtitle.language,
                                           forced_tag=subtitle.language.forced,
