@@ -62,6 +62,7 @@ declare namespace Settings {
     postprocessing_cmd?: string;
     postprocessing_threshold: number;
     postprocessing_threshold_movie: number;
+    remove_profile_tags: string[];
     single_language: boolean;
     subfolder: string;
     subfolder_custom?: string;
