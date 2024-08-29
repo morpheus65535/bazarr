@@ -172,7 +172,7 @@ class SubdivxSubtitlesProvider(Provider):
 
         logger.debug("Query: %s", query)
 
-        response = self.session.post(search_link, data=payload)
+        response = self.session.post(search_link, data=payload, timeout=30)
 
         if response.status_code == 500:
             logger.debug(
