@@ -7,7 +7,7 @@ import {
   Select,
   SelectProps,
 } from "@mantine/core";
-import { isNull, isUndefined, noop } from "lodash";
+import { isNull, isUndefined } from "lodash";
 import { LOG } from "@/utilities/console";
 
 export type SelectorOption<T> = Override<
@@ -49,10 +49,7 @@ export type GroupedSelectorProps<T> = Override<
 >;
 
 export function GroupedSelector<T>({
-  value,
   options,
-  getkey = DefaultKeyBuilder,
-  onOptionSubmit = noop,
   ...select
 }: GroupedSelectorProps<T>) {
   return (

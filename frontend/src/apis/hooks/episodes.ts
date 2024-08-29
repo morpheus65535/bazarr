@@ -25,23 +25,6 @@ const cacheEpisodes = (client: QueryClient, episodes: Item.Episode[]) => {
   });
 };
 
-export function useEpisodesByIds(ids: number[]) {
-  const client = useQueryClient();
-
-  const query = useQuery({
-    queryKey: [QueryKeys.Series, QueryKeys.Episodes, ids],
-    queryFn: () => api.episodes.byEpisodeId(ids),
-  });
-
-  useEffect(() => {
-    if (query.isSuccess && query.data) {
-      cacheEpisodes(client, query.data);
-    }
-  }, [query.isSuccess, query.data, client]);
-
-  return query;
-}
-
 export function useEpisodesBySeriesId(id: number) {
   const client = useQueryClient();
 
@@ -87,10 +70,11 @@ export function useEpisodeAddBlacklist() {
     },
 
     onSuccess: (_, { seriesId }) => {
-      client.invalidateQueries({
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
       });
-      client.invalidateQueries({
+
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Series, seriesId],
       });
     },
@@ -105,8 +89,8 @@ export function useEpisodeDeleteBlacklist() {
     mutationFn: (param: { all?: boolean; form?: FormType.DeleteBlacklist }) =>
       api.episodes.deleteBlacklist(param.all, param.form),
 
-    onSuccess: (_) => {
-      client.invalidateQueries({
+    onSuccess: () => {
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
       });
     },

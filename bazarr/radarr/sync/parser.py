@@ -152,6 +152,10 @@ def movieParser(movie, action, tags_dict, language_profiles, movie_default_profi
             tag_profile = get_matching_profile(tags, language_profiles)
             if tag_profile:
                 parsed_movie['profileId'] = tag_profile
+            remove_profile_tags_list = settings.general.remove_profile_tags
+            if len(remove_profile_tags_list) > 0:
+                if set(tags) & set(remove_profile_tags_list):
+                    parsed_movie['profileId'] = None
 
         return parsed_movie
 

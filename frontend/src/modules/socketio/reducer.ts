@@ -40,13 +40,17 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
       update: (ids) => {
         LOG("info", "Invalidating series", ids);
         ids.forEach((id) => {
-          queryClient.invalidateQueries({ queryKey: [QueryKeys.Series, id] });
+          void queryClient.invalidateQueries({
+            queryKey: [QueryKeys.Series, id],
+          });
         });
       },
       delete: (ids) => {
         LOG("info", "Invalidating series", ids);
         ids.forEach((id) => {
-          queryClient.invalidateQueries({ queryKey: [QueryKeys.Series, id] });
+          void queryClient.invalidateQueries({
+            queryKey: [QueryKeys.Series, id],
+          });
         });
       },
     },
@@ -55,13 +59,17 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
       update: (ids) => {
         LOG("info", "Invalidating movies", ids);
         ids.forEach((id) => {
-          queryClient.invalidateQueries({ queryKey: [QueryKeys.Movies, id] });
+          void queryClient.invalidateQueries({
+            queryKey: [QueryKeys.Movies, id],
+          });
         });
       },
       delete: (ids) => {
         LOG("info", "Invalidating movies", ids);
         ids.forEach((id) => {
-          queryClient.invalidateQueries({ queryKey: [QueryKeys.Movies, id] });
+          void queryClient.invalidateQueries({
+            queryKey: [QueryKeys.Movies, id],
+          });
         });
       },
     },
@@ -78,7 +86,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
             id,
           ]);
           if (episode !== undefined) {
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
               queryKey: [QueryKeys.Series, episode.sonarrSeriesId],
             });
           }
@@ -92,7 +100,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
             id,
           ]);
           if (episode !== undefined) {
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
               queryKey: [QueryKeys.Series, episode.sonarrSeriesId],
             });
           }
@@ -101,28 +109,28 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "episode-wanted",
-      update: (ids) => {
+      update: () => {
         // Find a better way to update wanted
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.Episodes, QueryKeys.Wanted],
         });
       },
       delete: () => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.Episodes, QueryKeys.Wanted],
         });
       },
     },
     {
       key: "movie-wanted",
-      update: (ids) => {
+      update: () => {
         // Find a better way to update wanted
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.Movies, QueryKeys.Wanted],
         });
       },
       delete: () => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.Movies, QueryKeys.Wanted],
         });
       },
@@ -130,13 +138,13 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "settings",
       any: () => {
-        queryClient.invalidateQueries({ queryKey: [QueryKeys.System] });
+        void queryClient.invalidateQueries({ queryKey: [QueryKeys.System] });
       },
     },
     {
       key: "languages",
       any: () => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.System, QueryKeys.Languages],
         });
       },
@@ -144,7 +152,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "badges",
       any: () => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.System, QueryKeys.Badges],
         });
       },
@@ -152,7 +160,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "movie-history",
       any: () => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.Movies, QueryKeys.History],
         });
       },
@@ -160,7 +168,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "movie-blacklist",
       any: () => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.Movies, QueryKeys.Blacklist],
         });
       },
@@ -168,7 +176,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "episode-history",
       any: () => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.Episodes, QueryKeys.History],
         });
       },
@@ -176,7 +184,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "episode-blacklist",
       any: () => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.Episodes, QueryKeys.Blacklist],
         });
       },
@@ -184,7 +192,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "reset-episode-wanted",
       any: () => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.Episodes, QueryKeys.Wanted],
         });
       },
@@ -192,7 +200,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "reset-movie-wanted",
       any: () => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.Movies, QueryKeys.Wanted],
         });
       },
@@ -200,7 +208,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "task",
       any: () => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: [QueryKeys.System, QueryKeys.Tasks],
         });
       },

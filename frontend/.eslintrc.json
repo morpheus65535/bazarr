@@ -15,12 +15,11 @@
     "@typescript-eslint/no-unused-vars": "warn"
   },
   "extends": [
-    "react-app",
-    "plugin:react-hooks/recommended",
     "eslint:recommended",
+    "plugin:react-hooks/recommended",
     "plugin:@typescript-eslint/recommended"
   ],
-  "plugins": ["testing-library", "simple-import-sort"],
+  "plugins": ["testing-library", "simple-import-sort", "react-refresh"],
   "overrides": [
     {
       "files": [
@@ -63,6 +62,7 @@
       }
     }
   ],
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "sourceType": "module",
     "ecmaVersion": "latest"

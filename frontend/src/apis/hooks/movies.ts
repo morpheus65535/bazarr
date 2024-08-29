@@ -15,23 +15,6 @@ const cacheMovies = (client: QueryClient, movies: Item.Movie[]) => {
   });
 };
 
-export function useMoviesByIds(ids: number[]) {
-  const client = useQueryClient();
-
-  const query = useQuery({
-    queryKey: [QueryKeys.Movies, ...ids],
-    queryFn: () => api.movies.movies(ids),
-  });
-
-  useEffect(() => {
-    if (query.isSuccess && query.data) {
-      cacheMovies(client, query.data);
-    }
-  }, [query.isSuccess, query.data, client]);
-
-  return query;
-}
-
 export function useMovieById(id: number) {
   return useQuery({
     queryKey: [QueryKeys.Movies, id],
@@ -74,12 +57,13 @@ export function useMovieModification() {
 
     onSuccess: (_, form) => {
       form.id.forEach((v) => {
-        client.invalidateQueries({
+        void client.invalidateQueries({
           queryKey: [QueryKeys.Movies, v],
         });
       });
+
       // TODO: query less
-      client.invalidateQueries({
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Movies],
       });
     },
@@ -93,7 +77,7 @@ export function useMovieAction() {
     mutationFn: (form: FormType.MoviesAction) => api.movies.action(form),
 
     onSuccess: () => {
-      client.invalidateQueries({
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Movies],
       });
     },
@@ -125,10 +109,11 @@ export function useMovieAddBlacklist() {
     },
 
     onSuccess: (_, { id }) => {
-      client.invalidateQueries({
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Movies, QueryKeys.Blacklist],
       });
-      client.invalidateQueries({
+
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Movies, id],
       });
     },
@@ -143,8 +128,8 @@ export function useMovieDeleteBlacklist() {
     mutationFn: (param: { all?: boolean; form?: FormType.DeleteBlacklist }) =>
       api.movies.deleteBlacklist(param.all, param.form),
 
-    onSuccess: (_, param) => {
-      client.invalidateQueries({
+    onSuccess: () => {
+      void client.invalidateQueries({
         queryKey: [QueryKeys.Movies, QueryKeys.Blacklist],
       });
     },
