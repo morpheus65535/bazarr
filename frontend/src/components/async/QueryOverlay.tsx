@@ -12,7 +12,7 @@ interface QueryOverlayProps {
 const QueryOverlay: FunctionComponent<QueryOverlayProps> = ({
   children,
   global = false,
-  result: { isLoading, isError, error },
+  result: { isLoading },
 }) => {
   return (
     <LoadingProvider value={isLoading}>

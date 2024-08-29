@@ -1,4 +1,4 @@
-import { FunctionComponent, ReactNode, ReactText } from "react";
+import { FunctionComponent, ReactNode } from "react";
 import {
   Input,
   NumberInput,
@@ -49,7 +49,7 @@ export const Number: FunctionComponent<NumberProps> = (props) => {
   );
 };
 
-export type TextProps = BaseInput<ReactText> & TextInputProps;
+export type TextProps = BaseInput<string | number> & TextInputProps;
 
 export const Text: FunctionComponent<TextProps> = (props) => {
   const { value, update, rest } = useBaseInput(props);
@@ -86,11 +86,7 @@ export interface CheckProps extends BaseInput<boolean> {
   inline?: boolean;
 }
 
-export const Check: FunctionComponent<CheckProps> = ({
-  label,
-  inline,
-  ...props
-}) => {
+export const Check: FunctionComponent<CheckProps> = ({ label, ...props }) => {
   const { value, update, rest } = useBaseInput(props);
 
   return (
