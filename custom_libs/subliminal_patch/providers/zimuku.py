@@ -316,7 +316,7 @@ class ZimukuProvider(Provider):
         r = self.yunsuo_bypass(download_link, headers={'Referer': subtitle.page_link}, timeout=30)
         r.raise_for_status()
         try:
-            filename = r.headers["Content-Disposition"]
+            filename = r.headers["Content-Disposition"].lower()
         except KeyError:
             logger.debug("Unable to parse subtitles filename. Dropping this subtitles.")
             return
