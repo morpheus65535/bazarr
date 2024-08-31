@@ -86,11 +86,13 @@ def _get_matching_sub(
         return None
 
 
-def _analize_sub_name(sub_name: str, title_):
-    titles = re.split(r"[.-]", os.path.splitext(sub_name)[0])
+def _analize_sub_name(sub_name: str, title_: str):
+    titles = re.split(r"[\s_\.\+]?[.-][\s_\.\+]?", os.path.splitext(sub_name)[0])
+
     for title in titles:
         title = title.strip()
-        ratio = SequenceMatcher(None, title, title_).ratio()
+        ratio = SequenceMatcher(None, title.lower(), title_.lower()).ratio()
+
         if ratio > 0.85:
             logger.debug(
                 "Episode title matched: '%s' -> '%s' [%s]", title, sub_name, ratio
