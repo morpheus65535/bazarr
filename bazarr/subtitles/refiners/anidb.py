@@ -113,6 +113,9 @@ class AniDBClient(object):
                 # Handle mapping list for Specials
                 if mapping_list:
                     for mapping in mapping_list.findall("mapping"):
+                        if mapping.text is None:
+                            continue
+
                         # Mapping values are usually like ;1-1;2-1;3-1;
                         for episode_ref in mapping.text.split(';'):
                             if not episode_ref:
