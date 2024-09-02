@@ -281,7 +281,7 @@ class Subtitle(Subtitle_):
         return encoding
 
     def is_valid(self):
-        """Check if a :attr:`text` is a valid SubRip format. Note that orignal format will pypass the checking
+        """Check if a :attr:`text` is a valid SubRip format. Note that original format will bypass the checking
 
         :return: whether or not the subtitle is valid.
         :rtype: bool
