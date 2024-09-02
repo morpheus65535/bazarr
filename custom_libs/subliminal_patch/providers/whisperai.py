@@ -143,7 +143,7 @@ def encode_audio_stream(path, ffmpeg_path, audio_stream_language=None):
             logger.debug(f"Whisper will only use the {audio_stream_language} audio stream for {path}")
             inp = inp[f'a:m:language:{audio_stream_language}']
 
-        out, _ = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000) \
+        out, _ = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af="aresample=async=1") \
                     .run(cmd=[ffmpeg_path, "-nostdin"], capture_stdout=True, capture_stderr=True)
 
     except ffmpeg.Error as e:
