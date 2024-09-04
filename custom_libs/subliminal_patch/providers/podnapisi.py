@@ -209,7 +209,8 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
                 break
 
             # exit if no results
-            if not xml.find('pagination/results').text or not int(xml.find('pagination/results').text):
+            if (not xml.find('pagination/results') or not xml.find('pagination/results').text or not
+                    int(xml.find('pagination/results').text)):
                 logger.debug('No subtitles found')
                 break
 
