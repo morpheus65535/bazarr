@@ -35,9 +35,11 @@ def seriesParser(show, action, tags_dict, language_profiles, serie_default_profi
         if image['coverType'] == 'fanart':
             fanart = image['url'].split('?')[0]
 
-    alternate_titles = None
     if show['alternateTitles'] is not None:
-        alternate_titles = str([item['title'] for item in show['alternateTitles']])
+        alternate_titles = [item['title'] for item in show['alternateTitles'] if 'title' in item and item['title'] not
+                            in [None, ''] and item["title"] != show["title"]]
+    else:
+        alternate_titles = []
 
     tags = [d['label'] for d in tags_dict if d['id'] in show['tags']]
 
@@ -64,7 +66,7 @@ def seriesParser(show, action, tags_dict, language_profiles, serie_default_profi
                     'audio_language': str(audio_language),
                     'sortTitle': show['sortTitle'],
                     'year': str(show['year']),
-                    'alternativeTitles': alternate_titles,
+                    'alternativeTitles': str(alternate_titles),
                     'tags': str(tags),
                     'seriesType': show['seriesType'],
                     'imdbId': imdbId,
