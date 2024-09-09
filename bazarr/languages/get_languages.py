@@ -61,10 +61,12 @@ def audio_language_from_name(lang):
         'Portuguese (Brazil)': 'pb'
     }
 
-    if lang_map.get(lang, None) is None:
+    alpha2_code = lang_map.get(lang, None)
+
+    if alpha2_code is None:
         return lang
 
-    return language_from_alpha2(lang_map.get(lang, None))
+    return language_from_alpha2(alpha2_code)
 
 def language_from_alpha2(lang):
     return next((item['name'] for item in languages_dict if item['code2'] == lang[:2]), None)
