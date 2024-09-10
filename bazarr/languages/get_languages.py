@@ -57,7 +57,6 @@ def create_languages_dict():
 def audio_language_from_name(lang):
     lang_map = {
         'Chinese': 'zh',
-        'Greek': 'el',
         'Portuguese (Brazil)': 'pb'
     }
 
