@@ -54,13 +54,18 @@ def create_languages_dict():
                TableSettingsLanguages.code3b))
         .all()]
 
-def audio_language_from_alpha2(lang):
+def audio_language_from_name(lang):
     lang_map = {
         'Chinese': 'zh',
         'Portuguese (Brazil)': 'pb'
     }
 
-    return language_from_alpha2(lang_map.get(lang, lang))
+    alpha2_code = lang_map.get(lang, None)
+
+    if alpha2_code is None:
+        return lang
+
+    return language_from_alpha2(alpha2_code)
 
 def language_from_alpha2(lang):
     return next((item['name'] for item in languages_dict if item['code2'] == lang[:2]), None)
