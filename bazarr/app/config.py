@@ -282,6 +282,10 @@ validators = [
     Validator('legendasdivx.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('legendasdivx.skip_wrong_fps', must_exist=True, default=False, is_type_of=bool),
 
+    # legendasnet section
+    Validator('legendasnet.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('legendasnet.password', must_exist=True, default='', is_type_of=str, cast=str),
+
     # ktuvit section
     Validator('ktuvit.email', must_exist=True, default='', is_type_of=str),
     Validator('ktuvit.hashed_password', must_exist=True, default='', is_type_of=str, cast=str),
