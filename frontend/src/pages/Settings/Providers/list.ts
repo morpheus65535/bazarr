@@ -305,6 +305,21 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       { type: "switch", key: "skip_wrong_fps", name: "Skip Wrong FPS" },
     ],
   },
+  {
+    key: "legendasnet",
+    name: "Legendas.net",
+    description: "Brazilian Subtitles Provider",
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+    ],
+  },
   { key: "napiprojekt", description: "Polish Subtitles Provider" },
   {
     key: "napisy24",

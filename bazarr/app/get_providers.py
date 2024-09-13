@@ -264,6 +264,10 @@ def get_providers_auth():
             'password': settings.legendasdivx.password,
             'skip_wrong_fps': settings.legendasdivx.skip_wrong_fps,
         },
+        'legendasnet': {
+            'username': settings.legendasnet.username,
+            'password': settings.legendasnet.password,
+        },
         'xsubs': {
             'username': settings.xsubs.username,
             'password': settings.xsubs.password,
