@@ -131,30 +131,30 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
         if isinstance(self.video, Episode):
             res = self.retry(
                 lambda: self.session.get(self.server_url() + 'search/tv',
-                                          json={
-                                                'name': video.series,
-                                                'page': 1,
-                                                'per_page': 25,
-                                                'tv_episode': video.episode,
-                                                'tv_season': video.season,
-                                                'imdb_id':  video.series_imdb_id
-                                          },
-                                          headers={'Content-Type': 'application/json'},
-                                          timeout=30),
+                                         json={
+                                             'name': video.series,
+                                             'page': 1,
+                                             'per_page': 25,
+                                             'tv_episode': video.episode,
+                                             'tv_season': video.season,
+                                             'imdb_id': video.series_imdb_id
+                                         },
+                                         headers={'Content-Type': 'application/json'},
+                                         timeout=30),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
             )
         else:
             res = self.retry(
                 lambda: self.session.get(self.server_url() + 'search/movie',
-                                          json={
-                                              'name': video.title,
-                                              'page': 1,
-                                              'per_page': 25,
-                                              'imdb_id': video.imdb_id
-                                          },
-                                          headers={'Content-Type': 'application/json'},
-                                          timeout=30),
+                                         json={
+                                             'name': video.title,
+                                             'page': 1,
+                                             'per_page': 25,
+                                             'imdb_id': video.imdb_id
+                                         },
+                                         headers={'Content-Type': 'application/json'},
+                                         timeout=30),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
             )
@@ -183,13 +183,14 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
                     subtitle = LegendasNetSubtitle(
                         language=Language('por', 'BR'),
                         forced=self._is_forced(item),
-                        page_link= f"https://legendas.net/tv_legenda?movie_id={result['tv_shows'][0]['tmdb_id']}&legenda_id={item['id']}",
-                        download_link= item['path'],
+                        page_link=f"https://legendas.net/tv_legenda?movie_id={result['tv_shows'][0]['tmdb_id']}&"
+                                  f"legenda_id={item['id']}",
+                        download_link=item['path'],
                         file_id=item['id'],
                         release_names=[item.get('release_name', '')],
-                        uploader=item['uploader'],  
-                        season=item.get('season', ''),  
-                        episode=item.get('episode', '')  
+                        uploader=item['uploader'],
+                        season=item.get('season', ''),
+                        episode=item.get('episode', '')
                     )
                     subtitle.get_matches(self.video)
                     if subtitle.language in languages:
@@ -200,13 +201,14 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
                     subtitle = LegendasNetSubtitle(
                         language=Language('por', 'BR'),
                         forced=self._is_forced(item),
-                        page_link= f"https://legendas.net/legenda?movie_id={result['movies'][0]['tmdb_id']}&legenda_id={item['id']}",
-                        download_link= item['path'],
+                        page_link=f"https://legendas.net/legenda?movie_id={result['movies'][0]['tmdb_id']}&"
+                                  f"legenda_id={item['id']}",
+                        download_link=item['path'],
                         file_id=item['id'],
                         release_names=[item.get('release_name', '')],
-                        uploader=item['uploader'],  
-                        season=None,  
-                        episode=None  
+                        uploader=item['uploader'],
+                        season=None,
+                        episode=None
                     )
                     subtitle.get_matches(self.video)
                     if subtitle.language in languages:
@@ -229,7 +231,7 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
 
     def download_subtitle(self, subtitle):
         logger.debug('Downloading subtitle %r', subtitle)
-        download_link = urljoin("https://legendas.net",subtitle.download_link)
+        download_link = urljoin("https://legendas.net", subtitle.download_link)
 
         r = self.retry(
             lambda: self.session.get(download_link, timeout=30),
