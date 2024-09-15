@@ -62,6 +62,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 - Karagarga.in
 - Ktuvit (Get `hashed_password` using method described [here](https://github.com/XBMCil/service.subtitles.ktuvit))
 - LegendasDivx
+- Legendas.net
 - Napiprojekt
 - Napisy24
 - Nekur
