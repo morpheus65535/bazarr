@@ -277,7 +277,11 @@ class SoustitreseuProvider(Provider, ProviderSubtitleArchiveMixin):
             release = name[:-4].lower().rstrip('tag').rstrip('en').rstrip('fr')
             _guess = guessit(release)
             if isinstance(video, Episode):
-                if video.episode != _guess['episode'] or video.season != _guess['season']:
+                try:
+                    if video.episode != _guess['episode'] or video.season != _guess['season']:
+                        continue
+                except KeyError:
+                    # episode or season are missing from guessit result
                     continue
 
             matches = set()

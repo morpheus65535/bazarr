@@ -1,11 +1,5 @@
-import { useSubtitleAction } from "@/apis/hooks";
-import { ColorToolModal } from "@/components/forms/ColorToolForm";
-import { FrameRateModal } from "@/components/forms/FrameRateForm";
-import { TimeOffsetModal } from "@/components/forms/TimeOffsetForm";
-import { TranslationModal } from "@/components/forms/TranslationForm";
-import { useModals } from "@/modules/modals";
-import { ModalComponent } from "@/modules/modals/WithModal";
-import { task } from "@/modules/task";
+import { FunctionComponent, ReactElement, useCallback, useMemo } from "react";
+import { Divider, List, Menu, MenuProps, ScrollArea } from "@mantine/core";
 import {
   faClock,
   faCode,
@@ -23,8 +17,14 @@ import {
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Divider, List, Menu, MenuProps, ScrollArea } from "@mantine/core";
-import { FunctionComponent, ReactElement, useCallback, useMemo } from "react";
+import { useSubtitleAction } from "@/apis/hooks";
+import { ColorToolModal } from "@/components/forms/ColorToolForm";
+import { FrameRateModal } from "@/components/forms/FrameRateForm";
+import { TimeOffsetModal } from "@/components/forms/TimeOffsetForm";
+import { TranslationModal } from "@/components/forms/TranslationForm";
+import { useModals } from "@/modules/modals";
+import { ModalComponent } from "@/modules/modals/WithModal";
+import { task } from "@/modules/task";
 import { SyncSubtitleModal } from "./forms/SyncSubtitleForm";
 
 export interface ToolOptions {
@@ -127,6 +127,8 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
           type: s.type,
           language: s.language,
           path: s.path,
+          hi: s.hi,
+          forced: s.forced,
         };
         task.create(s.path, name, mutateAsync, { action, form });
       });
@@ -148,7 +150,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
           <Menu.Item
             key={tool.key}
             disabled={disabledTools}
-            icon={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
+            leftSection={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
             onClick={() => {
               if (tool.modal) {
                 modals.openContextModal(tool.modal, { selections });
@@ -164,7 +166,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
         <Menu.Label>Actions</Menu.Label>
         <Menu.Item
           disabled={selections.length !== 0 || onAction === undefined}
-          icon={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}
+          leftSection={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}
           onClick={() => {
             onAction?.("search");
           }}
@@ -174,7 +176,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
         <Menu.Item
           disabled={selections.length === 0 || onAction === undefined}
           color="red"
-          icon={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
+          leftSection={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
           onClick={() => {
             modals.openConfirmModal({
               title: "The following subtitles will be deleted",

@@ -1,38 +1,44 @@
+import React, { Fragment } from "react";
+import { Box, Table, Text } from "@mantine/core";
 import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Text } from "@mantine/core";
 import {
   Cell,
-  HeaderGroup,
+  flexRender,
+  getExpandedRowModel,
+  getGroupedRowModel,
+  Header,
   Row,
-  useExpanded,
-  useGroupBy,
-  useSortBy,
-} from "react-table";
-import SimpleTable, { SimpleTableProps } from "./SimpleTable";
+} from "@tanstack/react-table";
+import SimpleTable, { SimpleTableProps } from "@/components/tables/SimpleTable";
 
-function renderCell<T extends object = object>(cell: Cell<T>, row: Row<T>) {
-  if (cell.isGrouped) {
+function renderCell<T extends object = object>(
+  cell: Cell<T, unknown>,
+  row: Row<T>,
+) {
+  if (cell.getIsGrouped()) {
     return (
-      <div {...row.getToggleRowExpandedProps()}>{cell.render("Cell")}</div>
+      <div>{flexRender(cell.column.columnDef.cell, cell.getContext())}</div>
     );
-  } else if (row.canExpand || cell.isAggregated) {
+  } else if (row.getCanExpand() || cell.getIsAggregated()) {
     return null;
   } else {
-    return cell.render("Cell");
+    return flexRender(cell.column.columnDef.cell, cell.getContext());
   }
 }
 
 function renderRow<T extends object>(row: Row<T>) {
-  if (row.canExpand) {
-    const cell = row.cells.find((cell) => cell.isGrouped);
+  if (row.getCanExpand()) {
+    const cell = row.getVisibleCells().find((cell) => cell.getIsGrouped());
+
     if (cell) {
-      const rotation = row.isExpanded ? 90 : undefined;
+      const rotation = row.getIsExpanded() ? 90 : undefined;
+
       return (
-        <tr {...row.getRowProps()}>
-          <td {...cell.getCellProps()} colSpan={row.cells.length}>
-            <Text {...row.getToggleRowExpandedProps()} p={2}>
-              {cell.render("Cell")}
+        <Table.Tr key={row.id} style={{ cursor: "pointer" }}>
+          <Table.Td key={cell.id} colSpan={row.getVisibleCells().length}>
+            <Text p={2} onClick={() => row.toggleExpanded()}>
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
               <Box component="span" mx={12}>
                 <FontAwesomeIcon
                   icon={faChevronCircleRight}
@@ -40,45 +46,55 @@ function renderRow<T extends object>(row: Row<T>) {
                 ></FontAwesomeIcon>
               </Box>
             </Text>
-          </td>
-        </tr>
+          </Table.Td>
+        </Table.Tr>
       );
     } else {
       return null;
     }
   } else {
     return (
-      <tr {...row.getRowProps()}>
-        {row.cells
-          .filter((cell) => !cell.isPlaceholder)
+      <Table.Tr key={row.id}>
+        {row
+          .getVisibleCells()
+          .filter((cell) => !cell.getIsPlaceholder())
           .map((cell) => (
-            <td {...cell.getCellProps()}>{renderCell(cell, row)}</td>
+            <Table.Td key={cell.id}>{renderCell(cell, row)}</Table.Td>
           ))}
-      </tr>
+      </Table.Tr>
     );
   }
 }
 
 function renderHeaders<T extends object>(
-  headers: HeaderGroup<T>[],
-): JSX.Element[] {
-  return headers
-    .filter((col) => !col.isGrouped)
-    .map((col) => <th {...col.getHeaderProps()}>{col.render("Header")}</th>);
+  headers: Header<T, unknown>[],
+): React.JSX.Element[] {
+  return headers.map((header) => {
+    if (header.column.getIsGrouped()) {
+      return <Fragment key={header.id}></Fragment>;
+    }
+
+    return (
+      <Table.Th key={header.id} colSpan={header.colSpan}>
+        {flexRender(header.column.columnDef.header, header.getContext())}
+      </Table.Th>
+    );
+  });
 }
 
 type Props<T extends object> = Omit<
   SimpleTableProps<T>,
-  "plugins" | "headersRenderer" | "rowRenderer"
+  "headersRenderer" | "rowRenderer"
 >;
-
-const plugins = [useGroupBy, useSortBy, useExpanded];
 
 function GroupTable<T extends object = object>(props: Props<T>) {
   return (
     <SimpleTable
       {...props}
-      plugins={plugins}
+      enableGrouping
+      enableExpanding
+      getGroupedRowModel={getGroupedRowModel()}
+      getExpandedRowModel={getExpandedRowModel()}
       tableStyles={{ headersRenderer: renderHeaders, rowRenderer: renderRow }}
     ></SimpleTable>
   );

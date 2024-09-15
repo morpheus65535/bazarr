@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
-import { UseMutationResult } from "react-query";
-import { Action } from "../inputs";
-import { ActionProps } from "../inputs/Action";
+import { UseMutationResult } from "@tanstack/react-query";
+import { Action } from "@/components/inputs";
+import { ActionProps } from "@/components/inputs/Action";
 
 type MutateActionProps<DATA, VAR> = Omit<
   ActionProps,
@@ -16,7 +16,6 @@ type MutateActionProps<DATA, VAR> = Omit<
 
 function MutateAction<DATA, VAR>({
   mutation,
-  noReset,
   onSuccess,
   onError,
   args,

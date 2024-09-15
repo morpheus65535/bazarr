@@ -96,7 +96,12 @@ class HDBitsProvider(Provider):
             "https://hdbits.org/api/torrents", json={**self._def_params, **lookup}
         )
         response.raise_for_status()
-        ids = [item["id"] for item in response.json()["data"]]
+
+        try:
+            ids = [item["id"] for item in response.json()["data"]]
+        except KeyError:
+            logger.debug("No data found")
+            return []
 
         subtitles = []
         for torrent_id in ids:

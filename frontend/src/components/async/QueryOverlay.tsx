@@ -1,7 +1,7 @@
-import { LoadingProvider } from "@/contexts";
-import { LoadingOverlay } from "@mantine/core";
 import { FunctionComponent, ReactNode } from "react";
-import { UseQueryResult } from "react-query";
+import { LoadingOverlay } from "@mantine/core";
+import { UseQueryResult } from "@tanstack/react-query";
+import { LoadingProvider } from "@/contexts";
 
 interface QueryOverlayProps {
   result: UseQueryResult<unknown, unknown>;
@@ -12,7 +12,7 @@ interface QueryOverlayProps {
 const QueryOverlay: FunctionComponent<QueryOverlayProps> = ({
   children,
   global = false,
-  result: { isLoading, isError, error },
+  result: { isLoading },
 }) => {
   return (
     <LoadingProvider value={isLoading}>

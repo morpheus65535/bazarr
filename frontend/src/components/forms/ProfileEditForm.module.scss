@@ -1,0 +1,13 @@
+.content {
+  @include smaller-than($mantine-breakpoint-md) {
+    padding: 0;
+  }
+}
+
+.evenly {
+  flex-wrap: wrap;
+
+  & > div {
+    flex: 1;
+  }
+}

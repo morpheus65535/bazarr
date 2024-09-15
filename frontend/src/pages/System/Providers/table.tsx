@@ -1,25 +1,25 @@
-import { SimpleTable } from "@/components";
 import { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
+import { ColumnDef } from "@tanstack/react-table";
+import SimpleTable from "@/components/tables/SimpleTable";
 
 interface Props {
-  providers: readonly System.Provider[];
+  providers: System.Provider[];
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const columns: Column<System.Provider>[] = useMemo<Column<System.Provider>[]>(
+  const columns = useMemo<ColumnDef<System.Provider>[]>(
     () => [
       {
-        Header: "Name",
-        accessor: "name",
+        header: "Name",
+        accessorKey: "name",
       },
       {
-        Header: "Status",
-        accessor: "status",
+        header: "Status",
+        accessorKey: "status",
       },
       {
-        Header: "Next Retry",
-        accessor: "retry",
+        header: "Next Retry",
+        accessorKey: "retry",
       },
     ],
     [],

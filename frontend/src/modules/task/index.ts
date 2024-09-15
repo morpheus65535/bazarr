@@ -1,10 +1,10 @@
-import { LOG } from "@/utilities/console";
 import {
   hideNotification,
   showNotification,
   updateNotification,
 } from "@mantine/notifications";
 import { uniqueId } from "lodash";
+import { LOG } from "@/utilities/console";
 import { notification } from "./notification";
 
 class TaskDispatcher {
@@ -133,7 +133,7 @@ class TaskDispatcher {
 
   public removeProgress(ids: string[]) {
     setTimeout(
-      () => ids.forEach(hideNotification),
+      () => ids.forEach((id) => hideNotification(id)),
       notification.PROGRESS_TIMEOUT,
     );
   }

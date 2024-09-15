@@ -1,68 +1,82 @@
-import { useSystemAnnouncementsAddDismiss } from "@/apis/hooks";
-import { SimpleTable } from "@/components";
-import { MutateAction } from "@/components/async";
-import { useTableStyles } from "@/styles";
-import { faWindowClose } from "@fortawesome/free-solid-svg-icons";
-import { Anchor, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
+import { Anchor, Text } from "@mantine/core";
+import { faWindowClose } from "@fortawesome/free-solid-svg-icons";
+import { ColumnDef } from "@tanstack/react-table";
+import { useSystemAnnouncementsAddDismiss } from "@/apis/hooks";
+import { MutateAction } from "@/components/async";
+import SimpleTable from "@/components/tables/SimpleTable";
 
 interface Props {
-  announcements: readonly System.Announcements[];
+  announcements: System.Announcements[];
 }
 
 const Table: FunctionComponent<Props> = ({ announcements }) => {
-  const columns: Column<System.Announcements>[] = useMemo<
-    Column<System.Announcements>[]
+  const addDismiss = useSystemAnnouncementsAddDismiss();
+
+  const columns: ColumnDef<System.Announcements>[] = useMemo<
+    ColumnDef<System.Announcements>[]
   >(
     () => [
       {
-        Header: "Since",
-        accessor: "timestamp",
-        Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-          return <Text className={classes.primary}>{value}</Text>;
+        header: "Since",
+        accessorKey: "timestamp",
+        cell: ({
+          row: {
+            original: { timestamp },
+          },
+        }) => {
+          return <Text className="table-primary">{timestamp}</Text>;
         },
       },
       {
-        Header: "Announcement",
-        accessor: "text",
-        Cell: ({ value }) => {
-          const { classes } = useTableStyles();
-          return <Text className={classes.primary}>{value}</Text>;
+        header: "Announcement",
+        accessorKey: "text",
+        cell: ({
+          row: {
+            original: { text },
+          },
+        }) => {
+          return <Text className="table-primary">{text}</Text>;
         },
       },
       {
-        Header: "More Info",
-        accessor: "link",
-        Cell: ({ value }) => {
-          if (value) {
-            return <Label link={value}>Link</Label>;
+        header: "More Info",
+        accessorKey: "link",
+        cell: ({
+          row: {
+            original: { link },
+          },
+        }) => {
+          if (link) {
+            return <Label link={link}>Link</Label>;
           } else {
             return <Text>n/a</Text>;
           }
         },
       },
       {
-        Header: "Dismiss",
-        accessor: "hash",
-        Cell: ({ row, value }) => {
-          const add = useSystemAnnouncementsAddDismiss();
+        header: "Dismiss",
+        accessorKey: "hash",
+        cell: ({
+          row: {
+            original: { dismissible, hash },
+          },
+        }) => {
           return (
             <MutateAction
               label="Dismiss announcement"
-              disabled={!row.original.dismissible}
+              disabled={!dismissible}
               icon={faWindowClose}
-              mutation={add}
+              mutation={addDismiss}
               args={() => ({
-                hash: value,
+                hash: hash,
               })}
             ></MutateAction>
           );
         },
       },
     ],
-    [],
+    [addDismiss],
   );
 
   return (

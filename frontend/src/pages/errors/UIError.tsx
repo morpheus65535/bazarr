@@ -1,7 +1,4 @@
-import { GithubRepoRoot } from "@/constants";
-import { Reload } from "@/utilities";
-import { faDizzy } from "@fortawesome/free-regular-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FunctionComponent, useMemo } from "react";
 import {
   Anchor,
   Box,
@@ -13,7 +10,10 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
+import { faDizzy } from "@fortawesome/free-regular-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { GithubRepoRoot } from "@/constants";
+import { Reload } from "@/utilities";
 
 const Placeholder = "********";
 
@@ -45,13 +45,11 @@ const UIError: FunctionComponent<Props> = ({ error }) => {
       <Center my="xl">
         <Code>{stack}</Code>
       </Center>
-      <Group position="center">
+      <Group justify="center">
         <Anchor href={`${GithubRepoRoot}/issues/new/choose`} target="_blank">
           <Button color="yellow">Report Issue</Button>
         </Anchor>
-        <Button onClick={Reload} color="light">
-          Reload Page
-        </Button>
+        <Button onClick={Reload}>Reload Page</Button>
       </Group>
     </Container>
   );

@@ -112,7 +112,11 @@ class EmbeddedSubtitlesProvider(Provider):
             # Default is True
             container.FFMPEG_STATS = False
 
-        tags.LANGUAGE_FALLBACK = self._fallback_lang if self._unknown_as_fallback and self._fallback_lang else None
+        tags.LANGUAGE_FALLBACK = (
+            self._fallback_lang
+            if self._unknown_as_fallback and self._fallback_lang
+            else None
+        )
         logger.debug("Language fallback set: %s", tags.LANGUAGE_FALLBACK)
 
     def initialize(self):
@@ -194,7 +198,7 @@ class EmbeddedSubtitlesProvider(Provider):
     def download_subtitle(self, subtitle: EmbeddedSubtitle):
         try:
             path = self._get_subtitle_path(subtitle)
-        except KeyError: # TODO: add MustGetBlacklisted support
+        except KeyError:  # TODO: add MustGetBlacklisted support
             logger.error("Couldn't get subtitle path")
             return None
 
@@ -229,6 +233,7 @@ class EmbeddedSubtitlesProvider(Provider):
                 timeout=self._timeout,
                 fallback_to_convert=True,
                 basename_callback=_basename_callback,
+                progress_callback=lambda d: logger.debug("Progress: %s", d),
             )
             # Add the extracted paths to the containter path key
             self._cached_paths[container.path] = extracted

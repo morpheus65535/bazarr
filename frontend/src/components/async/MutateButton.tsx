@@ -1,6 +1,6 @@
-import { Button, ButtonProps } from "@mantine/core";
 import { useCallback, useState } from "react";
-import { UseMutationResult } from "react-query";
+import { Button, ButtonProps } from "@mantine/core";
+import { UseMutationResult } from "@tanstack/react-query";
 
 type MutateButtonProps<DATA, VAR> = Omit<
   ButtonProps,
@@ -15,7 +15,6 @@ type MutateButtonProps<DATA, VAR> = Omit<
 
 function MutateButton<DATA, VAR>({
   mutation,
-  noReset,
   onSuccess,
   onError,
   args,

@@ -1,12 +1,19 @@
-import { Anchor, Blockquote, Text } from "@mantine/core";
+// eslint-disable-next-line simple-import-sort/imports
 import { FunctionComponent } from "react";
-import { Check, Layout, Message, Section } from "../components";
+import { Anchor, Blockquote, Text } from "@mantine/core";
+import { Check, Layout, Message, Section } from "@/pages/Settings/components";
 import { NotificationView } from "./components";
+import { faQuoteLeftAlt } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const SettingsNotificationsView: FunctionComponent = () => {
   return (
     <Layout name="Notifications">
-      <Blockquote>
+      <Blockquote
+        bg="transparent"
+        mt="xl"
+        icon={<FontAwesomeIcon icon={faQuoteLeftAlt}></FontAwesomeIcon>}
+      >
         <Text>
           Thanks to caronc for his work on{" "}
           <Anchor

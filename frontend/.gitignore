@@ -1,7 +1,7 @@
-node_modules
-dist
 *.local
+*.tsbuildinfo
 build
 coverage
-
-*.tsbuildinfo
+dev-dist
+dist
+node_modules

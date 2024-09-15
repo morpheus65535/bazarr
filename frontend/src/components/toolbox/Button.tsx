@@ -1,6 +1,3 @@
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, ButtonProps, Text } from "@mantine/core";
 import {
   ComponentProps,
   FunctionComponent,
@@ -8,6 +5,9 @@ import {
   useCallback,
   useState,
 } from "react";
+import { Button, ButtonProps, Text } from "@mantine/core";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 type ToolboxButtonProps = Omit<ButtonProps, "color" | "variant" | "leftIcon"> &
   Omit<ComponentProps<"button">, "ref"> & {
@@ -24,7 +24,7 @@ const ToolboxButton: FunctionComponent<ToolboxButtonProps> = ({
     <Button
       color="dark"
       variant="subtle"
-      leftIcon={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
+      leftSection={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
       {...props}
     >
       <Text size="xs">{children}</Text>

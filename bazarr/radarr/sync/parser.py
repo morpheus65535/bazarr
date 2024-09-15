@@ -3,7 +3,7 @@
 import os
 
 from app.config import settings
-from languages.get_languages import language_from_alpha2
+from languages.get_languages import audio_language_from_name
 from radarr.info import get_radarr_info
 from utilities.video_analyzer import embedded_audio_reader
 from utilities.path_mappings import path_mappings
@@ -11,7 +11,17 @@ from utilities.path_mappings import path_mappings
 from .converter import RadarrFormatAudioCodec, RadarrFormatVideoCodec
 
 
-def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles):
+def get_matching_profile(tags, language_profiles):
+    matching_profile = None
+    if len(tags) > 0:
+        for profileId, name, tag in language_profiles:
+            if tag in tags:
+                matching_profile = profileId
+                break
+    return matching_profile
+
+
+def movieParser(movie, action, tags_dict, language_profiles, movie_default_profile, audio_profiles):
     if 'movieFile' in movie:
         try:
             overview = str(movie['overview'])
@@ -107,9 +117,7 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
                     for item in movie['movieFile']['languages']:
                         if isinstance(item, dict):
                             if 'name' in item:
-                                language = item['name']
-                                if item['name'] == 'Portuguese (Brazil)':
-                                    language = language_from_alpha2('pb')
+                                language = audio_language_from_name(item['name'])
                                 audio_language.append(language)
 
         tags = [d['label'] for d in tags_dict if d['id'] in movie['tags']]
@@ -139,6 +147,15 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
         if action == 'insert':
             parsed_movie['subtitles'] = '[]'
             parsed_movie['profileId'] = movie_default_profile
+
+        if settings.general.movie_tag_enabled:
+            tag_profile = get_matching_profile(tags, language_profiles)
+            if tag_profile:
+                parsed_movie['profileId'] = tag_profile
+            remove_profile_tags_list = settings.general.remove_profile_tags
+            if len(remove_profile_tags_list) > 0:
+                if set(tags) & set(remove_profile_tags_list):
+                    parsed_movie['profileId'] = None
 
         return parsed_movie
 

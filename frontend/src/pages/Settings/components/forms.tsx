@@ -1,7 +1,20 @@
+import { FunctionComponent, ReactNode } from "react";
 import {
+  Input,
+  NumberInput,
+  NumberInputProps,
+  PasswordInput,
+  PasswordInputProps,
+  Slider as MantineSlider,
+  SliderProps as MantineSliderProps,
+  Switch,
+  TextInput,
+  TextInputProps,
+} from "@mantine/core";
+import {
+  Action as GlobalAction,
   FileBrowser,
   FileBrowserProps,
-  Action as GlobalAction,
   MultiSelector as GlobalMultiSelector,
   MultiSelectorProps as GlobalMultiSelectorProps,
   Selector as GlobalSelector,
@@ -9,21 +22,8 @@ import {
 } from "@/components";
 import { ActionProps as GlobalActionProps } from "@/components/inputs/Action";
 import ChipInput, { ChipInputProps } from "@/components/inputs/ChipInput";
+import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
 import { useSliderMarks } from "@/utilities";
-import {
-  Input,
-  Slider as MantineSlider,
-  SliderProps as MantineSliderProps,
-  NumberInput,
-  NumberInputProps,
-  PasswordInput,
-  PasswordInputProps,
-  Switch,
-  TextInput,
-  TextInputProps,
-} from "@mantine/core";
-import { FunctionComponent, ReactNode, ReactText } from "react";
-import { BaseInput, useBaseInput } from "../utilities/hooks";
 
 export type NumberProps = BaseInput<number> & NumberInputProps;
 
@@ -38,13 +38,18 @@ export const Number: FunctionComponent<NumberProps> = (props) => {
         if (val === "") {
           val = 0;
         }
+
+        if (typeof val === "string") {
+          return update(+val);
+        }
+
         update(val);
       }}
     ></NumberInput>
   );
 };
 
-export type TextProps = BaseInput<ReactText> & TextInputProps;
+export type TextProps = BaseInput<string | number> & TextInputProps;
 
 export const Text: FunctionComponent<TextProps> = (props) => {
   const { value, update, rest } = useBaseInput(props);
@@ -81,11 +86,7 @@ export interface CheckProps extends BaseInput<boolean> {
   inline?: boolean;
 }
 
-export const Check: FunctionComponent<CheckProps> = ({
-  label,
-  inline,
-  ...props
-}) => {
+export const Check: FunctionComponent<CheckProps> = ({ label, ...props }) => {
   const { value, update, rest } = useBaseInput(props);
 
   return (
@@ -155,13 +156,25 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
 };
 
 type ChipsProp = BaseInput<string[]> &
-  Omit<ChipInputProps, "onChange" | "data">;
+  Omit<ChipInputProps, "onChange" | "data"> & {
+    sanitizeFn?: (values: string[] | null) => string[] | undefined;
+  };
 
 export const Chips: FunctionComponent<ChipsProp> = (props) => {
   const { value, update, rest } = useBaseInput(props);
 
+  const handleChange = (value: string[] | null) => {
+    const sanitizedValues = props.sanitizeFn?.(value) ?? value;
+
+    update(sanitizedValues || null);
+  };
+
   return (
-    <ChipInput {...rest} value={value ?? []} onChange={update}></ChipInput>
+    <ChipInput
+      {...rest}
+      value={value ?? []}
+      onChange={handleChange}
+    ></ChipInput>
   );
 };
 

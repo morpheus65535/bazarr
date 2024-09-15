@@ -1,23 +1,24 @@
-import { LOG } from "@/utilities/console";
+import { useCallback, useMemo, useRef } from "react";
 import {
+  ComboboxItem,
+  ComboboxItemGroup,
   MultiSelect,
   MultiSelectProps,
   Select,
-  SelectItem,
   SelectProps,
 } from "@mantine/core";
 import { isNull, isUndefined } from "lodash";
-import { useCallback, useMemo, useRef } from "react";
+import { LOG } from "@/utilities/console";
 
 export type SelectorOption<T> = Override<
   {
     value: T;
     label: string;
   },
-  SelectItem
+  ComboboxItem
 >;
 
-type SelectItemWithPayload<T> = SelectItem & {
+type SelectItemWithPayload<T> = ComboboxItem & {
   payload: T;
 };
 
@@ -32,6 +33,33 @@ function DefaultKeyBuilder<T>(value: T) {
       `Invalid type (${typeof value}) in the SelectorOption, please provide a label builder`,
     );
   }
+}
+
+export interface GroupedSelectorOptions<T> {
+  group: string;
+  items: SelectorOption<T>[];
+}
+
+export type GroupedSelectorProps<T> = Override<
+  {
+    options: ComboboxItemGroup[];
+    getkey?: (value: T) => string;
+  },
+  Omit<SelectProps, "data">
+>;
+
+export function GroupedSelector<T>({
+  options,
+  ...select
+}: GroupedSelectorProps<T>) {
+  return (
+    <Select
+      data-testid="input-selector"
+      comboboxProps={{ withinPortal: true }}
+      data={options}
+      {...select}
+    ></Select>
+  );
 }
 
 export type SelectorProps<T> = Override<
@@ -84,7 +112,7 @@ export function Selector<T>({
   }, [defaultValue, keyRef]);
 
   const wrappedOnChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
       const payload = data.find((v) => v.value === value)?.payload ?? null;
       onChange?.(payload);
     },
@@ -93,7 +121,8 @@ export function Selector<T>({
 
   return (
     <Select
-      withinPortal={true}
+      data-testid="input-selector"
+      comboboxProps={{ withinPortal: true }}
       data={data}
       defaultValue={wrappedDefaultValue}
       value={wrappedValue}
@@ -144,6 +173,7 @@ export function MultiSelector<T>({
     () => value && value.map(labelRef.current),
     [value],
   );
+
   const wrappedDefaultValue = useMemo(
     () => defaultValue && defaultValue.map(labelRef.current),
     [defaultValue],
@@ -168,6 +198,7 @@ export function MultiSelector<T>({
   return (
     <MultiSelect
       {...select}
+      hidePickedOptions
       value={wrappedValue}
       defaultValue={wrappedDefaultValue}
       onChange={wrappedOnChange}

@@ -264,6 +264,10 @@ def get_providers_auth():
             'password': settings.legendasdivx.password,
             'skip_wrong_fps': settings.legendasdivx.skip_wrong_fps,
         },
+        'legendasnet': {
+            'username': settings.legendasnet.username,
+            'password': settings.legendasnet.password,
+        },
         'xsubs': {
             'username': settings.xsubs.username,
             'password': settings.xsubs.password,
@@ -284,6 +288,12 @@ def get_providers_auth():
         'titlovi': {
             'username': settings.titlovi.username,
             'password': settings.titlovi.password,
+        },
+        'jimaku': {
+            'api_key': settings.jimaku.api_key,
+            'enable_name_search_fallback': settings.jimaku.enable_name_search_fallback,
+            'enable_archives_download': settings.jimaku.enable_archives_download,
+            'enable_ai_subs': settings.jimaku.enable_ai_subs,
         },
         'ktuvit': {
             'email': settings.ktuvit.email,
@@ -322,6 +332,9 @@ def get_providers_auth():
         },
         "animetosho": {
             'search_threshold': settings.animetosho.search_threshold,
+        },
+        "subdl": {
+            'api_key': settings.subdl.api_key,
         }
     }
 

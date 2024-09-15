@@ -50,7 +50,7 @@ class Server:
             self.connected = True
         except OSError as error:
             if error.errno == errno.EADDRNOTAVAIL:
-                logging.exception("BAZARR cannot bind to specified IP, trying with default (0.0.0.0)")
+                logging.exception("BAZARR cannot bind to specified IP, trying with 0.0.0.0")
                 self.address = '0.0.0.0'
                 self.connected = False
                 super(Server, self).__init__()
@@ -76,8 +76,7 @@ class Server:
             self.shutdown(EXIT_INTERRUPT)
 
     def start(self):
-        logging.info(f'BAZARR is started and waiting for request on http://{self.server.effective_host}:'
-                     f'{self.server.effective_port}')
+        self.server.print_listen("BAZARR is started and waiting for requests on: http://{}:{}")
         signal.signal(signal.SIGINT, self.interrupt_handler)
         try:
             self.server.run()

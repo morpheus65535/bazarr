@@ -455,7 +455,13 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
 
         soup = ParserBeautifulSoup(r, ['lxml'])
         tables = soup.find_all("table")
-        tables = tables[0].find_all("tr")
+
+        try:
+            tables = tables[0].find_all("tr")
+        except IndexError:
+            logger.debug("No tables found for %s", url)
+            return []
+
         i = 0
 
         for table in tables:

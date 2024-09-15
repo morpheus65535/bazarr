@@ -1,15 +1,10 @@
-import { useSystemHealth, useSystemStatus } from "@/apis/hooks";
-import { QueryOverlay } from "@/components/async";
-import { GithubRepoRoot } from "@/constants";
-import { Environment, useInterval } from "@/utilities";
-import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
-  faDiscord,
-  faGithub,
-  faWikipediaW,
-} from "@fortawesome/free-brands-svg-icons";
-import { faCode, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+  FunctionComponent,
+  PropsWithChildren,
+  ReactNode,
+  useCallback,
+  useState,
+} from "react";
 import {
   Anchor,
   Container,
@@ -20,13 +15,18 @@ import {
   Text,
 } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
+import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
-  FunctionComponent,
-  PropsWithChildren,
-  ReactNode,
-  useCallback,
-  useState,
-} from "react";
+  faDiscord,
+  faGithub,
+  faWikipediaW,
+} from "@fortawesome/free-brands-svg-icons";
+import { faCode, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useSystemHealth, useSystemStatus } from "@/apis/hooks";
+import { QueryOverlay } from "@/components/async";
+import { GithubRepoRoot } from "@/constants";
+import { Environment, useInterval } from "@/utilities";
 import {
   divisorDay,
   divisorHour,
@@ -46,7 +46,7 @@ function Row(props: InfoProps): JSX.Element {
   return (
     <Grid columns={10}>
       <Grid.Col span={2}>
-        <Text size="sm" align="right" weight="bold">
+        <Text size="sm" ta="right" fw="bold">
           {title}
         </Text>
       </Grid.Col>
@@ -85,9 +85,12 @@ const InfoContainer: FunctionComponent<
   return (
     <Stack>
       <Divider
-        labelProps={{ size: "medium", weight: "bold" }}
         labelPosition="left"
-        label={title}
+        label={
+          <Text size="md" fw="bold">
+            {title}
+          </Text>
+        }
       ></Divider>
       {children}
       <Space />

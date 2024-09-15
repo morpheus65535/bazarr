@@ -1,5 +1,5 @@
-import { Code, Space, Table } from "@mantine/core";
-import { FunctionComponent } from "react";
+import React, { FunctionComponent } from "react";
+import { Code, Space, Table, Text as MantineText } from "@mantine/core";
 import {
   Check,
   CollapseBox,
@@ -10,11 +10,11 @@ import {
   Selector,
   Slider,
   Text,
-} from "../components";
+} from "@/pages/Settings/components";
 import {
   SubzeroColorModification,
   SubzeroModification,
-} from "../utilities/modifications";
+} from "@/pages/Settings/utilities/modifications";
 import {
   adaptiveSearchingDelayOption,
   adaptiveSearchingDeltaOption,
@@ -115,14 +115,16 @@ const commandOptions: CommandOption[] = [
   },
 ];
 
-const commandOptionElements: JSX.Element[] = commandOptions.map((op, idx) => (
-  <tr key={idx}>
-    <td>
-      <Code>{op.option}</Code>
-    </td>
-    <td>{op.description}</td>
-  </tr>
-));
+const commandOptionElements: React.JSX.Element[] = commandOptions.map(
+  (op, idx) => (
+    <tr key={idx}>
+      <td>
+        <Code>{op.option}</Code>
+      </td>
+      <td>{op.description}</td>
+    </tr>
+  ),
+);
 
 const SettingsSubtitlesView: FunctionComponent = () => {
   return (
@@ -436,8 +438,11 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             <Slider settingKey="settings-subsync-subsync_threshold"></Slider>
             <Space />
             <Message>
-              Only series subtitles with scores <b>below</b> this value will be
-              automatically synchronized.
+              Only series subtitles with scores{" "}
+              <MantineText fw={700} span>
+                below
+              </MantineText>{" "}
+              this value will be automatically synchronized.
             </Message>
           </CollapseBox>
           <Check
@@ -451,8 +456,11 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             <Slider settingKey="settings-subsync-subsync_movie_threshold"></Slider>
             <Space />
             <Message>
-              Only movie subtitles with scores <b>below</b> this value will be
-              automatically synchronized.
+              Only movie subtitles with scores{" "}
+              <MantineText fw={700} span>
+                below
+              </MantineText>{" "}
+              this value will be automatically synchronized.
             </Message>
           </CollapseBox>
         </CollapseBox>
@@ -478,8 +486,11 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             <Slider settingKey="settings-general-postprocessing_threshold"></Slider>
             <Space />
             <Message>
-              Only series subtitles with scores <b>below</b> this value will be
-              automatically post-processed.
+              Only series subtitles with scores{" "}
+              <MantineText fw={700} span>
+                below
+              </MantineText>{" "}
+              this value will be automatically post-processed.
             </Message>
           </CollapseBox>
           <Check
@@ -493,15 +504,18 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             <Slider settingKey="settings-general-postprocessing_threshold_movie"></Slider>
             <Space />
             <Message>
-              Only movie subtitles with scores <b>below</b> this value will be
-              automatically post-processed.
+              Only movie subtitles with scores{" "}
+              <MantineText fw={700} span>
+                below
+              </MantineText>{" "}
+              this value will be automatically post-processed.
             </Message>
           </CollapseBox>
           <Text
             label="Command"
             settingKey="settings-general-postprocessing_cmd"
           ></Text>
-          <Table highlightOnHover fontSize="sm">
+          <Table highlightOnHover fs="sm">
             <tbody>{commandOptionElements}</tbody>
           </Table>
         </CollapseBox>

@@ -2,7 +2,6 @@
 
 import os
 import logging
-import re
 
 from guess_language import guess_language
 from subliminal_patch import core
@@ -136,6 +135,7 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                     continue
                 text = text.decode(encoding)
 
-                if bool(re.search(core.HI_REGEX, text)):
+                if core.parse_for_hi_regex(subtitle_text=text,
+                                           alpha3_language=language.alpha3 if hasattr(language, 'alpha3') else None):
                     subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
     return subtitles

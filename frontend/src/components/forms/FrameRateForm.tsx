@@ -1,10 +1,10 @@
+import { FunctionComponent } from "react";
+import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
+import { useForm } from "@mantine/form";
 import { useSubtitleAction } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import FormUtils from "@/utilities/form";
-import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { FunctionComponent } from "react";
 
 const TaskName = "Changing Frame Rate";
 
@@ -55,15 +55,17 @@ const FrameRateForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       })}
     >
       <Stack>
-        <Group spacing="xs" grow>
+        <Group gap="xs" grow>
           <NumberInput
             placeholder="From"
-            precision={2}
+            decimalScale={2}
+            fixedDecimalScale
             {...form.getInputProps("from")}
           ></NumberInput>
           <NumberInput
             placeholder="To"
-            precision={2}
+            decimalScale={2}
+            fixedDecimalScale
             {...form.getInputProps("to")}
           ></NumberInput>
         </Group>

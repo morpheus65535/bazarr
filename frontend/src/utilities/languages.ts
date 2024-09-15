@@ -1,5 +1,5 @@
-import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 import { useMemo } from "react";
+import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 
 export function useLanguageProfileBy(id: number | null | undefined) {
   const { data } = useLanguageProfiles();
@@ -51,3 +51,7 @@ export function useLanguageFromCode3(code3: string) {
     [data, code3],
   );
 }
+
+export const normalizeAudioLanguage = (name: string) => {
+  return name === "Chinese Simplified" ? "Chinese" : name;
+};

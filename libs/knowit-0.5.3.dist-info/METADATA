@@ -1,0 +1,274 @@
+Metadata-Version: 2.1
+Name: knowit
+Version: 0.5.3
+Summary: Know better your media files
+Home-page: https://github.com/ratoaq2/knowit
+License: MIT
+Keywords: video,mkv,mp4,mediainfo,metadata,movie,episode,tv,shows,series
+Author: Rato
+Requires-Python: >=3.9.0,<4.0.0
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Topic :: Multimedia :: Video
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Dist: babelfish (>=0.6.0,<0.7.0)
+Requires-Dist: enzyme (>=0.4.1,<0.5.0)
+Requires-Dist: pint (>=0.20.1,<0.22.0)
+Requires-Dist: pymediainfo (>=6.0.1,<7.0.0)
+Requires-Dist: pyyaml (>=6.0,<7.0)
+Requires-Dist: trakit (>=0.2.1,<0.3.0)
+Project-URL: Repository, https://github.com/ratoaq2/knowit
+Description-Content-Type: text/markdown
+
+# KnowIt
+
+Know better your media files.
+
+[![Latest
+Version](https://img.shields.io/pypi/v/knowit.svg)](https://pypi.python.org/pypi/knowit)
+
+[![tests](https://github.com/ratoaq2/knowit/actions/workflows/test.yml/badge.svg)](https://github.com/ratoaq2/knowit/actions/workflows/test.yml)
+
+[![License](https://img.shields.io/github/license/ratoaq2/knowit.svg)](https://github.com/ratoaq2/knowit/blob/master/LICENSE)
+
+  - Project page  
+    <https://github.com/ratoaq2/knowit>
+
+## Usage
+
+### CLI
+
+Extract information from a video file:
+
+    $ knowit /folder/Audio Samples/hd_dtsma_7.1.mkv
+    For: /folder/Audio Samples/hd_dtsma_7.1.mkv
+    Knowit 0.4.0 found:
+    {
+        "title": "7.1Ch DTS-HD MA - Speaker Mapping Test File",
+        "path": "/folder/Audio Samples/hd_dtsma_7.1.mkv",
+        "duration": "0:01:37",
+        "size": "40.77 MB",
+        "bit_rate": "3.3 Mbps",
+        "container": "mkv",
+        "video": [
+            {
+                "id": 1,
+                "duration": "0:01:37",
+                "width": "1920 pixel",
+                "height": "1080 pixel",
+                "scan_type": "Progressive",
+                "aspect_ratio": "1.778",
+                "pixel_aspect_ratio": "1.0",
+                "resolution": "1080p",
+                "frame_rate": "23.976 FPS",
+                "bit_depth": "8 bit",
+                "codec": "H.264",
+                "profile": "Main",
+                "profile_level": "4",
+                "media_type": "video/H264",
+                "default": true
+            }
+        ],
+        "audio": [
+            {
+                "id": 2,
+                "name": "7.1Ch DTS-HD MA",
+                "language": "English",
+                "duration": "0:01:37",
+                "codec": "DTS-HD",
+                "profile": "Master Audio",
+                "channels_count": 8,
+                "channels": "7.1",
+                "bit_depth": "24 bit",
+                "bit_rate_mode": "Variable",
+                "sampling_rate": "48.0 KHz",
+                "compression": "Lossless",
+                "default": true
+            }
+        ],
+        "provider": {
+            "name": "mediainfo",
+            "version": {
+                "pymediainfo": "5.0.3",
+                "libmediainfo.so.0": "v20.9"
+            }
+        }
+    }
+
+Extract information from a video file using ffmpeg:
+
+    $ knowit --provider ffmpeg /folder/Audio Samples/hd_dtsma_7.1.mkv
+    For: /folder/Audio Samples/hd_dtsma_7.1.mkv
+    Knowit 0.4.0 found:
+    {
+        "title": "7.1Ch DTS-HD MA - Speaker Mapping Test File",
+        "path": "/folder/Audio Samples/hd_dtsma_7.1.mkv",
+        "duration": "0:01:37",
+        "size": "40.77 MB",
+        "bit_rate": "3.3 Mbps",
+        "container": "mkv",
+        "video": [
+            {
+                "id": 0,
+                "width": "1920 pixel",
+                "height": "1080 pixel",
+                "scan_type": "Progressive",
+                "aspect_ratio": "1.778",
+                "pixel_aspect_ratio": "1.0",
+                "resolution": "1080p",
+                "frame_rate": "23.976 FPS",
+                "bit_depth": "8 bit",
+                "codec": "H.264",
+                "profile": "Main",
+                "default": true
+            }
+        ],
+        "audio": [
+            {
+                "id": 1,
+                "name": "7.1Ch DTS-HD MA",
+                "language": "English",
+                "codec": "DTS-HD",
+                "profile": "Master Audio",
+                "channels_count": 8,
+                "channels": "7.1",
+                "bit_depth": "24 bit",
+                "sampling_rate": "48.0 KHz",
+                "default": true
+            }
+        ],
+        "provider": {
+            "name": "ffmpeg",
+            "version": {
+                "ffprobe": "v4.2.4-1ubuntu0.1"
+            }
+        }
+    }
+
+Using docker:
+
+    docker run -it --rm -v /folder:/folder knowit /folder/Audio Samples/hd_dtsma_7.1.mkv
+    For: /folder/Audio Samples/hd_dtsma_7.1.mkv
+    Knowit 0.4.0 found:
+    {
+        "title": "7.1Ch DTS-HD MA - Speaker Mapping Test File",
+        "path": "/folder/Audio Samples/hd_dtsma_7.1.mkv",
+        "duration": "0:01:37",
+        "size": "40.77 MB",
+        "bit_rate": "3.3 Mbps",
+        "container": "mkv",
+        "video": [
+            {
+                "id": 1,
+                "duration": "0:01:37",
+                "width": "1920 pixel",
+                "height": "1080 pixel",
+                "scan_type": "Progressive",
+                "aspect_ratio": "1.778",
+                "pixel_aspect_ratio": "1.0",
+                "resolution": "1080p",
+                "frame_rate": "23.976 FPS",
+                "bit_depth": "8 bit",
+                "codec": "H.264",
+                "profile": "Main",
+                "profile_level": "4",
+                "media_type": "video/H264",
+                "default": true
+            }
+        ],
+        "audio": [
+            {
+                "id": 2,
+                "name": "7.1Ch DTS-HD MA",
+                "language": "English",
+                "duration": "0:01:37",
+                "codec": "DTS-HD",
+                "profile": "Master Audio",
+                "channels_count": 8,
+                "channels": "7.1",
+                "bit_depth": "24 bit",
+                "bit_rate_mode": "Variable",
+                "sampling_rate": "48.0 KHz",
+                "compression": "Lossless",
+                "default": true
+            }
+        ],
+        "provider": {
+            "name": "mediainfo",
+            "version": {
+                "pymediainfo": "5.0.3",
+                "libmediainfo.so.0": "v20.9"
+            }
+        }
+    }
+
+All available CLI options:
+
+    $ knowit --help
+    usage: knowit [-h] [-p PROVIDER] [--debug] [--report] [-y] [-N] [-P PROFILE] [--mediainfo MEDIAINFO] [--ffmpeg FFMPEG] [--mkvmerge MKVMERGE] [--version] [videopath [videopath ...]]
+    
+    positional arguments:
+      videopath             Path to the video to introspect
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+    
+    Providers:
+      -p PROVIDER, --provider PROVIDER
+                            The provider to be used: mediainfo, ffmpeg, mkvmerge or enzyme.
+    
+    Output:
+      --debug               Print information for debugging knowit and for reporting bugs.
+      --report              Parse media and report all non-detected values
+      -y, --yaml            Display output in yaml format
+      -N, --no-units        Display output without units
+      -P PROFILE, --profile PROFILE
+                            Display values according to specified profile: code, default, human, technical
+    
+    Configuration:
+      --mediainfo MEDIAINFO
+                            The location to search for MediaInfo binaries
+      --ffmpeg FFMPEG       The location to search for ffprobe (FFmpeg) binaries
+      --mkvmerge MKVMERGE   The location to search for mkvmerge (MKVToolNix) binaries
+    
+    Information:
+      --version             Display knowit version.
+
+## Installation
+
+KnowIt can be installed as a regular python module by running:
+
+    $ [sudo] pip install knowit
+
+For a better isolation with your system you should use a dedicated
+virtualenv or install for your user only using the `--user` flag.
+
+## External dependencies
+
+KnowIt can use MediaInfo, ffprobe (FFmpeg) or mkvmerge (MKVToolNix)
+
+KnowIt supports MKV regardless if MediaInfo, FFmpeg or MKVToolNix are
+installed.
+
+MediaInfo, FFmpeg or MKVToolNix increases the number of supported
+formats and the number of extracted information.
+
+MediaInfo is the default provider. Visit their
+[website](http://mediaarea.net/MediaInfo) and install the proper package
+for your system.
+
+ffprobe (FFmpeg) can be downloaded
+[here](https://ffmpeg.org/download.html)
+
+mkvmerge (MKVToolNix) can be downloaded
+[here](https://mkvtoolnix.download/downloads.html)
+

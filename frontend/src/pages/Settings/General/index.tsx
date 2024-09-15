@@ -1,12 +1,11 @@
-import { Environment, toggleState } from "@/utilities";
+import { FunctionComponent, useState } from "react";
+import { Box, Group as MantineGroup, Text as MantineText } from "@mantine/core";
+import { useClipboard } from "@mantine/hooks";
 import {
   faCheck,
   faClipboard,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
-import { Group as MantineGroup, Text as MantineText } from "@mantine/core";
-import { useClipboard } from "@mantine/hooks";
-import { FunctionComponent, useState } from "react";
 import {
   Action,
   Check,
@@ -20,7 +19,8 @@ import {
   Section,
   Selector,
   Text,
-} from "../components";
+} from "@/pages/Settings/components";
+import { Environment, toggleState } from "@/utilities";
 import { branchOptions, proxyOptions, securityOptions } from "./options";
 
 const characters = "abcdef0123456789";
@@ -43,10 +43,10 @@ const SettingsGeneralView: FunctionComponent = () => {
       <Section header="Host">
         <Text
           label="Address"
-          placeholder="0.0.0.0"
+          placeholder="*"
           settingKey="settings-general-ip"
         ></Text>
-        <Message>Valid IPv4 address or '0.0.0.0' for all interfaces</Message>
+        <Message>Valid IP address or '*' for all interfaces</Message>
         <Number
           label="Port"
           placeholder="6767"
@@ -54,7 +54,7 @@ const SettingsGeneralView: FunctionComponent = () => {
         ></Number>
         <Text
           label="Base URL"
-          icon="/"
+          leftSection="/"
           settingKey="settings-general-base_url"
           settingOptions={{
             onLoaded: (s) => s.general.base_url?.slice(1) ?? "",
@@ -87,15 +87,14 @@ const SettingsGeneralView: FunctionComponent = () => {
           rightSectionWidth={95}
           rightSectionProps={{ style: { justifyContent: "flex-end" } }}
           rightSection={
-            <MantineGroup spacing="xs" mx="xs" position="right">
+            <MantineGroup gap="xs" mx="xs" justify="right">
               {
                 // Clipboard API is only available in secure contexts See: https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API#interfaces
                 window.isSecureContext && (
                   <Action
                     label="Copy API Key"
-                    variant="light"
                     settingKey={settingApiKey}
-                    color={copied ? "green" : undefined}
+                    c={copied ? "green" : undefined}
                     icon={copied ? faCheck : faClipboard}
                     onClick={(update, value) => {
                       if (value) {
@@ -108,9 +107,8 @@ const SettingsGeneralView: FunctionComponent = () => {
               }
               <Action
                 label="Regenerate"
-                variant="light"
                 settingKey={settingApiKey}
-                color="red"
+                c="red"
                 icon={faSync}
                 onClick={(update) => {
                   update(generateApiKey());
@@ -204,13 +202,12 @@ const SettingsGeneralView: FunctionComponent = () => {
         <Number
           label="Retention"
           settingKey="settings-backup-retention"
-          styles={{
-            rightSection: { width: "4rem", justifyContent: "flex-end" },
-          }}
           rightSection={
-            <MantineText size="xs" px="sm" color="dimmed">
-              Days
-            </MantineText>
+            <Box w="4rem" style={{ justifyContent: "flex-end" }}>
+              <MantineText size="xs" px="sm" c="dimmed">
+                Days
+              </MantineText>
+            </Box>
           }
         ></Number>
       </Section>

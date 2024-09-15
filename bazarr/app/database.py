@@ -172,6 +172,7 @@ class TableHistory(Base):
     video_path = mapped_column(Text)
     matched = mapped_column(Text)
     not_matched = mapped_column(Text)
+    upgradedFromId = mapped_column(Integer, ForeignKey('table_history.id'))
 
 
 class TableHistoryMovie(Base):
@@ -190,6 +191,7 @@ class TableHistoryMovie(Base):
     video_path = mapped_column(Text)
     matched = mapped_column(Text)
     not_matched = mapped_column(Text)
+    upgradedFromId = mapped_column(Integer, ForeignKey('table_history_movie.id'))
 
 
 class TableLanguagesProfiles(Base):
@@ -202,6 +204,7 @@ class TableLanguagesProfiles(Base):
     name = mapped_column(Text, nullable=False)
     mustContain = mapped_column(Text)
     mustNotContain = mapped_column(Text)
+    tag = mapped_column(Text)
 
 
 class TableMovies(Base):
@@ -376,6 +379,7 @@ def update_profile_id_list():
         'mustContain': ast.literal_eval(x.mustContain) if x.mustContain else [],
         'mustNotContain': ast.literal_eval(x.mustNotContain) if x.mustNotContain else [],
         'originalFormat': x.originalFormat,
+        'tag': x.tag,
     } for x in database.execute(
         select(TableLanguagesProfiles.profileId,
                TableLanguagesProfiles.name,
@@ -383,7 +387,8 @@ def update_profile_id_list():
                TableLanguagesProfiles.items,
                TableLanguagesProfiles.mustContain,
                TableLanguagesProfiles.mustNotContain,
-               TableLanguagesProfiles.originalFormat))
+               TableLanguagesProfiles.originalFormat,
+               TableLanguagesProfiles.tag))
         .all()
     ]
 
@@ -418,7 +423,7 @@ def get_profile_cutoff(profile_id):
     if profile_id and profile_id != 'null':
         cutoff_language = []
         for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat = profile.values()
+            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat, tag = profile.values()
             if cutoff:
                 if profileId == int(profile_id):
                     for item in items:
@@ -497,3 +502,29 @@ def convert_list_to_clause(arr: list):
         return f"({','.join(str(x) for x in arr)})"
     else:
         return ""
+
+
+def upgrade_languages_profile_hi_values():
+    for languages_profile in (database.execute(
+            select(
+                TableLanguagesProfiles.profileId,
+                TableLanguagesProfiles.name,
+                TableLanguagesProfiles.cutoff,
+                TableLanguagesProfiles.items,
+                TableLanguagesProfiles.mustContain,
+                TableLanguagesProfiles.mustNotContain,
+                TableLanguagesProfiles.originalFormat,
+                TableLanguagesProfiles.tag)
+            ))\
+            .all():
+        items = json.loads(languages_profile.items)
+        for language in items:
+            if language['hi'] == "only":
+                language['hi'] = "True"
+            elif language['hi'] in ["also", "never"]:
+                language['hi'] = "False"
+        database.execute(
+            update(TableLanguagesProfiles)
+            .values({"items": json.dumps(items)})
+            .where(TableLanguagesProfiles.profileId == languages_profile.profileId)
+        )

@@ -1,44 +1,47 @@
-import { Selector } from "@/components";
-import { useModals, withModal } from "@/modules/modals";
-import { BuildKey, useSelectorOptions } from "@/utilities";
-import { ASSERT } from "@/utilities/console";
-import {
-  Button,
-  Divider,
-  Group,
-  Text as MantineText,
-  SimpleGrid,
-  Stack,
-} from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { capitalize } from "lodash";
 import {
   FunctionComponent,
-  forwardRef,
   useCallback,
   useMemo,
   useRef,
   useState,
 } from "react";
 import {
+  AutocompleteProps,
+  Button,
+  Divider,
+  Group,
+  SimpleGrid,
+  Stack,
+  Text as MantineText,
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { capitalize } from "lodash";
+import { Selector } from "@/components";
+import { useModals, withModal } from "@/modules/modals";
+import {
   Card,
   Check,
   Chips,
-  Selector as GlobalSelector,
   Message,
   Password,
   ProviderTestButton,
+  Selector as GlobalSelector,
   Text,
-} from "../components";
+} from "@/pages/Settings/components";
 import {
   FormContext,
   FormValues,
   runHooks,
   useFormActions,
   useStagedValues,
-} from "../utilities/FormValues";
-import { SettingsProvider, useSettings } from "../utilities/SettingsProvider";
-import { useSettingValue } from "../utilities/hooks";
+} from "@/pages/Settings/utilities/FormValues";
+import { useSettingValue } from "@/pages/Settings/utilities/hooks";
+import {
+  SettingsProvider,
+  useSettings,
+} from "@/pages/Settings/utilities/SettingsProvider";
+import { BuildKey, useSelectorOptions } from "@/utilities";
+import { ASSERT } from "@/utilities/console";
 import { ProviderInfo } from "./list";
 
 type SettingsKey =
@@ -48,6 +51,11 @@ type SettingsKey =
 interface ProviderViewProps {
   availableOptions: Readonly<ProviderInfo[]>;
   settingsKey: SettingsKey;
+}
+
+interface ProviderSelect {
+  value: string;
+  payload: ProviderInfo;
 }
 
 export const ProviderView: FunctionComponent<ProviderViewProps> = ({
@@ -100,10 +108,12 @@ export const ProviderView: FunctionComponent<ProviderViewProps> = ({
         })
         .map((v, idx) => (
           <Card
+            titleStyles={{ overflow: "hidden", textOverflow: "ellipsis" }}
             key={BuildKey(v.key, idx)}
             header={v.name ?? capitalize(v.key)}
             description={v.description}
             onClick={() => select(v)}
+            lineClamp={2}
           ></Card>
         ));
     } else {
@@ -130,17 +140,16 @@ interface ProviderToolProps {
   settingsKey: Readonly<SettingsKey>;
 }
 
-const SelectItem = forwardRef<
-  HTMLDivElement,
-  { payload: ProviderInfo; label: string }
->(({ payload: { description }, label, ...other }, ref) => {
+const SelectItem: AutocompleteProps["renderOption"] = ({ option }) => {
+  const provider = option as ProviderSelect;
+
   return (
-    <Stack spacing={1} ref={ref} {...other}>
-      <MantineText size="md">{label}</MantineText>
-      <MantineText size="xs">{description}</MantineText>
+    <Stack gap={1}>
+      <MantineText size="md">{provider.value}</MantineText>
+      <MantineText size="xs">{provider.payload.description}</MantineText>
     </Stack>
   );
-});
+};
 
 const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   payload,
@@ -298,19 +307,19 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
       }
     });
 
-    return <Stack spacing="xs">{elements}</Stack>;
+    return <Stack gap="xs">{elements}</Stack>;
   }, [info]);
 
   return (
     <SettingsProvider value={settings}>
       <FormContext.Provider value={form}>
         <Stack>
-          <Stack spacing="xs">
+          <Stack gap="xs">
             <Selector
               data-autofocus
               searchable
               placeholder="Click to Select a Provider"
-              itemComponent={SelectItem}
+              renderOption={SelectItem}
               disabled={payload !== null}
               {...selectorOptions}
               value={info}
@@ -323,7 +332,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
             </div>
           </Stack>
           <Divider></Divider>
-          <Group position="right">
+          <Group justify="right">
             <Button hidden={!payload} color="red" onClick={deletePayload}>
               Delete
             </Button>

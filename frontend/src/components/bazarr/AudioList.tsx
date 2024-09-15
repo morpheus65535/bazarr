@@ -1,6 +1,7 @@
-import { BuildKey } from "@/utilities";
-import { Badge, BadgeProps, Group, GroupProps } from "@mantine/core";
 import { FunctionComponent } from "react";
+import { Badge, BadgeProps, Group, GroupProps } from "@mantine/core";
+import { BuildKey } from "@/utilities";
+import { normalizeAudioLanguage } from "@/utilities/languages";
 
 export type AudioListProps = GroupProps & {
   audios: Language.Info[];
@@ -13,10 +14,10 @@ const AudioList: FunctionComponent<AudioListProps> = ({
   ...group
 }) => {
   return (
-    <Group spacing="xs" {...group}>
+    <Group gap="xs" {...group}>
       {audios.map((audio, idx) => (
         <Badge color="blue" key={BuildKey(idx, audio.code2)} {...badgeProps}>
-          {audio.name}
+          {normalizeAudioLanguage(audio.name)}
         </Badge>
       ))}
     </Group>

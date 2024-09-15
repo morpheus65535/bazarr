@@ -1,15 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import { useCallback, useContext, useMemo } from "react";
 import { useModals as useMantineModals } from "@mantine/modals";
 import { ModalSettings } from "@mantine/modals/lib/context";
-import { useCallback, useContext, useMemo } from "react";
 import { ModalComponent, ModalIdContext } from "./WithModal";
 
 export function useModals() {
-  const {
-    openContextModal: openMantineContextModal,
-    closeContextModal: closeContextModalRaw,
-    ...rest
-  } = useMantineModals();
+  const { openContextModal: openMantineContextModal, ...rest } =
+    useMantineModals();
 
   const openContextModal = useCallback(
     <ARGS extends {}>(
@@ -26,7 +23,7 @@ export function useModals() {
     [openMantineContextModal],
   );
 
-  const closeContextModal = useCallback(
+  const closeContext = useCallback(
     (modal: ModalComponent) => {
       rest.closeModal(modal.modalKey);
     },
@@ -43,7 +40,7 @@ export function useModals() {
 
   // TODO: Performance
   return useMemo(
-    () => ({ openContextModal, closeContextModal, closeSelf, ...rest }),
-    [closeContextModal, closeSelf, openContextModal, rest],
+    () => ({ openContextModal, closeContext, closeSelf, ...rest }),
+    [closeContext, closeSelf, openContextModal, rest],
   );
 }

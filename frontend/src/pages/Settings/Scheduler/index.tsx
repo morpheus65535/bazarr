@@ -1,5 +1,5 @@
-import { SelectorOption } from "@/components";
 import { FunctionComponent, useMemo } from "react";
+import { SelectorOption } from "@/components";
 import {
   Check,
   CollapseBox,
@@ -7,7 +7,7 @@ import {
   Message,
   Section,
   Selector,
-} from "../components";
+} from "@/pages/Settings/components";
 import {
   backupOptions,
   dayOptions,

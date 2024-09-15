@@ -1,7 +1,7 @@
-import { render } from "@/tests";
 import { describe } from "vitest";
-import SeriesView from ".";
+import { render } from "@/tests";
 import SeriesMassEditor from "./Editor";
+import SeriesView from ".";
 
 describe("Series page", () => {
   it("should render", () => {

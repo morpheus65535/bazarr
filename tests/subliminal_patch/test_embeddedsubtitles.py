@@ -8,9 +8,9 @@ from fese.exceptions import LanguageNotFound
 import pytest
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
+from subliminal_patch.providers.embeddedsubtitles import _clean_ass_subtitles
 from subliminal_patch.providers.embeddedsubtitles import (
     _discard_possible_incomplete_subtitles,
-    _clean_ass_subtitles,
 )
 from subliminal_patch.providers.embeddedsubtitles import _get_pretty_release_name
 from subliminal_patch.providers.embeddedsubtitles import _MemoizedFFprobeVideoContainer
@@ -107,6 +107,13 @@ def fake_streams():
                 "tags": {"language": "eng", "title": "English"},
             }
         ),
+        "tg": FFprobeSubtitleStream(
+            {
+                "index": 3,
+                "codec_name": "subrip",
+                "tags": {"language": "fil", "title": "Filipino"},
+            }
+        ),
         "es_hi": FFprobeSubtitleStream(
             {
                 "index": 3,
@@ -127,7 +134,9 @@ def fake_streams():
 
 @pytest.mark.parametrize("tags_", [{}, {"language": "und", "title": "Unknown"}])
 def test_list_subtitles_unknown_as_fallback(mocker, tags_, video_single_language):
-    with EmbeddedSubtitlesProvider(unknown_as_fallback=True, fallback_lang="en") as provider:
+    with EmbeddedSubtitlesProvider(
+        unknown_as_fallback=True, fallback_lang="en"
+    ) as provider:
         fake = FFprobeSubtitleStream(
             {"index": 3, "codec_name": "subrip", "tags": tags_}
         )
@@ -144,7 +153,9 @@ def test_list_subtitles_unknown_as_fallback(mocker, tags_, video_single_language
 def test_list_subtitles_unknown_as_fallback_w_real_english_subtitles(
     video_single_language, mocker
 ):
-    with EmbeddedSubtitlesProvider(unknown_as_fallback=True, fallback_lang="en") as provider:
+    with EmbeddedSubtitlesProvider(
+        unknown_as_fallback=True, fallback_lang="en"
+    ) as provider:
         fakes = [
             FFprobeSubtitleStream(
                 {"index": 3, "codec_name": "subrip", "tags": {"language": "und"}}
@@ -165,7 +176,7 @@ def test_list_subtitles_unknown_as_fallback_w_real_english_subtitles(
 
 @pytest.mark.parametrize("tags_", [{}, {"language": "und", "title": "Unknown"}])
 def test_list_subtitles_unknown_as_fallback_disabled(tags_):
-    with EmbeddedSubtitlesProvider(unknown_as_fallback=False,fallback_lang="en"):
+    with EmbeddedSubtitlesProvider(unknown_as_fallback=False, fallback_lang="en"):
         with pytest.raises(LanguageNotFound):
             assert FFprobeSubtitleStream(
                 {"index": 3, "codec_name": "subrip", "tags": tags_}
@@ -186,6 +197,18 @@ def test_list_subtitles_hi_fallback_one_stream(
         subs = provider.list_subtitles(video_single_language, {language})
         assert subs[0].language == Language("eng", hi=False)
         assert subs[0].hearing_impaired == False
+
+
+def test_list_subtitles_custom_language_from_fese(
+    video_single_language, fake_streams, mocker
+):
+    with EmbeddedSubtitlesProvider(hi_fallback=True) as provider:
+        language = Language("tgl", "PH")
+        mocker.patch(
+            "subliminal_patch.providers.embeddedsubtitles._MemoizedFFprobeVideoContainer.get_subtitles",
+            return_value=[fake_streams["tg"]],
+        )
+        assert provider.list_subtitles(video_single_language, {language})
 
 
 def test_list_subtitles_hi_fallback_multiple_streams(
@@ -360,6 +383,21 @@ def test_download_subtitle_single(video_single_language):
         )[0]
         provider.download_subtitle(subtitle)
         assert subtitle.is_valid()
+
+
+def test_download_subtitle_single_is_ass(video_single_language):
+    with EmbeddedSubtitlesProvider() as provider:
+        subtitle = provider.list_subtitles(
+            video_single_language, {Language.fromalpha2("en")}
+        )[0]
+        provider.download_subtitle(subtitle)
+        assert subtitle.is_valid()
+
+        assert subtitle.format == "srt"
+
+        subtitle.use_original_format = True
+
+        assert subtitle.format == "ass"
 
 
 def test_memoized(video_single_language, mocker):

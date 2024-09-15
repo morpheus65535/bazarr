@@ -184,15 +184,36 @@ def test_download_subtitle_episode(provider, subtitle_episode):
     assert subtitle_episode.is_valid()
 
 
-def test_download_subtitle_episode_with_title(provider):
+@pytest.mark.parametrize(
+    "language,page_link,release_info,episode_number,episode_title",
+    [
+        (
+            "en",
+            "https://subf2m.co/subtitles/courage-the-cowardly-dog/english/2232402",
+            "Season 3 complete.",
+            13,
+            "Feast of the Bullfrogs",
+        ),
+        (
+            "en",
+            "https://subf2m.co/subtitles/rick-and-morty-sixth-season/english/3060783",
+            "Used Subtitle Tools to convert from SUP to SRT, then ran the cleaner to remove HI. Grabbed subs from Rick.and.Morty.S06.1080p.BluRay.x264-STORiES.",
+            7,
+            "Full Meta Jackrick",
+        ),
+    ],
+)
+def test_download_subtitle_episode_with_title(
+    provider, language, page_link, release_info, episode_number, episode_title
+):
     sub = Subf2mSubtitle(
-        Language.fromalpha2("en"),
-        "https://subf2m.co/subtitles/courage-the-cowardly-dog/english/2232402",
-        "Season 3 complete.",
-        13,
+        Language.fromalpha2(language),
+        page_link,
+        release_info,
+        episode_number,
     )
 
-    sub.episode_title = "Feast of the Bullfrogs"
+    sub.episode_title = episode_title
     provider.download_subtitle(sub)
     assert sub.is_valid()
 

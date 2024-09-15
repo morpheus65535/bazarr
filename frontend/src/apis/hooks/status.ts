@@ -1,16 +1,28 @@
-import { useIsMutating } from "react-query";
-import { QueryKeys } from "../queries/keys";
+import { useIsMutating } from "@tanstack/react-query";
+import { QueryKeys } from "@/apis/queries/keys";
 
 export function useIsAnyActionRunning() {
-  return useIsMutating([QueryKeys.Actions]) > 0;
+  return (
+    useIsMutating({
+      mutationKey: [QueryKeys.Actions],
+    }) > 0
+  );
 }
 
 export function useIsMovieActionRunning() {
-  return useIsMutating([QueryKeys.Actions, QueryKeys.Movies]) > 0;
+  return (
+    useIsMutating({
+      mutationKey: [QueryKeys.Actions, QueryKeys.Movies],
+    }) > 0
+  );
 }
 
 export function useIsSeriesActionRunning() {
-  return useIsMutating([QueryKeys.Actions, QueryKeys.Series]) > 0;
+  return (
+    useIsMutating({
+      mutationKey: [QueryKeys.Actions, QueryKeys.Series],
+    }) > 0
+  );
 }
 
 export function useIsAnyMutationRunning() {

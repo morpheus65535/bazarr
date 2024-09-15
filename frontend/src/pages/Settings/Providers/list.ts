@@ -1,5 +1,5 @@
-import { SelectorOption } from "@/components";
 import { ReactText } from "react";
+import { SelectorOption } from "@/components";
 
 type Input<T, N> = {
   type: N;
@@ -218,6 +218,35 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
   },
+  {
+    key: "jimaku",
+    name: "Jimaku.cc",
+    description: "Japanese Subtitles Provider",
+    message:
+      "API key required. Subtitles stem from various sources and might have quality/timing issues.",
+    inputs: [
+      {
+        type: "password",
+        key: "api_key",
+        name: "API key",
+      },
+      {
+        type: "switch",
+        key: "enable_name_search_fallback",
+        name: "Search by name if no AniList ID was determined (Less accurate, required for live action)",
+      },
+      {
+        type: "switch",
+        key: "enable_archives_download",
+        name: "Also consider archives alongside uncompressed subtitles",
+      },
+      {
+        type: "switch",
+        key: "enable_ai_subs",
+        name: "Download AI generated subtitles",
+      },
+    ],
+  },
   { key: "hosszupuska", description: "Hungarian Subtitles Provider" },
   {
     key: "karagarga",
@@ -274,6 +303,21 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "password",
       },
       { type: "switch", key: "skip_wrong_fps", name: "Skip Wrong FPS" },
+    ],
+  },
+  {
+    key: "legendasnet",
+    name: "Legendas.net",
+    description: "Brazilian Subtitles Provider",
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
     ],
   },
   { key: "napiprojekt", description: "Polish Subtitles Provider" },
@@ -371,6 +415,15 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Mostly French Subtitles Provider",
   },
   { key: "subdivx", description: "LATAM Spanish / Spanish Subtitles Provider" },
+  {
+    key: "subdl",
+    inputs: [
+      {
+        type: "text",
+        key: "api_key",
+      },
+    ],
+  },
   {
     key: "subf2m",
     name: "subf2m.co",

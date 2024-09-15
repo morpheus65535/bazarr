@@ -44,6 +44,12 @@ def create_languages_dict():
         .values(name='Chinese Simplified')
         .where(TableSettingsLanguages.code3 == 'zho'))
 
+    # replace Modern Greek by Greek to match Sonarr and Radarr languages
+    database.execute(
+        update(TableSettingsLanguages)
+        .values(name='Greek')
+        .where(TableSettingsLanguages.code3 == 'ell'))
+
     languages_dict = [{
         'code3': x.code3,
         'code2': x.code2,
@@ -53,6 +59,19 @@ def create_languages_dict():
         select(TableSettingsLanguages.code3, TableSettingsLanguages.code2, TableSettingsLanguages.name,
                TableSettingsLanguages.code3b))
         .all()]
+
+
+def audio_language_from_name(lang):
+    lang_map = {
+        'Chinese': 'zh',
+    }
+
+    alpha2_code = lang_map.get(lang, None)
+
+    if alpha2_code is None:
+        return lang
+
+    return language_from_alpha2(alpha2_code)
 
 
 def language_from_alpha2(lang):

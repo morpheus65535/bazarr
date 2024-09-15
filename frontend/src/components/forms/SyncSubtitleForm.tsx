@@ -1,20 +1,23 @@
 /* eslint-disable camelcase */
-
+import { FunctionComponent } from "react";
+import { Alert, Button, Checkbox, Divider, Stack, Text } from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   useRefTracksByEpisodeId,
   useRefTracksByMovieId,
   useSubtitleAction,
 } from "@/apis/hooks";
+import {
+  GroupedSelector,
+  GroupedSelectorOptions,
+  Selector,
+} from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/Subtitles/options";
-import { toPython } from "@/utilities";
-import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Alert, Button, Checkbox, Divider, Stack, Text } from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { FunctionComponent } from "react";
-import { Selector, SelectorOption } from "../inputs";
+import { fromPython, toPython } from "@/utilities";
 
 const TaskName = "Syncing Subtitle";
 
@@ -37,15 +40,21 @@ function useReferencedSubtitles(
 
   const mediaData = mediaType === "episode" ? episodeData : movieData;
 
-  const subtitles: { group: string; value: string; label: string }[] = [];
+  const subtitles: GroupedSelectorOptions<string>[] = [];
 
   if (!mediaData.data) {
     return [];
   } else {
     if (mediaData.data.audio_tracks.length > 0) {
+      const embeddedAudioGroup: GroupedSelectorOptions<string> = {
+        group: "Embedded audio tracks",
+        items: [],
+      };
+
+      subtitles.push(embeddedAudioGroup);
+
       mediaData.data.audio_tracks.forEach((item) => {
-        subtitles.push({
-          group: "Embedded audio tracks",
+        embeddedAudioGroup.items.push({
           value: item.stream,
           label: `${item.name || item.language} (${item.stream})`,
         });
@@ -53,9 +62,15 @@ function useReferencedSubtitles(
     }
 
     if (mediaData.data.embedded_subtitles_tracks.length > 0) {
+      const embeddedSubtitlesTrackGroup: GroupedSelectorOptions<string> = {
+        group: "Embedded subtitles tracks",
+        items: [],
+      };
+
+      subtitles.push(embeddedSubtitlesTrackGroup);
+
       mediaData.data.embedded_subtitles_tracks.forEach((item) => {
-        subtitles.push({
-          group: "Embedded subtitles tracks",
+        embeddedSubtitlesTrackGroup.items.push({
           value: item.stream,
           label: `${item.name || item.language} (${item.stream})`,
         });
@@ -63,10 +78,16 @@ function useReferencedSubtitles(
     }
 
     if (mediaData.data.external_subtitles_tracks.length > 0) {
+      const externalSubtitlesFilesGroup: GroupedSelectorOptions<string> = {
+        group: "External Subtitles files",
+        items: [],
+      };
+
+      subtitles.push(externalSubtitlesFilesGroup);
+
       mediaData.data.external_subtitles_tracks.forEach((item) => {
         if (item) {
-          subtitles.push({
-            group: "External Subtitles files",
+          externalSubtitlesFilesGroup.items.push({
             value: item.path,
             label: item.name,
           });
@@ -88,6 +109,8 @@ interface FormValues {
   maxOffsetSeconds?: string;
   noFixFramerate: boolean;
   gss: boolean;
+  hi?: boolean;
+  forced?: boolean;
 }
 
 const SyncSubtitleForm: FunctionComponent<Props> = ({
@@ -101,20 +124,20 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
   const { mutateAsync } = useSubtitleAction();
   const modals = useModals();
 
-  const mediaType = selections[0].type;
-  const mediaId = selections[0].id;
-  const subtitlesPath = selections[0].path;
+  const subtitle = selections[0];
 
-  const subtitles: SelectorOption<string>[] = useReferencedSubtitles(
-    mediaType,
-    mediaId,
-    subtitlesPath,
-  );
+  const mediaType = subtitle.type;
+  const mediaId = subtitle.id;
+  const subtitlesPath = subtitle.path;
+
+  const subtitles = useReferencedSubtitles(mediaType, mediaId, subtitlesPath);
 
   const form = useForm<FormValues>({
     initialValues: {
       noFixFramerate: false,
       gss: false,
+      hi: fromPython(subtitle.hi),
+      forced: fromPython(subtitle.forced),
     },
   });
 
@@ -145,14 +168,14 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
         >
           <Text size="sm">{selections.length} subtitles selected</Text>
         </Alert>
-        <Selector
+        <GroupedSelector
           clearable
           disabled={subtitles.length === 0 || selections.length !== 1}
           label="Reference"
           placeholder="Default: choose automatically within video file"
           options={subtitles}
           {...form.getInputProps("reference")}
-        ></Selector>
+        ></GroupedSelector>
         <Selector
           clearable
           label="Max Offset Seconds"

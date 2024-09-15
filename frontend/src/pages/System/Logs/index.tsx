@@ -1,25 +1,25 @@
-import { useDeleteLogs, useSystemLogs, useSystemSettings } from "@/apis/hooks";
-import { Toolbox } from "@/components";
-import { QueryOverlay } from "@/components/async";
-import { Check, LayoutModal, Message, Text } from "@/pages/Settings/components";
-import { Environment } from "@/utilities";
+import { FunctionComponent, useCallback } from "react";
+import { Badge, Container, Group, Stack } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
+import { useModals } from "@mantine/modals";
 import {
   faDownload,
   faFilter,
   faSync,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
-import { Badge, Container, Group, Stack } from "@mantine/core";
-import { useDocumentTitle } from "@mantine/hooks";
-import { useModals } from "@mantine/modals";
-import { FunctionComponent, useCallback } from "react";
+import { useDeleteLogs, useSystemLogs, useSystemSettings } from "@/apis/hooks";
+import { Toolbox } from "@/components";
+import { QueryOverlay } from "@/components/async";
+import { Check, LayoutModal, Message, Text } from "@/pages/Settings/components";
+import { Environment } from "@/utilities";
 import Table from "./table";
 
 const SystemLogsView: FunctionComponent = () => {
   const logs = useSystemLogs();
   const { isFetching, data, refetch } = logs;
 
-  const { mutate, isLoading } = useDeleteLogs();
+  const { mutate, isPending } = useDeleteLogs();
 
   const download = useCallback(() => {
     window.open(`${Environment.baseUrl}/bazarr.log`);
@@ -86,7 +86,7 @@ const SystemLogsView: FunctionComponent = () => {
     <Container fluid px={0}>
       <QueryOverlay result={logs}>
         <Toolbox>
-          <Group spacing="xs">
+          <Group gap="xs">
             <Toolbox.Button
               loading={isFetching}
               icon={faSync}
@@ -98,17 +98,17 @@ const SystemLogsView: FunctionComponent = () => {
               Download
             </Toolbox.Button>
             <Toolbox.Button
-              loading={isLoading}
+              loading={isPending}
               icon={faTrash}
               onClick={() => mutate()}
             >
               Empty
             </Toolbox.Button>
             <Toolbox.Button
-              loading={isLoading}
+              loading={isPending}
               icon={faFilter}
               onClick={openFilterModal}
-              rightIcon={
+              rightSection={
                 suffix() !== "" ? (
                   <Badge size="xs" radius="sm">
                     {suffix()}
