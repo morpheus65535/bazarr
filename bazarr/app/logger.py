@@ -62,7 +62,7 @@ class UnwantedWaitressMessageFilter(logging.Filter):
             # no filtering in debug mode or if originating from us
             return True
 
-        if record.level != loggin.ERROR:
+        if record.level < logging.ERROR:
             return False
 
         unwantedMessages = [
