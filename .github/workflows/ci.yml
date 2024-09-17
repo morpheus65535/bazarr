@@ -70,7 +70,8 @@ jobs:
   Backend:
     runs-on: ubuntu-latest
     needs: Frontend
-
+    env:
+      SCRIPTS_DIRECTORY: .github/scripts
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -89,17 +90,11 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Unit Tests
+      - name: Run Python test scripts
         run: |
-          python3 bazarr.py --no-update &
-          PID=$!
-          sleep 15
-          if kill -s 0 $PID
-          then
-            echo "**** Bazarr launch successful ****"
-            kill $PID
-            exit 0
-          else
-          echo "**** Bazarr launch failed ****"
-            exit 1
-          fi
+          pip install -U pytest
+          pytest tests/
+
+      - name: Test Bazarr execution
+        run: |
+          bash '${{ env.SCRIPTS_DIRECTORY }}/build_test.sh'
