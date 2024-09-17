@@ -3,20 +3,13 @@ import logging
 from bazarr.app.logger import UnwantedWaitressMessageFilter
 
 def test_true_for_bazarr():
-  record = logging.makeLogRecord({
-    "level": logging.INFO,
-    "msg": "a message from BAZARR for logging"
-  })
+  record = LogRecord("", logging.INFO, "", 0, "a message from BAZARR for logging", (), None)
   assert UnwantedWaitressMessageFilter().filter(record)
 
 def test_false_below_error():
-  record = logging.makeLogRecord({
-    "level": logging.INFO
-  })
+  record = LogRecord("", logging.INFO, "", 0, "", (), None)
   assert not UnwantedWaitressMessageFilter().filter(record)
 
-def test_true_error_up():
-  record = logging.makeLogRecord({
-    "level": logging.CRITICAL
-  })
+def test_true_above_error():
+  record = LogRecord("", logging.CRITICAL, "", 0, "", (), None)
   assert UnwantedWaitressMessageFilter().filter(record)
