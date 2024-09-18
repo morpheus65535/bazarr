@@ -17,7 +17,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
-import { isString } from "lodash";
+import { isString, uniqBy } from "lodash";
 import {
   useEpisodesBySeriesId,
   useEpisodeSubtitleModification,
@@ -100,7 +100,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
   const profile = useLanguageProfileBy(series.profileId);
   const languages = useProfileItemsToLanguages(profile);
   const languageOptions = useSelectorOptions(
-    languages,
+    uniqBy(languages, "code2"),
     (v) => v.name,
     (v) => v.code2,
   );
