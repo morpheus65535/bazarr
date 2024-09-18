@@ -79,10 +79,10 @@ const Table: FunctionComponent = () => {
         }) => {
           return (
             <Group gap="xs" wrap="nowrap">
-              {items.map((v) => {
+              {items.map((v, i) => {
                 const isCutoff = v.id === cutoff || cutoff === anyCutoff;
                 return (
-                  <ItemBadge key={v.id} cutoff={isCutoff} item={v}></ItemBadge>
+                  <ItemBadge key={i} cutoff={isCutoff} item={v}></ItemBadge>
                 );
               })}
             </Group>
