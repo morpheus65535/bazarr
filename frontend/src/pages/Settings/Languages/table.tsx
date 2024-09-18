@@ -79,10 +79,10 @@ const Table: FunctionComponent = () => {
         }) => {
           return (
             <Group gap="xs" wrap="nowrap">
-              {items.map((v) => {
+              {items.map((v, i) => {
                 const isCutoff = v.id === cutoff || cutoff === anyCutoff;
                 return (
-                  <ItemBadge key={v.id} cutoff={isCutoff} item={v}></ItemBadge>
+                  <ItemBadge key={i} cutoff={isCutoff} item={v}></ItemBadge>
                 );
               })}
             </Group>
@@ -148,9 +148,19 @@ const Table: FunctionComponent = () => {
                 icon={faWrench}
                 c="gray"
                 onClick={() => {
+                  // We once had an issue on the past where there were duplicated
+                  // item ids that needs to become unique upon editing.
+                  const sanitizedProfile = {
+                    ...cloneDeep(profile),
+                    items: profile.items.map((value, index) => {
+                      return { ...value, id: index + 1 };
+                    }),
+                    tag: profile.tag || undefined,
+                  };
+
                   modals.openContextModal(ProfileEditModal, {
                     languages,
-                    profile: cloneDeep(profile),
+                    profile: sanitizedProfile,
                     onComplete: updateProfile,
                   });
                 }}
