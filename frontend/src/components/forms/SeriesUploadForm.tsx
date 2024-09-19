@@ -1,12 +1,5 @@
 import { FunctionComponent, useEffect, useMemo } from "react";
-import {
-  Button,
-  Checkbox,
-  Divider,
-  MantineColor,
-  Stack,
-  Text,
-} from "@mantine/core";
+import { Button, Divider, MantineColor, Stack, Text } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import {
   faCheck,
@@ -17,7 +10,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
-import { isString, uniqBy } from "lodash";
+import { cond, isString, uniqWith } from "lodash";
 import {
   useEpisodesBySeriesId,
   useEpisodeSubtitleModification,
@@ -28,7 +21,7 @@ import SimpleTable from "@/components/tables/SimpleTable";
 import TextPopover from "@/components/TextPopover";
 import { useModals, withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
-import { useArrayAction, useSelectorOptions } from "@/utilities";
+import { BuildKey, useArrayAction, useSelectorOptions } from "@/utilities";
 import FormUtils from "@/utilities/form";
 import {
   useLanguageProfileBy,
@@ -100,9 +93,20 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
   const profile = useLanguageProfileBy(series.profileId);
   const languages = useProfileItemsToLanguages(profile);
   const languageOptions = useSelectorOptions(
-    uniqBy(languages, "code2"),
-    (v) => v.name,
-    (v) => v.code2,
+    uniqWith(
+      languages,
+      (a, b) => a.code2 === b.code2 && a.hi === b.hi && a.forced === b.forced,
+    ),
+    (v) => {
+      const suffix = cond([
+        [(v: Language.Info) => v.hi || false, () => "(Hearing Impaired Only)"],
+        [(v) => v.forced || false, () => "(Forced Only)"],
+        [() => true, () => "(Normal or Hearing Impaired)"],
+      ]);
+
+      return `${v.name} ${suffix(v)}`;
+    },
+    (v) => BuildKey(v.code2, v.hi, v.forced),
   );
 
   const defaultLanguage = useMemo(
@@ -236,42 +240,6 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         },
       },
       {
-        header: "Forced",
-        accessorKey: "forced",
-        cell: ({ row: { original, index } }) => {
-          return (
-            <Checkbox
-              checked={original.forced}
-              onChange={({ currentTarget: { checked } }) => {
-                action.mutate(index, {
-                  ...original,
-                  forced: checked,
-                  hi: checked ? false : original.hi,
-                });
-              }}
-            ></Checkbox>
-          );
-        },
-      },
-      {
-        header: "HI",
-        accessorKey: "hi",
-        cell: ({ row: { original, index } }) => {
-          return (
-            <Checkbox
-              checked={original.hi}
-              onChange={({ currentTarget: { checked } }) => {
-                action.mutate(index, {
-                  ...original,
-                  hi: checked,
-                  forced: checked ? false : original.forced,
-                });
-              }}
-            ></Checkbox>
-          );
-        },
-      },
-      {
         header: () => (
           <Selector
             {...languageOptions}
@@ -344,7 +312,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         const { sonarrSeriesId: seriesId } = series;
 
         files.forEach((value) => {
-          const { file, hi, forced, language, episode } = value;
+          const { file, language, episode } = value;
 
           if (language === null || episode === null) {
             throw new Error(
@@ -361,8 +329,8 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
             form: {
               file,
               language: code2,
-              hi,
-              forced,
+              hi: language.hi || false,
+              forced: language.forced || false,
             },
           });
         });

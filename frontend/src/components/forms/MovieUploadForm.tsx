@@ -1,12 +1,5 @@
 import { FunctionComponent, useEffect, useMemo } from "react";
-import {
-  Button,
-  Checkbox,
-  Divider,
-  MantineColor,
-  Stack,
-  Text,
-} from "@mantine/core";
+import { Button, Divider, MantineColor, Stack, Text } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import {
   faCheck,
@@ -17,14 +10,14 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
-import { isString, uniqBy } from "lodash";
+import { cond, isString, uniqWith } from "lodash";
 import { useMovieSubtitleModification } from "@/apis/hooks";
 import { Action, Selector } from "@/components/inputs";
 import SimpleTable from "@/components/tables/SimpleTable";
 import TextPopover from "@/components/TextPopover";
 import { useModals, withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
-import { useArrayAction, useSelectorOptions } from "@/utilities";
+import { BuildKey, useArrayAction, useSelectorOptions } from "@/utilities";
 import FormUtils from "@/utilities/form";
 import {
   useLanguageProfileBy,
@@ -34,8 +27,6 @@ import {
 type SubtitleFile = {
   file: File;
   language: Language.Info | null;
-  forced: boolean;
-  hi: boolean;
   validateResult?: SubtitleValidateResult;
 };
 
@@ -88,9 +79,20 @@ const MovieUploadForm: FunctionComponent<Props> = ({
 
   const languages = useProfileItemsToLanguages(profile);
   const languageOptions = useSelectorOptions(
-    uniqBy(languages, "code2"),
-    (v) => v.name,
-    (v) => v.code2,
+    uniqWith(
+      languages,
+      (a, b) => a.code2 === b.code2 && a.hi === b.hi && a.forced === b.forced,
+    ),
+    (v) => {
+      const suffix = cond([
+        [(v: Language.Info) => v.hi || false, () => "(Hearing Impaired Only)"],
+        [(v) => v.forced || false, () => "(Forced Only)"],
+        [() => true, () => "(Normal or Hearing Impaired)"],
+      ]);
+
+      return `${v.name} ${suffix(v)}`;
+    },
+    (v) => BuildKey(v.code2, v.hi, v.forced),
   );
 
   const defaultLanguage = useMemo(
@@ -104,8 +106,6 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         .map<SubtitleFile>((file) => ({
           file,
           language: defaultLanguage,
-          forced: defaultLanguage?.forced ?? false,
-          hi: defaultLanguage?.hi ?? false,
         }))
         .map<SubtitleFile>((v) => ({
           ...v,
@@ -208,34 +208,6 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         },
       },
       {
-        header: "Forced",
-        accessorKey: "forced",
-        cell: ({ row: { original, index } }) => {
-          return (
-            <Checkbox
-              checked={original.forced}
-              onChange={({ currentTarget: { checked } }) => {
-                action.mutate(index, { ...original, forced: checked });
-              }}
-            ></Checkbox>
-          );
-        },
-      },
-      {
-        header: "HI",
-        accessorKey: "hi",
-        cell: ({ row: { original, index } }) => {
-          return (
-            <Checkbox
-              checked={original.hi}
-              onChange={({ currentTarget: { checked } }) => {
-                action.mutate(index, { ...original, hi: checked });
-              }}
-            ></Checkbox>
-          );
-        },
-      },
-      {
         header: "Language",
         accessorKey: "language",
         cell: ({ row: { original, index } }) => {
@@ -275,14 +247,19 @@ const MovieUploadForm: FunctionComponent<Props> = ({
       onSubmit={form.onSubmit(({ files }) => {
         const { radarrId } = movie;
 
-        files.forEach(({ file, language, hi, forced }) => {
+        files.forEach(({ file, language }) => {
           if (language === null) {
             throw new Error("Language is not selected");
           }
 
           task.create(file.name, TaskGroup.UploadSubtitle, upload.mutateAsync, {
             radarrId,
-            form: { file, language: language.code2, hi, forced },
+            form: {
+              file,
+              language: language.code2,
+              hi: language.hi || false,
+              forced: language.forced || false,
+            },
           });
         });
 
