@@ -328,6 +328,7 @@ validators = [
     Validator('titulky.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('titulky.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('titulky.approved_only', must_exist=True, default=False, is_type_of=bool),
+    Validator('titulky.skip_wrong_fps', must_exist=True, default=False, is_type_of=bool),
 
     # embeddedsubtitles section
     Validator('embeddedsubtitles.included_codecs', must_exist=True, default=[], is_type_of=list),

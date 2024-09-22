@@ -53,6 +53,8 @@ class TitulkySubtitle(Subtitle):
                  approved,
                  page_link,
                  download_link,
+                 fps,
+                 skip_wrong_fps,
                  asked_for_episode=None):
         super().__init__(language, page_link=page_link)
 
@@ -67,6 +69,8 @@ class TitulkySubtitle(Subtitle):
         self.page_link = page_link
         self.uploader = uploader
         self.download_link = download_link
+        self.fps = fps
+        self.skip_wrong_fps = skip_wrong_fps
         self.asked_for_episode = asked_for_episode
         self.matches = None
 
@@ -77,6 +81,17 @@ class TitulkySubtitle(Subtitle):
     def get_matches(self, video):
         matches = set()
         media_type = 'movie' if isinstance(video, Movie) else 'episode'
+
+        # video has fps info, sub also, and sub's fps is greater than 0
+        if video.fps and self.fps and not framerate_equal(video.fps, self.fps):
+            self.wrong_fps = True
+
+            if self.skip_wrong_fps:
+                logger.debug("Wrong FPS (expected: %s, got: %s, lowering score massively)", video.fps, self.fps)
+                # fixme: may be too harsh
+                return set()
+            else:
+                logger.debug("Wrong FPS (expected: %s, got: %s, continuing)", video.fps, self.fps)
 
         if media_type == 'episode':
             # match imdb_id of a series
@@ -120,16 +135,19 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
     def __init__(self,
                  username=None,
                  password=None,
-                 approved_only=None):
+                 approved_only=None,
+                 skip_wrong_fps=None):
         if not all([username, password]):
             raise ConfigurationError("Username and password must be specified!")
-
         if type(approved_only) is not bool:
+            raise ConfigurationError(f"Approved_only {approved_only} must be a boolean!")
+        if type(skip_wrong_fps) is not bool:
             raise ConfigurationError(f"Approved_only {approved_only} must be a boolean!")
 
         self.username = username
         self.password = password
         self.approved_only = approved_only
+        self.skip_wrong_fps = skip_wrong_fps
 
         self.session = None
 
@@ -268,6 +286,44 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
 
         return result
 
+    # Retrieves the fps value given subtitles id from the details page and caches it.
+    def retrieve_subtitles_fps(self, subtitles_id):
+        cache_key = f"titulky_subs-{subtitles_id}_fps"
+        cached_fps_value = cache.get(cache_key)
+
+        if(cached_fps_value != NO_VALUE):
+            return cached_fps_value
+
+        params = {
+            'action': 'detail',
+            'id': subtitles_id
+        }
+        browse_url = self.build_url(params)
+        html_src = self.fetch_page(browse_url, allow_redirects=True)
+        browse_page_soup = ParserBeautifulSoup(html_src, ['lxml', 'html.parser'])
+
+        fps_container = browse_page_soup.select_one("div.ulozil:has(> img[src='img/ico/Movieroll.png'])")
+        if(fps_container is None):
+            logger.debug("Titulky.com: Could not manage to find the FPS container in the details page")
+            cache.set(cache_key, None)
+            return None
+
+        fps_text_components = fps_container.get_text(strip=True).split()
+        # Check if the container contains valid fps data
+        if(len(fps_text_components) < 2 or fps_text_components[1].lower() != "fps"):
+            cache.set(cache_key, None)
+            return None
+
+        fps_text = fps_text_components[0].replace(",", ".") # Fix decimal comma to decimal point
+        try:
+            fps = float(fps_text)
+            cache.set(cache_key, fps)            
+            return fps
+        except:
+            cache.set(cache_key, None)
+            return None
+
+
     """ 
         There are multiple ways to find substitles on Titulky.com, however we are 
         going to utilize a page that lists all available subtitles for all episodes in a season
@@ -377,7 +433,8 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                     'language': sub_language,
                     'uploader': uploader,
                     'details_link': details_link,
-                    'download_link': download_link
+                    'download_link': download_link,
+                    'fps': retrieve_subtitles_fps(sub_id),
                 }
 
                 # If this row contains the first subtitles to an episode number,
@@ -413,7 +470,9 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                 sub_info['approved'],
                 sub_info['details_link'],
                 sub_info['download_link'],
-                asked_for_episode=(media_type is SubtitlesType.EPISODE)
+                sub_info['fps'],
+                self.skip_wrong_fps,
+                asked_for_episode=(media_type is SubtitlesType.EPISODE),
             )
             subtitles.append(subtitle_instance)
 
