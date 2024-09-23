@@ -172,9 +172,14 @@ def configure_logging(debug=False):
     logging.getLogger("rebulk").setLevel(logging.WARNING)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
 
+def empty_file(filename):
+    # Open the log file in write mode to clear its contents
+    with open(filename, 'w'):
+        pass  # Just opening and closing the file will clear it
 
 def empty_log():
     fh.doRollover()
+    empty_file(get_log_file_path())
     logging.info('BAZARR Log file emptied')
 
 
