@@ -24,6 +24,8 @@ from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 
 from subliminal_patch.subtitle import Subtitle, guess_matches
 
+from subliminal_patch.score import framerate_equal
+
 from dogpile.cache.api import NO_VALUE
 from subzero.language import Language
 
@@ -84,14 +86,12 @@ class TitulkySubtitle(Subtitle):
 
         # video has fps info, sub also, and sub's fps is greater than 0
         if video.fps and self.fps and not framerate_equal(video.fps, self.fps):
-            self.wrong_fps = True
-
             if self.skip_wrong_fps:
-                logger.debug("Wrong FPS (expected: %s, got: %s, lowering score massively)", video.fps, self.fps)
+                logger.debug(f"Titulky.com: Wrong FPS (expected: {video.fps}, got: {self.fps}, lowering score massively)")
                 # fixme: may be too harsh
                 return set()
             else:
-                logger.debug("Wrong FPS (expected: %s, got: %s, continuing)", video.fps, self.fps)
+                logger.debug(f"Titulky.com: Wrong FPS (expected: {video.fps}, got: {self.fps}, continuing)")
 
         if media_type == 'episode':
             # match imdb_id of a series
@@ -292,6 +292,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         cached_fps_value = cache.get(cache_key)
 
         if(cached_fps_value != NO_VALUE):
+            logger.debug(f"Titulky.com: Reusing cached fps value {cached_fps_value} for subtitles with id {subtitles_id}")
             return cached_fps_value
 
         params = {
@@ -311,15 +312,18 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         fps_text_components = fps_container.get_text(strip=True).split()
         # Check if the container contains valid fps data
         if(len(fps_text_components) < 2 or fps_text_components[1].lower() != "fps"):
+            logger.debug(f"Titulky.com: Could not determine FPS value for subtitles with id {subtitles_id}")
             cache.set(cache_key, None)
             return None
 
         fps_text = fps_text_components[0].replace(",", ".") # Fix decimal comma to decimal point
         try:
             fps = float(fps_text)
+            logger.debug(f"Titulky.com: Retrieved FPS value {fps} from details page for subtitles with id {subtitles_id}")
             cache.set(cache_key, fps)            
             return fps
         except:
+            logger.debug(f"Titulky.com: There was an error parsing FPS value string for subtitles with id {subtitles_id}")
             cache.set(cache_key, None)
             return None
 
@@ -434,7 +438,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                     'uploader': uploader,
                     'details_link': details_link,
                     'download_link': download_link,
-                    'fps': retrieve_subtitles_fps(sub_id),
+                    'fps': self.retrieve_subtitles_fps(sub_id),
                 }
 
                 # If this row contains the first subtitles to an episode number,
