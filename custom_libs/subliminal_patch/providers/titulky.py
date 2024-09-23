@@ -320,7 +320,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         try:
             fps = float(fps_text)
             logger.debug(f"Titulky.com: Retrieved FPS value {fps} from details page for subtitles with id {subtitles_id}")
-            cache.set(cache_key, fps)            
+            cache.set(cache_key, fps)
             return fps
         except:
             logger.debug(f"Titulky.com: There was an error parsing FPS value string for subtitles with id {subtitles_id}")
