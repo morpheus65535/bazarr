@@ -148,25 +148,39 @@ const Table: FunctionComponent = () => {
                 icon={faWrench}
                 c="gray"
                 onClick={() => {
-                  let ids: number[] = [];
-                  let duplicatedIds: number[] = [];
                   const lastId = maxBy(profile.items, "id")?.id || 0;
 
                   // We once had an issue on the past where there were duplicated
                   // item ids that needs to become unique upon editing.
                   const sanitizedProfile = {
                     ...cloneDeep(profile),
-                    items: profile.items.map((value) => {
-                      if (includes(ids, value.id)) {
-                        duplicatedIds = [...duplicatedIds, value.id];
+                    items: profile.items.reduce(
+                      (acc, value) => {
+                        const { ids, duplicatedIds, items } = acc;
 
-                        return { ...value, id: lastId + duplicatedIds.length };
-                      }
+                        // We once had an issue on the past where there were duplicated
+                        // item ids that needs to become unique upon editing.
+                        if (includes(ids, value.id)) {
+                          duplicatedIds.push(value.id);
+                          items.push({
+                            ...value,
+                            id: lastId + duplicatedIds.length,
+                          });
 
-                      ids = [...ids, value.id];
+                          return acc;
+                        }
 
-                      return value;
-                    }),
+                        ids.push(value.id);
+                        items.push(value);
+
+                        return acc;
+                      },
+                      {
+                        ids: [] as number[],
+                        duplicatedIds: [] as number[],
+                        items: [] as typeof profile.items,
+                      },
+                    ).items,
                     tag: profile.tag || undefined,
                   };
 
