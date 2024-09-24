@@ -18,16 +18,20 @@ function useSearch(query: string) {
   return useMemo<SearchResultItem[]>(
     () =>
       data?.map((v) => {
-        let link: string;
-        if (v.sonarrSeriesId) {
-          link = `/series/${v.sonarrSeriesId}`;
-        } else if (v.radarrId) {
-          link = `/movies/${v.radarrId}`;
-        } else {
+        const { link, typeLabel } = (() => {
+          if (v.sonarrSeriesId) {
+            return { link: `/series/${v.sonarrSeriesId}`, typeLabel: "S" };
+          }
+
+          if (v.radarrId) {
+            return { link: `/movies/${v.radarrId}`, typeLabel: "M" };
+          }
+
           throw new Error("Unknown search result");
-        }
+        })();
+
         return {
-          value: `${v.title} (${v.year})`,
+          value: `${v.title} (${v.year}) (${typeLabel})`,
           link,
         };
       }) ?? [],
