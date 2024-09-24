@@ -2,7 +2,7 @@ import { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, Button, Group } from "@mantine/core";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { ColumnDef } from "@tanstack/react-table";
-import { cloneDeep } from "lodash";
+import { cloneDeep, includes, maxBy } from "lodash";
 import { Action } from "@/components";
 import {
   anyCutoff,
@@ -148,12 +148,24 @@ const Table: FunctionComponent = () => {
                 icon={faWrench}
                 c="gray"
                 onClick={() => {
+                  let ids: number[] = [];
+                  let duplicatedIds: number[] = [];
+                  const lastId = maxBy(profile.items, "id")?.id || 0;
+
                   // We once had an issue on the past where there were duplicated
                   // item ids that needs to become unique upon editing.
                   const sanitizedProfile = {
                     ...cloneDeep(profile),
-                    items: profile.items.map((value, index) => {
-                      return { ...value, id: index + 1 };
+                    items: profile.items.map((value) => {
+                      if (includes(ids, value.id)) {
+                        duplicatedIds = [...duplicatedIds, value.id];
+
+                        return { ...value, id: lastId + duplicatedIds.length };
+                      }
+
+                      ids = [...ids, value.id];
+
+                      return value;
                     }),
                     tag: profile.tag || undefined,
                   };
