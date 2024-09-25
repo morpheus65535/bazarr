@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Autocomplete, ComboboxItem, OptionsFilter, Text } from "@mantine/core";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { chain, includes } from "lodash";
 import { useServerSearch } from "@/apis/hooks";
 import { useDebouncedValue } from "@/utilities";
 
@@ -15,27 +16,45 @@ function useSearch(query: string) {
   const debouncedQuery = useDebouncedValue(query, 500);
   const { data } = useServerSearch(debouncedQuery, debouncedQuery.length >= 0);
 
+  const duplicates = chain(data)
+    .groupBy((item) => `${item.title} (${item.year})`)
+    .filter((group) => group.length > 1)
+    .map((group) => `${group[0].title} (${group[0].year})`)
+    .value();
+
   return useMemo<SearchResultItem[]>(
     () =>
       data?.map((v) => {
-        const { link, typeLabel } = (() => {
+        const { link, displayName } = (() => {
+          const hasDuplicate = includes(duplicates, `${v.title} (${v.year})`);
+
           if (v.sonarrSeriesId) {
-            return { link: `/series/${v.sonarrSeriesId}`, typeLabel: "S" };
+            return {
+              link: `/series/${v.sonarrSeriesId}`,
+              displayName: hasDuplicate
+                ? `${v.title} (${v.year}) (S)`
+                : `${v.title} (${v.year})`,
+            };
           }
 
           if (v.radarrId) {
-            return { link: `/movies/${v.radarrId}`, typeLabel: "M" };
+            return {
+              link: `/movies/${v.radarrId}`,
+              displayName: hasDuplicate
+                ? `${v.title} (${v.year}) (M)`
+                : `${v.title} (${v.year})`,
+            };
           }
 
           throw new Error("Unknown search result");
         })();
 
         return {
-          value: `${v.title} (${v.year}) (${typeLabel})`,
+          value: displayName,
           link,
         };
       }) ?? [],
-    [data],
+    [data, duplicates],
   );
 }
 
