@@ -20,6 +20,8 @@ declare namespace System {
     bazarr_config_directory: string;
     bazarr_directory: string;
     bazarr_version: string;
+    database_engine: string;
+    database_migration: string;
     operating_system: string;
     package_version: string;
     python_version: string;
