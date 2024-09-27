@@ -54,8 +54,13 @@ HI_REGEX_WITH_PARENTHESIS = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3
 
 HI_REGEX_PARENTHESIS_EXCLUDED_LANGUAGES = ['ara']
 
+HI_REGEX_DISABLED_LANGUAGES = ['zho']
+
 
 def parse_for_hi_regex(subtitle_text, alpha3_language):
+    if alpha3_language in HI_REGEX_DISABLED_LANGUAGES:
+        return False
+
     if alpha3_language in HI_REGEX_PARENTHESIS_EXCLUDED_LANGUAGES:
         return bool(re.search(HI_REGEX_WITHOUT_PARENTHESIS, subtitle_text))
     else:
