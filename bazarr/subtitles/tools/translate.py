@@ -16,6 +16,7 @@ from radarr.history import history_log_movie
 from sonarr.history import history_log
 from subtitles.processing import ProcessSubtitlesResult
 from app.event_handler import show_progress, hide_progress
+from utilities.path_mappings import path_mappings
 
 
 def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, forced, hi, media_type, sonarr_series_id,
@@ -104,14 +105,19 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
 
     message = f"{language_from_alpha2(from_lang)} subtitles translated to {language_from_alpha3(to_lang)}."
 
+    if media_type == 'series':
+        prr = path_mappings.path_replace_reverse
+    else:
+        prr = path_mappings.path_replace_reverse_movie
+
     result = ProcessSubtitlesResult(message=message,
-                                    reversed_path=video_path,
+                                    reversed_path=prr(video_path),
                                     downloaded_language_code2=to_lang,
                                     downloaded_provider=None,
                                     score=None,
                                     forced=forced,
                                     subtitle_id=None,
-                                    reversed_subtitles_path=dest_srt_file,
+                                    reversed_subtitles_path=prr(dest_srt_file),
                                     hearing_impaired=hi)
 
     if media_type == 'series':

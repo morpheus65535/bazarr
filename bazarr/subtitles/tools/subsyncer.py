@@ -112,14 +112,19 @@ class SubSyncer:
                                f"{offset_seconds} seconds and a framerate scale factor of "
                                f"{f'{framerate_scale_factor:.2f}'}.")
 
+                    if sonarr_series_id:
+                        prr = path_mappings.path_replace_reverse
+                    else:
+                        prr = path_mappings.path_replace_reverse_movie
+
                     result = ProcessSubtitlesResult(message=message,
-                                                    reversed_path=path_mappings.path_replace_reverse(self.reference),
+                                                    reversed_path=prr(self.reference),
                                                     downloaded_language_code2=srt_lang,
                                                     downloaded_provider=None,
                                                     score=None,
                                                     forced=forced,
                                                     subtitle_id=None,
-                                                    reversed_subtitles_path=srt_path,
+                                                    reversed_subtitles_path=prr(self.srtin),
                                                     hearing_impaired=hi)
 
                     if sonarr_episode_id:

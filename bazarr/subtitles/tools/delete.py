@@ -36,40 +36,47 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
         language_log += ':forced'
         language_string += ' forced'
 
+    if media_type == 'series':
+        pr = path_mappings.path_replace
+        prr = path_mappings.path_replace_reverse
+    else:
+        pr = path_mappings.path_replace_movie
+        prr = path_mappings.path_replace_reverse_movie
+
     result = ProcessSubtitlesResult(message=f"{language_string} subtitles deleted from disk.",
-                                    reversed_path=path_mappings.path_replace_reverse(media_path),
+                                    reversed_path=prr(media_path),
                                     downloaded_language_code2=language_log,
                                     downloaded_provider=None,
                                     score=None,
                                     forced=None,
                                     subtitle_id=None,
-                                    reversed_subtitles_path=path_mappings.path_replace_reverse(subtitles_path),
+                                    reversed_subtitles_path=prr(subtitles_path),
                                     hearing_impaired=None)
 
     if media_type == 'series':
         try:
-            os.remove(path_mappings.path_replace(subtitles_path))
+            os.remove(pr(subtitles_path))
         except OSError:
             logging.exception(f'BAZARR cannot delete subtitles file: {subtitles_path}')
-            store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
+            store_subtitles(prr(media_path), media_path)
             return False
         else:
             history_log(0, sonarr_series_id, sonarr_episode_id, result)
-            store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
+            store_subtitles(prr(media_path), media_path)
             notify_sonarr(sonarr_series_id)
             event_stream(type='series', action='update', payload=sonarr_series_id)
             event_stream(type='episode-wanted', action='update', payload=sonarr_episode_id)
             return True
     else:
         try:
-            os.remove(path_mappings.path_replace_movie(subtitles_path))
+            os.remove(pr(subtitles_path))
         except OSError:
             logging.exception(f'BAZARR cannot delete subtitles file: {subtitles_path}')
-            store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
+            store_subtitles_movie(prr(media_path), media_path)
             return False
         else:
             history_log_movie(0, radarr_id, result)
-            store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
+            store_subtitles_movie(prr(media_path), media_path)
             notify_radarr(radarr_id)
             event_stream(type='movie-wanted', action='update', payload=radarr_id)
             return True
