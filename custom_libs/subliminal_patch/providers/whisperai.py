@@ -16,7 +16,7 @@ from babelfish.exceptions import LanguageReverseError
 
 import ffmpeg
 import functools
-import pycountry
+from pycountry import languages
 
 # These are all the languages Whisper supports.
 # from whisper.tokenizer import LANGUAGES
@@ -139,7 +139,7 @@ set_log_level()
 #                   or 'fre' instead of 'fra' for the French language
 def get_ISO_639_2_code(iso639_3_code):
     # find the language using ISO 639-3 code
-    language = pycountry.languages.get(alpha_3=iso639_3_code)
+    language = languages.get(alpha_3=iso639_3_code)
     # get the ISO 639-2 code or use the original input if there isn't a match
     iso639_2_code = language.bibliographic if language and hasattr(language, 'bibliographic') else iso639_3_code
     logger.debug(f"ffmpeg using language code '{iso639_2_code}' (instead of '{iso639_3_code}')")
