@@ -16,6 +16,7 @@ from babelfish.exceptions import LanguageReverseError
 
 import ffmpeg
 import functools
+import pycountry
 
 # These are all the languages Whisper supports.
 # from whisper.tokenizer import LANGUAGES
@@ -132,6 +133,18 @@ def set_log_level(newLevel="INFO"):
 # initialize to default above
 set_log_level()
 
+# ffmpeg uses the older ISO 639-2 code when extracting audio streams based on language
+# if we give it the newer ISO 639-3 code it can't find that audio stream by name because it's different
+# for example it wants 'ger' instead of 'deu' for the German language
+#                   or 'fre' instead of 'fra' for the French language
+def get_ISO_639_2_code(iso639_3_code):
+    # find the language using ISO 639-3 code
+    language = pycountry.languages.get(alpha_3=iso639_3_code)
+    # get the ISO 639-2 code or use the original input if there isn't a match
+    iso639_2_code = language.bibliographic if language and hasattr(language, 'bibliographic') else iso639_3_code
+    logger.debug(f"ffmpeg using language code '{iso639_2_code}' (instead of '{iso639_3_code}')")
+    return iso639_2_code
+
 @functools.lru_cache(2)
 def encode_audio_stream(path, ffmpeg_path, audio_stream_language=None):
     logger.debug("Encoding audio stream to WAV with ffmpeg")
@@ -140,7 +153,10 @@ def encode_audio_stream(path, ffmpeg_path, audio_stream_language=None):
         # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
         inp = ffmpeg.input(path, threads=0)
         if audio_stream_language:
-            logger.debug(f"Whisper will only use the {audio_stream_language} audio stream for {path}")
+            # There is more than one audio stream, so pick the requested one by name
+            # Use the ISO 639-2 code if available
+            audio_stream_language = get_ISO_639_2_code(audio_stream_language)
+            logger.debug(f"Whisper will use the '{audio_stream_language}' audio stream for {path}")
             inp = inp[f'a:m:language:{audio_stream_language}']
 
         out, _ = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af="aresample=async=1") \
