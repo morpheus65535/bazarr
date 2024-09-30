@@ -159,6 +159,8 @@ class ChineseTraditional(CustomLanguage):
     )
     _extensions_hi = (
         ".cht.hi", ".tc.hi", ".zht.hi", "hant.hi", ".big5.hi", "繁體中文.hi", "雙語.hi", ".zh-tw.hi",
+        ".cht.cc", ".tc.cc", ".zht.cc", "hant.cc", ".big5.cc", "繁體中文.cc", "雙語.cc", ".zh-tw.cc",
+        ".cht.sdh", ".tc.sdh", ".zht.sdh", "hant.sdh", ".big5.sdh", "繁體中文.sdh", "雙語.sdh", ".zh-tw.sdh",
     )
     _extensions_fuzzy = ("繁", "雙語")
     _extensions_disamb_fuzzy = ("简", "双语")
