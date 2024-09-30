@@ -31,11 +31,19 @@ def base_url_slash_cleaner(uri):
 
 
 def validate_ip_address(ip_string):
+    if ip_string == '*':
+        return True
     try:
         ip_address(ip_string)
         return True
     except ValueError:
         return False
+
+def validate_tags(tags):
+    if not tags:
+        return True
+
+    return all(re.match( r'^[a-z0-9_-]+$', item) for item in tags)
 
 
 ONE_HUNDRED_YEARS_IN_MINUTES = 52560000
@@ -67,7 +75,7 @@ validators = [
     # general section
     Validator('general.flask_secret_key', must_exist=True, default=hexlify(os.urandom(16)).decode(),
               is_type_of=str),
-    Validator('general.ip', must_exist=True, default='0.0.0.0', is_type_of=str, condition=validate_ip_address),
+    Validator('general.ip', must_exist=True, default='*', is_type_of=str, condition=validate_ip_address),
     Validator('general.port', must_exist=True, default=6767, is_type_of=int, gte=1, lte=65535),
     Validator('general.base_url', must_exist=True, default='', is_type_of=str),
     Validator('general.path_mappings', must_exist=True, default=[], is_type_of=list),
@@ -88,6 +96,9 @@ validators = [
     Validator('general.use_sonarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.path_mappings_movie', must_exist=True, default=[], is_type_of=list),
+    Validator('general.serie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.movie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.remove_profile_tags', must_exist=True, default=[], is_type_of=list, condition=validate_tags),
     Validator('general.serie_default_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.serie_default_profile', must_exist=True, default='', is_type_of=(int, str)),
     Validator('general.movie_default_enabled', must_exist=True, default=False, is_type_of=bool),
@@ -176,7 +187,7 @@ validators = [
     Validator('sonarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('sonarr.series_sync', must_exist=True, default=60, is_type_of=int,
               is_in=[15, 60, 180, 360, 720, 1440, 10080, ONE_HUNDRED_YEARS_IN_MINUTES]),
-    Validator('sonarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
+    Validator('sonarr.excluded_tags', must_exist=True, default=[], is_type_of=list, condition=validate_tags),
     Validator('sonarr.excluded_series_types', must_exist=True, default=[], is_type_of=list),
     Validator('sonarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
     Validator('sonarr.exclude_season_zero', must_exist=True, default=False, is_type_of=bool),
@@ -199,7 +210,7 @@ validators = [
     Validator('radarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('radarr.movies_sync', must_exist=True, default=60, is_type_of=int,
               is_in=[15, 60, 180, 360, 720, 1440, 10080, ONE_HUNDRED_YEARS_IN_MINUTES]),
-    Validator('radarr.excluded_tags', must_exist=True, default=[], is_type_of=list),
+    Validator('radarr.excluded_tags', must_exist=True, default=[], is_type_of=list, condition=validate_tags),
     Validator('radarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
     Validator('radarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
     Validator('radarr.sync_only_monitored_movies', must_exist=True, default=False, is_type_of=bool),
@@ -271,6 +282,10 @@ validators = [
     Validator('legendasdivx.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('legendasdivx.skip_wrong_fps', must_exist=True, default=False, is_type_of=bool),
 
+    # legendasnet section
+    Validator('legendasnet.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('legendasnet.password', must_exist=True, default='', is_type_of=str, cast=str),
+
     # ktuvit section
     Validator('ktuvit.email', must_exist=True, default='', is_type_of=str),
     Validator('ktuvit.hashed_password', must_exist=True, default='', is_type_of=str, cast=str),
@@ -298,6 +313,12 @@ validators = [
 
     # analytics section
     Validator('analytics.enabled', must_exist=True, default=True, is_type_of=bool),
+    
+    # jimaku section
+    Validator('jimaku.api_key', must_exist=True, default='', is_type_of=str),
+    Validator('jimaku.enable_name_search_fallback', must_exist=True, default=True, is_type_of=bool),
+    Validator('jimaku.enable_archives_download', must_exist=True, default=False, is_type_of=bool),
+    Validator('jimaku.enable_ai_subs', must_exist=True, default=False, is_type_of=bool),
 
     # titlovi section
     Validator('titlovi.username', must_exist=True, default='', is_type_of=str, cast=str),
@@ -454,6 +475,7 @@ array_keys = ['excluded_tags',
               'enabled_integrations',
               'path_mappings',
               'path_mappings_movie',
+              'remove_profile_tags',
               'language_equals',
               'blacklisted_languages',
               'blacklisted_providers']

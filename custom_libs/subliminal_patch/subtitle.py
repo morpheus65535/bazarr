@@ -12,6 +12,7 @@ import chardet
 import pysrt
 import pysubs2
 from bs4 import UnicodeDammit
+from copy import deepcopy
 from pysubs2 import SSAStyle
 from pysubs2.formats.subrip import parse_tags, MAX_REPRESENTABLE_TIME
 from pysubs2.time import ms_to_times
@@ -65,6 +66,11 @@ class Subtitle(Subtitle_):
     # format = "srt" # default format is srt
 
     def __init__(self, language, hearing_impaired=False, page_link=None, encoding=None, mods=None, original_format=False):
+        # language needs to be cloned because it is actually a reference to the provider language object
+        # if a new copy is not created then all subsequent subtitles for this provider will incorrectly be modified
+        # at least until Bazarr is restarted or the provider language object is recreated somehow
+        language = deepcopy(language)
+
         # set subtitle language to hi if it's hearing_impaired
         if hearing_impaired:
             language = Language.rebuild(language, hi=True)
@@ -275,7 +281,7 @@ class Subtitle(Subtitle_):
         return encoding
 
     def is_valid(self):
-        """Check if a :attr:`text` is a valid SubRip format. Note that orignal format will pypass the checking
+        """Check if a :attr:`text` is a valid SubRip format. Note that original format will bypass the checking
 
         :return: whether or not the subtitle is valid.
         :rtype: bool

@@ -5,7 +5,8 @@ import os
 
 from subzero.language import Language
 
-from app.database import database, insert
+from app.database import database, insert, update
+from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ class CustomLanguage:
     language = "pt-BR"
     official_alpha2 = "pt"
     official_alpha3 = "por"
-    name = "Brazilian Portuguese"
+    name = "Portuguese (Brazil)"
     iso = "BR"
     _scripts = []
     _possible_matches = ("pt-br", "pob", "pb", "brazilian", "brasil", "brazil")
@@ -50,13 +51,19 @@ class CustomLanguage:
         """Register the custom language subclasses in the database."""
 
         for sub in cls.__subclasses__():
-            database.execute(
-                insert(table)
-                .values(code3=sub.alpha3,
-                        code2=sub.alpha2,
-                        name=sub.name,
-                        enabled=0)
-                .on_conflict_do_nothing())
+            try:
+                database.execute(
+                    insert(table)
+                    .values(code3=sub.alpha3,
+                            code2=sub.alpha2,
+                            name=sub.name,
+                            enabled=0))
+            except IntegrityError:
+                database.execute(
+                    update(table)
+                    .values(code2=sub.alpha2,
+                            name=sub.name)
+                    .where(table.code3 == sub.alpha3))
 
     @classmethod
     def found_external(cls, subtitle, subtitle_path):
@@ -212,7 +219,7 @@ class LatinAmericanSpanish(CustomLanguage):
     language = "es-MX"
     official_alpha2 = "es"
     official_alpha3 = "spa"
-    name = "Latin American Spanish"
+    name = "Spanish (Latino)"
     iso = "MX"  # Not fair, but ok
     _scripts = ("419",)
     _possible_matches = (

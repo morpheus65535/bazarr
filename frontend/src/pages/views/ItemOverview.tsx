@@ -31,6 +31,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Language } from "@/components/bazarr";
 import { BuildKey } from "@/utilities";
 import {
+  normalizeAudioLanguage,
   useLanguageProfileBy,
   useProfileItemsToLanguages,
 } from "@/utilities/languages";
@@ -87,7 +88,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           icon={faMusic}
           title="Audio Language"
         >
-          {v.name}
+          {normalizeAudioLanguage(v.name)}
         </ItemBadge>
       )) ?? [],
     [item?.audio_language],
@@ -142,12 +143,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         }}
       >
         <Grid.Col span={3} visibleFrom="sm">
-          <Image
-            src={item?.poster}
-            mx="auto"
-            maw="250px"
-            fallbackSrc="https://placehold.co/250x250?text=Placeholder"
-          ></Image>
+          <Image src={item?.poster} mx="auto" maw="250px"></Image>
         </Grid.Col>
         <Grid.Col span={8} maw="100%" style={{ overflow: "hidden" }}>
           <Stack align="flex-start" gap="xs" mx={6}>

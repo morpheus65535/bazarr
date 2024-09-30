@@ -40,6 +40,7 @@ declare namespace Language {
     mustContain: string[];
     mustNotContain: string[];
     originalFormat: boolean | null;
+    tag: string | undefined;
   }
 }
 

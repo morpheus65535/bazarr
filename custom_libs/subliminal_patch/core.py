@@ -49,7 +49,17 @@ SUBTITLE_EXTENSIONS = ('.srt', '.sub', '.smi', '.txt', '.ssa', '.ass', '.mpl', '
 
 _POOL_LIFETIME = datetime.timedelta(hours=12)
 
-HI_REGEX = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}](?<!{\\an\d})')
+HI_REGEX_WITHOUT_PARENTHESIS = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\{].{3,}[\]\}](?<!{\\an\d})')
+HI_REGEX_WITH_PARENTHESIS = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}](?<!{\\an\d})')
+
+HI_REGEX_PARENTHESIS_EXCLUDED_LANGUAGES = ['ara']
+
+
+def parse_for_hi_regex(subtitle_text, alpha3_language):
+    if alpha3_language in HI_REGEX_PARENTHESIS_EXCLUDED_LANGUAGES:
+        return bool(re.search(HI_REGEX_WITHOUT_PARENTHESIS, subtitle_text))
+    else:
+        return bool(re.search(HI_REGEX_WITH_PARENTHESIS, subtitle_text))
 
 
 def remove_crap_from_fn(fn):
@@ -1203,7 +1213,10 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             continue
 
         # create subtitle path
-        if subtitle.text and bool(re.search(HI_REGEX, subtitle.text)):
+        if subtitle.text and parse_for_hi_regex(subtitle_text=subtitle.text,
+                                                alpha3_language=subtitle.language.alpha3 if
+                                                (hasattr(subtitle, 'language') and hasattr(subtitle.language, 'alpha3'))
+                                                else None):
             subtitle.language.hi = True
         subtitle_path = get_subtitle_path(file_path, None if single else subtitle.language,
                                           forced_tag=subtitle.language.forced,

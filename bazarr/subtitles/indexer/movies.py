@@ -216,7 +216,9 @@ def list_missing_subtitles_movies(no=None, send_event=True):
 
             if cutoff_temp_list:
                 for cutoff_temp in cutoff_temp_list:
-                    cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
+                    cutoff_language = {'language': cutoff_temp['language'],
+                                       'forced': cutoff_temp['forced'],
+                                       'hi': cutoff_temp['hi']}
                     if cutoff_temp['audio_exclude'] == 'True' and \
                             any(x['code2'] == cutoff_temp['language'] for x in
                                 get_audio_profile_languages(movie_subtitles.audio_language)):
@@ -224,7 +226,10 @@ def list_missing_subtitles_movies(no=None, send_event=True):
                     elif cutoff_language in actual_subtitles_list:
                         cutoff_met = True
                     # HI is considered as good as normal
-                    elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
+                    elif (cutoff_language and
+                          {'language': cutoff_language['language'],
+                           'forced': 'False',
+                           'hi': 'True'} in actual_subtitles_list):
                         cutoff_met = True
 
             if cutoff_met:

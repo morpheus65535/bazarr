@@ -54,7 +54,10 @@ def _ffmpeg_call(command, log_callback=None, progress_callback=None, timeout=100
             if match:
                 size, time_, bitrate, speed = match.groups()
                 info = {"size": size, "time": time_, "bitrate": bitrate, "speed": speed}
-                progress_callback(info)
+            else:
+                info = {"size": "n/a", "time": "n/a", "bitrate": "n/a", "speed": "n/a"}
+
+            progress_callback(info)
 
         if timeout is not None and time.time() - start > timeout:
             proc.kill()

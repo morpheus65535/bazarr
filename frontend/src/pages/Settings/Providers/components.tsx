@@ -108,10 +108,12 @@ export const ProviderView: FunctionComponent<ProviderViewProps> = ({
         })
         .map((v, idx) => (
           <Card
+            titleStyles={{ overflow: "hidden", textOverflow: "ellipsis" }}
             key={BuildKey(v.key, idx)}
             header={v.name ?? capitalize(v.key)}
             description={v.description}
             onClick={() => select(v)}
+            lineClamp={2}
           ></Card>
         ));
     } else {

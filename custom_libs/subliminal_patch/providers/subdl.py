@@ -17,8 +17,7 @@ from .mixins import ProviderRetryMixin
 from subliminal_patch.subtitle import Subtitle
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.providers import Provider
-from subliminal_patch.subtitle import guess_matches
-from guessit import guessit
+from subliminal_patch.providers import utils
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +25,6 @@ retry_amount = 3
 retry_timeout = 5
 
 language_converters.register('subdl = subliminal_patch.converters.subdl:SubdlConverter')
-
-supported_languages = list(language_converters['subdl'].to_subdl.keys())
 
 
 class SubdlSubtitle(Subtitle):
@@ -59,7 +56,6 @@ class SubdlSubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
-        type_ = "movie" if isinstance(video, Movie) else "episode"
 
         # handle movies and series separately
         if isinstance(video, Episode):
@@ -79,8 +75,7 @@ class SubdlSubtitle(Subtitle):
             # imdb
             matches.add('imdb_id')
 
-        # other properties
-        matches |= guess_matches(video, guessit(self.release_info, {"type": type_}))
+        utils.update_matches(matches, video, self.release_info)
 
         self.matches = matches
 
@@ -91,7 +86,7 @@ class SubdlProvider(ProviderRetryMixin, Provider):
     """Subdl Provider"""
     server_hostname = 'api.subdl.com'
 
-    languages = {Language(*lang) for lang in supported_languages}
+    languages = {Language(*lang) for lang in list(language_converters['subdl'].to_subdl.keys())}
     languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
     languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
@@ -130,7 +125,8 @@ class SubdlProvider(ProviderRetryMixin, Provider):
             imdb_id = self.video.imdb_id
 
         # be sure to remove duplicates using list(set())
-        langs_list = sorted(list(set([lang.basename.upper() for lang in languages])))
+        langs_list = sorted(list(set([language_converters['subdl'].convert(lang.alpha3, lang.country, lang.script) for
+                                      lang in languages])))
 
         langs = ','.join(langs_list)
         logger.debug(f'Searching for those languages: {langs}')
@@ -148,7 +144,9 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                                                  ('subs_per_page', 30),
                                                  ('type', 'tv'),
                                                  ('comment', 1),
-                                                 ('releases', 1)),
+                                                 ('releases', 1),
+                                                 ('bazarr', 1)),  # this argument filter incompatible image based or
+                                         # txt subtitles
                                          timeout=30),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
@@ -163,7 +161,9 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                                                  ('subs_per_page', 30),
                                                  ('type', 'movie'),
                                                  ('comment', 1),
-                                                 ('releases', 1)),
+                                                 ('releases', 1),
+                                                 ('bazarr', 1)),  # this argument filter incompatible image based or
+                                         # txt subtitles
                                          timeout=30),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
@@ -181,7 +181,8 @@ class SubdlProvider(ProviderRetryMixin, Provider):
         result = res.json()
 
         if ('success' in result and not result['success']) or ('status' in result and not result['status']):
-            raise ProviderError(result['error'])
+            logger.debug(result["error"])
+            return []
 
         logger.debug(f"Query returned {len(result['subtitles'])} subtitles")
 

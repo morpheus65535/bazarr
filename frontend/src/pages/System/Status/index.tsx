@@ -144,6 +144,8 @@ const SystemStatusView: FunctionComponent = () => {
           <Row title="Radarr Version">{status?.radarr_version}</Row>
           <Row title="Operating System">{status?.operating_system}</Row>
           <Row title="Python Version">{status?.python_version}</Row>
+          <Row title="Database Engine">{status?.database_engine}</Row>
+          <Row title="Database Version">{status?.database_migration}</Row>
           <Row title="Bazarr Directory">{status?.bazarr_directory}</Row>
           <Row title="Bazarr Config Directory">
             {status?.bazarr_config_directory}

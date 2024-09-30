@@ -2,7 +2,7 @@ import { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, Button, Group } from "@mantine/core";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { ColumnDef } from "@tanstack/react-table";
-import { cloneDeep } from "lodash";
+import { cloneDeep, includes, maxBy } from "lodash";
 import { Action } from "@/components";
 import {
   anyCutoff,
@@ -66,6 +66,10 @@ const Table: FunctionComponent = () => {
         accessorKey: "name",
       },
       {
+        header: "Tag",
+        accessorKey: "tag",
+      },
+      {
         header: "Languages",
         accessorKey: "items",
         cell: ({
@@ -75,10 +79,10 @@ const Table: FunctionComponent = () => {
         }) => {
           return (
             <Group gap="xs" wrap="nowrap">
-              {items.map((v) => {
+              {items.map((v, i) => {
                 const isCutoff = v.id === cutoff || cutoff === anyCutoff;
                 return (
-                  <ItemBadge key={v.id} cutoff={isCutoff} item={v}></ItemBadge>
+                  <ItemBadge key={i} cutoff={isCutoff} item={v}></ItemBadge>
                 );
               })}
             </Group>
@@ -144,9 +148,45 @@ const Table: FunctionComponent = () => {
                 icon={faWrench}
                 c="gray"
                 onClick={() => {
+                  const lastId = maxBy(profile.items, "id")?.id || 0;
+
+                  // We once had an issue on the past where there were duplicated
+                  // item ids that needs to become unique upon editing.
+                  const sanitizedProfile = {
+                    ...cloneDeep(profile),
+                    items: profile.items.reduce(
+                      (acc, value) => {
+                        const { ids, duplicatedIds, items } = acc;
+
+                        // We once had an issue on the past where there were duplicated
+                        // item ids that needs to become unique upon editing.
+                        if (includes(ids, value.id)) {
+                          duplicatedIds.push(value.id);
+                          items.push({
+                            ...value,
+                            id: lastId + duplicatedIds.length,
+                          });
+
+                          return acc;
+                        }
+
+                        ids.push(value.id);
+                        items.push(value);
+
+                        return acc;
+                      },
+                      {
+                        ids: [] as number[],
+                        duplicatedIds: [] as number[],
+                        items: [] as typeof profile.items,
+                      },
+                    ).items,
+                    tag: profile.tag || undefined,
+                  };
+
                   modals.openContextModal(ProfileEditModal, {
                     languages,
-                    profile: cloneDeep(profile),
+                    profile: sanitizedProfile,
                     onComplete: updateProfile,
                   });
                 }}
@@ -178,6 +218,7 @@ const Table: FunctionComponent = () => {
           const profile = {
             profileId: nextProfileId,
             name: "",
+            tag: undefined,
             items: [],
             cutoff: null,
             mustContain: [],

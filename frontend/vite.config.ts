@@ -36,6 +36,9 @@ export default defineConfig(async ({ mode, command }) => {
         enableBuild: false,
       }),
       VitePWA({
+        workbox: {
+          globIgnores: ["index.html"],
+        },
         registerType: "autoUpdate",
         includeAssets: [
           `${imagesFolder}/favicon.ico`,

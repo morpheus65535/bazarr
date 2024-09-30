@@ -132,9 +132,9 @@ _DEFAULT_HEADERS = {
 class Subf2mProvider(Provider):
     provider_name = "subf2m"
 
-    _movie_title_regex = re.compile(r"^(.+?)( \((\d{4})\))?$")
+    _movie_title_regex = re.compile(r"^(.+?)(\s+\((\d{4})\))?$")
     _tv_show_title_regex = re.compile(
-        r"^(.+?) [-\(]\s?(.*?) (season|series)\)?( \((\d{4})\))?$"
+        r"^(.+?)\s+[-\(]\s?(.*?)\s+(season|series)\)?(\s+\((\d{4})\))?$"
     )
     _tv_show_title_alt_regex = re.compile(r"(.+)\s(\d{1,2})(?:\s|$)")
     _supported_languages = {}
@@ -220,7 +220,7 @@ class Subf2mProvider(Provider):
 
         results = []
         for result in self._gen_results(title):
-            text = result.text.lower()
+            text = result.text.strip().lower()
             match = self._movie_title_regex.match(text)
             if not match:
                 continue
@@ -254,7 +254,7 @@ class Subf2mProvider(Provider):
 
         results = []
         for result in self._gen_results(title):
-            text = result.text.lower()
+            text = result.text.strip().lower()
 
             match = self._tv_show_title_regex.match(text)
             if not match:

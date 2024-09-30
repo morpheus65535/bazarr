@@ -58,9 +58,12 @@ class NoExceptionFormatter(logging.Formatter):
 
 class UnwantedWaitressMessageFilter(logging.Filter):
     def filter(self, record):
-        if settings.general.debug:
-            # no filtering in debug mode
+        if settings.general.debug or "BAZARR" in record.msg:
+            # no filtering in debug mode or if originating from us
             return True
+
+        if record.levelno < logging.ERROR:
+            return False
 
         unwantedMessages = [
             "Exception while serving /api/socket.io/",
@@ -161,7 +164,7 @@ def configure_logging(debug=False):
         logging.getLogger("websocket").setLevel(logging.CRITICAL)
         logging.getLogger("ga4mp.ga4mp").setLevel(logging.ERROR)
 
-    logging.getLogger("waitress").setLevel(logging.ERROR)
+    logging.getLogger("waitress").setLevel(logging.INFO)
     logging.getLogger("waitress").addFilter(UnwantedWaitressMessageFilter())
     logging.getLogger("knowit").setLevel(logging.CRITICAL)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
@@ -169,9 +172,14 @@ def configure_logging(debug=False):
     logging.getLogger("rebulk").setLevel(logging.WARNING)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
 
+def empty_file(filename):
+    # Open the log file in write mode to clear its contents
+    with open(filename, 'w'):
+        pass  # Just opening and closing the file will clear it
 
 def empty_log():
     fh.doRollover()
+    empty_file(get_log_file_path())
     logging.info('BAZARR Log file emptied')
 
 
