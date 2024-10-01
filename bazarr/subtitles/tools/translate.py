@@ -28,9 +28,15 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
     }
 
     to_lang = alpha3_from_alpha2(to_lang)
-    lang_obj = CustomLanguage.from_value(to_lang, "alpha3")
-    if not lang_obj:
+    try:
         lang_obj = Language(to_lang)
+    except ValueError:
+        custom_lang_obj = CustomLanguage.from_value(to_lang, "alpha3")
+        if custom_lang_obj:
+            lang_obj = CustomLanguage.subzero_language(custom_lang_obj)
+        else:
+            logging.debug(f'BAZARR is unable to translate to {to_lang} for this subtitles: {source_srt_file}')
+            return False
     if forced:
         lang_obj = Language.rebuild(lang_obj, forced=True)
     if hi:
