@@ -142,7 +142,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         if type(approved_only) is not bool:
             raise ConfigurationError(f"Approved_only {approved_only} must be a boolean!")
         if type(skip_wrong_fps) is not bool:
-            raise ConfigurationError(f"Approved_only {approved_only} must be a boolean!")
+            raise ConfigurationError(f"Skip_wrong_fps {skip_wrong_fps} must be a boolean!")
 
         self.username = username
         self.password = password
