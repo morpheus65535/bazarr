@@ -218,7 +218,8 @@ def refine_anidb_ids(video):
     )
     
     if not anidb_series_id:
-        logger.error(f'Could not find anime series {video.series}')
+        logger.debug(f'AniDB refinement has been skipped for {video.series}. The series is not an anime or it is not mapped.')
+        
         return video
     
     anidb_episode_id = None
