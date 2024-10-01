@@ -56,7 +56,7 @@ class TitloviSubtitle(Subtitle):
     provider_name = 'titlovi'
 
     def __init__(self, language, download_link, sid, releases, title, alt_title=None, season=None,
-                 episode=None, year=None, rating=None, download_count=None, asked_for_release_group=None, asked_for_episode=None):
+                 episode=None, year=None, rating=None, download_count=None, asked_for_release_group=None, asked_for_episode=None, is_pack=False):
         super(TitloviSubtitle, self).__init__(language)
         self.sid = sid
         self.releases = self.release_info = releases
@@ -71,6 +71,7 @@ class TitloviSubtitle(Subtitle):
         self.matches = None
         self.asked_for_release_group = asked_for_release_group
         self.asked_for_episode = asked_for_episode
+        self.is_pack = is_pack
 
     def __repr__(self):
         if self.season and self.episode:
@@ -258,15 +259,19 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
                 # skip if season and episode number does not match
                 if season and season != sub.get('Season'):
                     continue
-                elif episode and episode != sub.get('Episode'):
+                elif episode and episode != sub.get('Episode') and sub.get('Episode') != 0:
                     continue
 
+                is_pack = False
+                if sub.get('Episode') == 0:
+                    is_pack = True
+                    
                 subtitle = self.subtitle_class(Language.fromtitlovi(sub.get('Lang')), sub.get('Link'), sub.get('Id'), sub.get('Release'), _title,
-                                               alt_title=alt_title, season=sub.get('Season'), episode=sub.get('Episode'),
+                                               alt_title=alt_title, season=sub.get('Season'), episode=episode,
                                                year=sub.get('Year'), rating=sub.get('Rating'),
                                                download_count=sub.get('DownloadCount'),
                                                asked_for_release_group=video.release_group,
-                                               asked_for_episode=episode)
+                                               asked_for_episode=episode, is_pack=is_pack)
             else:
                 subtitle = self.subtitle_class(Language.fromtitlovi(sub.get('Lang')), sub.get('Link'), sub.get('Id'), sub.get('Release'), _title,
                                                alt_title=alt_title, year=sub.get('Year'), rating=sub.get('Rating'),
@@ -321,13 +326,25 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
 
         subs_in_archive = archive.namelist()
 
-        # if Serbian lat and cyr versions are packed together, try to find right version
-        if len(subs_in_archive) > 1 and (subtitle.language == 'sr' or subtitle.language == 'sr-Cyrl'):
+        if len(subs_in_archive) > 1 and subtitle.is_pack:
+            # if subtitle is a pack, try to find the right subtitle by format SSxEE or SxxEyy
+            self.get_subtitle_from_pack(subtitle, subs_in_archive, archive)
+        elif len(subs_in_archive) > 1 and (subtitle.language == 'sr' or subtitle.language == 'sr-Cyrl') and subtitle.episode != 0:
+            # if Serbian lat and cyr versions are packed together, try to find right version
             self.get_subtitle_from_bundled_archive(subtitle, subs_in_archive, archive)
         else:
             # use default method for everything else
             subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
 
+    def get_subtitle_from_pack(self, subtitle, subs_in_archive, archive):
+        # try to find the right subtitle, it should contain season and episode number in format SSxEE or SxxEyy
+        format1 = '%.2dx%.2d' % (subtitle.season, subtitle.episode)
+        format2 = 's%.2de%.2d' % (subtitle.season, subtitle.episode)
+        for sub_name in subs_in_archive:
+            if format1 in sub_name.lower() or format2 in sub_name.lower():
+                subtitle.content = fix_line_ending(archive.read(sub_name))
+                return
+    
     def get_subtitle_from_bundled_archive(self, subtitle, subs_in_archive, archive):
         sr_lat_subs = []
         sr_cyr_subs = []
