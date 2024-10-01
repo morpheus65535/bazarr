@@ -329,7 +329,7 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
         if len(subs_in_archive) > 1 and subtitle.is_pack:
             # if subtitle is a pack, try to find the right subtitle by format SSxEE or SxxEyy
             self.get_subtitle_from_pack(subtitle, subs_in_archive, archive)
-        elif len(subs_in_archive) > 1 and (subtitle.language == 'sr' or subtitle.language == 'sr-Cyrl') and subtitle.episode != 0:
+        elif len(subs_in_archive) > 1 and (subtitle.language == 'sr' or subtitle.language == 'sr-Cyrl'):
             # if Serbian lat and cyr versions are packed together, try to find right version
             self.get_subtitle_from_bundled_archive(subtitle, subs_in_archive, archive)
         else:
