@@ -7,15 +7,12 @@ import random
 import re
 
 from requests import Session
-from subliminal import __short_version__
-from subliminal.video import Episode
-from subliminal.video import Movie
+from subliminal import ProviderError
+from subliminal.video import Episode, Movie
 from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.providers import Provider
-from subliminal_patch.providers.utils import get_archive_from_bytes
-from subliminal_patch.providers.utils import get_subtitle_from_archive
-from subliminal_patch.providers.utils import update_matches
-from subliminal_patch.providers.utils import USER_AGENTS
+from subliminal_patch.providers.utils import (get_archive_from_bytes, get_subtitle_from_archive, update_matches,
+                                              USER_AGENTS)
 from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
 
@@ -111,7 +108,6 @@ class SubdivxSubtitlesProvider(Provider):
         self.session = Session()
 
     def initialize(self):
-        # self.session.headers["User-Agent"] = f"Subliminal/{__short_version__}"
         self.session.headers["User-Agent"] = random.choice(USER_AGENTS)
         self.session.cookies.update({"iduser_cookie": _IDUSER_COOKIE})
 
@@ -166,9 +162,26 @@ class SubdivxSubtitlesProvider(Provider):
         return subtitles
 
     def _query_results(self, query, video):
+        token_link = f"{_SERVER_URL}/inc/gt.php?gt=1"
+
+        token_response = self.session.get(token_link, timeout=30)
+
+        if token_response.status_code != 200:
+            raise ProviderError("Unable to obtain a token")
+
+        try:
+            token_response_json = token_response.json()
+        except JSONDecodeError:
+            raise ProviderError("Unable to parse JSON response")
+        else:
+            if 'token' in token_response_json and token_response_json['token']:
+                token = token_response_json['token']
+            else:
+                raise ProviderError("Response doesn't include a token")
+
         search_link = f"{_SERVER_URL}/inc/ajax.php"
 
-        payload = {"tabla": "resultados", "filtros": "", "buscar": query}
+        payload = {"tabla": "resultados", "filtros": "", "buscar393": query, "token": token}
 
         logger.debug("Query: %s", query)
 
@@ -197,7 +210,7 @@ class SubdivxSubtitlesProvider(Provider):
         # Iterate over each subtitle in the response
         for item in data["aaData"]:
             id = item["id"]
-            page_link = f"{_SERVER_URL}/descargar.php?id={id}"
+            page_link = f"{_SERVER_URL}/{id}"
             title = _clean_title(item["titulo"])
             description = item["descripcion"]
             uploader = item["nick"]

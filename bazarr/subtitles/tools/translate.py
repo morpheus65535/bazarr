@@ -16,6 +16,7 @@ from radarr.history import history_log_movie
 from sonarr.history import history_log
 from subtitles.processing import ProcessSubtitlesResult
 from app.event_handler import show_progress, hide_progress
+from utilities.path_mappings import path_mappings
 
 
 def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, forced, hi, media_type, sonarr_series_id,
@@ -27,9 +28,15 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
     }
 
     to_lang = alpha3_from_alpha2(to_lang)
-    lang_obj = CustomLanguage.from_value(to_lang, "alpha3")
-    if not lang_obj:
+    try:
         lang_obj = Language(to_lang)
+    except ValueError:
+        custom_lang_obj = CustomLanguage.from_value(to_lang, "alpha3")
+        if custom_lang_obj:
+            lang_obj = CustomLanguage.subzero_language(custom_lang_obj)
+        else:
+            logging.debug(f'BAZARR is unable to translate to {to_lang} for this subtitles: {source_srt_file}')
+            return False
     if forced:
         lang_obj = Language.rebuild(lang_obj, forced=True)
     if hi:
@@ -104,14 +111,19 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
 
     message = f"{language_from_alpha2(from_lang)} subtitles translated to {language_from_alpha3(to_lang)}."
 
+    if media_type == 'series':
+        prr = path_mappings.path_replace_reverse
+    else:
+        prr = path_mappings.path_replace_reverse_movie
+
     result = ProcessSubtitlesResult(message=message,
-                                    reversed_path=video_path,
+                                    reversed_path=prr(video_path),
                                     downloaded_language_code2=to_lang,
                                     downloaded_provider=None,
                                     score=None,
                                     forced=forced,
                                     subtitle_id=None,
-                                    reversed_subtitles_path=dest_srt_file,
+                                    reversed_subtitles_path=prr(dest_srt_file),
                                     hearing_impaired=hi)
 
     if media_type == 'series':

@@ -218,10 +218,12 @@ def refine_anidb_ids(video):
     )
     
     if not anidb_series_id:
-        logger.error(f'Could not find anime series {video.series}')
         return video
+
+    logger.debug(f'AniDB refinement identified {video.series} as {anidb_series_id}.')
     
     anidb_episode_id = None
+
     if anidb_client.has_api_credentials:
         if anidb_client.is_throttled:
             logger.warning(f'API daily limit reached. Skipping episode ID refinement for {video.series}')

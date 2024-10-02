@@ -1,7 +1,6 @@
 # Bazarr dependencies
 alembic==1.13.1
 aniso8601==9.0.1
-argparse==1.4.0
 apprise==1.7.6
 apscheduler<=3.10.4
 attrs==23.2.0

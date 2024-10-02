@@ -162,14 +162,4 @@ class Language(Language_):
         return Language(*Language_.fromalpha3b(s).__getstate__())
 
 
-IETF_MATCH = ".+\.([^-.]+)(?:-[A-Za-z]+)?$"
-ENDSWITH_LANGUAGECODE_RE = re.compile("\.([^-.]{2,3})(?:-[A-Za-z]{2,})?$")
-
-
-def match_ietf_language(s, ietf=False):
-    language_match = re.match(".+\.([^\.]+)$" if not ietf
-                              else IETF_MATCH, s)
-    if language_match and len(language_match.groups()) == 1:
-        language = language_match.groups()[0]
-        return language
-    return s
+ENDSWITH_LANGUAGECODE_RE = re.compile(r"\.([^-.]{2,3})(?:-[A-Za-z]{2,})?$")

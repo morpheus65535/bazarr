@@ -270,6 +270,7 @@ function useRoutes(): CustomRouteObject[] {
               {
                 path: "status",
                 name: "Status",
+                badge: data?.status,
                 element: (
                   <Lazy>
                     <SystemStatusView></SystemStatusView>
@@ -309,6 +310,7 @@ function useRoutes(): CustomRouteObject[] {
       data?.sonarr_signalr,
       data?.radarr_signalr,
       data?.announcements,
+      data?.status,
       radarr,
       sonarr,
     ],

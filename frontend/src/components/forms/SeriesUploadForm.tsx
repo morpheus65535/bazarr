@@ -1,9 +1,9 @@
-import { FunctionComponent, useEffect, useMemo } from "react";
+import React, { FunctionComponent, useEffect, useMemo } from "react";
 import {
   Button,
-  Checkbox,
   Divider,
   MantineColor,
+  Select,
   Stack,
   Text,
 } from "@mantine/core";
@@ -17,12 +17,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
-import { isString } from "lodash";
+import { isString, uniqBy } from "lodash";
 import {
   useEpisodesBySeriesId,
   useEpisodeSubtitleModification,
   useSubtitleInfos,
 } from "@/apis/hooks";
+import { subtitlesTypeOptions } from "@/components/forms/uploadFormSelectorTypes";
 import { Action, Selector } from "@/components/inputs";
 import SimpleTable from "@/components/tables/SimpleTable";
 import TextPopover from "@/components/TextPopover";
@@ -100,7 +101,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
   const profile = useLanguageProfileBy(series.profileId);
   const languages = useProfileItemsToLanguages(profile);
   const languageOptions = useSelectorOptions(
-    languages,
+    uniqBy(languages, "code2"),
     (v) => v.name,
     (v) => v.code2,
   );
@@ -236,42 +237,6 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         },
       },
       {
-        header: "Forced",
-        accessorKey: "forced",
-        cell: ({ row: { original, index } }) => {
-          return (
-            <Checkbox
-              checked={original.forced}
-              onChange={({ currentTarget: { checked } }) => {
-                action.mutate(index, {
-                  ...original,
-                  forced: checked,
-                  hi: checked ? false : original.hi,
-                });
-              }}
-            ></Checkbox>
-          );
-        },
-      },
-      {
-        header: "HI",
-        accessorKey: "hi",
-        cell: ({ row: { original, index } }) => {
-          return (
-            <Checkbox
-              checked={original.hi}
-              onChange={({ currentTarget: { checked } }) => {
-                action.mutate(index, {
-                  ...original,
-                  hi: checked,
-                  forced: checked ? false : original.forced,
-                });
-              }}
-            ></Checkbox>
-          );
-        },
-      },
-      {
         header: () => (
           <Selector
             {...languageOptions}
@@ -280,8 +245,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
             onChange={(value) => {
               if (value) {
                 action.update((item) => {
-                  item.language = value;
-                  return item;
+                  return { ...item, language: value };
                 });
               }
             }}
@@ -298,6 +262,61 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
                 action.mutate(index, { ...original, language: item });
               }}
             ></Selector>
+          );
+        },
+      },
+      {
+        header: () => (
+          <Selector
+            options={subtitlesTypeOptions}
+            value={null}
+            placeholder="Type"
+            onChange={(value) => {
+              if (value) {
+                action.update((item) => {
+                  switch (value) {
+                    case "hi":
+                      return { ...item, hi: true, forced: false };
+                    case "forced":
+                      return { ...item, hi: false, forced: true };
+                    case "normal":
+                      return { ...item, hi: false, forced: false };
+                    default:
+                      return item;
+                  }
+                });
+              }
+            }}
+          ></Selector>
+        ),
+        accessorKey: "type",
+        cell: ({ row: { original, index } }) => {
+          return (
+            <Select
+              value={
+                subtitlesTypeOptions.find((s) => {
+                  if (original.hi) {
+                    return s.value === "hi";
+                  }
+
+                  if (original.forced) {
+                    return s.value === "forced";
+                  }
+
+                  return s.value === "normal";
+                })?.value
+              }
+              data={subtitlesTypeOptions}
+              onChange={(value) => {
+                if (value) {
+                  action.mutate(index, {
+                    ...original,
+                    hi: value === "hi",
+                    forced: value === "forced",
+                  });
+                }
+              }}
+            ></Select>
           );
         },
       },

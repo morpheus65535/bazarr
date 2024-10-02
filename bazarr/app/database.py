@@ -528,3 +528,32 @@ def upgrade_languages_profile_hi_values():
             .values({"items": json.dumps(items)})
             .where(TableLanguagesProfiles.profileId == languages_profile.profileId)
         )
+
+
+def fix_languages_profiles_with_duplicate_ids():
+    languages_profiles = database.execute(
+        select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.items, TableLanguagesProfiles.cutoff)).all()
+    for languages_profile in languages_profiles:
+        if languages_profile.cutoff:
+            # ignore profiles that have a cutoff set
+            continue
+        languages_profile_ids = []
+        languages_profile_has_duplicate = False
+        languages_profile_items = json.loads(languages_profile.items)
+        for items in languages_profile_items:
+            if items['id'] in languages_profile_ids:
+                languages_profile_has_duplicate = True
+                break
+            else:
+                languages_profile_ids.append(items['id'])
+
+        if languages_profile_has_duplicate:
+            item_id = 0
+            for items in languages_profile_items:
+                item_id += 1
+                items['id'] = item_id
+            database.execute(
+                update(TableLanguagesProfiles)
+                .values({"items": json.dumps(languages_profile_items)})
+                .where(TableLanguagesProfiles.profileId == languages_profile.profileId)
+            )

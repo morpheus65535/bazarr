@@ -6,6 +6,7 @@ import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
+import { uniqueId } from "lodash";
 import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
 import { Action } from "@/components";
 import { AudioList } from "@/components/bazarr";
@@ -95,7 +96,7 @@ const MovieView: FunctionComponent = () => {
                 <Badge
                   mr="xs"
                   color="yellow"
-                  key={BuildKey(v.code2, v.hi, v.forced)}
+                  key={uniqueId(`${BuildKey(v.code2, v.hi, v.forced)}_`)}
                 >
                   <Language.Text value={v}></Language.Text>
                 </Badge>
