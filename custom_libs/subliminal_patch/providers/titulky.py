@@ -71,7 +71,7 @@ class TitulkySubtitle(Subtitle):
         self.page_link = page_link
         self.uploader = uploader
         self.download_link = download_link
-        self.fps = fps
+        self.fps = fps if skip_wrong_fps else None # This attribute should be ignored if skip_wrong_fps is false
         self.skip_wrong_fps = skip_wrong_fps
         self.asked_for_episode = asked_for_episode
         self.matches = None
@@ -84,14 +84,9 @@ class TitulkySubtitle(Subtitle):
         matches = set()
         media_type = 'movie' if isinstance(video, Movie) else 'episode'
 
-        # video has fps info, sub also, and sub's fps is greater than 0
-        if video.fps and self.fps and not framerate_equal(video.fps, self.fps):
-            if self.skip_wrong_fps:
-                logger.debug(f"Titulky.com: Wrong FPS (expected: {video.fps}, got: {self.fps}, lowering score massively)")
-                # fixme: may be too harsh
-                return set()
-            else:
-                logger.debug(f"Titulky.com: Wrong FPS (expected: {video.fps}, got: {self.fps}, continuing)")
+        if self.skip_wrong_fps and video.fps and self.fps and not framerate_equal(video.fps, self.fps):
+            logger.debug(f"Titulky.com: Wrong FPS (expected: {video.fps}, got: {self.fps}, lowering score massively)")
+            return set()
 
         if media_type == 'episode':
             # match imdb_id of a series
@@ -438,7 +433,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                     'uploader': uploader,
                     'details_link': details_link,
                     'download_link': download_link,
-                    'fps': self.retrieve_subtitles_fps(sub_id),
+                    'fps': self.retrieve_subtitles_fps(sub_id) if skip_wrong_fps else None,
                 }
 
                 # If this row contains the first subtitles to an episode number,
