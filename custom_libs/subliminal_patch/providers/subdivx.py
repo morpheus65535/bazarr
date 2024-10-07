@@ -39,6 +39,7 @@ _SEASON_NUM_RE = re.compile(
 )
 _EPISODE_YEAR_RE = re.compile(r"\((?P<x>(19\d{2}|20[0-2]\d))\)")
 _UNSUPPORTED_RE = re.compile(r"(extras|forzado(s)?|forced)\s?$", flags=re.IGNORECASE)
+_VERSION_RESOLUTION = re.compile(r'id="vs">([^<]+)<\/div>')
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +162,16 @@ class SubdivxSubtitlesProvider(Provider):
 
         return subtitles
 
+    def _get_vs(self):
+        #    t["buscar" + $("#vs").html().replace(".", "").replace("v", "")] = $("#buscar").val(),
+        res = self.session.get('https://subdivx.com/')
+        results = _VERSION_RESOLUTION.findall(res.text)
+        if results is not None and len(results) == 0:
+            return -1
+        version = results[0]
+        version = version.replace('.','').replace('v','')
+        return version
+
     def _query_results(self, query, video):
         token_link = f"{_SERVER_URL}/inc/gt.php?gt=1"
 
@@ -180,8 +191,8 @@ class SubdivxSubtitlesProvider(Provider):
                 raise ProviderError("Response doesn't include a token")
 
         search_link = f"{_SERVER_URL}/inc/ajax.php"
-
-        payload = {"tabla": "resultados", "filtros": "", "buscar393": query, "token": token}
+        version = self._get_vs()
+        payload = {"tabla": "resultados", "filtros": "", f"buscar{version}": query, "token": token}
 
         logger.debug("Query: %s", query)
 
