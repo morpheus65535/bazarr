@@ -217,7 +217,7 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
         is_episode = False
         if season and episode:
             is_episode = True
-            #search_params['season'] = season
+            search_params['season'] = season
             #search_params['episode'] = episode
         #if year:
         #    search_params['year'] = year
@@ -239,6 +239,18 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
             resp_json = response.json()
             if resp_json['SubtitleResults']:
                 query_results.extend(resp_json['SubtitleResults'])
+            
+            # if there are more pages, loop through them. If there is more than 3 pages, stop at 3
+            if resp_json['PagesAvailable'] > 1:
+                for page in range(2, min(4, resp_json['PagesAvailable'] + 1)):
+                    search_params['pg'] = page
+                    response = self.get_result(self.api_search_url, search_params)
+                    resp_json = response.json()
+                    if resp_json['SubtitleResults']:
+                        query_results.extend(resp_json['SubtitleResults'])
+                    else:
+                        break
+
         except TooManyRequests:
             raise
         except Exception as e:
