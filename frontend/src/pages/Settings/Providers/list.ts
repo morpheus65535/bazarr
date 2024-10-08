@@ -517,6 +517,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "approved_only",
         name: "Skip unapproved subtitles",
       },
+      {
+        type: "switch",
+        key: "skip_wrong_fps",
+        name: "Skip subtitles with mismatched fps to video's",
+      },
     ],
   },
   {

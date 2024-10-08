@@ -284,6 +284,7 @@ def get_providers_auth():
             'username': settings.titulky.username,
             'password': settings.titulky.password,
             'approved_only': settings.titulky.approved_only,
+            'skip_wrong_fps': settings.titulky.skip_wrong_fps,
         },
         'titlovi': {
             'username': settings.titlovi.username,

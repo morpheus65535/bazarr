@@ -24,6 +24,8 @@ from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 
 from subliminal_patch.subtitle import Subtitle, guess_matches
 
+from subliminal_patch.score import framerate_equal
+
 from dogpile.cache.api import NO_VALUE
 from subzero.language import Language
 
@@ -53,6 +55,8 @@ class TitulkySubtitle(Subtitle):
                  approved,
                  page_link,
                  download_link,
+                 fps,
+                 skip_wrong_fps,
                  asked_for_episode=None):
         super().__init__(language, page_link=page_link)
 
@@ -67,6 +71,8 @@ class TitulkySubtitle(Subtitle):
         self.page_link = page_link
         self.uploader = uploader
         self.download_link = download_link
+        self.fps = fps if skip_wrong_fps else None # This attribute should be ignored if skip_wrong_fps is false
+        self.skip_wrong_fps = skip_wrong_fps
         self.asked_for_episode = asked_for_episode
         self.matches = None
 
@@ -77,6 +83,10 @@ class TitulkySubtitle(Subtitle):
     def get_matches(self, video):
         matches = set()
         media_type = 'movie' if isinstance(video, Movie) else 'episode'
+
+        if self.skip_wrong_fps and video.fps and self.fps and not framerate_equal(video.fps, self.fps):
+            logger.debug(f"Titulky.com: Wrong FPS (expected: {video.fps}, got: {self.fps}, lowering score massively)")
+            return set()
 
         if media_type == 'episode':
             # match imdb_id of a series
@@ -120,16 +130,19 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
     def __init__(self,
                  username=None,
                  password=None,
-                 approved_only=None):
+                 approved_only=None,
+                 skip_wrong_fps=None):
         if not all([username, password]):
             raise ConfigurationError("Username and password must be specified!")
-
         if type(approved_only) is not bool:
             raise ConfigurationError(f"Approved_only {approved_only} must be a boolean!")
+        if type(skip_wrong_fps) is not bool:
+            raise ConfigurationError(f"Skip_wrong_fps {skip_wrong_fps} must be a boolean!")
 
         self.username = username
         self.password = password
         self.approved_only = approved_only
+        self.skip_wrong_fps = skip_wrong_fps
 
         self.session = None
 
@@ -268,6 +281,48 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
 
         return result
 
+    # Retrieves the fps value given subtitles id from the details page and caches it.
+    def retrieve_subtitles_fps(self, subtitles_id):
+        cache_key = f"titulky_subs-{subtitles_id}_fps"
+        cached_fps_value = cache.get(cache_key)
+
+        if(cached_fps_value != NO_VALUE):
+            logger.debug(f"Titulky.com: Reusing cached fps value {cached_fps_value} for subtitles with id {subtitles_id}")
+            return cached_fps_value
+
+        params = {
+            'action': 'detail',
+            'id': subtitles_id
+        }
+        browse_url = self.build_url(params)
+        html_src = self.fetch_page(browse_url, allow_redirects=True)
+        browse_page_soup = ParserBeautifulSoup(html_src, ['lxml', 'html.parser'])
+
+        fps_container = browse_page_soup.select_one("div.ulozil:has(> img[src='img/ico/Movieroll.png'])")
+        if(fps_container is None):
+            logger.debug("Titulky.com: Could not manage to find the FPS container in the details page")
+            cache.set(cache_key, None)
+            return None
+
+        fps_text_components = fps_container.get_text(strip=True).split()
+        # Check if the container contains valid fps data
+        if(len(fps_text_components) < 2 or fps_text_components[1].lower() != "fps"):
+            logger.debug(f"Titulky.com: Could not determine FPS value for subtitles with id {subtitles_id}")
+            cache.set(cache_key, None)
+            return None
+
+        fps_text = fps_text_components[0].replace(",", ".") # Fix decimal comma to decimal point
+        try:
+            fps = float(fps_text)
+            logger.debug(f"Titulky.com: Retrieved FPS value {fps} from details page for subtitles with id {subtitles_id}")
+            cache.set(cache_key, fps)
+            return fps
+        except:
+            logger.debug(f"Titulky.com: There was an error parsing FPS value string for subtitles with id {subtitles_id}")
+            cache.set(cache_key, None)
+            return None
+
+
     """ 
         There are multiple ways to find substitles on Titulky.com, however we are 
         going to utilize a page that lists all available subtitles for all episodes in a season
@@ -377,7 +432,8 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                     'language': sub_language,
                     'uploader': uploader,
                     'details_link': details_link,
-                    'download_link': download_link
+                    'download_link': download_link,
+                    'fps': self.retrieve_subtitles_fps(sub_id) if skip_wrong_fps else None,
                 }
 
                 # If this row contains the first subtitles to an episode number,
@@ -413,7 +469,9 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                 sub_info['approved'],
                 sub_info['details_link'],
                 sub_info['download_link'],
-                asked_for_episode=(media_type is SubtitlesType.EPISODE)
+                sub_info['fps'],
+                self.skip_wrong_fps,
+                asked_for_episode=(media_type is SubtitlesType.EPISODE),
             )
             subtitles.append(subtitle_instance)
 
