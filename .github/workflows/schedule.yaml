@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Execute
-        uses: benc-uk/workflow-dispatch@v1.2.3
+        uses: benc-uk/workflow-dispatch@v1.2.4
         with:
           workflow: "release_beta_to_dev"
           token: ${{ secrets.WF_GITHUB_TOKEN }}
