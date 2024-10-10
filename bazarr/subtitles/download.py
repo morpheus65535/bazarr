@@ -13,7 +13,7 @@ from subliminal_patch.core_persistent import download_best_subtitles
 from subliminal_patch.score import ComputeScore
 
 from app.config import settings, get_scores, get_array_from
-from app.database import TableEpisodes, TableMovies, database, select
+from app.database import TableEpisodes, TableMovies, database, select, get_profiles_list
 from utilities.path_mappings import path_mappings
 from utilities.helper import get_target_folder, force_unicode
 from languages.get_languages import alpha3_from_alpha2
@@ -41,6 +41,8 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     providers = pool.providers
 
     language_set = _get_language_obj(languages=languages)
+    profile = get_profiles_list(profile_id=profile_id)
+    original_format = profile['originalFormat']
     hi_required = "force HI" if any([x.hi for x in language_set]) else False
     also_forced = any([x.forced for x in language_set])
     forced_required = all([x.forced for x in language_set])
@@ -82,6 +84,8 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                         subtitle_formats = set()
                         for s in subtitles:
                             s.mods = subz_mods
+                            if original_format in (1, "1", "True", True):
+                                s.use_original_format = True
                             subtitle_formats.add(s.format)
 
                         try:
@@ -100,7 +104,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                              tags=None,  # fixme
                                                              directory=fld,
                                                              chmod=chmod,
-                                                             formats=tuple(subtitle_formats),
+                                                             formats=subtitle_formats,
                                                              path_decoder=force_unicode
                                                              )
                         except Exception as e:
