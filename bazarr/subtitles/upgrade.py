@@ -107,6 +107,7 @@ def upgrade_subtitles():
                                              str(episode['sceneName']),
                                              episode['seriesTitle'],
                                              'series',
+                                             episode['profileId'],
                                              forced_minimum_score=int(episode['score']),
                                              is_upgrade=True,
                                              previous_subtitles_to_delete=path_mappings.path_replace(
@@ -192,6 +193,7 @@ def upgrade_subtitles():
                                              str(movie['sceneName']),
                                              movie['title'],
                                              'movie',
+                                             movie['profileId'],
                                              forced_minimum_score=int(movie['score']),
                                              is_upgrade=True,
                                              previous_subtitles_to_delete=path_mappings.path_replace_movie(

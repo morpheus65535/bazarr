@@ -30,7 +30,8 @@ def movies_download_subtitles(no):
                TableMovies.sceneName,
                TableMovies.title,
                TableMovies.tags,
-               TableMovies.monitored)
+               TableMovies.monitored,
+               TableMovies.profileId)
         .where(reduce(operator.and_, conditions))) \
         .first()
     if not movie:
@@ -79,6 +80,7 @@ def movies_download_subtitles(no):
                                      str(movie.sceneName),
                                      movie.title,
                                      'movie',
+                                     movie.profileId,
                                      check_if_still_required=True):
 
         if result:

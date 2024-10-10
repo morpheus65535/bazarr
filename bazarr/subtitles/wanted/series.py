@@ -51,6 +51,7 @@ def _wanted_episode(episode):
                                      str(episode.sceneName),
                                      episode.title,
                                      'series',
+                                     episode.profileId,
                                      check_if_still_required=True):
         if result:
             if isinstance(result, tuple) and len(result):
@@ -71,7 +72,8 @@ def wanted_download_subtitles(sonarr_episode_id):
                TableEpisodes.audio_language,
                TableEpisodes.sceneName,
                TableEpisodes.failedAttempts,
-               TableShows.title)
+               TableShows.title,
+               TableShows.profileId)
         .select_from(TableEpisodes)
         .join(TableShows)
         .where((TableEpisodes.sonarrEpisodeId == sonarr_episode_id))) \
