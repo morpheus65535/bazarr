@@ -24,8 +24,8 @@ from .processing import process_subtitle
 
 
 @update_pools
-def generate_subtitles(path, languages, audio_language, sceneName, title, media_type, forced_minimum_score=None,
-                       is_upgrade=False, profile_id=None, check_if_still_required=False,
+def generate_subtitles(path, languages, audio_language, sceneName, title, media_type, profile_id,
+                       forced_minimum_score=None, is_upgrade=False, check_if_still_required=False,
                        previous_subtitles_to_delete=None):
     if not languages:
         return None

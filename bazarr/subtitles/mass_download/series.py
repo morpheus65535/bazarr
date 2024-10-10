@@ -43,7 +43,8 @@ def series_download_subtitles(no):
                TableShows.title,
                TableEpisodes.season,
                TableEpisodes.episode,
-               TableEpisodes.title.label('episodeTitle'))
+               TableEpisodes.title.label('episodeTitle'),
+               TableShows.profileId)
         .select_from(TableEpisodes)
         .join(TableShows)
         .where(reduce(operator.and_, conditions))) \
@@ -87,6 +88,7 @@ def series_download_subtitles(no):
                                              str(episode.sceneName),
                                              episode.title,
                                              'series',
+                                             episode.profileId,
                                              check_if_still_required=True):
                 if result:
                     if isinstance(result, tuple) and len(result):
@@ -117,7 +119,8 @@ def episode_download_subtitles(no, send_progress=False):
                TableShows.seriesType,
                TableEpisodes.title.label('episodeTitle'),
                TableEpisodes.season,
-               TableEpisodes.episode)
+               TableEpisodes.episode,
+               TableShows.profileId)
         .select_from(TableEpisodes)
         .join(TableShows)
         .where(reduce(operator.and_, conditions))) \
@@ -159,6 +162,7 @@ def episode_download_subtitles(no, send_progress=False):
                                              str(episode.sceneName),
                                              episode.title,
                                              'series',
+                                             episode.profileId,
                                              check_if_still_required=True):
                 if result:
                     if isinstance(result, tuple) and len(result):
