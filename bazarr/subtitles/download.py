@@ -74,7 +74,8 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                                    pool_instance=pool,
                                                                    min_score=int(min_score),
                                                                    hearing_impaired=hi_required,
-                                                                   compute_score=ComputeScore(get_scores()))
+                                                                   compute_score=ComputeScore(get_scores()),
+                                                                   use_original_format=original_format in (1, "1", "True", True))
 
                 if downloaded_subtitles:
                     for video, subtitles in downloaded_subtitles.items():
@@ -84,8 +85,6 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                         subtitle_formats = set()
                         for s in subtitles:
                             s.mods = subz_mods
-                            if original_format in (1, "1", "True", True):
-                                s.use_original_format = True
                             subtitle_formats.add(s.format)
 
                         try:
