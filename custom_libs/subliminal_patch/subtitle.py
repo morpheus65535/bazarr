@@ -316,10 +316,6 @@ class Subtitle(Subtitle_):
                     if self.use_original_format:
                         self._og_format = subs.format
                         self._is_valid = True
-                        # if self.use_original_format:
-                        #    self.format = subs.format
-                        #    self._is_valid = True
-                        #    logger.debug("Using original format")
                         return True
 
             except pysubs2.UnknownFPSError:
