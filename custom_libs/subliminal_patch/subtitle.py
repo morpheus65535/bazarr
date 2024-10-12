@@ -313,13 +313,10 @@ class Subtitle(Subtitle_):
                     logger.info("Got FPS from MicroDVD subtitle: %s", subs.fps)
                 else:
                     logger.info("Got format: %s", subs.format)
-                    self._og_format = subs.format
-                    self._is_valid = True
-                    # if self.use_original_format:
-                    #    self.format = subs.format
-                    #    self._is_valid = True
-                    #    logger.debug("Using original format")
-                    return True
+                    if self.use_original_format:
+                        self._og_format = subs.format
+                        self._is_valid = True
+                        return True
 
             except pysubs2.UnknownFPSError:
                 # if parsing failed, use frame rate from provider
