@@ -50,6 +50,7 @@ def _wanted_movie(movie):
                                      str(movie.sceneName),
                                      movie.title,
                                      'movie',
+                                     movie.profileId,
                                      check_if_still_required=True):
 
         if result:
@@ -69,7 +70,8 @@ def wanted_download_subtitles_movie(radarr_id):
                TableMovies.audio_language,
                TableMovies.sceneName,
                TableMovies.failedAttempts,
-               TableMovies.title)
+               TableMovies.title,
+               TableMovies.profileId)
         .where(TableMovies.radarrId == radarr_id)) \
         .all()
 

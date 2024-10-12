@@ -524,7 +524,7 @@ class SZProviderPool(ProviderPool):
         return True
 
     def download_best_subtitles(self, subtitles, video, languages, min_score=0, hearing_impaired=False, only_one=False,
-                                compute_score=None):
+                                compute_score=None, use_original_format=False):
         """Download the best matching subtitles.
 
         patch:
@@ -543,6 +543,7 @@ class SZProviderPool(ProviderPool):
         :param bool only_one: download only one subtitle, not one per language.
         :param compute_score: function that takes `subtitle` and `video` as positional arguments,
             `hearing_impaired` as keyword argument and returns the score.
+        :param bool use_original_format: preserve original subtitles format
         :return: downloaded subtitles.
         :rtype: list of :class:`~subliminal.subtitle.Subtitle`
 
@@ -619,6 +620,9 @@ class SZProviderPool(ProviderPool):
                     logger.debug("%r: Skipping subtitle with score %d, because it doesn't match our series/episode",
                                  subtitle, score)
                     continue
+
+            # make sure to preserve original subtitles format if requested
+            subtitle.use_original_format = use_original_format
 
             # download
             logger.debug("%r: Trying to download subtitle with matches %s, score: %s; release(s): %s", subtitle,
@@ -1213,10 +1217,9 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             continue
 
         # create subtitle path
-        if subtitle.text and parse_for_hi_regex(subtitle_text=subtitle.text,
-                                                alpha3_language=subtitle.language.alpha3 if
-                                                (hasattr(subtitle, 'language') and hasattr(subtitle.language, 'alpha3'))
-                                                else None):
+        if (subtitle.text and subtitle.format == 'srt' and
+                parse_for_hi_regex(subtitle_text=subtitle.text, alpha3_language=subtitle.language.alpha3 if
+                                   (hasattr(subtitle, 'language') and hasattr(subtitle.language, 'alpha3')) else None)):
             subtitle.language.hi = True
         subtitle_path = get_subtitle_path(file_path, None if single else subtitle.language,
                                           forced_tag=subtitle.language.forced,
