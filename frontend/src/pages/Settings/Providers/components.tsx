@@ -334,7 +334,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
           <Divider></Divider>
           <Group justify="right">
             <Button hidden={!payload} color="red" onClick={deletePayload}>
-              Delete
+              Disable
             </Button>
             <Button
               disabled={!canSave}
@@ -342,7 +342,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
                 submit(form.values);
               }}
             >
-              Save
+              Enable
             </Button>
           </Group>
         </Stack>
