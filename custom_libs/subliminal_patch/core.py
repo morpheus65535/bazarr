@@ -1217,7 +1217,8 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             continue
 
         # create subtitle path
-        if (subtitle.text and subtitle.format == 'srt' and
+        if (subtitle.text and subtitle.format == 'srt' and (hasattr(subtitle.language, 'hi') and
+                                                            not subtitle.language.hi) and
                 parse_for_hi_regex(subtitle_text=subtitle.text, alpha3_language=subtitle.language.alpha3 if
                                    (hasattr(subtitle, 'language') and hasattr(subtitle.language, 'alpha3')) else None)):
             subtitle.language.hi = True
