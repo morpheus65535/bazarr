@@ -1,48 +1,51 @@
 import { FunctionComponent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Autocomplete, ComboboxItem, OptionsFilter, Text } from "@mantine/core";
+import {
+  ComboboxItem,
+  Image,
+  OptionsFilter,
+  Select,
+  Text,
+} from "@mantine/core";
+import { ComboboxItemGroup } from "@mantine/core/lib/components/Combobox/Combobox.types";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { chain, includes } from "lodash";
 import { useServerSearch } from "@/apis/hooks";
 import { useDebouncedValue } from "@/utilities";
 
 type SearchResultItem = {
   value: string;
+  label: string;
   link: string;
+  poster: string;
+  type: string;
 };
 
 function useSearch(query: string) {
   const debouncedQuery = useDebouncedValue(query, 500);
   const { data } = useServerSearch(debouncedQuery, debouncedQuery.length >= 0);
 
-  const duplicates = chain(data)
-    .groupBy((item) => `${item.title} (${item.year})`)
-    .filter((group) => group.length > 1)
-    .map((group) => `${group[0].title} (${group[0].year})`)
-    .value();
-
   return useMemo<SearchResultItem[]>(
     () =>
       data?.map((v) => {
-        const { link, displayName } = (() => {
-          const hasDuplicate = includes(duplicates, `${v.title} (${v.year})`);
-
+        const { link, label, poster, type, value } = (() => {
           if (v.sonarrSeriesId) {
             return {
+              poster: v.poster,
               link: `/series/${v.sonarrSeriesId}`,
-              displayName: hasDuplicate
-                ? `${v.title} (${v.year}) (S)`
-                : `${v.title} (${v.year})`,
+              type: "show",
+              label: `${v.title} (${v.year})`,
+              value: `s-${v.sonarrSeriesId}`,
             };
           }
 
           if (v.radarrId) {
             return {
+              poster: v.poster,
               link: `/movies/${v.radarrId}`,
-              displayName: hasDuplicate
-                ? `${v.title} (${v.year}) (M)`
-                : `${v.title} (${v.year})`,
+              type: "movie",
+              value: `m-${v.radarrId}`,
+              label: `${v.title} (${v.year})`,
             };
           }
 
@@ -50,11 +53,14 @@ function useSearch(query: string) {
         })();
 
         return {
-          value: displayName,
-          link,
+          value: value,
+          poster: poster,
+          label: label,
+          type: type,
+          link: link,
         };
       }) ?? [],
-    [data, duplicates],
+    [data],
   );
 }
 
@@ -62,16 +68,25 @@ const optionsFilter: OptionsFilter = ({ options, search }) => {
   const lowercaseSearch = search.toLowerCase();
   const trimmedSearch = search.trim();
 
-  return (options as ComboboxItem[]).filter((option) => {
-    return (
-      option.value.toLowerCase().includes(lowercaseSearch) ||
-      option.value
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .includes(trimmedSearch)
-    );
+  (options as ComboboxItemGroup[]).map((c) => {
+    return {
+      group: c.group,
+      items: c.items.filter((option) => {
+        const o = option as ComboboxItem;
+
+        return (
+          o.label.toLowerCase().includes(lowercaseSearch) ||
+          o.label
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .includes(trimmedSearch)
+        );
+      }),
+    };
   });
+
+  return options;
 };
 
 const Search: FunctionComponent = () => {
@@ -80,23 +95,62 @@ const Search: FunctionComponent = () => {
 
   const results = useSearch(query);
 
+  const groups = [
+    {
+      group: "Series",
+      items: results
+        .filter((r) => r.type === "show")
+        .map((r) => {
+          return {
+            label: r.label,
+            value: r.value,
+          };
+        }),
+    },
+    {
+      group: "Movies",
+      items: results
+        .filter((r) => r.type === "movie")
+        .map((r) => {
+          return {
+            label: r.label,
+            value: r.value,
+          };
+        }),
+    },
+  ];
+
   return (
-    <Autocomplete
-      leftSection={<FontAwesomeIcon icon={faSearch} />}
-      renderOption={(input) => <Text p="xs">{input.option.value}</Text>}
+    <Select
       placeholder="Search"
+      withCheckIcon={false}
+      leftSection={<FontAwesomeIcon icon={faSearch} />}
+      rightSection={<></>}
       size="sm"
-      data={results}
-      value={query}
+      searchable
       scrollAreaProps={{ type: "auto" }}
       maxDropdownHeight={400}
-      onChange={setQuery}
+      data={groups}
+      value={query}
+      onSearchChange={(a) => {
+        setQuery(a);
+      }}
       onBlur={() => setQuery("")}
       filter={optionsFilter}
-      onOptionSubmit={(option) =>
-        navigate(results.find((a) => a.value === option)?.link || "/")
-      }
-    ></Autocomplete>
+      onOptionSubmit={(option) => {
+        navigate(results.find((a) => a.value === option)?.link || "/");
+      }}
+      renderOption={(input) => {
+        const result = results.find((r) => r.value === input.option.value);
+
+        return (
+          <>
+            <Image src={result?.poster} w={35} h={50} />
+            <Text p="xs">{result?.label}</Text>
+          </>
+        );
+      }}
+    />
   );
 };
 
