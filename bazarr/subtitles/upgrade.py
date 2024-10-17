@@ -45,7 +45,7 @@ def upgrade_subtitles():
             'subtitles_path': x.subtitles_path,
             'path': x.path,
             'profileId': x.profileId,
-            'external_subtitles': [ast.literal_eval(f'"{y[1]}"') for y in ast.literal_eval(x.external_subtitles) if y[1]],
+            'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
             'upgradable': bool(x.upgradable),
         } for x in database.execute(
             select(TableHistory.id,
@@ -142,7 +142,7 @@ def upgrade_subtitles():
             'path': x.path,
             'profileId': x.profileId,
             'subtitles_path': x.subtitles_path,
-            'external_subtitles': [ast.literal_eval(f'"{y[1]}"') for y in ast.literal_eval(x.external_subtitles) if y[1]],
+            'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
             'upgradable': bool(x.upgradable),
         } for x in database.execute(
             select(TableMovies.title,
