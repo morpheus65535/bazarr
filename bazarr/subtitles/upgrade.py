@@ -71,7 +71,6 @@ def upgrade_subtitles():
             .join(episodes_to_upgrade, onclause=TableHistory.id == episodes_to_upgrade.c.id, isouter=True)
             .where(episodes_to_upgrade.c.id.is_not(None)))
             .all() if _language_still_desired(x.language, x.profileId) and
-            x.subtitles_path in x.external_subtitles and
             x.video_path == x.path
         ]
 
