@@ -45,7 +45,7 @@ def upgrade_subtitles():
             'subtitles_path': x.subtitles_path,
             'path': x.path,
             'profileId': x.profileId,
-            'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
+            'external_subtitles': [ast.literal_eval(f'"{y[1]}"') for y in ast.literal_eval(x.external_subtitles) if y[1]],
             'upgradable': bool(x.upgradable),
         } for x in database.execute(
             select(TableHistory.id,
@@ -76,6 +76,11 @@ def upgrade_subtitles():
         ]
 
         for item in episodes_data:
+            # do not consider subtitles that do not exist on disk anymore
+            if item['subtitles_path'] not in item['external_subtitles']:
+                episodes_data.remove(item)
+
+            # cleanup the unused attributes
             del item['path']
             del item['external_subtitles']
 
@@ -138,7 +143,7 @@ def upgrade_subtitles():
             'path': x.path,
             'profileId': x.profileId,
             'subtitles_path': x.subtitles_path,
-            'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
+            'external_subtitles': [ast.literal_eval(f'"{y[1]}"') for y in ast.literal_eval(x.external_subtitles) if y[1]],
             'upgradable': bool(x.upgradable),
         } for x in database.execute(
             select(TableMovies.title,
@@ -158,11 +163,15 @@ def upgrade_subtitles():
             .join(movies_to_upgrade, onclause=TableHistoryMovie.id == movies_to_upgrade.c.id, isouter=True)
             .where(movies_to_upgrade.c.id.is_not(None)))
             .all() if _language_still_desired(x.language, x.profileId) and
-            x.subtitles_path in x.external_subtitles and
             x.video_path == x.path
         ]
 
         for item in movies_data:
+            # do not consider subtitles that do not exist on disk anymore
+            if item['subtitles_path'] not in item['external_subtitles']:
+                movies_data.remove(item)
+
+            # cleanup the unused attributes
             del item['path']
             del item['external_subtitles']
 

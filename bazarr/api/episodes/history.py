@@ -129,7 +129,7 @@ class EpisodesHistory(Resource):
             'provider': x.provider,
             'matches': x.matched,
             'dont_matches': x.not_matched,
-            'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
+            'external_subtitles': [ast.literal_eval(f'"{y[1]}"') for y in ast.literal_eval(x.external_subtitles) if y[1]],
             'upgradable': bool(x.upgradable) if _language_still_desired(x.language, x.profileId) else False,
             'blacklisted': bool(x.blacklisted),
         } for x in database.execute(stmt).all()]
