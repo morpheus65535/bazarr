@@ -433,7 +433,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                     'uploader': uploader,
                     'details_link': details_link,
                     'download_link': download_link,
-                    'fps': self.retrieve_subtitles_fps(sub_id) if skip_wrong_fps else None,
+                    'fps': self.retrieve_subtitles_fps(sub_id) if self.skip_wrong_fps else None,
                 }
 
                 # If this row contains the first subtitles to an episode number,
