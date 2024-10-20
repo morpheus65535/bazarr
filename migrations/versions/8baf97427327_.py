@@ -16,18 +16,35 @@ branch_labels = None
 depends_on = None
 
 
+bind = op.get_context().bind
+insp = sa.inspect(bind)
+tables = insp.get_table_names()
+sqlite = bind.engine.name == 'sqlite'
+
+
+def column_exists(table_name, column_name):
+    columns = insp.get_columns(table_name)
+    return any(c["name"] == column_name for c in columns)
+
+
 def upgrade():
     with op.batch_alter_table('table_episodes', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('created_at_timestamp', sa.DateTime(), nullable=True))
-        batch_op.add_column(sa.Column('updated_at_timestamp', sa.DateTime(), nullable=True))
+        if not column_exists('table_episodes', 'created_at_timestamp'):
+            batch_op.add_column(sa.Column('created_at_timestamp', sa.DateTime(), nullable=True))
+        if not column_exists('table_episodes', 'updated_at_timestamp'):
+            batch_op.add_column(sa.Column('updated_at_timestamp', sa.DateTime(), nullable=True))
 
     with op.batch_alter_table('table_movies', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('created_at_timestamp', sa.DateTime(), nullable=True))
-        batch_op.add_column(sa.Column('updated_at_timestamp', sa.DateTime(), nullable=True))
+        if not column_exists('table_movies', 'created_at_timestamp'):
+            batch_op.add_column(sa.Column('created_at_timestamp', sa.DateTime(), nullable=True))
+        if not column_exists('table_movies', 'updated_at_timestamp'):
+            batch_op.add_column(sa.Column('updated_at_timestamp', sa.DateTime(), nullable=True))
 
     with op.batch_alter_table('table_shows', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('created_at_timestamp', sa.DateTime(), nullable=True))
-        batch_op.add_column(sa.Column('updated_at_timestamp', sa.DateTime(), nullable=True))
+        if not column_exists('table_shows', 'created_at_timestamp'):
+            batch_op.add_column(sa.Column('created_at_timestamp', sa.DateTime(), nullable=True))
+        if not column_exists('table_shows', 'updated_at_timestamp'):
+            batch_op.add_column(sa.Column('updated_at_timestamp', sa.DateTime(), nullable=True))
 
 
 def downgrade():
