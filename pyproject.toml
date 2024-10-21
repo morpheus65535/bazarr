@@ -55,6 +55,7 @@ dev-dependencies = [
   "pytest-vcr>=1.0.2",
   "pytest>=8.3.3",
   "requests-mock>=1.12.1",
+  "ruff>=0.7.0",
   "setuptools>=75.2.0",
   "sympy>=1.13.3",
   "vcrpy>=1.6.1",
@@ -84,6 +85,19 @@ commands = [
 artifacts = [
   "frontend/build/*",
 ]
+
+[tool.ruff]
+exclude = [
+  "libs",
+  "custom_libs",
+  "frontend",
+]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.format]
+
+[tool.ruff.lint]
 
 [build-system]
 requires = ["hatchling", "hatch-build-scripts"]
