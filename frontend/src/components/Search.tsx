@@ -7,7 +7,6 @@ import {
   Select,
   Text,
 } from "@mantine/core";
-import { ComboboxItemGroup } from "@mantine/core/lib/components/Combobox/Combobox.types";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useServerSearch } from "@/apis/hooks";
@@ -68,25 +67,16 @@ const optionsFilter: OptionsFilter = ({ options, search }) => {
   const lowercaseSearch = search.toLowerCase();
   const trimmedSearch = search.trim();
 
-  (options as ComboboxItemGroup[]).map((c) => {
-    return {
-      group: c.group,
-      items: c.items.filter((option) => {
-        const o = option as ComboboxItem;
-
-        return (
-          o.label.toLowerCase().includes(lowercaseSearch) ||
-          o.label
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase()
-            .includes(trimmedSearch)
-        );
-      }),
-    };
+  return (options as ComboboxItem[]).filter((option) => {
+    return (
+      option.label.toLowerCase().includes(lowercaseSearch) ||
+      option.label
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .includes(trimmedSearch)
+    );
   });
-
-  return options;
 };
 
 const Search: FunctionComponent = () => {
@@ -94,31 +84,6 @@ const Search: FunctionComponent = () => {
   const [query, setQuery] = useState("");
 
   const results = useSearch(query);
-
-  const groups = [
-    {
-      group: "Series",
-      items: results
-        .filter((r) => r.type === "show")
-        .map((r) => {
-          return {
-            label: r.label,
-            value: r.value,
-          };
-        }),
-    },
-    {
-      group: "Movies",
-      items: results
-        .filter((r) => r.type === "movie")
-        .map((r) => {
-          return {
-            label: r.label,
-            value: r.value,
-          };
-        }),
-    },
-  ];
 
   return (
     <Select
@@ -130,7 +95,7 @@ const Search: FunctionComponent = () => {
       searchable
       scrollAreaProps={{ type: "auto" }}
       maxDropdownHeight={400}
-      data={groups}
+      data={results}
       value={query}
       onSearchChange={(a) => {
         setQuery(a);
