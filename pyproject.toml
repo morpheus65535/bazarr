@@ -74,6 +74,7 @@ dependencies = [
   "pysrt>=1.1.2",
   "python-anticaptcha>=1.0.0",
   "pytz-deprecation-shim>=0.1.0.post0",
+  "pywin32>=308 ; platform_system == 'Windows'",
   "rarfile>=4.2",
   "requests-toolbelt>=1.0.0",
   "requests>=2.32.3",
