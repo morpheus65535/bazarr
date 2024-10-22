@@ -14,7 +14,7 @@ keywords = [
   "subliminal",
   "subtitle-downloader",
 ]
-requires-python = ">=3.8,<3.12"
+requires-python = ">=3.8,<3.13"
 maintainers = [
   {name = "morpheus65535", email = "louis_vezina@hotmail.com"}
 ]
@@ -31,6 +31,7 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
 ]
 dependencies = [
@@ -66,7 +67,8 @@ dependencies = [
   "json-tricks>=3.17.3",
   "knowit>=0.4.0",
   "lxml>=4.3.0,<5.0.0",
-  "numpy>=1.12.0",
+  "numpy>=1.12.0; python_version < '3.12'",
+  "numpy>=1.26.4,<2; python_version >= '3.12'",
   "pillow>=9.0.0",
   "pycountry>=24.6.1",
   "pyrsistent>=0.20.0",
