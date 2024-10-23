@@ -26,3 +26,6 @@ pushd __builds__/bazarr
 zip -r ../bazarr.zip . -b "$(mktemp -d)"
 popd
 rm -rf $to_dist
+
+uv build
+cp --parents dist/bazarr-* __builds__
