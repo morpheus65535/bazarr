@@ -99,7 +99,11 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
     logging.debug(f'BAZARR saving translated subtitles to {dest_srt_file}')
     for i, line in enumerate(subs):
         try:
-            line.plaintext = lines_list[i]
+            if lines_list[i]:
+                line.plaintext = lines_list[i]
+            else:
+                # we assume that there was nothing to translate if Google returns None. ex.: "♪♪"
+                continue
         except IndexError:
             logging.error(f'BAZARR is unable to translate malformed subtitles: {source_srt_file}')
             return False
