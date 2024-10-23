@@ -1,2 +1,0 @@
-[console_scripts]
-cmark = commonmark.cmark:main
