@@ -7,7 +7,7 @@
   "github": {
     "release": true,
     "releaseName": "v${version}",
-    "assets": ["__builds__/*.zip"]
+    "assets": ["__builds__/*.zip", "__builds__/*.tar.gz", "__builds__/*.whl"]
   },
   "npm": {
     "publish": false,

@@ -1,8 +1,5 @@
 bazarr
 custom_libs
 frontend/build
-libs
 bazarr.py
-requirements.txt
-postgres-requirements.txt
 migrations
