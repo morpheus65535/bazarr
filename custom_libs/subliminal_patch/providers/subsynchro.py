@@ -6,6 +6,7 @@ import os
 from zipfile import ZipFile, is_zipfile
 from requests import Session
 from guessit import guessit
+from requests.exceptions import JSONDecodeError
 
 from subliminal import Movie
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending
@@ -91,7 +92,11 @@ class SubsynchroProvider(Provider):
         result.raise_for_status()
 
         subtitles = []
-        results = result.json() or {}
+
+        try:
+            results = result.json()
+        except JSONDecodeError:
+            results = {}
 
         status_ = results.get("status")
 
