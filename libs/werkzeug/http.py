@@ -157,19 +157,19 @@ def quote_header_value(value: t.Any, allow_token: bool = True) -> str:
 
     .. versionadded:: 0.5
     """
-    value = str(value)
+    value_str = str(value)
 
-    if not value:
+    if not value_str:
         return '""'
 
     if allow_token:
         token_chars = _token_chars
 
-        if token_chars.issuperset(value):
-            return value
+        if token_chars.issuperset(value_str):
+            return value_str
 
-    value = value.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{value}"'
+    value_str = value_str.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{value_str}"'
 
 
 def unquote_header_value(value: str) -> str:
@@ -361,6 +361,10 @@ def parse_dict_header(value: str) -> dict[str, str | None]:
         key, has_value, value = item.partition("=")
         key = key.strip()
 
+        if not key:
+            # =value is not valid
+            continue
+
         if not has_value:
             result[key] = None
             continue
@@ -395,22 +399,8 @@ def parse_dict_header(value: str) -> dict[str, str | None]:
 
 
 # https://httpwg.org/specs/rfc9110.html#parameter
-_parameter_re = re.compile(
-    r"""
-    # don't match multiple empty parts, that causes backtracking
-    \s*;\s*  # find the part delimiter
-    (?:
-        ([\w!#$%&'*+\-.^`|~]+)  # key, one or more token chars
-        =  # equals, with no space on either side
-        (  # value, token or quoted string
-            [\w!#$%&'*+\-.^`|~]+  # one or more token chars
-        |
-            "(?:\\\\|\\"|.)*?"  # quoted string, consuming slash escapes
-        )
-    )?  # optionally match key=value, to account for empty parts
-    """,
-    re.ASCII | re.VERBOSE,
-)
+_parameter_key_re = re.compile(r"([\w!#$%&'*+\-.^`|~]+)=", flags=re.ASCII)
+_parameter_token_value_re = re.compile(r"[\w!#$%&'*+\-.^`|~]+", flags=re.ASCII)
 # https://www.rfc-editor.org/rfc/rfc2231#section-4
 _charset_value_re = re.compile(
     r"""
@@ -492,18 +482,49 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
         # empty (invalid) value, or value without options
         return value, {}
 
-    rest = f";{rest}"
+    # Collect all valid key=value parts without processing the value.
+    parts: list[tuple[str, str]] = []
+
+    while True:
+        if (m := _parameter_key_re.match(rest)) is not None:
+            pk = m.group(1).lower()
+            rest = rest[m.end() :]
+
+            # Value may be a token.
+            if (m := _parameter_token_value_re.match(rest)) is not None:
+                parts.append((pk, m.group()))
+
+            # Value may be a quoted string, find the closing quote.
+            elif rest[:1] == '"':
+                pos = 1
+                length = len(rest)
+
+                while pos < length:
+                    if rest[pos : pos + 2] in {"\\\\", '\\"'}:
+                        # Consume escaped slashes and quotes.
+                        pos += 2
+                    elif rest[pos] == '"':
+                        # Stop at an unescaped quote.
+                        parts.append((pk, rest[: pos + 1]))
+                        rest = rest[pos + 1 :]
+                        break
+                    else:
+                        # Consume any other character.
+                        pos += 1
+
+        # Find the next section delimited by `;`, if any.
+        if (end := rest.find(";")) == -1:
+            break
+
+        rest = rest[end + 1 :].lstrip()
+
     options: dict[str, str] = {}
     encoding: str | None = None
     continued_encoding: str | None = None
 
-    for pk, pv in _parameter_re.findall(rest):
-        if not pk:
-            # empty or invalid part
-            continue
-
-        pk = pk.lower()
-
+    # For each collected part, process optional charset and continuation,
+    # unquote quoted values.
+    for pk, pv in parts:
         if pk[-1] == "*":
             # key*=charset''value becomes key=value, where value is percent encoded
             pk = pk[:-1]
@@ -553,13 +574,11 @@ _TAnyAccept = t.TypeVar("_TAnyAccept", bound="ds.Accept")
 
 
 @t.overload
-def parse_accept_header(value: str | None) -> ds.Accept:
-    ...
+def parse_accept_header(value: str | None) -> ds.Accept: ...
 
 
 @t.overload
-def parse_accept_header(value: str | None, cls: type[_TAnyAccept]) -> _TAnyAccept:
-    ...
+def parse_accept_header(value: str | None, cls: type[_TAnyAccept]) -> _TAnyAccept: ...
 
 
 def parse_accept_header(
@@ -616,26 +635,26 @@ def parse_accept_header(
 
 
 _TAnyCC = t.TypeVar("_TAnyCC", bound="ds.cache_control._CacheControl")
-_t_cc_update = t.Optional[t.Callable[[_TAnyCC], None]]
 
 
 @t.overload
 def parse_cache_control_header(
-    value: str | None, on_update: _t_cc_update, cls: None = None
-) -> ds.RequestCacheControl:
-    ...
+    value: str | None,
+    on_update: t.Callable[[ds.cache_control._CacheControl], None] | None = None,
+) -> ds.RequestCacheControl: ...
 
 
 @t.overload
 def parse_cache_control_header(
-    value: str | None, on_update: _t_cc_update, cls: type[_TAnyCC]
-) -> _TAnyCC:
-    ...
+    value: str | None,
+    on_update: t.Callable[[ds.cache_control._CacheControl], None] | None = None,
+    cls: type[_TAnyCC] = ...,
+) -> _TAnyCC: ...
 
 
 def parse_cache_control_header(
     value: str | None,
-    on_update: _t_cc_update = None,
+    on_update: t.Callable[[ds.cache_control._CacheControl], None] | None = None,
     cls: type[_TAnyCC] | None = None,
 ) -> _TAnyCC:
     """Parse a cache control header.  The RFC differs between response and
@@ -655,7 +674,7 @@ def parse_cache_control_header(
     :return: a `cls` object.
     """
     if cls is None:
-        cls = t.cast(t.Type[_TAnyCC], ds.RequestCacheControl)
+        cls = t.cast("type[_TAnyCC]", ds.RequestCacheControl)
 
     if not value:
         return cls((), on_update)
@@ -664,26 +683,26 @@ def parse_cache_control_header(
 
 
 _TAnyCSP = t.TypeVar("_TAnyCSP", bound="ds.ContentSecurityPolicy")
-_t_csp_update = t.Optional[t.Callable[[_TAnyCSP], None]]
 
 
 @t.overload
 def parse_csp_header(
-    value: str | None, on_update: _t_csp_update, cls: None = None
-) -> ds.ContentSecurityPolicy:
-    ...
+    value: str | None,
+    on_update: t.Callable[[ds.ContentSecurityPolicy], None] | None = None,
+) -> ds.ContentSecurityPolicy: ...
 
 
 @t.overload
 def parse_csp_header(
-    value: str | None, on_update: _t_csp_update, cls: type[_TAnyCSP]
-) -> _TAnyCSP:
-    ...
+    value: str | None,
+    on_update: t.Callable[[ds.ContentSecurityPolicy], None] | None = None,
+    cls: type[_TAnyCSP] = ...,
+) -> _TAnyCSP: ...
 
 
 def parse_csp_header(
     value: str | None,
-    on_update: _t_csp_update = None,
+    on_update: t.Callable[[ds.ContentSecurityPolicy], None] | None = None,
     cls: type[_TAnyCSP] | None = None,
 ) -> _TAnyCSP:
     """Parse a Content Security Policy header.
@@ -699,7 +718,7 @@ def parse_csp_header(
     :return: a `cls` object.
     """
     if cls is None:
-        cls = t.cast(t.Type[_TAnyCSP], ds.ContentSecurityPolicy)
+        cls = t.cast("type[_TAnyCSP]", ds.ContentSecurityPolicy)
 
     if value is None:
         return cls((), on_update)
@@ -1160,7 +1179,7 @@ def is_hop_by_hop_header(header: str) -> bool:
 
 def parse_cookie(
     header: WSGIEnvironment | str | None,
-    cls: type[ds.MultiDict] | None = None,
+    cls: type[ds.MultiDict[str, str]] | None = None,
 ) -> ds.MultiDict[str, str]:
     """Parse a cookie from a string or WSGI environ.
 

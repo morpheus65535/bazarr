@@ -493,8 +493,9 @@ def bindparam(
 
         from sqlalchemy import bindparam
 
-        stmt = select(users_table).\
-                    where(users_table.c.name == bindparam('username'))
+        stmt = select(users_table).where(
+            users_table.c.name == bindparam("username")
+        )
 
     The above statement, when rendered, will produce SQL similar to::
 
@@ -504,22 +505,25 @@ def bindparam(
     would typically be applied at execution time to a method
     like :meth:`_engine.Connection.execute`::
 
-        result = connection.execute(stmt, username='wendy')
+        result = connection.execute(stmt, {"username": "wendy"})
 
     Explicit use of :func:`.bindparam` is also common when producing
     UPDATE or DELETE statements that are to be invoked multiple times,
     where the WHERE criterion of the statement is to change on each
     invocation, such as::
 
-        stmt = (users_table.update().
-                where(user_table.c.name == bindparam('username')).
-                values(fullname=bindparam('fullname'))
-                )
+        stmt = (
+            users_table.update()
+            .where(user_table.c.name == bindparam("username"))
+            .values(fullname=bindparam("fullname"))
+        )
 
         connection.execute(
-            stmt, [{"username": "wendy", "fullname": "Wendy Smith"},
-                   {"username": "jack", "fullname": "Jack Jones"},
-                   ]
+            stmt,
+            [
+                {"username": "wendy", "fullname": "Wendy Smith"},
+                {"username": "jack", "fullname": "Jack Jones"},
+            ],
         )
 
     SQLAlchemy's Core expression system makes wide use of
@@ -568,7 +572,7 @@ def bindparam(
     bound placeholders based on the arguments passed, as in::
 
         stmt = users_table.insert()
-        result = connection.execute(stmt, name='Wendy')
+        result = connection.execute(stmt, {"name": "Wendy"})
 
     The above will produce SQL output as::
 
@@ -1086,16 +1090,23 @@ def desc(
 def distinct(expr: _ColumnExpressionArgument[_T]) -> UnaryExpression[_T]:
     """Produce an column-expression-level unary ``DISTINCT`` clause.
 
-    This applies the ``DISTINCT`` keyword to an individual column
-    expression, and is typically contained within an aggregate function,
-    as in::
+    This applies the ``DISTINCT`` keyword to an **individual column
+    expression** (e.g. not the whole statement), and renders **specifically
+    in that column position**; this is used for containment within
+    an aggregate function, as in::
 
         from sqlalchemy import distinct, func
-        stmt = select(func.count(distinct(users_table.c.name)))
+        stmt = select(users_table.c.id, func.count(distinct(users_table.c.name)))
 
-    The above would produce an expression resembling::
+    The above would produce an statement resembling::
 
-        SELECT COUNT(DISTINCT name) FROM user
+        SELECT user.id, count(DISTINCT user.name) FROM user
+
+    .. tip:: The :func:`_sql.distinct` function does **not** apply DISTINCT
+       to the full SELECT statement, instead applying a DISTINCT modifier
+       to **individual column expressions**.  For general ``SELECT DISTINCT``
+       support, use the
+       :meth:`_sql.Select.distinct` method on :class:`_sql.Select`.
 
     The :func:`.distinct` function is also available as a column-level
     method, e.g. :meth:`_expression.ColumnElement.distinct`, as in::
@@ -1118,7 +1129,7 @@ def distinct(expr: _ColumnExpressionArgument[_T]) -> UnaryExpression[_T]:
 
         :data:`.func`
 
-    """
+    """  # noqa: E501
     return UnaryExpression._create_distinct(expr)
 
 
@@ -1147,6 +1158,9 @@ def extract(field: str, expr: _ColumnExpressionArgument[Any]) -> Extract:
     :data:`.func` namespace.
 
     :param field: The field to extract.
+
+     .. warning:: This field is used as a literal SQL string.
+         **DO NOT PASS UNTRUSTED INPUT TO THIS STRING**.
 
     :param expr: A column or Python scalar expression serving as the
       right side of the ``EXTRACT`` expression.
@@ -1589,7 +1603,7 @@ def text(text: str) -> TextClause:
     E.g.::
 
         t = text("SELECT * FROM users WHERE id=:user_id")
-        result = connection.execute(t, user_id=12)
+        result = connection.execute(t, {"user_id": 12})
 
     For SQL statements where a colon is required verbatim, as within
     an inline string, use a backslash to escape::
@@ -1619,7 +1633,7 @@ def text(text: str) -> TextClause:
     such as for the WHERE clause of a SELECT statement::
 
         s = select(users.c.id, users.c.name).where(text("id=:user_id"))
-        result = connection.execute(s, user_id=12)
+        result = connection.execute(s, {"user_id": 12})
 
     :func:`_expression.text` is also used for the construction
     of a full, standalone statement using plain text.

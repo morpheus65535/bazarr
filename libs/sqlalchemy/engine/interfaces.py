@@ -270,6 +270,7 @@ class _CoreKnownExecutionOptions(TypedDict, total=False):
     yield_per: int
     insertmanyvalues_page_size: int
     schema_translate_map: Optional[SchemaTranslateMapType]
+    preserve_rowcount: bool
 
 
 _ExecuteOptions = immutabledict[str, Any]
@@ -1252,8 +1253,7 @@ class Dialect(EventTarget):
         """
         raise NotImplementedError()
 
-    @classmethod
-    def type_descriptor(cls, typeobj: TypeEngine[_T]) -> TypeEngine[_T]:
+    def type_descriptor(self, typeobj: TypeEngine[_T]) -> TypeEngine[_T]:
         """Transform a generic type to a dialect-specific type.
 
         Dialect classes will usually use the
@@ -1315,6 +1315,7 @@ class Dialect(EventTarget):
     def get_multi_columns(
         self,
         connection: Connection,
+        *,
         schema: Optional[str] = None,
         filter_names: Optional[Collection[str]] = None,
         **kw: Any,
@@ -1363,6 +1364,7 @@ class Dialect(EventTarget):
     def get_multi_pk_constraint(
         self,
         connection: Connection,
+        *,
         schema: Optional[str] = None,
         filter_names: Optional[Collection[str]] = None,
         **kw: Any,
@@ -1409,6 +1411,7 @@ class Dialect(EventTarget):
     def get_multi_foreign_keys(
         self,
         connection: Connection,
+        *,
         schema: Optional[str] = None,
         filter_names: Optional[Collection[str]] = None,
         **kw: Any,
@@ -1568,6 +1571,7 @@ class Dialect(EventTarget):
     def get_multi_indexes(
         self,
         connection: Connection,
+        *,
         schema: Optional[str] = None,
         filter_names: Optional[Collection[str]] = None,
         **kw: Any,
@@ -1614,6 +1618,7 @@ class Dialect(EventTarget):
     def get_multi_unique_constraints(
         self,
         connection: Connection,
+        *,
         schema: Optional[str] = None,
         filter_names: Optional[Collection[str]] = None,
         **kw: Any,
@@ -1661,6 +1666,7 @@ class Dialect(EventTarget):
     def get_multi_check_constraints(
         self,
         connection: Connection,
+        *,
         schema: Optional[str] = None,
         filter_names: Optional[Collection[str]] = None,
         **kw: Any,
@@ -1703,6 +1709,7 @@ class Dialect(EventTarget):
     def get_multi_table_options(
         self,
         connection: Connection,
+        *,
         schema: Optional[str] = None,
         filter_names: Optional[Collection[str]] = None,
         **kw: Any,
@@ -1754,6 +1761,7 @@ class Dialect(EventTarget):
     def get_multi_table_comment(
         self,
         connection: Connection,
+        *,
         schema: Optional[str] = None,
         filter_names: Optional[Collection[str]] = None,
         **kw: Any,
@@ -2146,6 +2154,7 @@ class Dialect(EventTarget):
 
     def _deliver_insertmanyvalues_batches(
         self,
+        connection: Connection,
         cursor: DBAPICursor,
         statement: str,
         parameters: _DBAPIMultiExecuteParams,
@@ -2976,6 +2985,9 @@ class ExecutionContext:
     """a list of Column objects for which a server-side default or
       inline SQL expression value was fired off.  Applies to inserts
       and updates."""
+
+    execution_options: _ExecuteOptions
+    """Execution options associated with the current statement execution"""
 
     @classmethod
     def _init_ddl(

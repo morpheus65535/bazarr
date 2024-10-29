@@ -797,6 +797,11 @@ class SuiteRequirements(Requirements):
         return exclusions.open()
 
     @property
+    def inline_check_constraint_reflection(self):
+        """target dialect supports reflection of inline check constraints"""
+        return exclusions.closed()
+
+    @property
     def check_constraint_reflection(self):
         """target dialect supports reflection of check constraints"""
         return exclusions.closed()
@@ -1092,6 +1097,11 @@ class SuiteRequirements(Requirements):
                 )
 
         return exclusions.only_if(go)
+
+    @property
+    def array_type(self):
+        """Target platform implements a native ARRAY type"""
+        return exclusions.closed()
 
     @property
     def json_type(self):
@@ -1780,4 +1790,29 @@ class SuiteRequirements(Requirements):
     @property
     def materialized_views_reflect_pk(self):
         """Target database reflect MATERIALIZED VIEWs pks."""
+        return exclusions.closed()
+
+    @property
+    def supports_bitwise_or(self):
+        """Target database supports bitwise or"""
+        return exclusions.closed()
+
+    @property
+    def supports_bitwise_and(self):
+        """Target database supports bitwise and"""
+        return exclusions.closed()
+
+    @property
+    def supports_bitwise_not(self):
+        """Target database supports bitwise not"""
+        return exclusions.closed()
+
+    @property
+    def supports_bitwise_xor(self):
+        """Target database supports bitwise xor"""
+        return exclusions.closed()
+
+    @property
+    def supports_bitwise_shift(self):
+        """Target database supports bitwise left or right shift"""
         return exclusions.closed()

@@ -400,6 +400,10 @@ class WrappedSocket:
     def version(self) -> str:
         return self.connection.get_protocol_version_name()  # type: ignore[no-any-return]
 
+    def selected_alpn_protocol(self) -> str | None:
+        alpn_proto = self.connection.get_alpn_proto_negotiated()
+        return alpn_proto.decode() if alpn_proto else None
+
 
 WrappedSocket.makefile = socket_cls.makefile  # type: ignore[attr-defined]
 

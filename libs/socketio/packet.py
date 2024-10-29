@@ -185,6 +185,6 @@ class Packet(object):
             'data': self.data,
             'nsp': self.namespace,
         }
-        if self.id:
+        if self.id is not None:
             d['id'] = self.id
         return d

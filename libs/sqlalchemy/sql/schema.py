@@ -60,6 +60,7 @@ from . import roles
 from . import type_api
 from . import visitors
 from .base import _DefaultDescriptionTuple
+from .base import _NoArg
 from .base import _NoneName
 from .base import _SentinelColumnCharacterization
 from .base import _SentinelDefaultCharacterization
@@ -76,7 +77,6 @@ from .elements import TextClause
 from .selectable import TableClause
 from .type_api import to_instance
 from .visitors import ExternallyTraversible
-from .visitors import InternalTraversal
 from .. import event
 from .. import exc
 from .. import inspection
@@ -100,7 +100,6 @@ if typing.TYPE_CHECKING:
     from .elements import BindParameter
     from .functions import Function
     from .type_api import TypeEngine
-    from .visitors import _TraverseInternalsType
     from .visitors import anon_map
     from ..engine import Connection
     from ..engine import Engine
@@ -123,6 +122,8 @@ _ConstraintNameArgument = Optional[Union[str, _NoneName]]
 _ServerDefaultArgument = Union[
     "FetchedValue", str, TextClause, ColumnElement[Any]
 ]
+
+_ServerOnUpdateArgument = _ServerDefaultArgument
 
 
 class SchemaConst(Enum):
@@ -390,11 +391,6 @@ class Table(
             :meth:`_reflection.Inspector.get_indexes`
 
     """
-
-    _traverse_internals: _TraverseInternalsType = (
-        TableClause._traverse_internals
-        + [("schema", InternalTraversal.dp_string)]
-    )
 
     if TYPE_CHECKING:
 
@@ -1438,7 +1434,7 @@ class Table(
 
         args = []
         for col in self.columns:
-            args.append(col._copy(schema=actual_schema))
+            args.append(col._copy(schema=actual_schema, _to_metadata=metadata))
         table = Table(
             name,
             metadata,
@@ -1514,7 +1510,8 @@ class Column(DialectKWArgs, SchemaItem, ColumnClause[_T]):
         name: Optional[str] = None,
         type_: Optional[_TypeEngineArgument[_T]] = None,
         autoincrement: _AutoIncrementType = "auto",
-        default: Optional[Any] = None,
+        default: Optional[Any] = _NoArg.NO_ARG,
+        insert_default: Optional[Any] = _NoArg.NO_ARG,
         doc: Optional[str] = None,
         key: Optional[str] = None,
         index: Optional[bool] = None,
@@ -1526,7 +1523,7 @@ class Column(DialectKWArgs, SchemaItem, ColumnClause[_T]):
         onupdate: Optional[Any] = None,
         primary_key: bool = False,
         server_default: Optional[_ServerDefaultArgument] = None,
-        server_onupdate: Optional[FetchedValue] = None,
+        server_onupdate: Optional[_ServerOnUpdateArgument] = None,
         quote: Optional[bool] = None,
         system: bool = False,
         comment: Optional[str] = None,
@@ -1750,6 +1747,11 @@ class Column(DialectKWArgs, SchemaItem, ColumnClause[_T]):
             .. seealso::
 
                 :ref:`metadata_defaults_toplevel`
+
+        :param insert_default: An alias of :paramref:`.Column.default`
+            for compatibility with :func:`_orm.mapped_column`.
+
+            .. versionadded: 2.0.31
 
         :param doc: optional String that can be used by the ORM or similar
             to document attributes on the Python side.   This attribute does
@@ -2104,12 +2106,19 @@ class Column(DialectKWArgs, SchemaItem, ColumnClause[_T]):
             # otherwise, add DDL-related events
             self._set_type(self.type)
 
-        if default is not None:
-            if not isinstance(default, (ColumnDefault, Sequence)):
-                default = ColumnDefault(default)
+        if insert_default is not _NoArg.NO_ARG:
+            resolved_default = insert_default
+        elif default is not _NoArg.NO_ARG:
+            resolved_default = default
+        else:
+            resolved_default = None
 
-            self.default = default
-            l_args.append(default)
+        if resolved_default is not None:
+            if not isinstance(resolved_default, (ColumnDefault, Sequence)):
+                resolved_default = ColumnDefault(resolved_default)
+
+            self.default = resolved_default
+            l_args.append(resolved_default)
         else:
             self.default = None
 
@@ -2466,6 +2475,8 @@ class Column(DialectKWArgs, SchemaItem, ColumnClause[_T]):
         server_onupdate = self.server_onupdate
         if isinstance(server_default, (Computed, Identity)):
             # TODO: likely should be copied in all cases
+            # TODO: if a Sequence, we would need to transfer the Sequence
+            # .metadata as well
             args.append(server_default._copy(**kw))
             server_default = server_onupdate = None
 
@@ -2569,17 +2580,17 @@ class Column(DialectKWArgs, SchemaItem, ColumnClause[_T]):
             new_onupdate = self.onupdate._copy()
             new_onupdate._set_parent(other)
 
-        if self.index and not other.index:
-            other.index = True
+        if self.index in (True, False) and other.index is None:
+            other.index = self.index
+
+        if self.unique in (True, False) and other.unique is None:
+            other.unique = self.unique
 
         if self.doc and other.doc is None:
             other.doc = self.doc
 
         if self.comment and other.comment is None:
             other.comment = self.comment
-
-        if self.unique and not other.unique:
-            other.unique = True
 
         for const in self.constraints:
             if not const._type_bound:
@@ -5615,6 +5626,38 @@ class MetaData(HasSchemaAttr):
         return ddl.sort_tables(
             sorted(self.tables.values(), key=lambda t: t.key)  # type: ignore
         )
+
+    # overload needed to work around mypy this mypy
+    # https://github.com/python/mypy/issues/17093
+    @overload
+    def reflect(
+        self,
+        bind: Engine,
+        schema: Optional[str] = ...,
+        views: bool = ...,
+        only: Union[
+            _typing_Sequence[str], Callable[[str, MetaData], bool], None
+        ] = ...,
+        extend_existing: bool = ...,
+        autoload_replace: bool = ...,
+        resolve_fks: bool = ...,
+        **dialect_kwargs: Any,
+    ) -> None: ...
+
+    @overload
+    def reflect(
+        self,
+        bind: Connection,
+        schema: Optional[str] = ...,
+        views: bool = ...,
+        only: Union[
+            _typing_Sequence[str], Callable[[str, MetaData], bool], None
+        ] = ...,
+        extend_existing: bool = ...,
+        autoload_replace: bool = ...,
+        resolve_fks: bool = ...,
+        **dialect_kwargs: Any,
+    ) -> None: ...
 
     @util.preload_module("sqlalchemy.engine.reflection")
     def reflect(

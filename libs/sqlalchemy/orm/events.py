@@ -1939,7 +1939,7 @@ class SessionEvents(event.Events[Session]):
             @event.listens_for(Session, "after_soft_rollback")
             def do_something(session, previous_transaction):
                 if session.is_active:
-                    session.execute("select * from some_table")
+                    session.execute(text("select * from some_table"))
 
         :param session: The target :class:`.Session`.
         :param previous_transaction: The :class:`.SessionTransaction`
@@ -3155,7 +3155,9 @@ class QueryEvents(event.Events[Query[Any]]):
                         entity = desc['entity']
                         query = query.filter(entity.deleted == False)
 
-                        update_context.values['timestamp'] = datetime.utcnow()
+                        update_context.values['timestamp'] = (
+                            datetime.datetime.now(datetime.UTC)
+                        )
                 return query
 
         The ``.values`` dictionary of the "update context" object can also

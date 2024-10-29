@@ -9,10 +9,10 @@ from typing import Iterator
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
-
 if TYPE_CHECKING:  # pragma: no cover
+    from dynaconf.base import LazySettings
+    from dynaconf.base import Settings
     from dynaconf.utils.boxing import DynaBox
-    from dynaconf.base import LazySettings, Settings
 
 
 BANNER = """
@@ -47,7 +47,6 @@ def object_merge(
         return new
 
     if isinstance(old, list) and isinstance(new, list):
-
         # 726: allow local_merge to override global merge on lists
         if "dynaconf_merge_unique" in new:
             new.remove("dynaconf_merge_unique")
@@ -83,7 +82,6 @@ def object_merge(
         should_merge = new.pop("dynaconf_merge", True)
         if should_merge:
             for old_key, value in safe_items(old):
-
                 # This is for when the dict exists internally
                 # but the new value on the end of full path is the same
                 if (
@@ -131,7 +129,6 @@ def handle_metavalues(
     """Cleanup of MetaValues on new dict"""
 
     for key in list(new.keys()):
-
         # MetaValue instances
         if getattr(new[key], "_dynaconf_reset", False):  # pragma: no cover
             # a Reset on `new` triggers reasign of existing data
@@ -300,7 +297,7 @@ def trimmed_split(
             continue
         data = [item.strip() for item in s.strip().split(sep)]
         return data
-    return [s]  # raw un-splitted
+    return [s]  # raw un-split
 
 
 T = TypeVar("T")

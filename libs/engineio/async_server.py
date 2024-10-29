@@ -70,6 +70,10 @@ class AsyncServer(base_server.BaseServer):
     :param async_handlers: If set to ``True``, run message event handlers in
                            non-blocking threads. To run handlers synchronously,
                            set to ``False``. The default is ``True``.
+    :param monitor_clients: If set to ``True``, a background task will ensure
+                            inactive clients are closed. Set to ``False`` to
+                            disable the monitoring task (not recommended). The
+                            default is ``True``.
     :param transports: The list of allowed transports. Valid transports
                        are ``'polling'`` and ``'websocket'``. Defaults to
                        ``['polling', 'websocket']``.
@@ -265,11 +269,11 @@ class AsyncServer(base_server.BaseServer):
                                  'bad-jsonp-index')
             r = self._bad_request('Invalid JSONP index number')
         elif method == 'GET':
+            upgrade_header = environ.get('HTTP_UPGRADE').lower() \
+                if 'HTTP_UPGRADE' in environ else None
             if sid is None:
                 # transport must be one of 'polling' or 'websocket'.
                 # if 'websocket', the HTTP_UPGRADE header must match.
-                upgrade_header = environ.get('HTTP_UPGRADE').lower() \
-                    if 'HTTP_UPGRADE' in environ else None
                 if transport == 'polling' \
                         or transport == upgrade_header == 'websocket':
                     r = await self._handle_connect(environ, transport,
@@ -284,18 +288,25 @@ class AsyncServer(base_server.BaseServer):
                     r = self._bad_request('Invalid session ' + sid)
                 else:
                     socket = self._get_socket(sid)
-                    try:
-                        packets = await socket.handle_get_request(environ)
-                        if isinstance(packets, list):
-                            r = self._ok(packets, jsonp_index=jsonp_index)
-                        else:
-                            r = packets
-                    except exceptions.EngineIOError:
-                        if sid in self.sockets:  # pragma: no cover
-                            await self.disconnect(sid)
-                        r = self._bad_request()
-                    if sid in self.sockets and self.sockets[sid].closed:
-                        del self.sockets[sid]
+                    if self.transport(sid) != transport and \
+                            transport != upgrade_header:
+                        self._log_error_once(
+                            'Invalid transport for session ' + sid,
+                            'bad-transport')
+                        r = self._bad_request('Invalid transport')
+                    else:
+                        try:
+                            packets = await socket.handle_get_request(environ)
+                            if isinstance(packets, list):
+                                r = self._ok(packets, jsonp_index=jsonp_index)
+                            else:
+                                r = packets
+                        except exceptions.EngineIOError:
+                            if sid in self.sockets:  # pragma: no cover
+                                await self.disconnect(sid)
+                            r = self._bad_request()
+                        if sid in self.sockets and self.sockets[sid].closed:
+                            del self.sockets[sid]
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
                 self._log_error_once('Invalid session ' + sid, 'bad-sid')
@@ -524,9 +535,9 @@ class AsyncServer(base_server.BaseServer):
                 try:
                     await asyncio.wait_for(self.service_task_event.wait(),
                                            timeout=self.ping_timeout)
-                except asyncio.TimeoutError:
                     break
-                continue
+                except asyncio.TimeoutError:
+                    continue
 
             # go through the entire client list in a ping interval cycle
             sleep_interval = self.ping_timeout / len(self.sockets)
@@ -546,8 +557,9 @@ class AsyncServer(base_server.BaseServer):
                     try:
                         await asyncio.wait_for(self.service_task_event.wait(),
                                                timeout=sleep_interval)
-                    except asyncio.TimeoutError:
                         raise KeyboardInterrupt()
+                    except asyncio.TimeoutError:
+                        continue
             except (
                 SystemExit,
                 KeyboardInterrupt,

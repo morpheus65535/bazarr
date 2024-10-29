@@ -25,13 +25,17 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-
+import copy
 import re
 import sys
 import json
 import contextlib
 import os
+import binascii
 import locale
+import platform
+import typing
+import base64
 from itertools import chain
 from os.path import expanduser
 from functools import reduce
@@ -43,6 +47,20 @@ from urllib.parse import urlparse
 from urllib.parse import urlencode as _urlencode
 
 import importlib.util
+
+
+# A simple path decoder we can re-use which looks after
+# ensuring our file info is expanded correctly when provided
+# a path.
+__PATH_DECODER = os.path.expandvars if \
+    platform.system() == 'Windows' else os.path.expanduser
+
+
+def path_decode(path):
+    """
+    Returns the fully decoded path based on the operating system
+    """
+    return os.path.abspath(__PATH_DECODER(path))
 
 
 def import_module(path, name):
@@ -173,6 +191,11 @@ IS_PHONE_NO = re.compile(r'^\+?(?P<phone>[0-9\s)(+-]+)\s*$')
 # Regular expression used to destinguish between multiple phone numbers
 PHONE_NO_DETECTION_RE = re.compile(
     r'\s*([+(\s]*[0-9][0-9()\s-]+[0-9])(?=$|[\s,+(]+[0-9])', re.I)
+
+# Support for prefix: (string followed by colon) infront of phone no
+PHONE_NO_WPREFIX_DETECTION_RE = re.compile(
+    r'\s*((?:[a-z]+:)?[+(\s]*[0-9][0-9()\s-]+[0-9])'
+    r'(?=$|(?:[a-z]+:)?[\s,+(]+[0-9])', re.I)
 
 # A simple verification check to make sure the content specified
 # rougly conforms to a ham radio call sign before we parse it further
@@ -541,7 +564,7 @@ def tidy_path(path):
     return path
 
 
-def parse_qsd(qs, simple=False, plus_to_space=False):
+def parse_qsd(qs, simple=False, plus_to_space=False, sanitize=True):
     """
     Query String Dictionary Builder
 
@@ -568,6 +591,8 @@ def parse_qsd(qs, simple=False, plus_to_space=False):
     per normal URL Encoded defininition. Normal URL parsing applies
     this, but `+` is very actively used character with passwords,
     api keys, tokens, etc.  So Apprise does not do this by default.
+
+    if sanitize is set to False, then kwargs are not placed into lowercase
     """
 
     # Our return result set:
@@ -608,7 +633,7 @@ def parse_qsd(qs, simple=False, plus_to_space=False):
 
         # Always Query String Dictionary (qsd) for every entry we have
         # content is always made lowercase for easy indexing
-        result['qsd'][key.lower().strip()] = val
+        result['qsd'][key.lower().strip() if sanitize else key] = val
 
         if simple:
             # move along
@@ -636,7 +661,7 @@ def parse_qsd(qs, simple=False, plus_to_space=False):
 
 
 def parse_url(url, default_schema='http', verify_host=True, strict_port=False,
-              simple=False, plus_to_space=False):
+              simple=False, plus_to_space=False, sanitize=True):
     """A function that greatly simplifies the parsing of a url
     specified by the end user.
 
@@ -691,6 +716,8 @@ def parse_url(url, default_schema='http', verify_host=True, strict_port=False,
 
      If the URL can't be parsed then None is returned
 
+     If sanitize is set to False, then kwargs are not placed in lowercase
+     and wrapping whitespace is not removed
     """
 
     if not isinstance(url, str):
@@ -750,7 +777,8 @@ def parse_url(url, default_schema='http', verify_host=True, strict_port=False,
     # while ensuring that all keys are lowercase
     if qsdata:
         result.update(parse_qsd(
-            qsdata, simple=simple, plus_to_space=plus_to_space))
+            qsdata, simple=simple, plus_to_space=plus_to_space,
+            sanitize=sanitize))
 
     # Now do a proper extraction of data; http:// is just substitued in place
     # to allow urlparse() to function as expected, we'll swap this back to the
@@ -934,7 +962,7 @@ def parse_bool(arg, default=False):
     return bool(arg)
 
 
-def parse_phone_no(*args, store_unparseable=True, **kwargs):
+def parse_phone_no(*args, store_unparseable=True, prefix=False, **kwargs):
     """
     Takes a string containing phone numbers separated by comma's and/or spaces
     and returns a list.
@@ -943,7 +971,8 @@ def parse_phone_no(*args, store_unparseable=True, **kwargs):
     result = []
     for arg in args:
         if isinstance(arg, str) and arg:
-            _result = PHONE_NO_DETECTION_RE.findall(arg)
+            _result = (PHONE_NO_DETECTION_RE if not prefix
+                       else PHONE_NO_WPREFIX_DETECTION_RE).findall(arg)
             if _result:
                 result += _result
 
@@ -961,7 +990,7 @@ def parse_phone_no(*args, store_unparseable=True, **kwargs):
         elif isinstance(arg, (set, list, tuple)):
             # Use recursion to handle the list of phone numbers
             result += parse_phone_no(
-                *arg, store_unparseable=store_unparseable)
+                *arg, store_unparseable=store_unparseable, prefix=prefix)
 
     return result
 
@@ -1518,7 +1547,7 @@ def environ(*remove, **update):
             locale.setlocale(locale.LC_ALL, loc_orig)
 
         except locale.Error:
-            # Thrown in py3.6
+            # Handle this case
             pass
 
 
@@ -1589,3 +1618,146 @@ def dict_full_update(dict1, dict2):
 
     _merge(dict1, dict2)
     return
+
+
+def dir_size(path, max_depth=3, missing_okay=True, _depth=0, _errors=None):
+    """
+    Scans a provided path an returns it's size (in bytes) of path provided
+    """
+
+    if _errors is None:
+        _errors = set()
+
+    if _depth > max_depth:
+        _errors.add(path)
+        return (0, _errors)
+
+    total = 0
+    try:
+        with os.scandir(path) as it:
+            for entry in it:
+                try:
+                    if entry.is_file(follow_symlinks=False):
+                        total += entry.stat(follow_symlinks=False).st_size
+
+                    elif entry.is_dir(follow_symlinks=False):
+                        (totals, _) = dir_size(
+                            entry.path,
+                            max_depth=max_depth,
+                            _depth=_depth + 1,
+                            _errors=_errors)
+                        total += totals
+
+                except FileNotFoundError:
+                    # no worries; Nothing to do
+                    continue
+
+                except (OSError, IOError) as e:
+                    # Permission error of some kind or disk problem...
+                    # There is nothing we can do at this point
+                    _errors.add(entry.path)
+                    logger.warning(
+                        'dir_size detetcted inaccessible path: %s',
+                        os.fsdecode(entry.path))
+                    logger.debug('dir_size Exception: %s' % str(e))
+                    continue
+
+    except FileNotFoundError:
+        if not missing_okay:
+            # Conditional error situation
+            _errors.add(path)
+
+    except (OSError, IOError) as e:
+        # Permission error of some kind or disk problem...
+        # There is nothing we can do at this point
+        _errors.add(path)
+        logger.warning(
+            'dir_size detetcted inaccessible path: %s',
+            os.fsdecode(path))
+        logger.debug('dir_size Exception: %s' % str(e))
+
+    return (total, _errors)
+
+
+def bytes_to_str(value):
+    """
+    Covert an integer (in bytes) into it's string representation with
+    acompanied unit value (such as B, KB, MB, GB, TB, etc)
+    """
+    unit = 'B'
+    try:
+        value = float(value)
+
+    except (ValueError, TypeError):
+        return None
+
+    if value >= 1024.0:
+        value = value / 1024.0
+        unit = 'KB'
+        if value >= 1024.0:
+            value = value / 1024.0
+            unit = 'MB'
+            if value >= 1024.0:
+                value = value / 1024.0
+                unit = 'GB'
+                if value >= 1024.0:
+                    value = value / 1024.0
+                    unit = 'TB'
+
+    return '%.2f%s' % (round(value, 2), unit)
+
+
+def decode_b64_dict(di: dict) -> dict:
+    """
+    decodes base64 dictionary previously encoded
+
+    string entries prefixed with `b64:` are targeted
+    """
+    di = copy.deepcopy(di)
+    for k, v in di.items():
+        if not isinstance(v, str) or not v.startswith("b64:"):
+            continue
+
+        try:
+            parsed_v = base64.b64decode(v[4:])
+            parsed_v = json.loads(parsed_v)
+
+        except (ValueError, TypeError, binascii.Error,
+                json.decoder.JSONDecodeError):
+            # ValueError: the length of altchars is not 2.
+            # TypeError: invalid input
+            # binascii.Error: not base64 (bad padding)
+            # json.decoder.JSONDecodeError: Bad JSON object
+
+            parsed_v = v
+        di[k] = parsed_v
+    return di
+
+
+def encode_b64_dict(di: dict, encoding='utf-8') -> typing.Tuple[dict, bool]:
+    """
+    Encodes dictionary entries containing binary types (int, float) into base64
+
+    Final product is always string based values
+    """
+    di = copy.deepcopy(di)
+    needs_decoding = False
+    for k, v in di.items():
+        if isinstance(v, str):
+            continue
+
+        try:
+            encoded = base64.urlsafe_b64encode(json.dumps(v).encode(encoding))
+            encoded = "b64:{}".format(encoded.decode(encoding))
+            needs_decoding = True
+
+        except (ValueError, TypeError):
+            # ValueError:
+            #  - the length of altchars is not 2.
+            # TypeError:
+            #  - json not searializable or
+            #  - bytes object not passed into urlsafe_b64encode()
+            encoded = str(v)
+
+        di[k] = encoded
+    return di, needs_decoding

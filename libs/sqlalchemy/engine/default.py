@@ -58,6 +58,7 @@ from ..sql import compiler
 from ..sql import dml
 from ..sql import expression
 from ..sql import type_api
+from ..sql import util as sql_util
 from ..sql._typing import is_tuple_type
 from ..sql.base import _NoArg
 from ..sql.compiler import DDLCompiler
@@ -95,6 +96,7 @@ if typing.TYPE_CHECKING:
     from ..sql.elements import BindParameter
     from ..sql.schema import Column
     from ..sql.type_api import _BindProcessorType
+    from ..sql.type_api import _ResultProcessorType
     from ..sql.type_api import TypeEngine
 
 # When we're handed literal SQL, ensure it's a SELECT query
@@ -167,7 +169,10 @@ class DefaultDialect(Dialect):
     tuple_in_values = False
 
     connection_characteristics = util.immutabledict(
-        {"isolation_level": characteristics.IsolationLevelCharacteristic()}
+        {
+            "isolation_level": characteristics.IsolationLevelCharacteristic(),
+            "logging_token": characteristics.LoggingTokenCharacteristic(),
+        }
     )
 
     engine_config_types: Mapping[str, Any] = util.immutabledict(
@@ -659,7 +664,7 @@ class DefaultDialect(Dialect):
         if connection.in_transaction():
             trans_objs = [
                 (name, obj)
-                for name, obj, value in characteristic_values
+                for name, obj, _ in characteristic_values
                 if obj.transactional
             ]
             if trans_objs:
@@ -672,8 +677,10 @@ class DefaultDialect(Dialect):
                 )
 
         dbapi_connection = connection.connection.dbapi_connection
-        for name, characteristic, value in characteristic_values:
-            characteristic.set_characteristic(self, dbapi_connection, value)
+        for _, characteristic, value in characteristic_values:
+            characteristic.set_connection_characteristic(
+                self, connection, dbapi_connection, value
+            )
         connection.connection._connection_record.finalize_callback.append(
             functools.partial(self._reset_characteristics, characteristics)
         )
@@ -756,10 +763,24 @@ class DefaultDialect(Dialect):
         connection.execute(expression.ReleaseSavepointClause(name))
 
     def _deliver_insertmanyvalues_batches(
-        self, cursor, statement, parameters, generic_setinputsizes, context
+        self,
+        connection,
+        cursor,
+        statement,
+        parameters,
+        generic_setinputsizes,
+        context,
     ):
         context = cast(DefaultExecutionContext, context)
         compiled = cast(SQLCompiler, context.compiled)
+
+        _composite_sentinel_proc: Sequence[
+            Optional[_ResultProcessorType[Any]]
+        ] = ()
+        _scalar_sentinel_proc: Optional[_ResultProcessorType[Any]] = None
+        _sentinel_proc_initialized: bool = False
+
+        compiled_parameters = context.compiled_parameters
 
         imv = compiled._insertmanyvalues
         assert imv is not None
@@ -769,7 +790,12 @@ class DefaultDialect(Dialect):
             "insertmanyvalues_page_size", self.insertmanyvalues_page_size
         )
 
-        sentinel_value_resolvers = None
+        if compiled.schema_translate_map:
+            schema_translate_map = context.execution_options.get(
+                "schema_translate_map", {}
+            )
+        else:
+            schema_translate_map = None
 
         if is_returning:
             result: Optional[List[Any]] = []
@@ -777,10 +803,6 @@ class DefaultDialect(Dialect):
 
             sort_by_parameter_order = imv.sort_by_parameter_order
 
-            if imv.num_sentinel_columns:
-                sentinel_value_resolvers = (
-                    compiled._imv_sentinel_value_resolvers
-                )
         else:
             sort_by_parameter_order = False
             result = None
@@ -788,14 +810,27 @@ class DefaultDialect(Dialect):
         for imv_batch in compiled._deliver_insertmanyvalues_batches(
             statement,
             parameters,
+            compiled_parameters,
             generic_setinputsizes,
             batch_size,
             sort_by_parameter_order,
+            schema_translate_map,
         ):
             yield imv_batch
 
             if is_returning:
-                rows = context.fetchall_for_returning(cursor)
+
+                try:
+                    rows = context.fetchall_for_returning(cursor)
+                except BaseException as be:
+                    connection._handle_dbapi_exception(
+                        be,
+                        sql_util._long_statement(imv_batch.replaced_statement),
+                        imv_batch.replaced_parameters,
+                        None,
+                        context,
+                        is_sub_exec=True,
+                    )
 
                 # I would have thought "is_returning: Final[bool]"
                 # would have assured this but pylance thinks not
@@ -815,11 +850,46 @@ class DefaultDialect(Dialect):
                     # otherwise, create dictionaries to match up batches
                     # with parameters
                     assert imv.sentinel_param_keys
+                    assert imv.sentinel_columns
 
+                    _nsc = imv.num_sentinel_columns
+
+                    if not _sentinel_proc_initialized:
+                        if composite_sentinel:
+                            _composite_sentinel_proc = [
+                                col.type._cached_result_processor(
+                                    self, cursor_desc[1]
+                                )
+                                for col, cursor_desc in zip(
+                                    imv.sentinel_columns,
+                                    cursor.description[-_nsc:],
+                                )
+                            ]
+                        else:
+                            _scalar_sentinel_proc = (
+                                imv.sentinel_columns[0]
+                            ).type._cached_result_processor(
+                                self, cursor.description[-1][1]
+                            )
+                        _sentinel_proc_initialized = True
+
+                    rows_by_sentinel: Union[
+                        Dict[Tuple[Any, ...], Any],
+                        Dict[Any, Any],
+                    ]
                     if composite_sentinel:
-                        _nsc = imv.num_sentinel_columns
                         rows_by_sentinel = {
-                            tuple(row[-_nsc:]): row for row in rows
+                            tuple(
+                                (proc(val) if proc else val)
+                                for val, proc in zip(
+                                    row[-_nsc:], _composite_sentinel_proc
+                                )
+                            ): row
+                            for row in rows
+                        }
+                    elif _scalar_sentinel_proc:
+                        rows_by_sentinel = {
+                            _scalar_sentinel_proc(row[-1]): row for row in rows
                         }
                     else:
                         rows_by_sentinel = {row[-1]: row for row in rows}
@@ -838,63 +908,10 @@ class DefaultDialect(Dialect):
                         )
 
                     try:
-                        if composite_sentinel:
-                            if sentinel_value_resolvers:
-                                # composite sentinel (PK) with value resolvers
-                                ordered_rows = [
-                                    rows_by_sentinel[
-                                        tuple(
-                                            (
-                                                _resolver(parameters[_spk])  # type: ignore  # noqa: E501
-                                                if _resolver
-                                                else parameters[_spk]  # type: ignore  # noqa: E501
-                                            )
-                                            for _resolver, _spk in zip(
-                                                sentinel_value_resolvers,
-                                                imv.sentinel_param_keys,
-                                            )
-                                        )
-                                    ]
-                                    for parameters in imv_batch.batch
-                                ]
-                            else:
-                                # composite sentinel (PK) with no value
-                                # resolvers
-                                ordered_rows = [
-                                    rows_by_sentinel[
-                                        tuple(
-                                            parameters[_spk]  # type: ignore
-                                            for _spk in imv.sentinel_param_keys
-                                        )
-                                    ]
-                                    for parameters in imv_batch.batch
-                                ]
-                        else:
-                            _sentinel_param_key = imv.sentinel_param_keys[0]
-                            if (
-                                sentinel_value_resolvers
-                                and sentinel_value_resolvers[0]
-                            ):
-                                # single-column sentinel with value resolver
-                                _sentinel_value_resolver = (
-                                    sentinel_value_resolvers[0]
-                                )
-                                ordered_rows = [
-                                    rows_by_sentinel[
-                                        _sentinel_value_resolver(
-                                            parameters[_sentinel_param_key]  # type: ignore  # noqa: E501
-                                        )
-                                    ]
-                                    for parameters in imv_batch.batch
-                                ]
-                            else:
-                                # single-column sentinel with no value resolver
-                                ordered_rows = [
-                                    rows_by_sentinel[
-                                        parameters[_sentinel_param_key]  # type: ignore  # noqa: E501
-                                    ]
-                                    for parameters in imv_batch.batch
-                                ]
+                        ordered_rows = [
+                            rows_by_sentinel[sentinel_keys]
+                            for sentinel_keys in imv_batch.sentinel_values
+                        ]
                     except KeyError as ke:
                         # see test_insert_exec.py::
                         # IMVSentinelTest::test_sentinel_cant_match_keys
@@ -1198,7 +1215,7 @@ class DefaultExecutionContext(ExecutionContext):
 
     _soft_closed = False
 
-    _has_rowcount = False
+    _rowcount: Optional[int] = None
 
     # a hook for SQLite's translation of
     # result column names
@@ -1788,7 +1805,14 @@ class DefaultExecutionContext(ExecutionContext):
 
     @util.non_memoized_property
     def rowcount(self) -> int:
-        return self.cursor.rowcount
+        if self._rowcount is not None:
+            return self._rowcount
+        else:
+            return self.cursor.rowcount
+
+    @property
+    def _has_rowcount(self):
+        return self._rowcount is not None
 
     def supports_sane_rowcount(self):
         return self.dialect.supports_sane_rowcount
@@ -1798,6 +1822,9 @@ class DefaultExecutionContext(ExecutionContext):
 
     def _setup_result_proxy(self):
         exec_opt = self.execution_options
+
+        if self._rowcount is None and exec_opt.get("preserve_rowcount", False):
+            self._rowcount = self.cursor.rowcount
 
         if self.is_crud or self.is_text:
             result = self._setup_dml_or_text_result()
@@ -1955,8 +1982,7 @@ class DefaultExecutionContext(ExecutionContext):
 
             if rows:
                 self.returned_default_rows = rows
-            result.rowcount = len(rows)
-            self._has_rowcount = True
+            self._rowcount = len(rows)
 
             if self._is_supplemental_returning:
                 result._rewind(rows)
@@ -1970,12 +1996,12 @@ class DefaultExecutionContext(ExecutionContext):
         elif not result._metadata.returns_rows:
             # no results, get rowcount
             # (which requires open cursor on some drivers)
-            result.rowcount
-            self._has_rowcount = True
+            if self._rowcount is None:
+                self._rowcount = self.cursor.rowcount
             result._soft_close()
         elif self.isupdate or self.isdelete:
-            result.rowcount
-            self._has_rowcount = True
+            if self._rowcount is None:
+                self._rowcount = self.cursor.rowcount
         return result
 
     @util.memoized_property

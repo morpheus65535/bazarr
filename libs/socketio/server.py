@@ -106,6 +106,9 @@ class Server(base_server.BaseServer):
                             inactive clients are closed. Set to ``False`` to
                             disable the monitoring task (not recommended). The
                             default is ``True``.
+    :param transports: The list of allowed transports. Valid transports
+                       are ``'polling'`` and ``'websocket'``. Defaults to
+                       ``['polling', 'websocket']``.
     :param engineio_logger: To enable Engine.IO logging set to ``True`` or pass
                             a logger object to use. To disable logging set to
                             ``False``. The default is ``False``. Note that

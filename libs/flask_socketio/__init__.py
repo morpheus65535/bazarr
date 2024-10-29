@@ -279,7 +279,18 @@ class SocketIO(object):
         def decorator(handler):
             @wraps(handler)
             def _handler(sid, *args):
-                return self._handle_event(handler, message, namespace, sid,
+                nonlocal namespace
+                real_ns = namespace
+                if namespace == '*':
+                    real_ns = sid
+                    sid = args[0]
+                    args = args[1:]
+                real_msg = message
+                if message == '*':
+                    real_msg = sid
+                    sid = args[0]
+                    args = [real_msg] + list(args[1:])
+                return self._handle_event(handler, message, real_ns, sid,
                                           *args)
 
             if self.server:

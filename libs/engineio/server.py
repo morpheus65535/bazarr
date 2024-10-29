@@ -180,7 +180,7 @@ class Server(base_server.BaseServer):
                 if sid in self.sockets:  # pragma: no cover
                     del self.sockets[sid]
         else:
-            for client in self.sockets.values():
+            for client in self.sockets.copy().values():
                 client.close()
             self.sockets = {}
 
@@ -251,11 +251,11 @@ class Server(base_server.BaseServer):
                                  'bad-jsonp-index')
             r = self._bad_request('Invalid JSONP index number')
         elif method == 'GET':
+            upgrade_header = environ.get('HTTP_UPGRADE').lower() \
+                if 'HTTP_UPGRADE' in environ else None
             if sid is None:
                 # transport must be one of 'polling' or 'websocket'.
                 # if 'websocket', the HTTP_UPGRADE header must match.
-                upgrade_header = environ.get('HTTP_UPGRADE').lower() \
-                    if 'HTTP_UPGRADE' in environ else None
                 if transport == 'polling' \
                         or transport == upgrade_header == 'websocket':
                     r = self._handle_connect(environ, start_response,
@@ -270,19 +270,26 @@ class Server(base_server.BaseServer):
                     r = self._bad_request('Invalid session')
                 else:
                     socket = self._get_socket(sid)
-                    try:
-                        packets = socket.handle_get_request(
-                            environ, start_response)
-                        if isinstance(packets, list):
-                            r = self._ok(packets, jsonp_index=jsonp_index)
-                        else:
-                            r = packets
-                    except exceptions.EngineIOError:
-                        if sid in self.sockets:  # pragma: no cover
-                            self.disconnect(sid)
-                        r = self._bad_request()
-                    if sid in self.sockets and self.sockets[sid].closed:
-                        del self.sockets[sid]
+                    if self.transport(sid) != transport and \
+                            transport != upgrade_header:
+                        self._log_error_once(
+                            'Invalid transport for session ' + sid,
+                            'bad-transport')
+                        r = self._bad_request('Invalid transport')
+                    else:
+                        try:
+                            packets = socket.handle_get_request(
+                                environ, start_response)
+                            if isinstance(packets, list):
+                                r = self._ok(packets, jsonp_index=jsonp_index)
+                            else:
+                                r = packets
+                        except exceptions.EngineIOError:
+                            if sid in self.sockets:  # pragma: no cover
+                                self.disconnect(sid)
+                            r = self._bad_request()
+                        if sid in self.sockets and self.sockets[sid].closed:
+                            del self.sockets[sid]
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
                 self._log_error_once(

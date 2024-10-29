@@ -21,7 +21,7 @@ class Namespace(base_namespace.BaseServerNamespace):
         method can be overridden if special dispatching rules are needed, or if
         having a single method that catches all events is desired.
         """
-        handler_name = 'on_' + event
+        handler_name = 'on_' + (event or '')
         if hasattr(self, handler_name):
             return getattr(self, handler_name)(*args)
 
@@ -152,7 +152,7 @@ class ClientNamespace(base_namespace.BaseClientNamespace):
         method can be overridden if special dispatching rules are needed, or if
         having a single method that catches all events is desired.
         """
-        handler_name = 'on_' + event
+        handler_name = 'on_' + (event or '')
         if hasattr(self, handler_name):
             return getattr(self, handler_name)(*args)
 

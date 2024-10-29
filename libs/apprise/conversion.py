@@ -29,7 +29,7 @@
 import re
 from markdown import markdown
 from .common import NotifyFormat
-from .URLBase import URLBase
+from .url import URLBase
 
 from html.parser import HTMLParser
 
@@ -180,8 +180,10 @@ class HTMLConverter(HTMLParser, object):
             self._result.append('\n')
 
         elif tag == 'hr':
-            if self._result:
+            if self._result and isinstance(self._result[-1], str):
                 self._result[-1] = self._result[-1].rstrip(' ')
+            else:
+                pass
 
             self._result.append('\n---\n')
 

@@ -109,6 +109,7 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
 
     """
 
+    dialect: Dialect
     dispatch: dispatcher[ConnectionEventsTarget]
 
     _sqla_logger_namespace = "sqlalchemy.engine.Connection"
@@ -173,13 +174,9 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
         if self._has_events or self.engine._has_events:
             self.dispatch.engine_connect(self)
 
-    @util.memoized_property
-    def _message_formatter(self) -> Any:
-        if "logging_token" in self._execution_options:
-            token = self._execution_options["logging_token"]
-            return lambda msg: "[%s] %s" % (token, msg)
-        else:
-            return None
+    # this can be assigned differently via
+    # characteristics.LoggingTokenCharacteristic
+    _message_formatter: Any = None
 
     def _log_info(self, message: str, *arg: Any, **kw: Any) -> None:
         fmt = self._message_formatter
@@ -250,6 +247,7 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
         yield_per: int = ...,
         insertmanyvalues_page_size: int = ...,
         schema_translate_map: Optional[SchemaTranslateMapType] = ...,
+        preserve_rowcount: bool = False,
         **opt: Any,
     ) -> Connection: ...
 
@@ -489,6 +487,18 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
           .. seealso::
 
             :ref:`schema_translating`
+
+        :param preserve_rowcount: Boolean; when True, the ``cursor.rowcount``
+          attribute will be unconditionally memoized within the result and
+          made available via the :attr:`.CursorResult.rowcount` attribute.
+          Normally, this attribute is only preserved for UPDATE and DELETE
+          statements.  Using this option, the DBAPIs rowcount value can
+          be accessed for other kinds of statements such as INSERT and SELECT,
+          to the degree that the DBAPI supports these statements.  See
+          :attr:`.CursorResult.rowcount` for notes regarding the behavior
+          of this attribute.
+
+          .. versionadded:: 2.0.28
 
         .. seealso::
 
@@ -1831,10 +1841,7 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
         context.pre_exec()
 
         if context.execute_style is ExecuteStyle.INSERTMANYVALUES:
-            return self._exec_insertmany_context(
-                dialect,
-                context,
-            )
+            return self._exec_insertmany_context(dialect, context)
         else:
             return self._exec_single_context(
                 dialect, context, statement, parameters
@@ -2018,7 +2025,13 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
         if self._echo:
             stats = context._get_cache_stats() + " (insertmanyvalues)"
 
+        preserve_rowcount = context.execution_options.get(
+            "preserve_rowcount", False
+        )
+        rowcount = 0
+
         for imv_batch in dialect._deliver_insertmanyvalues_batches(
+            self,
             cursor,
             str_statement,
             effective_parameters,
@@ -2039,6 +2052,7 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
                         imv_batch.replaced_parameters,
                         None,
                         context,
+                        is_sub_exec=True,
                     )
 
             sub_stmt = imv_batch.replaced_statement
@@ -2128,8 +2142,14 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
                     context.executemany,
                 )
 
+            if preserve_rowcount:
+                rowcount += imv_batch.current_batch_size
+
         try:
             context.post_exec()
+
+            if preserve_rowcount:
+                context._rowcount = rowcount  # type: ignore[attr-defined]
 
             result = context._setup_result_proxy()
 

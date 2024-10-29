@@ -56,11 +56,14 @@ class Client(base_client.BaseClient):
     :param http_session: an initialized ``requests.Session`` object to be used
                          when sending requests to the server. Use it if you
                          need to add special client options such as proxy
-                         servers, SSL certificates, etc.
+                         servers, SSL certificates, custom CA bundle, etc.
     :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
                        The default is ``True``.
+    :param websocket_extra_options: Dictionary containing additional keyword
+                                    arguments passed to
+                                    ``websocket.create_connection()``.
     :param engineio_logger: To enable Engine.IO logging set to ``True`` or pass
                             a logger object to use. To disable logging set to
                             ``False``. The default is ``False``. Note that
@@ -126,6 +129,8 @@ class Client(base_client.BaseClient):
         if namespaces is None:
             namespaces = list(set(self.handlers.keys()).union(
                 set(self.namespace_handlers.keys())))
+            if '*' in namespaces:
+                namespaces.remove('*')
             if len(namespaces) == 0:
                 namespaces = ['/']
         elif isinstance(namespaces, str):
@@ -297,6 +302,20 @@ class Client(base_client.BaseClient):
             self._send_packet(self.packet_class(
                 packet.DISCONNECT, namespace=n))
         self.eio.disconnect(abort=True)
+
+    def shutdown(self):
+        """Stop the client.
+
+        If the client is connected to a server, it is disconnected. If the
+        client is attempting to reconnect to server, the reconnection attempts
+        are stopped. If the client is not connected to a server and is not
+        attempting to reconnect, then this function does nothing.
+        """
+        if self.connected:
+            self.disconnect()
+        elif self._reconnect_task:  # pragma: no branch
+            self._reconnect_abort.set()
+            self._reconnect_task.join()
 
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task using the appropriate async model.

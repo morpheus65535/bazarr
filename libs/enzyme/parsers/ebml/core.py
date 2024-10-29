@@ -1,14 +1,30 @@
-# -*- coding: utf-8 -*-
 from ...exceptions import ReadError
 from .readers import *
-from pkg_resources import resource_stream  # @UnresolvedImport
 from xml.dom import minidom
 import logging
 
+try:
+    from importlib.resources import files
+except ImportError:
+    from importlib_resources import files  # type: ignore[assignment,no-redef,import-not-found]
 
-__all__ = ['INTEGER', 'UINTEGER', 'FLOAT', 'STRING', 'UNICODE', 'DATE', 'MASTER', 'BINARY',
-           'SPEC_TYPES', 'READERS', 'Element', 'MasterElement', 'parse', 'parse_element',
-           'get_matroska_specs']
+__all__ = [
+    "INTEGER",
+    "UINTEGER",
+    "FLOAT",
+    "STRING",
+    "UNICODE",
+    "DATE",
+    "MASTER",
+    "BINARY",
+    "SPEC_TYPES",
+    "READERS",
+    "Element",
+    "MasterElement",
+    "parse",
+    "parse_element",
+    "get_matroska_specs",
+]
 logger = logging.getLogger(__name__)
 
 
@@ -17,14 +33,14 @@ INTEGER, UINTEGER, FLOAT, STRING, UNICODE, DATE, MASTER, BINARY = range(8)
 
 # Spec types to EBML types mapping
 SPEC_TYPES = {
-    'integer': INTEGER,
-    'uinteger': UINTEGER,
-    'float': FLOAT,
-    'string': STRING,
-    'utf-8': UNICODE,
-    'date': DATE,
-    'master': MASTER,
-    'binary': BINARY
+    "integer": INTEGER,
+    "uinteger": UINTEGER,
+    "float": FLOAT,
+    "string": STRING,
+    "utf-8": UNICODE,
+    "date": DATE,
+    "master": MASTER,
+    "binary": BINARY,
 }
 
 # Readers to use per EBML type
@@ -35,11 +51,11 @@ READERS = {
     STRING: read_element_string,
     UNICODE: read_element_unicode,
     DATE: read_element_date,
-    BINARY: read_element_binary
+    BINARY: read_element_binary,
 }
 
 
-class Element(object):
+class Element:
     """Base object of EBML
 
     :param int id: id of the element, best represented as hexadecimal (0x18538067 for Matroska Segment element)
@@ -52,7 +68,10 @@ class Element(object):
     :param data: data as read by the corresponding :data:`READERS`
 
     """
-    def __init__(self, id=None, type=None, name=None, level=None, position=None, size=None, data=None):  # @ReservedAssignment
+
+    def __init__(
+        self, id=None, type=None, name=None, level=None, position=None, size=None, data=None
+    ):  # @ReservedAssignment
         self.id = id
         self.type = type
         self.name = name
@@ -62,7 +81,7 @@ class Element(object):
         self.data = data
 
     def __repr__(self):
-        return '<%s [%s, %r]>' % (self.__class__.__name__, self.name, self.data)
+        return "<%s [%s, %r]>" % (self.__class__.__name__, self.name, self.data)
 
 
 class MasterElement(Element):
@@ -89,6 +108,7 @@ class MasterElement(Element):
         Element(DocType, u'matroska')
 
     """
+
     def __init__(self, id=None, name=None, level=None, position=None, size=None, data=None):  # @ReservedAssignment
         super(MasterElement, self).__init__(id, MASTER, name, level, position, size, data)
 
@@ -118,7 +138,7 @@ class MasterElement(Element):
             return default
         element = self[name]
         if element.type == MASTER:
-            raise ValueError('%s is a MasterElement' % name)
+            raise ValueError("%s is a MasterElement" % name)
         return element.data
 
     def __getitem__(self, key):
@@ -128,7 +148,7 @@ class MasterElement(Element):
         if not children:
             raise KeyError(key)
         if len(children) > 1:
-            raise KeyError('More than 1 child with key %s (%d)' % (key, len(children)))
+            raise KeyError("More than 1 child with key %s (%d)" % (key, len(children)))
         return children[0]
 
     def __contains__(self, item):
@@ -165,19 +185,31 @@ def parse(stream, specs, size=None, ignore_element_types=None, ignore_element_na
             element = parse_element(stream, specs)
             if element is None:
                 continue
-            logger.debug('%s %s parsed', element.__class__.__name__, element.name)
+            logger.debug("%s %s parsed", element.__class__.__name__, element.name)
             if element.type in ignore_element_types or element.name in ignore_element_names:
-                logger.info('%s %s ignored', element.__class__.__name__, element.name)
+                logger.info("%s %s ignored", element.__class__.__name__, element.name)
                 if element.type == MASTER:
                     stream.seek(element.size, 1)
                 continue
             if element.type == MASTER:
                 if max_level is not None and element.level >= max_level:
-                    logger.info('Maximum level %d reached for children of %s %s', max_level, element.__class__.__name__, element.name)
+                    logger.info(
+                        "Maximum level %d reached for children of %s %s",
+                        max_level,
+                        element.__class__.__name__,
+                        element.name,
+                    )
                     stream.seek(element.size, 1)
                 else:
-                    logger.debug('Loading child elements for %s %s with size %d', element.__class__.__name__, element.name, element.size)
-                    element.data = parse(stream, specs, element.size, ignore_element_types, ignore_element_names, max_level)
+                    logger.debug(
+                        "Loading child elements for %s %s with size %d",
+                        element.__class__.__name__,
+                        element.name,
+                        element.size,
+                    )
+                    element.data = parse(
+                        stream, specs, element.size, ignore_element_types, ignore_element_names, max_level
+                    )
             elements.append(element)
         except ReadError:
             if size is not None:
@@ -186,7 +218,9 @@ def parse(stream, specs, size=None, ignore_element_types=None, ignore_element_na
     return elements
 
 
-def parse_element(stream, specs, load_children=False, ignore_element_types=None, ignore_element_names=None, max_level=None):
+def parse_element(
+    stream, specs, load_children=False, ignore_element_types=None, ignore_element_names=None, max_level=None
+):
     """Extract a single :class:`Element` from the `stream` according to the `specs`
 
     :param stream: file-like object from which to read
@@ -203,12 +237,12 @@ def parse_element(stream, specs, load_children=False, ignore_element_types=None,
     ignore_element_names = ignore_element_names if ignore_element_names is not None else []
     element_id = read_element_id(stream)
     if element_id is None:
-        raise ReadError('Cannot read element id')
+        raise ReadError("Cannot read element id")
     element_size = read_element_size(stream)
     if element_size is None:
-        raise ReadError('Cannot read element size')
+        raise ReadError("Cannot read element size")
     if element_id not in specs:
-        logger.error('Element with id 0x%x is not in the specs' % element_id)
+        logger.error("Element with id 0x%x is not in the specs" % element_id)
         stream.seek(element_size, 1)
         return None
     element_type, element_name, element_level = specs[element_id]
@@ -231,9 +265,14 @@ def get_matroska_specs(webm_only=False):
 
     """
     specs = {}
-    with resource_stream(__name__, 'specs/matroska.xml') as resource:
+    spec_file = files(__package__).joinpath("specs", "matroska.xml")
+    with spec_file.open("rb") as resource:
         xmldoc = minidom.parse(resource)
-        for element in xmldoc.getElementsByTagName('element'):
-            if not webm_only or element.hasAttribute('webm') and element.getAttribute('webm') == '1':
-                specs[int(element.getAttribute('id'), 16)] = (SPEC_TYPES[element.getAttribute('type')], element.getAttribute('name'), int(element.getAttribute('level')))
+        for element in xmldoc.getElementsByTagName("element"):
+            if not webm_only or element.hasAttribute("webm") and element.getAttribute("webm") == "1":
+                specs[int(element.getAttribute("id"), 16)] = (
+                    SPEC_TYPES[element.getAttribute("type")],
+                    element.getAttribute("name"),
+                    int(element.getAttribute("level")),
+                )
     return specs

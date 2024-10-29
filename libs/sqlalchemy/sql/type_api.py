@@ -183,6 +183,9 @@ class TypeEngine(Visitable, Generic[_T]):
             self.expr = expr
             self.type = expr.type
 
+        def __reduce__(self) -> Any:
+            return self.__class__, (self.expr,)
+
         @util.preload_module("sqlalchemy.sql.default_comparator")
         def operate(
             self, op: OperatorType, *other: Any, **kwargs: Any
@@ -574,18 +577,6 @@ class TypeEngine(Visitable, Generic[_T]):
         """
         return None
 
-    def _sentinel_value_resolver(
-        self, dialect: Dialect
-    ) -> Optional[_SentinelProcessorType[_T]]:
-        """Return an optional callable that will match parameter values
-        (post-bind processing) to result values
-        (pre-result-processing), for use in the "sentinel" feature.
-
-        .. versionadded:: 2.0.10
-
-        """
-        return None
-
     @util.memoized_property
     def _has_bind_expression(self) -> bool:
         """memoized boolean, check if bind_expression is implemented.
@@ -767,6 +758,10 @@ class TypeEngine(Visitable, Generic[_T]):
 
         return self
 
+    def _with_collation(self, collation: str) -> Self:
+        """set up error handling for the collate expression"""
+        raise NotImplementedError("this datatype does not support collation")
+
     @util.ro_memoized_property
     def _type_affinity(self) -> Optional[Type[TypeEngine[_T]]]:
         """Return a rudimental 'affinity' value expressing the general class
@@ -933,18 +928,6 @@ class TypeEngine(Visitable, Generic[_T]):
         d["result"][coltype] = rp
         return rp
 
-    def _cached_sentinel_value_processor(
-        self, dialect: Dialect
-    ) -> Optional[_SentinelProcessorType[_T]]:
-        try:
-            return dialect._type_memos[self]["sentinel"]
-        except KeyError:
-            pass
-
-        d = self._dialect_info(dialect)
-        d["sentinel"] = bp = d["impl"]._sentinel_value_resolver(dialect)
-        return bp
-
     def _cached_custom_processor(
         self, dialect: Dialect, key: str, fn: Callable[[TypeEngine[_T]], _O]
     ) -> _O:
@@ -1029,9 +1012,11 @@ class TypeEngine(Visitable, Generic[_T]):
         types with "implementation" types that are specific to a particular
         dialect.
         """
-        return util.constructor_copy(
+        typ = util.constructor_copy(
             self, cast(Type[TypeEngine[Any]], cls), **kw
         )
+        typ._variant_mapping = self._variant_mapping
+        return typ
 
     def coerce_compared_value(
         self, op: Optional[OperatorType], value: Any
@@ -1575,6 +1560,8 @@ class TypeDecorator(SchemaEventTarget, ExternalType, TypeEngine[_T]):
         class MyEpochType(types.TypeDecorator):
             impl = types.Integer
 
+            cache_ok = True
+
             epoch = datetime.date(1970, 1, 1)
 
             def process_bind_param(self, value, dialect):
@@ -1737,20 +1724,48 @@ class TypeDecorator(SchemaEventTarget, ExternalType, TypeEngine[_T]):
             kwargs["_python_is_types"] = self.expr.type.coerce_to_is_types
             return super().reverse_operate(op, other, **kwargs)
 
+    @staticmethod
+    def _reduce_td_comparator(
+        impl: TypeEngine[Any], expr: ColumnElement[_T]
+    ) -> Any:
+        return TypeDecorator._create_td_comparator_type(impl)(expr)
+
+    @staticmethod
+    def _create_td_comparator_type(
+        impl: TypeEngine[Any],
+    ) -> _ComparatorFactory[Any]:
+
+        def __reduce__(self: TypeDecorator.Comparator[Any]) -> Any:
+            return (TypeDecorator._reduce_td_comparator, (impl, self.expr))
+
+        return type(
+            "TDComparator",
+            (TypeDecorator.Comparator, impl.comparator_factory),  # type: ignore # noqa: E501
+            {"__reduce__": __reduce__},
+        )
+
     @property
     def comparator_factory(  # type: ignore  # mypy properties bug
         self,
     ) -> _ComparatorFactory[Any]:
         if TypeDecorator.Comparator in self.impl.comparator_factory.__mro__:  # type: ignore # noqa: E501
-            return self.impl.comparator_factory
+            return self.impl_instance.comparator_factory
         else:
             # reconcile the Comparator class on the impl with that
-            # of TypeDecorator
-            return type(
-                "TDComparator",
-                (TypeDecorator.Comparator, self.impl.comparator_factory),  # type: ignore # noqa: E501
-                {},
+            # of TypeDecorator.
+            # the use of multiple staticmethods is to support repeated
+            # pickling of the Comparator itself
+            return TypeDecorator._create_td_comparator_type(self.impl_instance)
+
+    def _copy_with_check(self) -> Self:
+        tt = self.copy()
+        if not isinstance(tt, self.__class__):
+            raise AssertionError(
+                "Type object %s does not properly "
+                "implement the copy() method, it must "
+                "return an object of type %s" % (self, self.__class__)
             )
+        return tt
 
     def _gen_dialect_impl(self, dialect: Dialect) -> TypeEngine[_T]:
         if dialect.name in self._variant_mapping:
@@ -1766,14 +1781,15 @@ class TypeDecorator(SchemaEventTarget, ExternalType, TypeEngine[_T]):
         # to a copy of this TypeDecorator and return
         # that.
         typedesc = self.load_dialect_impl(dialect).dialect_impl(dialect)
-        tt = self.copy()
-        if not isinstance(tt, self.__class__):
-            raise AssertionError(
-                "Type object %s does not properly "
-                "implement the copy() method, it must "
-                "return an object of type %s" % (self, self.__class__)
-            )
+        tt = self._copy_with_check()
         tt.impl = tt.impl_instance = typedesc
+        return tt
+
+    def _with_collation(self, collation: str) -> Self:
+        tt = self._copy_with_check()
+        tt.impl = tt.impl_instance = self.impl_instance._with_collation(
+            collation
+        )
         return tt
 
     @util.ro_non_memoized_property

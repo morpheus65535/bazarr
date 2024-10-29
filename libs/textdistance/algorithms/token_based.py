@@ -15,7 +15,7 @@ __all__ = [
     'Jaccard', 'Sorensen', 'Tversky',
     'Overlap', 'Cosine', 'Tanimoto', 'MongeElkan', 'Bag',
 
-    'jaccard', 'sorensen', 'tversky', 'sorensen_dice',
+    'jaccard', 'sorensen', 'tversky', 'sorensen_dice', 'dice',
     'overlap', 'cosine', 'tanimoto', 'monge_elkan', 'bag',
 ]
 

@@ -9,7 +9,6 @@
 """
 .. dialect:: mssql
     :name: Microsoft SQL Server
-    :full_support: 2017
     :normal_support: 2012+
     :best_effort: 2005+
 
@@ -1555,29 +1554,6 @@ class MSUUid(sqltypes.Uuid):
 
                 return process
 
-    def _sentinel_value_resolver(self, dialect):
-        if not self.native_uuid:
-            # dealing entirely with strings going in and out of
-            # CHAR(32)
-            return None
-
-        # true if we expect the returned UUID values to be strings
-        # pymssql sends UUID objects back, pyodbc sends strings,
-        # however pyodbc converts them to uppercase coming back, so
-        # need special logic here
-        character_based_uuid = not dialect.supports_native_uuid
-
-        if character_based_uuid:
-            # we sent UUID objects in all cases, see bind_processor()
-            def process(uuid_value):
-                return str(uuid_value).upper()
-
-            return process
-        elif not self.as_uuid:
-            return _python_UUID
-        else:
-            return None
-
 
 class UNIQUEIDENTIFIER(sqltypes.Uuid[sqltypes._UUID_RETURN]):
     __visit_name__ = "UNIQUEIDENTIFIER"
@@ -1841,7 +1817,6 @@ class MSExecutionContext(default.DefaultExecutionContext):
     _enable_identity_insert = False
     _select_lastrowid = False
     _lastrowid = None
-    _rowcount = None
 
     dialect: MSDialect
 
@@ -1961,13 +1936,6 @@ class MSExecutionContext(default.DefaultExecutionContext):
     def get_lastrowid(self):
         return self._lastrowid
 
-    @property
-    def rowcount(self):
-        if self._rowcount is not None:
-            return self._rowcount
-        else:
-            return self.cursor.rowcount
-
     def handle_dbapi_exception(self, e):
         if self._enable_identity_insert:
             try:
@@ -2018,6 +1986,10 @@ class MSSQLCompiler(compiler.SQLCompiler):
     def __init__(self, *args, **kwargs):
         self.tablealiases = {}
         super().__init__(*args, **kwargs)
+
+    def _format_frame_clause(self, range_, **kw):
+        kw["literal_execute"] = True
+        return super()._format_frame_clause(range_, **kw)
 
     def _with_legacy_schema_aliasing(fn):
         def decorate(self, *arg, **kw):

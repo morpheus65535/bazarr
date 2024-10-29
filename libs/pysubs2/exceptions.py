@@ -1,5 +1,4 @@
-from typing import List
-
+from typing import List, Any
 
 __all__ = [
     "Pysubs2Error",
@@ -35,6 +34,9 @@ class UnknownFileExtensionError(Pysubs2Error):
         msg = f"File extension {ext!r} does not match any supported subtitle format"
         super().__init__(msg)
 
+    def __reduce__(self) -> Any:
+        return self.__class__, (self.ext,)
+
 
 class UnknownFormatIdentifierError(Pysubs2Error):
     """
@@ -51,6 +53,9 @@ class UnknownFormatIdentifierError(Pysubs2Error):
         self.format_ = format_
         msg = f"Format identifier {format_!r} does not match any supported subtitle format"
         super().__init__(msg)
+
+    def __reduce__(self) -> Any:
+        return self.__class__, (self.format_,)
 
 
 class FormatAutodetectionError(Pysubs2Error):
@@ -74,3 +79,6 @@ class FormatAutodetectionError(Pysubs2Error):
         else:
             msg = f"Multiple suitable formats ({formats!r})"
         super().__init__(msg)
+
+    def __reduce__(self) -> Any:
+        return self.__class__, (self.content, self.formats)

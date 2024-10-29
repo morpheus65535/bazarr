@@ -263,8 +263,6 @@ BADNESS_RE = re.compile(
     |
     [{box}{end_punctuation}{currency}{numeric}] [{lower_accented}]
     |
-    # leave out [upper_accented][currency] without further info, because it's used in some
-    # fancy leetspeak-esque writing
     [{lower_accented}{box}{end_punctuation}] [{currency}]
     |
     \s [{upper_accented}] [{currency}]
@@ -352,9 +350,7 @@ BADNESS_RE = re.compile(
 
     # Windows-1253 mojibake of Latin-1 characters and/or the Greek alphabet
     [ΒΓΞΟ][{c1}{bad}{start_punctuation}{end_punctuation}{currency}°][ΒΓΞΟ]
-""".format(
-        **MOJIBAKE_CATEGORIES
-    ),
+""".format(**MOJIBAKE_CATEGORIES),
     re.VERBOSE,
 )
 

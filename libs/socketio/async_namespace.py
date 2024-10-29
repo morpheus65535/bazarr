@@ -29,7 +29,7 @@ class AsyncNamespace(base_namespace.BaseServerNamespace):
 
         Note: this method is a coroutine.
         """
-        handler_name = 'on_' + event
+        handler_name = 'on_' + (event or '')
         if hasattr(self, handler_name):
             handler = getattr(self, handler_name)
             if asyncio.iscoroutinefunction(handler) is True:
@@ -194,7 +194,7 @@ class AsyncClientNamespace(base_namespace.BaseClientNamespace):
 
         Note: this method is a coroutine.
         """
-        handler_name = 'on_' + event
+        handler_name = 'on_' + (event or '')
         if hasattr(self, handler_name):
             handler = getattr(self, handler_name)
             if asyncio.iscoroutinefunction(handler) is True:

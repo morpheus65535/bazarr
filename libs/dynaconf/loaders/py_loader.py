@@ -3,7 +3,6 @@ from __future__ import annotations
 import errno
 import importlib
 import inspect
-import io
 import types
 from contextlib import suppress
 from pathlib import Path

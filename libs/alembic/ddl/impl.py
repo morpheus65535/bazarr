@@ -77,7 +77,6 @@ _impls: Dict[str, Type[DefaultImpl]] = {}
 
 
 class DefaultImpl(metaclass=ImplMeta):
-
     """Provide the entrypoint for major migration operations,
     including database-specific behavioral variances.
 
@@ -168,16 +167,15 @@ class DefaultImpl(metaclass=ImplMeta):
     def _exec(
         self,
         construct: Union[Executable, str],
-        execution_options: Optional[dict[str, Any]] = None,
-        multiparams: Sequence[dict] = (),
-        params: Dict[str, Any] = util.immutabledict(),
+        execution_options: Optional[Mapping[str, Any]] = None,
+        multiparams: Optional[Sequence[Mapping[str, Any]]] = None,
+        params: Mapping[str, Any] = util.immutabledict(),
     ) -> Optional[CursorResult]:
         if isinstance(construct, str):
             construct = text(construct)
         if self.as_sql:
-            if multiparams or params:
-                # TODO: coverage
-                raise Exception("Execution arguments not allowed with as_sql")
+            if multiparams is not None or params:
+                raise TypeError("SQL parameters not allowed with as_sql")
 
             compile_kw: dict[str, Any]
             if self.literal_binds and not isinstance(
@@ -200,11 +198,16 @@ class DefaultImpl(metaclass=ImplMeta):
             assert conn is not None
             if execution_options:
                 conn = conn.execution_options(**execution_options)
-            if params:
-                assert isinstance(multiparams, tuple)
-                multiparams += (params,)
 
-            return conn.execute(construct, multiparams)
+            if params and multiparams is not None:
+                raise TypeError(
+                    "Can't send params and multiparams at the same time"
+                )
+
+            if multiparams:
+                return conn.execute(construct, multiparams)
+            else:
+                return conn.execute(construct, params)
 
     def execute(
         self,
@@ -359,11 +362,11 @@ class DefaultImpl(metaclass=ImplMeta):
             base.RenameTable(old_table_name, new_table_name, schema=schema)
         )
 
-    def create_table(self, table: Table) -> None:
+    def create_table(self, table: Table, **kw: Any) -> None:
         table.dispatch.before_create(
             table, self.connection, checkfirst=False, _ddl_runner=self
         )
-        self._exec(schema.CreateTable(table))
+        self._exec(schema.CreateTable(table, **kw))
         table.dispatch.after_create(
             table, self.connection, checkfirst=False, _ddl_runner=self
         )
@@ -382,11 +385,11 @@ class DefaultImpl(metaclass=ImplMeta):
             if comment and with_comment:
                 self.create_column_comment(column)
 
-    def drop_table(self, table: Table) -> None:
+    def drop_table(self, table: Table, **kw: Any) -> None:
         table.dispatch.before_drop(
             table, self.connection, checkfirst=False, _ddl_runner=self
         )
-        self._exec(schema.DropTable(table))
+        self._exec(schema.DropTable(table, **kw))
         table.dispatch.after_drop(
             table, self.connection, checkfirst=False, _ddl_runner=self
         )
@@ -421,13 +424,15 @@ class DefaultImpl(metaclass=ImplMeta):
                 self._exec(
                     sqla_compat._insert_inline(table).values(
                         **{
-                            k: sqla_compat._literal_bindparam(
-                                k, v, type_=table.c[k].type
+                            k: (
+                                sqla_compat._literal_bindparam(
+                                    k, v, type_=table.c[k].type
+                                )
+                                if not isinstance(
+                                    v, sqla_compat._literal_bindparam
+                                )
+                                else v
                             )
-                            if not isinstance(
-                                v, sqla_compat._literal_bindparam
-                            )
-                            else v
                             for k, v in row.items()
                         }
                     )

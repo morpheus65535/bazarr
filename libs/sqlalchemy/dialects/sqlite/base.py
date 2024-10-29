@@ -10,7 +10,6 @@
 r"""
 .. dialect:: sqlite
     :name: SQLite
-    :full_support: 3.36.0
     :normal_support: 3.12+
     :best_effort: 3.7.16+
 
@@ -1528,6 +1527,13 @@ class SQLiteCompiler(compiler.SQLCompiler):
 
         return "ON CONFLICT %s DO UPDATE SET %s" % (target_text, action_text)
 
+    def visit_bitwise_xor_op_binary(self, binary, operator, **kw):
+        # sqlite has no xor. Use "a XOR b" = "(a | b) - (a & b)".
+        kw["eager_grouping"] = True
+        or_ = self._generate_generic_binary(binary, " | ", **kw)
+        and_ = self._generate_generic_binary(binary, " & ", **kw)
+        return f"({or_} - {and_})"
+
 
 class SQLiteDDLCompiler(compiler.DDLCompiler):
     def get_column_specification(self, column, **kwargs):
@@ -2231,6 +2237,14 @@ class SQLiteDialect(default.DefaultDialect):
                 tablesql = self._get_table_sql(
                     connection, table_name, schema, **kw
                 )
+                # remove create table
+                match = re.match(
+                    r"create table .*?\((.*)\)$",
+                    tablesql.strip(),
+                    re.DOTALL | re.IGNORECASE,
+                )
+                assert match, f"create table not found in {tablesql}"
+                tablesql = match.group(1).strip()
 
             columns.append(
                 self._get_column_info(
@@ -2285,7 +2299,10 @@ class SQLiteDialect(default.DefaultDialect):
         if generated:
             sqltext = ""
             if tablesql:
-                pattern = r"[^,]*\s+AS\s+\(([^,]*)\)\s*(?:virtual|stored)?"
+                pattern = (
+                    r"[^,]*\s+GENERATED\s+ALWAYS\s+AS"
+                    r"\s+\((.*)\)\s*(?:virtual|stored)?"
+                )
                 match = re.search(
                     re.escape(name) + pattern, tablesql, re.IGNORECASE
                 )
@@ -2570,8 +2587,8 @@ class SQLiteDialect(default.DefaultDialect):
                 return
             UNIQUE_PATTERN = r'(?:CONSTRAINT "?(.+?)"? +)?UNIQUE *\((.+?)\)'
             INLINE_UNIQUE_PATTERN = (
-                r'(?:(".+?")|(?:[\[`])?([a-z0-9_]+)(?:[\]`])?) '
-                r"+[a-z0-9_ ]+? +UNIQUE"
+                r'(?:(".+?")|(?:[\[`])?([a-z0-9_]+)(?:[\]`])?)[\t ]'
+                r"+[a-z0-9_ ]+?[\t ]+UNIQUE"
             )
 
             for match in re.finditer(UNIQUE_PATTERN, table_data, re.I):
@@ -2606,15 +2623,21 @@ class SQLiteDialect(default.DefaultDialect):
             connection, table_name, schema=schema, **kw
         )
 
-        CHECK_PATTERN = r"(?:CONSTRAINT (.+) +)?" r"CHECK *\( *(.+) *\),? *"
-        cks = []
-        # NOTE: we aren't using re.S here because we actually are
-        # taking advantage of each CHECK constraint being all on one
-        # line in the table definition in order to delineate.  This
+        # NOTE NOTE NOTE
+        # DO NOT CHANGE THIS REGULAR EXPRESSION.   There is no known way
+        # to parse CHECK constraints that contain newlines themselves using
+        # regular expressions, and the approach here relies upon each
+        # individual
+        # CHECK constraint being on a single line by itself.   This
         # necessarily makes assumptions as to how the CREATE TABLE
-        # was emitted.
+        # was emitted.   A more comprehensive DDL parsing solution would be
+        # needed to improve upon the current situation. See #11840 for
+        # background
+        CHECK_PATTERN = r"(?:CONSTRAINT (.+) +)?CHECK *\( *(.+) *\),? *"
+        cks = []
 
         for match in re.finditer(CHECK_PATTERN, table_data or "", re.I):
+
             name = match.group(1)
 
             if name:

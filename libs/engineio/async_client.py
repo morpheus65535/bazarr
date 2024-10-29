@@ -62,7 +62,7 @@ class AsyncClient(base_client.BaseClient):
     :param http_session: an initialized ``aiohttp.ClientSession`` object to be
                          used when sending requests to the server. Use it if
                          you need to add special client options such as proxy
-                         servers, SSL certificates, etc.
+                         servers, SSL certificates, custom CA bundle, etc.
     :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.

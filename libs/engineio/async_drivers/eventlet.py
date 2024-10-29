@@ -25,7 +25,7 @@ class EventletThread:  # pragma: no cover
             return self.g.wait()
 
 
-class WebSocketWSGI(_WebSocketWSGI):
+class WebSocketWSGI(_WebSocketWSGI):  # pragma: no cover
     def __init__(self, handler, server):
         try:
             super().__init__(
