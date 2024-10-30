@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from requests import Session
 
+from requests.exceptions import JSONDecodeError
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.providers import Provider
 from subliminal import __short_version__
@@ -269,10 +270,19 @@ class WhisperAIProvider(Provider):
                               params={'encode': 'false'},
                               files={'audio_file': out},
                               timeout=(self.response, self.timeout))
+        
+        try:
+            results = r.json()
+        except JSONDecodeError:
+            results = {}
 
-        logger.debug(f"Whisper detected language of {path} as {r.json()['detected_language']}")
+        if len(results) == 0:
+            logger.info(f"Whisper returned empty response when detecting language")
+            return None
 
-        return whisper_get_language(r.json()["language_code"], r.json()["detected_language"])
+        logger.debug(f"Whisper detected language of {path} as {results['detected_language']}")
+
+        return whisper_get_language(results["language_code"], results["detected_language"])
 
     def query(self, language, video):
         if language not in self.languages:
