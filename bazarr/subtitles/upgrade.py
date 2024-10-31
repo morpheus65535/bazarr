@@ -124,7 +124,8 @@ def upgrade_subtitles():
                 if isinstance(result, tuple) and len(result):
                     result = result[0]
                 store_subtitles(episode['video_path'], path_mappings.path_replace(episode['video_path']))
-                history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result)
+                history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result,
+                            upgraded_from_id=episode['id'])
                 send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result.message)
 
         hide_progress(id='upgrade_episodes_progress')
@@ -132,6 +133,7 @@ def upgrade_subtitles():
     if use_radarr:
         movies_to_upgrade = get_upgradable_movies_subtitles()
         movies_data = [{
+            'id': x.id,
             'title': x.title,
             'language': x.language,
             'audio_language': x.audio_language,
@@ -145,7 +147,8 @@ def upgrade_subtitles():
             'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
             'upgradable': bool(x.upgradable),
         } for x in database.execute(
-            select(TableMovies.title,
+            select(TableHistoryMovie.id,
+                   TableMovies.title,
                    TableHistoryMovie.language,
                    TableMovies.audio_language,
                    TableHistoryMovie.video_path,
@@ -215,7 +218,7 @@ def upgrade_subtitles():
                     result = result[0]
                 store_subtitles_movie(movie['video_path'],
                                       path_mappings.path_replace_movie(movie['video_path']))
-                history_log_movie(3, movie['radarrId'], result)
+                history_log_movie(3, movie['radarrId'], result, upgraded_from_id=movie['id'])
                 send_notifications_movie(movie['radarrId'], result.message)
 
         hide_progress(id='upgrade_movies_progress')
