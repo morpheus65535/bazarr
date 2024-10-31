@@ -2,11 +2,14 @@ import { FunctionComponent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ComboboxItem,
+  em,
+  Flex,
   Image,
   OptionsFilter,
   Select,
   Text,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useServerSearch } from "@/apis/hooks";
@@ -85,6 +88,8 @@ const Search: FunctionComponent = () => {
 
   const results = useSearch(query);
 
+  const isMobile = useMediaQuery(`(max-width: ${em(750)})`);
+
   return (
     <Select
       placeholder="Search"
@@ -109,10 +114,12 @@ const Search: FunctionComponent = () => {
         const result = results.find((r) => r.value === input.option.value);
 
         return (
-          <>
-            <Image src={result?.poster} w={35} h={50} />
-            <Text p="xs">{result?.label}</Text>
-          </>
+          <Flex>
+            <Image src={result?.poster} w={55} h={70} />
+            <Text size={isMobile ? "xs" : "md"} pl="xs" pr="xs" lineClamp={3}>
+              {result?.label}
+            </Text>
+          </Flex>
         );
       }}
     />
