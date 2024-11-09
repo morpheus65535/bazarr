@@ -41,6 +41,11 @@ class NapiProjektProvider(_NapiProjektProvider):
     video_types = (Episode, Movie)
     subtitle_class = NapiProjektSubtitle
 
+    def __init__(self, only_authors=None, only_real_names=None):
+        super().__init__()
+        self.only_authors = only_authors
+        self.only_real_names = only_real_names
+
     def query(self, language, hash):
         params = {
             'v': 'dreambox',
@@ -116,13 +121,21 @@ class NapiProjektProvider(_NapiProjektProvider):
                         else:
                             author = ""
 
+                    if self.only_authors:
+                        if author.lower() in ["brak", "automat", "si", "chatgpt", "ai", "robot"]:
+                            continue
+
+                    if self.only_real_names:
+                        # Check if `self.only_authors` contains exactly 2 uppercase letters and at least one lowercase letter
+                        if not (re.match(r'^(?=(?:.*[A-Z]){2})(?=.*[a-z]).*$', author) or
+                                re.match(r'^\w+\s\w+$', author)):
+                            continue
 
                     match = re.search(r"<b>Video rozdzielczość:</b> (.*?)<", title)
                     if match:
                         resolution = match.group(1).strip()
                     else:
                         resolution = ""
-
 
                     match = re.search(r"<b>Video FPS:</b> (.*?)<", title)
                     if match:

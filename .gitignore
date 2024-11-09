@@ -24,3 +24,6 @@ VERSION
 # Allow
 !*.dll
 
+/frontend/.env.development
+.gitignore
+

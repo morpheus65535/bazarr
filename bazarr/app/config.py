@@ -239,6 +239,10 @@ validators = [
     Validator('opensubtitlescom.use_hash', must_exist=True, default=True, is_type_of=bool),
     Validator('opensubtitlescom.include_ai_translated', must_exist=True, default=False, is_type_of=bool),
 
+    # napiprojekt section
+    Validator('napiprojekt.only_authors', must_exist=True, default=False, is_type_of=bool),
+    Validator('napiprojekt.only_real_names', must_exist=True, default=False, is_type_of=bool),
+
     # addic7ed section
     Validator('addic7ed.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('addic7ed.password', must_exist=True, default='', is_type_of=str, cast=str),
