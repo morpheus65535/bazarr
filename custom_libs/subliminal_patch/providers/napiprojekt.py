@@ -87,7 +87,8 @@ class NapiProjektProvider(_NapiProjektProvider):
         if language.alpha2 != 'pl':
             return []
         title, matches = self._find_title(video)
-        if title == None:
+
+        if title is None:
             return []
         episode = f'-s{video.season:02d}e{video.episode:02d}' if isinstance(
             video, Episode) else ''
