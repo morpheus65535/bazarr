@@ -67,8 +67,10 @@ class NapiProjektProvider(Provider):
     server_url = 'http://napiprojekt.pl/unit_napisy/dl.php'
     subtitle_class = NapiProjektSubtitle
 
-    def __init__(self):
+    def __init__(self, only_authors=None, only_real_names=None):
         self.session = None
+        self.only_authors = only_authors
+        self.only_real_names = only_real_names
 
     def initialize(self):
         self.session = Session()
@@ -78,6 +80,8 @@ class NapiProjektProvider(Provider):
         self.session.close()
 
     def query(self, language, hash):
+        if self.only_authors or self.only_real_names:
+            return None
         params = {
             'v': 'dreambox',
             'kolejka': 'false',
