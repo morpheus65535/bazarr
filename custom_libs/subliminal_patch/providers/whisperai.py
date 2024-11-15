@@ -207,7 +207,10 @@ class WhisperAISubtitle(Subtitle):
 
     @property
     def id(self):
-        return self.video.original_name
+        # Construct unique id otherwise provider pool will think 
+        # subtitles are all the same and drop all except the first one
+        # This is important for language profiles with more than one language
+        return f"{self.video.original_name}_{self.task}_{str(self.language)}"
 
     def get_matches(self, video):
         matches = set()
