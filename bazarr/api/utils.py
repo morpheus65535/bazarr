@@ -134,9 +134,20 @@ def postprocess(item):
     if item.get('path'):
         item['path'] = path_replace(item['path'])
 
+    if item.get('video_path'):
+        # Provide mapped video path for history
+        item['video_path'] = path_replace(item['video_path'])
+
     if item.get('subtitles_path'):
         # Provide mapped subtitles path
         item['subtitles_path'] = path_replace(item['subtitles_path'])
+
+    if item.get('external_subtitles'):
+        # Provide mapped external subtitles paths for history
+        if isinstance(item['external_subtitles'], str):
+            item['external_subtitles'] = ast.literal_eval(item['external_subtitles'])
+        for i, subs in enumerate(item['external_subtitles']):
+            item['external_subtitles'][i] = path_replace(subs)
 
     # map poster and fanart to server proxy
     if item.get('poster') is not None:

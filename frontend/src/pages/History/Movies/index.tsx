@@ -116,7 +116,7 @@ const MoviesHistoryView: FunctionComponent = () => {
         },
       },
       {
-        header: "Upgrade",
+        header: "Upgradable",
         accessorKey: "upgradable",
         cell: ({
           row: {

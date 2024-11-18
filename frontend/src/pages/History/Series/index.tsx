@@ -139,7 +139,7 @@ const SeriesHistoryView: FunctionComponent = () => {
         },
       },
       {
-        header: "Upgrade",
+        header: "Upgradable",
         accessorKey: "upgradable",
         cell: ({
           row: {
