@@ -233,7 +233,7 @@ class WhisperAIProvider(Provider):
 
     video_types = (Episode, Movie)
 
-    def __init__(self, endpoint=None, response=None, timeout=None, ffmpeg_path=None, loglevel=None):
+    def __init__(self, endpoint=None, response=None, timeout=None, ffmpeg_path=None, pass_video_name=None, loglevel=None):
         set_log_level(loglevel)
         if not endpoint:
             raise ConfigurationError('Whisper Web Service Endpoint must be provided')
@@ -246,12 +246,16 @@ class WhisperAIProvider(Provider):
 
         if not ffmpeg_path:
             raise ConfigurationError("ffmpeg path must be provided")
+        
+        if pass_video_name is None:
+            raise ConfigurationError('Whisper Web Service Pass Video Name option must be provided')
 
         self.endpoint = endpoint.rstrip("/")
         self.response = int(response)
         self.timeout = int(timeout)
         self.session = None
         self.ffmpeg_path = ffmpeg_path
+        self.pass_video_name = pass_video_name
 
     def initialize(self):
         self.session = Session()
@@ -369,9 +373,11 @@ class WhisperAIProvider(Provider):
         
         logger.info(f'Starting WhisperAI {subtitle.task} to {language_from_alpha3(output_language)} for {subtitle.video.original_path}')
         startTime = time.time()
+        video_name = subtitle.video.original_path if self.pass_video_name else None
 
         r = self.session.post(f"{self.endpoint}/asr",
-                              params={'task': subtitle.task, 'language': input_language, 'output': 'srt', 'encode': 'false'},
+                              params={'task': subtitle.task, 'language': input_language, 'output': 'srt', 'encode': 'false',
+                                      'video_file': {video_name}},
                               files={'audio_file': out},
                               timeout=(self.response, self.timeout))
                               

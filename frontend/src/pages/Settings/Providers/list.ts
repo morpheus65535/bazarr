@@ -562,6 +562,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         options: logLevelOptions,
       },
       {
+        type: "switch",
+        key: "pass_video_name",
+        name: "Pass video filename to Whisper (for logging)",
+        defaultValue: false,
+      },
+      {
         type: "testbutton",
         key: "whisperai",
         name: "Test Connection button",
