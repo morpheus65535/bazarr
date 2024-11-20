@@ -7,7 +7,6 @@ import ast
 
 from datetime import datetime, timedelta
 from functools import reduce
-
 from sqlalchemy import and_
 
 from app.config import settings
@@ -269,10 +268,12 @@ def parse_language_string(language_string):
 def get_upgradable_episode_subtitles():
     if not settings.general.upgrade_subs:
         # return an empty set of rows
+        logging.debug("Subtitles upgrade is disabled so we wont go further.")
         return select(TableHistory.id) \
             .where(TableHistory.id.is_(None)) \
             .subquery()
 
+    logging.debug("Determining upgradable episode subtitles")
     max_id_timestamp = select(TableHistory.video_path,
                               TableHistory.language,
                               func.max(TableHistory.timestamp).label('timestamp')) \
@@ -281,6 +282,8 @@ def get_upgradable_episode_subtitles():
         .subquery()
 
     minimum_timestamp, query_actions = get_queries_condition_parameters()
+    logging.debug(f"Minimum timestamp used for subtitles upgrade: {minimum_timestamp}")
+    logging.debug(f"Those actions are considered for subtitles upgrade: {query_actions}")
 
     upgradable_episodes_conditions = [(TableHistory.action.in_(query_actions)),
                                       (TableHistory.timestamp > minimum_timestamp),
@@ -301,6 +304,8 @@ def get_upgradable_episode_subtitles():
         .where(reduce(operator.and_, upgradable_episodes_conditions))
         .order_by(TableHistory.timestamp.desc())) \
         .all()
+    logging.debug(f"{len(subtitles_to_upgrade)} subtitles are candidates and we've selected the latest timestamp for "
+                  f"each of them.")
 
     query_actions_without_upgrade = [x for x in query_actions if x != 3]
     upgradable_episode_subtitles = {}
@@ -308,9 +313,12 @@ def get_upgradable_episode_subtitles():
         # check if we have the original subtitles id in database and use it instead of guessing
         if subtitle_to_upgrade.upgradedFromId:
             upgradable_episode_subtitles.update({subtitle_to_upgrade.id: subtitle_to_upgrade.upgradedFromId})
+            logging.debug(f"The original subtitles ID for TableHistory ID {subtitle_to_upgrade.id} stored in DB is: "
+                          f"{subtitle_to_upgrade.upgradedFromId}")
             continue
 
         # if not, we have to try to guess the original subtitles id
+        logging.debug("We don't have the original subtitles ID for this subtitle so we'll have to guess it.")
         potential_parents = database.execute(
             select(TableHistory.id, TableHistory.action)
             .where(TableHistory.video_path == subtitle_to_upgrade.video_path,
@@ -318,25 +326,34 @@ def get_upgradable_episode_subtitles():
             .order_by(TableHistory.timestamp.desc())
         ).all()
 
+        logging.debug(f"The potential original subtitles IDs for TableHistory ID {subtitle_to_upgrade.id} are: "
+                      f"{[x.id for x in potential_parents]}")
         confirmed_parent = None
         for potential_parent in potential_parents:
             if potential_parent.action in query_actions_without_upgrade:
                 confirmed_parent = potential_parent.id
+                logging.debug(f"This ID is the first one to match selected query actions so it's been selected as "
+                              f"original subtitles ID: {potential_parent.id}")
                 break
 
         if confirmed_parent not in upgradable_episode_subtitles.values():
+            logging.debug("We haven't defined this ID as original subtitles ID for any other ID so we'll add it to "
+                          "upgradable episode subtitles.")
             upgradable_episode_subtitles.update({subtitle_to_upgrade.id: confirmed_parent})
 
+    logging.debug(f"We've found {len(upgradable_episode_subtitles)} episode subtitles IDs to be upgradable")
     return upgradable_episode_subtitles
 
 
 def get_upgradable_movies_subtitles():
     if not settings.general.upgrade_subs:
         # return an empty set of rows
+        logging.debug("Subtitles upgrade is disabled so we wont go further.")
         return select(TableHistoryMovie.id) \
             .where(TableHistoryMovie.id.is_(None)) \
             .subquery()
 
+    logging.debug("Determining upgradable movie subtitles")
     max_id_timestamp = select(TableHistoryMovie.video_path,
                               TableHistoryMovie.language,
                               func.max(TableHistoryMovie.timestamp).label('timestamp')) \
@@ -345,6 +362,8 @@ def get_upgradable_movies_subtitles():
         .subquery()
 
     minimum_timestamp, query_actions = get_queries_condition_parameters()
+    logging.debug(f"Minimum timestamp used for subtitles upgrade: {minimum_timestamp}")
+    logging.debug(f"Those actions are considered for subtitles upgrade: {query_actions}")
 
     upgradable_movies_conditions = [(TableHistoryMovie.action.in_(query_actions)),
                                     (TableHistoryMovie.timestamp > minimum_timestamp),
@@ -364,6 +383,8 @@ def get_upgradable_movies_subtitles():
         .where(reduce(operator.and_, upgradable_movies_conditions))
         .order_by(TableHistoryMovie.timestamp.desc())) \
         .all()
+    logging.debug(f"{len(subtitles_to_upgrade)} subtitles are candidates and we've selected the latest timestamp for "
+                  f"each of them.")
 
     query_actions_without_upgrade = [x for x in query_actions if x != 3]
     upgradable_movie_subtitles = {}
@@ -371,9 +392,12 @@ def get_upgradable_movies_subtitles():
         # check if we have the original subtitles id in database and use it instead of guessing
         if subtitle_to_upgrade.upgradedFromId:
             upgradable_movie_subtitles.update({subtitle_to_upgrade.id: subtitle_to_upgrade.upgradedFromId})
+            logging.debug(f"The original subtitles ID for TableHistoryMovie ID {subtitle_to_upgrade.id} stored in DB "
+                          f"is: {subtitle_to_upgrade.upgradedFromId}")
             continue
 
         # if not, we have to try to guess the original subtitles id
+        logging.debug("We don't have the original subtitles ID for this subtitle so we'll have to guess it.")
         potential_parents = database.execute(
             select(TableHistoryMovie.id, TableHistoryMovie.action)
             .where(TableHistoryMovie.video_path == subtitle_to_upgrade.video_path,
@@ -381,15 +405,22 @@ def get_upgradable_movies_subtitles():
             .order_by(TableHistoryMovie.timestamp.desc())
         ).all()
 
+        logging.debug(f"The potential original subtitles IDs for TableHistoryMovie ID {subtitle_to_upgrade.id} are: "
+                      f"{[x.id for x in potential_parents]}")
         confirmed_parent = None
         for potential_parent in potential_parents:
             if potential_parent.action in query_actions_without_upgrade:
                 confirmed_parent = potential_parent.id
+                logging.debug(f"This ID is the first one to match selected query actions so it's been selected as "
+                              f"original subtitles ID: {potential_parent.id}")
                 break
 
         if confirmed_parent not in upgradable_movie_subtitles.values():
+            logging.debug("We haven't defined this ID as original subtitles ID for any other ID so we'll add it to "
+                          "upgradable episode subtitles.")
             upgradable_movie_subtitles.update({subtitle_to_upgrade.id: confirmed_parent})
 
+    logging.debug(f"We've found {len(upgradable_movie_subtitles)} movie subtitles IDs to be upgradable")
     return upgradable_movie_subtitles
 
 

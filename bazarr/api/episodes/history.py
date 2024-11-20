@@ -132,20 +132,13 @@ class EpisodesHistory(Resource):
         } for x in database.execute(stmt).all()]
 
         for item in episode_history:
-            still_desired = True
-            if not _language_still_desired(item['language'], item['profileId']):
-                # this language isn't desired anymore so there's no point in upgrading this subtitles
-                still_desired = False
+            # is this language still desired or should we simply skip this subtitles from upgrade logic?
+            still_desired = _language_still_desired(item['language'], item['profileId'])
 
             item.update(postprocess(item))
 
             # Mark upgradeable and get original_id
             item.update({'original_id': upgradable_episodes_not_perfect.get(item['id'])})
-            language = item['language']['code2']
-            if item['language']['hi']:
-                language += ':hi'
-            elif item['language']['forced']:
-                language += ':forced'
             item.update({'upgradable': bool(item['original_id'])})
 
             # Mark not upgradable if score or if video/subtitles file doesn't exist anymore
