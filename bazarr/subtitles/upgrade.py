@@ -75,7 +75,7 @@ def upgrade_subtitles():
             if item['subtitles_path'] not in item['external_subtitles']:
                 continue
 
-            # Mark upgradeable and get original_id
+            # Mark upgradable and get original_id
             item.update({'original_id': episodes_to_upgrade.get(item['id'])})
             item.update({'upgradable': bool(item['original_id'])})
 
@@ -174,7 +174,7 @@ def upgrade_subtitles():
             if item['subtitles_path'] not in item['external_subtitles']:
                 continue
 
-            # Mark upgradeable and get original_id
+            # Mark upgradable and get original_id
             item.update({'original_id': movies_to_upgrade.get(item['id'])})
             item.update({'upgradable': bool(item['original_id'])})
 
@@ -283,7 +283,7 @@ def get_upgradable_episode_subtitles():
 
     minimum_timestamp, query_actions = get_queries_condition_parameters()
     logging.debug(f"Minimum timestamp used for subtitles upgrade: {minimum_timestamp}")
-    logging.debug(f"Those actions are considered for subtitles upgrade: {query_actions}")
+    logging.debug(f"These actions are considered for subtitles upgrade: {query_actions}")
 
     upgradable_episodes_conditions = [(TableHistory.action.in_(query_actions)),
                                       (TableHistory.timestamp > minimum_timestamp),
@@ -348,7 +348,7 @@ def get_upgradable_episode_subtitles():
 def get_upgradable_movies_subtitles():
     if not settings.general.upgrade_subs:
         # return an empty set of rows
-        logging.debug("Subtitles upgrade is disabled so we wont go further.")
+        logging.debug("Subtitles upgrade is disabled so we won't go further.")
         return select(TableHistoryMovie.id) \
             .where(TableHistoryMovie.id.is_(None)) \
             .subquery()
@@ -363,7 +363,7 @@ def get_upgradable_movies_subtitles():
 
     minimum_timestamp, query_actions = get_queries_condition_parameters()
     logging.debug(f"Minimum timestamp used for subtitles upgrade: {minimum_timestamp}")
-    logging.debug(f"Those actions are considered for subtitles upgrade: {query_actions}")
+    logging.debug(f"These actions are considered for subtitles upgrade: {query_actions}")
 
     upgradable_movies_conditions = [(TableHistoryMovie.action.in_(query_actions)),
                                     (TableHistoryMovie.timestamp > minimum_timestamp),
@@ -411,7 +411,7 @@ def get_upgradable_movies_subtitles():
         for potential_parent in potential_parents:
             if potential_parent.action in query_actions_without_upgrade:
                 confirmed_parent = potential_parent.id
-                logging.debug(f"This ID is the first one to match selected query actions so it's been selected as "
+                logging.debug(f"This ID is the newest one to match selected query actions so it's been selected as "
                               f"original subtitles ID: {potential_parent.id}")
                 break
 
