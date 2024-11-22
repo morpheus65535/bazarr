@@ -172,6 +172,14 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
       settings: staged,
       hooks: {},
     },
+    validate: {
+      settings: {
+        "settings-opensubtitlescom-username": (value) =>
+          /^.\S+@\S+$/.test(value)
+            ? "Invalid Username. Do not use your e-mail."
+            : null,
+      },
+    },
   });
 
   const deletePayload = useCallback(() => {
@@ -188,6 +196,12 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
 
   const submit = useCallback(
     (values: FormValues) => {
+      const result = form.validate();
+
+      if (result.hasErrors) {
+        return;
+      }
+
       if (info && enabledProviders) {
         const changes = { ...values.settings };
         const hooks = values.hooks;
@@ -204,7 +218,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
         modals.closeAll();
       }
     },
-    [info, enabledProviders, modals, settingsKey],
+    [info, enabledProviders, modals, settingsKey, form],
   );
 
   const canSave = info !== null;
@@ -249,43 +263,61 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
       const label = value.name ?? capitalize(value.key);
       const options = value.options ?? [];
 
+      const error = form.errors[`settings.settings-${itemKey}-${key}`] ? (
+        <MantineText c="red" component="span" size="xs">
+          {form.errors[`settings.settings-${itemKey}-${key}`]}
+        </MantineText>
+      ) : null;
+
       switch (value.type) {
         case "text":
           elements.push(
-            <Text
-              key={BuildKey(itemKey, key)}
-              label={label}
-              settingKey={`settings-${itemKey}-${key}`}
-            ></Text>,
+            <>
+              <Text
+                key={BuildKey(itemKey, key)}
+                label={label}
+                settingKey={`settings-${itemKey}-${key}`}
+              ></Text>
+              {error}
+            </>,
           );
           return;
         case "password":
           elements.push(
-            <Password
-              key={BuildKey(itemKey, key)}
-              label={label}
-              settingKey={`settings-${itemKey}-${key}`}
-            ></Password>,
+            <>
+              <Password
+                key={BuildKey(itemKey, key)}
+                label={label}
+                settingKey={`settings-${itemKey}-${key}`}
+              ></Password>
+              {error}
+            </>,
           );
           return;
         case "switch":
           elements.push(
-            <Check
-              key={key}
-              inline
-              label={label}
-              settingKey={`settings-${itemKey}-${key}`}
-            ></Check>,
+            <>
+              <Check
+                key={key}
+                inline
+                label={label}
+                settingKey={`settings-${itemKey}-${key}`}
+              ></Check>
+              {error}
+            </>,
           );
           return;
         case "select":
           elements.push(
-            <GlobalSelector
-              key={key}
-              label={label}
-              settingKey={`settings-${itemKey}-${key}`}
-              options={options}
-            ></GlobalSelector>,
+            <>
+              <GlobalSelector
+                key={key}
+                label={label}
+                settingKey={`settings-${itemKey}-${key}`}
+                options={options}
+              ></GlobalSelector>
+              {error}
+            </>,
           );
           return;
         case "testbutton":
@@ -295,11 +327,14 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
           return;
         case "chips":
           elements.push(
-            <Chips
-              key={key}
-              label={label}
-              settingKey={`settings-${itemKey}-${key}`}
-            ></Chips>,
+            <>
+              <Chips
+                key={key}
+                label={label}
+                settingKey={`settings-${itemKey}-${key}`}
+              ></Chips>
+              {error}
+            </>,
           );
           return;
         default:
@@ -308,7 +343,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     });
 
     return <Stack gap="xs">{elements}</Stack>;
-  }, [info]);
+  }, [info, form]);
 
   return (
     <SettingsProvider value={settings}>
