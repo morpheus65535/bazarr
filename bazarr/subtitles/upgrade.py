@@ -269,9 +269,7 @@ def get_upgradable_episode_subtitles():
     if not settings.general.upgrade_subs:
         # return an empty set of rows
         logging.debug("Subtitles upgrade is disabled so we wont go further.")
-        return select(TableHistory.id) \
-            .where(TableHistory.id.is_(None)) \
-            .subquery()
+        return {}
 
     logging.debug("Determining upgradable episode subtitles")
     max_id_timestamp = select(TableHistory.video_path,
@@ -349,9 +347,7 @@ def get_upgradable_movies_subtitles():
     if not settings.general.upgrade_subs:
         # return an empty set of rows
         logging.debug("Subtitles upgrade is disabled so we won't go further.")
-        return select(TableHistoryMovie.id) \
-            .where(TableHistoryMovie.id.is_(None)) \
-            .subquery()
+        return {}
 
     logging.debug("Determining upgradable movie subtitles")
     max_id_timestamp = select(TableHistoryMovie.video_path,
