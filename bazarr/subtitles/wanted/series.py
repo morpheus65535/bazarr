@@ -101,7 +101,8 @@ def wanted_download_subtitles(sonarr_episode_id):
 
 
 def wanted_search_missing_subtitles_series():
-    conditions = [(TableEpisodes.missing_subtitles.is_not('[]'))]
+    conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
+                  (TableEpisodes.missing_subtitles.is_not('[]'))]
     conditions += get_exclusion_clause('series')
     episodes = database.execute(
         select(TableEpisodes.sonarrSeriesId,
