@@ -9,7 +9,7 @@ import os
 from functools import reduce
 
 from utilities.path_mappings import path_mappings
-from subtitles.indexer.movies import store_subtitles_movie
+from subtitles.indexer.movies import store_subtitles_movie, list_missing_subtitles_movies
 from radarr.history import history_log_movie
 from app.notifier import send_notifications_movie
 from app.get_providers import get_providers
@@ -20,23 +20,32 @@ from ..download import generate_subtitles
 
 
 def movies_download_subtitles(no):
-    conditions = [(TableMovies.radarrId == no)]
+    conditions = [(TableMovies.radarrId.is_(no))]
     conditions += get_exclusion_clause('movie')
-    movie = database.execute(
-        select(TableMovies.path,
-               TableMovies.missing_subtitles,
-               TableMovies.audio_language,
-               TableMovies.radarrId,
-               TableMovies.sceneName,
-               TableMovies.title,
-               TableMovies.tags,
-               TableMovies.monitored,
-               TableMovies.profileId)
-        .where(reduce(operator.and_, conditions))) \
-        .first()
+    stmt = select(TableMovies.path,
+                  TableMovies.missing_subtitles,
+                  TableMovies.audio_language,
+                  TableMovies.radarrId,
+                  TableMovies.sceneName,
+                  TableMovies.title,
+                  TableMovies.tags,
+                  TableMovies.monitored,
+                  TableMovies.profileId,
+                  TableMovies.subtitles) \
+        .where(reduce(operator.and_, conditions))
+    movie = database.execute(stmt).first()
+
     if not movie:
-        logging.debug("BAZARR no movie with that radarrId can be found in database:", str(no))
+        logging.debug(f"BAZARR no movie with that radarrId can be found in database: {no}")
         return
+    elif movie.subtitles is None:
+        # subtitles indexing for this movie is incomplete, we'll do it again
+        store_subtitles_movie(movie.path, path_mappings.path_replace_movie(movie.path))
+        movie = database.execute(stmt).first()
+    elif movie.missing_subtitles is None:
+        # missing subtitles calculation for this movie is incomplete, we'll do it again
+        list_missing_subtitles_movies(no=no)
+        movie = database.execute(stmt).first()
 
     moviePath = path_mappings.path_replace_movie(movie.path)
 

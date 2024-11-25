@@ -45,7 +45,7 @@ class MoviesWanted(Resource):
         args = self.get_request_parser.parse_args()
         radarrid = args.get("radarrid[]")
 
-        wanted_conditions = [(TableMovies.missing_subtitles != '[]')]
+        wanted_conditions = [(TableMovies.missing_subtitles.is_not('[]'))]
         if len(radarrid) > 0:
             wanted_conditions.append((TableMovies.radarrId.in_(radarrid)))
             start = 0
