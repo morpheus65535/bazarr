@@ -1,5 +1,6 @@
-import { ReactText } from "react";
 import { SelectorOption } from "@/components";
+
+type Text = string | number;
 
 type Input<T, N> = {
   type: N;
@@ -8,15 +9,18 @@ type Input<T, N> = {
   name?: string;
   description?: string;
   options?: SelectorOption<string>[];
+  validation?: {
+    rule: (value: string) => string | null;
+  };
 };
 
 type AvailableInput =
-  | Input<ReactText, "text">
+  | Input<Text, "text">
   | Input<string, "password">
   | Input<boolean, "switch">
   | Input<string, "select">
   | Input<string, "testbutton">
-  | Input<ReactText[], "chips">;
+  | Input<Text[], "chips">;
 
 export interface ProviderInfo {
   key: string;
@@ -390,6 +394,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "text",
         key: "username",
+        validation: {
+          rule: (value: string) =>
+            /^.\S+@\S+$/.test(value)
+              ? "Invalid Username. Do not use your e-mail."
+              : null,
+        },
       },
       {
         type: "password",

@@ -42,7 +42,7 @@ import {
 } from "@/pages/Settings/utilities/SettingsProvider";
 import { BuildKey, useSelectorOptions } from "@/utilities";
 import { ASSERT } from "@/utilities/console";
-import { ProviderInfo } from "./list";
+import { ProviderInfo, ProviderList } from "./list";
 
 type SettingsKey =
   | "settings-general-enabled_providers"
@@ -151,6 +151,27 @@ const SelectItem: AutocompleteProps["renderOption"] = ({ option }) => {
   );
 };
 
+const validation = ProviderList.map((provider) => {
+  return provider.inputs
+    ?.map((input) => {
+      if (input.validation === undefined) {
+        return null;
+      }
+
+      return {
+        [`settings-${provider.key}-${input.key}`]: input.validation?.rule,
+      };
+    })
+    .filter((input) => input && Object.keys(input).length > 0)
+    .reduce((acc, curr) => {
+      return { ...acc, ...curr };
+    }, {});
+})
+  .filter((provider) => provider && Object.keys(provider).length > 0)
+  .reduce((acc, item) => {
+    return { ...acc, ...item };
+  }, {});
+
 const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   payload,
   enabledProviders,
@@ -173,12 +194,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
       hooks: {},
     },
     validate: {
-      settings: {
-        "settings-opensubtitlescom-username": (value) =>
-          /^.\S+@\S+$/.test(value)
-            ? "Invalid Username. Do not use your e-mail."
-            : null,
-      },
+      settings: validation!,
     },
   });
 
