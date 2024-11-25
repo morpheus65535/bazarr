@@ -1,6 +1,15 @@
 import { FunctionComponent } from "react";
-import { Alert, Flex, Group, List, Popover, Stack, Text } from "@mantine/core";
-import { useHover } from "@mantine/hooks";
+import {
+  Alert,
+  em,
+  Flex,
+  Group,
+  List,
+  Popover,
+  Stack,
+  Text,
+} from "@mantine/core";
+import { useHover, useMediaQuery } from "@mantine/hooks";
 import {
   faCheckCircle,
   faExclamationCircle,
@@ -26,6 +35,8 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
 
   const { hovered, ref } = useHover();
 
+  const isMobile = useMediaQuery(`(max-width: ${em(750)})`);
+
   const PopoverTarget: FunctionComponent = () => {
     if (isHistory) {
       return <FontAwesomeIcon icon={faListCheck} />;
@@ -48,10 +59,15 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
         </Text>
       </Popover.Target>
       <Popover.Dropdown>
-        <Alert variant="light" color="blue" mb="sm">
-          Not matching attributes will not prevent the subtitle to be downloaded
-          and are strictly used for scoring the subtitle.
-        </Alert>
+        <Text size="xl" ta="center">
+          Scoring Criteria
+        </Text>
+        {isMobile ? null : (
+          <Alert variant="light" color="blue" mb="sm">
+            Not matching attributes will not prevent the subtitle to be
+            downloaded and are strictly used for scoring the subtitle.
+          </Alert>
+        )}
         <Group justify="left" gap="xl" wrap="nowrap" grow>
           <Stack align="flex-start" justify="flex-start" gap="xs" mb="auto">
             <Flex gap="sm">
