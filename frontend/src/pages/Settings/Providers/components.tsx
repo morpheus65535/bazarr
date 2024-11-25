@@ -1,4 +1,5 @@
 import {
+  Fragment,
   FunctionComponent,
   useCallback,
   useMemo,
@@ -288,52 +289,48 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
       switch (value.type) {
         case "text":
           elements.push(
-            <>
+            <Fragment key={BuildKey(itemKey, key)}>
               <Text
-                key={BuildKey(itemKey, key)}
                 label={label}
                 settingKey={`settings-${itemKey}-${key}`}
               ></Text>
               {error}
-            </>,
+            </Fragment>,
           );
           return;
         case "password":
           elements.push(
-            <>
+            <Fragment key={BuildKey(itemKey, key)}>
               <Password
-                key={BuildKey(itemKey, key)}
                 label={label}
                 settingKey={`settings-${itemKey}-${key}`}
               ></Password>
               {error}
-            </>,
+            </Fragment>,
           );
           return;
         case "switch":
           elements.push(
-            <>
+            <Fragment key={BuildKey(itemKey, key)}>
               <Check
-                key={key}
                 inline
                 label={label}
                 settingKey={`settings-${itemKey}-${key}`}
               ></Check>
               {error}
-            </>,
+            </Fragment>,
           );
           return;
         case "select":
           elements.push(
-            <>
+            <Fragment key={BuildKey(itemKey, key)}>
               <GlobalSelector
-                key={key}
                 label={label}
                 settingKey={`settings-${itemKey}-${key}`}
                 options={options}
               ></GlobalSelector>
               {error}
-            </>,
+            </Fragment>,
           );
           return;
         case "testbutton":
@@ -343,14 +340,13 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
           return;
         case "chips":
           elements.push(
-            <>
+            <Fragment key={BuildKey(itemKey, key)}>
               <Chips
-                key={key}
                 label={label}
                 settingKey={`settings-${itemKey}-${key}`}
               ></Chips>
               {error}
-            </>,
+            </Fragment>,
           );
           return;
         default:
