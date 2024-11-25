@@ -320,7 +320,22 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
   },
-  { key: "napiprojekt", description: "Polish Subtitles Provider" },
+  {
+    key: "napiprojekt",
+    description: "Polish Subtitles Provider",
+    inputs: [
+      {
+        type: "switch",
+        key: "only_authors",
+        name: "Skip subtitles without authors or possibly AI generated",
+      },
+      {
+        type: "switch",
+        key: "only_real_names",
+        name: "Download subtitles with real name authors only",
+      },
+    ],
+  },
   {
     key: "napisy24",
     description: "Polish Subtitles Provider",
