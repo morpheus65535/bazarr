@@ -47,6 +47,8 @@ class NapiProjektProvider(_NapiProjektProvider):
         self.only_real_names = only_real_names
 
     def query(self, language, hash):
+        if self.only_authors or self.only_real_names:
+            return None
         params = {
             'v': 'dreambox',
             'kolejka': 'false',
