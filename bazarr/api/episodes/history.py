@@ -95,13 +95,10 @@ class EpisodesHistory(Resource):
                       TableHistory.matched,
                       TableHistory.not_matched,
                       TableEpisodes.subtitles.label('external_subtitles'),
-                      upgradable_episodes_not_perfect.c.id.label('upgradable'),
                       blacklisted_subtitles.c.subs_id.label('blacklisted')) \
             .select_from(TableHistory) \
             .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId) \
             .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
-            .join(upgradable_episodes_not_perfect, onclause=TableHistory.id == upgradable_episodes_not_perfect.c.id,
-                  isouter=True) \
             .join(blacklisted_subtitles, onclause=TableHistory.subs_id == blacklisted_subtitles.c.subs_id,
                   isouter=True) \
             .where(reduce(operator.and_, query_conditions)) \
@@ -120,6 +117,7 @@ class EpisodesHistory(Resource):
             'sonarrSeriesId': x.sonarrSeriesId,
             'path': x.path,
             'language': x.language,
+            'profileId': x.profileId,
             'score': x.score,
             'tags': x.tags,
             'action': x.action,
@@ -130,24 +128,29 @@ class EpisodesHistory(Resource):
             'matches': x.matched,
             'dont_matches': x.not_matched,
             'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
-            'upgradable': bool(x.upgradable) if _language_still_desired(x.language, x.profileId) else False,
             'blacklisted': bool(x.blacklisted),
         } for x in database.execute(stmt).all()]
 
         for item in episode_history:
-            original_video_path = item['path']
-            original_subtitle_path = item['subtitles_path']
+            # is this language still desired or should we simply skip this subtitles from upgrade logic?
+            still_desired = _language_still_desired(item['language'], item['profileId'])
+
             item.update(postprocess(item))
 
-            # Mark not upgradable if score is perfect or if video/subtitles file doesn't exist anymore
+            # Mark upgradable and get original_id
+            item.update({'original_id': upgradable_episodes_not_perfect.get(item['id'])})
+            item.update({'upgradable': bool(item['original_id'])})
+
+            # Mark not upgradable if video/subtitles file doesn't exist anymore or if language isn't desired anymore
             if item['upgradable']:
-                if original_subtitle_path not in item['external_subtitles'] or \
-                        not item['video_path'] == original_video_path:
+                if (item['subtitles_path'] not in item['external_subtitles'] or item['video_path'] != item['path'] or
+                        not still_desired):
                     item.update({"upgradable": False})
 
             del item['path']
             del item['video_path']
             del item['external_subtitles']
+            del item['profileId']
 
             if item['score']:
                 item['score'] = f"{round((int(item['score']) * 100 / 360), 2)}%"

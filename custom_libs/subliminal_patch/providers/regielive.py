@@ -92,17 +92,19 @@ class RegieLiveProvider(Provider):
             data=payload, headers=self.headers)
 
         subtitles = []
-        if response.json()['cod'] == 200:
-            results_subs = response.json()['rezultate']
-            for film in results_subs:
-                for sub in results_subs[film]['subtitrari']:
-                    subtitles.append(
-                        RegieLiveSubtitle(
-                            results_subs[film]['subtitrari'][sub]['titlu'],
-                            video,
-                            results_subs[film]['subtitrari'][sub]['url'],
-                            results_subs[film]['subtitrari'][sub]['rating']['nota'],
-                            language))
+        if response.status_code == 200:
+            results = response.json()
+            if len(results) > 0:
+                results_subs = results['rezultate']
+                for film in results_subs:
+                    for sub in results_subs[film]['subtitrari']:
+                        subtitles.append(
+                            RegieLiveSubtitle(
+                                results_subs[film]['subtitrari'][sub]['titlu'],
+                                video,
+                                results_subs[film]['subtitrari'][sub]['url'],
+                                results_subs[film]['subtitrari'][sub]['rating']['nota'],
+                                language))
         return subtitles
 
     def list_subtitles(self, video, languages):

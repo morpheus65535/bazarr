@@ -3,9 +3,11 @@
 
 import logging
 import os
+import json
 
 from subzero.language import Language
 from subzero.video import parse_video
+from guessit.jsonutils import GuessitEncoder
 
 from app.config import settings
 from languages.custom_lang import CustomLanguage
@@ -26,33 +28,32 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
     :return: `Video` instance
     """
     hints = {"title": title, "type": "movie" if media_type == "movie" else "episode"}
-    used_scene_name = False
-    original_path = path
-    original_name = os.path.basename(path)
-    hash_from = None
-    if sceneName != "None":
-        # use the sceneName but keep the folder structure for better guessing
-        path = os.path.join(os.path.dirname(path), sceneName + os.path.splitext(path)[1])
-        used_scene_name = True
-        hash_from = original_path
 
     try:
+        logging.debug(f'BAZARR guessing video object using video file path: {path}')
         skip_hashing = settings.general.skip_hashing
-        video = parse_video(path, hints=hints, skip_hashing=skip_hashing, dry_run=used_scene_name, providers=providers,
-                            hash_from=hash_from)
-        video.used_scene_name = used_scene_name
-        video.original_name = original_name
-        video.original_path = original_path
+        video = parse_video(path, hints=hints, skip_hashing=skip_hashing, dry_run=False, providers=providers)
+        if sceneName != "None":
+            # refine the video object using the sceneName and update the video object accordingly
+            scenename_with_extension = sceneName + os.path.splitext(path)[1]
+            logging.debug(f'BAZARR guessing video object using scene name: {scenename_with_extension}')
+            scenename_video = parse_video(scenename_with_extension, hints=hints, dry_run=True)
+            refine_video_with_scenename(initial_video=video, scenename_video=scenename_video)
+
+        video.original_name = os.path.basename(path)
+        video.original_path = path
 
         for key, refiner in registered_refiners.items():
             logging.debug("Running refiner: %s", key)
-            refiner(original_path, video)
+            refiner(path, video)
 
-        logging.debug('BAZARR is using these video object properties: %s', vars(video))
+        logging.debug('BAZARR is using these video object properties: %s', json.dumps(vars(video),
+                                                                                      cls=GuessitEncoder, indent=4,
+                                                                                      ensure_ascii=False))
         return video
 
     except Exception as error:
-        logging.exception("BAZARR Error (%s) trying to get video information for this file: %s", error, original_path)
+        logging.exception("BAZARR Error (%s) trying to get video information for this file: %s", error, path)
 
 
 def _get_download_code3(subtitle):
@@ -100,3 +101,10 @@ def _set_forced_providers(pool, also_forced=False, forced_required=False):
             "opensubtitles": {'also_foreign': also_forced, "only_foreign": forced_required}
         }
     )
+
+
+def refine_video_with_scenename(initial_video, scenename_video):
+    for key, value in vars(scenename_video).items():
+        if value:
+            setattr(initial_video, key, value)
+    return initial_video

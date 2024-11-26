@@ -2,8 +2,10 @@
 # fmt: off
 
 import logging
+import json
 
 from subliminal import Movie
+from guessit.jsonutils import GuessitEncoder
 
 from utilities.path_mappings import path_mappings
 from app.database import TableEpisodes, TableMovies, database, select
@@ -37,10 +39,12 @@ def refine_from_ffprobe(path, video):
         return video
 
     if data['ffprobe']:
-        logging.debug('FFprobe found: %s', data['ffprobe'])
+        logging.debug('FFprobe found: %s', json.dumps(data['ffprobe'], cls=GuessitEncoder, indent=4,
+                                                      ensure_ascii=False))
         parser_data = data['ffprobe']
     elif data['mediainfo']:
-        logging.debug('Mediainfo found: %s', data['mediainfo'])
+        logging.debug('Mediainfo found: %s', json.dumps(data['mediainfo'], cls=GuessitEncoder, indent=4,
+                                                        ensure_ascii=False))
         parser_data = data['mediainfo']
     else:
         parser_data = {}

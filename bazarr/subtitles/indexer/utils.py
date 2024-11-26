@@ -135,7 +135,9 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                     continue
                 text = text.decode(encoding)
 
-                if core.parse_for_hi_regex(subtitle_text=text,
-                                           alpha3_language=language.alpha3 if hasattr(language, 'alpha3') else None):
-                    subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
+                if os.path.splitext(subtitle_path)[1] == 'srt':
+                    if core.parse_for_hi_regex(subtitle_text=text,
+                                               alpha3_language=language.alpha3 if hasattr(language, 'alpha3') else
+                                               None):
+                        subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
     return subtitles

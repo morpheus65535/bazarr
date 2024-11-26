@@ -16,7 +16,7 @@ import { IntegrationList, ProviderList } from "./list";
 const SettingsProvidersView: FunctionComponent = () => {
   return (
     <Layout name="Providers">
-      <Section header="Providers">
+      <Section header="Enabled Providers">
         <ProviderView
           availableOptions={ProviderList}
           settingsKey="settings-general-enabled_providers"

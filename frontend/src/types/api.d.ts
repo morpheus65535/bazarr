@@ -295,6 +295,7 @@ type ItemSearchResult = Partial<SeriesIdType> &
   Partial<MovieIdType> & {
     title: string;
     year: string;
+    poster: string;
   };
 
 type BackendError = {

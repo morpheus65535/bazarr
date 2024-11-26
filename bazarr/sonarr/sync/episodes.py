@@ -5,6 +5,7 @@ import logging
 from constants import MINIMUM_VIDEO_SIZE
 
 from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 
 from app.database import database, TableShows, TableEpisodes, delete, update, insert, select
 from app.config import settings
@@ -145,10 +146,27 @@ def sync_episodes(series_id, send_event=True):
                 if send_event:
                     event_stream(type='episode', action='delete', payload=removed_episode)
 
+    # Insert new episodes in DB
+    if len(episodes_to_add):
+        for added_episode in episodes_to_add:
+            try:
+                added_episode['created_at_timestamp'] = datetime.now()
+                database.execute(insert(TableEpisodes).values(added_episode))
+            except IntegrityError as e:
+                logging.error(f"BAZARR cannot insert episodes because of {e}. We'll try to update it instead.")
+                del added_episode['created_at_timestamp']
+                episodes_to_update.append(added_episode)
+            else:
+                store_subtitles(added_episode['path'], path_mappings.path_replace(added_episode['path']))
+
+                if send_event:
+                    event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
+
     # Update existing episodes in DB
     if len(episodes_to_update):
         for updated_episode in episodes_to_update:
             try:
+                updated_episode['updated_at_timestamp'] = datetime.now()
                 database.execute(update(TableEpisodes)
                                  .values(updated_episode)
                                  .where(TableEpisodes.sonarrEpisodeId == updated_episode['sonarrEpisodeId']))
@@ -159,19 +177,6 @@ def sync_episodes(series_id, send_event=True):
 
                 if send_event:
                     event_stream(type='episode', action='update', payload=updated_episode['sonarrEpisodeId'])
-
-    # Insert new episodes in DB
-    if len(episodes_to_add):
-        for added_episode in episodes_to_add:
-            try:
-                database.execute(insert(TableEpisodes).values(added_episode))
-            except IntegrityError as e:
-                logging.error(f"BAZARR cannot insert episodes because of {e}")
-            else:
-                store_subtitles(added_episode['path'], path_mappings.path_replace(added_episode['path']))
-
-                if send_event:
-                    event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
 
     logging.debug(f'BAZARR All episodes from series ID {series_id} synced from Sonarr into database.')
 
@@ -225,6 +230,7 @@ def sync_one_episode(episode_id, defer_search=False):
     # Update existing episodes in DB
     elif episode and existing_episode:
         try:
+            episode['updated_at_timestamp'] = datetime.now()
             database.execute(
                 update(TableEpisodes)
                 .values(episode)
@@ -240,6 +246,7 @@ def sync_one_episode(episode_id, defer_search=False):
     # Insert new episodes in DB
     elif episode and not existing_episode:
         try:
+            episode['created_at_timestamp'] = datetime.now()
             database.execute(
                 insert(TableEpisodes)
                 .values(episode))

@@ -1,12 +1,21 @@
 import { FunctionComponent } from "react";
-import { Group, List, Popover, Stack, Text } from "@mantine/core";
-import { useHover } from "@mantine/hooks";
 import {
-  faCheck,
+  Alert,
+  em,
+  Flex,
+  Group,
+  List,
+  Popover,
+  Stack,
+  Text,
+} from "@mantine/core";
+import { useHover, useMediaQuery } from "@mantine/hooks";
+import {
   faCheckCircle,
   faExclamationCircle,
   faListCheck,
-  faTimes,
+  faMinus,
+  faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { BuildKey } from "@/utilities";
@@ -25,6 +34,8 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
   const hasIssues = dont.length > 0;
 
   const { hovered, ref } = useHover();
+
+  const isMobile = useMediaQuery(`(max-width: ${em(750)})`);
 
   const PopoverTarget: FunctionComponent = () => {
     if (isHistory) {
@@ -48,11 +59,23 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
         </Text>
       </Popover.Target>
       <Popover.Dropdown>
+        <Text size="xl" ta="center">
+          Scoring Criteria
+        </Text>
+        {isMobile ? null : (
+          <Alert variant="light" color="blue" mb="sm">
+            Not matching attributes will not prevent the subtitle to be
+            downloaded and are strictly used for scoring the subtitle.
+          </Alert>
+        )}
         <Group justify="left" gap="xl" wrap="nowrap" grow>
           <Stack align="flex-start" justify="flex-start" gap="xs" mb="auto">
-            <Text c="green">
-              <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>
-            </Text>
+            <Flex gap="sm">
+              <Text c="green">
+                <FontAwesomeIcon icon={faPlus}></FontAwesomeIcon>
+              </Text>
+              <Text c="green">Matching</Text>
+            </Flex>
             <List>
               {matches.map((v, idx) => (
                 <List.Item key={BuildKey(idx, v, "match")}>{v}</List.Item>
@@ -60,9 +83,12 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
             </List>
           </Stack>
           <Stack align="flex-start" justify="flex-start" gap="xs" mb="auto">
-            <Text c="yellow">
-              <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>
-            </Text>
+            <Flex gap="sm">
+              <Text c="yellow">
+                <FontAwesomeIcon icon={faMinus}></FontAwesomeIcon>
+              </Text>
+              <Text c="yellow">Not Matching</Text>
+            </Flex>
             <List>
               {dont.map((v, idx) => (
                 <List.Item key={BuildKey(idx, v, "miss")}>{v}</List.Item>

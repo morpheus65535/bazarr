@@ -13,7 +13,7 @@ from subliminal_patch.core_persistent import download_best_subtitles
 from subliminal_patch.score import ComputeScore
 
 from app.config import settings, get_scores, get_array_from
-from app.database import TableEpisodes, TableMovies, database, select
+from app.database import TableEpisodes, TableMovies, database, select, get_profiles_list
 from utilities.path_mappings import path_mappings
 from utilities.helper import get_target_folder, force_unicode
 from languages.get_languages import alpha3_from_alpha2
@@ -24,8 +24,8 @@ from .processing import process_subtitle
 
 
 @update_pools
-def generate_subtitles(path, languages, audio_language, sceneName, title, media_type, forced_minimum_score=None,
-                       is_upgrade=False, profile_id=None, check_if_still_required=False,
+def generate_subtitles(path, languages, audio_language, sceneName, title, media_type, profile_id,
+                       forced_minimum_score=None, is_upgrade=False, check_if_still_required=False,
                        previous_subtitles_to_delete=None):
     if not languages:
         return None
@@ -41,6 +41,8 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     providers = pool.providers
 
     language_set = _get_language_obj(languages=languages)
+    profile = get_profiles_list(profile_id=profile_id)
+    original_format = profile['originalFormat']
     hi_required = "force HI" if any([x.hi for x in language_set]) else False
     also_forced = any([x.forced for x in language_set])
     forced_required = all([x.forced for x in language_set])
@@ -72,7 +74,8 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                                    pool_instance=pool,
                                                                    min_score=int(min_score),
                                                                    hearing_impaired=hi_required,
-                                                                   compute_score=ComputeScore(get_scores()))
+                                                                   compute_score=ComputeScore(get_scores()),
+                                                                   use_original_format=original_format in (1, "1", "True", True))
 
                 if downloaded_subtitles:
                     for video, subtitles in downloaded_subtitles.items():
@@ -100,7 +103,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                              tags=None,  # fixme
                                                              directory=fld,
                                                              chmod=chmod,
-                                                             formats=tuple(subtitle_formats),
+                                                             formats=subtitle_formats,
                                                              path_decoder=force_unicode
                                                              )
                         except Exception as e:
