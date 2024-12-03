@@ -159,11 +159,12 @@ const SettingsSubtitlesView: FunctionComponent = () => {
       </Section>
       <Section header="Embedded Subtitles">
         <Check
-          label="Use Embedded Subtitles"
+          label="Treat Embedded Subtitles as Downloaded"
           settingKey="settings-general-use_embedded_subs"
         ></Check>
         <Message>
-          Use embedded subtitles in media files when determining missing ones.
+          Treat embedded subtitles in media files as already downloaded when
+          determining missing ones.
         </Message>
         <CollapseBox indent settingKey="settings-general-use_embedded_subs">
           <Selector
@@ -179,21 +180,21 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             settingKey="settings-general-ignore_pgs_subs"
           ></Check>
           <Message>
-            Ignores PGS Subtitles in Embedded Subtitles detection.
+            Ignore PGS Subtitles when detecting embedded subtitles.
           </Message>
           <Check
             label="Ignore Embedded VobSub Subtitles"
             settingKey="settings-general-ignore_vobsub_subs"
           ></Check>
           <Message>
-            Ignores VobSub Subtitles in Embedded Subtitles detection.
+            Ignore VobSub Subtitles when detecting embedded subtitles.
           </Message>
           <Check
             label="Ignore Embedded ASS Subtitles"
             settingKey="settings-general-ignore_ass_subs"
           ></Check>
           <Message>
-            Ignores ASS Subtitles in Embedded Subtitles detection.
+            Ignore ASS Subtitles when detecting embedded subtitles.
           </Message>
           <Check
             label="Show Only Desired Languages"

@@ -151,7 +151,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "embeddedsubtitles",
     name: "Embedded Subtitles",
-    description: "Embedded Subtitles from your Media Files",
+    description:
+      "This provider extracts embedded subtitles from your media files. You must disable 'Treat Embedded Subtitles as Downloaded' in Settings -> Subtitles for this provider to work.",
     inputs: [
       {
         type: "chips",
