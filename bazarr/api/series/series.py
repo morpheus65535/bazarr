@@ -74,7 +74,7 @@ class Series(Resource):
             .subquery()
 
         episodes_missing_conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
-                                       (TableEpisodes.missing_subtitles.is_not('[]'))]
+                                       (TableEpisodes.missing_subtitles != '[]')]
         episodes_missing_conditions += get_exclusion_clause('series')
 
         episodeMissingCount = select(TableShows.sonarrSeriesId,

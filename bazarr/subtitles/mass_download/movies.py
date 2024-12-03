@@ -20,7 +20,7 @@ from ..download import generate_subtitles
 
 
 def movies_download_subtitles(no):
-    conditions = [(TableMovies.radarrId.is_(no))]
+    conditions = [(TableMovies.radarrId == no)]
     conditions += get_exclusion_clause('movie')
     stmt = select(TableMovies.path,
                   TableMovies.missing_subtitles,

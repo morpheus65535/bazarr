@@ -97,7 +97,7 @@ def wanted_download_subtitles_movie(radarr_id):
 
 def wanted_search_missing_subtitles_movies():
     conditions = [(TableMovies.missing_subtitles.is_not(None)),
-                  (TableMovies.missing_subtitles.is_not('[]'))]
+                  (TableMovies.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('movie')
     movies = database.execute(
         select(TableMovies.radarrId,

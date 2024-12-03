@@ -29,7 +29,7 @@ def series_download_subtitles(no):
         raise OSError
 
     conditions = [(TableEpisodes.sonarrSeriesId == no),
-                  (TableEpisodes.missing_subtitles.is_not('[]'))]
+                  (TableEpisodes.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('series')
     episodes_details = database.execute(
         select(TableEpisodes.sonarrEpisodeId,
