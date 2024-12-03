@@ -9,7 +9,7 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
-import { useHover, useMediaQuery } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import {
   faCheckCircle,
   faExclamationCircle,
@@ -33,7 +33,7 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
 }) => {
   const hasIssues = dont.length > 0;
 
-  const { hovered, ref } = useHover();
+  const [opened, { close, open }] = useDisclosure(false);
 
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`);
 
@@ -52,9 +52,9 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
   };
 
   return (
-    <Popover opened={hovered} position="top" width={360} withArrow withinPortal>
+    <Popover position="left" opened={opened} width={360} withArrow withinPortal>
       <Popover.Target>
-        <Text ref={ref}>
+        <Text onMouseEnter={open} onMouseLeave={close}>
           <PopoverTarget />
         </Text>
       </Popover.Target>
