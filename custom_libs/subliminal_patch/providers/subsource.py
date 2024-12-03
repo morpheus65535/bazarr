@@ -6,7 +6,7 @@ import io
 
 from zipfile import ZipFile, is_zipfile
 from urllib.parse import urljoin
-from requests import Session
+from requests import Session, JSONDecodeError
 
 from subzero.language import Language
 from subliminal import Episode, Movie
@@ -81,7 +81,7 @@ class SubsourceSubtitle(Subtitle):
 
 class SubsourceProvider(ProviderRetryMixin, Provider):
     """Subsource Provider"""
-    server_hostname = 'api.subsource.net'
+    server_url = 'https://api.subsource.net/api/'
 
     languages = {Language('por', 'BR')} | {Language(l) for l in [
         'ara', 'bul', 'ces', 'dan', 'deu', 'ell', 'eng', 'fin', 'fra', 'hun', 'ita', 'jpn', 'kor', 'nld', 'pol', 'por',
@@ -92,13 +92,9 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
 
     video_types = (Episode, Movie)
 
-    def __init__(self, api_key=None):
-        if not api_key:
-            raise ConfigurationError('Api_key must be specified')
-
+    def __init__(self):
         self.session = Session()
         self.session.headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")}
-        self.api_key = api_key
         self.video = None
         self._started = None
 
@@ -108,8 +104,62 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
     def terminate(self):
         self.session.close()
 
-    def server_url(self):
-        return f'https://{self.server_hostname}/api/v1/'
+    @staticmethod
+    def parse_json(response):
+        try:
+            return response.json()
+        except JSONDecodeError:
+            logging.debug("Unable to parse server response")
+            return False
+
+    def searchMovie(self, imdb_id=None, title=None):
+        res = self.session.post(f"{self.server_url}searchMovie",
+                                json={'query': imdb_id or title},
+                                timeout=30)
+        results = self.parse_json(res)
+        if results and 'found' in results and isinstance(results['found'], list) and len(results['found']) > 0:
+            return results['found'][0]['linkName']
+        return False
+
+    def getMovie(self, title, season=None):
+        data = {'movieName': title}
+        if season:
+            data.update({'season': f"season-{season}"})
+        res = self.session.post(f"{self.server_url}getMovie",
+                                json=data,
+                                timeout=30)
+        results = self.parse_json(res)
+        if results and 'subs' in results and isinstance(results['subs'], list) and len(results['subs']) > 0:
+            subs_to_return = []
+            for sub in results['subs']:
+                subs_to_return.append({
+                    'movie': sub['linkName'],
+                    'lang': sub['lang'],
+                    'id': sub['subId'],
+                })
+            return subs_to_return
+        return False
+
+    def getSub(self, title, season=None):
+        data = {'movieName': title}
+        if season:
+            data.update({'season': f"season-{season}"})
+        res = self.session.post(f"{self.server_url}getSub",
+                                json=data,
+                                timeout=30)
+        results = self.parse_json(res)
+        if results and 'subs' in results and isinstance(results['subs'], list) and len(results['subs']) > 0:
+            subs_to_return = []
+            for sub in results['subs']:
+                subs_to_return.append({
+                    'page_link': f"https://subsource.net{sub['fullLink']}",
+                    'uploader': sub['uploadedBy'],
+                    'release_info': sub['releaseName'],
+                    'file_id': sub['subId'],
+                    'language': sub['lang'],
+                })
+            return results['found'][0]['linkName']
+        return False
 
     def query(self, languages, video):
         self.video = video
@@ -124,12 +174,13 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
         elif isinstance(self.video, Movie) and self.video.imdb_id:
             imdb_id = self.video.imdb_id
 
+        linkName = self.search(imdb_id=imdb_id, title=title)
+
         # query the server
         if isinstance(self.video, Episode):
             res = self.retry(
-                lambda: self.session.get(self.server_url() + 'subtitles',
-                                         params=(('api_key', self.api_key),
-                                                 ('episode_number', self.video.episode),
+                lambda: self.session.get(f"{self.server_url}subtitles",
+                                         params=(('episode_number', self.video.episode),
                                                  ('film_name', title if not imdb_id else None),
                                                  ('imdb_id', imdb_id if imdb_id else None),
                                                  ('season_number', self.video.season),
@@ -145,11 +196,9 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
             )
         else:
             res = self.retry(
-                lambda: self.session.get(self.server_url() + 'subtitles',
-                                         params=(('api_key', self.api_key),
-                                                 ('film_name', title if not imdb_id else None),
+                lambda: self.session.get(f"{self.server_url}subtitles",
+                                         params=(('film_name', title if not imdb_id else None),
                                                  ('imdb_id', imdb_id if imdb_id else None),
-                                                 ('languages', langs),
                                                  ('subs_per_page', 30),
                                                  ('type', 'movie'),
                                                  ('comment', 1),
