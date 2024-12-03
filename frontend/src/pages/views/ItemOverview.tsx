@@ -49,7 +49,15 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
 
     if (item) {
       badges.push(
-        <ItemBadge key="file-path" icon={faFolder} title="File Path">
+        <ItemBadge
+          key="file-path"
+          icon={faFolder}
+          title="File Path"
+          styles={{
+            root: { overflow: "unset" },
+            label: { overflow: "hidden" },
+          }}
+        >
           <Tooltip
             label={item.path}
             multiline
