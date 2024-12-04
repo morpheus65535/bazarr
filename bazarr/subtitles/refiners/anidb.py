@@ -111,7 +111,7 @@ class AniDBClient(object):
                 mapping_list = anime.find('mapping-list')
 
                 # Handle mapping list for Specials
-                if mapping_list:
+                if mapping_list is not None:
                     for mapping in mapping_list.findall("mapping"):
                         if mapping.text is None:
                             continue
@@ -176,7 +176,7 @@ class AniDBClient(object):
 
         episode_elements = xml_root.find('episodes')
 
-        if not episode_elements:
+        if episode_elements is None:
             raise ValueError
 
         return etree.tostring(episode_elements, encoding='utf8', method='xml')
