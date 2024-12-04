@@ -51,7 +51,11 @@ def sync_subtitles(video_path, srt_path, srt_lang, forced, hi, percent_score, so
                               count=1)
                 subsync.sync(**sync_kwargs)
             finally:
-                hide_progress(id=f'subsync_{subtitles_filename}')
+                show_progress(id=f'subsync_{subtitles_filename}',
+                              header='Syncing Subtitle',
+                              name=srt_path,
+                              value=1,
+                              count=1)
             del subsync
             gc.collect()
             return True
