@@ -27,7 +27,7 @@ export const notification = {
     };
   },
 
-  PROGRESS_TIMEOUT: 10 * 1000,
+  PROGRESS_TIMEOUT: 3 * 1000,
 
   progress: {
     pending: (
