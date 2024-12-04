@@ -3,8 +3,10 @@
 
 import logging
 import gc
+import os
 
 from app.config import settings
+from app.event_handler import show_progress, hide_progress
 from subtitles.tools.subsyncer import SubSyncer
 
 
@@ -40,7 +42,16 @@ def sync_subtitles(video_path, srt_path, srt_lang, forced, hi, percent_score, so
                 'sonarr_episode_id': sonarr_episode_id,
                 'radarr_id': radarr_id,
             }
-            subsync.sync(**sync_kwargs)
+            subtitles_filename = os.path.basename(srt_path)
+            try:
+                show_progress(id=f'subsync_{subtitles_filename}',
+                              header='Syncing Subtitle',
+                              name=srt_path,
+                              value=1,
+                              count=1)
+                subsync.sync(**sync_kwargs)
+            finally:
+                hide_progress(id=f'subsync_{subtitles_filename}')
             del subsync
             gc.collect()
             return True
