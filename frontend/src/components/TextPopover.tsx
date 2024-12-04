@@ -1,6 +1,5 @@
 import { FunctionComponent, ReactElement } from "react";
 import { Tooltip, TooltipProps } from "@mantine/core";
-import { useHover } from "@mantine/hooks";
 import { isNull, isUndefined } from "lodash";
 
 interface TextPopoverProps {
@@ -14,20 +13,13 @@ const TextPopover: FunctionComponent<TextPopoverProps> = ({
   text,
   tooltip,
 }) => {
-  const { hovered, ref } = useHover();
-
   if (isNull(text) || isUndefined(text)) {
     return children;
   }
 
   return (
-    <Tooltip
-      opened={hovered}
-      label={text}
-      {...tooltip}
-      style={{ textWrap: "wrap" }}
-    >
-      <div ref={ref}>{children}</div>
+    <Tooltip label={text} {...tooltip} style={{ textWrap: "wrap" }}>
+      <div>{children}</div>
     </Tooltip>
   );
 };
