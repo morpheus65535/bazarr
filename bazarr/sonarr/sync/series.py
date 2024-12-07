@@ -178,7 +178,11 @@ def update_series(send_event=True):
                 event_stream(type='series', action='delete', payload=series)
 
         if send_event:
-            hide_progress(id='series_progress')
+            show_progress(id='series_progress',
+                          header='Syncing series...',
+                          name='',
+                          value=series_count,
+                          count=series_count)
 
         if sync_monitored:
             trace(f"skipped {skipped_count} unmonitored series out of {i}")

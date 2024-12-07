@@ -43,14 +43,16 @@ def sync_subtitles(video_path, srt_path, srt_lang, forced, hi, percent_score, so
                 'radarr_id': radarr_id,
             }
             subtitles_filename = os.path.basename(srt_path)
+            show_progress(id=f'subsync_{subtitles_filename}',
+                          header='Syncing Subtitle',
+                          name=srt_path,
+                          value=0,
+                          count=1)
             try:
-                show_progress(id=f'subsync_{subtitles_filename}',
-                              header='Syncing Subtitle',
-                              name=srt_path,
-                              value=0,
-                              count=1)
                 subsync.sync(**sync_kwargs)
-            finally:
+            except Exception:
+                hide_progress(id=f'subsync_{subtitles_filename}')
+            else:
                 show_progress(id=f'subsync_{subtitles_filename}',
                               header='Syncing Subtitle',
                               name=srt_path,

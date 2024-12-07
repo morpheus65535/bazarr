@@ -133,7 +133,11 @@ def upgrade_subtitles():
                             upgraded_from_id=episode['original_id'])
                 send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result.message)
 
-        hide_progress(id='upgrade_episodes_progress')
+        show_progress(id='upgrade_episodes_progress',
+                      header='Upgrading episodes subtitles...',
+                      name='',
+                      value=count_episode_to_upgrade,
+                      count=count_episode_to_upgrade)
 
     if use_radarr:
         movies_to_upgrade = get_upgradable_movies_subtitles()
@@ -231,7 +235,11 @@ def upgrade_subtitles():
                 history_log_movie(3, movie['radarrId'], result, upgraded_from_id=movie['original_id'])
                 send_notifications_movie(movie['radarrId'], result.message)
 
-        hide_progress(id='upgrade_movies_progress')
+        show_progress(id='upgrade_movies_progress',
+                      header='Upgrading movies subtitles...',
+                      name='',
+                      value=count_movie_to_upgrade,
+                      count=count_movie_to_upgrade)
 
     logging.info('BAZARR Finished searching for Subtitles to upgrade. Check History for more information.')
 
