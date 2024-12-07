@@ -292,7 +292,11 @@ def movies_full_scan_subtitles(use_cache=None):
                       count=count_movies)
         store_subtitles_movie(movie.path, path_mappings.path_replace_movie(movie.path), use_cache=use_cache)
 
-    hide_progress(id='movies_disk_scan')
+    show_progress(id='movies_disk_scan',
+                  header='Full disk scan...',
+                  name='Movies subtitles',
+                  value=count_movies,
+                  count=count_movies)
 
     gc.collect()
 

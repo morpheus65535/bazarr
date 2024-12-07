@@ -122,6 +122,10 @@ def wanted_search_missing_subtitles_movies():
             logging.info("BAZARR All providers are throttled")
             break
 
-    hide_progress(id='wanted_movies_progress')
+    show_progress(id='wanted_movies_progress',
+                  header='Searching subtitles...',
+                  name="",
+                  value=count_movies,
+                  count=count_movies)
 
     logging.info('BAZARR Finished searching for missing Movies Subtitles. Check History for more information.')
