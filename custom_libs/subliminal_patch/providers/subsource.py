@@ -5,6 +5,7 @@ import time
 import io
 
 from zipfile import ZipFile, is_zipfile
+from babelfish import language_converters
 from urllib.parse import urljoin
 from requests import Session, JSONDecodeError
 
@@ -19,6 +20,8 @@ from subliminal_patch.providers import Provider
 from subliminal_patch.providers import utils
 
 logger = logging.getLogger(__name__)
+
+language_converters.register('subsource = subliminal_patch.converters.subsource:SubsourceConverter')
 
 retry_amount = 3
 retry_timeout = 5
@@ -83,12 +86,12 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
     """Subsource Provider"""
     server_url = 'https://api.subsource.net/api/'
 
-    languages = {Language('por', 'BR')} | {Language(l) for l in [
-        'ara', 'bul', 'ces', 'dan', 'deu', 'ell', 'eng', 'fin', 'fra', 'hun', 'ita', 'jpn', 'kor', 'nld', 'pol', 'por',
-        'ron', 'rus', 'spa', 'swe', 'tur', 'ukr', 'zho'
-    ]}
+    languages = ({Language.fromsubsource(l) for l in language_converters['subsource'].codes} |
+                 {Language("spa", "MX")} |
+                 {Language("zho", "CN")} |
+                 {Language("zho", "TW")})
+    languages.update(set(Language.rebuild(lang, hi=True) for lang in languages))
     languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
-    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
     video_types = (Episode, Movie)
 
@@ -121,7 +124,7 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
             return results['found'][0]['linkName']
         return False
 
-    def getMovie(self, title, season=None):
+    def getMovie(self, languages, title, season=None):
         data = {'movieName': title}
         if season:
             data.update({'season': f"season-{season}"})
@@ -132,33 +135,47 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
         if results and 'subs' in results and isinstance(results['subs'], list) and len(results['subs']) > 0:
             subs_to_return = []
             for sub in results['subs']:
-                subs_to_return.append({
-                    'movie': sub['linkName'],
-                    'lang': sub['lang'],
-                    'id': sub['subId'],
-                })
-            return subs_to_return
-        return False
+                if 'lang' not in sub:
+                    logger.debug(f"No language found for https://subsource.net{sub['fullLink']}")
+                    continue
+                language = Language.fromsubsource(sub['lang'])
+                if language.alpha3 == "zho" and "traditional" in sub['commentary'].lower():
+                        language = Language.rebuild(language, country="TW")
+                elif language.alpha3 == "spa" and "latin" in sub['commentary'].lower():
+                        language = Language.rebuild(language, country="MX")
 
-    def getSub(self, title, season=None):
-        data = {'movieName': title}
-        if season:
-            data.update({'season': f"season-{season}"})
+                if language in languages:
+                    sub_details = self.getSub(lang=sub['lang'], title=sub['linkName'], sub_id=sub['subId'])
+                    if sub_details:
+                        subs_to_return.append(
+                            SubsourceSubtitle(language=language,
+                                              forced=sub_details['forced'],
+                                              hearing_impaired=sub['hi'] == 1,
+                                              page_link=f"https://subsource.net{sub['fullLink']}",
+                                              download_link=sub_details['download_link'],
+                                              file_id=sub['subId'],
+                                              release_names=sub_details['releases_info'],
+                                              uploader=sub['uploadedBy'],
+                                              season=None,
+                                              episode=None),
+                        )
+            return subs_to_return
+        return []
+
+    def getSub(self, lang, title, sub_id):
+        data = {'movie': title,
+                'lang': lang.replace(' ', '_'),
+                'id': sub_id}
         res = self.session.post(f"{self.server_url}getSub",
                                 json=data,
                                 timeout=30)
-        results = self.parse_json(res)
-        if results and 'subs' in results and isinstance(results['subs'], list) and len(results['subs']) > 0:
-            subs_to_return = []
-            for sub in results['subs']:
-                subs_to_return.append({
-                    'page_link': f"https://subsource.net{sub['fullLink']}",
-                    'uploader': sub['uploadedBy'],
-                    'release_info': sub['releaseName'],
-                    'file_id': sub['subId'],
-                    'language': sub['lang'],
-                })
-            return results['found'][0]['linkName']
+        result = self.parse_json(res)
+        if result and 'sub' in result and isinstance(result['sub'], dict):
+            return {
+                'download_link': f"{self.server_url}downloadSub/{result['sub']['downloadToken']}",
+                'forced': result['sub']['fp'] == 1,
+                'releases_info': result['sub']['ri'],
+            }
         return False
 
     def query(self, languages, video):
@@ -174,116 +191,11 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
         elif isinstance(self.video, Movie) and self.video.imdb_id:
             imdb_id = self.video.imdb_id
 
-        linkName = self.search(imdb_id=imdb_id, title=title)
-
-        # query the server
-        if isinstance(self.video, Episode):
-            res = self.retry(
-                lambda: self.session.get(f"{self.server_url}subtitles",
-                                         params=(('episode_number', self.video.episode),
-                                                 ('film_name', title if not imdb_id else None),
-                                                 ('imdb_id', imdb_id if imdb_id else None),
-                                                 ('season_number', self.video.season),
-                                                 ('subs_per_page', 30),
-                                                 ('type', 'tv'),
-                                                 ('comment', 1),
-                                                 ('releases', 1),
-                                                 ('bazarr', 1)),  # this argument filter incompatible image based or
-                                         # txt subtitles
-                                         timeout=30),
-                amount=retry_amount,
-                retry_timeout=retry_timeout
-            )
+        movie_name = self.searchMovie(imdb_id=imdb_id, title=title)
+        if movie_name:
+            return self.getMovie(languages=languages, title=movie_name, season=self.video.season if hasattr(self.video, 'season') else None)
         else:
-            res = self.retry(
-                lambda: self.session.get(f"{self.server_url}subtitles",
-                                         params=(('film_name', title if not imdb_id else None),
-                                                 ('imdb_id', imdb_id if imdb_id else None),
-                                                 ('subs_per_page', 30),
-                                                 ('type', 'movie'),
-                                                 ('comment', 1),
-                                                 ('releases', 1),
-                                                 ('bazarr', 1)),  # this argument filter incompatible image based or
-                                         # txt subtitles
-                                         timeout=30),
-                amount=retry_amount,
-                retry_timeout=retry_timeout
-            )
-
-        if res.status_code == 429:
-            raise APIThrottled("Too many requests")
-        elif res.status_code == 403:
-            raise ConfigurationError("Invalid API key")
-        elif res.status_code != 200:
-            res.raise_for_status()
-
-        subtitles = []
-
-        result = res.json()
-
-        if ('success' in result and not result['success']) or ('status' in result and not result['status']):
-            logger.debug(result["error"])
             return []
-
-        logger.debug(f"Query returned {len(result['subtitles'])} subtitles")
-
-        if len(result['subtitles']):
-            for item in result['subtitles']:
-                if (isinstance(self.video, Episode) and
-                        item.get('episode_from', False) != item.get('episode_end', False)):
-                    # ignore season packs
-                    continue
-                else:
-                    subtitle = SubsourceSubtitle(
-                        language=item['language'],
-                        forced=self._is_forced(item),
-                        hearing_impaired=item.get('hi', False) or self._is_hi(item),
-                        page_link=urljoin("https://api.subsource.net", item.get('subtitlePage', '')),
-                        download_link=item['url'],
-                        file_id=item['name'],
-                        release_names=item.get('releases', []),
-                        uploader=item.get('author', ''),
-                        season=item.get('season', None),
-                        episode=item.get('episode', None),
-                    )
-                    subtitle.get_matches(self.video)
-                    if subtitle.language in languages:  # make sure only desired subtitles variants are returned
-                        subtitles.append(subtitle)
-
-        return subtitles
-
-    @staticmethod
-    def _is_hi(item):
-        # Comments include specific mention of removed or non HI
-        non_hi_tag = ['hi remove', 'non hi', 'nonhi', 'non-hi', 'non-sdh', 'non sdh', 'nonsdh', 'sdh remove']
-        for tag in non_hi_tag:
-            if tag in item.get('comment', '').lower():
-                return False
-
-        # Archive filename include _HI_
-        if '_hi_' in item.get('name', '').lower():
-            return True
-
-        # Comments or release names include some specific strings
-        hi_keys = [item.get('comment', '').lower(), [x.lower() for x in item.get('releases', [])]]
-        hi_tag = ['_hi_', ' hi ', '.hi.', 'hi ', ' hi', 'sdh', '𝓢𝓓𝓗']
-        for key in hi_keys:
-            if any(x in key for x in hi_tag):
-                return True
-
-        # nothing match so we consider it as non-HI
-        return False
-
-    @staticmethod
-    def _is_forced(item):
-        # Comments include specific mention of forced subtitles
-        forced_tags = ['forced', 'foreign']
-        for tag in forced_tags:
-            if tag in item.get('comment', '').lower():
-                return True
-
-        # nothing match so we consider it as normal subtitles
-        return False
 
     def list_subtitles(self, video, languages):
         return self.query(languages, video)
