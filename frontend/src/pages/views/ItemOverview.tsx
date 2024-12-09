@@ -62,6 +62,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             label={item.path}
             multiline
             style={{ overflowWrap: "anywhere" }}
+            events={{ hover: true, focus: false, touch: true }}
           >
             <span>{item.path}</span>
           </Tooltip>

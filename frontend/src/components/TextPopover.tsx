@@ -18,7 +18,12 @@ const TextPopover: FunctionComponent<TextPopoverProps> = ({
   }
 
   return (
-    <Tooltip label={text} {...tooltip} style={{ textWrap: "wrap" }}>
+    <Tooltip
+      label={text}
+      {...tooltip}
+      style={{ textWrap: "wrap" }}
+      events={{ hover: true, focus: false, touch: true }}
+    >
       <div>{children}</div>
     </Tooltip>
   );
