@@ -2,20 +2,16 @@
 import logging
 import os
 import time
-import io
 
-from zipfile import ZipFile, is_zipfile
 from babelfish import language_converters
-from urllib.parse import urljoin
 from requests import Session, JSONDecodeError
+from guessit import guessit
 
 from subzero.language import Language
 from subliminal import Episode, Movie
-from subliminal.exceptions import ConfigurationError, DownloadLimitExceeded
 from subliminal_patch.exceptions import APIThrottled
 from .mixins import ProviderRetryMixin
 from subliminal_patch.subtitle import Subtitle
-from subliminal.subtitle import fix_line_ending
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers import utils
 
@@ -133,8 +129,13 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
                                 timeout=30)
         results = self.parse_json(res)
         if results and 'subs' in results and isinstance(results['subs'], list) and len(results['subs']) > 0:
+            subs_seen = []
             subs_to_return = []
             for sub in results['subs']:
+                if sub['subId'] in subs_seen:
+                    # subtitles ID already included in results so we don't query further for duplicates
+                    continue
+
                 if 'lang' not in sub:
                     logger.debug(f"No language found for https://subsource.net{sub['fullLink']}")
                     continue
@@ -145,6 +146,12 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
                         language = Language.rebuild(language, country="MX")
 
                 if language in languages:
+                    if isinstance(self.video, Episode):
+                        guess = guessit(sub['releaseName'])
+                        if 'episode' not in guess or guess['episode'] != self.video.episode:
+                            # episode number guessed from release name doesn't match the video episode number
+                            continue
+
                     sub_details = self.getSub(lang=sub['lang'], title=sub['linkName'], sub_id=sub['subId'])
                     if sub_details:
                         subs_to_return.append(
@@ -159,6 +166,7 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
                                               season=None,
                                               episode=None),
                         )
+                        subs_seen.append(sub['subId'])
             return subs_to_return
         return []
 
@@ -201,36 +209,20 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
         return self.query(languages, video)
 
     def download_subtitle(self, subtitle):
-        logger.debug('Downloading subtitle %r', subtitle)
-        download_link = urljoin("https://api.subsource.net", subtitle.download_link)
+        # download the subtitle
+        logger.debug("Downloading subtitle %r", subtitle)
 
-        r = self.retry(
-            lambda: self.session.get(download_link, timeout=30),
-            amount=retry_amount,
-            retry_timeout=retry_timeout
+        response = self.session.get(
+            subtitle.download_link,
+            headers={"Referer": self.server_url},
+            timeout=30,
         )
+        response.raise_for_status()
 
-        if r.status_code == 429:
-            raise DownloadLimitExceeded("Daily download limit exceeded")
-        elif r.status_code == 403:
-            raise ConfigurationError("Invalid API key")
-        elif r.status_code != 200:
-            r.raise_for_status()
+        # TODO: add MustGetBlacklisted support
 
-        if not r:
-            logger.error(f'Could not download subtitle from {download_link}')
-            subtitle.content = None
-            return
-        else:
-            archive_stream = io.BytesIO(r.content)
-            if is_zipfile(archive_stream):
-                archive = ZipFile(archive_stream)
-                for name in archive.namelist():
-                    # TODO when possible, deal with season pack / multiple files archive
-                    subtitle_content = archive.read(name)
-                    subtitle.content = fix_line_ending(subtitle_content)
-                    return
-            else:
-                logger.error(f'Could not unzip subtitle from {download_link}')
-                subtitle.content = None
-                return
+        archive = utils.get_archive_from_bytes(response.content)
+        if archive is None:
+            raise APIThrottled("Unknwon compressed format")
+
+        subtitle.content = utils.get_subtitle_from_archive(archive, get_first_subtitle=True)
