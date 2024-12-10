@@ -48,7 +48,7 @@ const SettingsRadarrView: FunctionComponent = () => {
         </Section>
         <Section header="Options">
           <Slider
-            label="Minimum Score"
+            label="Minimum Score For Movies"
             settingKey="settings-general-minimum_score_movie"
           ></Slider>
           <Chips

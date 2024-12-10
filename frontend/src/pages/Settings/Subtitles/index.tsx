@@ -129,7 +129,7 @@ const commandOptionElements: React.JSX.Element[] = commandOptions.map(
 const SettingsSubtitlesView: FunctionComponent = () => {
   return (
     <Layout name="Subtitles">
-      <Section header="Basic Options">
+      <Section header="Subtitle File Options">
         <Selector
           label="Subtitle Folder"
           options={folderOptions}
@@ -156,8 +156,26 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           What file extension to use when saving hearing-impaired subtitles to
           disk (e.g., video.en.sdh.srt).
         </Message>
+        <Check
+          label="Encode Subtitles To UTF-8"
+          settingKey="settings-general-utf8_encode"
+        ></Check>
+        <Message>
+          Re-encode downloaded subtitles to UTF-8. Should be left enabled in
+          most cases.
+        </Message>
+        <Check
+          label="Change Subtitle File Permission After Download (chmod)"
+          settingKey="settings-general-chmod_enabled"
+        ></Check>
+        <CollapseBox indent settingKey="settings-general-chmod_enabled">
+          <Text placeholder="0777" settingKey="settings-general-chmod"></Text>
+          <Message>
+            Must be a 4 digit octal number. Only for non-Windows systems.
+          </Message>
+        </CollapseBox>
       </Section>
-      <Section header="Embedded Subtitles">
+      <Section header="Embedded Subtitles Handling">
         <Check
           label="Treat Embedded Subtitles as Downloaded"
           settingKey="settings-general-use_embedded_subs"
@@ -233,28 +251,6 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           </Message>
         </CollapseBox>
       </Section>
-      <Section header="Encoding">
-        <Check
-          label="Encode Subtitles To UTF-8"
-          settingKey="settings-general-utf8_encode"
-        ></Check>
-        <Message>
-          Re-encode downloaded subtitles to UTF-8. Should be left enabled in
-          most cases.
-        </Message>
-      </Section>
-      <Section header="Permissions">
-        <Check
-          label="Change Subtitle File Permission (chmod)"
-          settingKey="settings-general-chmod_enabled"
-        ></Check>
-        <CollapseBox indent settingKey="settings-general-chmod_enabled">
-          <Text placeholder="0777" settingKey="settings-general-chmod"></Text>
-          <Message>
-            Must be a 4 digit octal number. Only for non-Windows systems.
-          </Message>
-        </CollapseBox>
-      </Section>
       <Section header="Performance / Optimization">
         <Check
           label="Adaptive Searching"
@@ -304,7 +300,11 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           results scores.
         </Message>
       </Section>
-      <Section header="Sub-Zero Modifications">
+      <Section header="Sub-Zero Subtitle Content Modifications">
+        <Message>
+          After downloaded, content of the subtitles will be modified based on
+          options selected below.
+        </Message>
         <Check
           label="Hearing Impaired"
           settingOptions={{ onLoaded: SubzeroModification("remove_HI") }}
@@ -373,7 +373,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           playback devices.
         </Message>
       </Section>
-      <Section header="Synchronization / Alignment">
+      <Section header="Audio Synchronization / Alignment">
         <Check
           label="Always use Audio Track as Reference for Syncing"
           settingKey="settings-subsync-force_audio"
@@ -383,7 +383,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           subtitle.
         </Message>
         <Check
-          label="No Fix Framerate"
+          label="Do Not Fix Framerate Mismatch"
           settingKey="settings-subsync-no_fix_framerate"
         ></Check>
         <Message>
@@ -408,11 +408,11 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           The max allowed offset seconds for any subtitle segment.
         </Message>
         <Check
-          label="Automatic Subtitles Synchronization"
+          label="Automatic Subtitles Audio Synchronization"
           settingKey="settings-subsync-use_subsync"
         ></Check>
         <Message>
-          Enable automatic synchronization after downloading subtitles.
+          Enable automatic audio synchronization after downloading subtitles.
         </Message>
         <CollapseBox indent settingKey="settings-subsync-use_subsync">
           <MultiSelector
@@ -429,7 +429,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             the media file.
           </Message>
           <Check
-            label="Series Score Threshold"
+            label="Series Score Threshold For Audio Sync"
             settingKey="settings-subsync-use_subsync_threshold"
           ></Check>
           <CollapseBox
@@ -447,7 +447,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             </Message>
           </CollapseBox>
           <Check
-            label="Movies Score Threshold"
+            label="Movies Score Threshold For Audio Sync"
             settingKey="settings-subsync-use_subsync_movie_threshold"
           ></Check>
           <CollapseBox
@@ -478,7 +478,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         <CollapseBox indent settingKey="settings-general-use_postprocessing">
           <Check
             settingKey="settings-general-use_postprocessing_threshold"
-            label="Series Score Threshold"
+            label="Series Score Threshold For Post-Processing"
           ></Check>
           <CollapseBox
             indent
@@ -496,7 +496,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           </CollapseBox>
           <Check
             settingKey="settings-general-use_postprocessing_threshold_movie"
-            label="Movies Score Threshold"
+            label="Movies Score Threshold For Post-Processing"
           ></Check>
           <CollapseBox
             indent
