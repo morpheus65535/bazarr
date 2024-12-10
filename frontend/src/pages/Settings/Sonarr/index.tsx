@@ -50,7 +50,7 @@ const SettingsSonarrView: FunctionComponent = () => {
         </Section>
         <Section header="Options">
           <Slider
-            label="Minimum Score"
+            label="Minimum Score For Episodes"
             settingKey="settings-general-minimum_score"
           ></Slider>
           <Chips
