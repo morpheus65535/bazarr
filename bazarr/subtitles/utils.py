@@ -42,9 +42,6 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
             logging.debug('BAZARR resulting video object once refined using scene name: %s',
                           json.dumps(vars(video), cls=GuessitEncoder, indent=4, ensure_ascii=False))
 
-        video.original_name = os.path.basename(path)
-        video.original_path = path
-
         for key, refiner in registered_refiners.items():
             logging.debug("Running refiner: %s", key)
             refiner(path, video)
@@ -107,6 +104,6 @@ def _set_forced_providers(pool, also_forced=False, forced_required=False):
 
 def refine_video_with_scenename(initial_video, scenename_video):
     for key, value in vars(scenename_video).items():
-        if value:
+        if value and getattr(initial_video, key) in [None, (), {}, []]:
             setattr(initial_video, key, value)
     return initial_video
