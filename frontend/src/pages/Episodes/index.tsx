@@ -19,6 +19,7 @@ import {
   faHdd,
   faSearch,
   faSync,
+  faTriangleExclamation,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import { Table as TableInstance } from "@tanstack/table-core/build/lib/types";
@@ -61,6 +62,10 @@ const SeriesEpisodesView: FunctionComponent = () => {
       {
         icon: faHdd,
         text: `${series?.episodeFileCount} files`,
+      },
+      {
+        icon: faTriangleExclamation,
+        text: `${series?.episodeMissingCount} missing subtitles`,
       },
       {
         icon: faAdjust,
