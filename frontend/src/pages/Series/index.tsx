@@ -3,7 +3,12 @@ import { Link } from "react-router-dom";
 import { Anchor, Container, Progress } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
-import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBookmark,
+  faPlay,
+  faStop,
+  faWrench,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
@@ -32,6 +37,19 @@ const SeriesView: FunctionComponent = () => {
           <FontAwesomeIcon
             title={monitored ? "monitored" : "unmonitored"}
             icon={monitored ? faBookmark : farBookmark}
+          ></FontAwesomeIcon>
+        ),
+      },
+      {
+        id: "ended",
+        cell: ({
+          row: {
+            original: { ended },
+          },
+        }) => (
+          <FontAwesomeIcon
+            title={ended ? "Ended" : "Continuing"}
+            icon={ended ? faStop : faPlay}
           ></FontAwesomeIcon>
         ),
       },
