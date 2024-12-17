@@ -8,14 +8,20 @@ Create Date: 2024-12-15 21:19:19.406290
 from alembic import op
 import sqlalchemy as sa
 
-from migrations.utils import column_exists
-
 
 # revision identifiers, used by Alembic.
 revision = '4274a5dfc4ad'
 down_revision = '8baf97427327'
 branch_labels = None
 depends_on = None
+
+bind = op.get_context().bind
+insp = sa.inspect(bind)
+
+
+def column_exists(table_name, column_name):
+    columns = insp.get_columns(table_name)
+    return any(c["name"] == column_name for c in columns)
 
 
 def upgrade():
