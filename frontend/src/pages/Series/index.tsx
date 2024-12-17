@@ -1,6 +1,6 @@
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Anchor, Container, Progress } from "@mantine/core";
+import { Anchor, Container, Group, Progress } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import {
@@ -28,29 +28,19 @@ const SeriesView: FunctionComponent = () => {
   const columns = useMemo<ColumnDef<Item.Series>[]>(
     () => [
       {
-        id: "monitored",
-        cell: ({
-          row: {
-            original: { monitored },
-          },
-        }) => (
-          <FontAwesomeIcon
-            title={monitored ? "monitored" : "unmonitored"}
-            icon={monitored ? faBookmark : farBookmark}
-          ></FontAwesomeIcon>
-        ),
-      },
-      {
-        id: "ended",
-        cell: ({
-          row: {
-            original: { ended },
-          },
-        }) => (
-          <FontAwesomeIcon
-            title={ended ? "Ended" : "Continuing"}
-            icon={ended ? faStop : faPlay}
-          ></FontAwesomeIcon>
+        id: "status",
+        cell: ({ row: { original } }) => (
+          <Group gap="xs" wrap="nowrap">
+            <FontAwesomeIcon
+              title={original.monitored ? "monitored" : "unmonitored"}
+              icon={original.monitored ? faBookmark : farBookmark}
+            ></FontAwesomeIcon>
+
+            <FontAwesomeIcon
+              title={original.ended ? "Ended" : "Continuing"}
+              icon={original.ended ? faStop : faPlay}
+            ></FontAwesomeIcon>
+          </Group>
         ),
       },
       {
