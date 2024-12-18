@@ -151,6 +151,8 @@ declare namespace Item {
     SeriesIdType & {
       episodeFileCount: number;
       episodeMissingCount: number;
+      ended: boolean;
+      lastAired: string;
       seriesType: SonarrSeriesType;
       tvdbId: number;
     };

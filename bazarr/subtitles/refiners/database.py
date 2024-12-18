@@ -40,10 +40,8 @@ def refine_from_db(path, video):
 
         if data:
             video.series = _TITLE_RE.sub('', data.seriesTitle)
-            if not video.season and data.season:
-                video.season = int(data.season)
-            if not video.episode and data.episode:
-                video.episode = int(data.episode)
+            video.season = int(data.season)
+            video.episode = int(data.episode)
             video.title = data.episodeTitle
 
             # Only refine year as a fallback

@@ -97,7 +97,7 @@ def wanted_download_subtitles_movie(radarr_id):
 
 def wanted_search_missing_subtitles_movies():
     conditions = [(TableMovies.missing_subtitles.is_not(None)),
-                  (TableMovies.missing_subtitles.is_not('[]'))]
+                  (TableMovies.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('movie')
     movies = database.execute(
         select(TableMovies.radarrId,
@@ -122,6 +122,10 @@ def wanted_search_missing_subtitles_movies():
             logging.info("BAZARR All providers are throttled")
             break
 
-    hide_progress(id='wanted_movies_progress')
+    show_progress(id='wanted_movies_progress',
+                  header='Searching subtitles...',
+                  name="",
+                  value=count_movies,
+                  count=count_movies)
 
     logging.info('BAZARR Finished searching for missing Movies Subtitles. Check History for more information.')

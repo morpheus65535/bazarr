@@ -39,9 +39,8 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
             logging.debug(f'BAZARR guessing video object using scene name: {scenename_with_extension}')
             scenename_video = parse_video(scenename_with_extension, hints=hints, dry_run=True)
             refine_video_with_scenename(initial_video=video, scenename_video=scenename_video)
-
-        video.original_name = os.path.basename(path)
-        video.original_path = path
+            logging.debug('BAZARR resulting video object once refined using scene name: %s',
+                          json.dumps(vars(video), cls=GuessitEncoder, indent=4, ensure_ascii=False))
 
         for key, refiner in registered_refiners.items():
             logging.debug("Running refiner: %s", key)
@@ -105,6 +104,6 @@ def _set_forced_providers(pool, also_forced=False, forced_required=False):
 
 def refine_video_with_scenename(initial_video, scenename_video):
     for key, value in vars(scenename_video).items():
-        if value:
+        if value and getattr(initial_video, key) in [None, (), {}, []]:
             setattr(initial_video, key, value)
     return initial_video

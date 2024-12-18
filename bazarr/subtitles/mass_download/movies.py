@@ -20,7 +20,7 @@ from ..download import generate_subtitles
 
 
 def movies_download_subtitles(no):
-    conditions = [(TableMovies.radarrId.is_(no))]
+    conditions = [(TableMovies.radarrId == no)]
     conditions += get_exclusion_clause('movie')
     stmt = select(TableMovies.path,
                   TableMovies.missing_subtitles,
@@ -99,4 +99,8 @@ def movies_download_subtitles(no):
             history_log_movie(1, no, result)
             send_notifications_movie(no, result.message)
 
-    hide_progress(id=f'movie_search_progress_{no}')
+    show_progress(id=f'movie_search_progress_{no}',
+                  header='Searching missing subtitles...',
+                  name=movie.title,
+                  value=count_movie,
+                  count=count_movie)

@@ -29,7 +29,7 @@ def series_download_subtitles(no):
         raise OSError
 
     conditions = [(TableEpisodes.sonarrSeriesId == no),
-                  (TableEpisodes.missing_subtitles.is_not('[]'))]
+                  (TableEpisodes.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('series')
     episodes_details = database.execute(
         select(TableEpisodes.sonarrEpisodeId,
@@ -64,7 +64,11 @@ def series_download_subtitles(no):
             logging.info("BAZARR All providers are throttled")
             break
 
-    hide_progress(id=f'series_search_progress_{no}')
+    show_progress(id=f'series_search_progress_{no}',
+                  header='Searching missing subtitles...',
+                  name='',
+                  value=count_episodes_details,
+                  count=count_episodes_details)
 
 
 def episode_download_subtitles(no, send_progress=False, providers_list=None):
@@ -145,6 +149,10 @@ def episode_download_subtitles(no, send_progress=False, providers_list=None):
                 send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)
 
         if send_progress:
-            hide_progress(id=f'episode_search_progress_{no}')
+            show_progress(id=f'episode_search_progress_{no}',
+                          header='Searching missing subtitles...',
+                          name=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d} - {episode.episodeTitle}',
+                          value=1,
+                          count=1)
     else:
         logging.info("BAZARR All providers are throttled")

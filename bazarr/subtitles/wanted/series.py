@@ -102,7 +102,7 @@ def wanted_download_subtitles(sonarr_episode_id):
 
 def wanted_search_missing_subtitles_series():
     conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
-                  (TableEpisodes.missing_subtitles.is_not('[]'))]
+                  (TableEpisodes.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('series')
     episodes = database.execute(
         select(TableEpisodes.sonarrSeriesId,
@@ -134,6 +134,10 @@ def wanted_search_missing_subtitles_series():
             logging.info("BAZARR All providers are throttled")
             break
 
-    hide_progress(id='wanted_episodes_progress')
+    show_progress(id='wanted_episodes_progress',
+                  header='Searching subtitles...',
+                  name='',
+                  value=count_episodes,
+                  count=count_episodes)
 
     logging.info('BAZARR Finished searching for missing Series Subtitles. Check History for more information.')

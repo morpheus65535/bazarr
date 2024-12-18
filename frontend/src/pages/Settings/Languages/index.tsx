@@ -161,7 +161,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
           empty if you don't want Bazarr to remove language profiles.
         </Message>
       </Section>
-      <Section header="Default Settings">
+      <Section header="Default Language Profiles For Newly Added Shows">
         <Check
           label="Series"
           settingKey="settings-general-serie_default_enabled"

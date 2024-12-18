@@ -294,7 +294,11 @@ def series_full_scan_subtitles(use_cache=None):
                       count=count_episodes)
         store_subtitles(episode.path, path_mappings.path_replace(episode.path), use_cache=use_cache)
 
-    hide_progress(id='episodes_disk_scan')
+    show_progress(id='episodes_disk_scan',
+                  header='Full disk scan...',
+                  name='Episodes subtitles',
+                  value=count_episodes,
+                  count=count_episodes)
 
     gc.collect()
 

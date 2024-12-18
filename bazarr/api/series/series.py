@@ -34,9 +34,11 @@ class Series(Resource):
         'alternativeTitles': fields.List(fields.String),
         'audio_language': fields.Nested(get_audio_language_model),
         'episodeFileCount': fields.Integer(default=0),
+        'ended': fields.Boolean(),
         'episodeMissingCount': fields.Integer(default=0),
         'fanart': fields.String(),
         'imdbId': fields.String(),
+        'lastAired': fields.String(),
         'monitored': fields.Boolean(),
         'overview': fields.String(),
         'path': fields.String(),
@@ -74,7 +76,7 @@ class Series(Resource):
             .subquery()
 
         episodes_missing_conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
-                                       (TableEpisodes.missing_subtitles.is_not('[]'))]
+                                       (TableEpisodes.missing_subtitles != '[]')]
         episodes_missing_conditions += get_exclusion_clause('series')
 
         episodeMissingCount = select(TableShows.sonarrSeriesId,
@@ -100,6 +102,8 @@ class Series(Resource):
                       TableShows.tags,
                       TableShows.title,
                       TableShows.year,
+                      TableShows.ended,
+                      TableShows.lastAired,
                       episodeFileCount.c.episodeFileCount,
                       episodeMissingCount.c.episodeMissingCount) \
             .select_from(TableShows) \
@@ -128,6 +132,8 @@ class Series(Resource):
             'tags': x.tags,
             'title': x.title,
             'year': x.year,
+            'ended': x.ended,
+            'lastAired': x.lastAired,
             'episodeFileCount': x.episodeFileCount,
             'episodeMissingCount': x.episodeMissingCount,
         }) for x in database.execute(stmt).all()]

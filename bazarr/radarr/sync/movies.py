@@ -206,7 +206,11 @@ def update_movies(send_event=True):
                     files_missing += 1
 
             if send_event:
-                hide_progress(id='movies_progress')
+                show_progress(id='movies_progress',
+                              header='Syncing movies...',
+                              name='',
+                              value=movies_count,
+                              count=movies_count)
 
             trace(f"Skipped {files_missing} file missing movies out of {movies_count}")
             if sync_monitored:

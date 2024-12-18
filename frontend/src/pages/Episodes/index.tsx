@@ -13,12 +13,16 @@ import { showNotification } from "@mantine/notifications";
 import {
   faAdjust,
   faBriefcase,
+  faCalendar,
   faCircleChevronDown,
   faCircleChevronRight,
   faCloudUploadAlt,
   faHdd,
+  faPlay,
   faSearch,
+  faStop,
   faSync,
+  faTriangleExclamation,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import { Table as TableInstance } from "@tanstack/table-core/build/lib/types";
@@ -61,6 +65,18 @@ const SeriesEpisodesView: FunctionComponent = () => {
       {
         icon: faHdd,
         text: `${series?.episodeFileCount} files`,
+      },
+      {
+        icon: faTriangleExclamation,
+        text: `${series?.episodeMissingCount} missing subtitles`,
+      },
+      {
+        icon: series?.ended ? faStop : faPlay,
+        text: series?.ended ? "Ended" : "Continuing",
+      },
+      {
+        icon: faCalendar,
+        text: `Last ${series?.ended ? "aired on" : "known airdate"}: ${series?.lastAired}`,
       },
       {
         icon: faAdjust,
