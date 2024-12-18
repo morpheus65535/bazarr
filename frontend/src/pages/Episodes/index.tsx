@@ -13,11 +13,14 @@ import { showNotification } from "@mantine/notifications";
 import {
   faAdjust,
   faBriefcase,
+  faCalendar,
   faCircleChevronDown,
   faCircleChevronRight,
   faCloudUploadAlt,
   faHdd,
+  faPlay,
   faSearch,
+  faStop,
   faSync,
   faTriangleExclamation,
   faWrench,
@@ -66,6 +69,14 @@ const SeriesEpisodesView: FunctionComponent = () => {
       {
         icon: faTriangleExclamation,
         text: `${series?.episodeMissingCount} missing subtitles`,
+      },
+      {
+        icon: series?.ended ? faStop : faPlay,
+        text: series?.ended ? "Ended" : "Continuing",
+      },
+      {
+        icon: faCalendar,
+        text: `Last ${series?.ended ? "aired on" : "known airdate"}: ${series?.lastAired}`,
       },
       {
         icon: faAdjust,
