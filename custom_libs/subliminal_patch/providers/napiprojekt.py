@@ -47,8 +47,6 @@ class NapiProjektProvider(_NapiProjektProvider):
         self.only_real_names = only_real_names
 
     def query(self, language, hash):
-        if self.only_authors or self.only_real_names:
-            return None
         params = {
             'v': 'dreambox',
             'kolejka': 'false',
@@ -74,11 +72,23 @@ class NapiProjektProvider(_NapiProjektProvider):
         return subtitle
 
     def list_subtitles(self, video, languages):
-        def flatten(l):
-            return [item for sublist in l for item in sublist]
+        def flatten(nested_list):
+            """Flatten a nested list."""
+            return [item for sublist in nested_list for item in sublist]
 
-        return [s for s in [self.query(l, video.hashes['napiprojekt']) for l in languages] if s is not None] + \
-               flatten([self._scrape(video, l) for l in languages])
+        # Determine the source of subtitles based on conditions
+        hash_subtitles = []
+        if not (self.only_authors or self.only_real_names):
+            hash_subtitles = [
+                subtitle
+                for language in languages
+                if (subtitle := self.query(language, video.hashes.get('napiprojekt'))) is not None
+            ]
+
+        # Scrape additional subtitles
+        scraped_subtitles = flatten([self._scrape(video, language) for language in languages])
+
+        return hash_subtitles + scraped_subtitles
 
     def download_subtitle(self, subtitle):
         if subtitle.content is not None:
@@ -125,7 +135,7 @@ class NapiProjektProvider(_NapiProjektProvider):
                             author = ""
 
                     if self.only_authors:
-                        if author.lower() in ["brak", "automat", "si", "chatgpt", "ai", "robot"]:
+                        if author.lower() in ["brak", "automat", "si", "chatgpt", "ai", "robot", "maszynowe", "tłumaczenie maszynowe"]:
                             continue
 
                     if self.only_real_names:
