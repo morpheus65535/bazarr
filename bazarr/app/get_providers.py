@@ -100,6 +100,9 @@ def provider_throttle_map():
         "titlovi": {
             TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
         },
+        "titrari": {
+            TooManyRequests: (datetime.timedelta(minutes=10), "10 minutes"),
+        },
         "titulky": {
             DownloadLimitExceeded: (
                 titulky_limit_reset_timedelta(),

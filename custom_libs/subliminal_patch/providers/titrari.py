@@ -5,18 +5,18 @@ import os
 import io
 import logging
 import re
-import rarfile
-from random import randint
 
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 from guessit import guessit
+from time import sleep
+
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming as _fix_inconsistent_naming
-from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 from subliminal.exceptions import ProviderError
+from subliminal_patch.exceptions import TooManyRequests
 from subliminal.providers import ParserBeautifulSoup
 from subliminal.video import Episode, Movie
 from subliminal.subtitle import SUBTITLE_EXTENSIONS
@@ -147,6 +147,10 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         params = self.getQueryParams(imdb_id, title, language)
 
         search_response = self.session.get(self.api_url, params=params, timeout=15)
+
+        if search_response.status_code == 404 and 'Too many requests' in search_response.content:
+            raise TooManyRequests(search_response.content)
+
         search_response.raise_for_status()
 
         if not search_response.content:
@@ -214,6 +218,8 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
             subtitles.append(subtitle)
 
         ordered_subs = self.order(subtitles)
+
+        sleep(5)  # prevent being blocked for too many requests
 
         return ordered_subs
 
