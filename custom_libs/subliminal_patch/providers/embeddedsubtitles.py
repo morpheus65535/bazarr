@@ -255,8 +255,6 @@ class EmbeddedSubtitlesProvider(Provider):
 
 
 class _MemoizedFFprobeVideoContainer(FFprobeVideoContainer):
-    # 128 is the default value for maxsize since Python 3.8. We ste it here for previous versions.
-    @functools.lru_cache(maxsize=128)
     def get_subtitles(self, *args, **kwargs):
         return super().get_subtitles(*args, **kwargs)
 
@@ -287,7 +285,7 @@ def _check_hi_fallback(streams, languages):
         logger.debug("Checking HI fallback for '%r' language", language)
 
         streams_ = [
-            stream for stream in streams if stream.language.alpha3 == language.alpha3
+            stream for stream in streams if stream.language.alpha3 == language.alpha3 and stream.language.forced == language.forced
         ]
         if len(streams_) == 1 and streams_[0].disposition.hearing_impaired:
             stream_ = streams_[0]

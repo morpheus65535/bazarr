@@ -11,7 +11,7 @@ from subtitles.manual import manual_search, manual_download_subtitle
 from sonarr.history import history_log
 from app.config import settings
 from app.notifier import send_notifications
-from subtitles.indexer.series import store_subtitles
+from subtitles.indexer.series import store_subtitles, list_missing_subtitles
 from subtitles.processing import ProcessSubtitlesResult
 
 from ..utils import authenticate
@@ -50,18 +50,27 @@ class ProviderEpisodes(Resource):
         """Search manually for an episode subtitles"""
         args = self.get_request_parser.parse_args()
         sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = database.execute(
-            select(TableEpisodes.path,
-                   TableEpisodes.sceneName,
-                   TableShows.title,
-                   TableShows.profileId)
-            .select_from(TableEpisodes)
-            .join(TableShows)
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
-            .first()
+        stmt = select(TableEpisodes.path,
+                      TableEpisodes.sceneName,
+                      TableShows.title,
+                      TableShows.profileId,
+                      TableEpisodes.subtitles,
+                      TableEpisodes.missing_subtitles) \
+            .select_from(TableEpisodes) \
+            .join(TableShows) \
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)
+        episodeInfo = database.execute(stmt).first()
 
         if not episodeInfo:
             return 'Episode not found', 404
+        elif episodeInfo.subtitles is None:
+            # subtitles indexing for this episode is incomplete, we'll do it again
+            store_subtitles(episodeInfo.path, path_mappings.path_replace(episodeInfo.path))
+            episodeInfo = database.execute(stmt).first()
+        elif episodeInfo.missing_subtitles is None:
+            # missing subtitles calculation for this episode is incomplete, we'll do it again
+            list_missing_subtitles(epno=sonarrEpisodeId)
+            episodeInfo = database.execute(stmt).first()
 
         title = episodeInfo.title
         episodePath = path_mappings.path_replace(episodeInfo.path)

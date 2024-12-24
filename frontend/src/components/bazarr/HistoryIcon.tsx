@@ -65,7 +65,12 @@ const HistoryIcon: FunctionComponent<{
 
   if (icon) {
     return (
-      <Tooltip label={label} openDelay={500} position="right">
+      <Tooltip
+        label={label}
+        openDelay={500}
+        position="right"
+        events={{ hover: true, focus: false, touch: true }}
+      >
         <FontAwesomeIcon
           aria-label={label}
           title={title}

@@ -141,6 +141,7 @@ const MovieDetailView: FunctionComponent = () => {
             <Toolbox.Button
               icon={faSearch}
               disabled={!isNumber(movie?.profileId)}
+              loading={hasTask}
               onClick={() => {
                 if (movie) {
                   task.create(movie.title, TaskGroup.SearchSubtitle, action, {

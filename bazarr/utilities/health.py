@@ -2,8 +2,11 @@
 
 import json
 
+from sqlalchemy import func
+
 from app.config import settings
-from app.database import TableShowsRootfolder, TableMoviesRootfolder, TableLanguagesProfiles, database, select
+from app.database import (TableShowsRootfolder, TableMoviesRootfolder, TableLanguagesProfiles, database, select,
+                          TableShows, TableMovies)
 from app.event_handler import event_stream
 from .path_mappings import path_mappings
 from sonarr.rootfolder import check_sonarr_rootfolder
@@ -65,5 +68,20 @@ def get_health_issues():
                 break
             else:
                 languages_profile_ids.append(items['id'])
+
+    # check if there's at least one languages profile created
+    languages_profiles_count = database.execute(select(func.count(TableLanguagesProfiles.profileId))).scalar()
+    series_with_profile = database.execute(select(func.count(TableShows.sonarrSeriesId))
+                                           .where(TableShows.profileId.is_not(None))).scalar()
+    movies_with_profile = database.execute(select(func.count(TableMovies.radarrId))
+                                           .where(TableMovies.profileId.is_not(None))).scalar()
+    if languages_profiles_count == 0:
+        health_issues.append({'object': 'Missing languages profile',
+                              'issue': 'You must create at least one languages profile and assign it to your content.'})
+    elif languages_profiles_count > 0 and ((settings.general.use_sonarr and series_with_profile == 0) or
+                                           (settings.general.use_radarr and movies_with_profile == 0)):
+        health_issues.append({'object': 'No assigned languages profile',
+                              'issue': 'Although you have created at least one languages profile, you must assign it '
+                                       'to your content.'})
 
     return health_issues

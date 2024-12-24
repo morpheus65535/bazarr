@@ -151,6 +151,8 @@ declare namespace Item {
     SeriesIdType & {
       episodeFileCount: number;
       episodeMissingCount: number;
+      ended: boolean;
+      lastAired: string;
       seriesType: SonarrSeriesType;
       tvdbId: number;
     };
@@ -295,6 +297,7 @@ type ItemSearchResult = Partial<SeriesIdType> &
   Partial<MovieIdType> & {
     title: string;
     year: string;
+    poster: string;
   };
 
 type BackendError = {

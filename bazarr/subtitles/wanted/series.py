@@ -8,6 +8,7 @@ import operator
 from functools import reduce
 
 from utilities.path_mappings import path_mappings
+from subtitles.indexer.series import store_subtitles, list_missing_subtitles
 from subtitles.indexer.series import store_subtitles
 from sonarr.history import history_log
 from app.notifier import send_notifications
@@ -51,6 +52,7 @@ def _wanted_episode(episode):
                                      str(episode.sceneName),
                                      episode.title,
                                      'series',
+                                     episode.profileId,
                                      check_if_still_required=True):
         if result:
             if isinstance(result, tuple) and len(result):
@@ -63,32 +65,44 @@ def _wanted_episode(episode):
 
 
 def wanted_download_subtitles(sonarr_episode_id):
-    episodes_details = database.execute(
-        select(TableEpisodes.path,
-               TableEpisodes.missing_subtitles,
-               TableEpisodes.sonarrEpisodeId,
-               TableEpisodes.sonarrSeriesId,
-               TableEpisodes.audio_language,
-               TableEpisodes.sceneName,
-               TableEpisodes.failedAttempts,
-               TableShows.title)
-        .select_from(TableEpisodes)
-        .join(TableShows)
-        .where((TableEpisodes.sonarrEpisodeId == sonarr_episode_id))) \
-        .all()
+    stmt = select(TableEpisodes.path,
+                  TableEpisodes.missing_subtitles,
+                  TableEpisodes.sonarrEpisodeId,
+                  TableEpisodes.sonarrSeriesId,
+                  TableEpisodes.audio_language,
+                  TableEpisodes.sceneName,
+                  TableEpisodes.failedAttempts,
+                  TableShows.title,
+                  TableShows.profileId,
+                  TableEpisodes.subtitles) \
+        .select_from(TableEpisodes) \
+        .join(TableShows) \
+        .where((TableEpisodes.sonarrEpisodeId == sonarr_episode_id))
+    episode_details = database.execute(stmt).first()
 
-    for episode in episodes_details:
-        providers_list = get_providers()
+    if not episode_details:
+        logging.debug(f"BAZARR no episode with that sonarrId can be found in database: {sonarr_episode_id}")
+        return
+    elif episode_details.subtitles is None:
+        # subtitles indexing for this episode is incomplete, we'll do it again
+        store_subtitles(episode_details.path, path_mappings.path_replace(episode_details.path))
+        episode_details = database.execute(stmt).first()
+    elif episode_details.missing_subtitles is None:
+        # missing subtitles calculation for this episode is incomplete, we'll do it again
+        list_missing_subtitles(epno=sonarr_episode_id)
+        episode_details = database.execute(stmt).first()
 
-        if providers_list:
-            _wanted_episode(episode)
-        else:
-            logging.info("BAZARR All providers are throttled")
-            break
+    providers_list = get_providers()
+
+    if providers_list:
+        _wanted_episode(episode_details)
+    else:
+        logging.info("BAZARR All providers are throttled")
 
 
 def wanted_search_missing_subtitles_series():
-    conditions = [(TableEpisodes.missing_subtitles != '[]')]
+    conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
+                  (TableEpisodes.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('series')
     episodes = database.execute(
         select(TableEpisodes.sonarrSeriesId,
@@ -120,6 +134,10 @@ def wanted_search_missing_subtitles_series():
             logging.info("BAZARR All providers are throttled")
             break
 
-    hide_progress(id='wanted_episodes_progress')
+    show_progress(id='wanted_episodes_progress',
+                  header='Searching subtitles...',
+                  name='',
+                  value=count_episodes,
+                  count=count_episodes)
 
     logging.info('BAZARR Finished searching for missing Series Subtitles. Check History for more information.')

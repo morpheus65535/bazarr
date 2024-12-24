@@ -188,7 +188,11 @@ class SubdlProvider(ProviderRetryMixin, Provider):
 
         if len(result['subtitles']):
             for item in result['subtitles']:
-                if item.get('episode_from', False) == item.get('episode_end', False):  # ignore season packs
+                if (isinstance(self.video, Episode) and
+                        item.get('episode_from', False) != item.get('episode_end', False)):
+                    # ignore season packs
+                    continue
+                else:
                     subtitle = SubdlSubtitle(
                         language=Language.fromsubdl(item['language']),
                         forced=self._is_forced(item),

@@ -48,7 +48,8 @@ class EpisodesWanted(Resource):
         args = self.get_request_parser.parse_args()
         episodeid = args.get('episodeid[]')
 
-        wanted_conditions = [(TableEpisodes.missing_subtitles != '[]')]
+        wanted_conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
+                             (TableEpisodes.missing_subtitles != '[]')]
         if len(episodeid) > 0:
             wanted_conditions.append((TableEpisodes.sonarrEpisodeId in episodeid))
             start = 0

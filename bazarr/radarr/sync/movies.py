@@ -5,6 +5,7 @@ import logging
 from constants import MINIMUM_VIDEO_SIZE
 
 from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 
 from app.config import settings
 from utilities.path_mappings import path_mappings
@@ -49,6 +50,7 @@ def get_movie_file_size_from_db(movie_path):
 # Update movies in DB
 def update_movie(updated_movie, send_event):
     try:
+        updated_movie['updated_at_timestamp'] = datetime.now()
         database.execute(
             update(TableMovies).values(updated_movie)
             .where(TableMovies.tmdbId == updated_movie['tmdbId']))
@@ -75,6 +77,7 @@ def get_movie_monitored_status(movie_id):
 # Insert new movies in DB
 def add_movie(added_movie, send_event):
     try:
+        added_movie['created_at_timestamp'] = datetime.now()
         database.execute(
             insert(TableMovies)
             .values(added_movie))
@@ -203,7 +206,11 @@ def update_movies(send_event=True):
                     files_missing += 1
 
             if send_event:
-                hide_progress(id='movies_progress')
+                show_progress(id='movies_progress',
+                              header='Syncing movies...',
+                              name='',
+                              value=movies_count,
+                              count=movies_count)
 
             trace(f"Skipped {files_missing} file missing movies out of {movies_count}")
             if sync_monitored:
@@ -296,6 +303,7 @@ def update_one_movie(movie_id, action, defer_search=False):
     # Update existing movie in DB
     elif movie and existing_movie:
         try:
+            movie['updated_at_timestamp'] = datetime.now()
             database.execute(
                 update(TableMovies)
                 .values(movie)
@@ -312,6 +320,7 @@ def update_one_movie(movie_id, action, defer_search=False):
     # Insert new movie in DB
     elif movie and not existing_movie:
         try:
+            movie['created_at_timestamp'] = datetime.now()
             database.execute(
                 insert(TableMovies)
                 .values(movie))

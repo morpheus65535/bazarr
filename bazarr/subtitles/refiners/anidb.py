@@ -91,11 +91,11 @@ class AniDBClient(object):
                 return None, None, None
 
             is_special_entry = True
+
             for special_entry in special_entries:
                 mapping_list = special_entry.findall(f".//mapping[@tvdbseason='{tvdb_series_season}']")
-                if len(mapping_list) > 0:
-                    anidb_id = int(special_entry.attrib.get('anidbid'))
-                    offset = int(mapping_list[0].attrib.get('offset', 0))
+                anidb_id = int(special_entry.attrib.get('anidbid'))
+                offset = int(mapping_list[0].attrib.get('offset', 0)) if len(mapping_list) > 0 else 0
 
         if not is_special_entry:
             # Sort the anime by offset in ascending order
@@ -111,7 +111,7 @@ class AniDBClient(object):
                 mapping_list = anime.find('mapping-list')
 
                 # Handle mapping list for Specials
-                if mapping_list:
+                if mapping_list is not None:
                     for mapping in mapping_list.findall("mapping"):
                         if mapping.text is None:
                             continue
@@ -176,7 +176,7 @@ class AniDBClient(object):
 
         episode_elements = xml_root.find('episodes')
 
-        if not episode_elements:
+        if episode_elements is None:
             raise ValueError
 
         return etree.tostring(episode_elements, encoding='utf8', method='xml')

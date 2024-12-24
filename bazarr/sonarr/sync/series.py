@@ -3,6 +3,7 @@
 import logging
 
 from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 
 from app.config import settings
 from subtitles.indexer.series import list_missing_subtitles
@@ -127,6 +128,7 @@ def update_series(send_event=True):
                         .first():
                     try:
                         trace(f"Updating {show['title']}")
+                        updated_series['updated_at_timestamp'] = datetime.now()
                         database.execute(
                             update(TableShows)
                             .values(updated_series)
@@ -145,6 +147,7 @@ def update_series(send_event=True):
 
                 try:
                     trace(f"Inserting {show['title']}")
+                    added_series['created_at_timestamp'] = datetime.now()
                     database.execute(
                         insert(TableShows)
                         .values(added_series))
@@ -175,7 +178,11 @@ def update_series(send_event=True):
                 event_stream(type='series', action='delete', payload=series)
 
         if send_event:
-            hide_progress(id='series_progress')
+            show_progress(id='series_progress',
+                          header='Syncing series...',
+                          name='',
+                          value=series_count,
+                          count=series_count)
 
         if sync_monitored:
             trace(f"skipped {skipped_count} unmonitored series out of {i}")
@@ -238,6 +245,7 @@ def update_one_series(series_id, action):
     # Update existing series in DB
     if action == 'updated' and existing_series:
         try:
+            series['updated_at_timestamp'] = datetime.now()
             database.execute(
                 update(TableShows)
                 .values(series)
@@ -252,6 +260,7 @@ def update_one_series(series_id, action):
     # Insert new series in DB
     elif action == 'updated' and not existing_series:
         try:
+            series['created_at_timestamp'] = datetime.now()
             database.execute(
                 insert(TableShows)
                 .values(series))

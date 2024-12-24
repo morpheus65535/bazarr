@@ -43,10 +43,15 @@ class AniListClient(object):
         logger.debug(f"Based on '{mapped_tag}': '{candidate_id_value}', anime-list matched: {obj}")
 
         if len(obj) > 0:
-            return obj[0]["anilist_id"]
+            anilist_id = obj[0].get("anilist_id")
+            if not anilist_id:
+                logger.error("This entry does not have an AniList ID")
+            
+            return anilist_id
         else:
             logger.debug(f"Could not find corresponding AniList ID with '{mapped_tag}': {candidate_id_value}")
-            return None
+        
+        return None
 
 
 def refine_from_anilist(path, video):

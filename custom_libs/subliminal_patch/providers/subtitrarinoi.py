@@ -282,4 +282,7 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
         r.raise_for_status()
 
         archive = get_archive_from_bytes(r.content)
-        subtitle.content = get_subtitle_from_archive(archive, episode=subtitle.desired_episode)
+        if archive:
+            subtitle.content = get_subtitle_from_archive(archive, episode=subtitle.desired_episode)
+        else:
+            subtitle.content = r.content

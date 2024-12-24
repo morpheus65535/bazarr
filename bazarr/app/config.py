@@ -239,6 +239,10 @@ validators = [
     Validator('opensubtitlescom.use_hash', must_exist=True, default=True, is_type_of=bool),
     Validator('opensubtitlescom.include_ai_translated', must_exist=True, default=False, is_type_of=bool),
 
+    # napiprojekt section
+    Validator('napiprojekt.only_authors', must_exist=True, default=False, is_type_of=bool),
+    Validator('napiprojekt.only_real_names', must_exist=True, default=False, is_type_of=bool),
+
     # addic7ed section
     Validator('addic7ed.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('addic7ed.password', must_exist=True, default='', is_type_of=str, cast=str),
@@ -274,6 +278,7 @@ validators = [
     Validator('whisperai.endpoint', must_exist=True, default='http://127.0.0.1:9000', is_type_of=str),
     Validator('whisperai.response', must_exist=True, default=5, is_type_of=int, gte=1),
     Validator('whisperai.timeout', must_exist=True, default=3600, is_type_of=int, gte=1),
+    Validator('whisperai.pass_video_name', must_exist=True, default=False, is_type_of=bool),
     Validator('whisperai.loglevel', must_exist=True, default='INFO', is_type_of=str,
               is_in=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),
 
@@ -328,6 +333,7 @@ validators = [
     Validator('titulky.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('titulky.password', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('titulky.approved_only', must_exist=True, default=False, is_type_of=bool),
+    Validator('titulky.skip_wrong_fps', must_exist=True, default=False, is_type_of=bool),
 
     # embeddedsubtitles section
     Validator('embeddedsubtitles.included_codecs', must_exist=True, default=[], is_type_of=list),

@@ -136,6 +136,7 @@ class TableEpisodes(Base):
 
     audio_codec = mapped_column(Text)
     audio_language = mapped_column(Text)
+    created_at_timestamp = mapped_column(DateTime)
     episode = mapped_column(Integer, nullable=False)
     episode_file_id = mapped_column(Integer)
     failedAttempts = mapped_column(Text)
@@ -152,6 +153,7 @@ class TableEpisodes(Base):
     sonarrSeriesId = mapped_column(Integer, ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'))
     subtitles = mapped_column(Text)
     title = mapped_column(Text, nullable=False)
+    updated_at_timestamp = mapped_column(DateTime)
     video_codec = mapped_column(Text)
 
 
@@ -213,6 +215,7 @@ class TableMovies(Base):
     alternativeTitles = mapped_column(Text)
     audio_codec = mapped_column(Text)
     audio_language = mapped_column(Text)
+    created_at_timestamp = mapped_column(DateTime)
     failedAttempts = mapped_column(Text)
     fanart = mapped_column(Text)
     ffprobe_cache = mapped_column(LargeBinary)
@@ -234,6 +237,7 @@ class TableMovies(Base):
     tags = mapped_column(Text)
     title = mapped_column(Text, nullable=False)
     tmdbId = mapped_column(Text, nullable=False, unique=True)
+    updated_at_timestamp = mapped_column(DateTime)
     video_codec = mapped_column(Text)
     year = mapped_column(Text)
 
@@ -271,8 +275,11 @@ class TableShows(Base):
     tvdbId = mapped_column(Integer)
     alternativeTitles = mapped_column(Text)
     audio_language = mapped_column(Text)
+    created_at_timestamp = mapped_column(DateTime)
+    ended = mapped_column(Text)
     fanart = mapped_column(Text)
     imdbId = mapped_column(Text)
+    lastAired = mapped_column(Text)
     monitored = mapped_column(Text)
     overview = mapped_column(Text)
     path = mapped_column(Text, nullable=False, unique=True)
@@ -283,6 +290,7 @@ class TableShows(Base):
     sortTitle = mapped_column(Text)
     tags = mapped_column(Text)
     title = mapped_column(Text, nullable=False)
+    updated_at_timestamp = mapped_column(DateTime)
     year = mapped_column(Text)
 
 

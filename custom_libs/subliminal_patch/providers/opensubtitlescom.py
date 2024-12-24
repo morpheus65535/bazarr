@@ -54,6 +54,7 @@ def fix_movie_naming(title):
 custom_languages = {
     'pt': 'pt-PT',
     'zh': 'zh-CN',
+    'es-MX': 'ea',
 }
 
 
@@ -156,9 +157,10 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     """OpenSubtitlesCom Provider"""
     server_hostname = 'api.opensubtitles.com'
 
-    languages = {Language.fromopensubtitles(lang) for lang in language_converters['szopensubtitles'].codes}
+    languages = ({Language.fromietf("es-MX")} |
+                 {Language.fromopensubtitles(lang) for lang in language_converters['szopensubtitles'].codes})
     languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
-    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
+    languages.update(set(Language.rebuild(lang, hi=True) for lang in languages))
 
     video_types = (Episode, Movie)
 

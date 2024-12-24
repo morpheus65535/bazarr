@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import absolute_import
 import logging
+import re
 
 from subliminal.providers.napiprojekt import NapiProjektProvider as _NapiProjektProvider, \
     NapiProjektSubtitle as _NapiProjektSubtitle, get_subhash
@@ -40,6 +41,11 @@ class NapiProjektProvider(_NapiProjektProvider):
     video_types = (Episode, Movie)
     subtitle_class = NapiProjektSubtitle
 
+    def __init__(self, only_authors=None, only_real_names=None):
+        super().__init__()
+        self.only_authors = only_authors
+        self.only_real_names = only_real_names
+
     def query(self, language, hash):
         params = {
             'v': 'dreambox',
@@ -66,10 +72,23 @@ class NapiProjektProvider(_NapiProjektProvider):
         return subtitle
 
     def list_subtitles(self, video, languages):
-        def flatten(l):
-            return [item for sublist in l for item in sublist]
-        return [s for s in [self.query(l, video.hashes['napiprojekt']) for l in languages] if s is not None] + \
-            flatten([self._scrape(video, l) for l in languages])
+        def flatten(nested_list):
+            """Flatten a nested list."""
+            return [item for sublist in nested_list for item in sublist]
+
+        # Determine the source of subtitles based on conditions
+        hash_subtitles = []
+        if not (self.only_authors or self.only_real_names):
+            hash_subtitles = [
+                subtitle
+                for language in languages
+                if (subtitle := self.query(language, video.hashes.get('napiprojekt'))) is not None
+            ]
+
+        # Scrape additional subtitles
+        scraped_subtitles = flatten([self._scrape(video, language) for language in languages])
+
+        return hash_subtitles + scraped_subtitles
 
     def download_subtitle(self, subtitle):
         if subtitle.content is not None:
@@ -80,7 +99,8 @@ class NapiProjektProvider(_NapiProjektProvider):
         if language.alpha2 != 'pl':
             return []
         title, matches = self._find_title(video)
-        if title == None:
+
+        if title is None:
             return []
         episode = f'-s{video.season:02d}e{video.episode:02d}' if isinstance(
             video, Episode) else ''
@@ -89,14 +109,59 @@ class NapiProjektProvider(_NapiProjektProvider):
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         subtitles = []
-        for link in soup.find_all('a'):
-            if 'class' in link.attrs and 'tableA' in link.attrs['class']:
-                hash = link.attrs['href'][len('napiprojekt:'):]
-                subtitles.append(
-                    NapiProjektSubtitle(language,
-                                        hash,
-                                        release_info=str(link.contents[0]),
-                                        matches=matches | ({'season', 'episode'} if episode else set())))
+
+        # Find all rows with titles and napiprojekt links
+        rows = soup.find_all("tr", title=True)
+
+        for row in rows:
+            for link in row.find_all('a'):
+                if 'class' in link.attrs and 'tableA' in link.attrs['class']:
+                    title = row['title']
+                    hash = link.attrs['href'][len('napiprojekt:'):]
+
+                    data = row.find_all('p')
+
+                    size = data[1].contents[0] if len(data) > 1 and data[1].contents else ""
+                    length = data[3].contents[0] if len(data) > 3 and data[3].contents else ""
+                    author = data[4].contents[0] if len(data) > 4 and data[4].contents else ""
+                    added = data[5].contents[0] if len(data) > 5 and data[5].contents else ""
+
+                    if author == "":
+                        match = re.search(r"<b>Autor:</b> (.*?)\(", title)
+                        print(title)
+                        if match:
+                            author = match.group(1).strip()
+                        else:
+                            author = ""
+
+                    if self.only_authors:
+                        if author.lower() in ["brak", "automat", "si", "chatgpt", "ai", "robot", "maszynowe", "tłumaczenie maszynowe"]:
+                            continue
+
+                    if self.only_real_names:
+                        # Check if `self.only_authors` contains exactly 2 uppercase letters and at least one lowercase letter
+                        if not (re.match(r'^(?=(?:.*[A-Z]){2})(?=.*[a-z]).*$', author) or
+                                re.match(r'^\w+\s\w+$', author)):
+                            continue
+
+                    match = re.search(r"<b>Video rozdzielczość:</b> (.*?)<", title)
+                    if match:
+                        resolution = match.group(1).strip()
+                    else:
+                        resolution = ""
+
+                    match = re.search(r"<b>Video FPS:</b> (.*?)<", title)
+                    if match:
+                        fps = match.group(1).strip()
+                    else:
+                        fps = ""
+
+                    added_lenght = "Autor: " + author + " | " + resolution + " | " + fps + " | " + size + " | " + added + " | " + length
+                    subtitles.append(
+                        NapiProjektSubtitle(language,
+                                            hash,
+                                            release_info=added_lenght,
+                                            matches=matches | ({'season', 'episode'} if episode else set())))
 
         logger.debug(f'Found subtitles {subtitles}')
         return subtitles
@@ -114,15 +179,17 @@ class NapiProjektProvider(_NapiProjektProvider):
             video, Episode) else video.imdb_id
 
         def match_title_tag(
-            tag): return tag.name == 'a' and 'class' in tag.attrs and 'movieTitleCat' in tag.attrs['class'] and 'href' in tag.attrs
+                tag):
+            return tag.name == 'a' and 'class' in tag.attrs and 'movieTitleCat' in tag.attrs[
+                'class'] and 'href' in tag.attrs
 
         if imdb_id:
             for entry in soup.find_all(lambda tag: tag.name == 'div' and 'greyBoxCatcher' in tag['class']):
                 if entry.find_all(href=lambda href: href and href.startswith(f'https://www.imdb.com/title/{imdb_id}')):
                     for link in entry.find_all(match_title_tag):
                         return link.attrs['href'][len('napisy-'):], \
-                            {'series', 'year', 'series_imdb_id'} if isinstance(
-                                video, Episode) else {'title', 'year', 'imdb_id'}
+                               {'series', 'year', 'series_imdb_id'} if isinstance(
+                                   video, Episode) else {'title', 'year', 'imdb_id'}
 
         type = 'episode' if isinstance(video, Episode) else 'movie'
         for link in soup.find_all(match_title_tag):

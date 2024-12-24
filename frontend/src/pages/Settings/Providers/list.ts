@@ -1,5 +1,6 @@
-import { ReactText } from "react";
 import { SelectorOption } from "@/components";
+
+type Text = string | number;
 
 type Input<T, N> = {
   type: N;
@@ -8,15 +9,18 @@ type Input<T, N> = {
   name?: string;
   description?: string;
   options?: SelectorOption<string>[];
+  validation?: {
+    rule: (value: string) => string | null;
+  };
 };
 
 type AvailableInput =
-  | Input<ReactText, "text">
+  | Input<Text, "text">
   | Input<string, "password">
   | Input<boolean, "switch">
   | Input<string, "select">
   | Input<string, "testbutton">
-  | Input<ReactText[], "chips">;
+  | Input<Text[], "chips">;
 
 export interface ProviderInfo {
   key: string;
@@ -151,7 +155,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "embeddedsubtitles",
     name: "Embedded Subtitles",
-    description: "Embedded Subtitles from your Media Files",
+    description:
+      "This provider extracts embedded subtitles from your media files. You must disable 'Treat Embedded Subtitles as Downloaded' in Settings -> Subtitles for this provider to work.",
     inputs: [
       {
         type: "chips",
@@ -320,7 +325,22 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
   },
-  { key: "napiprojekt", description: "Polish Subtitles Provider" },
+  {
+    key: "napiprojekt",
+    description: "Polish Subtitles Provider",
+    inputs: [
+      {
+        type: "switch",
+        key: "only_authors",
+        name: "Skip subtitles without authors or possibly AI generated",
+      },
+      {
+        type: "switch",
+        key: "only_real_names",
+        name: "Download subtitles with real name authors only",
+      },
+    ],
+  },
   {
     key: "napisy24",
     description: "Polish Subtitles Provider",
@@ -375,6 +395,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "text",
         key: "username",
+        validation: {
+          rule: (value: string) =>
+            /^.\S+@\S+$/.test(value)
+              ? "Invalid Username. Do not use your e-mail."
+              : null,
+        },
       },
       {
         type: "password",
@@ -517,6 +543,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "approved_only",
         name: "Skip unapproved subtitles",
       },
+      {
+        type: "switch",
+        key: "skip_wrong_fps",
+        name: "Skip subtitles with mismatched fps to video's",
+      },
     ],
   },
   {
@@ -555,6 +586,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "loglevel",
         name: "Logging level",
         options: logLevelOptions,
+      },
+      {
+        type: "switch",
+        key: "pass_video_name",
+        name: "Pass video filename to Whisper (for logging)",
+        defaultValue: false,
       },
       {
         type: "testbutton",

@@ -11,7 +11,7 @@ from time import sleep
 from math import ceil
 
 from subliminal import Movie, Episode
-from subliminal.exceptions import AuthenticationError, ConfigurationError, DownloadLimitExceeded, ProviderError
+from subliminal.exceptions import ConfigurationError, ProviderError
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.providers import Provider
@@ -104,7 +104,7 @@ class AssrtSubtitle(Subtitle):
             if 'subtitle_language' in guess:
                 langs.update(guess['subtitle_language'])
             if self.language in langs:
-                self._defail = f
+                self._detail = f
                 return f
 
         # second pass: keyword matching
@@ -112,7 +112,7 @@ class AssrtSubtitle(Subtitle):
         for f in files:
             langs = set([Language.fromassrt(k) for k in codes if k in f['f']])
             if self.language in langs:
-                self._defail = f
+                self._detail = f
                 return f
 
         # fallback: pick up first file if nothing matches
