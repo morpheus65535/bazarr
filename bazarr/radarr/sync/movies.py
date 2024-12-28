@@ -133,7 +133,7 @@ def update_movies(send_event=True):
                                                             select(TableMovies))
                                                         .all()]]
 
-            current_movies_radarr = [str(movie['id']) for movie in movies if movie['hasFile'] and
+            current_movies_radarr = [movie['id'] for movie in movies if movie['hasFile'] and
                                      'movieFile' in movie and
                                      (movie['movieFile']['size'] > MINIMUM_VIDEO_SIZE or
                                       get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE)]
@@ -184,7 +184,7 @@ def update_movies(send_event=True):
                                 get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE):
                             # Add/update movies from Radarr that have a movie file to current movies list
                             trace(f"{i}: (Processing) {movie['title']}")
-                            if str(movie['id']) in current_movies_id_db:
+                            if movie['id'] in current_movies_id_db:
                                 parsed_movie = movieParser(movie, action='update',
                                                            tags_dict=tagsDict,
                                                            language_profiles=language_profiles,
