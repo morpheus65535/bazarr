@@ -11,7 +11,7 @@ from subtitles.manual import manual_search, manual_download_subtitle
 from radarr.history import history_log_movie
 from app.config import settings
 from app.notifier import send_notifications_movie
-from subtitles.indexer.movies import store_subtitles_movie
+from subtitles.indexer.movies import store_subtitles_movie, list_missing_subtitles_movies
 from subtitles.processing import ProcessSubtitlesResult
 
 from ..utils import authenticate
@@ -51,16 +51,25 @@ class ProviderMovies(Resource):
         """Search manually for a movie subtitles"""
         args = self.get_request_parser.parse_args()
         radarrId = args.get('radarrid')
-        movieInfo = database.execute(
-            select(TableMovies.title,
-                   TableMovies.path,
-                   TableMovies.sceneName,
-                   TableMovies.profileId)
-            .where(TableMovies.radarrId == radarrId)) \
-            .first()
+        stmt = select(TableMovies.title,
+                      TableMovies.path,
+                      TableMovies.sceneName,
+                      TableMovies.profileId,
+                      TableMovies.subtitles,
+                      TableMovies.missing_subtitles) \
+            .where(TableMovies.radarrId == radarrId)
+        movieInfo = database.execute(stmt).first()
 
         if not movieInfo:
             return 'Movie not found', 404
+        elif movieInfo.subtitles is None:
+            # subtitles indexing for this movie is incomplete, we'll do it again
+            store_subtitles_movie(movieInfo.path, path_mappings.path_replace_movie(movieInfo.path))
+            movieInfo = database.execute(stmt).first()
+        elif movieInfo.missing_subtitles is None:
+            # missing subtitles calculation for this movie is incomplete, we'll do it again
+            list_missing_subtitles_movies(no=radarrId)
+            movieInfo = database.execute(stmt).first()
 
         title = movieInfo.title
         moviePath = path_mappings.path_replace_movie(movieInfo.path)

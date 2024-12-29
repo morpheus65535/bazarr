@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from requests import Session
 
+from requests.exceptions import JSONDecodeError
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.providers import Provider
 from subliminal import __short_version__
@@ -206,7 +207,10 @@ class WhisperAISubtitle(Subtitle):
 
     @property
     def id(self):
-        return self.video.original_name
+        # Construct unique id otherwise provider pool will think 
+        # subtitles are all the same and drop all except the first one
+        # This is important for language profiles with more than one language
+        return f"{self.video.original_name}_{self.task}_{str(self.language)}"
 
     def get_matches(self, video):
         matches = set()
@@ -229,7 +233,7 @@ class WhisperAIProvider(Provider):
 
     video_types = (Episode, Movie)
 
-    def __init__(self, endpoint=None, response=None, timeout=None, ffmpeg_path=None, loglevel=None):
+    def __init__(self, endpoint=None, response=None, timeout=None, ffmpeg_path=None, pass_video_name=None, loglevel=None):
         set_log_level(loglevel)
         if not endpoint:
             raise ConfigurationError('Whisper Web Service Endpoint must be provided')
@@ -242,12 +246,16 @@ class WhisperAIProvider(Provider):
 
         if not ffmpeg_path:
             raise ConfigurationError("ffmpeg path must be provided")
+        
+        if pass_video_name is None:
+            raise ConfigurationError('Whisper Web Service Pass Video Name option must be provided')
 
         self.endpoint = endpoint.rstrip("/")
         self.response = int(response)
         self.timeout = int(timeout)
         self.session = None
         self.ffmpeg_path = ffmpeg_path
+        self.pass_video_name = pass_video_name
 
     def initialize(self):
         self.session = Session()
@@ -269,10 +277,19 @@ class WhisperAIProvider(Provider):
                               params={'encode': 'false'},
                               files={'audio_file': out},
                               timeout=(self.response, self.timeout))
+        
+        try:
+            results = r.json()
+        except JSONDecodeError:
+            results = {}
 
-        logger.debug(f"Whisper detected language of {path} as {r.json()['detected_language']}")
+        if len(results) == 0:
+            logger.info(f"Whisper returned empty response when detecting language")
+            return None
 
-        return whisper_get_language(r.json()["language_code"], r.json()["detected_language"])
+        logger.debug(f"Whisper detected language of {path} as {results['detected_language']}")
+
+        return whisper_get_language(results["language_code"], results["detected_language"])
 
     def query(self, language, video):
         if language not in self.languages:
@@ -356,9 +373,11 @@ class WhisperAIProvider(Provider):
         
         logger.info(f'Starting WhisperAI {subtitle.task} to {language_from_alpha3(output_language)} for {subtitle.video.original_path}')
         startTime = time.time()
+        video_name = subtitle.video.original_path if self.pass_video_name else None
 
         r = self.session.post(f"{self.endpoint}/asr",
-                              params={'task': subtitle.task, 'language': input_language, 'output': 'srt', 'encode': 'false'},
+                              params={'task': subtitle.task, 'language': input_language, 'output': 'srt', 'encode': 'false',
+                                      'video_file': {video_name}},
                               files={'audio_file': out},
                               timeout=(self.response, self.timeout))
                               

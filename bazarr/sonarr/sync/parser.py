@@ -2,6 +2,8 @@
 
 import os
 
+from dateutil import parser
+
 from app.config import settings
 from app.database import TableShows, database, select
 from constants import MINIMUM_VIDEO_SIZE
@@ -45,6 +47,10 @@ def seriesParser(show, action, tags_dict, language_profiles, serie_default_profi
 
     imdbId = show['imdbId'] if 'imdbId' in show else None
 
+    ended = 'True' if 'ended' in show and show['ended'] else 'False'
+
+    lastAired = parser.parse(show['lastAired']).strftime("%Y-%m-%d") if 'lastAired' in show and show['lastAired'] else None
+
     audio_language = []
     if not settings.general.parse_embedded_audio_track:
         if get_sonarr_info.is_legacy():
@@ -56,22 +62,24 @@ def seriesParser(show, action, tags_dict, language_profiles, serie_default_profi
                 audio_language = []
 
     parsed_series = {
-                    'title': show["title"],
-                    'path': show["path"],
-                    'tvdbId': int(show["tvdbId"]),
-                    'sonarrSeriesId': int(show["id"]),
-                    'overview': overview,
-                    'poster': poster,
-                    'fanart': fanart,
-                    'audio_language': str(audio_language),
-                    'sortTitle': show['sortTitle'],
-                    'year': str(show['year']),
-                    'alternativeTitles': str(alternate_titles),
-                    'tags': str(tags),
-                    'seriesType': show['seriesType'],
-                    'imdbId': imdbId,
-                    'monitored': str(bool(show['monitored']))
-                    }
+        'title': show["title"],
+        'path': show["path"],
+        'tvdbId': int(show["tvdbId"]),
+        'sonarrSeriesId': int(show["id"]),
+        'overview': overview,
+        'poster': poster,
+        'fanart': fanart,
+        'audio_language': str(audio_language),
+        'sortTitle': show['sortTitle'],
+        'year': str(show['year']),
+        'alternativeTitles': str(alternate_titles),
+        'tags': str(tags),
+        'seriesType': show['seriesType'],
+        'imdbId': imdbId,
+        'monitored': str(bool(show['monitored'])),
+        'ended': ended,
+        'lastAired': lastAired,
+    }
 
     if action == 'insert':
         parsed_series['profileId'] = serie_default_profile

@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import base64
 import logging
 import os
-import traceback
 import re
 import zlib
 import time
@@ -411,6 +410,8 @@ def checked(fn, raise_api_limit=False):
 
         except requests.RequestException as e:
             status_code = e.response.status_code
+            if status_code == 503 and "Server under maintenance" in e.response.text:
+                status_code = 506
         else:
             status_code = int(response['status'][:3])
     except:
@@ -437,6 +438,8 @@ def checked(fn, raise_api_limit=False):
             raise APIThrottled
     if status_code == 503:
         raise ServiceUnavailable(str(status_code))
+    if status_code == 506:
+        raise ServiceUnavailable("Server under maintenance")
     if status_code != 200:
         if response and "status" in response:
             raise OpenSubtitlesError(response['status'])

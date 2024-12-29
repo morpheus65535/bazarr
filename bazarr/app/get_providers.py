@@ -30,7 +30,6 @@ from radarr.blacklist import blacklist_log_movie
 from sonarr.blacklist import blacklist_log
 from utilities.analytics import event_tracker
 
-
 _TRACEBACK_RE = re.compile(r'File "(.*?providers[\\/].*?)", line (\d+)')
 
 
@@ -41,7 +40,7 @@ def time_until_midnight(timezone):
     """
     now_in_tz = datetime.datetime.now(tz=timezone)
     midnight = now_in_tz.replace(hour=0, minute=0, second=0, microsecond=0) + \
-        datetime.timedelta(days=1)
+               datetime.timedelta(days=1)
     return midnight - now_in_tz
 
 
@@ -91,7 +90,7 @@ def provider_throttle_map():
         },
         "opensubtitlescom": {
             TooManyRequests: (datetime.timedelta(minutes=1), "1 minute"),
-            DownloadLimitExceeded: (datetime.timedelta(hours=24), "24 hours"),
+            DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
         },
         "addic7ed": {
             DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
@@ -100,6 +99,9 @@ def provider_throttle_map():
         },
         "titlovi": {
             TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
+        },
+        "titrari": {
+            TooManyRequests: (datetime.timedelta(minutes=10), "10 minutes"),
         },
         "titulky": {
             DownloadLimitExceeded: (
@@ -254,6 +256,8 @@ def get_providers_auth():
                              'include_ai_translated': settings.opensubtitlescom.include_ai_translated,
                              'api_key': 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
                              },
+        'napiprojekt': {'only_authors': settings.napiprojekt.only_authors,
+                        'only_real_names': settings.napiprojekt.only_real_names},
         'podnapisi': {
             'only_foreign': False,  # fixme
             'also_foreign': False,  # fixme
@@ -330,6 +334,7 @@ def get_providers_auth():
             'timeout': settings.whisperai.timeout,
             'ffmpeg_path': _FFMPEG_BINARY,
             'loglevel': settings.whisperai.loglevel,
+            'pass_video_name': settings.whisperai.pass_video_name,
         },
         "animetosho": {
             'search_threshold': settings.animetosho.search_threshold,
@@ -368,7 +373,7 @@ def provider_throttle(name, exception, ids=None, language=None):
                 cls = valid_cls
 
     throttle_data = provider_throttle_map().get(name, provider_throttle_map()["default"]).get(cls, None) or \
-        provider_throttle_map()["default"].get(cls, None)
+                    provider_throttle_map()["default"].get(cls, None)
 
     if throttle_data:
         throttle_delta, throttle_description = throttle_data
@@ -378,7 +383,8 @@ def provider_throttle(name, exception, ids=None, language=None):
     throttle_until = datetime.datetime.now() + throttle_delta
 
     if cls_name not in VALID_COUNT_EXCEPTIONS or throttled_count(name):
-        if cls_name == 'ValueError' and isinstance(exception.args, tuple) and len(exception.args) and exception.args[0].startswith('unsupported pickle protocol'):
+        if cls_name == 'ValueError' and isinstance(exception.args, tuple) and len(exception.args) and exception.args[
+            0].startswith('unsupported pickle protocol'):
             for fn in subliminal_cache_region.backend.all_filenames:
                 try:
                     os.remove(fn)

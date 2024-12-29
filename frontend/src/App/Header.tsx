@@ -39,20 +39,20 @@ const AppHeader: FunctionComponent = () => {
     <AppShell.Header p="md" className={styles.header}>
       <Group justify="space-between" wrap="nowrap">
         <Group wrap="nowrap">
-          <Anchor onClick={goHome} visibleFrom="sm">
-            <Avatar
-              alt="brand"
-              size={32}
-              src={`${Environment.baseUrl}/images/logo64.png`}
-            ></Avatar>
-          </Anchor>
           <Burger
             opened={showed}
             onClick={() => show(!showed)}
             size="sm"
             hiddenFrom="sm"
           ></Burger>
-          <Badge size="lg" radius="sm" variant="brand">
+          <Anchor onClick={goHome}>
+            <Avatar
+              alt="brand"
+              size={32}
+              src={`${Environment.baseUrl}/images/logo64.png`}
+            ></Avatar>
+          </Anchor>
+          <Badge size="lg" radius="sm" variant="brand" visibleFrom="sm">
             Bazarr
           </Badge>
         </Group>

@@ -97,7 +97,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           on={(k) => k === "Weekly"}
         >
           <Selector
-            label="Day of The Week"
+            label="Day of Week"
             settingKey="settings-sonarr-full_update_day"
             options={dayOptions}
           ></Selector>
@@ -107,7 +107,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           on={(k) => k === "Daily" || k === "Weekly"}
         >
           <Selector
-            label="Time of The Day"
+            label="Time of Day"
             settingKey="settings-sonarr-full_update_hour"
             options={timeOptions}
           ></Selector>
@@ -134,7 +134,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           on={(k) => k === "Weekly"}
         >
           <Selector
-            label="Day of The Week"
+            label="Day of Week"
             settingKey="settings-radarr-full_update_day"
             options={dayOptions}
           ></Selector>
@@ -144,7 +144,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           on={(k) => k === "Daily" || k === "Weekly"}
         >
           <Selector
-            label="Time of The Day"
+            label="Time of Day"
             settingKey="settings-radarr-full_update_hour"
             options={timeOptions}
           ></Selector>
@@ -190,7 +190,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           on={(k) => k === "Weekly"}
         >
           <Selector
-            label="Day of The Week"
+            label="Day of Week"
             settingKey="settings-backup-day"
             options={dayOptions}
           ></Selector>
@@ -200,7 +200,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           on={(k) => k === "Daily" || k === "Weekly"}
         >
           <Selector
-            label="Time of The Day"
+            label="Time of Day"
             settingKey="settings-backup-hour"
             options={timeOptions}
           ></Selector>

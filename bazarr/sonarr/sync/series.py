@@ -34,7 +34,7 @@ def get_language_profiles():
 
 def get_series_monitored_table():
     series_monitored = database.execute(
-        select(TableShows.tvdbId, TableShows.monitored))\
+        select(TableShows.sonarrSeriesId, TableShows.monitored))\
         .all()
     series_dict = dict((x, y) for x, y in series_monitored)
     return series_dict
@@ -95,7 +95,7 @@ def update_series(send_event=True):
 
             if sync_monitored:
                 try:
-                    monitored_status_db = bool_map[series_monitored[show['tvdbId']]]
+                    monitored_status_db = bool_map[series_monitored[show['id']]]
                 except KeyError:
                     monitored_status_db = None
                 if monitored_status_db is None:
@@ -178,7 +178,11 @@ def update_series(send_event=True):
                 event_stream(type='series', action='delete', payload=series)
 
         if send_event:
-            hide_progress(id='series_progress')
+            show_progress(id='series_progress',
+                          header='Syncing series...',
+                          name='',
+                          value=series_count,
+                          count=series_count)
 
         if sync_monitored:
             trace(f"skipped {skipped_count} unmonitored series out of {i}")

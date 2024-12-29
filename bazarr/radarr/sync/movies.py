@@ -53,7 +53,7 @@ def update_movie(updated_movie, send_event):
         updated_movie['updated_at_timestamp'] = datetime.now()
         database.execute(
             update(TableMovies).values(updated_movie)
-            .where(TableMovies.tmdbId == updated_movie['tmdbId']))
+            .where(TableMovies.radarrId == updated_movie['radarrId']))
     except IntegrityError as e:
         logging.error(f"BAZARR cannot update movie {updated_movie['path']} because of {e}")
     else:
@@ -66,7 +66,7 @@ def update_movie(updated_movie, send_event):
 def get_movie_monitored_status(movie_id):
     existing_movie_monitored = database.execute(
         select(TableMovies.monitored)
-        .where(TableMovies.tmdbId == str(movie_id)))\
+        .where(TableMovies.radarrId == str(movie_id)))\
         .first()
     if existing_movie_monitored is None:
         return True
@@ -124,16 +124,16 @@ def update_movies(send_event=True):
             return
         else:
             # Get current movies in DB
-            current_movies_id_db = [x.tmdbId for x in
+            current_movies_id_db = [x.radarrId for x in
                                     database.execute(
-                                        select(TableMovies.tmdbId))
+                                        select(TableMovies.radarrId))
                                     .all()]
             current_movies_db_kv = [x.items() for x in [y._asdict()['TableMovies'].__dict__ for y in
                                                         database.execute(
                                                             select(TableMovies))
                                                         .all()]]
 
-            current_movies_radarr = [str(movie['tmdbId']) for movie in movies if movie['hasFile'] and
+            current_movies_radarr = [movie['id'] for movie in movies if movie['hasFile'] and
                                      'movieFile' in movie and
                                      (movie['movieFile']['size'] > MINIMUM_VIDEO_SIZE or
                                       get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE)]
@@ -143,7 +143,7 @@ def update_movies(send_event=True):
             movies_deleted = []
             if len(movies_to_delete):
                 try:
-                    database.execute(delete(TableMovies).where(TableMovies.tmdbId.in_(movies_to_delete)))
+                    database.execute(delete(TableMovies).where(TableMovies.radarrId.in_(movies_to_delete)))
                 except IntegrityError as e:
                     logging.error(f"BAZARR cannot delete movies because of {e}")
                 else:
@@ -172,7 +172,7 @@ def update_movies(send_event=True):
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
                         if sync_monitored:
-                            if get_movie_monitored_status(movie['tmdbId']) != movie['monitored']:
+                            if get_movie_monitored_status(movie['id']) != movie['monitored']:
                                 # monitored status is not the same as our DB
                                 trace(f"{i}: (Monitor Status Mismatch) {movie['title']}")
                             elif not movie['monitored']:
@@ -184,7 +184,7 @@ def update_movies(send_event=True):
                                 get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE):
                             # Add/update movies from Radarr that have a movie file to current movies list
                             trace(f"{i}: (Processing) {movie['title']}")
-                            if str(movie['tmdbId']) in current_movies_id_db:
+                            if movie['id'] in current_movies_id_db:
                                 parsed_movie = movieParser(movie, action='update',
                                                            tags_dict=tagsDict,
                                                            language_profiles=language_profiles,
@@ -206,7 +206,11 @@ def update_movies(send_event=True):
                     files_missing += 1
 
             if send_event:
-                hide_progress(id='movies_progress')
+                show_progress(id='movies_progress',
+                              header='Syncing movies...',
+                              name='',
+                              value=movies_count,
+                              count=movies_count)
 
             trace(f"Skipped {files_missing} file missing movies out of {movies_count}")
             if sync_monitored:
