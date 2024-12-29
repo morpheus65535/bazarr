@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import argparse
 import sys
 from json import dumps
 from os.path import abspath, basename, dirname, join, realpath
 from platform import python_version
-from typing import List, Optional
 from unicodedata import unidata_version
 
 import charset_normalizer.md as md_module
@@ -45,7 +46,7 @@ def query_yes_no(question: str, default: str = "yes") -> bool:
             sys.stdout.write("Please respond with 'yes' or 'no' " "(or 'y' or 'n').\n")
 
 
-def cli_detect(argv: Optional[List[str]] = None) -> int:
+def cli_detect(argv: list[str] | None = None) -> int:
     """
     CLI assistant using ARGV and ArgumentParser
     :param argv:
@@ -124,7 +125,7 @@ def cli_detect(argv: Optional[List[str]] = None) -> int:
         default=0.2,
         type=float,
         dest="threshold",
-        help="Define a custom maximum amount of chaos allowed in decoded content. 0. <= chaos <= 1.",
+        help="Define a custom maximum amount of noise allowed in decoded content. 0. <= noise <= 1.",
     )
     parser.add_argument(
         "--version",
@@ -259,7 +260,7 @@ def cli_detect(argv: Optional[List[str]] = None) -> int:
                 dir_path = dirname(realpath(my_file.name))
                 file_name = basename(realpath(my_file.name))
 
-                o_: List[str] = file_name.split(".")
+                o_: list[str] = file_name.split(".")
 
                 if args.replace is False:
                     o_.insert(-1, best_guess.encoding)
@@ -284,7 +285,7 @@ def cli_detect(argv: Optional[List[str]] = None) -> int:
 
                     with open(x_[0].unicode_path, "wb") as fp:
                         fp.write(best_guess.output())
-                except IOError as e:
+                except OSError as e:
                     print(str(e), file=sys.stderr)
                     if my_file.closed is False:
                         my_file.close()

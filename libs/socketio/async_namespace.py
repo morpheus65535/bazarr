@@ -34,11 +34,27 @@ class AsyncNamespace(base_namespace.BaseServerNamespace):
             handler = getattr(self, handler_name)
             if asyncio.iscoroutinefunction(handler) is True:
                 try:
-                    ret = await handler(*args)
+                    try:
+                        ret = await handler(*args)
+                    except TypeError:
+                        # legacy disconnect events do not have a reason
+                        # argument
+                        if event == 'disconnect':
+                            ret = await handler(*args[:-1])
+                        else:  # pragma: no cover
+                            raise
                 except asyncio.CancelledError:  # pragma: no cover
                     ret = None
             else:
-                ret = handler(*args)
+                try:
+                    ret = handler(*args)
+                except TypeError:
+                    # legacy disconnect events do not have a reason
+                    # argument
+                    if event == 'disconnect':
+                        ret = handler(*args[:-1])
+                    else:  # pragma: no cover
+                        raise
             return ret
 
     async def emit(self, event, data=None, to=None, room=None, skip_sid=None,
@@ -199,11 +215,27 @@ class AsyncClientNamespace(base_namespace.BaseClientNamespace):
             handler = getattr(self, handler_name)
             if asyncio.iscoroutinefunction(handler) is True:
                 try:
-                    ret = await handler(*args)
+                    try:
+                        ret = await handler(*args)
+                    except TypeError:
+                        # legacy disconnect events do not have a reason
+                        # argument
+                        if event == 'disconnect':
+                            ret = await handler(*args[:-1])
+                        else:  # pragma: no cover
+                            raise
                 except asyncio.CancelledError:  # pragma: no cover
                     ret = None
             else:
-                ret = handler(*args)
+                try:
+                    ret = handler(*args)
+                except TypeError:
+                    # legacy disconnect events do not have a reason
+                    # argument
+                    if event == 'disconnect':
+                        ret = handler(*args[:-1])
+                    else:  # pragma: no cover
+                        raise
             return ret
 
     async def emit(self, event, data=None, namespace=None, callback=None):

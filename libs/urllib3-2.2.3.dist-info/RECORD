@@ -1,8 +1,8 @@
 urllib3-2.2.3.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-urllib3-2.2.3.dist-info/METADATA,sha256=NpyLMYu-QoAmQK6pmmgoZRuq0HPt-lf_J9zIuCGMRNY,6485
+urllib3-2.2.3.dist-info/METADATA,sha256=T1CN4mjm6UV2ZV71tZfPSPDYimBCcm6nqJrZMGmH8S0,6485
 urllib3-2.2.3.dist-info/RECORD,,
 urllib3-2.2.3.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-urllib3-2.2.3.dist-info/WHEEL,sha256=1yFddiXMmvYK7QYTqtRNtX66WJ0Mz8PYEiEUoOUUxRY,87
+urllib3-2.2.3.dist-info/WHEEL,sha256=qtCwoSJWgHk21S1Kb4ihdzI2rlJ1ZKaIurTj_ngOhyQ,87
 urllib3-2.2.3.dist-info/licenses/LICENSE.txt,sha256=Ew46ZNX91dCWp1JpRjSn2d8oRGnehuVzIQAmgEHj1oY,1093
 urllib3/__init__.py,sha256=JMo1tg1nIV1AeJ2vENC_Txfl0e5h6Gzl9DGVk1rWRbo,6979
 urllib3/_base_connection.py,sha256=tH0ZlOxWKika-S9NW-MuIlI_PLFQUUmSnoE_9MeywkM,5652

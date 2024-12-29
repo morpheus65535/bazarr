@@ -1,5 +1,7 @@
 import logging
 
+import engineio
+
 from . import manager
 from . import base_namespace
 from . import packet
@@ -9,6 +11,7 @@ default_logger = logging.getLogger('socketio.server')
 
 class BaseServer:
     reserved_events = ['connect', 'disconnect']
+    reason = engineio.Server.reason
 
     def __init__(self, client_manager=None, logger=False, serializer='default',
                  json=None, async_handlers=True, always_connect=False,

@@ -89,7 +89,7 @@ class AsyncServer(base_server.BaseServer):
     def attach(self, app, engineio_path='engine.io'):
         """Attach the Engine.IO server to an application."""
         engineio_path = engineio_path.strip('/')
-        self._async['create_route'](app, self, '/{}/'.format(engineio_path))
+        self._async['create_route'](app, self, f'/{engineio_path}/')
 
     async def send(self, sid, data):
         """Send a message to a client.
@@ -162,7 +162,7 @@ class AsyncServer(base_server.BaseServer):
                 async with eio.session(sid) as session:
                     print('received message from ', session['username'])
         """
-        class _session_context_manager(object):
+        class _session_context_manager:
             def __init__(self, server, sid):
                 self.server = server
                 self.sid = sid
@@ -192,12 +192,15 @@ class AsyncServer(base_server.BaseServer):
                 # the socket was already closed or gone
                 pass
             else:
-                await socket.close()
+                await socket.close(reason=self.reason.SERVER_DISCONNECT)
                 if sid in self.sockets:  # pragma: no cover
                     del self.sockets[sid]
         else:
-            await asyncio.wait([asyncio.create_task(client.close())
-                                for client in self.sockets.values()])
+            await asyncio.wait([
+                asyncio.create_task(client.close(
+                    reason=self.reason.SERVER_DISCONNECT))
+                for client in self.sockets.values()
+            ])
             self.sockets = {}
 
     async def handle_request(self, *args, **kwargs):
@@ -284,33 +287,41 @@ class AsyncServer(base_server.BaseServer):
                     r = self._bad_request('Invalid websocket upgrade')
             else:
                 if sid not in self.sockets:
-                    self._log_error_once('Invalid session ' + sid, 'bad-sid')
-                    r = self._bad_request('Invalid session ' + sid)
+                    self._log_error_once(f'Invalid session {sid}', 'bad-sid')
+                    r = self._bad_request(f'Invalid session {sid}')
                 else:
-                    socket = self._get_socket(sid)
-                    if self.transport(sid) != transport and \
-                            transport != upgrade_header:
-                        self._log_error_once(
-                            'Invalid transport for session ' + sid,
-                            'bad-transport')
-                        r = self._bad_request('Invalid transport')
+                    try:
+                        socket = self._get_socket(sid)
+                    except KeyError as e:  # pragma: no cover
+                        self._log_error_once(f'{e} {sid}', 'bad-sid')
+                        r = self._bad_request(f'{e} {sid}')
                     else:
-                        try:
-                            packets = await socket.handle_get_request(environ)
-                            if isinstance(packets, list):
-                                r = self._ok(packets, jsonp_index=jsonp_index)
-                            else:
-                                r = packets
-                        except exceptions.EngineIOError:
-                            if sid in self.sockets:  # pragma: no cover
-                                await self.disconnect(sid)
-                            r = self._bad_request()
-                        if sid in self.sockets and self.sockets[sid].closed:
-                            del self.sockets[sid]
+                        if self.transport(sid) != transport and \
+                                transport != upgrade_header:
+                            self._log_error_once(
+                                f'Invalid transport for session {sid}',
+                                'bad-transport')
+                            r = self._bad_request('Invalid transport')
+                        else:
+                            try:
+                                packets = await socket.handle_get_request(
+                                    environ)
+                                if isinstance(packets, list):
+                                    r = self._ok(packets,
+                                                 jsonp_index=jsonp_index)
+                                else:
+                                    r = packets
+                            except exceptions.EngineIOError:
+                                if sid in self.sockets:  # pragma: no cover
+                                    await self.disconnect(sid)
+                                r = self._bad_request()
+                            if sid in self.sockets and \
+                                    self.sockets[sid].closed:
+                                del self.sockets[sid]
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
-                self._log_error_once('Invalid session ' + sid, 'bad-sid')
-                r = self._bad_request('Invalid session ' + sid)
+                self._log_error_once(f'Invalid session {sid}', 'bad-sid')
+                r = self._bad_request(f'Invalid session {sid}')
             else:
                 socket = self._get_socket(sid)
                 try:
@@ -440,11 +451,14 @@ class AsyncServer(base_server.BaseServer):
         s = async_socket.AsyncSocket(self, sid)
         self.sockets[sid] = s
 
-        pkt = packet.Packet(
-            packet.OPEN, {'sid': sid,
-                          'upgrades': self._upgrades(sid, transport),
-                          'pingTimeout': int(self.ping_timeout * 1000),
-                          'pingInterval': int(self.ping_interval * 1000)})
+        pkt = packet.Packet(packet.OPEN, {
+            'sid': sid,
+            'upgrades': self._upgrades(sid, transport),
+            'pingTimeout': int(self.ping_timeout * 1000),
+            'pingInterval': int(
+                self.ping_interval + self.ping_interval_grace_period) * 1000,
+            'maxPayload': self.max_http_buffer_size,
+        })
         await s.send(pkt)
         s.schedule_ping()
 
@@ -491,7 +505,16 @@ class AsyncServer(base_server.BaseServer):
             if asyncio.iscoroutinefunction(self.handlers[event]):
                 async def run_async_handler():
                     try:
-                        return await self.handlers[event](*args)
+                        try:
+                            return await self.handlers[event](*args)
+                        except TypeError:
+                            if event == 'disconnect' and \
+                                    len(args) == 2:  # pragma: no branch
+                                # legacy disconnect events do not have a reason
+                                # argument
+                                return await self.handlers[event](args[0])
+                            else:  # pragma: no cover
+                                raise
                     except asyncio.CancelledError:  # pragma: no cover
                         pass
                     except:
@@ -510,7 +533,16 @@ class AsyncServer(base_server.BaseServer):
             else:
                 async def run_sync_handler():
                     try:
-                        return self.handlers[event](*args)
+                        try:
+                            return self.handlers[event](*args)
+                        except TypeError:
+                            if event == 'disconnect' and \
+                                    len(args) == 2:  # pragma: no branch
+                                # legacy disconnect events do not have a reason
+                                # argument
+                                return self.handlers[event](args[0])
+                            else:  # pragma: no cover
+                                raise
                     except:
                         self.logger.exception(event + ' handler error')
                         if event == 'connect':
@@ -528,6 +560,7 @@ class AsyncServer(base_server.BaseServer):
 
     async def _service_task(self):  # pragma: no cover
         """Monitor connected clients and clean up those that time out."""
+        loop = asyncio.get_running_loop()
         self.service_task_event = self.create_event()
         while not self.service_task_event.is_set():
             if len(self.sockets) == 0:
@@ -569,7 +602,7 @@ class AsyncServer(base_server.BaseServer):
                 self.logger.info('service task canceled')
                 break
             except:
-                if asyncio.get_event_loop().is_closed():
+                if loop.is_closed():
                     self.logger.info('event loop is closed, exiting service '
                                      'task')
                     break

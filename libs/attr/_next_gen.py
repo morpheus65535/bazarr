@@ -5,7 +5,6 @@ These are keyword-only APIs that call `attr.s` and `attr.ib` with different
 default values.
 """
 
-
 from functools import partial
 
 from . import setters
@@ -77,7 +76,7 @@ def define(
             sensible ``__ne__`` by default, so it *should* be enough to only
             implement ``__eq__`` in most cases).
 
-            Passing True or False` to *init*, *repr*, *eq*, *cmp*, or *hash*
+            Passing True or False` to *init*, *repr*, *eq*, or *hash*
             overrides whatever *auto_detect* would determine.
 
         auto_exc (bool):
@@ -151,10 +150,6 @@ def define(
             If `None` mirror value of *eq*.
 
             .. seealso:: `comparison`
-
-        cmp (bool | None):
-            Setting *cmp* is equivalent to setting *eq* and *order* to the same
-            value. Must not be mixed with *eq* or *order*.
 
         unsafe_hash (bool | None):
             If None (default), the ``__hash__`` method is generated according
@@ -321,6 +316,9 @@ def define(
        If a class has an *inherited* classmethod called
        ``__attrs_init_subclass__``, it is executed after the class is created.
     .. deprecated:: 24.1.0 *hash* is deprecated in favor of *unsafe_hash*.
+    .. versionadded:: 24.3.0
+       Unless already present, a ``__replace__`` method is automatically
+       created for `copy.replace` (Python 3.13+ only).
 
     .. note::
 
@@ -502,12 +500,6 @@ def field(
             ``__lt__``, ``__le__``, ``__gt__`` and ``__ge__`` methods. To
             override how the attribute value is ordered, pass a callable that
             takes a single value and returns the value to be ordered.
-
-            .. seealso:: `comparison`
-
-        cmp(bool | ~typing.Callable):
-            Setting *cmp* is equivalent to setting *eq* and *order* to the same
-            value. Must not be mixed with *eq* or *order*.
 
             .. seealso:: `comparison`
 

@@ -49,7 +49,7 @@ from json import dumps
 
 from .base import NotifyBase
 from ..common import NotifyType
-from ..utils import validate_regex
+from ..utils.parse import validate_regex
 from ..locale import gettext_lazy as _
 
 
@@ -64,8 +64,6 @@ class MisskeyVisibility:
 
     FOLLOWERS = 'followers'
 
-    PRIVATE = 'private'
-
     SPECIFIED = 'specified'
 
 
@@ -74,7 +72,6 @@ MISSKEY_VISIBILITIES = (
     MisskeyVisibility.PUBLIC,
     MisskeyVisibility.HOME,
     MisskeyVisibility.FOLLOWERS,
-    MisskeyVisibility.PRIVATE,
     MisskeyVisibility.SPECIFIED,
 )
 

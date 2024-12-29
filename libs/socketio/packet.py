@@ -7,7 +7,7 @@ packet_names = ['CONNECT', 'DISCONNECT', 'EVENT', 'ACK', 'CONNECT_ERROR',
                 'BINARY_EVENT', 'BINARY_ACK']
 
 
-class Packet(object):
+class Packet:
     """Socket.IO packet."""
 
     # the format of the Socket.IO packet is as follows:

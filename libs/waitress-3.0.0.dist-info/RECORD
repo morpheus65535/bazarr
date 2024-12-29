@@ -4,7 +4,7 @@ waitress-3.0.0.dist-info/LICENSE.txt,sha256=PmcdsR32h1FswdtbPWXkqjg-rKPCDOo_r1Og
 waitress-3.0.0.dist-info/METADATA,sha256=LcIRiiQFPBQfYWZELvGinG7VDEEob2Rwxs50fHvzhfE,4205
 waitress-3.0.0.dist-info/RECORD,,
 waitress-3.0.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-waitress-3.0.0.dist-info/WHEEL,sha256=OVMc5UfuAQiSplgO0_WdW7vXVGAt9Hdd6qtN4HotdyA,91
+waitress-3.0.0.dist-info/WHEEL,sha256=P9jw-gEje8ByB7_hXoICnHtVCrEwMQh-630tKvQWehc,91
 waitress-3.0.0.dist-info/entry_points.txt,sha256=tDR8epG2g4I70Lak9d-1qTHbCfBzZd5FDEScAkVuH_E,106
 waitress-3.0.0.dist-info/top_level.txt,sha256=_kFnXYtDXvRWHSXprH53h56AM2jDfY-Y7sgIakVEImI,9
 waitress/__init__.py,sha256=XucLsghawSMTlUAAZ6ToN5qKZyJNv3iolYYgx812a5o,1370

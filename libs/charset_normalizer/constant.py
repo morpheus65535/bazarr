@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
+from __future__ import annotations
+
 from codecs import BOM_UTF8, BOM_UTF16_BE, BOM_UTF16_LE, BOM_UTF32_BE, BOM_UTF32_LE
 from encodings.aliases import aliases
-from re import IGNORECASE, compile as re_compile
-from typing import Dict, List, Set, Union
+from re import IGNORECASE
+from re import compile as re_compile
 
 # Contain for each eligible encoding a list of/item bytes SIG/BOM
-ENCODING_MARKS: Dict[str, Union[bytes, List[bytes]]] = {
+ENCODING_MARKS: dict[str, bytes | list[bytes]] = {
     "utf_8": BOM_UTF8,
     "utf_7": [
         b"\x2b\x2f\x76\x38",
@@ -25,7 +26,7 @@ TOO_BIG_SEQUENCE: int = int(10e6)
 UTF8_MAXIMAL_ALLOCATION: int = 1_112_064
 
 # Up-to-date Unicode ucd/15.0.0
-UNICODE_RANGES_COMBINED: Dict[str, range] = {
+UNICODE_RANGES_COMBINED: dict[str, range] = {
     "Control character": range(32),
     "Basic Latin": range(32, 128),
     "Latin-1 Supplement": range(128, 256),
@@ -357,7 +358,7 @@ UNICODE_RANGES_COMBINED: Dict[str, range] = {
 }
 
 
-UNICODE_SECONDARY_RANGE_KEYWORD: List[str] = [
+UNICODE_SECONDARY_RANGE_KEYWORD: list[str] = [
     "Supplement",
     "Extended",
     "Extensions",
@@ -392,7 +393,7 @@ IANA_NO_ALIASES = [
     "koi8_u",
 ]
 
-IANA_SUPPORTED: List[str] = sorted(
+IANA_SUPPORTED: list[str] = sorted(
     filter(
         lambda x: x.endswith("_codec") is False
         and x not in {"rot_13", "tactis", "mbcs"},
@@ -403,7 +404,7 @@ IANA_SUPPORTED: List[str] = sorted(
 IANA_SUPPORTED_COUNT: int = len(IANA_SUPPORTED)
 
 # pre-computed code page that are similar using the function cp_similarity.
-IANA_SUPPORTED_SIMILAR: Dict[str, List[str]] = {
+IANA_SUPPORTED_SIMILAR: dict[str, list[str]] = {
     "cp037": ["cp1026", "cp1140", "cp273", "cp500"],
     "cp1026": ["cp037", "cp1140", "cp273", "cp500"],
     "cp1125": ["cp866"],
@@ -492,7 +493,7 @@ IANA_SUPPORTED_SIMILAR: Dict[str, List[str]] = {
 }
 
 
-CHARDET_CORRESPONDENCE: Dict[str, str] = {
+CHARDET_CORRESPONDENCE: dict[str, str] = {
     "iso2022_kr": "ISO-2022-KR",
     "iso2022_jp": "ISO-2022-JP",
     "euc_kr": "EUC-KR",
@@ -528,7 +529,7 @@ CHARDET_CORRESPONDENCE: Dict[str, str] = {
 }
 
 
-COMMON_SAFE_ASCII_CHARACTERS: Set[str] = {
+COMMON_SAFE_ASCII_CHARACTERS: set[str] = {
     "<",
     ">",
     "=",
@@ -549,8 +550,8 @@ COMMON_SAFE_ASCII_CHARACTERS: Set[str] = {
 }
 
 
-KO_NAMES: Set[str] = {"johab", "cp949", "euc_kr"}
-ZH_NAMES: Set[str] = {"big5", "cp950", "big5hkscs", "hz"}
+KO_NAMES: set[str] = {"johab", "cp949", "euc_kr"}
+ZH_NAMES: set[str] = {"big5", "cp950", "big5hkscs", "hz"}
 
 # Logging LEVEL below DEBUG
 TRACE: int = 5
@@ -558,7 +559,7 @@ TRACE: int = 5
 
 # Language label that contain the em dash "—"
 # character are to be considered alternative seq to origin
-FREQUENCIES: Dict[str, List[str]] = {
+FREQUENCIES: dict[str, list[str]] = {
     "English": [
         "e",
         "a",

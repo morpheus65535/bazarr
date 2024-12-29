@@ -55,6 +55,9 @@ class Client(base_client.BaseClient):
     :param websocket_extra_options: Dictionary containing additional keyword
                                     arguments passed to
                                     ``websocket.create_connection()``.
+    :param timestamp_requests: If ``True`` a timestamp is added to the query
+                               string of Socket.IO requests as a cache-busting
+                               measure. Set to ``False`` to disable.
     """
     def connect(self, url, headers=None, transports=None,
                 engineio_path='engine.io'):
@@ -110,7 +113,7 @@ class Client(base_client.BaseClient):
         """
         self._send_packet(packet.Packet(packet.MESSAGE, data=data))
 
-    def disconnect(self, abort=False):
+    def disconnect(self, abort=False, reason=None):
         """Disconnect from the server.
 
         :param abort: If set to ``True``, do not wait for background tasks
@@ -120,7 +123,9 @@ class Client(base_client.BaseClient):
             self._send_packet(packet.Packet(packet.CLOSE))
             self.queue.put(None)
             self.state = 'disconnecting'
-            self._trigger_event('disconnect', run_async=False)
+            self._trigger_event('disconnect',
+                                reason or self.reason.CLIENT_DISCONNECT,
+                                run_async=False)
             if self.current_transport == 'websocket':
                 self.ws.close()
             if not abort:
@@ -251,7 +256,7 @@ class Client(base_client.BaseClient):
         extra_options = {}
         if self.http:
             # cookies
-            cookies = '; '.join(["{}={}".format(cookie.name, cookie.value)
+            cookies = '; '.join([f"{cookie.name}={cookie.value}"
                                  for cookie in self.http.cookies])
             for header, value in headers.items():
                 if header.lower() == 'cookie':
@@ -325,7 +330,7 @@ class Client(base_client.BaseClient):
         try:
             ws = websocket.create_connection(
                 websocket_url + self._get_url_timestamp(), **extra_options)
-        except (ConnectionError, IOError, websocket.WebSocketException):
+        except (ConnectionError, OSError, websocket.WebSocketException):
             if upgrade:
                 self.logger.warning(
                     'WebSocket upgrade failed: connection error')
@@ -404,7 +409,7 @@ class Client(base_client.BaseClient):
         elif pkt.packet_type == packet.PING:
             self._send_packet(packet.Packet(packet.PONG, pkt.data))
         elif pkt.packet_type == packet.CLOSE:
-            self.disconnect(abort=True)
+            self.disconnect(abort=True, reason=self.reason.SERVER_DISCONNECT)
         elif pkt.packet_type == packet.NOOP:
             pass
         else:
@@ -444,7 +449,16 @@ class Client(base_client.BaseClient):
                 return self.start_background_task(self.handlers[event], *args)
             else:
                 try:
-                    return self.handlers[event](*args)
+                    try:
+                        return self.handlers[event](*args)
+                    except TypeError:
+                        if event == 'disconnect' and \
+                                len(args) == 1:  # pragma: no branch
+                            # legacy disconnect events do  not have a reason
+                            # argument
+                            return self.handlers[event]()
+                        else:  # pragma: no cover
+                            raise
                 except:
                     self.logger.exception(event + ' handler error')
 
@@ -480,7 +494,8 @@ class Client(base_client.BaseClient):
             self.logger.info('Waiting for write loop task to end')
             self.write_loop_task.join()
         if self.state == 'connected':
-            self._trigger_event('disconnect', run_async=False)
+            self._trigger_event('disconnect', self.reason.TRANSPORT_ERROR,
+                                run_async=False)
             try:
                 base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
@@ -530,7 +545,8 @@ class Client(base_client.BaseClient):
             self.logger.info('Waiting for write loop task to end')
             self.write_loop_task.join()
         if self.state == 'connected':
-            self._trigger_event('disconnect', run_async=False)
+            self._trigger_event('disconnect', self.reason.TRANSPORT_ERROR,
+                                run_async=False)
             try:
                 base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover

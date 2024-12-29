@@ -1,9 +1,9 @@
 werkzeug-3.0.6.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
 werkzeug-3.0.6.dist-info/LICENSE.txt,sha256=O0nc7kEF6ze6wQ-vG-JgQI_oXSUrjp3y4JefweCUQ3s,1475
-werkzeug-3.0.6.dist-info/METADATA,sha256=im31HsOnwlqXdpNMK9QeIqZNo8hRiVBl7pCusz3C8sU,3682
+werkzeug-3.0.6.dist-info/METADATA,sha256=pY6ipkBHFQjk6kAjpXsHAaeFxkdNV-s2VmyCrIb6_mQ,3682
 werkzeug-3.0.6.dist-info/RECORD,,
 werkzeug-3.0.6.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-werkzeug-3.0.6.dist-info/WHEEL,sha256=EZbGkh7Ie4PoZfRQ8I0ZuP9VklN_TvcZ6DSE5Uar4z4,81
+werkzeug-3.0.6.dist-info/WHEEL,sha256=CpUCUxeHQbRN5UGRQHYRJorO5Af-Qy_fHMctcQ8DSGI,82
 werkzeug/__init__.py,sha256=HX_PSY5E2vtVlD3R4YblwBRCjg7j3Tlm3LASbYqOSkU,727
 werkzeug/_internal.py,sha256=su1olkbHMkzt0VKcEkPLCha8sdVzXNBuqW6YVpp8GHg,5545
 werkzeug/_reloader.py,sha256=QuMO-UwuD-cHsUpwSEUr7iYNbv_ziHFhgNDAiv25J80,15429

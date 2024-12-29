@@ -86,7 +86,7 @@ class KombuManager(PubSubManager):  # pragma: no cover
         return kombu.Exchange(self.channel, **options)
 
     def _queue(self):
-        queue_name = 'flask-socketio.' + str(uuid.uuid4())
+        queue_name = 'python-socketio.' + str(uuid.uuid4())
         options = {'durable': False, 'queue_arguments': {'x-expires': 300000}}
         options.update(self.queue_options)
         return kombu.Queue(queue_name, self._exchange(), **options)

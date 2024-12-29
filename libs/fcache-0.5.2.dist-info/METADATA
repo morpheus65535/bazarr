@@ -1,4 +1,4 @@
-Metadata-Version: 2.3
+Metadata-Version: 2.4
 Name: fcache
 Version: 0.5.2
 Summary: a dictionary-like, file-based cache module for Python

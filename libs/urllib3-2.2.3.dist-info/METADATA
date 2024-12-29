@@ -1,4 +1,4 @@
-Metadata-Version: 2.3
+Metadata-Version: 2.4
 Name: urllib3
 Version: 2.2.3
 Summary: HTTP library with thread-safe connection pooling, file post, and more.

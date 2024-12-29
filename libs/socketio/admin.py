@@ -16,7 +16,7 @@ class EventBuffer:
 
     def push(self, type, count=1):
         timestamp = int(time.time()) * 1000
-        key = '{};{}'.format(timestamp, type)
+        key = f'{timestamp};{type}'
         if key not in self.buffer:
             self.buffer[key] = {
                 'timestamp': timestamp,
