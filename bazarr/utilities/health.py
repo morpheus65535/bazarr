@@ -75,11 +75,13 @@ def get_health_issues():
                                            .where(TableShows.profileId.is_not(None))).scalar()
     movies_with_profile = database.execute(select(func.count(TableMovies.radarrId))
                                            .where(TableMovies.profileId.is_not(None))).scalar()
+    default_series_profile_empty = settings.general.serie_default_enabled and settings.general.serie_default_profile == ''
+    default_movies_profile_empty = settings.general.movie_default_enabled and settings.general.movie_default_profile == ''
     if languages_profiles_count == 0:
         health_issues.append({'object': 'Missing languages profile',
                               'issue': 'You must create at least one languages profile and assign it to your content.'})
-    elif languages_profiles_count > 0 and ((settings.general.use_sonarr and series_with_profile == 0) or
-                                           (settings.general.use_radarr and movies_with_profile == 0)):
+    elif languages_profiles_count > 0 and ((settings.general.use_sonarr and series_with_profile == 0 and default_series_profile_empty) or
+                                           (settings.general.use_radarr and movies_with_profile == 0 and default_movies_profile_empty)):
         health_issues.append({'object': 'No assigned languages profile',
                               'issue': 'Although you have created at least one languages profile, you must assign it '
                                        'to your content.'})
