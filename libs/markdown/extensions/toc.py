@@ -6,7 +6,7 @@
 
 # Original code Copyright 2008 [Jack Miller](https://codezen.org/)
 
-# All changes Copyright 2008-2014 The Python Markdown Project
+# All changes Copyright 2008-2024 The Python Markdown Project
 
 # License: [BSD](https://opensource.org/licenses/bsd-license.php)
 
@@ -21,11 +21,13 @@ from __future__ import annotations
 
 from . import Extension
 from ..treeprocessors import Treeprocessor
-from ..util import code_escape, parseBoolValue, AMP_SUBSTITUTE, HTML_PLACEHOLDER_RE, AtomicString
+from ..util import parseBoolValue, AMP_SUBSTITUTE, deprecated, HTML_PLACEHOLDER_RE, AtomicString
 from ..treeprocessors import UnescapeTreeprocessor
+from ..serializers import RE_AMP
 import re
 import html
 import unicodedata
+from copy import deepcopy
 import xml.etree.ElementTree as etree
 from typing import TYPE_CHECKING, Any, Iterator, MutableSet
 
@@ -63,6 +65,7 @@ def unique(id: str, ids: MutableSet[str]) -> str:
     return id
 
 
+@deprecated('Use `render_inner_html` and `striptags` instead.')
 def get_name(el: etree.Element) -> str:
     """Get title name."""
 
@@ -75,6 +78,7 @@ def get_name(el: etree.Element) -> str:
     return ''.join(text).strip()
 
 
+@deprecated('Use `run_postprocessors`, `render_inner_html` and/or `striptags` instead.')
 def stashedHTML2text(text: str, md: Markdown, strip_entities: bool = True) -> str:
     """ Extract raw HTML from stash, reduce to plain text and swap with placeholder. """
     def _html_sub(m: re.Match[str]) -> str:
@@ -93,9 +97,78 @@ def stashedHTML2text(text: str, md: Markdown, strip_entities: bool = True) -> st
 
 
 def unescape(text: str) -> str:
-    """ Unescape escaped text. """
+    """ Unescape Markdown backslash escaped text. """
     c = UnescapeTreeprocessor()
     return c.unescape(text)
+
+
+def strip_tags(text: str) -> str:
+    """ Strip HTML tags and return plain text. Note: HTML entities are unaffected. """
+    # A comment could contain a tag, so strip comments first
+    while (start := text.find('<!--')) != -1 and (end := text.find('-->', start)) != -1:
+        text = f'{text[:start]}{text[end + 3:]}'
+
+    while (start := text.find('<')) != -1 and (end := text.find('>', start)) != -1:
+        text = f'{text[:start]}{text[end + 1:]}'
+
+    # Collapse whitespace
+    text = ' '.join(text.split())
+    return text
+
+
+def escape_cdata(text: str) -> str:
+    """ Escape character data. """
+    if "&" in text:
+        # Only replace & when not part of an entity
+        text = RE_AMP.sub('&amp;', text)
+    if "<" in text:
+        text = text.replace("<", "&lt;")
+    if ">" in text:
+        text = text.replace(">", "&gt;")
+    return text
+
+
+def run_postprocessors(text: str, md: Markdown) -> str:
+    """ Run postprocessors from Markdown instance on text. """
+    for pp in md.postprocessors:
+        text = pp.run(text)
+    return text.strip()
+
+
+def render_inner_html(el: etree.Element, md: Markdown) -> str:
+    """ Fully render inner html of an `etree` element as a string. """
+    # The `UnescapeTreeprocessor` runs after `toc` extension so run here.
+    text = unescape(md.serializer(el))
+
+    # strip parent tag
+    start = text.index('>') + 1
+    end = text.rindex('<')
+    text = text[start:end].strip()
+
+    return run_postprocessors(text, md)
+
+
+def remove_fnrefs(root: etree.Element) -> etree.Element:
+    """ Remove footnote references from a copy of the element, if any are present. """
+    # Remove footnote references, which look like this: `<sup id="fnref:1">...</sup>`.
+    # If there are no `sup` elements, then nothing to do.
+    if next(root.iter('sup'), None) is None:
+        return root
+    root = deepcopy(root)
+    # Find parent elements that contain `sup` elements.
+    for parent in root.findall('.//sup/..'):
+        carry_text = ""
+        for child in reversed(parent):  # Reversed for the ability to mutate during iteration.
+            # Remove matching footnote references but carry any `tail` text to preceding elements.
+            if child.tag == 'sup' and child.get('id', '').startswith('fnref'):
+                carry_text = f'{child.tail or ""}{carry_text}'
+                parent.remove(child)
+            elif carry_text:
+                child.tail = f'{child.tail or ""}{carry_text}'
+                carry_text = ""
+        if carry_text:
+            parent.text = f'{parent.text or ""}{carry_text}'
+    return root
 
 
 def nest_toc_tokens(toc_list):
@@ -300,26 +373,29 @@ class TocTreeprocessor(Treeprocessor):
         for el in doc.iter():
             if isinstance(el.tag, str) and self.header_rgx.match(el.tag):
                 self.set_level(el)
-                text = get_name(el)
+                innerhtml = render_inner_html(remove_fnrefs(el), self.md)
+                name = strip_tags(innerhtml)
 
                 # Do not override pre-existing ids
                 if "id" not in el.attrib:
-                    innertext = unescape(stashedHTML2text(text, self.md))
-                    el.attrib["id"] = unique(self.slugify(innertext, self.sep), used_ids)
+                    el.attrib["id"] = unique(self.slugify(html.unescape(name), self.sep), used_ids)
+
+                data_toc_label = ''
+                if 'data-toc-label' in el.attrib:
+                    data_toc_label = run_postprocessors(unescape(el.attrib['data-toc-label']), self.md)
+                    # Overwrite name with sanitized value of `data-toc-label`.
+                    name = escape_cdata(strip_tags(data_toc_label))
+                    # Remove the data-toc-label attribute as it is no longer needed
+                    del el.attrib['data-toc-label']
 
                 if int(el.tag[-1]) >= self.toc_top and int(el.tag[-1]) <= self.toc_bottom:
                     toc_tokens.append({
                         'level': int(el.tag[-1]),
                         'id': el.attrib["id"],
-                        'name': unescape(stashedHTML2text(
-                            code_escape(el.attrib.get('data-toc-label', text)),
-                            self.md, strip_entities=False
-                        ))
+                        'name': name,
+                        'html': innerhtml,
+                        'data-toc-label': data_toc_label
                     })
-
-                # Remove the data-toc-label attribute as it is no longer needed
-                if 'data-toc-label' in el.attrib:
-                    del el.attrib['data-toc-label']
 
                 if self.use_anchors:
                     self.add_anchor(el, el.attrib["id"])

@@ -38,6 +38,9 @@ from ...orm import Session
 from ...orm import SessionTransaction
 from ...orm import state as _instance_state
 from ...util.concurrency import greenlet_spawn
+from ...util.typing import Concatenate
+from ...util.typing import ParamSpec
+
 
 if TYPE_CHECKING:
     from .engine import AsyncConnection
@@ -71,6 +74,7 @@ if TYPE_CHECKING:
 
 _AsyncSessionBind = Union["AsyncEngine", "AsyncConnection"]
 
+_P = ParamSpec("_P")
 _T = TypeVar("_T", bound=Any)
 
 
@@ -332,7 +336,10 @@ class AsyncSession(ReversibleProxy[Session]):
         )
 
     async def run_sync(
-        self, fn: Callable[..., _T], *arg: Any, **kw: Any
+        self,
+        fn: Callable[Concatenate[Session, _P], _T],
+        *arg: _P.args,
+        **kw: _P.kwargs,
     ) -> _T:
         """Invoke the given synchronous (i.e. not async) callable,
         passing a synchronous-style :class:`_orm.Session` as the first
@@ -386,7 +393,9 @@ class AsyncSession(ReversibleProxy[Session]):
             :ref:`session_run_sync`
         """  # noqa: E501
 
-        return await greenlet_spawn(fn, self.sync_session, *arg, **kw)
+        return await greenlet_spawn(
+            fn, self.sync_session, *arg, _require_await=False, **kw
+        )
 
     @overload
     async def execute(
@@ -1298,7 +1307,7 @@ class AsyncSession(ReversibleProxy[Session]):
 
         This method retrieves the history for each instrumented
         attribute on the instance and performs a comparison of the current
-        value to its previously committed value, if any.
+        value to its previously flushed or committed value, if any.
 
         It is in effect a more expensive and accurate
         version of checking for the given instance in the
@@ -1854,7 +1863,7 @@ class AsyncSessionTransaction(
     ) -> AsyncSessionTransaction:
         self.sync_transaction = self._assign_proxied(
             await greenlet_spawn(
-                self.session.sync_session.begin_nested  # type: ignore
+                self.session.sync_session.begin_nested
                 if self.nested
                 else self.session.sync_session.begin
             )

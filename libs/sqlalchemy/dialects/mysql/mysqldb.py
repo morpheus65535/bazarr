@@ -97,12 +97,7 @@ from ... import util
 
 
 class MySQLExecutionContext_mysqldb(MySQLExecutionContext):
-    @property
-    def rowcount(self):
-        if hasattr(self, "_rowcount"):
-            return self._rowcount
-        else:
-            return self.cursor.rowcount
+    pass
 
 
 class MySQLCompiler_mysqldb(MySQLCompiler):
@@ -217,7 +212,7 @@ class MySQLDialect_mysqldb(MySQLDialect):
         util.coerce_kw_type(opts, "read_timeout", int)
         util.coerce_kw_type(opts, "write_timeout", int)
         util.coerce_kw_type(opts, "client_flag", int)
-        util.coerce_kw_type(opts, "local_infile", int)
+        util.coerce_kw_type(opts, "local_infile", bool)
         # Note: using either of the below will cause all strings to be
         # returned as Unicode, both in raw SQL operations and with column
         # types like String and MSString.

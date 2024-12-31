@@ -1,4 +1,5 @@
 import click
+from flask import g
 from flask.cli import with_appcontext
 from flask_migrate import list_templates as _list_templates
 from flask_migrate import init as _init
@@ -18,9 +19,12 @@ from flask_migrate import check as _check
 
 
 @click.group()
-def db():
+@click.option('-x', '--x-arg', multiple=True,
+              help='Additional arguments consumed by custom env.py scripts')
+@with_appcontext
+def db(x_arg):
     """Perform database migrations."""
-    pass
+    g.x_arg = x_arg  # these will be picked up by Migrate.get_config()
 
 
 @db.command()
@@ -234,12 +238,15 @@ def current(directory, verbose):
 @click.option('--tag', default=None,
               help=('Arbitrary "tag" name - can be used by custom env.py '
                     'scripts'))
+@click.option('--purge', is_flag=True,
+              help=('Delete the version in the alembic_version table before '
+                    'stamping'))
 @click.argument('revision', default='head')
 @with_appcontext
-def stamp(directory, sql, tag, revision):
+def stamp(directory, sql, tag, revision, purge):
     """'stamp' the revision table with the given revision; don't run any
     migrations"""
-    _stamp(directory, revision, sql, tag)
+    _stamp(directory, revision, sql, tag, purge)
 
 
 @db.command()

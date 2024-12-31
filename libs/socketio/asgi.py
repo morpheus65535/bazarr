@@ -15,7 +15,12 @@ class ASGIApp(engineio.ASGIApp):  # pragma: no cover
     :param other_asgi_app: A separate ASGI app that receives all other traffic.
     :param socketio_path: The endpoint where the Socket.IO application should
                           be installed. The default value is appropriate for
-                          most cases.
+                          most cases. With a value of ``None``, all incoming
+                          traffic is directed to the Socket.IO server, with the
+                          assumption that routing, if necessary, is handled by
+                          a different layer. When this option is set to
+                          ``None``, ``static_files`` and ``other_asgi_app`` are
+                          ignored.
     :param on_startup: function to be called on application startup; can be
                        coroutine
     :param on_shutdown: function to be called on application shutdown; can be
@@ -27,7 +32,7 @@ class ASGIApp(engineio.ASGIApp):  # pragma: no cover
         import uvicorn
 
         sio = socketio.AsyncServer()
-        app = engineio.ASGIApp(sio, static_files={
+        app = socketio.ASGIApp(sio, static_files={
             '/': 'index.html',
             '/static': './public',
         })

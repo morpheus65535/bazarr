@@ -90,13 +90,13 @@ class LazySettings(LazyObject):
         e.g: ROOT_PATH='/' is transformed into `ROOT_PATH_FOR_DYNACONF`
         """
 
-        mispells = {
+        misspells = {
             "settings_files": "settings_file",
             "SETTINGS_FILES": "SETTINGS_FILE",
             "environment": "environments",
             "ENVIRONMENT": "ENVIRONMENTS",
         }
-        for misspell, correct in mispells.items():
+        for misspell, correct in misspells.items():
             if misspell in kwargs:
                 kwargs[correct] = kwargs.pop(misspell)
 
@@ -229,7 +229,7 @@ class Settings:
         self._loaded_py_modules = []
         self._loaded_files = []
         self._deleted = set()
-        self._store = DynaBox(box_settings=self)
+        self._store = kwargs.pop("_store", DynaBox(box_settings=self))
         self._env_cache = {}
         self._loaded_by_loaders: dict[SourceMetadata | str, Any] = {}
         self._loaders = []
@@ -432,6 +432,12 @@ class Settings:
         :param default: In case of not found it will be returned
         :param parent: Is there a pre-loaded parent in a nested data?
         """
+        # if parent is not traverseable raise error
+        if parent and not hasattr(parent, "get"):
+            raise AttributeError(
+                f"cannot lookup {dotted_key!r} from {type(parent).__name__!r}"
+            )
+
         split_key = dotted_key.split(".")
         name, keys = split_key[0], split_key[1:]
         result = self.get(name, default=default, parent=parent, **kwargs)
@@ -918,7 +924,7 @@ class Settings:
         :param key: The key to store. Can be of any type.
         :param value: The raw value to parse and store
         :param loader_identifier: Optional loader name e.g: toml, yaml etc.
-                                  Or isntance of SourceMetadata
+                                  Or instance of SourceMetadata
         :param tomlfy: Bool define if value is parsed by toml (defaults False)
         :param merge: Bool define if existing nested data will be merged.
         :param validate: Bool define if validation will be triggered
@@ -1179,13 +1185,10 @@ class Settings:
             core_loader.load(self, env, silent=silent, key=key)
 
         self.load_includes(env, silent=silent, key=key)
-        self._store._box_config["_bypass_evaluation"] = True
 
         # execute hooks
         execute_module_hooks("post", self, env, silent=silent, key=key)
         execute_instance_hooks(self, "post", self._post_hooks)
-
-        self._store._box_config.pop("_bypass_evaluation", None)
 
     def pre_load(self, env, silent, key):
         """Do we have any file to pre-load before main settings file?"""
@@ -1228,7 +1231,6 @@ class Settings:
         if files:
             already_loaded = set()
             for _filename in files:
-
                 # load_file() will handle validation later
                 with suppress(ValidationError):
                     if py_loader.try_to_load_from_py_module_name(
@@ -1250,14 +1252,10 @@ class Settings:
                     filepath = os.path.join(root_dir, str(_filename))
 
                 paths = [
-                    p
-                    for p in sorted(glob(filepath, root_dir=self._root_path))
-                    if ".local." not in p
+                    p for p in sorted(glob(filepath)) if ".local." not in p
                 ]
                 local_paths = [
-                    p
-                    for p in sorted(glob(filepath, root_dir=self._root_path))
-                    if ".local." in p
+                    p for p in sorted(glob(filepath)) if ".local." in p
                 ]
 
                 # Handle possible *.globs sorted alphanumeric

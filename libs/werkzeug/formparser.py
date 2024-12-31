@@ -30,9 +30,12 @@ except ImportError:
 
 if t.TYPE_CHECKING:
     import typing as te
+
     from _typeshed.wsgi import WSGIEnvironment
 
-    t_parse_result = t.Tuple[t.IO[bytes], MultiDict, MultiDict]
+    t_parse_result = t.Tuple[
+        t.IO[bytes], MultiDict[str, str], MultiDict[str, FileStorage]
+    ]
 
     class TStreamFactory(te.Protocol):
         def __call__(
@@ -41,8 +44,7 @@ if t.TYPE_CHECKING:
             content_type: str | None,
             filename: str | None,
             content_length: int | None = None,
-        ) -> t.IO[bytes]:
-            ...
+        ) -> t.IO[bytes]: ...
 
 
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
@@ -69,7 +71,7 @@ def parse_form_data(
     stream_factory: TStreamFactory | None = None,
     max_form_memory_size: int | None = None,
     max_content_length: int | None = None,
-    cls: type[MultiDict] | None = None,
+    cls: type[MultiDict[str, t.Any]] | None = None,
     silent: bool = True,
     *,
     max_form_parts: int | None = None,
@@ -170,7 +172,7 @@ class FormDataParser:
         stream_factory: TStreamFactory | None = None,
         max_form_memory_size: int | None = None,
         max_content_length: int | None = None,
-        cls: type[MultiDict] | None = None,
+        cls: type[MultiDict[str, t.Any]] | None = None,
         silent: bool = True,
         *,
         max_form_parts: int | None = None,
@@ -184,7 +186,7 @@ class FormDataParser:
         self.max_form_parts = max_form_parts
 
         if cls is None:
-            cls = MultiDict
+            cls = t.cast("type[MultiDict[str, t.Any]]", MultiDict)
 
         self.cls = cls
         self.silent = silent
@@ -279,15 +281,11 @@ class FormDataParser:
         ):
             raise RequestEntityTooLarge()
 
-        try:
-            items = parse_qsl(
-                stream.read().decode(),
-                keep_blank_values=True,
-                errors="werkzeug.url_quote",
-            )
-        except ValueError as e:
-            raise RequestEntityTooLarge() from e
-
+        items = parse_qsl(
+            stream.read().decode(),
+            keep_blank_values=True,
+            errors="werkzeug.url_quote",
+        )
         return stream, self.cls(items), self.cls()
 
 
@@ -296,7 +294,7 @@ class MultiPartParser:
         self,
         stream_factory: TStreamFactory | None = None,
         max_form_memory_size: int | None = None,
-        cls: type[MultiDict] | None = None,
+        cls: type[MultiDict[str, t.Any]] | None = None,
         buffer_size: int = 64 * 1024,
         max_form_parts: int | None = None,
     ) -> None:
@@ -309,7 +307,7 @@ class MultiPartParser:
         self.stream_factory = stream_factory
 
         if cls is None:
-            cls = MultiDict
+            cls = t.cast("type[MultiDict[str, t.Any]]", MultiDict)
 
         self.cls = cls
         self.buffer_size = buffer_size
@@ -352,8 +350,9 @@ class MultiPartParser:
 
     def parse(
         self, stream: t.IO[bytes], boundary: bytes, content_length: int | None
-    ) -> tuple[MultiDict, MultiDict]:
+    ) -> tuple[MultiDict[str, str], MultiDict[str, FileStorage]]:
         current_part: Field | File
+        field_size: int | None = None
         container: t.IO[bytes] | list[bytes]
         _write: t.Callable[[bytes], t.Any]
 
@@ -372,13 +371,23 @@ class MultiPartParser:
             while not isinstance(event, (Epilogue, NeedData)):
                 if isinstance(event, Field):
                     current_part = event
+                    field_size = 0
                     container = []
                     _write = container.append
                 elif isinstance(event, File):
                     current_part = event
+                    field_size = None
                     container = self.start_file_streaming(event, content_length)
                     _write = container.write
                 elif isinstance(event, Data):
+                    if self.max_form_memory_size is not None and field_size is not None:
+                        # Ensure that accumulated data events do not exceed limit.
+                        # Also checked within single event in MultipartDecoder.
+                        field_size += len(event.data)
+
+                        if field_size > self.max_form_memory_size:
+                            raise RequestEntityTooLarge()
+
                     _write(event.data)
                     if not event.more_data:
                         if isinstance(current_part, Field):

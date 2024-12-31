@@ -1,14 +1,20 @@
-# -*- coding: utf-8 -*-
-from ...compat import bytes
 from ...exceptions import ReadError, SizeError
 from datetime import datetime, timedelta
 from io import BytesIO
 from struct import unpack
 
 
-__all__ = ['read_element_id', 'read_element_size', 'read_element_integer', 'read_element_uinteger',
-           'read_element_float', 'read_element_string', 'read_element_unicode', 'read_element_date',
-           'read_element_binary']
+__all__ = [
+    "read_element_id",
+    "read_element_size",
+    "read_element_integer",
+    "read_element_uinteger",
+    "read_element_float",
+    "read_element_string",
+    "read_element_unicode",
+    "read_element_date",
+    "read_element_binary",
+]
 
 
 def _read(stream, size):
@@ -24,7 +30,7 @@ def _read(stream, size):
     """
     data = stream.read(size)
     if len(data) < size:
-        raise ReadError('Less than %d bytes read (%d)' % (size, len(data)))
+        raise ReadError("Less than %d bytes read (%d)" % (size, len(data)))
     return data
 
 
@@ -42,14 +48,14 @@ def read_element_id(stream):
     if byte & 0x80:
         return byte
     elif byte & 0x40:
-        return unpack('>H', char + _read(stream, 1))[0]
+        return unpack(">H", char + _read(stream, 1))[0]
     elif byte & 0x20:
-        b, h = unpack('>BH', char + _read(stream, 2))
-        return b * 2 ** 16 + h
+        b, h = unpack(">BH", char + _read(stream, 2))
+        return b * 2**16 + h
     elif byte & 0x10:
-        return unpack('>L', char + _read(stream, 3))[0]
+        return unpack(">L", char + _read(stream, 3))[0]
     else:
-        ValueError('Not an Element ID')
+        ValueError("Not an Element ID")
 
 
 def read_element_size(stream):
@@ -64,27 +70,27 @@ def read_element_size(stream):
     char = _read(stream, 1)
     byte = ord(char)
     if byte & 0x80:
-        return unpack('>B', bytes((byte ^ 0x80,)))[0]
+        return unpack(">B", bytes((byte ^ 0x80,)))[0]
     elif byte & 0x40:
-        return unpack('>H', bytes((byte ^ 0x40,)) + _read(stream, 1))[0]
+        return unpack(">H", bytes((byte ^ 0x40,)) + _read(stream, 1))[0]
     elif byte & 0x20:
-        b, h = unpack('>BH', bytes((byte ^ 0x20,)) + _read(stream, 2))
-        return b * 2 ** 16 + h
+        b, h = unpack(">BH", bytes((byte ^ 0x20,)) + _read(stream, 2))
+        return b * 2**16 + h
     elif byte & 0x10:
-        return unpack('>L', bytes((byte ^ 0x10,)) + _read(stream, 3))[0]
+        return unpack(">L", bytes((byte ^ 0x10,)) + _read(stream, 3))[0]
     elif byte & 0x08:
-        b, l = unpack('>BL', bytes((byte ^ 0x08,)) + _read(stream, 4))
-        return b * 2 ** 32 + l
+        b, l = unpack(">BL", bytes((byte ^ 0x08,)) + _read(stream, 4))
+        return b * 2**32 + l
     elif byte & 0x04:
-        h, l = unpack('>HL', bytes((byte ^ 0x04,)) + _read(stream, 5))
-        return h * 2 ** 32 + l
+        h, l = unpack(">HL", bytes((byte ^ 0x04,)) + _read(stream, 5))
+        return h * 2**32 + l
     elif byte & 0x02:
-        b, h, l = unpack('>BHL', bytes((byte ^ 0x02,)) + _read(stream, 6))
-        return b * 2 ** 48 + h * 2 ** 32 + l
+        b, h, l = unpack(">BHL", bytes((byte ^ 0x02,)) + _read(stream, 6))
+        return b * 2**48 + h * 2**32 + l
     elif byte & 0x01:
-        return unpack('>Q', bytes((byte ^ 0x01,)) + _read(stream, 7))[0]
+        return unpack(">Q", bytes((byte ^ 0x01,)) + _read(stream, 7))[0]
     else:
-        ValueError('Not an Element Size')
+        ValueError("Not an Element Size")
 
 
 def read_element_integer(stream, size):
@@ -99,25 +105,25 @@ def read_element_integer(stream, size):
 
     """
     if size == 1:
-        return unpack('>b', _read(stream, 1))[0]
+        return unpack(">b", _read(stream, 1))[0]
     elif size == 2:
-        return unpack('>h', _read(stream, 2))[0]
+        return unpack(">h", _read(stream, 2))[0]
     elif size == 3:
-        b, h = unpack('>bH', _read(stream, 3))
-        return b * 2 ** 16 + h
+        b, h = unpack(">bH", _read(stream, 3))
+        return b * 2**16 + h
     elif size == 4:
-        return unpack('>l', _read(stream, 4))[0]
+        return unpack(">l", _read(stream, 4))[0]
     elif size == 5:
-        b, l = unpack('>bL', _read(stream, 5))
-        return b * 2 ** 32 + l
+        b, l = unpack(">bL", _read(stream, 5))
+        return b * 2**32 + l
     elif size == 6:
-        h, l = unpack('>hL', _read(stream, 6))
-        return h * 2 ** 32 + l
+        h, l = unpack(">hL", _read(stream, 6))
+        return h * 2**32 + l
     elif size == 7:
-        b, h, l = unpack('>bHL', _read(stream, 7))
-        return b * 2 ** 48 + h * 2 ** 32 + l
+        b, h, l = unpack(">bHL", _read(stream, 7))
+        return b * 2**48 + h * 2**32 + l
     elif size == 8:
-        return unpack('>q', _read(stream, 8))[0]
+        return unpack(">q", _read(stream, 8))[0]
     else:
         raise SizeError(size)
 
@@ -134,25 +140,25 @@ def read_element_uinteger(stream, size):
 
     """
     if size == 1:
-        return unpack('>B', _read(stream, 1))[0]
+        return unpack(">B", _read(stream, 1))[0]
     elif size == 2:
-        return unpack('>H', _read(stream, 2))[0]
+        return unpack(">H", _read(stream, 2))[0]
     elif size == 3:
-        b, h = unpack('>BH', _read(stream, 3))
-        return b * 2 ** 16 + h
+        b, h = unpack(">BH", _read(stream, 3))
+        return b * 2**16 + h
     elif size == 4:
-        return unpack('>L', _read(stream, 4))[0]
+        return unpack(">L", _read(stream, 4))[0]
     elif size == 5:
-        b, l = unpack('>BL', _read(stream, 5))
-        return b * 2 ** 32 + l
+        b, l = unpack(">BL", _read(stream, 5))
+        return b * 2**32 + l
     elif size == 6:
-        h, l = unpack('>HL', _read(stream, 6))
-        return h * 2 ** 32 + l
+        h, l = unpack(">HL", _read(stream, 6))
+        return h * 2**32 + l
     elif size == 7:
-        b, h, l = unpack('>BHL', _read(stream, 7))
-        return b * 2 ** 48 + h * 2 ** 32 + l
+        b, h, l = unpack(">BHL", _read(stream, 7))
+        return b * 2**48 + h * 2**32 + l
     elif size == 8:
-        return unpack('>Q', _read(stream, 8))[0]
+        return unpack(">Q", _read(stream, 8))[0]
     else:
         raise SizeError(size)
 
@@ -169,9 +175,9 @@ def read_element_float(stream, size):
 
     """
     if size == 4:
-        return unpack('>f', _read(stream, 4))[0]
+        return unpack(">f", _read(stream, 4))[0]
     elif size == 8:
-        return unpack('>d', _read(stream, 8))[0]
+        return unpack(">d", _read(stream, 8))[0]
     else:
         raise SizeError(size)
 
@@ -187,7 +193,7 @@ def read_element_string(stream, size):
     :rtype: unicode
 
     """
-    return _read(stream, size).decode('ascii')
+    return _read(stream, size).decode("ascii")
 
 
 def read_element_unicode(stream, size):
@@ -201,7 +207,7 @@ def read_element_unicode(stream, size):
     :rtype: unicode
 
     """
-    return _read(stream, size).decode('utf-8')
+    return _read(stream, size).decode("utf-8")
 
 
 def read_element_date(stream, size):
@@ -217,7 +223,7 @@ def read_element_date(stream, size):
     """
     if size != 8:
         raise SizeError(size)
-    nanoseconds = unpack('>q', _read(stream, 8))[0]
+    nanoseconds = unpack(">q", _read(stream, 8))[0]
     return datetime(2001, 1, 1, 0, 0, 0, 0, None) + timedelta(microseconds=nanoseconds // 1000)
 
 

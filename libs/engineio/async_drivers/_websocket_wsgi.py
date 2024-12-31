@@ -25,7 +25,7 @@ class SimpleWebSocketWSGI:  # pragma: no cover
         try:
             return self.ws.send(message)
         except simple_websocket.ConnectionClosed:
-            raise IOError()
+            raise OSError()
 
     def wait(self):
         try:

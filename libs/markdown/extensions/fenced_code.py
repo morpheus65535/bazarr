@@ -25,7 +25,7 @@ from textwrap import dedent
 from . import Extension
 from ..preprocessors import Preprocessor
 from .codehilite import CodeHilite, CodeHiliteExtension, parse_hl_lines
-from .attr_list import get_attrs, AttrListExtension
+from .attr_list import get_attrs_and_remainder, AttrListExtension
 from ..util import parseBoolValue
 from ..serializers import _escape_attrib_html
 import re
@@ -56,7 +56,7 @@ class FencedBlockPreprocessor(Preprocessor):
     FENCED_BLOCK_RE = re.compile(
         dedent(r'''
             (?P<fence>^(?:~{3,}|`{3,}))[ ]*                          # opening fence
-            ((\{(?P<attrs>[^\}\n]*)\})|                              # (optional {attrs} or
+            ((\{(?P<attrs>[^\n]*)\})|                                # (optional {attrs} or
             (\.?(?P<lang>[\w#.+-]*)[ ]*)?                            # optional (.)lang
             (hl_lines=(?P<quot>"|')(?P<hl_lines>.*?)(?P=quot)[ ]*)?) # optional hl_lines)
             \n                                                       # newline (end of opening fence)
@@ -94,12 +94,17 @@ class FencedBlockPreprocessor(Preprocessor):
             self.checked_for_deps = True
 
         text = "\n".join(lines)
+        index = 0
         while 1:
-            m = self.FENCED_BLOCK_RE.search(text)
+            m = self.FENCED_BLOCK_RE.search(text, index)
             if m:
                 lang, id, classes, config = None, '', [], {}
                 if m.group('attrs'):
-                    id, classes, config = self.handle_attrs(get_attrs(m.group('attrs')))
+                    attrs, remainder = get_attrs_and_remainder(m.group('attrs'))
+                    if remainder:  # Does not have correctly matching curly braces, so the syntax is invalid.
+                        index = m.end('attrs')  # Explicitly skip over this, to prevent an infinite loop.
+                        continue
+                    id, classes, config = self.handle_attrs(attrs)
                     if len(classes):
                         lang = classes.pop(0)
                 else:
@@ -151,6 +156,8 @@ class FencedBlockPreprocessor(Preprocessor):
 
                 placeholder = self.md.htmlStash.store(code)
                 text = f'{text[:m.start()]}\n{placeholder}\n{text[m.end():]}'
+                # Continue from after the replaced text in the next iteration.
+                index = m.start() + 1 + len(placeholder)
             else:
                 break
         return text.split("\n")

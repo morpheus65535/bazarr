@@ -78,10 +78,10 @@ ROOT_PATH_FOR_DYNACONF = get("ROOT_PATH_FOR_DYNACONF", None)
 # Default settings file
 SETTINGS_FILE_FOR_DYNACONF = get("SETTINGS_FILE_FOR_DYNACONF", [])
 
-# MISPELLS `FILES` when/if it happens
-mispelled_files = get("SETTINGS_FILES_FOR_DYNACONF", None)
-if not SETTINGS_FILE_FOR_DYNACONF and mispelled_files is not None:
-    SETTINGS_FILE_FOR_DYNACONF = mispelled_files
+# MISSPELLS `FILES` when/if it happens
+misspelled_files = get("SETTINGS_FILES_FOR_DYNACONF", None)
+if not SETTINGS_FILE_FOR_DYNACONF and misspelled_files is not None:
+    SETTINGS_FILE_FOR_DYNACONF = misspelled_files
 
 # # ENV SETTINGS
 # # In dynaconf 1.0.0 `NAMESPACE` got renamed to `ENV`

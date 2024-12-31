@@ -24,8 +24,8 @@ def gen_salt(length: int) -> str:
 
 def _hash_internal(method: str, salt: str, password: str) -> tuple[str, str]:
     method, *args = method.split(":")
-    salt = salt.encode("utf-8")
-    password = password.encode("utf-8")
+    salt_bytes = salt.encode()
+    password_bytes = password.encode()
 
     if method == "scrypt":
         if not args:
@@ -40,7 +40,9 @@ def _hash_internal(method: str, salt: str, password: str) -> tuple[str, str]:
 
         maxmem = 132 * n * r * p  # ideally 128, but some extra seems needed
         return (
-            hashlib.scrypt(password, salt=salt, n=n, r=r, p=p, maxmem=maxmem).hex(),
+            hashlib.scrypt(
+                password_bytes, salt=salt_bytes, n=n, r=r, p=p, maxmem=maxmem
+            ).hex(),
             f"scrypt:{n}:{r}:{p}",
         )
     elif method == "pbkdf2":
@@ -59,7 +61,9 @@ def _hash_internal(method: str, salt: str, password: str) -> tuple[str, str]:
             raise ValueError("'pbkdf2' takes 2 arguments.")
 
         return (
-            hashlib.pbkdf2_hmac(hash_name, password, salt, iterations).hex(),
+            hashlib.pbkdf2_hmac(
+                hash_name, password_bytes, salt_bytes, iterations
+            ).hex(),
             f"pbkdf2:{hash_name}:{iterations}",
         )
     else:
@@ -147,6 +151,8 @@ def safe_join(directory: str, *pathnames: str) -> str | None:
         if (
             any(sep in filename for sep in _os_alt_seps)
             or os.path.isabs(filename)
+            # ntpath.isabs doesn't catch this on Python < 3.11
+            or filename.startswith("/")
             or filename == ".."
             or filename.startswith("../")
         ):

@@ -11,7 +11,6 @@
 from __future__ import annotations
 
 import collections
-import itertools
 
 from ..engine import AdaptedConnection
 from ..util.concurrency import asyncio
@@ -37,7 +36,8 @@ class AsyncAdapt_dbapi_cursor:
         cursor = self._connection.cursor()
         self._cursor = self._aenter_cursor(cursor)
 
-        self._rows = collections.deque()
+        if not self.server_side:
+            self._rows = collections.deque()
 
     def _aenter_cursor(self, cursor):
         return self.await_(cursor.__aenter__())
@@ -114,11 +114,8 @@ class AsyncAdapt_dbapi_cursor:
     def fetchmany(self, size=None):
         if size is None:
             size = self.arraysize
-
-        rr = iter(self._rows)
-        retval = list(itertools.islice(rr, 0, size))
-        self._rows = collections.deque(rr)
-        return retval
+        rr = self._rows
+        return [rr.popleft() for _ in range(min(size, len(rr)))]
 
     def fetchall(self):
         retval = list(self._rows)
@@ -152,6 +149,14 @@ class AsyncAdapt_dbapi_ss_cursor(AsyncAdapt_dbapi_cursor):
 
     def fetchall(self):
         return self.await_(self._cursor.fetchall())
+
+    def __iter__(self):
+        iterator = self._cursor.__aiter__()
+        while True:
+            try:
+                yield self.await_(iterator.__anext__())
+            except StopAsyncIteration:
+                break
 
 
 class AsyncAdapt_dbapi_connection(AdaptedConnection):

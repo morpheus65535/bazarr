@@ -427,7 +427,7 @@ class HTTPHeaderDict(typing.MutableMapping[str, str]):
             val = other.getlist(key)
             self._container[key.lower()] = [key, *val]
 
-    def copy(self) -> HTTPHeaderDict:
+    def copy(self) -> Self:
         clone = type(self)()
         clone._copy_from(self)
         return clone
@@ -462,7 +462,7 @@ class HTTPHeaderDict(typing.MutableMapping[str, str]):
         self.extend(maybe_constructable)
         return self
 
-    def __or__(self, other: object) -> HTTPHeaderDict:
+    def __or__(self, other: object) -> Self:
         # Supports merging header dicts using operator |
         # combining items with add instead of __setitem__
         maybe_constructable = ensure_can_construct_http_header_dict(other)
@@ -472,7 +472,7 @@ class HTTPHeaderDict(typing.MutableMapping[str, str]):
         result.extend(maybe_constructable)
         return result
 
-    def __ror__(self, other: object) -> HTTPHeaderDict:
+    def __ror__(self, other: object) -> Self:
         # Supports merging header dicts using operator | when other is on left side
         # combining items with add instead of __setitem__
         maybe_constructable = ensure_can_construct_http_header_dict(other)

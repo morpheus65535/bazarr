@@ -32,6 +32,7 @@ from .api import CantDeserializeException
 from .api import KeyType
 from .api import MetaDataType
 from .api import NO_VALUE
+from .api import NoValueType
 from .api import SerializedReturnType
 from .api import Serializer
 from .api import ValuePayload
@@ -706,19 +707,20 @@ class CacheRegion:
         key: KeyType,
         expiration_time: Optional[float] = None,
         ignore_expiration: bool = False,
-    ) -> CacheReturnType:
+    ) -> Union[ValuePayload, NoValueType]:
         """Return a value from the cache, based on the given key.
 
         If the value is not present, the method returns the token
-        ``NO_VALUE``. ``NO_VALUE`` evaluates to False, but is separate from
-        ``None`` to distinguish between a cached value of ``None``.
+        :data:`.api.NO_VALUE`. :data:`.api.NO_VALUE` evaluates to False, but is
+        separate from ``None`` to distinguish between a cached value of
+        ``None``.
 
         By default, the configured expiration time of the
         :class:`.CacheRegion`, or alternatively the expiration
         time supplied by the ``expiration_time`` argument,
         is tested against the creation time of the retrieved
         value versus the current time (as reported by ``time.time()``).
-        If stale, the cached value is ignored and the ``NO_VALUE``
+        If stale, the cached value is ignored and the :data:`.api.NO_VALUE`
         token is returned.  Passing the flag ``ignore_expiration=True``
         bypasses the expiration time check.
 
@@ -731,7 +733,7 @@ class CacheRegion:
         of the current "invalidation" time as set by
         the :meth:`.invalidate` method.   If a value is present,
         but its creation time is older than the current
-        invalidation time, the ``NO_VALUE`` token is returned.
+        invalidation time, the :data:`.api.NO_VALUE` token is returned.
         Passing the flag ``ignore_expiration=True`` bypasses
         the invalidation time check.
 
@@ -1083,7 +1085,7 @@ class CacheRegion:
                         return creator(*ca[0], **ca[1])
 
                 else:
-                    go = creator
+                    go = creator  # type: ignore
                 return acr(self, orig_key, go, mutex)
 
         else:

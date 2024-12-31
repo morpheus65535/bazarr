@@ -20,6 +20,7 @@ On your projects root folder now you can start as::
     DJANGO_ALLOWED_HOSTS='["localhost"]' \
     python manage.py runserver
 """
+
 from __future__ import annotations
 
 import inspect
@@ -114,7 +115,6 @@ def load(django_settings_module_name=None, **kwargs):  # pragma: no cover
 
     # 5) Patch django.conf.settings
     class Wrapper:
-
         # lazy_settings = conf.settings.lazy_settings
 
         def __getattribute__(self, name):

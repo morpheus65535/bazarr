@@ -104,6 +104,7 @@ class QueryContext:
         "top_level_context",
         "compile_state",
         "query",
+        "user_passed_query",
         "params",
         "load_options",
         "bind_arguments",
@@ -148,6 +149,10 @@ class QueryContext:
         self,
         compile_state: CompileState,
         statement: Union[Select[Any], FromStatement[Any]],
+        user_passed_query: Union[
+            Select[Any],
+            FromStatement[Any],
+        ],
         params: _CoreSingleExecuteParams,
         session: Session,
         load_options: Union[
@@ -162,6 +167,13 @@ class QueryContext:
         self.bind_arguments = bind_arguments or _EMPTY_DICT
         self.compile_state = compile_state
         self.query = statement
+
+        # the query that the end user passed to Session.execute() or similar.
+        # this is usually the same as .query, except in the bulk_persistence
+        # routines where a separate FromStatement is manufactured in the
+        # compile stage; this allows differentiation in that case.
+        self.user_passed_query = user_passed_query
+
         self.session = session
         self.loaders_require_buffering = False
         self.loaders_require_uniquing = False
@@ -169,7 +181,7 @@ class QueryContext:
         self.top_level_context = load_options._sa_top_level_orm_context
 
         cached_options = compile_state.select_statement._with_options
-        uncached_options = statement._with_options
+        uncached_options = user_passed_query._with_options
 
         # see issue #7447 , #8399 for some background
         # propagated loader options will be present on loaded InstanceState
@@ -578,6 +590,7 @@ class ORMCompileState(AbstractORMCompileState):
         querycontext = QueryContext(
             compile_state,
             statement,
+            statement,
             params,
             session,
             load_options,
@@ -888,6 +901,8 @@ class FromStatement(GroupedElement, Generative, TypedReturnsRows[_TP]):
         ("_compile_options", InternalTraversal.dp_has_cache_key)
     ]
 
+    is_from_statement = True
+
     def __init__(
         self,
         entities: Iterable[_ColumnsClauseArgument[Any]],
@@ -905,6 +920,10 @@ class FromStatement(GroupedElement, Generative, TypedReturnsRows[_TP]):
         ]
         self.element = element
         self.is_dml = element.is_dml
+        self.is_select = element.is_select
+        self.is_delete = element.is_delete
+        self.is_insert = element.is_insert
+        self.is_update = element.is_update
         self._label_style = (
             element._label_style if is_select_base(element) else None
         )
@@ -3044,7 +3063,10 @@ class _RawColumnEntity(_ColumnEntity):
         if not is_current_entities or column._is_text_clause:
             self._label_name = None
         else:
-            self._label_name = compile_state._label_convention(column)
+            if parent_bundle:
+                self._label_name = column._proxy_key
+            else:
+                self._label_name = compile_state._label_convention(column)
 
         if parent_bundle:
             parent_bundle._entities.append(self)
@@ -3138,9 +3160,12 @@ class _ORMColumnEntity(_ColumnEntity):
         self.raw_column_index = raw_column_index
 
         if is_current_entities:
-            self._label_name = compile_state._label_convention(
-                column, col_name=orm_key
-            )
+            if parent_bundle:
+                self._label_name = orm_key if orm_key else column._proxy_key
+            else:
+                self._label_name = compile_state._label_convention(
+                    column, col_name=orm_key
+                )
         else:
             self._label_name = None
 

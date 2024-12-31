@@ -2,7 +2,7 @@ import os
 from engineio.static_files import get_static_file
 
 
-class WSGIApp(object):
+class WSGIApp:
     """WSGI application middleware for Engine.IO.
 
     This middleware dispatches traffic to an Engine.IO application. It can
@@ -50,7 +50,7 @@ class WSGIApp(object):
             # directly into the environment. To give eventlet's WebSocket
             # module access to this socket when running under gunicorn, here we
             # copy the socket to the eventlet format.
-            class Input(object):
+            class Input:
                 def __init__(self, socket):
                     self.socket = socket
 

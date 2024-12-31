@@ -42,6 +42,7 @@ from ._typing import prop_is_relationship
 from .base import _class_to_mapper as _class_to_mapper
 from .base import _MappedAnnotationBase
 from .base import _never_set as _never_set  # noqa: F401
+from .base import _none_only_set as _none_only_set  # noqa: F401
 from .base import _none_set as _none_set  # noqa: F401
 from .base import attribute_str as attribute_str  # noqa: F401
 from .base import class_mapper as class_mapper
@@ -89,6 +90,7 @@ from ..util.typing import (
     de_stringify_union_elements as _de_stringify_union_elements,
 )
 from ..util.typing import eval_name_only as _eval_name_only
+from ..util.typing import fixup_container_fwd_refs
 from ..util.typing import is_origin_of_cls
 from ..util.typing import Literal
 from ..util.typing import Protocol
@@ -247,7 +249,7 @@ class CascadeOptions(FrozenSet[str]):
             values.clear()
         values.discard("all")
 
-        self = super().__new__(cls, values)  # type: ignore
+        self = super().__new__(cls, values)
         self.save_update = "save-update" in values
         self.delete = "delete" in values
         self.refresh_expire = "refresh-expire" in values
@@ -1067,6 +1069,7 @@ class AliasedInsp(
         aliased: bool = False,
         innerjoin: bool = False,
         adapt_on_names: bool = False,
+        name: Optional[str] = None,
         _use_mapper_path: bool = False,
     ) -> AliasedClass[_O]:
         primary_mapper = _class_to_mapper(base)
@@ -1087,6 +1090,7 @@ class AliasedInsp(
         return AliasedClass(
             base,
             selectable,
+            name=name,
             with_polymorphic_mappers=mappers,
             adapt_on_names=adapt_on_names,
             with_polymorphic_discriminator=polymorphic_on,
@@ -1378,7 +1382,10 @@ class LoaderCriteriaOption(CriteriaOption):
     def __init__(
         self,
         entity_or_base: _EntityType[Any],
-        where_criteria: _ColumnExpressionArgument[bool],
+        where_criteria: Union[
+            _ColumnExpressionArgument[bool],
+            Callable[[Any], _ColumnExpressionArgument[bool]],
+        ],
         loader_only: bool = False,
         include_aliases: bool = False,
         propagate_to_loaders: bool = True,
@@ -1676,7 +1683,7 @@ class Bundle(
     c: ReadOnlyColumnCollection[str, KeyedColumnElement[Any]]
     """An alias for :attr:`.Bundle.columns`."""
 
-    def _clone(self):
+    def _clone(self, **kw):
         cloned = self.__class__.__new__(self.__class__)
         cloned.__dict__.update(self.__dict__)
         return cloned
@@ -1938,7 +1945,7 @@ class _ORMJoin(expression.Join):
             self.onclause,
             isouter=self.isouter,
             _left_memo=self._left_memo,
-            _right_memo=other._left_memo,
+            _right_memo=other._left_memo._path_registry,
         )
 
         return _ORMJoin(
@@ -2149,7 +2156,7 @@ def _entity_isa(given: _InternalEntityType[Any], mapper: Mapper[Any]) -> bool:
             mapper
         )
     elif given.with_polymorphic_mappers:
-        return mapper in given.with_polymorphic_mappers
+        return mapper in given.with_polymorphic_mappers or given.isa(mapper)
     else:
         return given.isa(mapper)
 
@@ -2316,7 +2323,7 @@ def _extract_mapped_subtype(
     is_dataclass_field: bool,
     expect_mapped: bool = True,
     raiseerr: bool = True,
-) -> Optional[Tuple[Union[type, str], Optional[type]]]:
+) -> Optional[Tuple[Union[_AnnotationScanType, str], Optional[type]]]:
     """given an annotation, figure out if it's ``Mapped[something]`` and if
     so, return the ``something`` part.
 
@@ -2402,4 +2409,16 @@ def _extract_mapped_subtype(
                 "Expected sub-type for Mapped[] annotation"
             )
 
-        return annotated.__args__[0], annotated.__origin__
+        return (
+            # fix dict/list/set args to be ForwardRef, see #11814
+            fixup_container_fwd_refs(annotated.__args__[0]),
+            annotated.__origin__,
+        )
+
+
+def _mapper_property_as_plain_name(prop: Type[Any]) -> str:
+    if hasattr(prop, "_mapper_property_name"):
+        name = prop._mapper_property_name()
+    else:
+        name = None
+    return util.clsname_as_plain_name(prop, name)

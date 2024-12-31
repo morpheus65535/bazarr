@@ -479,6 +479,11 @@ class HashHeaderProcessor(BlockProcessor):
             h.text = m.group('header').strip()
             if after:
                 # Insert remaining lines as first block for future parsing.
+                if self.parser.state.isstate('looselist'):
+                    # This is a weird edge case where a header is a child of a loose list
+                    # and there is no blank line after the header. To ensure proper
+                    # parsing, the line(s) after need to be detabbed. See #1443.
+                    after = self.looseDetab(after)
                 blocks.insert(0, after)
         else:  # pragma: no cover
             # This should never happen, but just in case...

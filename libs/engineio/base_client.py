@@ -30,9 +30,18 @@ original_signal_handler = None
 class BaseClient:
     event_names = ['connect', 'disconnect', 'message']
 
+    class reason:
+        """Disconnection reasons."""
+        #: Client-initiated disconnection.
+        CLIENT_DISCONNECT = 'client disconnect'
+        #: Server-initiated disconnection.
+        SERVER_DISCONNECT = 'server disconnect'
+        #: Transport error.
+        TRANSPORT_ERROR = 'transport error'
+
     def __init__(self, logger=False, json=None, request_timeout=5,
                  http_session=None, ssl_verify=True, handle_sigint=True,
-                 websocket_extra_options=None):
+                 websocket_extra_options=None, timestamp_requests=True):
         global original_signal_handler
         if handle_sigint and original_signal_handler is None and \
                 threading.current_thread() == threading.main_thread():
@@ -56,6 +65,7 @@ class BaseClient:
         self.state = 'disconnected'
         self.ssl_verify = ssl_verify
         self.websocket_extra_options = websocket_extra_options or {}
+        self.timestamp_requests = timestamp_requests
 
         if json is not None:
             packet.Packet.json = json
@@ -143,4 +153,6 @@ class BaseClient:
 
     def _get_url_timestamp(self):
         """Generate the Engine.IO query string timestamp."""
+        if not self.timestamp_requests:
+            return ''
         return '&t=' + str(time.time())

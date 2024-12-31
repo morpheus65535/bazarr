@@ -53,11 +53,14 @@ class AsyncClient(base_client.BaseClient):
     :param http_session: an initialized ``aiohttp.ClientSession`` object to be
                          used when sending requests to the server. Use it if
                          you need to add special client options such as proxy
-                         servers, SSL certificates, etc.
+                         servers, SSL certificates, custom CA bundle, etc.
     :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
                        The default is ``True``.
+    :param websocket_extra_options: Dictionary containing additional keyword
+                                    arguments passed to
+                                    ``websocket.create_connection()``.
     :param engineio_logger: To enable Engine.IO logging set to ``True`` or pass
                             a logger object to use. To disable logging set to
                             ``False``. The default is ``False``. Note that
@@ -113,7 +116,7 @@ class AsyncClient(base_client.BaseClient):
         Example usage::
 
             sio = socketio.AsyncClient()
-            sio.connect('http://localhost:5000')
+            await sio.connect('http://localhost:5000')
         """
         if self.connected:
             raise exceptions.ConnectionError('Already connected')
@@ -128,6 +131,8 @@ class AsyncClient(base_client.BaseClient):
         if namespaces is None:
             namespaces = list(set(self.handlers.keys()).union(
                 set(self.namespace_handlers.keys())))
+            if '*' in namespaces:
+                namespaces.remove('*')
             if len(namespaces) == 0:
                 namespaces = ['/']
         elif isinstance(namespaces, str):
@@ -184,6 +189,9 @@ class AsyncClient(base_client.BaseClient):
             await self.eio.wait()
             await self.sleep(1)  # give the reconnect task time to start up
             if not self._reconnect_task:
+                if self.eio.state == 'connected':  # pragma: no cover
+                    # connected while sleeping above
+                    continue
                 break
             await self._reconnect_task
             if self.eio.state != 'connected':
@@ -318,6 +326,20 @@ class AsyncClient(base_client.BaseClient):
                                     namespace=n))
         await self.eio.disconnect(abort=True)
 
+    async def shutdown(self):
+        """Stop the client.
+
+        If the client is connected to a server, it is disconnected. If the
+        client is attempting to reconnect to server, the reconnection attempts
+        are stopped. If the client is not connected to a server and is not
+        attempting to reconnect, then this function does nothing.
+        """
+        if self.connected:
+            await self.disconnect()
+        elif self._reconnect_task:  # pragma: no branch
+            self._reconnect_abort.set()
+            await self._reconnect_task
+
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task using the appropriate async model.
 
@@ -366,7 +388,7 @@ class AsyncClient(base_client.BaseClient):
     async def _handle_connect(self, namespace, data):
         namespace = namespace or '/'
         if namespace not in self.namespaces:
-            self.logger.info('Namespace {} is connected'.format(namespace))
+            self.logger.info(f'Namespace {namespace} is connected')
             self.namespaces[namespace] = (data or {}).get('sid', self.sid)
             await self._trigger_event('connect', namespace=namespace)
             self._connect_event.set()
@@ -375,8 +397,9 @@ class AsyncClient(base_client.BaseClient):
         if not self.connected:
             return
         namespace = namespace or '/'
-        await self._trigger_event('disconnect', namespace=namespace)
-        await self._trigger_event('__disconnect_final', namespace=namespace)
+        await self._trigger_event('disconnect', namespace,
+                                  self.reason.SERVER_DISCONNECT)
+        await self._trigger_event('__disconnect_final', namespace)
         if namespace in self.namespaces:
             del self.namespaces[namespace]
         if not self.namespaces:
@@ -439,11 +462,27 @@ class AsyncClient(base_client.BaseClient):
         if handler:
             if asyncio.iscoroutinefunction(handler):
                 try:
-                    ret = await handler(*args)
+                    try:
+                        ret = await handler(*args)
+                    except TypeError:
+                        # the legacy disconnect event does not take a reason
+                        # argument
+                        if event == 'disconnect':
+                            ret = await handler(*args[:-1])
+                        else:  # pragma: no cover
+                            raise
                 except asyncio.CancelledError:  # pragma: no cover
                     ret = None
             else:
-                ret = handler(*args)
+                try:
+                    ret = handler(*args)
+                except TypeError:
+                    # the legacy disconnect event does not take a reason
+                    # argument
+                    if event == 'disconnect':
+                        ret = handler(*args[:-1])
+                    else:  # pragma: no cover
+                        raise
             return ret
 
         # or else, forward the event to a namepsace handler if one exists
@@ -467,15 +506,20 @@ class AsyncClient(base_client.BaseClient):
             self.logger.info(
                 'Connection failed, new attempt in {:.02f} seconds'.format(
                     delay))
+            abort = False
             try:
                 await asyncio.wait_for(self._reconnect_abort.wait(), delay)
+                abort = True
+            except asyncio.TimeoutError:
+                pass
+            except asyncio.CancelledError:  # pragma: no cover
+                abort = True
+            if abort:
                 self.logger.info('Reconnect task aborted')
                 for n in self.connection_namespaces:
                     await self._trigger_event('__disconnect_final',
                                               namespace=n)
                 break
-            except (asyncio.TimeoutError, asyncio.CancelledError):
-                pass
             attempt_count += 1
             try:
                 await self.connect(self.connection_url,
@@ -538,22 +582,21 @@ class AsyncClient(base_client.BaseClient):
             else:
                 raise ValueError('Unknown packet type.')
 
-    async def _handle_eio_disconnect(self):
+    async def _handle_eio_disconnect(self, reason):
         """Handle the Engine.IO disconnection event."""
         self.logger.info('Engine.IO connection dropped')
         will_reconnect = self.reconnection and self.eio.state == 'connected'
         if self.connected:
             for n in self.namespaces:
-                await self._trigger_event('disconnect', namespace=n)
+                await self._trigger_event('disconnect', n, reason)
                 if not will_reconnect:
-                    await self._trigger_event('__disconnect_final',
-                                              namespace=n)
+                    await self._trigger_event('__disconnect_final', n)
             self.namespaces = {}
             self.connected = False
         self.callbacks = {}
         self._binary_packet = None
         self.sid = None
-        if will_reconnect:
+        if will_reconnect and not self._reconnect_task:
             self._reconnect_task = self.start_background_task(
                 self._handle_reconnect)
 

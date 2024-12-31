@@ -10,7 +10,6 @@
 r"""
 .. dialect:: oracle
     :name: Oracle
-    :full_support: 18c
     :normal_support: 11+
     :best_effort: 9+
 
@@ -326,13 +325,12 @@ returned as well.
    on parity with other backends.
 
 
-
 ON UPDATE CASCADE
 -----------------
 
 Oracle doesn't have native ON UPDATE CASCADE functionality.  A trigger based
 solution is available at
-https://asktom.oracle.com/tkyte/update_cascade/index.html .
+https://web.archive.org/web/20090317041251/https://asktom.oracle.com/tkyte/update_cascade/index.html
 
 When using the SQLAlchemy ORM, the ORM has limited ability to manually issue
 cascading updates - specify ForeignKey objects using the
@@ -467,7 +465,7 @@ is reflected and the type is reported as ``DATE``, the time-supporting
 .. _oracle_table_options:
 
 Oracle Table Options
--------------------------
+--------------------
 
 The CREATE TABLE phrase supports the following options with Oracle
 in conjunction with the :class:`_schema.Table` construct:
@@ -1244,6 +1242,31 @@ class OracleCompiler(compiler.SQLCompiler):
     def visit_aggregate_strings_func(self, fn, **kw):
         return "LISTAGG%s" % self.function_argspec(fn, **kw)
 
+    def _visit_bitwise(self, binary, fn_name, custom_right=None, **kw):
+        left = self.process(binary.left, **kw)
+        right = self.process(
+            custom_right if custom_right is not None else binary.right, **kw
+        )
+        return f"{fn_name}({left}, {right})"
+
+    def visit_bitwise_xor_op_binary(self, binary, operator, **kw):
+        return self._visit_bitwise(binary, "BITXOR", **kw)
+
+    def visit_bitwise_or_op_binary(self, binary, operator, **kw):
+        return self._visit_bitwise(binary, "BITOR", **kw)
+
+    def visit_bitwise_and_op_binary(self, binary, operator, **kw):
+        return self._visit_bitwise(binary, "BITAND", **kw)
+
+    def visit_bitwise_rshift_op_binary(self, binary, operator, **kw):
+        raise exc.CompileError("Cannot compile bitwise_rshift in oracle")
+
+    def visit_bitwise_lshift_op_binary(self, binary, operator, **kw):
+        raise exc.CompileError("Cannot compile bitwise_lshift in oracle")
+
+    def visit_bitwise_not_op_unary_operator(self, element, operator, **kw):
+        raise exc.CompileError("Cannot compile bitwise_not in oracle")
+
 
 class OracleDDLCompiler(compiler.DDLCompiler):
     def define_constraint_cascades(self, constraint):
@@ -1253,7 +1276,7 @@ class OracleDDLCompiler(compiler.DDLCompiler):
 
         # oracle has no ON UPDATE CASCADE -
         # its only available via triggers
-        # https://asktom.oracle.com/tkyte/update_cascade/index.html
+        # https://web.archive.org/web/20090317041251/https://asktom.oracle.com/tkyte/update_cascade/index.html
         if constraint.onupdate is not None:
             util.warn(
                 "Oracle does not contain native UPDATE CASCADE "
@@ -2036,8 +2059,16 @@ class OracleDialect(default.DefaultDialect):
     ):
         query = select(
             dictionary.all_tables.c.table_name,
-            dictionary.all_tables.c.compression,
-            dictionary.all_tables.c.compress_for,
+            (
+                dictionary.all_tables.c.compression
+                if self._supports_table_compression
+                else sql.null().label("compression")
+            ),
+            (
+                dictionary.all_tables.c.compress_for
+                if self._supports_table_compress_for
+                else sql.null().label("compress_for")
+            ),
         ).where(dictionary.all_tables.c.owner == owner)
         if has_filter_names:
             query = query.where(

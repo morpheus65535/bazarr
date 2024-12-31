@@ -39,13 +39,15 @@ never.
    ftfy instead.
 """
 
-import re
 import codecs
-from typing import Tuple
+import re
 from encodings.utf_8 import (
     IncrementalDecoder as UTF8IncrementalDecoder,
+)
+from encodings.utf_8 import (
     IncrementalEncoder as UTF8IncrementalEncoder,
 )
+from typing import Callable, Optional, Tuple
 
 NAME = "utf-8-variants"
 
@@ -90,7 +92,10 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
     we define here for the cases the real encoder isn't expecting.
     """
 
-    def _buffer_decode(self, input, errors, final):
+    @staticmethod
+    def _buffer_decode(  # type: ignore[override]
+        input: bytes, errors: Optional[str], final: bool
+    ) -> Tuple[str, int]:
         """
         Decode bytes that may be arriving in a stream, following the Codecs
         API.
@@ -112,7 +117,7 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
         position = 0
         while True:
             # Use _buffer_decode_step to decode a segment of text.
-            decoded, consumed = self._buffer_decode_step(
+            decoded, consumed = IncrementalDecoder._buffer_decode_step(
                 input[position:], errors, final
             )
             if consumed == 0:
@@ -131,7 +136,10 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
 
         return "".join(decoded_segments), position
 
-    def _buffer_decode_step(self, input, errors, final):
+    @staticmethod
+    def _buffer_decode_step(
+        input: bytes, errors: Optional[str], final: bool
+    ) -> Tuple[str, int]:
         """
         There are three possibilities for each decoding step:
 
@@ -170,10 +178,17 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
                     return "", 0
         else:
             # Decode a possible six-byte sequence starting with 0xed.
-            return self._buffer_decode_surrogates(sup, input, errors, final)
+            return IncrementalDecoder._buffer_decode_surrogates(
+                sup, input, errors, final
+            )
 
     @staticmethod
-    def _buffer_decode_surrogates(sup, input, errors, final):
+    def _buffer_decode_surrogates(
+        sup: Callable[[bytes, Optional[str], bool], Tuple[str, int]],
+        input: bytes,
+        errors: Optional[str],
+        final: bool,
+    ) -> Tuple[str, int]:
         """
         When we have improperly encoded surrogates, we can still see the
         bits that they were meant to represent.

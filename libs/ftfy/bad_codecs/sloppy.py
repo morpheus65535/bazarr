@@ -71,16 +71,17 @@ sloppy-windows-1252 merges Windows-1252 with Latin-1:
     U+0081  \x81    [Cc] <unknown>
     U+201A  ‚       [Ps] SINGLE LOW-9 QUOTATION MARK
 """
+
 from __future__ import annotations
+
 import codecs
 from encodings import normalize_encoding
-import sys
+from typing import Optional, Tuple
 
 REPLACEMENT_CHAR = "\ufffd"
-PY26 = sys.version_info[:2] == (2, 6)
 
 
-def make_sloppy_codec(encoding):
+def make_sloppy_codec(encoding: str) -> codecs.CodecInfo:
     """
     Take a codec name, and return a 'sloppy' version of that codec that can
     encode and decode the unassigned bytes in that encoding.
@@ -98,10 +99,7 @@ def make_sloppy_codec(encoding):
 
     # Get a list of what they decode to in the given encoding. Use the
     # replacement character for unassigned bytes.
-    if PY26:
-        decoded_chars = all_bytes.decode(encoding, "replace")
-    else:
-        decoded_chars = all_bytes.decode(encoding, errors="replace")
+    decoded_chars = all_bytes.decode(encoding, errors="replace")
 
     # Update the sloppy_chars list. Each byte that was successfully decoded
     # gets its decoded value in the list. The unassigned bytes are left as
@@ -123,19 +121,23 @@ def make_sloppy_codec(encoding):
     # `encodings.cp1252` for comparison; this is almost exactly the same,
     # except I made it follow pep8.
     class Codec(codecs.Codec):
-        def encode(self, input, errors="strict"):
+        def encode(
+            self, input: str, errors: Optional[str] = "strict"
+        ) -> Tuple[bytes, int]:
             return codecs.charmap_encode(input, errors, encoding_table)
 
-        def decode(self, input, errors="strict"):
-            return codecs.charmap_decode(input, errors, decoding_table)  # type: ignore
+        def decode(
+            self, input: bytes, errors: Optional[str] = "strict"
+        ) -> Tuple[str, int]:
+            return codecs.charmap_decode(input, errors, decoding_table)  # type: ignore[arg-type]
 
     class IncrementalEncoder(codecs.IncrementalEncoder):
-        def encode(self, input, final=False):
+        def encode(self, input: str, final: bool = False) -> bytes:
             return codecs.charmap_encode(input, self.errors, encoding_table)[0]
 
     class IncrementalDecoder(codecs.IncrementalDecoder):
-        def decode(self, input, final=False):
-            return codecs.charmap_decode(input, self.errors, decoding_table)[0]  # type: ignore
+        def decode(self, input: bytes, final: bool = False) -> str:  # type: ignore[override]
+            return codecs.charmap_decode(input, self.errors, decoding_table)[0]  # type: ignore[arg-type]
 
     class StreamWriter(Codec, codecs.StreamWriter):
         pass

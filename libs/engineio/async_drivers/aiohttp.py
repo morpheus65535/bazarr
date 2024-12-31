@@ -57,7 +57,7 @@ def translate_request(request):
 
         key = 'HTTP_%s' % hdr_name.replace('-', '_')
         if key in environ:
-            hdr_value = '%s,%s' % (environ[key], hdr_value)
+            hdr_value = f'{environ[key]},{hdr_value}'
 
         environ[key] = hdr_value
 
@@ -79,7 +79,7 @@ def make_response(status, headers, payload, environ):
                     headers=headers)
 
 
-class WebSocket(object):  # pragma: no cover
+class WebSocket:  # pragma: no cover
     """
     This wrapper class provides a aiohttp WebSocket interface that is
     somewhat compatible with eventlet's implementation.
@@ -114,7 +114,7 @@ class WebSocket(object):  # pragma: no cover
         msg = await self._sock.receive()
         if not isinstance(msg.data, bytes) and \
                 not isinstance(msg.data, str):
-            raise IOError()
+            raise OSError()
         return msg.data
 
 

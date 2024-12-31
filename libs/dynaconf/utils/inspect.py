@@ -1,4 +1,5 @@
 """Inspecting module"""
+
 from __future__ import annotations
 
 import json
@@ -8,7 +9,6 @@ from pathlib import PosixPath
 from typing import Any
 from typing import Callable
 from typing import Literal
-from typing import Optional
 from typing import Protocol
 from typing import TextIO
 from typing import TYPE_CHECKING
@@ -21,7 +21,8 @@ from dynaconf.vendor.box.box_list import BoxList
 from dynaconf.vendor.ruamel.yaml import YAML
 
 if TYPE_CHECKING:  # pragma: no cover
-    from dynaconf.base import LazySettings, Settings
+    from dynaconf.base import LazySettings
+    from dynaconf.base import Settings
 
 
 # Dumpers config
@@ -298,7 +299,8 @@ def _ensure_serializable(data: BoxList | DynaBox) -> dict | list:
         return [_ensure_serializable(v) for v in data]
     elif isinstance(data, (DynaBox, dict)):
         return {
-            k: _ensure_serializable(v) for k, v in data.items()  # type: ignore
+            k: _ensure_serializable(v)
+            for k, v in data.items()  # type: ignore
         }
     else:
         return data if isinstance(data, (int, bool, float)) else str(data)

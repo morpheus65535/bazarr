@@ -1,12 +1,16 @@
 import json
 import typing
 
-from pkg_resources import resource_stream
+try:
+    from importlib.resources import files
+except ImportError:
+    from importlib_resources import files  # type: ignore[assignment,no-redef,import-not-found]
 
 
 class Config:
     def __init__(self, config: typing.Optional[typing.Mapping[str, typing.Any]]):
-        with resource_stream('trakit', 'data/config.json') as f:
+        config_file = files(__package__).joinpath('data/config.json')
+        with config_file.open('rb') as f:
             cfg: typing.Dict[str, typing.Any] = json.load(f)
         if config:
             cfg.update(config)

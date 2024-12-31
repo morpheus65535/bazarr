@@ -1,14 +1,18 @@
 from wsproto.frame_protocol import CloseReason
 
 
-class ConnectionError(RuntimeError):  # pragma: no cover
+class SimpleWebsocketError(RuntimeError):
+    pass
+
+
+class ConnectionError(SimpleWebsocketError):
     """Connection error exception class."""
-    def __init__(self, status_code=None):
+    def __init__(self, status_code=None):  # pragma: no cover
         self.status_code = status_code
         super().__init__(f'Connection error: {status_code}')
 
 
-class ConnectionClosed(RuntimeError):
+class ConnectionClosed(SimpleWebsocketError):
     """Connection closed exception class."""
     def __init__(self, reason=CloseReason.NO_STATUS_RCVD, message=None):
         self.reason = reason

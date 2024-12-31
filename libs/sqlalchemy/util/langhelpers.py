@@ -174,10 +174,11 @@ def string_or_unprintable(element: Any) -> str:
             return "unprintable element %r" % element
 
 
-def clsname_as_plain_name(cls: Type[Any]) -> str:
-    return " ".join(
-        n.lower() for n in re.findall(r"([A-Z][a-z]+|SQL)", cls.__name__)
-    )
+def clsname_as_plain_name(
+    cls: Type[Any], use_name: Optional[str] = None
+) -> str:
+    name = use_name or cls.__name__
+    return " ".join(n.lower() for n in re.findall(r"([A-Z][a-z]+|SQL)", name))
 
 
 def method_is_overridden(
@@ -307,10 +308,10 @@ def decorator(target: Callable[..., Any]) -> Callable[[_Fn], _Fn]:
         )
         decorated.__defaults__ = getattr(fn, "__func__", fn).__defaults__
 
-        decorated.__wrapped__ = fn  # type: ignore
-        return cast(_Fn, update_wrapper(decorated, fn))
+        decorated.__wrapped__ = fn  # type: ignore[attr-defined]
+        return update_wrapper(decorated, fn)  # type: ignore[return-value]
 
-    return update_wrapper(decorate, target)
+    return update_wrapper(decorate, target)  # type: ignore[return-value]
 
 
 def _update_argspec_defaults_into_env(spec, env):
@@ -1658,6 +1659,8 @@ class _IntFlagMeta(type):
         items: List[symbol]
         cls._items = items = []
         for k, v in dict_.items():
+            if re.match(r"^__.*__$", k):
+                continue
             if isinstance(v, int):
                 sym = symbol(k, canonical=v)
             elif not k.startswith("_"):
@@ -1957,6 +1960,9 @@ def attrsetter(attrname):
     return env["set"]
 
 
+_dunders = re.compile("^__.+__$")
+
+
 class TypingOnly:
     """A mixin class that marks a class as 'typing only', meaning it has
     absolutely no methods, attributes, or runtime functionality whatsoever.
@@ -1967,15 +1973,9 @@ class TypingOnly:
 
     def __init_subclass__(cls) -> None:
         if TypingOnly in cls.__bases__:
-            remaining = set(cls.__dict__).difference(
-                {
-                    "__module__",
-                    "__doc__",
-                    "__slots__",
-                    "__orig_bases__",
-                    "__annotations__",
-                }
-            )
+            remaining = {
+                name for name in cls.__dict__ if not _dunders.match(name)
+            }
             if remaining:
                 raise AssertionError(
                     f"Class {cls} directly inherits TypingOnly but has "
@@ -2208,3 +2208,11 @@ def has_compiled_ext(raise_=False):
         )
     else:
         return False
+
+
+class _Missing(enum.Enum):
+    Missing = enum.auto()
+
+
+Missing = _Missing.Missing
+MissingOr = Union[_T, Literal[_Missing.Missing]]

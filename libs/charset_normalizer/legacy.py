@@ -1,13 +1,24 @@
-from typing import Any, Dict, Optional, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 from warnings import warn
 
 from .api import from_bytes
 from .constant import CHARDET_CORRESPONDENCE
 
+# TODO: remove this check when dropping Python 3.7 support
+if TYPE_CHECKING:
+    from typing_extensions import TypedDict
+
+    class ResultDict(TypedDict):
+        encoding: str | None
+        language: str
+        confidence: float | None
+
 
 def detect(
     byte_str: bytes, should_rename_legacy: bool = False, **kwargs: Any
-) -> Dict[str, Optional[Union[str, float]]]:
+) -> ResultDict:
     """
     chardet legacy method
     Detect the encoding of the given byte string. It should be mostly backward-compatible.
@@ -26,8 +37,9 @@ def detect(
 
     if not isinstance(byte_str, (bytearray, bytes)):
         raise TypeError(  # pragma: nocover
-            "Expected object of type bytes or bytearray, got: "
-            "{0}".format(type(byte_str))
+            "Expected object of type bytes or bytearray, got: " "{}".format(
+                type(byte_str)
+            )
         )
 
     if isinstance(byte_str, bytearray):

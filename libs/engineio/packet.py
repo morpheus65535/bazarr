@@ -7,7 +7,7 @@ packet_names = ['OPEN', 'CLOSE', 'PING', 'PONG', 'MESSAGE', 'UPGRADE', 'NOOP']
 binary_types = (bytes, bytearray)
 
 
-class Packet(object):
+class Packet:
     """Engine.IO packet."""
 
     json = _json

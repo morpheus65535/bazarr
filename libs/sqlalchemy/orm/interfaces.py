@@ -149,13 +149,17 @@ class ORMColumnDescription(TypedDict):
 class _IntrospectsAnnotations:
     __slots__ = ()
 
+    @classmethod
+    def _mapper_property_name(cls) -> str:
+        return cls.__name__
+
     def found_in_pep593_annotated(self) -> Any:
         """return a copy of this object to use in declarative when the
         object is found inside of an Annotated object."""
 
         raise NotImplementedError(
-            f"Use of the {self.__class__} construct inside of an "
-            f"Annotated object is not yet supported."
+            f"Use of the {self._mapper_property_name()!r} "
+            "construct inside of an Annotated object is not yet supported."
         )
 
     def declarative_scan(
@@ -181,7 +185,8 @@ class _IntrospectsAnnotations:
         raise sa_exc.ArgumentError(
             f"Python typing annotation is required for attribute "
             f'"{cls.__name__}.{key}" when primary argument(s) for '
-            f'"{self.__class__.__name__}" construct are None or not present'
+            f'"{self._mapper_property_name()}" '
+            "construct are None or not present"
         )
 
 
@@ -201,6 +206,7 @@ class _AttributeOptions(NamedTuple):
     dataclasses_default_factory: Union[_NoArg, Callable[[], Any]]
     dataclasses_compare: Union[_NoArg, bool]
     dataclasses_kw_only: Union[_NoArg, bool]
+    dataclasses_hash: Union[_NoArg, bool, None]
 
     def _as_dataclass_field(self, key: str) -> Any:
         """Return a ``dataclasses.Field`` object given these arguments."""
@@ -218,6 +224,8 @@ class _AttributeOptions(NamedTuple):
             kw["compare"] = self.dataclasses_compare
         if self.dataclasses_kw_only is not _NoArg.NO_ARG:
             kw["kw_only"] = self.dataclasses_kw_only
+        if self.dataclasses_hash is not _NoArg.NO_ARG:
+            kw["hash"] = self.dataclasses_hash
 
         if "default" in kw and callable(kw["default"]):
             # callable defaults are ambiguous. deprecate them in favour of
@@ -297,10 +305,12 @@ _DEFAULT_ATTRIBUTE_OPTIONS = _AttributeOptions(
     _NoArg.NO_ARG,
     _NoArg.NO_ARG,
     _NoArg.NO_ARG,
+    _NoArg.NO_ARG,
 )
 
 _DEFAULT_READONLY_ATTRIBUTE_OPTIONS = _AttributeOptions(
     False,
+    _NoArg.NO_ARG,
     _NoArg.NO_ARG,
     _NoArg.NO_ARG,
     _NoArg.NO_ARG,

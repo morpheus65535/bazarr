@@ -18,7 +18,7 @@ class Thread(gevent.Greenlet):  # pragma: no cover
         return self.run()
 
 
-class uWSGIWebSocket(object):  # pragma: no cover
+class uWSGIWebSocket:  # pragma: no cover
     """
     This wrapper class provides a uWSGI WebSocket interface that is
     compatible with eventlet's implementation.
@@ -115,7 +115,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
             if self._req_ctx is not None:
                 try:
                     msg = uwsgi.websocket_recv(request_context=self._req_ctx)
-                except IOError:  # connection closed
+                except OSError:  # connection closed
                     self.close()
                     return None
                 return self._decode_received(msg)
@@ -138,7 +138,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                     for msg in msgs:
                         try:
                             self._send(msg)
-                        except IOError:
+                        except OSError:
                             self.close()
                             return None
                 # maybe there is something to receive, if not, at least
@@ -146,7 +146,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                 while True:
                     try:
                         msg = uwsgi.websocket_recv_nb()
-                    except IOError:  # connection closed
+                    except OSError:  # connection closed
                         self.close()
                         return None
                     if msg:  # message available

@@ -431,7 +431,7 @@ class _ImperativeMapperConfig(_MapperConfig):
 class _CollectedAnnotation(NamedTuple):
     raw_annotation: _AnnotationScanType
     mapped_container: Optional[Type[Mapped[Any]]]
-    extracted_mapped_annotation: Union[Type[Any], str]
+    extracted_mapped_annotation: Union[_AnnotationScanType, str]
     is_dataclass: bool
     attr_value: Any
     originating_module: str
@@ -453,6 +453,7 @@ class _ClassScanMapperConfig(_MapperConfig):
         "tablename",
         "mapper_args",
         "mapper_args_fn",
+        "table_fn",
         "inherits",
         "single",
         "allow_dataclass_fields",
@@ -759,7 +760,7 @@ class _ClassScanMapperConfig(_MapperConfig):
         _include_dunders = self._include_dunders
         mapper_args_fn = None
         table_args = inherited_table_args = None
-
+        table_fn = None
         tablename = None
         fixed_table = "__table__" in clsdict_view
 
@@ -840,6 +841,22 @@ class _ClassScanMapperConfig(_MapperConfig):
                         )
                         if not tablename and (not class_mapped or check_decl):
                             tablename = cls_as_Decl.__tablename__
+                    elif name == "__table__":
+                        check_decl = _check_declared_props_nocascade(
+                            obj, name, cls
+                        )
+                        # if a @declared_attr using "__table__" is detected,
+                        # wrap up a callable to look for "__table__" from
+                        # the final concrete class when we set up a table.
+                        # this was fixed by
+                        # #11509, regression in 2.0 from version 1.4.
+                        if check_decl and not table_fn:
+                            # don't even invoke __table__ until we're ready
+                            def _table_fn() -> FromClause:
+                                return cls_as_Decl.__table__
+
+                            table_fn = _table_fn
+
                     elif name == "__table_args__":
                         check_decl = _check_declared_props_nocascade(
                             obj, name, cls
@@ -856,9 +873,10 @@ class _ClassScanMapperConfig(_MapperConfig):
                             if base is not cls:
                                 inherited_table_args = True
                     else:
-                        # skip all other dunder names, which at the moment
-                        # should only be __table__
-                        continue
+                        # any other dunder names; should not be here
+                        # as we have tested for all four names in
+                        # _include_dunders
+                        assert False
                 elif class_mapped:
                     if _is_declarative_props(obj) and not obj._quiet:
                         util.warn(
@@ -1031,6 +1049,7 @@ class _ClassScanMapperConfig(_MapperConfig):
         self.table_args = table_args
         self.tablename = tablename
         self.mapper_args_fn = mapper_args_fn
+        self.table_fn = table_fn
 
     def _setup_dataclasses_transforms(self) -> None:
         dataclass_setup_arguments = self.dataclass_setup_arguments
@@ -1046,6 +1065,16 @@ class _ClassScanMapperConfig(_MapperConfig):
                 "This can happen if a class that inherits from "
                 "'MappedAsDataclass', even indirectly, is been mapped with "
                 "'@registry.mapped_as_dataclass'"
+            )
+
+        # can't create a dataclass if __table__ is already there. This would
+        # fail an assertion when calling _get_arguments_for_make_dataclass:
+        # assert False, "Mapped[] received without a mapping declaration"
+        if "__table__" in self.cls.__dict__:
+            raise exc.InvalidRequestError(
+                f"Class {self.cls} already defines a '__table__'. "
+                "ORM Annotated Dataclasses do not support a pre-existing "
+                "'__table__' element"
             )
 
         warn_for_non_dc_attrs = collections.defaultdict(list)
@@ -1687,7 +1716,11 @@ class _ClassScanMapperConfig(_MapperConfig):
 
         manager = attributes.manager_of_class(cls)
 
-        if "__table__" not in clsdict_view and table is None:
+        if (
+            self.table_fn is None
+            and "__table__" not in clsdict_view
+            and table is None
+        ):
             if hasattr(cls, "__table_cls__"):
                 table_cls = cast(
                     Type[Table],
@@ -1733,7 +1766,12 @@ class _ClassScanMapperConfig(_MapperConfig):
                 )
         else:
             if table is None:
-                table = cls_as_Decl.__table__
+                if self.table_fn:
+                    table = self.set_cls_attribute(
+                        "__table__", self.table_fn()
+                    )
+                else:
+                    table = cls_as_Decl.__table__
             if declared_columns:
                 for c in declared_columns:
                     if not table.c.contains_column(c):

@@ -1,9 +1,9 @@
 ../../bin/jsonschema,sha256=OGb6w5dwZHsl6rXgS34xFKvogE2caDivcWj8ukkFJDc,236
 jsonschema-4.17.3.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-jsonschema-4.17.3.dist-info/METADATA,sha256=YnDEs-j6S4At_Fq54u7PqfYG4gQT8E5nrp8vu2PXeXw,7879
+jsonschema-4.17.3.dist-info/METADATA,sha256=x_UDV2TgG-vvXjMZDEKIsx-NByuAhR-0OaABungk3cM,7879
 jsonschema-4.17.3.dist-info/RECORD,,
 jsonschema-4.17.3.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-jsonschema-4.17.3.dist-info/WHEEL,sha256=TJPnKdtrSue7xZ_AVGkp9YXcvDrobsjBds1du3Nx6dc,87
+jsonschema-4.17.3.dist-info/WHEEL,sha256=1yFddiXMmvYK7QYTqtRNtX66WJ0Mz8PYEiEUoOUUxRY,87
 jsonschema-4.17.3.dist-info/entry_points.txt,sha256=vO7rX4Fs_xIVJy2pnAtKgTSxfpnozAVQ0DjCmpMxnWE,51
 jsonschema-4.17.3.dist-info/licenses/COPYING,sha256=T5KgFaE8TRoEC-8BiqE0MLTxvHO0Gxa7hGw0Z2bedDk,1057
 jsonschema/__init__.py,sha256=FRdJDXN8-AFk-Fj1qclckQsZNeGQB__r_QuMjtRoze4,2187

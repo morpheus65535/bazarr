@@ -1,3 +1,12 @@
+"""
+A Path-like interface for zipfiles.
+
+This codebase is shared between zipfile.Path in the stdlib
+and zipp in PyPI. See
+https://github.com/python/importlib_metadata/wiki/Development-Methodology
+for more detail.
+"""
+
 import io
 import posixpath
 import zipfile
@@ -5,9 +14,11 @@ import itertools
 import contextlib
 import pathlib
 import re
+import stat
+import sys
 
-from .py310compat import text_encoding
-from .glob import translate
+from .compat.py310 import text_encoding
+from .glob import Translator
 
 
 __all__ = ['Path']
@@ -35,7 +46,7 @@ def _parents(path):
 def _ancestry(path):
     """
     Given a path with elements separated by
-    posixpath.sep, generate all elements of that path
+    posixpath.sep, generate all elements of that path.
 
     >>> list(_ancestry('b/d'))
     ['b/d', 'b']
@@ -47,9 +58,14 @@ def _ancestry(path):
     ['b']
     >>> list(_ancestry(''))
     []
+
+    Multiple separators are treated like a single.
+
+    >>> list(_ancestry('//b//d///f//'))
+    ['//b//d///f', '//b//d', '//b']
     """
     path = path.rstrip(posixpath.sep)
-    while path and path != posixpath.sep:
+    while path.rstrip(posixpath.sep):
         yield path
         path, tail = posixpath.split(path)
 
@@ -179,13 +195,18 @@ class FastLookup(CompleteDirs):
 
 
 def _extract_text_encoding(encoding=None, *args, **kwargs):
-    # stacklevel=3 so that the caller of the caller see any warning.
-    return text_encoding(encoding, 3), args, kwargs
+    # compute stack level so that the caller of the caller sees any warning.
+    is_pypy = sys.implementation.name == 'pypy'
+    stack_level = 3 + is_pypy
+    return text_encoding(encoding, stack_level), args, kwargs
 
 
 class Path:
     """
-    A pathlib-compatible interface for zip files.
+    A :class:`importlib.resources.abc.Traversable` interface for zip files.
+
+    Implements many of the features users enjoy from
+    :class:`pathlib.Path`.
 
     Consider a zip file with this structure::
 
@@ -260,7 +281,7 @@ class Path:
     >>> str(path.parent)
     'mem'
 
-    If the zipfile has no filename, such attribtues are not
+    If the zipfile has no filename, such attributes are not
     valid and accessing them will raise an Exception.
 
     >>> zf.filename = None
@@ -388,16 +409,19 @@ class Path:
 
     def is_symlink(self):
         """
-        Return whether this path is a symlink. Always false (python/cpython#82102).
+        Return whether this path is a symlink.
         """
-        return False
+        info = self.root.getinfo(self.at)
+        mode = info.external_attr >> 16
+        return stat.S_ISLNK(mode)
 
     def glob(self, pattern):
         if not pattern:
             raise ValueError(f"Unacceptable pattern: {pattern!r}")
 
         prefix = re.escape(self.at)
-        matches = re.compile(prefix + translate(pattern)).fullmatch
+        tr = Translator(seps='/')
+        matches = re.compile(prefix + tr.translate(pattern)).fullmatch
         return map(self._next, filter(matches, self.root.namelist()))
 
     def rglob(self, pattern):

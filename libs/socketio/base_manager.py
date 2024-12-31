@@ -37,8 +37,7 @@ class BaseManager:
                 participants.update(ns[r]._fwdm if r in ns else {})
         else:
             participants = ns[room]._fwdm.copy() if room in ns else {}
-        for sid, eio_sid in participants.items():
-            yield sid, eio_sid
+        yield from participants.items()
 
     def connect(self, eio_sid, namespace):
         """Register a client connection to a namespace."""

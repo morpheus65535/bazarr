@@ -2,7 +2,7 @@
 # Use of this source code is governed by the 3-clause BSD license
 # that can be found in the LICENSE file.
 #
-from pkg_resources import iter_entry_points, EntryPoint
+from ..compat import iter_entry_points, EntryPoint
 from ..exceptions import LanguageConvertError, LanguageReverseError
 
 try:

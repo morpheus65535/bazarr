@@ -29,9 +29,10 @@ A quick example of decoding text that's encoded in CESU-8:
     >>> print(b'\xed\xa0\xbd\xed\xb8\x8d'.decode('utf-8-variants'))
     😍
 """
-from encodings import normalize_encoding
+
 import codecs
-from typing import Dict
+from encodings import normalize_encoding
+from typing import Dict, Optional
 
 _CACHE: Dict[str, codecs.CodecInfo] = {}
 
@@ -51,7 +52,7 @@ UTF8_VAR_NAMES = (
 )
 
 
-def search_function(encoding):
+def search_function(encoding: str) -> Optional[codecs.CodecInfo]:
     """
     Register our "bad codecs" with Python's codecs API. This involves adding
     a search function that takes in an encoding name, and returns a codec
@@ -85,7 +86,7 @@ def search_function(encoding):
     return codec
 
 
-def ok():
+def ok() -> None:
     """
     A feel-good function that gives you something to call after importing
     this package.

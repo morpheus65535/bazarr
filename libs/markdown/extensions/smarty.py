@@ -269,7 +269,7 @@ class SmartyExtension(Extension):
             self.educateDashes(md)
         inlineProcessor = InlineProcessor(md)
         inlineProcessor.inlinePatterns = self.inlinePatterns
-        md.treeprocessors.register(inlineProcessor, 'smarty', 2)
+        md.treeprocessors.register(inlineProcessor, 'smarty', 6)
         md.ESCAPED_CHARS.extend(['"', "'"])
 
 

@@ -28,7 +28,7 @@
 from __future__ import annotations
 
 
-__version_info__ = (3, 5, 2, 'final', 0)
+__version_info__ = (3, 7, 0, 'final', 0)
 
 
 def _get_version(version_info):

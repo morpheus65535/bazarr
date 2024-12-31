@@ -21,9 +21,16 @@ class Namespace(base_namespace.BaseServerNamespace):
         method can be overridden if special dispatching rules are needed, or if
         having a single method that catches all events is desired.
         """
-        handler_name = 'on_' + event
+        handler_name = 'on_' + (event or '')
         if hasattr(self, handler_name):
-            return getattr(self, handler_name)(*args)
+            try:
+                return getattr(self, handler_name)(*args)
+            except TypeError:
+                # legacy disconnect events do not have a reason argument
+                if event == 'disconnect':
+                    return getattr(self, handler_name)(*args[:-1])
+                else:  # pragma: no cover
+                    raise
 
     def emit(self, event, data=None, to=None, room=None, skip_sid=None,
              namespace=None, callback=None, ignore_queue=False):
@@ -152,9 +159,16 @@ class ClientNamespace(base_namespace.BaseClientNamespace):
         method can be overridden if special dispatching rules are needed, or if
         having a single method that catches all events is desired.
         """
-        handler_name = 'on_' + event
+        handler_name = 'on_' + (event or '')
         if hasattr(self, handler_name):
-            return getattr(self, handler_name)(*args)
+            try:
+                return getattr(self, handler_name)(*args)
+            except TypeError:
+                # legacy disconnect events do not have a reason argument
+                if event == 'disconnect':
+                    return getattr(self, handler_name)(*args[:-1])
+                else:  # pragma: no cover
+                    raise
 
     def emit(self, event, data=None, namespace=None, callback=None):
         """Emit a custom event to the server.

@@ -1,6 +1,6 @@
 # rarfile.py
 #
-# Copyright (c) 2005-2020  Marko Kreen <markokr@gmail.com>
+# Copyright (c) 2005-2024  Marko Kreen <markokr@gmail.com>
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -92,7 +92,7 @@ class AES_CBC_Decrypt:
             self.decrypt = ciph.decryptor().update
 
 
-__version__ = "4.1"
+__version__ = "4.2"
 
 # export only interesting items
 __all__ = ["get_rar_version", "is_rarfile", "is_rarfile_sfx", "RarInfo", "RarFile", "RarExtFile"]
@@ -671,6 +671,8 @@ class RarFile:
         part_only
             If True, read only single file and allow it to be middle-part
             of multi-volume archive.
+
+            .. versionadded:: 4.0
     """
 
     #: File name, if available.  Unicode string or None.
@@ -737,6 +739,13 @@ class RarFile:
         """
         return self._file_parser.needs_password()
 
+    def is_solid(self):
+        """Returns True if archive uses solid compression.
+
+        .. versionadded:: 4.2
+        """
+        return self._file_parser.is_solid()
+
     def namelist(self):
         """Return list of filenames in archive.
         """
@@ -765,6 +774,8 @@ class RarFile:
 
         RAR5: if name is hard-linked or copied file,
         returns original entry with original filename.
+
+        .. versionadded:: 4.1
         """
         return self._file_parser.getinfo_orig(name)
 
@@ -1026,6 +1037,14 @@ class CommonParser:
         self._sfx_offset = sfx_offset
         self._part_only = part_only
 
+    def is_solid(self):
+        """Returns True if archive uses solid compression.
+        """
+        if self._main:
+            if self._main.flags & RAR_MAIN_SOLID:
+                return True
+        return False
+
     def has_header_encryption(self):
         """Returns True if headers are encrypted
         """
@@ -1163,7 +1182,9 @@ class CommonParser:
                     if not self._password:
                         break
             elif h.type == RAR_BLOCK_ENDARC:
-                more_vols = (h.flags & RAR_ENDARC_NEXT_VOLUME) > 0
+                # use flag, but also allow RAR 2.x logic below to trigger
+                if h.flags & RAR_ENDARC_NEXT_VOLUME:
+                    more_vols = True
                 endarc = True
                 if raise_need_first_vol and (h.flags & RAR_ENDARC_VOLNR) > 0:
                     raise NeedFirstVolume(
@@ -2337,8 +2358,8 @@ class RarExtFile(io.RawIOBase):
         """Seek in data.
 
         On uncompressed files, the seeking works by actual
-        seeks so it's fast.  On compresses files its slow
-        - forward seeking happends by reading ahead,
+        seeks so it's fast.  On compressed files its slow
+        - forward seeking happens by reading ahead,
         backwards by re-opening and decompressing from the start.
         """
 
@@ -3110,7 +3131,7 @@ def rar3_decompress(vers, meth, data, declen=0, flags=0, crc=0, pwd=None, salt=N
 
 
 def sanitize_filename(fname, pathsep, is_win32):
-    """Simulate unrar sanitization.
+    """Make filename safe for write access.
     """
     if is_win32:
         if len(fname) > 1 and fname[1] == ":":
@@ -3182,12 +3203,12 @@ def parse_dos_time(stamp):
 class nsdatetime(datetime):
     """Datetime that carries nanoseconds.
 
-    Arithmetic not supported, will lose nanoseconds.
+    Arithmetic operations will lose nanoseconds.
 
     .. versionadded:: 4.0
     """
     __slots__ = ("nanosecond",)
-    nanosecond: int     #: Number of nanoseconds, 0 <= nanosecond < 999999999
+    nanosecond: int     #: Number of nanoseconds, 0 <= nanosecond <= 999999999
 
     def __new__(cls, year, month=None, day=None, hour=0, minute=0, second=0,
                 microsecond=0, tzinfo=None, *, fold=0, nanosecond=0):
@@ -3389,7 +3410,7 @@ class ToolSetup:
 
 UNRAR_CONFIG = {
     "open_cmd": ("UNRAR_TOOL", "p", "-inul"),
-    "check_cmd": ("UNRAR_TOOL", "-inul"),
+    "check_cmd": ("UNRAR_TOOL", "-inul", "-?"),
     "password": "-p",
     "no_password": ("-p-",),
     # map return code to exception class, codes from rar.txt

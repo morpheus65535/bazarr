@@ -9,7 +9,6 @@
 r"""
 .. dialect:: postgresql
     :name: PostgreSQL
-    :full_support: 12, 13, 14, 15
     :normal_support: 9.6+
     :best_effort: 9+
 
@@ -346,7 +345,9 @@ Remote-Schema Table Introspection and PostgreSQL search_path
 .. admonition:: Section Best Practices Summarized
 
     keep the ``search_path`` variable set to its default of ``public``, without
-    any other schema names. For other schema names, name these explicitly
+    any other schema names. Ensure the username used to connect **does not**
+    match remote schemas, or ensure the ``"$user"`` token is **removed** from
+    ``search_path``.  For other schema names, name these explicitly
     within :class:`_schema.Table` definitions. Alternatively, the
     ``postgresql_ignore_search_path`` option will cause all reflected
     :class:`_schema.Table` objects to have a :attr:`_schema.Table.schema`
@@ -355,12 +356,63 @@ Remote-Schema Table Introspection and PostgreSQL search_path
 The PostgreSQL dialect can reflect tables from any schema, as outlined in
 :ref:`metadata_reflection_schemas`.
 
+In all cases, the first thing SQLAlchemy does when reflecting tables is
+to **determine the default schema for the current database connection**.
+It does this using the PostgreSQL ``current_schema()``
+function, illustated below using a PostgreSQL client session (i.e. using
+the ``psql`` tool)::
+
+    test=> select current_schema();
+    current_schema
+    ----------------
+    public
+    (1 row)
+
+Above we see that on a plain install of PostgreSQL, the default schema name
+is the name ``public``.
+
+However, if your database username **matches the name of a schema**, PostgreSQL's
+default is to then **use that name as the default schema**.  Below, we log in
+using the username ``scott``.  When we create a schema named ``scott``, **it
+implicitly changes the default schema**::
+
+    test=> select current_schema();
+    current_schema
+    ----------------
+    public
+    (1 row)
+
+    test=> create schema scott;
+    CREATE SCHEMA
+    test=> select current_schema();
+    current_schema
+    ----------------
+    scott
+    (1 row)
+
+The behavior of ``current_schema()`` is derived from the
+`PostgreSQL search path
+<https://www.postgresql.org/docs/current/static/ddl-schemas.html#DDL-SCHEMAS-PATH>`_
+variable ``search_path``, which in modern PostgreSQL versions defaults to this::
+
+    test=> show search_path;
+    search_path
+    -----------------
+    "$user", public
+    (1 row)
+
+Where above, the ``"$user"`` variable will inject the current username as the
+default schema, if one exists.   Otherwise, ``public`` is used.
+
+When a :class:`_schema.Table` object is reflected, if it is present in the
+schema indicated by the ``current_schema()`` function, **the schema name assigned
+to the ".schema" attribute of the Table is the Python "None" value**.  Otherwise, the
+".schema" attribute will be assigned the string name of that schema.
+
 With regards to tables which these :class:`_schema.Table`
 objects refer to via foreign key constraint, a decision must be made as to how
 the ``.schema`` is represented in those remote tables, in the case where that
-remote schema name is also a member of the current
-`PostgreSQL search path
-<https://www.postgresql.org/docs/current/static/ddl-schemas.html#DDL-SCHEMAS-PATH>`_.
+remote schema name is also a member of the current ``search_path``.
 
 By default, the PostgreSQL dialect mimics the behavior encouraged by
 PostgreSQL's own ``pg_get_constraintdef()`` builtin procedure.  This function
@@ -465,13 +517,6 @@ We will now have ``test_schema.referred`` stored as schema-qualified::
     explicitly when building up a :class:`_schema.Table` object.  The options
     described here are only for those users who can't, or prefer not to, stay
     within these guidelines.
-
-Note that **in all cases**, the "default" schema is always reflected as
-``None``. The "default" schema on PostgreSQL is that which is returned by the
-PostgreSQL ``current_schema()`` function.  On a typical PostgreSQL
-installation, this is the name ``public``.  So a table that refers to another
-which is in the ``public`` (i.e. default) schema will always have the
-``.schema`` attribute set to ``None``.
 
 .. seealso::
 
@@ -2730,6 +2775,8 @@ class ReflectedDomain(ReflectedNamedType):
     """The constraints defined in the domain, if any.
     The constraint are in order of evaluation by postgresql.
     """
+    collation: Optional[str]
+    """The collation for the domain."""
 
 
 class ReflectedEnum(ReflectedNamedType):
@@ -3661,20 +3708,156 @@ class PGDialect(default.DefaultDialect):
 
         return columns.items()
 
-    def _get_columns_info(self, rows, domains, enums, schema):
-        array_type_pattern = re.compile(r"\[\]$")
-        attype_pattern = re.compile(r"\(.*\)")
-        charlen_pattern = re.compile(r"\(([\d,]+)\)")
-        args_pattern = re.compile(r"\((.*)\)")
-        args_split_pattern = re.compile(r"\s*,\s*")
+    _format_type_args_pattern = re.compile(r"\((.*)\)")
+    _format_type_args_delim = re.compile(r"\s*,\s*")
+    _format_array_spec_pattern = re.compile(r"((?:\[\])*)$")
 
-        def _handle_array_type(attype):
-            return (
-                # strip '[]' from integer[], etc.
-                array_type_pattern.sub("", attype),
-                attype.endswith("[]"),
+    def _reflect_type(
+        self,
+        format_type: Optional[str],
+        domains: dict[str, ReflectedDomain],
+        enums: dict[str, ReflectedEnum],
+        type_description: str,
+    ) -> sqltypes.TypeEngine[Any]:
+        """
+        Attempts to reconstruct a column type defined in ischema_names based
+        on the information available in the format_type.
+
+        If the `format_type` cannot be associated with a known `ischema_names`,
+        it is treated as a reference to a known PostgreSQL named `ENUM` or
+        `DOMAIN` type.
+        """
+        type_description = type_description or "unknown type"
+        if format_type is None:
+            util.warn(
+                "PostgreSQL format_type() returned NULL for %s"
+                % type_description
             )
+            return sqltypes.NULLTYPE
 
+        attype_args_match = self._format_type_args_pattern.search(format_type)
+        if attype_args_match and attype_args_match.group(1):
+            attype_args = self._format_type_args_delim.split(
+                attype_args_match.group(1)
+            )
+        else:
+            attype_args = ()
+
+        match_array_dim = self._format_array_spec_pattern.search(format_type)
+        # Each "[]" in array specs corresponds to an array dimension
+        array_dim = len(match_array_dim.group(1) or "") // 2
+
+        # Remove all parameters and array specs from format_type to obtain an
+        # ischema_name candidate
+        attype = self._format_type_args_pattern.sub("", format_type)
+        attype = self._format_array_spec_pattern.sub("", attype)
+
+        schema_type = self.ischema_names.get(attype.lower(), None)
+        args, kwargs = (), {}
+
+        if attype == "numeric":
+            if len(attype_args) == 2:
+                precision, scale = map(int, attype_args)
+                args = (precision, scale)
+
+        elif attype == "double precision":
+            args = (53,)
+
+        elif attype == "integer":
+            args = ()
+
+        elif attype in ("timestamp with time zone", "time with time zone"):
+            kwargs["timezone"] = True
+            if len(attype_args) == 1:
+                kwargs["precision"] = int(attype_args[0])
+
+        elif attype in (
+            "timestamp without time zone",
+            "time without time zone",
+            "time",
+        ):
+            kwargs["timezone"] = False
+            if len(attype_args) == 1:
+                kwargs["precision"] = int(attype_args[0])
+
+        elif attype == "bit varying":
+            kwargs["varying"] = True
+            if len(attype_args) == 1:
+                charlen = int(attype_args[0])
+                args = (charlen,)
+
+        elif attype.startswith("interval"):
+            schema_type = INTERVAL
+
+            field_match = re.match(r"interval (.+)", attype)
+            if field_match:
+                kwargs["fields"] = field_match.group(1)
+
+            if len(attype_args) == 1:
+                kwargs["precision"] = int(attype_args[0])
+
+        else:
+            enum_or_domain_key = tuple(util.quoted_token_parser(attype))
+
+            if enum_or_domain_key in enums:
+                schema_type = ENUM
+                enum = enums[enum_or_domain_key]
+
+                args = tuple(enum["labels"])
+                kwargs["name"] = enum["name"]
+
+                if not enum["visible"]:
+                    kwargs["schema"] = enum["schema"]
+                args = tuple(enum["labels"])
+            elif enum_or_domain_key in domains:
+                schema_type = DOMAIN
+                domain = domains[enum_or_domain_key]
+
+                data_type = self._reflect_type(
+                    domain["type"],
+                    domains,
+                    enums,
+                    type_description="DOMAIN '%s'" % domain["name"],
+                )
+                args = (domain["name"], data_type)
+
+                kwargs["collation"] = domain["collation"]
+                kwargs["default"] = domain["default"]
+                kwargs["not_null"] = not domain["nullable"]
+                kwargs["create_type"] = False
+
+                if domain["constraints"]:
+                    # We only support a single constraint
+                    check_constraint = domain["constraints"][0]
+
+                    kwargs["constraint_name"] = check_constraint["name"]
+                    kwargs["check"] = check_constraint["check"]
+
+                if not domain["visible"]:
+                    kwargs["schema"] = domain["schema"]
+
+            else:
+                try:
+                    charlen = int(attype_args[0])
+                    args = (charlen, *attype_args[1:])
+                except (ValueError, IndexError):
+                    args = attype_args
+
+        if not schema_type:
+            util.warn(
+                "Did not recognize type '%s' of %s"
+                % (attype, type_description)
+            )
+            return sqltypes.NULLTYPE
+
+        data_type = schema_type(*args, **kwargs)
+        if array_dim >= 1:
+            # postgres does not preserve dimensionality or size of array types.
+            data_type = _array.ARRAY(data_type)
+
+        return data_type
+
+    def _get_columns_info(self, rows, domains, enums, schema):
         columns = defaultdict(list)
         for row_dict in rows:
             # ensure that each table has an entry, even if it has no columns
@@ -3685,131 +3868,28 @@ class PGDialect(default.DefaultDialect):
                 continue
             table_cols = columns[(schema, row_dict["table_name"])]
 
-            format_type = row_dict["format_type"]
+            coltype = self._reflect_type(
+                row_dict["format_type"],
+                domains,
+                enums,
+                type_description="column '%s'" % row_dict["name"],
+            )
+
             default = row_dict["default"]
             name = row_dict["name"]
             generated = row_dict["generated"]
-            identity = row_dict["identity_options"]
-
-            if format_type is None:
-                no_format_type = True
-                attype = format_type = "no format_type()"
-                is_array = False
-            else:
-                no_format_type = False
-
-                # strip (*) from character varying(5), timestamp(5)
-                # with time zone, geometry(POLYGON), etc.
-                attype = attype_pattern.sub("", format_type)
-
-                # strip '[]' from integer[], etc. and check if an array
-                attype, is_array = _handle_array_type(attype)
-
-            # strip quotes from case sensitive enum or domain names
-            enum_or_domain_key = tuple(util.quoted_token_parser(attype))
-
             nullable = not row_dict["not_null"]
 
-            charlen = charlen_pattern.search(format_type)
-            if charlen:
-                charlen = charlen.group(1)
-            args = args_pattern.search(format_type)
-            if args and args.group(1):
-                args = tuple(args_split_pattern.split(args.group(1)))
-            else:
-                args = ()
-            kwargs = {}
+            if isinstance(coltype, DOMAIN):
+                if not default:
+                    # domain can override the default value but
+                    # cant set it to None
+                    if coltype.default is not None:
+                        default = coltype.default
 
-            if attype == "numeric":
-                if charlen:
-                    prec, scale = charlen.split(",")
-                    args = (int(prec), int(scale))
-                else:
-                    args = ()
-            elif attype == "double precision":
-                args = (53,)
-            elif attype == "integer":
-                args = ()
-            elif attype in ("timestamp with time zone", "time with time zone"):
-                kwargs["timezone"] = True
-                if charlen:
-                    kwargs["precision"] = int(charlen)
-                args = ()
-            elif attype in (
-                "timestamp without time zone",
-                "time without time zone",
-                "time",
-            ):
-                kwargs["timezone"] = False
-                if charlen:
-                    kwargs["precision"] = int(charlen)
-                args = ()
-            elif attype == "bit varying":
-                kwargs["varying"] = True
-                if charlen:
-                    args = (int(charlen),)
-                else:
-                    args = ()
-            elif attype.startswith("interval"):
-                field_match = re.match(r"interval (.+)", attype, re.I)
-                if charlen:
-                    kwargs["precision"] = int(charlen)
-                if field_match:
-                    kwargs["fields"] = field_match.group(1)
-                attype = "interval"
-                args = ()
-            elif charlen:
-                args = (int(charlen),)
+                nullable = nullable and not coltype.not_null
 
-            while True:
-                # looping here to suit nested domains
-                if attype in self.ischema_names:
-                    coltype = self.ischema_names[attype]
-                    break
-                elif enum_or_domain_key in enums:
-                    enum = enums[enum_or_domain_key]
-                    coltype = ENUM
-                    kwargs["name"] = enum["name"]
-                    if not enum["visible"]:
-                        kwargs["schema"] = enum["schema"]
-                    args = tuple(enum["labels"])
-                    break
-                elif enum_or_domain_key in domains:
-                    domain = domains[enum_or_domain_key]
-                    attype = domain["type"]
-                    attype, is_array = _handle_array_type(attype)
-                    # strip quotes from case sensitive enum or domain names
-                    enum_or_domain_key = tuple(
-                        util.quoted_token_parser(attype)
-                    )
-                    # A table can't override a not null on the domain,
-                    # but can override nullable
-                    nullable = nullable and domain["nullable"]
-                    if domain["default"] and not default:
-                        # It can, however, override the default
-                        # value, but can't set it to null.
-                        default = domain["default"]
-                    continue
-                else:
-                    coltype = None
-                    break
-
-            if coltype:
-                coltype = coltype(*args, **kwargs)
-                if is_array:
-                    coltype = self.ischema_names["_array"](coltype)
-            elif no_format_type:
-                util.warn(
-                    "PostgreSQL format_type() returned NULL for column '%s'"
-                    % (name,)
-                )
-                coltype = sqltypes.NULLTYPE
-            else:
-                util.warn(
-                    "Did not recognize type '%s' of column '%s'"
-                    % (attype, name)
-                )
-                coltype = sqltypes.NULLTYPE
+            identity = row_dict["identity_options"]
 
             # If a zero byte or blank string depending on driver (is also
             # absent for older PG versions), then not a generated column.
@@ -4608,6 +4688,8 @@ class PGDialect(default.DefaultDialect):
                     pg_catalog.pg_class.c.oid
                     == pg_catalog.pg_description.c.objoid,
                     pg_catalog.pg_description.c.objsubid == 0,
+                    pg_catalog.pg_description.c.classoid
+                    == sql.func.cast("pg_catalog.pg_class", REGCLASS),
                 ),
             )
             .where(self._pg_class_relkind_condition(relkinds))
@@ -4858,11 +4940,17 @@ class PGDialect(default.DefaultDialect):
                 pg_catalog.pg_namespace.c.nspname.label("schema"),
                 con_sq.c.condefs,
                 con_sq.c.connames,
+                pg_catalog.pg_collation.c.collname,
             )
             .join(
                 pg_catalog.pg_namespace,
                 pg_catalog.pg_namespace.c.oid
                 == pg_catalog.pg_type.c.typnamespace,
+            )
+            .outerjoin(
+                pg_catalog.pg_collation,
+                pg_catalog.pg_type.c.typcollation
+                == pg_catalog.pg_collation.c.oid,
             )
             .outerjoin(
                 con_sq,
@@ -4877,14 +4965,13 @@ class PGDialect(default.DefaultDialect):
 
     @reflection.cache
     def _load_domains(self, connection, schema=None, **kw):
-        # Load data types for domains:
         result = connection.execute(self._domain_query(schema))
 
-        domains = []
+        domains: List[ReflectedDomain] = []
         for domain in result.mappings():
             # strip (30) from character varying(30)
             attype = re.search(r"([^\(]+)", domain["attype"]).group(1)
-            constraints = []
+            constraints: List[ReflectedDomainConstraint] = []
             if domain["connames"]:
                 # When a domain has multiple CHECK constraints, they will
                 # be tested in alphabetical order by name.
@@ -4898,7 +4985,7 @@ class PGDialect(default.DefaultDialect):
                     check = def_[7:-1]
                     constraints.append({"name": name, "check": check})
 
-            domain_rec = {
+            domain_rec: ReflectedDomain = {
                 "name": domain["name"],
                 "schema": domain["schema"],
                 "visible": domain["visible"],
@@ -4906,6 +4993,7 @@ class PGDialect(default.DefaultDialect):
                 "nullable": domain["nullable"],
                 "default": domain["default"],
                 "constraints": constraints,
+                "collation": domain["collname"],
             }
             domains.append(domain_rec)
 

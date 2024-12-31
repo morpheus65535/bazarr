@@ -13,8 +13,9 @@ except ImportError:  # pragma: no cover
     Config = object
 
 
-import dynaconf
 from importlib.metadata import EntryPoint
+
+import dynaconf
 
 
 class FlaskDynaconf:

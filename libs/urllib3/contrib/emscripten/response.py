@@ -45,6 +45,7 @@ class EmscriptenHttpResponseWrapper(BaseHTTPResponse):
             status=internal_response.status_code,
             request_url=url,
             version=0,
+            version_string="HTTP/?",
             reason="",
             decode_content=True,
         )
@@ -155,7 +156,7 @@ class EmscriptenHttpResponseWrapper(BaseHTTPResponse):
                 self.length_is_certain = True
                 # wrap body in IOStream
                 self._response.body = BytesIO(self._response.body)
-            if amt is not None:
+            if amt is not None and amt >= 0:
                 # don't cache partial content
                 cache_content = False
                 data = self._response.body.read(amt)
@@ -211,13 +212,21 @@ class EmscriptenHttpResponseWrapper(BaseHTTPResponse):
 
     def json(self) -> typing.Any:
         """
-        Parses the body of the HTTP response as JSON.
+        Deserializes the body of the HTTP response as a Python object.
 
-        To use a custom JSON decoder pass the result of :attr:`HTTPResponse.data` to the decoder.
+        The body of the HTTP response must be encoded using UTF-8, as per
+        `RFC 8529 Section 8.1 <https://www.rfc-editor.org/rfc/rfc8259#section-8.1>`_.
 
-        This method can raise either `UnicodeDecodeError` or `json.JSONDecodeError`.
+        To use a custom JSON decoder pass the result of :attr:`HTTPResponse.data` to
+        your custom decoder instead.
 
-        Read more :ref:`here <json>`.
+        If the body of the HTTP response is not decodable to UTF-8, a
+        `UnicodeDecodeError` will be raised. If the body of the HTTP response is not a
+        valid JSON document, a `json.JSONDecodeError` will be raised.
+
+        Read more :ref:`here <json_content>`.
+
+        :returns: The body of the HTTP response as a Python object.
         """
         data = self.data.decode("utf-8")
         return _json.loads(data)

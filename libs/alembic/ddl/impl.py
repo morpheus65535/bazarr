@@ -21,7 +21,12 @@ from typing import TYPE_CHECKING
 from typing import Union
 
 from sqlalchemy import cast
+from sqlalchemy import Column
+from sqlalchemy import MetaData
+from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy import schema
+from sqlalchemy import String
+from sqlalchemy import Table
 from sqlalchemy import text
 
 from . import _autogen
@@ -43,11 +48,9 @@ if TYPE_CHECKING:
     from sqlalchemy.sql import Executable
     from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.elements import quoted_name
-    from sqlalchemy.sql.schema import Column
     from sqlalchemy.sql.schema import Constraint
     from sqlalchemy.sql.schema import ForeignKeyConstraint
     from sqlalchemy.sql.schema import Index
-    from sqlalchemy.sql.schema import Table
     from sqlalchemy.sql.schema import UniqueConstraint
     from sqlalchemy.sql.selectable import TableClause
     from sqlalchemy.sql.type_api import TypeEngine
@@ -77,7 +80,6 @@ _impls: Dict[str, Type[DefaultImpl]] = {}
 
 
 class DefaultImpl(metaclass=ImplMeta):
-
     """Provide the entrypoint for major migration operations,
     including database-specific behavioral variances.
 
@@ -137,6 +139,40 @@ class DefaultImpl(metaclass=ImplMeta):
         self.output_buffer.write(text + "\n\n")
         self.output_buffer.flush()
 
+    def version_table_impl(
+        self,
+        *,
+        version_table: str,
+        version_table_schema: Optional[str],
+        version_table_pk: bool,
+        **kw: Any,
+    ) -> Table:
+        """Generate a :class:`.Table` object which will be used as the
+        structure for the Alembic version table.
+
+        Third party dialects may override this hook to provide an alternate
+        structure for this :class:`.Table`; requirements are only that it
+        be named based on the ``version_table`` parameter and contains
+        at least a single string-holding column named ``version_num``.
+
+        .. versionadded:: 1.14
+
+        """
+        vt = Table(
+            version_table,
+            MetaData(),
+            Column("version_num", String(32), nullable=False),
+            schema=version_table_schema,
+        )
+        if version_table_pk:
+            vt.append_constraint(
+                PrimaryKeyConstraint(
+                    "version_num", name=f"{version_table}_pkc"
+                )
+            )
+
+        return vt
+
     def requires_recreate_in_batch(
         self, batch_op: BatchOperationsImpl
     ) -> bool:
@@ -168,16 +204,15 @@ class DefaultImpl(metaclass=ImplMeta):
     def _exec(
         self,
         construct: Union[Executable, str],
-        execution_options: Optional[dict[str, Any]] = None,
-        multiparams: Sequence[dict] = (),
-        params: Dict[str, Any] = util.immutabledict(),
+        execution_options: Optional[Mapping[str, Any]] = None,
+        multiparams: Optional[Sequence[Mapping[str, Any]]] = None,
+        params: Mapping[str, Any] = util.immutabledict(),
     ) -> Optional[CursorResult]:
         if isinstance(construct, str):
             construct = text(construct)
         if self.as_sql:
-            if multiparams or params:
-                # TODO: coverage
-                raise Exception("Execution arguments not allowed with as_sql")
+            if multiparams is not None or params:
+                raise TypeError("SQL parameters not allowed with as_sql")
 
             compile_kw: dict[str, Any]
             if self.literal_binds and not isinstance(
@@ -200,11 +235,16 @@ class DefaultImpl(metaclass=ImplMeta):
             assert conn is not None
             if execution_options:
                 conn = conn.execution_options(**execution_options)
-            if params:
-                assert isinstance(multiparams, tuple)
-                multiparams += (params,)
 
-            return conn.execute(construct, multiparams)
+            if params and multiparams is not None:
+                raise TypeError(
+                    "Can't send params and multiparams at the same time"
+                )
+
+            if multiparams:
+                return conn.execute(construct, multiparams)
+            else:
+                return conn.execute(construct, params)
 
     def execute(
         self,
@@ -359,11 +399,11 @@ class DefaultImpl(metaclass=ImplMeta):
             base.RenameTable(old_table_name, new_table_name, schema=schema)
         )
 
-    def create_table(self, table: Table) -> None:
+    def create_table(self, table: Table, **kw: Any) -> None:
         table.dispatch.before_create(
             table, self.connection, checkfirst=False, _ddl_runner=self
         )
-        self._exec(schema.CreateTable(table))
+        self._exec(schema.CreateTable(table, **kw))
         table.dispatch.after_create(
             table, self.connection, checkfirst=False, _ddl_runner=self
         )
@@ -382,11 +422,11 @@ class DefaultImpl(metaclass=ImplMeta):
             if comment and with_comment:
                 self.create_column_comment(column)
 
-    def drop_table(self, table: Table) -> None:
+    def drop_table(self, table: Table, **kw: Any) -> None:
         table.dispatch.before_drop(
             table, self.connection, checkfirst=False, _ddl_runner=self
         )
-        self._exec(schema.DropTable(table))
+        self._exec(schema.DropTable(table, **kw))
         table.dispatch.after_drop(
             table, self.connection, checkfirst=False, _ddl_runner=self
         )
@@ -421,13 +461,15 @@ class DefaultImpl(metaclass=ImplMeta):
                 self._exec(
                     sqla_compat._insert_inline(table).values(
                         **{
-                            k: sqla_compat._literal_bindparam(
-                                k, v, type_=table.c[k].type
+                            k: (
+                                sqla_compat._literal_bindparam(
+                                    k, v, type_=table.c[k].type
+                                )
+                                if not isinstance(
+                                    v, sqla_compat._literal_bindparam
+                                )
+                                else v
                             )
-                            if not isinstance(
-                                v, sqla_compat._literal_bindparam
-                            )
-                            else v
                             for k, v in row.items()
                         }
                     )

@@ -4,30 +4,32 @@ ftfy: fixes text for you
 This is a module for making text less broken. See the `fix_text` function
 for more information.
 """
+
 from __future__ import annotations
+
 import unicodedata
 import warnings
 from typing import (
     Any,
     BinaryIO,
+    Callable,
     Dict,
     Iterator,
     List,
+    Literal,
     NamedTuple,
     Optional,
     TextIO,
     Tuple,
     Union,
     cast,
-    no_type_check,
 )
 
-from ftfy import bad_codecs
-from ftfy import chardata, fixes
+from ftfy import bad_codecs, chardata, fixes
 from ftfy.badness import is_bad
 from ftfy.formatting import display_ljust
 
-__version__ = "6.1.2"
+__version__ = "6.2.3"
 
 
 # Though this function does nothing, it lets linters know that we're using
@@ -75,7 +77,7 @@ class ExplainedText(NamedTuple):
 
 
 # Functions that can be applied using `apply_plan`.
-FIXERS = {
+FIXERS: Dict[str, Callable] = {  # type: ignore[type-arg]
     "unescape_html": fixes.unescape_html,
     "remove_terminal_escapes": fixes.remove_terminal_escapes,
     "restore_byte_a0": fixes.restore_byte_a0,
@@ -211,6 +213,7 @@ class TextFixerConfig(NamedTuple):
       Functions that accept TextFixerConfig and don't return an explanation
       will automatically set `explain` to False.
     """
+
     unescape_html: Union[str, bool] = "auto"
     remove_terminal_escapes: bool = True
     fix_encoding: bool = True
@@ -224,7 +227,7 @@ class TextFixerConfig(NamedTuple):
     fix_line_breaks: bool = True
     fix_surrogates: bool = True
     remove_control_chars: bool = True
-    normalization: Optional[str] = "NFC"
+    normalization: Optional[Literal["NFC", "NFD", "NFKC", "NFKD"]] = "NFC"
     max_decode_length: int = 1000000
     explain: bool = True
 
@@ -238,7 +241,9 @@ def _config_from_kwargs(
     """
     if "fix_entities" in kwargs:
         warnings.warn(
-            "`fix_entities` has been renamed to `unescape_html`", DeprecationWarning
+            "`fix_entities` has been renamed to `unescape_html`",
+            DeprecationWarning,
+            stacklevel=2,
         )
         kwargs = kwargs.copy()
         kwargs["unescape_html"] = kwargs["fix_entities"]
@@ -287,7 +292,7 @@ def _try_fix(
     return text
 
 
-def fix_text(text: str, config: Optional[TextFixerConfig] = None, **kwargs) -> str:
+def fix_text(text: str, config: Optional[TextFixerConfig] = None, **kwargs: Any) -> str:
     r"""
     Given Unicode text as input, fix inconsistencies and glitches in it,
     such as mojibake (text that was decoded in the wrong encoding).
@@ -362,7 +367,7 @@ def fix_text(text: str, config: Optional[TextFixerConfig] = None, **kwargs) -> s
 
 
 def fix_and_explain(
-    text: str, config: Optional[TextFixerConfig] = None, **kwargs
+    text: str, config: Optional[TextFixerConfig] = None, **kwargs: Any
 ) -> ExplainedText:
     """
     Fix text as a single segment, returning the fixed text and an explanation
@@ -422,7 +427,7 @@ def fix_and_explain(
 
 
 def fix_encoding_and_explain(
-    text: str, config: Optional[TextFixerConfig] = None, **kwargs
+    text: str, config: Optional[TextFixerConfig] = None, **kwargs: Any
 ) -> ExplainedText:
     """
     Apply the steps of ftfy that detect mojibake and fix it. Returns the fixed
@@ -503,8 +508,13 @@ def _fix_encoding_one_step_and_explain(
                 decoding = "utf-8"
                 # Check encoded_bytes for sequences that would be UTF-8,
                 # except they have b' ' where b'\xa0' would belong.
-                if config.restore_byte_a0 and chardata.ALTERED_UTF8_RE.search(
-                    encoded_bytes
+                #
+                # Don't do this in the macroman encoding, where it would match
+                # an en dash followed by a space, leading to false positives.
+                if (
+                    config.restore_byte_a0
+                    and encoding != "macroman"
+                    and chardata.ALTERED_UTF8_RE.search(encoded_bytes)
                 ):
                     replaced_bytes = fixes.restore_byte_a0(encoded_bytes)
                     if replaced_bytes != encoded_bytes:
@@ -578,7 +588,9 @@ def _fix_encoding_one_step_and_explain(
     return ExplainedText(text, [])
 
 
-def fix_encoding(text: str, config: Optional[TextFixerConfig] = None, **kwargs):
+def fix_encoding(
+    text: str, config: Optional[TextFixerConfig] = None, **kwargs: Any
+) -> str:
     """
     Apply just the encoding-fixing steps of ftfy to this text. Returns the
     fixed text, discarding the explanation.
@@ -599,7 +611,9 @@ def fix_encoding(text: str, config: Optional[TextFixerConfig] = None, **kwargs):
 ftfy = fix_text
 
 
-def fix_text_segment(text: str, config: Optional[TextFixerConfig] = None, **kwargs):
+def fix_text_segment(
+    text: str, config: Optional[TextFixerConfig] = None, **kwargs: Any
+) -> str:
     """
     Fix text as a single segment, with a consistent sequence of steps that
     are applied to fix the text. Discard the explanation.
@@ -615,7 +629,7 @@ def fix_file(
     input_file: TextIO | BinaryIO,
     encoding: Optional[str] = None,
     config: Optional[TextFixerConfig] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> Iterator[str]:
     """
     Fix text that is found in a file.
@@ -715,8 +729,7 @@ def guess_bytes(bstring: bytes) -> Tuple[str, str]:
     return bstring.decode("sloppy-windows-1252"), "sloppy-windows-1252"
 
 
-@no_type_check
-def apply_plan(text: str, plan: List[Tuple[str, str]]):
+def apply_plan(text: str, plan: List[Tuple[str, str]]) -> str:
     """
     Apply a plan for fixing the encoding of text.
 
@@ -743,9 +756,9 @@ def apply_plan(text: str, plan: List[Tuple[str, str]]):
     obj = text
     for operation, encoding in plan:
         if operation == "encode":
-            obj = obj.encode(encoding)
+            obj = obj.encode(encoding)  # type: ignore
         elif operation == "decode":
-            obj = obj.decode(encoding)
+            obj = obj.decode(encoding)  # type: ignore
         elif operation in ("transcode", "apply"):
             if encoding in FIXERS:
                 obj = FIXERS[encoding](obj)
@@ -757,7 +770,7 @@ def apply_plan(text: str, plan: List[Tuple[str, str]]):
     return obj
 
 
-def explain_unicode(text: str):
+def explain_unicode(text: str) -> None:
     """
     A utility method that's useful for debugging mysterious Unicode.
 

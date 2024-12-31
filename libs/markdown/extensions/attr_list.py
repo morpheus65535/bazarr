@@ -57,17 +57,30 @@ def _handle_word(s, t):
 
 
 _scanner = re.Scanner([
-    (r'[^ =]+=".*?"', _handle_double_quote),
-    (r"[^ =]+='.*?'", _handle_single_quote),
-    (r'[^ =]+=[^ =]+', _handle_key_value),
-    (r'[^ =]+', _handle_word),
+    (r'[^ =}]+=".*?"', _handle_double_quote),
+    (r"[^ =}]+='.*?'", _handle_single_quote),
+    (r'[^ =}]+=[^ =}]+', _handle_key_value),
+    (r'[^ =}]+', _handle_word),
     (r' ', None)
 ])
 
 
-def get_attrs(str: str) -> list[tuple[str, str]]:
-    """ Parse attribute list and return a list of attribute tuples. """
-    return _scanner.scan(str)[0]
+def get_attrs_and_remainder(attrs_string: str) -> tuple[list[tuple[str, str]], str]:
+    """ Parse attribute list and return a list of attribute tuples.
+
+    Additionally, return any text that remained after a curly brace. In typical cases, its presence
+    should mean that the input does not match the intended attribute list syntax.
+    """
+    attrs, remainder = _scanner.scan(attrs_string)
+    # To keep historic behavior, discard all unparsable text prior to '}'.
+    index = remainder.find('}')
+    remainder = remainder[index:] if index != -1 else ''
+    return attrs, remainder
+
+
+def get_attrs(str: str) -> list[tuple[str, str]]:  # pragma: no cover
+    """ Soft-deprecated. Prefer `get_attrs_and_remainder`. """
+    return get_attrs_and_remainder(str)[0]
 
 
 def isheader(elem: Element) -> bool:
@@ -76,7 +89,7 @@ def isheader(elem: Element) -> bool:
 
 class AttrListTreeprocessor(Treeprocessor):
 
-    BASE_RE = r'\{\:?[ ]*([^\}\n ][^\}\n]*)[ ]*\}'
+    BASE_RE = r'\{\:?[ ]*([^\}\n ][^\n]*)[ ]*\}'
     HEADER_RE = re.compile(r'[ ]+{}[ ]*$'.format(BASE_RE))
     BLOCK_RE = re.compile(r'\n[ ]*{}[ ]*$'.format(BASE_RE))
     INLINE_RE = re.compile(r'^{}'.format(BASE_RE))
@@ -106,49 +119,58 @@ class AttrListTreeprocessor(Treeprocessor):
                         # use tail of last child. no `ul` or `ol`.
                         m = RE.search(elem[-1].tail)
                         if m:
-                            self.assign_attrs(elem, m.group(1))
-                            elem[-1].tail = elem[-1].tail[:m.start()]
+                            if not self.assign_attrs(elem, m.group(1), strict=True):
+                                elem[-1].tail = elem[-1].tail[:m.start()]
                     elif pos is not None and pos > 0 and elem[pos-1].tail:
                         # use tail of last child before `ul` or `ol`
                         m = RE.search(elem[pos-1].tail)
                         if m:
-                            self.assign_attrs(elem, m.group(1))
-                            elem[pos-1].tail = elem[pos-1].tail[:m.start()]
+                            if not self.assign_attrs(elem, m.group(1), strict=True):
+                                elem[pos-1].tail = elem[pos-1].tail[:m.start()]
                     elif elem.text:
                         # use text. `ul` is first child.
                         m = RE.search(elem.text)
                         if m:
-                            self.assign_attrs(elem, m.group(1))
-                            elem.text = elem.text[:m.start()]
+                            if not self.assign_attrs(elem, m.group(1), strict=True):
+                                elem.text = elem.text[:m.start()]
                 elif len(elem) and elem[-1].tail:
                     # has children. Get from tail of last child
                     m = RE.search(elem[-1].tail)
                     if m:
-                        self.assign_attrs(elem, m.group(1))
-                        elem[-1].tail = elem[-1].tail[:m.start()]
-                        if isheader(elem):
-                            # clean up trailing #s
-                            elem[-1].tail = elem[-1].tail.rstrip('#').rstrip()
+                        if not self.assign_attrs(elem, m.group(1), strict=True):
+                            elem[-1].tail = elem[-1].tail[:m.start()]
+                            if isheader(elem):
+                                # clean up trailing #s
+                                elem[-1].tail = elem[-1].tail.rstrip('#').rstrip()
                 elif elem.text:
                     # no children. Get from text.
                     m = RE.search(elem.text)
                     if m:
-                        self.assign_attrs(elem, m.group(1))
-                        elem.text = elem.text[:m.start()]
-                        if isheader(elem):
-                            # clean up trailing #s
-                            elem.text = elem.text.rstrip('#').rstrip()
+                        if not self.assign_attrs(elem, m.group(1), strict=True):
+                            elem.text = elem.text[:m.start()]
+                            if isheader(elem):
+                                # clean up trailing #s
+                                elem.text = elem.text.rstrip('#').rstrip()
             else:
                 # inline: check for `attrs` at start of tail
                 if elem.tail:
                     m = self.INLINE_RE.match(elem.tail)
                     if m:
-                        self.assign_attrs(elem, m.group(1))
-                        elem.tail = elem.tail[m.end():]
+                        remainder = self.assign_attrs(elem, m.group(1))
+                        elem.tail = elem.tail[m.end():] + remainder
 
-    def assign_attrs(self, elem: Element, attrs: str) -> None:
-        """ Assign `attrs` to element. """
-        for k, v in get_attrs(attrs):
+    def assign_attrs(self, elem: Element, attrs_string: str, *, strict: bool = False) -> str:
+        """ Assign `attrs` to element.
+
+        If the `attrs_string` has an extra closing curly brace, the remaining text is returned.
+
+        The `strict` argument controls whether to still assign `attrs` if there is a remaining `}`.
+        """
+        attrs, remainder = get_attrs_and_remainder(attrs_string)
+        if strict and remainder:
+            return remainder
+
+        for k, v in attrs:
             if k == '.':
                 # add to class
                 cls = elem.get('class')
@@ -159,11 +181,13 @@ class AttrListTreeprocessor(Treeprocessor):
             else:
                 # assign attribute `k` with `v`
                 elem.set(self.sanitize_name(k), v)
+        # The text that we initially over-matched will be put back.
+        return remainder
 
     def sanitize_name(self, name: str) -> str:
         """
-        Sanitize name as 'an XML Name, minus the ":"'.
-        See https://www.w3.org/TR/REC-xml-names/#NT-NCName
+        Sanitize name as 'an XML Name, minus the `:`.'
+        See <https://www.w3.org/TR/REC-xml-names/#NT-NCName>.
         """
         return self.NAME_RE.sub('_', name)
 

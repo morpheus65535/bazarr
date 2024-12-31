@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import warnings
 from typing import NamedTuple
 
@@ -227,7 +226,7 @@ class BaseLoader:
 
 class SourceMetadata(NamedTuple):
     """
-    Usefull metadata about some loaded source (file, envvar, etc).
+    Useful metadata about some loaded source (file, envvar, etc).
 
     Serve as a unique identifier for data from a specific env
     and a specific source (file, envvar, validationd default, etc)

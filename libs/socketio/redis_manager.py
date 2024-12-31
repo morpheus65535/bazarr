@@ -94,8 +94,7 @@ class RedisManager(PubSubManager):  # pragma: no cover
                     self._redis_connect()
                     self.pubsub.subscribe(self.channel)
                     retry_sleep = 1
-                for message in self.pubsub.listen():
-                    yield message
+                yield from self.pubsub.listen()
             except redis.exceptions.RedisError:
                 logger.error('Cannot receive from redis... '
                              'retrying in {} secs'.format(retry_sleep))

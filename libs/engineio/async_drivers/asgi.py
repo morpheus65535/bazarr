@@ -19,7 +19,12 @@ class ASGIApp:
     :param other_asgi_app: A separate ASGI app that receives all other traffic.
     :param engineio_path: The endpoint where the Engine.IO application should
                           be installed. The default value is appropriate for
-                          most cases.
+                          most cases. With a value of ``None``, all incoming
+                          traffic is directed to the Engine.IO server, with the
+                          assumption that routing, if necessary, is handled by
+                          a different layer. When this option is set to
+                          ``None``, ``static_files`` and ``other_asgi_app`` are
+                          ignored.
     :param on_startup: function to be called on application startup; can be
                        coroutine
     :param on_shutdown: function to be called on application shutdown; can be
@@ -44,24 +49,27 @@ class ASGIApp:
         self.engineio_server = engineio_server
         self.other_asgi_app = other_asgi_app
         self.engineio_path = engineio_path
-        if not self.engineio_path.startswith('/'):
-            self.engineio_path = '/' + self.engineio_path
-        if not self.engineio_path.endswith('/'):
-            self.engineio_path += '/'
+        if self.engineio_path is not None:
+            if not self.engineio_path.startswith('/'):
+                self.engineio_path = '/' + self.engineio_path
+            if not self.engineio_path.endswith('/'):
+                self.engineio_path += '/'
         self.static_files = static_files or {}
         self.on_startup = on_startup
         self.on_shutdown = on_shutdown
 
     async def __call__(self, scope, receive, send):
-        if scope['type'] in ['http', 'websocket'] and \
-                scope['path'].startswith(self.engineio_path):
+        if scope['type'] == 'lifespan':
+            await self.lifespan(scope, receive, send)
+        elif scope['type'] in ['http', 'websocket'] and (
+                self.engineio_path is None
+                or self._ensure_trailing_slash(scope['path']).startswith(
+                    self.engineio_path)):
             await self.engineio_server.handle_request(scope, receive, send)
         else:
             static_file = get_static_file(scope['path'], self.static_files) \
                 if scope['type'] == 'http' and self.static_files else None
-            if scope['type'] == 'lifespan':
-                await self.lifespan(scope, receive, send)
-            elif static_file and os.path.exists(static_file['filename']):
+            if static_file and os.path.exists(static_file['filename']):
                 await self.serve_static_file(static_file, receive, send)
             elif self.other_asgi_app is not None:
                 await self.other_asgi_app(scope, receive, send)
@@ -120,9 +128,14 @@ class ASGIApp:
         await send({'type': 'http.response.body',
                     'body': b'Not Found'})
 
+    def _ensure_trailing_slash(self, path):
+        if not path.endswith('/'):
+            path += '/'
+        return path
+
 
 async def translate_request(scope, receive, send):
-    class AwaitablePayload(object):  # pragma: no cover
+    class AwaitablePayload:  # pragma: no cover
         def __init__(self, payload):
             self.payload = payload or b''
 
@@ -148,9 +161,15 @@ async def translate_request(scope, receive, send):
     else:
         return {}
 
-    raw_uri = scope['path'].encode('utf-8')
+    raw_uri = scope['path']
+    query_string = ''
     if 'query_string' in scope and scope['query_string']:
-        raw_uri += b'?' + scope['query_string']
+        try:
+            query_string = scope['query_string'].decode('utf-8')
+        except UnicodeDecodeError:
+            pass
+        else:
+            raw_uri += '?' + query_string
     environ = {
         'wsgi.input': AwaitablePayload(payload),
         'wsgi.errors': sys.stderr,
@@ -162,8 +181,8 @@ async def translate_request(scope, receive, send):
         'SERVER_SOFTWARE': 'asgi',
         'REQUEST_METHOD': scope.get('method', 'GET'),
         'PATH_INFO': scope['path'],
-        'QUERY_STRING': scope.get('query_string', b'').decode('utf-8'),
-        'RAW_URI': raw_uri.decode('utf-8'),
+        'QUERY_STRING': query_string,
+        'RAW_URI': raw_uri,
         'SCRIPT_NAME': '',
         'SERVER_PROTOCOL': 'HTTP/1.1',
         'REMOTE_ADDR': '127.0.0.1',
@@ -176,8 +195,12 @@ async def translate_request(scope, receive, send):
     }
 
     for hdr_name, hdr_value in scope['headers']:
-        hdr_name = hdr_name.upper().decode('utf-8')
-        hdr_value = hdr_value.decode('utf-8')
+        try:
+            hdr_name = hdr_name.upper().decode('utf-8')
+            hdr_value = hdr_value.decode('utf-8')
+        except UnicodeDecodeError:
+            # skip header if it cannot be decoded
+            continue
         if hdr_name == 'CONTENT-TYPE':
             environ['CONTENT_TYPE'] = hdr_value
             continue
@@ -187,7 +210,7 @@ async def translate_request(scope, receive, send):
 
         key = 'HTTP_%s' % hdr_name.replace('-', '_')
         if key in environ:
-            hdr_value = '%s,%s' % (environ[key], hdr_value)
+            hdr_value = f'{environ[key]},{hdr_value}'
 
         environ[key] = hdr_value
 
@@ -218,7 +241,7 @@ async def make_response(status, headers, payload, environ):
                                 'body': payload})
 
 
-class WebSocket(object):  # pragma: no cover
+class WebSocket:  # pragma: no cover
     """
     This wrapper class provides an asgi WebSocket interface that is
     somewhat compatible with eventlet's implementation.
@@ -256,7 +279,7 @@ class WebSocket(object):  # pragma: no cover
     async def wait(self):
         event = await self.asgi_receive()
         if event['type'] != 'websocket.receive':
-            raise IOError()
+            raise OSError()
         return event.get('bytes') or event.get('text')
 
 

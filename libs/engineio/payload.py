@@ -3,7 +3,7 @@ import urllib
 from . import packet
 
 
-class Payload(object):
+class Payload:
     """Engine.IO payload."""
     max_decode_packets = 16
 

@@ -1,4 +1,4 @@
-class BaseNamespace(object):
+class BaseNamespace:
     def __init__(self, namespace=None):
         self.namespace = namespace or '/'
 

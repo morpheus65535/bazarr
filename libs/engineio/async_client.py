@@ -37,7 +37,7 @@ def async_signal_handler():
         for task in tasks:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
-        asyncio.get_event_loop().stop()
+        asyncio.get_running_loop().stop()
 
     asyncio.ensure_future(_handler())
 
@@ -62,7 +62,7 @@ class AsyncClient(base_client.BaseClient):
     :param http_session: an initialized ``aiohttp.ClientSession`` object to be
                          used when sending requests to the server. Use it if
                          you need to add special client options such as proxy
-                         servers, SSL certificates, etc.
+                         servers, SSL certificates, custom CA bundle, etc.
     :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
@@ -75,6 +75,9 @@ class AsyncClient(base_client.BaseClient):
     :param websocket_extra_options: Dictionary containing additional keyword
                                     arguments passed to
                                     ``aiohttp.ws_connect()``.
+    :param timestamp_requests: If ``True`` a timestamp is added to the query
+                               string of Socket.IO requests as a cache-busting
+                               measure. Set to ``False`` to disable.
     """
     def is_asyncio_based(self):
         return True
@@ -106,7 +109,7 @@ class AsyncClient(base_client.BaseClient):
         if self.handle_sigint and not async_signal_handler_set and \
                 threading.current_thread() == threading.main_thread():
             try:
-                asyncio.get_event_loop().add_signal_handler(
+                asyncio.get_running_loop().add_signal_handler(
                     signal.SIGINT, async_signal_handler)
             except NotImplementedError:  # pragma: no cover
                 self.logger.warning('Signal handler is unsupported')
@@ -149,7 +152,7 @@ class AsyncClient(base_client.BaseClient):
         """
         await self._send_packet(packet.Packet(packet.MESSAGE, data=data))
 
-    async def disconnect(self, abort=False):
+    async def disconnect(self, abort=False, reason=None):
         """Disconnect from the server.
 
         :param abort: If set to ``True``, do not wait for background tasks
@@ -161,7 +164,9 @@ class AsyncClient(base_client.BaseClient):
             await self._send_packet(packet.Packet(packet.CLOSE))
             await self.queue.put(None)
             self.state = 'disconnecting'
-            await self._trigger_event('disconnect', run_async=False)
+            await self._trigger_event('disconnect',
+                                      reason or self.reason.CLIENT_DISCONNECT,
+                                      run_async=False)
             if self.current_transport == 'websocket':
                 await self.ws.close()
             if not abort:
@@ -409,7 +414,8 @@ class AsyncClient(base_client.BaseClient):
         elif pkt.packet_type == packet.PING:
             await self._send_packet(packet.Packet(packet.PONG, pkt.data))
         elif pkt.packet_type == packet.CLOSE:
-            await self.disconnect(abort=True)
+            await self.disconnect(abort=True,
+                                  reason=self.reason.SERVER_DISCONNECT)
         elif pkt.packet_type == packet.NOOP:
             pass
         else:
@@ -462,7 +468,16 @@ class AsyncClient(base_client.BaseClient):
                     return task
                 else:
                     try:
-                        ret = await self.handlers[event](*args)
+                        try:
+                            ret = await self.handlers[event](*args)
+                        except TypeError:
+                            if event == 'disconnect' and \
+                                    len(args) == 1:  # pragma: no branch
+                                # legacy disconnect events do not have a reason
+                                # argument
+                                return await self.handlers[event]()
+                            else:  # pragma: no cover
+                                raise
                     except asyncio.CancelledError:  # pragma: no cover
                         pass
                     except:
@@ -482,7 +497,16 @@ class AsyncClient(base_client.BaseClient):
                     return task
                 else:
                     try:
-                        ret = self.handlers[event](*args)
+                        try:
+                            ret = self.handlers[event](*args)
+                        except TypeError:
+                            if event == 'disconnect' and \
+                                    len(args) == 1:  # pragma: no branch
+                                # legacy disconnect events do not have a reason
+                                # argument
+                                ret = self.handlers[event]()
+                            else:  # pragma: no cover
+                                raise
                     except:
                         self.logger.exception(event + ' handler error')
                         if event == 'connect':
@@ -524,7 +548,8 @@ class AsyncClient(base_client.BaseClient):
             self.logger.info('Waiting for write loop task to end')
             await self.write_loop_task
         if self.state == 'connected':
-            await self._trigger_event('disconnect', run_async=False)
+            await self._trigger_event(
+                'disconnect', self.reason.TRANSPORT_ERROR, run_async=False)
             try:
                 base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
@@ -578,7 +603,8 @@ class AsyncClient(base_client.BaseClient):
             self.logger.info('Waiting for write loop task to end')
             await self.write_loop_task
         if self.state == 'connected':
-            await self._trigger_event('disconnect', run_async=False)
+            await self._trigger_event(
+                'disconnect', self.reason.TRANSPORT_ERROR, run_async=False)
             try:
                 base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover

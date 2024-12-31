@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import abc
+import enum
 import pickle
 import time
 from typing import Any
 from typing import Callable
 from typing import cast
+from typing import Literal
 from typing import Mapping
 from typing import NamedTuple
 from typing import Optional
@@ -15,7 +17,7 @@ from typing import Union
 from ..util.typing import Self
 
 
-class NoValue:
+class NoValue(enum.Enum):
     """Describe a missing cache value.
 
     The :data:`.NO_VALUE` constant should be used.
@@ -33,12 +35,16 @@ class NoValue:
         """
         return "<dogpile.cache.api.NoValue object>"
 
-    def __bool__(self):  # pragma NO COVERAGE
+    def __bool__(self) -> Literal[False]:  # pragma NO COVERAGE
         return False
 
+    NO_VALUE = "NoValue"
 
-NO_VALUE = NoValue()
-"""Value returned from ``get()`` that describes
+
+NoValueType = Literal[NoValue.NO_VALUE]
+
+NO_VALUE = NoValue.NO_VALUE
+"""Value returned from :meth:`.CacheRegion.get` that describes
 a  key not present."""
 
 MetaDataType = Mapping[str, Any]
@@ -160,13 +166,13 @@ class CachedValue(NamedTuple):
         return time.time() - self.cached_time
 
 
-CacheReturnType = Union[CachedValue, NoValue]
+CacheReturnType = Union[CachedValue, NoValueType]
 """The non-serialized form of what may be returned from a backend
 get method.
 
 """
 
-SerializedReturnType = Union[bytes, NoValue]
+SerializedReturnType = Union[bytes, NoValueType]
 """the serialized form of what may be returned from a backend get method."""
 
 BackendFormatted = Union[CacheReturnType, SerializedReturnType]

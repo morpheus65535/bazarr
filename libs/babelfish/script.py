@@ -6,8 +6,8 @@
 #
 from __future__ import unicode_literals
 from collections import namedtuple
-from pkg_resources import resource_stream  # @UnresolvedImport
 from . import basestr
+from .compat import resource_stream
 
 #: Script code to script name mapping
 SCRIPTS = {}

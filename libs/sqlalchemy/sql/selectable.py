@@ -473,14 +473,25 @@ class HasHints:
         ("_hints", InternalTraversal.dp_table_hint_list),
     ]
 
+    @_generative
     def with_statement_hint(self, text: str, dialect_name: str = "*") -> Self:
         """Add a statement hint to this :class:`_expression.Select` or
         other selectable object.
 
-        This method is similar to :meth:`_expression.Select.with_hint`
-        except that
-        it does not require an individual table, and instead applies to the
-        statement as a whole.
+        .. tip::
+
+            :meth:`_expression.Select.with_statement_hint` generally adds hints
+            **at the trailing end** of a SELECT statement.  To place
+            dialect-specific hints such as optimizer hints at the **front** of
+            the SELECT statement after the SELECT keyword, use the
+            :meth:`_expression.Select.prefix_with` method for an open-ended
+            space, or for table-specific hints the
+            :meth:`_expression.Select.with_hint` may be used, which places
+            hints in a dialect-specific location.
+
+        This method is similar to :meth:`_expression.Select.with_hint` except
+        that it does not require an individual table, and instead applies to
+        the statement as a whole.
 
         Hints here are specific to the backend database and may include
         directives such as isolation levels, file directives, fetch directives,
@@ -492,7 +503,7 @@ class HasHints:
 
             :meth:`_expression.Select.prefix_with` - generic SELECT prefixing
             which also can suit some database-specific HINT syntaxes such as
-            MySQL optimizer hints
+            MySQL or Oracle optimizer hints
 
         """
         return self._with_hint(None, text, dialect_name)
@@ -507,6 +518,17 @@ class HasHints:
         r"""Add an indexing or other executional context hint for the given
         selectable to this :class:`_expression.Select` or other selectable
         object.
+
+        .. tip::
+
+            The :meth:`_expression.Select.with_hint` method adds hints that are
+            **specific to a single table** to a statement, in a location that
+            is **dialect-specific**.  To add generic optimizer hints to the
+            **beginning** of a statement ahead of the SELECT keyword such as
+            for MySQL or Oracle, use the :meth:`_expression.Select.prefix_with`
+            method.  To add optimizer hints to the **end** of a statement such
+            as for PostgreSQL, use the
+            :meth:`_expression.Select.with_statement_hint` method.
 
         The text of the hint is rendered in the appropriate
         location for the database backend in use, relative
@@ -536,6 +558,10 @@ class HasHints:
         .. seealso::
 
             :meth:`_expression.Select.with_statement_hint`
+
+            :meth:`_expression.Select.prefix_with` - generic SELECT prefixing
+            which also can suit some database-specific HINT syntaxes such as
+            MySQL or Oracle optimizer hints
 
         """
 
@@ -1242,7 +1268,6 @@ class Join(roles.DMLTableRole, FromClause):
     def self_group(
         self, against: Optional[OperatorType] = None
     ) -> FromGrouping:
-        ...
         return FromGrouping(self)
 
     @util.preload_module("sqlalchemy.sql.util")
@@ -1517,11 +1542,23 @@ class Join(roles.DMLTableRole, FromClause):
     ) -> TODO_Any:
         sqlutil = util.preloaded.sql_util
         if flat:
-            if name is not None:
-                raise exc.ArgumentError("Can't send name argument with flat")
+            if isinstance(self.left, (FromGrouping, Join)):
+                left_name = name  # will recurse
+            else:
+                if name and isinstance(self.left, NamedFromClause):
+                    left_name = f"{name}_{self.left.name}"
+                else:
+                    left_name = name
+            if isinstance(self.right, (FromGrouping, Join)):
+                right_name = name  # will recurse
+            else:
+                if name and isinstance(self.right, NamedFromClause):
+                    right_name = f"{name}_{self.right.name}"
+                else:
+                    right_name = name
             left_a, right_a = (
-                self.left._anonymous_fromclause(flat=True),
-                self.right._anonymous_fromclause(flat=True),
+                self.left._anonymous_fromclause(name=left_name, flat=flat),
+                self.right._anonymous_fromclause(name=right_name, flat=flat),
             )
             adapter = sqlutil.ClauseAdapter(left_a).chain(
                 sqlutil.ClauseAdapter(right_a)
@@ -2889,6 +2926,12 @@ class FromGrouping(GroupedElement, FromClause):
     def __setstate__(self, state: Dict[str, FromClause]) -> None:
         self.element = state["element"]
 
+    if TYPE_CHECKING:
+
+        def self_group(
+            self, against: Optional[OperatorType] = None
+        ) -> Self: ...
+
 
 class NamedFromGrouping(FromGrouping, NamedFromClause):
     """represent a grouping of a named FROM clause
@@ -2898,6 +2941,12 @@ class NamedFromGrouping(FromGrouping, NamedFromClause):
     """
 
     inherit_cache = True
+
+    if TYPE_CHECKING:
+
+        def self_group(
+            self, against: Optional[OperatorType] = None
+        ) -> Self: ...
 
 
 class TableClause(roles.DMLTableRole, Immutable, NamedFromClause):
@@ -3070,6 +3119,7 @@ class ForUpdateArg(ClauseElement):
         ("nowait", InternalTraversal.dp_boolean),
         ("read", InternalTraversal.dp_boolean),
         ("skip_locked", InternalTraversal.dp_boolean),
+        ("key_share", InternalTraversal.dp_boolean),
     ]
 
     of: Optional[Sequence[ClauseElement]]
@@ -3311,6 +3361,12 @@ class ScalarValues(roles.InElementRole, GroupedElement, ColumnElement[Any]):
 
     def __clause_element__(self) -> ScalarValues:
         return self
+
+    if TYPE_CHECKING:
+
+        def self_group(
+            self, against: Optional[OperatorType] = None
+        ) -> Self: ...
 
 
 class SelectBase(
@@ -3651,7 +3707,7 @@ class SelectStatementGrouping(GroupedElement, SelectBase, Generic[_SB]):
     __visit_name__ = "select_statement_grouping"
     _traverse_internals: _TraverseInternalsType = [
         ("element", InternalTraversal.dp_clauseelement)
-    ]
+    ] + SupportsCloneAnnotations._clone_annotations_traverse_internals
 
     _is_select_container = True
 
@@ -3684,7 +3740,6 @@ class SelectStatementGrouping(GroupedElement, SelectBase, Generic[_SB]):
         return self.element
 
     def self_group(self, against: Optional[OperatorType] = None) -> Self:
-        ...
         return self
 
     if TYPE_CHECKING:
@@ -3731,6 +3786,10 @@ class SelectStatementGrouping(GroupedElement, SelectBase, Generic[_SB]):
     @util.ro_non_memoized_property
     def _from_objects(self) -> List[FromClause]:
         return self.element._from_objects
+
+    def add_cte(self, *ctes: CTE, nest_here: bool = False) -> Self:
+        # SelectStatementGrouping not generative: has no attribute '_generate'
+        raise NotImplementedError
 
 
 class GenerativeSelect(SelectBase, Generative):
@@ -3840,7 +3899,7 @@ class GenerativeSelect(SelectBase, Generative):
         :attr:`_sql.SelectLabelStyle.LABEL_STYLE_DISAMBIGUATE_ONLY`,
         :attr:`_sql.SelectLabelStyle.LABEL_STYLE_TABLENAME_PLUS_COL`, and
         :attr:`_sql.SelectLabelStyle.LABEL_STYLE_NONE`.   The default style is
-        :attr:`_sql.SelectLabelStyle.LABEL_STYLE_TABLENAME_PLUS_COL`.
+        :attr:`_sql.SelectLabelStyle.LABEL_STYLE_DISAMBIGUATE_ONLY`.
 
         In modern SQLAlchemy, there is not generally a need to change the
         labeling style, as per-expression labels are more effectively used by
@@ -4101,7 +4160,7 @@ class GenerativeSelect(SelectBase, Generative):
 
         For example, ::
 
-            stmt = select(User).order_by(User).id.slice(1, 3)
+            stmt = select(User).order_by(User.id).slice(1, 3)
 
         renders as
 
@@ -4277,17 +4336,21 @@ class CompoundSelect(HasCompileState, GenerativeSelect, ExecutableReturnsRows):
 
     __visit_name__ = "compound_select"
 
-    _traverse_internals: _TraverseInternalsType = [
-        ("selects", InternalTraversal.dp_clauseelement_list),
-        ("_limit_clause", InternalTraversal.dp_clauseelement),
-        ("_offset_clause", InternalTraversal.dp_clauseelement),
-        ("_fetch_clause", InternalTraversal.dp_clauseelement),
-        ("_fetch_clause_options", InternalTraversal.dp_plain_dict),
-        ("_order_by_clauses", InternalTraversal.dp_clauseelement_list),
-        ("_group_by_clauses", InternalTraversal.dp_clauseelement_list),
-        ("_for_update_arg", InternalTraversal.dp_clauseelement),
-        ("keyword", InternalTraversal.dp_string),
-    ] + SupportsCloneAnnotations._clone_annotations_traverse_internals
+    _traverse_internals: _TraverseInternalsType = (
+        [
+            ("selects", InternalTraversal.dp_clauseelement_list),
+            ("_limit_clause", InternalTraversal.dp_clauseelement),
+            ("_offset_clause", InternalTraversal.dp_clauseelement),
+            ("_fetch_clause", InternalTraversal.dp_clauseelement),
+            ("_fetch_clause_options", InternalTraversal.dp_plain_dict),
+            ("_order_by_clauses", InternalTraversal.dp_clauseelement_list),
+            ("_group_by_clauses", InternalTraversal.dp_clauseelement_list),
+            ("_for_update_arg", InternalTraversal.dp_clauseelement),
+            ("keyword", InternalTraversal.dp_string),
+        ]
+        + SupportsCloneAnnotations._clone_annotations_traverse_internals
+        + HasCTE._has_ctes_traverse_internals
+    )
 
     selects: List[SelectBase]
 
@@ -4547,6 +4610,7 @@ class SelectState(util.MemoizedSlots, CompileState):
         cls, label_style: SelectLabelStyle
     ) -> _LabelConventionCallable:
         table_qualified = label_style is LABEL_STYLE_TABLENAME_PLUS_COL
+
         dedupe = label_style is not LABEL_STYLE_NONE
 
         pa = prefix_anon_map()
@@ -5755,22 +5819,33 @@ class Select(
         )
         return woc
 
-    # START OVERLOADED FUNCTIONS self.with_only_columns Select 8
+    # START OVERLOADED FUNCTIONS self.with_only_columns Select 1-8 ", *, maintain_column_froms: bool =..." # noqa: E501
 
     # code within this block is **programmatically,
-    # statically generated** by tools/generate_sel_v1_overloads.py
-
-    @overload
-    def with_only_columns(self, __ent0: _TCCA[_T0]) -> Select[Tuple[_T0]]: ...
+    # statically generated** by tools/generate_tuple_map_overloads.py
 
     @overload
     def with_only_columns(
-        self, __ent0: _TCCA[_T0], __ent1: _TCCA[_T1]
+        self, __ent0: _TCCA[_T0], *, maintain_column_froms: bool = ...
+    ) -> Select[Tuple[_T0]]: ...
+
+    @overload
+    def with_only_columns(
+        self,
+        __ent0: _TCCA[_T0],
+        __ent1: _TCCA[_T1],
+        *,
+        maintain_column_froms: bool = ...,
     ) -> Select[Tuple[_T0, _T1]]: ...
 
     @overload
     def with_only_columns(
-        self, __ent0: _TCCA[_T0], __ent1: _TCCA[_T1], __ent2: _TCCA[_T2]
+        self,
+        __ent0: _TCCA[_T0],
+        __ent1: _TCCA[_T1],
+        __ent2: _TCCA[_T2],
+        *,
+        maintain_column_froms: bool = ...,
     ) -> Select[Tuple[_T0, _T1, _T2]]: ...
 
     @overload
@@ -5780,6 +5855,8 @@ class Select(
         __ent1: _TCCA[_T1],
         __ent2: _TCCA[_T2],
         __ent3: _TCCA[_T3],
+        *,
+        maintain_column_froms: bool = ...,
     ) -> Select[Tuple[_T0, _T1, _T2, _T3]]: ...
 
     @overload
@@ -5790,6 +5867,8 @@ class Select(
         __ent2: _TCCA[_T2],
         __ent3: _TCCA[_T3],
         __ent4: _TCCA[_T4],
+        *,
+        maintain_column_froms: bool = ...,
     ) -> Select[Tuple[_T0, _T1, _T2, _T3, _T4]]: ...
 
     @overload
@@ -5801,6 +5880,8 @@ class Select(
         __ent3: _TCCA[_T3],
         __ent4: _TCCA[_T4],
         __ent5: _TCCA[_T5],
+        *,
+        maintain_column_froms: bool = ...,
     ) -> Select[Tuple[_T0, _T1, _T2, _T3, _T4, _T5]]: ...
 
     @overload
@@ -5813,6 +5894,8 @@ class Select(
         __ent4: _TCCA[_T4],
         __ent5: _TCCA[_T5],
         __ent6: _TCCA[_T6],
+        *,
+        maintain_column_froms: bool = ...,
     ) -> Select[Tuple[_T0, _T1, _T2, _T3, _T4, _T5, _T6]]: ...
 
     @overload
@@ -5826,6 +5909,8 @@ class Select(
         __ent5: _TCCA[_T5],
         __ent6: _TCCA[_T6],
         __ent7: _TCCA[_T7],
+        *,
+        maintain_column_froms: bool = ...,
     ) -> Select[Tuple[_T0, _T1, _T2, _T3, _T4, _T5, _T6, _T7]]: ...
 
     # END OVERLOADED FUNCTIONS self.with_only_columns
@@ -5972,11 +6057,26 @@ class Select(
     @_generative
     def distinct(self, *expr: _ColumnExpressionArgument[Any]) -> Self:
         r"""Return a new :func:`_expression.select` construct which
-        will apply DISTINCT to its columns clause.
+        will apply DISTINCT to the SELECT statement overall.
+
+        E.g.::
+
+            from sqlalchemy import select
+            stmt = select(users_table.c.id, users_table.c.name).distinct()
+
+        The above would produce an statement resembling::
+
+            SELECT DISTINCT user.id, user.name FROM user
+
+        The method also accepts an ``*expr`` parameter which produces the
+        PostgreSQL dialect-specific ``DISTINCT ON`` expression.  Using this
+        parameter on other backends which don't support this syntax will
+        raise an error.
 
         :param \*expr: optional column expressions.  When present,
-         the PostgreSQL dialect will render a ``DISTINCT ON (<expressions>>)``
-         construct.
+         the PostgreSQL dialect will render a ``DISTINCT ON (<expressions>)``
+         construct.  A deprecation warning and/or :class:`_exc.CompileError`
+         will be raised on other backends.
 
          .. deprecated:: 1.4 Using \*expr in other dialects is deprecated
             and will raise :class:`_exc.CompileError` in a future version.
@@ -6308,7 +6408,6 @@ class Select(
     def self_group(
         self, against: Optional[OperatorType] = None
     ) -> Union[SelectStatementGrouping[Self], Self]:
-        ...
         """Return a 'grouping' construct as per the
         :class:`_expression.ClauseElement` specification.
 
@@ -6500,19 +6599,7 @@ class ScalarSelect(
         self.element = cast("Select[Any]", self.element).where(crit)
         return self
 
-    @overload
-    def self_group(
-        self: ScalarSelect[Any], against: Optional[OperatorType] = None
-    ) -> ScalarSelect[Any]: ...
-
-    @overload
-    def self_group(
-        self: ColumnElement[Any], against: Optional[OperatorType] = None
-    ) -> ColumnElement[Any]: ...
-
-    def self_group(
-        self, against: Optional[OperatorType] = None
-    ) -> ColumnElement[Any]:
+    def self_group(self, against: Optional[OperatorType] = None) -> Self:
         return self
 
     if TYPE_CHECKING:
@@ -6648,7 +6735,7 @@ class Exists(UnaryExpression[bool]):
         assert isinstance(return_value, SelectStatementGrouping)
         return return_value
 
-    def select(self) -> Select[Any]:
+    def select(self) -> Select[Tuple[bool]]:
         r"""Return a SELECT of this :class:`_expression.Exists`.
 
         e.g.::
@@ -6771,10 +6858,14 @@ class TextualSelect(SelectBase, ExecutableReturnsRows, Generative):
 
     _label_style = LABEL_STYLE_NONE
 
-    _traverse_internals: _TraverseInternalsType = [
-        ("element", InternalTraversal.dp_clauseelement),
-        ("column_args", InternalTraversal.dp_clauseelement_list),
-    ] + SupportsCloneAnnotations._clone_annotations_traverse_internals
+    _traverse_internals: _TraverseInternalsType = (
+        [
+            ("element", InternalTraversal.dp_clauseelement),
+            ("column_args", InternalTraversal.dp_clauseelement_list),
+        ]
+        + SupportsCloneAnnotations._clone_annotations_traverse_internals
+        + HasCTE._has_ctes_traverse_internals
+    )
 
     _is_textual = True
 

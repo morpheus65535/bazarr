@@ -20,6 +20,11 @@ from dynaconf.loaders.py_loader import get_module
 from dynaconf.utils import upperfy
 from dynaconf.utils.files import read_file
 from dynaconf.utils.functional import empty
+from dynaconf.utils.inspect import builtin_dumpers
+from dynaconf.utils.inspect import EnvNotFoundError
+from dynaconf.utils.inspect import inspect_settings
+from dynaconf.utils.inspect import KeyNotFoundError
+from dynaconf.utils.inspect import OutputFormatError
 from dynaconf.utils.parse_conf import parse_conf_data
 from dynaconf.utils.parse_conf import unparse_conf_data
 from dynaconf.validator import ValidationError
@@ -28,9 +33,8 @@ from dynaconf.vendor import click
 from dynaconf.vendor import toml
 from dynaconf.vendor import tomllib
 
-
 if TYPE_CHECKING:  # pragma: no cover
-    from dynaconf.base import Settings
+    from dynaconf.base import Settings  # noqa: F401
 
 os.environ["PYTHONIOENCODING"] = "utf-8"
 
@@ -78,7 +82,7 @@ def set_settings(ctx, instance=None):
         try:
             # Django extension v2
             from django.conf import settings  # noqa
-            import dynaconf
+            import dynaconf  # noqa: F401
             import django
 
             # see https://docs.djangoproject.com/en/4.2/ref/applications/
@@ -97,7 +101,6 @@ def set_settings(ctx, instance=None):
             )
 
     if settings is None:
-
         if instance is None and "--help" not in click.get_os_args():
             if ctx.invoked_subcommand and ctx.invoked_subcommand not in [
                 "init",
@@ -394,9 +397,7 @@ def init(ctx, fileformat, path, env, _vars, _secrets, wg, y, django):
 
     if settings_path:
         loader.write(settings_path, settings_data, merge=True)
-        click.echo(
-            f"🎛️  {settings_path.name} created to hold your settings.\n"
-        )
+        click.echo(f"🎛️  {settings_path.name} created to hold your settings.\n")
 
     if secrets_path:
         loader.write(secrets_path, secrets_data, merge=True)
@@ -461,7 +462,7 @@ def init(ctx, fileformat, path, env, _vars, _secrets, wg, y, django):
 def get(key, default, env, unparse):
     """Returns the raw value for a settings key.
 
-    If result is a dict, list or tuple it is printes as a valid json string.
+    If result is a dict, list or tuple it is printed as a valid json string.
     """
     if env:
         env = env.strip()
@@ -622,7 +623,7 @@ def _list(env, key, more, loader, _all=False, output=None, flat=False):
     default=None,
     help=(
         "key values to be written "
-        "e.g: `dynaconf write toml -e NAME=foo -e X=2"
+        "e.g: `dynaconf write toml -e NAME=foo -e X=2`"
     ),
 )
 @click.option(
@@ -633,7 +634,7 @@ def _list(env, key, more, loader, _all=False, output=None, flat=False):
     default=None,
     help=(
         "secret key values to be written in .secrets "
-        "e.g: `dynaconf write toml -s TOKEN=kdslmflds -s X=2"
+        "e.g: `dynaconf write toml -s TOKEN=kdslmflds -s X=2`"
     ),
 )
 @click.option(
@@ -661,7 +662,6 @@ def write(to, _vars, _secrets, path, env, y):
     loader = importlib.import_module(f"dynaconf.loaders.{to}_loader")
 
     if to in EXTS:
-
         # Lets write to a file
         path = Path(path)
 
@@ -807,14 +807,6 @@ def validate(path):  # pragma: no cover
         sys.exit(1)
 
 
-from dynaconf.utils.inspect import (
-    KeyNotFoundError,
-    builtin_dumpers,
-    inspect_settings,
-    EnvNotFoundError,
-    OutputFormatError,
-)
-
 INSPECT_FORMATS = list(builtin_dumpers.keys())
 
 
@@ -860,7 +852,7 @@ def inspect(
     """
     Inspect the loading history of the given settings instance.
 
-    Filters by key and environement, otherwise shows all.
+    Filters by key and environment, otherwise shows all.
     """
     try:
         inspect_settings(

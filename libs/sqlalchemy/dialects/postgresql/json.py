@@ -144,6 +144,7 @@ class JSON(sqltypes.JSON):
 
     """  # noqa
 
+    render_bind_cast = True
     astext_type = sqltypes.Text()
 
     def __init__(self, none_as_null=False, astext_type=None):
@@ -155,7 +156,7 @@ class JSON(sqltypes.JSON):
          be used to persist a NULL value::
 
              from sqlalchemy import null
-             conn.execute(table.insert(), data=null())
+             conn.execute(table.insert(), {"data": null()})
 
          .. seealso::
 
@@ -256,22 +257,27 @@ class JSONB(JSON):
         """Define comparison operations for :class:`_types.JSON`."""
 
         def has_key(self, other):
-            """Boolean expression.  Test for presence of a key.  Note that the
-            key may be a SQLA expression.
+            """Boolean expression.  Test for presence of a key (equivalent of
+            the ``?`` operator).  Note that the key may be a SQLA expression.
             """
             return self.operate(HAS_KEY, other, result_type=sqltypes.Boolean)
 
         def has_all(self, other):
-            """Boolean expression.  Test for presence of all keys in jsonb"""
+            """Boolean expression.  Test for presence of all keys in jsonb
+            (equivalent of the ``?&`` operator)
+            """
             return self.operate(HAS_ALL, other, result_type=sqltypes.Boolean)
 
         def has_any(self, other):
-            """Boolean expression.  Test for presence of any key in jsonb"""
+            """Boolean expression.  Test for presence of any key in jsonb
+            (equivalent of the ``?|`` operator)
+            """
             return self.operate(HAS_ANY, other, result_type=sqltypes.Boolean)
 
         def contains(self, other, **kwargs):
             """Boolean expression.  Test if keys (or array) are a superset
-            of/contained the keys of the argument jsonb expression.
+            of/contained the keys of the argument jsonb expression
+            (equivalent of the ``@>`` operator).
 
             kwargs may be ignored by this operator but are required for API
             conformance.
@@ -280,7 +286,8 @@ class JSONB(JSON):
 
         def contained_by(self, other):
             """Boolean expression.  Test if keys are a proper subset of the
-            keys of the argument jsonb expression.
+            keys of the argument jsonb expression
+            (equivalent of the ``<@`` operator).
             """
             return self.operate(
                 CONTAINED_BY, other, result_type=sqltypes.Boolean
@@ -288,7 +295,7 @@ class JSONB(JSON):
 
         def delete_path(self, array):
             """JSONB expression. Deletes field or array element specified in
-            the argument array.
+            the argument array (equivalent of the ``#-`` operator).
 
             The input may be a list of strings that will be coerced to an
             ``ARRAY`` or an instance of :meth:`_postgres.array`.
@@ -302,7 +309,7 @@ class JSONB(JSON):
 
         def path_exists(self, other):
             """Boolean expression. Test for presence of item given by the
-            argument JSONPath expression.
+            argument JSONPath expression (equivalent of the ``@?`` operator).
 
             .. versionadded:: 2.0
             """
@@ -312,7 +319,8 @@ class JSONB(JSON):
 
         def path_match(self, other):
             """Boolean expression. Test if JSONPath predicate given by the
-            argument JSONPath expression matches.
+            argument JSONPath expression matches
+            (equivalent of the ``@@`` operator).
 
             Only the first item of the result is taken into account.
 

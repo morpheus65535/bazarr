@@ -296,6 +296,17 @@ class Mapper(
            particular primary key value. A "partial primary key" can occur if
            one has mapped to an OUTER JOIN, for example.
 
+           The :paramref:`.orm.Mapper.allow_partial_pks` parameter also
+           indicates to the ORM relationship lazy loader, when loading a
+           many-to-one related object, if a composite primary key that has
+           partial NULL values should result in an attempt to load from the
+           database, or if a load attempt is not necessary.
+
+           .. versionadded:: 2.0.36 :paramref:`.orm.Mapper.allow_partial_pks`
+              is consulted by the relationship lazy loader strategy, such that
+              when set to False, a SELECT for a composite primary key that
+              has partial NULL values will not be emitted.
+
         :param batch: Defaults to ``True``, indicating that save operations
            of multiple entities can be batched together for efficiency.
            Setting to False indicates
@@ -442,7 +453,7 @@ class Mapper(
           mapping of the class to an alternate selectable, for loading
           only.
 
-         .. seealso::
+          .. seealso::
 
             :ref:`relationship_aliased_class` - the new pattern that removes
             the need for the :paramref:`_orm.Mapper.non_primary` flag.
@@ -3805,6 +3816,7 @@ class Mapper(
         this subclass as a SELECT with IN.
 
         """
+
         strategy_options = util.preloaded.orm_strategy_options
 
         assert self.inherits
@@ -3828,7 +3840,7 @@ class Mapper(
             classes_to_include.add(m)
             m = m.inherits
 
-        for prop in self.attrs:
+        for prop in self.column_attrs + self.relationships:
             # skip prop keys that are not instrumented on the mapped class.
             # this is primarily the "_sa_polymorphic_on" property that gets
             # created for an ad-hoc polymorphic_on SQL expression, issue #8704

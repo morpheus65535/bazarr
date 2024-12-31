@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from eventlet.green.threading import Event
 from eventlet import queue, sleep, spawn
 from eventlet.websocket import WebSocketWSGI as _WebSocketWSGI
@@ -25,7 +23,7 @@ class EventletThread:  # pragma: no cover
             return self.g.wait()
 
 
-class WebSocketWSGI(_WebSocketWSGI):
+class WebSocketWSGI(_WebSocketWSGI):  # pragma: no cover
     def __init__(self, handler, server):
         try:
             super().__init__(

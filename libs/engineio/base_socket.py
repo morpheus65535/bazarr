@@ -1,4 +1,3 @@
-
 class BaseSocket:
     upgrade_protocols = ['websocket']
 
