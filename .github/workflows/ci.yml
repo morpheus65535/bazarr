@@ -6,11 +6,11 @@ on:
     paths:
       - frontend/**
       - bazarr/**
-      - libs/**
       - migrations/**
       - bazarr.py
-      - requirements.txt
-      - dev-requirements.txt
+      - pyproject.toml
+      - uv.lock
+      - .python-version
       - .github/workflows/ci.yml
   pull_request:
     branches: [development]
@@ -75,10 +75,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v5
+      - name: Cache node_modules
+        uses: actions/cache@v4
         with:
-          python-version: "3.8"
+          path: "${{ env.UI_DIRECTORY }}/node_modules"
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-modules-
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.4.25"  # Best practice: pin uv version
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install python3.8
+
+      - name: Install the project
+        run: uv sync --all-extras --dev
+
+      - name: Remove non-development frontend build
+        run: rm -rf "${{ env.UI_DIRECTORY }}/build"
 
       - name: Install UI
         uses: actions/download-artifact@v4
@@ -86,12 +109,9 @@ jobs:
           name: ${{ env.UI_ARTIFACT_NAME }}
           path: "${{ env.UI_DIRECTORY }}/build"
 
-      - name: Install Python dependencies
-        run: pip install -r requirements.txt
-
       - name: Unit Tests
         run: |
-          python3 bazarr.py --no-update &
+          uv run -- bazarr.py --no-update &
           PID=$!
           sleep 15
           if kill -s 0 $PID
@@ -103,3 +123,6 @@ jobs:
           echo "**** Bazarr launch failed ****"
             exit 1
           fi
+
+      - name: Minimize uv cache
+        run: uv cache prune --ci

@@ -42,6 +42,19 @@ jobs:
         with:
           node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.4.25"  # Best practice: pin uv version
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install python3.8
+
+      - name: Install the project
+        run: uv sync --all-extras --dev
+
       - name: Install Global Tools
         run: npm install -g release-it auto-changelog
 
