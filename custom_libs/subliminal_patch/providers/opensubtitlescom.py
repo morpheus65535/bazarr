@@ -290,6 +290,10 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         if not title_id:
             logger.debug(f'No match found for {title}')
 
+    @staticmethod
+    def is_real_forced(attributes):
+        return attributes['foreign_parts_only'] and not attributes['hearing_impaired']
+
     def query(self, languages, video):
         self.video = video
         if self.use_hash:
@@ -363,11 +367,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
         # filter out forced subtitles or not depending on the required languages
         if all([lang.forced for lang in languages]):  # only forced
-            result['data'] = [x for x in result['data'] if x['attributes']['foreign_parts_only']]
+            result['data'] = [x for x in result['data'] if self.is_real_forced(x['attributes'])]
         elif any([lang.forced for lang in languages]):  # also forced
             pass
         else:  # not forced
-            result['data'] = [x for x in result['data'] if not x['attributes']['foreign_parts_only']]
+            result['data'] = [x for x in result['data'] if not self.is_real_forced(x['attributes'])]
 
         logger.debug(f"Query returned {len(result['data'])} subtitles")
 
@@ -407,7 +411,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 if len(item['attributes']['files']):
                     subtitle = OpenSubtitlesComSubtitle(
                         language=Language.fromietf(from_opensubtitlescom(item['attributes']['language'])),
-                        forced=item['attributes']['foreign_parts_only'],
+                        forced=self.is_real_forced(item['attributes']),
                         hearing_impaired=item['attributes']['hearing_impaired'],
                         page_link=item['attributes']['url'],
                         file_id=item['attributes']['files'][0]['file_id'],
