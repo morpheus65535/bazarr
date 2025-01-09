@@ -16,7 +16,7 @@ import {
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import SimpleTable from "@/components/tables/SimpleTable";
-import { withModal } from "@/modules/modals";
+import { useModals, withModal } from "@/modules/modals";
 import { task, TaskGroup } from "@/modules/task";
 import { fromPython, isMovie, toPython } from "@/utilities";
 
@@ -73,6 +73,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
     useEpisodeSubtitleModification();
   const { download: downloadMovie, remove: removeMovie } =
     useMovieSubtitleModification();
+  const modals = useModals();
 
   const columns = useMemo<ColumnDef<TableColumnType>[]>(
     () => [
@@ -222,6 +223,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
                 );
               }
             });
+            modals.closeAll();
           }}
         >
           <Button disabled={selections.length === 0} variant="light">
