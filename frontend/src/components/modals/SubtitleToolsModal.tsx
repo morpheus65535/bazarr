@@ -33,7 +33,7 @@ type LocalisedType = {
   id: number;
   seriesId: number;
   type: "movie" | "episode";
-  name: string | null;
+  name: string;
   isMovie: boolean;
 };
 
@@ -51,7 +51,7 @@ function getLocalisedValues(item: SupportType): LocalisedType {
       seriesId: item.sonarrSeriesId,
       id: item.sonarrEpisodeId,
       type: "episode",
-      name: null,
+      name: item.title,
       isMovie: false,
     };
   }
@@ -153,7 +153,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
                 path: v.path,
                 // eslint-disable-next-line camelcase
                 raw_language: v,
-                name: name || v.name,
+                name,
                 hi: toPython(v.forced),
                 forced: toPython(v.hi),
                 isMovie,
