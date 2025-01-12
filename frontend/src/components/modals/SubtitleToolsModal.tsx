@@ -9,23 +9,51 @@ import {
   Text,
 } from "@mantine/core";
 import { ColumnDef } from "@tanstack/react-table";
+import {
+  useEpisodeSubtitleModification,
+  useMovieSubtitleModification,
+} from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import SimpleTable from "@/components/tables/SimpleTable";
-import { withModal } from "@/modules/modals";
-import { isMovie } from "@/utilities";
+import { useModals, withModal } from "@/modules/modals";
+import { task, TaskGroup } from "@/modules/task";
+import { fromPython, isMovie, toPython } from "@/utilities";
 
 type SupportType = Item.Episode | Item.Movie;
 
 type TableColumnType = FormType.ModifySubtitle & {
   raw_language: Language.Info;
+  seriesId: number;
+  name: string;
+  isMovie: boolean;
 };
 
-function getIdAndType(item: SupportType): [number, "episode" | "movie"] {
+type LocalisedType = {
+  id: number;
+  seriesId: number;
+  type: "movie" | "episode";
+  name: string;
+  isMovie: boolean;
+};
+
+function getLocalisedValues(item: SupportType): LocalisedType {
   if (isMovie(item)) {
-    return [item.radarrId, "movie"];
+    return {
+      seriesId: 0,
+      id: item.radarrId,
+      type: "movie",
+      name: item.title,
+      isMovie: true,
+    };
   } else {
-    return [item.sonarrEpisodeId, "episode"];
+    return {
+      seriesId: item.sonarrSeriesId,
+      id: item.sonarrEpisodeId,
+      type: "episode",
+      name: item.title,
+      isMovie: false,
+    };
   }
 }
 
@@ -41,6 +69,11 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
   payload,
 }) => {
   const [selections, setSelections] = useState<TableColumnType[]>([]);
+  const { remove: removeEpisode, download: downloadEpisode } =
+    useEpisodeSubtitleModification();
+  const { download: downloadMovie, remove: removeMovie } =
+    useMovieSubtitleModification();
+  const modals = useModals();
 
   const columns = useMemo<ColumnDef<TableColumnType>[]>(
     () => [
@@ -109,17 +142,22 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
   const data = useMemo<TableColumnType[]>(
     () =>
       payload.flatMap((item) => {
-        const [id, type] = getIdAndType(item);
+        const { seriesId, id, type, name, isMovie } = getLocalisedValues(item);
         return item.subtitles.flatMap((v) => {
           if (v.path) {
             return [
               {
                 id,
+                seriesId,
                 type,
                 language: v.code2,
                 path: v.path,
                 // eslint-disable-next-line camelcase
                 raw_language: v,
+                name,
+                hi: toPython(v.forced),
+                forced: toPython(v.hi),
+                isMovie,
               },
             ];
           } else {
@@ -143,7 +181,51 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
       ></SimpleTable>
       <Divider></Divider>
       <Group>
-        <SubtitleToolsMenu selections={selections}>
+        <SubtitleToolsMenu
+          selections={selections}
+          onAction={(action) => {
+            selections.forEach((selection) => {
+              const actionPayload = {
+                form: {
+                  language: selection.language,
+                  hi: fromPython(selection.hi),
+                  forced: fromPython(selection.forced),
+                  path: selection.path,
+                },
+                radarrId: 0,
+                seriesId: 0,
+                episodeId: 0,
+              };
+              if (selection.isMovie) {
+                actionPayload.radarrId = selection.id;
+              } else {
+                actionPayload.seriesId = selection.seriesId;
+                actionPayload.episodeId = selection.id;
+              }
+              const download = selection.isMovie
+                ? downloadMovie
+                : downloadEpisode;
+              const remove = selection.isMovie ? removeMovie : removeEpisode;
+
+              if (action === "search") {
+                task.create(
+                  selection.name,
+                  TaskGroup.SearchSubtitle,
+                  download.mutateAsync,
+                  actionPayload,
+                );
+              } else if (action === "delete" && selection.path) {
+                task.create(
+                  selection.name,
+                  TaskGroup.DeleteSubtitle,
+                  remove.mutateAsync,
+                  actionPayload,
+                );
+              }
+            });
+            modals.closeAll();
+          }}
+        >
           <Button disabled={selections.length === 0} variant="light">
             Select Action
           </Button>

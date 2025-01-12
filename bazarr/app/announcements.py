@@ -12,7 +12,9 @@ from operator import itemgetter
 
 from app.get_providers import get_enabled_providers
 from app.database import TableAnnouncements, database, insert, select
-from .get_args import args
+
+from app.config import settings
+from app.get_args import args
 from sonarr.info import get_sonarr_info
 from radarr.info import get_radarr_info
 from app.check_update import deprecated_python_version
@@ -79,10 +81,10 @@ def get_local_announcements():
 
     # opensubtitles.org end-of-life
     enabled_providers = get_enabled_providers()
-    if enabled_providers and 'opensubtitles' in enabled_providers:
+    if enabled_providers and 'opensubtitles' in enabled_providers and not settings.opensubtitles.vip:
         announcements.append({
-            'text': 'Opensubtitles.org will be deprecated soon, migrate to Opensubtitles.com ASAP and disable this '
-                    'provider to remove this announcement.',
+            'text': 'Opensubtitles.org is deprecated for non-VIP users, migrate to Opensubtitles.com ASAP and disable '
+                    'this provider to remove this announcement.',
             'link': 'https://wiki.bazarr.media/Troubleshooting/OpenSubtitles-migration/',
             'dismissible': False,
             'timestamp': 1676236978,
