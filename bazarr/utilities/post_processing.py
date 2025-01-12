@@ -18,6 +18,33 @@ def _escape(in_str):
 def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3, episode_language,
                episode_language_code2, episode_language_code3, score, subtitle_id, provider, uploader,
                release_info, series_id, episode_id):
+    """Replace placeholders in post-processing command with actual values.
+
+    This function takes a post-processing command template and replaces various placeholders
+    with their corresponding values. All values are properly escaped and quoted in the output.
+
+    Args:
+        pp_command (str): The post-processing command template containing placeholders
+        episode (str): Path to the episode file
+        subtitles (str): Path to the subtitles file
+        language (str): Subtitle language name
+        language_code2 (str): Two-letter language code for subtitles
+        language_code3 (str): Three-letter language code for subtitles
+        episode_language (str): Episode audio language name
+        episode_language_code2 (str): Two-letter language code for episode audio
+        episode_language_code3 (str): Three-letter language code for episode audio
+        score (str): Subtitle match score
+        subtitle_id (str): Unique identifier for the subtitle
+        provider (str): Name of the subtitle provider
+        uploader (str): Name of the subtitle uploader
+        release_info (str): Release information
+        series_id (str): Unique identifier for the series
+        episode_id (str): Unique identifier for the episode
+
+    Returns:
+        str: The processed command with all placeholders replaced with properly escaped values
+    """
+
     replacements = {
         r'[\'"]?{{directory}}[\'"]?': _escape(os.path.dirname(episode)),
         r'[\'"]?{{episode}}[\'"]?': _escape(episode),
