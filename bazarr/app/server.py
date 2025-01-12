@@ -49,12 +49,12 @@ class Server:
                                         threads=100)
             self.connected = True
         except OSError as error:
-            if error.errno == 49:
+            if error.errno == errno.EADDRNOTAVAIL:
                 logging.exception("BAZARR cannot bind to specified IP, trying with 0.0.0.0")
                 self.address = '0.0.0.0'
                 self.connected = False
                 super(Server, self).__init__()
-            elif error.errno == 48:
+            elif error.errno == errno.EADDRINUSE:
                 if self.port != '6767':
                     logging.exception("BAZARR cannot bind to specified TCP port, trying with default (6767)")
                     self.port = '6767'
@@ -64,7 +64,7 @@ class Server:
                     logging.exception("BAZARR cannot bind to default TCP port (6767) because it's already in use, "
                                       "exiting...")
                     self.shutdown(EXIT_PORT_ALREADY_IN_USE_ERROR)
-            elif error.errno == 97:
+            elif error.errno == errno.ENOLINK:
                 logging.exception("BAZARR cannot bind to IPv6 (*), trying with 0.0.0.0")
                 self.address = '0.0.0.0'
                 self.connected = False

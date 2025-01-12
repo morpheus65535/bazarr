@@ -167,6 +167,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
                 series.profileId === null ||
                 !available
               }
+              loading={hasTask}
             >
               Search
             </Toolbox.Button>
@@ -195,7 +196,8 @@ const SeriesEpisodesView: FunctionComponent = () => {
                 series === undefined ||
                 series.episodeFileCount === 0 ||
                 series.profileId === null ||
-                !available
+                !available ||
+                hasTask
               }
               icon={faCloudUploadAlt}
               onClick={() => openDropzone.current?.()}
