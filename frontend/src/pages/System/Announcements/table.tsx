@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, JSX, useMemo } from "react";
 import { Anchor, Text } from "@mantine/core";
 import { faWindowClose } from "@fortawesome/free-solid-svg-icons";
 import { ColumnDef } from "@tanstack/react-table";

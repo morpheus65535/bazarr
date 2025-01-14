@@ -1,5 +1,6 @@
 import {
   FunctionComponent,
+  JSX,
   PropsWithChildren,
   ReactNode,
   useCallback,
