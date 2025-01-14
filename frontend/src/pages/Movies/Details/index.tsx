@@ -1,5 +1,5 @@
 import { FunctionComponent, useCallback, useRef } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router";
 import { Container, Group, Menu, Stack } from "@mantine/core";
 import { Dropzone } from "@mantine/dropzone";
 import { useDocumentTitle } from "@mantine/hooks";

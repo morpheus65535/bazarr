@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import {
   createContext,
   FunctionComponent,
@@ -5,7 +6,7 @@ import {
   useContext,
   useMemo,
 } from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router";
 import {
   faClock,
   faCogs,
@@ -324,7 +325,10 @@ export const Router: FunctionComponent = () => {
 
   // TODO: Move this outside the function component scope
   const router = useMemo(
-    () => createBrowserRouter(routes, { basename: Environment.baseUrl }),
+    () =>
+      createBrowserRouter(routes, {
+        basename: Environment.baseUrl,
+      }),
     [routes],
   );
 
