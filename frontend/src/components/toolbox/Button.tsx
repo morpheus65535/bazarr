@@ -1,6 +1,7 @@
 import {
   ComponentProps,
   FunctionComponent,
+  JSX,
   PropsWithChildren,
   useCallback,
   useState,
