@@ -173,7 +173,7 @@ declare namespace Settings {
     excluded_tags: string[];
   }
 
-   interface Plex {
+  interface Plex {
     ip: string;
     port: number;
     apikey?: string;
