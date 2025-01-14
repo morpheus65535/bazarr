@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { matchPath, NavLink, RouteObject, useLocation } from "react-router-dom";
+import { matchPath, NavLink, RouteObject, useLocation } from "react-router";
 import {
   Anchor,
   AppShell,
