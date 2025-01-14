@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { Box, Container, useCombobox } from "@mantine/core";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
 import { UseMutationResult } from "@tanstack/react-query";

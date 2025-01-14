@@ -1,5 +1,5 @@
 import { FunctionComponent, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Anchor, Badge, Group } from "@mantine/core";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

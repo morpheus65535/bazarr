@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 import { FunctionComponent, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Anchor, Badge, Text } from "@mantine/core";
 import {
   faFileExcel,
