@@ -11,6 +11,7 @@ from app.database import TableEpisodes, TableMovies, database, select
 from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
+from plex.operations import plex_set_added_date_now
 from app.event_handler import event_stream
 
 from .utils import _get_download_code3
@@ -95,7 +96,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                            sonarr_episode_id=episode_metadata.sonarrEpisodeId)
     else:
         movie_metadata = database.execute(
-            select(TableMovies.radarrId)
+            select(TableMovies.radarrId, TableMovies.imdbId)
             .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)))\
             .first()
         if not movie_metadata:
@@ -145,6 +146,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(downloaded_path)
         notify_radarr(movie_metadata.radarrId)
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
+        if settings.plex.set_added is True:
+            plex_set_added_date_now(movie_metadata)
 
     event_tracker.track_subtitles(provider=downloaded_provider, action=action, language=downloaded_language)
 
