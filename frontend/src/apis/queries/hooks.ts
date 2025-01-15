@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import {
   QueryKey,
   useQuery,
@@ -34,7 +35,12 @@ export function usePaginationQuery<
 ): UsePaginationQueryResult<TObject> {
   const client = useQueryClient();
 
-  const [page, setIndex] = useState(0);
+  const [searchParams] = useSearchParams();
+
+  const [page, setIndex] = useState(
+    (Number(searchParams.get("page")) ?? 0) - 1,
+  );
+
   const pageSize = usePageSize();
 
   const start = page * pageSize;
