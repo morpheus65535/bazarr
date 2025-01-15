@@ -38,7 +38,7 @@ export function usePaginationQuery<
   const [searchParams] = useSearchParams();
 
   const [page, setIndex] = useState(
-    (Number(searchParams.get("page")) ?? 0) - 1,
+    searchParams.get("page") ? Number(searchParams.get("page")) - 1 : 0,
   );
 
   const pageSize = usePageSize();
