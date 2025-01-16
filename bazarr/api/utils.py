@@ -73,8 +73,8 @@ def postprocess(item):
             if len(language) > 1:
                 item['subtitles'][i].update(
                     {
-                        "forced": language[1] == 'forced',
-                        "hi": language[1] == 'hi',
+                        "forced": language[1].lower() == 'forced',
+                        "hi": language[1].lower() == 'hi',
                     }
                 )
         if settings.general.embedded_subs_show_desired and item.get('profileId'):

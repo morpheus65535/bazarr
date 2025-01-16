@@ -4,11 +4,7 @@ import {
   ReactElement,
   StrictMode,
 } from "react";
-import {
-  createBrowserRouter,
-  RouteObject,
-  RouterProvider,
-} from "react-router-dom";
+import { createBrowserRouter, RouteObject, RouterProvider } from "react-router";
 import { render, RenderOptions } from "@testing-library/react";
 import { AllProviders } from "@/providers";
 

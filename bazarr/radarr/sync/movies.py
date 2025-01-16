@@ -333,10 +333,6 @@ def update_one_movie(movie_id, action, defer_search=False):
             logging.debug(
                 f'BAZARR inserted this movie into the database:{path_mappings.path_replace_movie(movie["path"])}')
 
-    # Storing existing subtitles
-    logging.debug(f'BAZARR storing subtitles for this movie: {path_mappings.path_replace_movie(movie["path"])}')
-    store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-
     # Downloading missing subtitles
     if defer_search:
         logging.debug(

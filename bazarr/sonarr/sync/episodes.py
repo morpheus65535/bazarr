@@ -258,10 +258,6 @@ def sync_one_episode(episode_id, defer_search=False):
             logging.debug(
                 f'BAZARR inserted this episode into the database:{path_mappings.path_replace(episode["path"])}')
 
-    # Storing existing subtitles
-    logging.debug(f'BAZARR storing subtitles for this episode: {path_mappings.path_replace(episode["path"])}')
-    store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
-
     # Downloading missing subtitles
     if defer_search:
         logging.debug(
@@ -270,4 +266,4 @@ def sync_one_episode(episode_id, defer_search=False):
     else:
         logging.debug(
             f'BAZARR downloading missing subtitles for this episode: {path_mappings.path_replace(episode["path"])}')
-        episode_download_subtitles(episode_id)
+        episode_download_subtitles(episode_id, send_progress=True)
