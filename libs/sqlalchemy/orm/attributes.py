@@ -1,5 +1,5 @@
 # orm/attributes.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -2663,7 +2663,7 @@ def init_collection(obj: object, key: str) -> CollectionAdapter:
     This function is used to provide direct access to collection internals
     for a previously unloaded attribute.  e.g.::
 
-        collection_adapter = init_collection(someobject, 'elements')
+        collection_adapter = init_collection(someobject, "elements")
         for elem in values:
             collection_adapter.append_without_event(elem)
 

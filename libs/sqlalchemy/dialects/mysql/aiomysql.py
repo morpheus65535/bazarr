@@ -1,5 +1,5 @@
 # dialects/mysql/aiomysql.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors <see AUTHORS
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors <see AUTHORS
 # file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -23,8 +23,10 @@ This dialect should normally be used only with the
 :func:`_asyncio.create_async_engine` engine creation function::
 
     from sqlalchemy.ext.asyncio import create_async_engine
-    engine = create_async_engine("mysql+aiomysql://user:pass@hostname/dbname?charset=utf8mb4")
 
+    engine = create_async_engine(
+        "mysql+aiomysql://user:pass@hostname/dbname?charset=utf8mb4"
+    )
 
 """  # noqa
 from collections import deque

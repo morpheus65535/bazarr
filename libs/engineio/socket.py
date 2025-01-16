@@ -250,6 +250,7 @@ class Socket(base_socket.BaseSocket):
 
         self.queue.put(None)  # unlock the writer task so that it can exit
         writer_task.join()
-        self.close(wait=False, abort=True)
+        self.close(wait=False, abort=True,
+                   reason=self.server.reason.TRANSPORT_CLOSE)
 
         return []

@@ -1,5 +1,5 @@
 # __init__.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -269,7 +269,7 @@ from .types import Uuid as Uuid
 from .types import VARBINARY as VARBINARY
 from .types import VARCHAR as VARCHAR
 
-__version__ = "2.0.36"
+__version__ = "2.0.37"
 
 
 def __go(lcls: Any) -> None:

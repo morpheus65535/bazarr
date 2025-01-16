@@ -1,5 +1,5 @@
 # engine/reflection.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -193,7 +193,8 @@ class Inspector(inspection.Inspectable["Inspector"]):
     or a :class:`_engine.Connection`::
 
         from sqlalchemy import inspect, create_engine
-        engine = create_engine('...')
+
+        engine = create_engine("...")
         insp = inspect(engine)
 
     Where above, the :class:`~sqlalchemy.engine.interfaces.Dialect` associated
@@ -630,7 +631,7 @@ class Inspector(inspection.Inspectable["Inspector"]):
         r"""Return a list of temporary table names for the current bind.
 
         This method is unsupported by most dialects; currently
-        only Oracle, PostgreSQL and SQLite implements it.
+        only Oracle Database, PostgreSQL and SQLite implements it.
 
         :param \**kw: Additional keyword argument to pass to the dialect
          specific implementation. See the documentation of the dialect
@@ -666,7 +667,7 @@ class Inspector(inspection.Inspectable["Inspector"]):
         given name was created.
 
         This currently includes some options that apply to MySQL and Oracle
-        tables.
+        Database tables.
 
         :param table_name: string name of the table.  For special quoting,
          use :class:`.quoted_name`.
@@ -1492,9 +1493,9 @@ class Inspector(inspection.Inspectable["Inspector"]):
             from sqlalchemy import create_engine, MetaData, Table
             from sqlalchemy import inspect
 
-            engine = create_engine('...')
+            engine = create_engine("...")
             meta = MetaData()
-            user_table = Table('user', meta)
+            user_table = Table("user", meta)
             insp = inspect(engine)
             insp.reflect_table(user_table, None)
 

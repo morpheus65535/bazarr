@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2021, Brandon Nielsen
+# Copyright (c) 2025, Brandon Nielsen
 # All rights reserved.
 #
 # This software may be modified and distributed under the terms
@@ -137,7 +137,7 @@ class BaseTimeBuilder(object):
         0,
         24,
         HoursOutOfBoundsError,
-        "Hour must be between 0..24 with " "24 representing midnight.",
+        "Hour must be between 0..24 with 24 representing midnight.",
         range_check,
     )
     TIME_MM_LIMIT = Limit(
@@ -153,7 +153,7 @@ class BaseTimeBuilder(object):
         0,
         60,
         SecondsOutOfBoundsError,
-        "Second must be between 0..60 with " "60 representing a leap second.",
+        "Second must be between 0..60 with 60 representing a leap second.",
         range_check,
     )
     TZ_HH_LIMIT = Limit(
@@ -453,7 +453,7 @@ class BaseTimeBuilder(object):
     @classmethod
     def _build_object(cls, parsetuple):
         # Given a TupleBuilder tuple, build the correct object
-        if type(parsetuple) is DateTuple:
+        if isinstance(parsetuple, DateTuple):
             return cls.build_date(
                 YYYY=parsetuple.YYYY,
                 MM=parsetuple.MM,
@@ -463,15 +463,15 @@ class BaseTimeBuilder(object):
                 DDD=parsetuple.DDD,
             )
 
-        if type(parsetuple) is TimeTuple:
+        if isinstance(parsetuple, TimeTuple):
             return cls.build_time(
                 hh=parsetuple.hh, mm=parsetuple.mm, ss=parsetuple.ss, tz=parsetuple.tz
             )
 
-        if type(parsetuple) is DatetimeTuple:
+        if isinstance(parsetuple, DatetimeTuple):
             return cls.build_datetime(parsetuple.date, parsetuple.time)
 
-        if type(parsetuple) is DurationTuple:
+        if isinstance(parsetuple, DurationTuple):
             return cls.build_duration(
                 PnY=parsetuple.PnY,
                 PnM=parsetuple.PnM,
@@ -482,12 +482,12 @@ class BaseTimeBuilder(object):
                 TnS=parsetuple.TnS,
             )
 
-        if type(parsetuple) is IntervalTuple:
+        if isinstance(parsetuple, IntervalTuple):
             return cls.build_interval(
                 start=parsetuple.start, end=parsetuple.end, duration=parsetuple.duration
             )
 
-        if type(parsetuple) is RepeatingIntervalTuple:
+        if isinstance(parsetuple, RepeatingIntervalTuple):
             return cls.build_repeating_interval(
                 R=parsetuple.R, Rnn=parsetuple.Rnn, interval=parsetuple.interval
             )
@@ -502,10 +502,10 @@ class BaseTimeBuilder(object):
 
     @classmethod
     def _is_interval_end_concise(cls, endtuple):
-        if type(endtuple) is TimeTuple:
+        if isinstance(endtuple, TimeTuple):
             return True
 
-        if type(endtuple) is DatetimeTuple:
+        if isinstance(endtuple, DatetimeTuple):
             enddatetuple = endtuple.date
         else:
             enddatetuple = endtuple
@@ -523,16 +523,16 @@ class BaseTimeBuilder(object):
         endtimetuple = None
         enddatetuple = None
 
-        if type(starttuple) is DateTuple:
+        if isinstance(starttuple, DateTuple):
             startdatetuple = starttuple
         else:
             # Start is a datetime
             starttimetuple = starttuple.time
             startdatetuple = starttuple.date
 
-        if type(conciseendtuple) is DateTuple:
+        if isinstance(conciseendtuple, DateTuple):
             enddatetuple = conciseendtuple
-        elif type(conciseendtuple) is DatetimeTuple:
+        elif isinstance(conciseendtuple, DatetimeTuple):
             enddatetuple = conciseendtuple.date
             endtimetuple = conciseendtuple.time
         else:
@@ -559,6 +559,9 @@ class BaseTimeBuilder(object):
                     DDD=enddatetuple.DDD,
                 )
 
+            if endtimetuple is None:
+                return newenddatetuple
+
         if (starttimetuple is not None and starttimetuple.tz is not None) and (
             endtimetuple is not None and endtimetuple.tz != starttimetuple.tz
         ):
@@ -569,9 +572,6 @@ class BaseTimeBuilder(object):
                 ss=endtimetuple.ss,
                 tz=starttimetuple.tz,
             )
-
-        if enddatetuple is not None and endtimetuple is None:
-            return newenddatetuple
 
         if enddatetuple is not None and endtimetuple is not None:
             return TupleBuilder.build_datetime(newenddatetuple, endtimetuple)

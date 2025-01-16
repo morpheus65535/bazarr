@@ -1,5 +1,5 @@
 # testing/util.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -254,18 +254,19 @@ def flag_combinations(*combinations):
             dict(lazy=False, passive=True),
             dict(lazy=False, passive=True, raiseload=True),
         )
-
+        def test_fn(lazy, passive, raiseload): ...
 
     would result in::
 
         @testing.combinations(
-            ('', False, False, False),
-            ('lazy', True, False, False),
-            ('lazy_passive', True, True, False),
-            ('lazy_passive', True, True, True),
-            id_='iaaa',
-            argnames='lazy,passive,raiseload'
+            ("", False, False, False),
+            ("lazy", True, False, False),
+            ("lazy_passive", True, True, False),
+            ("lazy_passive", True, True, True),
+            id_="iaaa",
+            argnames="lazy,passive,raiseload",
         )
+        def test_fn(lazy, passive, raiseload): ...
 
     """
 

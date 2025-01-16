@@ -1,5 +1,5 @@
 # exc.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -432,14 +432,16 @@ class DontWrapMixin:
 
         from sqlalchemy.exc import DontWrapMixin
 
+
         class MyCustomException(Exception, DontWrapMixin):
             pass
+
 
         class MySpecialType(TypeDecorator):
             impl = String
 
             def process_bind_param(self, value, dialect):
-                if value == 'invalid':
+                if value == "invalid":
                     raise MyCustomException("invalid!")
 
     """

@@ -3,7 +3,7 @@ importlib_resources-6.4.5.dist-info/LICENSE,sha256=z8d0m5b2O9McPEK1xHG_dWgUBT6Ef
 importlib_resources-6.4.5.dist-info/METADATA,sha256=iwGfOzcc9jUBSuQa6zQeXla0el4YCZlAoj5uRIm7fyg,3975
 importlib_resources-6.4.5.dist-info/RECORD,,
 importlib_resources-6.4.5.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-importlib_resources-6.4.5.dist-info/WHEEL,sha256=OVMc5UfuAQiSplgO0_WdW7vXVGAt9Hdd6qtN4HotdyA,91
+importlib_resources-6.4.5.dist-info/WHEEL,sha256=P9jw-gEje8ByB7_hXoICnHtVCrEwMQh-630tKvQWehc,91
 importlib_resources-6.4.5.dist-info/top_level.txt,sha256=fHIjHU1GZwAjvcydpmUnUrTnbvdiWjG4OEVZK8by0TQ,20
 importlib_resources/__init__.py,sha256=3J-261Qqzg-1kBenMVsOsvJo19EbUmYqjHkrZWiFHOM,703
 importlib_resources/_adapters.py,sha256=vprJGbUeHbajX6XCuMP6J3lMrqCi-P_MTlziJUR7jfk,4482

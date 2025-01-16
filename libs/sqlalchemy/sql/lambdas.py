@@ -1,5 +1,5 @@
 # sql/lambdas.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -278,7 +278,7 @@ class LambdaElement(elements.ClauseElement):
                         rec = AnalyzedFunction(
                             tracker, self, apply_propagate_attrs, fn
                         )
-                        rec.closure_bindparams = bindparams
+                        rec.closure_bindparams = list(bindparams)
                         lambda_cache[key] = rec
                     else:
                         rec = lambda_cache[key]
@@ -518,7 +518,6 @@ class StatementLambdaElement(
 
         stmt += lambda s: s.where(table.c.col == parameter)
 
-
     .. versionadded:: 1.4
 
     .. seealso::
@@ -558,9 +557,7 @@ class StatementLambdaElement(
             ...     stmt = lambda_stmt(
             ...         lambda: select(table.c.x, table.c.y),
             ...     )
-            ...     stmt = stmt.add_criteria(
-            ...         lambda: table.c.x > parameter
-            ...     )
+            ...     stmt = stmt.add_criteria(lambda: table.c.x > parameter)
             ...     return stmt
 
         The :meth:`_sql.StatementLambdaElement.add_criteria` method is
@@ -571,18 +568,15 @@ class StatementLambdaElement(
             >>> def my_stmt(self, foo):
             ...     stmt = lambda_stmt(
             ...         lambda: select(func.max(foo.x, foo.y)),
-            ...         track_closure_variables=False
+            ...         track_closure_variables=False,
             ...     )
-            ...     stmt = stmt.add_criteria(
-            ...         lambda: self.where_criteria,
-            ...         track_on=[self]
-            ...     )
+            ...     stmt = stmt.add_criteria(lambda: self.where_criteria, track_on=[self])
             ...     return stmt
 
         See :func:`_sql.lambda_stmt` for a description of the parameters
         accepted.
 
-        """
+        """  # noqa: E501
 
         opts = self.opts + dict(
             enable_tracking=enable_tracking,

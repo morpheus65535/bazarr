@@ -1,5 +1,5 @@
 # dialects/postgresql/psycopg.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -29,20 +29,29 @@ selected depending on how the engine is created:
   automatically select the sync version, e.g.::
 
     from sqlalchemy import create_engine
-    sync_engine = create_engine("postgresql+psycopg://scott:tiger@localhost/test")
+
+    sync_engine = create_engine(
+        "postgresql+psycopg://scott:tiger@localhost/test"
+    )
 
 * calling :func:`_asyncio.create_async_engine` with
   ``postgresql+psycopg://...`` will automatically select the async version,
   e.g.::
 
     from sqlalchemy.ext.asyncio import create_async_engine
-    asyncio_engine = create_async_engine("postgresql+psycopg://scott:tiger@localhost/test")
+
+    asyncio_engine = create_async_engine(
+        "postgresql+psycopg://scott:tiger@localhost/test"
+    )
 
 The asyncio version of the dialect may also be specified explicitly using the
 ``psycopg_async`` suffix, as::
 
     from sqlalchemy.ext.asyncio import create_async_engine
-    asyncio_engine = create_async_engine("postgresql+psycopg_async://scott:tiger@localhost/test")
+
+    asyncio_engine = create_async_engine(
+        "postgresql+psycopg_async://scott:tiger@localhost/test"
+    )
 
 .. seealso::
 
@@ -397,10 +406,12 @@ class PGDialect_psycopg(_PGDialect_common_psycopg):
 
                 # register the adapter for connections made subsequent to
                 # this one
+                assert self._psycopg_adapters_map
                 register_hstore(info, self._psycopg_adapters_map)
 
                 # register the adapter for this connection
-                register_hstore(info, connection.connection)
+                assert connection.connection
+                register_hstore(info, connection.connection.driver_connection)
 
     @classmethod
     def import_dbapi(cls):

@@ -36,10 +36,11 @@
     The ``tests/examplefiles`` contains a few test files with data to be
     parsed by these lexers.
 
-    :copyright: Copyright 2006-2024 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
+import collections
 import re
 
 from pygments.lexer import Lexer, RegexLexer, do_insertions, bygroups, words
@@ -56,12 +57,13 @@ from pygments.lexers._mysql_builtins import \
     MYSQL_KEYWORDS, \
     MYSQL_OPTIMIZER_HINTS
 
+from pygments.lexers import _googlesql_builtins
 from pygments.lexers import _tsql_builtins
 
 
-__all__ = ['PostgresLexer', 'PlPgsqlLexer', 'PostgresConsoleLexer',
-           'PostgresExplainLexer', 'SqlLexer', 'TransactSqlLexer',
-           'MySqlLexer', 'SqliteConsoleLexer', 'RqlLexer']
+__all__ = ['GoogleSqlLexer', 'PostgresLexer', 'PlPgsqlLexer',
+           'PostgresConsoleLexer', 'PostgresExplainLexer', 'SqlLexer',
+           'TransactSqlLexer', 'MySqlLexer', 'SqliteConsoleLexer', 'RqlLexer']
 
 line_re  = re.compile('.*?\n')
 sqlite_prompt_re = re.compile(r'^(?:sqlite|   ...)>(?= )')
@@ -76,6 +78,12 @@ name_between_backtick_re = re.compile(r'`[a-zA-Z_]\w*`')
 tsql_go_re = re.compile(r'\bgo\b', re.IGNORECASE)
 tsql_declare_re = re.compile(r'\bdeclare\s+@', re.IGNORECASE)
 tsql_variable_re = re.compile(r'@[a-zA-Z_]\w*\b')
+
+# Identifiers for analyse_text()
+googlesql_identifiers = (
+    _googlesql_builtins.functionnames
+    + _googlesql_builtins.keywords
+    + _googlesql_builtins.types)
 
 
 def language_callback(lexer, match):
@@ -310,6 +318,7 @@ class PostgresConsoleLexer(Lexer):
     mimetypes = ['text/x-postgresql-psql']
     url = 'https://www.postgresql.org'
     version_added = '1.5'
+    _example = "psql/psql_session.txt"
 
     def get_tokens_unprocessed(self, data):
         sql = PsqlRegexLexer(**self.options)
@@ -386,7 +395,7 @@ class PostgresExplainLexer(RegexLexer):
 
     tokens = {
         'root': [
-            (r'(:|\(|\)|ms|kB|->|\.\.|\,)', Punctuation),
+            (r'(:|\(|\)|ms|kB|->|\.\.|\,|\/)', Punctuation),
             (r'(\s+)', Whitespace),
 
             # This match estimated cost and effectively measured counters with ANALYZE
@@ -395,9 +404,9 @@ class PostgresExplainLexer(RegexLexer):
             (r'(actual)( )(=?)', bygroups(Name.Class, Whitespace, Punctuation), 'instrumentation'),
 
             # Misc keywords
-            (words(('actual', 'Memory Usage', 'Memory', 'Buckets', 'Batches',
+            (words(('actual', 'Memory Usage', 'Disk Usage', 'Memory', 'Buckets', 'Batches',
                     'originally', 'row', 'rows', 'Hits', 'Misses',
-                    'Evictions', 'Overflows'), suffix=r'\b'),
+                    'Evictions', 'Overflows', 'Planned Partitions'), suffix=r'\b'),
              Comment.Single),
 
             (r'(hit|read|dirtied|written|write|time|calls)(=)', bygroups(Comment.Single, Operator)),
@@ -712,7 +721,7 @@ class TransactSqlLexer(RegexLexer):
     tokens = {
         'root': [
             (r'\s+', Whitespace),
-            (r'--.*?$\n?', Comment.Single),
+            (r'--.*[$|\n]?', Comment.Single),
             (r'/\*', Comment.Multiline, 'multiline-comments'),
             (words(_tsql_builtins.OPERATORS), Operator),
             (words(_tsql_builtins.OPERATOR_WORDS, suffix=r'\b'), Operator.Word),
@@ -963,6 +972,166 @@ class MySqlLexer(RegexLexer):
         return rating
 
 
+class GoogleSqlLexer(RegexLexer):
+    """
+    GoogleSQL is Google's standard SQL dialect, formerly known as ZetaSQL.
+
+    The list of keywords includes reserved words for future use.
+    """
+
+    name = 'GoogleSQL'
+    aliases = ['googlesql', 'zetasql']
+    filenames = ['*.googlesql', '*.googlesql.sql']
+    mimetypes = ['text/x-google-sql', 'text/x-google-sql-aux']
+    url = 'https://cloud.google.com/bigquery/googlesql'
+    version_added = '2.19'
+
+    flags = re.IGNORECASE
+    tokens = {
+        'root': [
+            (r'\s+', Whitespace),
+
+            # Comments
+            (r'(?:#|--\s+).*', Comment.Single),
+            (r'/\*', Comment.Multiline, 'multiline-comment'),
+
+            # Hexadecimal literals
+            (r"x'([0-9a-f]{2})+'", Number.Hex),
+            (r'0x[0-9a-f]+', Number.Hex),
+
+            # Binary literals
+            (r"b'[01]+'", Number.Bin),
+            (r'0b[01]+', Number.Bin),
+
+            # Numeric literals
+            (r'[0-9]+\.[0-9]*(e[+-]?[0-9]+)?', Number.Float),  # Mandatory integer, optional fraction and exponent
+            (r'[0-9]*\.[0-9]+(e[+-]?[0-9]+)?', Number.Float),  # Mandatory fraction, optional integer and exponent
+            (r'[0-9]+e[+-]?[0-9]+', Number.Float),  # Exponents with integer significands are still floats
+            (r'[0-9]+(?=[^0-9a-z$_\u0080-\uffff])', Number.Integer),  # Integers that are not in a schema object name
+
+            # Date literals
+            (r"\{\s*d\s*(?P<quote>['\"])\s*\d{2}(\d{2})?.?\d{2}.?\d{2}\s*(?P=quote)\s*\}",
+             Literal.Date),
+
+            # Time literals
+            (r"\{\s*t\s*(?P<quote>['\"])\s*(?:\d+\s+)?\d{1,2}.?\d{1,2}.?\d{1,2}(\.\d*)?\s*(?P=quote)\s*\}",
+             Literal.Date),
+
+            # Timestamp literals
+            (
+                r"\{\s*ts\s*(?P<quote>['\"])\s*"
+                r"\d{2}(?:\d{2})?.?\d{2}.?\d{2}"  # Date part
+                r"\s+"  # Whitespace between date and time
+                r"\d{1,2}.?\d{1,2}.?\d{1,2}(\.\d*)?"  # Time part
+                r"\s*(?P=quote)\s*\}",
+                Literal.Date
+            ),
+
+            # String literals
+            (r"'", String.Single, 'single-quoted-string'),
+            (r'"', String.Double, 'double-quoted-string'),
+
+            # Variables
+            (r'@@(?:global\.|persist\.|persist_only\.|session\.)?[a-z_]+', Name.Variable),
+            (r'@[a-z0-9_$.]+', Name.Variable),
+            (r"@'", Name.Variable, 'single-quoted-variable'),
+            (r'@"', Name.Variable, 'double-quoted-variable'),
+            (r"@`", Name.Variable, 'backtick-quoted-variable'),
+            (r'\?', Name.Variable),  # For demonstrating prepared statements
+
+            # Exceptions; these words tokenize differently in different contexts.
+            (r'\b(set)(?!\s*\()', Keyword),
+            (r'\b(character)(\s+)(set)\b', bygroups(Keyword, Whitespace, Keyword)),
+
+            # Constants, types, keywords, functions, operators
+            (words(_googlesql_builtins.constants, prefix=r'\b', suffix=r'\b'), Name.Constant),
+            (words(_googlesql_builtins.types, prefix=r'\b', suffix=r'\b'), Keyword.Type),
+            (words(_googlesql_builtins.keywords, prefix=r'\b', suffix=r'\b'), Keyword),
+            (words(_googlesql_builtins.functionnames, prefix=r'\b', suffix=r'\b(\s*)(\()'),
+             bygroups(Name.Function, Whitespace, Punctuation)),
+            (words(_googlesql_builtins.operators, prefix=r'\b', suffix=r'\b'), Operator),
+
+            # Schema object names
+            #
+            # Note: Although the first regex supports unquoted all-numeric
+            # identifiers, this will not be a problem in practice because
+            # numeric literals have already been handled above.
+            #
+            ('[0-9a-z$_\u0080-\uffff]+', Name),
+            (r'`', Name.Quoted, 'schema-object-name'),
+
+            # Punctuation
+            (r'[(),.;]', Punctuation),
+        ],
+
+        # Multiline comment substates
+        # ---------------------------
+
+        'multiline-comment': [
+            (r'[^*]+', Comment.Multiline),
+            (r'\*/', Comment.Multiline, '#pop'),
+            (r'\*', Comment.Multiline),
+        ],
+
+        # String substates
+        # ----------------
+
+        'single-quoted-string': [
+            (r"[^'\\]+", String.Single),
+            (r"''", String.Escape),
+            (r"""\\[0'"bnrtZ\\%_]""", String.Escape),
+            (r"'", String.Single, '#pop'),
+        ],
+
+        'double-quoted-string': [
+            (r'[^"\\]+', String.Double),
+            (r'""', String.Escape),
+            (r"""\\[0'"bnrtZ\\%_]""", String.Escape),
+            (r'"', String.Double, '#pop'),
+        ],
+
+        # Variable substates
+        # ------------------
+
+        'single-quoted-variable': [
+            (r"[^']+", Name.Variable),
+            (r"''", Name.Variable),
+            (r"'", Name.Variable, '#pop'),
+        ],
+
+        'double-quoted-variable': [
+            (r'[^"]+', Name.Variable),
+            (r'""', Name.Variable),
+            (r'"', Name.Variable, '#pop'),
+        ],
+
+        'backtick-quoted-variable': [
+            (r'[^`]+', Name.Variable),
+            (r'``', Name.Variable),
+            (r'`', Name.Variable, '#pop'),
+        ],
+
+        # Schema object name substates
+        # ----------------------------
+        #
+        # "Name.Quoted" and "Name.Quoted.Escape" are non-standard but
+        # formatters will style them as "Name" by default but add
+        # additional styles based on the token name. This gives users
+        # flexibility to add custom styles as desired.
+        #
+        'schema-object-name': [
+            (r'[^`]+', Name.Quoted),
+            (r'``', Name.Quoted.Escape),
+            (r'`', Name.Quoted, '#pop'),
+        ],
+    }
+
+    def analyse_text(text):
+        tokens = collections.Counter(text.split())
+        return 0.001 * sum(count for t, count in tokens.items()
+                           if t in googlesql_identifiers)
+
+
 class SqliteConsoleLexer(Lexer):
     """
     Lexer for example sessions using sqlite3.
@@ -974,6 +1143,7 @@ class SqliteConsoleLexer(Lexer):
     mimetypes = ['text/x-sqlite3-console']
     url = 'https://www.sqlite.org'
     version_added = '0.11'
+    _example = "sqlite3/sqlite3.sqlite3-console"
 
     def get_tokens_unprocessed(self, data):
         sql = SqlLexer(**self.options)

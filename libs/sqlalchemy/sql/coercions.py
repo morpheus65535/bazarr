@@ -1,5 +1,5 @@
 # sql/coercions.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -57,9 +57,9 @@ if typing.TYPE_CHECKING:
     from .elements import ClauseElement
     from .elements import ColumnClause
     from .elements import ColumnElement
-    from .elements import DQLDMLClauseElement
     from .elements import NamedColumn
     from .elements import SQLCoreOperations
+    from .elements import TextClause
     from .schema import Column
     from .selectable import _ColumnsClauseElement
     from .selectable import _JoinTargetProtocol
@@ -190,7 +190,7 @@ def expect(
     role: Type[roles.DDLReferredColumnRole],
     element: Any,
     **kw: Any,
-) -> Column[Any]: ...
+) -> Union[Column[Any], str]: ...
 
 
 @overload
@@ -206,7 +206,7 @@ def expect(
     role: Type[roles.StatementOptionRole],
     element: Any,
     **kw: Any,
-) -> DQLDMLClauseElement: ...
+) -> Union[ColumnElement[Any], TextClause]: ...
 
 
 @overload
@@ -846,15 +846,15 @@ class InElementImpl(RoleImpl):
     def _literal_coercion(self, element, *, expr, operator, **kw):
         if util.is_non_string_iterable(element):
             non_literal_expressions: Dict[
-                Optional[ColumnElement[Any]],
-                ColumnElement[Any],
+                Optional[_ColumnExpressionArgument[Any]],
+                _ColumnExpressionArgument[Any],
             ] = {}
             element = list(element)
             for o in element:
                 if not _is_literal(o):
                     if not isinstance(
                         o, util.preloaded.sql_elements.ColumnElement
-                    ):
+                    ) and not hasattr(o, "__clause_element__"):
                         self._raise_for_expected(element, **kw)
 
                     else:

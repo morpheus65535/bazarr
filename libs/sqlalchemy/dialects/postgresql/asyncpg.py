@@ -1,5 +1,5 @@
 # dialects/postgresql/asyncpg.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors <see AUTHORS
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors <see AUTHORS
 # file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -23,7 +23,10 @@ This dialect should normally be used only with the
 :func:`_asyncio.create_async_engine` engine creation function::
 
     from sqlalchemy.ext.asyncio import create_async_engine
-    engine = create_async_engine("postgresql+asyncpg://user:pass@hostname/dbname")
+
+    engine = create_async_engine(
+        "postgresql+asyncpg://user:pass@hostname/dbname"
+    )
 
 .. versionadded:: 1.4
 
@@ -78,11 +81,15 @@ asyncpg dialect, therefore is handled as a DBAPI argument, not a dialect
 argument)::
 
 
-    engine = create_async_engine("postgresql+asyncpg://user:pass@hostname/dbname?prepared_statement_cache_size=500")
+    engine = create_async_engine(
+        "postgresql+asyncpg://user:pass@hostname/dbname?prepared_statement_cache_size=500"
+    )
 
 To disable the prepared statement cache, use a value of zero::
 
-    engine = create_async_engine("postgresql+asyncpg://user:pass@hostname/dbname?prepared_statement_cache_size=0")
+    engine = create_async_engine(
+        "postgresql+asyncpg://user:pass@hostname/dbname?prepared_statement_cache_size=0"
+    )
 
 .. versionadded:: 1.4.0b2 Added ``prepared_statement_cache_size`` for asyncpg.
 
@@ -131,7 +138,7 @@ a prepared statement is prepared::
         "postgresql+asyncpg://user:pass@somepgbouncer/dbname",
         poolclass=NullPool,
         connect_args={
-            'prepared_statement_name_func': lambda:  f'__asyncpg_{uuid4()}__',
+            "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",
         },
     )
 
@@ -255,6 +262,10 @@ class AsyncPgEnum(ENUM):
 
 
 class AsyncpgInteger(sqltypes.Integer):
+    render_bind_cast = True
+
+
+class AsyncpgSmallInteger(sqltypes.SmallInteger):
     render_bind_cast = True
 
 
@@ -535,7 +546,8 @@ class AsyncAdapt_asyncpg_cursor:
                     status = prepared_stmt.get_statusmsg()
 
                     reg = re.match(
-                        r"(?:SELECT|UPDATE|DELETE|INSERT \d+) (\d+)", status
+                        r"(?:SELECT|UPDATE|DELETE|INSERT \d+) (\d+)",
+                        status or "",
                     )
                     if reg:
                         self.rowcount = int(reg.group(1))
@@ -1044,6 +1056,7 @@ class PGDialect_asyncpg(PGDialect):
             INTERVAL: AsyncPgInterval,
             sqltypes.Boolean: AsyncpgBoolean,
             sqltypes.Integer: AsyncpgInteger,
+            sqltypes.SmallInteger: AsyncpgSmallInteger,
             sqltypes.BigInteger: AsyncpgBigInteger,
             sqltypes.Numeric: AsyncpgNumeric,
             sqltypes.Float: AsyncpgFloat,

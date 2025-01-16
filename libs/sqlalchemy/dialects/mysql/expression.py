@@ -1,5 +1,5 @@
 # dialects/mysql/expression.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -38,7 +38,9 @@ class match(Generative, elements.BinaryExpression):
             .order_by(desc(match_expr))
         )
 
-    Would produce SQL resembling::
+    Would produce SQL resembling:
+
+    .. sourcecode:: sql
 
         SELECT id, firstname, lastname
         FROM user

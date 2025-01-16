@@ -1,5 +1,5 @@
 # util/_collections.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -80,8 +80,8 @@ def merge_lists_w_ordering(a: List[Any], b: List[Any]) -> List[Any]:
 
     Example::
 
-        >>> a = ['__tablename__', 'id', 'x', 'created_at']
-        >>> b = ['id', 'name', 'data', 'y', 'created_at']
+        >>> a = ["__tablename__", "id", "x", "created_at"]
+        >>> b = ["id", "name", "data", "y", "created_at"]
         >>> merge_lists_w_ordering(a, b)
         ['__tablename__', 'id', 'name', 'data', 'y', 'x', 'created_at']
 

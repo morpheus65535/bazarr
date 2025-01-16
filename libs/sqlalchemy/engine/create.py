@@ -1,5 +1,5 @@
 # engine/create.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -133,8 +133,11 @@ def create_engine(url: Union[str, _url.URL], **kwargs: Any) -> Engine:
     and its underlying :class:`.Dialect` and :class:`_pool.Pool`
     constructs::
 
-        engine = create_engine("mysql+mysqldb://scott:tiger@hostname/dbname",
-                                    pool_recycle=3600, echo=True)
+        engine = create_engine(
+            "mysql+mysqldb://scott:tiger@hostname/dbname",
+            pool_recycle=3600,
+            echo=True,
+        )
 
     The string form of the URL is
     ``dialect[+driver]://user:password@host/dbname[?key=value..]``, where

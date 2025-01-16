@@ -1,5 +1,5 @@
 # dialects/oracle/types.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -64,17 +64,18 @@ class NUMBER(sqltypes.Numeric, sqltypes.Integer):
 
 
 class FLOAT(sqltypes.FLOAT):
-    """Oracle FLOAT.
+    """Oracle Database FLOAT.
 
     This is the same as :class:`_sqltypes.FLOAT` except that
-    an Oracle-specific :paramref:`_oracle.FLOAT.binary_precision`
+    an Oracle Database -specific :paramref:`_oracle.FLOAT.binary_precision`
     parameter is accepted, and
     the :paramref:`_sqltypes.Float.precision` parameter is not accepted.
 
-    Oracle FLOAT types indicate precision in terms of "binary precision", which
-    defaults to 126. For a REAL type, the value is 63. This parameter does not
-    cleanly map to a specific number of decimal places but is roughly
-    equivalent to the desired number of decimal places divided by 0.3103.
+    Oracle Database FLOAT types indicate precision in terms of "binary
+    precision", which defaults to 126. For a REAL type, the value is 63. This
+    parameter does not cleanly map to a specific number of decimal places but
+    is roughly equivalent to the desired number of decimal places divided by
+    0.3103.
 
     .. versionadded:: 2.0
 
@@ -91,10 +92,11 @@ class FLOAT(sqltypes.FLOAT):
         r"""
         Construct a FLOAT
 
-        :param binary_precision: Oracle binary precision value to be rendered
-         in DDL. This may be approximated to the number of decimal characters
-         using the formula "decimal precision = 0.30103 * binary precision".
-         The default value used by Oracle for FLOAT / DOUBLE PRECISION is 126.
+        :param binary_precision: Oracle Database binary precision value to be
+         rendered in DDL. This may be approximated to the number of decimal
+         characters using the formula "decimal precision = 0.30103 * binary
+         precision".  The default value used by Oracle Database for FLOAT /
+         DOUBLE PRECISION is 126.
 
         :param asdecimal: See :paramref:`_sqltypes.Float.asdecimal`
 
@@ -109,10 +111,36 @@ class FLOAT(sqltypes.FLOAT):
 
 
 class BINARY_DOUBLE(sqltypes.Double):
+    """Implement the Oracle ``BINARY_DOUBLE`` datatype.
+
+    This datatype differs from the Oracle ``DOUBLE`` datatype in that it
+    delivers a true 8-byte FP value.   The datatype may be combined with a
+    generic :class:`.Double` datatype using :meth:`.TypeEngine.with_variant`.
+
+    .. seealso::
+
+        :ref:`oracle_float_support`
+
+
+    """
+
     __visit_name__ = "BINARY_DOUBLE"
 
 
 class BINARY_FLOAT(sqltypes.Float):
+    """Implement the Oracle ``BINARY_FLOAT`` datatype.
+
+    This datatype differs from the Oracle ``FLOAT`` datatype in that it
+    delivers a true 4-byte FP value.   The datatype may be combined with a
+    generic :class:`.Float` datatype using :meth:`.TypeEngine.with_variant`.
+
+    .. seealso::
+
+        :ref:`oracle_float_support`
+
+
+    """
+
     __visit_name__ = "BINARY_FLOAT"
 
 
@@ -163,10 +191,10 @@ class _OracleDateLiteralRender:
 
 
 class DATE(_OracleDateLiteralRender, sqltypes.DateTime):
-    """Provide the oracle DATE type.
+    """Provide the Oracle Database DATE type.
 
     This type has no special Python behavior, except that it subclasses
-    :class:`_types.DateTime`; this is to suit the fact that the Oracle
+    :class:`_types.DateTime`; this is to suit the fact that the Oracle Database
     ``DATE`` type supports a time value.
 
     """
@@ -246,8 +274,8 @@ class INTERVAL(sqltypes.NativeForEmulated, sqltypes._AbstractInterval):
 
 
 class TIMESTAMP(sqltypes.TIMESTAMP):
-    """Oracle implementation of ``TIMESTAMP``, which supports additional
-    Oracle-specific modes
+    """Oracle Database implementation of ``TIMESTAMP``, which supports
+    additional Oracle Database-specific modes
 
     .. versionadded:: 2.0
 
@@ -257,10 +285,11 @@ class TIMESTAMP(sqltypes.TIMESTAMP):
         """Construct a new :class:`_oracle.TIMESTAMP`.
 
         :param timezone: boolean.  Indicates that the TIMESTAMP type should
-         use Oracle's ``TIMESTAMP WITH TIME ZONE`` datatype.
+         use Oracle Database's ``TIMESTAMP WITH TIME ZONE`` datatype.
 
         :param local_timezone: boolean.  Indicates that the TIMESTAMP type
-         should use Oracle's ``TIMESTAMP WITH LOCAL TIME ZONE`` datatype.
+         should use Oracle Database's ``TIMESTAMP WITH LOCAL TIME ZONE``
+         datatype.
 
 
         """
@@ -273,7 +302,7 @@ class TIMESTAMP(sqltypes.TIMESTAMP):
 
 
 class ROWID(sqltypes.TypeEngine):
-    """Oracle ROWID type.
+    """Oracle Database ROWID type.
 
     When used in a cast() or similar, generates ROWID.
 
