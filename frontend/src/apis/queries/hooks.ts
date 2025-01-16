@@ -68,7 +68,14 @@ export function usePaginationQuery<
         }
       });
     }
-  }, [results.isSuccess, results.data, client, cacheIndividual, queryKey]);
+  }, [
+    results.isSuccess,
+    results.data,
+    client,
+    cacheIndividual,
+    queryKey,
+    page,
+  ]);
 
   const totalCount = data?.total ?? 0;
   const pageCount = Math.ceil(totalCount / pageSize);

@@ -1,5 +1,5 @@
 import { FunctionComponent } from "react";
-import { useNavigate } from "react-router";
+import { useSearchParams } from "react-router";
 import { Group, Pagination, Text } from "@mantine/core";
 import { useIsLoading } from "@/contexts";
 
@@ -23,7 +23,7 @@ const PageControl: FunctionComponent<Props> = ({
   const end = Math.min(size * (index + 1), total);
 
   const isLoading = useIsLoading();
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   return (
     <Group p={16} justify="space-between">
@@ -35,7 +35,9 @@ const PageControl: FunctionComponent<Props> = ({
         color={isLoading ? "gray" : "primary"}
         value={index + 1}
         onChange={(page) => {
-          navigate(`?page=${page}`, { replace: true });
+          searchParams.set("page", page.toString());
+
+          setSearchParams(searchParams, { replace: true });
 
           return goto(page - 1);
         }}
