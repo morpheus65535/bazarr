@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import {
   QueryKey,
   useQuery,
@@ -34,7 +35,12 @@ export function usePaginationQuery<
 ): UsePaginationQueryResult<TObject> {
   const client = useQueryClient();
 
-  const [page, setIndex] = useState(0);
+  const [searchParams] = useSearchParams();
+
+  const [page, setIndex] = useState(
+    searchParams.get("page") ? Number(searchParams.get("page")) - 1 : 0,
+  );
+
   const pageSize = usePageSize();
 
   const start = page * pageSize;
@@ -62,7 +68,14 @@ export function usePaginationQuery<
         }
       });
     }
-  }, [results.isSuccess, results.data, client, cacheIndividual, queryKey]);
+  }, [
+    results.isSuccess,
+    results.data,
+    client,
+    cacheIndividual,
+    queryKey,
+    page,
+  ]);
 
   const totalCount = data?.total ?? 0;
   const pageCount = Math.ceil(totalCount / pageSize);
