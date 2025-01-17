@@ -2,6 +2,7 @@
 
 import { vitest } from "vitest";
 import "@testing-library/jest-dom";
+import server from "./mocks/node";
 
 // From https://stackoverflow.com/questions/39830580/jest-test-fails-typeerror-window-matchmedia-is-not-a-function
 Object.defineProperty(window, "matchMedia", {
@@ -28,3 +29,11 @@ class ResizeObserver {
 window.ResizeObserver = ResizeObserver;
 
 window.scrollTo = () => {};
+
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: "error" });
+});
+
+afterEach(() => server.resetHandlers());
+
+afterAll(() => server.close());
