@@ -1,24 +1,12 @@
 import { Text } from "@mantine/core";
-import { http, HttpResponse } from "msw";
 import { describe, it } from "vitest";
 import { render, screen } from "@/tests";
-import server from "@/tests/mocks/node";
 import { Section } from "./Section";
 
 describe("Settings section", () => {
   const header = "Section Header";
 
   it("should show header", () => {
-    server.use(
-      http.get("/api/system/settings", () => {
-        return HttpResponse.json({
-          general: {
-            theme: "auto",
-          },
-        });
-      }),
-    );
-
     render(<Section header="Section Header"></Section>);
 
     expect(screen.getByText(header)).toBeDefined();

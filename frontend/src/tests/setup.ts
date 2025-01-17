@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { http } from "msw";
+import { HttpResponse } from "msw";
 import { vitest } from "vitest";
 import "@testing-library/jest-dom";
 import server from "./mocks/node";
@@ -32,6 +34,16 @@ window.scrollTo = () => {};
 
 beforeAll(() => {
   server.listen({ onUnhandledRequest: "error" });
+
+  server.use(
+    http.get("/api/system/settings", () => {
+      return HttpResponse.json({
+        general: {
+          theme: "auto",
+        },
+      });
+    }),
+  );
 });
 
 afterEach(() => server.resetHandlers());
