@@ -35,7 +35,7 @@ pytz_deprecation_shim==0.1.0.post0
 rarfile==4.2
 referencing<=0.23.0  # newer version require other compiled dependency
 requests==2.32.3
-semver==3.0.2
+semver==3.0.3
 signalrcore==0.9.5
 simple-websocket==1.1.0
 sqlalchemy==2.0.37

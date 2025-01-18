@@ -32,6 +32,7 @@ Comparable = Union["Version", Dict[str, VersionPart], Collection[VersionPart], s
 Comparator = Callable[["Version", Comparable], bool]
 
 T = TypeVar("T", bound="Version")
+T_cmp = TypeVar("T_cmp", tuple, str, int)
 
 
 def _comparator(operator: Comparator) -> Comparator:
@@ -40,7 +41,7 @@ def _comparator(operator: Comparator) -> Comparator:
     @wraps(operator)
     def wrapper(self: "Version", other: Comparable) -> bool:
         comparable_types = (
-            Version,
+            type(self),
             dict,
             tuple,
             list,
@@ -53,7 +54,7 @@ def _comparator(operator: Comparator) -> Comparator:
     return wrapper
 
 
-def _cmp(a, b):  # TODO: type hints
+def _cmp(a: T_cmp, b: T_cmp) -> int:
     """Return negative if a<b, zero if a==b, positive if a>b."""
     return (a > b) - (a < b)
 
@@ -137,7 +138,7 @@ class Version:
         self._build = None if build is None else str(build)
 
     @classmethod
-    def _nat_cmp(cls, a, b):  # TODO: type hints
+    def _nat_cmp(cls, a: Optional[str], b: Optional[str]) -> int:
         def cmp_prerelease_tag(a, b):
             if isinstance(a, int) and isinstance(b, int):
                 return _cmp(a, b)
@@ -148,16 +149,15 @@ class Version:
             else:
                 return _cmp(a, b)
 
-        a, b = a or "", b or ""
-        a_parts, b_parts = a.split("."), b.split(".")
-        a_parts = [int(x) if re.match(r"^\d+$", x) else x for x in a_parts]
-        b_parts = [int(x) if re.match(r"^\d+$", x) else x for x in b_parts]
+        a_parts = [int(x) if x.isdigit() else x for x in (a or "").split(".")]
+        b_parts = [int(x) if x.isdigit() else x for x in (b or "").split(".")]
+
         for sub_a, sub_b in zip(a_parts, b_parts):
             cmp_result = cmp_prerelease_tag(sub_a, sub_b)
             if cmp_result != 0:
                 return cmp_result
-        else:
-            return _cmp(len(a), len(b))
+
+        return _cmp(len(a_parts), len(b_parts))
 
     @property
     def major(self) -> int:
@@ -382,13 +382,11 @@ build='build.10')
         :return: The return value is negative if ver1 < ver2,
              zero if ver1 == ver2 and strictly positive if ver1 > ver2
 
-        >>> semver.compare("2.0.0")
+        >>> Version.parse("1.0.0").compare("2.0.0")
         -1
-        >>> semver.compare("1.0.0")
+        >>> Version.parse("2.0.0").compare("1.0.0")
         1
-        >>> semver.compare("2.0.0")
-        0
-        >>> semver.compare(dict(major=2, minor=0, patch=0))
+        >>> Version.parse("2.0.0").compare("2.0.0")
         0
         """
         cls = type(self)
