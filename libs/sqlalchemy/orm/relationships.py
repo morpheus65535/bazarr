@@ -1,5 +1,5 @@
 # orm/relationships.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -19,6 +19,7 @@ import collections
 from collections import abc
 import dataclasses
 import inspect as _py_inspect
+import itertools
 import re
 import typing
 from typing import Any
@@ -26,6 +27,7 @@ from typing import Callable
 from typing import cast
 from typing import Collection
 from typing import Dict
+from typing import FrozenSet
 from typing import Generic
 from typing import Iterable
 from typing import Iterator
@@ -707,12 +709,16 @@ class RelationshipProperty(
         def __eq__(self, other: Any) -> ColumnElement[bool]:  # type: ignore[override]  # noqa: E501
             """Implement the ``==`` operator.
 
-            In a many-to-one context, such as::
+            In a many-to-one context, such as:
+
+            .. sourcecode:: text
 
               MyClass.some_prop == <some object>
 
             this will typically produce a
-            clause such as::
+            clause such as:
+
+            .. sourcecode:: text
 
               mytable.related_id == <some id>
 
@@ -875,11 +881,12 @@ class RelationshipProperty(
             An expression like::
 
                 session.query(MyClass).filter(
-                    MyClass.somereference.any(SomeRelated.x==2)
+                    MyClass.somereference.any(SomeRelated.x == 2)
                 )
 
+            Will produce a query like:
 
-            Will produce a query like::
+            .. sourcecode:: sql
 
                 SELECT * FROM my_table WHERE
                 EXISTS (SELECT 1 FROM related WHERE related.my_id=my_table.id
@@ -893,11 +900,11 @@ class RelationshipProperty(
             :meth:`~.Relationship.Comparator.any` is particularly
             useful for testing for empty collections::
 
-                session.query(MyClass).filter(
-                    ~MyClass.somereference.any()
-                )
+                session.query(MyClass).filter(~MyClass.somereference.any())
 
-            will produce::
+            will produce:
+
+            .. sourcecode:: sql
 
                 SELECT * FROM my_table WHERE
                 NOT (EXISTS (SELECT 1 FROM related WHERE
@@ -928,11 +935,12 @@ class RelationshipProperty(
             An expression like::
 
                 session.query(MyClass).filter(
-                    MyClass.somereference.has(SomeRelated.x==2)
+                    MyClass.somereference.has(SomeRelated.x == 2)
                 )
 
+            Will produce a query like:
 
-            Will produce a query like::
+            .. sourcecode:: sql
 
                 SELECT * FROM my_table WHERE
                 EXISTS (SELECT 1 FROM related WHERE
@@ -971,7 +979,9 @@ class RelationshipProperty(
 
                 MyClass.contains(other)
 
-            Produces a clause like::
+            Produces a clause like:
+
+            .. sourcecode:: sql
 
                 mytable.id == <some id>
 
@@ -991,7 +1001,9 @@ class RelationshipProperty(
 
                 query(MyClass).filter(MyClass.contains(other))
 
-            Produces a query like::
+            Produces a query like:
+
+            .. sourcecode:: sql
 
                 SELECT * FROM my_table, my_association_table AS
                 my_association_table_1 WHERE
@@ -1087,11 +1099,15 @@ class RelationshipProperty(
         def __ne__(self, other: Any) -> ColumnElement[bool]:  # type: ignore[override]  # noqa: E501
             """Implement the ``!=`` operator.
 
-            In a many-to-one context, such as::
+            In a many-to-one context, such as:
+
+            .. sourcecode:: text
 
               MyClass.some_prop != <some object>
 
-            This will typically produce a clause such as::
+            This will typically produce a clause such as:
+
+            .. sourcecode:: sql
 
               mytable.related_id != <some id>
 
@@ -1753,19 +1769,17 @@ class RelationshipProperty(
         argument = extracted_mapped_annotation
         assert originating_module is not None
 
-        is_write_only = mapped_container is not None and issubclass(
-            mapped_container, WriteOnlyMapped
-        )
-        if is_write_only:
-            self.lazy = "write_only"
-            self.strategy_key = (("lazy", self.lazy),)
-
-        is_dynamic = mapped_container is not None and issubclass(
-            mapped_container, DynamicMapped
-        )
-        if is_dynamic:
-            self.lazy = "dynamic"
-            self.strategy_key = (("lazy", self.lazy),)
+        if mapped_container is not None:
+            is_write_only = issubclass(mapped_container, WriteOnlyMapped)
+            is_dynamic = issubclass(mapped_container, DynamicMapped)
+            if is_write_only:
+                self.lazy = "write_only"
+                self.strategy_key = (("lazy", self.lazy),)
+            elif is_dynamic:
+                self.lazy = "dynamic"
+                self.strategy_key = (("lazy", self.lazy),)
+        else:
+            is_write_only = is_dynamic = False
 
         argument = de_optionalize_union_types(argument)
 
@@ -3235,6 +3249,15 @@ class JoinCondition:
             if annotation_set.issubset(col._annotations)
         }
 
+    @util.memoized_property
+    def _secondary_lineage_set(self) -> FrozenSet[ColumnElement[Any]]:
+        if self.secondary is not None:
+            return frozenset(
+                itertools.chain(*[c.proxy_set for c in self.secondary.c])
+            )
+        else:
+            return util.EMPTY_SET
+
     def join_targets(
         self,
         source_selectable: Optional[FromClause],
@@ -3285,23 +3308,25 @@ class JoinCondition:
 
         if extra_criteria:
 
-            def mark_unrelated_columns_as_ok_to_adapt(
+            def mark_exclude_cols(
                 elem: SupportsAnnotations, annotations: _AnnotationDict
             ) -> SupportsAnnotations:
-                """note unrelated columns in the "extra criteria" as OK
-                to adapt, even though they are not part of our "local"
-                or "remote" side.
+                """note unrelated columns in the "extra criteria" as either
+                should be adapted or not adapted, even though they are not
+                part of our "local" or "remote" side.
 
-                see #9779 for this case
+                see #9779 for this case, as well as #11010 for a follow up
 
                 """
 
                 parentmapper_for_element = elem._annotations.get(
                     "parentmapper", None
                 )
+
                 if (
                     parentmapper_for_element is not self.prop.parent
                     and parentmapper_for_element is not self.prop.mapper
+                    and elem not in self._secondary_lineage_set
                 ):
                     return _safe_annotate(elem, annotations)
                 else:
@@ -3310,8 +3335,8 @@ class JoinCondition:
             extra_criteria = tuple(
                 _deep_annotate(
                     elem,
-                    {"ok_to_adapt_in_join_condition": True},
-                    annotate_callable=mark_unrelated_columns_as_ok_to_adapt,
+                    {"should_not_adapt": True},
+                    annotate_callable=mark_exclude_cols,
                 )
                 for elem in extra_criteria
             )
@@ -3325,14 +3350,16 @@ class JoinCondition:
             if secondary is not None:
                 secondary = secondary._anonymous_fromclause(flat=True)
                 primary_aliasizer = ClauseAdapter(
-                    secondary, exclude_fn=_ColInAnnotations("local")
+                    secondary,
+                    exclude_fn=_local_col_exclude,
                 )
                 secondary_aliasizer = ClauseAdapter(
                     dest_selectable, equivalents=self.child_equivalents
                 ).chain(primary_aliasizer)
                 if source_selectable is not None:
                     primary_aliasizer = ClauseAdapter(
-                        secondary, exclude_fn=_ColInAnnotations("local")
+                        secondary,
+                        exclude_fn=_local_col_exclude,
                     ).chain(
                         ClauseAdapter(
                             source_selectable,
@@ -3344,14 +3371,14 @@ class JoinCondition:
             else:
                 primary_aliasizer = ClauseAdapter(
                     dest_selectable,
-                    exclude_fn=_ColInAnnotations("local"),
+                    exclude_fn=_local_col_exclude,
                     equivalents=self.child_equivalents,
                 )
                 if source_selectable is not None:
                     primary_aliasizer.chain(
                         ClauseAdapter(
                             source_selectable,
-                            exclude_fn=_ColInAnnotations("remote"),
+                            exclude_fn=_remote_col_exclude,
                             equivalents=self.parent_equivalents,
                         )
                     )
@@ -3430,25 +3457,29 @@ class JoinCondition:
 
 
 class _ColInAnnotations:
-    """Serializable object that tests for a name in c._annotations."""
+    """Serializable object that tests for names in c._annotations.
 
-    __slots__ = ("name",)
+    TODO: does this need to be serializable anymore?  can we find what the
+    use case was for that?
 
-    def __init__(self, name: str):
-        self.name = name
+    """
+
+    __slots__ = ("names",)
+
+    def __init__(self, *names: str):
+        self.names = frozenset(names)
 
     def __call__(self, c: ClauseElement) -> bool:
-        return (
-            self.name in c._annotations
-            or "ok_to_adapt_in_join_condition" in c._annotations
-        )
+        return bool(self.names.intersection(c._annotations))
 
 
-class Relationship(  # type: ignore
+_local_col_exclude = _ColInAnnotations("local", "should_not_adapt")
+_remote_col_exclude = _ColInAnnotations("remote", "should_not_adapt")
+
+
+class Relationship(
     RelationshipProperty[_T],
     _DeclarativeMapped[_T],
-    WriteOnlyMapped[_T],  # not compatible with Mapped[_T]
-    DynamicMapped[_T],  # not compatible with Mapped[_T]
 ):
     """Describes an object property that holds a single item or list
     of items that correspond to a related database table.
@@ -3466,3 +3497,18 @@ class Relationship(  # type: ignore
 
     inherit_cache = True
     """:meta private:"""
+
+
+class _RelationshipDeclared(  # type: ignore[misc]
+    Relationship[_T],
+    WriteOnlyMapped[_T],  # not compatible with Mapped[_T]
+    DynamicMapped[_T],  # not compatible with Mapped[_T]
+):
+    """Relationship subclass used implicitly for declarative mapping."""
+
+    inherit_cache = True
+    """:meta private:"""
+
+    @classmethod
+    def _mapper_property_name(cls) -> str:
+        return "Relationship"

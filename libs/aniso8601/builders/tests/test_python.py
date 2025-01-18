@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2021, Brandon Nielsen
+# Copyright (c) 2025, Brandon Nielsen
 # All rights reserved.
 #
 # This software may be modified and distributed under the terms
@@ -52,7 +52,9 @@ class TestPythonTimeBuilder_UtiltyFunctions(unittest.TestCase):
             None,
         )
 
-        self.assertEqual(year_range_check("1", yearlimit), 1000)
+        self.assertEqual(year_range_check("19", yearlimit), 1900)
+        self.assertEqual(year_range_check("1234", yearlimit), 1234)
+        self.assertEqual(year_range_check("1985", yearlimit), 1985)
 
     def test_fractional_range_check(self):
         limit = Limit(
@@ -117,7 +119,7 @@ class TestPythonTimeBuilder(unittest.TestCase):
             ),
             (
                 {
-                    "YYYY": "1900",
+                    "YYYY": "19",
                     "MM": None,
                     "DD": None,
                     "Www": None,
@@ -125,6 +127,17 @@ class TestPythonTimeBuilder(unittest.TestCase):
                     "DDD": None,
                 },
                 datetime.date(1900, 1, 1),
+            ),
+            (
+                {
+                    "YYYY": "10",
+                    "MM": None,
+                    "DD": None,
+                    "Www": None,
+                    "D": None,
+                    "DDD": None,
+                },
+                datetime.date(1000, 1, 1),
             ),
             (
                 {

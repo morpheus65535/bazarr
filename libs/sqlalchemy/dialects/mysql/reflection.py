@@ -1,5 +1,5 @@
 # dialects/mysql/reflection.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -505,7 +505,7 @@ class MySQLTableDefinitionParser:
         #
         # unique constraints come back as KEYs
         kw = quotes.copy()
-        kw["on"] = "RESTRICT|CASCADE|SET NULL|NO ACTION"
+        kw["on"] = "RESTRICT|CASCADE|SET NULL|NO ACTION|SET DEFAULT"
         self._re_fk_constraint = _re_compile(
             r"  "
             r"CONSTRAINT +"

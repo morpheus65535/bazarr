@@ -1,5 +1,5 @@
 # ext/mypy/apply.py
-# Copyright (C) 2021-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2021-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -199,10 +199,14 @@ def apply_type_to_mapped_statement(
 
     To one that describes the final Python behavior to Mypy::
 
+    ... format: off
+
         class User(Base):
             # ...
 
             attrname : Mapped[Optional[int]] = <meaningless temp node>
+
+    ... format: on
 
     """
     left_node = lvalue.node

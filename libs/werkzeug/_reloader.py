@@ -141,7 +141,7 @@ def _find_watchdog_paths(
 
 
 def _find_common_roots(paths: t.Iterable[str]) -> t.Iterable[str]:
-    root: dict[str, dict] = {}
+    root: dict[str, dict[str, t.Any]] = {}
 
     for chunks in sorted((PurePath(x).parts for x in paths), key=len, reverse=True):
         node = root
@@ -153,11 +153,13 @@ def _find_common_roots(paths: t.Iterable[str]) -> t.Iterable[str]:
 
     rv = set()
 
-    def _walk(node: t.Mapping[str, dict], path: tuple[str, ...]) -> None:
+    def _walk(node: t.Mapping[str, dict[str, t.Any]], path: tuple[str, ...]) -> None:
         for prefix, child in node.items():
             _walk(child, path + (prefix,))
 
-        if not node:
+        # If there are no more nodes, and a path has been accumulated, add it.
+        # Path may be empty if the "" entry is in sys.path.
+        if not node and path:
             rv.add(os.path.join(*path))
 
     _walk(root, ())
@@ -279,7 +281,7 @@ class ReloaderLoop:
         self.log_reload(filename)
         sys.exit(3)
 
-    def log_reload(self, filename: str) -> None:
+    def log_reload(self, filename: str | bytes) -> None:
         filename = os.path.abspath(filename)
         _log("info", f" * Detected change in {filename!r}, reloading")
 
@@ -310,17 +312,28 @@ class StatReloaderLoop(ReloaderLoop):
 
 class WatchdogReloaderLoop(ReloaderLoop):
     def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        from watchdog.observers import Observer
-        from watchdog.events import PatternMatchingEventHandler
-        from watchdog.events import EVENT_TYPE_OPENED
+        from watchdog.events import EVENT_TYPE_CLOSED
+        from watchdog.events import EVENT_TYPE_CREATED
+        from watchdog.events import EVENT_TYPE_DELETED
+        from watchdog.events import EVENT_TYPE_MODIFIED
+        from watchdog.events import EVENT_TYPE_MOVED
         from watchdog.events import FileModifiedEvent
+        from watchdog.events import PatternMatchingEventHandler
+        from watchdog.observers import Observer
 
         super().__init__(*args, **kwargs)
         trigger_reload = self.trigger_reload
 
         class EventHandler(PatternMatchingEventHandler):
             def on_any_event(self, event: FileModifiedEvent):  # type: ignore
-                if event.event_type == EVENT_TYPE_OPENED:
+                if event.event_type not in {
+                    EVENT_TYPE_CLOSED,
+                    EVENT_TYPE_CREATED,
+                    EVENT_TYPE_DELETED,
+                    EVENT_TYPE_MODIFIED,
+                    EVENT_TYPE_MOVED,
+                }:
+                    # skip events that don't involve changes to the file
                     return
 
                 trigger_reload(event.src_path)
@@ -347,7 +360,7 @@ class WatchdogReloaderLoop(ReloaderLoop):
         )
         self.should_reload = False
 
-    def trigger_reload(self, filename: str) -> None:
+    def trigger_reload(self, filename: str | bytes) -> None:
         # This is called inside an event handler, which means throwing
         # SystemExit has no effect.
         # https://github.com/gorakhargosh/watchdog/issues/294

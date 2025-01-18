@@ -1,4 +1,5 @@
 import click
+from flask import g
 from flask.cli import with_appcontext
 from flask_migrate import list_templates as _list_templates
 from flask_migrate import init as _init
@@ -18,9 +19,15 @@ from flask_migrate import check as _check
 
 
 @click.group()
-def db():
+@click.option('-d', '--directory', default=None,
+              help=('Migration script directory (default is "migrations")'))
+@click.option('-x', '--x-arg', multiple=True,
+              help='Additional arguments consumed by custom env.py scripts')
+@with_appcontext
+def db(directory, x_arg):
     """Perform database migrations."""
-    pass
+    g.directory = directory
+    g.x_arg = x_arg  # these will be picked up by Migrate.get_config()
 
 
 @db.command()
@@ -43,7 +50,7 @@ def list_templates():
 @with_appcontext
 def init(directory, multidb, template, package):
     """Creates a new migration repository."""
-    _init(directory, multidb, template, package)
+    _init(directory or g.directory, multidb, template, package)
 
 
 @db.command()
@@ -72,8 +79,8 @@ def init(directory, multidb, template, package):
 def revision(directory, message, autogenerate, sql, head, splice, branch_label,
              version_path, rev_id):
     """Create a new revision file."""
-    _revision(directory, message, autogenerate, sql, head, splice,
-              branch_label, version_path, rev_id)
+    _revision(directory or g.directory, message, autogenerate, sql, head,
+              splice, branch_label, version_path, rev_id)
 
 
 @db.command()
@@ -102,8 +109,8 @@ def migrate(directory, message, sql, head, splice, branch_label, version_path,
             rev_id, x_arg):
     """Autogenerate a new revision file (Alias for
     'revision --autogenerate')"""
-    _migrate(directory, message, sql, head, splice, branch_label, version_path,
-             rev_id, x_arg)
+    _migrate(directory or g.directory, message, sql, head, splice,
+             branch_label, version_path, rev_id, x_arg or g.x_arg)
 
 
 @db.command()
@@ -113,7 +120,7 @@ def migrate(directory, message, sql, head, splice, branch_label, version_path,
 @with_appcontext
 def edit(directory, revision):
     """Edit a revision file"""
-    _edit(directory, revision)
+    _edit(directory or g.directory, revision)
 
 
 @db.command()
@@ -129,7 +136,7 @@ def edit(directory, revision):
 @with_appcontext
 def merge(directory, message, branch_label, rev_id, revisions):
     """Merge two revisions together, creating a new revision file"""
-    _merge(directory, revisions, message, branch_label, rev_id)
+    _merge(directory or g.directory, revisions, message, branch_label, rev_id)
 
 
 @db.command()
@@ -147,7 +154,7 @@ def merge(directory, message, branch_label, rev_id, revisions):
 @with_appcontext
 def upgrade(directory, sql, tag, x_arg, revision):
     """Upgrade to a later version"""
-    _upgrade(directory, revision, sql, tag, x_arg)
+    _upgrade(directory or g.directory, revision, sql, tag, x_arg or g.x_arg)
 
 
 @db.command()
@@ -165,7 +172,7 @@ def upgrade(directory, sql, tag, x_arg, revision):
 @with_appcontext
 def downgrade(directory, sql, tag, x_arg, revision):
     """Revert to a previous version"""
-    _downgrade(directory, revision, sql, tag, x_arg)
+    _downgrade(directory or g.directory, revision, sql, tag, x_arg or g.x_arg)
 
 
 @db.command()
@@ -175,7 +182,7 @@ def downgrade(directory, sql, tag, x_arg, revision):
 @with_appcontext
 def show(directory, revision):
     """Show the revision denoted by the given symbol."""
-    _show(directory, revision)
+    _show(directory or g.directory, revision)
 
 
 @db.command()
@@ -190,7 +197,7 @@ def show(directory, revision):
 @with_appcontext
 def history(directory, rev_range, verbose, indicate_current):
     """List changeset scripts in chronological order."""
-    _history(directory, rev_range, verbose, indicate_current)
+    _history(directory or g.directory, rev_range, verbose, indicate_current)
 
 
 @db.command()
@@ -202,7 +209,7 @@ def history(directory, rev_range, verbose, indicate_current):
 @with_appcontext
 def heads(directory, verbose, resolve_dependencies):
     """Show current available heads in the script directory"""
-    _heads(directory, verbose, resolve_dependencies)
+    _heads(directory or g.directory, verbose, resolve_dependencies)
 
 
 @db.command()
@@ -212,7 +219,7 @@ def heads(directory, verbose, resolve_dependencies):
 @with_appcontext
 def branches(directory, verbose):
     """Show current branch points"""
-    _branches(directory, verbose)
+    _branches(directory or g.directory, verbose)
 
 
 @db.command()
@@ -222,7 +229,7 @@ def branches(directory, verbose):
 @with_appcontext
 def current(directory, verbose):
     """Display the current revision for each database."""
-    _current(directory, verbose)
+    _current(directory or g.directory, verbose)
 
 
 @db.command()
@@ -234,12 +241,15 @@ def current(directory, verbose):
 @click.option('--tag', default=None,
               help=('Arbitrary "tag" name - can be used by custom env.py '
                     'scripts'))
+@click.option('--purge', is_flag=True,
+              help=('Delete the version in the alembic_version table before '
+                    'stamping'))
 @click.argument('revision', default='head')
 @with_appcontext
-def stamp(directory, sql, tag, revision):
+def stamp(directory, sql, tag, revision, purge):
     """'stamp' the revision table with the given revision; don't run any
     migrations"""
-    _stamp(directory, revision, sql, tag)
+    _stamp(directory or g.directory, revision, sql, tag, purge)
 
 
 @db.command()
@@ -248,4 +258,4 @@ def stamp(directory, sql, tag, revision):
 @with_appcontext
 def check(directory):
     """Check if there are any new operations to migrate"""
-    _check(directory)
+    _check(directory or g.directory)

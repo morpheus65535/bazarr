@@ -1,5 +1,5 @@
 # sql/crud.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -1286,7 +1286,7 @@ class _multiparam_column(elements.ColumnElement[Any]):
     def compare(self, other, **kw):
         raise NotImplementedError()
 
-    def _copy_internals(self, other, **kw):
+    def _copy_internals(self, **kw):
         raise NotImplementedError()
 
     def __eq__(self, other):

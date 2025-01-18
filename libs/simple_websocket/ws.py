@@ -132,7 +132,10 @@ class Base:
         if self.ping_interval:
             next_ping = time() + self.ping_interval
             sel = self.selector_class()
-            sel.register(self.sock, selectors.EVENT_READ, True)
+            try:
+                sel.register(self.sock, selectors.EVENT_READ, True)
+            except ValueError:  # pragma: no cover
+                self.connected = False
 
         while self.connected:
             try:
@@ -143,6 +146,7 @@ class Base:
                         if not self.pong_received:
                             self.close(reason=CloseReason.POLICY_VIOLATION,
                                        message='Ping/Pong timeout')
+                            self.event.set()
                             break
                         self.pong_received = False
                         self.sock.send(self.ws.send(Ping()))
@@ -153,7 +157,8 @@ class Base:
                     raise OSError()
                 self.ws.receive_data(in_data)
                 self.connected = self._handle_events()
-            except (OSError, ConnectionResetError):  # pragma: no cover
+            except (OSError, ConnectionResetError,
+                    LocalProtocolError):  # pragma: no cover
                 self.connected = False
                 self.event.set()
                 break
@@ -392,13 +397,18 @@ class Client(Base):
         elif isinstance(headers, list):
             self.extra_headeers = headers
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        connection_args = socket.getaddrinfo(self.host, self.port,
+                                             type=socket.SOCK_STREAM)
+        if len(connection_args) == 0:  # pragma: no cover
+            raise ConnectionError()
+        sock = socket.socket(connection_args[0][0], connection_args[0][1],
+                             connection_args[0][2])
         if is_secure:  # pragma: no cover
             if ssl_context is None:
                 ssl_context = ssl.create_default_context(
                     purpose=ssl.Purpose.SERVER_AUTH)
             sock = ssl_context.wrap_socket(sock, server_hostname=self.host)
-        sock.connect((self.host, self.port))
+        sock.connect(connection_args[0][4])
         super().__init__(sock, connection_type=ConnectionType.CLIENT,
                          receive_bytes=receive_bytes,
                          ping_interval=ping_interval,

@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-__title__ = 'enzyme'
-__version__ = '0.4.1'
-__author__ = 'Antoine Bertin'
-__license__ = 'Apache 2.0'
-__copyright__ = 'Copyright 2013 Antoine Bertin'
+__title__ = "enzyme"
+__version__ = "0.5.2"
+__author__ = "Antoine Bertin"
+__license__ = "MIT"
+__copyright__ = "Copyright 2013 Antoine Bertin"
 
 import logging
 from .exceptions import *

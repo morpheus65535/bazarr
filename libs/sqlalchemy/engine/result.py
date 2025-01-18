@@ -1,5 +1,5 @@
 # engine/result.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -1099,17 +1099,15 @@ class Result(_WithKeys, ResultInternal[Row[_TP]]):
             statement = select(table.c.x, table.c.y, table.c.z)
             result = connection.execute(statement)
 
-            for z, y in result.columns('z', 'y'):
-                # ...
-
+            for z, y in result.columns("z", "y"):
+                ...
 
         Example of using the column objects from the statement itself::
 
             for z, y in result.columns(
-                    statement.selected_columns.c.z,
-                    statement.selected_columns.c.y
+                statement.selected_columns.c.z, statement.selected_columns.c.y
             ):
-                # ...
+                ...
 
         .. versionadded:: 1.4
 
@@ -1452,11 +1450,11 @@ class Result(_WithKeys, ResultInternal[Row[_TP]]):
         """Return exactly one scalar result or raise an exception.
 
         This is equivalent to calling :meth:`_engine.Result.scalars` and
-        then :meth:`_engine.Result.one`.
+        then :meth:`_engine.ScalarResult.one`.
 
         .. seealso::
 
-            :meth:`_engine.Result.one`
+            :meth:`_engine.ScalarResult.one`
 
             :meth:`_engine.Result.scalars`
 
@@ -1475,11 +1473,11 @@ class Result(_WithKeys, ResultInternal[Row[_TP]]):
         """Return exactly one scalar result or ``None``.
 
         This is equivalent to calling :meth:`_engine.Result.scalars` and
-        then :meth:`_engine.Result.one_or_none`.
+        then :meth:`_engine.ScalarResult.one_or_none`.
 
         .. seealso::
 
-            :meth:`_engine.Result.one_or_none`
+            :meth:`_engine.ScalarResult.one_or_none`
 
             :meth:`_engine.Result.scalars`
 
@@ -1917,11 +1915,11 @@ class TupleResult(FilterResult[_R], util.TypingOnly):
             """Return exactly one scalar result or raise an exception.
 
             This is equivalent to calling :meth:`_engine.Result.scalars`
-            and then :meth:`_engine.Result.one`.
+            and then :meth:`_engine.ScalarResult.one`.
 
             .. seealso::
 
-                :meth:`_engine.Result.one`
+                :meth:`_engine.ScalarResult.one`
 
                 :meth:`_engine.Result.scalars`
 
@@ -1940,11 +1938,11 @@ class TupleResult(FilterResult[_R], util.TypingOnly):
             """Return exactly one or no scalar result.
 
             This is equivalent to calling :meth:`_engine.Result.scalars`
-            and then :meth:`_engine.Result.one_or_none`.
+            and then :meth:`_engine.ScalarResult.one_or_none`.
 
             .. seealso::
 
-                :meth:`_engine.Result.one_or_none`
+                :meth:`_engine.ScalarResult.one_or_none`
 
                 :meth:`_engine.Result.scalars`
 

@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -30,19 +30,18 @@ import os
 import copy
 
 # Used for testing
-from .NotifyBase import NotifyBase
+from .base import NotifyBase
 
 from ..common import NotifyImageSize
 from ..common import NOTIFY_IMAGE_SIZES
 from ..common import NotifyType
 from ..common import NOTIFY_TYPES
-from ..utils import parse_list
-from ..utils import cwe312_url
-from ..utils import GET_SCHEMA_RE
+from ..utils.cwe312 import cwe312_url
+from ..utils.parse import parse_list, GET_SCHEMA_RE
 from ..logger import logger
-from ..AppriseLocale import gettext_lazy as _
-from ..AppriseLocale import LazyTranslation
-from ..NotificationManager import NotificationManager
+from ..locale import gettext_lazy as _
+from ..locale import LazyTranslation
+from ..manager_plugins import NotificationManager
 
 
 # Grant access to our Notification Manager Singleton

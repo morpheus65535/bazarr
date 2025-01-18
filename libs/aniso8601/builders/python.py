@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2021, Brandon Nielsen
+# Copyright (c) 2025, Brandon Nielsen
 # All rights reserved.
 #
 # This software may be modified and distributed under the terms
@@ -12,10 +12,8 @@ from functools import partial
 
 from aniso8601.builders import (
     BaseTimeBuilder,
-    DatetimeTuple,
     DateTuple,
     Limit,
-    TimeTuple,
     TupleBuilder,
     cast,
     range_check,
@@ -23,9 +21,6 @@ from aniso8601.builders import (
 from aniso8601.exceptions import (
     DayOutOfBoundsError,
     HoursOutOfBoundsError,
-    ISOFormatError,
-    LeapSecondError,
-    MidnightBoundsError,
     MinutesOutOfBoundsError,
     MonthOutOfBoundsError,
     SecondsOutOfBoundsError,
@@ -85,7 +80,7 @@ def fractional_range_check(conversion, valuestr, limit):
 
     value = cast(valuestr, castfunc, thrownmessage=limit.casterrorstring)
 
-    if type(value) is FractionalComponent:
+    if isinstance(value, FractionalComponent):
         tocheck = float(valuestr)
     else:
         tocheck = int(valuestr)
@@ -128,7 +123,7 @@ class PythonTimeBuilder(BaseTimeBuilder):
         0,
         24,
         HoursOutOfBoundsError,
-        "Hour must be between 0..24 with " "24 representing midnight.",
+        "Hour must be between 0..24 with 24 representing midnight.",
         partial(fractional_range_check, MICROSECONDS_PER_HOUR),
     )
     TIME_MM_LIMIT = Limit(
@@ -144,7 +139,7 @@ class PythonTimeBuilder(BaseTimeBuilder):
         0,
         60,
         SecondsOutOfBoundsError,
-        "Second must be between 0..60 with " "60 representing a leap second.",
+        "Second must be between 0..60 with 60 representing a leap second.",
         partial(fractional_range_check, MICROSECONDS_PER_SECOND),
     )
     DURATION_PNY_LIMIT = Limit(
@@ -248,19 +243,19 @@ class PythonTimeBuilder(BaseTimeBuilder):
 
         hh, mm, ss, tz = cls.range_check_time(hh, mm, ss, tz)
 
-        if type(hh) is FractionalComponent:
+        if isinstance(hh, FractionalComponent):
             hours = hh.principal
             microseconds = hh.microsecondremainder
         elif hh is not None:
             hours = hh
 
-        if type(mm) is FractionalComponent:
+        if isinstance(mm, FractionalComponent):
             minutes = mm.principal
             microseconds = mm.microsecondremainder
         elif mm is not None:
             minutes = mm
 
-        if type(ss) is FractionalComponent:
+        if isinstance(ss, FractionalComponent):
             seconds = ss.principal
             microseconds = ss.microsecondremainder
         elif ss is not None:
@@ -349,7 +344,7 @@ class PythonTimeBuilder(BaseTimeBuilder):
             endobject = cls._build_object(end)
 
             # Range check
-            if type(end) is DateTuple and datetimerequired is True:
+            if isinstance(end, DateTuple) and datetimerequired is True:
                 # <end> is a date, and <duration> requires datetime resolution
                 return (
                     endobject,
@@ -362,7 +357,7 @@ class PythonTimeBuilder(BaseTimeBuilder):
         startobject = cls._build_object(start)
 
         # Range check
-        if type(start) is DateTuple and datetimerequired is True:
+        if isinstance(start, DateTuple) and datetimerequired is True:
             # <start> is a date, and <duration> requires datetime resolution
             return (
                 startobject,
@@ -448,7 +443,7 @@ class PythonTimeBuilder(BaseTimeBuilder):
         )
 
         if PnY is not None:
-            if type(PnY) is FractionalComponent:
+            if isinstance(PnY, FractionalComponent):
                 years = PnY.principal
                 microseconds = PnY.microsecondremainder
             else:
@@ -458,7 +453,7 @@ class PythonTimeBuilder(BaseTimeBuilder):
                 raise YearOutOfBoundsError("Duration exceeds maximum timedelta size.")
 
         if PnM is not None:
-            if type(PnM) is FractionalComponent:
+            if isinstance(PnM, FractionalComponent):
                 months = PnM.principal
                 microseconds = PnM.microsecondremainder
             else:
@@ -468,7 +463,7 @@ class PythonTimeBuilder(BaseTimeBuilder):
                 raise MonthOutOfBoundsError("Duration exceeds maximum timedelta size.")
 
         if PnW is not None:
-            if type(PnW) is FractionalComponent:
+            if isinstance(PnW, FractionalComponent):
                 weeks = PnW.principal
                 microseconds = PnW.microsecondremainder
             else:
@@ -478,7 +473,7 @@ class PythonTimeBuilder(BaseTimeBuilder):
                 raise WeekOutOfBoundsError("Duration exceeds maximum timedelta size.")
 
         if PnD is not None:
-            if type(PnD) is FractionalComponent:
+            if isinstance(PnD, FractionalComponent):
                 days = PnD.principal
                 microseconds = PnD.microsecondremainder
             else:
@@ -488,7 +483,7 @@ class PythonTimeBuilder(BaseTimeBuilder):
                 raise DayOutOfBoundsError("Duration exceeds maximum timedelta size.")
 
         if TnH is not None:
-            if type(TnH) is FractionalComponent:
+            if isinstance(TnH, FractionalComponent):
                 hours = TnH.principal
                 microseconds = TnH.microsecondremainder
             else:
@@ -498,7 +493,7 @@ class PythonTimeBuilder(BaseTimeBuilder):
                 raise HoursOutOfBoundsError("Duration exceeds maximum timedelta size.")
 
         if TnM is not None:
-            if type(TnM) is FractionalComponent:
+            if isinstance(TnM, FractionalComponent):
                 minutes = TnM.principal
                 microseconds = TnM.microsecondremainder
             else:
@@ -510,7 +505,7 @@ class PythonTimeBuilder(BaseTimeBuilder):
                 )
 
         if TnS is not None:
-            if type(TnS) is FractionalComponent:
+            if isinstance(TnS, FractionalComponent):
                 seconds = TnS.principal
                 microseconds = TnS.microsecondremainder
             else:
@@ -586,7 +581,7 @@ class PythonTimeBuilder(BaseTimeBuilder):
             endobject = cls._build_object(end)
 
             # Range check
-            if type(end) is DateTuple:
+            if isinstance(end, DateTuple):
                 enddatetime = cls.build_datetime(end, TupleBuilder.build_time())
 
                 if enddatetime - datetime.datetime.min < durationobject:

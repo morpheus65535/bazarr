@@ -9,11 +9,12 @@ from .base import FormatBase
 from ..ssafile import SSAFile
 
 
-# We're using Color dataclass
+# Custom JSONEncoder is needed since our `Color` is a dataclass
 # https://stackoverflow.com/questions/51286748/make-the-python-json-encoder-support-pythons-new-dataclasses
 class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, o: Any) -> Any:
-        if dataclasses.is_dataclass(o):
+        if not isinstance(o, type) and dataclasses.is_dataclass(o):
+            # MyPy 1.11.0 thinks `o` is `type[DataclassInstance]` instead of `DataclassInstance` without the isinstance
             return dataclasses.asdict(o)
         return super().default(o)
 

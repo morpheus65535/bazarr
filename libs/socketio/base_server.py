@@ -1,5 +1,7 @@
 import logging
 
+import engineio
+
 from . import manager
 from . import base_namespace
 from . import packet
@@ -9,6 +11,7 @@ default_logger = logging.getLogger('socketio.server')
 
 class BaseServer:
     reserved_events = ['connect', 'disconnect']
+    reason = engineio.Server.reason
 
     def __init__(self, client_manager=None, logger=False, serializer='default',
                  json=None, async_handlers=True, always_connect=False,
@@ -226,7 +229,7 @@ class BaseServer:
                     '*' in self.handlers[namespace]:
                 handler = self.handlers[namespace]['*']
                 args = (event, *args)
-        elif '*' in self.handlers:
+        if handler is None and '*' in self.handlers:
             if event in self.handlers['*']:
                 handler = self.handlers['*'][event]
                 args = (namespace, *args)
@@ -245,7 +248,7 @@ class BaseServer:
         handler = None
         if namespace in self.namespace_handlers:
             handler = self.namespace_handlers[namespace]
-        elif '*' in self.namespace_handlers:
+        if handler is None and '*' in self.namespace_handlers:
             handler = self.namespace_handlers['*']
             args = (namespace, *args)
         return handler, args

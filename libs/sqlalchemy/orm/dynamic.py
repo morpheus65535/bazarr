@@ -1,5 +1,5 @@
 # orm/dynamic.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -161,10 +161,12 @@ class AppenderMixin(AbstractCollectionWriter[_T]):
 
             return result.IteratorResult(
                 result.SimpleResultMetaData([self.attr.class_.__name__]),
-                self.attr._get_collection_history(  # type: ignore[arg-type]
-                    attributes.instance_state(self.instance),
-                    PassiveFlag.PASSIVE_NO_INITIALIZE,
-                ).added_items,
+                iter(
+                    self.attr._get_collection_history(
+                        attributes.instance_state(self.instance),
+                        PassiveFlag.PASSIVE_NO_INITIALIZE,
+                    ).added_items
+                ),
                 _source_supports_scalars=True,
             ).scalars()
         else:

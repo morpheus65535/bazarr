@@ -21,9 +21,9 @@ Requires-Python: >=3.6
 Description-Content-Type: text/markdown
 License-File: LICENSE
 License-File: licenses/LICENSE_APACHE
-Requires-Dist: importlib-resources ; python_version < "3.7"
+Requires-Dist: importlib-resources; python_version < "3.7"
 Provides-Extra: tzdata
-Requires-Dist: tzdata ; extra == 'tzdata'
+Requires-Dist: tzdata; extra == "tzdata"
 
 # `backports.zoneinfo`: Backport of the standard library module `zoneinfo`
 

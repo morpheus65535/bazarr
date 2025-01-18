@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2021, Brandon Nielsen
+# Copyright (c) 2025, Brandon Nielsen
 # All rights reserved.
 #
 # This software may be modified and distributed under the terms
@@ -115,6 +115,17 @@ class TestDateParserFunctions(unittest.TestCase):
                 "19",
                 {
                     "YYYY": "19",
+                    "MM": None,
+                    "DD": None,
+                    "Www": None,
+                    "D": None,
+                    "DDD": None,
+                },
+            ),
+            (
+                "10",
+                {
+                    "YYYY": "10",
                     "MM": None,
                     "DD": None,
                     "Www": None,
@@ -265,7 +276,8 @@ class TestDateParserFunctions(unittest.TestCase):
 
     def test_parse_date_badstr(self):
         testtuples = (
-            "W53",
+            "1",
+            "123" "W53",
             "2004-W",
             "2014-01-230",
             "2014-012-23",

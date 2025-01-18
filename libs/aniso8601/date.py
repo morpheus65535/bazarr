@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2021, Brandon Nielsen
+# Copyright (c) 2025, Brandon Nielsen
 # All rights reserved.
 #
 # This software may be modified and distributed under the terms
@@ -60,7 +60,8 @@ def parse_date(isodatestr, builder=PythonTimeBuilder):
     # Given a string in any ISO 8601 date format, return a datetime.date
     # object that corresponds to the given date. Valid string formats are:
     #
-    # Y[YYY]
+    # YY
+    # YYYY
     # YYYY-MM-DD
     # YYYYMMDD
     # YYYY-MM
@@ -75,11 +76,12 @@ def parse_date(isodatestr, builder=PythonTimeBuilder):
 
     if isodatestr.startswith("+") or isodatestr.startswith("-"):
         raise NotImplementedError(
-            "ISO 8601 extended year representation " "not supported."
+            "ISO 8601 extended year representation not supported."
         )
 
     if len(isodatestr) == 0 or isodatestr.count("-") > 2:
         raise ISOFormatError('"{0}" is not a valid ISO 8601 date.'.format(isodatestr))
+
     yearstr = None
     monthstr = None
     daystr = None
@@ -87,8 +89,9 @@ def parse_date(isodatestr, builder=PythonTimeBuilder):
     weekdaystr = None
     ordinaldaystr = None
 
-    if len(isodatestr) <= 4:
-        # Y[YYY]
+    if len(isodatestr) in (2, 4):
+        # YY
+        # YYYY
         yearstr = isodatestr
     elif "W" in isodatestr:
         if len(isodatestr) == 10:

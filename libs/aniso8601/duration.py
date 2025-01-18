@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2021, Brandon Nielsen
+# Copyright (c) 2025, Brandon Nielsen
 # All rights reserved.
 #
 # This software may be modified and distributed under the terms
@@ -85,14 +85,14 @@ def _parse_duration_prescribed(isodurationstr):
     # Make sure the end character is valid
     # https://bitbucket.org/nielsenb/aniso8601/issues/9/durations-with-trailing-garbage-are-parsed
     if isodurationstr[-1] not in ["Y", "M", "D", "H", "S", "W"]:
-        raise ISOFormatError("ISO 8601 duration must end with a valid " "character.")
+        raise ISOFormatError("ISO 8601 duration must end with a valid character.")
 
     # Make sure only the lowest order element has decimal precision
     durationstr = normalize(isodurationstr)
 
     if durationstr.count(".") > 1:
         raise ISOFormatError(
-            "ISO 8601 allows only lowest order element to " "have a decimal fraction."
+            "ISO 8601 allows only lowest order element to have a decimal fraction."
         )
 
     seperatoridx = durationstr.find(".")
@@ -104,7 +104,7 @@ def _parse_duration_prescribed(isodurationstr):
         # then one, the string is invalid
         if remaining.isdigit() is False:
             raise ISOFormatError(
-                "ISO 8601 duration must end with " "a single valid character."
+                "ISO 8601 duration must end with a single valid character."
             )
 
     # Do not allow W in combination with other designators
@@ -169,7 +169,7 @@ def _parse_duration_prescribed_notime(isodurationstr):
     for componentstr in [yearstr, monthstr, daystr, weekstr]:
         if componentstr is not None:
             if "." in componentstr:
-                intstr, fractionalstr = componentstr.split(".", 1)
+                intstr = componentstr.split(".", 1)[0]
 
                 if intstr.isdigit() is False:
                     raise ISOFormatError(
@@ -227,7 +227,7 @@ def _parse_duration_prescribed_time(isodurationstr):
     for componentstr in [hourstr, minutestr, secondstr]:
         if componentstr is not None:
             if "." in componentstr:
-                intstr, fractionalstr = componentstr.split(".", 1)
+                intstr = componentstr.split(".", 1)[0]
 
                 if intstr.isdigit() is False:
                     raise ISOFormatError(

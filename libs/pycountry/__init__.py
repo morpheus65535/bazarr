@@ -2,7 +2,7 @@
 
 import os.path
 import unicodedata
-from importlib import metadata as importlib_metadata
+from importlib import metadata as _importlib_metadata
 from typing import Dict, List, Optional, Type
 
 import pycountry.db
@@ -15,7 +15,7 @@ import pycountry.db
 try:
     import importlib_resources  # type: ignore
 except ModuleNotFoundError:
-    from importlib import resources as importlib_resources
+    from importlib import resources as importlib_resources  # type: ignore
 
 
 def resource_filename(package_or_requirement: str, resource_name: str) -> str:
@@ -26,8 +26,8 @@ def resource_filename(package_or_requirement: str, resource_name: str) -> str:
 
 def get_version(distribution_name: str) -> Optional[str]:
     try:
-        return importlib_metadata.version(distribution_name)
-    except importlib_metadata.PackageNotFoundError:
+        return _importlib_metadata.version(distribution_name)
+    except _importlib_metadata.PackageNotFoundError:
         return "n/a"
 
 
@@ -76,7 +76,6 @@ class ExistingCountries(pycountry.db.Database):
             self=subdivisions, query=query
         )
         for candidate in match_subdivions:
-            print(candidate)
             add_result(candidate.country, 49)
 
         # Prio 3: partial matches on country names
@@ -170,7 +169,10 @@ class SubdivisionHierarchy(pycountry.db.Data):
         super().__init__(**kw)
         self.country_code = self.code.split("-")[0]
         if self.parent_code is not None:
-            self.parent_code = f"{self.country_code}-{self.parent_code}"
+            # Split the parent_code to check if the country_code is already present
+            parts = self.parent_code.split("-")
+            if parts[0] != self.country_code:
+                self.parent_code = f"{self.country_code}-{self.parent_code}"
 
     @property
     def country(self):

@@ -29,7 +29,7 @@ except ImportError:
 else:
     ACCEPT_ENCODING += ",br"
 try:
-    import zstandard as _unused_module_zstd  # type: ignore[import-not-found] # noqa: F401
+    import zstandard as _unused_module_zstd  # noqa: F401
 except ImportError:
     pass
 else:
@@ -227,7 +227,7 @@ def body_to_chunks(
                 if not datablock:
                     break
                 if encode:
-                    datablock = datablock.encode("iso-8859-1")
+                    datablock = datablock.encode("utf-8")
                 yield datablock
 
         chunks = chunk_readable()

@@ -9,6 +9,7 @@ This makes it also possible to "run" a wheel like in this command::
     $ python3 semver-3*-py3-none-any.whl/semver -h
 
 """
+
 import os.path
 import sys
 from typing import List, Optional

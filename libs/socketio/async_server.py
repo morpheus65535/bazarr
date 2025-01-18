@@ -102,6 +102,9 @@ class AsyncServer(base_server.BaseServer):
                             inactive clients are closed. Set to ``False`` to
                             disable the monitoring task (not recommended). The
                             default is ``True``.
+    :param transports: The list of allowed transports. Valid transports
+                       are ``'polling'`` and ``'websocket'``. Defaults to
+                       ``['polling', 'websocket']``.
     :param engineio_logger: To enable Engine.IO logging set to ``True`` or pass
                             a logger object to use. To disable logging set to
                             ``False``. The default is ``False``. Note that
@@ -382,7 +385,7 @@ class AsyncServer(base_server.BaseServer):
                 async with eio.session(sid) as session:
                     print('received message from ', session['username'])
         """
-        class _session_context_manager(object):
+        class _session_context_manager:
             def __init__(self, server, sid, namespace):
                 self.server = server
                 self.sid = sid
@@ -424,7 +427,8 @@ class AsyncServer(base_server.BaseServer):
             eio_sid = self.manager.pre_disconnect(sid, namespace=namespace)
             await self._send_packet(eio_sid, self.packet_class(
                 packet.DISCONNECT, namespace=namespace))
-            await self._trigger_event('disconnect', namespace, sid)
+            await self._trigger_event('disconnect', namespace, sid,
+                                      self.reason.SERVER_DISCONNECT)
             await self.manager.disconnect(sid, namespace=namespace,
                                           ignore_queue=True)
 
@@ -572,14 +576,15 @@ class AsyncServer(base_server.BaseServer):
             await self._send_packet(eio_sid, self.packet_class(
                 packet.CONNECT, {'sid': sid}, namespace=namespace))
 
-    async def _handle_disconnect(self, eio_sid, namespace):
+    async def _handle_disconnect(self, eio_sid, namespace, reason=None):
         """Handle a client disconnect."""
         namespace = namespace or '/'
         sid = self.manager.sid_from_eio_sid(eio_sid, namespace)
         if not self.manager.is_connected(sid, namespace):  # pragma: no cover
             return
         self.manager.pre_disconnect(sid, namespace=namespace)
-        await self._trigger_event('disconnect', namespace, sid)
+        await self._trigger_event('disconnect', namespace, sid,
+                                  reason or self.reason.CLIENT_DISCONNECT)
         await self.manager.disconnect(sid, namespace, ignore_queue=True)
 
     async def _handle_event(self, eio_sid, namespace, id, data):
@@ -631,11 +636,25 @@ class AsyncServer(base_server.BaseServer):
         if handler:
             if asyncio.iscoroutinefunction(handler):
                 try:
-                    ret = await handler(*args)
+                    try:
+                        ret = await handler(*args)
+                    except TypeError:
+                        # legacy disconnect events use only one argument
+                        if event == 'disconnect':
+                            ret = await handler(*args[:-1])
+                        else:  # pragma: no cover
+                            raise
                 except asyncio.CancelledError:  # pragma: no cover
                     ret = None
             else:
-                ret = handler(*args)
+                try:
+                    ret = handler(*args)
+                except TypeError:
+                    # legacy disconnect events use only one argument
+                    if event == 'disconnect':
+                        ret = handler(*args[:-1])
+                    else:  # pragma: no cover
+                        raise
             return ret
         # or else, forward the event to a namespace handler if one exists
         handler, args = self._get_namespace_handler(namespace, args)
@@ -668,7 +687,8 @@ class AsyncServer(base_server.BaseServer):
             if pkt.packet_type == packet.CONNECT:
                 await self._handle_connect(eio_sid, pkt.namespace, pkt.data)
             elif pkt.packet_type == packet.DISCONNECT:
-                await self._handle_disconnect(eio_sid, pkt.namespace)
+                await self._handle_disconnect(eio_sid, pkt.namespace,
+                                              self.reason.CLIENT_DISCONNECT)
             elif pkt.packet_type == packet.EVENT:
                 await self._handle_event(eio_sid, pkt.namespace, pkt.id,
                                          pkt.data)
@@ -683,10 +703,10 @@ class AsyncServer(base_server.BaseServer):
             else:
                 raise ValueError('Unknown packet type.')
 
-    async def _handle_eio_disconnect(self, eio_sid):
+    async def _handle_eio_disconnect(self, eio_sid, reason):
         """Handle Engine.IO disconnect event."""
         for n in list(self.manager.get_namespaces()).copy():
-            await self._handle_disconnect(eio_sid, n)
+            await self._handle_disconnect(eio_sid, n, reason)
         if eio_sid in self.environ:
             del self.environ[eio_sid]
 

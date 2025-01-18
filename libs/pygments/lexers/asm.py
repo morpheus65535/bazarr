@@ -4,7 +4,7 @@
 
     Lexers for assembly languages.
 
-    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -31,6 +31,8 @@ class GasLexer(RegexLexer):
     aliases = ['gas', 'asm']
     filenames = ['*.s', '*.S']
     mimetypes = ['text/x-gas']
+    url = 'https://www.gnu.org/software/binutils'
+    version_added = ''
 
     #: optional Comment or Whitespace
     string = r'"(\\"|[^"])*"'
@@ -167,6 +169,8 @@ class ObjdumpLexer(RegexLexer):
     aliases = ['objdump']
     filenames = ['*.objdump']
     mimetypes = ['text/x-objdump']
+    url = 'https://www.gnu.org/software/binutils'
+    version_added = ''
 
     tokens = _objdump_lexer_tokens(GasLexer)
 
@@ -179,6 +183,8 @@ class DObjdumpLexer(DelegatingLexer):
     aliases = ['d-objdump']
     filenames = ['*.d-objdump']
     mimetypes = ['text/x-d-objdump']
+    url = 'https://www.gnu.org/software/binutils'
+    version_added = ''
 
     def __init__(self, **options):
         super().__init__(DLexer, ObjdumpLexer, **options)
@@ -192,6 +198,8 @@ class CppObjdumpLexer(DelegatingLexer):
     aliases = ['cpp-objdump', 'c++-objdumb', 'cxx-objdump']
     filenames = ['*.cpp-objdump', '*.c++-objdump', '*.cxx-objdump']
     mimetypes = ['text/x-cpp-objdump']
+    url = 'https://www.gnu.org/software/binutils'
+    version_added = ''
 
     def __init__(self, **options):
         super().__init__(CppLexer, ObjdumpLexer, **options)
@@ -205,6 +213,9 @@ class CObjdumpLexer(DelegatingLexer):
     aliases = ['c-objdump']
     filenames = ['*.c-objdump']
     mimetypes = ['text/x-c-objdump']
+    url = 'https://www.gnu.org/software/binutils'
+    version_added = ''
+
 
     def __init__(self, **options):
         super().__init__(CLexer, ObjdumpLexer, **options)
@@ -213,13 +224,13 @@ class CObjdumpLexer(DelegatingLexer):
 class HsailLexer(RegexLexer):
     """
     For HSAIL assembly code.
-
-    .. versionadded:: 2.2
     """
     name = 'HSAIL'
     aliases = ['hsail', 'hsa']
     filenames = ['*.hsail']
     mimetypes = ['text/x-hsail']
+    url = 'https://en.wikipedia.org/wiki/Heterogeneous_System_Architecture#HSA_Intermediate_Layer'
+    version_added = '2.2'
 
     string = r'"[^"]*?"'
     identifier = r'[a-zA-Z_][\w.]*'
@@ -354,6 +365,7 @@ class LlvmLexer(RegexLexer):
     aliases = ['llvm']
     filenames = ['*.ll']
     mimetypes = ['text/x-llvm']
+    version_added = ''
 
     #: optional Comment or Whitespace
     string = r'"[^"]*?"'
@@ -378,7 +390,7 @@ class LlvmLexer(RegexLexer):
             (r'!\d+', Name.Variable.Anonymous),
             (r'c?' + string, String),
 
-            (r'0[xX][a-fA-F0-9]+', Number),
+            (r'0[xX][KLMHR]?[a-fA-F0-9]+', Number),
             (r'-?\d+(?:[.]\d+)?(?:[eE][-+]?\d+(?:[.]\d+)?)?', Number),
 
             (r'[=<>{}\[\]()*.,!]|x\b', Punctuation)
@@ -453,24 +465,25 @@ class LlvmLexer(RegexLexer):
                 'singleImpl', 'singleImplName', 'sitofp', 'sizeM1',
                 'sizeM1BitWidth', 'sle', 'slt', 'source_filename',
                 'speculatable', 'speculative_load_hardening', 'spir_func',
-                'spir_kernel', 'srem', 'sret', 'ssp', 'sspreq', 'sspstrong',
-                'store', 'strictfp', 'sub', 'summaries', 'summary', 'swiftcc',
-                'swifterror', 'swiftself', 'switch', 'syncscope', 'tail',
-                'tailcc', 'target', 'thread_local', 'to', 'token', 'triple',
-                'true', 'trunc', 'type', 'typeCheckedLoadConstVCalls',
-                'typeCheckedLoadVCalls', 'typeid', 'typeidCompatibleVTable',
-                'typeIdInfo', 'typeTestAssumeConstVCalls',
-                'typeTestAssumeVCalls', 'typeTestRes', 'typeTests', 'udiv',
-                'ueq', 'uge', 'ugt', 'uitofp', 'ule', 'ult', 'umax', 'umin',
-                'undef', 'une', 'uniformRetVal', 'uniqueRetVal', 'unknown',
-                'unnamed_addr', 'uno', 'unordered', 'unreachable', 'unsat',
-                'unwind', 'urem', 'uselistorder', 'uselistorder_bb', 'uwtable',
-                'va_arg', 'varFlags', 'variable', 'vcall_visibility',
-                'vFuncId', 'virtFunc', 'virtualConstProp', 'void', 'volatile',
-                'vscale', 'vTableFuncs', 'weak', 'weak_odr', 'webkit_jscc',
-                'win64cc', 'within', 'wpdRes', 'wpdResolutions', 'writeonly',
-                'x', 'x86_64_sysvcc', 'x86_fastcallcc', 'x86_intrcc',
-                'x86_mmx', 'x86_regcallcc', 'x86_stdcallcc', 'x86_thiscallcc',
+                'spir_kernel', 'splat', 'srem', 'sret', 'ssp', 'sspreq',
+                'sspstrong', 'store', 'strictfp', 'sub', 'summaries',
+                'summary', 'swiftcc', 'swifterror', 'swiftself', 'switch',
+                'syncscope', 'tail', 'tailcc', 'target', 'thread_local', 'to',
+                'token', 'triple', 'true', 'trunc', 'type',
+                'typeCheckedLoadConstVCalls', 'typeCheckedLoadVCalls',
+                'typeid', 'typeidCompatibleVTable', 'typeIdInfo',
+                'typeTestAssumeConstVCalls', 'typeTestAssumeVCalls',
+                'typeTestRes', 'typeTests', 'udiv', 'ueq', 'uge', 'ugt',
+                'uitofp', 'ule', 'ult', 'umax', 'umin', 'undef', 'une',
+                'uniformRetVal', 'uniqueRetVal', 'unknown', 'unnamed_addr',
+                'uno', 'unordered', 'unreachable', 'unsat', 'unwind', 'urem',
+                'uselistorder', 'uselistorder_bb', 'uwtable', 'va_arg',
+                'varFlags', 'variable', 'vcall_visibility', 'vFuncId',
+                'virtFunc', 'virtualConstProp', 'void', 'volatile', 'vscale',
+                'vTableFuncs', 'weak', 'weak_odr', 'webkit_jscc', 'win64cc',
+                'within', 'wpdRes', 'wpdResolutions', 'writeonly', 'x',
+                'x86_64_sysvcc', 'x86_fastcallcc', 'x86_intrcc', 'x86_mmx',
+                'x86_regcallcc', 'x86_stdcallcc', 'x86_thiscallcc',
                 'x86_vectorcallcc', 'xchg', 'xor', 'zeroext',
                 'zeroinitializer', 'zext', 'immarg', 'willreturn'),
                 suffix=r'\b'), Keyword),
@@ -490,14 +503,13 @@ class LlvmLexer(RegexLexer):
 class LlvmMirBodyLexer(RegexLexer):
     """
     For LLVM MIR examples without the YAML wrapper.
-
-    .. versionadded:: 2.6
     """
     name = 'LLVM-MIR Body'
     url = 'https://llvm.org/docs/MIRLangRef.html'
     aliases = ['llvm-mir-body']
     filenames = []
     mimetypes = []
+    version_added = '2.6'
 
     tokens = {
         'root': [
@@ -635,13 +647,12 @@ class LlvmMirLexer(RegexLexer):
     machine specific intermediate representation. It allows LLVM's developers to
     see the state of the compilation process at various points, as well as test
     individual pieces of the compiler.
-
-    .. versionadded:: 2.6
     """
     name = 'LLVM-MIR'
     url = 'https://llvm.org/docs/MIRLangRef.html'
     aliases = ['llvm-mir']
     filenames = ['*.mir']
+    version_added = '2.6'
 
     tokens = {
         'root': [
@@ -715,6 +726,8 @@ class NasmLexer(RegexLexer):
     aliases = ['nasm']
     filenames = ['*.asm', '*.ASM', '*.nasm']
     mimetypes = ['text/x-nasm']
+    url = 'https://nasm.us'
+    version_added = ''
 
     # Tasm uses the same file endings, but TASM is not as common as NASM, so
     # we prioritize NASM higher by default
@@ -746,7 +759,7 @@ class NasmLexer(RegexLexer):
             (r'^\s*%', Comment.Preproc, 'preproc'),
             include('whitespace'),
             (identifier + ':', Name.Label),
-            (r'(%s)(\s+)(equ)' % identifier,
+            (rf'({identifier})(\s+)(equ)',
                 bygroups(Name.Constant, Whitespace, Keyword.Declaration),
                 'instruction-args'),
             (directives, Keyword, 'instruction-args'),
@@ -796,13 +809,13 @@ class NasmLexer(RegexLexer):
 class NasmObjdumpLexer(ObjdumpLexer):
     """
     For the output of ``objdump -d -M intel``.
-
-    .. versionadded:: 2.0
     """
     name = 'objdump-nasm'
     aliases = ['objdump-nasm']
     filenames = ['*.objdump-intel']
     mimetypes = ['text/x-nasm-objdump']
+    url = 'https://www.gnu.org/software/binutils'
+    version_added = '2.0'
 
     tokens = _objdump_lexer_tokens(NasmLexer)
 
@@ -815,6 +828,8 @@ class TasmLexer(RegexLexer):
     aliases = ['tasm']
     filenames = ['*.asm', '*.ASM', '*.tasm']
     mimetypes = ['text/x-tasm']
+    url = 'https://en.wikipedia.org/wiki/Turbo_Assembler'
+    version_added = ''
 
     identifier = r'[@a-z$._?][\w$.?#@~]*'
     hexn = r'(?:0x[0-9a-f]+|$0[0-9a-f]*|[0-9]+[0-9a-f]*h)'
@@ -844,7 +859,7 @@ class TasmLexer(RegexLexer):
             include('whitespace'),
             (identifier + ':', Name.Label),
             (directives, Keyword, 'instruction-args'),
-            (r'(%s)(\s+)(%s)' % (identifier, datatype),
+            (rf'({identifier})(\s+)({datatype})',
                 bygroups(Name.Constant, Whitespace, Keyword.Declaration),
                 'instruction-args'),
             (declkw, Keyword.Declaration, 'instruction-args'),
@@ -896,12 +911,12 @@ class TasmLexer(RegexLexer):
 class Ca65Lexer(RegexLexer):
     """
     For ca65 assembler sources.
-
-    .. versionadded:: 1.6
     """
     name = 'ca65 assembler'
     aliases = ['ca65']
     filenames = ['*.s']
+    url = 'https://cc65.github.io'
+    version_added = '1.6'
 
     flags = re.IGNORECASE
 
@@ -935,14 +950,13 @@ class Ca65Lexer(RegexLexer):
 class Dasm16Lexer(RegexLexer):
     """
     For DCPU-16 Assembly.
-
-    .. versionadded:: 2.4
     """
     name = 'DASM16'
     url = 'http://0x10c.com/doc/dcpu-16.txt'
     aliases = ['dasm16']
     filenames = ['*.dasm16', '*.dasm']
     mimetypes = ['text/x-dasm16']
+    version_added = '2.4'
 
     INSTRUCTIONS = [
         'SET',

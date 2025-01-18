@@ -6,7 +6,6 @@ try:  # pragma: no cover
     try:
         from sanic.server.protocols.websocket_protocol import WebSocketProtocol
     except ImportError:
-        print('yay')
         from sanic.websocket import WebSocketProtocol
 except ImportError:
     HTTPResponse = None
@@ -33,7 +32,7 @@ def translate_request(request):  # pragma: no cover
     """This function takes the arguments passed to the request handler and
     uses them to generate a WSGI compatible environ dictionary.
     """
-    class AwaitablePayload(object):
+    class AwaitablePayload:
         def __init__(self, payload):
             self.payload = payload or b''
 
@@ -78,7 +77,7 @@ def translate_request(request):  # pragma: no cover
 
         key = 'HTTP_%s' % hdr_name.replace('-', '_')
         if key in environ:
-            hdr_value = '%s,%s' % (environ[key], hdr_value)
+            hdr_value = f'{environ[key]},{hdr_value}'
 
         environ[key] = hdr_value
 
@@ -107,7 +106,7 @@ def make_response(status, headers, payload, environ):  # pragma: no cover
                         status=int(status.split()[0]), headers=headers_dict)
 
 
-class WebSocket(object):  # pragma: no cover
+class WebSocket:  # pragma: no cover
     """
     This wrapper class provides a sanic WebSocket interface that is
     somewhat compatible with eventlet's implementation.
@@ -136,7 +135,7 @@ class WebSocket(object):  # pragma: no cover
         data = await self._sock.recv()
         if not isinstance(data, bytes) and \
                 not isinstance(data, str):
-            raise IOError()
+            raise OSError()
         return data
 
 

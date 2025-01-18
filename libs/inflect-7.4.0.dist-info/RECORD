@@ -1,0 +1,11 @@
+inflect-7.4.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+inflect-7.4.0.dist-info/LICENSE,sha256=htoPAa6uRjSKPD1GUZXcHOzN55956HdppkuNoEsqR0E,1023
+inflect-7.4.0.dist-info/METADATA,sha256=MV9Pl_30VbIbBxTU6A6sw-H9g6caHnyx2OYY2ZP0Spg,21265
+inflect-7.4.0.dist-info/RECORD,,
+inflect-7.4.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+inflect-7.4.0.dist-info/WHEEL,sha256=P9jw-gEje8ByB7_hXoICnHtVCrEwMQh-630tKvQWehc,91
+inflect-7.4.0.dist-info/top_level.txt,sha256=m52ujdp10CqT6jh1XQxZT6kEntcnv-7Tl7UiGNTzWZA,8
+inflect/__init__.py,sha256=BsJ4xVkg2TcttXL0zl43ZAR55IOmj54XSddEuxyD2bc,103635
+inflect/compat/__init__.py,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+inflect/compat/py38.py,sha256=oObVfVnWX9_OpnOuEJn1mFbJxVhwyR5epbiTNXDDaso,160
+inflect/py.typed,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0

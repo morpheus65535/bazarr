@@ -19,6 +19,19 @@ class BaseServer:
     _default_monitor_clients = True
     sequence_number = 0
 
+    class reason:
+        """Disconnection reasons."""
+        #: Server-initiated disconnection.
+        SERVER_DISCONNECT = 'server disconnect'
+        #: Client-initiated disconnection.
+        CLIENT_DISCONNECT = 'client disconnect'
+        #: Ping timeout.
+        PING_TIMEOUT = 'ping timeout'
+        #: Transport close.
+        TRANSPORT_CLOSE = 'transport close'
+        #: Transport error.
+        TRANSPORT_ERROR = 'transport error'
+
     def __init__(self, async_mode=None, ping_interval=25, ping_timeout=20,
                  max_http_buffer_size=1000000, allow_upgrades=True,
                  http_compression=True, compression_threshold=1024,
