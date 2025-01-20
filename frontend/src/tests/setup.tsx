@@ -2,9 +2,20 @@
 
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { vitest } from "vitest";
+import { vi, vitest } from "vitest";
 import "@testing-library/jest-dom";
 import server from "./mocks/node";
+
+vi.mock("recharts", async () => {
+  const OriginalRechartsModule = await vi.importActual("recharts");
+
+  return {
+    ...OriginalRechartsModule,
+    ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
+      <div style={{ width: "100%", height: "100%" }}>{children}</div>
+    ),
+  };
+});
 
 // From https://stackoverflow.com/questions/39830580/jest-test-fails-typeerror-window-matchmedia-is-not-a-function
 Object.defineProperty(window, "matchMedia", {
