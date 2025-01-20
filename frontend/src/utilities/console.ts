@@ -6,6 +6,10 @@ import { isProdEnv } from ".";
 type LoggerType = "info" | "warning" | "error";
 
 export function LOG(type: LoggerType, msg: string, ...payload: any[]) {
+  if (import.meta.env.MODE === "test") {
+    return;
+  }
+
   if (!isProdEnv) {
     let logger = console.log;
     if (type === "warning") {
