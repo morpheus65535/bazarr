@@ -34,6 +34,7 @@ import SeriesMassEditor from "@/pages/Series/Editor";
 import SettingsGeneralView from "@/pages/Settings/General";
 import SettingsLanguagesView from "@/pages/Settings/Languages";
 import SettingsNotificationsView from "@/pages/Settings/Notifications";
+import SettingsPlexView from "@/pages/Settings/Plex";
 import SettingsProvidersView from "@/pages/Settings/Providers";
 import SettingsRadarrView from "@/pages/Settings/Radarr";
 import SettingsSchedulerView from "@/pages/Settings/Scheduler";
@@ -221,6 +222,11 @@ function useRoutes(): CustomRouteObject[] {
                 path: "radarr",
                 name: "Radarr",
                 element: <SettingsRadarrView></SettingsRadarrView>,
+              },
+              {
+                path: "plex",
+                name: "Plex",
+                element: <SettingsPlexView></SettingsPlexView>,
               },
               {
                 path: "notifications",

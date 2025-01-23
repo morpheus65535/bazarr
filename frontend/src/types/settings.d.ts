@@ -173,6 +173,15 @@ declare namespace Settings {
     excluded_tags: string[];
   }
 
+  interface Plex {
+    ip: string;
+    port: number;
+    apikey?: string;
+    ssl?: boolean;
+    set_added?: boolean;
+    movie_library?: string;
+  }
+
   interface Anticaptcha {
     anti_captcha_key?: string;
   }
