@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2021, Brandon Nielsen
+# Copyright (c) 2025, Brandon Nielsen
 # All rights reserved.
 #
 # This software may be modified and distributed under the terms
@@ -51,7 +51,7 @@ class UTCOffset(datetime.tzinfo):
 
         if correcteddays == 0:
             return "-{0}:{1:02}:{2:02} UTC".format(hours, minutes, seconds)
-        elif correcteddays == 1:
+        if correcteddays == 1:
             return "-1 day, {0}:{1:02}:{2:02} UTC".format(hours, minutes, seconds)
 
         return "-{0} days, {1}:{2:02}:{3:02} UTC".format(

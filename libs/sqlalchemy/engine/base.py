@@ -1,5 +1,5 @@
 # engine/base.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -109,6 +109,7 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
 
     """
 
+    dialect: Dialect
     dispatch: dispatcher[ConnectionEventsTarget]
 
     _sqla_logger_namespace = "sqlalchemy.engine.Connection"
@@ -173,13 +174,9 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
         if self._has_events or self.engine._has_events:
             self.dispatch.engine_connect(self)
 
-    @util.memoized_property
-    def _message_formatter(self) -> Any:
-        if "logging_token" in self._execution_options:
-            token = self._execution_options["logging_token"]
-            return lambda msg: "[%s] %s" % (token, msg)
-        else:
-            return None
+    # this can be assigned differently via
+    # characteristics.LoggingTokenCharacteristic
+    _message_formatter: Any = None
 
     def _log_info(self, message: str, *arg: Any, **kw: Any) -> None:
         fmt = self._message_formatter
@@ -250,6 +247,7 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
         yield_per: int = ...,
         insertmanyvalues_page_size: int = ...,
         schema_translate_map: Optional[SchemaTranslateMapType] = ...,
+        preserve_rowcount: bool = False,
         **opt: Any,
     ) -> Connection: ...
 
@@ -380,12 +378,11 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
         :param stream_results: Available on: :class:`_engine.Connection`,
           :class:`_sql.Executable`.
 
-          Indicate to the dialect that results should be
-          "streamed" and not pre-buffered, if possible.  For backends
-          such as PostgreSQL, MySQL and MariaDB, this indicates the use of
-          a "server side cursor" as opposed to a client side cursor.
-          Other backends such as that of Oracle may already use server
-          side cursors by default.
+          Indicate to the dialect that results should be "streamed" and not
+          pre-buffered, if possible.  For backends such as PostgreSQL, MySQL
+          and MariaDB, this indicates the use of a "server side cursor" as
+          opposed to a client side cursor.  Other backends such as that of
+          Oracle Database may already use server side cursors by default.
 
           The usage of
           :paramref:`_engine.Connection.execution_options.stream_results` is
@@ -489,6 +486,18 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
           .. seealso::
 
             :ref:`schema_translating`
+
+        :param preserve_rowcount: Boolean; when True, the ``cursor.rowcount``
+          attribute will be unconditionally memoized within the result and
+          made available via the :attr:`.CursorResult.rowcount` attribute.
+          Normally, this attribute is only preserved for UPDATE and DELETE
+          statements.  Using this option, the DBAPIs rowcount value can
+          be accessed for other kinds of statements such as INSERT and SELECT,
+          to the degree that the DBAPI supports these statements.  See
+          :attr:`.CursorResult.rowcount` for notes regarding the behavior
+          of this attribute.
+
+          .. versionadded:: 2.0.28
 
         .. seealso::
 
@@ -791,7 +800,6 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
                 with conn.begin() as trans:
                     conn.execute(table.insert(), {"username": "sandy"})
 
-
         The returned object is an instance of :class:`_engine.RootTransaction`.
         This object represents the "scope" of the transaction,
         which completes when either the :meth:`_engine.Transaction.rollback`
@@ -897,7 +905,7 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
                     trans.rollback()  # rollback to savepoint
 
                 # outer transaction continues
-                connection.execute( ... )
+                connection.execute(...)
 
         If :meth:`_engine.Connection.begin_nested` is called without first
         calling :meth:`_engine.Connection.begin` or
@@ -907,11 +915,11 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
 
             with engine.connect() as connection:  # begin() wasn't called
 
-                with connection.begin_nested(): will auto-"begin()" first
-                    connection.execute( ... )
+                with connection.begin_nested():  # will auto-"begin()" first
+                    connection.execute(...)
                 # savepoint is released
 
-                connection.execute( ... )
+                connection.execute(...)
 
                 # explicitly commit outer transaction
                 connection.commit()
@@ -1728,21 +1736,20 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
 
              conn.exec_driver_sql(
                  "INSERT INTO table (id, value) VALUES (%(id)s, %(value)s)",
-                 [{"id":1, "value":"v1"}, {"id":2, "value":"v2"}]
+                 [{"id": 1, "value": "v1"}, {"id": 2, "value": "v2"}],
              )
 
          Single dictionary::
 
              conn.exec_driver_sql(
                  "INSERT INTO table (id, value) VALUES (%(id)s, %(value)s)",
-                 dict(id=1, value="v1")
+                 dict(id=1, value="v1"),
              )
 
          Single tuple::
 
              conn.exec_driver_sql(
-                 "INSERT INTO table (id, value) VALUES (?, ?)",
-                 (1, 'v1')
+                 "INSERT INTO table (id, value) VALUES (?, ?)", (1, "v1")
              )
 
          .. note:: The :meth:`_engine.Connection.exec_driver_sql` method does
@@ -1831,10 +1838,7 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
         context.pre_exec()
 
         if context.execute_style is ExecuteStyle.INSERTMANYVALUES:
-            return self._exec_insertmany_context(
-                dialect,
-                context,
-            )
+            return self._exec_insertmany_context(dialect, context)
         else:
             return self._exec_single_context(
                 dialect, context, statement, parameters
@@ -2018,7 +2022,13 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
         if self._echo:
             stats = context._get_cache_stats() + " (insertmanyvalues)"
 
+        preserve_rowcount = context.execution_options.get(
+            "preserve_rowcount", False
+        )
+        rowcount = 0
+
         for imv_batch in dialect._deliver_insertmanyvalues_batches(
+            self,
             cursor,
             str_statement,
             effective_parameters,
@@ -2039,6 +2049,7 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
                         imv_batch.replaced_parameters,
                         None,
                         context,
+                        is_sub_exec=True,
                     )
 
             sub_stmt = imv_batch.replaced_statement
@@ -2128,8 +2139,14 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
                     context.executemany,
                 )
 
+            if preserve_rowcount:
+                rowcount += imv_batch.current_batch_size
+
         try:
             context.post_exec()
+
+            if preserve_rowcount:
+                context._rowcount = rowcount  # type: ignore[attr-defined]
 
             result = context._setup_result_proxy()
 
@@ -2494,6 +2511,7 @@ class Transaction(TransactionalContext):
     :class:`_engine.Connection`::
 
         from sqlalchemy import create_engine
+
         engine = create_engine("postgresql+psycopg2://scott:tiger@localhost/test")
         connection = engine.connect()
         trans = connection.begin()
@@ -3071,10 +3089,10 @@ class Engine(
 
             shards = {"default": "base", "shard_1": "db1", "shard_2": "db2"}
 
+
             @event.listens_for(Engine, "before_cursor_execute")
-            def _switch_shard(conn, cursor, stmt,
-                    params, context, executemany):
-                shard_id = conn.get_execution_options().get('shard_id', "default")
+            def _switch_shard(conn, cursor, stmt, params, context, executemany):
+                shard_id = conn.get_execution_options().get("shard_id", "default")
                 current_shard = conn.info.get("current_shard", None)
 
                 if current_shard != shard_id:
@@ -3200,9 +3218,7 @@ class Engine(
         E.g.::
 
             with engine.begin() as conn:
-                conn.execute(
-                    text("insert into table (x, y, z) values (1, 2, 3)")
-                )
+                conn.execute(text("insert into table (x, y, z) values (1, 2, 3)"))
                 conn.execute(text("my_special_procedure(5)"))
 
         Upon successful operation, the :class:`.Transaction`
@@ -3218,7 +3234,7 @@ class Engine(
             :meth:`_engine.Connection.begin` - start a :class:`.Transaction`
             for a particular :class:`_engine.Connection`.
 
-        """
+        """  # noqa: E501
         with self.connect() as conn:
             with conn.begin():
                 yield conn

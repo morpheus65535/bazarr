@@ -1,5 +1,5 @@
 import { FunctionComponent, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Anchor, Text } from "@mantine/core";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { ColumnDef } from "@tanstack/react-table";

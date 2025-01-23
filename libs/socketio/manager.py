@@ -20,9 +20,10 @@ class Manager(base_manager.BaseManager):
         return self.is_connected(sid, namespace)
 
     def emit(self, event, data, namespace, room=None, skip_sid=None,
-             callback=None, **kwargs):
+             callback=None, to=None, **kwargs):
         """Emit a message to a single client, a room, or all the clients
         connected to the namespace."""
+        room = to or room
         if namespace not in self.rooms:
             return
         if isinstance(data, tuple):

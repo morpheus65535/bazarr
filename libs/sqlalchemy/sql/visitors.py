@@ -1,5 +1,5 @@
 # sql/visitors.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -934,10 +934,12 @@ def traverse(
 
         from sqlalchemy.sql import visitors
 
-        stmt = select(some_table).where(some_table.c.foo == 'bar')
+        stmt = select(some_table).where(some_table.c.foo == "bar")
+
 
         def visit_bindparam(bind_param):
             print("found bound value: %s" % bind_param.value)
+
 
         visitors.traverse(stmt, {}, {"bindparam": visit_bindparam})
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2021, Brandon Nielsen
+# Copyright (c) 2025, Brandon Nielsen
 # All rights reserved.
 #
 # This software may be modified and distributed under the terms
@@ -23,4 +23,4 @@ from aniso8601.time import (
     parse_time,
 )
 
-__version__ = "9.0.1"
+__version__ = "10.0.0"

@@ -1,5 +1,5 @@
 # dialects/mysql/dml.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from typing import Any
+from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
@@ -141,7 +142,11 @@ class Insert(StandardInsert):
          in :ref:`tutorial_parameter_ordered_updates`::
 
             insert().on_duplicate_key_update(
-                [("name", "some name"), ("value", "some value")])
+                [
+                    ("name", "some name"),
+                    ("value", "some value"),
+                ]
+            )
 
          .. versionchanged:: 1.3 parameters can be specified as a dictionary
             or list of 2-tuples; the latter form provides for parameter
@@ -181,6 +186,7 @@ class OnDuplicateClause(ClauseElement):
 
     _parameter_ordering: Optional[List[str]] = None
 
+    update: Dict[str, Any]
     stringify_dialect = "mysql"
 
     def __init__(

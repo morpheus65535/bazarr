@@ -1,5 +1,5 @@
 # ext/associationproxy.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -98,6 +98,7 @@ def association_proxy(
     default_factory: Union[_NoArg, Callable[[], _T]] = _NoArg.NO_ARG,
     compare: Union[_NoArg, bool] = _NoArg.NO_ARG,
     kw_only: Union[_NoArg, bool] = _NoArg.NO_ARG,
+    hash: Union[_NoArg, bool, None] = _NoArg.NO_ARG,  # noqa: A002
 ) -> AssociationProxy[Any]:
     r"""Return a Python property implementing a view of a target
     attribute which references an attribute on members of the
@@ -198,6 +199,13 @@ def association_proxy(
 
      .. versionadded:: 2.0.0b4
 
+    :param hash: Specific to
+     :ref:`orm_declarative_native_dataclasses`, controls if this field
+     is included when generating the ``__hash__()`` method for the mapped
+     class.
+
+     .. versionadded:: 2.0.36
+
     :param info: optional, will be assigned to
      :attr:`.AssociationProxy.info` if present.
 
@@ -237,7 +245,7 @@ def association_proxy(
         cascade_scalar_deletes=cascade_scalar_deletes,
         create_on_none_assignment=create_on_none_assignment,
         attribute_options=_AttributeOptions(
-            init, repr, default, default_factory, compare, kw_only
+            init, repr, default, default_factory, compare, kw_only, hash
         ),
     )
 
@@ -450,7 +458,7 @@ class AssociationProxy(
             class User(Base):
                 # ...
 
-                keywords = association_proxy('kws', 'keyword')
+                keywords = association_proxy("kws", "keyword")
 
         If we access this :class:`.AssociationProxy` from
         :attr:`_orm.Mapper.all_orm_descriptors`, and we want to view the
@@ -770,9 +778,9 @@ class AssociationProxyInstance(SQLORMOperations[_T]):
         :attr:`.AssociationProxyInstance.remote_attr` attributes separately::
 
             stmt = (
-                select(Parent).
-                join(Parent.proxied.local_attr).
-                join(Parent.proxied.remote_attr)
+                select(Parent)
+                .join(Parent.proxied.local_attr)
+                .join(Parent.proxied.remote_attr)
             )
 
         A future release may seek to provide a more succinct join pattern

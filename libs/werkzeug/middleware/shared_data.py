@@ -8,8 +8,10 @@ Serve Shared Static Files
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+
 from __future__ import annotations
 
+import collections.abc as cabc
 import importlib.util
 import mimetypes
 import os
@@ -38,7 +40,6 @@ if t.TYPE_CHECKING:
 
 
 class SharedDataMiddleware:
-
     """A WSGI middleware which provides static content for development
     environments or simple server setups. Its usage is quite simple::
 
@@ -103,7 +104,7 @@ class SharedDataMiddleware:
         self,
         app: WSGIApplication,
         exports: (
-            dict[str, str | tuple[str, str]]
+            cabc.Mapping[str, str | tuple[str, str]]
             | t.Iterable[tuple[str, str | tuple[str, str]]]
         ),
         disallow: None = None,
@@ -116,7 +117,7 @@ class SharedDataMiddleware:
         self.cache = cache
         self.cache_timeout = cache_timeout
 
-        if isinstance(exports, dict):
+        if isinstance(exports, cabc.Mapping):
             exports = exports.items()
 
         for key, value in exports:
@@ -218,9 +219,9 @@ class SharedDataMiddleware:
         return loader
 
     def generate_etag(self, mtime: datetime, file_size: int, real_filename: str) -> str:
-        real_filename = os.fsencode(real_filename)
+        fn_str = os.fsencode(real_filename)
         timestamp = mtime.timestamp()
-        checksum = adler32(real_filename) & 0xFFFFFFFF
+        checksum = adler32(fn_str) & 0xFFFFFFFF
         return f"wzsdm-{timestamp}-{file_size}-{checksum}"
 
     def __call__(

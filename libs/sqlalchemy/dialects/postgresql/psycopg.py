@@ -1,5 +1,5 @@
 # dialects/postgresql/psycopg.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -29,20 +29,29 @@ selected depending on how the engine is created:
   automatically select the sync version, e.g.::
 
     from sqlalchemy import create_engine
-    sync_engine = create_engine("postgresql+psycopg://scott:tiger@localhost/test")
+
+    sync_engine = create_engine(
+        "postgresql+psycopg://scott:tiger@localhost/test"
+    )
 
 * calling :func:`_asyncio.create_async_engine` with
   ``postgresql+psycopg://...`` will automatically select the async version,
   e.g.::
 
     from sqlalchemy.ext.asyncio import create_async_engine
-    asyncio_engine = create_async_engine("postgresql+psycopg://scott:tiger@localhost/test")
+
+    asyncio_engine = create_async_engine(
+        "postgresql+psycopg://scott:tiger@localhost/test"
+    )
 
 The asyncio version of the dialect may also be specified explicitly using the
 ``psycopg_async`` suffix, as::
 
     from sqlalchemy.ext.asyncio import create_async_engine
-    asyncio_engine = create_async_engine("postgresql+psycopg_async://scott:tiger@localhost/test")
+
+    asyncio_engine = create_async_engine(
+        "postgresql+psycopg_async://scott:tiger@localhost/test"
+    )
 
 .. seealso::
 
@@ -50,9 +59,42 @@ The asyncio version of the dialect may also be specified explicitly using the
     dialect shares most of its behavior with the ``psycopg2`` dialect.
     Further documentation is available there.
 
+Using a different Cursor class
+------------------------------
+
+One of the differences between ``psycopg`` and the older ``psycopg2``
+is how bound parameters are handled: ``psycopg2`` would bind them
+client side, while ``psycopg`` by default will bind them server side.
+
+It's possible to configure ``psycopg`` to do client side binding by
+specifying the ``cursor_factory`` to be ``ClientCursor`` when creating
+the engine::
+
+    from psycopg import ClientCursor
+
+    client_side_engine = create_engine(
+        "postgresql+psycopg://...",
+        connect_args={"cursor_factory": ClientCursor},
+    )
+
+Similarly when using an async engine the ``AsyncClientCursor`` can be
+specified::
+
+    from psycopg import AsyncClientCursor
+
+    client_side_engine = create_async_engine(
+        "postgresql+psycopg://...",
+        connect_args={"cursor_factory": AsyncClientCursor},
+    )
+
+.. seealso::
+
+    `Client-side-binding cursors <https://www.psycopg.org/psycopg3/docs/advanced/cursors.html#client-side-binding-cursors>`_
+
 """  # noqa
 from __future__ import annotations
 
+from collections import deque
 import logging
 import re
 from typing import cast
@@ -93,8 +135,6 @@ class _PGREGCONFIG(REGCONFIG):
 
 
 class _PGJSON(JSON):
-    render_bind_cast = True
-
     def bind_processor(self, dialect):
         return self._make_bind_processor(None, dialect._psycopg_Json)
 
@@ -103,8 +143,6 @@ class _PGJSON(JSON):
 
 
 class _PGJSONB(JSONB):
-    render_bind_cast = True
-
     def bind_processor(self, dialect):
         return self._make_bind_processor(None, dialect._psycopg_Jsonb)
 
@@ -368,10 +406,12 @@ class PGDialect_psycopg(_PGDialect_common_psycopg):
 
                 # register the adapter for connections made subsequent to
                 # this one
+                assert self._psycopg_adapters_map
                 register_hstore(info, self._psycopg_adapters_map)
 
                 # register the adapter for this connection
-                register_hstore(info, connection.connection)
+                assert connection.connection
+                register_hstore(info, connection.connection.driver_connection)
 
     @classmethod
     def import_dbapi(cls):
@@ -532,7 +572,7 @@ class AsyncAdapt_psycopg_cursor:
     def __init__(self, cursor, await_) -> None:
         self._cursor = cursor
         self.await_ = await_
-        self._rows = []
+        self._rows = deque()
 
     def __getattr__(self, name):
         return getattr(self._cursor, name)
@@ -559,24 +599,19 @@ class AsyncAdapt_psycopg_cursor:
         # eq/ne
         if res and res.status == self._psycopg_ExecStatus.TUPLES_OK:
             rows = self.await_(self._cursor.fetchall())
-            if not isinstance(rows, list):
-                self._rows = list(rows)
-            else:
-                self._rows = rows
+            self._rows = deque(rows)
         return result
 
     def executemany(self, query, params_seq):
         return self.await_(self._cursor.executemany(query, params_seq))
 
     def __iter__(self):
-        # TODO: try to avoid pop(0) on a list
         while self._rows:
-            yield self._rows.pop(0)
+            yield self._rows.popleft()
 
     def fetchone(self):
         if self._rows:
-            # TODO: try to avoid pop(0) on a list
-            return self._rows.pop(0)
+            return self._rows.popleft()
         else:
             return None
 
@@ -584,13 +619,12 @@ class AsyncAdapt_psycopg_cursor:
         if size is None:
             size = self._cursor.arraysize
 
-        retval = self._rows[0:size]
-        self._rows = self._rows[size:]
-        return retval
+        rr = self._rows
+        return [rr.popleft() for _ in range(min(size, len(rr)))]
 
     def fetchall(self):
-        retval = self._rows
-        self._rows = []
+        retval = list(self._rows)
+        self._rows.clear()
         return retval
 
 

@@ -3,6 +3,8 @@ import logging
 import signal
 import threading
 
+import engineio
+
 from . import base_namespace
 from . import packet
 
@@ -31,6 +33,7 @@ original_signal_handler = None
 class BaseClient:
     reserved_events = ['connect', 'connect_error', 'disconnect',
                        '__disconnect_final']
+    reason = engineio.Client.reason
 
     def __init__(self, reconnection=True, reconnection_attempts=0,
                  reconnection_delay=1, reconnection_delay_max=5,
@@ -285,7 +288,7 @@ class BaseClient:
     def _handle_eio_message(self, data):  # pragma: no cover
         raise NotImplementedError()
 
-    def _handle_eio_disconnect(self):  # pragma: no cover
+    def _handle_eio_disconnect(self, reason):  # pragma: no cover
         raise NotImplementedError()
 
     def _engineio_client_class(self):  # pragma: no cover

@@ -57,8 +57,7 @@ class KafkaManager(PubSubManager):  # pragma: no cover
         self.producer.flush()
 
     def _kafka_listen(self):
-        for message in self.consumer:
-            yield message
+        yield from self.consumer
 
     def _listen(self):
         for message in self._kafka_listen():

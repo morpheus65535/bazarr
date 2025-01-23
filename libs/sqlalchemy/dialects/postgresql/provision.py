@@ -1,5 +1,5 @@
 # dialects/postgresql/provision.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -97,7 +97,7 @@ def drop_all_schema_objects_pre_tables(cfg, eng):
         for xid in conn.exec_driver_sql(
             "select gid from pg_prepared_xacts"
         ).scalars():
-            conn.execute("ROLLBACK PREPARED '%s'" % xid)
+            conn.exec_driver_sql("ROLLBACK PREPARED '%s'" % xid)
 
 
 @drop_all_schema_objects_post_tables.for_db("postgresql")

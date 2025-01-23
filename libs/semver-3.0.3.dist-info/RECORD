@@ -1,0 +1,17 @@
+../../bin/pysemver,sha256=T_UCyWjf8mX-i7Yu0yebC7wo7V50JeJbv-9n9YAeQ-M,232
+semver-3.0.3.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+semver-3.0.3.dist-info/LICENSE.txt,sha256=zBAXnenO2GVdd2W9OorEZDimHmY9588cSNUC0rr589U,1499
+semver-3.0.3.dist-info/METADATA,sha256=Ef24P39KoAY1-_E45BgQyIbVSsf5h5SHWdoEIMeTeno,6777
+semver-3.0.3.dist-info/RECORD,,
+semver-3.0.3.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+semver-3.0.3.dist-info/WHEEL,sha256=P9jw-gEje8ByB7_hXoICnHtVCrEwMQh-630tKvQWehc,91
+semver-3.0.3.dist-info/entry_points.txt,sha256=QsWAwfEwq2bdJmY8lmGFjnvA1gi8_tHqQRZTyxr9CIg,45
+semver-3.0.3.dist-info/top_level.txt,sha256=oFJ1J3NJzsV1x-L91Xz4FBlYpVqO-Cr4UEfj-hGvqq0,7
+semver/__about__.py,sha256=lBkzYrR2i_6yRSVyQgNmsnlJMFs6h2k_IIrEqpZ9EF0,815
+semver/__init__.py,sha256=RRBj6kuuYaCY5B9gLxwE0h7meBwurYEbfQZnv7t1kKM,1269
+semver/__main__.py,sha256=msULq4Lb0AV8K4rulhm0FzzJO8oMCv52GjcTG2t8iws,593
+semver/_deprecated.py,sha256=OOX-AeaY-QqJK2gQGE8pdJExh_13TP-9ASZAkgqCmt4,11273
+semver/_types.py,sha256=-AfazZgnmmMe7WthSx_M-w1BCnq2dPFmysjmtTOm1oc,422
+semver/cli.py,sha256=HwvpnqcN95G3OINU4cLgouRHCtWhRsuKghfhPWtGOew,5189
+semver/py.typed,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+semver/version.py,sha256=jpY4CRicE6pD0H-adnnEqQ-mjRkRtMY9XSPt6tneaL8,24041

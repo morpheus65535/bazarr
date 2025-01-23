@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { faList } from "@fortawesome/free-solid-svg-icons";
 import { ColumnDef } from "@tanstack/react-table";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";

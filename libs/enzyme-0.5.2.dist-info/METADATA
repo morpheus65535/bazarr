@@ -1,0 +1,70 @@
+Metadata-Version: 2.1
+Name: enzyme
+Version: 0.5.2
+Summary: Video metadata parser
+Author-email: Antoine Bertin <ant.bertin@gmail.com>
+Maintainer-email: Antoine Bertin <ant.bertin@gmail.com>
+License: MIT
+Project-URL: homepage, https://github.com/Diaoul/enzyme
+Project-URL: repository, https://github.com/Diaoul/enzyme
+Project-URL: documentation, https://enzyme.readthedocs.org
+Keywords: video,metadata,parser,mkv,matroska,ebml
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Multimedia :: Video
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: importlib-resources >=4.6 ; python_version == "3.8"
+Provides-Extra: dev
+Requires-Dist: doc8 ; extra == 'dev'
+Requires-Dist: mypy ; extra == 'dev'
+Requires-Dist: ruff ; extra == 'dev'
+Requires-Dist: typos ; extra == 'dev'
+Requires-Dist: validate-pyproject ; extra == 'dev'
+Requires-Dist: tox ; extra == 'dev'
+Provides-Extra: docs
+Requires-Dist: sphinx ; extra == 'docs'
+Requires-Dist: sphinx-rtd-theme ; extra == 'docs'
+Requires-Dist: myst-parser ; extra == 'docs'
+Provides-Extra: test
+Requires-Dist: PyYAML ; extra == 'test'
+Requires-Dist: requests ; extra == 'test'
+Requires-Dist: mypy ; extra == 'test'
+Requires-Dist: pytest >=6.0 ; extra == 'test'
+Requires-Dist: importlib-metadata >=4.6 ; (python_version < "3.10") and extra == 'test'
+
+# Enzyme
+
+Enzyme is a Python module to parse video metadata.
+
+## Usage
+
+Parse a MKV file metadata:
+
+```python
+>>> import enzyme
+>>> with open('example.mkv', 'rb') as f:
+...     mkv = enzyme.MKV(f)
+...
+>>> mkv.info
+<Info [title=None, duration=0:00:01.440000, date=2015-03-14 08:40:16]>
+>>> mkv.video_tracks
+[<VideoTrack [2, 720x576, V_DIRAC, name=u'Video\x00', language=None]>]
+>>> mkv.audio_tracks
+[<AudioTrack [1, 2 channel(s), 44100Hz, A_MS/ACM, name=u'Audio\x00', language=None]>]
+```
+
+## License
+
+Enzyme is licensed under the MIT license.

@@ -1,4 +1,5 @@
 """Extension API for adding custom tags and behavior."""
+
 import pprint
 import re
 import typing as t
@@ -18,23 +19,23 @@ from .utils import pass_context
 
 if t.TYPE_CHECKING:
     import typing_extensions as te
+
     from .lexer import Token
     from .lexer import TokenStream
     from .parser import Parser
 
     class _TranslationsBasic(te.Protocol):
-        def gettext(self, message: str) -> str:
-            ...
+        def gettext(self, message: str) -> str: ...
 
         def ngettext(self, singular: str, plural: str, n: int) -> str:
             pass
 
     class _TranslationsContext(_TranslationsBasic):
-        def pgettext(self, context: str, message: str) -> str:
-            ...
+        def pgettext(self, context: str, message: str) -> str: ...
 
-        def npgettext(self, context: str, singular: str, plural: str, n: int) -> str:
-            ...
+        def npgettext(
+            self, context: str, singular: str, plural: str, n: int
+        ) -> str: ...
 
     _SupportedTranslations = t.Union[_TranslationsBasic, _TranslationsContext]
 
@@ -88,7 +89,7 @@ class Extension:
     def __init__(self, environment: Environment) -> None:
         self.environment = environment
 
-    def bind(self, environment: Environment) -> "Extension":
+    def bind(self, environment: Environment) -> "te.Self":
         """Create a copy of this extension bound to another environment."""
         rv = object.__new__(self.__class__)
         rv.__dict__.update(self.__dict__)
@@ -218,7 +219,7 @@ def _make_new_pgettext(func: t.Callable[[str, str], str]) -> t.Callable[..., str
 
 
 def _make_new_npgettext(
-    func: t.Callable[[str, str, str, int], str]
+    func: t.Callable[[str, str, str, int], str],
 ) -> t.Callable[..., str]:
     @pass_context
     def npgettext(
@@ -294,14 +295,14 @@ class InternationalizationExtension(Extension):
             pgettext = translations.pgettext
         else:
 
-            def pgettext(c: str, s: str) -> str:
+            def pgettext(c: str, s: str) -> str:  # type: ignore[misc]
                 return s
 
         if hasattr(translations, "npgettext"):
             npgettext = translations.npgettext
         else:
 
-            def npgettext(c: str, s: str, p: str, n: int) -> str:
+            def npgettext(c: str, s: str, p: str, n: int) -> str:  # type: ignore[misc]
                 return s if n == 1 else p
 
         self._install_callables(

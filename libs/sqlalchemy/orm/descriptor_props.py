@@ -1,5 +1,5 @@
 # orm/descriptor_props.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -53,9 +53,10 @@ from .. import util
 from ..sql import expression
 from ..sql import operators
 from ..sql.elements import BindParameter
+from ..util.typing import get_args
 from ..util.typing import is_fwd_ref
 from ..util.typing import is_pep593
-from ..util.typing import typing_get_args
+
 
 if typing.TYPE_CHECKING:
     from ._typing import _InstanceDict
@@ -364,7 +365,7 @@ class CompositeProperty(
         argument = extracted_mapped_annotation
 
         if is_pep593(argument):
-            argument = typing_get_args(argument)[0]
+            argument = get_args(argument)[0]
 
         if argument and self.composite_class is None:
             if isinstance(argument, str) or is_fwd_ref(
@@ -781,7 +782,9 @@ class CompositeProperty(
             elif isinstance(self.prop.composite_class, type) and isinstance(
                 value, self.prop.composite_class
             ):
-                values = self.prop._composite_values_from_instance(value)
+                values = self.prop._composite_values_from_instance(
+                    value  # type: ignore[arg-type]
+                )
             else:
                 raise sa_exc.ArgumentError(
                     "Can't UPDATE composite attribute %s to %r"

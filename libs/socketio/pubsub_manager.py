@@ -37,7 +37,7 @@ class PubSubManager(Manager):
         self._get_logger().info(self.name + ' backend initialized.')
 
     def emit(self, event, data, namespace=None, room=None, skip_sid=None,
-             callback=None, **kwargs):
+             callback=None, to=None, **kwargs):
         """Emit a message to a single client, a room, or all the clients
         connected to the namespace.
 
@@ -46,6 +46,7 @@ class PubSubManager(Manager):
 
         The parameters are the same as in :meth:`.Server.emit`.
         """
+        room = to or room
         if kwargs.get('ignore_queue'):
             return super().emit(
                 event, data, namespace=namespace, room=room, skip_sid=skip_sid,

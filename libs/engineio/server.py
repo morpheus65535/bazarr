@@ -148,7 +148,7 @@ class Server(base_server.BaseServer):
                 with eio.session(sid) as session:
                     print('received message from ', session['username'])
         """
-        class _session_context_manager(object):
+        class _session_context_manager:
             def __init__(self, server, sid):
                 self.server = server
                 self.sid = sid
@@ -176,12 +176,12 @@ class Server(base_server.BaseServer):
                 # the socket was already closed or gone
                 pass
             else:
-                socket.close()
+                socket.close(reason=self.reason.SERVER_DISCONNECT)
                 if sid in self.sockets:  # pragma: no cover
                     del self.sockets[sid]
         else:
-            for client in self.sockets.values():
-                client.close()
+            for client in self.sockets.copy().values():
+                client.close(reason=self.reason.SERVER_DISCONNECT)
             self.sockets = {}
 
     def handle_request(self, environ, start_response):
@@ -251,11 +251,11 @@ class Server(base_server.BaseServer):
                                  'bad-jsonp-index')
             r = self._bad_request('Invalid JSONP index number')
         elif method == 'GET':
+            upgrade_header = environ.get('HTTP_UPGRADE').lower() \
+                if 'HTTP_UPGRADE' in environ else None
             if sid is None:
                 # transport must be one of 'polling' or 'websocket'.
                 # if 'websocket', the HTTP_UPGRADE header must match.
-                upgrade_header = environ.get('HTTP_UPGRADE').lower() \
-                    if 'HTTP_UPGRADE' in environ else None
                 if transport == 'polling' \
                         or transport == upgrade_header == 'websocket':
                     r = self._handle_connect(environ, start_response,
@@ -266,28 +266,41 @@ class Server(base_server.BaseServer):
                     r = self._bad_request('Invalid websocket upgrade')
             else:
                 if sid not in self.sockets:
-                    self._log_error_once('Invalid session ' + sid, 'bad-sid')
-                    r = self._bad_request('Invalid session')
+                    self._log_error_once(f'Invalid session {sid}', 'bad-sid')
+                    r = self._bad_request(f'Invalid session {sid}')
                 else:
-                    socket = self._get_socket(sid)
                     try:
-                        packets = socket.handle_get_request(
-                            environ, start_response)
-                        if isinstance(packets, list):
-                            r = self._ok(packets, jsonp_index=jsonp_index)
+                        socket = self._get_socket(sid)
+                    except KeyError as e:  # pragma: no cover
+                        self._log_error_once(f'{e} {sid}', 'bad-sid')
+                        r = self._bad_request(f'{e} {sid}')
+                    else:
+                        if self.transport(sid) != transport and \
+                                transport != upgrade_header:
+                            self._log_error_once(
+                                f'Invalid transport for session {sid}',
+                                'bad-transport')
+                            r = self._bad_request('Invalid transport')
                         else:
-                            r = packets
-                    except exceptions.EngineIOError:
-                        if sid in self.sockets:  # pragma: no cover
-                            self.disconnect(sid)
-                        r = self._bad_request()
-                    if sid in self.sockets and self.sockets[sid].closed:
-                        del self.sockets[sid]
+                            try:
+                                packets = socket.handle_get_request(
+                                    environ, start_response)
+                                if isinstance(packets, list):
+                                    r = self._ok(packets,
+                                                 jsonp_index=jsonp_index)
+                                else:
+                                    r = packets
+                            except exceptions.EngineIOError:
+                                if sid in self.sockets:  # pragma: no cover
+                                    self.disconnect(sid)
+                                r = self._bad_request()
+                            if sid in self.sockets and \
+                                    self.sockets[sid].closed:
+                                del self.sockets[sid]
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
-                self._log_error_once(
-                    'Invalid session ' + (sid or 'None'), 'bad-sid')
-                r = self._bad_request('Invalid session')
+                self._log_error_once(f'Invalid session {sid}', 'bad-sid')
+                r = self._bad_request(f'Invalid session {sid}')
             else:
                 socket = self._get_socket(sid)
                 try:
@@ -383,7 +396,9 @@ class Server(base_server.BaseServer):
             'upgrades': self._upgrades(sid, transport),
             'pingTimeout': int(self.ping_timeout * 1000),
             'pingInterval': int(
-                self.ping_interval + self.ping_interval_grace_period) * 1000})
+                self.ping_interval + self.ping_interval_grace_period) * 1000,
+            'maxPayload': self.max_http_buffer_size,
+        })
         s.send(pkt)
         s.schedule_ping()
 
@@ -431,7 +446,16 @@ class Server(base_server.BaseServer):
         if event in self.handlers:
             def run_handler():
                 try:
-                    return self.handlers[event](*args)
+                    try:
+                        return self.handlers[event](*args)
+                    except TypeError:
+                        if event == 'disconnect' and \
+                                len(args) == 2:  # pragma: no branch
+                            # legacy disconnect events do not have a reason
+                            # argument
+                            return self.handlers[event](args[0])
+                        else:  # pragma: no cover
+                            raise
                 except:
                     self.logger.exception(event + ' handler error')
                     if event == 'connect':

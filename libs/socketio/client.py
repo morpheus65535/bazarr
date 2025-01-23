@@ -56,11 +56,14 @@ class Client(base_client.BaseClient):
     :param http_session: an initialized ``requests.Session`` object to be used
                          when sending requests to the server. Use it if you
                          need to add special client options such as proxy
-                         servers, SSL certificates, etc.
+                         servers, SSL certificates, custom CA bundle, etc.
     :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
                        The default is ``True``.
+    :param websocket_extra_options: Dictionary containing additional keyword
+                                    arguments passed to
+                                    ``websocket.create_connection()``.
     :param engineio_logger: To enable Engine.IO logging set to ``True`` or pass
                             a logger object to use. To disable logging set to
                             ``False``. The default is ``False``. Note that
@@ -126,6 +129,8 @@ class Client(base_client.BaseClient):
         if namespaces is None:
             namespaces = list(set(self.handlers.keys()).union(
                 set(self.namespace_handlers.keys())))
+            if '*' in namespaces:
+                namespaces.remove('*')
             if len(namespaces) == 0:
                 namespaces = ['/']
         elif isinstance(namespaces, str):
@@ -175,7 +180,12 @@ class Client(base_client.BaseClient):
             self.eio.wait()
             self.sleep(1)  # give the reconnect task time to start up
             if not self._reconnect_task:
-                break
+                if self.eio.state == 'connected':  # pragma: no cover
+                    # connected while sleeping above
+                    continue
+                else:
+                    # the reconnect task gave up
+                    break
             self._reconnect_task.join()
             if self.eio.state != 'connected':
                 break
@@ -298,6 +308,20 @@ class Client(base_client.BaseClient):
                 packet.DISCONNECT, namespace=n))
         self.eio.disconnect(abort=True)
 
+    def shutdown(self):
+        """Stop the client.
+
+        If the client is connected to a server, it is disconnected. If the
+        client is attempting to reconnect to server, the reconnection attempts
+        are stopped. If the client is not connected to a server and is not
+        attempting to reconnect, then this function does nothing.
+        """
+        if self.connected:
+            self.disconnect()
+        elif self._reconnect_task:  # pragma: no branch
+            self._reconnect_abort.set()
+            self._reconnect_task.join()
+
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task using the appropriate async model.
 
@@ -344,7 +368,7 @@ class Client(base_client.BaseClient):
     def _handle_connect(self, namespace, data):
         namespace = namespace or '/'
         if namespace not in self.namespaces:
-            self.logger.info('Namespace {} is connected'.format(namespace))
+            self.logger.info(f'Namespace {namespace} is connected')
             self.namespaces[namespace] = (data or {}).get('sid', self.sid)
             self._trigger_event('connect', namespace=namespace)
             self._connect_event.set()
@@ -353,8 +377,9 @@ class Client(base_client.BaseClient):
         if not self.connected:
             return
         namespace = namespace or '/'
-        self._trigger_event('disconnect', namespace=namespace)
-        self._trigger_event('__disconnect_final', namespace=namespace)
+        self._trigger_event('disconnect', namespace,
+                            self.reason.SERVER_DISCONNECT)
+        self._trigger_event('__disconnect_final', namespace)
         if namespace in self.namespaces:
             del self.namespaces[namespace]
         if not self.namespaces:
@@ -412,7 +437,14 @@ class Client(base_client.BaseClient):
         # first see if we have an explicit handler for the event
         handler, args = self._get_event_handler(event, namespace, args)
         if handler:
-            return handler(*args)
+            try:
+                return handler(*args)
+            except TypeError:
+                # the legacy disconnect event does not take a reason argument
+                if event == 'disconnect':
+                    return handler(*args[:-1])
+                else:  # pragma: no cover
+                    raise
 
         # or else, forward the event to a namespace handler if one exists
         handler, args = self._get_namespace_handler(namespace, args)
@@ -501,21 +533,21 @@ class Client(base_client.BaseClient):
             else:
                 raise ValueError('Unknown packet type.')
 
-    def _handle_eio_disconnect(self):
+    def _handle_eio_disconnect(self, reason):
         """Handle the Engine.IO disconnection event."""
         self.logger.info('Engine.IO connection dropped')
         will_reconnect = self.reconnection and self.eio.state == 'connected'
         if self.connected:
             for n in self.namespaces:
-                self._trigger_event('disconnect', namespace=n)
+                self._trigger_event('disconnect', n, reason)
                 if not will_reconnect:
-                    self._trigger_event('__disconnect_final', namespace=n)
+                    self._trigger_event('__disconnect_final', n)
             self.namespaces = {}
             self.connected = False
         self.callbacks = {}
         self._binary_packet = None
         self.sid = None
-        if will_reconnect:
+        if will_reconnect and not self._reconnect_task:
             self._reconnect_task = self.start_background_task(
                 self._handle_reconnect)
 

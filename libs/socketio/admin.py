@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import functools
 import os
 import socket
@@ -16,7 +16,7 @@ class EventBuffer:
 
     def push(self, type, count=1):
         timestamp = int(time.time()) * 1000
-        key = '{};{}'.format(timestamp, type)
+        key = f'{timestamp};{type}'
         if key not in self.buffer:
             self.buffer[key] = {
                 'timestamp': timestamp,
@@ -77,13 +77,9 @@ class InstrumentedServer:
             # track socket connection times
             self.sio.manager._timestamps = {}
 
-            # report socket.io connections
-            self.sio.manager.__connect = self.sio.manager.connect
-            self.sio.manager.connect = self._connect
-
-            # report socket.io disconnection
-            self.sio.manager.__disconnect = self.sio.manager.disconnect
-            self.sio.manager.disconnect = self._disconnect
+            # report socket.io connections, disconnections and received events
+            self.sio.__trigger_event = self.sio._trigger_event
+            self.sio._trigger_event = self._trigger_event
 
             # report join rooms
             self.sio.manager.__basic_enter_room = \
@@ -98,10 +94,6 @@ class InstrumentedServer:
             # report emit events
             self.sio.manager.__emit = self.sio.manager.emit
             self.sio.manager.emit = self._emit
-
-            # report receive events
-            self.sio.__handle_event_internal = self.sio._handle_event_internal
-            self.sio._handle_event_internal = self._handle_event_internal
 
         # report engine.io connections
         self.sio.eio.on('connect', self._handle_eio_connect)
@@ -128,14 +120,12 @@ class InstrumentedServer:
 
     def uninstrument(self):  # pragma: no cover
         if self.mode == 'development':
-            self.sio.manager.connect = self.sio.manager.__connect
-            self.sio.manager.disconnect = self.sio.manager.__disconnect
+            self.sio._trigger_event = self.sio.__trigger_event
             self.sio.manager.basic_enter_room = \
                 self.sio.manager.__basic_enter_room
             self.sio.manager.basic_leave_room = \
                 self.sio.manager.__basic_leave_room
             self.sio.manager.emit = self.sio.manager.__emit
-            self.sio._handle_event_internal = self.sio.__handle_event_internal
         self.sio.eio._ok = self.sio.eio.__ok
 
         from engineio.socket import Socket
@@ -205,26 +195,34 @@ class InstrumentedServer:
             self.stop_stats_event.set()
             self.stats_task.join()
 
-    def _connect(self, eio_sid, namespace):
-        sid = self.sio.manager.__connect(eio_sid, namespace)
+    def _trigger_event(self, event, namespace, *args):
         t = time.time()
-        self.sio.manager._timestamps[sid] = t
-        serialized_socket = self.serialize_socket(sid, namespace, eio_sid)
-        self.sio.emit('socket_connected', (
-            serialized_socket,
-            datetime.utcfromtimestamp(t).isoformat() + 'Z',
-        ), namespace=self.admin_namespace)
-        return sid
-
-    def _disconnect(self, sid, namespace, **kwargs):
-        del self.sio.manager._timestamps[sid]
-        self.sio.emit('socket_disconnected', (
-            namespace,
-            sid,
-            'N/A',
-            datetime.utcnow().isoformat() + 'Z',
-        ), namespace=self.admin_namespace)
-        return self.sio.manager.__disconnect(sid, namespace, **kwargs)
+        sid = args[0]
+        if event == 'connect':
+            eio_sid = self.sio.manager.eio_sid_from_sid(sid, namespace)
+            self.sio.manager._timestamps[sid] = t
+            serialized_socket = self.serialize_socket(sid, namespace, eio_sid)
+            self.sio.emit('socket_connected', (
+                serialized_socket,
+                datetime.fromtimestamp(t, timezone.utc).isoformat(),
+            ), namespace=self.admin_namespace)
+        elif event == 'disconnect':
+            del self.sio.manager._timestamps[sid]
+            reason = args[1]
+            self.sio.emit('socket_disconnected', (
+                namespace,
+                sid,
+                reason,
+                datetime.fromtimestamp(t, timezone.utc).isoformat(),
+            ), namespace=self.admin_namespace)
+        else:
+            self.sio.emit('event_received', (
+                namespace,
+                sid,
+                (event, *args[1:]),
+                datetime.fromtimestamp(t, timezone.utc).isoformat(),
+            ), namespace=self.admin_namespace)
+        return self.sio.__trigger_event(event, namespace, *args)
 
     def _check_for_upgrade(self, eio_sid, sid, namespace):  # pragma: no cover
         for _ in range(5):
@@ -248,7 +246,7 @@ class InstrumentedServer:
                 namespace,
                 room,
                 sid,
-                datetime.utcnow().isoformat() + 'Z',
+                datetime.now(timezone.utc).isoformat(),
             ), namespace=self.admin_namespace)
         return ret
 
@@ -258,7 +256,7 @@ class InstrumentedServer:
                 namespace,
                 room,
                 sid,
-                datetime.utcnow().isoformat() + 'Z',
+                datetime.now(timezone.utc).isoformat(),
             ), namespace=self.admin_namespace)
         return self.sio.manager.__basic_leave_room(sid, namespace, room)
 
@@ -269,7 +267,7 @@ class InstrumentedServer:
                                       **kwargs)
         if namespace != self.admin_namespace:
             event_data = [event] + list(data) if isinstance(data, tuple) \
-                else [data]
+                else [event, data]
             if not isinstance(skip_sid, list):  # pragma: no branch
                 skip_sid = [skip_sid]
             for sid, _ in self.sio.manager.get_participants(namespace, room):
@@ -278,20 +276,8 @@ class InstrumentedServer:
                         namespace,
                         sid,
                         event_data,
-                        datetime.utcnow().isoformat() + 'Z',
+                        datetime.now(timezone.utc).isoformat(),
                     ), namespace=self.admin_namespace)
-        return ret
-
-    def _handle_event_internal(self, server, sid, eio_sid, data, namespace,
-                               id):
-        ret = self.sio.__handle_event_internal(server, sid, eio_sid, data,
-                                               namespace, id)
-        self.sio.emit('event_received', (
-            namespace,
-            sid,
-            data,
-            datetime.utcnow().isoformat() + 'Z',
-        ), namespace=self.admin_namespace)
         return ret
 
     def _handle_eio_connect(self, eio_sid, environ):
@@ -303,9 +289,9 @@ class InstrumentedServer:
         self.event_buffer.push('rawConnection')
         return self.sio._handle_eio_connect(eio_sid, environ)
 
-    def _handle_eio_disconnect(self, eio_sid):
+    def _handle_eio_disconnect(self, eio_sid, reason):
         self.event_buffer.push('rawDisconnection')
-        return self.sio._handle_eio_disconnect(eio_sid)
+        return self.sio._handle_eio_disconnect(eio_sid, reason)
 
     def _eio_http_response(self, packets=None, headers=None, jsonp_index=None):
         ret = self.sio.eio.__ok(packets=packets, headers=headers,
@@ -349,7 +335,7 @@ class InstrumentedServer:
                                                           eio_sid)
                 self.sio.emit('socket_connected', (
                     serialized_socket,
-                    datetime.utcfromtimestamp(t).isoformat() + 'Z',
+                    datetime.fromtimestamp(t, timezone.utc).isoformat(),
                 ), namespace=self.admin_namespace)
         return socket.__send_ping()
 
@@ -398,7 +384,7 @@ class InstrumentedServer:
                 'secure': environ.get('wsgi.url_scheme', '') == 'https',
                 'url': environ.get('PATH_INFO', ''),
                 'issued': tm * 1000,
-                'time': datetime.utcfromtimestamp(tm).isoformat() + 'Z'
+                'time': datetime.fromtimestamp(tm, timezone.utc).isoformat()
                 if tm else '',
             },
             'rooms': self.sio.manager.get_rooms(sid, namespace),

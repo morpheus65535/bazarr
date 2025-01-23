@@ -1,5 +1,5 @@
 # dialects/mysql/mariadbconnector.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -87,13 +87,6 @@ class MySQLExecutionContext_mariadbconnector(MySQLExecutionContext):
         if self.isinsert and self.compiled.postfetch_lastrowid:
             self._lastrowid = self.cursor.lastrowid
 
-    @property
-    def rowcount(self):
-        if self._rowcount is not None:
-            return self._rowcount
-        else:
-            return self.cursor.rowcount
-
     def get_lastrowid(self):
         return self._lastrowid
 
@@ -172,6 +165,7 @@ class MySQLDialect_mariadbconnector(MySQLDialect):
 
     def create_connect_args(self, url):
         opts = url.translate_connect_args()
+        opts.update(url.query)
 
         int_params = [
             "connect_timeout",
@@ -186,6 +180,7 @@ class MySQLDialect_mariadbconnector(MySQLDialect):
             "ssl_verify_cert",
             "ssl",
             "pool_reset_connection",
+            "compress",
         ]
 
         for key in int_params:

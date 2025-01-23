@@ -4,6 +4,7 @@ repr, these expose more information and produce HTML instead of ASCII.
 Together with the CSS and JavaScript of the debugger this gives a
 colorful and more compact output.
 """
+
 from __future__ import annotations
 
 import codecs
@@ -80,9 +81,7 @@ class _Helper:
 helper = _Helper()
 
 
-def _add_subclass_info(
-    inner: str, obj: object, base: t.Type | tuple[t.Type, ...]
-) -> str:
+def _add_subclass_info(inner: str, obj: object, base: type | tuple[type, ...]) -> str:
     if isinstance(base, tuple):
         for cls in base:
             if type(obj) is cls:
@@ -96,9 +95,9 @@ def _add_subclass_info(
 
 
 def _sequence_repr_maker(
-    left: str, right: str, base: t.Type, limit: int = 8
-) -> t.Callable[[DebugReprGenerator, t.Iterable, bool], str]:
-    def proxy(self: DebugReprGenerator, obj: t.Iterable, recursive: bool) -> str:
+    left: str, right: str, base: type, limit: int = 8
+) -> t.Callable[[DebugReprGenerator, t.Iterable[t.Any], bool], str]:
+    def proxy(self: DebugReprGenerator, obj: t.Iterable[t.Any], recursive: bool) -> str:
         if recursive:
             return _add_subclass_info(f"{left}...{right}", obj, base)
         buf = [left]
@@ -130,7 +129,7 @@ class DebugReprGenerator:
         '<span class="module">collections.</span>deque([', "])", deque
     )
 
-    def regex_repr(self, obj: t.Pattern) -> str:
+    def regex_repr(self, obj: t.Pattern[t.AnyStr]) -> str:
         pattern = repr(obj.pattern)
         pattern = codecs.decode(pattern, "unicode-escape", "ignore")
         pattern = f"r{pattern}"
@@ -188,7 +187,7 @@ class DebugReprGenerator:
         buf.append("}")
         return _add_subclass_info("".join(buf), d, dict)
 
-    def object_repr(self, obj: type[dict] | t.Callable | type[list] | None) -> str:
+    def object_repr(self, obj: t.Any) -> str:
         r = repr(obj)
         return f'<span class="object">{escape(r)}</span>'
 

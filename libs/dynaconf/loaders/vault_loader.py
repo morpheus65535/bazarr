@@ -13,7 +13,8 @@ except ImportError:
 
 try:
     from hvac import Client
-    from hvac.exceptions import InvalidPath, Forbidden
+    from hvac.exceptions import Forbidden
+    from hvac.exceptions import InvalidPath
 except ImportError:
     raise ImportError(
         "vault package is not installed in your environment. "
