@@ -219,6 +219,9 @@ validators = [
     Validator('plex.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
     Validator('plex.port', must_exist=True, default=32400, is_type_of=int, gte=1, lte=65535),
     Validator('plex.ssl', must_exist=True, default=False, is_type_of=bool),
+    Validator('plex.apikey', must_exist=True, default='', is_type_of=str),
+    Validator('plex.movie_library', must_exist=True, default='', is_type_of=str),
+    Validator('plex.set_added', must_exist=True, default=False, is_type_of=bool),
 
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
