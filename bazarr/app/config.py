@@ -221,7 +221,10 @@ validators = [
     Validator('plex.ssl', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.apikey', must_exist=True, default='', is_type_of=str),
     Validator('plex.movie_library', must_exist=True, default='', is_type_of=str),
+    Validator('plex.series_library', must_exist=True, default='', is_type_of=str),
     Validator('plex.set_added', must_exist=True, default=False, is_type_of=bool),
+    Validator('plex.update_movie_library', must_exist=True, default=False, is_type_of=bool),
+    Validator('plex.update_series_library', must_exist=True, default=False, is_type_of=bool),
 
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),

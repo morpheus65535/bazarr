@@ -25,3 +25,24 @@ def plex_set_added_date_now(movie_metadata):
         video.edit(**updates)
     except Exception as e:
         logger.error(f"A Plex error occurred: {e}")
+
+
+def plex_update_library(is_movie):
+    try:
+        # Determine protocol based on SSL settings
+        protocol_plex = "https://" if settings.plex.ssl else "http://"
+        baseurl = f"{protocol_plex}{settings.plex.ip}:{settings.plex.port}"
+        token = settings.plex.apikey
+
+        # Connect to the Plex server
+        plex = PlexServer(baseurl, token)
+
+        # Select the library to update
+        library_name = settings.plex.movie_library if is_movie else settings.plex.series_library
+        library = plex.library.section(library_name)
+
+        # Trigger update
+        library.update()
+
+    except Exception as e:
+        logger.error(f"A Plex error occurred: {e}")
