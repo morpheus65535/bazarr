@@ -4,6 +4,7 @@ import { http } from "msw";
 import { HttpResponse } from "msw";
 import { vi, vitest } from "vitest";
 import "@testing-library/jest-dom";
+import queryClient from "@/apis/queries";
 import server from "./mocks/node";
 
 vi.mock("recharts", async () => {
@@ -45,7 +46,10 @@ window.scrollTo = () => {};
 
 beforeAll(() => {
   server.listen({ onUnhandledRequest: "error" });
+});
 
+beforeEach(() => {
+  server.resetHandlers();
   server.use(
     http.get("/api/system/settings", () => {
       return HttpResponse.json({
@@ -57,6 +61,10 @@ beforeAll(() => {
   );
 });
 
-afterEach(() => server.resetHandlers());
+afterEach(() => {
+  server.resetHandlers();
+
+  queryClient.clear();
+});
 
 afterAll(() => server.close());
