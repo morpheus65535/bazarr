@@ -1,10 +1,10 @@
+/* eslint-disable camelcase */
 import { http } from "msw";
 import { HttpResponse } from "msw";
 import { render, screen, waitFor } from "@/tests";
 import server from "@/tests/mocks/node";
 import BlacklistSeriesView from ".";
 
-/* eslint-disable camelcase */
 describe("Blacklist Series", () => {
   it("should render without blacklisted series", async () => {
     server.use(
