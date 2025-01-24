@@ -78,7 +78,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     if media_type == 'series':
         episode_metadata = database.execute(
             select(TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId)
-                .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))) \
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))) \
             .first()
         if not episode_metadata:
             return
@@ -97,7 +97,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     else:
         movie_metadata = database.execute(
             select(TableMovies.radarrId, TableMovies.imdbId)
-                .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))) \
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))) \
             .first()
         if not movie_metadata:
             return
