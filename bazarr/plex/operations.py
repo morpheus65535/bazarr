@@ -37,7 +37,7 @@ def plex_update_library(is_movie):
         # Connect to the Plex server
         plex = PlexServer(baseurl, token)
 
-        # Select the library to update
+        # Select the library type to update
         library_name = settings.plex.movie_library if is_movie else settings.plex.series_library
         library = plex.library.section(library_name)
 
