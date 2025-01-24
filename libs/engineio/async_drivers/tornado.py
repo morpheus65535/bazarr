@@ -64,7 +64,7 @@ def translate_request(handler):
     """This function takes the arguments passed to the request handler and
     uses them to generate a WSGI compatible environ dictionary.
     """
-    class AwaitablePayload(object):
+    class AwaitablePayload:
         def __init__(self, payload):
             self.payload = payload or b''
 
@@ -142,7 +142,7 @@ def make_response(status, headers, payload, environ):
     tornado_handler.finish()
 
 
-class WebSocket(object):  # pragma: no cover
+class WebSocket:  # pragma: no cover
     """
     This wrapper class provides a tornado WebSocket interface that is
     somewhat compatible with eventlet's implementation.
@@ -170,7 +170,7 @@ class WebSocket(object):  # pragma: no cover
         msg = await self.tornado_handler.get_next_message()
         if not isinstance(msg, bytes) and \
                 not isinstance(msg, str):
-            raise IOError()
+            raise OSError()
         return msg
 
 

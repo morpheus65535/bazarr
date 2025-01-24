@@ -168,11 +168,46 @@ def _jinja_formatter(value, **context):
     return jinja_env.from_string(value).render(**context)
 
 
+def _get_formatter(value, **context):
+    """
+    Invokes settings.get from the annotation in value.
+
+    value can be one of the following:
+
+    @get KEY
+    @get KEY @int
+    @get KEY default_value
+    @get KEY @int default_value
+
+    @marker KEY_TO_LOOKUP @OPTIONAL_CAST OPTIONAL_DEFAULT_VALUE
+
+    key group will match the key
+    cast group will match anything provided after @
+    the default group will match anything between single or double quotes
+    """
+    pattern = re.compile(
+        r"(?P<key>\w+(?:\.\w+)?)\s*"
+        r"(?:(?P<cast>@\w+)\s*)?"
+        r'(?P<quote>["\']?)'
+        r'\s*(?P<default>[^"\']*)\s*(?P=quote)?'
+    )
+    if match := pattern.match(value.strip()):
+        data = match.groupdict()
+        return context["this"].get(
+            key=data["key"],
+            default=data["default"],
+            cast=data["cast"],
+        )
+    else:
+        raise DynaconfFormatError(f"Error parsing {value} malformed syntax.")
+
+
 class Formatters:
     """Dynaconf builtin formatters"""
 
     python_formatter = BaseFormatter(str.format, "format")
     jinja_formatter = BaseFormatter(_jinja_formatter, "jinja")
+    get_formatter = BaseFormatter(_get_formatter, "get")
 
 
 class Lazy:
@@ -268,6 +303,7 @@ converters = {
     "@merge_unique": lambda value, box_settings: Merge(
         value, box_settings, unique=True
     ),
+    "@get": lambda value: Lazy(value, formatter=Formatters.get_formatter),
     # Special markers to be used as placeholders e.g: in prefilled forms
     # will always return None when evaluated
     "@note": lambda value: None,
@@ -405,21 +441,21 @@ def parse_conf_data(data, tomlfy=False, box_settings=None):
 
     if isinstance(data, DynaBox):
         # recursively parse inner dict items
-        _parsed = DynaBox({}, box_settings=box_settings)
+        # It is important to keep the same object id because
+        # of mutability
         for k, v in data._safe_items():
-            _parsed[k] = parse_conf_data(
+            data[k] = parse_conf_data(
                 v, tomlfy=tomlfy, box_settings=box_settings
             )
-        return _parsed
+        return data
 
     if isinstance(data, dict):
         # recursively parse inner dict items
-        _parsed = {}
         for k, v in data.items():
-            _parsed[k] = parse_conf_data(
+            data[k] = parse_conf_data(
                 v, tomlfy=tomlfy, box_settings=box_settings
             )
-        return _parsed
+        return data
 
     # return parsed string value
     return _parse_conf_data(data, tomlfy=tomlfy, box_settings=box_settings)
@@ -451,7 +487,7 @@ def boolean_fix(value: str | None):
     """Gets a value like `True/False` and turns to `true/false`
     This function exists because of issue #976
     Toml parser casts booleans from true/false lower case
-    however envvars are usually exportes as True/False capitalized
+    however envvars are usually exported as True/False capitalized
     by mistake, this helper fixes it for envvars only.
 
     Assume envvars are always str.

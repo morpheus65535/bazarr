@@ -1,7 +1,6 @@
 import json
 import logging
 import threading
-import warnings
 from typing import Any, Iterator, List, Optional, Type, Union
 
 logger = logging.getLogger("pycountry.db")
@@ -14,7 +13,7 @@ class Data:
     def __getattr__(self, key):
         if key in self._fields:
             return self._fields[key]
-        raise AttributeError()
+        raise AttributeError(key)
 
     def __setattr__(self, key: str, value: str) -> None:
         if key != "_fields":
@@ -36,26 +35,7 @@ class Data:
 
 
 class Country(Data):
-    def __getattr__(self, key):
-        if key in ("common_name", "official_name"):
-            # First try to get the common_name or official_name
-            value = self._fields.get(key)
-            if value is not None:
-                return value
-            # Fall back to name if common_name or official_name is not found
-            name = self._fields.get("name")
-            if name is not None:
-                warning_message = (
-                    f"Country's {key} not found. Country name provided instead."
-                )
-                warnings.warn(warning_message, UserWarning)
-                return name
-            raise AttributeError()
-        else:
-            # For other keys, simply return the value or raise an error
-            if key in self._fields:
-                return self._fields[key]
-            raise AttributeError()
+    pass
 
 
 class Subdivision(Data):
@@ -174,9 +154,9 @@ class Database:
         return len(self.objects)
 
     @lazy_load
-    def get(self, **kw: Optional[str]) -> Optional[Any]:
-        kw.setdefault("default", None)
-        default = kw.pop("default")
+    def get(
+        self, *, default: Optional[Any] = None, **kw: Optional[str]
+    ) -> Optional[Any]:
         if len(kw) != 1:
             raise TypeError("Only one criteria may be given")
         field, value = kw.popitem()

@@ -1,10 +1,12 @@
 """
 A command-line utility for fixing text found in a file.
 """
+
 import os
 import sys
+from typing import Union
 
-from ftfy import __version__, fix_file, TextFixerConfig
+from ftfy import TextFixerConfig, __version__, fix_file
 
 ENCODE_ERROR_TEXT_UNIX = """ftfy error:
 Unfortunately, this output stream does not support Unicode.
@@ -39,7 +41,7 @@ Can't read and write the same file. Please output to a new file instead.
 """
 
 
-def main():
+def main() -> None:
     """
     Run ftfy as a command-line utility.
     """
@@ -117,7 +119,7 @@ def main():
     if normalization.lower() == "none":
         normalization = None
 
-    unescape_html: str | bool
+    unescape_html: Union[str, bool]
     if args.preserve_entities:
         unescape_html = False
     else:

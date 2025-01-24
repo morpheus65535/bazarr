@@ -1,5 +1,5 @@
 # orm/session.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -575,22 +575,67 @@ class ORMExecuteState(util.MemoizedSlots):
 
     @property
     def is_select(self) -> bool:
-        """return True if this is a SELECT operation."""
+        """return True if this is a SELECT operation.
+
+        .. versionchanged:: 2.0.30 - the attribute is also True for a
+           :meth:`_sql.Select.from_statement` construct that is itself against
+           a :class:`_sql.Select` construct, such as
+           ``select(Entity).from_statement(select(..))``
+
+        """
         return self.statement.is_select
 
     @property
+    def is_from_statement(self) -> bool:
+        """return True if this operation is a
+        :meth:`_sql.Select.from_statement` operation.
+
+        This is independent from :attr:`_orm.ORMExecuteState.is_select`, as a
+        ``select().from_statement()`` construct can be used with
+        INSERT/UPDATE/DELETE RETURNING types of statements as well.
+        :attr:`_orm.ORMExecuteState.is_select` will only be set if the
+        :meth:`_sql.Select.from_statement` is itself against a
+        :class:`_sql.Select` construct.
+
+        .. versionadded:: 2.0.30
+
+        """
+        return self.statement.is_from_statement
+
+    @property
     def is_insert(self) -> bool:
-        """return True if this is an INSERT operation."""
+        """return True if this is an INSERT operation.
+
+        .. versionchanged:: 2.0.30 - the attribute is also True for a
+           :meth:`_sql.Select.from_statement` construct that is itself against
+           a :class:`_sql.Insert` construct, such as
+           ``select(Entity).from_statement(insert(..))``
+
+        """
         return self.statement.is_dml and self.statement.is_insert
 
     @property
     def is_update(self) -> bool:
-        """return True if this is an UPDATE operation."""
+        """return True if this is an UPDATE operation.
+
+        .. versionchanged:: 2.0.30 - the attribute is also True for a
+           :meth:`_sql.Select.from_statement` construct that is itself against
+           a :class:`_sql.Update` construct, such as
+           ``select(Entity).from_statement(update(..))``
+
+        """
         return self.statement.is_dml and self.statement.is_update
 
     @property
     def is_delete(self) -> bool:
-        """return True if this is a DELETE operation."""
+        """return True if this is a DELETE operation.
+
+        .. versionchanged:: 2.0.30 - the attribute is also True for a
+           :meth:`_sql.Select.from_statement` construct that is itself against
+           a :class:`_sql.Delete` construct, such as
+           ``select(Entity).from_statement(delete(..))``
+
+        """
         return self.statement.is_dml and self.statement.is_delete
 
     @property
@@ -1166,6 +1211,17 @@ class SessionTransaction(_StateChange, TransactionalContext):
                         else:
                             join_transaction_mode = "rollback_only"
 
+                        if local_connect:
+                            util.warn(
+                                "The engine provided as bind produced a "
+                                "connection that is already in a transaction. "
+                                "This is usually caused by a core event, "
+                                "such as 'engine_connect', that has left a "
+                                "transaction open. The effective join "
+                                "transaction mode used by this session is "
+                                f"{join_transaction_mode!r}. To silence this "
+                                "warning, do not leave transactions open"
+                            )
                     if join_transaction_mode in (
                         "control_fully",
                         "rollback_only",
@@ -1513,12 +1569,16 @@ class Session(_SessionClassMethods, EventTarget):
            operation.    The complete heuristics for resolution are
            described at :meth:`.Session.get_bind`.  Usage looks like::
 
-            Session = sessionmaker(binds={
-                SomeMappedClass: create_engine('postgresql+psycopg2://engine1'),
-                SomeDeclarativeBase: create_engine('postgresql+psycopg2://engine2'),
-                some_mapper: create_engine('postgresql+psycopg2://engine3'),
-                some_table: create_engine('postgresql+psycopg2://engine4'),
-                })
+            Session = sessionmaker(
+                binds={
+                    SomeMappedClass: create_engine("postgresql+psycopg2://engine1"),
+                    SomeDeclarativeBase: create_engine(
+                        "postgresql+psycopg2://engine2"
+                    ),
+                    some_mapper: create_engine("postgresql+psycopg2://engine3"),
+                    some_table: create_engine("postgresql+psycopg2://engine4"),
+                }
+            )
 
            .. seealso::
 
@@ -1713,7 +1773,7 @@ class Session(_SessionClassMethods, EventTarget):
 
         # the idea is that at some point NO_ARG will warn that in the future
         # the default will switch to close_resets_only=False.
-        if close_resets_only or close_resets_only is _NoArg.NO_ARG:
+        if close_resets_only in (True, _NoArg.NO_ARG):
             self._close_state = _SessionCloseState.CLOSE_IS_RESET
         else:
             self._close_state = _SessionCloseState.ACTIVE
@@ -2260,9 +2320,8 @@ class Session(_SessionClassMethods, EventTarget):
         E.g.::
 
             from sqlalchemy import select
-            result = session.execute(
-                select(User).where(User.id == 5)
-            )
+
+            result = session.execute(select(User).where(User.id == 5))
 
         The API contract of :meth:`_orm.Session.execute` is similar to that
         of :meth:`_engine.Connection.execute`, the :term:`2.0 style` version
@@ -2914,7 +2973,7 @@ class Session(_SessionClassMethods, EventTarget):
 
         e.g.::
 
-            obj = session._identity_lookup(inspect(SomeClass), (1, ))
+            obj = session._identity_lookup(inspect(SomeClass), (1,))
 
         :param mapper: mapper in use
         :param primary_key_identity: the primary key we are searching for, as
@@ -2985,7 +3044,8 @@ class Session(_SessionClassMethods, EventTarget):
     @util.langhelpers.tag_method_for_warnings(
         "This warning originated from the Session 'autoflush' process, "
         "which was invoked automatically in response to a user-initiated "
-        "operation.",
+        "operation. Consider using ``no_autoflush`` context manager if this "
+        "warning happended while initializing objects.",
         sa_exc.SAWarning,
     )
     def _autoflush(self) -> None:
@@ -3541,10 +3601,7 @@ class Session(_SessionClassMethods, EventTarget):
 
             some_object = session.get(VersionedFoo, (5, 10))
 
-            some_object = session.get(
-                VersionedFoo,
-                {"id": 5, "version_id": 10}
-            )
+            some_object = session.get(VersionedFoo, {"id": 5, "version_id": 10})
 
         .. versionadded:: 1.4 Added :meth:`_orm.Session.get`, which is moved
            from the now legacy :meth:`_orm.Query.get` method.
@@ -3633,7 +3690,7 @@ class Session(_SessionClassMethods, EventTarget):
 
         :return: The object instance, or ``None``.
 
-        """
+        """  # noqa: E501
         return self._get_impl(
             entity,
             ident,
@@ -4529,11 +4586,11 @@ class Session(_SessionClassMethods, EventTarget):
             self._bulk_save_mappings(
                 mapper,
                 states,
-                isupdate,
-                True,
-                return_defaults,
-                update_changed_only,
-                False,
+                isupdate=isupdate,
+                isstates=True,
+                return_defaults=return_defaults,
+                update_changed_only=update_changed_only,
+                render_nulls=False,
             )
 
     def bulk_insert_mappings(
@@ -4612,11 +4669,11 @@ class Session(_SessionClassMethods, EventTarget):
         self._bulk_save_mappings(
             mapper,
             mappings,
-            False,
-            False,
-            return_defaults,
-            False,
-            render_nulls,
+            isupdate=False,
+            isstates=False,
+            return_defaults=return_defaults,
+            update_changed_only=False,
+            render_nulls=render_nulls,
         )
 
     def bulk_update_mappings(
@@ -4658,13 +4715,20 @@ class Session(_SessionClassMethods, EventTarget):
 
         """
         self._bulk_save_mappings(
-            mapper, mappings, True, False, False, False, False
+            mapper,
+            mappings,
+            isupdate=True,
+            isstates=False,
+            return_defaults=False,
+            update_changed_only=False,
+            render_nulls=False,
         )
 
     def _bulk_save_mappings(
         self,
         mapper: Mapper[_O],
         mappings: Union[Iterable[InstanceState[_O]], Iterable[Dict[str, Any]]],
+        *,
         isupdate: bool,
         isstates: bool,
         return_defaults: bool,
@@ -4681,17 +4745,17 @@ class Session(_SessionClassMethods, EventTarget):
                     mapper,
                     mappings,
                     transaction,
-                    isstates,
-                    update_changed_only,
+                    isstates=isstates,
+                    update_changed_only=update_changed_only,
                 )
             else:
                 bulk_persistence._bulk_insert(
                     mapper,
                     mappings,
                     transaction,
-                    isstates,
-                    return_defaults,
-                    render_nulls,
+                    isstates=isstates,
+                    return_defaults=return_defaults,
+                    render_nulls=render_nulls,
                 )
             transaction.commit()
 
@@ -4709,7 +4773,7 @@ class Session(_SessionClassMethods, EventTarget):
 
         This method retrieves the history for each instrumented
         attribute on the instance and performs a comparison of the current
-        value to its previously committed value, if any.
+        value to its previously flushed or committed value, if any.
 
         It is in effect a more expensive and accurate
         version of checking for the given instance in the
@@ -4879,7 +4943,7 @@ class sessionmaker(_SessionClassMethods, Generic[_S]):
 
         # an Engine, which the Session will use for connection
         # resources
-        engine = create_engine('postgresql+psycopg2://scott:tiger@localhost/')
+        engine = create_engine("postgresql+psycopg2://scott:tiger@localhost/")
 
         Session = sessionmaker(engine)
 
@@ -4932,7 +4996,7 @@ class sessionmaker(_SessionClassMethods, Generic[_S]):
 
         with engine.connect() as connection:
             with Session(bind=connection) as session:
-                # work with session
+                ...  # work with session
 
     The class also includes a method :meth:`_orm.sessionmaker.configure`, which
     can be used to specify additional keyword arguments to the factory, which
@@ -4947,7 +5011,7 @@ class sessionmaker(_SessionClassMethods, Generic[_S]):
 
         # ... later, when an engine URL is read from a configuration
         # file or other events allow the engine to be created
-        engine = create_engine('sqlite:///foo.db')
+        engine = create_engine("sqlite:///foo.db")
         Session.configure(bind=engine)
 
         sess = Session()
@@ -5085,7 +5149,7 @@ class sessionmaker(_SessionClassMethods, Generic[_S]):
 
             Session = sessionmaker()
 
-            Session.configure(bind=create_engine('sqlite://'))
+            Session.configure(bind=create_engine("sqlite://"))
         """
         self.kw.update(new_kw)
 

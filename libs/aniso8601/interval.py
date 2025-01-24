@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2021, Brandon Nielsen
+# Copyright (c) 2025, Brandon Nielsen
 # All rights reserved.
 #
 # This software may be modified and distributed under the terms
@@ -62,7 +62,7 @@ def _get_interval_resolution(intervaltuple):
 
 
 def _get_interval_component_resolution(componenttuple):
-    if type(componenttuple) is DateTuple:
+    if isinstance(componenttuple, DateTuple):
         if componenttuple.DDD is not None:
             # YYYY-DDD
             # YYYYDDD
@@ -89,7 +89,8 @@ def _get_interval_component_resolution(componenttuple):
 
         # Y[YYY]
         return IntervalResolution.Year
-    elif type(componenttuple) is DatetimeTuple:
+
+    if isinstance(componenttuple, DatetimeTuple):
         # Datetime
         if componenttuple.time.ss is not None:
             return IntervalResolution.Seconds
@@ -193,7 +194,7 @@ def parse_repeating_interval(
         raise ISOFormatError("Repeating interval string is empty.")
 
     if isointervalstr[0] != "R":
-        raise ISOFormatError("ISO 8601 repeating interval must start " "with an R.")
+        raise ISOFormatError("ISO 8601 repeating interval must start with an R.")
 
     if intervaldelimiter not in isointervalstr:
         raise ISOFormatError(
@@ -249,7 +250,8 @@ def _parse_interval(
             endtuple = parse_date(secondpart, builder=TupleBuilder)
 
         return builder.build_interval(end=endtuple, duration=duration)
-    elif secondpart[0] == "P":
+
+    if secondpart[0] == "P":
         # <start>/<duration>
         # We need to figure out if <start> is a date, or a datetime
         duration = parse_duration(secondpart, builder=TupleBuilder)
@@ -288,7 +290,7 @@ def _parse_interval_end(endstr, starttuple, datetimedelimiter):
 
     concise = False
 
-    if type(starttuple) is DateTuple:
+    if isinstance(starttuple, DateTuple):
         startdatetuple = starttuple
     else:
         # Start is a datetime
@@ -304,9 +306,9 @@ def _parse_interval_end(endstr, starttuple, datetimedelimiter):
     if timestr is not None:
         endtimetuple = parse_time(timestr, builder=TupleBuilder)
 
-    # End is just a time
-    if datestr is None:
-        return endtimetuple
+        # End is just a time
+        if datestr is None:
+            return endtimetuple
 
     # Handle backwards concise representation
     if datestr.count("-") == 1:
@@ -326,7 +328,7 @@ def _parse_interval_end(endstr, starttuple, datetimedelimiter):
         # Separators required because concise elements may be missing digits
         if monthstr is not None:
             concisedatestr += "-" + monthstr
-        elif startdatetuple.MM is not None:
+        else:
             concisedatestr += "-" + startdatetuple.MM
 
         concisedatestr += "-" + daystr

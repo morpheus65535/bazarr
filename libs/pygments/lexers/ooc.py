@@ -4,7 +4,7 @@
 
     Lexers for the Ooc language.
 
-    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -18,14 +18,13 @@ __all__ = ['OocLexer']
 class OocLexer(RegexLexer):
     """
     For Ooc source code
-
-    .. versionadded:: 1.2
     """
     name = 'Ooc'
-    url = 'http://ooc-lang.org/'
+    url = 'https://ooc-lang.github.io/'
     aliases = ['ooc']
     filenames = ['*.ooc']
     mimetypes = ['text/x-ooc']
+    version_added = '1.2'
 
     tokens = {
         'root': [
@@ -43,7 +42,7 @@ class OocLexer(RegexLexer):
             (r'(func)((?:[ \t]|\\\n)+)(~[a-z_]\w*)',
              bygroups(Keyword, Text, Name.Function)),
             (r'\bfunc\b', Keyword),
-            # Note: %= and ^= not listed on http://ooc-lang.org/syntax
+            # Note: %= not listed on https://ooc-lang.github.io/docs/lang/operators/
             (r'//.*', Comment),
             (r'(?s)/\*.*?\*/', Comment.Multiline),
             (r'(==?|\+=?|-[=>]?|\*=?|/=?|:=|!=?|%=?|\?|>{1,3}=?|<{1,3}=?|\.\.|'

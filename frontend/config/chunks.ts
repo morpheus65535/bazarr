@@ -3,7 +3,7 @@ import { dependencies } from "../package.json";
 
 const vendors = [
   "react",
-  "react-router-dom",
+  "react-router",
   "react-dom",
   "@tanstack/react-query",
   "axios",

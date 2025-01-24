@@ -4,7 +4,7 @@
 
     Lexer for the Vyper Smart Contract language.
 
-    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -17,13 +17,12 @@ __all__ = ['VyperLexer']
 
 class VyperLexer(RegexLexer):
     """For the Vyper smart contract language.
-    
-    .. versionadded:: 2.17
     """
     name = 'Vyper'
     aliases = ['vyper']
     filenames = ['*.vy']
     url = "https://vyper.readthedocs.io"
+    version_added = '2.17'
 
     tokens = {
         'root': [
@@ -62,7 +61,7 @@ class VyperLexer(RegexLexer):
             # Keywords
             (words(('def', 'event', 'pass', 'return', 'for', 'while', 'if', 'elif',
                     'else', 'assert', 'raise', 'import', 'in', 'struct', 'implements',
-                    'interface', 'from', 'indexed', 'log'),
+                    'interface', 'from', 'indexed', 'log', 'extcall', 'staticcall'),
                    prefix=r'\b', suffix=r'\b'), Keyword),
 
             # Visibility and State Mutability

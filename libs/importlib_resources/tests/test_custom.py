@@ -6,7 +6,7 @@ import importlib_resources as resources
 from .. import abc
 from ..abc import TraversableResources, ResourceReader
 from . import util
-from ._compat import os_helper
+from .compat.py39 import os_helper
 
 
 class SimpleLoader:

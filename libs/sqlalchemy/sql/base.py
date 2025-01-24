@@ -1,5 +1,5 @@
 # sql/base.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -72,7 +72,6 @@ if TYPE_CHECKING:
     from .elements import ClauseList
     from .elements import ColumnClause  # noqa
     from .elements import ColumnElement
-    from .elements import KeyedColumnElement
     from .elements import NamedColumn
     from .elements import SQLCoreOperations
     from .elements import TextClause
@@ -481,7 +480,7 @@ class DialectKWArgs:
 
             Index.argument_for("mydialect", "length", None)
 
-            some_index = Index('a', 'b', mydialect_length=5)
+            some_index = Index("a", "b", mydialect_length=5)
 
         The :meth:`.DialectKWArgs.argument_for` method is a per-argument
         way adding extra arguments to the
@@ -570,7 +569,7 @@ class DialectKWArgs:
         and ``<argument_name>``.  For example, the ``postgresql_where``
         argument would be locatable as::
 
-            arg = my_object.dialect_options['postgresql']['where']
+            arg = my_object.dialect_options["postgresql"]["where"]
 
         .. versionadded:: 0.9.2
 
@@ -918,11 +917,7 @@ class Options(metaclass=_MetaOptions):
                 execution_options,
             ) = QueryContext.default_load_options.from_execution_options(
                 "_sa_orm_load_options",
-                {
-                    "populate_existing",
-                    "autoflush",
-                    "yield_per"
-                },
+                {"populate_existing", "autoflush", "yield_per"},
                 execution_options,
                 statement._execution_options,
             )
@@ -1029,6 +1024,7 @@ class Executable(roles.StatementRole):
     ]
 
     is_select = False
+    is_from_statement = False
     is_update = False
     is_insert = False
     is_text = False
@@ -1167,6 +1163,7 @@ class Executable(roles.StatementRole):
         render_nulls: bool = ...,
         is_delete_using: bool = ...,
         is_update_from: bool = ...,
+        preserve_rowcount: bool = False,
         **opt: Any,
     ) -> Self: ...
 
@@ -1222,6 +1219,7 @@ class Executable(roles.StatementRole):
         or :attr:`_orm.ORMExecuteState.execution_options`, e.g.::
 
              from sqlalchemy import event
+
 
              @event.listens_for(some_engine, "before_execute")
              def _process_opt(conn, statement, multiparams, params, execution_options):
@@ -1352,7 +1350,7 @@ class _SentinelColumnCharacterization(NamedTuple):
 _COLKEY = TypeVar("_COLKEY", Union[None, str], str)
 
 _COL_co = TypeVar("_COL_co", bound="ColumnElement[Any]", covariant=True)
-_COL = TypeVar("_COL", bound="KeyedColumnElement[Any]")
+_COL = TypeVar("_COL", bound="ColumnElement[Any]")
 
 
 class _ColumnMetrics(Generic[_COL_co]):
@@ -1474,14 +1472,14 @@ class ColumnCollection(Generic[_COLKEY, _COL_co]):
     mean either two columns with the same key, in which case the column
     returned by key  access is **arbitrary**::
 
-        >>> x1, x2 = Column('x', Integer), Column('x', Integer)
+        >>> x1, x2 = Column("x", Integer), Column("x", Integer)
         >>> cc = ColumnCollection(columns=[(x1.name, x1), (x2.name, x2)])
         >>> list(cc)
         [Column('x', Integer(), table=None),
          Column('x', Integer(), table=None)]
-        >>> cc['x'] is x1
+        >>> cc["x"] is x1
         False
-        >>> cc['x'] is x2
+        >>> cc["x"] is x2
         True
 
     Or it can also mean the same column multiple times.   These cases are
@@ -1640,9 +1638,15 @@ class ColumnCollection(Generic[_COLKEY, _COL_co]):
     def __eq__(self, other: Any) -> bool:
         return self.compare(other)
 
+    @overload
+    def get(self, key: str, default: None = None) -> Optional[_COL_co]: ...
+
+    @overload
+    def get(self, key: str, default: _COL) -> Union[_COL_co, _COL]: ...
+
     def get(
-        self, key: str, default: Optional[_COL_co] = None
-    ) -> Optional[_COL_co]:
+        self, key: str, default: Optional[_COL] = None
+    ) -> Optional[Union[_COL_co, _COL]]:
         """Get a :class:`_sql.ColumnClause` or :class:`_schema.Column` object
         based on a string key name from this
         :class:`_expression.ColumnCollection`."""
@@ -1923,16 +1927,15 @@ class DedupeColumnCollection(ColumnCollection[str, _NAMEDCOL]):
 
     """
 
-    def add(
-        self, column: ColumnElement[Any], key: Optional[str] = None
+    def add(  # type: ignore[override]
+        self, column: _NAMEDCOL, key: Optional[str] = None
     ) -> None:
-        named_column = cast(_NAMEDCOL, column)
-        if key is not None and named_column.key != key:
+        if key is not None and column.key != key:
             raise exc.ArgumentError(
                 "DedupeColumnCollection requires columns be under "
                 "the same key as their .key"
             )
-        key = named_column.key
+        key = column.key
 
         if key is None:
             raise exc.ArgumentError(
@@ -1942,17 +1945,17 @@ class DedupeColumnCollection(ColumnCollection[str, _NAMEDCOL]):
         if key in self._index:
             existing = self._index[key][1]
 
-            if existing is named_column:
+            if existing is column:
                 return
 
-            self.replace(named_column)
+            self.replace(column)
 
             # pop out memoized proxy_set as this
             # operation may very well be occurring
             # in a _make_proxy operation
-            util.memoized_property.reset(named_column, "proxy_set")
+            util.memoized_property.reset(column, "proxy_set")
         else:
-            self._append_new_column(key, named_column)
+            self._append_new_column(key, column)
 
     def _append_new_column(self, key: str, named_column: _NAMEDCOL) -> None:
         l = len(self._collection)
@@ -2027,8 +2030,8 @@ class DedupeColumnCollection(ColumnCollection[str, _NAMEDCOL]):
 
         e.g.::
 
-            t = Table('sometable', metadata, Column('col1', Integer))
-            t.columns.replace(Column('col1', Integer, key='columnone'))
+            t = Table("sometable", metadata, Column("col1", Integer))
+            t.columns.replace(Column("col1", Integer, key="columnone"))
 
         will remove the original 'col1' from the collection, and add
         the new column under the name 'columnname'.
@@ -2131,7 +2134,7 @@ class ColumnSet(util.OrderedSet["ColumnClause[Any]"]):
                     l.append(c == local)
         return elements.and_(*l)
 
-    def __hash__(self):
+    def __hash__(self):  # type: ignore[override]
         return hash(tuple(x for x in self))
 
 

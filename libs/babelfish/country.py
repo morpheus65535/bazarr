@@ -7,9 +7,9 @@
 from __future__ import unicode_literals
 from collections import namedtuple
 from functools import partial
-from pkg_resources import resource_stream  # @UnresolvedImport
 from .converters import ConverterManager
 from . import basestr
+from .compat import resource_stream
 
 
 COUNTRIES = {}

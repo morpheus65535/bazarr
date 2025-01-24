@@ -1,5 +1,5 @@
 # orm/attributes.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -401,7 +401,7 @@ class QueryableAttribute(
             parententity=adapt_to_entity,
         )
 
-    def of_type(self, entity: _EntityType[Any]) -> QueryableAttribute[_T]:
+    def of_type(self, entity: _EntityType[_T]) -> QueryableAttribute[_T]:
         return QueryableAttribute(
             self.class_,
             self.key,
@@ -503,7 +503,7 @@ def _queryable_attribute_unreduce(
         return getattr(entity, key)
 
 
-class InstrumentedAttribute(QueryableAttribute[_T]):
+class InstrumentedAttribute(QueryableAttribute[_T_co]):
     """Class bound instrumented attribute which adds basic
     :term:`descriptor` methods.
 
@@ -544,14 +544,14 @@ class InstrumentedAttribute(QueryableAttribute[_T]):
     @overload
     def __get__(
         self, instance: None, owner: Any
-    ) -> InstrumentedAttribute[_T]: ...
+    ) -> InstrumentedAttribute[_T_co]: ...
 
     @overload
-    def __get__(self, instance: object, owner: Any) -> _T: ...
+    def __get__(self, instance: object, owner: Any) -> _T_co: ...
 
     def __get__(
         self, instance: Optional[object], owner: Any
-    ) -> Union[InstrumentedAttribute[_T], _T]:
+    ) -> Union[InstrumentedAttribute[_T_co], _T_co]:
         if instance is None:
             return self
 
@@ -2663,7 +2663,7 @@ def init_collection(obj: object, key: str) -> CollectionAdapter:
     This function is used to provide direct access to collection internals
     for a previously unloaded attribute.  e.g.::
 
-        collection_adapter = init_collection(someobject, 'elements')
+        collection_adapter = init_collection(someobject, "elements")
         for elem in values:
             collection_adapter.append_without_event(elem)
 

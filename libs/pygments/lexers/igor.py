@@ -4,7 +4,7 @@
 
     Lexers for Igor Pro.
 
-    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -19,15 +19,14 @@ __all__ = ['IgorLexer']
 class IgorLexer(RegexLexer):
     """
     Pygments Lexer for Igor Pro procedure files (.ipf).
-    See http://www.wavemetrics.com/ and http://www.igorexchange.com/.
-
-    .. versionadded:: 2.0
     """
 
     name = 'Igor'
     aliases = ['igor', 'igorpro']
     filenames = ['*.ipf']
     mimetypes = ['text/ipf']
+    url = 'http://www.wavemetrics.com'
+    version_added = '2.0'
 
     flags = re.IGNORECASE | re.MULTILINE
 
@@ -39,7 +38,7 @@ class IgorLexer(RegexLexer):
     types = (
         'variable', 'string', 'constant', 'strconstant', 'NVAR', 'SVAR', 'WAVE',
         'STRUCT', 'dfref', 'funcref', 'char', 'uchar', 'int16', 'uint16', 'int32',
-        'uint32', 'int64', 'uint64', 'float', 'double'
+        'uint32', 'int64', 'uint64', 'float', 'double', 'int'
     )
     keywords = (
         'override', 'ThreadSafe', 'MultiThread', 'static',  'Proc',

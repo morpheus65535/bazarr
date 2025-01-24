@@ -1,5 +1,5 @@
 # ext/asyncio/base.py
-# Copyright (C) 2020-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2020-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -224,7 +224,9 @@ def asyncstartablecontext(
     ``@contextlib.asynccontextmanager`` supports, and the usage pattern
     is different as well.
 
-    Typical usage::
+    Typical usage:
+
+    .. sourcecode:: text
 
         @asyncstartablecontext
         async def some_async_generator(<arguments>):

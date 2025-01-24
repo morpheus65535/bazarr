@@ -11,6 +11,7 @@ from charset_normalizer import detect
 from constants import MAXIMUM_SUBTITLE_SIZE
 from app.config import settings
 from utilities.path_mappings import path_mappings
+from languages.custom_lang import CustomLanguage
 
 
 def get_external_subtitles_path(file, subtitle):
@@ -54,8 +55,7 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                     break
             if x_found_lang:
                 if not language:
-                    x_hi = ':hi' in x_found_lang
-                    subtitles[subtitle] = Language.rebuild(Language.fromietf(x_found_lang), hi=x_hi)
+                    subtitles[subtitle] = _get_lang_from_str(x_found_lang)
                 continue
 
         if not language:
@@ -141,3 +141,23 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
                                                None):
                         subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
     return subtitles
+
+
+def _get_lang_from_str(x_found_lang):
+    x_found_lang_split = x_found_lang.split(':')[0]
+    x_hi = ':hi' in x_found_lang.lower()
+    x_forced = ':forced' in x_found_lang.lower()
+
+    if len(x_found_lang_split) == 2:
+        x_custom_lang_attr = "alpha2"
+    elif len(x_found_lang_split) == 3:
+        x_custom_lang_attr = "alpha3"
+    else:
+        x_custom_lang_attr = "language"
+
+    x_custom_lang = CustomLanguage.from_value(x_found_lang_split, attr=x_custom_lang_attr)
+
+    if x_custom_lang is not None:
+        return Language.rebuild(x_custom_lang.subzero_language(), hi=x_hi, forced=x_forced)
+    else:
+        return Language.rebuild(Language.fromietf(x_found_lang), hi=x_hi, forced=x_forced)

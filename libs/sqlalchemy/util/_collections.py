@@ -1,5 +1,5 @@
 # util/_collections.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -16,6 +16,7 @@ import typing
 from typing import Any
 from typing import Callable
 from typing import cast
+from typing import Container
 from typing import Dict
 from typing import FrozenSet
 from typing import Generic
@@ -79,8 +80,8 @@ def merge_lists_w_ordering(a: List[Any], b: List[Any]) -> List[Any]:
 
     Example::
 
-        >>> a = ['__tablename__', 'id', 'x', 'created_at']
-        >>> b = ['id', 'name', 'data', 'y', 'created_at']
+        >>> a = ["__tablename__", "id", "x", "created_at"]
+        >>> b = ["id", "name", "data", "y", "created_at"]
         >>> merge_lists_w_ordering(a, b)
         ['__tablename__', 'id', 'name', 'data', 'y', 'x', 'created_at']
 
@@ -425,15 +426,14 @@ def to_list(x: Any, default: Optional[List[Any]] = None) -> List[Any]:
         return list(x)
 
 
-def has_intersection(set_, iterable):
+def has_intersection(set_: Container[Any], iterable: Iterable[Any]) -> bool:
     r"""return True if any items of set\_ are present in iterable.
 
     Goes through special effort to ensure __hash__ is not called
     on items in iterable that don't support it.
 
     """
-    # TODO: optimize, write in C, etc.
-    return bool(set_.intersection([i for i in iterable if i.__hash__]))
+    return any(i in set_ for i in iterable if i.__hash__)
 
 
 def to_set(x):

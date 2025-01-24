@@ -3,7 +3,7 @@ from functools import wraps
 import logging
 import os
 import sys
-from flask import current_app
+from flask import current_app, g
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
 from alembic import command
@@ -92,15 +92,15 @@ class Migrate(object):
         for opt in opts or []:
             setattr(config.cmd_opts, opt, True)
         if not hasattr(config.cmd_opts, 'x'):
+            setattr(config.cmd_opts, 'x', [])
+            for x in getattr(g, 'x_arg', []):
+                config.cmd_opts.x.append(x)
             if x_arg is not None:
-                setattr(config.cmd_opts, 'x', [])
                 if isinstance(x_arg, list) or isinstance(x_arg, tuple):
                     for x in x_arg:
                         config.cmd_opts.x.append(x)
                 else:
                     config.cmd_opts.x.append(x_arg)
-            else:
-                setattr(config.cmd_opts, 'x', None)
         return self.call_configure_callbacks(config)
 
 
@@ -252,11 +252,11 @@ def current(directory=None, verbose=False):
 
 
 @catch_errors
-def stamp(directory=None, revision='head', sql=False, tag=None):
+def stamp(directory=None, revision='head', sql=False, tag=None, purge=False):
     """'stamp' the revision table with the given revision; don't run any
     migrations"""
     config = current_app.extensions['migrate'].migrate.get_config(directory)
-    command.stamp(config, revision, sql=sql, tag=tag)
+    command.stamp(config, revision, sql=sql, tag=tag, purge=purge)
 
 
 @catch_errors

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useSearchParams } from "react-router";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import SimpleTable, { SimpleTableProps } from "@/components/tables/SimpleTable";
 import { LoadingProvider } from "@/contexts";
@@ -18,6 +19,8 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
     controls: { gotoPage },
   } = query;
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   useEffect(() => {
     ScrollToTop();
   }, [page]);
@@ -30,7 +33,13 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
         index={page}
         size={pageSize}
         total={totalCount}
-        goto={gotoPage}
+        goto={(page) => {
+          searchParams.set("page", (page + 1).toString());
+
+          setSearchParams(searchParams, { replace: true });
+
+          gotoPage(page);
+        }}
       ></PageControl>
     </LoadingProvider>
   );

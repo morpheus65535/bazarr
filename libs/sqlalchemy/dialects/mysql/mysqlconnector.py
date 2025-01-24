@@ -1,5 +1,5 @@
 # dialects/mysql/mysqlconnector.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -96,6 +96,7 @@ class MySQLDialect_mysqlconnector(MySQLDialect):
         util.coerce_kw_type(opts, "allow_local_infile", bool)
         util.coerce_kw_type(opts, "autocommit", bool)
         util.coerce_kw_type(opts, "buffered", bool)
+        util.coerce_kw_type(opts, "client_flag", int)
         util.coerce_kw_type(opts, "compress", bool)
         util.coerce_kw_type(opts, "connection_timeout", int)
         util.coerce_kw_type(opts, "connect_timeout", int)

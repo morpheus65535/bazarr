@@ -15,7 +15,7 @@ import re
 from requests import ConnectionError
 from subzero.language import Language
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
-    MustGetBlacklisted, SearchLimitReached
+    MustGetBlacklisted, SearchLimitReached, ProviderError
 from subliminal.providers.opensubtitles import DownloadLimitReached, PaymentRequired, Unauthorized
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable, AuthenticationError, ConfigurationError
 from subliminal import region as subliminal_cache_region
@@ -122,6 +122,11 @@ def provider_throttle_map():
         },
         "whisperai": {
             ConnectionError: (datetime.timedelta(hours=24), "24 hours"),
+        },
+        "regielive": {
+            APIThrottled: (datetime.timedelta(hours=1), "1 hour"),
+            TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
+            ProviderError: (datetime.timedelta(minutes=10), "10 minutes"),
         },
     }
 

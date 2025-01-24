@@ -1,5 +1,5 @@
 # sql/traversals.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -562,6 +562,8 @@ class TraversalComparatorStrategy(HasTraversalDispatch, util.MemoizedSlots):
                         return False
                     else:
                         continue
+                elif right_child is None:
+                    return False
 
                 comparison = dispatch(
                     left_attrname, left, left_child, right, right_child, **kw
