@@ -37,7 +37,7 @@ const SettingsPlexView: FunctionComponent = () => {
             label="Mark the movie as recently added after downloading subtitles"
             settingKey="settings-plex-set_added"
           ></Check>
-           <Check
+          <Check
             label="Scan library for new files after downloading subtitles"
             settingKey="settings-plex-update_movie_library"
           ></Check>
@@ -48,7 +48,7 @@ const SettingsPlexView: FunctionComponent = () => {
             label="Name of the library"
             settingKey="settings-plex-series_library"
           ></Text>
-           <Check
+          <Check
             label="Scan library for new files after downloading subtitles"
             settingKey="settings-plex-update_series_library"
           ></Check>
