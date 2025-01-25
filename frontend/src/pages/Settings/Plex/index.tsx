@@ -49,6 +49,10 @@ const SettingsPlexView: FunctionComponent = () => {
             settingKey="settings-plex-series_library"
           ></Text>
           <Check
+            label="Mark the episode as recently added after downloading subtitles"
+            settingKey="settings-plex-set_episode_added"
+          ></Check>
+          <Check
             label="Scan library for new files after downloading subtitles"
             settingKey="settings-plex-update_series_library"
           ></Check>

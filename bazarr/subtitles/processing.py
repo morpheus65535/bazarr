@@ -7,11 +7,11 @@ from app.config import settings, sync_checker as _defaul_sync_checker
 from utilities.path_mappings import path_mappings
 from utilities.post_processing import pp_replace, set_chmod
 from languages.get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
-from app.database import TableEpisodes, TableMovies, database, select
+from app.database import TableShows, TableEpisodes, TableMovies, database, select
 from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
-from plex.operations import plex_set_added_date_now, plex_update_library
+from plex.operations import plex_set_movie_added_date_now, plex_update_library, plex_set_episode_added_date_now
 from app.event_handler import event_stream
 
 from .utils import _get_download_code3
@@ -77,8 +77,10 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
 
     if media_type == 'series':
         episode_metadata = database.execute(
-            select(TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId)
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
+            select(TableShows.imdbId, TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId,
+                   TableEpisodes.season, TableEpisodes.episode)
+                .join(TableShows)\
+                .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
             .first()
         if not episode_metadata:
             return
@@ -97,7 +99,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     else:
         movie_metadata = database.execute(
             select(TableMovies.radarrId, TableMovies.imdbId)
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)))\
+                .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)))\
             .first()
         if not movie_metadata:
             return
@@ -142,8 +144,10 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         event_stream(type='episode-wanted', action='delete',
                      payload=episode_metadata.sonarrEpisodeId)
         if settings.general.use_plex is True:
-            if settings.plex.update_movie_library is True:
+            if settings.plex.update_series_library is True:
                 plex_update_library(is_movie_library=False)
+            if settings.plex.set_episode_added is True:
+                plex_set_episode_added_date_now(episode_metadata)
 
     else:
         reversed_path = path_mappings.path_replace_reverse_movie(path)
@@ -152,7 +156,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
         if settings.general.use_plex is True:
             if settings.plex.set_added is True:
-                plex_set_added_date_now(movie_metadata)
+                plex_set_movie_added_date_now(movie_metadata)
             if settings.plex.update_movie_library is True:
                 plex_update_library(is_movie_library=True)
 
