@@ -178,7 +178,7 @@ declare namespace Settings {
     port: number;
     apikey?: string;
     ssl?: boolean;
-    set_added?: boolean;
+    set_movie_added?: boolean;
     set_episode_added?: boolean;
     movie_library?: string;
     series_library?: string;

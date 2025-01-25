@@ -155,7 +155,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         notify_radarr(movie_metadata.radarrId)
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
         if settings.general.use_plex is True:
-            if settings.plex.set_added is True:
+            if settings.plex.set_movie_added is True:
                 plex_set_movie_added_date_now(movie_metadata)
             if settings.plex.update_movie_library is True:
                 plex_update_library(is_movie_library=True)
