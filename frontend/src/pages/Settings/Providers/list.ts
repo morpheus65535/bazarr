@@ -551,6 +551,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "turkcealtyaziorg",
+    name: "Turkcealtyazi.org",
+    description: "Turkish Subtitles Provider",
+  },
+  {
     key: "tusubtitulo",
     name: "Tusubtitulo.com",
     description:
