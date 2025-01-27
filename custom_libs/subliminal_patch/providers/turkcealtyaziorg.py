@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class TurkceAltyaziOrgSubtitle(Subtitle):
-    """GreekSubs Subtitle."""
+    """Turkcealtyazi.org Subtitle."""
 
     provider_name = "turkcealtyaziorg"
     hearing_impaired_verifiable = True
@@ -53,7 +53,7 @@ class TurkceAltyaziOrgSubtitle(Subtitle):
                 video, guessit(self.version, {"type": "episode"}), partial=True
             )
         # movie
-        elif isinstance(video, Movie):
+        else:
             # other properties
             matches |= guess_matches(
                 video, guessit(self.version, {"type": "movie"}), partial=True
@@ -120,12 +120,7 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def initialize(self):
         self.session = RetryingCFSession()
-        if self.user_agent:
-            self.session.headers["User-Agent"] = self.user_agent
-        else:
-            self.session.headers["User-Agent"] = AGENT_LIST[
-                randint(0, len(AGENT_LIST) - 1)
-            ]
+        self.session.headers["User-Agent"] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     def terminate(self):
         self.session.close()
@@ -136,7 +131,7 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
 
         if isinstance(video, Episode):
             imdbId = video.series_imdb_id
-        elif isinstance(video, Movie):
+        else:
             imdbId = video.imdb_id
 
         if not imdbId:
@@ -148,7 +143,7 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
             subtitles = self.query(
                 video, languages, imdbId, season=video.season, episode=video.episode
             )
-        elif isinstance(video, Movie):
+        else:
             subtitles = self.query(video, languages, imdbId)
 
         return subtitles
@@ -182,11 +177,11 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
                 entries = soup_page.select(
                     "div.altyazi-list-wrapper > div > div.altsonsez2"
                 )
-
-            if isinstance(video, Episode):
+            else:
                 entries = soup_page.select(
                     f"div.altyazi-list-wrapper > div > div.altsonsez1.sezon_{season}"
                 )
+
             for item in entries:
                 sub_page_link = (
                     self.server_url
@@ -208,7 +203,6 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
                         sub_episode = int(sub_episode)
                     except ValueError:
                         is_package = True
-                    # TODO: Handle packages for sub_episode
 
                 sub_uploader_container = item.select("div.alcevirmen")[0]
                 if sub_uploader_container.text != "":
