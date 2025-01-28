@@ -5,7 +5,7 @@ import server from "@/tests/mocks/node";
 import HistoryStats from "./HistoryStats";
 
 describe("History Stats", () => {
-  it("should render with stats", async () => {
+  it("should render without stats", async () => {
     server.use(
       http.get("/api/providers", () => {
         return HttpResponse.json({
@@ -21,7 +21,7 @@ describe("History Stats", () => {
     server.use(
       http.get("/api/history/stats", () => {
         return HttpResponse.json({
-          data: [],
+          series: [],
         });
       }),
     );
@@ -33,7 +33,5 @@ describe("History Stats", () => {
     );
 
     render(<HistoryStats />);
-
-    // TODO: Assert
   });
 });

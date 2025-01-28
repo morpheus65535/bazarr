@@ -8,6 +8,16 @@ import BlacklistMoviesView from ".";
 describe("Blacklist Movies", () => {
   it("should render with blacklisted movies", async () => {
     server.use(
+      http.get("/api/system/settings", () => {
+        return HttpResponse.json({
+          general: {
+            theme: "auto",
+          },
+        });
+      }),
+    );
+
+    server.use(
       http.get("/api/movies/blacklist", () => {
         // TODO: Replace with Factory
         return HttpResponse.json({
