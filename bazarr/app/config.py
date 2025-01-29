@@ -225,7 +225,7 @@ validators = [
 
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
-              is_in=[None, 'socks5', 'http']),
+              is_in=[None, 'socks5', 'socks5h', 'http']),
     Validator('proxy.url', must_exist=True, default='', is_type_of=str),
     Validator('proxy.port', must_exist=True, default='', is_type_of=(str, int)),
     Validator('proxy.username', must_exist=True, default='', is_type_of=str, cast=str),

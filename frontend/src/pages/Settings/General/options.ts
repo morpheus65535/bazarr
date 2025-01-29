@@ -13,8 +13,12 @@ export const securityOptions: SelectorOption<string>[] = [
 
 export const proxyOptions: SelectorOption<string>[] = [
   {
-    label: "Socks5",
+    label: "Socks5 (local DNS)",
     value: "socks5",
+  },
+  {
+    label: "Socks5h (remote DNS)",
+    value: "socks5h",
   },
   {
     label: "HTTP(S)",
