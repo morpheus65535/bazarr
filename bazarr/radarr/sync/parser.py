@@ -124,7 +124,7 @@ def movieParser(movie, action, tags_dict, language_profiles, movie_default_profi
 
         parsed_movie = {'radarrId': int(movie["id"]),
                         'title': movie["title"],
-                        'path': os.path.join(movie["path"], movie['movieFile']['relativePath']),
+                        'path': movie['movieFile']['path'],
                         'tmdbId': str(movie["tmdbId"]),
                         'poster': poster,
                         'fanart': fanart,
