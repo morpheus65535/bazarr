@@ -5,10 +5,11 @@ from random import randint
 from subzero.language import Language
 from guessit import guessit
 from subliminal_patch.http import RetryingCFSession
-from subliminal_patch.subtitle import guess_matches, Subtitle
+from subliminal_patch.subtitle import guess_matches
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
-from subliminal.utils import sanitize_release_group, sanitize
+from subliminal.utils import sanitize_release_group
 from subliminal.score import get_equivalent_release_groups
+from subliminal.subtitle import Subtitle
 
 
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
