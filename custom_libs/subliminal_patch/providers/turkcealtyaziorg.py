@@ -5,14 +5,16 @@ from random import randint
 from subzero.language import Language
 from guessit import guessit
 from subliminal_patch.http import RetryingCFSession
-from subliminal_patch.subtitle import guess_matches
+from subliminal_patch.subtitle import guess_matches, Subtitle
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
+from subliminal.utils import sanitize_release_group, sanitize
+from subliminal.score import get_equivalent_release_groups
+
 
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 from .utils import get_archive_from_bytes
 
 from subliminal.providers import ParserBeautifulSoup, Provider
-from subliminal.subtitle import Subtitle
 from subliminal.video import Episode, Movie
 
 from datetime import datetime
@@ -28,36 +30,72 @@ class TurkceAltyaziOrgSubtitle(Subtitle):
     hearing_impaired_verifiable = True
 
     def __init__(
-        self, language, page_link, release_info, uploader, hearing_impaired=False
+        self,
+        language,
+        page_link,
+        release_info,
+        uploader,
+        hearing_impaired=False,
+        season=None,
+        episode=None,
     ):
-        super(TurkceAltyaziOrgSubtitle, self).__init__(language, page_link=page_link)
+        super().__init__(language, hearing_impaired, page_link)
+        self.season = season
+        self.episode = episode
         self.release_info = release_info
-        self.page_link = page_link
         self.download_link = page_link
         self.uploader = uploader
-        self.hearing_impaired = hearing_impaired
+        self.matches = None
+        # Currently we only search by imdb_id, so this will always be True for now
+        self.imdb_match = True
 
     @property
     def id(self):
-        return self.page_link
+        episode_string = f"S{self.season:02d}E{self.episode:02d}"
+        id_string = self.page_link
+        if self.season and self.episode:
+            id_string += episode_string
+        return id_string
 
     def get_matches(self, video):
         matches = set()
+        type_ = "movie" if isinstance(video, Movie) else "episode"
 
-        # episode
-        if isinstance(video, Episode):
-            # Blatanly match the year
-            matches.add("year")
-            # other properties
-            matches |= guess_matches(
-                video, guessit(self.version, {"type": "episode"}), partial=True
-            )
-        # movie
+        # handle movies and series separately
+        if type_ == "episode":
+            # series
+            matches.add("series")
+            # season
+            if video.season == self.season:
+                matches.add("season")
+            # episode
+            if video.episode == self.episode:
+                matches.add("episode")
+            # imdb
+            if self.imdb_match:
+                matches.add("series_imdb_id")
         else:
-            # other properties
-            matches |= guess_matches(
-                video, guessit(self.version, {"type": "movie"}), partial=True
+            # imdb
+            if self.imdb_match:
+                matches.add("imdb_id")
+
+        # release_group
+        if (
+            video.release_group
+            and self.release_info
+            and any(
+                r in sanitize_release_group(self.release_info)
+                for r in get_equivalent_release_groups(
+                    sanitize_release_group(video.release_group)
+                )
             )
+        ):
+            matches.add("release_group")
+
+        # other properties
+        matches |= guess_matches(video, guessit(self.release_info, {"type": type_}))
+
+        self.matches = matches
 
         return matches
 
@@ -105,7 +143,7 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
         "flagfr": "fra",
         "flagger": "ger",
         "flagita": "ita",
-        "flagunk": "unknown",  # TODO: Handle this?
+        "flagunk": "unknown",
         # Turkish time granularity
         "dakika": "minutes",
         "saat": "hours",
@@ -151,6 +189,7 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
     def query(self, video, languages, imdb_id, season=None, episode=None):
         logger.debug("Searching subtitles for %r", imdb_id)
         subtitles = []
+        type_ = "movie" if isinstance(video, Movie) else "episode"
         search_link = f"{self.server_url}/find.php?cat=sub&find={imdb_id}"
 
         r = self.session.get(search_link, timeout=30)
@@ -173,7 +212,7 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
             logger.debug("IMDB id %s not found on turkcealtyaziorg", imdb_id)
             return subtitles
         try:
-            if isinstance(video, Movie):
+            if type_ == "movie":
                 entries = soup_page.select(
                     "div.altyazi-list-wrapper > div > div.altsonsez2"
                 )
@@ -192,17 +231,17 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
                     item.select("div.aldil > span")[0].attrs["class"][0]
                 )
                 sub_language = Language.fromalpha3(sub_language)
-                if isinstance(video, Episode):
+                if type_ == "episode":
                     sub_season, sub_episode = [
                         x.text for x in item.select("div.alcd")[0].find_all("b")
                     ]
 
                     sub_season = int(sub_season)
-                    is_package = False
+                    in_package = False
                     try:
                         sub_episode = int(sub_episode)
                     except ValueError:
-                        is_package = True
+                        in_package = True
 
                 sub_uploader_container = item.select("div.alcevirmen")[0]
                 if sub_uploader_container.text != "":
@@ -237,16 +276,22 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
                 _sub_released_at = self.get_approximate_time(sub_released_at_string)
 
                 if (sub_language in languages) and (
-                    isinstance(video, Movie)
+                    type_ == "movie"
                     or (sub_season == season)
-                    and (is_package or sub_episode == episode)
+                    and (in_package or sub_episode == episode)
                 ):
                     subtitle = self.subtitle_class(
                         sub_language,
                         sub_page_link,
                         sub_release_info,
                         sub_uploader,
-                        sub_hearing_impaired,
+                        hearing_impaired=sub_hearing_impaired,
+                        season=sub_season if type_ == "episode" else None,
+                        episode=(
+                            (episode if in_package else sub_episode)
+                            if type_ == "episode"
+                            else None
+                        ),
                     )
 
                     logger.debug("Found subtitle %r", subtitle)
