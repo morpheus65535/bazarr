@@ -95,6 +95,7 @@ validators = [
     Validator('general.use_postprocessing_threshold_movie', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_sonarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.use_plex', must_exist=True, default=False, is_type_of=bool),
     Validator('general.path_mappings_movie', must_exist=True, default=[], is_type_of=list),
     Validator('general.serie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.movie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
@@ -229,7 +230,7 @@ validators = [
 
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
-              is_in=[None, 'socks5', 'http']),
+              is_in=[None, 'socks5', 'socks5h', 'http']),
     Validator('proxy.url', must_exist=True, default='', is_type_of=str),
     Validator('proxy.port', must_exist=True, default='', is_type_of=(str, int)),
     Validator('proxy.username', must_exist=True, default='', is_type_of=str, cast=str),
