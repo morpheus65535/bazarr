@@ -449,6 +449,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             amount=retry_amount
         )
 
+        logger.debug(f'params sent to the download endpoint: {res.request.body}')
         download_data = res.json()
         subtitle.download_link = download_data['link']
 
