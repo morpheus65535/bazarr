@@ -39,11 +39,16 @@ class TurkceAltyaziOrgSubtitle(Subtitle):
         hearing_impaired=False,
         season=None,
         episode=None,
+        is_pack=False,
     ):
         super().__init__(language, hearing_impaired, page_link)
         self.season = season
         self.episode = episode
+        if episode:
+            self.asked_for_episode = True
         self.release_info = release_info
+        self.releases = release_info
+        self.is_pack = is_pack
         self.download_link = page_link
         self.uploader = uploader
         self.matches = None
@@ -231,18 +236,18 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
                 sub_language = self.custom_identifiers.get(
                     item.select("div.aldil > span")[0].attrs["class"][0]
                 )
-                sub_language = Language.fromalpha3(sub_language)
+                sub_language = Language.fromalpha3b(sub_language)
                 if type_ == "episode":
                     sub_season, sub_episode = [
                         x.text for x in item.select("div.alcd")[0].find_all("b")
                     ]
 
                     sub_season = int(sub_season)
-                    in_package = False
+                    is_pack = False
                     try:
                         sub_episode = int(sub_episode)
                     except ValueError:
-                        in_package = True
+                        is_pack = True
 
                 sub_uploader_container = item.select("div.alcevirmen")[0]
                 if sub_uploader_container.text != "":
@@ -265,7 +270,7 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
                 sub_release_info_list.extend(
                     x.strip() for x in sub_rip_container.text.strip().split("/")
                 )
-                sub_release_info = ", ".join(sub_release_info_list)
+                sub_release_info = ",".join(sub_release_info_list)
 
                 sub_hearing_impaired = bool(
                     sub_rip_container.find("img", {"src": "/images/isitme.png"})
@@ -279,7 +284,7 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
                 if (sub_language in languages) and (
                     type_ == "movie"
                     or (sub_season == season)
-                    and (in_package or sub_episode == episode)
+                    and (is_pack or sub_episode == episode)
                 ):
                     subtitle = self.subtitle_class(
                         sub_language,
@@ -289,10 +294,11 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
                         hearing_impaired=sub_hearing_impaired,
                         season=sub_season if type_ == "episode" else None,
                         episode=(
-                            (episode if in_package else sub_episode)
+                            (episode if is_pack else sub_episode)
                             if type_ == "episode"
                             else None
                         ),
+                        is_pack=bool(is_pack),
                     )
 
                     logger.debug("Found subtitle %r", subtitle)
