@@ -27,6 +27,7 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
         'zt': 'zh-TW',
     }
 
+    orig_to_lang = to_lang
     to_lang = alpha3_from_alpha2(to_lang)
     try:
         lang_obj = Language(to_lang)
@@ -126,7 +127,7 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
 
     result = ProcessSubtitlesResult(message=message,
                                     reversed_path=prr(video_path),
-                                    downloaded_language_code2=to_lang,
+                                    downloaded_language_code2=orig_to_lang,
                                     downloaded_provider=None,
                                     score=None,
                                     forced=forced,
