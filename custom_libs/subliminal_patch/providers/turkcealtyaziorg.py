@@ -57,9 +57,9 @@ class TurkceAltyaziOrgSubtitle(Subtitle):
 
     @property
     def id(self):
-        episode_string = f"S{self.season:02d}E{self.episode:02d}"
         id_string = self.page_link
-        if self.season and self.episode:
+        if self.season is not None and self.episode is not None:
+            episode_string = f"S{self.season:02d}E{self.episode:02d}"
             id_string += episode_string
         return id_string
 
@@ -228,6 +228,8 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
                 )
 
             for item in entries:
+                is_pack = False
+
                 sub_page_link = (
                     self.server_url
                     + item.select("div.alisim > div.fl > a")[0].attrs["href"]
@@ -243,7 +245,6 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
                     ]
 
                     sub_season = int(sub_season)
-                    is_pack = False
                     try:
                         sub_episode = int(sub_episode)
                     except ValueError:
