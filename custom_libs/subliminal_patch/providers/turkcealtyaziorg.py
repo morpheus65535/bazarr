@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from random import randint
+from datetime import datetime
 
 from subzero.language import Language
 from guessit import guessit
@@ -10,7 +11,9 @@ from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal.utils import sanitize_release_group
 from subliminal.score import get_equivalent_release_groups
 from subliminal.subtitle import Subtitle
+from subliminal.exceptions import AuthenticationError
 
+from http.cookies import SimpleCookie
 
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 from .utils import get_archive_from_bytes
@@ -18,8 +21,9 @@ from .utils import get_archive_from_bytes
 from subliminal.providers import ParserBeautifulSoup, Provider
 from subliminal.video import Episode, Movie
 
-from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from requests.cookies import RequestsCookieJar
+
 
 logger = logging.getLogger(__name__)
 
@@ -159,12 +163,33 @@ class TurkceAltyaziOrgProvider(Provider, ProviderSubtitleArchiveMixin):
         "yıl": "years",
     }
 
-    def __init__(self):
+    def __init__(self, cookies=None, user_agent=None):
         self.session = None
+        self.cookies = cookies
+        self.user_agent = user_agent
 
     def initialize(self):
         self.session = RetryingCFSession()
-        self.session.headers["User-Agent"] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
+        if self.user_agent and self.user_agent != "":
+            self.session.headers["User-Agent"] = self.user_agent
+        else:
+            self.session.headers["User-Agent"] = AGENT_LIST[
+                randint(0, len(AGENT_LIST) - 1)
+            ]
+        self.session.headers["Referer"] = self.server_url
+
+        if self.cookies and self.cookies != "":
+            self.session.cookies = RequestsCookieJar()
+            simple_cookie = SimpleCookie()
+            simple_cookie.load(self.cookies)
+
+            for k, v in simple_cookie.items():
+                self.session.cookies.set(k, v.value)
+
+        rr = self.session.get(self.server_url, allow_redirects=False, timeout=10)
+        if rr.status_code == 403:
+            logger.info("Cookies expired")
+            raise AuthenticationError("Cookies with User Agent are not valid anymore")
 
     def terminate(self):
         self.session.close()
