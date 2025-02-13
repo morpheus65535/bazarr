@@ -346,6 +346,10 @@ def get_providers_auth():
         },
         "subdl": {
             'api_key': settings.subdl.api_key,
+        },
+        'turkcealtyaziorg': {
+            'cookies': settings.turkcealtyaziorg.cookies,
+            'user_agent': settings.turkcealtyaziorg.user_agent,
         }
     }
 

@@ -87,6 +87,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 - Titlovi
 - Titrari.ro
 - Titulky.com
+- Turkcealtyazi.org
 - TuSubtitulo
 - TVSubtitles
 - Whisper (requires [ahmetoner/whisper-asr-webservice](https://github.com/ahmetoner/whisper-asr-webservice))

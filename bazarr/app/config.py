@@ -364,6 +364,10 @@ validators = [
     # subdl section
     Validator('subdl.api_key', must_exist=True, default='', is_type_of=str, cast=str),
 
+    # turkcealtyaziorg section
+    Validator('turkcealtyaziorg.cookies', must_exist=True, default='', is_type_of=str),
+    Validator('turkcealtyaziorg.user_agent', must_exist=True, default='', is_type_of=str),
+
     # subsync section
     Validator('subsync.use_subsync', must_exist=True, default=False, is_type_of=bool),
     Validator('subsync.use_subsync_threshold', must_exist=True, default=False, is_type_of=bool),
