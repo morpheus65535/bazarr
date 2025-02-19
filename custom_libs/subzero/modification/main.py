@@ -199,7 +199,7 @@ class SubtitleModifications(object):
                 entry_used = True
             else:
                 # skip full entry
-                break
+                continue
 
             if entry_used:
                 entries_used += 1
