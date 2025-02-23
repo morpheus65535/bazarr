@@ -205,8 +205,9 @@ class ZimukuProvider(Provider):
             backup_session = copy.deepcopy(self.session)
             backup_session.headers["Referer"] = link
 
-            # Mark each language of the subtitle as its own subtitle, and add it to the list, when handling archives or subtitles with multiple languages
-            # to ensure each language is downloaded separately.
+            # Mark each language of the subtitle as its own subtitle, and add it to the list, when handling archives or subtitles
+            # with multiple languages to ensure each language is identified as its own subtitle since they are the same archive file
+            # but will have its own file when downloaded and extracted.
             for language in language_list:
                 subs.append(
                     self.subtitle_class(language, sub_page_link, name, backup_session, year)
