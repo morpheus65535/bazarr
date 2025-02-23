@@ -177,31 +177,40 @@ class ZimukuProvider(Provider):
             ]  # remove ext because it can be an archive type
 
             language = Language("eng")
+            language_list = []
+
             for img in sub.find("td", class_="tac lang").find_all("img"):
                 if (
                         "china" in img.attrs["src"]
                         and "hongkong" in img.attrs["src"]
                 ):
-                    language = Language("zho").add(Language('zho', 'TW', None))
                     logger.debug("language:" + str(language))
+                    
+                    language = Language("zho").add(Language('zho', 'TW', None))
+                    language_list.append(language)
                 elif (
                         "china" in img.attrs["src"]
                         or "jollyroger" in img.attrs["src"]
                 ):
-                    language = Language("zho")
                     logger.debug("language chinese simplified found: " + str(language))
-                    break
+
+                    language = Language("zho")
+                    language_list.append(language)
                 elif "hongkong" in img.attrs["src"]:
-                    language = Language('zho', 'TW', None)
                     logger.debug("language chinese traditional found: " + str(language))
-                    break
+
+                    language = Language('zho', 'TW', None)
+                    language_list.append(language)
             sub_page_link = urljoin(self.server_url, a.attrs["href"])
             backup_session = copy.deepcopy(self.session)
             backup_session.headers["Referer"] = link
 
-            subs.append(
-                self.subtitle_class(language, sub_page_link, name, backup_session, year)
-            )
+            # Mark each language of the subtitle as its own subtitle, and add it to the list, when handling archives or subtitles with multiple languages
+            # to ensure each language is downloaded separately.
+            for language in language_list:
+                subs.append(
+                    self.subtitle_class(language, sub_page_link, name, backup_session, year)
+                )
 
         return subs
 
