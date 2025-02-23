@@ -189,8 +189,11 @@ class ZimukuProvider(Provider):
                         or "jollyroger" in img.attrs["src"]
                 ):
                     language = Language("zho")
+                    logger.debug("language chinese simplified found: " + str(language))
+                    break
                 elif "hongkong" in img.attrs["src"]:
                     language = Language('zho', 'TW', None)
+                    logger.debug("language chinese traditional found: " + str(language))
                     break
             sub_page_link = urljoin(self.server_url, a.attrs["href"])
             backup_session = copy.deepcopy(self.session)
