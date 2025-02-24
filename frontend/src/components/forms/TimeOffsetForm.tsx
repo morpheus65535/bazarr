@@ -32,11 +32,20 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       ms: 0,
     },
     validate: {
-      hour: FormUtils.validation((v) => v >= 0, "Hour must be larger than 0"),
-      min: FormUtils.validation((v) => v >= 0, "Minute must be larger than 0"),
-      sec: FormUtils.validation((v) => v >= 0, "Second must be larger than 0"),
+      hour: FormUtils.validation(
+        (v: number) => v >= 0,
+        "Hour must be larger than 0",
+      ),
+      min: FormUtils.validation(
+        (v: number) => v >= 0,
+        "Minute must be larger than 0",
+      ),
+      sec: FormUtils.validation(
+        (v: number) => v >= 0,
+        "Second must be larger than 0",
+      ),
       ms: FormUtils.validation(
-        (v) => v >= 0,
+        (v: number) => v >= 0,
         "Millisecond must be larger than 0",
       ),
     },

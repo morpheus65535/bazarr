@@ -57,7 +57,7 @@ const NotificationForm: FunctionComponent<Props> = ({
         "Please select a notification provider",
       ),
       url: FormUtils.validation(
-        (value) => value.trim().length !== 0,
+        (value: string) => value.trim().length !== 0,
         "URL must not be empty",
       ),
     },
