@@ -31,6 +31,7 @@ const defaultCutoffOptions: SelectorOption<Language.ProfileItem>[] = [
       id: anyCutoff,
       // eslint-disable-next-line camelcase
       audio_exclude: "False",
+      audio_only_include: "False",
       forced: "False",
       hi: "False",
       language: "any",
@@ -50,6 +51,21 @@ const subtitlesTypeOptions: SelectorOption<string>[] = [
   {
     label: "Forced (foreign part only)",
     value: "forced",
+  },
+];
+
+const inclusionOptions: SelectorOption<string>[] = [
+  {
+    label: "Always",
+    value: "always_include",
+  },
+  {
+    label: "When matching audio",
+    value: "audio_only_include",
+  },
+  {
+    label: "When not matching audio",
+    value: "audio_exclude",
   },
 ];
 
@@ -145,6 +161,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         language,
         // eslint-disable-next-line camelcase
         audio_exclude: "False",
+        audio_only_include: "False",
         hi: "False",
         forced: "False",
       };
@@ -209,6 +226,36 @@ const ProfileEditForm: FunctionComponent<Props> = ({
     },
   );
 
+  const InclusionCell = React.memo(
+    ({ item, index }: { item: Language.ProfileItem; index: number }) => {
+      const selectValue = useMemo(() => {
+        if (item.audio_exclude === "True") {
+          return "audio_exclude";
+        } else if (item.audio_only_include === "True") {
+          return "audio_only_include";
+        } else {
+          return "always_include";
+        }
+      }, [item.audio_exclude, item.audio_only_include]);
+
+      return (
+        <Select
+          value={selectValue}
+          data={inclusionOptions}
+          onChange={(value) => {
+            if (value) {
+              action.mutate(index, {
+                ...item,
+                audio_exclude: value === "audio_exclude" ? "True" : "False",
+                audio_only_include: value === "audio_only_include" ? "True" : "False",
+              });
+            }
+          }}
+        ></Select>
+      );
+    },
+  );
+
   const columns = useMemo<ColumnDef<Language.ProfileItem>[]>(
     () => [
       {
@@ -230,21 +277,10 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         },
       },
       {
-        header: "Exclude If Matching Audio",
+        header: "Include",
         accessorKey: "audio_exclude",
         cell: ({ row: { original: item, index } }) => {
-          return (
-            <Checkbox
-              checked={item.audio_exclude === "True"}
-              onChange={({ currentTarget: { checked } }) => {
-                action.mutate(index, {
-                  ...item,
-                  // eslint-disable-next-line camelcase
-                  audio_exclude: checked ? "True" : "False",
-                });
-              }}
-            ></Checkbox>
-          );
+          return <InclusionCell item={item} index={index} />;
         },
       },
       {
