@@ -32,15 +32,18 @@ class SubtitleModifications(object):
         self.initialized_mods = {}
         self.mods_used = []
 
-    def load(self, fn=None, content=None, language=None, encoding="utf-8"):
+    def load(self, fn=None, content=None, language=None, encoding="utf-8", mods=None):
         """
 
         :param encoding: used for decoding the content when fn is given, not used in case content is given
         :param language: babelfish.Language language of the subtitle
         :param fn:  filename
         :param content: unicode
+        :param mods: list of mods to be applied to subtitles
         :return:
         """
+        if mods is None:
+            mods = []
         if language:
             self.language = Language.rebuild(language, forced=False)
         self.initialized_mods = {}
@@ -48,7 +51,11 @@ class SubtitleModifications(object):
             if fn:
                 self.f = pysubs2.load(fn, encoding=encoding)
             elif content:
-                self.f = pysubs2.SSAFile.from_string(content)
+                from_string_additional_kwargs = {}
+                if 'remove_tags' not in mods:
+                    from_string_additional_kwargs = {'keep_html_tags': True, 'keep_unknown_html_tags': True,
+                                                     'keep_ssa_tags': True}
+                self.f = pysubs2.SSAFile.from_string(content, **from_string_additional_kwargs)
         except (IOError,
                 UnicodeDecodeError,
                 pysubs2.exceptions.UnknownFPSError,
