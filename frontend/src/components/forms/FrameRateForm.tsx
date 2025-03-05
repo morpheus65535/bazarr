@@ -28,11 +28,11 @@ const FrameRateForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
     },
     validate: {
       from: FormUtils.validation(
-        (value) => value > 0,
+        (value: number) => value > 0,
         "The From value must be larger than 0",
       ),
       to: FormUtils.validation(
-        (value) => value > 0,
+        (value: number) => value > 0,
         "The To value must be larger than 0",
       ),
     },

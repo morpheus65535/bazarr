@@ -70,10 +70,10 @@ const ProfileEditForm: FunctionComponent<Props> = ({
     initialValues: profile,
     validate: {
       name: FormUtils.validation(
-        (value) => value.length > 0,
+        (value: string) => value.length > 0,
         "Must have a name",
       ),
-      tag: FormUtils.validation((value) => {
+      tag: FormUtils.validation((value: string | undefined) => {
         if (!value) {
           return true;
         }
@@ -81,7 +81,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         return /^[a-z_0-9-]+$/.test(value);
       }, "Only lowercase alphanumeric characters, underscores (_) and hyphens (-) are allowed"),
       items: FormUtils.validation(
-        (value) => value.length > 0,
+        (value: Language.ProfileItem[]) => value.length > 0,
         "Must contain at least 1 language",
       ),
     },
