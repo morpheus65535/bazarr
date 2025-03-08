@@ -272,9 +272,10 @@ class WhisperAIProvider(Provider):
         if out == None:
             logger.info(f"Whisper cannot detect language of {path} because of missing/bad audio track")
             return None
+        video_name = path if self.pass_video_name else None
 
         r = self.session.post(f"{self.endpoint}/detect-language",
-                              params={'encode': 'false'},
+                              params={'encode': 'false', 'video_file': {video_name}},
                               files={'audio_file': out},
                               timeout=(self.response, self.timeout))
         
