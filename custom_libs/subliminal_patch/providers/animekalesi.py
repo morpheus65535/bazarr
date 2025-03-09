@@ -7,6 +7,7 @@ import os
 import zipfile
 from random import randint
 from typing import Optional, Dict, List, Set
+from datetime import datetime, timedelta
 
 from babelfish import Language
 from guessit import guessit
@@ -19,10 +20,14 @@ from subliminal.subtitle import fix_line_ending
 from subliminal.video import Episode
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from subzero.language import Language
+from subliminal.cache import region
 
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
+
+# Cache expiration times
+SEARCH_EXPIRATION_TIME = timedelta(weeks=1).total_seconds()
 
 def fix_turkish_chars(text: str) -> str:
     """Fix Turkish characters for proper matching."""
@@ -53,7 +58,8 @@ class AnimeKalesiSubtitle(Subtitle):
     provider_name = 'animekalesi'
     hearing_impaired_verifiable = False
 
-    def __init__(self, language: Language, page_link: str, series: str, season: int, episode: int, version: str, download_link: str, uploader: str = None):
+    def __init__(self, language: Language, page_link: str, series: str, season: int, episode: int, 
+                 version: str, download_link: str, uploader: str = None, release_group: str = None):
         super().__init__(language)
         self.page_link = page_link
         self.series = series
@@ -64,7 +70,7 @@ class AnimeKalesiSubtitle(Subtitle):
         self.release_info = version
         self.matches = set()
         self.uploader = uploader
-        self.release_group = None
+        self.release_group = release_group
         self.hearing_impaired = False
 
     @property
@@ -102,19 +108,14 @@ class AnimeKalesiSubtitle(Subtitle):
             if video.release_group.lower() in self.release_group.lower():
                 matches.add('release_group')
 
-        #matches |= guess_matches(video, guessit(self.version))
-        matches.add('year')
-        matches.add('video_codec')
-        matches.add('audio_codec')
-        matches.add('resolution')
-        matches.add('streaming_service')
+        matches |= guess_matches(video, guessit(self.version))
 
         self.matches = matches
         return matches
 
 class AnimeKalesiProvider(Provider, ProviderSubtitleArchiveMixin):
     """AnimeKalesi Provider."""
-    languages = {Language('tur')} | {Language('tur', 'TR')} | {Language.fromietf('tr')}
+    languages = {Language('tur')}
     video_types = (Episode,)
     server_url = 'https://www.animekalesi.com'
     subtitle_class = AnimeKalesiSubtitle
@@ -136,6 +137,7 @@ class AnimeKalesiProvider(Provider, ProviderSubtitleArchiveMixin):
     def terminate(self):
         self.session.close()
 
+    @region.cache_on_arguments(expiration_time=SEARCH_EXPIRATION_TIME)
     def _search_anime_list(self, series: str) -> Optional[Dict[str, str]]:
         """Search for series in anime list."""
         if not series:
@@ -196,6 +198,36 @@ class AnimeKalesiProvider(Provider, ProviderSubtitleArchiveMixin):
             logger.error('Error parsing season/episode from title "%s": %s', title, e)
             return None, None
 
+    @region.cache_on_arguments(expiration_time=SEARCH_EXPIRATION_TIME)
+    def _get_episode_list(self, series_url: str) -> Optional[List[Dict[str, str]]]:
+        """Get episode list for a series."""
+        if not series_url:
+            return None
+
+        try:
+            subtitle_page_url = f'{self.server_url}/{series_url.replace("bolumler-", "altyazib-")}'
+            response = self.session.get(subtitle_page_url, timeout=10)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.content, 'html.parser')
+
+            episodes = []
+            for td in soup.select('td#ayazi_indir'):
+                link = td.find('a', href=True)
+                if not link:
+                    continue
+
+                if 'indir_bolum-' in link['href'] and 'Bölüm Türkçe Altyazısı' in link.get('title', ''):
+                    episodes.append({
+                        'title': link['title'],
+                        'url': f"{self.server_url}/{link['href']}"
+                    })
+
+            return episodes
+
+        except Exception as e:
+            logger.error('Error getting episode list: %s', e)
+            return None
+
     def query(self, series: str, season: int, episode: int) -> List[AnimeKalesiSubtitle]:
         """Search subtitles from AnimeKalesi."""
         if not series or not season or not episode:
@@ -209,81 +241,74 @@ class AnimeKalesiProvider(Provider, ProviderSubtitleArchiveMixin):
             logger.debug('Series not found: %s', series)
             return subtitles
 
-        try:
-            # Navigate to subtitle page
-            subtitle_page_url = f'{self.server_url}/{series_data["url"].replace("bolumler-", "altyazib-")}'
-            response = self.session.get(subtitle_page_url, timeout=10)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.content, 'html.parser')
+        # Get episode list
+        episodes = self._get_episode_list(series_data['url'])
+        if not episodes:
+            return subtitles
 
-            # Scan all episode links
-            for td in soup.select('td#ayazi_indir'):
-                link = td.find('a', href=True)
-                if not link:
+        try:
+            for episode_data in episodes:
+                title = episode_data['title']
+                link_url = episode_data['url']
+
+                # Extract season and episode numbers
+                current_season, current_episode = self._parse_season_episode(title)
+                if current_season is None or current_episode is None:
                     continue
 
-                if 'indir_bolum-' in link['href'] and 'Bölüm Türkçe Altyazısı' in link.get('title', ''):
-                    title = link['title']
-                    link_url = f"{self.server_url}/{link['href']}"
+                if current_season == season and current_episode == episode:
+                    try:
+                        # Navigate to subtitle download page
+                        response = self.session.get(link_url, timeout=10)
+                        response.raise_for_status()
+                        soup = BeautifulSoup(response.content, 'html.parser')
 
-                    # Extract season and episode numbers
-                    current_season, current_episode = self._parse_season_episode(title)
-                    if current_season is None or current_episode is None:
+                        # Find download link
+                        subtitle_div = soup.find('div', id='altyazi_indir')
+                        if subtitle_div and subtitle_div.find('a', href=True):
+                            download_link = f"{self.server_url}/{subtitle_div.find('a')['href']}"
+
+                            # Find uploader information
+                            uploader = None
+                            translator_info = soup.find('strong', text='Altyazı/Çeviri:')
+                            if translator_info and translator_info.parent:
+                                strong_tags = translator_info.parent.find_all('strong')
+                                for i, tag in enumerate(strong_tags):
+                                    if tag.text == 'Altyazı/Çeviri:':
+                                        if i + 1 < len(strong_tags):
+                                            uploader = tag.next_sibling
+                                            if uploader:
+                                                uploader = uploader.strip()
+                                        else:
+                                            uploader = tag.next_sibling
+                                            if uploader:
+                                                uploader = uploader.strip()
+                                        break
+
+                            version = f"{series_data['title']} - S{current_season:02d}E{current_episode:02d}"
+                            if uploader:
+                                version += f" by {uploader}"
+
+                            try:
+                                subtitle = self.subtitle_class(
+                                    Language('tur'),
+                                    link_url,
+                                    series_data['title'],
+                                    current_season,
+                                    current_episode,
+                                    version,
+                                    download_link,
+                                    uploader=uploader,
+                                    release_group=None
+                                )
+                                subtitles.append(subtitle)
+                            except Exception as e:
+                                logger.error('Error creating subtitle object: %s', e)
+                                continue
+
+                    except Exception as e:
+                        logger.error('Error processing subtitle page %s: %s', link_url, e)
                         continue
-
-                    if current_season == season and current_episode == episode:
-                        try:
-                            # Navigate to subtitle download page
-                            response = self.session.get(link_url, timeout=10)
-                            response.raise_for_status()
-                            soup = BeautifulSoup(response.content, 'html.parser')
-
-                            # Find download link
-                            subtitle_div = soup.find('div', id='altyazi_indir')
-                            if subtitle_div and subtitle_div.find('a', href=True):
-                                download_link = f"{self.server_url}/{subtitle_div.find('a')['href']}"
-
-                                # Find uploader information
-                                uploader = None
-                                translator_info = soup.find('strong', text='Altyazı/Çeviri:')
-                                if translator_info and translator_info.parent:
-                                    strong_tags = translator_info.parent.find_all('strong')
-                                    for i, tag in enumerate(strong_tags):
-                                        if tag.text == 'Altyazı/Çeviri:':
-                                            if i + 1 < len(strong_tags):
-                                                uploader = tag.next_sibling
-                                                if uploader:
-                                                    uploader = uploader.strip()
-                                            else:
-                                                uploader = tag.next_sibling
-                                                if uploader:
-                                                    uploader = uploader.strip()
-                                            break
-
-                                version = f"{series_data['title']} - S{current_season:02d}E{current_episode:02d}"
-                                if uploader:
-                                    version += f" by {uploader}"
-
-                                try:
-                                    subtitle = self.subtitle_class(
-                                        Language('tur'),
-                                        link_url,
-                                        series_data['title'],
-                                        current_season,
-                                        current_episode,
-                                        version,
-                                        download_link,
-                                        uploader=uploader
-                                    )
-                                    subtitle.release_group = None
-                                    subtitles.append(subtitle)
-                                except Exception as e:
-                                    logger.error('Error creating subtitle object: %s', e)
-                                    continue
-
-                        except Exception as e:
-                            logger.error('Error processing subtitle page %s: %s', link_url, e)
-                            continue
 
         except Exception as e:
             logger.error('Error querying subtitles: %s', e)
@@ -292,11 +317,6 @@ class AnimeKalesiProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def list_subtitles(self, video: Episode, languages: Set[Language]) -> List[AnimeKalesiSubtitle]:
         if not video.series or not video.episode:
-            return []
-
-        # Language check - both alpha3 and IETF codes
-        supported_languages = {l for l in languages if l.alpha3 == 'tur' or l.alpha2 == 'tr'}
-        if not supported_languages:
             return []
 
         return self.query(video.series, video.season, video.episode)
@@ -330,3 +350,4 @@ class AnimeKalesiProvider(Provider, ProviderSubtitleArchiveMixin):
 
         except Exception as e:
             logger.error('Error downloading subtitle: %s', e)
+
