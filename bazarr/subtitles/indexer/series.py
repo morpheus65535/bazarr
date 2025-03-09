@@ -225,8 +225,11 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                                        'forced': cutoff_temp['forced'],
                                        'hi': cutoff_temp['hi']}
                     if cutoff_temp['audio_only_include'] == 'True' and not matches_audio(cutoff_temp):
+                        # We don't want subs in this language unless it matches
+                        # the audio. Don't use it to meet the cutoff.
                         continue
                     elif cutoff_temp['audio_exclude'] == 'True' and matches_audio(cutoff_temp):
+                        # The cutoff is met through one of the audio tracks.
                         cutoff_met = True
                     elif cutoff_language in actual_subtitles_list:
                         cutoff_met = True
