@@ -64,7 +64,7 @@ class Server:
                     logging.exception("BAZARR cannot bind to default TCP port (6767) because it's already in use, "
                                       "exiting...")
                     self.shutdown(EXIT_PORT_ALREADY_IN_USE_ERROR)
-            elif error.errno == errno.ENOLINK:
+            elif error.errno in [errno.ENOLINK, errno.EAFNOSUPPORT]:
                 logging.exception("BAZARR cannot bind to IPv6 (*), trying with 0.0.0.0")
                 self.address = '0.0.0.0'
                 self.connected = False
