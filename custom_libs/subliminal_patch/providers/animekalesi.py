@@ -27,7 +27,7 @@ from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 logger = logging.getLogger(__name__)
 
 # Cache expiration times
-SEARCH_EXPIRATION_TIME = timedelta(weeks=1).total_seconds()
+SEARCH_EXPIRATION_TIME = timedelta(hours=1).total_seconds()
 
 def fix_turkish_chars(text: str) -> str:
     """Fix Turkish characters for proper matching."""
