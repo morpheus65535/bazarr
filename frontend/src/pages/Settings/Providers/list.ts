@@ -69,6 +69,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "animekalesi",
+    name: "AnimeKalesi",
+    description: "Turkish Anime Series Subtitles Provider",
+  },
+  {
     key: "animetosho",
     name: "Anime Tosho",
     description:
