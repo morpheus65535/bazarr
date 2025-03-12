@@ -29,7 +29,6 @@ class RegieLiveSubtitle(Subtitle):
         self.page_link = link
         self.video = video
         self.rating = rating
-        self.language = language
         self.release_info = filename
 
     @property
