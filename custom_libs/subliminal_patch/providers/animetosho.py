@@ -30,15 +30,19 @@ supported_languages = [
     "eng",  # English
     "fin",  # Finnish
     "fra",  # French
+    "deu",  # German
     "heb",  # Hebrew
+    "ind",  # Indonesian
     "ita",  # Italian
     "jpn",  # Japanese
     "por",  # Portuguese
     "pol",  # Polish
+    "rus",  # Russian
     "spa",  # Spanish
     "swe",  # Swedish
     "tha",  # Thai
     "tur",  # Turkish
+    "vie",  # Vietnamese
 ]
 
 
