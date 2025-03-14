@@ -217,7 +217,6 @@ class AvistazNetworkSubtitle(Subtitle):
         super().__init__(language, page_link=page_link)
         self.provider_name = provider_name
         self.hearing_impaired = None
-        self.language = language
         self.filename = filename
         self.release_info = release
         self.page_link = page_link

@@ -36,7 +36,6 @@ class LegendasdivxSubtitle(Subtitle):
 
     def __init__(self, language, video, data, skip_wrong_fps=True):
         super(LegendasdivxSubtitle, self).__init__(language)
-        self.language = language
         self.page_link = data['link']
         self.hits = data['hits']
         self.exact_match = data['exact_match']
