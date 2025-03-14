@@ -30,7 +30,6 @@ class BSPlayerSubtitle(Subtitle):
 
     def __init__(self, language, filename, subtype, video, link, subid):
         super(BSPlayerSubtitle, self).__init__(language)
-        self.language = language
         self.filename = filename
         self.page_link = link
         self.subtype = subtype

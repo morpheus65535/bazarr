@@ -31,7 +31,7 @@ class SoustitreseuSubtitle(Subtitle):
     provider_name = 'soustitreseu'
 
     def __init__(self, language, video, name, data, content, is_perfect_match):
-        self.language = language
+        super().__init__(language)
         self.srt_filename = name
         self.release_info = name
         self.page_link = None
