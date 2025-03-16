@@ -109,7 +109,7 @@ class YavkaNetProvider(Provider):
         self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
         self.session.headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
         self.session.headers["Accept-Language"] = "en-US,en;q=0.5"
-        self.session.headers["Accept-Encoding"] = "gzip, deflate, br"
+        self.session.headers["Accept-Encoding"] = "gzip, deflate"
         self.session.headers["DNT"] = "1"
         self.session.headers["Connection"] = "keep-alive"
         self.session.headers["Upgrade-Insecure-Requests"] = "1"
@@ -138,7 +138,7 @@ class YavkaNetProvider(Provider):
             logger.debug('No subtitles found')
             return subtitles
 
-        soup = BeautifulSoup(response.content, 'lxml')
+        soup = BeautifulSoup(response.content, 'html.parser')
         rows = soup.findAll('tr')
 
         # Search on first 25 rows only
@@ -174,7 +174,7 @@ class YavkaNetProvider(Provider):
                         logger.info('Subtitle page did not load: %s', link)
                         continue
 
-                    soup = BeautifulSoup(response.content, 'lxml')
+                    soup = BeautifulSoup(response.content, 'html.parser')
                     post_form = soup.find('form', attrs={'method': 'POST'})
                     if post_form:
                         input_fields = post_form.find_all('input')
