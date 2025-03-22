@@ -73,7 +73,7 @@ class HearingImpaired(SubtitleTextModification):
 
         # all caps line (at least 4 consecutive uppercase chars)
         NReProcessor(re.compile(r'(?u)(^(?=.*[A-ZÀ-Ž&+]{4,})[A-ZÀ-Ž-_\s&+]+$)'), "", name="HI_all_caps",
-                     supported=lambda p: not p.only_uppercase),
+                     supported=lambda p: not p.mostly_uppercase),
 
         # remove MAN:
         NReProcessor(re.compile(r'(?suxi)(\b(?:WO)MAN:\s*)'), "", name="HI_remove_man"),
@@ -83,7 +83,7 @@ class HearingImpaired(SubtitleTextModification):
 
         # all caps at start before new sentence
         NReProcessor(re.compile(r'(?u)^(?=[A-ZÀ-Ž]{4,})[A-ZÀ-Ž-_\s]+\s([A-ZÀ-Ž][a-zà-ž].+)'), r"\1",
-                     name="HI_starting_upper_then_sentence", supported=lambda p: not p.only_uppercase),
+                     name="HI_starting_upper_then_sentence", supported=lambda p: not p.mostly_uppercase),
     ]
 
     post_processors = empty_line_post_processors
