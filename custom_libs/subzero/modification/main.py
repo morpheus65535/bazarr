@@ -118,7 +118,7 @@ class SubtitleModifications(object):
                                  identifier, self.language)
                 continue
 
-            if mod_cls.only_uppercase and not self.mostly_uppercase:
+            if mod_cls.mostly_uppercase and not self.mostly_uppercase:
                 if self.debug:
                     logger.debug("Skipping %s, because the subtitle isn't all uppercase", identifier)
                 continue

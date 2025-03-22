@@ -175,7 +175,7 @@ class FixUppercase(SubtitleModification):
     modifies_whole_file = True
     exclusive = True
     order = 41
-    only_uppercase = True
+    mostly_uppercase = True
     apply_last = True
 
     long_description = "Some subtitles are in all-uppercase letters. This at least makes them readable."
