@@ -151,22 +151,20 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
 
 
 def list_missing_subtitles(no=None, epno=None, send_event=True):
-    if epno is not None:
-        episodes_subtitles_clause = (TableEpisodes.sonarrEpisodeId == epno)
-    elif no is not None:
-        episodes_subtitles_clause = (TableEpisodes.sonarrSeriesId == no)
-    else:
-        episodes_subtitles_clause = None
-    episodes_subtitles = database.execute(
-        select(TableShows.sonarrSeriesId,
-               TableEpisodes.sonarrEpisodeId,
-               TableEpisodes.subtitles,
-               TableShows.profileId,
-               TableEpisodes.audio_language)
-        .select_from(TableEpisodes)
+    stmt = select(TableShows.sonarrSeriesId,
+                  TableEpisodes.sonarrEpisodeId,
+                  TableEpisodes.subtitles,
+                  TableShows.profileId,
+                  TableEpisodes.audio_language) \
+        .select_from(TableEpisodes) \
         .join(TableShows)
-        .where(episodes_subtitles_clause))\
-        .all()
+
+    if epno is not None:
+        episodes_subtitles = database.execute(stmt.where(TableEpisodes.sonarrEpisodeId == epno)).all()
+    elif no is not None:
+        episodes_subtitles = database.execute(stmt.where(TableEpisodes.sonarrSeriesId == no)).all()
+    else:
+        episodes_subtitles = database.execute(stmt).all()
 
     use_embedded_subs = settings.general.use_embedded_subs
 

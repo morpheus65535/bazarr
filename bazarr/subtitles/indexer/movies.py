@@ -152,21 +152,15 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
 
 
 def list_missing_subtitles_movies(no=None, send_event=True):
+    stmt = select(TableMovies.radarrId,
+                  TableMovies.subtitles,
+                  TableMovies.profileId,
+                  TableMovies.audio_language)
+
     if no:
-        movies_subtitles = database.execute(
-            select(TableMovies.radarrId,
-                   TableMovies.subtitles,
-                   TableMovies.profileId,
-                   TableMovies.audio_language)
-            .where(TableMovies.radarrId == no)) \
-            .all()
+        movies_subtitles = database.execute(stmt.where(TableMovies.radarrId == no)).all()
     else:
-        movies_subtitles = database.execute(
-            select(TableMovies.radarrId,
-                   TableMovies.subtitles,
-                   TableMovies.profileId,
-                   TableMovies.audio_language)) \
-            .all()
+        movies_subtitles = database.execute(stmt).all()
 
     use_embedded_subs = settings.general.use_embedded_subs
 
