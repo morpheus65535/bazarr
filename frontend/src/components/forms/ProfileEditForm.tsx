@@ -2,7 +2,6 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import {
   Accordion,
   Button,
-  Checkbox,
   Flex,
   Select,
   Stack,
@@ -31,6 +30,7 @@ const defaultCutoffOptions: SelectorOption<Language.ProfileItem>[] = [
       id: anyCutoff,
       // eslint-disable-next-line camelcase
       audio_exclude: "False",
+      // eslint-disable-next-line camelcase
       audio_only_include: "False",
       forced: "False",
       hi: "False",
@@ -161,6 +161,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         language,
         // eslint-disable-next-line camelcase
         audio_exclude: "False",
+        // eslint-disable-next-line camelcase
         audio_only_include: "False",
         hi: "False",
         forced: "False",
@@ -246,8 +247,11 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             if (value) {
               action.mutate(index, {
                 ...item,
+                // eslint-disable-next-line camelcase
                 audio_exclude: value === "audio_exclude" ? "True" : "False",
-                audio_only_include: value === "audio_only_include" ? "True" : "False",
+                // eslint-disable-next-line camelcase
+                audio_only_include:
+                  value === "audio_only_include" ? "True" : "False",
               });
             }
           }}
@@ -297,7 +301,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         },
       },
     ],
-    [action, LanguageCell, SubtitleTypeCell],
+    [action, LanguageCell, SubtitleTypeCell, InclusionCell],
   );
 
   return (
