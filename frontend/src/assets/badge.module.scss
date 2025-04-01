@@ -1,44 +1,44 @@
 @layer mantine {
   .root {
-    background-color: transparentize($color-brand-6, 0.8);
+    background-color: transparentize(bazarr.$color-brand-6, 0.8);
 
     &[data-variant="warning"] {
-      color: lighten($color-warning-2, 0.8);
-      background-color: transparentize($color-warning-6, 0.8);
+      color: lighten(bazarr.$color-warning-2, 0.8);
+      background-color: transparentize(bazarr.$color-warning-6, 0.8);
     }
 
     &[data-variant="highlight"] {
-      color: lighten($color-highlight-2, 1);
-      background-color: transparentize($color-highlight-5, 0.8);
+      color: lighten(bazarr.$color-highlight-2, 1);
+      background-color: transparentize(bazarr.$color-highlight-5, 0.8);
     }
 
     &[data-variant="disabled"] {
-      color: lighten($color-disabled-0, 1);
-      background-color: transparentize($color-disabled-7, 0.8);
+      color: lighten(bazarr.$color-disabled-0, 1);
+      background-color: transparentize(bazarr.$color-disabled-7, 0.8);
     }
 
     &[data-variant="light"] {
       color: var(--mantine-color-dark-0);
-      background-color: transparentize($color-disabled-9, 0.8);
+      background-color: transparentize(bazarr.$color-disabled-9, 0.8);
     }
 
-    @include light {
-      color: $color-brand-6;
-      background-color: transparentize($color-brand-3, 0.8);
+    @include mantine.light {
+      color: bazarr.$color-brand-6;
+      background-color: transparentize(bazarr.$color-brand-3, 0.8);
 
       &[data-variant="warning"] {
-        color: darken($color-warning-7, 1);
-        background-color: transparentize($color-warning-6, 0.8);
+        color: darken(bazarr.$color-warning-7, 1);
+        background-color: transparentize(bazarr.$color-warning-6, 0.8);
       }
 
       &[data-variant="disabled"] {
-        color: darken($color-disabled-6, 1);
-        background-color: transparentize($color-disabled-4, 0.8);
+        color: darken(bazarr.$color-disabled-6, 1);
+        background-color: transparentize(bazarr.$color-disabled-4, 0.8);
       }
 
       &[data-variant="highlight"] {
-        color: darken($color-highlight-6, 1);
-        background-color: transparentize($color-highlight-5, 0.8);
+        color: darken(bazarr.$color-highlight-6, 1);
+        background-color: transparentize(bazarr.$color-highlight-5, 0.8);
       }
 
       &[data-variant="light"] {

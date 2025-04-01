@@ -106,9 +106,10 @@ export default defineConfig(async ({ mode, command }) => {
     css: {
       preprocessorOptions: {
         scss: {
+          api: "modern-compiler",
           additionalData: `
-            @import "./src/assets/_mantine";
-            @import "./src/assets/_bazarr";
+            @use "${path.join(process.cwd(), "src/assets/_mantine").replace(/\\/g, "/")}" as mantine;
+            @use "${path.join(process.cwd(), "src/assets/_bazarr").replace(/\\/g, "/")}" as bazarr;
           `,
         },
       },

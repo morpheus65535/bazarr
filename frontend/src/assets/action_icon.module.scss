@@ -2,13 +2,13 @@
   .root {
     --ai-bg: transparent;
 
-    @include light {
+    @include mantine.light {
       color: var(--mantine-color-dark-2);
       --ai-hover: var(--mantine-color-gray-1);
       --ai-hover-color: var(--mantine-color-gray-1);
     }
 
-    @include dark {
+    @include mantine.dark {
       color: var(--mantine-color-dark-0);
       --ai-hover: var(--mantine-color-gray-8);
     }
