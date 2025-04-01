@@ -12,11 +12,11 @@ import { VitePWA } from "vite-plugin-pwa";
 import chunks from "./config/chunks";
 import overrideEnv from "./config/configReader";
 
-export default defineConfig(async ({ mode, command }) => {
+export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd());
 
   if (command === "serve") {
-    await overrideEnv(env);
+    overrideEnv(env);
   }
 
   const target = env.VITE_PROXY_URL;
