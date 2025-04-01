@@ -19,7 +19,6 @@ describe("Blacklist Movies", () => {
 
     server.use(
       http.get("/api/movies/blacklist", () => {
-        // TODO: Replace with Factory
         return HttpResponse.json({
           data: [
             {
