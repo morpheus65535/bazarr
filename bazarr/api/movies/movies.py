@@ -3,6 +3,7 @@
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from app.database import TableMovies, database, update, select, func
+from radarr.sync.movies import update_one_movie
 from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
 from app.event_handler import event_stream
 from subtitles.wanted import wanted_search_missing_subtitles_movies
@@ -183,6 +184,9 @@ class Movies(Resource):
                 return '', 204
         elif action == "search-wanted":
             wanted_search_missing_subtitles_movies()
+            return '', 204
+        elif action == "sync":
+            update_one_movie(radarrid, 'updated', True)
             return '', 204
 
         return 'Unknown action', 400
