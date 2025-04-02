@@ -159,7 +159,7 @@ class Movies(Resource):
     patch_request_parser = reqparse.RequestParser()
     patch_request_parser.add_argument('radarrid', type=int, required=False, help='Radarr movie ID')
     patch_request_parser.add_argument('action', type=str, required=False, help='Action to perform from ["scan-disk", '
-                                                                               '"search-missing", "search-wanted"]')
+                                                                               '"search-missing", "search-wanted", "sync"]')
 
     @authenticate
     @api_ns_movies.doc(parser=patch_request_parser)

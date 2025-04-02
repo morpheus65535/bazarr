@@ -199,7 +199,7 @@ class Series(Resource):
     patch_request_parser = reqparse.RequestParser()
     patch_request_parser.add_argument('seriesid', type=int, required=False, help='Sonarr series ID')
     patch_request_parser.add_argument('action', type=str, required=False, help='Action to perform from ["scan-disk", '
-                                                                               '"search-missing", "search-wanted"]')
+                                                                               '"search-missing", "search-wanted", "sync"]')
 
     @authenticate
     @api_ns_series.doc(parser=patch_request_parser)
