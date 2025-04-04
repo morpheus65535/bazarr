@@ -339,6 +339,11 @@ def update_one_movie(movie_id, action, defer_search=False):
             f'BAZARR searching for missing subtitles is deferred until scheduled task execution for this movie: '
             f'{path_mappings.path_replace_movie(movie["path"])}')
     else:
-        logging.debug(
-            f'BAZARR downloading missing subtitles for this movie: {path_mappings.path_replace_movie(movie["path"])}')
-        movies_download_subtitles(movie_id)
+        mapped_movie_path = path_mappings.path_replace_movie(movie["path"])
+        if os.path.exists(mapped_movie_path):
+            logging.debug(f'BAZARR downloading missing subtitles for this movie: {mapped_movie_path}')
+            movies_download_subtitles(movie_id)
+        else:
+            logging.debug(f'BAZARR cannot find this file yet (Radarr may be slow to import movie between disks?). '
+                          f'Searching for missing subtitles is deferred until scheduled task execution for this movie: '
+                          f'{mapped_movie_path}')
