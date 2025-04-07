@@ -316,6 +316,12 @@ def get_upgradable_episode_subtitles():
     query_actions_without_upgrade = [x for x in query_actions if x != 3]
     upgradable_episode_subtitles = {}
     for subtitle_to_upgrade in subtitles_to_upgrade:
+        # exclude subtitles with ID that as been "upgraded from" and shouldn't be considered (should help prevent
+        # non-matching hi/non-hi bug)
+        if database.execute(select(TableHistory.id).where(TableHistory.upgradedFromId == subtitle_to_upgrade.id)).first():
+            logging.debug(f"Episode subtitle {subtitle_to_upgrade.id} has already been upgraded so we'll skip it.")
+            continue
+
         # check if we have the original subtitles id in database and use it instead of guessing
         if subtitle_to_upgrade.upgradedFromId:
             upgradable_episode_subtitles.update({subtitle_to_upgrade.id: subtitle_to_upgrade.upgradedFromId})
@@ -393,6 +399,13 @@ def get_upgradable_movies_subtitles():
     query_actions_without_upgrade = [x for x in query_actions if x != 3]
     upgradable_movie_subtitles = {}
     for subtitle_to_upgrade in subtitles_to_upgrade:
+        # exclude subtitles with ID that as been "upgraded from" and shouldn't be considered (should help prevent
+        # non-matching hi/non-hi bug)
+        if database.execute(
+                select(TableHistoryMovie.id).where(TableHistoryMovie.upgradedFromId == subtitle_to_upgrade.id)).first():
+            logging.debug(f"Movie subtitle {subtitle_to_upgrade.id} has already been upgraded so we'll skip it.")
+            continue
+
         # check if we have the original subtitles id in database and use it instead of guessing
         if subtitle_to_upgrade.upgradedFromId:
             upgradable_movie_subtitles.update({subtitle_to_upgrade.id: subtitle_to_upgrade.upgradedFromId})
