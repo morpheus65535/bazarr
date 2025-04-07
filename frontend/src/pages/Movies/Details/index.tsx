@@ -7,6 +7,7 @@ import { showNotification } from "@mantine/notifications";
 import {
   faCloudUploadAlt,
   faEllipsis,
+  faHardDrive,
   faHistory,
   faSearch,
   faSync,
@@ -126,6 +127,20 @@ const MovieDetailView: FunctionComponent = () => {
           <Group gap="xs">
             <Toolbox.Button
               icon={faSync}
+              disabled={hasTask}
+              onClick={() => {
+                if (movie) {
+                  task.create(movie.title, TaskGroup.Sync, action, {
+                    action: "sync",
+                    radarrid: id,
+                  });
+                }
+              }}
+            >
+              Sync
+            </Toolbox.Button>
+            <Toolbox.Button
+              icon={faHardDrive}
               disabled={hasTask}
               onClick={() => {
                 if (movie) {

@@ -6,6 +6,7 @@ from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select, update, func
+from sonarr.sync.series import update_one_series
 from subtitles.indexer.series import list_missing_subtitles, series_scan_subtitles
 from subtitles.mass_download import series_download_subtitles
 from subtitles.wanted import wanted_search_missing_subtitles_series
@@ -198,7 +199,7 @@ class Series(Resource):
     patch_request_parser = reqparse.RequestParser()
     patch_request_parser.add_argument('seriesid', type=int, required=False, help='Sonarr series ID')
     patch_request_parser.add_argument('action', type=str, required=False, help='Action to perform from ["scan-disk", '
-                                                                               '"search-missing", "search-wanted"]')
+                                                                               '"search-missing", "search-wanted", "sync"]')
 
     @authenticate
     @api_ns_series.doc(parser=patch_request_parser)
@@ -223,6 +224,9 @@ class Series(Resource):
                 return '', 204
         elif action == "search-wanted":
             wanted_search_missing_subtitles_series()
+            return '', 204
+        elif action == "sync":
+            update_one_series(seriesid, 'updated')
             return '', 204
 
         return 'Unknown action', 400
