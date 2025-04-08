@@ -97,7 +97,7 @@ class SystemLogs(Resource):
                         log['exception'] = raw_message[4].strip('\'').replace('  ', '\u2003\u2003')
                     else:
                         log['exception'] = None
-                logs.append(log)
+                    logs.append(log)
 
             logs.reverse()
         return marshal(logs, self.get_response_model, envelope='data')
