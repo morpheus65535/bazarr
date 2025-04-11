@@ -60,6 +60,9 @@ tzlocal==5.2
 # Required-by: beautifulsoup4
 soupsieve==2.3.2.post1
 
+# Required-by: deathbycaptcha
+filetype==1.2.0
+
 # Required-by: ffsubsync
 auditok<=0.1.5  # do not upgrade unless ffsubsync requirements.txt change
 ffmpeg-python==0.2.0
