@@ -23,6 +23,20 @@ class SystemLogs(Resource):
         'exception': fields.String(),
     })
 
+    def handle_record(self, logs, multi_line_record):
+        # finalize the multi line record
+        if logs:
+            # update the exception of the last entry 
+            last_log = logs[-1]
+            last_log["exception"] += "\n".join(multi_line_record)
+        else:
+            # multiline record is first entry in log
+            last_log = dict()
+            last_log["type"] = "ERROR"
+            last_log["message"] = "See exception"
+            last_log["exception"] = "\n".join(multi_line_record)
+            logs.append(last_log)
+
     @authenticate
     @api_ns_system_logs.doc(parser=None)
     @api_ns_system_logs.response(200, 'Success')
@@ -93,9 +107,7 @@ class SystemLogs(Resource):
                 # check if the line has a timestamp that matches the start of a new log record
                 if record_start_pattern.match(line):
                     if multi_line_record:
-                        # finalize the multi line record and update the exception of the last entry 
-                        last_log = logs[-1]
-                        last_log["exception"] += "\n" + "\n".join(multi_line_record)
+                        self.handle_record(logs, multi_line_record)
                         # reset for the next multi-line record
                         multi_line_record = []
                     raw_message = line.split('|')
@@ -116,8 +128,7 @@ class SystemLogs(Resource):
 
             if multi_line_record:
                 # finalize the multi line record and update the exception of the last entry 
-                last_log = logs[-1]
-                last_log["exception"] += "\n".join(multi_line_record)
+                self.handle_record(logs, multi_line_record)
 
             logs.reverse()
         return marshal(logs, self.get_response_model, envelope='data')
