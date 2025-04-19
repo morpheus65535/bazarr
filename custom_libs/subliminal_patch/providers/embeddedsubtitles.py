@@ -67,7 +67,7 @@ _ALLOWED_CODECS = ("ass", "subrip", "webvtt", "mov_text")
 class EmbeddedSubtitlesProvider(Provider):
     provider_name = "embeddedsubtitles"
 
-    languages = {Language("por", "BR"), Language("spa", "MX")} | {
+    languages = {Language("por", "BR"), Language("spa", "MX"), Language("zho", "TW")} | {
         Language.fromalpha2(l) for l in language_converters["alpha2"].codes
     }
     languages.update(set(Language.rebuild(lang, hi=True) for lang in languages))
