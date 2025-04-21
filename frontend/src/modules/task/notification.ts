@@ -1,11 +1,14 @@
 import { NotificationData } from "@mantine/notifications";
 
+const defaultPosition = "bottom-left";
+
 export const notification = {
   info: (title: string, message: string): NotificationData => {
     return {
       title,
       message,
       autoClose: 5 * 1000,
+      position: defaultPosition,
     };
   },
 
@@ -15,6 +18,7 @@ export const notification = {
       message,
       color: "yellow",
       autoClose: 6 * 1000,
+      position: defaultPosition,
     };
   },
 
@@ -24,6 +28,7 @@ export const notification = {
       message,
       color: "red",
       autoClose: 7 * 1000,
+      position: defaultPosition,
     };
   },
 
@@ -40,6 +45,7 @@ export const notification = {
         message: "Starting Tasks...",
         color: "gray",
         loading: true,
+        position: defaultPosition,
       };
     },
     update: (
@@ -55,6 +61,7 @@ export const notification = {
         message: `[${current}/${total}] ${body}`,
         loading: true,
         autoClose: false,
+        position: defaultPosition,
       };
     },
     end: (id: string, header: string): NotificationData & { id: string } => {
@@ -64,6 +71,7 @@ export const notification = {
         message: "All Tasks Completed",
         color: "green",
         autoClose: 2 * 1000,
+        position: defaultPosition,
       };
     },
   },
