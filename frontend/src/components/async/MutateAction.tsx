@@ -11,7 +11,6 @@ type MutateActionProps<DATA, VAR> = Omit<
   args: () => VAR | null;
   onSuccess?: (args: DATA) => void;
   onError?: () => void;
-  noReset?: boolean;
 };
 
 function MutateAction<DATA, VAR>({

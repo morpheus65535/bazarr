@@ -10,7 +10,6 @@ type MutateButtonProps<DATA, VAR> = Omit<
   args: () => VAR | null;
   onSuccess?: (args: DATA) => void;
   onError?: () => void;
-  noReset?: boolean;
 };
 
 function MutateButton<DATA, VAR>({

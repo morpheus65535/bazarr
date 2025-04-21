@@ -57,14 +57,6 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
     ];
   }, [profileOptions.options]);
 
-  const getKey = useCallback((value: Language.Profile | null) => {
-    if (value) {
-      return value.name;
-    }
-
-    return "Clear";
-  }, []);
-
   const { mutateAsync } = mutation;
 
   /**
@@ -136,7 +128,6 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
             placeholder="Change Profile"
             withCheckIcon={false}
             options={profileOptionsWithAction}
-            getkey={getKey}
             disabled={selections.length === 0}
             comboboxProps={{
               store: combobox,

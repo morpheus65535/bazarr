@@ -1,9 +1,9 @@
 import { describe, it } from "vitest";
 import { Search } from "@/components/index";
-import { render } from "@/tests";
+import { customRender } from "@/tests";
 
 describe("Search Bar", () => {
   it.skip("should render the closed empty state", () => {
-    render(<Search />);
+    customRender(<Search />);
   });
 });
