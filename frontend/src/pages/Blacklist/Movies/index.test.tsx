@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { render, screen, waitFor } from "@/tests";
+import { customRender, screen, waitFor } from "@/tests";
 import server from "@/tests/mocks/node";
 import BlacklistMoviesView from ".";
 
@@ -42,7 +42,7 @@ describe("Blacklist Movies", () => {
       }),
     );
 
-    render(<BlacklistMoviesView />);
+    customRender(<BlacklistMoviesView />);
 
     await waitFor(() => {
       expect(screen.getByText("yifysubtitles")).toBeInTheDocument();
@@ -58,7 +58,7 @@ describe("Blacklist Movies", () => {
       }),
     );
 
-    render(<BlacklistMoviesView />);
+    customRender(<BlacklistMoviesView />);
 
     await waitFor(() => {
       expect(

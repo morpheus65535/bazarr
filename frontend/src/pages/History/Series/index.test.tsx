@@ -2,7 +2,7 @@
 
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { render, screen, waitFor } from "@/tests";
+import { customRender, screen, waitFor } from "@/tests";
 import server from "@/tests/mocks/node";
 import SeriesHistoryView from ".";
 
@@ -37,7 +37,7 @@ describe("History Series", () => {
       }),
     );
 
-    render(<SeriesHistoryView />);
+    customRender(<SeriesHistoryView />);
 
     await waitFor(() => {
       expect(screen.getByText("Breaking Bad")).toBeInTheDocument();

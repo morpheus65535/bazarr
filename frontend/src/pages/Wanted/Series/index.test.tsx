@@ -2,7 +2,7 @@
 
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { render, screen } from "@/tests";
+import { customRender, screen } from "@/tests";
 import server from "@/tests/mocks/node";
 import WantedSeriesView from ".";
 
@@ -37,7 +37,7 @@ describe("Wanted Series", () => {
       }),
     );
 
-    render(<WantedSeriesView />);
+    customRender(<WantedSeriesView />);
 
     await screen.findByText("Breaking Bad");
     expect(screen.getByText("Name")).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe("Wanted Series", () => {
       }),
     );
 
-    render(<WantedSeriesView />);
+    customRender(<WantedSeriesView />);
 
     await screen.findByText(/No missing Series subtitles/i);
   });

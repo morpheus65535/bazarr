@@ -1,6 +1,6 @@
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { render } from "@/tests";
+import { customRender } from "@/tests";
 import server from "@/tests/mocks/node";
 import SystemProvidersView from ".";
 
@@ -14,7 +14,7 @@ describe("System Providers", () => {
       }),
     );
 
-    render(<SystemProvidersView />);
+    customRender(<SystemProvidersView />);
 
     // TODO: Assert
   });

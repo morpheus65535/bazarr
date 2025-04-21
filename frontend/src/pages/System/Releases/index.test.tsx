@@ -1,6 +1,6 @@
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { render, screen } from "@/tests";
+import { customRender, screen } from "@/tests";
 import server from "@/tests/mocks/node";
 import SystemReleasesView from ".";
 
@@ -37,7 +37,7 @@ describe("System Releases", () => {
       }),
     );
 
-    render(<SystemReleasesView />);
+    customRender(<SystemReleasesView />);
 
     await screen.findByText("v1.0.0");
     await screen.findByText("v1.1.0-beta");
@@ -72,7 +72,7 @@ describe("System Releases", () => {
       }),
     );
 
-    render(<SystemReleasesView />);
+    customRender(<SystemReleasesView />);
 
     expect(screen.queryByRole("card")).not.toBeInTheDocument();
   });

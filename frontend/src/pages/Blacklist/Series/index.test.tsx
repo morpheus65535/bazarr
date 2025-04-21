@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { render, screen, waitFor } from "@/tests";
+import { customRender, screen, waitFor } from "@/tests";
 import server from "@/tests/mocks/node";
 import BlacklistSeriesView from ".";
 
@@ -15,7 +15,7 @@ describe("Blacklist Series", () => {
       }),
     );
 
-    render(<BlacklistSeriesView />);
+    customRender(<BlacklistSeriesView />);
 
     await waitFor(() => {
       expect(
@@ -53,7 +53,7 @@ describe("Blacklist Series", () => {
       }),
     );
 
-    render(<BlacklistSeriesView />);
+    customRender(<BlacklistSeriesView />);
 
     await waitFor(() => {
       expect(screen.getByText("animetosho")).toBeInTheDocument();

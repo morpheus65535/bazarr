@@ -1,5 +1,5 @@
 import { FunctionComponent } from "react";
-import { render } from ".";
+import { customRender } from ".";
 
 export interface RenderTestCase {
   name: string;
@@ -17,7 +17,7 @@ export function renderTest(name: string, cases: RenderTestCase[]) {
 
     cases.forEach((element) => {
       it(`${element.name.toLowerCase()} should render`, () => {
-        render(<element.ui />);
+        customRender(<element.ui />);
       });
     });
   });

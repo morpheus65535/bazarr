@@ -1,7 +1,7 @@
 import { faStickyNote } from "@fortawesome/free-regular-svg-icons";
 import userEvent from "@testing-library/user-event";
 import { describe, it, vitest } from "vitest";
-import { render, screen } from "@/tests";
+import { customRender, screen } from "@/tests";
 import Action from "./Action";
 
 const testLabel = "Test Label";
@@ -9,7 +9,7 @@ const testIcon = faStickyNote;
 
 describe("Action button", () => {
   it("should be a button", () => {
-    render(<Action icon={testIcon} label={testLabel}></Action>);
+    customRender(<Action icon={testIcon} label={testLabel}></Action>);
     const element = screen.getByRole("button", { name: testLabel });
 
     expect(element.getAttribute("type")).toEqual("button");
@@ -17,7 +17,7 @@ describe("Action button", () => {
   });
 
   it("should show icon", () => {
-    render(<Action icon={testIcon} label={testLabel}></Action>);
+    customRender(<Action icon={testIcon} label={testLabel}></Action>);
     // TODO: use getBy...
     const element = screen.getByRole("img", { hidden: true });
 
@@ -27,7 +27,7 @@ describe("Action button", () => {
 
   it("should call on-click event when clicked", async () => {
     const onClickFn = vitest.fn();
-    render(
+    customRender(
       <Action icon={testIcon} label={testLabel} onClick={onClickFn}></Action>,
     );
 

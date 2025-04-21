@@ -1,6 +1,6 @@
 import userEvent from "@testing-library/user-event";
 import { describe, it, vitest } from "vitest";
-import { render, screen } from "@/tests";
+import { customRender, screen } from "@/tests";
 import { Selector, SelectorOption } from "./Selector";
 
 const selectorName = "Test Selections";
@@ -18,7 +18,9 @@ const testOptions: SelectorOption<string>[] = [
 describe("Selector", () => {
   describe("options", () => {
     it("should work with the SelectorOption", () => {
-      render(<Selector name={selectorName} options={testOptions}></Selector>);
+      customRender(
+        <Selector name={selectorName} options={testOptions}></Selector>,
+      );
 
       testOptions.forEach((o) => {
         expect(screen.getByText(o.label)).toBeDefined();
@@ -26,7 +28,9 @@ describe("Selector", () => {
     });
 
     it("should display when clicked", async () => {
-      render(<Selector name={selectorName} options={testOptions}></Selector>);
+      customRender(
+        <Selector name={selectorName} options={testOptions}></Selector>,
+      );
 
       const element = screen.getByTestId("input-selector");
 
@@ -41,7 +45,7 @@ describe("Selector", () => {
 
     it("shouldn't show default value", async () => {
       const option = testOptions[0];
-      render(
+      customRender(
         <Selector
           name={selectorName}
           options={testOptions}
@@ -54,7 +58,7 @@ describe("Selector", () => {
 
     it("shouldn't show value", async () => {
       const option = testOptions[0];
-      render(
+      customRender(
         <Selector
           name={selectorName}
           options={testOptions}
@@ -72,7 +76,7 @@ describe("Selector", () => {
       const mockedFn = vitest.fn((value: string | null) => {
         expect(value).toEqual(clickedOption.value);
       });
-      render(
+      customRender(
         <Selector
           name={selectorName}
           options={testOptions}
@@ -112,7 +116,7 @@ describe("Selector", () => {
       const mockedFn = vitest.fn((value: { name: string } | null) => {
         expect(value).toEqual(clickedOption.value);
       });
-      render(
+      customRender(
         <Selector
           name={selectorName}
           options={objectOptions}
@@ -134,7 +138,7 @@ describe("Selector", () => {
   describe("placeholder", () => {
     it("should show when no selection", () => {
       const placeholder = "Empty Selection";
-      render(
+      customRender(
         <Selector
           name={selectorName}
           options={testOptions}

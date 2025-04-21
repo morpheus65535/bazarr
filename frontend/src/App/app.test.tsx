@@ -1,7 +1,7 @@
 import { http } from "msw";
 import { HttpResponse } from "msw";
 import { describe, it } from "vitest";
-import { render } from "@/tests";
+import { customRender } from "@/tests";
 import server from "@/tests/mocks/node";
 import App from ".";
 
@@ -13,6 +13,6 @@ describe("App", () => {
       }),
     );
 
-    render(<App />);
+    customRender(<App />);
   });
 });

@@ -1,6 +1,6 @@
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { render } from "@/tests";
+import { customRender } from "@/tests";
 import server from "@/tests/mocks/node";
 import SystemLogsView from ".";
 
@@ -14,7 +14,7 @@ describe("System Logs", () => {
       }),
     );
 
-    render(<SystemLogsView />);
+    customRender(<SystemLogsView />);
 
     // TODO: Assert
   });

@@ -1,5 +1,5 @@
 import { describe, it } from "vitest";
-import { render, screen } from "@/tests";
+import { customRender, screen } from "@/tests";
 import { Language } from ".";
 
 describe("Language text", () => {
@@ -9,13 +9,13 @@ describe("Language text", () => {
   };
 
   it("should show short text", () => {
-    render(<Language.Text value={testLanguage}></Language.Text>);
+    customRender(<Language.Text value={testLanguage}></Language.Text>);
 
     expect(screen.getByText(testLanguage.code2)).toBeDefined();
   });
 
   it("should show long text", () => {
-    render(<Language.Text value={testLanguage} long></Language.Text>);
+    customRender(<Language.Text value={testLanguage} long></Language.Text>);
 
     expect(screen.getByText(testLanguage.name)).toBeDefined();
   });
@@ -23,7 +23,7 @@ describe("Language text", () => {
   const testLanguageWithHi: Language.Info = { ...testLanguage, hi: true };
 
   it("should show short text with HI", () => {
-    render(<Language.Text value={testLanguageWithHi}></Language.Text>);
+    customRender(<Language.Text value={testLanguageWithHi}></Language.Text>);
 
     const expectedText = `${testLanguageWithHi.code2}:HI`;
 
@@ -31,7 +31,9 @@ describe("Language text", () => {
   });
 
   it("should show long text with HI", () => {
-    render(<Language.Text value={testLanguageWithHi} long></Language.Text>);
+    customRender(
+      <Language.Text value={testLanguageWithHi} long></Language.Text>,
+    );
 
     const expectedText = `${testLanguageWithHi.name} HI`;
 
@@ -44,7 +46,9 @@ describe("Language text", () => {
   };
 
   it("should show short text with Forced", () => {
-    render(<Language.Text value={testLanguageWithForced}></Language.Text>);
+    customRender(
+      <Language.Text value={testLanguageWithForced}></Language.Text>,
+    );
 
     const expectedText = `${testLanguageWithHi.code2}:Forced`;
 
@@ -52,7 +56,9 @@ describe("Language text", () => {
   });
 
   it("should show long text with Forced", () => {
-    render(<Language.Text value={testLanguageWithForced} long></Language.Text>);
+    customRender(
+      <Language.Text value={testLanguageWithForced} long></Language.Text>,
+    );
 
     const expectedText = `${testLanguageWithHi.name} Forced`;
 
@@ -73,7 +79,7 @@ describe("Language list", () => {
   ];
 
   it("should show all languages", () => {
-    render(<Language.List value={elements}></Language.List>);
+    customRender(<Language.List value={elements}></Language.List>);
 
     elements.forEach((value) => {
       expect(screen.getByText(value.name)).toBeDefined();

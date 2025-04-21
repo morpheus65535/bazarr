@@ -1,6 +1,6 @@
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { render } from "@/tests";
+import { customRender } from "@/tests";
 import server from "@/tests/mocks/node";
 import SystemTasksView from ".";
 
@@ -14,7 +14,7 @@ describe("System Tasks", () => {
       }),
     );
 
-    render(<SystemTasksView />);
+    customRender(<SystemTasksView />);
 
     // TODO: Assert
   });

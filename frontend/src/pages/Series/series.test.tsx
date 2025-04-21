@@ -1,7 +1,7 @@
 import { http } from "msw";
 import { HttpResponse } from "msw";
 import { beforeEach, describe, it } from "vitest";
-import { render } from "@/tests";
+import { customRender } from "@/tests";
 import server from "@/tests/mocks/node";
 import SeriesMassEditor from "./Editor";
 import SeriesView from ".";
@@ -18,7 +18,7 @@ describe("Series page", () => {
   });
 
   it("should render", () => {
-    render(<SeriesView />);
+    customRender(<SeriesView />);
   });
 });
 
@@ -39,6 +39,6 @@ describe("Series editor page", () => {
   });
 
   it("should render", () => {
-    render(<SeriesMassEditor />);
+    customRender(<SeriesMassEditor />);
   });
 });

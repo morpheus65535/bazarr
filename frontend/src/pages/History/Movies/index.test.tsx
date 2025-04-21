@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { render, screen, waitFor } from "@/tests";
+import { customRender, screen, waitFor } from "@/tests";
 import server from "@/tests/mocks/node";
 import MoviesHistoryView from ".";
 
@@ -50,7 +50,7 @@ describe("History Movies", () => {
   });
 
   it("should render the movies history table", async () => {
-    render(<MoviesHistoryView />);
+    customRender(<MoviesHistoryView />);
 
     await waitFor(() => {
       expect(
@@ -71,7 +71,7 @@ describe("History Movies", () => {
   });
 
   it("should display movie information correctly", async () => {
-    render(<MoviesHistoryView />);
+    customRender(<MoviesHistoryView />);
 
     await waitFor(() => {
       expect(
@@ -86,7 +86,7 @@ describe("History Movies", () => {
   });
 
   it("should show blacklist button when movie is not blacklisted", async () => {
-    render(<MoviesHistoryView />);
+    customRender(<MoviesHistoryView />);
 
     await waitFor(() => {
       expect(screen.getByLabelText("Add to Blacklist")).toBeInTheDocument();
@@ -105,7 +105,7 @@ describe("History Movies", () => {
       }),
     );
 
-    render(<MoviesHistoryView />);
+    customRender(<MoviesHistoryView />);
 
     await waitFor(() => {
       expect(
@@ -115,7 +115,7 @@ describe("History Movies", () => {
   });
 
   it("should navigate to movie details when clicking on movie title", async () => {
-    render(<MoviesHistoryView />);
+    customRender(<MoviesHistoryView />);
 
     await waitFor(() => {
       const movieLink = screen.getByText(

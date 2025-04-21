@@ -1,7 +1,7 @@
 import { http } from "msw";
 import { HttpResponse } from "msw";
 import { beforeEach, describe, it } from "vitest";
-import { render, screen } from "@/tests";
+import { customRender, screen } from "@/tests";
 import server from "@/tests/mocks/node";
 import MovieMassEditor from "./Editor";
 import MovieView from ".";
@@ -18,7 +18,7 @@ describe("Movies page", () => {
   });
 
   it("should render", () => {
-    render(<MovieView />);
+    customRender(<MovieView />);
   });
 });
 
@@ -39,7 +39,7 @@ describe("Movies editor page", () => {
   });
 
   it("should render", () => {
-    render(<MovieMassEditor />);
+    customRender(<MovieMassEditor />);
 
     expect(screen.getByText("Actions")).toBeInTheDocument();
   });

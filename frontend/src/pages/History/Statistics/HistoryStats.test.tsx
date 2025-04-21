@@ -1,6 +1,6 @@
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { render } from "@/tests";
+import { customRender } from "@/tests";
 import server from "@/tests/mocks/node";
 import HistoryStats from "./HistoryStats";
 
@@ -32,6 +32,6 @@ describe("History Stats", () => {
       }),
     );
 
-    render(<HistoryStats />);
+    customRender(<HistoryStats />);
   });
 });

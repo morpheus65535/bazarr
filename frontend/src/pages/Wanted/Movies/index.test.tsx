@@ -2,7 +2,7 @@
 
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { render, screen } from "@/tests";
+import { customRender, screen } from "@/tests";
 import server from "@/tests/mocks/node";
 import WantedMoviesView from ".";
 
@@ -31,7 +31,7 @@ describe("Wanted Movies", () => {
       }),
     );
 
-    render(<WantedMoviesView />);
+    customRender(<WantedMoviesView />);
 
     const movieTitle = await screen.findByText("The Shawshank Redemption");
     expect(movieTitle).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("Wanted Movies", () => {
       }),
     );
 
-    render(<WantedMoviesView />);
+    customRender(<WantedMoviesView />);
 
     const table = await screen.findByRole("table");
     expect(table).toBeInTheDocument();

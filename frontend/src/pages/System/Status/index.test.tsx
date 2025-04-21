@@ -1,6 +1,6 @@
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import { render } from "@/tests";
+import { customRender } from "@/tests";
 import server from "@/tests/mocks/node";
 import SystemStatusView from ".";
 
@@ -22,7 +22,7 @@ describe("System Status", () => {
       }),
     );
 
-    render(<SystemStatusView />);
+    customRender(<SystemStatusView />);
 
     // TODO: Assert
   });
