@@ -1,16 +1,32 @@
-import {
-  hideNotification,
-  showNotification,
-  updateNotification,
-} from "@mantine/notifications";
+import { NotificationData } from "@mantine/notifications";
 import { uniqueId } from "lodash";
 import { LOG } from "@/utilities/console";
 import { notification } from "./notification";
 
+let notificationContextRef: {
+  showNotification?: (notification: NotificationData & { id?: string }) => void;
+  updateNotification?: (
+    notification: NotificationData & { id: string },
+  ) => void;
+  hideNotification?: (id: string) => void;
+} = {};
+
+export const setNotificationContextRef = (
+  showFn: (notification: NotificationData & { id?: string }) => void,
+  updateFn: (notification: NotificationData & { id: string }) => void,
+  hideFn: (id: string) => void,
+) => {
+  notificationContextRef = {
+    showNotification: showFn,
+    updateNotification: updateFn,
+    hideNotification: hideFn,
+  };
+};
+
 class TaskDispatcher {
   private running: boolean;
-  private tasks: Record<string, Task.Callable[]> = {};
-  private progress: Record<string, boolean> = {};
+  private readonly tasks: Record<string, Task.Callable[]> = {};
+  private readonly progress: Record<string, boolean> = {};
 
   constructor() {
     this.running = false;
@@ -25,10 +41,9 @@ class TaskDispatcher {
 
     if (Object.keys(this.tasks).length > 0) {
       e.preventDefault();
-      e.returnValue = message;
-      return;
+
+      return message;
     }
-    delete e["returnValue"];
   }
 
   private update() {
@@ -66,16 +81,18 @@ class TaskDispatcher {
             try {
               await task(...task.parameters);
             } catch (error) {
-              // TODO
+              LOG("error", "Error while running task", task.description, error);
             }
           }
 
           const notifyEnd = notification.progress.end(taskId, group);
+
           updateNotification(notifyEnd);
 
           delete this.tasks[group];
         }
       }
+
       this.running = false;
     });
   }
@@ -86,10 +103,10 @@ class TaskDispatcher {
     callable: T,
     ...parameters: Parameters<T>
   ): Task.Ref {
-    // Clone this function
     const task = callable.bind({}) as Task.Callable<T>;
     task.parameters = parameters;
     task.description = name;
+
     task.id = uniqueId("task");
 
     if (this.tasks[group] === undefined) {
@@ -145,5 +162,30 @@ class TaskDispatcher {
 }
 
 export const task = new TaskDispatcher();
+
+export const showNotification = (
+  notification: NotificationData & { id?: string },
+) => {
+  if (notificationContextRef.showNotification) {
+    notificationContextRef.showNotification(notification);
+  }
+};
+
+export const updateNotification = (
+  notification: NotificationData & { id: string },
+) => {
+  if (notificationContextRef.updateNotification) {
+    notificationContextRef.updateNotification(notification);
+  }
+};
+
+export const hideNotification = (id: string) => {
+  if (notificationContextRef.hideNotification) {
+    notificationContextRef.hideNotification(id);
+  }
+};
+
 export * from "./group";
 export * from "./notification";
+export * from "./hooks";
+export * from "./NotificationContext";

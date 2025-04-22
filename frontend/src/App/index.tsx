@@ -7,7 +7,7 @@ import AppNavbar from "@/App/Navbar";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import NavbarProvider from "@/contexts/Navbar";
 import OnlineProvider from "@/contexts/Online";
-import { notification } from "@/modules/task";
+import { notification, NotificationProvider } from "@/modules/task";
 import CriticalError from "@/pages/errors/CriticalError";
 import { RouterNames } from "@/Router/RouterNames";
 import { Environment } from "@/utilities";
@@ -54,21 +54,23 @@ const App: FunctionComponent = () => {
     <ErrorBoundary>
       <NavbarProvider value={{ showed: navbar, show: setNavbar }}>
         <OnlineProvider value={{ online, setOnline }}>
-          <AppShell
-            navbar={{
-              width: styleVars.navBarWidth,
-              breakpoint: "sm",
-              collapsed: { mobile: !navbar },
-            }}
-            header={{ height: { base: styleVars.headerHeight } }}
-            padding={0}
-          >
-            <AppHeader></AppHeader>
-            <AppNavbar></AppNavbar>
-            <AppShell.Main>
-              <Outlet></Outlet>
-            </AppShell.Main>
-          </AppShell>
+          <NotificationProvider>
+            <AppShell
+              navbar={{
+                width: styleVars.navBarWidth,
+                breakpoint: "sm",
+                collapsed: { mobile: !navbar },
+              }}
+              header={{ height: { base: styleVars.headerHeight } }}
+              padding={0}
+            >
+              <AppHeader></AppHeader>
+              <AppNavbar></AppNavbar>
+              <AppShell.Main>
+                <Outlet></Outlet>
+              </AppShell.Main>
+            </AppShell>
+          </NotificationProvider>
         </OnlineProvider>
       </NavbarProvider>
     </ErrorBoundary>

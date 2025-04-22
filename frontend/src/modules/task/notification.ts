@@ -1,4 +1,15 @@
 import { NotificationData } from "@mantine/notifications";
+export { useNotifications } from "./hooks";
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  color?: string;
+  loading?: boolean;
+  autoClose?: boolean | number;
+  timestamp: Date;
+}
 
 export const notification = {
   info: (title: string, message: string): NotificationData => {
