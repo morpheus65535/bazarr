@@ -13,6 +13,7 @@ import {
 import { faCheck, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useNotifications } from "@/modules/task";
+import { uniqueId } from "lodash";
 
 interface NotificationDrawerProps {
   opened: boolean;
@@ -63,7 +64,12 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
         ) : (
           <Stack>
             {notifications.map((notification) => (
-              <Card key={notification.id} withBorder shadow="sm" p="sm">
+              <Card
+                key={uniqueId(notification.id)}
+                withBorder
+                shadow="sm"
+                p="sm"
+              >
                 <Card.Section withBorder pt={12} pl={14} pb={8} pos="relative">
                   <Badge
                     color={notification.color || "gray"}
@@ -79,7 +85,7 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
                   </Badge>
                   <Group>
                     {notification.loading ? (
-                      <FontAwesomeIcon icon={faSpinner} />
+                      <FontAwesomeIcon icon={faSpinner} spin />
                     ) : (
                       <FontAwesomeIcon
                         icon={faCheck}
