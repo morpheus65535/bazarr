@@ -15,7 +15,7 @@ export const AllProviders: FunctionComponent<PropsWithChildren> = ({
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <ModalsProvider>
-          <Notifications limit={5} />
+          <Notifications position="bottom-left" limit={5} />
           {/* c8 ignore next 3 */}
           {Environment.queryDev && <ReactQueryDevtools initialIsOpen={false} />}
           {children}
