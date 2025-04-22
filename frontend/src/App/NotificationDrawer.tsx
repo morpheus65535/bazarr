@@ -55,7 +55,7 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
         </Button>
       </Group>
 
-      <ScrollArea h="calc(100vh - 130px)" offsetScrollbars>
+      <ScrollArea offsetScrollbars>
         {notifications.length === 0 ? (
           <Text c="dimmed" ta="center" py="xl">
             No notifications to display
