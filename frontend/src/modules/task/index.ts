@@ -112,6 +112,7 @@ class TaskDispatcher {
 
     if (this.tasks[group] === undefined) {
       this.tasks[group] = [];
+
       const notifyStart = notification.progress.pending(group, group);
 
       showNotification(notifyStart);

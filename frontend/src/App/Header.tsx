@@ -1,4 +1,4 @@
-import { FunctionComponent, useState } from "react";
+import { FunctionComponent, useEffect, useState } from "react";
 import {
   Anchor,
   AppShell,
@@ -7,6 +7,7 @@ import {
   Burger,
   Divider,
   Group,
+  Indicator,
   Menu,
 } from "@mantine/core";
 import {
@@ -20,6 +21,7 @@ import { useSystem, useSystemSettings } from "@/apis/hooks";
 import { Action, Search } from "@/components";
 import { useNavbar } from "@/contexts/Navbar";
 import { useIsOnline } from "@/contexts/Online";
+import { useNotifications } from "@/modules/task";
 import { Environment, useGotoHomepage } from "@/utilities";
 import NotificationDrawer from "./NotificationDrawer";
 import styles from "./Header.module.scss";
@@ -28,6 +30,8 @@ const AppHeader: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
   const hasLogout = settings?.auth.type === "form";
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
+  const [hasPendingNotifications, setHasPendingNotifications] = useState(false);
+  const { notifications } = useNotifications();
 
   const { show, showed } = useNavbar();
 
@@ -37,6 +41,20 @@ const AppHeader: FunctionComponent = () => {
   const { shutdown, restart, logout } = useSystem();
 
   const goHome = useGotoHomepage();
+
+  useEffect(() => {
+    const pending = notifications.some((notification) => notification);
+    setHasPendingNotifications(pending);
+  }, [notifications]);
+
+  const handleOpenDrawer = () => {
+    setNotificationDrawerOpen(true);
+  };
+
+  const handleCloseDrawer = () => {
+    setNotificationDrawerOpen(false);
+    setHasPendingNotifications(false);
+  };
 
   return (
     <>
@@ -62,13 +80,21 @@ const AppHeader: FunctionComponent = () => {
           </Group>
           <Group gap="xs" justify="right" wrap="nowrap">
             <Search></Search>
-            <Action
-              label="Notifications"
-              tooltip={{ position: "left", openDelay: 2000 }}
-              icon={faBell}
-              size="lg"
-              onClick={() => setNotificationDrawerOpen(true)}
-            ></Action>
+            <Indicator
+              color="red"
+              size={10}
+              offset={5}
+              position="top-end"
+              disabled={!hasPendingNotifications}
+            >
+              <Action
+                label="Notifications"
+                tooltip={{ position: "left", openDelay: 2000 }}
+                icon={faBell}
+                size="lg"
+                onClick={handleOpenDrawer}
+              ></Action>
+            </Indicator>
             <Menu>
               <Menu.Target>
                 <Action
@@ -104,7 +130,7 @@ const AppHeader: FunctionComponent = () => {
       </AppShell.Header>
       <NotificationDrawer
         opened={notificationDrawerOpen}
-        onClose={() => setNotificationDrawerOpen(false)}
+        onClose={handleCloseDrawer}
       />
     </>
   );
