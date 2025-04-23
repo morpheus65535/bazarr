@@ -101,9 +101,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   }, [showNotification, updateNotification, hideNotification]);
 
-  const sortedNotifications = [...notifications].sort(
-    (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
-  );
+  const sortedNotifications = [...notifications].sort((a, b) => {
+    if (a.loading && !b.loading) {
+      return -1;
+    }
+
+    return 1;
+  });
 
   const value = {
     notifications: sortedNotifications,

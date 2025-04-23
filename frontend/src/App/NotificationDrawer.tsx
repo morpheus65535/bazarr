@@ -62,7 +62,7 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
           <Stack>
             {notifications.map((notification) => (
               <NotificationCard
-                key={notification.id || uniqueId("notification-")}
+                key={uniqueId(notification.id)}
                 notification={notification}
               />
             ))}
@@ -156,7 +156,8 @@ const NotificationCard = memo(
     );
 
     const notificationKey = useMemo(
-      () => (notification.id ? notification.id : uniqueId("notification-")),
+      () =>
+        notification.id ? uniqueId(notification.id) : uniqueId("notification-"),
       [notification.id],
     );
 
