@@ -76,20 +76,15 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
 const NotificationProgress = memo(
   ({ message, color }: { message: string; color?: string }) => {
     const [progress, setProgress] = useState(0);
-    const messageRef = useRef(message);
 
     useEffect(() => {
-      if (messageRef.current !== message) {
-        messageRef.current = message;
-
-        const match = message.match(/\[(\d+)\/(\d+)]/);
-        if (match) {
-          const current = parseInt(match[1], 10);
-          const total = parseInt(match[2], 10);
-          setProgress((current / total) * 100);
-        } else {
-          setProgress(0);
-        }
+      const match = message.match(/\[(\d+)\/(\d+)]/);
+      if (match) {
+        const current = parseInt(match[1], 10);
+        const total = parseInt(match[2], 10);
+        setProgress((current / total) * 100);
+      } else {
+        setProgress(0);
       }
     }, [message]);
 
