@@ -76,6 +76,7 @@ class TaskDispatcher {
               index,
               tasks.length,
             );
+
             updateNotification(notifyInProgress);
 
             try {
@@ -112,6 +113,7 @@ class TaskDispatcher {
     if (this.tasks[group] === undefined) {
       this.tasks[group] = [];
       const notifyStart = notification.progress.pending(group, group);
+
       showNotification(notifyStart);
     }
 
@@ -125,9 +127,7 @@ class TaskDispatcher {
   public updateProgress(items: Site.Progress[]) {
     items.forEach((item) => {
       if (this.progress[item.id] === undefined) {
-        showNotification(notification.progress.pending(item.id, item.header));
         this.progress[item.id] = true;
-        setTimeout(() => this.updateProgress([item]), 1000);
 
         return;
       }

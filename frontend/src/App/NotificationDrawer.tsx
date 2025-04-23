@@ -12,8 +12,8 @@ import {
 } from "@mantine/core";
 import { faCheck, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useNotifications } from "@/modules/task";
 import { uniqueId } from "lodash";
+import { useNotifications } from "@/modules/task";
 
 interface NotificationDrawerProps {
   opened: boolean;
