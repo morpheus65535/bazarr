@@ -369,7 +369,7 @@ def _basename_callback(path: str):
 
 
 # TODO: improve this
-_SIGNS_LINE_RE = re.compile(r",([\w|_]{,15}(sign|fx|karaoke))", flags=re.IGNORECASE)
+_SIGNS_LINE_RE = re.compile(r",([\w|_]{,15}(fx|karaoke))", flags=re.IGNORECASE)
 
 
 def _clean_ass_subtitles(path, output_path):
