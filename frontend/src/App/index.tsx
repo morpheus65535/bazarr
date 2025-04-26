@@ -7,7 +7,7 @@ import AppNavbar from "@/App/Navbar";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import NavbarProvider from "@/contexts/Navbar";
 import OnlineProvider from "@/contexts/Online";
-import { notification, NotificationProvider } from "@/modules/task";
+import { NotificationProvider } from "@/modules/task";
 import CriticalError from "@/pages/errors/CriticalError";
 import { RouterNames } from "@/Router/RouterNames";
 import { Environment } from "@/utilities";
@@ -37,12 +37,13 @@ const App: FunctionComponent = () => {
 
   useEffect(() => {
     if (Environment.hasUpdate) {
-      showNotification(
-        notification.info(
-          "Update available",
-          "A new version of Bazarr is ready, restart is required",
-        ),
-      );
+      showNotification({
+        title: "Update available",
+        message: "A new version of Bazarr is ready, restart is required.",
+        color: "yellow",
+        icon: <></>,
+        autoClose: 0,
+      });
     }
   }, []);
 

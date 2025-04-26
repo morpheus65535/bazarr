@@ -1,19 +1,16 @@
-import { NotificationData } from "@mantine/notifications";
 import { uniqueId } from "lodash";
 import { LOG } from "@/utilities/console";
-import { notification } from "./notification";
+import { notification, NotificationItem } from "./notification";
 
 let notificationContextRef: {
-  showNotification?: (notification: NotificationData & { id?: string }) => void;
-  updateNotification?: (
-    notification: NotificationData & { id: string },
-  ) => void;
+  showNotification?: (notification: NotificationItem) => void;
+  updateNotification?: (notification: NotificationItem) => void;
   hideNotification?: (id: string) => void;
 } = {};
 
 export const setNotificationContextRef = (
-  showFn: (notification: NotificationData & { id?: string }) => void,
-  updateFn: (notification: NotificationData & { id: string }) => void,
+  showFn: (notification: NotificationItem) => void,
+  updateFn: (notification: NotificationItem) => void,
   hideFn: (id: string) => void,
 ) => {
   notificationContextRef = {
@@ -188,17 +185,13 @@ class TaskDispatcher {
 
 export const task = new TaskDispatcher();
 
-export const showNotification = (
-  notification: NotificationData & { id?: string },
-) => {
+export const showNotification = (notification: NotificationItem) => {
   if (notificationContextRef.showNotification) {
     notificationContextRef.showNotification(notification);
   }
 };
 
-export const updateNotification = (
-  notification: NotificationData & { id: string },
-) => {
+export const updateNotification = (notification: NotificationItem) => {
   if (notificationContextRef.updateNotification) {
     notificationContextRef.updateNotification(notification);
   }

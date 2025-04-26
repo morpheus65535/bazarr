@@ -1,7 +1,7 @@
 import { cleanNotifications, showNotification } from "@mantine/notifications";
 import queryClient from "@/apis/queries";
 import { QueryKeys } from "@/apis/queries/keys";
-import { notification, task } from "@/modules/task";
+import { task } from "@/modules/task";
 import { LOG } from "@/utilities/console";
 import { setCriticalError, setOnlineStatus } from "@/utilities/event";
 
@@ -26,7 +26,12 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
       key: "message",
       update: (msg) => {
         msg
-          .map((message) => notification.info("Notification", message))
+          .map((message) => {
+            return {
+              title: "Notification",
+              message,
+            };
+          })
           .forEach((data) => showNotification(data));
       },
     },
