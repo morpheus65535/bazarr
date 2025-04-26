@@ -107,6 +107,22 @@ def check_status():
             child_process = start_bazarr()
 
 
+def is_process_running(pid):
+    commands = {
+        "win": ["tasklist", "/FI", f"PID eq {pid}"],
+        "linux": ["ps", "-eo", "pid"],
+        "darwin": ["ps", "-ax", "-o", "pid"]
+    }
+
+    # Determine OS and execute corresponding command
+    for key in commands:
+        if sys.platform.startswith(key):
+            result = subprocess.run(commands[key], capture_output=True, text=True)
+            return str(pid) in result.stdout.split()
+
+    print("Unsupported OS")
+    return False
+
 def interrupt_handler(signum, frame):
     # catch and ignore keyboard interrupt Ctrl-C
     # the child process Server object will catch SIGINT and perform an orderly shutdown
@@ -116,7 +132,9 @@ def interrupt_handler(signum, frame):
         interrupted = True
         print('Handling keyboard interrupt...')
     else:
-        print("Stop doing that! I heard you the first time!")
+        if not is_process_running(child_process):
+            # this will be caught by the main loop below
+            raise SystemExit(EXIT_INTERRUPT)
 
 
 if __name__ == '__main__':
