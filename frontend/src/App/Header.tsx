@@ -43,8 +43,10 @@ const AppHeader: FunctionComponent = () => {
   const goHome = useGotoHomepage();
 
   useEffect(() => {
-    const pending = notifications.some((notification) => notification);
-    setHasPendingNotifications(pending);
+    const unreadNotifications = notifications.some(
+      (notification) => notification.read !== true,
+    );
+    setHasPendingNotifications(unreadNotifications);
   }, [notifications]);
 
   const handleOpenDrawer = () => {
@@ -53,7 +55,6 @@ const AppHeader: FunctionComponent = () => {
 
   const handleCloseDrawer = () => {
     setNotificationDrawerOpen(false);
-    setHasPendingNotifications(false);
   };
 
   return (

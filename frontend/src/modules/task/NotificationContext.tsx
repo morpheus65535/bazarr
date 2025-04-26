@@ -14,6 +14,7 @@ interface NotificationContextType {
   updateNotification: (notification: NotificationItem) => void;
   hideNotification: (id: string) => void;
   clearNotifications: () => void;
+  markAsRead: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -98,13 +99,23 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     setNotifications([]);
   }, [setNotifications]);
 
+  const markAsRead = useCallback(() => {
+    setNotifications((prev) =>
+      prev.map((notification) => ({
+        ...notification,
+        read: true,
+      })),
+    );
+  }, [setNotifications]);
+
   useEffect(() => {
     setNotificationContextRef(
       showNotification,
       updateNotification,
       hideNotification,
+      markAsRead,
     );
-  }, [showNotification, updateNotification, hideNotification]);
+  }, [showNotification, updateNotification, hideNotification, markAsRead]);
 
   const sortedNotifications = [...notifications].sort((a, b) => {
     if (a.loading && !b.loading) {
@@ -120,6 +131,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     updateNotification,
     hideNotification,
     clearNotifications,
+    markAsRead,
   };
 
   return (

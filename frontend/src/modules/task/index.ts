@@ -6,17 +6,20 @@ let notificationContextRef: {
   showNotification?: (notification: NotificationItem) => void;
   updateNotification?: (notification: NotificationItem) => void;
   hideNotification?: (id: string) => void;
+  markAsReadFn?: () => void;
 } = {};
 
 export const setNotificationContextRef = (
   showFn: (notification: NotificationItem) => void,
   updateFn: (notification: NotificationItem) => void,
   hideFn: (id: string) => void,
+  markAsReadFn: () => void,
 ) => {
   notificationContextRef = {
     showNotification: showFn,
     updateNotification: updateFn,
     hideNotification: hideFn,
+    markAsReadFn: markAsReadFn,
   };
 };
 
@@ -122,11 +125,7 @@ class TaskDispatcher {
     if (this.tasks[group] === undefined) {
       this.tasks[group] = [];
 
-      const notificationId = `${group}-${Date.now()}`;
-      this.taskNotificationIds[group] = notificationId;
-      const notifyStart = notification.progress.pending(notificationId, group);
-
-      showNotification(notifyStart);
+      this.taskNotificationIds[group] = `${group}-${Date.now()}`;
     }
 
     this.tasks[group].push(task);

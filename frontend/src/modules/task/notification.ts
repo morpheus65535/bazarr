@@ -11,6 +11,7 @@ export interface NotificationItem {
     current: number;
     total: number;
   };
+  read?: boolean;
 }
 
 export const notification = {
@@ -19,6 +20,7 @@ export const notification = {
       timestamp: new Date().getTime(),
       title,
       message,
+      read: false,
     };
   },
 
@@ -28,6 +30,7 @@ export const notification = {
       message,
       color: "yellow",
       timestamp: new Date().getTime(),
+      read: false,
     };
   },
 
@@ -37,6 +40,7 @@ export const notification = {
       message,
       color: "red",
       timestamp: new Date().getTime(),
+      read: false,
     };
   },
 
@@ -51,6 +55,7 @@ export const notification = {
         color: "gray",
         loading: true,
         timestamp: new Date().getTime(),
+        read: false,
       };
     },
     update: (
@@ -70,6 +75,7 @@ export const notification = {
         },
         loading: true,
         timestamp: new Date().getTime(),
+        read: false,
       };
     },
     end: (id: string, header: string): NotificationItem => {
@@ -79,6 +85,7 @@ export const notification = {
         message: "All Tasks Completed",
         color: "green",
         timestamp: new Date().getTime(),
+        read: false,
       };
     },
   },

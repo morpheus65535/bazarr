@@ -24,7 +24,13 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
   opened,
   onClose,
 }) => {
-  const { notifications, clearNotifications } = useNotifications();
+  const { notifications, clearNotifications, markAsRead } = useNotifications();
+
+  useEffect(() => {
+    if (opened) {
+      markAsRead();
+    }
+  }, [opened, markAsRead]);
 
   return (
     <Drawer
