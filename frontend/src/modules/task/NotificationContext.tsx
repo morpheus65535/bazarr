@@ -3,8 +3,8 @@ import React, {
   useCallback,
   useContext,
   useEffect,
-  useState,
 } from "react";
+import { useLocalStorage } from "@mantine/hooks";
 import { setNotificationContextRef } from "./index";
 import { NotificationItem } from "./notification";
 
@@ -33,56 +33,70 @@ export const useNotificationContext = (): NotificationContextType => {
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notifications, setNotifications] = useLocalStorage<NotificationItem[]>(
+    {
+      key: "notifications",
+      defaultValue: [],
+    },
+  );
 
-  const showNotification = useCallback((notification: NotificationItem) => {
-    const newNotification = {
-      ...notification,
-      title: String(notification.title),
-      message: String(notification.message),
-      id: notification.id ?? `notification-${Date.now()}`,
-      timestamp: new Date().getTime(),
-    };
+  const showNotification = useCallback(
+    (notification: NotificationItem) => {
+      const newNotification = {
+        ...notification,
+        title: String(notification.title),
+        message: String(notification.message),
+        id: notification.id ?? `notification-${Date.now()}`,
+        timestamp: new Date().getTime(),
+      };
 
-    setNotifications((prev) => [...prev, newNotification]);
-  }, []);
+      setNotifications((prev) => [...prev, newNotification]);
+    },
+    [setNotifications],
+  );
 
-  const updateNotification = useCallback((notification: NotificationItem) => {
-    if (notification.id) {
-      setNotifications((prev) => {
-        const existing = prev.findIndex((n) => n.id === notification.id);
-        if (existing >= 0) {
-          const updated = [...prev];
-          updated[existing] = {
-            ...notification,
-            title: String(notification.title),
-            message: String(notification.message),
-            timestamp: new Date().getTime(),
-          };
-          return updated;
-        }
-        return [
-          ...prev,
-          {
-            ...notification,
-            title: String(notification.title),
-            message: String(notification.message),
-            timestamp: new Date().getTime(),
-          },
-        ];
-      });
-    }
-  }, []);
+  const updateNotification = useCallback(
+    (notification: NotificationItem) => {
+      if (notification.id) {
+        setNotifications((prev) => {
+          const existing = prev.findIndex((n) => n.id === notification.id);
+          if (existing >= 0) {
+            const updated = [...prev];
+            updated[existing] = {
+              ...notification,
+              title: String(notification.title),
+              message: String(notification.message),
+              timestamp: new Date().getTime(),
+            };
+            return updated;
+          }
+          return [
+            ...prev,
+            {
+              ...notification,
+              title: String(notification.title),
+              message: String(notification.message),
+              timestamp: new Date().getTime(),
+            },
+          ];
+        });
+      }
+    },
+    [setNotifications],
+  );
 
-  const hideNotification = useCallback((id: string) => {
-    setNotifications((prev) =>
-      prev.filter((notification) => notification.id !== id),
-    );
-  }, []);
+  const hideNotification = useCallback(
+    (id: string) => {
+      setNotifications((prev) =>
+        prev.filter((notification) => notification.id !== id),
+      );
+    },
+    [setNotifications],
+  );
 
   const clearNotifications = useCallback(() => {
     setNotifications([]);
-  }, []);
+  }, [setNotifications]);
 
   useEffect(() => {
     setNotificationContextRef(
