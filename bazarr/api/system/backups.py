@@ -44,6 +44,7 @@ class SystemBackups(Resource):
     @api_ns_system_backups.response(204, 'Success')
     @api_ns_system_backups.response(400, 'Filename not provided')
     @api_ns_system_backups.response(401, 'Not Authenticated')
+    @api_ns_system_backups.response(500, 'Error while restoring backup. Check logs.')
     def patch(self):
         """Restore a backup file"""
         args = self.patch_request_parser.parse_args()
@@ -52,7 +53,10 @@ class SystemBackups(Resource):
             restored = prepare_restore(filename)
             if restored:
                 return '', 204
-        return 'Filename not provided', 400
+            else:
+                return 'Error while restoring backup. Check logs.', 500
+        else:
+            return 'Filename not provided', 400
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('filename', type=str, required=True, help='Backups to delete filename')
