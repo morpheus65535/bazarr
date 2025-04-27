@@ -48,8 +48,8 @@ class HearingImpaired(SubtitleTextModification):
                      else "" if not match.group(1).startswith(" ") else " ",
                      name="HI_before_colon_noncaps"),
 
-        # brackets (only remove if at least 3 chars in brackets)
-        NReProcessor(re.compile(r'(?sux)-?%(t)s["\']*[([][^([)\]]+?(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]]["\']*[\s:]*%(t)s' %
+        # brackets (only remove if at least 3 chars in brackets, allow numbers and spaces inside brackets)
+        NReProcessor(re.compile(r'(?sux)-?%(t)s["\']*\[(?=[^\[\]]{3,})[A-Za-zÀ-ž0-9\s\'".:-_&+]+[)\]]["\']*[\s:]*%(t)s' %
                                 {"t": TAG}), "", name="HI_brackets"),
 
         #NReProcessor(re.compile(r'(?sux)-?%(t)s[([]%(t)s(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+%(t)s$' % {"t": TAG}),
@@ -71,9 +71,19 @@ class HearingImpaired(SubtitleTextModification):
         #NReProcessor(re.compile(r'(?um)(^-?\s?[([][A-zÀ-ž-_\s]{3,}[)\]](?:(?=$)|:\s*))'), "",
         #             name="HI_brackets_special"),
 
-        # all caps line (at least 4 consecutive uppercase chars)
-        NReProcessor(re.compile(r'(?u)(^(?=.*[A-ZÀ-Ž&+]{4,})[A-ZÀ-Ž-_\s&+]+$)'), "", name="HI_all_caps",
-                     supported=lambda p: not p.mostly_uppercase),
+        # all caps line (at least 4 consecutive uppercase chars,only remove if line matches common HI cues, otherwise keep)
+        NReProcessor(
+            re.compile(r'(?u)^(?=.*[A-ZÀ-Ž&+]{4,})[A-ZÀ-Ž-_\s&+]+$'),
+            lambda m: "" if any(
+                cue in m.group(1)
+                for cue in [
+                    "LAUGH", "APPLAU", "CHEER", "MUSIC", "GASP", "SIGHS", "GROAN", "COUGH", "SCREAM", "SHOUT", "WHISPER",
+                    "PHONE", "DOOR", "KNOCK", "FOOTSTEP", "THUNDER", "EXPLOSION", "GUNSHOT", "SIREN"
+                ]
+            ) else m.group(1),
+            name="HI_all_caps",
+            supported=lambda p: not p.mostly_uppercase
+        ),
 
         # remove MAN:
         NReProcessor(re.compile(r'(?suxi)(\b(?:WO)MAN:\s*)'), "", name="HI_remove_man"),
