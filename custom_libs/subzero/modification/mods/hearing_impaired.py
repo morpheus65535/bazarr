@@ -73,7 +73,7 @@ class HearingImpaired(SubtitleTextModification):
 
         # all caps line (at least 4 consecutive uppercase chars,only remove if line matches common HI cues, otherwise keep)
         NReProcessor(
-            re.compile(r'(?u)^(?=.*[A-ZÀ-Ž&+]{4,})[A-ZÀ-Ž-_\s&+]+$'),
+            re.compile(r'(?u)(^(?=.*[A-ZÀ-Ž&+]{4,})[A-ZÀ-Ž-_\s&+]+$)'),
             lambda m: "" if any(
                 cue in m.group(1)
                 for cue in [
