@@ -126,7 +126,8 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
     video_types = (Episode, Movie)
     api_url = 'https://www.titrari.ro/'
     # query_advanced_search = 'cautarepreaavansata'
-    query_advanced_search = "maicauta"
+    # query_advanced_search = "maicauta"
+    query_advanced_search = "cautamsavedem"
 
     def __init__(self):
         self.session = None
