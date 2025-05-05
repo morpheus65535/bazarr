@@ -16,7 +16,8 @@ def get_profile_list():
                              f"apikey={apikey_radarr}")
 
     try:
-        profiles_json = requests.get(url_radarr_api_movies, timeout=int(settings.radarr.http_timeout), verify=False, headers=HEADERS)
+        profiles_json = requests.get(url_radarr_api_movies, timeout=int(settings.radarr.http_timeout), verify=False,
+                                     headers=HEADERS)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get profiles from Radarr. Connection Error.")
     except requests.exceptions.Timeout:
@@ -27,14 +28,14 @@ def get_profile_list():
         # Parsing data returned from radarr
         if get_radarr_info.is_legacy():
             for profile in profiles_json.json():
-                profiles_list.append([profile['id'], profile['language'].capitalize()])
+                if 'language' in profile:
+                    profiles_list.append([profile['id'], profile['language'].capitalize()])
         else:
             for profile in profiles_json.json():
-                profiles_list.append([profile['id'], profile['language']['name'].capitalize()])
+                if 'language' in profile and 'name' in profile['language']:
+                    profiles_list.append([profile['id'], profile['language']['name'].capitalize()])
 
-        return profiles_list
-
-    return None
+    return profiles_list
 
 
 def get_tags():

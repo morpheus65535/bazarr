@@ -33,14 +33,16 @@ def get_profile_list():
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get profiles from Sonarr.")
         return None
-
-    # Parsing data returned from Sonarr
-    if get_sonarr_info.is_legacy():
-        for profile in profiles_json.json():
-            profiles_list.append([profile['id'], profile['language'].capitalize()])
     else:
-        for profile in profiles_json.json():
-            profiles_list.append([profile['id'], profile['name'].capitalize()])
+        # Parsing data returned from Sonarr
+        if get_sonarr_info.is_legacy():
+            for profile in profiles_json.json():
+                if 'language' in profile:
+                    profiles_list.append([profile['id'], profile['language'].capitalize()])
+        else:
+            for profile in profiles_json.json():
+                if 'name' in profile:
+                    profiles_list.append([profile['id'], profile['name'].capitalize()])
 
     return profiles_list
 
