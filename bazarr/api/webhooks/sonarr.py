@@ -17,7 +17,7 @@ api_ns_webhooks_sonarr = Namespace('Webhooks Sonarr', description='Webhooks to t
 @api_ns_webhooks_sonarr.route('webhooks/sonarr')
 class WebHooksSonarr(Resource):
     post_request_parser = reqparse.RequestParser()
-    post_request_parser.add_argument('sonarr_episodefile_id', type=int, required=True, help='Episode file ID')
+    post_request_parser.add_argument('sonarr_episodefile_id', type=int, required=False, help='Episode file ID')
 
     @authenticate
     @api_ns_webhooks_sonarr.doc(parser=post_request_parser)
@@ -27,6 +27,8 @@ class WebHooksSonarr(Resource):
         """Search for missing subtitles for a specific episode file id"""
         args = self.post_request_parser.parse_args()
         episode_file_id = args.get('sonarr_episodefile_id')
+        if episode_file_id is None:
+            return 'No ID sent, skipping database search.', 200
 
         sonarrEpisodeId = database.execute(
             select(TableEpisodes.sonarrEpisodeId, TableEpisodes.path)

@@ -17,7 +17,7 @@ api_ns_webhooks_radarr = Namespace('Webhooks Radarr', description='Webhooks to t
 @api_ns_webhooks_radarr.route('webhooks/radarr')
 class WebHooksRadarr(Resource):
     post_request_parser = reqparse.RequestParser()
-    post_request_parser.add_argument('radarr_moviefile_id', type=int, required=True, help='Movie file ID')
+    post_request_parser.add_argument('radarr_moviefile_id', type=int, required=False, help='Movie file ID')
 
     @authenticate
     @api_ns_webhooks_radarr.doc(parser=post_request_parser)
@@ -27,6 +27,8 @@ class WebHooksRadarr(Resource):
         """Search for missing subtitles for a specific movie file id"""
         args = self.post_request_parser.parse_args()
         movie_file_id = args.get('radarr_moviefile_id')
+        if movie_file_id is None:
+            return 'No ID sent, skipping database search.', 200
 
         radarrMovieId = database.execute(
             select(TableMovies.radarrId, TableMovies.path)
