@@ -75,8 +75,8 @@ You can now build and run the frontend using Docker. Follow these steps:
    ```
 
    - The `docker build --build-arg NODE_VERSION=$(cat .nvmrc 2>/dev/null || echo "20") -t your-image-name .` argument ensures the Docker image uses the Node.js version specified in the `.nvmrc` file.
-   
- 2. Run the Docker container:
+
+2. Run the Docker container:
 
    ```
    $ docker run -p 5173:5173 your-image-name
