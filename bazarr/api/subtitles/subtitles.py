@@ -12,6 +12,7 @@ from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import subtitles_sync_references
 from subtitles.tools.subsyncer import SubSyncer
 from subtitles.tools.translate import translate_subtitles_file
+from subtitles.tools.translate import translate_subtitles_file_gemini
 from subtitles.tools.mods import subtitles_apply_mods
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
@@ -173,6 +174,18 @@ class Subtitles(Resource):
             dest_language = language
             try:
                 translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
+                                         from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
+                                         media_type="series" if media_type == "episode" else "movies",
+                                         sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
+                                         sonarr_episode_id=id,
+                                         radarr_id=id)
+            except OSError:
+                return 'Unable to edit subtitles file. Check logs.', 409
+        elif action == 'translate_gemini':
+            from_language = subtitles_lang_from_filename(subtitles_path)
+            dest_language = language
+            try:
+                translate_subtitles_file_gemini(video_path=video_path, source_srt_file=subtitles_path,
                                          from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
                                          media_type="series" if media_type == "episode" else "movies",
                                          sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,

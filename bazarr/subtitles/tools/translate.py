@@ -2,7 +2,9 @@
 
 import logging
 import pysubs2
+from . import gemini_srt_translator as gst
 
+from app.config import settings
 from subliminal_patch.core import get_subtitle_path
 from subzero.language import Language
 from deep_translator import GoogleTranslator
@@ -15,7 +17,7 @@ from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, la
 from radarr.history import history_log_movie
 from sonarr.history import history_log
 from subtitles.processing import ProcessSubtitlesResult
-from app.event_handler import show_progress, hide_progress
+from app.event_handler import show_progress, hide_progress, show_message
 from utilities.path_mappings import path_mappings
 
 
@@ -117,6 +119,84 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
     except OSError:
         logging.error(f'BAZARR is unable to save translated subtitles to {dest_srt_file}')
         raise OSError
+
+    message = f"{language_from_alpha2(from_lang)} subtitles translated to {language_from_alpha3(to_lang)}."
+
+    if media_type == 'series':
+        prr = path_mappings.path_replace_reverse
+    else:
+        prr = path_mappings.path_replace_reverse_movie
+
+    result = ProcessSubtitlesResult(message=message,
+                                    reversed_path=prr(video_path),
+                                    downloaded_language_code2=orig_to_lang,
+                                    downloaded_provider=None,
+                                    score=None,
+                                    forced=forced,
+                                    subtitle_id=None,
+                                    reversed_subtitles_path=prr(dest_srt_file),
+                                    hearing_impaired=hi)
+
+    if media_type == 'series':
+        history_log(action=6, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id, result=result)
+    else:
+        history_log_movie(action=6, radarr_id=radarr_id, result=result)
+
+    return dest_srt_file
+
+
+def translate_subtitles_file_gemini(video_path, source_srt_file, from_lang, to_lang, forced, hi, media_type,
+                                    sonarr_series_id,
+                                    sonarr_episode_id, radarr_id):
+    orig_to_lang = to_lang
+    to_lang = alpha3_from_alpha2(to_lang)
+    try:
+        lang_obj = Language(to_lang)
+    except ValueError:
+        custom_lang_obj = CustomLanguage.from_value(to_lang, "alpha3")
+        if custom_lang_obj:
+            lang_obj = CustomLanguage.subzero_language(custom_lang_obj)
+        else:
+            logging.debug(f'BAZARR is unable to translate with Gemini to {to_lang} for this subtitles: {source_srt_file}')
+            return False
+    if forced:
+        lang_obj = Language.rebuild(lang_obj, forced=True)
+    if hi:
+        lang_obj = Language.rebuild(lang_obj, hi=True)
+
+    logging.debug(f'BAZARR is translating with Gemini in {lang_obj} this subtitles {source_srt_file}')
+
+    dest_srt_file = get_subtitle_path(video_path,
+                                      language=lang_obj if isinstance(lang_obj,
+                                                                      Language) else lang_obj.subzero_language(),
+                                      extension='.srt',
+                                      forced_tag=forced,
+                                      hi_tag=hi)
+
+    subs = pysubs2.load(source_srt_file, encoding='utf-8')
+    subs.remove_miscellaneous_events()
+
+    try:
+        logging.debug(f'BAZARR is sending subtitle file to Gemini for translation')
+
+        logging.info(f"BAZARR is sending subtitle file to Gemini for translation " + source_srt_file)
+
+        gst.gemini_api_key = settings.translating.gemini_key
+        gst.target_language = language_from_alpha3(to_lang)
+        gst.output_file = dest_srt_file
+        gst.input_file = source_srt_file
+
+        try:
+            gst.translate()
+        except Exception as e:
+            logging.error(f'translate encountered an error translating with Gemini: {str(e)}')
+            show_message(f'Gemini translation error: {str(e)}')
+
+    except Exception as e:
+        logging.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
+        return False
+
+    logging.debug(f'BAZARR saved translated subtitles to {dest_srt_file}')
 
     message = f"{language_from_alpha2(from_lang)} subtitles translated to {language_from_alpha3(to_lang)}."
 

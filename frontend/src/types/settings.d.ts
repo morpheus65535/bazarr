@@ -173,6 +173,10 @@ declare namespace Settings {
     excluded_tags: string[];
   }
 
+  interface Translating {
+    gemini_key: string;
+  }
+
   interface Plex {
     ip: string;
     port: number;

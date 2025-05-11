@@ -135,7 +135,7 @@ class NapiProjektProvider(_NapiProjektProvider):
                             author = ""
 
                     if self.only_authors:
-                        if author.lower() in ["brak", "automat", "si", "chatgpt", "ai", "robot", "maszynowe", "tłumaczenie maszynowe"]:
+                        if author.lower() in ["brak", "automat", "si", "chatgpt", "ai", "deepl", "robot", "maszynowe", "translator" "tłumaczenie maszynowe"]:
                             continue
 
                     if self.only_real_names:

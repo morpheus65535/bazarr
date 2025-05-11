@@ -174,6 +174,9 @@ validators = [
     Validator('backup.day', must_exist=True, default=6, is_type_of=int, gte=0, lte=6),
     Validator('backup.hour', must_exist=True, default=3, is_type_of=int, gte=0, lte=23),
 
+    # translating section
+    Validator('translating.gemini_key', must_exist=True, default='', is_type_of=str, cast=str),
+
     # sonarr section
     Validator('sonarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
     Validator('sonarr.port', must_exist=True, default=8989, is_type_of=int, gte=1, lte=65535),
