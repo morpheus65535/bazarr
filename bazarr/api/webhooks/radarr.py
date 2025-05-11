@@ -24,15 +24,16 @@ class WebHooksRadarr(Resource):
     @api_ns_webhooks_radarr.doc(parser=post_request_parser)
     @api_ns_webhooks_radarr.response(200, 'Success')
     @api_ns_webhooks_radarr.response(401, 'Not Authenticated')
+    @api_ns_webhooks_radarr.response(404, 'Movie file ID not provided')
     def post(self):
         """Search for missing subtitles for a specific movie file id"""
         args = self.post_request_parser.parse_args()
         event_type = args.get('eventType')
         movie_file_id = args.get('radarr_moviefile_id')
         if event_type == 'Test':
-            return 'Received test hook, skipping database search.', 200
+            return '', 200
         elif not movie_file_id:
-            return 'Movie file ID not provided', 400
+            return 'Movie file ID not provided', 404
 
         radarrMovieId = database.execute(
             select(TableMovies.radarrId, TableMovies.path)

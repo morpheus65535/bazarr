@@ -24,15 +24,16 @@ class WebHooksSonarr(Resource):
     @api_ns_webhooks_sonarr.doc(parser=post_request_parser)
     @api_ns_webhooks_sonarr.response(200, 'Success')
     @api_ns_webhooks_sonarr.response(401, 'Not Authenticated')
+    @api_ns_webhooks_sonarr.response(404, 'Episode file ID not provided')
     def post(self):
         """Search for missing subtitles for a specific episode file id"""
         args = self.post_request_parser.parse_args()
         event_type = args.get('eventType')
         episode_file_id = args.get('sonarr_episodefile_id')
         if event_type == 'Test':
-            return 'Received test hook, skipping database search.', 200
+            return '', 200
         elif not episode_file_id:
-            return 'Episode file ID not provided', 400
+            return 'Episode file ID not provided', 404
 
 
         sonarrEpisodeId = database.execute(
