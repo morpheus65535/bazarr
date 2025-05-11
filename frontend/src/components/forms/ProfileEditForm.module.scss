@@ -1,5 +1,5 @@
 .content {
-  @include smaller-than($mantine-breakpoint-md) {
+  @include mantine.smaller-than(mantine.$mantine-breakpoint-md) {
     padding: 0;
   }
 }

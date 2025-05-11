@@ -1,6 +1,6 @@
 @layer mantine {
   .root {
-    @include dark {
+    @include mantine.dark {
       color: var(--mantine-color-dark-0);
     }
 
@@ -11,7 +11,7 @@
   }
 
   .root:disabled {
-    @include dark {
+    @include mantine.dark {
       color: var(--mantine-color-dark-9);
     }
   }

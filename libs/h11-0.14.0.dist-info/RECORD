@@ -1,9 +1,9 @@
 h11-0.14.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
 h11-0.14.0.dist-info/LICENSE.txt,sha256=N9tbuFkm2yikJ6JYZ_ELEjIAOuob5pzLhRE4rbjm82E,1124
-h11-0.14.0.dist-info/METADATA,sha256=B7pZ0m7WBXNs17vl6hUH9bJTL9s37DaGvY31w7jNxSg,8175
+h11-0.14.0.dist-info/METADATA,sha256=ql-03yzC2R3KPYYtngVlhyt21TRceo3qQTVx4j2s1KI,8174
 h11-0.14.0.dist-info/RECORD,,
 h11-0.14.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-h11-0.14.0.dist-info/WHEEL,sha256=oiQVh_5PnQM0E3gPdiz09WCNmwiHDMaGer_elqB3coM,92
+h11-0.14.0.dist-info/WHEEL,sha256=OVMc5UfuAQiSplgO0_WdW7vXVGAt9Hdd6qtN4HotdyA,91
 h11-0.14.0.dist-info/top_level.txt,sha256=F7dC4jl3zeh8TGHEPaWJrMbeuoWbS379Gwdi-Yvdcis,4
 h11/__init__.py,sha256=iO1KzkSO42yZ6ffg-VMgbx_ZVTWGUY00nRYEWn-s3kY,1507
 h11/_abnf.py,sha256=ybixr0xsupnkA6GFAyMubuXF6Tc1lb_hF890NgCsfNc,4815

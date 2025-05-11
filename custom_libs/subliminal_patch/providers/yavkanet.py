@@ -45,7 +45,7 @@ class YavkaNetSubtitle(Subtitle):
     """YavkaNet Subtitle."""
     provider_name = 'yavkanet'
 
-    def __init__(self, language, filename, type, video, link, fps, subs_id_name, subs_id_value):
+    def __init__(self, language, filename, type, video, link, fps, subs_form_data):
         super(YavkaNetSubtitle, self).__init__(language)
         self.filename = filename
         self.page_link = link
@@ -53,8 +53,7 @@ class YavkaNetSubtitle(Subtitle):
         self.video = video
         self.fps = fps
         self.release_info = filename
-        self.subs_id_name = subs_id_name
-        self.subs_id_value = subs_id_value
+        self.subs_form_data = subs_form_data
         self.content = None
         self._is_valid = False
         if fps:
@@ -110,7 +109,7 @@ class YavkaNetProvider(Provider):
         self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
         self.session.headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
         self.session.headers["Accept-Language"] = "en-US,en;q=0.5"
-        self.session.headers["Accept-Encoding"] = "gzip, deflate, br"
+        self.session.headers["Accept-Encoding"] = "gzip, deflate"
         self.session.headers["DNT"] = "1"
         self.session.headers["Connection"] = "keep-alive"
         self.session.headers["Upgrade-Insecure-Requests"] = "1"
@@ -139,11 +138,11 @@ class YavkaNetProvider(Provider):
             logger.debug('No subtitles found')
             return subtitles
 
-        soup = BeautifulSoup(response.content, 'lxml')
+        soup = BeautifulSoup(response.content, 'html.parser')
         rows = soup.findAll('tr')
 
         # Search on first 25 rows only
-        for row in rows[:25]:
+        for row in rows[-50:]:
             element = row.select_one('a.balon, a.selector')
             if element:
                 link = element.get('href')
@@ -163,20 +162,38 @@ class YavkaNetProvider(Provider):
                 element = row.find('a', {'class': 'click'})
                 uploader = element.get_text() if element else None
                 logger.info('Found subtitle link %r', link)
-                # slow down to prevent being throttled
-                time.sleep(1)
-                response = self.retry(self.session.get('https://yavka.net' + link))
-                if not response:
-                    continue
-                soup = BeautifulSoup(response.content, 'lxml')
-                subs_id = soup.find("input")
-                if subs_id:
-                    subs_id_name = subs_id['name']
-                    subs_id_value = subs_id['value']
+                
+                cache_link = 'https://yavka.net' + link + '/'
+                cache_key = sha1(cache_link.encode("utf-8")).digest()
+                request = region.get(cache_key)
+                if request is NO_VALUE:
+                    # slow down to prevent being throttled
+                    time.sleep(randint(0, 1))
+                    response = self.retry(self.session.get('https://yavka.net' + link))
+                    if not response:
+                        logger.info('Subtitle page did not load: %s', link)
+                        continue
+
+                    soup = BeautifulSoup(response.content, 'html.parser')
+                    post_form = soup.find('form', attrs={'method': 'POST'})
+                    if post_form:
+                        input_fields = post_form.find_all('input')
+                        subs_form_data = {}
+                        for input_field in input_fields:
+                            input_name = input_field.get('name')
+                            if input_name:  # Only add to dictionary if the input has a name
+                                subs_form_data[input_name] = input_field.get('value', '')
+                        logger.info('Found subtitle form data "%s" for %s', subs_form_data, link)
+                    else:
+                        logger.info('Could not find subtitle form data: %s', link)
+                        continue
                 else:
-                    continue
+                    # will fetch from cache
+                    subs_form_data = {}
+                    logger.info('Skipping routines. Will use cache: %s', link)
+
                 sub = self.download_archive_and_add_subtitle_files('https://yavka.net' + link + '/', language, video,
-                                                                   fps, subs_id_name, subs_id_value)
+                                                                   fps, subs_form_data)
                 for s in sub:
                     s.title = title
                     s.notes = notes
@@ -195,52 +212,48 @@ class YavkaNetProvider(Provider):
         else:
             seeking_subtitle_file = subtitle.filename
             arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video,
-                                                                subtitle.fps, subtitle.subs_id_name,
-                                                                subtitle.subs_id_value)
+                                                                subtitle.fps, subtitle.subs_form_data)
             for s in arch:
                 if s.filename == seeking_subtitle_file:
                     subtitle.content = s.content
 
     @staticmethod
-    def process_archive_subtitle_files(archive_stream, language, video, link, fps, subs_id_name, subs_id_value):
+    def process_archive_subtitle_files(archive_stream, language, video, link, fps, subs_form_data):
         subtitles = []
         media_type = 'episode' if isinstance(video, Episode) else 'movie'
         for file_name in archive_stream.namelist():
             if file_name.lower().endswith(('.srt', '.sub')):
                 logger.info('Found subtitle file %r', file_name)
-                subtitle = YavkaNetSubtitle(language, file_name, media_type, video, link, fps, subs_id_name,
-                                            subs_id_value)
+                subtitle = YavkaNetSubtitle(language, file_name, media_type, video, link, fps, subs_form_data)
                 subtitle.content = fix_line_ending(archive_stream.read(file_name))
                 subtitles.append(subtitle)
         return subtitles
 
-    def download_archive_and_add_subtitle_files(self, link, language, video, fps, subs_id_name, subs_id_value):
+    def download_archive_and_add_subtitle_files(self, link, language, video, fps, subs_form_data):
         logger.info('Downloading subtitle %r', link)
         cache_key = sha1(link.encode("utf-8")).digest()
         request = region.get(cache_key)
         if request is NO_VALUE:
             time.sleep(1)
-            request = self.retry(self.session.post(link, data={
-                subs_id_name: subs_id_value,
-                'lng': language.basename.upper()
-            }, headers={
+            request = self.retry(self.session.post(link, data=subs_form_data, headers={
                 'referer': link
             }, allow_redirects=False))
             if not request:
                 return []
             request.raise_for_status()
             region.set(cache_key, request)
+            logger.info('Writing caching file %s for %s', codecs.encode(cache_key, 'hex_codec').decode('utf-8'), link)
         else:
-            logger.info('Cache file: %s', codecs.encode(cache_key, 'hex_codec').decode('utf-8'))
+            logger.info('Using cache file %s for %s', codecs.encode(cache_key, 'hex_codec').decode('utf-8'), link)
 
         try:
             archive_stream = io.BytesIO(request.content)
             if is_rarfile(archive_stream):
                 return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps,
-                                                           subs_id_name, subs_id_value)
+                                                           subs_form_data)
             elif is_zipfile(archive_stream):
                 return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps,
-                                                           subs_id_name, subs_id_value)
+                                                           subs_form_data)
         except:
             pass
 

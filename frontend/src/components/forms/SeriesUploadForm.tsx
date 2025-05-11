@@ -128,9 +128,9 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
     },
     validate: {
       files: FormUtils.validation(
-        (values) =>
+        (values: SubtitleFile[]) =>
           values.find(
-            (v) =>
+            (v: SubtitleFile) =>
               v.language === null ||
               v.episode === null ||
               v.validateResult === undefined ||

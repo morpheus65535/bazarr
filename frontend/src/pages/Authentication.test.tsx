@@ -1,10 +1,10 @@
 import { describe, it } from "vitest";
-import { render, screen } from "@/tests";
+import { customRender, screen } from "@/tests";
 import Authentication from "./Authentication";
 
 describe("Authentication", () => {
   it("should render without crash", () => {
-    render(<Authentication></Authentication>);
+    customRender(<Authentication></Authentication>);
 
     expect(screen.getByPlaceholderText("Username")).toBeDefined();
     expect(screen.getByPlaceholderText("Password")).toBeDefined();

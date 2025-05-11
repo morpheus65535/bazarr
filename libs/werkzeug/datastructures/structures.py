@@ -70,8 +70,12 @@ class TypeConversionDict(dict):
                         be looked up.  If not further specified `None` is
                         returned.
         :param type: A callable that is used to cast the value in the
-                     :class:`MultiDict`.  If a :exc:`ValueError` is raised
-                     by this callable the default value is returned.
+                     :class:`MultiDict`.  If a :exc:`ValueError` or a
+                     :exc:`TypeError` is raised by this callable the default
+                     value is returned.
+
+        .. versionchanged:: 3.0.2
+           Returns the default value on :exc:`TypeError`, too.
         """
         try:
             rv = self[key]
@@ -80,7 +84,7 @@ class TypeConversionDict(dict):
         if type is not None:
             try:
                 rv = type(rv)
-            except ValueError:
+            except (ValueError, TypeError):
                 rv = default
         return rv
 
@@ -146,7 +150,7 @@ class MultiDict(TypeConversionDict):
 
     def __init__(self, mapping=None):
         if isinstance(mapping, MultiDict):
-            dict.__init__(self, ((k, l[:]) for k, l in mapping.lists()))
+            dict.__init__(self, ((k, vs[:]) for k, vs in mapping.lists()))
         elif isinstance(mapping, dict):
             tmp = {}
             for key, value in mapping.items():

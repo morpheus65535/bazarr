@@ -1,5 +1,5 @@
 # dialects/postgresql/__init__.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -8,7 +8,7 @@
 
 from types import ModuleType
 
-from . import array as arraylib  # noqa # must be above base and other dialects
+from . import array as arraylib  # noqa # keep above base and other dialects
 from . import asyncpg  # noqa
 from . import base
 from . import pg8000  # noqa

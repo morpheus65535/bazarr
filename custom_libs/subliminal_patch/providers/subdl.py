@@ -181,7 +181,7 @@ class SubdlProvider(ProviderRetryMixin, Provider):
         result = res.json()
 
         if ('success' in result and not result['success']) or ('status' in result and not result['status']):
-            logger.debug(result["error"])
+            logger.debug(result)
             return []
 
         logger.debug(f"Query returned {len(result['subtitles'])} subtitles")
@@ -257,7 +257,7 @@ class SubdlProvider(ProviderRetryMixin, Provider):
             retry_timeout=retry_timeout
         )
 
-        if r.status_code == 429:
+        if r.status_code == 429 or (r.status_code == 500 and r.text == 'Download limit exceeded'):
             raise DownloadLimitExceeded("Daily download limit exceeded")
         elif r.status_code == 403:
             raise ConfigurationError("Invalid API key")

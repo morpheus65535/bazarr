@@ -24,6 +24,8 @@ language_converters.register('assrt = subliminal_patch.converters.assrt:AssrtCon
 server_url = 'https://api.assrt.net/v1'
 supported_languages = list(language_converters['assrt'].to_assrt.keys())
 
+meaningless_videoname = ['不知道']
+
 
 def get_request_delay(max_request_per_minute):
     return ceil(60 / max_request_per_minute)
@@ -203,8 +205,21 @@ class AssrtProvider(Provider):
                     language = Language.fromassrt(match.group('code'))
                     output_language = search_language_in_list(language, languages)
                     if output_language:
-                        subtitles.append(AssrtSubtitle(output_language, sub['id'], sub['videoname'], self.session,
-                                                       self.token, self.max_request_per_minute))
+                        if sub['videoname'] not in meaningless_videoname:
+                            video_name = sub['videoname']
+                        elif 'native_name' in sub and isinstance(sub['native_name'], str):
+                            video_name = sub['native_name']
+                        elif ('native_name' in sub and isinstance(sub['native_name'], list) and
+                              len(sub['native_name']) > 0):
+                            video_name = sub['native_name'][0]
+                        else:
+                            video_name = None
+                        subtitles.append(AssrtSubtitle(language=output_language,
+                                                       subtitle_id=sub['id'],
+                                                       video_name=video_name,
+                                                       session=self.session,
+                                                       token=self.token,
+                                                       max_request_per_minute=self.max_request_per_minute))
                 except:
                     pass
 

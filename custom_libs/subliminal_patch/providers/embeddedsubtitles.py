@@ -67,7 +67,7 @@ _ALLOWED_CODECS = ("ass", "subrip", "webvtt", "mov_text")
 class EmbeddedSubtitlesProvider(Provider):
     provider_name = "embeddedsubtitles"
 
-    languages = {Language("por", "BR"), Language("spa", "MX")} | {
+    languages = {Language("por", "BR"), Language("spa", "MX"), Language("zho", "TW")} | {
         Language.fromalpha2(l) for l in language_converters["alpha2"].codes
     }
     languages.update(set(Language.rebuild(lang, hi=True) for lang in languages))
@@ -369,7 +369,7 @@ def _basename_callback(path: str):
 
 
 # TODO: improve this
-_SIGNS_LINE_RE = re.compile(r",([\w|_]{,15}(sign|fx|karaoke))", flags=re.IGNORECASE)
+_SIGNS_LINE_RE = re.compile(r",([\w|_]{,15}(fx|karaoke))", flags=re.IGNORECASE)
 
 
 def _clean_ass_subtitles(path, output_path):

@@ -4,11 +4,7 @@ import {
   ReactElement,
   StrictMode,
 } from "react";
-import {
-  createBrowserRouter,
-  RouteObject,
-  RouterProvider,
-} from "react-router-dom";
+import { createBrowserRouter, RouteObject, RouterProvider } from "react-router";
 import { render, RenderOptions } from "@testing-library/react";
 import { AllProviders } from "@/providers";
 
@@ -39,6 +35,7 @@ const customRender = (
 
 // re-export everything
 export * from "@testing-library/react";
+
 // override render method
-export { customRender as render };
+export { customRender };
 export { render as rawRender };

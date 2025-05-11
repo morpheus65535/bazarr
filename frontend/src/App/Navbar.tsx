@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { matchPath, NavLink, RouteObject, useLocation } from "react-router-dom";
+import { matchPath, NavLink, RouteObject, useLocation } from "react-router";
 import {
   Anchor,
   AppShell,
@@ -114,7 +114,10 @@ const AppNavbar: FunctionComponent = () => {
   return (
     <AppShell.Navbar p="xs" className={styles.nav}>
       <Selection.Provider value={{ selection, select }}>
-        <AppShell.Section grow>
+        <AppShell.Section
+          grow
+          style={{ overflowY: "auto", scrollbarWidth: "none" }}
+        >
           <Stack gap={0}>
             {routes.map((route, idx) => (
               <RouteItem

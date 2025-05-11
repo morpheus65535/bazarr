@@ -66,7 +66,7 @@ class ZmqManager(PubSubManager):  # pragma: no cover
         sink.connect(sink_url)
 
         sub = zmq.Context().socket(zmq.SUB)
-        sub.setsockopt_string(zmq.SUBSCRIBE, u'')
+        sub.setsockopt_string(zmq.SUBSCRIBE, '')
         sub.connect(sub_url)
 
         self.sink = sink

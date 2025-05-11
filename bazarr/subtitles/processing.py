@@ -7,10 +7,11 @@ from app.config import settings, sync_checker as _defaul_sync_checker
 from utilities.path_mappings import path_mappings
 from utilities.post_processing import pp_replace, set_chmod
 from languages.get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
-from app.database import TableEpisodes, TableMovies, database, select
+from app.database import TableShows, TableEpisodes, TableMovies, database, select
 from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
+from plex.operations import plex_set_movie_added_date_now, plex_update_library, plex_set_episode_added_date_now
 from app.event_handler import event_stream
 
 from .utils import _get_download_code3
@@ -76,8 +77,10 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
 
     if media_type == 'series':
         episode_metadata = database.execute(
-            select(TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId)
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
+            select(TableShows.imdbId, TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId,
+                   TableEpisodes.season, TableEpisodes.episode)
+                .join(TableShows)\
+                .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
             .first()
         if not episode_metadata:
             return
@@ -95,8 +98,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                            sonarr_episode_id=episode_metadata.sonarrEpisodeId)
     else:
         movie_metadata = database.execute(
-            select(TableMovies.radarrId)
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)))\
+            select(TableMovies.radarrId, TableMovies.imdbId)
+                .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)))\
             .first()
         if not movie_metadata:
             return
@@ -115,7 +118,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     if use_postprocessing is True:
         command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
                              downloaded_language_code3, audio_language, audio_language_code2, audio_language_code3,
-                             percent_score, subtitle_id, downloaded_provider, uploader, release_info, series_id, episode_id)
+                             percent_score, subtitle_id, downloaded_provider, uploader, release_info, series_id,
+                             episode_id)
 
         if media_type == 'series':
             use_pp_threshold = settings.general.use_postprocessing_threshold
@@ -139,12 +143,22 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         event_stream(type='series', action='update', payload=episode_metadata.sonarrSeriesId)
         event_stream(type='episode-wanted', action='delete',
                      payload=episode_metadata.sonarrEpisodeId)
+        if settings.general.use_plex is True:
+            if settings.plex.update_series_library is True:
+                plex_update_library(is_movie_library=False)
+            if settings.plex.set_episode_added is True:
+                plex_set_episode_added_date_now(episode_metadata)
 
     else:
         reversed_path = path_mappings.path_replace_reverse_movie(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(downloaded_path)
         notify_radarr(movie_metadata.radarrId)
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
+        if settings.general.use_plex is True:
+            if settings.plex.set_movie_added is True:
+                plex_set_movie_added_date_now(movie_metadata)
+            if settings.plex.update_movie_library is True:
+                plex_update_library(is_movie_library=True)
 
     event_tracker.track_subtitles(provider=downloaded_provider, action=action, language=downloaded_language)
 

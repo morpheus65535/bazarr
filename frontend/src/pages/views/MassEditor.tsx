@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { Box, Container, useCombobox } from "@mantine/core";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
 import { UseMutationResult } from "@tanstack/react-query";
@@ -56,14 +56,6 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
       },
     ];
   }, [profileOptions.options]);
-
-  const getKey = useCallback((value: Language.Profile | null) => {
-    if (value) {
-      return value.name;
-    }
-
-    return "Clear";
-  }, []);
 
   const { mutateAsync } = mutation;
 
@@ -136,7 +128,6 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
             placeholder="Change Profile"
             withCheckIcon={false}
             options={profileOptionsWithAction}
-            getkey={getKey}
             disabled={selections.length === 0}
             comboboxProps={{
               store: combobox,

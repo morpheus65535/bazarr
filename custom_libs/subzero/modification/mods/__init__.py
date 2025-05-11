@@ -19,7 +19,7 @@ class SubtitleModification(object):
     order = None
     modifies_whole_file = False  # operates on the whole file, not individual entries
     apply_last = False
-    only_uppercase = False
+    mostly_uppercase = False
     pre_processors = []
     processors = []
     post_processors = []

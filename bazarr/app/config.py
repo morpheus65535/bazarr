@@ -95,6 +95,7 @@ validators = [
     Validator('general.use_postprocessing_threshold_movie', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_sonarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.use_plex', must_exist=True, default=False, is_type_of=bool),
     Validator('general.path_mappings_movie', must_exist=True, default=[], is_type_of=list),
     Validator('general.serie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.movie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
@@ -128,14 +129,15 @@ validators = [
     Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),
     Validator('general.upgrade_subs', must_exist=True, default=True, is_type_of=bool),
     Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int,
-              is_in=[6, 12, 24, ONE_HUNDRED_YEARS_IN_HOURS]),
+              is_in=[6, 12, 24, 168, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.days_to_upgrade_subs', must_exist=True, default=7, is_type_of=int, gte=0, lte=30),
     Validator('general.upgrade_manual', must_exist=True, default=True, is_type_of=bool),
     Validator('general.anti_captcha_provider', must_exist=True, default=None, is_type_of=(NoneType, str),
               is_in=[None, 'anti-captcha', 'death-by-captcha']),
-    Validator('general.wanted_search_frequency', must_exist=True, default=6, is_type_of=int, is_in=[6, 12, 24, ONE_HUNDRED_YEARS_IN_HOURS]),
+    Validator('general.wanted_search_frequency', must_exist=True, default=6, is_type_of=int, 
+              is_in=[6, 12, 24, 168, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.wanted_search_frequency_movie', must_exist=True, default=6, is_type_of=int,
-              is_in=[6, 12, 24, ONE_HUNDRED_YEARS_IN_HOURS]),
+              is_in=[6, 12, 24, 168, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.subzero_mods', must_exist=True, default='', is_type_of=str),
     Validator('general.dont_notify_manual_actions', must_exist=True, default=False, is_type_of=bool),
     Validator('general.hi_extension', must_exist=True, default='hi', is_type_of=str, is_in=['hi', 'cc', 'sdh']),
@@ -215,9 +217,21 @@ validators = [
     Validator('radarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
     Validator('radarr.sync_only_monitored_movies', must_exist=True, default=False, is_type_of=bool),
 
+    # plex section
+    Validator('plex.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
+    Validator('plex.port', must_exist=True, default=32400, is_type_of=int, gte=1, lte=65535),
+    Validator('plex.ssl', must_exist=True, default=False, is_type_of=bool),
+    Validator('plex.apikey', must_exist=True, default='', is_type_of=str),
+    Validator('plex.movie_library', must_exist=True, default='', is_type_of=str),
+    Validator('plex.series_library', must_exist=True, default='', is_type_of=str),
+    Validator('plex.set_movie_added', must_exist=True, default=False, is_type_of=bool),
+    Validator('plex.set_episode_added', must_exist=True, default=False, is_type_of=bool),
+    Validator('plex.update_movie_library', must_exist=True, default=False, is_type_of=bool),
+    Validator('plex.update_series_library', must_exist=True, default=False, is_type_of=bool),
+
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
-              is_in=[None, 'socks5', 'http']),
+              is_in=[None, 'socks5', 'socks5h', 'http']),
     Validator('proxy.url', must_exist=True, default='', is_type_of=str),
     Validator('proxy.port', must_exist=True, default='', is_type_of=(str, int)),
     Validator('proxy.username', must_exist=True, default='', is_type_of=str, cast=str),
@@ -350,6 +364,10 @@ validators = [
 
     # subdl section
     Validator('subdl.api_key', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # turkcealtyaziorg section
+    Validator('turkcealtyaziorg.cookies', must_exist=True, default='', is_type_of=str),
+    Validator('turkcealtyaziorg.user_agent', must_exist=True, default='', is_type_of=str),
 
     # subsync section
     Validator('subsync.use_subsync', must_exist=True, default=False, is_type_of=bool),

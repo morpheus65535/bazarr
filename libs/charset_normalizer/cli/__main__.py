@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import argparse
 import sys
 from json import dumps
 from os.path import abspath, basename, dirname, join, realpath
 from platform import python_version
-from typing import List, Optional
 from unicodedata import unidata_version
 
 import charset_normalizer.md as md_module
@@ -45,7 +46,7 @@ def query_yes_no(question: str, default: str = "yes") -> bool:
             sys.stdout.write("Please respond with 'yes' or 'no' " "(or 'y' or 'n').\n")
 
 
-def cli_detect(argv: Optional[List[str]] = None) -> int:
+def cli_detect(argv: list[str] | None = None) -> int:
     """
     CLI assistant using ARGV and ArgumentParser
     :param argv:
@@ -110,13 +111,21 @@ def cli_detect(argv: Optional[List[str]] = None) -> int:
         help="Replace file without asking if you are sure, use this flag with caution.",
     )
     parser.add_argument(
+        "-i",
+        "--no-preemptive",
+        action="store_true",
+        default=False,
+        dest="no_preemptive",
+        help="Disable looking at a charset declaration to hint the detector.",
+    )
+    parser.add_argument(
         "-t",
         "--threshold",
         action="store",
         default=0.2,
         type=float,
         dest="threshold",
-        help="Define a custom maximum amount of chaos allowed in decoded content. 0. <= chaos <= 1.",
+        help="Define a custom maximum amount of noise allowed in decoded content. 0. <= noise <= 1.",
     )
     parser.add_argument(
         "--version",
@@ -133,21 +142,35 @@ def cli_detect(argv: Optional[List[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     if args.replace is True and args.normalize is False:
+        if args.files:
+            for my_file in args.files:
+                my_file.close()
         print("Use --replace in addition of --normalize only.", file=sys.stderr)
         return 1
 
     if args.force is True and args.replace is False:
+        if args.files:
+            for my_file in args.files:
+                my_file.close()
         print("Use --force in addition of --replace only.", file=sys.stderr)
         return 1
 
     if args.threshold < 0.0 or args.threshold > 1.0:
+        if args.files:
+            for my_file in args.files:
+                my_file.close()
         print("--threshold VALUE should be between 0. AND 1.", file=sys.stderr)
         return 1
 
     x_ = []
 
     for my_file in args.files:
-        matches = from_fp(my_file, threshold=args.threshold, explain=args.verbose)
+        matches = from_fp(
+            my_file,
+            threshold=args.threshold,
+            explain=args.verbose,
+            preemptive_behaviour=args.no_preemptive is False,
+        )
 
         best_guess = matches.best()
 
@@ -155,9 +178,11 @@ def cli_detect(argv: Optional[List[str]] = None) -> int:
             print(
                 'Unable to identify originating encoding for "{}". {}'.format(
                     my_file.name,
-                    "Maybe try increasing maximum amount of chaos."
-                    if args.threshold < 1.0
-                    else "",
+                    (
+                        "Maybe try increasing maximum amount of chaos."
+                        if args.threshold < 1.0
+                        else ""
+                    ),
                 ),
                 file=sys.stderr,
             )
@@ -235,7 +260,7 @@ def cli_detect(argv: Optional[List[str]] = None) -> int:
                 dir_path = dirname(realpath(my_file.name))
                 file_name = basename(realpath(my_file.name))
 
-                o_: List[str] = file_name.split(".")
+                o_: list[str] = file_name.split(".")
 
                 if args.replace is False:
                     o_.insert(-1, best_guess.encoding)
@@ -258,9 +283,9 @@ def cli_detect(argv: Optional[List[str]] = None) -> int:
                 try:
                     x_[0].unicode_path = join(dir_path, ".".join(o_))
 
-                    with open(x_[0].unicode_path, "w", encoding="utf-8") as fp:
-                        fp.write(str(best_guess))
-                except IOError as e:
+                    with open(x_[0].unicode_path, "wb") as fp:
+                        fp.write(best_guess.output())
+                except OSError as e:
                     print(str(e), file=sys.stderr)
                     if my_file.closed is False:
                         my_file.close()

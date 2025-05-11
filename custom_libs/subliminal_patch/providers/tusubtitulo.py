@@ -37,7 +37,6 @@ class TuSubtituloSubtitle(Subtitle):
         super(TuSubtituloSubtitle, self).__init__(
             language, hearing_impaired=False, page_link=sub_dict["download_url"]
         )
-        self.language = language
         self.sub_dict = sub_dict
         self.release_info = sub_dict["metadata"]
         self.found_matches = matches

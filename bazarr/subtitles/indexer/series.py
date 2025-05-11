@@ -132,7 +132,7 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
             .values(subtitles=str(actual_subtitles))
             .where(TableEpisodes.path == original_path))
         matching_episodes = database.execute(
-            select(TableEpisodes.sonarrEpisodeId, TableEpisodes.sonarrSeriesId)
+            select(TableEpisodes.sonarrEpisodeId)
             .where(TableEpisodes.path == original_path))\
             .all()
 

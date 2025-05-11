@@ -1,0 +1,10 @@
+Flask_SocketIO-5.5.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+Flask_SocketIO-5.5.1.dist-info/LICENSE,sha256=aNCWbkgKjS_T1cJtACyZbvCM36KxWnfQ0LWTuavuYKQ,1082
+Flask_SocketIO-5.5.1.dist-info/METADATA,sha256=6NSCK70GFvnCHNKwcr6lmffkRAKLd9dOnGq6TbAJlfs,2638
+Flask_SocketIO-5.5.1.dist-info/RECORD,,
+Flask_SocketIO-5.5.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+Flask_SocketIO-5.5.1.dist-info/WHEEL,sha256=P9jw-gEje8ByB7_hXoICnHtVCrEwMQh-630tKvQWehc,91
+Flask_SocketIO-5.5.1.dist-info/top_level.txt,sha256=C1ugzQBJ3HHUJsWGzyt70XRVOX-y4CUAR8MWKjwJOQ8,15
+flask_socketio/__init__.py,sha256=5hN0LE0hfGMUDcX4FheZrtXERJ1IBEPagv0pgeqdtlU,54904
+flask_socketio/namespace.py,sha256=UkVryJvFYgnCMKWSF35GVfGdyh2cXRDyRbfmEPPchVA,2329
+flask_socketio/test_client.py,sha256=rClk02TSRqgidH8IyeohspKVKdpRx7gcZBjg1YUtZpA,11026

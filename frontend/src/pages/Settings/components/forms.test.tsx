@@ -2,7 +2,7 @@ import { FunctionComponent, PropsWithChildren, ReactElement } from "react";
 import { useForm } from "@mantine/form";
 import { describe, it } from "vitest";
 import { FormContext, FormValues } from "@/pages/Settings/utilities/FormValues";
-import { render, screen } from "@/tests";
+import { customRender, screen } from "@/tests";
 import { Number, Text } from "./forms";
 
 const FormSupport: FunctionComponent<PropsWithChildren> = ({ children }) => {
@@ -16,7 +16,7 @@ const FormSupport: FunctionComponent<PropsWithChildren> = ({ children }) => {
 };
 
 const formRender = (ui: ReactElement) =>
-  render(<FormSupport>{ui}</FormSupport>);
+  customRender(<FormSupport>{ui}</FormSupport>);
 
 describe("Settings form", () => {
   describe("number component", () => {

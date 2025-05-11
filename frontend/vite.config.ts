@@ -12,11 +12,11 @@ import { VitePWA } from "vite-plugin-pwa";
 import chunks from "./config/chunks";
 import overrideEnv from "./config/configReader";
 
-export default defineConfig(async ({ mode, command }) => {
+export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd());
 
   if (command === "serve") {
-    await overrideEnv(env);
+    overrideEnv(env);
   }
 
   const target = env.VITE_PROXY_URL;
@@ -106,9 +106,10 @@ export default defineConfig(async ({ mode, command }) => {
     css: {
       preprocessorOptions: {
         scss: {
+          api: "modern-compiler",
           additionalData: `
-            @import "./src/assets/_mantine";
-            @import "./src/assets/_bazarr";
+            @use "${path.join(process.cwd(), "src/assets/_mantine").replace(/\\/g, "/")}" as mantine;
+            @use "${path.join(process.cwd(), "src/assets/_bazarr").replace(/\\/g, "/")}" as bazarr;
           `,
         },
       },
@@ -132,7 +133,7 @@ export default defineConfig(async ({ mode, command }) => {
     test: {
       globals: true,
       environment: "jsdom",
-      setupFiles: "./src/tests/setup.ts",
+      setupFiles: "./src/tests/setup.tsx",
     },
     server: {
       proxy: {

@@ -1,5 +1,5 @@
 # sql/_typing.py
-# Copyright (C) 2022-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2022-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -69,6 +69,7 @@ if TYPE_CHECKING:
     from .sqltypes import TableValueType
     from .sqltypes import TupleType
     from .type_api import TypeEngine
+    from ..engine import Dialect
     from ..util.typing import TypeGuard
 
 _T = TypeVar("_T", bound=Any)
@@ -92,11 +93,21 @@ class _CoreAdapterProto(Protocol):
     def __call__(self, obj: _CE) -> _CE: ...
 
 
+class _HasDialect(Protocol):
+    """protocol for Engine/Connection-like objects that have dialect
+    attribute.
+    """
+
+    @property
+    def dialect(self) -> Dialect: ...
+
+
 # match column types that are not ORM entities
 _NOT_ENTITY = TypeVar(
     "_NOT_ENTITY",
     int,
     str,
+    bool,
     "datetime",
     "date",
     "time",
@@ -106,10 +117,12 @@ _NOT_ENTITY = TypeVar(
     "Decimal",
 )
 
+_StarOrOne = Literal["*", 1]
+
 _MAYBE_ENTITY = TypeVar(
     "_MAYBE_ENTITY",
     roles.ColumnsClauseRole,
-    Literal["*", 1],
+    _StarOrOne,
     Type[Any],
     Inspectable[_HasClauseElement[Any]],
     _HasClauseElement[Any],
@@ -134,7 +147,7 @@ _ColumnsClauseArgument = Union[
     roles.TypedColumnsClauseRole[_T],
     roles.ColumnsClauseRole,
     "SQLCoreOperations[_T]",
-    Literal["*", 1],
+    _StarOrOne,
     Type[_T],
     Inspectable[_HasClauseElement[_T]],
     _HasClauseElement[_T],
@@ -174,6 +187,7 @@ _ColumnExpressionArgument = Union[
     _HasClauseElement[_T],
     "SQLCoreOperations[_T]",
     roles.ExpressionElementRole[_T],
+    roles.TypedColumnsClauseRole[_T],
     Callable[[], "ColumnElement[_T]"],
     "LambdaElement",
 ]

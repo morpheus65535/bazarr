@@ -9,6 +9,7 @@ from .tasks import api_ns_system_tasks
 from .logs import api_ns_system_logs
 from .status import api_ns_system_status
 from .health import api_ns_system_health
+from .ping import api_ns_system_ping
 from .releases import api_ns_system_releases
 from .settings import api_ns_system_settings
 from .languages import api_ns_system_languages
@@ -25,6 +26,7 @@ api_ns_list_system = [
     api_ns_system_languages_profiles,
     api_ns_system_logs,
     api_ns_system_notifications,
+    api_ns_system_ping,
     api_ns_system_releases,
     api_ns_system_searches,
     api_ns_system_settings,

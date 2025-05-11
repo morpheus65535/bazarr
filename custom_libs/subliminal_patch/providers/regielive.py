@@ -4,8 +4,9 @@ import logging
 import io
 import os
 
-from requests import Session
+from requests import Session, JSONDecodeError
 from guessit import guessit
+from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ProviderError
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending
@@ -28,7 +29,6 @@ class RegieLiveSubtitle(Subtitle):
         self.page_link = link
         self.video = video
         self.rating = rating
-        self.language = language
         self.release_info = filename
 
     @property
@@ -87,13 +87,18 @@ class RegieLiveProvider(Provider):
             payload['nume'] = video.title
         payload['an'] = video.year
 
-        response = self.session.get(
-            self.url + "?" + urllib.parse.urlencode(payload),
-            data=payload, headers=self.headers)
+        response = self.checked(
+            lambda: self.session.get(
+                self.url + "?" + urllib.parse.urlencode(payload),
+                data=payload, headers=self.headers)
+        )
 
         subtitles = []
         if response.status_code == 200:
-            results = response.json()
+            try:
+                results = response.json()
+            except JSONDecodeError:
+                raise ProviderError('Unable to parse JSON response')
             if len(results) > 0:
                 results_subs = results['rezultate']
                 for film in results_subs:
@@ -122,9 +127,13 @@ class RegieLiveProvider(Provider):
             'Cache-Control': 'no-cache'
         }
         session.headers.update(_addheaders)
-        res = session.get('https://subtitrari.regielive.ro')
+        res = self.checked(
+            lambda: session.get('https://subtitrari.regielive.ro')
+        )
         cookies = res.cookies
-        _zipped = session.get(subtitle.page_link, cookies=cookies)
+        _zipped = self.checked(
+            lambda: session.get(subtitle.page_link, cookies=cookies, allow_redirects=False)
+        )
         if _zipped:
             if _zipped.text == '500':
                 raise ValueError('Error 500 on server')
@@ -135,7 +144,8 @@ class RegieLiveProvider(Provider):
             return subtitle
         raise ValueError('Problems conecting to the server')
 
-    def _get_subtitle_from_archive(self, archive):
+    @staticmethod
+    def _get_subtitle_from_archive(archive):
         # some files have a non subtitle with .txt extension
         _tmp = list(SUBTITLE_EXTENSIONS)
         _tmp.remove('.txt')
@@ -153,3 +163,27 @@ class RegieLiveProvider(Provider):
             return archive.read(name)
 
         raise APIThrottled('Can not find the subtitle in the compressed file')
+
+    @staticmethod
+    def checked(fn):
+        """Run :fn: and check the response status before returning it.
+
+        :param fn: the function to make an API call to provider.
+        :return: the response.
+
+        """
+        response = None
+        try:
+            response = fn()
+        except Exception:
+            logger.exception('Unhandled exception raised.')
+            raise ProviderError('Unhandled exception raised. Check log.')
+        else:
+            status_code = response.status_code
+
+            if status_code == 301:
+                raise APIThrottled()
+            elif status_code == 429:
+                raise TooManyRequests()
+
+        return response

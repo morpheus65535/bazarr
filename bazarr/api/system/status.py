@@ -22,6 +22,8 @@ api_ns_system_status = Namespace('System Status', description='List environment 
 @api_ns_system_status.route('system/status')
 class SystemStatus(Resource):
     @authenticate
+    @api_ns_system_status.response(200, "Success")
+    @api_ns_system_status.response(401, 'Not Authenticated')
     def get(self):
         """Return environment information and versions"""
         package_version = ''

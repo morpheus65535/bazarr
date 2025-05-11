@@ -27,9 +27,6 @@ from utilities.central import make_bazarr_dir, restart_bazarr, stop_bazarr
 global startTime
 startTime = time.time()
 
-# restore backup if required
-restore_from_backup()
-
 # set subliminal_patch user agent
 os.environ["SZ_USER_AGENT"] = f"Bazarr/{os.environ['BAZARR_VERSION']}"
 
@@ -62,6 +59,9 @@ from ga4mp import GtagMP  # noqa E402
 # configure logging
 configure_logging(settings.general.debug or args.debug)
 import logging  # noqa E402
+
+# restore backup if required
+restore_from_backup()
 
 
 def is_virtualenv():

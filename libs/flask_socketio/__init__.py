@@ -33,15 +33,13 @@ class _SocketIOMiddleware(socketio.WSGIApp):
     """
     def __init__(self, socketio_app, flask_app, socketio_path='socket.io'):
         self.flask_app = flask_app
-        super(_SocketIOMiddleware, self).__init__(socketio_app,
-                                                  flask_app.wsgi_app,
-                                                  socketio_path=socketio_path)
+        super().__init__(socketio_app, flask_app.wsgi_app,
+                         socketio_path=socketio_path)
 
     def __call__(self, environ, start_response):
         environ = environ.copy()
         environ['flask.app'] = self.flask_app
-        return super(_SocketIOMiddleware, self).__call__(environ,
-                                                         start_response)
+        return super().__call__(environ, start_response)
 
 
 class _ManagedSession(dict, SessionMixin):
@@ -51,7 +49,7 @@ class _ManagedSession(dict, SessionMixin):
     pass
 
 
-class SocketIO(object):
+class SocketIO:
     """Create a Flask-SocketIO server.
 
     :param app: The flask application instance. If the application instance
@@ -167,6 +165,7 @@ class SocketIO(object):
                             fatal errors are logged even when
                             ``engineio_logger`` is ``False``.
     """
+    reason = socketio.Server.reason
 
     def __init__(self, app=None, **kwargs):
         self.server = None
@@ -204,7 +203,7 @@ class SocketIO(object):
             if url:
                 if url.startswith(('redis://', "rediss://")):
                     queue_class = socketio.RedisManager
-                elif url.startswith(('kafka://')):
+                elif url.startswith('kafka://'):
                     queue_class = socketio.KafkaManager
                 elif url.startswith('zmq'):
                     queue_class = socketio.ZmqManager
@@ -220,7 +219,7 @@ class SocketIO(object):
             # changes when it is invoked inside or outside the app context
             # so here to prevent any ambiguities we replace it with wrappers
             # that ensure that the app context is always present
-            class FlaskSafeJSON(object):
+            class FlaskSafeJSON:
                 @staticmethod
                 def dumps(*args, **kwargs):
                     with app.app_context():
@@ -279,7 +278,18 @@ class SocketIO(object):
         def decorator(handler):
             @wraps(handler)
             def _handler(sid, *args):
-                return self._handle_event(handler, message, namespace, sid,
+                nonlocal namespace
+                real_ns = namespace
+                if namespace == '*':
+                    real_ns = sid
+                    sid = args[0]
+                    args = args[1:]
+                real_msg = message
+                if message == '*':
+                    real_msg = sid
+                    sid = args[0]
+                    args = [real_msg] + list(args[1:])
+                return self._handle_event(handler, message, real_ns, sid,
                                           *args)
 
             if self.server:
@@ -686,17 +696,15 @@ class SocketIO(object):
             from gevent import pywsgi
             try:
                 from geventwebsocket.handler import WebSocketHandler
-                websocket = True
+                gevent_websocket = True
             except ImportError:
-                app.logger.warning(
-                    'WebSocket transport not available. Install '
-                    'gevent-websocket for improved performance.')
-                websocket = False
+                # WebSocket support will come from the simple-websocket package
+                gevent_websocket = False
 
             log = 'default'
             if not log_output:
                 log = None
-            if websocket:
+            if gevent_websocket:
                 self.wsgi_server = pywsgi.WSGIServer(
                     (host, port), app, handler_class=WebSocketHandler,
                     log=log, **kwargs)

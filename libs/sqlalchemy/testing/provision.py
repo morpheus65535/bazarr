@@ -1,5 +1,5 @@
 # testing/provision.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -108,7 +108,9 @@ def generate_db_urls(db_urls, extra_drivers):
     """Generate a set of URLs to test given configured URLs plus additional
     driver names.
 
-    Given::
+    Given:
+
+    .. sourcecode:: text
 
         --dburi postgresql://db1  \
         --dburi postgresql://db2  \
@@ -116,7 +118,9 @@ def generate_db_urls(db_urls, extra_drivers):
         --dbdriver=psycopg2 --dbdriver=asyncpg?async_fallback=true
 
     Noting that the default postgresql driver is psycopg2,  the output
-    would be::
+    would be:
+
+    .. sourcecode:: text
 
         postgresql+psycopg2://db1
         postgresql+asyncpg://db1
@@ -132,6 +136,8 @@ def generate_db_urls(db_urls, extra_drivers):
     Driver specific query options can be specified by added them to the
     driver name. For example, to enable the async fallback option for
     asyncpg::
+
+    .. sourcecode:: text
 
         --dburi postgresql://db1  \
         --dbdriver=asyncpg?async_fallback=true
@@ -362,7 +368,7 @@ def update_db_opts(db_url, db_opts, options):
 def post_configure_engine(url, engine, follower_ident):
     """Perform extra steps after configuring an engine for testing.
 
-    (For the internal dialects, currently only used by sqlite, oracle)
+    (For the internal dialects, currently only used by sqlite, oracle, mssql)
     """
 
 

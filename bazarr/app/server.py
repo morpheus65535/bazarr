@@ -64,7 +64,7 @@ class Server:
                     logging.exception("BAZARR cannot bind to default TCP port (6767) because it's already in use, "
                                       "exiting...")
                     self.shutdown(EXIT_PORT_ALREADY_IN_USE_ERROR)
-            elif error.errno == errno.ENOLINK:
+            elif error.errno in [errno.ENOLINK, errno.EAFNOSUPPORT]:
                 logging.exception("BAZARR cannot bind to IPv6 (*), trying with 0.0.0.0")
                 self.address = '0.0.0.0'
                 self.connected = False
@@ -93,8 +93,9 @@ class Server:
     def close_all(self):
         print("Closing database...")
         close_database()
-        print("Closing webserver...")
-        self.server.close()
+        if self.server:
+            print("Closing webserver...")
+            self.server.close()
 
     def shutdown(self, status=EXIT_NORMAL):
         self.close_all()

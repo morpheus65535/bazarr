@@ -1,7 +1,7 @@
 .container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - $header-height);
+  height: calc(100vh - bazarr.$header-height);
 }
 
 .chart {

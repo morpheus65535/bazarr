@@ -38,7 +38,6 @@ class SubsynchroSubtitle(Subtitle):
             language, hearing_impaired=False, page_link=download_url
         )
         self.download_url = download_url
-        self.language = language
         self.file_type = file_type
         self.release_info = release_info
         self.filename = filename

@@ -158,10 +158,18 @@ def encode_audio_stream(path, ffmpeg_path, audio_stream_language=None):
             # Use the ISO 639-2 code if available
             audio_stream_language = get_ISO_639_2_code(audio_stream_language)
             logger.debug(f"Whisper will use the '{audio_stream_language}' audio stream for {path}")
-            inp = inp[f'a:m:language:{audio_stream_language}']
-
-        out, _ = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af="aresample=async=1") \
-                    .run(cmd=[ffmpeg_path, "-nostdin"], capture_stdout=True, capture_stderr=True)
+            # 0 = Pick first stream in case there are multiple language streams of the same language,
+            # otherwise ffmpeg will try to combine multiple streams, but our output format doesn't support that.
+            # The first stream is probably the correct one, as later streams are usually commentaries
+            lang_map = f"0:m:language:{audio_stream_language}"
+        else:
+            # there is only one stream, so just use that one
+            lang_map = ""
+        out, _ = (
+            inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af="aresample=async=1")
+            .global_args("-map", lang_map)
+            .run(cmd=[ffmpeg_path, "-nostdin"], capture_stdout=True, capture_stderr=True) 
+        )
 
     except ffmpeg.Error as e:
         logger.warning(f"ffmpeg failed to load audio: {e.stderr.decode()}")
@@ -272,9 +280,10 @@ class WhisperAIProvider(Provider):
         if out == None:
             logger.info(f"Whisper cannot detect language of {path} because of missing/bad audio track")
             return None
+        video_name = path if self.pass_video_name else None
 
         r = self.session.post(f"{self.endpoint}/detect-language",
-                              params={'encode': 'false'},
+                              params={'encode': 'false', 'video_file': {video_name}},
                               files={'audio_file': out},
                               timeout=(self.response, self.timeout))
         

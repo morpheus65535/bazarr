@@ -5,7 +5,7 @@ import {
   useContext,
   useMemo,
 } from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router";
 import {
   faClock,
   faCogs,
@@ -34,6 +34,7 @@ import SeriesMassEditor from "@/pages/Series/Editor";
 import SettingsGeneralView from "@/pages/Settings/General";
 import SettingsLanguagesView from "@/pages/Settings/Languages";
 import SettingsNotificationsView from "@/pages/Settings/Notifications";
+import SettingsPlexView from "@/pages/Settings/Plex";
 import SettingsProvidersView from "@/pages/Settings/Providers";
 import SettingsRadarrView from "@/pages/Settings/Radarr";
 import SettingsSchedulerView from "@/pages/Settings/Scheduler";
@@ -223,6 +224,11 @@ function useRoutes(): CustomRouteObject[] {
                 element: <SettingsRadarrView></SettingsRadarrView>,
               },
               {
+                path: "plex",
+                name: "Plex",
+                element: <SettingsPlexView></SettingsPlexView>,
+              },
+              {
                 path: "notifications",
                 name: "Notifications",
                 element: (
@@ -324,7 +330,10 @@ export const Router: FunctionComponent = () => {
 
   // TODO: Move this outside the function component scope
   const router = useMemo(
-    () => createBrowserRouter(routes, { basename: Environment.baseUrl }),
+    () =>
+      createBrowserRouter(routes, {
+        basename: Environment.baseUrl,
+      }),
     [routes],
   );
 

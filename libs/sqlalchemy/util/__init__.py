@@ -1,5 +1,5 @@
 # util/__init__.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -65,6 +65,7 @@ from .compat import osx as osx
 from .compat import py310 as py310
 from .compat import py311 as py311
 from .compat import py312 as py312
+from .compat import py313 as py313
 from .compat import py38 as py38
 from .compat import py39 as py39
 from .compat import pypy as pypy

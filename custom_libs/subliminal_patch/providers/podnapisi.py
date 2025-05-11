@@ -17,6 +17,8 @@ from requests.adapters import HTTPAdapter
 from subliminal.utils import sanitize
 from subliminal_patch.subtitle import guess_matches
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
+from subliminal_patch.exceptions import TooManyRequests
+
 
 try:
     from lxml import etree
@@ -202,10 +204,12 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
             # query the server
             content = None
             try:
-                content = self.session.get(self.server_url + 'search/old', params=params, timeout=30).content
-                xml = etree.fromstring(content)
+                content = self.session.get(self.server_url + 'search/old', params=params, timeout=30)
+                xml = etree.fromstring(content.content)
             except etree.ParseError:
-                logger.error("Wrong data returned: %r", content)
+                if '429 Too Many Requests' in content.text:
+                    raise TooManyRequests
+                logger.error("Wrong data returned: %r", content.text)
                 break
 
             # exit if no results

@@ -7,7 +7,7 @@ import ast
 
 from datetime import datetime, timedelta
 from functools import reduce
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 
 from app.config import settings
 from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies, \
@@ -118,7 +118,7 @@ def upgrade_subtitles():
                                              episode['seriesTitle'],
                                              'series',
                                              episode['profileId'],
-                                             forced_minimum_score=int(episode['score']),
+                                             forced_minimum_score=int(episode['score'] or 0),
                                              is_upgrade=True,
                                              previous_subtitles_to_delete=path_mappings.path_replace(
                                                  episode['subtitles_path'])))
@@ -221,7 +221,7 @@ def upgrade_subtitles():
                                              movie['title'],
                                              'movie',
                                              movie['profileId'],
-                                             forced_minimum_score=int(movie['score']),
+                                             forced_minimum_score=int(movie['score'] or 0),
                                              is_upgrade=True,
                                              previous_subtitles_to_delete=path_mappings.path_replace_movie(
                                                  movie['subtitles_path'])))
@@ -293,8 +293,8 @@ def get_upgradable_episode_subtitles():
 
     upgradable_episodes_conditions = [(TableHistory.action.in_(query_actions)),
                                       (TableHistory.timestamp > minimum_timestamp),
-                                      TableHistory.score.is_not(None),
-                                      (TableHistory.score < 357)]
+                                      or_(and_(TableHistory.score.is_(None), TableHistory.action == 6),
+                                      (TableHistory.score < 357))]
     upgradable_episodes_conditions += get_exclusion_clause('series')
     subtitles_to_upgrade = database.execute(
         select(TableHistory.id,
@@ -316,6 +316,12 @@ def get_upgradable_episode_subtitles():
     query_actions_without_upgrade = [x for x in query_actions if x != 3]
     upgradable_episode_subtitles = {}
     for subtitle_to_upgrade in subtitles_to_upgrade:
+        # exclude subtitles with ID that as been "upgraded from" and shouldn't be considered (should help prevent
+        # non-matching hi/non-hi bug)
+        if database.execute(select(TableHistory.id).where(TableHistory.upgradedFromId == subtitle_to_upgrade.id)).first():
+            logging.debug(f"Episode subtitle {subtitle_to_upgrade.id} has already been upgraded so we'll skip it.")
+            continue
+
         # check if we have the original subtitles id in database and use it instead of guessing
         if subtitle_to_upgrade.upgradedFromId:
             upgradable_episode_subtitles.update({subtitle_to_upgrade.id: subtitle_to_upgrade.upgradedFromId})
@@ -371,8 +377,8 @@ def get_upgradable_movies_subtitles():
 
     upgradable_movies_conditions = [(TableHistoryMovie.action.in_(query_actions)),
                                     (TableHistoryMovie.timestamp > minimum_timestamp),
-                                    TableHistoryMovie.score.is_not(None),
-                                    (TableHistoryMovie.score < 117)]
+                                    or_(and_(TableHistoryMovie.score.is_(None), TableHistoryMovie.action == 6),
+                                    (TableHistoryMovie.score < 117))]
     upgradable_movies_conditions += get_exclusion_clause('movie')
     subtitles_to_upgrade = database.execute(
         select(TableHistoryMovie.id,
@@ -393,6 +399,13 @@ def get_upgradable_movies_subtitles():
     query_actions_without_upgrade = [x for x in query_actions if x != 3]
     upgradable_movie_subtitles = {}
     for subtitle_to_upgrade in subtitles_to_upgrade:
+        # exclude subtitles with ID that as been "upgraded from" and shouldn't be considered (should help prevent
+        # non-matching hi/non-hi bug)
+        if database.execute(
+                select(TableHistoryMovie.id).where(TableHistoryMovie.upgradedFromId == subtitle_to_upgrade.id)).first():
+            logging.debug(f"Movie subtitle {subtitle_to_upgrade.id} has already been upgraded so we'll skip it.")
+            continue
+
         # check if we have the original subtitles id in database and use it instead of guessing
         if subtitle_to_upgrade.upgradedFromId:
             upgradable_movie_subtitles.update({subtitle_to_upgrade.id: subtitle_to_upgrade.upgradedFromId})

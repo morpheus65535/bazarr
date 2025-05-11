@@ -414,7 +414,7 @@ class Subtitle(Subtitle_):
                 encoding=self.get_encoding())
 
         submods = SubtitleModifications(debug=debug)
-        if submods.load(content=self.text, language=self.language):
+        if submods.load(content=self.text, language=self.language, mods=self.mods):
             logger.info("Applying mods: %s", self.mods)
             submods.modify(*self.mods)
             self.mods = submods.mods_used

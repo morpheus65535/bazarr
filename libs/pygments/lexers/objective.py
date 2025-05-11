@@ -4,7 +4,7 @@
 
     Lexers for Objective-C family languages.
 
-    :copyright: Copyright 2006-2023 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -13,7 +13,7 @@ import re
 from pygments.lexer import RegexLexer, include, bygroups, using, this, words, \
     inherit, default
 from pygments.token import Text, Keyword, Name, String, Operator, \
-    Number, Punctuation, Literal, Comment
+    Number, Punctuation, Literal, Comment, Whitespace
 
 from pygments.lexers.c_cpp import CLexer, CppLexer
 
@@ -201,6 +201,7 @@ class ObjectiveCLexer(objective(CLexer)):
     aliases = ['objective-c', 'objectivec', 'obj-c', 'objc']
     filenames = ['*.m', '*.h']
     mimetypes = ['text/x-objective-c']
+    version_added = ''
     priority = 0.05    # Lower than C
 
 
@@ -213,20 +214,20 @@ class ObjectiveCppLexer(objective(CppLexer)):
     aliases = ['objective-c++', 'objectivec++', 'obj-c++', 'objc++']
     filenames = ['*.mm', '*.hh']
     mimetypes = ['text/x-objective-c++']
+    version_added = ''
     priority = 0.05    # Lower than C++
 
 
 class LogosLexer(ObjectiveCppLexer):
     """
     For Logos + Objective-C source code with preprocessor directives.
-
-    .. versionadded:: 1.6
     """
 
     name = 'Logos'
     aliases = ['logos']
     filenames = ['*.x', '*.xi', '*.xm', '*.xmi']
     mimetypes = ['text/x-logos']
+    version_added = '1.6'
     priority = 0.25
 
     tokens = {
@@ -283,20 +284,19 @@ class LogosLexer(ObjectiveCppLexer):
 class SwiftLexer(RegexLexer):
     """
     For Swift source.
-
-    .. versionadded:: 2.0
     """
     name = 'Swift'
     url = 'https://www.swift.org/'
     filenames = ['*.swift']
     aliases = ['swift']
     mimetypes = ['text/x-swift']
+    version_added = '2.0'
 
     tokens = {
         'root': [
             # Whitespace and Comments
             (r'\n', Text),
-            (r'\s+', Text),
+            (r'\s+', Whitespace),
             (r'//', Comment.Single, 'comment-single'),
             (r'/\*', Comment.Multiline, 'comment-multi'),
             (r'#(if|elseif|else|endif|available)\b', Comment.Preproc, 'preproc'),
@@ -403,6 +403,7 @@ class SwiftLexer(RegexLexer):
              r'\.[0-9_]*|[eE][+\-]?[0-9_]+)', Number.Float),
             (r'[0-9][0-9_]*', Number.Integer),
             # String Literal
+            (r'"""', String, 'string-multi'),
             (r'"', String, 'string'),
 
             # Operators and Punctuation
@@ -436,11 +437,11 @@ class SwiftLexer(RegexLexer):
              r'|#(?:file|line|column|function))\b', Keyword.Constant),
             (r'import\b', Keyword.Declaration, 'module'),
             (r'(class|enum|extension|struct|protocol)(\s+)([a-zA-Z_]\w*)',
-             bygroups(Keyword.Declaration, Text, Name.Class)),
+             bygroups(Keyword.Declaration, Whitespace, Name.Class)),
             (r'(func)(\s+)([a-zA-Z_]\w*)',
-             bygroups(Keyword.Declaration, Text, Name.Function)),
+             bygroups(Keyword.Declaration, Whitespace, Name.Function)),
             (r'(var|let)(\s+)([a-zA-Z_]\w*)', bygroups(Keyword.Declaration,
-             Text, Name.Variable)),
+             Whitespace, Name.Variable)),
             (words((
                 'actor', 'associatedtype', 'class', 'deinit', 'enum', 'extension', 'func', 'import',
                 'init', 'internal', 'let', 'operator', 'private', 'protocol', 'public',
@@ -454,31 +455,38 @@ class SwiftLexer(RegexLexer):
 
         # Nested
         'comment-single': [
-            (r'\n', Text, '#pop'),
+            (r'\n', Whitespace, '#pop'),
             include('comment'),
-            (r'[^\n]', Comment.Single)
+            (r'[^\n]+', Comment.Single)
         ],
         'comment-multi': [
             include('comment'),
-            (r'[^*/]', Comment.Multiline),
+            (r'[^*/]+', Comment.Multiline),
             (r'/\*', Comment.Multiline, '#push'),
             (r'\*/', Comment.Multiline, '#pop'),
-            (r'[*/]', Comment.Multiline)
+            (r'[*/]+', Comment.Multiline)
         ],
         'module': [
-            (r'\n', Text, '#pop'),
+            (r'\n', Whitespace, '#pop'),
             (r'[a-zA-Z_]\w*', Name.Class),
             include('root')
         ],
         'preproc': [
-            (r'\n', Text, '#pop'),
+            (r'\n', Whitespace, '#pop'),
             include('keywords'),
             (r'[A-Za-z]\w*', Comment.Preproc),
             include('root')
         ],
         'string': [
-            (r'\\\(', String.Interpol, 'string-intp'),
             (r'"', String, '#pop'),
+            include("string-common"),
+        ],
+        'string-multi': [
+            (r'"""', String, '#pop'),
+            include("string-common"),
+        ],
+        'string-common': [
+            (r'\\\(', String.Interpol, 'string-intp'),
             (r"""\\['"\\nrt]|\\x[0-9a-fA-F]{2}|\\[0-7]{1,3}"""
              r"""|\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8}""", String.Escape),
             (r'[^\\"]+', String),

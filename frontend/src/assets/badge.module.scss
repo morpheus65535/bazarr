@@ -1,44 +1,46 @@
+@use "sass:color";
+
 @layer mantine {
   .root {
-    background-color: transparentize($color-brand-6, 0.8);
+    background-color: color.adjust(bazarr.$color-brand-6, $alpha: -0.8);
 
     &[data-variant="warning"] {
-      color: lighten($color-warning-2, 0.8);
-      background-color: transparentize($color-warning-6, 0.8);
+      color: color.adjust(bazarr.$color-warning-2, $lightness: 80%);
+      background-color: color.adjust(bazarr.$color-warning-6, $alpha: -0.8);
     }
 
     &[data-variant="highlight"] {
-      color: lighten($color-highlight-2, 1);
-      background-color: transparentize($color-highlight-5, 0.8);
+      color: color.adjust(bazarr.$color-highlight-2, $lightness: 100%);
+      background-color: color.adjust(bazarr.$color-highlight-5, $alpha: -0.8);
     }
 
     &[data-variant="disabled"] {
-      color: lighten($color-disabled-0, 1);
-      background-color: transparentize($color-disabled-7, 0.8);
+      color: color.adjust(bazarr.$color-disabled-0, $lightness: 100%);
+      background-color: color.adjust(bazarr.$color-disabled-7, $alpha: -0.8);
     }
 
     &[data-variant="light"] {
       color: var(--mantine-color-dark-0);
-      background-color: transparentize($color-disabled-9, 0.8);
+      background-color: color.adjust(bazarr.$color-disabled-9, $alpha: -0.8);
     }
 
-    @include light {
-      color: $color-brand-6;
-      background-color: transparentize($color-brand-3, 0.8);
+    @include mantine.light {
+      color: bazarr.$color-brand-6;
+      background-color: color.adjust(bazarr.$color-brand-3, $alpha: -0.8);
 
       &[data-variant="warning"] {
-        color: darken($color-warning-7, 1);
-        background-color: transparentize($color-warning-6, 0.8);
+        color: color.adjust(bazarr.$color-warning-7, $lightness: -100%);
+        background-color: color.adjust(bazarr.$color-warning-6, $alpha: -0.8);
       }
 
       &[data-variant="disabled"] {
-        color: darken($color-disabled-6, 1);
-        background-color: transparentize($color-disabled-4, 0.8);
+        color: color.adjust(bazarr.$color-disabled-6, $lightness: -100%);
+        background-color: color.adjust(bazarr.$color-disabled-4, $alpha: -0.8);
       }
 
       &[data-variant="highlight"] {
-        color: darken($color-highlight-6, 1);
-        background-color: transparentize($color-highlight-5, 0.8);
+        color: color.adjust(bazarr.$color-highlight-6, $lightness: -100%);
+        background-color: color.adjust(bazarr.$color-highlight-5, $alpha: -0.8);
       }
 
       &[data-variant="light"] {

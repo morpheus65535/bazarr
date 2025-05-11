@@ -258,16 +258,17 @@ def sync_one_episode(episode_id, defer_search=False):
             logging.debug(
                 f'BAZARR inserted this episode into the database:{path_mappings.path_replace(episode["path"])}')
 
-    # Storing existing subtitles
-    logging.debug(f'BAZARR storing subtitles for this episode: {path_mappings.path_replace(episode["path"])}')
-    store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
-
     # Downloading missing subtitles
     if defer_search:
         logging.debug(
             f'BAZARR searching for missing subtitles is deferred until scheduled task execution for this episode: '
             f'{path_mappings.path_replace(episode["path"])}')
     else:
-        logging.debug(
-            f'BAZARR downloading missing subtitles for this episode: {path_mappings.path_replace(episode["path"])}')
-        episode_download_subtitles(episode_id)
+        mapped_episode_path = path_mappings.path_replace(episode["path"])
+        if os.path.exists(mapped_episode_path):
+            logging.debug(f'BAZARR downloading missing subtitles for this episode: {mapped_episode_path}')
+            episode_download_subtitles(episode_id, send_progress=True)
+        else:
+            logging.debug(f'BAZARR cannot find this file yet (Sonarr may be slow to import episode between disks?). '
+                          f'Searching for missing subtitles is deferred until scheduled task execution for this episode'
+                          f': {mapped_episode_path}')

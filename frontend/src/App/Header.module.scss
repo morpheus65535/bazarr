@@ -1,9 +1,9 @@
 .header {
-  @include light {
+  @include mantine.light {
     color: var(--mantine-color-gray-0);
   }
 
-  @include dark {
+  @include mantine.dark {
     color: var(--mantine-color-dark-0);
   }
 }

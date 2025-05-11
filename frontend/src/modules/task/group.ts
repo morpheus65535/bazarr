@@ -4,4 +4,5 @@ export enum TaskGroup {
   DeleteSubtitle = "Deleting subtitles...",
   SearchSubtitle = "Searching subtitles...",
   ScanDisk = "Scanning disk...",
+  Sync = "Syncing...",
 }

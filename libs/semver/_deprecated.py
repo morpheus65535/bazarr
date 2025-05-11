@@ -3,6 +3,7 @@ Contains all deprecated functions.
 
 .. autofunction: deprecated
 """
+
 import inspect
 import warnings
 from functools import partial, wraps

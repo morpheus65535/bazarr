@@ -1,5 +1,5 @@
 # ext/horizontal_shard.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -125,12 +125,9 @@ class ShardedQuery(Query[_T]):
         The shard_id can be passed for a 2.0 style execution to the
         bind_arguments dictionary of :meth:`.Session.execute`::
 
-            results = session.execute(
-                stmt,
-                bind_arguments={"shard_id": "my_shard"}
-            )
+            results = session.execute(stmt, bind_arguments={"shard_id": "my_shard"})
 
-        """
+        """  # noqa: E501
         return self.execution_options(_sa_shard_id=shard_id)
 
 
@@ -321,7 +318,7 @@ class ShardedSession(Session):
             state.identity_token = shard_id
         return shard_id
 
-    def connection_callable(  # type: ignore [override]
+    def connection_callable(
         self,
         mapper: Optional[Mapper[_T]] = None,
         instance: Optional[Any] = None,
@@ -382,9 +379,9 @@ class set_shard_id(ORMOption):
     the :meth:`_sql.Executable.options` method of any executable statement::
 
         stmt = (
-            select(MyObject).
-            where(MyObject.name == 'some name').
-            options(set_shard_id("shard1"))
+            select(MyObject)
+            .where(MyObject.name == "some name")
+            .options(set_shard_id("shard1"))
         )
 
     Above, the statement when invoked will limit to the "shard1" shard

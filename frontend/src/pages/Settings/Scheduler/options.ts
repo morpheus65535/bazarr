@@ -36,4 +36,5 @@ export const upgradeOptions: SelectorOption<number>[] = [
   { label: "6 Hours", value: 6 },
   { label: "12 Hours", value: 12 },
   { label: "24 Hours", value: 24 },
+  { label: "Weekly", value: 168 },
 ];

@@ -80,7 +80,7 @@ def backup_to_zip():
             backupZip.write(database_backup_file, 'bazarr.db')
             try:
                 os.remove(database_backup_file)
-            except OSError:
+            except (OSError, FileNotFoundError):
                 logging.exception(f'Unable to delete temporary database backup file: {database_backup_file}')
         else:
             logging.debug('Database file is not included in backup. See previous exception')
@@ -104,7 +104,7 @@ def restore_from_backup():
         try:
             shutil.copy(restore_config_path, dest_config_path)
             os.remove(restore_config_path)
-        except OSError:
+        except (OSError, FileNotFoundError):
             logging.exception(f'Unable to restore or delete config file to {dest_config_path}')
         else:
             if new_config:
@@ -116,8 +116,7 @@ def restore_from_backup():
         if not settings.postgresql.enabled:
             try:
                 shutil.copy(restore_database_path, dest_database_path)
-                os.remove(restore_database_path)
-            except OSError:
+            except (OSError, FileNotFoundError):
                 logging.exception(f'Unable to restore or delete db to {dest_database_path}')
             else:
                 try:
@@ -125,11 +124,12 @@ def restore_from_backup():
                         os.remove(f'{dest_database_path}-shm')
                     if os.path.isfile(f'{dest_database_path}-wal'):
                         os.remove(f'{dest_database_path}-wal')
-                except OSError:
+                except (OSError, FileNotFoundError):
                     logging.exception('Unable to delete SHM and WAL file.')
+
             try:
                 os.remove(restore_database_path)
-            except OSError:
+            except (OSError, FileNotFoundError):
                 logging.exception(f'Unable to delete {dest_database_path}')
 
         logging.info('Backup restored successfully. Bazarr will restart.')
@@ -144,7 +144,7 @@ def restore_from_backup():
         os.remove(restore_config_path)
     except FileNotFoundError:
         pass
-    except OSError:
+    except (OSError, FileNotFoundError):
         logging.exception(f'Unable to delete {dest_config_path}')
 
 
@@ -154,7 +154,7 @@ def prepare_restore(filename):
     success = False
     try:
         shutil.copy(src_zip_file_path, dest_zip_file_path)
-    except OSError:
+    except (OSError, FileNotFoundError):
         logging.exception(f'Unable to copy backup archive to {dest_zip_file_path}')
     else:
         try:
@@ -162,18 +162,20 @@ def prepare_restore(filename):
                 zipObj.extractall(path=get_restore_path())
         except BadZipFile:
             logging.exception(f'Unable to extract files from backup archive {dest_zip_file_path}')
-
-        success = True
+        else:
+            success = True
     finally:
         try:
             os.remove(dest_zip_file_path)
-        except OSError:
+        except (OSError, FileNotFoundError):
             logging.exception(f'Unable to delete backup archive {dest_zip_file_path}')
 
     if success:
         logging.debug('time to restart')
         from app.server import webserver
         webserver.restart()
+
+    return success
 
 
 def backup_rotation():
@@ -192,7 +194,7 @@ def backup_rotation():
             logging.debug(f'Deleting old backup file {file}')
             try:
                 os.remove(file)
-            except OSError:
+            except (OSError, FileNotFoundError):
                 logging.debug(f'Unable to delete backup file {file}')
     logging.debug('Finished cleaning up old backup files')
 
@@ -202,7 +204,7 @@ def delete_backup_file(filename):
     try:
         os.remove(backup_file_path)
         return True
-    except OSError:
+    except (OSError, FileNotFoundError):
         logging.debug(f'Unable to delete backup file {backup_file_path}')
     return False
 

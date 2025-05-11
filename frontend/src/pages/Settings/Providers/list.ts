@@ -69,6 +69,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "animekalesi",
+    name: "AnimeKalesi",
+    description: "Turkish Anime Series Subtitles Provider",
+  },
+  {
     key: "animetosho",
     name: "Anime Tosho",
     description:
@@ -547,6 +552,25 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         type: "switch",
         key: "skip_wrong_fps",
         name: "Skip subtitles with mismatched fps to video's",
+      },
+    ],
+  },
+  {
+    key: "turkcealtyaziorg",
+    name: "Turkcealtyazi.org",
+    description: "Turkish Subtitles Provider",
+    message:
+      "For requests coming from outside of Turkey, cookies and user agent are required. Especially cf_clearance cookie.",
+    inputs: [
+      {
+        type: "text",
+        key: "cookies",
+        name: "Cookies, e.g., PHPSESSID=abc; wikisubtitlesuser=xyz; wikisubtitlespass=efg",
+      },
+      {
+        type: "text",
+        key: "user_agent",
+        name: "User-Agent, e.g., Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0",
       },
     ],
   },

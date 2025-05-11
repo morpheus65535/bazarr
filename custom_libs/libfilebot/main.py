@@ -11,7 +11,7 @@ import binascii
 import types
 import os
 
-from pipes import quote
+from shlex import quote
 from .lib import find_executable
 
 mswindows = False

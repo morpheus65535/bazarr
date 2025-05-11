@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 /// <reference types="node" />
 
-import { readFile } from "fs/promises";
+import { readFileSync } from "fs";
 import { get } from "lodash";
 import { parse } from "yaml";
 
@@ -12,9 +12,9 @@ class ConfigReader {
     this.config = {};
   }
 
-  async open(path: string) {
+  open(path: string) {
     try {
-      const rawConfig = await readFile(path, "utf8");
+      const rawConfig = readFileSync(path, "utf8");
       this.config = parse(rawConfig);
     } catch (err) {
       // We don't want to catch the error here, handle it on getValue method
@@ -33,7 +33,7 @@ class ConfigReader {
   }
 }
 
-export default async function overrideEnv(env: Record<string, string>) {
+export default function overrideEnv(env: Record<string, string>) {
   const configPath = env["VITE_BAZARR_CONFIG_FILE"];
 
   if (configPath === undefined) {
@@ -41,7 +41,7 @@ export default async function overrideEnv(env: Record<string, string>) {
   }
 
   const reader = new ConfigReader();
-  await reader.open(configPath);
+  reader.open(configPath);
 
   if (env["VITE_API_KEY"] === undefined) {
     try {

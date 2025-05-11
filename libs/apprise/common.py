@@ -2,7 +2,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2024, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -186,6 +186,42 @@ CONTENT_LOCATIONS = (
     ContentLocation.HOSTED,
     ContentLocation.INACCESSIBLE,
 )
+
+
+class PersistentStoreMode:
+    # Allow persistent storage; write on demand
+    AUTO = 'auto'
+
+    # Always flush every change to disk after it's saved. This has higher i/o
+    # but enforces disk reflects what was set immediately
+    FLUSH = 'flush'
+
+    # memory based store only
+    MEMORY = 'memory'
+
+
+PERSISTENT_STORE_MODES = (
+    PersistentStoreMode.AUTO,
+    PersistentStoreMode.FLUSH,
+    PersistentStoreMode.MEMORY,
+)
+
+
+class PersistentStoreState:
+    """
+    Defines the persistent states describing what has been cached
+    """
+    # Persistent Directory is actively cross-referenced against a matching URL
+    ACTIVE = 'active'
+
+    # Persistent Directory is no longer being used or has no cross-reference
+    STALE = 'stale'
+
+    # Persistent Directory is not utilizing any disk space at all, however
+    # it potentially could if the plugin it successfully cross-references
+    # is utilized
+    UNUSED = 'unused'
+
 
 # This is a reserved tag that is automatically assigned to every
 # Notification Plugin

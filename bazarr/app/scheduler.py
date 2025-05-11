@@ -6,7 +6,6 @@ import pretty
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
-from apscheduler.triggers.date import DateTrigger
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 from datetime import datetime, timedelta
 from calendar import day_name
@@ -65,11 +64,17 @@ class Scheduler:
     def __init__(self):
         self.__running_tasks = []
 
+        # delete empty TZ environment variable to prevent UserWarning
+        if os.environ.get("TZ") == "":
+            del os.environ["TZ"]
+
         try:
             self.timezone = get_localzone()
-        except zoneinfo.ZoneInfoNotFoundError as e:
-            logging.error(f"BAZARR cannot use specified timezone: {e}")
+        except zoneinfo.ZoneInfoNotFoundError:
+            logging.error("BAZARR cannot use the specified timezone and will use UTC instead.")
             self.timezone = tz.gettz("UTC")
+        else:
+            logging.info(f"Scheduler will use this timezone: {self.timezone}")
 
         self.aps_scheduler = BackgroundScheduler({'apscheduler.timezone': self.timezone})
 
@@ -109,7 +114,7 @@ class Scheduler:
 
     def add_job(self, job, name=None, max_instances=1, coalesce=True, args=None, kwargs=None):
         self.aps_scheduler.add_job(
-            job, DateTrigger(run_date=datetime.now()), name=name, id=name, max_instances=max_instances,
+            job, 'date', run_date=datetime.now(), name=name, id=name, max_instances=max_instances,
             coalesce=coalesce, args=args, kwargs=kwargs)
 
     def execute_job_now(self, taskid):
@@ -199,34 +204,34 @@ class Scheduler:
     def __sonarr_update_task(self):
         if settings.general.use_sonarr:
             self.aps_scheduler.add_job(
-                update_series, IntervalTrigger(minutes=int(settings.sonarr.series_sync)), max_instances=1,
+                update_series, 'interval', minutes=int(settings.sonarr.series_sync), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='update_series', name='Sync with Sonarr',
                 replace_existing=True)
 
     def __radarr_update_task(self):
         if settings.general.use_radarr:
             self.aps_scheduler.add_job(
-                update_movies, IntervalTrigger(minutes=int(settings.radarr.movies_sync)), max_instances=1,
+                update_movies, 'interval', minutes=int(settings.radarr.movies_sync), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='update_movies', name='Sync with Radarr',
                 replace_existing=True)
 
     def __cache_cleanup_task(self):
-        self.aps_scheduler.add_job(cache_maintenance, IntervalTrigger(hours=24), max_instances=1, coalesce=True,
+        self.aps_scheduler.add_job(cache_maintenance, 'interval', hours=24, max_instances=1, coalesce=True,
                                    misfire_grace_time=15, id='cache_cleanup', name='Cache Maintenance')
 
     def __check_health_task(self):
-        self.aps_scheduler.add_job(check_health, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
+        self.aps_scheduler.add_job(check_health, 'interval', hours=6, max_instances=1, coalesce=True,
                                    misfire_grace_time=15, id='check_health', name='Check Health')
 
     def __automatic_backup(self):
         backup = settings.backup.frequency
         if backup == "Daily":
-            trigger = CronTrigger(hour=settings.backup.hour)
+            trigger = {'hour': settings.backup.hour}
         elif backup == "Weekly":
-            trigger = CronTrigger(day_of_week=settings.backup.day, hour=settings.backup.hour)
-        elif backup == "Manually":
-            trigger = CronTrigger(year=in_a_century())
-        self.aps_scheduler.add_job(backup_to_zip, trigger,
+            trigger = {'day_of_week': settings.backup.day, 'hour': settings.backup.hour}
+        else:
+            trigger = {'year': in_a_century()}
+        self.aps_scheduler.add_job(backup_to_zip, 'cron', **trigger,
                                    max_instances=1, coalesce=True, misfire_grace_time=15, id='backup',
                                    name='Backup Database and Configuration File', replace_existing=True)
 
@@ -235,39 +240,39 @@ class Scheduler:
             full_update = settings.sonarr.full_update
             if full_update == "Daily":
                 self.aps_scheduler.add_job(
-                    update_all_episodes, CronTrigger(hour=settings.sonarr.full_update_hour), max_instances=1,
+                    update_all_episodes, 'cron', hour=settings.sonarr.full_update_hour, max_instances=1,
                     coalesce=True, misfire_grace_time=15, id='update_all_episodes',
                     name='Index All Episode Subtitles from Disk', replace_existing=True)
             elif full_update == "Weekly":
                 self.aps_scheduler.add_job(
-                    update_all_episodes,
-                    CronTrigger(day_of_week=settings.sonarr.full_update_day, hour=settings.sonarr.full_update_hour),
-                    max_instances=1, coalesce=True, misfire_grace_time=15, id='update_all_episodes',
-                    name='Index All Episode Subtitles from Disk', replace_existing=True)
+                    update_all_episodes, 'cron', day_of_week=settings.sonarr.full_update_day,
+                    hour=settings.sonarr.full_update_hour, max_instances=1, coalesce=True, misfire_grace_time=15,
+                    id='update_all_episodes', name='Index All Episode Subtitles from Disk', replace_existing=True)
             elif full_update == "Manually":
                 self.aps_scheduler.add_job(
-                    update_all_episodes, CronTrigger(year=in_a_century()), max_instances=1, coalesce=True,
-                    misfire_grace_time=15, id='update_all_episodes',
-                    name='Index All Episode Subtitles from Disk', replace_existing=True)
+                    update_all_episodes, 'cron', year=in_a_century(), max_instances=1, coalesce=True,
+                    misfire_grace_time=15, id='update_all_episodes', name='Index All Episode Subtitles from Disk',
+                    replace_existing=True)
 
     def __radarr_full_update_task(self):
         if settings.general.use_radarr:
             full_update = settings.radarr.full_update
             if full_update == "Daily":
                 self.aps_scheduler.add_job(
-                    update_all_movies, CronTrigger(hour=settings.radarr.full_update_hour), max_instances=1,
+                    update_all_movies, 'cron', hour=settings.radarr.full_update_hour, max_instances=1,
                     coalesce=True, misfire_grace_time=15,
                     id='update_all_movies', name='Index All Movie Subtitles from Disk', replace_existing=True)
             elif full_update == "Weekly":
                 self.aps_scheduler.add_job(
                     update_all_movies,
-                    CronTrigger(day_of_week=settings.radarr.full_update_day, hour=settings.radarr.full_update_hour),
+                    'cron', day_of_week=settings.radarr.full_update_day, hour=settings.radarr.full_update_hour,
                     max_instances=1, coalesce=True, misfire_grace_time=15, id='update_all_movies',
                     name='Index All Movie Subtitles from Disk', replace_existing=True)
             elif full_update == "Manually":
                 self.aps_scheduler.add_job(
-                    update_all_movies, CronTrigger(year=in_a_century()), max_instances=1, coalesce=True, misfire_grace_time=15,
-                    id='update_all_movies', name='Index All Movie Subtitles from Disk', replace_existing=True)
+                    update_all_movies, 'cron', year=in_a_century(), max_instances=1, coalesce=True,
+                    misfire_grace_time=15, id='update_all_movies', name='Index All Movie Subtitles from Disk',
+                    replace_existing=True)
 
     def __update_bazarr_task(self):
         if not args.no_update and os.environ["BAZARR_VERSION"] != '':
@@ -275,43 +280,42 @@ class Scheduler:
 
             if settings.general.auto_update:
                 self.aps_scheduler.add_job(
-                    check_if_new_update, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
+                    check_if_new_update, 'interval', hours=6, max_instances=1, coalesce=True,
                     misfire_grace_time=15, id='update_bazarr', name=task_name, replace_existing=True)
             else:
                 self.aps_scheduler.add_job(
-                    check_if_new_update, CronTrigger(year=in_a_century()), hour=4, id='update_bazarr', name=task_name,
+                    check_if_new_update, 'cron', year=in_a_century(), hour=4, id='update_bazarr', name=task_name,
                     replace_existing=True)
                 self.aps_scheduler.add_job(
-                    check_releases, IntervalTrigger(hours=3), max_instances=1, coalesce=True, misfire_grace_time=15,
+                    check_releases, 'interval', hours=3, max_instances=1, coalesce=True, misfire_grace_time=15,
                     id='update_release', name='Update Release Info', replace_existing=True)
 
         else:
             self.aps_scheduler.add_job(
-                check_releases, IntervalTrigger(hours=3), max_instances=1, coalesce=True, misfire_grace_time=15,
+                check_releases, 'interval', hours=3, max_instances=1, coalesce=True, misfire_grace_time=15,
                 id='update_release', name='Update Release Info', replace_existing=True)
 
         self.aps_scheduler.add_job(
-            get_announcements_to_file, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15,
+            get_announcements_to_file, 'interval', hours=6, max_instances=1, coalesce=True, misfire_grace_time=15,
             id='update_announcements', name='Update Announcements File', replace_existing=True)
 
     def __search_wanted_subtitles_task(self):
         if settings.general.use_sonarr:
             self.aps_scheduler.add_job(
-                wanted_search_missing_subtitles_series,
-                IntervalTrigger(hours=int(settings.general.wanted_search_frequency)), max_instances=1, coalesce=True,
-                misfire_grace_time=15, id='wanted_search_missing_subtitles_series', replace_existing=True,
-                name='Search for Missing Series Subtitles')
+                wanted_search_missing_subtitles_series, 'interval', hours=int(settings.general.wanted_search_frequency),
+                max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles_series',
+                replace_existing=True, name='Search for Missing Series Subtitles')
         if settings.general.use_radarr:
             self.aps_scheduler.add_job(
-                wanted_search_missing_subtitles_movies,
-                IntervalTrigger(hours=int(settings.general.wanted_search_frequency_movie)), max_instances=1,
-                coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles_movies',
+                wanted_search_missing_subtitles_movies, 'interval',
+                hours=int(settings.general.wanted_search_frequency_movie), max_instances=1, coalesce=True,
+                misfire_grace_time=15, id='wanted_search_missing_subtitles_movies',
                 name='Search for Missing Movies Subtitles', replace_existing=True)
 
     def __upgrade_subtitles_task(self):
         if settings.general.use_sonarr or settings.general.use_radarr:
             self.aps_scheduler.add_job(
-                upgrade_subtitles, IntervalTrigger(hours=int(settings.general.upgrade_frequency)), max_instances=1,
+                upgrade_subtitles, 'interval', hours=int(settings.general.upgrade_frequency), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='upgrade_subtitles',
                 name='Upgrade Previously Downloaded Subtitles', replace_existing=True)
 

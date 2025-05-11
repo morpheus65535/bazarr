@@ -1,5 +1,5 @@
 # dialects/mssql/json.py
-# Copyright (C) 2005-2024 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -54,9 +54,7 @@ class JSON(sqltypes.JSON):
        dictionary or list, the :meth:`_types.JSON.Comparator.as_json` accessor
        should be used::
 
-            stmt = select(
-                data_table.c.data["some key"].as_json()
-            ).where(
+            stmt = select(data_table.c.data["some key"].as_json()).where(
                 data_table.c.data["some key"].as_json() == {"sub": "structure"}
             )
 
@@ -67,9 +65,7 @@ class JSON(sqltypes.JSON):
        :meth:`_types.JSON.Comparator.as_integer`,
        :meth:`_types.JSON.Comparator.as_float`::
 
-            stmt = select(
-                data_table.c.data["some key"].as_string()
-            ).where(
+            stmt = select(data_table.c.data["some key"].as_string()).where(
                 data_table.c.data["some key"].as_string() == "some string"
             )
 

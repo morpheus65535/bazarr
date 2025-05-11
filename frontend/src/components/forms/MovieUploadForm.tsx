@@ -114,10 +114,10 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         })),
     },
     validate: {
-      files: FormUtils.validation((values) => {
+      files: FormUtils.validation((values: SubtitleFile[]) => {
         return (
           values.find(
-            (v) =>
+            (v: SubtitleFile) =>
               v.language === null ||
               v.validateResult === undefined ||
               v.validateResult.state === "error",

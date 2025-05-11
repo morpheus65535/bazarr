@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2021, Brandon Nielsen
+# Copyright (c) 2025, Brandon Nielsen
 # All rights reserved.
 #
 # This software may be modified and distributed under the terms
@@ -54,7 +54,7 @@ def get_time_resolution(isotimestr):
 def get_datetime_resolution(isodatetimestr, delimiter="T"):
     # <date>T<time>
     #
-    # Time part cannot be omittted so return time resolution
+    # Time part cannot be omitted so return time resolution
     isotimetuple = parse_datetime(
         isodatetimestr, delimiter=delimiter, builder=TupleBuilder
     ).time

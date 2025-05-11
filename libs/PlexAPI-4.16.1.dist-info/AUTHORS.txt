@@ -1,0 +1,7 @@
+Authors and Contributors:
+  * Michael Shepanski (Primary Author)
+  * Hellowlol (Major Contributor)
+  * Nate Mara (Timeline)
+  * Goni Zahavy (Sync, Media Parts)
+  * Simon W. Jackson (Stream URL)
+  * Håvard Gulldahl (Plex Audio)

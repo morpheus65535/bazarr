@@ -15,16 +15,13 @@ def evaluate_lazy_format(f):
 
     @wraps(f)
     def evaluate(dynabox, item, *args, **kwargs):
-        if dynabox._box_config.get("_bypass_evaluation") is True:
-            return f(dynabox, item, *args, **kwargs)
-
         value = f(dynabox, item, *args, **kwargs)
         settings = dynabox._box_config["box_settings"]
 
         if getattr(value, "_dynaconf_lazy_format", None):
-            dynabox._box_config[
-                f"raw_{item.lower()}"
-            ] = f"@{value.formatter.token} {value.value}"
+            dynabox._box_config[f"raw_{item.lower()}"] = (
+                f"@{value.formatter.token} {value.value}"
+            )
 
         return recursively_evaluate_lazy_format(value, settings)
 
@@ -58,6 +55,13 @@ class DynaBox(Box):
         except (AttributeError, KeyError):
             n_item = find_the_correct_casing(item, self) or item
             return super().__getitem__(n_item, *args, **kwargs)
+
+    def _safe_copy(self):
+        """Copy bypassing lazy evaluation"""
+        return self.__class__(
+            {k: self._safe_get(k) for k in self.keys()},
+            box_settings=self._box_config.get("box_settings"),
+        )
 
     def __copy__(self):
         return self.__class__(

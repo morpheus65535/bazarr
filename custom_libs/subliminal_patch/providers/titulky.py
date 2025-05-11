@@ -66,7 +66,6 @@ class TitulkySubtitle(Subtitle):
         self.episode = episode
         self.releases = [release_info]
         self.release_info = release_info
-        self.language = language
         self.approved = approved
         self.page_link = page_link
         self.uploader = uploader

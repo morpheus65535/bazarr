@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router";
 import { Container, Group, Stack } from "@mantine/core";
 import { Dropzone } from "@mantine/dropzone";
 import { useDocumentTitle } from "@mantine/hooks";
@@ -17,6 +17,7 @@ import {
   faCircleChevronDown,
   faCircleChevronRight,
   faCloudUploadAlt,
+  faHardDrive,
   faHdd,
   faPlay,
   faSearch,
@@ -139,6 +140,20 @@ const SeriesEpisodesView: FunctionComponent = () => {
           <Group gap="xs">
             <Toolbox.Button
               icon={faSync}
+              disabled={!available || hasTask}
+              onClick={() => {
+                if (series) {
+                  task.create(series.title, TaskGroup.Sync, action, {
+                    action: "sync",
+                    seriesid: id,
+                  });
+                }
+              }}
+            >
+              Sync
+            </Toolbox.Button>
+            <Toolbox.Button
+              icon={faHardDrive}
               disabled={!available || hasTask}
               onClick={() => {
                 if (series) {

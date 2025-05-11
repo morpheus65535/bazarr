@@ -1,4 +1,4 @@
-import { RouteObject } from "react-router-dom";
+import { RouteObject } from "react-router";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 
 declare namespace Route {

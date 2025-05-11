@@ -22,7 +22,7 @@ class SubtitleModifications(object):
     language = None
     initialized_mods = {}
     mods_used = []
-    only_uppercase = False
+    mostly_uppercase = False
     f = None
 
     font_style_tag_start = u"{\\"
@@ -32,15 +32,18 @@ class SubtitleModifications(object):
         self.initialized_mods = {}
         self.mods_used = []
 
-    def load(self, fn=None, content=None, language=None, encoding="utf-8"):
+    def load(self, fn=None, content=None, language=None, encoding="utf-8", mods=None):
         """
 
         :param encoding: used for decoding the content when fn is given, not used in case content is given
         :param language: babelfish.Language language of the subtitle
         :param fn:  filename
         :param content: unicode
+        :param mods: list of mods to be applied to subtitles
         :return:
         """
+        if mods is None:
+            mods = []
         if language:
             self.language = Language.rebuild(language, forced=False)
         self.initialized_mods = {}
@@ -48,7 +51,11 @@ class SubtitleModifications(object):
             if fn:
                 self.f = pysubs2.load(fn, encoding=encoding)
             elif content:
-                self.f = pysubs2.SSAFile.from_string(content)
+                from_string_additional_kwargs = {}
+                if 'remove_tags' not in mods:
+                    from_string_additional_kwargs = {'keep_html_tags': True, 'keep_unknown_html_tags': True,
+                                                     'keep_ssa_tags': True}
+                self.f = pysubs2.SSAFile.from_string(content, **from_string_additional_kwargs)
         except (IOError,
                 UnicodeDecodeError,
                 pysubs2.exceptions.UnknownFPSError,
@@ -111,7 +118,7 @@ class SubtitleModifications(object):
                                  identifier, self.language)
                 continue
 
-            if mod_cls.only_uppercase and not self.only_uppercase:
+            if mod_cls.mostly_uppercase and not self.mostly_uppercase:
                 if self.debug:
                     logger.debug("Skipping %s, because the subtitle isn't all uppercase", identifier)
                 continue
@@ -181,41 +188,43 @@ class SubtitleModifications(object):
         return line_mods, non_line_mods, used_mods
 
     def detect_uppercase(self):
-        entries_used = 0
-        for entry in self.f:
-            entry_used = False
-            sub = entry.text
-            # skip HI bracket entries, those might actually be lowercase
-            sub = sub.strip()
-            for processor in registry.mods["remove_HI"].processors[:4]:
-                sub = processor.process(sub)
+            MAXIMUM_ENTRIES = 50
+            MINIMUM_UPPERCASE_PERCENTAGE = 90
+            MINIMUM_UPPERCASE_COUNT = 100
+            entry_count = 0
+            uppercase_count = 0
+            lowercase_count = 0
 
-            if sub.strip():
-                # only consider alphabetic characters to determine if uppercase
-                alpha_sub = ''.join([i for i in sub if i.isalpha()])
-                if alpha_sub and not alpha_sub.isupper():
-                    return False
+            for entry in self.f:
+                sub = entry.text
+                # skip HI bracket entries, those might actually be lowercase
+                sub = sub.strip()
+                for processor in registry.mods["remove_HI"].processors[:4]:
+                    sub = processor.process(sub)
 
-                entry_used = True
-            else:
-                # skip full entry
-                break
+                if sub.strip():
+                    uppercase_count += sum(1 for char in sub if char.isupper())
+                    lowercase_count += sum(1 for char in sub if char.islower())
+                    entry_count += 1
 
-            if entry_used:
-                entries_used += 1
+                if entry_count >= MAXIMUM_ENTRIES:
+                    break
 
-            if entries_used == 40:
-                break
-
-        return True
+            total_character_count = lowercase_count + uppercase_count
+            if total_character_count > 0 and uppercase_count > MINIMUM_UPPERCASE_COUNT:
+                uppercase_percentage = uppercase_count * 100 / total_character_count
+                logger.debug(f"Uppercase mod percentage is {uppercase_percentage:.2f}% vs minimum of {MINIMUM_UPPERCASE_PERCENTAGE}%")
+                return uppercase_percentage >= MINIMUM_UPPERCASE_PERCENTAGE
+            
+            return False
 
     def modify(self, *mods):
         new_entries = []
         start = time.time()
-        self.only_uppercase = self.detect_uppercase()
+        self.mostly_uppercase = self.detect_uppercase()
 
-        if self.only_uppercase and self.debug:
-            logger.debug("Full-uppercase subtitle found")
+        if self.mostly_uppercase and self.debug:
+            logger.debug("Mostly-uppercase subtitle found")
 
         line_mods, non_line_mods, mods_used = self.prepare_mods(*mods)
         self.mods_used = mods_used
