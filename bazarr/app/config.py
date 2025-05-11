@@ -176,6 +176,7 @@ validators = [
 
     # translating section
     Validator('translating.gemini_key', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translating.gemini_info', must_exist=True, default=True, is_type_of=bool),
 
     # sonarr section
     Validator('sonarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),

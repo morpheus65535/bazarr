@@ -1,7 +1,9 @@
 # coding=utf-8
 
 import logging
+import datetime
 import pysubs2
+import srt
 from . import gemini_srt_translator as gst
 
 from app.config import settings
@@ -183,14 +185,42 @@ def translate_subtitles_file_gemini(video_path, source_srt_file, from_lang, to_l
 
         gst.gemini_api_key = settings.translating.gemini_key
         gst.target_language = language_from_alpha3(to_lang)
-        gst.output_file = dest_srt_file
         gst.input_file = source_srt_file
+        gst.output_file = dest_srt_file
 
         try:
             gst.translate()
         except Exception as e:
             logging.error(f'translate encountered an error translating with Gemini: {str(e)}')
             show_message(f'Gemini translation error: {str(e)}')
+
+        # ADD TRANSLATION INFO TO SUBTITLES
+        if settings.translating.gemini_info:
+            # Load the SRT content
+            with open(dest_srt_file, "r", encoding="utf-8") as f:
+                srt_content = f.read()
+
+            # Parse subtitles
+            subtitles = list(srt.parse(srt_content))
+
+            # Check for any subtitle starting before 5 seconds
+            has_early_sub = any(sub.start < datetime.timedelta(seconds=5) for sub in subtitles)
+
+            if not has_early_sub:
+                # Create a new subtitle entry for "Hello"
+                new_sub = srt.Subtitle(
+                    index=1,  # temporary index, will be re-indexed
+                    start=datetime.timedelta(seconds=0),
+                    end=datetime.timedelta(seconds=5),
+                    content="# Subtitles translated with Gemini # "
+                )
+                subtitles.insert(0, new_sub)
+
+            # Re-index subtitles to ensure correct numbering
+            subtitles = list(srt.sort_and_reindex(subtitles))
+
+            with open(dest_srt_file, "w", encoding="utf-8") as f:
+                f.write(srt.compose(subtitles))
 
     except Exception as e:
         logging.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')

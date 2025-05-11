@@ -529,6 +529,10 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         <Message>
           You can generate it here: https://aistudio.google.com/apikey
         </Message>
+        <Check
+          label="Add translation info at the beginning"
+          settingKey="settings-translating-gemini_info"
+        ></Check>
       </Section>
       <Section header="Analytics">
         <Check label="Enable" settingKey="settings-analytics-enabled"></Check>
