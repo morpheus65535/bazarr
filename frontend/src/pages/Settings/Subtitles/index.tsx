@@ -24,6 +24,7 @@ import {
   hiExtensionOptions,
   providerOptions,
   syncMaxOffsetSecondsOptions,
+  translatorOption,
 } from "./options";
 
 interface CommandOption {
@@ -522,6 +523,13 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         </CollapseBox>
       </Section>
       <Section header="Translating">
+        <Selector
+          label="Translator"
+          clearable
+          options={translatorOption}
+          placeholder="Default translator"
+          settingKey="settings-translating-translator"
+        ></Selector>
         <Text
           label="Gemini API key"
           settingKey="settings-translating-gemini_key"

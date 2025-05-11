@@ -25,6 +25,12 @@ from utilities.path_mappings import path_mappings
 
 def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, forced, hi, media_type, sonarr_series_id,
                              sonarr_episode_id, radarr_id):
+
+    if settings.translating.translator == 'gemini':
+        translate_subtitles_file_gemini(video_path, source_srt_file, from_lang, to_lang, forced, hi, media_type, sonarr_series_id,
+                             sonarr_episode_id, radarr_id)
+        return
+
     language_code_convert_dict = {
         'he': 'iw',
         'zh': 'zh-CN',

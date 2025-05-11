@@ -1,7 +1,6 @@
 import { FunctionComponent, ReactElement, useCallback, useMemo } from "react";
 import { Divider, List, Menu, MenuProps, ScrollArea } from "@mantine/core";
 import {
-  faBrain,
   faClock,
   faCode,
   faDeaf,
@@ -23,7 +22,6 @@ import { ColorToolModal } from "@/components/forms/ColorToolForm";
 import { FrameRateModal } from "@/components/forms/FrameRateForm";
 import { TimeOffsetModal } from "@/components/forms/TimeOffsetForm";
 import { TranslationModal } from "@/components/forms/TranslationForm";
-import { TranslationGeminiModal } from "@/components/forms/TranslationGeminiForm";
 import { useModals } from "@/modules/modals";
 import { ModalComponent } from "@/modules/modals/WithModal";
 import { task } from "@/modules/task";
@@ -100,12 +98,6 @@ export function useTools() {
         icon: faLanguage,
         name: "Translate...",
         modal: TranslationModal,
-      },
-      {
-        key: "translation_gemini",
-        icon: faBrain,
-        name: "Translate with Gemini...",
-        modal: TranslationGeminiModal,
       },
     ],
     [],
