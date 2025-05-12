@@ -530,17 +530,22 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           placeholder="Default translator"
           settingKey="settings-translating-translator"
         ></Selector>
-        <Text
-          label="Gemini model"
-          settingKey="settings-translating-gemini_model"
-        />
-        <Text
-          label="Gemini API key"
-          settingKey="settings-translating-gemini_key"
-        ></Text>
-        <Message>
-          You can generate it here: https://aistudio.google.com/apikey
-        </Message>
+        <CollapseBox
+          settingKey="settings-translating-translator"
+          on={(val) => val === "gemini"}
+        >
+          <Text
+            label="Gemini model"
+            settingKey="settings-translating-gemini_model"
+          />
+          <Text
+            label="Gemini API key"
+            settingKey="settings-translating-gemini_key"
+          ></Text>
+          <Message>
+            You can generate it here: https://aistudio.google.com/apikey
+          </Message>
+        </CollapseBox>
         <Check
           label="Add translation info at the beginning"
           settingKey="settings-translating-translator_info"
