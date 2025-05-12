@@ -45,7 +45,6 @@ class GeminiSRTTranslator:
             model_name: str = "gemini-2.0-flash",
             batch_size: int = 100,
             free_quota: bool = True,
-            use_colors: bool = True,
             error_log: bool = False,
     ):
         """
@@ -62,7 +61,6 @@ class GeminiSRTTranslator:
             model_name (str): Gemini model to use
             batch_size (int): Number of subtitles to process in each batch
             free_quota (bool): Whether to use free quota (affects rate limiting)
-            use_colors (bool): Whether to use colored output
         """
 
         self.input_file = input_file
