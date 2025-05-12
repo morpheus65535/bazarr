@@ -9,30 +9,12 @@ import time
 import typing
 import unicodedata as ud
 from collections import Counter
-from app.event_handler import show_progress, hide_progress
+from app.event_handler import show_progress, hide_progress, show_message
 
 
 import srt
 from srt import Subtitle
 import requests
-
-from .logger import (
-    error,
-    error_with_progress,
-    get_last_chunk_size,
-    highlight,
-    highlight_with_progress,
-    info,
-    info_with_progress,
-    input_prompt,
-    input_prompt_with_progress,
-    progress_bar,
-    set_color_mode,
-    success_with_progress,
-    update_loading_animation,
-    warning,
-    warning_with_progress,
-)
 
 from .helpers import get_instruction
 
@@ -112,9 +94,6 @@ class GeminiSRTTranslator:
         self.token_count = 0
         self.interrupt_flag = False  # Flag to check for interruption
 
-        # Set color mode based on user preference
-        set_color_mode(use_colors)
-
         # Initialize progress tracking file path
         self.progress_file = None
         if input_file:
@@ -139,14 +118,14 @@ class GeminiSRTTranslator:
 
                 # Verify the progress file matches our current input file
                 if input_file != self.input_file:
-                    warning(f"Found progress file for different subtitle: {input_file}")
-                    warning("Ignoring saved progress.")
+                    show_message(f"Found progress file for different subtitle: {input_file}")
+                    show_message("Ignoring saved progress.")
                     return
 
                 if saved_line > 1 and self.start_line == 1:
                     os.remove(self.output_file)
         except Exception as e:
-            warning(f"Error reading progress file: {e}")
+            show_message(f"Error reading progress file: {e}")
 
     def _save_progress(self, line):
         """Save current progress to temporary file"""
@@ -157,7 +136,7 @@ class GeminiSRTTranslator:
             with open(self.progress_file, "w") as f:
                 json.dump({"line": line, "input_file": self.input_file}, f)
         except Exception as e:
-            warning_with_progress(f"Failed to save progress: {e}")
+            show_message(f"Failed to save progress: {e}")
 
     def _clear_progress(self):
         """Clear the progress file on successful completion"""
@@ -165,7 +144,7 @@ class GeminiSRTTranslator:
             try:
                 os.remove(self.progress_file)
             except Exception as e:
-                warning(f"Failed to remove progress file: {e}")
+                show_message(f"Failed to remove progress file: {e}")
 
     def handle_interrupt(self, *args):
         """Handle interrupt signal by setting interrupt flag"""
@@ -181,7 +160,7 @@ class GeminiSRTTranslator:
     def getmodels(self):
         """Get available Gemini models that support content generation."""
         if not self.current_api_key:
-            error("Please provide a valid Gemini API key.")
+            show_message("Please provide a valid Gemini API key.")
             exit(0)
 
         client = self._get_client()
@@ -199,23 +178,21 @@ class GeminiSRTTranslator:
         and writes the translated subtitles to the output file.
         """
         if not self.current_api_key:
-            error("Please provide a valid Gemini API key.")
+            show_message("Please provide a valid Gemini API key.")
             exit(0)
 
         if not self.target_language:
-            error("Please provide a target language.")
+            show_message("Please provide a target language.")
             exit(0)
 
         if not self.input_file:
-            error("Please provide a subtitle file.")
+            show_message("Please provide a subtitle file.")
             exit(0)
 
         self.token_limit = self._get_token_limit()
 
         # Setup signal handlers if possible
         is_main_thread = self.setup_signal_handlers()
-        if not is_main_thread:
-            info("Running in a non-main thread. Ctrl+C handling may not work properly.")
 
         with open(self.input_file, "r", encoding="utf-8") as original_file:
             original_text = original_file.read()
@@ -227,7 +204,7 @@ class GeminiSRTTranslator:
                 translated_subtitle = original_subtitle.copy()
 
             if len(original_subtitle) != len(translated_subtitle):
-                error(
+                show_message(
                     f"Number of lines of existing translated file does not match the number of lines in the original file."
                 )
                 exit(0)
@@ -235,7 +212,7 @@ class GeminiSRTTranslator:
             translated_file = open(self.output_file, "w", encoding="utf-8")
 
             if self.start_line > len(original_subtitle) or self.start_line < 1:
-                error(f"Start line must be between 1 and {len(original_subtitle)}. Please try again.")
+                show_message(f"Start line must be between 1 and {len(original_subtitle)}. Please try again.")
                 exit(0)
 
             if len(original_subtitle) < self.batch_size:
@@ -247,23 +224,19 @@ class GeminiSRTTranslator:
             if "pro" in self.model_name and self.free_quota:
                 delay = True
                 if not self.gemini_api_key2:
-                    info("Pro model and free user quota detected.\n")
+                    show_message("Pro model and free user quota detected.\n")
                 else:
                     delay_time = 15
-                    info("Pro model and free user quota detected, using secondary API key if needed.\n")
+                    show_message("Pro model and free user quota detected, using secondary API key if needed.\n")
 
             i = self.start_line - 1
             total = len(original_subtitle)
-            batch = []
+            batch = [SubtitleObject(index=str(i), content=original_subtitle[i].content)]
 
-            highlight(f"Starting translation of {total - self.start_line + 1} lines...\n")
-            progress_bar(i, total, prefix="Translating:", suffix=f"{self.model_name}", isSending=True)
-
-            batch.append(SubtitleObject(index=str(i), content=original_subtitle[i].content))
             i += 1
 
             if self.gemini_api_key2:
-                info_with_progress(f"Starting with API Key {self.current_api_number}")
+                show_message(f"Starting with API Key {self.current_api_number}")
 
             # Save initial progress
             self._save_progress(i)
@@ -276,12 +249,12 @@ class GeminiSRTTranslator:
                     continue
                 try:
                     if not self._validate_token_size(json.dumps(batch, ensure_ascii=False)):
-                        error_with_progress(
+                        show_message(
                             f"Token size ({int(self.token_count / 0.9)}) exceeds limit ({self.token_limit}) for {self.model_name}."
                         )
                         user_prompt = "0"
                         while not user_prompt.isdigit() or int(user_prompt) <= 0:
-                            user_prompt = input_prompt_with_progress(
+                            user_prompt = show_message(
                                 f"Please enter a new batch size (current: {self.batch_size}): "
                             )
                             if user_prompt.isdigit() and int(user_prompt) > 0:
@@ -292,17 +265,14 @@ class GeminiSRTTranslator:
                                         i -= 1
                                         batch.pop()
                                 self.batch_size = new_batch_size
-                                info_with_progress(f"Batch size updated to {self.batch_size}.")
+                                show_message(f"Batch size updated to {self.batch_size}.")
                             else:
-                                warning_with_progress("Invalid input. Batch size must be a positive integer.")
+                                show_message("Invalid input. Batch size must be a positive integer.")
                         continue
 
                     start_time = time.time()
                     self._process_batch(batch, translated_subtitle, total)
                     end_time = time.time()
-
-                    # Update progress bar
-                    progress_bar(i, total, prefix="Translating:", suffix=f"{self.model_name}", isSending=True)
 
                     # Save progress after each batch
                     self._save_progress(i + 1)
@@ -317,16 +287,9 @@ class GeminiSRTTranslator:
             # Check if we exited the loop due to an interrupt
             hide_progress(id=f'translate_progress_{self.output_file}')
             if self.interrupt_flag:
-                last_chunk_size = get_last_chunk_size()
-                warning_with_progress(
-                    f"Translation interrupted. Saving partial results to file. Progress saved.",
-                    chunk_size=max(0, last_chunk_size - 1),
-                )
-                translated_file.write(srt.compose(translated_subtitle))
-                self._save_progress(max(1, i - len(batch) + last_chunk_size))
                 return
 
-            success_with_progress("Translation completed successfully!")
+
             translated_file.write(srt.compose(translated_subtitle))
 
             # Clear progress file on successful completion
@@ -451,7 +414,7 @@ class GeminiSRTTranslator:
 
             # Validate translated lines
             if len(translated_lines) != len(batch):
-                raise ValueError(
+                raise Valueshow_message(
                     f"Gemini returned {len(translated_lines)} lines instead of expected {len(batch)} lines")
 
             # Clear the batch after successful processing
