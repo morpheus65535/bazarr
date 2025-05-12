@@ -531,6 +531,10 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           settingKey="settings-translating-translator"
         ></Selector>
         <Text
+          label="Gemini model"
+          settingKey="settings-translating-gemini_model"
+        />
+        <Text
           label="Gemini API key"
           settingKey="settings-translating-gemini_key"
         ></Text>
@@ -539,7 +543,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         </Message>
         <Check
           label="Add translation info at the beginning"
-          settingKey="settings-translating-gemini_info"
+          settingKey="settings-translating-translator_info"
         ></Check>
       </Section>
       <Section header="Analytics">

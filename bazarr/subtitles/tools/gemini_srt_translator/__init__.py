@@ -30,7 +30,6 @@
 """
 
 from .main import GeminiSRTTranslator
-from .utils import upgrade_package
 
 gemini_api_key: str = None
 gemini_api_key2: str = None
@@ -42,62 +41,8 @@ description: str = None
 model_name: str = None
 batch_size: int = None
 free_quota: bool = None
-skip_upgrade: bool = None
 use_colors: bool = None
 error_log: bool = None
-
-
-def getmodels():
-    """
-    ## Retrieves available models from the Gemini API.
-        This function configures the genai library with the provided Gemini API key
-        and retrieves a list of available models.
-
-    Example:
-    ```
-    import gemini_srt_translator as gst
-
-    # Your Gemini API key
-    gst.gemini_api_key = "your_gemini_api_key_here"
-
-    models = gst._getmodels()
-    print(models)
-    ```
-
-    Raises:
-        Exception: If the Gemini API key is not provided.
-    """
-    translator = GeminiSRTTranslator(gemini_api_key=gemini_api_key)
-    return translator.getmodels()
-
-
-def listmodels():
-    """
-    ## Lists available models from the Gemini API.
-        This function configures the genai library with the provided Gemini API key
-        and retrieves a list of available models. It then prints each model to the console.
-
-    Example:
-    ```
-    import gemini_srt_translator as gst
-
-    # Your Gemini API key
-    gst.gemini_api_key = "your_gemini_api_key_here"
-
-    gst.listmodels()
-    ```
-
-    Raises:
-        Exception: If the Gemini API key is not provided.
-    """
-    translator = GeminiSRTTranslator(gemini_api_key=gemini_api_key)
-    models = translator.getmodels()
-    if models:
-        print("Available models:\n")
-        for model in models:
-            print(model)
-    else:
-        print("No models available or an error occurred while fetching models.")
 
 
 def translate():
@@ -171,9 +116,6 @@ def translate():
         "use_colors": use_colors,
         "error_log": error_log,
     }
-
-    if not skip_upgrade:
-        upgrade_package("gemini-srt-translator", use_colors=use_colors)
 
     # Filter out None values
     filtered_params = {k: v for k, v in params.items() if v is not None}

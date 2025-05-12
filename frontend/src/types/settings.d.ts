@@ -174,7 +174,10 @@ declare namespace Settings {
   }
 
   interface Translating {
+    translator: string;
     gemini_key: string;
+    gemini_model: string;
+    translator_info: boolean;
   }
 
   interface Plex {

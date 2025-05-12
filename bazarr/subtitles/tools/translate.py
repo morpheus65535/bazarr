@@ -150,6 +150,8 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
     else:
         history_log_movie(action=6, radarr_id=radarr_id, result=result)
 
+    add_translator_info(dest_srt_file, f"# Subtitles translated with Google Translate # ")
+
     return dest_srt_file
 
 
@@ -193,6 +195,7 @@ def translate_subtitles_file_gemini(video_path, source_srt_file, from_lang, to_l
         gst.target_language = language_from_alpha3(to_lang)
         gst.input_file = source_srt_file
         gst.output_file = dest_srt_file
+        gst.model_name = settings.translating.gemini_model
 
         try:
             gst.translate()
@@ -200,33 +203,7 @@ def translate_subtitles_file_gemini(video_path, source_srt_file, from_lang, to_l
             logging.error(f'translate encountered an error translating with Gemini: {str(e)}')
             show_message(f'Gemini translation error: {str(e)}')
 
-        # ADD TRANSLATION INFO TO SUBTITLES
-        if settings.translating.gemini_info:
-            # Load the SRT content
-            with open(dest_srt_file, "r", encoding="utf-8") as f:
-                srt_content = f.read()
-
-            # Parse subtitles
-            subtitles = list(srt.parse(srt_content))
-
-            # Check for any subtitle starting before 5 seconds
-            has_early_sub = any(sub.start < datetime.timedelta(seconds=5) for sub in subtitles)
-
-            if not has_early_sub:
-                # Create a new subtitle entry for "Hello"
-                new_sub = srt.Subtitle(
-                    index=1,  # temporary index, will be re-indexed
-                    start=datetime.timedelta(seconds=0),
-                    end=datetime.timedelta(seconds=5),
-                    content="# Subtitles translated with Gemini # "
-                )
-                subtitles.insert(0, new_sub)
-
-            # Re-index subtitles to ensure correct numbering
-            subtitles = list(srt.sort_and_reindex(subtitles))
-
-            with open(dest_srt_file, "w", encoding="utf-8") as f:
-                f.write(srt.compose(subtitles))
+        add_translator_info(dest_srt_file, f"# Subtitles translated with {gst.model_name} # ")
 
     except Exception as e:
         logging.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
@@ -257,3 +234,32 @@ def translate_subtitles_file_gemini(video_path, source_srt_file, from_lang, to_l
         history_log_movie(action=6, radarr_id=radarr_id, result=result)
 
     return dest_srt_file
+
+
+def add_translator_info(dest_srt_file, info):
+    if settings.translating.translator_info:
+        # Load the SRT content
+        with open(dest_srt_file, "r", encoding="utf-8") as f:
+            srt_content = f.read()
+
+        # Parse subtitles
+        subtitles = list(srt.parse(srt_content))
+
+        # Check for any subtitle starting before 5 seconds
+        has_early_sub = any(sub.start < datetime.timedelta(seconds=6) for sub in subtitles)
+
+        if not has_early_sub:
+            # Create a new subtitle entry for "Hello"
+            new_sub = srt.Subtitle(
+                index=1,  # temporary index, will be re-indexed
+                start=datetime.timedelta(seconds=1),
+                end=datetime.timedelta(seconds=6),
+                content=info
+            )
+            subtitles.insert(0, new_sub)
+
+        # Re-index subtitles to ensure correct numbering
+        subtitles = list(srt.sort_and_reindex(subtitles))
+
+        with open(dest_srt_file, "w", encoding="utf-8") as f:
+            f.write(srt.compose(subtitles))

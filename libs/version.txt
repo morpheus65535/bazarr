@@ -23,6 +23,7 @@ guess_language-spirit==0.5.3
 guessit==3.8.0
 h11==0.14.0
 inflect==7.5.0
+json_repair==0.44.1
 jsonschema<=4.17.3  # newer version require other compiled dependency
 knowit<=0.5.3  # newer version doesn't support Python 3.8 anymore
 Mako==1.3.8
@@ -78,17 +79,6 @@ click==8.1.8
 itsdangerous==2.2.0
 jinja2==3.1.5
 werkzeug==3.1.3
-
-# Required-by: gemini_srt_translator
-anyio-4.9.0.dist-info
-cachetools==5.5.2
-exceptiongroup>=1.0.0rc8
-google-genai==1.13.0
-json-repair==0.44.1
-sniffio-1.3.1.dist-info
-typing_extensions-4.12.2.dist-info
-pyasn1==0.6.1
-pyasn1_modules==0.4.2
 
 # Required-by: guessit
 python-dateutil==2.9.0
