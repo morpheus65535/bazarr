@@ -16,8 +16,6 @@ import srt
 from srt import Subtitle
 import requests
 
-from .helpers import get_instruction
-
 
 class SubtitleObject(typing.TypedDict):
     """
@@ -28,7 +26,7 @@ class SubtitleObject(typing.TypedDict):
     content: str
 
 
-class GeminiSRTTranslator:
+class TranslatorGemini:
     """
     A translator class that uses Gemini API to translate subtitles.
     """
@@ -36,7 +34,6 @@ class GeminiSRTTranslator:
     def __init__(
             self,
             gemini_api_key: str = None,
-            gemini_api_key2: str = None,
             target_language: str = None,
             input_file: str = None,
             output_file: str = None,
@@ -52,7 +49,6 @@ class GeminiSRTTranslator:
 
         Args:
             gemini_api_key (str): Primary Gemini API key
-            gemini_api_key2 (str): Secondary Gemini API key for additional quota
             target_language (str): Target language for translation
             input_file (str): Path to input subtitle file
             output_file (str): Path to output translated subtitle file
@@ -76,7 +72,6 @@ class GeminiSRTTranslator:
             self.output_file = output_file
 
         self.gemini_api_key = gemini_api_key
-        self.gemini_api_key2 = gemini_api_key2
         self.current_api_key = gemini_api_key
         self.current_api_number = 1
         self.backup_api_number = 2
@@ -99,6 +94,30 @@ class GeminiSRTTranslator:
 
         # Check for saved progress
         self._check_saved_progress()
+
+    @staticmethod
+    def get_instruction(language: str, description: str) -> str:
+        """
+        Get the instruction for the translation model based on the target language.
+        """
+        instruction = f"""You are an assistant that translates subtitles to {language}.
+    You will receive the following JSON type:
+
+    class SubtitleObject(typing.TypedDict):
+        index: str
+        content: str
+
+    Request: list[SubtitleObject]
+
+    The 'index' key is the index of the subtitle dialog.
+    The 'content' key is the dialog to be translated.
+
+    The indices must remain the same in the response as in the request.
+    Dialogs must be translated as they are without any changes.
+    """
+        if description:
+            instruction += "\nAdditional user instruction: '" + description + "'"
+        return instruction
 
     def _check_saved_progress(self):
         """Check if there's a saved progress file and load it if exists"""
@@ -204,22 +223,11 @@ class GeminiSRTTranslator:
             delay = False
             delay_time = 30
 
-            if "pro" in self.model_name and self.free_quota:
-                delay = True
-                if not self.gemini_api_key2:
-                    show_message("Pro model and free user quota detected.\n")
-                else:
-                    delay_time = 15
-                    show_message("Pro model and free user quota detected, using secondary API key if needed.\n")
-
             i = self.start_line - 1
             total = len(original_subtitle)
             batch = [SubtitleObject(index=str(i), content=original_subtitle[i].content)]
 
             i += 1
-
-            if self.gemini_api_key2:
-                show_message(f"Starting with API Key {self.current_api_number}")
 
             # Save initial progress
             self._save_progress(i)
@@ -321,7 +329,7 @@ class GeminiSRTTranslator:
             "system_instruction": {
                 "parts": [
                     {
-                        "text": get_instruction(self.target_language, self.description)
+                        "text": self.get_instruction(self.target_language, self.description)
                     }
                 ]
             },

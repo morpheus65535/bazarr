@@ -4,7 +4,7 @@ import logging
 import datetime
 import pysubs2
 import srt
-from . import gemini_srt_translator as gst
+from .translator_gemini import TranslatorGemini
 
 from app.config import settings
 from subliminal_patch.core import get_subtitle_path
@@ -191,19 +191,24 @@ def translate_subtitles_file_gemini(video_path, source_srt_file, from_lang, to_l
 
         logging.info(f"BAZARR is sending subtitle file to Gemini for translation " + source_srt_file)
 
-        gst.gemini_api_key = settings.translating.gemini_key
-        gst.target_language = language_from_alpha3(to_lang)
-        gst.input_file = source_srt_file
-        gst.output_file = dest_srt_file
-        gst.model_name = settings.translating.gemini_model
+        params = {
+            "gemini_api_key": settings.translating.gemini_key,
+            "target_language": language_from_alpha3(to_lang),
+            "input_file": source_srt_file,
+            "output_file": dest_srt_file,
+            "model_name": settings.translating.gemini_model,
+        }
 
         try:
-            gst.translate()
+            filtered_params = {k: v for k, v in params.items() if v is not None}
+            translator = TranslatorGemini(**filtered_params)
+            translator.translate()
+
         except Exception as e:
             logging.error(f'translate encountered an error translating with Gemini: {str(e)}')
             show_message(f'Gemini translation error: {str(e)}')
 
-        add_translator_info(dest_srt_file, f"# Subtitles translated with {gst.model_name} # ")
+        add_translator_info(dest_srt_file, f"# Subtitles translated with {settings.translating.gemini_model} # ")
 
     except Exception as e:
         logging.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
