@@ -157,21 +157,6 @@ class GeminiSRTTranslator:
             return True
         return False
 
-    def getmodels(self):
-        """Get available Gemini models that support content generation."""
-        if not self.current_api_key:
-            show_message("Please provide a valid Gemini API key.")
-            exit(0)
-
-        client = self._get_client()
-        models = client.models.list()
-        list_models = []
-        for model in models:
-            supported_actions = model.supported_actions
-            if "generateContent" in supported_actions:
-                list_models.append(model.name.replace("models/", ""))
-        return list_models
-
     def translate(self):
         """
         Main translation method. Reads the input subtitle file, translates it in batches,
@@ -294,25 +279,6 @@ class GeminiSRTTranslator:
 
             # Clear progress file on successful completion
             self._clear_progress()
-
-    def _switch_api(self) -> bool:
-        """
-        Switch to the secondary API key if available.
-
-        Returns:
-            bool: True if switched successfully, False if no alternative API available
-        """
-        if self.current_api_number == 1 and self.gemini_api_key2:
-            self.current_api_key = self.gemini_api_key2
-            self.current_api_number = 2
-            self.backup_api_number = 1
-            return True
-        if self.current_api_number == 2 and self.gemini_api_key:
-            self.current_api_key = self.gemini_api_key
-            self.current_api_number = 1
-            self.backup_api_number = 2
-            return True
-        return False
 
     def _get_token_limit(self) -> int:
         """
