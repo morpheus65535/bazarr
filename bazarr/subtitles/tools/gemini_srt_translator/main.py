@@ -316,11 +316,6 @@ class GeminiSRTTranslator:
             translated_subtitle (list[Subtitle]): List to store translated subtitles
             total (int): Total number of subtitles to translate
         """
-        show_progress(id=f'translate_progress_{self.output_file}',
-                      header=f'Translating subtitles with Gemini to {self.target_language}...',
-                      name='',
-                      value=self.current_progress,
-                      count=total)
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.current_api_key}"
 
@@ -380,7 +375,7 @@ class GeminiSRTTranslator:
 
             # Validate translated lines
             if len(translated_lines) != len(batch):
-                raise Valueshow_message(
+                raise ValueError(
                     f"Gemini returned {len(translated_lines)} lines instead of expected {len(batch)} lines")
 
             # Clear the batch after successful processing
