@@ -36,8 +36,9 @@ describe("Selector", () => {
 
       await userEvent.click(element);
 
-      expect(screen.getByText("Option 1")).toBeInTheDocument();
-      expect(screen.getByText("Option 2")).toBeInTheDocument();
+      for (const option of testOptions) {
+        expect(screen.getByText(option.label)).toBeInTheDocument();
+      }
 
       testOptions.forEach((option) => {
         expect(screen.getByText(option.label)).toBeDefined();
