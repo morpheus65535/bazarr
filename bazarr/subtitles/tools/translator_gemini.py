@@ -1,8 +1,8 @@
 import json
 import re
 
-import json_repair
 import os
+import json_tricks
 import signal
 import threading
 import time
@@ -15,6 +15,7 @@ from app.event_handler import show_progress, hide_progress, show_message
 import srt
 from srt import Subtitle
 import requests
+
 
 
 class SubtitleObject(typing.TypedDict):
@@ -360,7 +361,7 @@ class TranslatorGemini:
             parts = json.loads(response.text)['candidates'][0]['content']['parts']
             result = clean_json_string(''.join(part['text'] for part in parts))
 
-            translated_lines = json_repair.loads(result)
+            translated_lines = json_tricks.loads(result)
             chunk_size = len(translated_lines)
 
             # Process translated lines
@@ -393,11 +394,6 @@ class TranslatorGemini:
             # More comprehensive error handling
             print(f"Translation request failed: {e}")
             raise e
-
-        except (json.JSONDecodeError, json_repair.JSONDecodeError) as e:
-            print(f"Error parsing JSON response: {e}")
-            exit(0)
-            raise
 
         except Exception as e:
             exit(0)

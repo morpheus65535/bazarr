@@ -528,19 +528,19 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           clearable
           options={translatorOption}
           placeholder="Default translator"
-          settingKey="settings-translating-translator"
+          settingKey="settings-translator-translator_type"
         ></Selector>
         <CollapseBox
-          settingKey="settings-translating-translator"
+          settingKey="settings-translator-translator_type"
           on={(val) => val === "gemini"}
         >
           <Text
             label="Gemini model"
-            settingKey="settings-translating-gemini_model"
+            settingKey="settings-translator-gemini_model"
           />
           <Text
             label="Gemini API key"
-            settingKey="settings-translating-gemini_key"
+            settingKey="settings-translator-gemini_key"
           ></Text>
           <Message>
             You can generate it here: https://aistudio.google.com/apikey
@@ -548,19 +548,8 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         </CollapseBox>
         <Check
           label="Add translation info at the beginning"
-          settingKey="settings-translating-translator_info"
+          settingKey="settings-translator-translator_info"
         ></Check>
-      </Section>
-      <Section header="Analytics">
-        <Check label="Enable" settingKey="settings-analytics-enabled"></Check>
-        <Message>
-          Send anonymous usage information, nothing that can identify you. This
-          includes information on which providers you use, what languages you
-          search for, Bazarr, Python, Sonarr, Radarr and what OS version you are
-          using. We will use this information to prioritize features and bug
-          fixes. Please, keep this enabled as this is the only way we have to
-          better understand how you use Bazarr.
-        </Message>
       </Section>
     </Layout>
   );

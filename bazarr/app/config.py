@@ -175,10 +175,10 @@ validators = [
     Validator('backup.hour', must_exist=True, default=3, is_type_of=int, gte=0, lte=23),
 
     # translating section
-    Validator('translating.gemini_key', must_exist=True, default='', is_type_of=str, cast=str),
-    Validator('translating.gemini_model', must_exist=True, default='gemini-2.0-flash', is_type_of=str, cast=str),
-    Validator('translating.translator_info', must_exist=True, default=True, is_type_of=bool),
-    Validator('translating.translator', must_exist=True, default='translate', is_type_of=str, cast=str),
+    Validator('translator.gemini_key', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.gemini_model', must_exist=True, default='gemini-2.0-flash', is_type_of=str, cast=str),
+    Validator('translator.translator_info', must_exist=True, default=True, is_type_of=bool),
+    Validator('translator.translator_type', must_exist=True, default='translate', is_type_of=str, cast=str),
 
     # sonarr section
     Validator('sonarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
