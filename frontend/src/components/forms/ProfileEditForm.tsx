@@ -60,11 +60,11 @@ const inclusionOptions: SelectorOption<string>[] = [
     value: "always_include",
   },
   {
-    label: "When matching audio",
+    label: "audio track matches",
     value: "audio_only_include",
   },
   {
-    label: "When not matching audio",
+    label: "no audio track matches",
     value: "audio_exclude",
   },
 ];
@@ -281,7 +281,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         },
       },
       {
-        header: "Include",
+        header: "Search only when...",
         accessorKey: "audio_exclude",
         cell: ({ row: { original: item, index } }) => {
           return <InclusionCell item={item} index={index} />;
