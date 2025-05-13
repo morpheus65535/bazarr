@@ -152,23 +152,20 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
 
 
 def list_missing_subtitles_movies(no=None, send_event=True):
+    stmt = select(TableMovies.radarrId,
+                  TableMovies.subtitles,
+                  TableMovies.profileId,
+                  TableMovies.audio_language)
+
     if no:
-        movies_subtitles = database.execute(
-            select(TableMovies.radarrId,
-                   TableMovies.subtitles,
-                   TableMovies.profileId,
-                   TableMovies.audio_language)
-            .where(TableMovies.radarrId == no)) \
-            .all()
+        movies_subtitles = database.execute(stmt.where(TableMovies.radarrId == no)).all()
     else:
-        movies_subtitles = database.execute(
-            select(TableMovies.radarrId,
-                   TableMovies.subtitles,
-                   TableMovies.profileId,
-                   TableMovies.audio_language)) \
-            .all()
+        movies_subtitles = database.execute(stmt).all()
 
     use_embedded_subs = settings.general.use_embedded_subs
+
+    matches_audio = lambda language: any(x['code2'] == language['language'] for x in get_audio_profile_languages(
+                                movie_subtitles.audio_language))
 
     for movie_subtitles in movies_subtitles:
         missing_subtitles_text = '[]'
@@ -179,8 +176,10 @@ def list_missing_subtitles_movies(no=None, send_event=True):
             if desired_subtitles_temp:
                 for language in desired_subtitles_temp['items']:
                     if language['audio_exclude'] == "True":
-                        if any(x['code2'] == language['language'] for x in get_audio_profile_languages(
-                                movie_subtitles.audio_language)):
+                        if matches_audio(language):
+                            continue
+                    if language['audio_only_include'] == "True":
+                        if not matches_audio(language):
                             continue
                     desired_subtitles_list.append({'language': language['language'],
                                                    'forced': language['forced'],
@@ -219,9 +218,12 @@ def list_missing_subtitles_movies(no=None, send_event=True):
                     cutoff_language = {'language': cutoff_temp['language'],
                                        'forced': cutoff_temp['forced'],
                                        'hi': cutoff_temp['hi']}
-                    if cutoff_temp['audio_exclude'] == 'True' and \
-                            any(x['code2'] == cutoff_temp['language'] for x in
-                                get_audio_profile_languages(movie_subtitles.audio_language)):
+                    if cutoff_temp['audio_only_include'] == 'True' and not matches_audio(cutoff_temp):
+                        # We don't want subs in this language unless it matches
+                        # the audio. Don't use it to meet the cutoff.
+                        continue
+                    elif cutoff_temp['audio_exclude'] == 'True' and matches_audio(cutoff_temp):
+                        # The cutoff is met through one of the audio tracks.
                         cutoff_met = True
                     elif cutoff_language in actual_subtitles_list:
                         cutoff_met = True

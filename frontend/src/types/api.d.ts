@@ -27,6 +27,7 @@ declare namespace Language {
   interface ProfileItem {
     id: number;
     audio_exclude: PythonBoolean;
+    audio_only_include: PythonBoolean;
     forced: PythonBoolean;
     hi: PythonBoolean;
     language: CodeType;
