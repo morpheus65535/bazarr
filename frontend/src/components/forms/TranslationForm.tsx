@@ -178,6 +178,7 @@ const TranslationForm: FunctionComponent<Props> = ({
         <Alert variant="outline">
           Enabled languages not listed here are unsupported by Google Translate.
         </Alert>
+        <Alert>You can choose translation service in the settings.</Alert>
         <Selector {...options} {...form.getInputProps("language")}></Selector>
         <Divider></Divider>
         <Button type="submit">Start</Button>
