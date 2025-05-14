@@ -17,7 +17,6 @@ import {
   Text as MantineText,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { capitalize } from "lodash";
 import { Selector } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
 import {
@@ -42,6 +41,7 @@ import {
   SettingsProvider,
   useSettings,
 } from "@/pages/Settings/utilities/SettingsProvider";
+import { capitalize } from "@/utilities";
 import { BuildKey, useSelectorOptions } from "@/utilities";
 import { ASSERT } from "@/utilities/console";
 import { ProviderInfo, ProviderList } from "./list";
