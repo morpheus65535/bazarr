@@ -40,7 +40,7 @@ import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { SeriesUploadModal } from "@/components/forms/SeriesUploadForm";
 import { SubtitleToolsModal } from "@/components/modals";
 import { useModals } from "@/modules/modals";
-import { notification, task, TaskGroup } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
 import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
@@ -101,12 +101,12 @@ const SeriesEpisodesView: FunctionComponent = () => {
           series,
         });
       } else {
-        showNotification(
-          notification.warn(
-            "Cannot Upload Files",
-            "series or language profile is not ready",
-          ),
-        );
+        showNotification({
+          title: "Cannot Upload Files",
+          message: "series or language profile is not ready",
+          color: "yellow",
+          autoClose: 6 * 1000,
+        });
       }
     },
     [modals, profile, series],

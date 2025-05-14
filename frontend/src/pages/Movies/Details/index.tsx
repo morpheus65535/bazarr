@@ -34,7 +34,7 @@ import { MovieUploadModal } from "@/components/forms/MovieUploadForm";
 import { MovieHistoryModal, SubtitleToolsModal } from "@/components/modals";
 import { MovieSearchModal } from "@/components/modals/ManualSearchModal";
 import { useModals } from "@/modules/modals";
-import { notification, task, TaskGroup } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
 import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
@@ -90,12 +90,12 @@ const MovieDetailView: FunctionComponent = () => {
           movie,
         });
       } else {
-        showNotification(
-          notification.warn(
-            "Cannot Upload Files",
-            "movie or language profile is not ready",
-          ),
-        );
+        showNotification({
+          title: "Cannot Upload Files",
+          message: "movie or language profile is not ready",
+          color: "yellow",
+          autoClose: 6 * 1000,
+        });
       }
     },
     [modals, movie, profile],

@@ -1,7 +1,6 @@
 import { showNotification } from "@mantine/notifications";
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
 import socketio from "@/modules/socketio";
-import { notification } from "@/modules/task";
 import { Environment } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { setAuthenticated } from "@/utilities/event";
@@ -90,7 +89,12 @@ class BazarrClient {
     }
     LOG("error", "A error has occurred", code);
 
-    showNotification(notification.error(`Error ${code}`, message));
+    showNotification({
+      title: "Internal Server Error",
+      message,
+      color: "red",
+      autoClose: 7 * 1000,
+    });
   }
 }
 

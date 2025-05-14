@@ -1,45 +1,61 @@
-import { NotificationData } from "@mantine/notifications";
+export { useNotifications } from "./hooks";
+
+export interface NotificationItem {
+  id?: string;
+  title: string;
+  message: string;
+  color?: string;
+  loading?: boolean;
+  timestamp: number;
+  progress?: {
+    current: number;
+    total: number;
+  };
+  read?: boolean;
+}
 
 export const notification = {
-  info: (title: string, message: string): NotificationData => {
+  info: (title: string, message: string): NotificationItem => {
     return {
+      timestamp: new Date().getTime(),
       title,
       message,
-      autoClose: 5 * 1000,
+      read: false,
     };
   },
 
-  warn: (title: string, message: string): NotificationData => {
+  warn: (title: string, message: string): NotificationItem => {
     return {
       title,
       message,
       color: "yellow",
-      autoClose: 6 * 1000,
+      timestamp: new Date().getTime(),
+      read: false,
     };
   },
 
-  error: (title: string, message: string): NotificationData => {
+  error: (title: string, message: string): NotificationItem => {
     return {
       title,
       message,
       color: "red",
-      autoClose: 7 * 1000,
+      timestamp: new Date().getTime(),
+      read: false,
     };
   },
 
   PROGRESS_TIMEOUT: 10 * 1000,
 
   progress: {
-    pending: (
-      id: string,
-      header: string,
-    ): NotificationData & { id: string } => {
+    pending: (id: string, header: string): NotificationItem => {
       return {
         id,
         title: header,
         message: "Starting Tasks...",
         color: "gray",
         loading: true,
+        timestamp: new Date().getTime(),
+        read: false,
       };
     },
     update: (
@@ -48,22 +64,28 @@ export const notification = {
       body: string,
       current: number,
       total: number,
-    ): NotificationData & { id: string } => {
+    ): NotificationItem => {
       return {
         id,
         title: header,
         message: `[${current}/${total}] ${body}`,
+        progress: {
+          current,
+          total,
+        },
         loading: true,
-        autoClose: false,
+        timestamp: new Date().getTime(),
+        read: false,
       };
     },
-    end: (id: string, header: string): NotificationData & { id: string } => {
+    end: (id: string, header: string): NotificationItem => {
       return {
         id,
         title: header,
         message: "All Tasks Completed",
         color: "green",
-        autoClose: 2 * 1000,
+        timestamp: new Date().getTime(),
+        read: false,
       };
     },
   },

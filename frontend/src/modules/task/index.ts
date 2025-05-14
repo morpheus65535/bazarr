@@ -1,21 +1,39 @@
-import {
-  hideNotification,
-  showNotification,
-  updateNotification,
-} from "@mantine/notifications";
 import { uniqueId } from "lodash";
 import { LOG } from "@/utilities/console";
-import { notification } from "./notification";
+import { notification, NotificationItem } from "./notification";
+
+let notificationContextRef: {
+  showNotification?: (notification: NotificationItem) => void;
+  updateNotification?: (notification: NotificationItem) => void;
+  hideNotification?: (id: string) => void;
+  markAsReadFn?: () => void;
+} = {};
+
+export const setNotificationContextRef = (
+  showFn: (notification: NotificationItem) => void,
+  updateFn: (notification: NotificationItem) => void,
+  hideFn: (id: string) => void,
+  markAsReadFn: () => void,
+) => {
+  notificationContextRef = {
+    showNotification: showFn,
+    updateNotification: updateFn,
+    hideNotification: hideFn,
+    markAsReadFn: markAsReadFn,
+  };
+};
 
 class TaskDispatcher {
   private running: boolean;
-  private tasks: Record<string, Task.Callable[]> = {};
-  private progress: Record<string, boolean> = {};
+  private readonly tasks: Record<string, Task.Callable[]> = {};
+  private readonly progress: Record<string, boolean> = {};
+  private readonly taskNotificationIds: Record<string, string> = {};
 
   constructor() {
     this.running = false;
     this.tasks = {};
     this.progress = {};
+    this.taskNotificationIds = {};
 
     window.addEventListener("beforeunload", this.onBeforeUnload.bind(this));
   }
@@ -25,10 +43,9 @@ class TaskDispatcher {
 
     if (Object.keys(this.tasks).length > 0) {
       e.preventDefault();
-      e.returnValue = message;
-      return;
+
+      return message;
     }
-    delete e["returnValue"];
   }
 
   private update() {
@@ -49,7 +66,8 @@ class TaskDispatcher {
         for await (const group of groups) {
           const tasks = this.tasks[group];
 
-          const taskId = group;
+          // Use the stored notification ID that was created in the create method
+          const taskId = this.taskNotificationIds[group];
 
           for (let index = 0; index < tasks.length; index++) {
             const task = tasks[index];
@@ -61,21 +79,33 @@ class TaskDispatcher {
               index,
               tasks.length,
             );
+
             updateNotification(notifyInProgress);
 
             try {
               await task(...task.parameters);
             } catch (error) {
-              // TODO
+              LOG("error", "Error while running task", task.description, error);
             }
           }
 
           const notifyEnd = notification.progress.end(taskId, group);
+
           updateNotification(notifyEnd);
 
+          // Clear this group's tasks
           delete this.tasks[group];
+
+          // Remove from progress tracking
+          if (this.progress[taskId]) {
+            delete this.progress[taskId];
+          }
+
+          // Clean up the notification ID tracking
+          delete this.taskNotificationIds[group];
         }
       }
+
       this.running = false;
     });
   }
@@ -86,16 +116,16 @@ class TaskDispatcher {
     callable: T,
     ...parameters: Parameters<T>
   ): Task.Ref {
-    // Clone this function
     const task = callable.bind({}) as Task.Callable<T>;
     task.parameters = parameters;
     task.description = name;
+
     task.id = uniqueId("task");
 
     if (this.tasks[group] === undefined) {
       this.tasks[group] = [];
-      const notifyStart = notification.progress.pending(group, group);
-      showNotification(notifyStart);
+
+      this.taskNotificationIds[group] = `${group}-${Date.now()}`;
     }
 
     this.tasks[group].push(task);
@@ -107,17 +137,25 @@ class TaskDispatcher {
 
   public updateProgress(items: Site.Progress[]) {
     items.forEach((item) => {
-      if (this.progress[item.id] === undefined) {
-        showNotification(notification.progress.pending(item.id, item.header));
-        this.progress[item.id] = true;
-        setTimeout(() => this.updateProgress([item]), 1000);
+      const notificationId = this.taskNotificationIds[item.header] || item.id;
 
+      if (this.progress[notificationId] === undefined) {
+        this.progress[notificationId] = true;
         return;
       }
 
       if (item.value >= item.count) {
-        updateNotification(notification.progress.end(item.id, item.header));
-        delete this.progress[item.id];
+        updateNotification(
+          notification.progress.end(notificationId, item.header),
+        );
+        delete this.progress[notificationId];
+
+        if (this.taskNotificationIds[item.header]) {
+          delete this.taskNotificationIds[item.header];
+          if (this.tasks[item.header]) {
+            delete this.tasks[item.header];
+          }
+        }
 
         return;
       }
@@ -126,7 +164,7 @@ class TaskDispatcher {
 
       updateNotification(
         notification.progress.update(
-          item.id,
+          notificationId,
           item.header,
           item.name,
           item.value,
@@ -145,5 +183,26 @@ class TaskDispatcher {
 }
 
 export const task = new TaskDispatcher();
+
+export const showNotification = (notification: NotificationItem) => {
+  if (notificationContextRef.showNotification) {
+    notificationContextRef.showNotification(notification);
+  }
+};
+
+export const updateNotification = (notification: NotificationItem) => {
+  if (notificationContextRef.updateNotification) {
+    notificationContextRef.updateNotification(notification);
+  }
+};
+
+export const hideNotification = (id: string) => {
+  if (notificationContextRef.hideNotification) {
+    notificationContextRef.hideNotification(id);
+  }
+};
+
 export * from "./group";
 export * from "./notification";
+export * from "./hooks";
+export * from "./NotificationContext";
