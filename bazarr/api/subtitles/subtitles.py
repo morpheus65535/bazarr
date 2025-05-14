@@ -12,7 +12,6 @@ from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import subtitles_sync_references
 from subtitles.tools.subsyncer import SubSyncer
 from subtitles.tools.translate import translate_subtitles_file
-from subtitles.tools.translate import translate_subtitles_file_gemini
 from subtitles.tools.mods import subtitles_apply_mods
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
