@@ -190,7 +190,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         location_qs = parse_qs(urlparse(res.headers['Location']).query)
 
         # If the response is a redirect and doesnt point to an error message page, then we are logged in
-        if res.status_code == 302 and location_qs['msg_type'][0] == 'i':
+        if res.status_code == 302 and location_qs['msg_type'][0].lower() == 'i':
             if 'omezené' in location_qs['msg'][0].lower():
                 raise AuthenticationError("V.I.P. account is required for this provider to work!")
             else:
@@ -244,16 +244,28 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                 return res
             
             location_qs = parse_qs(urlparse(res.headers['Location']).query)
-            # If the msg_type query parameter does NOT equal to 'e' or is absent, follow the URL in the Location header.
-            if allow_redirects is True and ('msg_type' not in location_qs or ('msg_type' in location_qs and location_qs['msg_type'][0] != 'e')):
+
+            # If the redirect url does not contain an error message, we follow the redirect right away
+            if 'msg_type' not in location_qs or ('msg_type' in location_qs and (location_qs['msg_type'][0]).lower() != 'e'):
                 return self.get_request(urljoin(res.headers['Origin'] or self.server_url, res.headers['Location']), ref=url, allow_redirects=True, _recursion=(_recursion + 1))
             
-            # Check if we got redirected because login cookies expired.
-            if "přihlašte" in location_qs['msg'][0].lower():
+            # We got redirected to a page with an error message:
+            error_message = location_qs['msg'][0].lower()
+
+            # Check if we got redirected because login cookies expired and try to relogin
+            if "přihlašte" in error_message:
                 logger.info(f"Titulky.com: Login cookies expired.")
                 self.login(True)
                 return self.get_request(url, ref=ref, allow_redirects=True, _recursion=(_recursion + 1))
 
+            # Check if we got redirected because our VIP expired
+            if "omezené" in error_message:
+                raise AuthenticationError("V.I.P. status expired.");
+
+            # TODO: We don't know why we got redirected to an error page. 
+            # What should we do? I am not aware if there is a use case where we want to return such response anway.
+            raise ProviderError(f"Got redirected from {url} to an error page with message: \"{location_qs['msg'][0]}\"");
+        
         return res
 
     def fetch_page(self, url, ref=server_url, allow_redirects=False):
