@@ -181,18 +181,6 @@ class Subtitles(Resource):
                                          radarr_id=id)
             except OSError:
                 return 'Unable to edit subtitles file. Check logs.', 409
-        elif action == 'translate_gemini':
-            from_language = subtitles_lang_from_filename(subtitles_path)
-            dest_language = language
-            try:
-                translate_subtitles_file_gemini(video_path=video_path, source_srt_file=subtitles_path,
-                                         from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
-                                         media_type="series" if media_type == "episode" else "movies",
-                                         sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
-                                         sonarr_episode_id=id,
-                                         radarr_id=id)
-            except OSError:
-                return 'Unable to edit subtitles file. Check logs.', 409
         else:
             use_original_format = True if args.get('original_format') == 'true' else False
             try:
