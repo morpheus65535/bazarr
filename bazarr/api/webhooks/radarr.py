@@ -1,8 +1,10 @@
 # coding=utf-8
+import logging
 
-from flask_restx import Resource, Namespace, reqparse
+from flask_restx import Resource, Namespace, fields
 
 from app.database import TableMovies, database, select
+from radarr.sync.movies import update_one_movie
 from subtitles.mass_download import movies_download_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
 from utilities.path_mappings import path_mappings
@@ -11,37 +13,66 @@ from ..utils import authenticate
 
 
 api_ns_webhooks_radarr = Namespace('Webhooks Radarr', description='Webhooks to trigger subtitles search based on '
-                                                                  'Radarr movie file ID')
+                                                                  'Radarr webhooks')
 
 
 @api_ns_webhooks_radarr.route('webhooks/radarr')
 class WebHooksRadarr(Resource):
-    post_request_parser = reqparse.RequestParser()
-    post_request_parser.add_argument('eventType', type=str, required=False, help='Event type - used when receiving test hooks from Radarr.')
-    post_request_parser.add_argument('radarr_moviefile_id', type=int, required=False, help='Movie file ID')
+
+    movie_model = api_ns_webhooks_radarr.model('RadarrMovie', {
+        'id':              fields.Integer(required=True, description='Movie ID'),
+    }, strict=False)
+        
+
+    movie_file_model = api_ns_webhooks_radarr.model('RadarrMovieFile', {
+        'id':              fields.Integer(required=True, description='Movie file ID'),
+    }, strict=False)
+
+    radarr_webhook_model = api_ns_webhooks_radarr.model('RadarrWebhook', {
+        'eventType':           fields.String(required=True, description='Type of event (e.g. MovieAdded)'),
+        'movieFile':               fields.Nested(movie_file_model, required=False, description='Full movie file details payload'),
+        'movie':                  fields.Nested(movie_model, required=False, description='Full movie details payload'),
+    }, strict=False)
 
     @authenticate
-    @api_ns_webhooks_radarr.doc(parser=post_request_parser)
+    @api_ns_webhooks_radarr.expect(radarr_webhook_model, validate=True)
     @api_ns_webhooks_radarr.response(200, 'Success')
     @api_ns_webhooks_radarr.response(401, 'Not Authenticated')
-    @api_ns_webhooks_radarr.response(404, 'Movie file ID not provided')
     def post(self):
         """Search for missing subtitles for a specific movie file id"""
-        args = self.post_request_parser.parse_args()
+        args = api_ns_webhooks_radarr.payload
         event_type = args.get('eventType')
-        movie_file_id = args.get('radarr_moviefile_id')
+
+        logging.debug('Received Radarr webhook event: %s', event_type)
+
         if event_type == 'Test':
-            return '', 200
-        elif not movie_file_id:
-            return 'Movie file ID not provided', 404
+            logging.debug('Received test hook, skipping database search.')
+            return 'Received test hook, skipping database search.', 200
+
+        movie_file_id = args.get('movieFile', {}).get('id')
+
+        if not movie_file_id:
+            logging.debug('No movie file ID found in the webhook request. Nothing to do.')
+            # Radarr reports the webhook as 'unhealthy' and requires
+            # user interaction if we return anything except 200s.
+            return 'No movie file ID found in the webhook request. Nothing to do.', 200
+
+        # This webhook is often faster than the database update,
+        # so we update the movie first if we can.
+        radarr_id = args.get('movie', {}).get('id')
+        if radarr_id:
+            update_one_movie(radarr_id, 'updated')
+            
 
         radarrMovieId = database.execute(
             select(TableMovies.radarrId, TableMovies.path)
             .where(TableMovies.movie_file_id == movie_file_id)) \
             .first()
-
-        if radarrMovieId:
-            store_subtitles_movie(radarrMovieId.path, path_mappings.path_replace_movie(radarrMovieId.path))
-            movies_download_subtitles(no=radarrMovieId.radarrId)
+        if not radarrMovieId:
+            logging.debug('No movie file ID found in the database. Nothing to do.')
+            return 'No movie file ID found in the database. Nothing to do.', 200
+        
+        store_subtitles_movie(radarrMovieId.path, path_mappings.path_replace_movie(radarrMovieId.path))
+        movies_download_subtitles(no=radarrMovieId.radarrId)
 
         return '', 200
