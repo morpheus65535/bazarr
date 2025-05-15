@@ -21,17 +21,17 @@ api_ns_webhooks_sonarr = Namespace('Webhooks Sonarr', description='Webhooks to t
 class WebHooksSonarr(Resource):
 
     episode_file_model = api_ns_webhooks_sonarr.model('SonarrEpisodeFile', {
-        'id':       fields.Integer(required=True, description='Episode file ID'),
+        'id': fields.Integer(required=True, description='Episode file ID'),
     }, strict=False)
     
     series_model = api_ns_webhooks_sonarr.model('SonarrSeries', {
-        'id':         fields.Integer(required=True, description='Series ID'),
+        'id': fields.Integer(required=True, description='Series ID'),
     }, strict=False)
     
     sonarr_webhook_model = api_ns_webhooks_sonarr.model('SonarrWebhook', {
-        'episodeFiles':   fields.List(fields.Nested(episode_file_model), required=False, description='List of episode files'),
-        'series':         fields.Nested(series_model, required=False, description='Full series details payload'),
-        'eventType':      fields.String(required=True, description='Type of event (e.g. Test)'),
+        'episodeFiles': fields.List(fields.Nested(episode_file_model), required=False, description='List of episode files'),
+        'series': fields.Nested(series_model, required=False, description='Full series details payload'),
+        'eventType': fields.String(required=True, description='Type of event (e.g. Test)'),
     }, strict=False)
 
     @authenticate

@@ -20,18 +20,18 @@ api_ns_webhooks_radarr = Namespace('Webhooks Radarr', description='Webhooks to t
 class WebHooksRadarr(Resource):
 
     movie_model = api_ns_webhooks_radarr.model('RadarrMovie', {
-        'id':              fields.Integer(required=True, description='Movie ID'),
+        'id': fields.Integer(required=True, description='Movie ID'),
     }, strict=False)
         
 
     movie_file_model = api_ns_webhooks_radarr.model('RadarrMovieFile', {
-        'id':              fields.Integer(required=True, description='Movie file ID'),
+        'id': fields.Integer(required=True, description='Movie file ID'),
     }, strict=False)
 
     radarr_webhook_model = api_ns_webhooks_radarr.model('RadarrWebhook', {
-        'eventType':           fields.String(required=True, description='Type of event (e.g. MovieAdded)'),
-        'movieFile':               fields.Nested(movie_file_model, required=False, description='Full movie file details payload'),
-        'movie':                  fields.Nested(movie_model, required=False, description='Full movie details payload'),
+        'eventType': fields.String(required=True, description='Type of event (e.g. MovieAdded)'),
+        'movieFile': fields.Nested(movie_file_model, required=False, description='Full movie file details payload'),
+        'movie': fields.Nested(movie_model, required=False, description='Full movie details payload'),
     }, strict=False)
 
     @authenticate
