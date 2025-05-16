@@ -42,6 +42,7 @@ class WebHooksRadarr(Resource):
     @api_ns_webhooks_radarr.expect(radarr_webhook_model, validate=True)
     @api_ns_webhooks_radarr.response(200, 'Success')
     @api_ns_webhooks_radarr.response(401, 'Not Authenticated')
+    @api_ns_webhooks_radarr.response(422, 'Invalid request: need at least one of event type or movie file ID.')
     def post(self):
         """Search for missing subtitles for a specific movie file id"""
         args = api_ns_webhooks_radarr.payload
