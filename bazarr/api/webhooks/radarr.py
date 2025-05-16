@@ -13,7 +13,9 @@ from ..utils import authenticate
 
 
 api_ns_webhooks_radarr = Namespace('Webhooks Radarr', description='Webhooks to trigger subtitles search based on '
-                                                                  'Radarr webhooks')
+                                                                  'Radarr webhooks or Radarr file IDs. '
+                                                                  'Requires at least one of eventType or '
+                                                                  'radarr_movie_file_id to be sent in the request body.')
 
 
 @api_ns_webhooks_radarr.route('webhooks/radarr')
@@ -32,6 +34,8 @@ class WebHooksRadarr(Resource):
         'eventType': fields.String(required=True, description='Type of event (e.g. MovieAdded)'),
         'movieFile': fields.Nested(movie_file_model, required=False, description='Full movie file details payload'),
         'movie': fields.Nested(movie_model, required=False, description='Full movie details payload'),
+        # Keep this field for backwards compatibility with user-scripts
+        'radarr_movie_file_id': fields.Integer(required=False, description='Radarr movie file ID for use with user scripts. Takes precedence over movieFile'),
     }, strict=False)
 
     @authenticate
@@ -42,6 +46,10 @@ class WebHooksRadarr(Resource):
         """Search for missing subtitles for a specific movie file id"""
         args = api_ns_webhooks_radarr.payload
         event_type = args.get('eventType')
+        radarr_movie_file_id = args.get('radarr_movie_file_id')
+        if not event_type and not radarr_movie_file_id:
+            logging.debug('Invalid request: need at least one of event type or movie file ID.')
+            return 'Invalid request: need at least one of event type or movie file ID.', 422
 
         logging.debug('Received Radarr webhook event: %s', event_type)
 
@@ -49,9 +57,10 @@ class WebHooksRadarr(Resource):
             logging.debug('Received test hook, skipping database search.')
             return 'Received test hook, skipping database search.', 200
 
-        movie_file_id = args.get('movieFile', {}).get('id')
+        if not radarr_movie_file_id:
+            radarr_movie_file_id = args.get('movieFile', {}).get('id')
 
-        if not movie_file_id:
+        if not radarr_movie_file_id:
             logging.debug('No movie file ID found in the webhook request. Nothing to do.')
             # Radarr reports the webhook as 'unhealthy' and requires
             # user interaction if we return anything except 200s.
@@ -66,7 +75,7 @@ class WebHooksRadarr(Resource):
 
         radarrMovieId = database.execute(
             select(TableMovies.radarrId, TableMovies.path)
-            .where(TableMovies.movie_file_id == movie_file_id)) \
+            .where(TableMovies.movie_file_id == radarr_movie_file_id)) \
             .first()
         if not radarrMovieId:
             logging.debug('No movie file ID found in the database. Nothing to do.')
@@ -75,4 +84,4 @@ class WebHooksRadarr(Resource):
         store_subtitles_movie(radarrMovieId.path, path_mappings.path_replace_movie(radarrMovieId.path))
         movies_download_subtitles(no=radarrMovieId.radarrId)
 
-        return '', 200
+        return 'Finished processing subtitles.', 200

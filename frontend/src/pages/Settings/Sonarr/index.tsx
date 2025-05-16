@@ -93,12 +93,11 @@ const SettingsSonarrView: FunctionComponent = () => {
             as soon as episodes are imported.
           </Message>
           <Message>
-            Search can be triggered using this command:
+            Search can be triggered via a Sonarr webhook or by running:
             <Code>
-              {`curl -H "Content-Type: application/json" -H "X-API-KEY: ###############################" -X POST 
-                -d '{ "eventType": "Download", "episodeFiles": [ { "id": "$sonarr_episodefile_id" } ] }' 
-                http://localhost:6767/api/webhooks/sonarr
-              `}
+              curl -d "sonarr_episodefile_id=$sonarr_episodefile_id" -H
+              "x-api-key: ###############################" -X POST
+              http://localhost:6767/api/webhooks/sonarr
             </Code>
           </Message>
           <Check
