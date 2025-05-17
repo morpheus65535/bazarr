@@ -1,7 +1,7 @@
 # coding=utf-8
 import logging
 
-from flask_restx import Resource, Namespace, reqparse
+from flask_restx import Resource, Namespace, fields
 
 from app.database import TableEpisodes, TableShows, database, select
 from sonarr.sync.series import update_one_series
@@ -14,26 +14,38 @@ from ..utils import authenticate
 
 
 api_ns_webhooks_sonarr = Namespace('Webhooks Sonarr', description='Webhooks to trigger subtitles search based on '
-                                                                  'Sonarr webhooks or Sonarr file IDs.')
+                                                                  'Sonarr webhooks or Sonarr file IDs. Requires '
+                                                                  'at least one of eventType or sonarr_episodefile_id '
+                                                                  'to be sent in the request body.')
 
 
 @api_ns_webhooks_sonarr.route('webhooks/sonarr')
 class WebHooksSonarr(Resource):
 
-    post_request_parser = reqparse.RequestParser()
-    post_request_parser.add_argument('sonarr_episodefile_id', type=int, required=False, help='Movie file ID')
-    post_request_parser.add_argument('eventType', type=str, required=False, help='Event type', location='json')
-    post_request_parser.add_argument('episodeFiles', type=list, required=False, help='Episode file details payload', location='json')
-    post_request_parser.add_argument('series', type=dict, required=False, help='Series details payload', location='json')
+    episode_file_model = api_ns_webhooks_sonarr.model('SonarrEpisodeFile', {
+        'id': fields.Integer(required=True, description='Episode file ID'),
+    }, strict=False)
+    
+    series_model = api_ns_webhooks_sonarr.model('SonarrSeries', {
+        'id': fields.Integer(required=True, description='Series ID'),
+    }, strict=False)
+    
+    sonarr_webhook_model = api_ns_webhooks_sonarr.model('SonarrWebhook', {
+        'episodeFiles': fields.List(fields.Nested(episode_file_model), required=False, description='Episode File payload from Sonarr Webhook'),
+        'series': fields.Nested(series_model, required=False, description='Series payload from Sonarr Webhook'),
+        'eventType': fields.String(required=False, description='Type of event (e.g. Test) from Sonarr Webhook'),
+        # Keep this field for backwards compatibility with user-scripts
+        'sonarr_episodefile_id': fields.Integer(required=False, description='Sonarr episode file ID for use with user scripts. Takes precedence over episodeFiles'),
+    }, strict=False)
 
     @authenticate
-    @api_ns_webhooks_sonarr.doc(parser=post_request_parser)
+    @api_ns_webhooks_sonarr.expect(sonarr_webhook_model, validate=True)
     @api_ns_webhooks_sonarr.response(200, 'Success')
     @api_ns_webhooks_sonarr.response(401, 'Not Authenticated')
     @api_ns_webhooks_sonarr.response(422, 'Invalid request: need at least one of event type or episode file ID.')
     def post(self):
         """Search for missing subtitles for a specific episode file id"""
-        args = self.post_request_parser.parse_args()
+        args = api_ns_webhooks_sonarr.payload
         event_type = args.get('eventType')
         sonarr_episodefile_id = args.get('sonarr_episodefile_id')
 
@@ -47,11 +59,13 @@ class WebHooksSonarr(Resource):
             logging.debug('Received test hook, skipping database search.')
             return 'Received test hook, skipping database search.', 200
 
-        episode_file_ids = []
         if sonarr_episodefile_id:
             episode_file_ids = [sonarr_episodefile_id]
-        elif isinstance(args.get('episodeFiles'), list):
+        else:
+            # Sonarr hooks only differentiate a download starting vs. ending by
+            # the inclusion of episodeFiles in the payload.
             episode_file_ids = [e.get('id') for e in args.get('episodeFiles', [])]
+
         if not episode_file_ids:
             logging.debug('No episode file IDs found in the webhook request. Nothing to do.')
             # Sonarr reports the webhook as 'unhealthy' and requires
@@ -60,11 +74,7 @@ class WebHooksSonarr(Resource):
 
         # This webhook is often faster than the database update,
         # so we update the series first if we can.
-        try:
-            series_id = args.get('series', {}).get('id')
-        except AttributeError:
-            series_id = None
-
+        series_id = args.get('series', {}).get('id')
         if series_id:
             update_one_series(series_id, 'updated')
 
