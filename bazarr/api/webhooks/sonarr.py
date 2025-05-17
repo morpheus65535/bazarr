@@ -14,9 +14,7 @@ from ..utils import authenticate
 
 
 api_ns_webhooks_sonarr = Namespace('Webhooks Sonarr', description='Webhooks to trigger subtitles search based on '
-                                                                  'Sonarr webhooks or Sonarr file IDs. Requires '
-                                                                  'at least one of eventType or sonarr_episodefile_id '
-                                                                  'to be sent in the request body.')
+                                                                  'Sonarr webhooks')
 
 
 @api_ns_webhooks_sonarr.route('webhooks/sonarr')
@@ -31,11 +29,9 @@ class WebHooksSonarr(Resource):
     }, strict=False)
     
     sonarr_webhook_model = api_ns_webhooks_sonarr.model('SonarrWebhook', {
-        'episodeFiles': fields.List(fields.Nested(episode_file_model), required=False, description='Episode File payload from Sonarr Webhook'),
-        'series': fields.Nested(series_model, required=False, description='Series payload from Sonarr Webhook'),
-        'eventType': fields.String(required=False, description='Type of event (e.g. Test) from Sonarr Webhook'),
-        # Keep this field for backwards compatibility with user-scripts
-        'sonarr_episodefile_id': fields.Integer(required=False, description='Sonarr episode file ID for use with user scripts. Takes precedence over episodeFiles'),
+        'episodeFiles': fields.List(fields.Nested(episode_file_model), required=False, description='List of episode files'),
+        'series': fields.Nested(series_model, required=False, description='Full series details payload'),
+        'eventType': fields.String(required=True, description='Type of event (e.g. Test)'),
     }, strict=False)
 
     @authenticate
@@ -43,14 +39,9 @@ class WebHooksSonarr(Resource):
     @api_ns_webhooks_sonarr.response(200, 'Success')
     @api_ns_webhooks_sonarr.response(401, 'Not Authenticated')
     def post(self):
-        """Search for missing subtitles for a specific episode file id"""
+        """Search for missing subtitles based on Sonarr webhooks"""
         args = api_ns_webhooks_sonarr.payload
         event_type = args.get('eventType')
-        sonarr_episodefile_id = args.get('sonarr_episodefile_id')
-
-        if not event_type and not sonarr_episodefile_id:
-            logging.debug('Invalid request: need at least one of event type or episode file ID.')
-            return 'Invalid request: need at least one of event type or episode file ID.', 422
 
         logging.debug('Received Sonarr webhook event: %s', event_type)
 
@@ -58,12 +49,10 @@ class WebHooksSonarr(Resource):
             logging.debug('Received test hook, skipping database search.')
             return 'Received test hook, skipping database search.', 200
 
-        if sonarr_episodefile_id:
-            episode_file_ids = [sonarr_episodefile_id]
-        else:
-            # Sonarr hooks only differentiate a download starting vs. ending by
-            # the inclusion of episodeFiles in the payload.
-            episode_file_ids = [e.get('id') for e in args.get('episodeFiles', [])]
+
+        # Sonarr hooks only differentiate a download starting vs. ending by
+        # the inclusion of episodeFiles in the payload.
+        episode_file_ids = [e.get('id') for e in args.get('episodeFiles', [])]
 
         if not episode_file_ids:
             logging.debug('No episode file IDs found in the webhook request. Nothing to do.')

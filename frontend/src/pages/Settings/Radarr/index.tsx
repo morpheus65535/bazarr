@@ -82,11 +82,12 @@ const SettingsRadarrView: FunctionComponent = () => {
             as soon as movies are imported.
           </Message>
           <Message>
-            Search can be triggered via a Radarr Webhook or by running:
+            Search can be triggered using this command
             <Code>
-              curl -d "radarr_moviefile_id=$radarr_moviefile_id" -H "x-api-key:
-              ###############################" -X POST
-              http://localhost:6767/api/webhooks/radarr
+              {`curl -H "Content-Type: application/json" -H "X-API-KEY: ###############################" -X POST 
+                -d '{ "eventType": "Download", "movieFile": [ { "id": "$radarr_moviefile_id" } ] }' 
+                http://localhost:6767/api/webhooks/radarr
+              `}
             </Code>
           </Message>
         </Section>
