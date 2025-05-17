@@ -42,7 +42,6 @@ class WebHooksSonarr(Resource):
     @api_ns_webhooks_sonarr.expect(sonarr_webhook_model, validate=True)
     @api_ns_webhooks_sonarr.response(200, 'Success')
     @api_ns_webhooks_sonarr.response(401, 'Not Authenticated')
-    @api_ns_webhooks_sonarr.response(422, 'Invalid request: need at least one of event type or episode file ID.')
     def post(self):
         """Search for missing subtitles for a specific episode file id"""
         args = api_ns_webhooks_sonarr.payload
