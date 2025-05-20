@@ -29,9 +29,9 @@ class WebHooksRadarr(Resource):
     }, strict=False)
 
     radarr_webhook_model = api_ns_webhooks_radarr.model('RadarrWebhook', {
-        'eventType': fields.String(required=True, description='Type of event (e.g. MovieAdded)'),
-        'movieFile': fields.Nested(movie_file_model, required=False, description='Full movie file details payload'),
-        'movie': fields.Nested(movie_model, required=False, description='Full movie details payload'),
+        'eventType': fields.String(required=True, description='Type of Radarr event (e.g. MovieAdded, Test, etc)'),
+        'movieFile': fields.Nested(movie_file_model, required=False, description='Radarr movie file payload. Required for anything other than test hooks'),
+        'movie': fields.Nested(movie_model, required=False, description='Radarr movie payload. Can be used to sync movies from Radarr if not found in Bazarr'),
     }, strict=False)
 
     @authenticate
@@ -60,19 +60,19 @@ class WebHooksRadarr(Resource):
         # This webhook is often faster than the database update,
         # so we update the movie first if we can.
         radarr_id = args.get('movie', {}).get('id')
-        if radarr_id:
-            update_one_movie(radarr_id, 'updated')
             
+        q = select(TableMovies.radarrId, TableMovies.path).where(TableMovies.movie_file_id == movie_file_id).first()
 
-        radarrMovieId = database.execute(
-            select(TableMovies.radarrId, TableMovies.path)
-            .where(TableMovies.movie_file_id == movie_file_id)) \
-            .first()
-        if not radarrMovieId:
-            logging.debug('No movie file ID found in the database. Nothing to do.')
-            return 'No movie file ID found in the database. Nothing to do.', 200
+        movie = database.execute(q)
+        if not movie and radarr_id:
+            logging.debug('No movie file ID found in the database. Attempting to sync from Radarr.')
+            update_one_movie(radarr_id, 'updated')
+            movie = database.execute(q)
+        if not movie:
+            logging.debug('No movie matching file ID %s found in the database. Nothing to do.', movie_file_id)
+            return 'No movie matching file ID found in the database. Nothing to do.', 200
         
-        store_subtitles_movie(radarrMovieId.path, path_mappings.path_replace_movie(radarrMovieId.path))
-        movies_download_subtitles(no=radarrMovieId.radarrId)
+        store_subtitles_movie(movie.path, path_mappings.path_replace_movie(movie.path))
+        movies_download_subtitles(no=movie.radarrId)
 
-        return '', 200
+        return 'Finished processing subtitles.', 200
