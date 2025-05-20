@@ -43,11 +43,12 @@ class WebHooksSonarr(Resource):
         args = api_ns_webhooks_sonarr.payload
         event_type = args.get('eventType')
 
-        logging.debug('Received Sonarr webhook event: %s', event_type)
+        logging.debug(f'Received Sonarr webhook event: {event_type}')
 
         if event_type == 'Test':
-            logging.debug('Received test hook, skipping database search.')
-            return 'Received test hook, skipping database search.', 200
+            message = 'Received test hook, skipping database search.'
+            logging.debug(message)
+            return message, 200
 
 
         # Sonarr hooks only differentiate a download starting vs. ending by
@@ -55,15 +56,16 @@ class WebHooksSonarr(Resource):
         sonarr_episode_file_ids = [e.get('id') for e in args.get('episodeFiles', [])]
 
         if not sonarr_episode_file_ids:
-            logging.debug('No episode file IDs found in the webhook request. Nothing to do.')
+            message = 'No episode file IDs found in the webhook request. Nothing to do.'
+            logging.debug(message)
             # Sonarr reports the webhook as 'unhealthy' and requires
             # user interaction if we return anything except 200s.
-            return 'No episode file IDs found in the webhook request. Nothing to do.', 200
+            return message, 200
 
         sonarr_episode_ids = [e.get('id') for e in args.get('episodes', [])]
 
         if len(sonarr_episode_ids) != len(sonarr_episode_file_ids):
-            logging.debug('Episode IDs and episode file IDs do not match, ignoring episode IDs.')
+            logging.debug('Episode IDs and episode file IDs are different lengths, ignoring episode IDs.')
             sonarr_episode_ids = []
             
         for i, efid in enumerate(sonarr_episode_file_ids):

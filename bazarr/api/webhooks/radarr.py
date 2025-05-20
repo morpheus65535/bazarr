@@ -43,19 +43,21 @@ class WebHooksRadarr(Resource):
         args = api_ns_webhooks_radarr.payload
         event_type = args.get('eventType')
 
-        logging.debug('Received Radarr webhook event: %s', event_type)
+        logging.debug(f'Received Radarr webhook event: {event_type}')
 
         if event_type == 'Test':
-            logging.debug('Received test hook, skipping database search.')
-            return 'Received test hook, skipping database search.', 200
+            message = 'Received test hook, skipping database search.'
+            logging.debug(message)
+            return message, 200
 
         movie_file_id = args.get('movieFile', {}).get('id')
 
         if not movie_file_id:
-            logging.debug('No movie file ID found in the webhook request. Nothing to do.')
+            message = 'No movie file ID found in the webhook request. Nothing to do.'
+            logging.debug(message)
             # Radarr reports the webhook as 'unhealthy' and requires
             # user interaction if we return anything except 200s.
-            return 'No movie file ID found in the webhook request. Nothing to do.', 200
+            return message, 200
 
         # This webhook is often faster than the database update,
         # so we update the movie first if we can.
@@ -65,12 +67,13 @@ class WebHooksRadarr(Resource):
 
         movie = database.execute(q)
         if not movie and radarr_id:
-            logging.debug('No movie file ID found in the database. Attempting to sync from Radarr.')
+            logging.debug(f'No movie matching file ID {movie_file_id} found in the database. Attempting to sync from Radarr.')
             update_one_movie(radarr_id, 'updated')
             movie = database.execute(q)
         if not movie:
-            logging.debug('No movie matching file ID %s found in the database. Nothing to do.', movie_file_id)
-            return 'No movie matching file ID found in the database. Nothing to do.', 200
+            message = f'No movie matching file ID {movie_file_id} found in the database. Nothing to do.'
+            logging.debug(message)
+            return message, 200
         
         store_subtitles_movie(movie.path, path_mappings.path_replace_movie(movie.path))
         movies_download_subtitles(no=movie.radarrId)
