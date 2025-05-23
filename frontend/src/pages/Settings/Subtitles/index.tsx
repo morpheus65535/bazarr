@@ -24,6 +24,7 @@ import {
   hiExtensionOptions,
   providerOptions,
   syncMaxOffsetSecondsOptions,
+  translatorOption,
 } from "./options";
 
 interface CommandOption {
@@ -520,6 +521,35 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             <tbody>{commandOptionElements}</tbody>
           </Table>
         </CollapseBox>
+      </Section>
+      <Section header="Translating">
+        <Selector
+          label="Translator"
+          clearable
+          options={translatorOption}
+          placeholder="Default translator"
+          settingKey="settings-translator-translator_type"
+        ></Selector>
+        <CollapseBox
+          settingKey="settings-translator-translator_type"
+          on={(val) => val === "gemini"}
+        >
+          <Text
+            label="Gemini model"
+            settingKey="settings-translator-gemini_model"
+          />
+          <Text
+            label="Gemini API key"
+            settingKey="settings-translator-gemini_key"
+          ></Text>
+          <Message>
+            You can generate it here: https://aistudio.google.com/apikey
+          </Message>
+        </CollapseBox>
+        <Check
+          label="Add translation info at the beginning"
+          settingKey="settings-translator-translator_info"
+        ></Check>
       </Section>
     </Layout>
   );
