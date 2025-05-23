@@ -88,6 +88,9 @@ class TranslatorGemini:
         self.token_count = 0
         self.interrupt_flag = False  # Flag to check for interruption
 
+        if "2.5-flash" in model_name or "pro" in model_name:
+            self.batch_size = 300
+
         # Initialize progress tracking file path
         self.progress_file = None
         if input_file:
@@ -292,9 +295,14 @@ class TranslatorGemini:
         Get the token limit for the current model.
 
         Returns:
-            int: Token limit for the current model
+            int: Token limit for the current model according to https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash
         """
-        return 7000
+        if "2.0-flash" in self.model_name:
+            return 7000
+        elif "2.5-flash" in self.model_name or "pro" in self.model_name:
+            return 50000
+        else:
+            return 7000
 
     def _validate_token_size(self, contents: str) -> bool:
         """
