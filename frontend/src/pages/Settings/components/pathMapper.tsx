@@ -3,7 +3,6 @@ import { Button } from "@mantine/core";
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
-import { capitalize } from "lodash";
 import { Action, FileBrowser } from "@/components";
 import SimpleTable from "@/components/tables/SimpleTable";
 import {
@@ -14,6 +13,7 @@ import {
 } from "@/pages/Settings/keys";
 import { useFormActions } from "@/pages/Settings/utilities/FormValues";
 import { useSettingValue } from "@/pages/Settings/utilities/hooks";
+import { capitalize } from "@/utilities";
 import { useArrayAction } from "@/utilities";
 import { Message } from "./Message";
 
