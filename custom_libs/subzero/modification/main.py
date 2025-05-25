@@ -287,7 +287,7 @@ class SubtitleModifications(object):
                 continue
 
             line_split = t.split(r"\N")
-            if len(line_split) > 3: # Badly parsed subtitle
+            if len(line_split) > 10:  # Badly parsed subtitle
                 logger.error("Skipping %d lines for %s mod", len(line_split), mods)
                 continue
 
