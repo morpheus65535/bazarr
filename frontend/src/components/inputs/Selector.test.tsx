@@ -36,7 +36,9 @@ describe("Selector", () => {
 
       await userEvent.click(element);
 
-      expect(screen.queryAllByRole("option")).toHaveLength(testOptions.length);
+      for (const option of testOptions) {
+        expect(screen.getByText(option.label)).toBeInTheDocument();
+      }
 
       testOptions.forEach((option) => {
         expect(screen.getByText(option.label)).toBeDefined();

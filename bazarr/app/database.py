@@ -512,7 +512,7 @@ def convert_list_to_clause(arr: list):
         return ""
 
 
-def upgrade_languages_profile_hi_values():
+def upgrade_languages_profile_values():
     for languages_profile in (database.execute(
             select(
                 TableLanguagesProfiles.profileId,
@@ -531,6 +531,9 @@ def upgrade_languages_profile_hi_values():
                 language['hi'] = "True"
             elif language['hi'] in ["also", "never"]:
                 language['hi'] = "False"
+
+            if 'audio_only_include' not in language:
+                language['audio_only_include'] = "False"
         database.execute(
             update(TableLanguagesProfiles)
             .values({"items": json.dumps(items)})
