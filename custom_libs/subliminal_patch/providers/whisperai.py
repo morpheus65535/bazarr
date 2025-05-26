@@ -1,128 +1,258 @@
 from __future__ import absolute_import
+
+import functools
 import logging
+import os
 import time
 from datetime import timedelta
-
+import ffmpeg
+from babelfish.exceptions import LanguageReverseError
+from pycountry import languages as py_languages
 from requests import Session
-
 from requests.exceptions import JSONDecodeError
-from subliminal_patch.subtitle import Subtitle
-from subliminal_patch.providers import Provider
 from subliminal import __short_version__
 from subliminal.exceptions import ConfigurationError
-from subzero.language import Language
 from subliminal.video import Episode, Movie
-
-from babelfish.exceptions import LanguageReverseError
-
-import ffmpeg
-import functools
-from pycountry import languages
+from subliminal_patch.providers import Provider
+from subliminal_patch.subtitle import Subtitle
+from subzero.language import Language
 
 # These are all the languages Whisper supports.
 # from whisper.tokenizer import LANGUAGES
 
-whisper_languages = {
-    "en": "english",
-    "zh": "chinese",
-    "de": "german",
-    "es": "spanish",
-    "ru": "russian",
-    "ko": "korean",
-    "fr": "french",
-    "ja": "japanese",
-    "pt": "portuguese",
-    "tr": "turkish",
-    "pl": "polish",
-    "ca": "catalan",
-    "nl": "dutch",
-    "ar": "arabic",
-    "sv": "swedish",
-    "it": "italian",
-    "id": "indonesian",
-    "hi": "hindi",
-    "fi": "finnish",
-    "vi": "vietnamese",
-    "he": "hebrew",
-    "uk": "ukrainian",
-    "el": "greek",
-    "ms": "malay",
-    "cs": "czech",
-    "ro": "romanian",
-    "da": "danish",
-    "hu": "hungarian",
-    "ta": "tamil",
-    "no": "norwegian",
-    "th": "thai",
-    "ur": "urdu",
-    "hr": "croatian",
-    "bg": "bulgarian",
-    "lt": "lithuanian",
-    "la": "latin",
-    "mi": "maori",
-    "ml": "malayalam",
-    "cy": "welsh",
-    "sk": "slovak",
-    "te": "telugu",
-    "fa": "persian",
-    "lv": "latvian",
-    "bn": "bengali",
-    "sr": "serbian",
-    "az": "azerbaijani",
-    "sl": "slovenian",
-    "kn": "kannada",
-    "et": "estonian",
-    "mk": "macedonian",
-    "br": "breton",
-    "eu": "basque",
-    "is": "icelandic",
-    "hy": "armenian",
-    "ne": "nepali",
-    "mn": "mongolian",
-    "bs": "bosnian",
-    "kk": "kazakh",
-    "sq": "albanian",
-    "sw": "swahili",
-    "gl": "galician",
-    "mr": "marathi",
-    "pa": "punjabi",
-    "si": "sinhala",
-    "km": "khmer",
-    "sn": "shona",
-    "yo": "yoruba",
-    "so": "somali",
-    "af": "afrikaans",
-    "oc": "occitan",
-    "ka": "georgian",
-    "be": "belarusian",
-    "tg": "tajik",
-    "sd": "sindhi",
-    "gu": "gujarati",
-    "am": "amharic",
-    "yi": "yiddish",
-    "lo": "lao",
-    "uz": "uzbek",
-    "fo": "faroese",
-    "ht": "haitian creole",
-    "ps": "pashto",
-    "tk": "turkmen",
-    "nn": "nynorsk",
-    "mt": "maltese",
-    "sa": "sanskrit",
-    "lb": "luxembourgish",
-    "my": "myanmar",
-    "bo": "tibetan",
-    "tl": "tagalog",
-    "mg": "malagasy",
-    "as": "assamese",
-    "tt": "tatar",
-    "haw": "hawaiian",
-    "ln": "lingala",
-    "ha": "hausa",
-    "ba": "bashkir",
-    "jw": "javanese",
-    "su": "sundanese",
+whisper_language_data = [
+    ("en", "eng", "English"),
+    ("zh", "zho", "Chinese"),
+    ("de", "deu", "German"),
+    ("es", "spa", "Spanish"),
+    ("ru", "rus", "Russian"),
+    ("ko", "kor", "Korean"),
+    ("fr", "fra", "French"),
+    ("ja", "jpn", "Japanese"),
+    ("pt", "por", "Portuguese"),
+    ("tr", "tur", "Turkish"),
+    ("pl", "pol", "Polish"),
+    ("ca", "cat", "Catalan"),
+    ("nl", "nld", "Dutch"),
+    ("ar", "ara", "Arabic"),
+    ("sv", "swe", "Swedish"),
+    ("it", "ita", "Italian"),
+    ("id", "ind", "Indonesian"),
+    ("hi", "hin", "Hindi"),
+    ("fi", "fin", "Finnish"),
+    ("vi", "vie", "Vietnamese"),
+    ("he", "heb", "Hebrew"),
+    ("uk", "ukr", "Ukrainian"),
+    ("el", "ell", "Greek"),
+    ("ms", "msa", "Malay"),
+    ("cs", "ces", "Czech"),
+    ("ro", "ron", "Romanian"),
+    ("da", "dan", "Danish"),
+    ("hu", "hun", "Hungarian"),
+    ("ta", "tam", "Tamil"),
+    ("no", "nor", "Norwegian"),
+    ("th", "tha", "Thai"),
+    ("ur", "urd", "Urdu"),
+    ("hr", "hrv", "Croatian"),
+    ("bg", "bul", "Bulgarian"),
+    ("lt", "lit", "Lithuanian"),
+    ("la", "lat", "Latin"),
+    ("mi", "mri", "Maori"),
+    ("ml", "mal", "Malayalam"),
+    ("cy", "cym", "Welsh"),
+    ("sk", "slk", "Slovak"),
+    ("te", "tel", "Telugu"),
+    ("fa", "fas", "Persian"),
+    ("lv", "lav", "Latvian"),
+    ("bn", "ben", "Bengali"),
+    ("sr", "srp", "Serbian"),
+    ("az", "aze", "Azerbaijani"),
+    ("sl", "slv", "Slovenian"),
+    ("kn", "kan", "Kannada"),
+    ("et", "est", "Estonian"),
+    ("mk", "mkd", "Macedonian"),
+    ("br", "bre", "Breton"),
+    ("eu", "eus", "Basque"),
+    ("is", "isl", "Icelandic"),
+    ("hy", "hye", "Armenian"),
+    ("ne", "nep", "Nepali"),
+    ("mn", "mon", "Mongolian"),
+    ("bs", "bos", "Bosnian"),
+    ("kk", "kaz", "Kazakh"),
+    ("sq", "sqi", "Albanian"),
+    ("sw", "swa", "Swahili"),
+    ("gl", "glg", "Galician"),
+    ("mr", "mar", "Marathi"),
+    ("pa", "pan", "Punjabi"),
+    ("si", "sin", "Sinhala"),
+    ("km", "khm", "Khmer"),
+    ("sn", "sna", "Shona"),
+    ("yo", "yor", "Yoruba"),
+    ("so", "som", "Somali"),
+    ("af", "afr", "Afrikaans"),
+    ("oc", "oci", "Occitan"),
+    ("ka", "kat", "Georgian"),
+    ("be", "bel", "Belarusian"),
+    ("tg", "tgk", "Tajik"),
+    ("sd", "snd", "Sindhi"),
+    ("gu", "guj", "Gujarati"),
+    ("am", "amh", "Amharic"),
+    ("yi", "yid", "Yiddish"),
+    ("lo", "lao", "Lao"),
+    ("uz", "uzb", "Uzbek"),
+    ("fo", "fao", "Faroese"),
+    ("ht", "hat", "Haitian Creole"),
+    ("ps", "pus", "Pashto"),
+    ("tk", "tuk", "Turkmen"),
+    ("nn", "nno", "Nynorsk"),
+    ("mt", "mlt", "Maltese"),
+    ("sa", "san", "Sanskrit"),
+    ("lb", "ltz", "Luxembourgish"),
+    ("my", "mya", "Myanmar"),
+    ("bo", "bod", "Tibetan"),
+    ("tl", "tgl", "Tagalog"),
+    ("mg", "mlg", "Malagasy"),
+    ("as", "asm", "Assamese"),
+    ("tt", "tat", "Tatar"),
+    ("haw", "haw", "Hawaiian"),
+    ("ln", "lin", "Lingala"),
+    ("ha", "hau", "Hausa"),
+    ("ba", "bak", "Bashkir"),
+    ("jw", "jav", "Javanese"),
+    ("su", "sun", "Sundanese"),
+    # these languages are not supported by whisper, but we map them below to existing similar languages
+    ("gsw", "gsw", "Swiss German"),
+    # ("und", "und", "Undefined"),
+]
+
+language_mapping = {
+    "gsw": "deu",  # Swiss German -> German (ISO 639-3)
+    "und": "eng",  # Undefined -> English
 }
+
+whisper_ambiguous_language_codes = [
+    "alg",  # Algonquian languages (language family)
+    "art",  # Artificial languages
+    "ath",  # Athapascan languages (language family)
+    "aus",  # Australian languages (language family)
+    "mis",  # Miscellaneous languages
+    "mul",  # Multiple languages
+#    "qaa–qtz",  # Reserved for local use
+    "sgn",  # Sign languages
+    "und",  # Undetermined
+    "zxx"   # No linguistic content
+]
+
+class LanguageManager:
+    def __init__(self, language_data):
+        """Initialize with language data as list of tuples (alpha2, alpha3, name)"""
+        self.language_data = language_data
+        self._build_indices()
+    
+    def _build_indices(self):
+        """Build lookup dictionaries for quick access"""
+        # Create indices for lookup by each code type
+        self.by_alpha2 = {item[0]: item for item in self.language_data}
+        self.by_alpha3 = {item[1]: item for item in self.language_data}
+        self.by_name = {item[2]: item for item in self.language_data}
+    
+    def get_by_alpha2(self, code):
+        """Get language tuple by alpha2 code"""
+        return self.by_alpha2.get(code)
+    
+    def get_by_alpha3(self, code):
+        """Get language tuple by alpha3 code"""
+        return self.by_alpha3.get(code)
+    
+    def get_by_name(self, name):
+        """Get language tuple by name"""
+        return self.by_name.get(name.lower())
+    
+    def alpha2_to_alpha3(self, code):
+        """Convert alpha2 to alpha3"""
+        lang_tuple = self.get_by_alpha2(code)
+        return lang_tuple[1] if lang_tuple else None
+    
+    def alpha3_to_alpha2(self, code):
+        """Convert alpha3 to alpha2"""
+        lang_tuple = self.get_by_alpha3(code)
+        return lang_tuple[0] if lang_tuple else None
+    
+    def get_name(self, code, code_type="alpha3"):
+        """Get language name from code"""
+        if code_type == "alpha2":
+            lang_tuple = self.get_by_alpha2(code)
+        else:  # alpha3
+            lang_tuple = self.get_by_alpha3(code)
+        return lang_tuple[2] if lang_tuple else None
+    
+    def add_language_data(self, language_data):
+        """Add a number of new language tuples to the data structure"""
+        self.language_data.extend(language_data)
+        # Update indices
+        self._build_indices()
+    
+    def add_language(self, alpha2, alpha3, name):
+        """Add a new language to the data structure"""
+        new_lang = (alpha2, alpha3, name.lower())
+        self.language_data.append(new_lang)
+        # Update indices
+        self._build_indices()
+        return new_lang
+    
+    def get_all_language_names(self):
+        """Return list of all language names"""
+        return [item[2] for item in self.language_data]
+    
+    def get_all_alpha2(self):
+        """Return list of all alpha2 codes"""
+        return [item[0] for item in self.language_data]
+    
+    def get_all_alpha3(self):
+        """Return list of all alpha3 codes"""
+        return [item[1] for item in self.language_data]
+
+
+class WhisperLanguageManager(LanguageManager):
+    def __init__(self, language_data):
+        super().__init__(language_data)
+
+    def _get_language(self, code, name):
+        # Handle 'und' language code explicitly
+        if code == "und":
+            logger.warning("Undefined language code detected")
+            return None
+        # Whisper uses an inconsistent mix of alpha2 and alpha3 language codes
+        try:
+            return Language.fromalpha2(code)
+        except LanguageReverseError:
+            try:
+                return Language.fromname(name)
+            except LanguageReverseError:
+                logger.error(f"Could not convert Whisper language: {code} ({name})")
+                return None
+    
+    def get_all_language_objects(self):
+        """Return set of all Language objects"""
+        # populate set of Language objects that are supoorted by Whisper
+        return set(self._get_language(item[0], item[2]) for item in self.language_data)
+
+    # ffmpeg uses the older ISO 639-2 code when extracting audio streams based on language
+    # if we give it the newer ISO 639-3 code it can't find that audio stream by name because it's different
+    # for example it wants 'ger' instead of 'deu' for the German language
+    #                   or 'fre' instead of 'fra' for the French language
+    def get_ISO_639_2_code(self, iso639_3_code):
+        # find the language using ISO 639-3 code
+        language = py_languages.get(alpha_3=iso639_3_code)
+        # get the ISO 639-2 code or use the original input if there isn't a match
+        iso639_2_code = language.bibliographic if language and hasattr(language, 'bibliographic') else iso639_3_code
+        if iso639_2_code != iso639_3_code:
+            logger.debug(f"ffmpeg using language code '{iso639_2_code}' (instead of '{iso639_3_code}')")
+        return iso639_2_code
+
+
+# Create language manager
+wlm = WhisperLanguageManager(whisper_language_data)
 
 logger = logging.getLogger(__name__)
 
@@ -133,72 +263,6 @@ def set_log_level(newLevel="INFO"):
 
 # initialize to default above
 set_log_level()
-
-# ffmpeg uses the older ISO 639-2 code when extracting audio streams based on language
-# if we give it the newer ISO 639-3 code it can't find that audio stream by name because it's different
-# for example it wants 'ger' instead of 'deu' for the German language
-#                   or 'fre' instead of 'fra' for the French language
-def get_ISO_639_2_code(iso639_3_code):
-    # find the language using ISO 639-3 code
-    language = languages.get(alpha_3=iso639_3_code)
-    # get the ISO 639-2 code or use the original input if there isn't a match
-    iso639_2_code = language.bibliographic if language and hasattr(language, 'bibliographic') else iso639_3_code
-    logger.debug(f"ffmpeg using language code '{iso639_2_code}' (instead of '{iso639_3_code}')")
-    return iso639_2_code
-
-@functools.lru_cache(2)
-def encode_audio_stream(path, ffmpeg_path, audio_stream_language=None):
-    logger.debug("Encoding audio stream to WAV with ffmpeg")
-
-    try:
-        # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
-        inp = ffmpeg.input(path, threads=0)
-        if audio_stream_language:
-            # There is more than one audio stream, so pick the requested one by name
-            # Use the ISO 639-2 code if available
-            audio_stream_language = get_ISO_639_2_code(audio_stream_language)
-            logger.debug(f"Whisper will use the '{audio_stream_language}' audio stream for {path}")
-            # 0 = Pick first stream in case there are multiple language streams of the same language,
-            # otherwise ffmpeg will try to combine multiple streams, but our output format doesn't support that.
-            # The first stream is probably the correct one, as later streams are usually commentaries
-            lang_map = f"0:m:language:{audio_stream_language}"
-        else:
-            # there is only one stream, so just use that one
-            lang_map = ""
-        out, _ = (
-            inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af="aresample=async=1")
-            .global_args("-map", lang_map)
-            .run(cmd=[ffmpeg_path, "-nostdin"], capture_stdout=True, capture_stderr=True) 
-        )
-
-    except ffmpeg.Error as e:
-        logger.warning(f"ffmpeg failed to load audio: {e.stderr.decode()}")
-        return None
-
-    logger.debug(f"Finished encoding audio stream in {path} with no errors")
-
-    return out
-
-
-def whisper_get_language(code, name):
-    # Whisper uses an inconsistent mix of alpha2 and alpha3 language codes
-    try:
-        return Language.fromalpha2(code)
-    except LanguageReverseError:
-        return Language.fromname(name)
-
-
-def whisper_get_language_reverse(alpha3):
-    # Returns the whisper language code given an alpha3b language
-    for wl in whisper_languages:
-        lan = whisper_get_language(wl, whisper_languages[wl])
-        if lan.alpha3 == alpha3:
-            return wl
-    return None
-
-def language_from_alpha3(lang):
-    name = Language(lang).name
-    return name
 
 class WhisperAISubtitle(Subtitle):
     '''Whisper AI Subtitle.'''
@@ -234,11 +298,8 @@ class WhisperAISubtitle(Subtitle):
 class WhisperAIProvider(Provider):
     '''Whisper AI Provider.'''
 
-    languages = set()
-
-    for lan in whisper_languages:
-        languages.update({whisper_get_language(lan, whisper_languages[lan])})
-
+    # these next two variables must be set for superclass or this provider will not be listed in subtitle search results
+    languages = wlm.get_all_language_objects()
     video_types = (Episode, Movie)
 
     def __init__(self, endpoint=None, response=None, timeout=None, ffmpeg_path=None, pass_video_name=None, loglevel=None):
@@ -265,6 +326,10 @@ class WhisperAIProvider(Provider):
         self.ffmpeg_path = ffmpeg_path
         self.pass_video_name = pass_video_name
 
+        # Use provided ambiguous language codes directly without fallback
+        self.ambiguous_language_codes = whisper_ambiguous_language_codes
+        logger.debug(f"Using ambiguous language codes: {self.ambiguous_language_codes}")
+
     def initialize(self):
         self.session = Session()
         self.session.headers['User-Agent'] = 'Subliminal/%s' % __short_version__
@@ -272,121 +337,238 @@ class WhisperAIProvider(Provider):
     def terminate(self):
         self.session.close()
 
+    @functools.lru_cache(2)
+    def encode_audio_stream(self, path, ffmpeg_path, audio_stream_language=None):
+        logger.debug("Encoding audio stream to WAV with ffmpeg")
+
+        try:
+            # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
+            inp = ffmpeg.input(path, threads=0)
+            out = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af="aresample=async=1")
+            if audio_stream_language:
+                # There is more than one audio stream, so pick the requested one by name
+                # Use the ISO 639-2 code if available
+                audio_stream_language = wlm.get_ISO_639_2_code(audio_stream_language)
+                logger.debug(f"Whisper will use the '{audio_stream_language}' audio stream for {path}")
+                # 0 = Pick first stream in case there are multiple language streams of the same language,
+                # otherwise ffmpeg will try to combine multiple streams, but our output format doesn't support that.
+                # The first stream is probably the correct one, as later streams are usually commentaries
+                lang_map = f"0:m:language:{audio_stream_language}"
+                out = out.global_args("-map", lang_map)
+
+            start_time = time.time()
+            out, _ = out.run(cmd=[ffmpeg_path, "-nostdin"], capture_stdout=True, capture_stderr=True) 
+            elapsed_time = time.time() - start_time
+            logger.debug(f'Finished encoding audio stream in {elapsed_time:.2f} seconds with no errors for "{path}"')           
+            
+        except ffmpeg.Error as e:
+            logger.warning(f"ffmpeg failed to load audio: {e.stderr.decode()}")
+            return None
+
+        logger.debug(f'Audio stream length (in WAV format) is {len(out):,} bytes')
+
+        return out
 
     @functools.lru_cache(2048)
     def detect_language(self, path) -> Language:
-        out = encode_audio_stream(path, self.ffmpeg_path)
+        out = self.encode_audio_stream(path, self.ffmpeg_path)
 
-        if out == None:
-            logger.info(f"Whisper cannot detect language of {path} because of missing/bad audio track")
+        if out is None:
+            logger.info(f'WhisperAI cannot detect language of "{path}" because of missing/bad audio stream')
             return None
-        video_name = path if self.pass_video_name else None
 
-        r = self.session.post(f"{self.endpoint}/detect-language",
-                              params={'encode': 'false', 'video_file': {video_name}},
-                              files={'audio_file': out},
-                              timeout=(self.response, self.timeout))
-        
         try:
+            video_name = path if self.pass_video_name else None
+            r = self.session.post(f"{self.endpoint}/detect-language",
+                                params={'encode': 'false', 'video_file': video_name},
+                                files={'audio_file': out},
+                                timeout=(self.response, self.timeout))
             results = r.json()
-        except JSONDecodeError:
-            results = {}
-
-        if len(results) == 0:
-            logger.info(f"Whisper returned empty response when detecting language")
+        except (JSONDecodeError):
+            logger.error('Invalid JSON response in language detection')
             return None
 
-        logger.debug(f"Whisper detected language of {path} as {results['detected_language']}")
+        if not results.get("language_code"):
+            logger.info('WhisperAI returned empty language code')
+            return None
 
-        return whisper_get_language(results["language_code"], results["detected_language"])
+        # Explicitly handle 'und' from Whisper results
+        if results["language_code"] == "und":
+            logger.info('WhisperAI detected undefined language')
+            return None
+
+        logger.debug(f'Whisper detection raw results: {results}')
+        return wlm._get_language(results["language_code"], results["detected_language"])
 
     def query(self, language, video):
+        logger.debug(
+            f'Whisper query request - Language: "{language.alpha3} '
+            f'({wlm.get_name(language.alpha3)})" - File: "{os.path.basename(video.original_path)}"'
+        )
         if language not in self.languages:
+            logger.debug(f'Language {language.alpha3} not supported by Whisper')
             return None
 
         sub = WhisperAISubtitle(language, video)
         sub.task = "transcribe"
 
-        if video.audio_languages and not (list(video.audio_languages)[0] == "und" and len(video.audio_languages) == 1):
-            if language.alpha3 in video.audio_languages:
-                sub.audio_language = language.alpha3
-                if len(list(video.audio_languages)) > 1:
-                    sub.force_audio_stream = language.alpha3
-            else:
-                sub.task = "translate"
-
-                eligible_languages = list(video.audio_languages)
-                if len(eligible_languages) > 1:
-                    if "und" in eligible_languages:
-                        eligible_languages.remove("und")
-                sub.audio_language = eligible_languages[0]
-        else:
-            # We must detect the language manually
+        # Handle undefined/no audio languages
+        if not video.audio_languages:
+            logger.debug('No audio language tags present, detection started')
             detected_lang = self.detect_language(video.original_path)
-            if detected_lang == None:
+            if not detected_lang:
                 sub.task = "error"
-                # tell the user what is wrong
-                sub.release_info = "bad/missing audio track - cannot transcribe"
+                sub.release_info = "Language detection failed"
                 return sub
+            
+            logger.debug(f'Whisper detected audio language as "{detected_lang}"')
 
-            if detected_lang != language:
+            # Apply language mapping after detection
+            detected_alpha3 = detected_lang.alpha3
+            if detected_alpha3 in language_mapping:
+                detected_alpha3 = language_mapping[detected_alpha3]
+                logger.debug(f'Mapped detected language {detected_lang} -> {detected_alpha3}')
+
+            sub.audio_language = detected_alpha3
+
+            if detected_alpha3 != language.alpha3:
                 sub.task = "translate"
+        else:
+            # Existing audio language processing with mapping
+            processed_languages = {}
+            for lang in video.audio_languages:
+                if lang in language_mapping:
+                    logger.debug(f'Mapping audio language tag: {lang} -> {language_mapping[lang]}')
+                mapped_lang = language_mapping.get(lang, lang)
+                processed_languages[lang] = mapped_lang
 
-            sub.audio_language = detected_lang.alpha3
+            matched = False
+            for original_lang, processed_lang in processed_languages.items():
+                if language.alpha3 == processed_lang:
+                    sub.audio_language = processed_lang
+                    if len(video.audio_languages) > 1:
+                        sub.force_audio_stream = original_lang
+                    matched = True
+                    break
+
+            if not matched:
+                sub.task = "translate"
+                eligible_languages = [language_mapping.get(lang, lang) for lang in video.audio_languages]
+                sub.audio_language = eligible_languages[0] if eligible_languages else None
+
+            # Final validation
+            if not sub.audio_language:
+                sub.task = "error"
+                sub.release_info = "No valid audio language determined"
+                return sub
+            else:
+                # Handle case where audio language exists but may need verification
+                # Only run language detection if original unmapped audio languages contain ambiguous codes
+                original_ambiguous = any(
+                    lang in self.ambiguous_language_codes
+                    for lang in video.audio_languages
+                )
+
+                if original_ambiguous:
+                    # Format audio languages with both code and name
+                    formatted_audio_langs = [
+                        f'"{lang}" ({wlm.get_name(lang)})'
+                        for lang in video.audio_languages
+                    ]
+                    logger.debug(
+                        f'Original unmapped audio language code(s) {", ".join(formatted_audio_langs)} '
+                        f'matches "Ambiguous Languages Codes" list: {self.ambiguous_language_codes} - forcing detection!'
+                    )
+
+                    detected_lang = self.detect_language(video.original_path)
+                    if detected_lang is None:
+                        sub.task = "error"
+                        sub.release_info = "Bad/missing audio track - cannot transcribe"
+                        return sub
+
+                    detected_alpha3 = detected_lang.alpha3
+                    # Apply language mapping after detection
+                    if detected_alpha3 in language_mapping:
+                        detected_alpha3 = language_mapping[detected_alpha3]
+
+                    sub.audio_language = detected_alpha3
+                    if detected_alpha3 == language.alpha3:
+                        sub.task = "transcribe"
+                    else:
+                        sub.task = "translate"
+
+                    logger.debug(
+                        f'WhisperAI detected audio language: {detected_lang.alpha3} ({wlm.get_name(detected_lang.alpha3)}) '
+                        f'-> {sub.audio_language} ({wlm.get_name(sub.audio_language)}) - '
+                        f'(requested subtitle language: {language.alpha3} ({wlm.get_name(language.alpha3)}))'
+                    )
+                else:
+                    formatted_original = [
+                        f'"{lang}" ({wlm.get_name(lang)})'
+                        for lang in video.audio_languages
+                    ]
+                    logger.debug(
+                        f'Using existing audio language tag: {sub.audio_language} ({wlm.get_name(sub.audio_language)}) '
+                        f'(originally {formatted_original}) - skipping detection!'
+                    )
 
         if sub.task == "translate":
             if language.alpha3 != "eng":
-                logger.debug(f"Translation only possible from {language} to English")
+                logger.debug(
+                    f'Cannot translate from {sub.audio_language} ({wlm.get_name(sub.audio_language)}) -> {language.alpha3} '
+                    f'({wlm.get_name(language.alpha3)})!. - Only translations to English supported! - File: "{os.path.basename(sub.video.original_path)}"'
+                )
                 return None
-            
-        # tell the user what we are about to do
-        sub.release_info = f"{sub.task} {language_from_alpha3(sub.audio_language)} audio -> {language_from_alpha3(language.alpha3)} SRT"
-        logger.debug(f"Whisper query: ({video.original_path}): {sub.audio_language} -> {language.alpha3} [TASK: {sub.task}]")
 
+        sub.release_info = f'{sub.task} {wlm.get_name(sub.audio_language)} audio -> {wlm.get_name(language.alpha3)} SRT'
+        logger.debug(f'Whisper query result - Task: {sub.task} {sub.audio_language} -> {language.alpha3} for "({video.original_path})"')
         return sub
 
     def list_subtitles(self, video, languages):
-        subtitles = [self.query(l, video) for l in languages]
+        logger.debug(
+            f'Languages requested from WhisperAI: "{", ".join(f"{lang.alpha3} ({wlm.get_name(lang.alpha3)})" for lang in languages)}"'
+            f' - File: "{os.path.basename(video.original_path)}"'
+        )
+        subtitles = [self.query(lang, video) for lang in languages]
         return [s for s in subtitles if s is not None]
 
     def download_subtitle(self, subtitle: WhisperAISubtitle):
         # Invoke Whisper through the API. This may take a long time depending on the file.
         # TODO: This loads the entire file into memory, find a good way to stream the file in chunks
 
-        out = None
-        if subtitle.task != "error":
-            out = encode_audio_stream(subtitle.video.original_path, self.ffmpeg_path, subtitle.force_audio_stream)
-        if out == None:
-            logger.info(f"Whisper cannot process {subtitle.video.original_path} because of missing/bad audio track")
-            subtitle.content = None
-            return  
+        if subtitle.task == "error":
+            return
 
-        logger.debug(f'Audio stream length (in WAV format) is {len(out):,} bytes')
+        out = self.encode_audio_stream(subtitle.video.original_path, self.ffmpeg_path, subtitle.force_audio_stream)
+        if not out:
+            logger.info(f"WhisperAI cannot process {subtitle.video.original_path} due to missing/bad audio track")
+            subtitle.content = None
+            return
 
         if subtitle.task == "transcribe":
             output_language = subtitle.audio_language
         else:
             output_language = "eng"
 
-        input_language = whisper_get_language_reverse(subtitle.audio_language)
+        # Convert mapped alpha3 to Whisper's alpha2 code
+        input_language = wlm.alpha3_to_alpha2(subtitle.audio_language)
         if input_language is None:
             if output_language == "eng":
-                # guess that audio track is mislabelled English and let whisper try to transcribe it
                 input_language = "en"
                 subtitle.task = "transcribe"
-                logger.info(f"Whisper treating unsupported audio track language: '{subtitle.audio_language}' as English")
+                logger.info(f"WhisperAI treating unsupported audio track language: '{subtitle.audio_language}' as English")
             else:
-                logger.info(f"Whisper cannot process {subtitle.video.original_path} because of unsupported audio track language: '{subtitle.audio_language}'")
+                logger.info(f"WhisperAI cannot process {subtitle.video.original_path} because of unsupported audio track language: '{subtitle.audio_language}'")
                 subtitle.content = None
                 return
         
-        logger.info(f'Starting WhisperAI {subtitle.task} to {language_from_alpha3(output_language)} for {subtitle.video.original_path}')
+        logger.info(f'WhisperAI Starting {subtitle.task} to {wlm.get_name(output_language)} for {subtitle.video.original_path}')
         startTime = time.time()
         video_name = subtitle.video.original_path if self.pass_video_name else None
 
         r = self.session.post(f"{self.endpoint}/asr",
                               params={'task': subtitle.task, 'language': input_language, 'output': 'srt', 'encode': 'false',
-                                      'video_file': {video_name}},
+                                      'video_file': video_name},
                               files={'audio_file': out},
                               timeout=(self.response, self.timeout))
                               
@@ -400,6 +582,6 @@ class WhisperAIProvider(Provider):
         if subtitle_length > 0:
             logger.debug(f'First {subtitle_length} bytes of subtitle: {r.content[0:subtitle_length]}')
 
-        logger.info(f'Completed WhisperAI {subtitle.task} to {language_from_alpha3(output_language)} in {elapsedTime} for {subtitle.video.original_path}')
+        logger.info(f'WhisperAI Completed {subtitle.task} to {wlm.get_name(output_language)} in {elapsedTime} for {subtitle.video.original_path}')
 
         subtitle.content = r.content
