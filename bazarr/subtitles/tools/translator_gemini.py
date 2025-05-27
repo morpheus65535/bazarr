@@ -9,6 +9,7 @@ import time
 import typing
 import unicodedata as ud
 from collections import Counter
+from typing import List  # Add this import
 from app.event_handler import show_progress, hide_progress, show_message
 
 
@@ -319,16 +320,16 @@ class TranslatorGemini:
     current_progress = 0
     def _process_batch(
             self,
-            batch: list[SubtitleObject],
-            translated_subtitle: list[Subtitle],
+            batch: List[SubtitleObject],  # Changed from list[SubtitleObject]
+            translated_subtitle: List[Subtitle],  # Changed from list[Subtitle]
             total: int,
     ):
         """
         Process a batch of subtitles for translation with accurate progress tracking.
 
         Args:
-            batch (list[SubtitleObject]): Batch of subtitles to translate
-            translated_subtitle (list[Subtitle]): List to store translated subtitles
+            batch (List[SubtitleObject]): Batch of subtitles to translate
+            translated_subtitle (List[Subtitle]): List to store translated subtitles
             total (int): Total number of subtitles to translate
         """
 
@@ -410,17 +411,17 @@ class TranslatorGemini:
 
     def _process_translated_lines(
             self,
-            translated_lines: list[SubtitleObject],
-            translated_subtitle: list[Subtitle],
-            batch: list[SubtitleObject],
+            translated_lines: List[SubtitleObject],  # Changed from list[SubtitleObject]
+            translated_subtitle: List[Subtitle],  # Changed from list[Subtitle]
+            batch: List[SubtitleObject],  # Changed from list[SubtitleObject]
     ):
         """
         Process the translated lines and update the subtitle list.
 
         Args:
-            translated_lines (list[SubtitleObject]): List of translated lines
-            translated_subtitle (list[Subtitle]): List to store translated subtitles
-            batch (list[SubtitleObject]): Batch of subtitles to translate
+            translated_lines (List[SubtitleObject]): List of translated lines
+            translated_subtitle (List[Subtitle]): List to store translated subtitles
+            batch (List[SubtitleObject]): Batch of subtitles to translate
         """
         for line in translated_lines:
             if "content" not in line or "index" not in line:
