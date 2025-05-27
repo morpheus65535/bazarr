@@ -4,22 +4,22 @@ import logging
 import datetime
 import pysubs2
 import srt
-from .translator_gemini import TranslatorGemini
 
-from app.config import settings
 from subliminal_patch.core import get_subtitle_path
 from subzero.language import Language
 from deep_translator import GoogleTranslator
 from deep_translator.exceptions import TooManyRequests, RequestError, TranslationNotFound
-from app.database import TableShows, TableEpisodes, TableMovies, database, select
 from time import sleep
 from concurrent.futures import ThreadPoolExecutor
 
+from app.config import settings
+from app.database import TableShows, TableEpisodes, TableMovies, database, select
 from languages.custom_lang import CustomLanguage
 from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
 from radarr.history import history_log_movie
 from sonarr.history import history_log
 from subtitles.processing import ProcessSubtitlesResult
+from subtitles.tools.translator_gemini import TranslatorGemini
 from app.event_handler import show_progress, hide_progress, show_message
 from utilities.path_mappings import path_mappings
 
@@ -61,7 +61,7 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
             sonarr_series_id, sonarr_episode_id, radarr_id
         )
 
-    logging.debug(f'BAZARR saved translated subtitles to {dest_srt_file}')
+    logging.debug(f'BAZARR is saving translated subtitles to {dest_srt_file}')
 
     message = f"{language_from_alpha2(from_lang)} subtitles translated to {language_from_alpha3(to_lang)}."
 
@@ -85,13 +85,12 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
     else:
         history_log_movie(action=6, radarr_id=radarr_id, result=result)
 
-
     return dest_srt_file
 
-def translate_subtitles_file_google(source_srt_file, dest_srt_file, lang_obj, to_lang, from_lang,
-                                    media_type, video_path, orig_to_lang, forced, hi,
-                                    sonarr_series_id, sonarr_episode_id, radarr_id):
 
+def translate_subtitles_file_google(source_srt_file, dest_srt_file, lang_obj, to_lang, from_lang, media_type,
+                                    video_path, orig_to_lang, forced, hi, sonarr_series_id, sonarr_episode_id,
+                                    radarr_id):
     language_code_convert_dict = {
         'he': 'iw',
         'zh': 'zh-CN',
@@ -151,6 +150,7 @@ def translate_subtitles_file_google(source_srt_file, dest_srt_file, lang_obj, to
             if lines_list[i]:
                 line.plaintext = lines_list[i]
             else:
+                # we assume that there was nothing to translate if Google returns None. ex.: "♪♪"
                 continue
         except IndexError:
             logging.error(f'BAZARR is unable to translate malformed subtitles: {source_srt_file}')
@@ -190,12 +190,7 @@ def translate_subtitles_file_google(source_srt_file, dest_srt_file, lang_obj, to
     return dest_srt_file
 
 
-
-def translate_subtitles_file_gemini(dest_srt_file, source_srt_file, to_lang, media_type,
-                                    sonarr_series_id,
-                                    radarr_id):
-
-
+def translate_subtitles_file_gemini(dest_srt_file, source_srt_file, to_lang, media_type, sonarr_series_id, radarr_id):
     subs = pysubs2.load(source_srt_file, encoding='utf-8')
     subs.remove_miscellaneous_events()
 
@@ -240,8 +235,11 @@ def get_description(media_type, radarr_id, sonarr_series_id):
             if movie:
                 return (f"You will translate movie that is called {movie.title} from {movie.year} "
                         f"and it has IMDB ID = {movie.imdbId}. Its overview: {movie.overview}")
+            else:
+                logging.info(f"No movie found for this radarr_id: {radarr_id}")
+                return ""
 
-        elif media_type == 'series':
+        else:
             series = database.execute(
                 select(TableShows.title, TableShows.imdbId, TableShows.year, TableShows.overview)
                 .where(TableShows.sonarrSeriesId == sonarr_series_id)
@@ -250,10 +248,13 @@ def get_description(media_type, radarr_id, sonarr_series_id):
             if series:
                 return (f"You will translate TV show that is called {series.title} from {series.year} "
                         f"and it has IMDB ID = {series.imdbId}. Its overview: {series.overview}")
-
-    except Exception as e:
+            else:
+                logging.info(f"No series found for this sonarr_series_id: {sonarr_series_id}")
+                return ""
+    except Exception:
         logging.info("Problem with getting media info")
         return ""
+
 
 def add_translator_info(dest_srt_file, info):
     if settings.translator.translator_info:
