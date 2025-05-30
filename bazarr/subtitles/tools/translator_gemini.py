@@ -1,22 +1,20 @@
 import json
 import re
-
 import os
 import json_tricks
 import signal
 import threading
 import time
 import typing
-import unicodedata as ud
-from collections import Counter
-from typing import List  # Add this import
-from app.event_handler import show_progress, hide_progress, show_message
-
-
 import srt
-from srt import Subtitle
 import requests
 
+import unicodedata as ud
+from collections import Counter
+from typing import List
+from srt import Subtitle
+
+from app.event_handler import show_progress, hide_progress, show_message
 
 
 class SubtitleObject(typing.TypedDict):
@@ -318,6 +316,7 @@ class TranslatorGemini:
         return True
 
     current_progress = 0
+
     def _process_batch(
             self,
             batch: List[SubtitleObject],  # Changed from list[SubtitleObject]
@@ -409,8 +408,8 @@ class TranslatorGemini:
             throw(e)
             raise
 
+    @staticmethod
     def _process_translated_lines(
-            self,
             translated_lines: List[SubtitleObject],  # Changed from list[SubtitleObject]
             translated_subtitle: List[Subtitle],  # Changed from list[Subtitle]
             batch: List[SubtitleObject],  # Changed from list[SubtitleObject]
@@ -423,27 +422,28 @@ class TranslatorGemini:
             translated_subtitle (List[Subtitle]): List to store translated subtitles
             batch (List[SubtitleObject]): Batch of subtitles to translate
         """
+
+        def _dominant_strong_direction(s: str) -> str:
+            """
+            Determine the dominant text direction (RTL or LTR) of a string.
+
+            Args:
+                s (str): Input string to analyze
+
+            Returns:
+                str: 'rtl' if right-to-left is dominant, 'ltr' otherwise
+            """
+            count = Counter([ud.bidirectional(c) for c in list(s)])
+            rtl_count = count["R"] + count["AL"] + count["RLE"] + count["RLI"]
+            ltr_count = count["L"] + count["LRE"] + count["LRI"]
+            return "rtl" if rtl_count > ltr_count else "ltr"
+
         for line in translated_lines:
             if "content" not in line or "index" not in line:
                 break
             if line["index"] not in [x["index"] for x in batch]:
                 raise Exception("Gemini has returned different indices.")
-            if self._dominant_strong_direction(line["content"]) == "rtl":
+            if _dominant_strong_direction(line["content"]) == "rtl":
                 translated_subtitle[int(line["index"])].content = f"\u202b{line['content']}\u202c"
             else:
                 translated_subtitle[int(line["index"])].content = line["content"]
-
-    def _dominant_strong_direction(self, s: str) -> str:
-        """
-        Determine the dominant text direction (RTL or LTR) of a string.
-
-        Args:
-            s (str): Input string to analyze
-
-        Returns:
-            str: 'rtl' if right-to-left is dominant, 'ltr' otherwise
-        """
-        count = Counter([ud.bidirectional(c) for c in list(s)])
-        rtl_count = count["R"] + count["AL"] + count["RLE"] + count["RLI"]
-        ltr_count = count["L"] + count["LRE"] + count["LRI"]
-        return "rtl" if rtl_count > ltr_count else "ltr"
