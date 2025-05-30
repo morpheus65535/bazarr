@@ -184,15 +184,15 @@ class TranslatorGemini:
         """
         if not self.current_api_key:
             show_message("Please provide a valid Gemini API key.")
-            exit(0)
+            return
 
         if not self.target_language:
             show_message("Please provide a target language.")
-            exit(0)
+            return
 
         if not self.input_file:
             show_message("Please provide a subtitle file.")
-            exit(0)
+            return
 
         self.token_limit = self._get_token_limit()
 
@@ -212,13 +212,13 @@ class TranslatorGemini:
                 show_message(
                     f"Number of lines of existing translated file does not match the number of lines in the original file."
                 )
-                exit(0)
+                return
 
             translated_file = open(self.output_file, "w", encoding="utf-8")
 
             if self.start_line > len(original_subtitle) or self.start_line < 1:
                 show_message(f"Start line must be between 1 and {len(original_subtitle)}. Please try again.")
-                exit(0)
+                return
 
             if len(original_subtitle) < self.batch_size:
                 self.batch_size = len(original_subtitle)
@@ -402,11 +402,6 @@ class TranslatorGemini:
             # More comprehensive error handling
             print(f"Translation request failed: {e}")
             raise e
-
-        except Exception as e:
-            exit(0)
-            throw(e)
-            raise
 
     @staticmethod
     def _process_translated_lines(
