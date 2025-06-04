@@ -3,6 +3,7 @@ import { Alert, Button, Divider, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { isObject } from "lodash";
 import { useSubtitleAction } from "@/apis/hooks";
+import { useSystemSettings } from "@/apis/hooks";
 import { Selector } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
@@ -130,6 +131,7 @@ const TranslationForm: FunctionComponent<Props> = ({
   selections,
   onSubmit,
 }) => {
+  const settings = useSystemSettings();
   const { mutateAsync } = useSubtitleAction();
   const modals = useModals();
 
@@ -144,16 +146,40 @@ const TranslationForm: FunctionComponent<Props> = ({
     },
   });
 
-  const available = useMemo(
-    () => languages.filter((v) => v.code2 in translations),
-    [languages],
-  );
+  const TranslatorType = settings?.data?.translator?.translator_type;
+  const isGoogleTranslator = TranslatorType === "translate";
+
+  const available = useMemo(() => {
+    // Only filter by translations if using Google Translate
+    if (isGoogleTranslator) {
+      return languages.filter((v) => v.code2 in translations);
+    }
+    // For other translators, return all enabled languages
+    return languages;
+  }, [languages, isGoogleTranslator]);
 
   const options = useSelectorOptions(
     available,
     (v) => v.name,
     (v) => v.code2,
   );
+
+  // Get translation service name from settings
+  // eslint-disable-next-line no-console
+  console.log("Complete Settings object:", settings?.data);
+
+  const TranslatorModel =
+    TranslatorType === "translate"
+      ? ""
+      : TranslatorType === "gemini"
+        ? " (" + settings?.data?.translator?.gemini_model + ")"
+        : "";
+  const TranslatorService =
+    TranslatorType === "translate"
+      ? "Google Translate"
+      : TranslatorType === "gemini"
+        ? "Gemini"
+        : "Google Translate";
 
   return (
     <form
@@ -175,10 +201,18 @@ const TranslationForm: FunctionComponent<Props> = ({
       })}
     >
       <Stack>
-        <Alert variant="outline">
-          Enabled languages not listed here are unsupported by Google Translate.
+        {isGoogleTranslator && (
+          <Alert variant="outline">
+            Enabled languages not listed here are unsupported by{" "}
+            {TranslatorService}.
+          </Alert>
+        )}
+        <Alert>
+          {TranslatorService}
+          {TranslatorModel} will be used.
+          <br />
+          You can choose translation service in the subtitles settings.
         </Alert>
-        <Alert>You can choose translation service in the settings.</Alert>
         <Selector {...options} {...form.getInputProps("language")}></Selector>
         <Divider></Divider>
         <Button type="submit">Start</Button>

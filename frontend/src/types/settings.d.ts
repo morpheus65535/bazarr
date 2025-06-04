@@ -9,6 +9,7 @@ interface Settings {
   sonarr: Settings.Sonarr;
   radarr: Settings.Radarr;
   backup: Settings.Backup;
+  translator: Settings.Translator;
   // Anitcaptcha
   anticaptcha: Settings.Anticaptcha;
   deathbycaptcha: Settings.DeathByCaptche;
