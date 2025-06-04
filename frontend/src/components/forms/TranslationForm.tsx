@@ -146,8 +146,8 @@ const TranslationForm: FunctionComponent<Props> = ({
     },
   });
 
-  const TranslatorType = settings?.data?.translator?.translator_type;
-  const isGoogleTranslator = TranslatorType === "translate";
+  const translatorType = settings?.data?.translator?.translator_type;
+  const isGoogleTranslator = translatorType === "google_translate";
 
   const available = useMemo(() => {
     // Only filter by translations if using Google Translate
@@ -164,22 +164,25 @@ const TranslationForm: FunctionComponent<Props> = ({
     (v) => v.code2,
   );
 
-  // Get translation service name from settings
-  // eslint-disable-next-line no-console
-  console.log("Complete Settings object:", settings?.data);
+  const translatorConfig = {
+    googleTranslate: {
+      service: "Google Translate",
+      model: "",
+    },
+    gemini: {
+      service: "Gemini",
+      model: ` (${settings?.data?.translator?.gemini_model || ""})`,
+    },
+  } as const;
 
-  const TranslatorModel =
-    TranslatorType === "translate"
-      ? ""
-      : TranslatorType === "gemini"
-        ? " (" + settings?.data?.translator?.gemini_model + ")"
-        : "";
-  const TranslatorService =
-    TranslatorType === "translate"
-      ? "Google Translate"
-      : TranslatorType === "gemini"
-        ? "Gemini"
-        : "Google Translate";
+  const config =
+    translatorType &&
+    translatorConfig[translatorType as keyof typeof translatorConfig]
+      ? translatorConfig[translatorType as keyof typeof translatorConfig]
+      : translatorConfig.googleTranslate;
+
+  const translatorService = config.service;
+  const translatorModel = config.model;
 
   return (
     <form
@@ -202,15 +205,18 @@ const TranslationForm: FunctionComponent<Props> = ({
     >
       <Stack>
         <Alert>
-          {TranslatorService}
-          {TranslatorModel} will be used.
-          <br />
-          You can choose translation service in the subtitles settings.
+          <div>
+            {translatorService}
+            {translatorModel} will be used.
+          </div>
+          <div>
+            You can choose translation service in the subtitles settings.
+          </div>
         </Alert>
         {isGoogleTranslator && (
           <Alert variant="outline">
             Enabled languages not listed here are unsupported by{" "}
-            {TranslatorService}.
+            {translatorService}.
           </Alert>
         )}
         <Selector {...options} {...form.getInputProps("language")}></Selector>

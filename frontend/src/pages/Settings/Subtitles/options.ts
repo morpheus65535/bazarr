@@ -186,7 +186,7 @@ export const syncMaxOffsetSecondsOptions: SelectorOption<number>[] = [
 export const translatorOption: SelectorOption<string>[] = [
   {
     label: "Google Translate",
-    value: "translate",
+    value: "google_translate",
   },
   {
     label: "Gemini",
