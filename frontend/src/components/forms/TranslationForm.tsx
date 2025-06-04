@@ -201,18 +201,18 @@ const TranslationForm: FunctionComponent<Props> = ({
       })}
     >
       <Stack>
-        {isGoogleTranslator && (
-          <Alert variant="outline">
-            Enabled languages not listed here are unsupported by{" "}
-            {TranslatorService}.
-          </Alert>
-        )}
         <Alert>
           {TranslatorService}
           {TranslatorModel} will be used.
           <br />
           You can choose translation service in the subtitles settings.
         </Alert>
+        {isGoogleTranslator && (
+          <Alert variant="outline">
+            Enabled languages not listed here are unsupported by{" "}
+            {TranslatorService}.
+          </Alert>
+        )}
         <Selector {...options} {...form.getInputProps("language")}></Selector>
         <Divider></Divider>
         <Button type="submit">Start</Button>
