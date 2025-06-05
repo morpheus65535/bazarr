@@ -127,6 +127,11 @@ interface Props {
   onSubmit?: VoidFunction;
 }
 
+interface TranslationConfig {
+  service: string;
+  model: string;
+}
+
 const TranslationForm: FunctionComponent<Props> = ({
   selections,
   onSubmit,
@@ -164,23 +169,27 @@ const TranslationForm: FunctionComponent<Props> = ({
     (v) => v.code2,
   );
 
-  const translatorConfig = {
-    googleTranslate: {
+  const getTranslationConfig = (
+    settings: ReturnType<typeof useSystemSettings>,
+  ): TranslationConfig => {
+    const translatorType = settings?.data?.translator?.translator_type;
+
+    if (translatorType === "gemini") {
+      return {
+        service: "Gemini",
+        model: ` (${settings?.data?.translator?.gemini_model || ""})`,
+      };
+    }
+
+    // Default to Google Translate
+    return {
       service: "Google Translate",
       model: "",
-    },
-    gemini: {
-      service: "Gemini",
-      model: ` (${settings?.data?.translator?.gemini_model || ""})`,
-    },
-  } as const;
+    };
+  };
 
-  const config =
-    translatorType &&
-    translatorConfig[translatorType as keyof typeof translatorConfig]
-      ? translatorConfig[translatorType as keyof typeof translatorConfig]
-      : translatorConfig.googleTranslate;
-
+  // In the component, replace lines 167-185 with:
+  const config = getTranslationConfig(settings);
   const translatorService = config.service;
   const translatorModel = config.model;
 
