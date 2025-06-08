@@ -26,6 +26,7 @@ import { TranslationModal } from "@/components/forms/TranslationForm";
 import { useModals } from "@/modules/modals";
 import { ModalComponent } from "@/modules/modals/WithModal";
 import { task } from "@/modules/task";
+import { LinearAlignModal } from "./forms/LinearAlignForm";
 import { SyncSubtitleModal } from "./forms/SyncSubtitleForm";
 
 export interface ToolOptions {
@@ -98,6 +99,12 @@ export function useTools() {
         icon: faClock,
         name: "Adjust Times...",
         modal: TimeOffsetModal,
+      },
+      {
+        key: "linear_align",
+        icon: faClock,
+        name: "Linear Align...",
+        modal: LinearAlignModal,
       },
       {
         key: "translation",
