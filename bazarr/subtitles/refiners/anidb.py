@@ -121,11 +121,18 @@ class AniDBClient(object):
                             if not episode_ref:
                                 continue
 
-                            anidb_episode, tvdb_episode = map(int, episode_ref.split('-'))
-                            if tvdb_episode == episode:
-                                anidb_id = int(anime.attrib.get('anidbid'))
+                            # One AniDB episode can be mapped to multiple TVDB episodes, in which case the string is 'n-x+y'
+                            if '+' in episode_ref:
+                                tvdb_episodes = episode_ref.split('-')[1].split('+')
+                            else:
+                                tvdb_episodes = [episode_ref.split('-')[1]]
 
-                                return anidb_id, anidb_episode, 0
+                            logger.info(f"Comparing {tvdb_episodes} with {episode}")
+                            for tvdb_episode in tvdb_episodes:
+                                if int(tvdb_episode) == episode:
+                                    anidb_id = int(anime.attrib.get('anidbid'))
+                                    anidb_episode = int(episode_ref.split('-')[0])
+                                    return anidb_id, anidb_episode, 0
 
                 if episode > episode_offset:
                     anidb_id = int(anime.attrib.get('anidbid'))
