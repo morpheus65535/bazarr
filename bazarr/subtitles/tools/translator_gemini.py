@@ -178,10 +178,6 @@ class TranslatorGemini:
         return False
 
     def translate(self):
-        """
-        Main translation method. Reads the input subtitle file, translates it in batches,
-        and writes the translated subtitles to the output file.
-        """
         if not self.current_api_key:
             show_message("Please provide a valid Gemini API key.")
             return
@@ -196,98 +192,94 @@ class TranslatorGemini:
 
         self.token_limit = self._get_token_limit()
 
-        # Setup signal handlers if possible
-        is_main_thread = self.setup_signal_handlers()
+        try:
+            with open(self.input_file, "r", encoding="utf-8") as original_file:
+                original_text = original_file.read()
+                original_subtitle = list(srt.parse(original_text))
 
-        with open(self.input_file, "r", encoding="utf-8") as original_file:
-            original_text = original_file.read()
-            original_subtitle = list(srt.parse(original_text))
-            try:
-                translated_subtitle = original_subtitle.copy()
-
-            except FileNotFoundError:
-                translated_subtitle = original_subtitle.copy()
-
-            if len(original_subtitle) != len(translated_subtitle):
-                show_message(
-                    f"Number of lines of existing translated file does not match the number of lines in the original file."
-                )
-                return
-
-            translated_file = open(self.output_file, "w", encoding="utf-8")
-
-            if self.start_line > len(original_subtitle) or self.start_line < 1:
-                show_message(f"Start line must be between 1 and {len(original_subtitle)}. Please try again.")
-                return
-
-            if len(original_subtitle) < self.batch_size:
-                self.batch_size = len(original_subtitle)
-
-            delay = False
-            delay_time = 30
-
-            i = self.start_line - 1
-            total = len(original_subtitle)
-            batch = [SubtitleObject(index=str(i), content=original_subtitle[i].content)]
-
-            i += 1
-
-            # Save initial progress
-            self._save_progress(i)
-
-            last_time = 0
-            while (i < total or len(batch) > 0) and not self.interrupt_flag:
-                if i < total and len(batch) < self.batch_size:
-                    batch.append(SubtitleObject(index=str(i), content=original_subtitle[i].content))
-                    i += 1
-                    continue
                 try:
-                    if not self._validate_token_size(json.dumps(batch, ensure_ascii=False)):
-                        show_message(
-                            f"Token size ({int(self.token_count / 0.9)}) exceeds limit ({self.token_limit}) for {self.model_name}."
-                        )
-                        user_prompt = "0"
-                        while not user_prompt.isdigit() or int(user_prompt) <= 0:
-                            user_prompt = show_message(
-                                f"Please enter a new batch size (current: {self.batch_size}): "
-                            )
-                            if user_prompt.isdigit() and int(user_prompt) > 0:
-                                new_batch_size = int(user_prompt)
-                                decrement = self.batch_size - new_batch_size
-                                if decrement > 0:
-                                    for _ in range(decrement):
-                                        i -= 1
-                                        batch.pop()
-                                self.batch_size = new_batch_size
-                                show_message(f"Batch size updated to {self.batch_size}.")
-                            else:
-                                show_message("Invalid input. Batch size must be a positive integer.")
-                        continue
+                    translated_subtitle = original_subtitle.copy()
+                except FileNotFoundError:
+                    translated_subtitle = original_subtitle.copy()
 
-                    start_time = time.time()
-                    self._process_batch(batch, translated_subtitle, total)
-                    end_time = time.time()
+                # Use with statement for the output file too
+                with open(self.output_file, "w", encoding="utf-8") as translated_file:
+                    if len(original_subtitle) < self.batch_size:
+                        self.batch_size = len(original_subtitle)
 
-                    # Save progress after each batch
-                    self._save_progress(i + 1)
+                    delay = False
+                    delay_time = 30
 
-                    if delay and (end_time - start_time < delay_time) and i < total:
-                        time.sleep(delay_time - (end_time - start_time))
-                except Exception as e:
+                    i = self.start_line - 1
+                    total = len(original_subtitle)
+                    batch = [SubtitleObject(index=str(i), content=original_subtitle[i].content)]
+
+                    i += 1
+
+                    # Save initial progress
+                    self._save_progress(i)
+
+                    while (i < total or len(batch) > 0) and not self.interrupt_flag:
+                        if i < total and len(batch) < self.batch_size:
+                            batch.append(SubtitleObject(index=str(i), content=original_subtitle[i].content))
+                            i += 1
+                            continue
+
+                        try:
+                            if not self._validate_token_size(json.dumps(batch, ensure_ascii=False)):
+                                show_message(
+                                    f"Token size ({int(self.token_count / 0.9)}) exceeds limit ({self.token_limit}) for {self.model_name}."
+                                )
+                                user_prompt = "0"
+                                while not user_prompt.isdigit() or int(user_prompt) <= 0:
+                                    user_prompt = show_message(
+                                        f"Please enter a new batch size (current: {self.batch_size}): "
+                                    )
+                                    if user_prompt.isdigit() and int(user_prompt) > 0:
+                                        new_batch_size = int(user_prompt)
+                                        decrement = self.batch_size - new_batch_size
+                                        if decrement > 0:
+                                            for _ in range(decrement):
+                                                i -= 1
+                                                batch.pop()
+                                        self.batch_size = new_batch_size
+                                        show_message(f"Batch size updated to {self.batch_size}.")
+                                    else:
+                                        show_message("Invalid input. Batch size must be a positive integer.")
+                                continue
+
+                            start_time = time.time()
+                            self._process_batch(batch, translated_subtitle, total)
+                            end_time = time.time()
+
+                            # Save progress after each batch
+                            self._save_progress(i + 1)
+
+                            if delay and (end_time - start_time < delay_time) and i < total:
+                                time.sleep(delay_time - (end_time - start_time))
+
+                        except Exception as e:
+                            hide_progress(id=f'translate_progress_{self.output_file}')
+                            self._clear_progress()
+                            # File will be automatically closed by the with statement
+                            raise e
+
+                    # Check if we exited the loop due to an interrupt
                     hide_progress(id=f'translate_progress_{self.output_file}')
+                    if self.interrupt_flag:
+                        # File will be automatically closed by the with statement
+                        self._clear_progress()
+
+                    # Write the final result - this happens inside the with block
+                    translated_file.write(srt.compose(translated_subtitle))
+
+                    # Clear progress file on successful completion
                     self._clear_progress()
-                    raise e
 
-            # Check if we exited the loop due to an interrupt
+        except Exception as e:
             hide_progress(id=f'translate_progress_{self.output_file}')
-            if self.interrupt_flag:
-                return
-
-
-            translated_file.write(srt.compose(translated_subtitle))
-
-            # Clear progress file on successful completion
             self._clear_progress()
+            raise e
 
     def _get_token_limit(self) -> int:
         """
@@ -322,6 +314,7 @@ class TranslatorGemini:
             batch: List[SubtitleObject],  # Changed from list[SubtitleObject]
             translated_subtitle: List[Subtitle],  # Changed from list[Subtitle]
             total: int,
+            retry_num = 3
     ):
         """
         Process a batch of subtitles for translation with accurate progress tracking.
@@ -398,10 +391,12 @@ class TranslatorGemini:
 
             return self.current_progress
 
-        except requests.RequestException as e:
-            # More comprehensive error handling
-            print(f"Translation request failed: {e}")
-            raise e
+        except Exception as e:
+            if retry_num > 0:
+                return self._process_batch(batch, translated_subtitle, total, retry_num - 1)
+            else:
+                show_message(f"Translation request failed: {e}")
+                raise e
 
     @staticmethod
     def _process_translated_lines(

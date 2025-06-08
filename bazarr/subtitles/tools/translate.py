@@ -2,6 +2,7 @@
 
 import logging
 import datetime
+import os
 import pysubs2
 import srt
 
@@ -212,12 +213,11 @@ def translate_subtitles_file_gemini(dest_srt_file, source_srt_file, to_lang, med
             filtered_params = {k: v for k, v in params.items() if v is not None}
             translator = TranslatorGemini(**filtered_params)
             translator.translate()
-
+            add_translator_info(dest_srt_file, f"# Subtitles translated with {settings.translator.gemini_model} # ")
         except Exception as e:
+            os.remove(dest_srt_file)
             logging.error(f'translate encountered an error translating with Gemini: {str(e)}')
             show_message(f'Gemini translation error: {str(e)}')
-
-        add_translator_info(dest_srt_file, f"# Subtitles translated with {settings.translator.gemini_model} # ")
 
     except Exception as e:
         logging.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
