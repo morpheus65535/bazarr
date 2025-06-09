@@ -1,6 +1,7 @@
 import { FunctionComponent } from "react";
 import {
   Button,
+  Card,
   Divider,
   Group,
   InputLabel,
@@ -11,33 +12,20 @@ import { useForm } from "@mantine/form";
 import { useSubtitleAction } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
-import FormUtils from "@/utilities/form";
+// import FormUtils from "@/utilities/form";
 
 const TaskName = "Linearly Aligning";
 
 function convertToAction(
-  h: number,
-  m: number,
-  s: number,
-  ms: number,
-  scale: number,
+  r: { hour: number; min: number; sec: number; ms: number }, // offset to zero
+  o: { hour: number; min: number; sec: number; ms: number }, // offset
+  s: { from: number; to: number }, // scale
 ) {
-  return `linear_align(h=${h},m=${m},s=${s},ms=${ms},scale=${scale})`;
+  return `linear_align(rh=${r.hour},rm=${r.min},rs=${r.sec},rms=${r.ms},oh=${o.hour},om=${o.min},os=${o.sec},oms=${o.ms},from=${s.from},to=${s.to})`;
 }
 
-function convertToMs(h: number, m: number, s: number, ms: number) {
-  return h * 3600000 + m * 60000 + s * 1000 + ms;
-}
-
-function convertToTime(ms: number) {
-  const hours = Math.floor(ms / 3600000);
-  ms %= 3600000;
-  const minutes = Math.floor(ms / 60000);
-  ms %= 60000;
-  const seconds = Math.floor(ms / 1000);
-  const milliseconds = ms % 1000;
-  return { h: hours, m: minutes, s: seconds, ms: milliseconds };
-}
+const totalMs = (t: { hour: number; min: number; sec: number; ms: number }) =>
+  t.hour * 3600000 + t.min * 60000 + t.sec * 1000 + t.ms;
 
 interface Props {
   selections: FormType.ModifySubtitle[];
@@ -51,99 +39,41 @@ const LinearAlignForm: FunctionComponent<Props> = ({
   const { mutateAsync } = useSubtitleAction();
   const modals = useModals();
 
-  const timeInput = { hour: 0, min: 0, sec: 0, ms: 0 };
+  const timeInput = {
+    hour: 0,
+    min: 0,
+    sec: 0,
+    ms: 0,
+    totalMs() {
+      return totalMs(this);
+    },
+  };
   const alignInput = { from: timeInput, to: timeInput };
-
-  const timeInputValidation = {
-    hour: FormUtils.validation(
-      (v: number) => v >= 0,
-      "Hour must be larger than 0",
-    ),
-    min: FormUtils.validation(
-      (v: number) => v >= 0,
-      "Minute must be larger than 0",
-    ),
-    sec: FormUtils.validation(
-      (v: number) => v >= 0,
-      "Second must be larger than 0",
-    ),
-    ms: FormUtils.validation(
-      (v: number) => v >= 0,
-      "Millisecond must be larger than 0",
-    ),
-  };
-  const alignInputValidation = {
-    from: timeInputValidation,
-    to: timeInputValidation,
-  };
 
   const form = useForm({
     initialValues: {
       first: alignInput,
-      second: alignInput,
-    },
-    validate: {
-      first: alignInputValidation,
-      second: alignInputValidation,
+      last: alignInput,
     },
   });
 
   const enabled =
-    form.values.first.from.hour > 0 ||
-    form.values.first.from.min > 0 ||
-    form.values.first.from.sec > 0 ||
-    form.values.first.from.ms > 0 ||
-    form.values.first.to.hour > 0 ||
-    form.values.first.to.min > 0 ||
-    form.values.first.to.sec > 0 ||
-    form.values.first.to.ms > 0 ||
-    form.values.second.from.hour > 0 ||
-    form.values.second.from.min > 0 ||
-    form.values.second.from.sec > 0 ||
-    form.values.second.from.ms > 0 ||
-    form.values.second.from.hour > 0 ||
-    form.values.second.from.min > 0 ||
-    form.values.second.from.sec > 0 ||
-    form.values.second.from.ms > 0 ||
-    true;
+    (totalMs(form.values.first.from) > 0 ||
+      totalMs(form.values.first.to) > 0 ||
+      totalMs(form.values.last.from) > 0 ||
+      totalMs(form.values.last.to) > 0) &&
+    totalMs(form.values.first.to) <= totalMs(form.values.last.to) &&
+    totalMs(form.values.first.from) <= totalMs(form.values.last.from);
 
   return (
     <form
-      onSubmit={form.onSubmit(({ first, second }) => {
-        const firstActual: number = convertToMs(
-          first.from.hour,
-          first.from.min,
-          first.from.sec,
-          first.from.ms,
-        );
-        const firstSupposed: number = convertToMs(
-          first.to.hour,
-          first.to.min,
-          first.to.sec,
-          first.to.ms,
-        );
-        const firstOffset = firstSupposed;
-        const { h, m, s, ms } = convertToTime(firstOffset);
+      onSubmit={form.onSubmit(({ first, last }) => {
+        const scale = {
+          from: last.to.totalMs() - first.to.totalMs(),
+          to: last.from.totalMs() - first.from.totalMs(),
+        };
 
-        const secondActual: number = convertToMs(
-          second.from.hour,
-          second.from.min,
-          second.from.sec,
-          second.from.ms,
-        );
-        const secondSupposed: number = convertToMs(
-          second.to.hour,
-          second.to.min,
-          second.to.sec,
-          second.to.ms,
-        );
-
-        const actualDiff = secondActual - firstActual - firstActual;
-        const actualSupposed = secondSupposed - firstSupposed - firstActual;
-        const scale: number = actualSupposed / actualDiff;
-
-        const action: string = convertToAction(h, m, s, ms, scale);
-        console.log(h, m, s, ms, scale, action);
+        const action: string = convertToAction(first.from, first.to, scale);
 
         selections.forEach((s) =>
           task.create(s.path, TaskName, mutateAsync, {
@@ -157,100 +87,119 @@ const LinearAlignForm: FunctionComponent<Props> = ({
       })}
     >
       <Stack>
-        <InputLabel>(First) time in subtitle</InputLabel>
-        <Group align="end" gap="xs" wrap="nowrap">
-          <NumberInput
-            min={0}
-            label="hour"
-            {...form.getInputProps("first.from.hour")}
-          ></NumberInput>
-          <NumberInput
-            min={0}
-            label="min"
-            {...form.getInputProps("first.from.min")}
-          ></NumberInput>
-          <NumberInput
-            min={0}
-            label="sec"
-            {...form.getInputProps("first.from.sec")}
-          ></NumberInput>
-          <NumberInput
-            min={0}
-            label="ms"
-            {...form.getInputProps("first.from.ms")}
-          ></NumberInput>
-        </Group>
-        <InputLabel>(First) time in movie</InputLabel>
-        <Group align="end" gap="xs" wrap="nowrap">
-          <NumberInput
-            min={0}
-            label="hour"
-            {...form.getInputProps("first.to.hour")}
-          ></NumberInput>
-          <NumberInput
-            min={0}
-            label="min"
-            {...form.getInputProps("first.to.min")}
-          ></NumberInput>
-          <NumberInput
-            min={0}
-            label="sec"
-            {...form.getInputProps("first.to.sec")}
-          ></NumberInput>
-          <NumberInput
-            min={0}
-            label="ms"
-            {...form.getInputProps("first.to.ms")}
-          ></NumberInput>
-        </Group>
+        <Card>
+          <Stack gap="md">
+            <header>First sentence</header>
+            <Stack gap="0">
+              <InputLabel>When it appears</InputLabel>
+              <Group align="end" gap="xs" wrap="nowrap">
+                <NumberInput
+                  label="hour"
+                  min={0}
+                  {...form.getInputProps("first.from.hour")}
+                ></NumberInput>
+                <NumberInput
+                  label="min"
+                  min={0}
+                  {...form.getInputProps("first.from.min")}
+                ></NumberInput>
+                <NumberInput
+                  label="sec"
+                  min={0}
+                  {...form.getInputProps("first.from.sec")}
+                ></NumberInput>
+                <NumberInput
+                  label="ms"
+                  min={0}
+                  {...form.getInputProps("first.from.ms")}
+                ></NumberInput>
+              </Group>
+            </Stack>
 
-        <Divider></Divider>
-        <InputLabel>(Second) time in subtitle</InputLabel>
-        <Group align="end" gap="xs" wrap="nowrap">
-          <NumberInput
-            min={0}
-            label="hour"
-            {...form.getInputProps("second.from.hour")}
-          ></NumberInput>
-          <NumberInput
-            min={0}
-            label="min"
-            {...form.getInputProps("second.from.min")}
-          ></NumberInput>
-          <NumberInput
-            min={0}
-            label="sec"
-            {...form.getInputProps("second.from.sec")}
-          ></NumberInput>
-          <NumberInput
-            min={0}
-            label="ms"
-            {...form.getInputProps("second.from.ms")}
-          ></NumberInput>
-        </Group>
-        <InputLabel>(Second) time in movie</InputLabel>
-        <Group align="end" gap="xs" wrap="nowrap">
-          <NumberInput
-            min={0}
-            label="hour"
-            {...form.getInputProps("second.to.hour")}
-          ></NumberInput>
-          <NumberInput
-            min={0}
-            label="min"
-            {...form.getInputProps("second.to.min")}
-          ></NumberInput>
-          <NumberInput
-            min={0}
-            label="sec"
-            {...form.getInputProps("second.to.sec")}
-          ></NumberInput>
-          <NumberInput
-            min={0}
-            label="ms"
-            {...form.getInputProps("second.to.ms")}
-          ></NumberInput>
-        </Group>
+            <Stack gap="0">
+              <InputLabel>When it should appear</InputLabel>
+              <Group align="end" gap="xs" wrap="nowrap">
+                <NumberInput
+                  min={0}
+                  label="hour"
+                  {...form.getInputProps("first.to.hour")}
+                ></NumberInput>
+                <NumberInput
+                  min={0}
+                  label="min"
+                  {...form.getInputProps("first.to.min")}
+                ></NumberInput>
+                <NumberInput
+                  min={0}
+                  label="sec"
+                  {...form.getInputProps("first.to.sec")}
+                ></NumberInput>
+                <NumberInput
+                  min={0}
+                  label="ms"
+                  {...form.getInputProps("first.to.ms")}
+                ></NumberInput>
+              </Group>
+            </Stack>
+          </Stack>
+        </Card>
+
+        <Card>
+          <Stack gap="md">
+            <header>Last sentence</header>
+            <Stack gap="0">
+              <InputLabel>When it appears</InputLabel>
+              <Group align="end" gap="xs" wrap="nowrap">
+                <NumberInput
+                  min={0}
+                  label="hour"
+                  {...form.getInputProps("last.from.hour")}
+                ></NumberInput>
+                <NumberInput
+                  min={0}
+                  label="min"
+                  {...form.getInputProps("last.from.min")}
+                ></NumberInput>
+                <NumberInput
+                  min={0}
+                  label="sec"
+                  {...form.getInputProps("last.from.sec")}
+                ></NumberInput>
+                <NumberInput
+                  min={0}
+                  label="ms"
+                  {...form.getInputProps("last.from.ms")}
+                ></NumberInput>
+              </Group>
+            </Stack>
+
+            <Stack gap="0">
+              <InputLabel>When it should appear</InputLabel>
+              <Group align="end" gap="xs" wrap="nowrap">
+                <NumberInput
+                  min={0}
+                  label="hour"
+                  {...form.getInputProps("last.to.hour")}
+                ></NumberInput>
+                <NumberInput
+                  min={0}
+                  label="min"
+                  {...form.getInputProps("last.to.min")}
+                ></NumberInput>
+                <NumberInput
+                  min={0}
+                  label="sec"
+                  {...form.getInputProps("last.to.sec")}
+                ></NumberInput>
+                <NumberInput
+                  min={0}
+                  label="ms"
+                  {...form.getInputProps("last.to.ms")}
+                ></NumberInput>
+              </Group>
+            </Stack>
+          </Stack>
+        </Card>
 
         <Divider></Divider>
         <Button disabled={!enabled} type="submit">

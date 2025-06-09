@@ -309,9 +309,9 @@ class SSAFile(MutableSequence[SSAEvent]):
             line.start += delta
             line.end += delta
 
-    def transform_framerate(self, in_fps: float, out_fps: float) -> None:
+    def transform_framerate(self, in_fps: float, out_fps: float, keep_duration: bool = False) -> None:
         """
-        Rescale all timestamps by ratio of in_fps/out_fps.
+        Rescale all timestamps by ratio of in_fps/out_fps. Force keep duration/display time of subtitles.
 
         Can be used to fix files converted from frame-based to time-based
         with wrongly assumed framerate.
@@ -319,6 +319,7 @@ class SSAFile(MutableSequence[SSAEvent]):
         Arguments:
             in_fps (float)
             out_fps (float)
+            keep_duration (bool)
 
         Raises:
             ValueError: Non-positive framerate given.
@@ -329,8 +330,14 @@ class SSAFile(MutableSequence[SSAEvent]):
 
         ratio = in_fps / out_fps
         for line in self:
+            duration = line.duration
             line.start = int(round(line.start * ratio))
-            line.end = int(round(line.end * ratio))
+            if keep_duration:
+                line.duration = duration
+            else:
+                line.end = int(round(line.end * ratio))
+         
+                
 
     # ------------------------------------------------------------------------
     # Working with styles

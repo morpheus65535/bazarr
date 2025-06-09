@@ -1,6 +1,7 @@
 import { FunctionComponent, ReactElement, useCallback, useMemo } from "react";
 import { Divider, List, Menu, MenuProps, ScrollArea } from "@mantine/core";
 import {
+  faAlignJustify,
   faClock,
   faCode,
   faDeaf,
@@ -102,7 +103,7 @@ export function useTools() {
       },
       {
         key: "linear_align",
-        icon: faClock,
+        icon: faAlignJustify,
         name: "Linear Align...",
         modal: LinearAlignModal,
       },
