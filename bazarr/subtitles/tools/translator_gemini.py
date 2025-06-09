@@ -117,6 +117,7 @@ class TranslatorGemini:
 
     The indices must remain the same in the response as in the request.
     Dialogs must be translated as they are without any changes.
+    If a line has a comma or multiple sentences, try to keep one line to about 40-50 characters.
     """
         if description:
             instruction += "\nAdditional user instruction: '" + description + "'"
