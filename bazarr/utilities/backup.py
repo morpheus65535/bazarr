@@ -133,6 +133,9 @@ def restore_from_backup():
                 logging.exception(f'Unable to delete {dest_database_path}')
 
         logging.info('Backup restored successfully. Bazarr will restart.')
+        from app.server import webserver
+        if webserver is not None:
+            webserver.close_all()
         restart_bazarr()
     elif os.path.isfile(restore_config_path) or os.path.isfile(restore_database_path):
         logging.debug('Cannot restore a partial backup. You must have both config and database.')
@@ -172,8 +175,10 @@ def prepare_restore(filename):
 
     if success:
         logging.debug('time to restart')
-        from app.server import webserver
-        webserver.restart()
+        from app.server import webserver        
+        if webserver is not None:
+            webserver.close_all()
+        restart_bazarr()
 
     return success
 

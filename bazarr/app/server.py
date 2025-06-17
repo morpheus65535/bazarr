@@ -87,6 +87,12 @@ class Server:
             self.server.run()
         except (KeyboardInterrupt, SystemExit):
             self.shutdown()
+        except OSError as error:
+            if error.errno == 9:
+                # deal with "OSError: [Errno 9] Bad file descriptor" by closing webserver again.
+                self.server.close()
+            else:
+                pass
         except Exception:
             pass
 
