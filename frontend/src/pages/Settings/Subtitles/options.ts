@@ -192,4 +192,8 @@ export const translatorOption: SelectorOption<string>[] = [
     label: "Gemini",
     value: "gemini",
   },
+  {
+    label: "Lingarr",
+    value: "lingarr",
+  },
 ];

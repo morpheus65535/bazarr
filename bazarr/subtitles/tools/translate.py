@@ -55,6 +55,12 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
     if settings.translator.translator_type == 'gemini':
         translate_subtitles_file_gemini(dest_srt_file, source_srt_file, to_lang, media_type, sonarr_series_id,
                                         radarr_id)
+    elif settings.translator.translator_type == 'lingarr':
+        translate_subtitles_file_lingarr(
+            source_srt_file, dest_srt_file, to_lang, from_lang,
+            media_type, video_path, orig_to_lang, forced, hi,
+            sonarr_series_id, sonarr_episode_id, radarr_id
+        )
     else:
         translate_subtitles_file_google(
             source_srt_file, dest_srt_file, lang_obj, to_lang, from_lang,
@@ -223,6 +229,117 @@ def translate_subtitles_file_gemini(dest_srt_file, source_srt_file, to_lang, med
         logging.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
         return False
 
+def translate_subtitles_file_lingarr(source_srt_file, dest_srt_file, to_lang, from_lang, media_type,
+                                     video_path, orig_to_lang, forced, hi, sonarr_series_id, sonarr_episode_id,
+                                     radarr_id):
+    import requests
+
+    subs = pysubs2.load(source_srt_file, encoding='utf-8')
+    subs.remove_miscellaneous_events()
+    lines_list = [x.plaintext for x in subs]
+    lines_list_len = len(lines_list)
+
+    translated_lines = []
+
+    def translate_line_lingarr(id, line, attempt):
+        try:
+            payload = {
+                "subtitleLine": line,
+                "sourceLanguage": from_lang,
+                "targetLanguage": orig_to_lang
+            }
+
+            response = requests.post(
+                f"{settings.translator.lingarr_url}/api/Translate/line",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+
+            if response.status_code == 200:
+                translated_text = response.text
+            else:
+                logging.debug(f'Lingarr API error: {response.status_code} - {response.text}')
+                translated_text = line
+
+        except requests.exceptions.RequestException as e:
+            if attempt <= 3:
+                sleep(1)
+                translate_line_lingarr(id, line, attempt + 1)
+                return
+            else:
+                logging.debug(f'Lingarr API request failed after retries: {str(e)}')
+                translated_lines.append({'id': id, 'line': line})
+        except Exception as e:
+            logging.debug(f'Error translating line with Lingarr: {str(e)}')
+            translated_lines.append({'id': id, 'line': line})
+        else:
+            translated_lines.append({'id': id, 'line': translated_text})
+        finally:
+            show_progress(id=f'translate_progress_{dest_srt_file}',
+                          header=f'Translating subtitles lines to {language_from_alpha3(to_lang)} with Lingarr...',
+                          name='',
+                          value=len(translated_lines),
+                          count=lines_list_len)
+
+    logging.debug(f'BAZARR is sending {lines_list_len} blocks to Lingarr')
+    pool = ThreadPoolExecutor(max_workers=5)
+    for i, line in enumerate(lines_list):
+        pool.submit(translate_line_lingarr, i, line, 1)
+    pool.shutdown(wait=True)
+
+    for i, line in enumerate(translated_lines):
+        lines_list[line['id']] = line['line']
+
+    show_progress(id=f'translate_progress_{dest_srt_file}',
+                  header=f'Translating subtitles lines to {language_from_alpha3(to_lang)} with Lingarr...',
+                  name='',
+                  value=lines_list_len,
+                  count=lines_list_len)
+
+    logging.debug(f'BAZARR saving Lingarr translated subtitles to {dest_srt_file}')
+    for i, line in enumerate(subs):
+        try:
+            if lines_list[i]:
+                line.plaintext = lines_list[i]
+            else:
+                continue
+        except IndexError:
+            logging.error(f'BAZARR is unable to translate malformed subtitles: {source_srt_file}')
+            return False
+
+    try:
+        subs.save(dest_srt_file)
+        add_translator_info(dest_srt_file, f"# Subtitles translated with Lingarr # ")
+    except OSError:
+        logging.error(f'BAZARR is unable to save translated subtitles to {dest_srt_file}')
+        raise OSError
+
+    message = f"{language_from_alpha2(from_lang)} subtitles translated to {language_from_alpha3(to_lang)} using Lingarr."
+
+    if media_type == 'series':
+        prr = path_mappings.path_replace_reverse
+    else:
+        prr = path_mappings.path_replace_reverse_movie
+
+    result = ProcessSubtitlesResult(
+        message=message,
+        reversed_path=prr(video_path),
+        downloaded_language_code2=orig_to_lang,
+        downloaded_provider=None,
+        score=None,
+        forced=forced,
+        subtitle_id=None,
+        reversed_subtitles_path=prr(dest_srt_file),
+        hearing_impaired=hi
+    )
+
+    if media_type == 'series':
+        history_log(action=6, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id, result=result)
+    else:
+        history_log_movie(action=6, radarr_id=radarr_id, result=result)
+
+    return dest_srt_file
 
 def get_description(media_type, radarr_id, sonarr_series_id):
     try:
