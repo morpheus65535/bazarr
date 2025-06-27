@@ -173,19 +173,26 @@ const TranslationForm: FunctionComponent<Props> = ({
     settings: ReturnType<typeof useSystemSettings>,
   ): TranslationConfig => {
     const translatorType = settings?.data?.translator?.translator_type;
-
-    if (translatorType === "gemini") {
-      return {
-        service: "Gemini",
-        model: ` (${settings?.data?.translator?.gemini_model || ""})`,
-      };
-    }
-
-    // Default to Google Translate
-    return {
+    const defaultConfig: TranslationConfig = {
       service: "Google Translate",
       model: "",
     };
+
+    switch (translatorType) {
+      case "gemini":
+        return {
+          ...defaultConfig,
+          service: "Gemini",
+          model: ` (${settings?.data?.translator?.gemini_model || ""})`,
+        };
+      case "lingarr":
+        return {
+          ...defaultConfig,
+          service: "Lingarr",
+        };
+      default:
+        return defaultConfig;
+    }
   };
 
   // In the component, replace lines 167-185 with:

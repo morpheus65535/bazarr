@@ -177,6 +177,7 @@ declare namespace Settings {
   interface Translator {
     gemini_key: string;
     gemini_model: string;
+    lingarr_url: string;
     translator_info: boolean;
     translator_type: string;
   }
