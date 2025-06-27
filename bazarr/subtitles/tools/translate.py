@@ -5,6 +5,7 @@ import datetime
 import os
 import pysubs2
 import srt
+import requests
 
 from subliminal_patch.core import get_subtitle_path
 from subzero.language import Language
@@ -232,8 +233,6 @@ def translate_subtitles_file_gemini(dest_srt_file, source_srt_file, to_lang, med
 def translate_subtitles_file_lingarr(source_srt_file, dest_srt_file, to_lang, from_lang, media_type,
                                      video_path, orig_to_lang, forced, hi, sonarr_series_id, sonarr_episode_id,
                                      radarr_id):
-    import requests
-
     subs = pysubs2.load(source_srt_file, encoding='utf-8')
     subs.remove_miscellaneous_events()
     lines_list = [x.plaintext for x in subs]
@@ -262,20 +261,31 @@ def translate_subtitles_file_lingarr(source_srt_file, dest_srt_file, to_lang, fr
                 logging.debug(f'Lingarr API error: {response.status_code} - {response.text}')
                 translated_text = line
 
+            with lock:
+                translated_lines[id] = translated_text
+                show_progress(id=f'translate_progress_{dest_srt_file}',
+                              header=f'Translating subtitles lines to {language_from_alpha3(to_lang)} with Lingarr...',
+                              name='',
+                              value=len(translated_lines),
+                              count=lines_list_len)
+
         except requests.exceptions.RequestException as e:
             if attempt <= 3:
                 sleep(1)
                 translate_line_lingarr(id, line, attempt + 1)
-                return
             else:
                 logging.debug(f'Lingarr API request failed after retries: {str(e)}')
-                translated_lines.append({'id': id, 'line': line})
+                with lock:
+                    translated_lines[id] = line
+                    show_progress(id=f'translate_progress_{dest_srt_file}',
+                                  header=f'Translating subtitles lines to {language_from_alpha3(to_lang)} with Lingarr...',
+                                  name='',
+                                  value=len(translated_lines),
+                                  count=lines_list_len)
         except Exception as e:
             logging.debug(f'Error translating line with Lingarr: {str(e)}')
-            translated_lines.append({'id': id, 'line': line})
-        else:
-            translated_lines.append({'id': id, 'line': translated_text})
-        finally:
+            with lock:
+                translated_lines[id] = line
             show_progress(id=f'translate_progress_{dest_srt_file}',
                           header=f'Translating subtitles lines to {language_from_alpha3(to_lang)} with Lingarr...',
                           name='',
@@ -285,12 +295,12 @@ def translate_subtitles_file_lingarr(source_srt_file, dest_srt_file, to_lang, fr
     logging.debug(f'BAZARR is sending {lines_list_len} blocks to Lingarr')
     pool = ThreadPoolExecutor(max_workers=5)
     for i, line in enumerate(lines_list):
-        pool.submit(translate_line_lingarr, i, line, 1)
+        pool.submit(translate_line_lingarr, i, line)
     pool.shutdown(wait=True)
 
-    for i, line in enumerate(translated_lines):
-        lines_list[line['id']] = line['line']
-
+    for i in range(lines_list_len):
+        if i in translated_lines:
+            lines_list[i] = translated_lines[i]
     show_progress(id=f'translate_progress_{dest_srt_file}',
                   header=f'Translating subtitles lines to {language_from_alpha3(to_lang)} with Lingarr...',
                   name='',
