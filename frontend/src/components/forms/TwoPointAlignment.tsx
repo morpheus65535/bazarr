@@ -21,7 +21,7 @@ function convertToAction(
   o: { hour: number; min: number; sec: number; ms: number }, // offset
   s: { from: number; to: number }, // scale
 ) {
-  return `linear_align(rh=${r.hour},rm=${r.min},rs=${r.sec},rms=${r.ms},oh=${o.hour},om=${o.min},os=${o.sec},oms=${o.ms},from=${s.from},to=${s.to})`;
+  return `two_point_alignment(rh=${r.hour},rm=${r.min},rs=${r.sec},rms=${r.ms},oh=${o.hour},om=${o.min},os=${o.sec},oms=${o.ms},from=${s.from},to=${s.to})`;
 }
 
 const totalMs = (t: { hour: number; min: number; sec: number; ms: number }) =>
@@ -32,7 +32,7 @@ interface Props {
   onSubmit?: VoidFunction;
 }
 
-const LinearAlignForm: FunctionComponent<Props> = ({
+const TwoPointAlignmentForm: FunctionComponent<Props> = ({
   selections,
   onSubmit,
 }) => {
@@ -210,8 +210,12 @@ const LinearAlignForm: FunctionComponent<Props> = ({
   );
 };
 
-export const LinearAlignModal = withModal(LinearAlignForm, "linear-align", {
-  title: "Linear Align",
-});
+export const TwoPointAlignmentModal = withModal(
+  TwoPointAlignmentForm,
+  "two-point-alignment",
+  {
+    title: "Linear Align",
+  },
+);
 
-export default LinearAlignForm;
+export default TwoPointAlignmentForm;

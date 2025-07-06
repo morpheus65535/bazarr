@@ -9,8 +9,8 @@ from subzero.modification import registry
 logger = logging.getLogger(__name__)
 
 
-class LinearAlign(SubtitleModification):
-    identifier = "linear_align"
+class TwoPointAlignment(SubtitleModification):
+    identifier = "twp_point_alignment"
     description = "Use first and last sentences to linearly align timing of the subtitles"
     exclusive = False
     advanced = True
@@ -26,4 +26,4 @@ class LinearAlign(SubtitleModification):
         parent.f.transform_framerate(float(kwargs.get("from")), float(kwargs.get("to")), True)
         parent.f.shift(h=int(kwargs.get("oh", 0)), m=int(kwargs.get("om", 0)), s=int(kwargs.get("os", 0)), ms=int(kwargs.get("oms", 0)))
 
-registry.register(LinearAlign)
+registry.register(TwoPointAlignment)

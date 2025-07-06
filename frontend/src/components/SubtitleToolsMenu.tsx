@@ -27,7 +27,7 @@ import { TranslationModal } from "@/components/forms/TranslationForm";
 import { useModals } from "@/modules/modals";
 import { ModalComponent } from "@/modules/modals/WithModal";
 import { task } from "@/modules/task";
-import { LinearAlignModal } from "./forms/LinearAlignForm";
+import { TwoPointAlignmentModal } from "./forms/TwoPointAlignment";
 import { SyncSubtitleModal } from "./forms/SyncSubtitleForm";
 
 export interface ToolOptions {
@@ -102,10 +102,10 @@ export function useTools() {
         modal: TimeOffsetModal,
       },
       {
-        key: "linear_align",
+        key: "two_point_alignment",
         icon: faAlignJustify,
-        name: "Linear Align...",
-        modal: LinearAlignModal,
+        name: "Two Point Alignment...",
+        modal: TwoPointAlignmentModal,
       },
       {
         key: "translation",
