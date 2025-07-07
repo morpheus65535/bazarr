@@ -1,27 +1,30 @@
-import { FunctionComponent } from "react";
+import { FunctionComponent, useMemo } from "react";
 import {
+  Alert,
   Button,
   Card,
   Divider,
   Group,
-  InputLabel,
+  // InputLabel,
+  LoadingOverlay,
   NumberInput,
   Stack,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useSubtitleAction, useSubtitleContents } from "@/apis/hooks";
+import { Selector } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
-// import FormUtils from "@/utilities/form";
+import { useSelectorOptions } from "@/utilities";
 
-const TaskName = "Linearly Aligning";
+const TaskName = "Two Point Fit";
 
 function convertToAction(
   r: { hour: number; min: number; sec: number; ms: number }, // offset to zero
   o: { hour: number; min: number; sec: number; ms: number }, // offset
   s: { from: number; to: number }, // scale
 ) {
-  return `two_point_alignment(rh=${r.hour},rm=${r.min},rs=${r.sec},rms=${r.ms},oh=${o.hour},om=${o.min},os=${o.sec},oms=${o.ms},from=${s.from},to=${s.to})`;
+  return `two_point_fit(rh=${r.hour},rm=${r.min},rs=${r.sec},rms=${r.ms},oh=${o.hour},om=${o.min},os=${o.sec},oms=${o.ms},from=${s.from},to=${s.to})`;
 }
 
 const totalMs = (t: { hour: number; min: number; sec: number; ms: number }) =>
@@ -32,54 +35,50 @@ interface Props {
   onSubmit?: VoidFunction;
 }
 
-const TwoPointAlignmentForm: FunctionComponent<Props> = ({
+const TwoPointFitForm: FunctionComponent<Props> = ({
   selections,
   onSubmit,
 }) => {
   const { mutateAsync } = useSubtitleAction();
   const modals = useModals();
 
-  const subtitle = selections[0];
-  console.log(subtitle);
-
-  const { data } = useSubtitleContents(subtitle.path);
-  console.log(data);
-
-  const timeInput = {
-    hour: 0,
-    min: 0,
-    sec: 0,
-    ms: 0,
-    totalMs() {
-      return totalMs(this);
-    },
-  };
-  const alignInput = { from: timeInput, to: timeInput };
+  const query = useSubtitleContents(selections[0].path);
+  const lines = useMemo(() => query.data ?? [], [query]);
 
   const form = useForm({
     initialValues: {
-      first: alignInput,
-      last: alignInput,
+      first: {
+        line: null as SubtitleContents.Line | null,
+        to: { hour: 0, min: 0, sec: 0, ms: 0 },
+      },
+      last: {
+        line: null as SubtitleContents.Line | null,
+        to: { hour: 0, min: 0, sec: 0, ms: 0 },
+      },
     },
+    // validate: {
+    //   first: { line: FormUtils.validation(isObject, "Please select a line") },
+    //   last: { line: FormUtils.validation(isObject, "Please select a line") },
+    // },
   });
 
-  const enabled =
-    (totalMs(form.values.first.from) > 0 ||
-      totalMs(form.values.first.to) > 0 ||
-      totalMs(form.values.last.from) > 0 ||
-      totalMs(form.values.last.to) > 0) &&
-    totalMs(form.values.first.to) <= totalMs(form.values.last.to) &&
-    totalMs(form.values.first.from) <= totalMs(form.values.last.from);
+  const decimals = lines.length.toString().length;
+  const options = useSelectorOptions(
+    lines,
+    (v) =>
+      `${String(v.index).padStart(decimals, "0")}: ${String(v.content).replaceAll("\n", " ")}`,
+    (v) => String(v.index),
+  );
 
   return (
     <form
       onSubmit={form.onSubmit(({ first, last }) => {
         const scale = {
-          from: last.to.totalMs() - first.to.totalMs(),
-          to: last.from.totalMs() - first.from.totalMs(),
+          from: totalMs(last.to) - totalMs(first.to),
+          to: totalMs(first.to) - totalMs(last.to),
         };
 
-        const action: string = convertToAction(first.from, first.to, scale);
+        const action: string = convertToAction(first.to, first.to, scale);
 
         selections.forEach((s) =>
           task.create(s.path, TaskName, mutateAsync, {
@@ -92,42 +91,36 @@ const TwoPointAlignmentForm: FunctionComponent<Props> = ({
         modals.closeSelf();
       })}
     >
+      <LoadingOverlay
+        visible={query.isLoading}
+        zIndex={1000}
+        overlayProps={{ radius: "sm", blur: 2 }}
+      />
       <Stack>
+        <Alert>
+          Select two sentences and the time for when they should appear. This
+          will fit (offset and scale) every sentence.
+        </Alert>
         <Card>
           <Stack gap="md">
             <header>First sentence</header>
+            <Alert variant="outline">
+              The closer to the beginning, the better.
+            </Alert>
             <Stack gap="0">
-              <InputLabel>When it appears</InputLabel>
-              <Group align="end" gap="xs" wrap="nowrap">
-                <NumberInput
-                  label="hour"
-                  min={0}
-                  {...form.getInputProps("first.from.hour")}
-                ></NumberInput>
-                <NumberInput
-                  label="min"
-                  min={0}
-                  {...form.getInputProps("first.from.min")}
-                ></NumberInput>
-                <NumberInput
-                  label="sec"
-                  min={0}
-                  {...form.getInputProps("first.from.sec")}
-                ></NumberInput>
-                <NumberInput
-                  label="ms"
-                  min={0}
-                  {...form.getInputProps("first.from.ms")}
-                ></NumberInput>
-              </Group>
+              <Selector
+                {...options}
+                disabled={query.isLoading}
+                {...form.getInputProps("first.line")}
+              ></Selector>
             </Stack>
 
             <Stack gap="0">
-              <InputLabel>When it should appear</InputLabel>
+              {/* <InputLabel>When it should appear</InputLabel> */}
               <Group align="end" gap="xs" wrap="nowrap">
                 <NumberInput
-                  min={0}
                   label="hour"
+                  min={0}
                   {...form.getInputProps("first.to.hour")}
                 ></NumberInput>
                 <NumberInput
@@ -153,34 +146,17 @@ const TwoPointAlignmentForm: FunctionComponent<Props> = ({
         <Card>
           <Stack gap="md">
             <header>Last sentence</header>
+            <Alert variant="outline">The closer to the end, the better.</Alert>
             <Stack gap="0">
-              <InputLabel>When it appears</InputLabel>
-              <Group align="end" gap="xs" wrap="nowrap">
-                <NumberInput
-                  min={0}
-                  label="hour"
-                  {...form.getInputProps("last.from.hour")}
-                ></NumberInput>
-                <NumberInput
-                  min={0}
-                  label="min"
-                  {...form.getInputProps("last.from.min")}
-                ></NumberInput>
-                <NumberInput
-                  min={0}
-                  label="sec"
-                  {...form.getInputProps("last.from.sec")}
-                ></NumberInput>
-                <NumberInput
-                  min={0}
-                  label="ms"
-                  {...form.getInputProps("last.from.ms")}
-                ></NumberInput>
-              </Group>
+              <Selector
+                {...options}
+                disabled={query.isLoading}
+                {...form.getInputProps("last.line")}
+              ></Selector>
             </Stack>
 
             <Stack gap="0">
-              <InputLabel>When it should appear</InputLabel>
+              {/* <InputLabel>When it should appear</InputLabel> */}
               <Group align="end" gap="xs" wrap="nowrap">
                 <NumberInput
                   min={0}
@@ -208,20 +184,20 @@ const TwoPointAlignmentForm: FunctionComponent<Props> = ({
         </Card>
 
         <Divider></Divider>
-        <Button disabled={!enabled} type="submit">
-          Start
+        <Button disabled={query.isLoading} type="submit">
+          Align
         </Button>
       </Stack>
     </form>
   );
 };
 
-export const TwoPointAlignmentModal = withModal(
-  TwoPointAlignmentForm,
+export const TwoPointFitModal = withModal(
+  TwoPointFitForm,
   "two-point-alignment",
   {
-    title: "Linear Align",
+    title: "Two Point Fit",
   },
 );
 
-export default TwoPointAlignmentForm;
+export default TwoPointFitForm;

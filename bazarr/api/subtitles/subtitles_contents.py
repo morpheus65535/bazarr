@@ -15,15 +15,11 @@ class SubtitleNameContents(Resource):
     get_request_parser = reqparse.RequestParser()
     get_request_parser.add_argument('subtitlePath', type=str, required=True, help='Subtitle filepath')
 
-    timedelta_modal = api_ns_subtitle_contents.model('timedelta_modal', {
-        'seconds': fields.Integer(),
-        'microseconds': fields.Integer(),
-    })
-
     time_modal = api_ns_subtitle_contents.model('time_modal', {
         'hours': fields.Integer(),
         'minutes': fields.Integer(),
         'seconds': fields.Integer(),
+        'total_seconds': fields.Integer(),
         'microseconds': fields.Integer(),
     })
 
@@ -33,9 +29,7 @@ class SubtitleNameContents(Resource):
         'proprietary': fields.String(),
         'start': fields.Nested(time_modal),
         'end': fields.Nested(time_modal),
-        'start_timedelta': fields.Nested(timedelta_modal),
-        'end_timedelta': fields.Nested(timedelta_modal),
-        'duration': fields.Nested(timedelta_modal),
+        # 'duration': fields.Nested(time_modal),
     })
 
     @authenticate
@@ -43,7 +37,7 @@ class SubtitleNameContents(Resource):
     @api_ns_subtitle_contents.response(401, 'Not Authenticated')
     @api_ns_subtitle_contents.doc(parser=get_request_parser)
     def get(self):
-        """Guessit over subtitles filename"""
+        """Retrieve subtitle file contents"""
 
         args = self.get_request_parser.parse_args()
         path = args.get('subtitlePath')
@@ -63,32 +57,26 @@ class SubtitleNameContents(Resource):
 
             results.append(dict(
                 index=sub.index,
-                content=sub.content.replace('\n', ' '),
+                content=sub.content,
                 proprietary=sub.proprietary,
                 start=dict(
                     hours = start_total_seconds // 3600,
                     minutes = (start_total_seconds % 3600) // 60,
                     seconds = start_total_seconds % 60,
+                    total_seconds=int(sub.start.total_seconds()),
                     microseconds = sub.start.microseconds
                 ),
                 end=dict(
                     hours = end_total_seconds // 3600,
                     minutes = (end_total_seconds % 3600) // 60,
                     seconds = end_total_seconds % 60,
+                    total_seconds=int(sub.end.total_seconds()),
                     microseconds = sub.end.microseconds
                 ),
-                duration=dict(
-                    seconds=int(duration_timedelta.total_seconds()),
-                    microseconds=duration_timedelta.microseconds
-                ),
-                start_timedelta=dict(
-                    seconds=int(sub.start.total_seconds()),
-                    microseconds=sub.start.microseconds
-                ),
-                end_timedelta=dict(
-                    seconds=int(sub.end.total_seconds()),
-                    microseconds=sub.end.microseconds
-                ),
+                # duration=dict(
+                #     seconds=int(duration_timedelta.total_seconds()),
+                #     microseconds=duration_timedelta.microseconds
+                # ),
             ))
         
         return marshal(results, self.get_response_model, envelope='data')

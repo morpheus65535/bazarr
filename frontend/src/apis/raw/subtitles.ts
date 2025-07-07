@@ -39,7 +39,7 @@ class SubtitlesApi extends BaseApi {
   }
 
   async contents(subtitlePath: string) {
-    const response = await this.get<DataWrapper<Array<SubtitleContents.Line>>>(
+    const response = await this.get<DataWrapper<SubtitleContents.Line[]>>(
       "/contents",
       {
         subtitlePath,

@@ -397,25 +397,21 @@ interface SubtitleInfo {
 }
 
 declare namespace SubtitleContents {
-  interface LineTimeDelta {
-    seconds: number;
-    microseconds: number;
-  }
-
-  interface LineTime extends LineTimeDelta {
+  interface LineTime {
     hours: number;
-    minute: number;
+    minutes: number;
+    seconds: number;
+    total_seconds: number;
+    microseconds: number;
   }
 
   interface Line {
     index: number;
     content: string;
     proprietary: string;
-    start: SubtitleLineTime;
-    end: SubtitleLineTime;
-    start_timedelta: SubtitleLineTime;
-    end_timedelta: SubtitleLineTime;
-    duration: SubtitleLineTimeDelta;
+    start: LineTime;
+    end: LineTime;
+    // duration: LineTime;
   }
 
   // interface Contents extends Array<Line> {}

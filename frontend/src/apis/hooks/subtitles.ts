@@ -149,8 +149,8 @@ export function useSubtitleInfos(names: string[]) {
 export function useSubtitleContents(subtitlePath: string) {
   return useQuery({
     queryKey: [QueryKeys.Subtitles, subtitlePath],
-
     queryFn: () => api.subtitles.contents(subtitlePath),
+    staleTime: Infinity,
   });
 }
 
