@@ -37,6 +37,16 @@ class SubtitlesApi extends BaseApi {
   async modify(action: string, form: FormType.ModifySubtitle) {
     await this.patch("", form, { action });
   }
+
+  async contents(subtitlePath: string) {
+    const response = await this.get<DataWrapper<Array<SubtitleContents.Line>>>(
+      "/contents",
+      {
+        subtitlePath,
+      },
+    );
+    return response.data;
+  }
 }
 
 const subtitlesApi = new SubtitlesApi();

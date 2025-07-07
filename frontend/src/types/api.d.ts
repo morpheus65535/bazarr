@@ -396,6 +396,31 @@ interface SubtitleInfo {
   season: number;
 }
 
+declare namespace SubtitleContents {
+  interface LineTimeDelta {
+    seconds: number;
+    microseconds: number;
+  }
+
+  interface LineTime extends LineTimeDelta {
+    hours: number;
+    minute: number;
+  }
+
+  interface Line {
+    index: number;
+    content: string;
+    proprietary: string;
+    start: SubtitleLineTime;
+    end: SubtitleLineTime;
+    start_timedelta: SubtitleLineTime;
+    end_timedelta: SubtitleLineTime;
+    duration: SubtitleLineTimeDelta;
+  }
+
+  // interface Contents extends Array<Line> {}
+}
+
 type ItemSearchResult = Partial<SeriesIdType> &
   Partial<MovieIdType> & {
     title: string;

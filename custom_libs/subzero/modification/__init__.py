@@ -2,5 +2,5 @@
 
 from __future__ import absolute_import
 from .registry import registry
-from .mods import hearing_impaired, ocr_fixes, fps, offset, common, color, emoji, linear_align
+from .mods import hearing_impaired, ocr_fixes, fps, offset, common, color, emoji, two_point_alignment
 from .main import SubtitleModifications, SubMod

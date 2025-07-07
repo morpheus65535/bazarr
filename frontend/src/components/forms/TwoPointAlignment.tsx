@@ -9,7 +9,7 @@ import {
   Stack,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useSubtitleAction } from "@/apis/hooks";
+import { useSubtitleAction, useSubtitleContents } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 // import FormUtils from "@/utilities/form";
@@ -38,6 +38,12 @@ const TwoPointAlignmentForm: FunctionComponent<Props> = ({
 }) => {
   const { mutateAsync } = useSubtitleAction();
   const modals = useModals();
+
+  const subtitle = selections[0];
+  console.log(subtitle);
+
+  const { data } = useSubtitleContents(subtitle.path);
+  console.log(data);
 
   const timeInput = {
     hour: 0,
