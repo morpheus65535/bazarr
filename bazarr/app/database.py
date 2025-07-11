@@ -585,6 +585,10 @@ def ensure_indexes():
         "CREATE INDEX IF NOT EXISTS idx_table_history_movie_action     ON table_history_movie (action)",
         "CREATE INDEX IF NOT EXISTS idx_table_history_movie_provider   ON table_history_movie (provider)",
         "CREATE INDEX IF NOT EXISTS idx_table_history_movie_language   ON table_history_movie (language)",
+
+        # Episodes
+        "CREATE INDEX IF NOT EXISTS idx_table_episodes_episodeid ON table_episodes (sonarrEpisodeId)",
+        "CREATE INDEX IF NOT EXISTS idx_table_episodes_seriesid_season_episode ON table_episodes (sonarrSeriesId, season DESC, episode DESC)",
     ]
 
     with engine.begin() as conn:
