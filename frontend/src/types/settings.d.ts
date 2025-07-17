@@ -179,6 +179,8 @@ declare namespace Settings {
     gemini_model: string;
     translator_info: boolean;
     translator_type: string;
+    override_language: boolean;
+    override_code: string;
   }
 
   interface Plex {

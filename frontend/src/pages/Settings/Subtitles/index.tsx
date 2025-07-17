@@ -550,6 +550,24 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           label="Add translation info at the beginning"
           settingKey="settings-translator-translator_info"
         ></Check>
+        <Message>
+          Add information about the translation service and AI model used at the
+          beginning of the subtitle file.
+        </Message>
+        <Check
+          label="Override subtitles language code"
+          settingKey="settings-translator-override_language"
+        ></Check>
+        <Message>
+          Change the translated subtitle file's language code (this can help
+          monitor your language for new subtitles).
+        </Message>
+        <CollapseBox indent settingKey="settings-translator-override_language">
+          <Text
+            label="Language code"
+            settingKey="settings-translator-override_code"
+          />
+        </CollapseBox>
       </Section>
     </Layout>
   );

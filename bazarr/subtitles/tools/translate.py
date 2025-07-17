@@ -3,6 +3,8 @@
 import logging
 import datetime
 import os
+import re
+
 import pysubs2
 import srt
 
@@ -29,6 +31,7 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
                              sonarr_episode_id, radarr_id):
 
     orig_to_lang = to_lang
+
     to_lang = alpha3_from_alpha2(to_lang)
     try:
         lang_obj = Language(to_lang)
@@ -51,6 +54,11 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
                                       extension='.srt',
                                       forced_tag=forced,
                                       hi_tag=hi)
+
+    if settings.translator.override_language:
+        pattern = rf"\.{lang_obj.basename}\."
+        replacement = f".{settings.translator.override_code}."
+        dest_srt_file = re.sub(pattern, replacement, dest_srt_file)
 
     if settings.translator.translator_type == 'gemini':
         translate_subtitles_file_gemini(dest_srt_file, source_srt_file, to_lang, media_type, sonarr_series_id,
