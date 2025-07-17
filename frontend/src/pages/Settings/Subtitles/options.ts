@@ -182,3 +182,14 @@ export const syncMaxOffsetSecondsOptions: SelectorOption<number>[] = [
     value: 600,
   },
 ];
+
+export const translatorOption: SelectorOption<string>[] = [
+  {
+    label: "Google Translate",
+    value: "google_translate",
+  },
+  {
+    label: "Gemini",
+    value: "gemini",
+  },
+];

@@ -3,7 +3,6 @@
 # only methods can be specified here that do not cause other moudules to be loaded
 # for other methods that use settings, etc., use utilities/helper.py
 
-import contextlib
 import logging
 import os
 from pathlib import Path
@@ -35,7 +34,7 @@ def get_restart_file_path():
     return os.environ[ENV_RESTARTFILE]
 
 
-def stop_bazarr(status_code=EXIT_NORMAL, exit_main=True):
+def stop_bazarr(status_code=EXIT_NORMAL):
     try:
         with open(get_stop_file_path(), 'w', encoding='UTF-8') as file:
             # write out status code for final exit
@@ -44,8 +43,7 @@ def stop_bazarr(status_code=EXIT_NORMAL, exit_main=True):
     except Exception as e:
         logging.error(f'BAZARR Cannot create stop file: {repr(e)}')
     logging.info('Bazarr is being shutdown...')
-    if exit_main:
-        raise SystemExit(status_code)
+    os._exit(status_code)  # Don't raise SystemExit here since it's catch by waitress and it prevents proper exit
 
 
 def restart_bazarr():
@@ -54,8 +52,4 @@ def restart_bazarr():
     except Exception as e:
         logging.error(f'BAZARR Cannot create restart file: {repr(e)}')
     logging.info('Bazarr is being restarted...')
-
-    # Wrap the SystemExit for a graceful restart. The SystemExit still performs the cleanup but the traceback is omitted
-    # preventing to throw the exception to the caller but still terminates the Python process with the desired Exit Code
-    with contextlib.suppress(SystemExit):
-        raise SystemExit(EXIT_NORMAL)
+    os._exit(EXIT_NORMAL)  # Don't raise SystemExit here since it's catch by waitress and it prevents proper exit

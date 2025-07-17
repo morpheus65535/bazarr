@@ -21,7 +21,7 @@ class GreekSubsSubtitle(Subtitle):
     provider_name = 'greeksubs'
     hearing_impaired_verifiable = False
 
-    def __init__(self, language, page_link, version, uploader, referer):
+    def __init__(self, language, page_link, version, uploader, referer, subtitle_id):
         super(GreekSubsSubtitle, self).__init__(language, page_link=page_link)
         self.version = version.replace('-', '.')
         self.release_info = version
@@ -29,10 +29,11 @@ class GreekSubsSubtitle(Subtitle):
         self.download_link = page_link
         self.uploader = uploader
         self.referer = referer
+        self.subtitle_id = subtitle_id
 
     @property
     def id(self):
-        return self.page_link
+        return self.subtitle_id
 
     def get_matches(self, video):
         matches = set()
@@ -103,41 +104,20 @@ class GreekSubsProvider(Provider):
                         else:
                             for subtitles_item in soup_subs.select('#elSub > tbody > tr'):
                                 try:
-                                    subtitle_id = re.search(r'downloadMe\(\'(.*)\'\)', subtitles_item.contents[2].contents[2].contents[0].attrs['onclick']).group(1)
-                                    page_link = self.server_url + 'dll/' + subtitle_id + '/0/' + secCode
+                                    subtitle_id = re.search(r'downloadMe\(\'(.*)\'\)',
+                                                            subtitles_item.contents[2].contents[2].contents[0].attrs[
+                                                                'onclick']).group(1)
+                                    download_link = self.server_url + 'dll/' + subtitle_id + '/0/' + secCode
                                     language = Language.fromalpha2(subtitles_item.parent.find('img')['alt'])
                                     version = subtitles_item.contents[2].contents[4].text.strip()
-                                    uploader = subtitles_item.contents[2].contents[5].contents[0].contents[1].text.strip()
-                                    referer = episode_page.encode('utf-8')
-
-                                    r = self.session.get(page_link,
-                                                         headers={'Referer': referer},
-                                                         timeout=30, allow_redirects=False)
-                                    r.raise_for_status()
-                                    soup_dll = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['html.parser'])
-                                    try:
-                                        langcode = soup_dll.find(attrs={"name": 'langcode'}).get('value')
-                                        uid = soup_dll.find(attrs={"name": 'uid'}).get('value')
-                                        output = soup_dll.find(attrs={"name": 'output'}).get('value')
-                                        dll = soup_dll.find(attrs={"name": 'dll'}).get('value')
-                                    except Exception as e:
-                                        logging.debug(e)
-                                    else:
-                                        download_req = self.session.post(page_link, data={'langcode': langcode,
-                                                                                          'uid': uid,
-                                                                                          'output': output,
-                                                                                          'dll': dll},
-                                                                         headers={'Referer': page_link}, timeout=10)
+                                    uploader = (subtitles_item.contents[2].contents[5].contents[0].contents[1].text
+                                                .strip())
                                 except Exception as e:
                                     logging.debug(e)
                                 else:
                                     if language in languages:
-                                        subtitle = self.subtitle_class(language, page_link, version, uploader, referer)
-                                        if not download_req.content:
-                                            logger.error('Unable to download subtitle. No data returned from provider')
-                                            continue
-
-                                        subtitle.content = download_req.content
+                                        subtitle = self.subtitle_class(language, download_link, version, uploader,
+                                                                       search_link, subtitle_id)
 
                                         logger.debug('Found subtitle %r', subtitle)
                                         subtitles.append(subtitle)
@@ -158,41 +138,16 @@ class GreekSubsProvider(Provider):
                             subtitle_id = re.search(r'downloadMe\(\'(.*)\'\)',
                                                     subtitles_item.contents[2].contents[2].contents[0].attrs[
                                                         'onclick']).group(1)
-                            page_link = self.server_url + 'dll/' + subtitle_id + '/0/' + secCode
+                            download_link = self.server_url + 'dll/' + subtitle_id + '/0/' + secCode
                             language = Language.fromalpha2(subtitles_item.parent.find('img')['alt'])
                             version = subtitles_item.contents[2].contents[4].text.strip()
-                            uploader = subtitles_item.contents[2].contents[5].contents[0].contents[
-                                1].text.strip()
-                            referer = page_link.encode('utf-8')
-
-                            r = self.session.get(page_link,
-                                                 headers={'Referer': referer},
-                                                 timeout=30, allow_redirects=False)
-                            r.raise_for_status()
-                            soup_dll = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['html.parser'])
-                            try:
-                                langcode = soup_dll.find(attrs={"name": 'langcode'}).get('value')
-                                uid = soup_dll.find(attrs={"name": 'uid'}).get('value')
-                                output = soup_dll.find(attrs={"name": 'output'}).get('value')
-                                dll = soup_dll.find(attrs={"name": 'dll'}).get('value')
-                            except Exception as e:
-                                logging.debug(e)
-                            else:
-                                download_req = self.session.post(page_link, data={'langcode': langcode,
-                                                                                  'uid': uid,
-                                                                                  'output': output,
-                                                                                  'dll': dll},
-                                                                 headers={'Referer': page_link}, timeout=10)
+                            uploader = subtitles_item.contents[2].contents[5].contents[0].contents[1].text.strip()
                         except Exception as e:
                             logging.debug(e)
                         else:
                             if language in languages:
-                                subtitle = self.subtitle_class(language, page_link, version, uploader, referer)
-                                if not download_req.content:
-                                    logger.error('Unable to download subtitle. No data returned from provider')
-                                    continue
-
-                                subtitle.content = download_req.content
+                                subtitle = self.subtitle_class(language, download_link, version, uploader, search_link,
+                                                               subtitle_id)
 
                                 logger.debug('Found subtitle %r', subtitle)
                                 subtitles.append(subtitle)
@@ -225,5 +180,35 @@ class GreekSubsProvider(Provider):
         return subtitles
 
     def download_subtitle(self, subtitle):
-        if isinstance(subtitle, GreekSubsSubtitle):
-            subtitle.content = fix_line_ending(subtitle.content)
+        r = self.session.get(subtitle.page_link,
+                             headers={'Referer': subtitle.referer},
+                             timeout=30, allow_redirects=False)
+
+        if r.status_code == 302:
+            logger.critical("Greeksubs allow only one download per search. Search again to generate a new single use "
+                            "download token.")
+            return None
+
+        r.raise_for_status()
+
+        download_req = None
+        soup_dll = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['html.parser'])
+        try:
+            langcode = soup_dll.find(attrs={"name": 'langcode'}).get('value')
+            uid = soup_dll.find(attrs={"name": 'uid'}).get('value')
+            output = soup_dll.find(attrs={"name": 'output'}).get('value')
+            dll = soup_dll.find(attrs={"name": 'dll'}).get('value')
+        except Exception as e:
+            logging.debug(e)
+        else:
+            download_req = self.session.post(subtitle.download_link, data={'langcode': langcode,
+                                                                           'uid': uid,
+                                                                           'output': output,
+                                                                           'dll': dll},
+                                             headers={'Referer': subtitle.page_link}, timeout=10)
+
+        if download_req and not download_req.content:
+            logger.error('Unable to download subtitle. No data returned from provider')
+            return False
+
+        subtitle.content = fix_line_ending(download_req.content)

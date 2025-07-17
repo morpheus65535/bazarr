@@ -41,7 +41,7 @@ jobs:
           node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
 
       - name: Install Global Tools
-        run: npm install -g release-it auto-changelog
+        run: npm install -g release-it@v16.3.0 auto-changelog
 
       - name: Install UI Dependencies
         run: npm install
