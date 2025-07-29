@@ -17,7 +17,6 @@ from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, la
 from radarr.history import history_log_movie
 from sonarr.history import history_log
 from subtitles.processing import ProcessSubtitlesResult
-from subtitles.tools.translator_gemini import TranslatorGemini
 from app.event_handler import show_progress, hide_progress, show_message
 from utilities.path_mappings import path_mappings
 
