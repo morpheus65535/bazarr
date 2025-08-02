@@ -62,10 +62,6 @@ def create_app():
     def _db_close(exc):
         database.close()
 
-    # Register Plex OAuth blueprint
-    from bazarr.api.plex.oauth import plex_oauth
-    app.register_blueprint(plex_oauth)
-
     return app
 
 

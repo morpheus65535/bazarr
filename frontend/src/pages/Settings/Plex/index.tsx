@@ -1,5 +1,11 @@
-import { FunctionComponent, useState, useEffect } from "react";
-import axios from "axios";
+import { FunctionComponent } from "react";
+import { Button, Select } from "@mantine/core";
+import {
+  usePlexOAuth,
+  usePlexSelectServer,
+  usePlexServers,
+} from "@/apis/hooks";
+import { PlexServer } from "@/apis/raw/plex";
 import {
   Check,
   CollapseBox,
@@ -11,85 +17,73 @@ import {
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
 
-type PlexServer = {
-  name: string;
-  address: string;
-  port: string;
-  uri: string;
-  local: string;
-  ssl: boolean;
-};
-
 const SettingsPlexView: FunctionComponent = () => {
-  const [authenticated, setAuthenticated] = useState(false);
-  const [servers, setServers] = useState<PlexServer[]>([]);
-  const [selectedServer, setSelectedServer] = useState<PlexServer | null>(null);
+  const { data: serversData, isLoading, error } = usePlexServers();
+  const oauthMutation = usePlexOAuth();
+  const selectServerMutation = usePlexSelectServer();
 
-  useEffect(() => {
-    // Check if authenticated and fetch servers
-    axios
-      .get("/api/plex/servers")
-      .then((res) => {
-        if (res.data.servers) {
-          setAuthenticated(true);
-          setServers(res.data.servers);
-        }
-      })
-      .catch(() => setAuthenticated(false));
-  }, []);
+  const authenticated = !error && serversData?.servers;
+  const servers = serversData?.servers || [];
 
-  const handleAuthenticate = () => {
-    window.location.href = "/api/plex/oauth/login";
+  const handleAuthenticate = async () => {
+    try {
+      const result = await oauthMutation.mutateAsync();
+      if (result.redirect_url) {
+        window.location.href = result.redirect_url;
+      }
+    } catch {
+      // Authentication failed - error is handled by the UI
+    }
   };
 
-  const handleSelectServer = (e: any) => {
-    const idx = e.target.value;
-    const server = servers[idx];
-    setSelectedServer(server);
-    // Auto-fill host/port/ssl
-    axios.post("/api/plex/server", {
-      address: server.address,
-      port: server.port,
-      ssl: server.ssl,
-    });
+  const handleSelectServer = (value: string | null) => {
+    if (!value || !servers) return;
+
+    const serverIndex = parseInt(value, 10);
+    const server = servers[serverIndex];
+
+    if (server) {
+      selectServerMutation.mutate({
+        address: server.address,
+        port: server.port,
+        ssl: server.ssl,
+      });
+    }
   };
+
+  const serverOptions = servers.map((srv: PlexServer, idx: number) => ({
+    value: idx.toString(),
+    label: `${srv.name} (${srv.address}:${srv.port})`,
+  }));
 
   return (
     <Layout name="Interface">
       <Section header="Use Plex operations">
         <Check label="Enabled" settingKey={plexEnabledKey}></Check>
-        <div style={{ margin: "10px 0" }}>
-          {!authenticated ? (
-            <button
-              onClick={handleAuthenticate}
-              style={{
-                padding: "8px 16px",
-                background: "#3572b0",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-              }}
-            >
-              Authenticate with Plex.tv
-            </button>
-          ) : (
-            <div>
-              <label htmlFor="plex-server-select">Select Plex Server:</label>
-              <select
-                id="plex-server-select"
-                onChange={handleSelectServer}
-                style={{ marginLeft: "10px" }}
-              >
-                <option value="">-- Select --</option>
-                {servers.map((srv, idx) => (
-                  <option key={srv.uri} value={idx}>
-                    {srv.name} ({srv.address}:{srv.port})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
+
+        {!authenticated ? (
+          <Button
+            onClick={handleAuthenticate}
+            loading={oauthMutation.isPending}
+            disabled={isLoading}
+          >
+            Authenticate with Plex.tv
+          </Button>
+        ) : (
+          <Select
+            label="Select Plex Server"
+            placeholder="-- Select --"
+            data={serverOptions}
+            onChange={handleSelectServer}
+            disabled={selectServerMutation.isPending}
+          />
+        )}
+
+        {error && (
+          <Message>
+            Failed to connect to Plex. Please authenticate first.
+          </Message>
+        )}
       </Section>
       <CollapseBox settingKey={plexEnabledKey}>
         <Section header="Host">

@@ -218,27 +218,19 @@ validators = [
     Validator('radarr.sync_only_monitored_movies', must_exist=True, default=False, is_type_of=bool),
 
     # plex section - Legacy settings for backward compatibility
-    Validator('plex.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
-    Validator('plex.port', must_exist=True, default=32400, is_type_of=int, gte=1, lte=65535),
-    Validator('plex.ssl', must_exist=True, default=False, is_type_of=bool),
-    Validator('plex.apikey', must_exist=True, default='', is_type_of=str),
-    Validator('plex.movie_library', must_exist=True, default='', is_type_of=str),
-    Validator('plex.series_library', must_exist=True, default='', is_type_of=str),
-    Validator('plex.set_movie_added', must_exist=True, default=False, is_type_of=bool),
-    Validator('plex.set_episode_added', must_exist=True, default=False, is_type_of=bool),
-    Validator('plex.update_movie_library', must_exist=True, default=False, is_type_of=bool),
-    Validator('plex.update_series_library', must_exist=True, default=False, is_type_of=bool),
+    Validator('plex.ip', must_exist=False, default='127.0.0.1', is_type_of=str),
+    Validator('plex.port', must_exist=False, default=32400, is_type_of=int, gte=1, lte=65535),
+    Validator('plex.ssl', must_exist=False, default=False, is_type_of=bool),
+    Validator('plex.apikey', must_exist=False, default='', is_type_of=str),
+    Validator('plex.movie_library', must_exist=False, default='', is_type_of=str),
+    Validator('plex.series_library', must_exist=False, default='', is_type_of=str),
+    Validator('plex.set_movie_added', must_exist=False, default=False, is_type_of=bool),
+    Validator('plex.set_episode_added', must_exist=False, default=False, is_type_of=bool),
+    Validator('plex.update_movie_library', must_exist=False, default=False, is_type_of=bool),
+    Validator('plex.update_series_library', must_exist=False, default=False, is_type_of=bool),
     
     # New Plex OAuth settings
     Validator('plex.servers', must_exist=True, default=[], is_type_of=list),
-    Validator('plex.notifications', must_exist=True, default={}, is_type_of=dict),
-    Validator('plex.notifications.on_download', must_exist=True, default=True, is_type_of=bool),
-    Validator('plex.notifications.on_upgrade', must_exist=True, default=True, is_type_of=bool),
-    Validator('plex.notifications.on_rename', must_exist=True, default=False, is_type_of=bool),
-    Validator('plex.notifications.on_subtitle_download', must_exist=True, default=True, is_type_of=bool),
-    Validator('plex.notifications.on_health_issue', must_exist=True, default=False, is_type_of=bool),
-    Validator('plex.notifications.on_health_restored', must_exist=True, default=False, is_type_of=bool),
-    Validator('plex.notifications.on_manual_interaction_required', must_exist=True, default=False, is_type_of=bool),
 
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
@@ -557,17 +549,6 @@ if settings.plex.apikey and not settings.plex.servers:
         'updateLibrary': settings.plex.update_movie_library or settings.plex.update_series_library
     }
     settings.plex.servers = [legacy_server]
-    # Migrate notification settings
-    if not settings.plex.notifications:
-        settings.plex.notifications = {
-            'on_download': True,
-            'on_subtitle_download': True,
-            'on_upgrade': True,
-            'on_rename': False,
-            'on_health_issue': False,
-            'on_health_restored': False,
-            'on_manual_interaction_required': False
-        }
 
 # save updated settings to file
 write_config()
@@ -618,7 +599,6 @@ def save_settings(settings_items):
     update_schedule = False
     sonarr_changed = False
     radarr_changed = False
-    plex_changed = False  # Added for Plex OAuth support
     update_path_map = False
     configure_proxy = False
     exclusion_updated = False
@@ -714,10 +694,6 @@ def save_settings(settings_items):
         if key in ['settings-general-use_radarr', 'settings-radarr-ip', 'settings-radarr-port',
                    'settings-radarr-base_url', 'settings-radarr-ssl', 'settings-radarr-apikey']:
             radarr_changed = True
-            
-        # Handle Plex OAuth settings changes
-        if key in ['settings-general-use_plex', 'settings-plex-servers', 'settings-plex-notifications']:
-            plex_changed = True
 
         if key in ['settings-general-path_mappings', 'settings-general-path_mappings_movie']:
             update_path_map = True
@@ -881,12 +857,6 @@ def save_settings(settings_items):
             except Exception:
                 pass
                 
-        # Handle Plex OAuth changes
-        if plex_changed:
-            # Clear any cached Plex clients when settings change
-            from plex.plex_client import plex_clients
-            plex_clients.clear()
-
         if update_path_map:
             from utilities.path_mappings import path_mappings
             path_mappings.update()

@@ -1,39 +1,42 @@
 # coding=utf-8
 
-import os
-import requests
-from flask import Blueprint, redirect, request, session, jsonify
-from app.config import settings, save_settings
+from flask import redirect, request
+from flask_restx import Namespace, Resource
+from app.config import settings
 
-plex_oauth = Blueprint('plex_oauth', __name__)
+api_ns_plex = Namespace('Plex', description='Plex OAuth operations')
 
-@plex_oauth.route('/api/plex/oauth/login')
-def plex_login():
-    from bazarr.plex.service import PlexService
-    return redirect(PlexService.start_oauth())
+@api_ns_plex.route('/oauth/login')
+class PlexLogin(Resource):
+    def get(self):
+        from bazarr.plex.service import PlexService
+        return {'redirect_url': PlexService.start_oauth()}
 
-@plex_oauth.route('/api/plex/oauth/callback')
-def plex_callback():
-    from bazarr.plex.service import PlexService
-    code = request.args.get('code')
-    if not code:
-        return 'Missing code', 400
-    token_obj = PlexService.exchange_code_for_token(code)
-    if not token_obj:
-        return 'Failed to authenticate with Plex', 400
-    return redirect('/settings/plex')
+@api_ns_plex.route('/oauth/callback')
+class PlexCallback(Resource):
+    def get(self):
+        from bazarr.plex.service import PlexService
+        code = request.args.get('code')
+        if not code:
+            return {'error': 'Missing code'}, 400
+        token_obj = PlexService.exchange_code_for_token(code)
+        if not token_obj:
+            return {'error': 'Failed to authenticate with Plex'}, 400
+        return {'success': True, 'token': token_obj.to_dict()}
 
-@plex_oauth.route('/api/plex/servers')
-def plex_servers():
-    from bazarr.plex.service import PlexService
-    servers = PlexService.get_servers()
-    if servers is None:
-        return jsonify({'error': 'Not authenticated'}), 401
-    return jsonify({'servers': [s.to_dict() for s in servers]})
+@api_ns_plex.route('/servers')
+class PlexServers(Resource):
+    def get(self):
+        from bazarr.plex.service import PlexService
+        servers = PlexService.get_servers()
+        if servers is None:
+            return {'error': 'Not authenticated'}, 401
+        return {'servers': [s.to_dict() for s in servers]}
 
-@plex_oauth.route('/api/plex/server', methods=['POST'])
-def plex_select_server():
-    from bazarr.plex.service import PlexService
-    data = request.json
-    success = PlexService.save_selected_server(data)
-    return jsonify({'success': success})
+@api_ns_plex.route('/server')
+class PlexSelectServer(Resource):
+    def post(self):
+        from bazarr.plex.service import PlexService
+        data = request.json
+        success = PlexService.save_selected_server(data)
+        return {'success': success}

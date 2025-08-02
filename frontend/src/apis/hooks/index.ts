@@ -2,6 +2,7 @@ export * from "./episodes";
 export * from "./histories";
 export * from "./languages";
 export * from "./movies";
+export * from "./plex";
 export * from "./providers";
 export * from "./series";
 export * from "./status";
