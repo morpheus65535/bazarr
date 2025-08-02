@@ -1,4 +1,5 @@
-import { FunctionComponent } from "react";
+import { FunctionComponent, useState, useEffect } from "react";
+import axios from "axios";
 import {
   Check,
   CollapseBox,
@@ -10,11 +11,85 @@ import {
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
 
+type PlexServer = {
+  name: string;
+  address: string;
+  port: string;
+  uri: string;
+  local: string;
+  ssl: boolean;
+};
+
 const SettingsPlexView: FunctionComponent = () => {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [servers, setServers] = useState<PlexServer[]>([]);
+  const [selectedServer, setSelectedServer] = useState<PlexServer | null>(null);
+
+  useEffect(() => {
+    // Check if authenticated and fetch servers
+    axios
+      .get("/api/plex/servers")
+      .then((res) => {
+        if (res.data.servers) {
+          setAuthenticated(true);
+          setServers(res.data.servers);
+        }
+      })
+      .catch(() => setAuthenticated(false));
+  }, []);
+
+  const handleAuthenticate = () => {
+    window.location.href = "/api/plex/oauth/login";
+  };
+
+  const handleSelectServer = (e: any) => {
+    const idx = e.target.value;
+    const server = servers[idx];
+    setSelectedServer(server);
+    // Auto-fill host/port/ssl
+    axios.post("/api/plex/server", {
+      address: server.address,
+      port: server.port,
+      ssl: server.ssl,
+    });
+  };
+
   return (
     <Layout name="Interface">
       <Section header="Use Plex operations">
         <Check label="Enabled" settingKey={plexEnabledKey}></Check>
+        <div style={{ margin: "10px 0" }}>
+          {!authenticated ? (
+            <button
+              onClick={handleAuthenticate}
+              style={{
+                padding: "8px 16px",
+                background: "#3572b0",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+              }}
+            >
+              Authenticate with Plex.tv
+            </button>
+          ) : (
+            <div>
+              <label htmlFor="plex-server-select">Select Plex Server:</label>
+              <select
+                id="plex-server-select"
+                onChange={handleSelectServer}
+                style={{ marginLeft: "10px" }}
+              >
+                <option value="">-- Select --</option>
+                {servers.map((srv, idx) => (
+                  <option key={srv.uri} value={idx}>
+                    {srv.name} ({srv.address}:{srv.port})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       </Section>
       <CollapseBox settingKey={plexEnabledKey}>
         <Section header="Host">
