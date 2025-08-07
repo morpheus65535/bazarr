@@ -46,7 +46,6 @@ services:
       - ../frontend/tsconfig.json:/app/tsconfig.json:ro
       - ../frontend/package.json:/app/package.json:ro
       - ../frontend/.env.development:/app/.env.development:ro
-      - ../frontend/index.dev.html:/app/index.dev.html:ro
       
       # Ensure node_modules is not overwritten by volume mount
       - /app/node_modules
