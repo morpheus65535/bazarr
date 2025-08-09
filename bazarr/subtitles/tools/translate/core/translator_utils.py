@@ -134,3 +134,79 @@ def get_description(media_type, radarr_id, sonarr_series_id):
     except Exception:
         logging.info("Problem with getting media info")
         return ""
+
+def get_title(
+        media_type: str,
+        radarr_id: int | None = None,
+        sonarr_series_id: int | None = None,
+        sonarr_episode_id: int | None = None
+) -> str:
+    try:
+        if media_type == "movies":
+            if radarr_id is None:
+                return ""
+
+            movie_row = database.execute(
+                select(TableMovies.title).where(TableMovies.radarrId == radarr_id)
+            ).first()
+
+            if movie_row is None:
+                return ""
+
+            title_attr = getattr(movie_row, "title", None)
+            if title_attr is None:
+                return ""
+
+            movie_title = str(title_attr).strip()
+            if movie_title == "":
+                return ""
+
+            return movie_title
+
+        # Handle series
+        if sonarr_series_id is None:
+            return ""
+
+        series_row = database.execute(
+            select(TableShows.title).where(TableShows.sonarrSeriesId == sonarr_series_id)
+        ).first()
+
+        if series_row is None:
+            return ""
+
+        series_title_attr = getattr(series_row, "title", None)
+        if series_title_attr is None:
+            return ""
+
+        series_title = str(series_title_attr).strip()
+        if series_title == "":
+            return ""
+
+        # If episode ID is provided, get episode details and format as "Series - S##E## - Episode Title"
+        if sonarr_episode_id is not None:
+            episode_row = database.execute(
+                select(TableEpisodes.season, TableEpisodes.episode, TableEpisodes.title)
+                .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)
+            ).first()
+
+            if episode_row is not None:
+                season = getattr(episode_row, "season", None)
+                episode = getattr(episode_row, "episode", None)
+                episode_title = getattr(episode_row, "title", None)
+
+                if season is not None and episode is not None:
+                    season_str = f"S{season:02d}"
+                    episode_str = f"E{episode:02d}"
+
+                    full_title = f"{series_title} - {season_str}{episode_str}"
+
+                    if episode_title and str(episode_title).strip():
+                        full_title += f" - {str(episode_title).strip()}"
+
+                    return full_title
+
+        return series_title
+
+    except Exception:
+        logging.info("Problem with getting title")
+        return ""
