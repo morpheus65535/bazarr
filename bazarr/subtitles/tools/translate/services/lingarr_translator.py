@@ -100,7 +100,7 @@ class LingarrTranslatorService:
             hide_progress(id=f'translate_progress_{self.dest_srt_file}')
             return False
 
-    @retry(exceptions=(TooManyRequests, RequestError, requests.exceptions.RequestException), tries=6, delay=1, backoff=2, jitter=(0, 1))
+    @retry(exceptions=(TooManyRequests, RequestError, requests.exceptions.RequestException), tries=3, delay=1, backoff=2, jitter=(0, 1))
     def _translate_content(self, lines_list):
         try:
             source_lang = self.language_code_convert_dict.get(self.from_lang, self.from_lang)

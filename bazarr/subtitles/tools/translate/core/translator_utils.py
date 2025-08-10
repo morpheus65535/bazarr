@@ -14,6 +14,7 @@ from utilities.path_mappings import path_mappings
 
 from app.database import TableShows, TableEpisodes, TableMovies, database, select
 
+logger = logging.getLogger(__name__)
 
 def validate_translation_params(video_path, source_srt_file, from_lang, to_lang):
     """Validate translation parameters."""
@@ -116,7 +117,7 @@ def get_description(media_type, radarr_id, sonarr_series_id):
                 return (f"You will translate movie that is called {movie.title} from {movie.year} "
                         f"and it has IMDB ID = {movie.imdbId}. Its overview: {movie.overview}")
             else:
-                logging.info(f"No movie found for this radarr_id: {radarr_id}")
+                logger.info(f"No movie found for this radarr_id: {radarr_id}")
                 return ""
 
         else:
@@ -129,10 +130,10 @@ def get_description(media_type, radarr_id, sonarr_series_id):
                 return (f"You will translate TV show that is called {series.title} from {series.year} "
                         f"and it has IMDB ID = {series.imdbId}. Its overview: {series.overview}")
             else:
-                logging.info(f"No series found for this sonarr_series_id: {sonarr_series_id}")
+                logger.info(f"No series found for this sonarr_series_id: {sonarr_series_id}")
                 return ""
     except Exception:
-        logging.info("Problem with getting media info")
+        logger.exception("Problem with getting media info")
         return ""
 
 def get_title(
@@ -208,5 +209,5 @@ def get_title(
         return series_title
 
     except Exception:
-        logging.info("Problem with getting title")
+        logger.exception("Problem with getting title")
         return ""
