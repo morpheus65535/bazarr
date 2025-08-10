@@ -490,7 +490,7 @@ while failed_validator:
         failed_validator = False
     except ValidationError as e:
         current_validator_details = e.details[0][0]
-        logging.info(f"Validator failed for {current_validator_details.names[0]}: {e}")
+        logging.error(f"Validator failed for {current_validator_details.names[0]}: {e}")
         if hasattr(current_validator_details, 'default') and current_validator_details.default is not empty:
             old_value = settings.get(current_validator_details.names[0], 'undefined')
             settings[current_validator_details.names[0]] = current_validator_details.default
