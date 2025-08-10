@@ -3,6 +3,7 @@ import episodes from "./episodes";
 import files from "./files";
 import history from "./history";
 import movies from "./movies";
+import plex from "./plex";
 import providers from "./providers";
 import series from "./series";
 import subtitles from "./subtitles";
@@ -20,6 +21,7 @@ const api = {
   subtitles,
   system,
   utils,
+  plex,
 };
 
 export default api;
