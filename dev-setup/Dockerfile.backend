@@ -1,0 +1,61 @@
+FROM alpine:3.22
+
+# Install build dependencies and runtime dependencies
+RUN \
+  apk add --no-cache --virtual=build-dependencies \
+    build-base \
+    cargo \
+    libffi-dev \
+    libpq-dev \
+    libxml2-dev \
+    libxslt-dev \
+    python3-dev && \
+  apk add --no-cache \
+    ffmpeg \
+    libxml2 \
+    libxslt \
+    mediainfo \
+    python3 \
+    py3-pip \
+    p7zip \
+    bash \
+    git && \
+  mkdir -p \
+    /app/bazarr/bin \
+    /app/bazarr/data/config \
+    /app/bazarr/data/cache \
+    /app/bazarr/data/log
+
+# Set working directory
+WORKDIR /app/bazarr/bin
+
+# Copy only backend-related files
+COPY requirements.txt postgres-requirements.txt dev-requirements.txt ./
+COPY bazarr.py ./
+COPY libs ./libs
+COPY custom_libs ./custom_libs
+COPY bazarr ./bazarr
+COPY migrations ./migrations
+
+# Install Python dependencies
+RUN \
+  pip install --break-system-packages -U --no-cache-dir --find-links https://wheel-index.linuxserver.io/alpine-3.22/ \
+    -r requirements.txt \
+    -r postgres-requirements.txt \
+    -r dev-requirements.txt
+
+# Clean up build dependencies
+RUN apk del build-dependencies
+
+# Expose backend port
+EXPOSE 6767
+
+# Environment variables
+ENV SZ_USER_AGENT="bazarr-dev"
+ENV BAZARR_VERSION="dev"
+# Using PYTHONPATH instead of symlinks for cleaner approach
+# The order matters: custom_libs first (to override libs), then libs, then bazarr directory
+ENV PYTHONPATH="/app/bazarr/bin/custom_libs:/app/bazarr/bin/libs:/app/bazarr/bin/bazarr:/app/bazarr/bin"
+
+# Default command
+CMD ["python3", "bazarr.py", "--debug", "--no-update", "--config", "/app/bazarr/data"]

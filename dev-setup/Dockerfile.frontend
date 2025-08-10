@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1
+ARG NODE_VERSION=20
+
+FROM node:${NODE_VERSION}-alpine
+
+# Install wget for healthcheck
+RUN apk add --no-cache wget
+
+# Use development node environment by default
+ENV NODE_ENV=development
+
+WORKDIR /app
+
+# Copy package files first for better caching
+COPY frontend/package.json frontend/package-lock.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy frontend source files (these will be overridden by volume mounts in dev)
+COPY frontend/ .
+
+# Copy and setup entrypoint script
+COPY dev-setup/frontend-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/frontend-entrypoint.sh
+
+# Change ownership of the /app directory to the node user
+RUN chown -R node:node /app
+
+# Switch to the node user for security
+USER node
+
+# Ensure node_modules/.bin is in the PATH
+ENV PATH=/app/node_modules/.bin:$PATH
+
+# Expose the Vite dev server port
+EXPOSE 5173
+
+# Run the development server via entrypoint
+CMD ["/usr/local/bin/frontend-entrypoint.sh"]
