@@ -18,7 +18,6 @@ def get_plex_server() -> PlexServer:
         if auth_method == 'oauth':
             # OAuth authentication - use encrypted token and configured server URL
             from bazarr.api.plex.security import TokenManager
-            from cryptography.fernet import Fernet
             
             encrypted_token = settings.plex.get('token')
             if not encrypted_token:

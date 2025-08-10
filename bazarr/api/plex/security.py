@@ -4,7 +4,7 @@
 import secrets
 import hashlib
 from typing import Dict, Optional
-from cryptography.fernet import Fernet
+from itsdangerous import URLSafeSerializer, BadSignature
 from datetime import datetime, timedelta
 
 from .exceptions import InvalidTokenError
@@ -14,22 +14,22 @@ class TokenManager:
     
     def __init__(self, encryption_key: str):
         """Initialize token manager with encryption key."""
-        self.cipher = Fernet(encryption_key.encode() if isinstance(encryption_key, str) else encryption_key)
+        self.serializer = URLSafeSerializer(encryption_key)
         self._tokens = {}  # In-memory token cache
     
     def encrypt(self, token: str) -> str:
         """Encrypt token for storage."""
         if not token:
             return None
-        return self.cipher.encrypt(token.encode()).decode()
+        return self.serializer.dumps(token)
     
     def decrypt(self, encrypted_token: str) -> str:
         """Decrypt stored token."""
         if not encrypted_token:
             return None
         try:
-            return self.cipher.decrypt(encrypted_token.encode()).decode()
-        except Exception:
+            return self.serializer.loads(encrypted_token)
+        except BadSignature:
             raise InvalidTokenError("Failed to decrypt token")
     
     def generate_state_token(self) -> str:

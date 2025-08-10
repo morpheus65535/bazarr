@@ -972,8 +972,8 @@ def migrate_plex_config():
     # Generate encryption key if not exists
     if not settings.plex.get('encryption_key'):
         logging.info("Generating new encryption key for Plex token storage")
-        from cryptography.fernet import Fernet
-        key = Fernet.generate_key().decode()
+        import secrets
+        key = secrets.token_urlsafe(32)
         settings.plex.encryption_key = key
         write_config()
         logging.info("Plex encryption key generated")

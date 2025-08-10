@@ -5,7 +5,7 @@ import time
 import uuid
 import requests
 from functools import wraps
-from cryptography.fernet import Fernet
+from itsdangerous import URLSafeSerializer
 from datetime import datetime, timedelta
 from flask import request, current_app
 from flask_restx import Resource
@@ -42,7 +42,8 @@ def get_token_manager():
     """Get or create token manager with encryption key."""
     key = settings.plex.get('encryption_key')
     if not key:
-        key = Fernet.generate_key().decode()
+        import secrets
+        key = secrets.token_urlsafe(32)
         settings.plex.encryption_key = key
         write_config()
     return TokenManager(key)
