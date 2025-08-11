@@ -15,8 +15,7 @@ plex/
 │   └── plex.ts                   # React Query hooks for API calls
 ├── hooks/
 │   ├── usePlexOAuth.ts           # OAuth authentication hook (React Query)
-│   ├── usePlexServers.ts         # Server management hook (React Query)
-│   └── useServerSelection.ts     # Server selection state management
+│   └── usePlexServers.ts         # Server + connection management hook
 └── components/
     ├── PlexSettings.tsx          # Main Plex settings component
     └── PlexSettings.module.scss  # Component styles
@@ -43,7 +42,7 @@ import { PlexSettings } from "@/plex";
 ### Importing Hooks
 
 ```typescript
-import { usePlexOAuth, usePlexServers, useServerSelection } from "@/plex";
+import { usePlexOAuth, usePlexServers } from "@/plex";
 ```
 
 ### Importing React Query Hooks
@@ -129,14 +128,7 @@ Server management hook that handles:
 - Server selection and caching
 - Throttled server fetching
 
-### useServerSelection
-
-Manages server selection state using a reducer pattern:
-
-- Server selection tracking
-- Loading states
-- Save status management
-- Centralized state updates
+Server selection now handled internally in the settings component with simple React state (lighter weight than previous reducer pattern).
 
 ## Form Integration
 

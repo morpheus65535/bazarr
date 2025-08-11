@@ -8,46 +8,17 @@ import {
   usePlexServersQuery,
 } from "@/plex/queries/plex";
 import { parseAxiosError } from "@/plex/utilities/errors";
-import { plexServerCache } from "@/plex/utilities/serverCache";
 
 export const usePlexServers = () => {
-  // Queries
-  const {
-    data: serversResponse,
-    isLoading: serversLoading,
-    error: serversError,
-    refetch: refetchServers,
-  } = usePlexServersQuery();
-
-  const {
-    data: selectedServerResponse,
-    isLoading: selectedServerLoading,
-    refetch: refetchSelectedServer,
-  } = usePlexSelectedServerQuery();
-
-  // Mutations
+  const { data: serversResponse, isLoading: serversLoading, error: serversError, refetch: refetchServers } = usePlexServersQuery();
+  const { data: selectedServerResponse, isLoading: selectedServerLoading, refetch: refetchSelectedServer } = usePlexSelectedServerQuery();
   const connectionTestMutation = usePlexConnectionTestMutation();
   const serverSelectionMutation = usePlexServerSelectionMutation();
 
-  // State for processed servers
-  const [processedServers, setProcessedServers] = useState<PlexServer[]>([]);
-
-  // Process servers data
-  const rawServers: PlexServer[] = useMemo(
-    () => serversResponse?.servers || [],
-    [serversResponse?.servers],
-  );
+  // Local enriched state (latency + availability). Simpler: enrich once per fetch.
+  const [enriched, setEnriched] = useState<PlexServer[]>([]);
+  const rawServers: PlexServer[] = useMemo(() => serversResponse?.servers || [], [serversResponse?.servers]);
   const selectedServer = selectedServerResponse?.server || null;
-
-  // Use processed servers when available, fall back to raw servers
-  const servers = processedServers.length > 0 ? processedServers : rawServers;
-
-  // Reset processed servers when raw servers change
-  useEffect(() => {
-    if (rawServers.length === 0) {
-      setProcessedServers([]);
-    }
-  }, [rawServers]);
 
   // Test a single connection
   const testConnection = useCallback(
@@ -87,80 +58,45 @@ export const usePlexServers = () => {
     [],
   );
 
-  // Throttled fetchServers with connection testing
   const fetchServers = useCallback(async () => {
-    if (plexServerCache.shouldThrottleFetch()) {
-      // Throttle: only fetch every 30 seconds
-      return servers;
-    }
-    plexServerCache.setLastFetch(Date.now());
     try {
       const response = await refetchServers();
-      if (response.data?.servers) {
-        // Create mutable copies and test connections in parallel for each server
-        const serversWithConnections = await Promise.all(
-          response.data.servers.map(async (server: PlexServer) => {
-            // Create mutable copies of connections
-            const connectionsWithLatency = await Promise.all(
-              server.connections.map(async (conn: PlexServerConnection) => {
-                const connectionCopy = { ...conn };
-                await testConnection(connectionCopy);
-                return connectionCopy;
-              }),
-            );
-            // Create server copy with tested connections
-            const serverCopy = {
-              ...server,
-              connections: connectionsWithLatency,
-              bestConnection: getBestConnection(connectionsWithLatency),
-            };
+      if (!response.data?.servers) return [];
+      const enrichedServers = await Promise.all(
+        response.data.servers.map(async (server: PlexServer) => {
+          const connections = await Promise.all(
+            server.connections.map(async (c: PlexServerConnection) => {
+              const copy = { ...c };
+              await testConnection(copy);
+              return copy;
+            }),
+          );
+            const serverCopy = { ...server, connections, bestConnection: getBestConnection(connections) };
             return serverCopy;
-          }),
-        );
-        // Sort servers: ones with available connections first
-        serversWithConnections.sort((a: PlexServer, b: PlexServer) => {
-          const aHasConnection = !!a.bestConnection;
-          const bHasConnection = !!b.bestConnection;
-          if (aHasConnection && !bHasConnection) return -1;
-          if (!aHasConnection && bHasConnection) return 1;
-          return 0;
-        });
-        setProcessedServers(serversWithConnections);
-        return serversWithConnections;
-      }
-    } catch (error) {
-      // Parse and re-throw the error with better context for the UI
-      const errorMessage = parseAxiosError(error).message;
+        }),
+      );
+      enrichedServers.sort((a, b) => Number(!b.bestConnection) - Number(!a.bestConnection));
+      setEnriched(enrichedServers);
+      return enrichedServers;
+    } catch (e) {
+      const errorMessage = parseAxiosError(e).message;
       throw new Error(`Failed to fetch servers: ${errorMessage}`);
     }
-    return [];
-  }, [refetchServers, testConnection, getBestConnection, servers]);
+  }, [refetchServers, testConnection, getBestConnection]);
 
-  // Select a server and cache it
-  const selectServer = useCallback(
-    async (machineIdentifier: string) => {
-      const server = servers.find(
-        (s: PlexServer) => s.machineIdentifier === machineIdentifier,
-      );
-      if (!server) {
-        throw new Error(
-          `Server with identifier '${machineIdentifier}' not found`,
-        );
-      }
-      if (!server.bestConnection) {
-        throw new Error(`Server '${server.name}' has no available connections`);
-      }
+  const servers = enriched.length ? enriched : rawServers; // raw until enriched
 
-      await serverSelectionMutation.mutateAsync({
-        machineIdentifier,
-        name: server.name,
-        uri: server.bestConnection.uri,
-        local: server.bestConnection.local,
-      });
-      plexServerCache.setSelectedServer(server);
-    },
-    [servers, serverSelectionMutation],
-  );
+  const selectServer = useCallback(async (machineIdentifier: string) => {
+    const server = servers.find((s) => s.machineIdentifier === machineIdentifier);
+    if (!server) throw new Error(`Server '${machineIdentifier}' not found`);
+    if (!server.bestConnection) throw new Error(`Server '${server.name}' unavailable`);
+    await serverSelectionMutation.mutateAsync({
+      machineIdentifier,
+      name: server.name,
+      uri: server.bestConnection.uri,
+      local: server.bestConnection.local,
+    });
+  }, [servers, serverSelectionMutation]);
 
   // Get selected server (refresh from server)
   const getSelectedServer = useCallback(async () => {
@@ -173,16 +109,12 @@ export const usePlexServers = () => {
     }
   }, [refetchSelectedServer]);
 
-  return {
+  return { 
     servers,
     selectedServer,
-    isLoading:
-      serversLoading ||
-      selectedServerLoading ||
-      serverSelectionMutation.isPending,
+    isLoading: serversLoading || selectedServerLoading || serverSelectionMutation.isPending,
     error: serversError ? parseAxiosError(serversError).message : undefined,
     fetchServers,
-    refreshServers: fetchServers,
     selectServer,
     getSelectedServer,
   };

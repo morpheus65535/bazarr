@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   ActionIcon,
   Alert,
@@ -19,7 +19,6 @@ import { QueryKeys } from "@/apis/queries/keys";
 import { FormContext } from "@/pages/Settings/utilities/FormValues";
 import { usePlexOAuth } from "@/plex/hooks/usePlexOAuth";
 import { usePlexServers } from "@/plex/hooks/usePlexServers";
-import { useServerSelection } from "@/plex/hooks/useServerSelection";
 import type { PlexServer, PlexServerConnection } from "@/plex/queries/plex";
 import { getErrorMessage, type PlexError } from "@/plex/utilities/errors";
 import styles from "./PlexSettings.module.scss";
@@ -340,17 +339,11 @@ export const PlexSettings: React.FC = () => {
   const queryClient = useQueryClient();
   const form = useContext(FormContext);
 
-  // Server selection state management
-  const {
-    selectedServerId,
-    isSelecting,
-    isSaved,
-    selectedServer,
-    setSelectedServerId,
-    setSelecting,
-    setSaved,
-    setSelectedServer,
-  } = useServerSelection();
+  // Simplified local state (reduces ~150 lines of supporting code removed elsewhere)
+  const [selectedServerId, setSelectedServerId] = useState("");
+  const [selectedServer, setSelectedServer] = useState<PlexServer | null>(null);
+  const [isSelecting, setSelecting] = useState(false);
+  const [isSaved, setSaved] = useState(false);
 
   // Plex OAuth hook (React Query version)
   const {
@@ -379,63 +372,24 @@ export const PlexSettings: React.FC = () => {
     selectServer,
   } = usePlexServers();
 
-  // Centralized server selection effect - handles all server selection logic
+  // Basic selection effect: prefer previously saved server from API, else single available server auto-select.
   useEffect(() => {
-    if (!isAuthenticated) return;
-
-    // Priority 1: Use cached server if available
-    const cachedServer = (
-      window as unknown as {
-        bazarrPlexCache?: { selectedServer?: PlexServer | null };
-      }
-    )?.bazarrPlexCache?.selectedServer;
-
-    if (cachedServer && !isSaved) {
-      setSelectedServer(cachedServer);
-      setSelectedServerId(cachedServer.machineIdentifier);
-      setSaved(true);
-      return;
-    }
-
-    // Priority 2: Use saved server from API
-    if (savedSelectedServer && !isSaved) {
+    if (!isAuthenticated || isSaved) return;
+    if (savedSelectedServer) {
       setSelectedServer(savedSelectedServer);
       setSelectedServerId(savedSelectedServer.machineIdentifier);
       setSaved(true);
       return;
     }
-
-    // Priority 3: Auto-select single available server
-    if (
-      servers.length === 1 &&
-      servers[0].bestConnection &&
-      !isSaved &&
-      !savedSelectedServer &&
-      !cachedServer
-    ) {
-      const singleServer = servers[0];
-      setSelectedServerId(singleServer.machineIdentifier);
-
-      // Auto-select the single server
-      selectServer(singleServer.machineIdentifier)
-        .then(() => {
-          setSelectedServer(singleServer);
-          setSaved(true);
-        })
-        .catch(() => {
-          // Error is handled by the selectServer mutation
-        });
+    if (servers.length === 1 && servers[0].bestConnection) {
+      const single = servers[0];
+      setSelectedServerId(single.machineIdentifier);
+      selectServer(single.machineIdentifier).then(() => {
+        setSelectedServer(single);
+        setSaved(true);
+      }).catch(() => {/* handled upstream */});
     }
-  }, [
-    isAuthenticated,
-    servers,
-    savedSelectedServer,
-    isSaved,
-    selectServer,
-    setSelectedServerId,
-    setSelectedServer,
-    setSaved,
-  ]);
+  }, [isAuthenticated, servers, savedSelectedServer, isSaved, selectServer]);
 
   // Success handler for OAuth authentication
   function handleAuthSuccess() {
