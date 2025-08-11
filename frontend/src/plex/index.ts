@@ -1,8 +1,9 @@
 // Plex module exports
 export * from "./constants/auth";
 export * from "./utilities/errors";
-export * from "./hooks/useServerSelection";
-export * from "./hooks/usePlexOAuth";
-export * from "./hooks/usePlexServers";
+export * from "./hooks/usePlexManagement";
 export * from "./queries/plex";
 export { default as PlexSettings } from "./components/PlexSettings";
+export { PlexAuthSection } from "./components/PlexAuthSection";
+export { PlexServerSection } from "./components/PlexServerSection";
+export { PlexConnectionCard } from "./components/PlexConnectionCard";

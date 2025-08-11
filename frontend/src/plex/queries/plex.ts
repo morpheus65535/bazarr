@@ -13,7 +13,7 @@ export type {
   PlexServersResponse,
 } from "@/apis/raw/plex";
 
-// Auth validation query hook
+// Auth validation query hook with user-specific cache key
 export const usePlexAuthValidationQuery = () => {
   return useQuery({
     queryKey: [QueryKeys.Plex, "auth", "validate"],
@@ -31,15 +31,19 @@ export const usePlexAuthValidationQuery = () => {
         };
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 2, // Reduced to 2 minutes for faster auth state updates
+    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
     throwOnError: false, // Never throw errors from this query
   });
 };
 
-// Servers query hook
-export const usePlexServersQuery = (enabled: boolean = true) => {
+// Servers query hook with user-specific cache key to prevent cross-user pollution
+export const usePlexServersQuery = (
+  userId?: string,
+  enabled: boolean = true,
+) => {
   return useQuery({
-    queryKey: [QueryKeys.Plex, "servers"],
+    queryKey: [QueryKeys.Plex, "servers", userId || "anonymous"],
     queryFn: async () => {
       try {
         return await api.plex.getServers();
@@ -48,15 +52,19 @@ export const usePlexServersQuery = (enabled: boolean = true) => {
         throw new Error(plexError.message);
       }
     },
-    enabled,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    enabled: enabled && !!userId,
+    staleTime: 1000 * 60 * 1, // Reduced to 1 minute for faster updates
+    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
   });
 };
 
-// Selected server query hook
-export const usePlexSelectedServerQuery = (enabled: boolean = true) => {
+// Selected server query hook with user-specific cache key
+export const usePlexSelectedServerQuery = (
+  userId?: string,
+  enabled: boolean = true,
+) => {
   return useQuery({
-    queryKey: [QueryKeys.Plex, "selectedServer"],
+    queryKey: [QueryKeys.Plex, "selectedServer", userId || "anonymous"],
     queryFn: async () => {
       try {
         return await api.plex.getSelectedServer();
@@ -65,8 +73,9 @@ export const usePlexSelectedServerQuery = (enabled: boolean = true) => {
         return null;
       }
     },
-    enabled,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: enabled && !!userId,
+    staleTime: 1000 * 60 * 2, // Reduced for faster updates
+    gcTime: 1000 * 60 * 5,
   });
 };
 
@@ -84,7 +93,7 @@ export const usePlexPinMutation = () => {
   });
 };
 
-// PIN check mutation
+// PIN check mutation with optimistic cache updates to eliminate lag
 export const usePlexPinCheckMutation = () => {
   const queryClient = useQueryClient();
 
@@ -97,18 +106,39 @@ export const usePlexPinCheckMutation = () => {
         throw new Error(plexError.message);
       }
     },
-    onSuccess: (data: { authenticated: boolean }) => {
+    onSuccess: (data: {
+      authenticated: boolean;
+      username?: string;
+      email?: string;
+    }) => {
       if (data.authenticated) {
-        // Invalidate auth validation query when authentication succeeds
+        // Immediately invalidate auth validation query when authentication succeeds
         queryClient.invalidateQueries({
           queryKey: [QueryKeys.Plex, "auth", "validate"],
+        });
+
+        // Optimistically update the auth cache to eliminate 1-second lag
+        queryClient.setQueryData([QueryKeys.Plex, "auth", "validate"], {
+          valid: true,
+          // eslint-disable-next-line camelcase
+          auth_method: "oauth",
+          username: data.username,
+          email: data.email,
+        });
+
+        // Clear any old server caches since user context might have changed
+        queryClient.removeQueries({
+          queryKey: [QueryKeys.Plex, "servers"],
+        });
+        queryClient.removeQueries({
+          queryKey: [QueryKeys.Plex, "selectedServer"],
         });
       }
     },
   });
 };
 
-// Logout mutation
+// Logout mutation with complete cache cleanup
 export const usePlexLogoutMutation = () => {
   const queryClient = useQueryClient();
 
@@ -122,19 +152,20 @@ export const usePlexLogoutMutation = () => {
       }
     },
     onSuccess: () => {
-      // Invalidate all Plex queries on logout
-      queryClient.invalidateQueries({
-        queryKey: [QueryKeys.Plex],
-      });
-      // Also invalidate system queries as settings may have changed
-      queryClient.invalidateQueries({
-        queryKey: [QueryKeys.System],
+      // Complete cache cleanup on logout - fixes "wrong auth" bug
+      queryClient.clear(); // Clear ALL cache to prevent stale auth states
+
+      // Immediately set logged-out state
+      queryClient.setQueryData([QueryKeys.Plex, "auth", "validate"], {
+        valid: false,
+        // eslint-disable-next-line camelcase
+        auth_method: "apikey",
       });
     },
   });
 };
 
-// Server selection mutation
+// Server selection mutation with user-specific cache invalidation
 export const usePlexServerSelectionMutation = () => {
   const queryClient = useQueryClient();
 
@@ -144,6 +175,7 @@ export const usePlexServerSelectionMutation = () => {
       name: string;
       uri: string;
       local: boolean;
+      userId?: string;
     }) => {
       try {
         return await api.plex.selectServer({
@@ -159,10 +191,14 @@ export const usePlexServerSelectionMutation = () => {
         throw new Error(plexError.message);
       }
     },
-    onSuccess: () => {
-      // Invalidate selected server query when selection changes
+    onSuccess: (data, variables) => {
+      // Invalidate user-specific selected server query when selection changes
       queryClient.invalidateQueries({
-        queryKey: [QueryKeys.Plex, "selectedServer"],
+        queryKey: [
+          QueryKeys.Plex,
+          "selectedServer",
+          variables.userId || "anonymous",
+        ],
       });
       // Also invalidate system queries as settings may have changed
       queryClient.invalidateQueries({
