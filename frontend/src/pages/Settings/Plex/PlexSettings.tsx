@@ -15,11 +15,11 @@ import {
 import { faRefresh } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePlexOAuth } from "@/apis/hooks/usePlexOAuth";
+import { usePlexServers } from "@/apis/hooks/usePlexServers";
+import { useServerSelection } from "@/apis/hooks/useServerSelection";
 import { QueryKeys } from "@/apis/queries/keys";
 import { FormContext } from "@/pages/Settings/utilities/FormValues";
-import { usePlexOAuth } from "@/plex/hooks/usePlexOAuth";
-import { usePlexServers } from "@/plex/hooks/usePlexServers";
-import { useServerSelection } from "@/plex/hooks/useServerSelection";
 import type { PlexServer, PlexServerConnection } from "@/plex/queries/plex";
 import { getErrorMessage, type PlexError } from "@/plex/utilities/errors";
 import styles from "./PlexSettings.module.scss";
