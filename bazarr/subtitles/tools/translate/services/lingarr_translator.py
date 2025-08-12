@@ -20,7 +20,7 @@ from subtitles.processing import ProcessSubtitlesResult
 from app.event_handler import show_progress, hide_progress, show_message
 from utilities.path_mappings import path_mappings
 
-from ..core.translator_utils import add_translator_info, create_process_result
+from ..core.translator_utils import add_translator_info, create_process_result, get_title
 
 
 class LingarrTranslatorService:
@@ -57,15 +57,8 @@ class LingarrTranslatorService:
                 logging.debug('No lines to translate in subtitle file')
                 return self.dest_srt_file
 
-            lines_payload = []
-            for i, line in enumerate(lines_list):
-                lines_payload.append({
-                    "position": i,
-                    "line": line
-                })
-
             logging.debug(f'Starting translation for {self.source_srt_file}')
-            translated_lines = self._translate_batch(lines_payload)
+            translated_lines = self._translate_content(lines_list)
 
             if translated_lines is None:
                 logging.error(f'Translation failed for {self.source_srt_file}')
@@ -107,26 +100,49 @@ class LingarrTranslatorService:
             hide_progress(id=f'translate_progress_{self.dest_srt_file}')
             return False
 
-    @retry(exceptions=(TooManyRequests, RequestError, requests.exceptions.RequestException), tries=6, delay=1, backoff=2, jitter=(0, 1))
-    def _translate_batch(self, lines_payload):
+    @retry(exceptions=(TooManyRequests, RequestError, requests.exceptions.RequestException), tries=3, delay=1, backoff=2, jitter=(0, 1))
+    def _translate_content(self, lines_list):
         try:
             source_lang = self.language_code_convert_dict.get(self.from_lang, self.from_lang)
             target_lang = self.language_code_convert_dict.get(self.orig_to_lang, self.orig_to_lang)
 
+            lines_payload = []
+            for i, line in enumerate(lines_list):
+                lines_payload.append({
+                    "position": i,
+                    "line": line
+                })
+
+            title = get_title(
+                media_type=self.media_type,
+                radarr_id=self.radarr_id,
+                sonarr_series_id=self.sonarr_series_id,
+                sonarr_episode_id=self.sonarr_episode_id
+            )
+
+            if self.media_type == 'series':
+                api_media_type = "Episode"
+                arr_media_id = self.sonarr_series_id or 0
+            else:
+                api_media_type = "Movie"
+                arr_media_id = self.radarr_id or 0
+
             payload = {
+                "arrMediaId": arr_media_id,
+                "title": title,
                 "sourceLanguage": source_lang,
                 "targetLanguage": target_lang,
+                "mediaType": api_media_type,
                 "lines": lines_payload
             }
 
-            logging.debug(f'BAZARR is sending {len(lines_payload)} lines to Lingarr in a single batch request')
+            logging.debug(f'BAZARR is sending {len(lines_payload)} lines to Lingarr with full media context')
 
-            # Some services can only perform a single line translation, so we set a high timeout
             response = requests.post(
                 f"{settings.translator.lingarr_url}/api/translate/content",
                 json=payload,
                 headers={"Content-Type": "application/json"},
-                timeout=600
+                timeout=1800
             )
 
             if response.status_code == 200:
