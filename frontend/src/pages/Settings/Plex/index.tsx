@@ -12,7 +12,7 @@ import {
   Text,
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
-import { PlexSettings } from "@/plex";
+import { PlexSettings } from "./PlexSettings";
 
 const SettingsPlexView: FunctionComponent = () => {
   const [manualConfigOpen, setManualConfigOpen] = useState(false);
