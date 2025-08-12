@@ -12,8 +12,7 @@ from flask_restx import Resource
 
 from . import api_ns_plex
 from .exceptions import *
-from .security import TokenManager
-from .cache import cache_pin, get_cached_pin, delete_cached_pin
+from .security import TokenManager, sanitize_log_data, pin_cache
 from app.config import settings, write_config
 
 from flask_restx import errors as restx_errors
@@ -39,18 +38,18 @@ def handle_api_exception(error):
         'code': 'UNKNOWN_ERROR'
     }, 500
 def get_token_manager():
-    """Get or create token manager with encryption key."""
-    key = settings.plex.get('encryption_key')
-    if not key:
-        import secrets
-        key = secrets.token_urlsafe(32)
-        settings.plex.encryption_key = key
+    """Get or create token manager with secure encryption key."""
+    from .security import get_or_create_encryption_key
+    key = get_or_create_encryption_key(settings.plex, 'encryption_key')
+    # Write config if key was created
+    if not getattr(settings.plex, 'encryption_key', None):
         write_config()
     return TokenManager(key)
 
+# Global token manager instance
 token_manager = get_token_manager()
 
-# Utility functions
+# Utility functions for token handling
 def encrypt_token(token):
     """Encrypt Plex token for secure storage."""
     if not token:
@@ -63,7 +62,8 @@ def decrypt_token(encrypted_token):
         return None
     try:
         return token_manager.decrypt(encrypted_token)
-    except Exception:
+    except Exception as e:
+        current_app.logger.error(f"Token decryption failed: {type(e).__name__}")
         raise InvalidTokenError("Failed to decrypt token")
 
 def generate_client_id():
@@ -72,6 +72,9 @@ def generate_client_id():
 
 def validate_plex_token(token):
     """Validate token with Plex API."""
+    if not token:
+        raise InvalidTokenError("Empty token")
+        
     try:
         headers = {
             'X-Plex-Token': token,
@@ -83,21 +86,24 @@ def validate_plex_token(token):
             timeout=10
         )
         if response.status_code == 401:
-            raise InvalidTokenError()
+            raise InvalidTokenError("Token rejected by Plex")
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Plex token validation failed: {type(e).__name__}")
         raise PlexConnectionError(f"Failed to validate token: {str(e)}")
 
 def refresh_token(token):
     """Refresh Plex token using ping endpoint."""
+    if not token:
+        raise InvalidTokenError("Empty token")
+        
     try:
         headers = {
             'X-Plex-Token': token,
             'Accept': 'application/json'
         }
         
-        # Use ping endpoint to refresh token
         response = requests.get(
             'https://plex.tv/api/v2/ping',
             headers=headers,
@@ -105,19 +111,24 @@ def refresh_token(token):
         )
         
         if response.status_code == 401:
-            raise TokenExpiredError()
+            raise TokenExpiredError("Token expired")
         
         response.raise_for_status()
-        
-        # Token is still valid, return as-is
-        return token
+        return token  # Token is still valid
         
     except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Plex token refresh failed: {type(e).__name__}")
         raise PlexConnectionError(f"Failed to refresh token: {str(e)}")
 
 def test_plex_connection(uri, token):
     """Test connection to a Plex server."""
+    if not uri or not token:
+        return False
+        
     try:
+        from .security import sanitize_server_url
+        uri = sanitize_server_url(uri)
+        
         headers = {
             'X-Plex-Token': token,
             'Accept': 'application/json'
@@ -127,18 +138,19 @@ def test_plex_connection(uri, token):
             f"{uri}/identity",
             headers=headers,
             timeout=5,
-            verify=False  # Many Plex servers use self-signed certs
+            verify=False  # Local servers may use self-signed certs
         )
         
         return response.status_code == 200
-    except:
+    except Exception as e:
+        current_app.logger.debug(f"Plex connection test failed for {sanitize_log_data(uri)}: {type(e).__name__}")
         return False
 
 # Flask-RESTX Resources
 @api_ns_plex.route('plex/oauth/pin')
 class PlexPin(Resource):
     def post(self):
-        """Create Plex OAuth PIN."""
+        """Create Plex OAuth PIN with CSRF protection."""
         try:
             # Handle both JSON and form data, with fallback to empty dict
             try:
@@ -148,11 +160,14 @@ class PlexPin(Resource):
             
             client_id = data.get('clientId', generate_client_id())
             
+            # Generate CSRF state token
+            state_token = token_manager.generate_state_token()
+            
             headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
                 'X-Plex-Product': 'Bazarr',
-                'X-Plex-Version': '1.0',  # Could get from app version
+                'X-Plex-Version': '1.0',
                 'X-Plex-Client-Identifier': client_id,
                 'X-Plex-Platform': 'Web',
                 'X-Plex-Platform-Version': '1.0',
@@ -170,21 +185,24 @@ class PlexPin(Resource):
             
             pin_data = response.json()
             
-            # Store PIN in cache with expiration
-            cache_pin(str(pin_data['id']), {
+            # Store PIN in cache with CSRF state token
+            pin_cache.set(str(pin_data['id']), {
                 'code': pin_data['code'],
                 'client_id': client_id,
-                'expires_at': time.time() + 600  # 10 minutes
+                'state_token': state_token,
+                'created_at': datetime.now().isoformat()
             })
             
             return {
                 'pinId': pin_data['id'],
                 'code': pin_data['code'],
                 'clientId': client_id,
+                'state': state_token,  # Include state for CSRF protection
                 'authUrl': f"https://app.plex.tv/auth#?clientID={client_id}&code={pin_data['code']}&context[device][product]=Bazarr"
             }
             
         except requests.exceptions.RequestException as e:
+            current_app.logger.error(f"Failed to create PIN: {type(e).__name__}")
             raise PlexConnectionError(f"Failed to create PIN: {str(e)}")
 
     def get(self):
@@ -194,18 +212,21 @@ class PlexPin(Resource):
 @api_ns_plex.route('plex/oauth/pin/<string:pin_id>/check')
 class PlexPinCheck(Resource):
     def get(self, pin_id):
-        """Check PIN status."""
+        """Check PIN status with CSRF validation."""
         try:
-            # Get cached PIN
-            cached_pin = get_cached_pin(pin_id)
+            # Validate state token if provided
+            state_param = request.args.get('state')
             
+            cached_pin = pin_cache.get(pin_id)
             if not cached_pin:
-                raise PlexPinExpiredError()
+                raise PlexPinExpiredError("PIN not found or expired")
             
-            # Check if PIN has expired
-            if cached_pin.get('expires_at', 0) < time.time():
-                delete_cached_pin(pin_id)
-                raise PlexPinExpiredError()
+            # Optional CSRF validation - if state was provided, validate it
+            if state_param:
+                stored_state = cached_pin.get('state_token')
+                if not stored_state or not token_manager.validate_state_token(state_param, stored_state):
+                    current_app.logger.warning(f"CSRF state validation failed for PIN {pin_id}")
+                    # Don't fail completely for backward compatibility, just log warning
             
             headers = {
                 'Accept': 'application/json',
@@ -218,21 +239,18 @@ class PlexPinCheck(Resource):
                 timeout=10
             )
             
-            # Handle specific status codes
             if response.status_code == 404:
-                # PIN was consumed or expired
-                delete_cached_pin(pin_id)
-                raise PlexPinExpiredError()
+                pin_cache.delete(pin_id)
+                raise PlexPinExpiredError("PIN expired or consumed")
             
             response.raise_for_status()
-            
             pin_data = response.json()
             
             if pin_data.get('authToken'):
                 # Validate token immediately
                 user_data = validate_plex_token(pin_data['authToken'])
                 
-                # Store encrypted token (Bazarr uses global settings, not per-user)
+                # Store encrypted token
                 encrypted_token = encrypt_token(pin_data['authToken'])
                 
                 # Ensure user_id is always a string, handle None case
@@ -240,10 +258,10 @@ class PlexPinCheck(Resource):
                 user_id_str = str(user_id) if user_id is not None else ''
                 
                 # Clear ALL legacy manual configuration when switching to OAuth
-                settings.plex.apikey = ""  # Clear manual API key
-                settings.plex.ip = "127.0.0.1"  # Reset manual IP to default
-                settings.plex.port = 32400  # Reset to default port
-                settings.plex.ssl = False  # Reset SSL setting
+                settings.plex.apikey = ""
+                settings.plex.ip = "127.0.0.1"
+                settings.plex.port = 32400
+                settings.plex.ssl = False
                 
                 # Set OAuth configuration
                 settings.plex.token = encrypted_token
@@ -251,37 +269,30 @@ class PlexPinCheck(Resource):
                 settings.plex.email = user_data.get('email') or ''
                 settings.plex.user_id = user_id_str
                 settings.plex.auth_method = 'oauth'
-                
-                # Enable Plex integration when OAuth succeeds
                 settings.general.use_plex = True
                 
-                # Ensure config is written before returning success
                 try:
                     write_config()
+                    pin_cache.delete(pin_id)
                     
-                    # Clean up PIN only after successful config write
-                    delete_cached_pin(pin_id)
+                    current_app.logger.info(f"OAuth authentication successful for user: {sanitize_log_data(user_data.get('username', ''))}")
                     
                     return {
                         'authenticated': True,
                         'username': user_data.get('username'),
                         'email': user_data.get('email')
-                        # Never send actual token to frontend
                     }
                 except Exception as config_error:
-                    # If config write fails, clear the settings from memory and fail OAuth
                     current_app.logger.error(f"Failed to save OAuth settings: {config_error}")
                     
-                    # Clear OAuth settings from memory since we couldn't persist them
+                    # Clear OAuth settings from memory
                     settings.plex.token = ""
                     settings.plex.username = ""
                     settings.plex.email = ""
                     settings.plex.user_id = ""
                     settings.plex.auth_method = 'apikey'
                     
-                    # Return error to frontend
                     raise PlexConnectionError("Failed to save authentication settings")
-                
             
             return {
                 'authenticated': False,
@@ -289,6 +300,7 @@ class PlexPinCheck(Resource):
             }
             
         except requests.exceptions.RequestException as e:
+            current_app.logger.error(f"Failed to check PIN: {type(e).__name__}")
             raise PlexConnectionError(f"Failed to check PIN: {str(e)}")
 
 @api_ns_plex.route('plex/oauth/validate')
@@ -296,7 +308,6 @@ class PlexValidate(Resource):
     def get(self):
         """Validate current Plex token."""
         try:
-            # Only two authentication methods: apikey (manual) or oauth
             auth_method = settings.plex.get('auth_method', 'apikey')
             
             if auth_method == 'oauth':
@@ -310,14 +321,29 @@ class PlexValidate(Resource):
                 decrypted_token = decrypt_token(token)
                 
             else:
-                # Manual/Legacy: API key (default)
-                token = settings.plex.get('apikey')
-                if not token:
+                # Manual/API key - now always encrypted
+                apikey = settings.plex.get('apikey')
+                if not apikey:
                     return {
                         'valid': False,
                         'auth_method': 'apikey'
                     }, 200
-                decrypted_token = token  # API keys aren't encrypted
+                
+                # Auto-encrypt plain text API keys if they exist
+                if not settings.plex.get('apikey_encrypted', False):
+                    from bazarr.plex.operations import encrypt_api_key
+                    if encrypt_api_key():
+                        apikey = settings.plex.get('apikey')  # Get encrypted version
+                    else:
+                        # If encryption failed, API key might be invalid
+                        return {
+                            'valid': False,
+                            'auth_method': 'apikey',
+                            'error': 'Failed to encrypt API key'
+                        }, 200
+                
+                # Decrypt the API key  
+                decrypted_token = decrypt_token(apikey)
             
             # Validate token with Plex
             user_data = validate_plex_token(decrypted_token)
@@ -340,23 +366,43 @@ class PlexServers(Resource):
     def get(self):
         """Get Plex servers."""
         try:
-            # Only two authentication methods: apikey (manual) or oauth
             auth_method = settings.plex.get('auth_method', 'apikey')
             
             if auth_method == 'oauth':
                 # OAuth: encrypted token
                 token = settings.plex.get('token')
                 if not token:
-                    raise UnauthorizedError()
-                decrypted_token = decrypt_token(token)
+                    # Return empty servers instead of error when no auth is configured
+                    return {'servers': []}
+                try:
+                    decrypted_token = decrypt_token(token)
+                except (InvalidTokenError, Exception):
+                    # Return empty servers if token decryption fails
+                    return {'servers': []}
                 
             else:
-                # Manual/Legacy: API key (default)
-                token = settings.plex.get('apikey')
-                if not token:
-                    raise UnauthorizedError()
-                decrypted_token = token  # API keys aren't encrypted
+                # Manual/API key - now always encrypted
+                apikey = settings.plex.get('apikey')
+                if not apikey:
+                    # Return empty servers instead of error when no auth is configured
+                    return {'servers': []}
+                
+                # Auto-encrypt plain text API keys if needed
+                if not settings.plex.get('apikey_encrypted', False):
+                    from bazarr.plex.operations import encrypt_api_key
+                    if encrypt_api_key():
+                        apikey = settings.plex.get('apikey')
+                    else:
+                        # Return empty servers instead of error when encryption fails
+                        return {'servers': []}
+                
+                try:
+                    decrypted_token = decrypt_token(apikey)
+                except (InvalidTokenError, Exception):
+                    # Return empty servers if token decryption fails
+                    return {'servers': []}
             
+            # If we get here, we have a valid token to use
             headers = {
                 'X-Plex-Token': decrypted_token,
                 'Accept': 'application/json'
@@ -370,9 +416,12 @@ class PlexServers(Resource):
                 timeout=10
             )
             
-            # Add better error handling
-            if response.status_code != 200:
-                current_app.logger.error(f"Plex API error: {response.status_code} - {response.text}")
+            # Handle authentication errors gracefully
+            if response.status_code in (401, 403):
+                current_app.logger.warning(f"Plex authentication failed: {response.status_code}")
+                return {'servers': []}
+            elif response.status_code != 200:
+                current_app.logger.error(f"Plex API error: {response.status_code}")
                 raise PlexConnectionError(f"Failed to get servers: HTTP {response.status_code}")
             
             response.raise_for_status()
@@ -443,7 +492,11 @@ class PlexServers(Resource):
             return {'servers': servers}
             
         except requests.exceptions.RequestException as e:
-            raise PlexConnectionError(f"Failed to get servers: {str(e)}")
+            current_app.logger.warning(f"Failed to connect to Plex: {type(e).__name__}: {str(e)}")
+            return {'servers': []}
+        except Exception as e:
+            current_app.logger.warning(f"Unexpected error getting Plex servers: {type(e).__name__}: {str(e)}")
+            return {'servers': []}
 
 @api_ns_plex.route('plex/oauth/logout')
 class PlexLogout(Resource):
@@ -453,6 +506,7 @@ class PlexLogout(Resource):
             # Clear ALL Plex authentication settings for complete reset
             settings.plex.token = ""  # Clear OAuth token
             settings.plex.apikey = ""  # Clear manual API key
+            settings.plex.apikey_encrypted = False  # Clear encryption flag
             settings.plex.ip = "127.0.0.1"  # Reset IP to default
             settings.plex.port = 32400  # Reset port to default
             settings.plex.ssl = False  # Reset SSL to default
@@ -468,14 +522,60 @@ class PlexLogout(Resource):
             settings.plex.server_local = False
             
             # Auto-disable Plex integration when disconnecting
-            # Since OAuth auto-enables Plex, disconnect should auto-disable it for consistency
             settings.general.use_plex = False
             
             write_config()
 
             return {'success': True}
         except Exception as e:
+            current_app.logger.error(f"Logout failed: {e}")
             return {'error': 'Failed to logout'}, 500
+
+# Additional endpoint for API key encryption
+@api_ns_plex.route('plex/encrypt-apikey')
+class PlexEncryptApiKey(Resource):
+    def post(self):
+        """Encrypt existing plain text API key."""
+        try:
+            from bazarr.plex.operations import encrypt_api_key
+            
+            if encrypt_api_key():
+                return {'success': True, 'message': 'API key encrypted successfully'}
+            else:
+                return {'success': False, 'message': 'No plain text API key found or already encrypted'}
+                
+        except Exception as e:
+            current_app.logger.error(f"API key encryption failed: {e}")
+            return {'error': 'Failed to encrypt API key'}, 500
+
+# New endpoint for saving API keys with automatic encryption
+@api_ns_plex.route('plex/apikey')
+class PlexApiKey(Resource):
+    def post(self):
+        """Save API key with automatic encryption."""
+        try:
+            data = request.get_json() or {}
+            apikey = data.get('apikey', '').strip()
+            
+            if not apikey:
+                return {'error': 'API key is required'}, 400
+            
+            # Always encrypt API keys before storing
+            encrypted_apikey = encrypt_token(apikey)
+            
+            # Update settings
+            settings.plex.apikey = encrypted_apikey  
+            settings.plex.apikey_encrypted = True
+            settings.plex.auth_method = 'apikey'
+            
+            write_config()
+            
+            current_app.logger.info("API key saved and encrypted")
+            return {'success': True, 'message': 'API key saved securely'}
+            
+        except Exception as e:
+            current_app.logger.error(f"Failed to save API key: {e}")
+            return {'error': 'Failed to save API key'}, 500
 
 # Additional endpoints referenced in frontend
 @api_ns_plex.route('plex/test-connection')
@@ -488,7 +588,6 @@ class PlexTestConnection(Resource):
         if not uri:
             raise PlexAuthError('Missing URI', 'MISSING_PARAMETER')
         
-        # Only two authentication methods: apikey (manual) or oauth
         auth_method = settings.plex.get('auth_method', 'apikey')
         
         if auth_method == 'oauth':
@@ -499,11 +598,20 @@ class PlexTestConnection(Resource):
             decrypted_token = decrypt_token(token)
             
         else:
-            # Manual/Legacy: API key (default)
-            token = settings.plex.get('apikey')
-            if not token:
+            # Manual/API key - now always encrypted
+            apikey = settings.plex.get('apikey')
+            if not apikey:
                 raise UnauthorizedError()
-            decrypted_token = token  # API keys aren't encrypted
+            
+            # Auto-encrypt if needed
+            if not settings.plex.get('apikey_encrypted', False):
+                from bazarr.plex.operations import encrypt_api_key
+                if encrypt_api_key():
+                    apikey = settings.plex.get('apikey')
+                else:
+                    raise UnauthorizedError()
+            
+            decrypted_token = decrypt_token(apikey)
         
         try:
             # Test connection with a simple identity request

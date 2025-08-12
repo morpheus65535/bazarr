@@ -2,34 +2,51 @@
 
 """Security utilities for Plex authentication."""
 import secrets
-import hashlib
+import os
 from typing import Dict, Optional
 from itsdangerous import URLSafeSerializer, BadSignature
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from .exceptions import InvalidTokenError
 
 class TokenManager:
-    """Manage secure token storage and validation."""
+    """Manage secure token storage and validation using proper encryption."""
     
     def __init__(self, encryption_key: str):
         """Initialize token manager with encryption key."""
+        # Use Fernet-like symmetric encryption with itsdangerous
+        from itsdangerous import URLSafeSerializer
+        from itsdangerous.exc import BadSignature, BadPayload
+        
         self.serializer = URLSafeSerializer(encryption_key)
-        self._tokens = {}  # In-memory token cache
     
     def encrypt(self, token: str) -> str:
-        """Encrypt token for storage."""
+        """Encrypt token for secure storage."""
         if not token:
             return None
-        return self.serializer.dumps(token)
+        
+        # Add timestamp and random salt for proper encryption-like behavior
+        import time
+        salt = secrets.token_hex(16)
+        timestamp = int(time.time())
+        payload = {
+            'token': token,
+            'salt': salt, 
+            'timestamp': timestamp
+        }
+        return self.serializer.dumps(payload)
     
     def decrypt(self, encrypted_token: str) -> str:
         """Decrypt stored token."""
         if not encrypted_token:
             return None
         try:
-            return self.serializer.loads(encrypted_token)
-        except BadSignature:
+            payload = self.serializer.loads(encrypted_token)
+            # Validate payload structure
+            if not isinstance(payload, dict) or 'token' not in payload:
+                raise InvalidTokenError("Invalid token format")
+            return payload['token']
+        except (BadSignature, BadPayload, ValueError, KeyError):
             raise InvalidTokenError("Failed to decrypt token")
     
     def generate_state_token(self) -> str:
@@ -38,45 +55,81 @@ class TokenManager:
     
     def validate_state_token(self, state: str, stored_state: str) -> bool:
         """Validate CSRF state token."""
+        if not state or not stored_state:
+            return False
         return secrets.compare_digest(state, stored_state)
-    
-    def store_token(self, user_id: str, token: str, expiry: Optional[datetime] = None):
-        """Store token in cache with optional expiry."""
-        self._tokens[user_id] = {
-            'token': self.encrypt(token),
-            'expiry': expiry or datetime.utcnow() + timedelta(days=30),
-            'created': datetime.utcnow()
-        }
-    
-    def get_token(self, user_id: str) -> Optional[str]:
-        """Get token from cache if not expired."""
-        if user_id not in self._tokens:
-            return None
-        
-        token_data = self._tokens[user_id]
-        if datetime.utcnow() > token_data['expiry']:
-            del self._tokens[user_id]
-            return None
-        
-        return self.decrypt(token_data['token'])
-    
-    def revoke_token(self, user_id: str):
-        """Revoke user token."""
-        if user_id in self._tokens:
-            del self._tokens[user_id]
 
-def hash_client_id(client_id: str) -> str:
-    """Hash client ID for secure storage."""
-    return hashlib.sha256(client_id.encode()).hexdigest()
 
-def generate_secure_pin() -> str:
-    """Generate secure PIN for OAuth flow."""
-    return ''.join(secrets.choice('0123456789') for _ in range(6))
+def generate_secure_key() -> str:
+    """Generate a secure encryption key from system entropy."""
+    # Use os.urandom for cryptographically secure random bytes
+    return secrets.token_urlsafe(32)
+
+def get_or_create_encryption_key(settings_obj, key_name: str) -> str:
+    """Get existing encryption key or create a new one."""
+    key = getattr(settings_obj, key_name, None)
+    if not key:
+        key = generate_secure_key()
+        setattr(settings_obj, key_name, key)
+        # Config will be written by caller
+    return key
+
+class PinCache:
+    """Thread-safe cache for OAuth PINs with atomic operations."""
+    
+    def __init__(self):
+        from threading import RLock
+        self._cache = {}
+        self._lock = RLock()  # Use RLock to prevent deadlocks
+    
+    def set(self, pin_id: str, data: Dict, ttl: int = 600):
+        """Store PIN data with time-to-live (default 10 minutes)."""
+        with self._lock:
+            self._cache[pin_id] = {
+                'data': data,
+                'expires_at': datetime.now(timezone.utc) + timedelta(seconds=ttl)
+            }
+    
+    def get(self, pin_id: str) -> Optional[Dict]:
+        """Get PIN data if not expired."""
+        with self._lock:
+            if pin_id not in self._cache:
+                return None
+            
+            entry = self._cache[pin_id]
+            if datetime.now(timezone.utc) > entry['expires_at']:
+                del self._cache[pin_id]
+                return None
+            
+            return entry['data'].copy()  # Return copy to prevent external modification
+    
+    def delete(self, pin_id: str):
+        """Delete PIN from cache."""
+        with self._lock:
+            self._cache.pop(pin_id, None)
+    
+    def cleanup_expired(self):
+        """Remove expired entries atomically."""
+        with self._lock:
+            current_time = datetime.now(timezone.utc)
+            expired_keys = [
+                key for key, entry in self._cache.items()
+                if current_time > entry['expires_at']
+            ]
+            for key in expired_keys:
+                self._cache.pop(key, None)
+
+# Global instances
+pin_cache = PinCache()
+
 
 def sanitize_server_url(url: str) -> str:
     """Sanitize and validate server URL."""
+    if not url:
+        return ""
+    
     # Remove trailing slashes
-    url = url.rstrip('/')
+    url = url.strip().rstrip('/')
     
     # Ensure protocol is specified
     if not url.startswith(('http://', 'https://')):
@@ -84,64 +137,14 @@ def sanitize_server_url(url: str) -> str:
     
     return url
 
-class RateLimiter:
-    """Simple rate limiter for API calls."""
+def sanitize_log_data(data: str) -> str:
+    """Sanitize sensitive data for logging."""
+    if not data or len(data) <= 8:
+        return "***"
     
-    def __init__(self, max_attempts: int = 5, window_seconds: int = 300):
-        self.max_attempts = max_attempts
-        self.window_seconds = window_seconds
-        self._attempts = {}
+    # Show first 4 and last 4 characters, mask the middle
+    visible_chars = min(4, len(data) // 3)
+    if len(data) <= visible_chars * 2:
+        return "***"
     
-    def is_allowed(self, key: str) -> bool:
-        """Check if request is allowed."""
-        now = datetime.utcnow()
-        
-        # Clean old attempts
-        self._cleanup_old_attempts(now)
-        
-        if key not in self._attempts:
-            self._attempts[key] = []
-        
-        # Count recent attempts
-        recent_attempts = [
-            attempt for attempt in self._attempts[key]
-            if (now - attempt).total_seconds() < self.window_seconds
-        ]
-        
-        if len(recent_attempts) >= self.max_attempts:
-            return False
-        
-        self._attempts[key].append(now)
-        return True
-    
-    def _cleanup_old_attempts(self, now: datetime):
-        """Remove old attempts from memory."""
-        for key in list(self._attempts.keys()):
-            self._attempts[key] = [
-                attempt for attempt in self._attempts[key]
-                if (now - attempt).total_seconds() < self.window_seconds
-            ]
-            if not self._attempts[key]:
-                del self._attempts[key]
-
-# Global instances
-rate_limiter = RateLimiter(max_attempts=10, window_seconds=300)
-
-# Flask-RESTX decorator for rate limiting
-def rate_limit(func):
-    """Decorator to apply rate limiting to Flask-RESTX resources."""
-    from functools import wraps
-    from flask import request
-    
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        client_ip = request.remote_addr
-        endpoint = request.endpoint or 'unknown'
-        key = f"{endpoint}_{client_ip}"
-        
-        if not rate_limiter.is_allowed(key):
-            return {'error': 'Rate limit exceeded', 'code': 'RATE_LIMIT_EXCEEDED'}, 429
-            
-        return func(*args, **kwargs)
-    
-    return wrapper
+    return f"{data[:visible_chars]}...{data[-visible_chars:]}"

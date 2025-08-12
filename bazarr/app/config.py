@@ -990,8 +990,20 @@ def initialize_plex():
     # Start cache cleanup if OAuth is enabled
     if settings.general.use_plex and settings.plex.get('auth_method') == 'oauth':
         try:
-            from bazarr.api.plex.cache import start_cache_cleanup
-            start_cache_cleanup()
+            from bazarr.api.plex.security import pin_cache
+            import threading
+            import time
+            
+            def cleanup_task():
+                while True:
+                    time.sleep(300)  # 5 minutes
+                    try:
+                        pin_cache.cleanup_expired()
+                    except Exception:
+                        pass
+            
+            cleanup_thread = threading.Thread(target=cleanup_task, daemon=True)
+            cleanup_thread.start()
             logging.info("Plex cache cleanup started")
         except ImportError:
             logging.warning("Could not start Plex cache cleanup - module not found")

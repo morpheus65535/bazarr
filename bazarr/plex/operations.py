@@ -17,19 +17,21 @@ def get_plex_server() -> PlexServer:
         
         if auth_method == 'oauth':
             # OAuth authentication - use encrypted token and configured server URL
-            from bazarr.api.plex.security import TokenManager
+            from bazarr.api.plex.security import TokenManager, get_or_create_encryption_key
             
             encrypted_token = settings.plex.get('token')
             if not encrypted_token:
                 raise ValueError("OAuth token not found. Please re-authenticate with Plex.")
             
-            # Decrypt the token
-            encryption_key = settings.plex.get('encryption_key')
-            if not encryption_key:
-                raise ValueError("Encryption key not found. Please re-authenticate with Plex.")
-            
+            # Get or create encryption key
+            encryption_key = get_or_create_encryption_key(settings.plex, 'encryption_key')
             token_manager = TokenManager(encryption_key)
-            decrypted_token = token_manager.decrypt(encrypted_token)
+            
+            try:
+                decrypted_token = token_manager.decrypt(encrypted_token)
+            except Exception as e:
+                logger.error(f"Failed to decrypt OAuth token: {type(e).__name__}")
+                raise ValueError("Invalid OAuth token. Please re-authenticate with Plex.")
             
             # Use configured OAuth server URL
             server_url = settings.plex.get('server_url')
@@ -37,20 +39,68 @@ def get_plex_server() -> PlexServer:
                 raise ValueError("Server URL not configured. Please select a Plex server.")
             
             return PlexServer(server_url, decrypted_token)
+            
         else:
-            # Manual/API key authentication (legacy method)
+            # Manual/API key authentication - always use encryption now
             protocol = "https://" if settings.plex.ssl else "http://"
             baseurl = f"{protocol}{settings.plex.ip}:{settings.plex.port}"
-            apikey = settings.plex.apikey
             
+            apikey = settings.plex.get('apikey')
             if not apikey:
                 raise ValueError("API key not configured. Please configure Plex authentication.")
             
-            return PlexServer(baseurl, apikey)
+            # Auto-encrypt plain text API keys
+            if not settings.plex.get('apikey_encrypted', False):
+                logger.info("Auto-encrypting plain text API key")
+                encrypt_api_key()
+                apikey = settings.plex.get('apikey')  # Get the encrypted version
+            
+            # Decrypt the API key
+            from bazarr.api.plex.security import TokenManager, get_or_create_encryption_key
+            encryption_key = get_or_create_encryption_key(settings.plex, 'encryption_key')
+            token_manager = TokenManager(encryption_key)
+            
+            try:
+                decrypted_apikey = token_manager.decrypt(apikey)
+            except Exception as e:
+                logger.error(f"Failed to decrypt API key: {type(e).__name__}")
+                raise ValueError("Invalid encrypted API key. Please reconfigure Plex authentication.")
+            
+            return PlexServer(baseurl, decrypted_apikey)
             
     except Exception as e:
         logger.error(f"Failed to connect to Plex server: {e}")
         raise
+
+
+def encrypt_api_key():
+    """Encrypt plain text API key automatically."""
+    try:
+        apikey = settings.plex.get('apikey')
+        if apikey and not settings.plex.get('apikey_encrypted', False):
+            from bazarr.api.plex.security import TokenManager, get_or_create_encryption_key
+            from app.config import write_config
+            
+            encryption_key = get_or_create_encryption_key(settings.plex, 'encryption_key')
+            token_manager = TokenManager(encryption_key)
+            
+            # Encrypt the API key
+            encrypted_apikey = token_manager.encrypt(apikey)
+            
+            # Update settings
+            settings.plex.apikey = encrypted_apikey
+            settings.plex.apikey_encrypted = True
+            
+            # Save configuration
+            write_config()
+            
+            logger.info("Successfully encrypted Plex API key")
+            return True
+    except Exception as e:
+        logger.error(f"Failed to encrypt API key: {e}")
+        return False
+    
+    return False
 
 
 def update_added_date(video, added_date: str) -> None:
