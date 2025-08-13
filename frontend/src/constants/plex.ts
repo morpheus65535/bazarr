@@ -1,7 +1,6 @@
-// Plex OAuth Configuration Constants
 export const PLEX_AUTH_CONFIG = {
   POLLING_INTERVAL_MS: 2000,
-  MAX_POLLING_ATTEMPTS: 150, // 5 minutes with 2-second intervals
+  MAX_POLLING_ATTEMPTS: 150,
   AUTH_WINDOW_CONFIG: {
     width: 600,
     height: 700,

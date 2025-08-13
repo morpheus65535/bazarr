@@ -15,13 +15,15 @@ import {
 import { faRefresh } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQueryClient } from "@tanstack/react-query";
-import { usePlexOAuth } from "@/apis/hooks/usePlexOAuth";
-import { usePlexServers } from "@/apis/hooks/usePlexServers";
-import { useServerSelection } from "@/apis/hooks/useServerSelection";
+import {
+  usePlexOAuth,
+  usePlexServers,
+  useServerSelection,
+} from "@/apis/hooks/plex";
 import { QueryKeys } from "@/apis/queries/keys";
+import type { PlexServer, PlexServerConnection } from "@/apis/queries/plex";
 import { FormContext } from "@/pages/Settings/utilities/FormValues";
-import type { PlexServer, PlexServerConnection } from "@/plex/queries/plex";
-import { getErrorMessage, type PlexError } from "@/plex/utilities/errors";
+import { getErrorMessage, type PlexError } from "@/utilities/plexErrors";
 import styles from "./PlexSettings.module.scss";
 
 interface AuthSectionProps {
@@ -178,10 +180,8 @@ const ServerSection: React.FC<ServerSectionProps> = ({
           </Alert>
         )}
 
-        {isLoading ? (
-          <Stack gap="sm">
-            <Text>Loading servers...</Text>
-          </Stack>
+        {isAuthenticated && servers.length === 0 && !error && isLoading ? (
+          <Badge size="md">Testing server connections...</Badge>
         ) : servers.length === 0 ? (
           <Stack gap="sm">
             <Text>No servers found.</Text>
@@ -327,8 +327,10 @@ const ConnectionsCard: React.FC<ConnectionsCardProps> = ({
             <Text size="sm">
               {conn.uri}
               {conn.local && " (Local)"}
-              {conn.latency && ` - ${conn.latency}ms`}
             </Text>
+            {conn.available && conn.latency && (
+              <Badge size="sm">{conn.latency}ms</Badge>
+            )}
           </Group>
         ))}
       </Stack>
@@ -366,7 +368,6 @@ export const PlexSettings: React.FC = () => {
     isPolling,
   } = usePlexOAuth({
     onAuthSuccess: handleAuthSuccess,
-    onAuthError: handleAuthError,
   });
 
   // Plex servers hook (React Query version)
@@ -379,11 +380,9 @@ export const PlexSettings: React.FC = () => {
     selectServer,
   } = usePlexServers();
 
-  // Centralized server selection effect - handles all server selection logic
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    // Priority 1: Use cached server if available
     const cachedServer = (
       window as unknown as {
         bazarrPlexCache?: { selectedServer?: PlexServer | null };
@@ -397,7 +396,6 @@ export const PlexSettings: React.FC = () => {
       return;
     }
 
-    // Priority 2: Use saved server from API
     if (savedSelectedServer && !isSaved) {
       setSelectedServer(savedSelectedServer);
       setSelectedServerId(savedSelectedServer.machineIdentifier);
@@ -405,7 +403,6 @@ export const PlexSettings: React.FC = () => {
       return;
     }
 
-    // Priority 3: Auto-select single available server
     if (
       servers.length === 1 &&
       servers[0].bestConnection &&
@@ -416,37 +413,36 @@ export const PlexSettings: React.FC = () => {
       const singleServer = servers[0];
       setSelectedServerId(singleServer.machineIdentifier);
 
-      // Auto-select the single server
-      selectServer(singleServer.machineIdentifier)
-        .then(() => {
+      const autoSelectServer = async () => {
+        try {
+          await selectServer(singleServer.machineIdentifier);
           setSelectedServer(singleServer);
           setSaved(true);
-        })
-        .catch(() => {
+        } catch {
           // Error is handled by the selectServer mutation
-        });
+        }
+      };
+
+      autoSelectServer();
     }
   }, [
     isAuthenticated,
     servers,
     savedSelectedServer,
     isSaved,
-    selectServer,
-    setSelectedServerId,
     setSelectedServer,
+    setSelectedServerId,
     setSaved,
+    selectServer,
   ]);
 
-  // Success handler for OAuth authentication
   function handleAuthSuccess() {
     fetchServers();
 
-    // Invalidate system queries to refresh settings
     queryClient.invalidateQueries({
-      queryKey: [QueryKeys.System],
+      queryKey: [QueryKeys.System, QueryKeys.Settings],
     });
 
-    // Reset form properly using Promise microtask to avoid race conditions
     if (form) {
       Promise.resolve().then(() => {
         form.reset();
@@ -454,19 +450,6 @@ export const PlexSettings: React.FC = () => {
     }
   }
 
-  // Error handler for OAuth authentication
-  function handleAuthError() {
-    // Error is already handled in the hook and displayed in UI
-  }
-
-  // Fetch servers with connection testing when authenticated
-  useEffect(() => {
-    if (isAuthenticated && servers.length > 0) {
-      fetchServers();
-    }
-  }, [isAuthenticated, servers.length, fetchServers]);
-
-  // Handle server selection
   const handleServerSelect = useCallback(async () => {
     if (!selectedServerId) return;
 
@@ -495,16 +478,13 @@ export const PlexSettings: React.FC = () => {
     setSelecting,
   ]);
 
-  // Handle logout
   const handleLogout = useCallback(async () => {
     await logout();
 
-    // Invalidate system queries to refresh settings
     queryClient.invalidateQueries({
-      queryKey: [QueryKeys.System],
+      queryKey: [QueryKeys.System, QueryKeys.Settings],
     });
 
-    // Reset form properly
     if (form) {
       Promise.resolve().then(() => {
         form.reset();

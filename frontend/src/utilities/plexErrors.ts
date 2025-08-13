@@ -1,4 +1,4 @@
-import { PLEX_ERROR_CODES, type PlexErrorCode } from "@/plex/constants/auth";
+import { PLEX_ERROR_CODES, type PlexErrorCode } from "@/constants/plex";
 
 interface AxiosErrorResponse {
   data?: {
@@ -36,7 +36,6 @@ function isError(error: unknown): error is Error {
 }
 
 export function parseError(error: unknown): PlexError {
-  // Handle axios-like errors (for backward compatibility)
   if (isAxiosError(error)) {
     const responseData = error.response?.data;
     const errorCode = responseData?.code as PlexErrorCode;
@@ -49,20 +48,15 @@ export function parseError(error: unknown): PlexError {
     );
   }
 
-  // Handle generic errors
   if (isError(error)) {
     return createPlexError(error.message, PLEX_ERROR_CODES.CONNECTION_ERROR);
   }
 
-  // Handle unknown errors
   return createPlexError(
     "An unknown error occurred",
     PLEX_ERROR_CODES.CONNECTION_ERROR,
   );
 }
-
-// Keep the old function for backward compatibility
-export const parseAxiosError = parseError;
 
 export function getErrorMessage(error: PlexError): string {
   const codeMessages: Record<PlexErrorCode, string> = {

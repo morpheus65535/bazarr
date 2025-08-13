@@ -47,14 +47,6 @@ export interface PlexServersResponse {
   servers: PlexServer[];
 }
 
-export interface PlexTestConnectionRequest {
-  uri: string;
-}
-
-export interface PlexTestConnectionResponse {
-  success: boolean;
-}
-
 export interface PlexSelectServerRequest {
   machineIdentifier: string;
   name: string;
@@ -75,22 +67,18 @@ class PlexApi {
     this.prefix = "/plex";
   }
 
-  // OAuth Methods
   async createPin(): Promise<PlexPinResponse> {
-    return await plexClient.post<PlexPinResponse>(
-      `${this.prefix}/oauth/pin`,
-      {},
-    );
+    return plexClient.post<PlexPinResponse>(`${this.prefix}/oauth/pin`, {});
   }
 
   async validateAuth(): Promise<PlexValidateResponse> {
-    return await plexClient.get<PlexValidateResponse>(
+    return plexClient.get<PlexValidateResponse>(
       `${this.prefix}/oauth/validate`,
     );
   }
 
   async checkPin(pinId: string): Promise<PlexPinCheckResponse> {
-    return await plexClient.get<PlexPinCheckResponse>(
+    return plexClient.get<PlexPinCheckResponse>(
       `${this.prefix}/oauth/pin/${pinId}/check`,
     );
   }
@@ -99,31 +87,21 @@ class PlexApi {
     await plexClient.post(`${this.prefix}/oauth/logout`, {});
   }
 
-  // Server Methods
   async getServers(): Promise<PlexServersResponse> {
-    return await plexClient.get<PlexServersResponse>(
-      `${this.prefix}/oauth/servers`,
-    );
-  }
-
-  async testConnection(uri: string): Promise<PlexTestConnectionResponse> {
-    return await plexClient.post<PlexTestConnectionResponse>(
-      `${this.prefix}/test-connection`,
-      { uri },
-    );
+    return plexClient.get<PlexServersResponse>(`${this.prefix}/oauth/servers`);
   }
 
   async selectServer(
     request: PlexSelectServerRequest,
   ): Promise<PlexSelectedServerResponse> {
-    return await plexClient.post<PlexSelectedServerResponse>(
+    return plexClient.post<PlexSelectedServerResponse>(
       `${this.prefix}/select-server`,
       request,
     );
   }
 
   async getSelectedServer(): Promise<PlexSelectedServerResponse> {
-    return await plexClient.get<PlexSelectedServerResponse>(
+    return plexClient.get<PlexSelectedServerResponse>(
       `${this.prefix}/select-server`,
     );
   }

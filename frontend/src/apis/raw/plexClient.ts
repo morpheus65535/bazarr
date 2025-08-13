@@ -1,9 +1,8 @@
-import Axios, { AxiosError, AxiosInstance } from "axios";
+import Axios, { type AxiosError, type AxiosInstance } from "axios";
+import { PLEX_ERROR_CODES, type PlexErrorCode } from "@/constants/plex";
 import { Environment } from "@/utilities";
+import { createPlexError } from "@/utilities/plexErrors";
 
-/**
- * Dedicated Plex API client that doesn't interfere with main Bazarr authentication
- */
 class PlexApiClient {
   private axios: AxiosInstance;
 
@@ -18,12 +17,25 @@ class PlexApiClient {
       },
     });
 
-    // Custom error handling that doesn't affect global auth state
     this.axios.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
-        // Just pass through the error without global side effects
-        return Promise.reject(error);
+        const responseData = error.response?.data as {
+          error?: string;
+          code?: string;
+        };
+        const errorCode =
+          responseData?.code || PLEX_ERROR_CODES.CONNECTION_ERROR;
+        const errorMessage =
+          responseData?.error || error.message || "An unknown error occurred";
+
+        const plexError = createPlexError(
+          errorMessage,
+          errorCode as PlexErrorCode,
+          error.response?.status ? error.response.status >= 500 : false,
+        );
+
+        return Promise.reject(plexError);
       },
     );
   }
