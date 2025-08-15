@@ -14,6 +14,7 @@ const AuthSection = () => {
     data: authData,
     isLoading: authIsLoading,
     error: authError,
+    refetch: refetchAuth,
   } = usePlexAuthValidationQuery();
   const { mutateAsync: createPin } = usePlexPinMutation();
   const { mutate: logout } = usePlexLogoutMutation();
@@ -30,6 +31,17 @@ const AuthSection = () => {
     isPolling,
     pin?.pinId ? PLEX_AUTH_CONFIG.POLLING_INTERVAL_MS : false,
   );
+
+  // Handle successful authentication - stop polling and close window
+  if (pinData?.authenticated && isPolling) {
+    setPin(null);
+    if (authWindowRef.current) {
+      authWindowRef.current.close();
+      authWindowRef.current = null;
+    }
+    // Trigger a refetch to update auth status
+    void refetchAuth();
+  }
 
   const isAuthenticated = Boolean(
     authData?.valid && authData?.auth_method === "oauth",
@@ -68,7 +80,7 @@ const AuthSection = () => {
     return <Text>Loading authentication status...</Text>;
   }
 
-  if (isPolling && pinData) {
+  if (isPolling && !pinData?.authenticated) {
     return (
       <Paper withBorder radius="md" p="lg" className={styles.authSection}>
         <Stack gap="md">

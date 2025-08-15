@@ -74,8 +74,11 @@ export const usePlexPinCheckQuery = (
 ) => {
   return useQuery({
     queryKey: [QueryKeys.Plex, "pinCheck", pinId],
-    queryFn: () => api.plex.checkPin(pinId!),
-    enabled: enabled,
+    queryFn: () => {
+      if (!pinId) throw new Error("Pin ID is required");
+      return api.plex.checkPin(pinId);
+    },
+    enabled: enabled && !!pinId,
     retry: false,
     refetchInterval: refetchInterval,
     refetchOnWindowFocus: false,
