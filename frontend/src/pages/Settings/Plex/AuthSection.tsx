@@ -9,12 +9,7 @@ import {
 import { PLEX_AUTH_CONFIG } from "@/constants/plex";
 import styles from "@/pages/Settings/Plex/PlexSettings.module.scss";
 
-interface AuthSectionProps {
-  onCancelAuth: () => void;
-  onLogout: () => void;
-}
-
-const AuthSection = ({ onCancelAuth, onLogout }: AuthSectionProps) => {
+const AuthSection = () => {
   const {
     data: authData,
     isLoading: authIsLoading,
@@ -30,7 +25,7 @@ const AuthSection = ({ onCancelAuth, onLogout }: AuthSectionProps) => {
   // TODO: Close Window
   const isPolling = !!pin?.pinId;
 
-  const { data: pinData, error: pinCheckError } = usePlexPinCheckQuery(
+  const { data: pinData } = usePlexPinCheckQuery(
     pin?.pinId ?? null,
     isPolling,
     pin?.pinId ? PLEX_AUTH_CONFIG.POLLING_INTERVAL_MS : false,
@@ -57,8 +52,15 @@ const AuthSection = ({ onCancelAuth, onLogout }: AuthSectionProps) => {
 
   const handleLogout = () => {
     logout();
+    // Reset any local state if needed
+  };
 
-    onLogout();
+  const handleCancelAuth = () => {
+    setPin(null);
+    if (authWindowRef.current) {
+      authWindowRef.current.close();
+      authWindowRef.current = null;
+    }
   };
 
   if (authIsLoading && !isPolling) {
@@ -84,7 +86,7 @@ const AuthSection = ({ onCancelAuth, onLogout }: AuthSectionProps) => {
               Complete the authentication in the opened window.
             </Text>
             <Button
-              onClick={onCancelAuth}
+              onClick={handleCancelAuth}
               variant="light"
               color="gray"
               size="sm"

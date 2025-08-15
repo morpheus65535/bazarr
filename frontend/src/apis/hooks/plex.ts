@@ -113,11 +113,6 @@ export const usePlexServerSelectionMutation = () => {
   });
 };
 
-interface UsePlexOAuthOptions {
-  onAuthSuccess?: (data: unknown) => void;
-  onAuthError?: (error: unknown) => void;
-}
-
 // export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
 //   const { onAuthSuccess, onAuthError } = options;
 //   const queryClient = useQueryClient();
