@@ -965,12 +965,9 @@ def sync_checker(subtitle):
 
 # Plex OAuth Migration Functions
 def migrate_plex_config():
-    """
-    Clean up legacy Plex configuration.
-    This function should be called during application startup.
-    """
-    # Generate encryption key if not exists
-    if not settings.plex.get('encryption_key'):
+    # Generate encryption key if not exists or is empty
+    existing_key = settings.plex.get('encryption_key')
+    if not existing_key or existing_key.strip() == "":
         logging.info("Generating new encryption key for Plex token storage")
         import secrets
         key = secrets.token_urlsafe(32)

@@ -30,8 +30,11 @@ def handle_api_exception(error):
     }, 500
 def get_token_manager():
     from .security import get_or_create_encryption_key
+    # Check if encryption key exists before attempting to create one
+    key_existed = bool(getattr(settings.plex, 'encryption_key', None))
     key = get_or_create_encryption_key(settings.plex, 'encryption_key')
-    if not getattr(settings.plex, 'encryption_key', None):
+    # Save config if a new key was generated
+    if not key_existed:
         write_config()
     return TokenManager(key)
 
