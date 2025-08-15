@@ -82,9 +82,14 @@ export const usePlexPinCheckQuery = (
     queryKey: [QueryKeys.Plex, "pinCheck", pinId],
     queryFn: () => api.plex.checkPin(pinId!),
     enabled: enabled && !!pinId,
+    refetchInterval: (data: PlexPinCheckResponse | undefined) => {
+      // Stop polling if authenticated or error
+      return data?.authenticated ? false : 2000;
+    },
+    refetchIntervalInBackground: false,
     retry: false,
     refetchOnWindowFocus: false,
-    staleTime: 0, // Always fresh for polling
+    staleTime: 0,
   });
 };
 
