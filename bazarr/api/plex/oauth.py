@@ -166,7 +166,7 @@ class PlexPin(Resource):
             args = self.post_request_parser.parse_args()
             client_id = args.get('clientId') if args.get('clientId') else generate_client_id()
             
-            state_token = token_manager.generate_state_token()
+            state_token = get_token_manager().generate_state_token()
             
             headers = {
                 'Accept': 'application/json',
@@ -227,7 +227,7 @@ class PlexPinCheck(Resource):
             
             if state_param:
                 stored_state = cached_pin.get('state_token')
-                if not stored_state or not token_manager.validate_state_token(state_param, stored_state):
+                if not stored_state or not get_token_manager().validate_state_token(state_param, stored_state):
                     current_app.logger.warning(f"CSRF state validation failed for PIN {pin_id}")
             
             headers = {
