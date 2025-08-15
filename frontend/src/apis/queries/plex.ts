@@ -2,25 +2,6 @@ import type { UseQueryOptions } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
-import type {
-  PlexPinCheckResponse,
-  PlexPinResponse,
-  PlexSelectedServerResponse,
-  PlexServer,
-  PlexServerConnection,
-  PlexServersResponse,
-  PlexValidateResponse,
-} from "@/apis/raw/plex";
-
-export type {
-  PlexPinResponse,
-  PlexValidateResponse,
-  PlexPinCheckResponse,
-  PlexServerConnection,
-  PlexServer,
-  PlexServersResponse,
-  PlexSelectedServerResponse,
-};
 
 export const usePlexAuthValidationQuery = () => {
   return useQuery({
@@ -31,37 +12,32 @@ export const usePlexAuthValidationQuery = () => {
   });
 };
 
-export const usePlexServersQuery = <TData = PlexServersResponse>(
+export const usePlexServersQuery = <TData = any>(
   options?: Partial<
-    UseQueryOptions<PlexServersResponse, Error, TData, (string | boolean)[]>
+    UseQueryOptions<any, Error, TData, (string | boolean)[]>
   > & { enabled?: boolean },
 ) => {
   const enabled = options?.enabled ?? true;
 
   return useQuery({
     queryKey: [QueryKeys.Plex, "servers"],
-    queryFn: () => api.plex.getServers(),
+    queryFn: () => api.plex.servers(),
     enabled,
     staleTime: 1000 * 60 * 2,
     ...options,
   });
 };
 
-export const usePlexSelectedServerQuery = <TData = PlexSelectedServerResponse>(
+export const usePlexSelectedServerQuery = <TData = any>(
   options?: Partial<
-    UseQueryOptions<
-      PlexSelectedServerResponse,
-      Error,
-      TData,
-      (string | boolean)[]
-    >
+    UseQueryOptions<any, Error, TData, (string | boolean)[]>
   > & { enabled?: boolean },
 ) => {
   const enabled = options?.enabled ?? true;
 
   return useQuery({
     queryKey: [QueryKeys.Plex, "selectedServer"],
-    queryFn: () => api.plex.getSelectedServer(),
+    queryFn: () => api.plex.selectedServer(),
     enabled,
     staleTime: 1000 * 60 * 5,
     ...options,
@@ -82,7 +58,7 @@ export const usePlexPinCheckQuery = (
     queryKey: [QueryKeys.Plex, "pinCheck", pinId],
     queryFn: () => api.plex.checkPin(pinId!),
     enabled: enabled && !!pinId,
-    refetchInterval: (data: PlexPinCheckResponse | undefined) => {
+    refetchInterval: (data: any) => {
       // Stop polling if authenticated or error
       return data?.authenticated ? false : 2000;
     },

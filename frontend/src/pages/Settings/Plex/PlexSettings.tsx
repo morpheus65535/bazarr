@@ -68,8 +68,8 @@ export const PlexSettings: React.FC = () => {
 
   // Start PIN check polling when we have a PIN
   const { data: pinCheckData } = usePlexPinCheckQuery(
-    pinMutation.data?.pinId || null,
-    !!pinMutation.data?.pinId,
+    pinMutation.data?.data?.pinId || null,
+    !!pinMutation.data?.data?.pinId,
   );
 
   const isAuthenticated = authData?.valid && authData?.auth_method === "oauth";
@@ -99,7 +99,7 @@ export const PlexSettings: React.FC = () => {
       const top = Math.round(window.screen.height / 2 - height / 2);
 
       authWindowRef.current = window.open(
-        pin.authUrl,
+        pin.data.authUrl,
         "PlexAuth",
         `width=${width},height=${height},left=${left},top=${top},${features}`,
       );
@@ -181,7 +181,7 @@ export const PlexSettings: React.FC = () => {
                   <Text>
                     PIN Code:{" "}
                     <Text component="span" fw={700}>
-                      {pinMutation.data.code}
+                      {pinMutation.data.data.code}
                     </Text>
                   </Text>
                   <Text size="sm">
