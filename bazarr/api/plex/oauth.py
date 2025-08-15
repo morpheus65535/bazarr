@@ -38,18 +38,16 @@ def get_token_manager():
         write_config()
     return TokenManager(key)
 
-token_manager = get_token_manager()
-
 def encrypt_token(token):
     if not token:
         return None
-    return token_manager.encrypt(token)
+    return get_token_manager().encrypt(token)
 
 def decrypt_token(encrypted_token):
     if not encrypted_token:
         return None
     try:
-        return token_manager.decrypt(encrypted_token)
+        return get_token_manager().decrypt(encrypted_token)
     except Exception as e:
         current_app.logger.error(f"Token decryption failed: {type(e).__name__}")
         raise InvalidTokenError("Failed to decrypt token")
