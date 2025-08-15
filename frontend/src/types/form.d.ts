@@ -89,9 +89,7 @@ declare namespace FormType {
   interface PlexSelectServer {
     machineIdentifier: string;
     name: string;
-    connection: {
-      uri: string;
-      local: boolean;
-    };
+    uri: string;
+    local: boolean;
   }
 }
