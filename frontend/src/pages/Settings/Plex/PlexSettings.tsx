@@ -110,6 +110,7 @@ export const PlexSettings = () => {
     !values.isSaved &&
     !savedSelectedServer
   ) {
+    console.log("Auto-selecting single server:", servers[0]);
     const server = servers[0];
     setFieldValue("selectedServer", server);
     // Auto-select the server
@@ -124,6 +125,12 @@ export const PlexSettings = () => {
       setValue(server.bestConnection!.uri, "plex_server");
       setValue(server.name, "plex_server_name");
     });
+  }
+
+  // Debug: Log server info when we have servers
+  if (servers.length > 0) {
+    console.log("Available servers:", servers);
+    console.log("First server bestConnection:", servers[0].bestConnection);
   }
 
   return (
