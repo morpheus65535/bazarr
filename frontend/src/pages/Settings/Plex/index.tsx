@@ -1,5 +1,5 @@
-import { FunctionComponent, useState } from "react";
 import { Box, Button, Collapse, Group, Paper, Stack } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -14,12 +14,9 @@ import {
 import { plexEnabledKey } from "@/pages/Settings/keys";
 import { PlexSettings } from "./PlexSettings";
 
-const SettingsPlexView: FunctionComponent = () => {
-  const [manualConfigOpen, setManualConfigOpen] = useState(false);
-
-  const toggleManualConfig = () => {
-    setManualConfigOpen((prev: boolean) => !prev);
-  };
+const SettingsPlexView = () => {
+  const [manualConfigOpen, { toggle: manualConfigToggle }] =
+    useDisclosure(false);
 
   return (
     <Layout name="Interface">
@@ -48,7 +45,7 @@ const SettingsPlexView: FunctionComponent = () => {
                     <FontAwesomeIcon icon={faChevronDown} size="sm" />
                   )
                 }
-                onClick={toggleManualConfig}
+                onClick={manualConfigToggle}
               >
                 Manual Configuration (Legacy)
               </Button>
