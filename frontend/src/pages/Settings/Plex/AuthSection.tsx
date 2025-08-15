@@ -31,8 +31,9 @@ const AuthSection = () => {
     pin?.pinId ? PLEX_AUTH_CONFIG.POLLING_INTERVAL_MS : false,
   );
 
-  const isAuthenticated =
-    (authData?.valid && authData?.auth_method === "oauth") || false;
+  const isAuthenticated = Boolean(
+    authData?.valid && authData?.auth_method === "oauth",
+  );
 
   const handleAuth = async () => {
     const { data: pin } = await createPin();

@@ -10,9 +10,22 @@ import api from "@/apis/raw";
 export const usePlexAuthValidationQuery = () => {
   return useQuery({
     queryKey: [QueryKeys.Plex, "auth", "validate"],
-    queryFn: () => api.plex.validateAuth(),
+    queryFn: async () => {
+      try {
+        const result = await api.plex.validateAuth();
+        return result;
+      } catch (error) {
+        // Return a default value when API is not available
+        return {
+          valid: false,
+          auth_method: "oauth",
+          error: "API unavailable",
+        };
+      }
+    },
     staleTime: 1000 * 60 * 5,
     throwOnError: false,
+    retry: 1,
   });
 };
 
@@ -112,6 +125,11 @@ export const usePlexServerSelectionMutation = () => {
     },
   });
 };
+
+interface UsePlexOAuthOptions {
+  onAuthSuccess?: (data: unknown) => void;
+  onAuthError?: (error: unknown) => void;
+}
 
 // export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
 //   const { onAuthSuccess, onAuthError } = options;

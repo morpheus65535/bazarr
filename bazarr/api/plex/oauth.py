@@ -154,7 +154,7 @@ def test_plex_connection(uri, token):
         current_app.logger.debug(f"Plex connection test failed for {sanitize_log_data(uri)}: {type(e).__name__}")
         return False, None
 
-@api_ns_plex.route('pin')
+@api_ns_plex.route('plex/oauth/pin')
 class PlexPin(Resource):
     def post(self):
         try:
@@ -208,7 +208,7 @@ class PlexPin(Resource):
         from flask_restx import abort
         abort(405, "Method not allowed. Use POST.")
 
-@api_ns_plex.route('oauth/pin/<string:pin_id>/check')
+@api_ns_plex.route('plex/oauth/pin/<string:pin_id>/check')
 class PlexPinCheck(Resource):
     def get(self, pin_id):
         try:
@@ -292,7 +292,7 @@ class PlexPinCheck(Resource):
             current_app.logger.error(f"Failed to check PIN: {type(e).__name__}")
             raise PlexConnectionError(f"Failed to check PIN: {str(e)}")
 
-@api_ns_plex.route('oauth/validate')
+@api_ns_plex.route('plex/oauth/validate')
 class PlexValidate(Resource):
     def get(self):
         try:
@@ -320,7 +320,7 @@ class PlexValidate(Resource):
                 'code': e.error_code
             }, 200
 
-@api_ns_plex.route('oauth/servers')
+@api_ns_plex.route('plex/oauth/servers')
 class PlexServers(Resource):
     def get(self):
         try:
@@ -444,7 +444,7 @@ class PlexServers(Resource):
             current_app.logger.warning(f"Unexpected error getting Plex servers: {type(e).__name__}: {str(e)}")
             return {'servers': []}
 
-@api_ns_plex.route('oauth/logout')
+@api_ns_plex.route('plex/oauth/logout')
 class PlexLogout(Resource):
     def post(self):
         try:
@@ -475,7 +475,7 @@ class PlexLogout(Resource):
             current_app.logger.error(f"Logout failed: {e}")
             return {'error': 'Failed to logout'}, 500
 
-@api_ns_plex.route('encrypt-apikey')
+@api_ns_plex.route('plex/encrypt-apikey')
 class PlexEncryptApiKey(Resource):
     def post(self):
         try:
@@ -490,7 +490,7 @@ class PlexEncryptApiKey(Resource):
             current_app.logger.error(f"API key encryption failed: {e}")
             return {'error': 'Failed to encrypt API key'}, 500
 
-@api_ns_plex.route('apikey')
+@api_ns_plex.route('plex/apikey')
 class PlexApiKey(Resource):
     def post(self):
         try:
@@ -515,7 +515,7 @@ class PlexApiKey(Resource):
             current_app.logger.error(f"Failed to save API key: {e}")
             return {'error': 'Failed to save API key'}, 500
 
-@api_ns_plex.route('test-connection')
+@api_ns_plex.route('plex/test-connection')
 class PlexTestConnection(Resource):
     def post(self):
         data = request.get_json()
@@ -556,7 +556,7 @@ class PlexTestConnection(Resource):
         from flask_restx import abort
         abort(405, "Method not allowed. Use POST.")
 
-@api_ns_plex.route('select-server')
+@api_ns_plex.route('plex/select-server')
 class PlexSelectServer(Resource):
     def get(self):
         try:

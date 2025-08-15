@@ -30,7 +30,9 @@ const ServerSection = () => {
 
   // Get authentication status
   const { data: authData } = usePlexAuthValidationQuery();
-  const isAuthenticated = authData?.valid && authData?.auth_method === "oauth";
+  const isAuthenticated = Boolean(
+    authData?.valid && authData?.auth_method === "oauth",
+  );
 
   // Get servers data
   const {
