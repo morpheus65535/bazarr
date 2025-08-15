@@ -117,10 +117,8 @@ export const usePlexServerSelectionMutation = () => {
       api.plex.selectServer({
         machineIdentifier: params.machineIdentifier,
         name: params.name,
-        connection: {
-          uri: params.uri,
-          local: params.local,
-        },
+        uri: params.uri,
+        local: params.local,
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({

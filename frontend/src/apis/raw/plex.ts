@@ -6,7 +6,7 @@ class NewPlexApi extends BaseApi {
   }
 
   async createPin() {
-    const response = await this.post<DataWrapper<Plex.Pin>>("/oauth/pin", {});
+    const response = await this.post<DataWrapper<Plex.Pin>>("/oauth/pin");
 
     return response.data;
   }
@@ -21,7 +21,7 @@ class NewPlexApi extends BaseApi {
   }
 
   async logout() {
-    await this.post(`/oauth/logout`, {});
+    await this.post(`/oauth/logout`);
   }
 
   async servers() {
@@ -32,22 +32,13 @@ class NewPlexApi extends BaseApi {
   }
 
   async selectServer(form: FormType.PlexSelectServer) {
-    // Flatten the nested connection object for form data
-    const flattenedForm = {
-      machineIdentifier: form.machineIdentifier,
-      name: form.name,
-      "connection.uri": form.connection.uri,
-      "connection.local": form.connection.local.toString(),
-    };
-
     const response = await this.post<DataWrapper<Plex.Server>>(
       "/select-server",
-      flattenedForm,
+      form,
     );
 
     return response.data;
   }
-
   async selectedServer() {
     const response = await this.get<DataWrapper<Plex.Server>>(`/select-server`);
 
