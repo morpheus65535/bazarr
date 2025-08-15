@@ -1,7 +1,12 @@
-import { useCallback, useEffect } from "react";
 import { Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useFormActions } from "@/pages/Settings/utilities/FormValues";
+import {
+  usePlexAuthValidationQuery,
+  usePlexServersQuery,
+  usePlexSelectedServerQuery,
+  usePlexServerSelectionMutation,
+} from "@/apis/hooks/plex";
 import AuthSection from "./AuthSection";
 import ServerSection from "./ServerSection";
 
@@ -14,111 +19,79 @@ export const PlexSettings = () => {
     },
   });
 
-  // Extract stable form methods to satisfy ESLint exhaustive-deps
-  // const { setFieldValue, values, reset } = serverForm;
-
   const { setValue } = useFormActions();
 
-  // const {
-  //   servers,
-  //   selectedServer: savedSelectedServer,
-  //   error: serversError,
-  //   selectServer,
-  //   refetchServers,
-  // } = usePlexServers();
-  //
-  // // Plex OAuth hook (React Query version)
-  // const {
-  //   isAuthenticated,
-  //   isLoading: authLoading,
-  //   username,
-  //   email,
-  //   error: authError,
-  //   pinData,
-  //   isPolling,
-  //   startAuth,
-  //   cancelAuth,
-  // } = usePlexOAuth({
-  //   onAuthSuccess: () => {
-  //     // Just refetch servers on auth success - useEffect handles the rest
-  //     refetchServers();
-  //   },
-  // });
-  //
-  // const performAutoSelection = useCallback(
-  //   async (server: Plex.Server) => {
-  //     setFieldValue("selectedServer", server);
-  //     setFieldValue("isSelecting", true);
-  //
-  //     try {
-  //       await selectServer(server.machineIdentifier);
-  //       setFieldValue("isSaved", true);
-  //     } catch {
-  //       // Error is handled by the selectServer mutation
-  //     } finally {
-  //       setFieldValue("isSelecting", false);
-  //     }
-  //   },
-  //   [setFieldValue, selectServer],
-  // );
-  //
-  // const handleSavedServerSelection = useCallback(
-  //   (server: Plex.Server) => {
-  //     setFieldValue("selectedServer", server);
-  //     setFieldValue("isSaved", true);
-  //   },
-  //   [setFieldValue],
-  // );
-  //
-  // const isSaved = values.isSaved;
-  //
-  // useEffect(() => {
-  //   if (!isAuthenticated) {
-  //     return;
-  //   }
-  //
-  //   if (savedSelectedServer && !isSaved) {
-  //     handleSavedServerSelection(savedSelectedServer);
-  //     return;
-  //   }
-  //
-  //   if (
-  //     servers.length === 1 &&
-  //     servers[0].bestConnection &&
-  //     !isSaved &&
-  //     !savedSelectedServer
-  //   ) {
-  //     const singleServer = servers[0];
-  //     performAutoSelection(singleServer);
-  //   }
-  // }, [
-  //   isAuthenticated,
-  //   servers,
-  //   savedSelectedServer,
-  //   isSaved,
-  //   performAutoSelection,
-  //   handleSavedServerSelection,
-  // ]);
-  //
-  // const handleServerSelect = useCallback(async () => {
-  //   const selectedServer = values.selectedServer;
-  //   if (!selectedServer) return;
-  //
-  //   setFieldValue("isSelecting", true);
-  //   try {
-  //     if (selectedServer.bestConnection) {
-  //       await selectServer(selectedServer.machineIdentifier);
-  //       setFieldValue("isSaved", true);
-  //     }
-  //   } catch {
-  //     // Error is handled by the hook
-  //   } finally {
-  //     setFieldValue("isSelecting", false);
-  //   }
-  // }, [values.selectedServer, setFieldValue, selectServer]);
+  const authQuery = usePlexAuthValidationQuery();
+  const serversQuery = usePlexServersQuery({
+    enabled: authQuery.data?.valid && authQuery.data?.auth_method === "oauth",
+  });
+  const selectedServerQuery = usePlexSelectedServerQuery({
+    enabled: authQuery.data?.valid && authQuery.data?.auth_method === "oauth",
+  });
+  const serverSelectionMutation = usePlexServerSelectionMutation();
+
+  // Extract data from queries
+  const isAuthenticated =
+    authQuery.data?.valid && authQuery.data?.auth_method === "oauth";
+  const servers = serversQuery.data || [];
+  const serversError = serversQuery.error?.message;
+  const refetchServers = serversQuery.refetch;
+  const savedSelectedServer = selectedServerQuery.data;
+
+  if (isAuthenticated && savedSelectedServer && !form.values.isSaved) {
+    form.setFieldValue("selectedServer", savedSelectedServer);
+    form.setFieldValue("isSaved", true);
+  } else if (
+    isAuthenticated &&
+    servers.length === 1 &&
+    servers[0].bestConnection &&
+    !form.values.isSaved &&
+    !savedSelectedServer
+  ) {
+    form.setFieldValue("selectedServer", servers[0]);
+    serverSelectionMutation.mutate(
+      {
+        machineIdentifier: servers[0].machineIdentifier,
+        name: servers[0].name,
+        uri: servers[0].bestConnection.uri,
+        local: servers[0].bestConnection.local,
+      },
+      {
+        onSuccess: () => form.setFieldValue("isSaved", true),
+      },
+    );
+  }
+
+  const handleServerSelect = () => {
+    const selectedServer = form.values.selectedServer;
+    if (!selectedServer?.bestConnection) return;
+
+    form.setFieldValue("isSelecting", true);
+    serverSelectionMutation.mutate(
+      {
+        machineIdentifier: selectedServer.machineIdentifier,
+        name: selectedServer.name,
+        uri: selectedServer.bestConnection.uri,
+        local: selectedServer.bestConnection.local,
+      },
+      {
+        onSuccess: () => {
+          form.setFieldValue("isSaved", true);
+          form.setFieldValue("isSelecting", false);
+        },
+        onError: () => {
+          form.setFieldValue("isSelecting", false);
+        },
+      },
+    );
+  };
 
   const handleLogout = () => {
     form.reset();
+  };
+
+  const handleCancelAuth = () => {
+    // Handled in AuthSection
   };
 
   return (
@@ -128,13 +101,13 @@ export const PlexSettings = () => {
         isAuthenticated={isAuthenticated}
         servers={servers}
         error={serversError}
-        selectedServer={values.selectedServer}
-        isSelecting={values.isSelecting}
-        isSaved={values.isSaved}
+        selectedServer={form.values.selectedServer}
+        isSelecting={form.values.isSelecting}
+        isSaved={form.values.isSaved}
         onFetchServers={refetchServers}
         onServerSelect={handleServerSelect}
         onSelectedServerChange={(server: Plex.Server | null) =>
-          setFieldValue("selectedServer", server)
+          form.setFieldValue("selectedServer", server)
         }
       />
     </Stack>

@@ -15,57 +15,95 @@ interface AuthSectionProps {
 }
 
 const AuthSection = ({ onCancelAuth, onLogout }: AuthSectionProps) => {
-  const {
-    data: authData,
-    isLoading: authIsLoading,
-    error: authError,
-  } = usePlexAuthValidationQuery();
-  const { mutateAsync: createPin } = usePlexPinMutation();
-  const { mutate: logout } = usePlexLogoutMutation();
+  const authQuery = usePlexAuthValidationQuery();
+  const pinMutation = usePlexPinMutation();
+  const logoutMutation = usePlexLogoutMutation();
+
   const [pin, setPin] = useState<Plex.Pin | null>(null);
+  const [pollCount, setPollCount] = useState(0);
   const authWindowRef = useRef<Window | null>(null);
+  const pollIntervalRef = useRef<number | null>(null);
 
   // TODO: Add Maximum Attempts for Polling
   // TODO: Handle Polling Errors
   // TODO: Close Window
-  const isPolling = !!pin?.pinId;
 
-  const { data: pinData, error: pinCheckError } = usePlexPinCheckQuery(
-    pin?.pinId ?? null,
-    isPolling,
-    pin?.pinId ? PLEX_AUTH_CONFIG.POLLING_INTERVAL_MS : false,
-  );
+  const pinCheckQuery = usePlexPinCheckQuery(pin?.pinId ?? null, false);
 
   const isAuthenticated =
-    (authData?.valid && authData?.auth_method === "oauth") || false;
+    authQuery.data?.valid && authQuery.data?.auth_method === "oauth";
 
+  // Simple polling with native setTimeout
+  const startPolling = () => {
+    if (pollIntervalRef.current) return; // Already polling
+
+    const poll = () => {
+      if (pollCount >= PLEX_AUTH_CONFIG.MAX_POLLING_ATTEMPTS) {
+        stopPolling();
+        return;
+      }
+
+      pinCheckQuery.refetch();
+      setPollCount((prev) => prev + 1);
+      pollIntervalRef.current = window.setTimeout(
+        poll,
+        PLEX_AUTH_CONFIG.POLLING_INTERVAL_MS,
+      );
+    };
+
+    poll();
+  };
+
+  const stopPolling = () => {
+    if (pollIntervalRef.current) {
+      clearTimeout(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  };
+
+  // Simple handlers
   const handleAuth = async () => {
-    const { data: pin } = await createPin();
-
-    setPin(pin);
+    const { data: pinData } = await pinMutation.mutateAsync();
+    setPin(pinData);
+    setPollCount(0);
 
     const { width, height, features } = PLEX_AUTH_CONFIG.AUTH_WINDOW_CONFIG;
     const left = Math.round(window.screen.width / 2 - width / 2);
     const top = Math.round(window.screen.height / 2 - height / 2);
 
     authWindowRef.current = window.open(
-      pin.authUrl,
+      pinData.authUrl,
       "PlexAuth",
       `width=${width},height=${height},left=${left},top=${top},${features}`,
     );
+
+    // Start polling after opening auth window
+    startPolling();
+  };
+
+  const handleCancel = () => {
+    stopPolling();
+    setPin(null);
+    setPollCount(0);
+    if (authWindowRef.current) {
+      authWindowRef.current.close();
+    }
+    onCancelAuth();
   };
 
   const handleLogout = () => {
-    logout();
-
+    stopPolling();
+    logoutMutation.mutate();
     onLogout();
   };
 
-  if (authIsLoading && !isPolling) {
+  const isPolling = !!pin?.pinId && !!pollIntervalRef.current;
+
+  if (authQuery.isLoading && !isPolling) {
     return <Text>Loading authentication status...</Text>;
   }
 
-  if (isPolling && pinData) {
+  if (isPolling && pinCheckQuery.data) {
     return (
       <Paper withBorder radius="md" p="lg" className={styles.authSection}>
         <Stack gap="md">
@@ -84,7 +122,7 @@ const AuthSection = ({ onCancelAuth, onLogout }: AuthSectionProps) => {
               Complete the authentication in the opened window.
             </Text>
             <Button
-              onClick={onCancelAuth}
+              onClick={handleCancel}
               variant="light"
               color="gray"
               size="sm"
@@ -108,9 +146,9 @@ const AuthSection = ({ onCancelAuth, onLogout }: AuthSectionProps) => {
               Connect your Plex account to enable secure, automated integration
               with Bazarr.
             </Text>
-            {authError && (
+            {authQuery.error && (
               <Alert color="red" variant="light">
-                {authError.message || "Authentication failed"}
+                {authQuery.error.message || "Authentication failed"}
               </Alert>
             )}
             <Button
@@ -134,7 +172,7 @@ const AuthSection = ({ onCancelAuth, onLogout }: AuthSectionProps) => {
       <Stack gap="md">
         <Title order={4}>Plex OAuth (recommended)</Title>
         <Alert color="brand" variant="light">
-          Connected as ${authData?.username} (${authData?.email})
+          Connected as {authQuery.data?.username} ({authQuery.data?.email})
         </Alert>
         <Button
           onClick={handleLogout}
