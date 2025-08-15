@@ -158,8 +158,7 @@ def test_plex_connection(uri, token):
 class PlexPin(Resource):
     def post(self):
         try:
-            data = request.get_json() or {}
-            client_id = data.get('clientId', generate_client_id())
+            client_id = request.form.get('clientId', generate_client_id())
             
             state_token = token_manager.generate_state_token()
             
@@ -494,8 +493,7 @@ class PlexEncryptApiKey(Resource):
 class PlexApiKey(Resource):
     def post(self):
         try:
-            data = request.get_json() or {}
-            apikey = data.get('apikey', '').strip()
+            apikey = request.form.get('apikey', '').strip()
             
             if not apikey:
                 return {'error': 'API key is required'}, 400
@@ -518,8 +516,7 @@ class PlexApiKey(Resource):
 @api_ns_plex.route('plex/test-connection')
 class PlexTestConnection(Resource):
     def post(self):
-        data = request.get_json()
-        uri = data.get('uri')
+        uri = request.form.get('uri')
         
         if not uri:
             raise PlexAuthError('Missing URI', 'MISSING_PARAMETER')
@@ -576,18 +573,18 @@ class PlexSelectServer(Resource):
             return {'server': None}
     
     def post(self):
-        data = request.get_json()
-        machine_identifier = data.get('machineIdentifier')
-        name = data.get('name')
-        connection = data.get('connection', {})
+        machine_identifier = request.form.get('machineIdentifier')
+        name = request.form.get('name')
+        connection_uri = request.form.get('connection.uri')
+        connection_local = request.form.get('connection.local', 'false').lower() == 'true'
         
-        if not machine_identifier or not name or not connection.get('uri'):
+        if not machine_identifier or not name or not connection_uri:
             raise PlexAuthError('Missing required fields', 'MISSING_PARAMETER')
         
         settings.plex.server_machine_id = machine_identifier
         settings.plex.server_name = name
-        settings.plex.server_url = connection.get('uri')
-        settings.plex.server_local = connection.get('local', False)
+        settings.plex.server_url = connection_uri
+        settings.plex.server_local = connection_local
         write_config()
         
         return {
