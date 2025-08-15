@@ -13,7 +13,7 @@ import ServerSection from "./ServerSection";
 export const PlexSettings = () => {
   const form = useForm({
     initialValues: {
-      selectedServer: null as Plex.Server | null,
+      selectedServer: null as any,
       isSelecting: false,
       isSaved: false,
     },
@@ -30,13 +30,15 @@ export const PlexSettings = () => {
   });
   const serverSelectionMutation = usePlexServerSelectionMutation();
 
-  // Extract data from queries
-  const isAuthenticated =
-    authQuery.data?.valid && authQuery.data?.auth_method === "oauth";
-  const servers = serversQuery.data || [];
+  // Extract data from queries - handle both API response formats
+  const isAuthenticated = !!(
+    authQuery.data?.valid && authQuery.data?.auth_method === "oauth"
+  );
+  const servers = serversQuery.data?.servers || serversQuery.data || [];
   const serversError = serversQuery.error?.message;
   const refetchServers = serversQuery.refetch;
-  const savedSelectedServer = selectedServerQuery.data;
+  const savedSelectedServer =
+    selectedServerQuery.data?.server || selectedServerQuery.data;
 
   if (isAuthenticated && savedSelectedServer && !form.values.isSaved) {
     form.setFieldValue("selectedServer", savedSelectedServer);
@@ -106,7 +108,7 @@ export const PlexSettings = () => {
         isSaved={form.values.isSaved}
         onFetchServers={refetchServers}
         onServerSelect={handleServerSelect}
-        onSelectedServerChange={(server: Plex.Server | null) =>
+        onSelectedServerChange={(server: any) =>
           form.setFieldValue("selectedServer", server)
         }
       />
