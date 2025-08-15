@@ -160,7 +160,7 @@ const AuthSection = ({
       <Stack gap="md">
         <Title order={4}>Plex OAuth (recommended)</Title>
         <Alert color="brand" variant="light">
-          Connected as ${authData?.username} (${authData?.email})
+          Connected as {authData?.username} ({authData?.email})
         </Alert>
         <Button
           onClick={handleLogout}
