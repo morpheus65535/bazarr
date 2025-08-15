@@ -117,8 +117,10 @@ export const usePlexServerSelectionMutation = () => {
       api.plex.selectServer({
         machineIdentifier: params.machineIdentifier,
         name: params.name,
-        uri: params.uri,
-        local: params.local,
+        connection: {
+          uri: params.uri,
+          local: params.local,
+        },
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
@@ -127,11 +129,6 @@ export const usePlexServerSelectionMutation = () => {
     },
   });
 };
-
-interface UsePlexOAuthOptions {
-  onAuthSuccess?: (data: unknown) => void;
-  onAuthError?: (error: unknown) => void;
-}
 
 // export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
 //   const { onAuthSuccess, onAuthError } = options;

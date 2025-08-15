@@ -24,7 +24,6 @@ const AuthSection = ({
     data: authData,
     isLoading: authIsLoading,
     error: authError,
-    refetch: refetchAuth,
   } = usePlexAuthValidationQuery();
   const { mutateAsync: createPin } = usePlexPinMutation();
   const { mutate: logout } = usePlexLogoutMutation();
