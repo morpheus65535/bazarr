@@ -80,6 +80,12 @@ export const PlexSettings = () => {
     void refetchAuth();
   };
 
+  const handleAuthSuccess = () => {
+    // After successful authentication, refetch both auth and servers
+    void refetchAuth();
+    void refetchServers();
+  };
+
   // Initialize selected server from saved server (without useEffect)
   if (savedSelectedServer && !values.selectedServer && !values.isSaved) {
     setFieldValue("selectedServer", savedSelectedServer);
@@ -113,7 +119,11 @@ export const PlexSettings = () => {
 
   return (
     <Stack gap="lg">
-      <AuthSection onCancelAuth={handleCancelAuth} onLogout={handleLogout} />
+      <AuthSection
+        onCancelAuth={handleCancelAuth}
+        onLogout={handleLogout}
+        onAuthSuccess={handleAuthSuccess}
+      />
       <ServerSection
         isAuthenticated={isAuthenticated}
         servers={servers}

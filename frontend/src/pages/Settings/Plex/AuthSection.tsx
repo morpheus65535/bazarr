@@ -12,9 +12,14 @@ import styles from "@/pages/Settings/Plex/PlexSettings.module.scss";
 interface AuthSectionProps {
   onCancelAuth: () => void;
   onLogout: () => void;
+  onAuthSuccess: () => void;
 }
 
-const AuthSection = ({ onCancelAuth, onLogout }: AuthSectionProps) => {
+const AuthSection = ({
+  onCancelAuth,
+  onLogout,
+  onAuthSuccess,
+}: AuthSectionProps) => {
   const {
     data: authData,
     isLoading: authIsLoading,
@@ -44,8 +49,8 @@ const AuthSection = ({ onCancelAuth, onLogout }: AuthSectionProps) => {
       authWindowRef.current.close();
       authWindowRef.current = null;
     }
-    // Trigger a refetch to update auth status
-    void refetchAuth();
+    // Trigger refetch and servers data update
+    onAuthSuccess();
   }
 
   const isAuthenticated = Boolean(
