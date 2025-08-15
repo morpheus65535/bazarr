@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   ActionIcon,
   Alert,
@@ -13,75 +12,32 @@ import {
 } from "@mantine/core";
 import { faRefresh } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  usePlexAuthValidationQuery,
-  usePlexSelectedServerQuery,
-  usePlexServerSelectionMutation,
-  usePlexServersQuery,
-} from "@/apis/hooks/plex";
 import ConnectionsCard from "./ConnectionsCard";
 import styles from "@/pages/Settings/Plex/PlexSettings.module.scss";
 
-const ServerSection = () => {
-  const [selectedServer, setSelectedServer] = useState<Plex.Server | null>(
-    null,
-  );
-  const [isSelecting, setIsSelecting] = useState(false);
+interface ServerSectionProps {
+  isAuthenticated: boolean;
+  servers: Plex.Server[];
+  error?: string;
+  selectedServer: Plex.Server | null;
+  isSelecting: boolean;
+  isSaved: boolean;
+  onFetchServers: () => void;
+  onServerSelect: () => void;
+  onSelectedServerChange: (server: Plex.Server | null) => void;
+}
 
-  // Get authentication status
-  const { data: authData } = usePlexAuthValidationQuery();
-  const isAuthenticated = Boolean(
-    authData?.valid && authData?.auth_method === "oauth",
-  );
-
-  // Get servers data
-  const {
-    data: servers = [],
-    error: serversError,
-    refetch: refetchServers,
-  } = usePlexServersQuery({ enabled: isAuthenticated });
-
-  // Get selected server from backend
-  const { data: savedSelectedServer } = usePlexSelectedServerQuery({
-    enabled: isAuthenticated,
-  });
-
-  // Server selection mutation
-  const { mutateAsync: selectServer } = usePlexServerSelectionMutation();
-
-  // Initialize selected server from saved server
-  if (savedSelectedServer && !selectedServer) {
-    setSelectedServer(savedSelectedServer);
-  }
-
-  // Check if current server is saved
-  const isSaved =
-    savedSelectedServer?.machineIdentifier ===
-    selectedServer?.machineIdentifier;
-
-  const handleRefreshServers = () => {
-    refetchServers();
-  };
-
-  const handleServerSelect = async () => {
-    if (!selectedServer) return;
-
-    setIsSelecting(true);
-    try {
-      if (selectedServer.bestConnection) {
-        await selectServer({
-          machineIdentifier: selectedServer.machineIdentifier,
-          name: selectedServer.name,
-          uri: selectedServer.bestConnection.uri,
-          local: selectedServer.bestConnection.local,
-        });
-      }
-    } catch {
-      // Error is handled by the mutation
-    } finally {
-      setIsSelecting(false);
-    }
-  };
+const ServerSection = ({
+  isAuthenticated,
+  servers,
+  error,
+  selectedServer,
+  isSelecting,
+  isSaved,
+  onFetchServers,
+  onServerSelect,
+  onSelectedServerChange,
+}: ServerSectionProps) => {
   if (!isAuthenticated) {
     return null;
   }
@@ -91,18 +47,18 @@ const ServerSection = () => {
       <Stack gap="lg">
         <Title order={4}>Plex Servers</Title>
 
-        {serversError && (
+        {error && (
           <Alert color="red" variant="light">
-            Failed to load servers: {serversError.message}
+            Failed to load servers: {error}
           </Alert>
         )}
 
-        {isAuthenticated && servers.length === 0 && !serversError ? (
+        {isAuthenticated && servers.length === 0 && !error ? (
           <Badge size="md">Testing server connections...</Badge>
         ) : servers.length === 0 ? (
           <Stack gap="sm">
             <Text>No servers found.</Text>
-            <Button onClick={handleRefreshServers} variant="light" color="gray">
+            <Button onClick={onFetchServers} variant="light" color="gray">
               Refresh
             </Button>
           </Stack>
@@ -131,7 +87,7 @@ const ServerSection = () => {
                 variant="light"
                 color="gray"
                 size="lg"
-                onClick={handleRefreshServers}
+                onClick={onFetchServers}
                 title="Refresh server list"
               >
                 <FontAwesomeIcon icon={faRefresh} size="sm" />
@@ -163,7 +119,7 @@ const ServerSection = () => {
                         (s: Plex.Server) => s.machineIdentifier === value,
                       ) || null
                     : null;
-                  setSelectedServer(server);
+                  onSelectedServerChange(server);
                 }}
                 className={styles.serverSelectField}
                 searchable
@@ -173,7 +129,7 @@ const ServerSection = () => {
                 color="brand"
                 disabled={!selectedServer || isSelecting}
                 loading={isSelecting}
-                onClick={handleServerSelect}
+                onClick={onServerSelect}
               >
                 Select Server
               </Button>
@@ -181,7 +137,7 @@ const ServerSection = () => {
                 variant="light"
                 color="gray"
                 size="lg"
-                onClick={handleRefreshServers}
+                onClick={onFetchServers}
                 className={styles.refreshButton}
                 title="Refresh server list"
               >

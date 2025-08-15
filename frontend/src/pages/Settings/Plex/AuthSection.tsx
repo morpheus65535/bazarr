@@ -9,7 +9,12 @@ import {
 import { PLEX_AUTH_CONFIG } from "@/constants/plex";
 import styles from "@/pages/Settings/Plex/PlexSettings.module.scss";
 
-const AuthSection = () => {
+interface AuthSectionProps {
+  onCancelAuth: () => void;
+  onLogout: () => void;
+}
+
+const AuthSection = ({ onCancelAuth, onLogout }: AuthSectionProps) => {
   const {
     data: authData,
     isLoading: authIsLoading,
@@ -65,7 +70,7 @@ const AuthSection = () => {
 
   const handleLogout = () => {
     logout();
-    // Reset any local state if needed
+    onLogout();
   };
 
   const handleCancelAuth = () => {
@@ -74,6 +79,7 @@ const AuthSection = () => {
       authWindowRef.current.close();
       authWindowRef.current = null;
     }
+    onCancelAuth();
   };
 
   if (authIsLoading && !isPolling) {
