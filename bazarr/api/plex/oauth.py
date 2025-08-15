@@ -442,10 +442,15 @@ class PlexServers(Resource):
                                     current_app.logger.debug(f"Connection test failed: {e}")
                     
                     if connections:
+                        # Sort connections by latency to find the best one
+                        connections.sort(key=lambda x: x.get('latency', float('inf')))
+                        bestConnection = connections[0] if connections else None
+                        
                         servers.append({
                             'name': device['name'],
                             'machineIdentifier': device['clientIdentifier'],
                             'connections': connections,
+                            'bestConnection': bestConnection,
                             'version': device.get('productVersion'),
                             'platform': device.get('platform'),
                             'device': device.get('device')
