@@ -34,11 +34,12 @@ export const PlexSettings = () => {
     data: servers = [],
     error: serversError,
     refetch: refetchServers,
+    isLoading: serversLoading,
   } = usePlexServersQuery({ enabled: isAuthenticated });
 
-  // Get selected server from backend
+  // Get selected server from backend (only after servers query is complete)
   const { data: savedSelectedServer } = usePlexSelectedServerQuery({
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !serversLoading,
   });
 
   // Server selection mutation
