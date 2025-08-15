@@ -605,16 +605,16 @@ class PlexSelectServer(Resource):
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('machineIdentifier', type=str, required=True, help='Machine identifier')
     post_request_parser.add_argument('name', type=str, required=True, help='Server name')
-    post_request_parser.add_argument('uri', type=str, required=True, help='Connection URI')
-    post_request_parser.add_argument('local', type=str, required=False, default='false', help='Is local connection')
+    post_request_parser.add_argument('connection[uri]', type=str, required=True, help='Connection URI')
+    post_request_parser.add_argument('connection[local]', type=str, required=False, default='false', help='Is local connection')
 
     @api_ns_plex.doc(parser=post_request_parser)
     def post(self):
         args = self.post_request_parser.parse_args()
         machine_identifier = args.get('machineIdentifier')
         name = args.get('name')
-        connection_uri = args.get('uri')
-        connection_local = args.get('local', 'false').lower() == 'true'
+        connection_uri = args.get('connection[uri]')
+        connection_local = args.get('connection[local]', 'false').lower() == 'true'
         
         settings.plex.server_machine_id = machine_identifier
         settings.plex.server_name = name
