@@ -41,6 +41,15 @@ export const PlexSettings = () => {
     refetch: refetchServers,
   } = usePlexServersQuery({ enabled: isAuthenticated });
 
+  // Debug: Log the current state
+  console.log("PlexSettings state:", {
+    isAuthenticated,
+    savedSelectedServer,
+    serversCount: servers.length,
+    formSelectedServer: values.selectedServer,
+    isSaved: values.isSaved,
+  });
+
   // Server selection mutation
   const { mutateAsync: selectServer } = usePlexServerSelectionMutation();
 
