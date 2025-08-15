@@ -29,18 +29,17 @@ export const PlexSettings = () => {
     authData?.valid && authData?.auth_method === "oauth",
   );
 
-  // Get servers data
+  // Get selected server from backend first
+  const { data: savedSelectedServer } = usePlexSelectedServerQuery({
+    enabled: isAuthenticated,
+  });
+
+  // Get servers data (after we know which server should be selected)
   const {
     data: servers = [],
     error: serversError,
     refetch: refetchServers,
-    isLoading: serversLoading,
   } = usePlexServersQuery({ enabled: isAuthenticated });
-
-  // Get selected server from backend (only after servers are available)
-  const { data: savedSelectedServer } = usePlexSelectedServerQuery({
-    enabled: isAuthenticated && servers.length > 0,
-  });
 
   // Server selection mutation
   const { mutateAsync: selectServer } = usePlexServerSelectionMutation();
