@@ -6,6 +6,8 @@ import {
   usePlexServerSelectionMutation,
   usePlexServersQuery,
 } from "@/apis/hooks/plex";
+import { useFormActions } from "@/pages/Settings/utilities/FormValues";
+
 import AuthSection from "./AuthSection";
 import ServerSection from "./ServerSection";
 
@@ -19,6 +21,7 @@ export const PlexSettings = () => {
   });
 
   const { values, setFieldValue } = form;
+  const { setValue } = useFormActions();
 
   // Get authentication status
   const { data: authData, refetch: refetchAuth } = usePlexAuthValidationQuery();
@@ -56,6 +59,10 @@ export const PlexSettings = () => {
           local: selectedServer.bestConnection.local,
         });
         setFieldValue("isSaved", true);
+
+        // Save to Bazarr settings
+        setValue(selectedServer.bestConnection.uri, "plex_server");
+        setValue(selectedServer.name, "plex_server_name");
       }
     } catch {
       // Error is handled by the hook
@@ -98,6 +105,9 @@ export const PlexSettings = () => {
       local: server.bestConnection!.local,
     }).then(() => {
       setFieldValue("isSaved", true);
+      // Save to Bazarr settings
+      setValue(server.bestConnection!.uri, "plex_server");
+      setValue(server.name, "plex_server_name");
     });
   }
 
