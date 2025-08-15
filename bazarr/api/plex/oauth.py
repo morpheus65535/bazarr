@@ -5,7 +5,7 @@ import uuid
 import requests
 from datetime import datetime
 from flask import request, current_app
-from flask_restx import Resource
+from flask_restx import Resource, reqparse
 
 from . import api_ns_plex
 from .exceptions import *
@@ -156,9 +156,14 @@ def test_plex_connection(uri, token):
 
 @api_ns_plex.route('plex/oauth/pin')
 class PlexPin(Resource):
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('clientId', type=str, required=False, help='Client ID')
+
+    @api_ns_plex.doc(parser=post_request_parser)
     def post(self):
         try:
-            client_id = request.form.get('clientId', generate_client_id())
+            args = self.post_request_parser.parse_args()
+            client_id = args.get('clientId') or generate_client_id()
             
             state_token = token_manager.generate_state_token()
             
@@ -445,6 +450,9 @@ class PlexServers(Resource):
 
 @api_ns_plex.route('plex/oauth/logout')
 class PlexLogout(Resource):
+    post_request_parser = reqparse.RequestParser()
+
+    @api_ns_plex.doc(parser=post_request_parser)
     def post(self):
         try:
             settings.plex.token = ""
@@ -476,6 +484,9 @@ class PlexLogout(Resource):
 
 @api_ns_plex.route('plex/encrypt-apikey')
 class PlexEncryptApiKey(Resource):
+    post_request_parser = reqparse.RequestParser()
+
+    @api_ns_plex.doc(parser=post_request_parser)
     def post(self):
         try:
             from bazarr.plex.operations import encrypt_api_key
@@ -491,9 +502,14 @@ class PlexEncryptApiKey(Resource):
 
 @api_ns_plex.route('plex/apikey')
 class PlexApiKey(Resource):
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('apikey', type=str, required=True, help='API key')
+
+    @api_ns_plex.doc(parser=post_request_parser)
     def post(self):
         try:
-            apikey = request.form.get('apikey', '').strip()
+            args = self.post_request_parser.parse_args()
+            apikey = args.get('apikey', '').strip()
             
             if not apikey:
                 return {'error': 'API key is required'}, 400
@@ -515,11 +531,13 @@ class PlexApiKey(Resource):
 
 @api_ns_plex.route('plex/test-connection')
 class PlexTestConnection(Resource):
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('uri', type=str, required=True, help='Server URI')
+
+    @api_ns_plex.doc(parser=post_request_parser)
     def post(self):
-        uri = request.form.get('uri')
-        
-        if not uri:
-            raise PlexAuthError('Missing URI', 'MISSING_PARAMETER')
+        args = self.post_request_parser.parse_args()
+        uri = args.get('uri')
         
         decrypted_token = get_decrypted_token()
         if not decrypted_token:
@@ -572,14 +590,19 @@ class PlexSelectServer(Resource):
         except Exception as e:
             return {'server': None}
     
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('machineIdentifier', type=str, required=True, help='Machine identifier')
+    post_request_parser.add_argument('name', type=str, required=True, help='Server name')
+    post_request_parser.add_argument('connection.uri', type=str, required=True, help='Connection URI')
+    post_request_parser.add_argument('connection.local', type=str, required=False, default='false', help='Is local connection')
+
+    @api_ns_plex.doc(parser=post_request_parser)
     def post(self):
-        machine_identifier = request.form.get('machineIdentifier')
-        name = request.form.get('name')
-        connection_uri = request.form.get('connection.uri')
-        connection_local = request.form.get('connection.local', 'false').lower() == 'true'
-        
-        if not machine_identifier or not name or not connection_uri:
-            raise PlexAuthError('Missing required fields', 'MISSING_PARAMETER')
+        args = self.post_request_parser.parse_args()
+        machine_identifier = args.get('machineIdentifier')
+        name = args.get('name')
+        connection_uri = args.get('connection.uri')
+        connection_local = args.get('connection.local', 'false').lower() == 'true'
         
         settings.plex.server_machine_id = machine_identifier
         settings.plex.server_name = name
