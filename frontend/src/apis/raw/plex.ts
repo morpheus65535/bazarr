@@ -6,7 +6,7 @@ class NewPlexApi extends BaseApi {
   }
 
   async createPin() {
-    const response = await this.post<DataWrapper<Plex.Pin>>("/pin");
+    const response = await this.post<DataWrapper<Plex.Pin>>("/oauth/pin");
 
     return response.data;
   }
