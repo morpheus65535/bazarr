@@ -7,7 +7,6 @@ import {
   usePlexServersQuery,
 } from "@/apis/hooks/plex";
 import { useFormActions } from "@/pages/Settings/utilities/FormValues";
-
 import AuthSection from "./AuthSection";
 import ServerSection from "./ServerSection";
 
@@ -26,6 +25,7 @@ export const PlexSettings = () => {
   // Get authentication status
   const { data: authData, refetch: refetchAuth } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
+    // eslint-disable-next-line camelcase
     authData?.valid && authData?.auth_method === "oauth",
   );
 

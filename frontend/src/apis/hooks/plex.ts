@@ -18,6 +18,7 @@ export const usePlexAuthValidationQuery = () => {
         // Return a default value when API is not available
         return {
           valid: false,
+          // eslint-disable-next-line camelcase
           auth_method: "oauth",
           error: "API unavailable",
         };

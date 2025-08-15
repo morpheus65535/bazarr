@@ -49,6 +49,7 @@ const AuthSection = ({ onCancelAuth, onLogout }: AuthSectionProps) => {
   }
 
   const isAuthenticated = Boolean(
+    // eslint-disable-next-line camelcase
     authData?.valid && authData?.auth_method === "oauth",
   );
 
