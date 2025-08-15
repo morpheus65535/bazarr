@@ -12,18 +12,14 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { useForm } from "@mantine/form";
 import { faRefresh } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  usePlexOAuth,
-  usePlexServers,
-  useServerSelection,
-} from "@/apis/hooks/plex";
+import { usePlexOAuth, usePlexServers } from "@/apis/hooks/plex";
 import { QueryKeys } from "@/apis/queries/keys";
 import type { PlexServer, PlexServerConnection } from "@/apis/queries/plex";
 import { FormContext } from "@/pages/Settings/utilities/FormValues";
-import { getErrorMessage, type PlexError } from "@/utilities/plexErrors";
 import styles from "./PlexSettings.module.scss";
 
 interface AuthSectionProps {
@@ -31,7 +27,7 @@ interface AuthSectionProps {
   isPolling: boolean;
   isAuthenticated: boolean;
   pinData?: { code: string } | null;
-  authError?: PlexError;
+  authError?: Error;
   username?: string;
   email?: string;
   onStartAuth: () => void;
@@ -100,7 +96,7 @@ const AuthSection: React.FC<AuthSectionProps> = ({
             </Text>
             {authError && (
               <Alert color="red" variant="light">
-                {getErrorMessage(authError)}
+                {authError.message || "Authentication failed"}
               </Alert>
             )}
             <Button
@@ -143,29 +139,25 @@ const AuthSection: React.FC<AuthSectionProps> = ({
 interface ServerSectionProps {
   isAuthenticated: boolean;
   servers: PlexServer[];
-  isLoading: boolean;
   error?: string;
-  selectedServerId: string;
-  selectedServer?: PlexServer | null;
+  selectedServer: PlexServer | null;
   isSelecting: boolean;
   isSaved: boolean;
   onFetchServers: () => void;
   onServerSelect: () => void;
-  onSelectedServerIdChange: (id: string) => void;
+  onSelectedServerChange: (server: PlexServer | null) => void;
 }
 
 const ServerSection: React.FC<ServerSectionProps> = ({
   isAuthenticated,
   servers,
-  isLoading,
   error,
-  selectedServerId,
   selectedServer,
   isSelecting,
   isSaved,
   onFetchServers,
   onServerSelect,
-  onSelectedServerIdChange,
+  onSelectedServerChange,
 }) => {
   if (!isAuthenticated) return null;
 
@@ -180,7 +172,7 @@ const ServerSection: React.FC<ServerSectionProps> = ({
           </Alert>
         )}
 
-        {isAuthenticated && servers.length === 0 && !error && isLoading ? (
+        {isAuthenticated && servers.length === 0 && !error ? (
           <Badge size="md">Testing server connections...</Badge>
         ) : servers.length === 0 ? (
           <Stack gap="sm">
@@ -220,10 +212,10 @@ const ServerSection: React.FC<ServerSectionProps> = ({
                 <FontAwesomeIcon icon={faRefresh} size="sm" />
               </ActionIcon>
             </Group>
-            {selectedServerId && (
+            {selectedServer && (
               <ConnectionsCard
                 servers={servers}
-                selectedServerId={selectedServerId}
+                selectedServerId={selectedServer.machineIdentifier}
               />
             )}
           </Stack>
@@ -239,17 +231,20 @@ const ServerSection: React.FC<ServerSectionProps> = ({
                   label: `${server.name} (${server.platform} - v${server.version})${!server.bestConnection ? " (Unavailable)" : ""}`,
                   disabled: !server.bestConnection,
                 }))}
-                value={selectedServerId}
-                onChange={(value: string | null) =>
-                  onSelectedServerIdChange(value || "")
-                }
+                value={selectedServer?.machineIdentifier || null}
+                onChange={(value: string | null) => {
+                  const server = value
+                    ? servers.find((s) => s.machineIdentifier === value) || null
+                    : null;
+                  onSelectedServerChange(server);
+                }}
                 className={styles.serverSelectField}
                 searchable
               />
               <Button
                 variant="filled"
                 color="brand"
-                disabled={!selectedServerId || isSelecting}
+                disabled={!selectedServer || isSelecting}
                 loading={isSelecting}
                 onClick={onServerSelect}
               >
@@ -280,10 +275,10 @@ const ServerSection: React.FC<ServerSectionProps> = ({
               </Alert>
             )}
 
-            {selectedServerId && (
+            {selectedServer && (
               <ConnectionsCard
                 servers={servers}
-                selectedServerId={selectedServerId}
+                selectedServerId={selectedServer.machineIdentifier}
               />
             )}
           </Stack>
@@ -342,17 +337,25 @@ export const PlexSettings: React.FC = () => {
   const queryClient = useQueryClient();
   const form = useContext(FormContext);
 
-  // Server selection state management
+  // Mantine form for server selection
+  const serverForm = useForm({
+    initialValues: {
+      selectedServer: null as PlexServer | null,
+      isSelecting: false,
+      isSaved: false,
+    },
+  });
+
+  // Extract stable form methods to satisfy ESLint exhaustive-deps
+  const { setFieldValue, values, reset } = serverForm;
+
   const {
-    selectedServerId,
-    isSelecting,
-    isSaved,
-    selectedServer,
-    setSelectedServerId,
-    setSelecting,
-    setSaved,
-    setSelectedServer,
-  } = useServerSelection();
+    servers,
+    selectedServer: savedSelectedServer,
+    error: serversError,
+    selectServer,
+    refetchServers,
+  } = usePlexServers();
 
   // Plex OAuth hook (React Query version)
   const {
@@ -362,44 +365,49 @@ export const PlexSettings: React.FC = () => {
     email,
     error: authError,
     pinData,
+    isPolling,
     startAuth,
     logout,
     cancelAuth,
-    isPolling,
   } = usePlexOAuth({
-    onAuthSuccess: handleAuthSuccess,
+    onAuthSuccess: () => {
+      // Just refetch servers on auth success - useEffect handles the rest
+      refetchServers();
+    },
   });
 
-  // Plex servers hook (React Query version)
-  const {
-    servers,
-    selectedServer: savedSelectedServer,
-    isLoading: serversLoading,
-    error: serversError,
-    fetchServers,
-    selectServer,
-  } = usePlexServers();
+  const performAutoSelection = useCallback(
+    async (server: PlexServer) => {
+      setFieldValue("selectedServer", server);
+      setFieldValue("isSelecting", true);
+
+      try {
+        await selectServer(server.machineIdentifier);
+        setFieldValue("isSaved", true);
+      } catch {
+        // Error is handled by the selectServer mutation
+      } finally {
+        setFieldValue("isSelecting", false);
+      }
+    },
+    [setFieldValue, selectServer],
+  );
+
+  const handleSavedServerSelection = useCallback(
+    (server: PlexServer) => {
+      setFieldValue("selectedServer", server);
+      setFieldValue("isSaved", true);
+    },
+    [setFieldValue],
+  );
+
+  const isSaved = values.isSaved;
 
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const cachedServer = (
-      window as unknown as {
-        bazarrPlexCache?: { selectedServer?: PlexServer | null };
-      }
-    )?.bazarrPlexCache?.selectedServer;
-
-    if (cachedServer && !isSaved) {
-      setSelectedServer(cachedServer);
-      setSelectedServerId(cachedServer.machineIdentifier);
-      setSaved(true);
-      return;
-    }
-
     if (savedSelectedServer && !isSaved) {
-      setSelectedServer(savedSelectedServer);
-      setSelectedServerId(savedSelectedServer.machineIdentifier);
-      setSaved(true);
+      handleSavedServerSelection(savedSelectedServer);
       return;
     }
 
@@ -407,79 +415,40 @@ export const PlexSettings: React.FC = () => {
       servers.length === 1 &&
       servers[0].bestConnection &&
       !isSaved &&
-      !savedSelectedServer &&
-      !cachedServer
+      !savedSelectedServer
     ) {
       const singleServer = servers[0];
-      setSelectedServerId(singleServer.machineIdentifier);
-
-      const autoSelectServer = async () => {
-        try {
-          await selectServer(singleServer.machineIdentifier);
-          setSelectedServer(singleServer);
-          setSaved(true);
-        } catch {
-          // Error is handled by the selectServer mutation
-        }
-      };
-
-      autoSelectServer();
+      performAutoSelection(singleServer);
     }
   }, [
     isAuthenticated,
     servers,
     savedSelectedServer,
     isSaved,
-    setSelectedServer,
-    setSelectedServerId,
-    setSaved,
-    selectServer,
+    performAutoSelection,
+    handleSavedServerSelection,
   ]);
 
-  function handleAuthSuccess() {
-    fetchServers();
-
-    queryClient.invalidateQueries({
-      queryKey: [QueryKeys.System, QueryKeys.Settings],
-    });
-
-    if (form) {
-      Promise.resolve().then(() => {
-        form.reset();
-      });
-    }
-  }
-
   const handleServerSelect = useCallback(async () => {
-    if (!selectedServerId) return;
+    const selectedServer = values.selectedServer;
+    if (!selectedServer) return;
 
-    setSelecting(true);
+    setFieldValue("isSelecting", true);
     try {
-      const server = servers.find(
-        (s: PlexServer) => s.machineIdentifier === selectedServerId,
-      );
-
-      if (server?.bestConnection) {
-        await selectServer(selectedServerId);
-        setSelectedServer(server);
-        setSaved(true);
+      if (selectedServer.bestConnection) {
+        await selectServer(selectedServer.machineIdentifier);
+        setFieldValue("isSaved", true);
       }
     } catch {
       // Error is handled by the hook
     } finally {
-      setSelecting(false);
+      setFieldValue("isSelecting", false);
     }
-  }, [
-    selectedServerId,
-    servers,
-    selectServer,
-    setSelectedServer,
-    setSaved,
-    setSelecting,
-  ]);
+  }, [values.selectedServer, setFieldValue, selectServer]);
 
   const handleLogout = useCallback(async () => {
     await logout();
+    reset();
 
     queryClient.invalidateQueries({
       queryKey: [QueryKeys.System, QueryKeys.Settings],
@@ -490,7 +459,9 @@ export const PlexSettings: React.FC = () => {
         form.reset();
       });
     }
-  }, [logout, queryClient, form]);
+  }, [logout, reset, queryClient, form]);
+
+  const selectedServer = values.selectedServer;
 
   return (
     <Stack gap="lg">
@@ -499,7 +470,7 @@ export const PlexSettings: React.FC = () => {
         isPolling={isPolling}
         isAuthenticated={isAuthenticated}
         pinData={pinData}
-        authError={authError}
+        authError={authError || undefined}
         username={username}
         email={email}
         onStartAuth={startAuth}
@@ -509,15 +480,15 @@ export const PlexSettings: React.FC = () => {
       <ServerSection
         isAuthenticated={isAuthenticated}
         servers={servers}
-        isLoading={serversLoading}
         error={serversError}
-        selectedServerId={selectedServerId}
         selectedServer={selectedServer}
-        isSelecting={isSelecting}
-        isSaved={isSaved}
-        onFetchServers={fetchServers}
+        isSelecting={values.isSelecting}
+        isSaved={values.isSaved}
+        onFetchServers={refetchServers}
         onServerSelect={handleServerSelect}
-        onSelectedServerIdChange={setSelectedServerId}
+        onSelectedServerChange={(server: PlexServer | null) =>
+          setFieldValue("selectedServer", server)
+        }
       />
     </Stack>
   );

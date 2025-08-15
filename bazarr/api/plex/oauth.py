@@ -55,7 +55,6 @@ def generate_client_id():
     return str(uuid.uuid4())
 
 def get_decrypted_token():
-    """Get decrypted token based on current auth method"""
     auth_method = settings.plex.get('auth_method', 'apikey')
     
     if auth_method == 'oauth':
@@ -159,11 +158,7 @@ def test_plex_connection(uri, token):
 class PlexPin(Resource):
     def post(self):
         try:
-            try:
-                data = request.get_json() or {}
-            except:
-                data = {}
-            
+            data = request.get_json() or {}
             client_id = data.get('clientId', generate_client_id())
             
             state_token = token_manager.generate_state_token()
@@ -468,6 +463,8 @@ class PlexLogout(Resource):
             settings.plex.server_name = ""
             settings.plex.server_url = ""
             settings.plex.server_local = False
+            
+            settings.plex.encryption_key = ""
             
             settings.general.use_plex = False
             

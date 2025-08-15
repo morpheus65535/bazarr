@@ -1,37 +1,28 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { QueryKeys } from "@/apis/queries/keys";
 import {
   type PlexPinResponse,
   type PlexServer,
   type PlexServerConnection,
   usePlexAuthValidationQuery,
   usePlexLogoutMutation,
-  usePlexPinCheckMutation,
+  usePlexPinCheckQuery,
   usePlexPinMutation,
   usePlexSelectedServerQuery,
   usePlexServerSelectionMutation,
   usePlexServersQuery,
 } from "@/apis/queries/plex";
-import { PLEX_AUTH_CONFIG, PLEX_ERROR_CODES } from "@/constants/plex";
-import { parseError, type PlexError } from "@/utilities/plexErrors";
+import { PLEX_AUTH_CONFIG } from "@/constants/plex";
 
 interface UsePlexOAuthOptions {
   onAuthSuccess?: (data: unknown) => void;
-  onAuthError?: (error: PlexError) => void;
+  onAuthError?: (error: unknown) => void;
 }
 
 export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
   const { onAuthSuccess, onAuthError } = options;
-
-  const {
-    data: authData,
-    isLoading: authLoading,
-    error: authError,
-    refetch: refetchAuth,
-  } = usePlexAuthValidationQuery();
-
-  const pinMutation = usePlexPinMutation();
-  const pinCheckMutation = usePlexPinCheckMutation();
-  const logoutMutation = usePlexLogoutMutation();
+  const queryClient = useQueryClient();
 
   const [pinData, setPinData] = useState<PlexPinResponse | null>(null);
   const [isPolling, setIsPolling] = useState(false);
@@ -40,10 +31,24 @@ export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
   const pollingAttemptRef = useRef(0);
   const authWindowRef = useRef<Window | null>(null);
 
+  const {
+    data: authData,
+    isLoading: authLoading,
+    error: authError,
+  } = usePlexAuthValidationQuery();
+
+  const pinMutation = usePlexPinMutation();
+  const logoutMutation = usePlexLogoutMutation();
+
+  const { refetch: checkPin, error: pinCheckError } = usePlexPinCheckQuery(
+    pinData?.pinId ?? null,
+    !!pinData?.pinId,
+  );
+
   const isAuthenticated = authData?.valid && authData?.auth_method === "oauth";
   const username = authData?.username;
   const email = authData?.email;
-  const error = authError ? parseError(authError) : undefined;
+  const error = authError || pinCheckError;
 
   const cleanup = useCallback(() => {
     if (pollingIntervalRef.current) {
@@ -61,48 +66,49 @@ export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
     setPinData(null);
   }, []);
 
-  const startPolling = useCallback(
-    (pinId: string) => {
-      if (pollingIntervalRef.current) {
+  const startPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      return;
+    }
+
+    setIsPolling(true);
+    pollingAttemptRef.current = 0;
+
+    pollingIntervalRef.current = window.setInterval(async () => {
+      pollingAttemptRef.current++;
+
+      if (pollingAttemptRef.current >= PLEX_AUTH_CONFIG.MAX_POLLING_ATTEMPTS) {
+        cleanup();
+        const timeoutError = new Error(
+          "Authentication timeout. Please try again.",
+        );
+
+        if (onAuthError) {
+          onAuthError(timeoutError);
+        }
+
         return;
       }
 
-      setIsPolling(true);
-      pollingAttemptRef.current = 0;
+      try {
+        const result = await checkPin();
 
-      pollingIntervalRef.current = window.setInterval(async () => {
-        pollingAttemptRef.current++;
-
-        if (
-          pollingAttemptRef.current >= PLEX_AUTH_CONFIG.MAX_POLLING_ATTEMPTS
-        ) {
+        if (result.data?.authenticated) {
           cleanup();
-          const timeoutError: PlexError = {
-            message: "Authentication timeout. Please try again.",
-            code: PLEX_ERROR_CODES.AUTH_TIMEOUT,
-          };
-
-          if (onAuthError) {
-            onAuthError(timeoutError);
-          }
-
-          return;
-        }
-
-        const result = await pinCheckMutation.mutateAsync(pinId);
-
-        if (result.authenticated) {
-          cleanup();
-          await refetchAuth();
+          // Invalidate auth queries to refresh the auth state
+          queryClient.invalidateQueries({
+            queryKey: [QueryKeys.Plex, "auth", "validate"],
+          });
 
           if (onAuthSuccess) {
-            onAuthSuccess(result);
+            onAuthSuccess(result.data);
           }
         }
-      }, PLEX_AUTH_CONFIG.POLLING_INTERVAL_MS);
-    },
-    [pinCheckMutation, cleanup, onAuthSuccess, onAuthError, refetchAuth],
-  );
+      } catch (error) {
+        // Continue polling on error unless it's a timeout
+      }
+    }, PLEX_AUTH_CONFIG.POLLING_INTERVAL_MS);
+  }, [checkPin, cleanup, onAuthSuccess, onAuthError, queryClient]);
 
   const openAuthWindow = useCallback((authUrl: string): Window | null => {
     const { width, height, features } = PLEX_AUTH_CONFIG.AUTH_WINDOW_CONFIG;
@@ -123,7 +129,7 @@ export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
     setPinData(pin);
 
     authWindowRef.current = openAuthWindow(pin.authUrl);
-    startPolling(pin.pinId);
+    startPolling();
 
     return pin;
   }, [pinMutation, startPolling, cleanup, openAuthWindow]);
@@ -156,39 +162,8 @@ export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
 };
 
 export const usePlexServers = () => {
-  const {
-    data: serversResponse,
-    isLoading: serversLoading,
-    error: serversError,
-    refetch: refetchServers,
-  } = usePlexServersQuery();
-
-  const {
-    data: selectedServerResponse,
-    isLoading: selectedServerLoading,
-    refetch: refetchSelectedServer,
-  } = usePlexSelectedServerQuery();
-
-  const serverSelectionMutation = usePlexServerSelectionMutation();
-
-  const [processedServers, setProcessedServers] = useState<PlexServer[]>([]);
-  const [lastFetch, setLastFetch] = useState<number | undefined>();
-  const [cachedSelectedServer, setCachedSelectedServer] =
-    useState<PlexServer | null>(null);
-
-  const rawServers: PlexServer[] = useMemo(
-    () => serversResponse?.servers || [],
-    [serversResponse?.servers],
-  );
-  const selectedServer = selectedServerResponse?.server || null;
-
-  const servers = processedServers.length > 0 ? processedServers : rawServers;
-
-  useEffect(() => {
-    if (rawServers.length === 0) {
-      setProcessedServers([]);
-    }
-  }, [rawServers]);
+  const { data: authData } = usePlexAuthValidationQuery();
+  const isAuthenticated = authData?.valid && authData?.auth_method === "oauth";
 
   const getBestConnection = useCallback(
     (connections: PlexServerConnection[]): PlexServerConnection | null => {
@@ -206,42 +181,42 @@ export const usePlexServers = () => {
     [],
   );
 
-  const shouldThrottleFetch = useCallback(
-    (throttleMs: number = 30000): boolean => {
-      const now = Date.now();
-      return !!(lastFetch && now - lastFetch < throttleMs);
-    },
-    [lastFetch],
-  );
+  const {
+    data: servers = [],
+    isLoading: serversLoading,
+    error: serversError,
+    refetch: refetchServers,
+  } = usePlexServersQuery<PlexServer[]>({
+    enabled: isAuthenticated,
+    staleTime: 1000 * 30,
+    select: (data) => {
+      if (!data?.servers) return [];
 
-  const fetchServers = useCallback(async () => {
-    if (shouldThrottleFetch()) {
-      return servers;
-    }
-    setLastFetch(Date.now());
-    const response = await refetchServers();
-    if (response.data?.servers) {
-      const serversWithBestConnections = response.data.servers.map(
-        (server: PlexServer) => {
-          return {
-            ...server,
-            bestConnection: getBestConnection(server.connections),
-          };
-        },
+      const serversWithBestConnections = data.servers.map(
+        (server: PlexServer) => ({
+          ...server,
+          bestConnection: getBestConnection(server.connections),
+        }),
       );
 
-      serversWithBestConnections.sort((a: PlexServer, b: PlexServer) => {
+      // Sort servers with available connections first
+      return serversWithBestConnections.sort((a: PlexServer, b: PlexServer) => {
         const aHasConnection = !!a.bestConnection;
         const bHasConnection = !!b.bestConnection;
         if (aHasConnection && !bHasConnection) return -1;
         if (!aHasConnection && bHasConnection) return 1;
         return 0;
       });
-      setProcessedServers(serversWithBestConnections);
-      return serversWithBestConnections;
-    }
-    return [];
-  }, [servers, refetchServers, getBestConnection, shouldThrottleFetch]);
+    },
+  });
+
+  const { data: selectedServer = null, isLoading: selectedServerLoading } =
+    usePlexSelectedServerQuery<PlexServer | null>({
+      enabled: isAuthenticated,
+      select: (data) => data?.server || null,
+    });
+
+  const serverSelectionMutation = usePlexServerSelectionMutation();
 
   const selectServer = useCallback(
     async (machineIdentifier: string) => {
@@ -263,59 +238,19 @@ export const usePlexServers = () => {
         uri: server.bestConnection.uri,
         local: server.bestConnection.local,
       });
-      setCachedSelectedServer(server);
     },
-    [servers, serverSelectionMutation, setCachedSelectedServer],
+    [servers, serverSelectionMutation],
   );
-
-  const getSelectedServer = useCallback(async () => {
-    const response = await refetchSelectedServer();
-    return response.data?.server || null;
-  }, [refetchSelectedServer]);
 
   return {
     servers,
     selectedServer,
-    cachedSelectedServer,
     isLoading:
       serversLoading ||
       selectedServerLoading ||
       serverSelectionMutation.isPending,
     error: serversError?.message || undefined,
-    fetchServers,
-    refreshServers: fetchServers,
+    refetchServers,
     selectServer,
-    getSelectedServer,
-  };
-};
-
-export const useServerSelection = () => {
-  const [selectedServerId, setSelectedServerId] = useState("");
-  const [isSelecting, setSelecting] = useState(false);
-  const [isSaved, setSaved] = useState(false);
-  const [selectedServer, setSelectedServer] = useState<PlexServer | null>(null);
-
-  const reset = useCallback(() => {
-    setSelectedServerId("");
-    setSelecting(false);
-    setSaved(false);
-    setSelectedServer(null);
-  }, []);
-
-  const updateSelectedServer = useCallback((server: PlexServer | null) => {
-    setSelectedServer(server);
-    setSelectedServerId(server?.machineIdentifier || "");
-  }, []);
-
-  return {
-    selectedServerId,
-    isSelecting,
-    isSaved,
-    selectedServer,
-    setSelectedServerId,
-    setSelecting,
-    setSaved,
-    setSelectedServer: updateSelectedServer,
-    reset,
   };
 };

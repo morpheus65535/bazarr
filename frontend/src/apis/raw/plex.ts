@@ -1,4 +1,4 @@
-import plexClient from "./plexClient";
+import client from "./client";
 
 export interface PlexPinResponse {
   pinId: string;
@@ -68,42 +68,53 @@ class PlexApi {
   }
 
   async createPin(): Promise<PlexPinResponse> {
-    return plexClient.post<PlexPinResponse>(`${this.prefix}/oauth/pin`, {});
+    const response = await client.axios.post<PlexPinResponse>(
+      `${this.prefix}/oauth/pin`,
+      {},
+    );
+    return response.data;
   }
 
   async validateAuth(): Promise<PlexValidateResponse> {
-    return plexClient.get<PlexValidateResponse>(
+    const response = await client.axios.get<PlexValidateResponse>(
       `${this.prefix}/oauth/validate`,
     );
+    return response.data;
   }
 
   async checkPin(pinId: string): Promise<PlexPinCheckResponse> {
-    return plexClient.get<PlexPinCheckResponse>(
+    const response = await client.axios.get<PlexPinCheckResponse>(
       `${this.prefix}/oauth/pin/${pinId}/check`,
     );
+    return response.data;
   }
 
   async logout(): Promise<void> {
-    await plexClient.post(`${this.prefix}/oauth/logout`, {});
+    await client.axios.post(`${this.prefix}/oauth/logout`, {});
   }
 
   async getServers(): Promise<PlexServersResponse> {
-    return plexClient.get<PlexServersResponse>(`${this.prefix}/oauth/servers`);
+    const response = await client.axios.get<PlexServersResponse>(
+      `${this.prefix}/oauth/servers`,
+    );
+    return response.data;
   }
 
   async selectServer(
     request: PlexSelectServerRequest,
   ): Promise<PlexSelectedServerResponse> {
-    return plexClient.post<PlexSelectedServerResponse>(
+    const response = await client.axios.post<PlexSelectedServerResponse>(
       `${this.prefix}/select-server`,
       request,
     );
+    return response.data;
   }
 
   async getSelectedServer(): Promise<PlexSelectedServerResponse> {
-    return plexClient.get<PlexSelectedServerResponse>(
+    const response = await client.axios.get<PlexSelectedServerResponse>(
       `${this.prefix}/select-server`,
     );
+    return response.data;
   }
 }
 

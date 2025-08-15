@@ -1,9 +1,30 @@
-// A workaround of built-in hooks in React-Router v6
-// https://gist.github.com/rmorse/426ffcc579922a82749934826fa9f743
+// Navigation blocker utility using React Router's useBlocker with Mantine confirmation modal
 
-import { unstable_usePrompt as useUnstablePrompt } from "react-router";
+import { useEffect, useRef } from "react";
+import { useBlocker } from "react-router";
+import { modals } from "@mantine/modals";
 
-// TODO: Replace with Mantine's confirmation modal
 export function usePrompt(when: boolean, message: string) {
-  useUnstablePrompt({ when, message });
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      when && currentLocation.pathname !== nextLocation.pathname,
+  );
+
+  const prevWhen = useRef(when);
+
+  useEffect(() => {
+    if (blocker.state === "blocked" && prevWhen.current === when) {
+      modals.openConfirmModal({
+        title: "Unsaved Changes",
+        children: message,
+        labels: { confirm: "Leave", cancel: "Stay" },
+        confirmProps: { color: "red" },
+        onConfirm: () => blocker.proceed(),
+        onCancel: () => blocker.reset(),
+        closeOnCancel: true,
+        closeOnConfirm: true,
+      });
+    }
+    prevWhen.current = when;
+  }, [blocker, message, when]);
 }

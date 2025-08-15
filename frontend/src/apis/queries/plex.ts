@@ -1,6 +1,16 @@
+import type { UseQueryOptions } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
+import type {
+  PlexPinCheckResponse,
+  PlexPinResponse,
+  PlexSelectedServerResponse,
+  PlexServer,
+  PlexServerConnection,
+  PlexServersResponse,
+  PlexValidateResponse,
+} from "@/apis/raw/plex";
 
 export type {
   PlexPinResponse,
@@ -9,7 +19,8 @@ export type {
   PlexServerConnection,
   PlexServer,
   PlexServersResponse,
-} from "@/apis/raw/plex";
+  PlexSelectedServerResponse,
+};
 
 export const usePlexAuthValidationQuery = () => {
   return useQuery({
@@ -20,21 +31,40 @@ export const usePlexAuthValidationQuery = () => {
   });
 };
 
-export const usePlexServersQuery = (enabled: boolean = true) => {
+export const usePlexServersQuery = <TData = PlexServersResponse>(
+  options?: Partial<
+    UseQueryOptions<PlexServersResponse, Error, TData, (string | boolean)[]>
+  > & { enabled?: boolean },
+) => {
+  const enabled = options?.enabled ?? true;
+
   return useQuery({
     queryKey: [QueryKeys.Plex, "servers"],
     queryFn: () => api.plex.getServers(),
     enabled,
     staleTime: 1000 * 60 * 2,
+    ...options,
   });
 };
 
-export const usePlexSelectedServerQuery = (enabled: boolean = true) => {
+export const usePlexSelectedServerQuery = <TData = PlexSelectedServerResponse>(
+  options?: Partial<
+    UseQueryOptions<
+      PlexSelectedServerResponse,
+      Error,
+      TData,
+      (string | boolean)[]
+    >
+  > & { enabled?: boolean },
+) => {
+  const enabled = options?.enabled ?? true;
+
   return useQuery({
     queryKey: [QueryKeys.Plex, "selectedServer"],
     queryFn: () => api.plex.getSelectedServer(),
     enabled,
     staleTime: 1000 * 60 * 5,
+    ...options,
   });
 };
 
@@ -44,18 +74,17 @@ export const usePlexPinMutation = () => {
   });
 };
 
-export const usePlexPinCheckMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (pinId: string) => api.plex.checkPin(pinId),
-    onSuccess: (data: { authenticated: boolean }) => {
-      if (data.authenticated) {
-        queryClient.invalidateQueries({
-          queryKey: [QueryKeys.Plex, "auth", "validate"],
-        });
-      }
-    },
+export const usePlexPinCheckQuery = (
+  pinId: string | null,
+  enabled: boolean = false,
+) => {
+  return useQuery({
+    queryKey: [QueryKeys.Plex, "pinCheck", pinId],
+    queryFn: () => api.plex.checkPin(pinId!),
+    enabled: enabled && !!pinId,
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 0, // Always fresh for polling
   });
 };
 
