@@ -5,7 +5,7 @@ import sqlite3
 import shutil
 import logging
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from zipfile import ZipFile, BadZipFile, ZIP_DEFLATED
 from glob import glob
 
@@ -195,7 +195,8 @@ def backup_rotation():
 
     logging.debug(f'Cleaning up backup files older than {backup_retention} days')
     for file in backup_files:
-        if datetime.fromtimestamp(os.path.getmtime(file)) + timedelta(days=int(backup_retention)) < datetime.utcnow():
+        if (datetime.fromtimestamp(os.path.getmtime(file), tz=timezone.utc) + timedelta(days=int(backup_retention)) <
+                datetime.now(tz=timezone.utc)):
             logging.debug(f'Deleting old backup file {file}')
             try:
                 os.remove(file)
