@@ -523,6 +523,10 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         </CollapseBox>
       </Section>
       <Section header="Translating">
+        <Slider
+          label="Score for Translated Episode and Movie Subtitles"
+          settingKey="settings-translator-default_score"
+        ></Slider>
         <Selector
           label="Translator"
           clearable

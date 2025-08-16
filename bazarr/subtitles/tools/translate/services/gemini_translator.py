@@ -28,8 +28,9 @@ from subtitles.processing import ProcessSubtitlesResult
 from app.event_handler import show_progress, hide_progress, show_message
 from deep_translator.exceptions import TooManyRequests, RequestError, TranslationNotFound
 from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
-from ..core.translator_utils import add_translator_info, get_description
+from ..core.translator_utils import add_translator_info, get_description, create_process_result
 
+logger = logging.getLogger(__name__)
 
 class SubtitleObject(typing.TypedDict):
     """
@@ -41,14 +42,22 @@ class SubtitleObject(typing.TypedDict):
 
 class GeminiTranslatorService:
 
-    def __init__(self, source_srt_file, dest_srt_file, to_lang, media_type,
-                 sonarr_series_id=None, radarr_id=None, **kwargs):
+    def __init__(self, source_srt_file, dest_srt_file, to_lang, media_type, sonarr_series_id, sonarr_episode_id,
+                 radarr_id, forced, hi, video_path, from_lang, orig_to_lang, **kwargs):
         self.source_srt_file = source_srt_file
         self.dest_srt_file = dest_srt_file
         self.to_lang = to_lang
         self.media_type = media_type
         self.sonarr_series_id = sonarr_series_id
         self.radarr_id = radarr_id
+        self.from_lang = from_lang
+        self.video_path = video_path
+        self.forced = forced
+        self.hi = hi
+        self.sonarr_series_id = sonarr_series_id
+        self.sonarr_episode_id = sonarr_episode_id
+        self.radarr_id = radarr_id
+        self.orig_to_lang = orig_to_lang
 
         self.gemini_api_key = None
         self.current_api_key = None
@@ -74,8 +83,8 @@ class GeminiTranslatorService:
         subs.remove_miscellaneous_events()
 
         try:
-            logging.debug(f'BAZARR is sending subtitle file to Gemini for translation')
-            logging.info(f"BAZARR is sending subtitle file to Gemini for translation " + self.source_srt_file)
+            logger.debug(f'BAZARR is sending subtitle file to Gemini for translation')
+            logger.info(f"BAZARR is sending subtitle file to Gemini for translation " + self.source_srt_file)
 
             self.gemini_api_key = settings.translator.gemini_key
             self.current_api_key = self.gemini_api_key
@@ -100,7 +109,7 @@ class GeminiTranslatorService:
                 show_message(f'Gemini translation error: {str(e)}')
 
         except Exception as e:
-            logging.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
+            logger.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
             return False
 
     @staticmethod
@@ -449,8 +458,8 @@ class GeminiTranslatorService:
         subs.remove_miscellaneous_events()
 
         try:
-            logging.debug(f'BAZARR is sending subtitle file to Gemini for translation')
-            logging.info(f"BAZARR is sending subtitle file to Gemini for translation " + self.source_srt_file)
+            logger.debug(f'BAZARR is sending subtitle file to Gemini for translation')
+            logger.info(f"BAZARR is sending subtitle file to Gemini for translation " + self.source_srt_file)
 
             # Set up Gemini translator parameters
             self.gemini_api_key = settings.translator.gemini_key
@@ -475,9 +484,24 @@ class GeminiTranslatorService:
             try:
                 self._translate_with_gemini()
                 add_translator_info(self.dest_srt_file, f"# Subtitles translated with {settings.translator.gemini_model} # ")
+
+                message = f"{language_from_alpha2(self.from_lang)} subtitles translated to {language_from_alpha3(self.to_lang)}."
+                result = create_process_result(message, self.video_path, self.orig_to_lang, self.forced, self.hi, self.dest_srt_file, self.media_type)
+
+                if self.media_type == 'series':
+                    history_log(action=6, sonarr_series_id=self.sonarr_series_id, sonarr_episode_id=self.sonarr_episode_id, result=result)
+                else:
+                    history_log_movie(action=6, radarr_id=self.radarr_id, result=result)
+
+                return self.dest_srt_file
+
             except Exception as e:
                 show_message(f'Gemini translation error: {str(e)}')
+                hide_progress(id=f'translate_progress_{self.dest_srt_file}')
+                return False
 
         except Exception as e:
-            logging.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
+            logger.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
+            show_message(f'Gemini translation failed: {str(e)}')
+            hide_progress(id=f'translate_progress_{self.dest_srt_file}')
             return False

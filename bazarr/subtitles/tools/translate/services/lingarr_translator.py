@@ -22,6 +22,7 @@ from utilities.path_mappings import path_mappings
 
 from ..core.translator_utils import add_translator_info, create_process_result, get_title
 
+logger = logging.getLogger(__name__)
 
 class LingarrTranslatorService:
 
@@ -54,18 +55,18 @@ class LingarrTranslatorService:
             lines_list_len = len(lines_list)
 
             if lines_list_len == 0:
-                logging.debug('No lines to translate in subtitle file')
+                logger.debug('No lines to translate in subtitle file')
                 return self.dest_srt_file
 
-            logging.debug(f'Starting translation for {self.source_srt_file}')
+            logger.debug(f'Starting translation for {self.source_srt_file}')
             translated_lines = self._translate_content(lines_list)
 
             if translated_lines is None:
-                logging.error(f'Translation failed for {self.source_srt_file}')
+                logger.error(f'Translation failed for {self.source_srt_file}')
                 show_message(f'Translation failed for {self.source_srt_file}')
                 return False
 
-            logging.debug(f'BAZARR saving Lingarr translated subtitles to {self.dest_srt_file}')
+            logger.debug(f'BAZARR saving Lingarr translated subtitles to {self.dest_srt_file}')
             translation_map = {}
             for item in translated_lines:
                 if isinstance(item, dict) and 'position' in item and 'line' in item:
@@ -79,7 +80,7 @@ class LingarrTranslatorService:
                 subs.save(self.dest_srt_file)
                 add_translator_info(self.dest_srt_file, f"# Subtitles translated with Lingarr # ")
             except OSError:
-                logging.error(f'BAZARR is unable to save translated subtitles to {self.dest_srt_file}')
+                logger.error(f'BAZARR is unable to save translated subtitles to {self.dest_srt_file}')
                 show_message(f'Translation failed: Unable to save translated subtitles to {self.dest_srt_file}')
                 raise OSError
 
@@ -87,15 +88,19 @@ class LingarrTranslatorService:
             result = create_process_result(message, self.video_path, self.orig_to_lang, self.forced, self.hi, self.dest_srt_file, self.media_type)
 
             if self.media_type == 'series':
-                history_log(action=6, sonarr_series_id=self.sonarr_series_id, sonarr_episode_id=self.sonarr_episode_id,
+                history_log(action=6,
+                            sonarr_series_id=self.sonarr_series_id,
+                            sonarr_episode_id=self.sonarr_episode_id,
                             result=result)
             else:
-                history_log_movie(action=6, radarr_id=self.radarr_id, result=result)
+                history_log_movie(action=6,
+                                  radarr_id=self.radarr_id,
+                                  result=result)
 
             return self.dest_srt_file
 
         except Exception as e:
-            logging.error(f'BAZARR encountered an error during Lingarr translation: {str(e)}')
+            logger.error(f'BAZARR encountered an error during Lingarr translation: {str(e)}')
             show_message(f'Lingarr translation failed: {str(e)}')
             hide_progress(id=f'translate_progress_{self.dest_srt_file}')
             return False
@@ -136,7 +141,7 @@ class LingarrTranslatorService:
                 "lines": lines_payload
             }
 
-            logging.debug(f'BAZARR is sending {len(lines_payload)} lines to Lingarr with full media context')
+            logger.debug(f'BAZARR is sending {len(lines_payload)} lines to Lingarr with full media context')
 
             response = requests.post(
                 f"{settings.translator.lingarr_url}/api/translate/content",
@@ -151,34 +156,34 @@ class LingarrTranslatorService:
                 if isinstance(translated_batch, list):
                     for item in translated_batch:
                         if not isinstance(item, dict) or 'position' not in item or 'line' not in item:
-                            logging.error(f'Invalid response format from Lingarr API: {item}')
+                            logger.error(f'Invalid response format from Lingarr API: {item}')
                             return None
                     return translated_batch
                 else:
-                    logging.error(f'Unexpected response format from Lingarr API: {translated_batch}')
+                    logger.error(f'Unexpected response format from Lingarr API: {translated_batch}')
                     return None
             elif response.status_code == 429:
                 raise TooManyRequests("Rate limit exceeded")
             elif response.status_code >= 500:
                 raise RequestError(f"Server error: {response.status_code}")
             else:
-                logging.debug(f'Lingarr API error: {response.status_code} - {response.text}')
+                logger.debug(f'Lingarr API error: {response.status_code} - {response.text}')
                 return None
 
         except requests.exceptions.Timeout:
-            logging.debug('Lingarr API request timed out')
+            logger.debug('Lingarr API request timed out')
             raise RequestError("Request timed out")
         except requests.exceptions.ConnectionError:
-            logging.debug('Lingarr API connection error')
+            logger.debug('Lingarr API connection error')
             raise RequestError("Connection error")
         except requests.exceptions.RequestException as e:
-            logging.debug(f'Lingarr API request failed: {str(e)}')
+            logger.debug(f'Lingarr API request failed: {str(e)}')
             raise
         except (TooManyRequests, RequestError) as e:
-            logging.error(f'Lingarr API error after retries: {str(e)}')
+            logger.error(f'Lingarr API error after retries: {str(e)}')
             show_message(f'Lingarr API error: {str(e)}')
             raise
         except Exception as e:
-            logging.error(f'Unexpected error in Lingarr translation: {str(e)}')
+            logger.error(f'Unexpected error in Lingarr translation: {str(e)}')
             show_message(f'Translation error: {str(e)}')
             raise

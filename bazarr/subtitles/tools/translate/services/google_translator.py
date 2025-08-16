@@ -17,6 +17,7 @@ from app.event_handler import show_progress, hide_progress, show_message
 from deep_translator.exceptions import TooManyRequests, RequestError, TranslationNotFound
 from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
 
+logger = logging.getLogger(__name__)
 
 class GoogleTranslatorService:
 
@@ -50,13 +51,13 @@ class GoogleTranslatorService:
             lines_list_len = len(lines_list)
 
             translated_lines = []
-            logging.debug(f'starting translation for {self.source_srt_file}')
+            logger.debug(f'starting translation for {self.source_srt_file}')
             def translate_line(line_id, subtitle_line):
                 try:
                     translated_text = self._translate_text(subtitle_line)
                     translated_lines.append({'id': line_id, 'line': translated_text})
                 except TranslationNotFound:
-                    logging.debug(f'Unable to translate line {subtitle_line}')
+                    logger.debug(f'Unable to translate line {subtitle_line}')
                     translated_lines.append({'id': line_id, 'line': subtitle_line})
                 finally:
                     show_progress(id=f'translate_progress_{self.dest_srt_file}',
@@ -65,7 +66,7 @@ class GoogleTranslatorService:
                                   value=len(translated_lines),
                                   count=lines_list_len)
 
-            logging.debug(f'BAZARR is sending {lines_list_len} blocks to Google Translate')
+            logger.debug(f'BAZARR is sending {lines_list_len} blocks to Google Translate')
             pool = ThreadPoolExecutor(max_workers=10)
             futures = []
             for i, line in enumerate(lines_list):
@@ -76,7 +77,7 @@ class GoogleTranslatorService:
                 try:
                     future.result()
                 except Exception as e:
-                    logging.error(f"Error in translation task: {e}")
+                    logger.error(f"Error in translation task: {e}")
 
             for i, line in enumerate(translated_lines):
                 lines_list[line['id']] = line['line']
@@ -87,7 +88,7 @@ class GoogleTranslatorService:
                           value=lines_list_len,
                           count=lines_list_len)
 
-            logging.debug(f'BAZARR saving translated subtitles to {self.dest_srt_file}')
+            logger.debug(f'BAZARR saving translated subtitles to {self.dest_srt_file}')
             for i, line in enumerate(subs):
                 try:
                     if lines_list[i]:
@@ -96,7 +97,7 @@ class GoogleTranslatorService:
                         # we assume that there was nothing to translate if Google returns None. ex.: "♪♪"
                         continue
                 except IndexError:
-                    logging.error(f'BAZARR is unable to translate malformed subtitles: {self.source_srt_file}')
+                    logger.error(f'BAZARR is unable to translate malformed subtitles: {self.source_srt_file}')
                     show_message(f'Translation failed: Unable to translate malformed subtitles for {self.source_srt_file}')
                     return False
 
@@ -104,7 +105,7 @@ class GoogleTranslatorService:
                 subs.save(self.dest_srt_file)
                 add_translator_info(self.dest_srt_file, f"# Subtitles translated with Google Translate # ")
             except OSError:
-                logging.error(f'BAZARR is unable to save translated subtitles to {self.dest_srt_file}')
+                logger.error(f'BAZARR is unable to save translated subtitles to {self.dest_srt_file}')
                 show_message(f'Translation failed: Unable to save translated subtitles to {self.dest_srt_file}')
                 raise OSError
 
@@ -119,7 +120,7 @@ class GoogleTranslatorService:
             return self.dest_srt_file
 
         except Exception as e:
-            logging.error(f'BAZARR encountered an error during translation: {str(e)}')
+            logger.error(f'BAZARR encountered an error during translation: {str(e)}')
             show_message(f'Google translation failed: {str(e)}')
             hide_progress(id=f'translate_progress_{self.dest_srt_file}')
             return False
@@ -132,10 +133,10 @@ class GoogleTranslatorService:
                 target=self.language_code_convert_dict.get(self.lang_obj.alpha2, self.lang_obj.alpha2)
             ).translate(text=text)
         except (TooManyRequests, RequestError) as e:
-            logging.error(f'Google Translate API error after retries: {str(e)}')
+            logger.error(f'Google Translate API error after retries: {str(e)}')
             show_message(f'Google Translate API error: {str(e)}')
             raise
         except Exception as e:
-            logging.error(f'Unexpected error in Google translation: {str(e)}')
+            logger.error(f'Unexpected error in Google translation: {str(e)}')
             show_message(f'Translation error: {str(e)}')
             raise

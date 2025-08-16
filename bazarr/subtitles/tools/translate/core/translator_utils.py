@@ -64,7 +64,7 @@ def create_process_result(message, video_path, orig_to_lang, forced, hi, dest_sr
         reversed_path=prr(video_path),
         downloaded_language_code2=orig_to_lang,
         downloaded_provider=None,
-        score=None,
+        score=settings.translator.default_score,
         forced=forced,
         subtitle_id=None,
         reversed_subtitles_path=prr(dest_srt_file),
