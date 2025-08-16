@@ -1,122 +1,56 @@
-import client from "./client";
+import BaseApi from "./base";
 
-export interface PlexPinResponse {
-  pinId: string;
-  code: string;
-  clientId: string;
-  authUrl: string;
-}
-
-export interface PlexValidateResponse {
-  valid: boolean;
-  auth_method?: string;
-  username?: string;
-  email?: string;
-  error?: string;
-  code?: string;
-}
-
-export interface PlexPinCheckResponse {
-  authenticated: boolean;
-  username?: string;
-  email?: string;
-  error?: string;
-}
-
-export interface PlexServerConnection {
-  uri: string;
-  protocol: string;
-  address: string;
-  port: number;
-  local: boolean;
-  available?: boolean;
-  latency?: number;
-}
-
-export interface PlexServer {
-  name: string;
-  machineIdentifier: string;
-  connections: PlexServerConnection[];
-  version: string;
-  platform: string;
-  device: string;
-  bestConnection?: PlexServerConnection | null;
-}
-
-export interface PlexServersResponse {
-  servers: PlexServer[];
-}
-
-export interface PlexSelectServerRequest {
-  machineIdentifier: string;
-  name: string;
-  connection: {
-    uri: string;
-    local: boolean;
-  };
-}
-
-export interface PlexSelectedServerResponse {
-  server: PlexServer;
-}
-
-class PlexApi {
-  private prefix: string;
-
+class NewPlexApi extends BaseApi {
   constructor() {
-    this.prefix = "/plex";
+    super("/plex");
   }
 
-  async createPin(): Promise<PlexPinResponse> {
-    const response = await client.axios.post<PlexPinResponse>(
-      `${this.prefix}/oauth/pin`,
-      {},
-    );
+  async createPin() {
+    const response = await this.post<DataWrapper<Plex.Pin>>("/oauth/pin");
+
     return response.data;
   }
 
-  async validateAuth(): Promise<PlexValidateResponse> {
-    const response = await client.axios.get<PlexValidateResponse>(
-      `${this.prefix}/oauth/validate`,
+  async checkPin(pinId: string) {
+    // TODO: Can this be replaced with params instead of passing a variable in the path?
+    const response = await this.get<DataWrapper<Plex.PinCheckResult>>(
+      `/oauth/pin/${pinId}/check`,
     );
+
     return response.data;
   }
 
-  async checkPin(pinId: string): Promise<PlexPinCheckResponse> {
-    const response = await client.axios.get<PlexPinCheckResponse>(
-      `${this.prefix}/oauth/pin/${pinId}/check`,
-    );
+  async logout() {
+    await this.post(`/oauth/logout`);
+  }
+
+  async servers() {
+    const response =
+      await this.get<DataWrapper<Plex.Server[]>>(`/oauth/servers`);
+
     return response.data;
   }
 
-  async logout(): Promise<void> {
-    await client.axios.post(`${this.prefix}/oauth/logout`, {});
-  }
-
-  async getServers(): Promise<PlexServersResponse> {
-    const response = await client.axios.get<PlexServersResponse>(
-      `${this.prefix}/oauth/servers`,
+  async selectServer(form: FormType.PlexSelectServer) {
+    const response = await this.post<DataWrapper<Plex.Server>>(
+      "/select-server",
+      form,
     );
+
+    return response.data;
+  }
+  async selectedServer() {
+    const response = await this.get<DataWrapper<Plex.Server>>(`/select-server`);
+
     return response.data;
   }
 
-  async selectServer(
-    request: PlexSelectServerRequest,
-  ): Promise<PlexSelectedServerResponse> {
-    const response = await client.axios.post<PlexSelectedServerResponse>(
-      `${this.prefix}/select-server`,
-      request,
-    );
-    return response.data;
-  }
+  async validateAuth() {
+    const response =
+      await this.get<DataWrapper<Plex.ValidationResult>>(`/oauth/validate`);
 
-  async getSelectedServer(): Promise<PlexSelectedServerResponse> {
-    const response = await client.axios.get<PlexSelectedServerResponse>(
-      `${this.prefix}/select-server`,
-    );
     return response.data;
   }
 }
 
-const plexApi = new PlexApi();
-export default plexApi;
+export default new NewPlexApi();

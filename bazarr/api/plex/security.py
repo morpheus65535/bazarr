@@ -55,7 +55,8 @@ def generate_secure_key() -> str:
 
 def get_or_create_encryption_key(settings_obj, key_name: str) -> str:
     key = getattr(settings_obj, key_name, None)
-    if not key:
+    # Check for both None and empty string
+    if not key or key.strip() == "":
         key = generate_secure_key()
         setattr(settings_obj, key_name, key)
     return key
