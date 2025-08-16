@@ -1,34 +1,28 @@
 import { useRef, useState } from "react";
 import { Alert, Button, Paper, Stack, Text, Title } from "@mantine/core";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   usePlexAuthValidationQuery,
   usePlexLogoutMutation,
   usePlexPinCheckQuery,
   usePlexPinMutation,
 } from "@/apis/hooks/plex";
+import { QueryKeys } from "@/apis/queries/keys";
 import { PLEX_AUTH_CONFIG } from "@/constants/plex";
 import styles from "@/pages/Settings/Plex/PlexSettings.module.scss";
 
-interface AuthSectionProps {
-  onCancelAuth: () => void;
-  onLogout: () => void;
-  onAuthSuccess: () => void;
-}
-
-const AuthSection = ({
-  onCancelAuth,
-  onLogout,
-  onAuthSuccess,
-}: AuthSectionProps) => {
+const AuthSection = () => {
   const {
     data: authData,
     isLoading: authIsLoading,
     error: authError,
+    refetch: refetchAuth,
   } = usePlexAuthValidationQuery();
   const { mutateAsync: createPin } = usePlexPinMutation();
   const { mutate: logout } = usePlexLogoutMutation();
   const [pin, setPin] = useState<Plex.Pin | null>(null);
   const authWindowRef = useRef<Window | null>(null);
+  const queryClient = useQueryClient();
 
   // TODO: Add Maximum Attempts for Polling
   // TODO: Handle Polling Errors
@@ -48,8 +42,14 @@ const AuthSection = ({
       authWindowRef.current.close();
       authWindowRef.current = null;
     }
-    // Trigger refetch and servers data update
-    onAuthSuccess();
+    // Trigger refetch and invalidate server queries
+    void refetchAuth();
+    void queryClient.invalidateQueries({
+      queryKey: [QueryKeys.Plex, "servers"],
+    });
+    void queryClient.invalidateQueries({
+      queryKey: [QueryKeys.Plex, "selectedServer"],
+    });
   }
 
   const isAuthenticated = Boolean(
@@ -75,7 +75,7 @@ const AuthSection = ({
 
   const handleLogout = () => {
     logout();
-    onLogout();
+    // No additional cleanup needed - logout mutation handles invalidation
   };
 
   const handleCancelAuth = () => {
@@ -84,7 +84,8 @@ const AuthSection = ({
       authWindowRef.current.close();
       authWindowRef.current = null;
     }
-    onCancelAuth();
+    // Refetch auth status when auth is cancelled
+    void refetchAuth();
   };
 
   if (authIsLoading && !isPolling) {
