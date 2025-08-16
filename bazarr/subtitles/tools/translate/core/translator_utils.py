@@ -5,6 +5,8 @@ import os
 import srt
 import datetime
 
+from typing import Union
+
 from app.config import settings
 from subzero.language import Language
 from languages.custom_lang import CustomLanguage
@@ -16,6 +18,7 @@ from app.database import TableShows, TableEpisodes, TableMovies, database, selec
 
 logger = logging.getLogger(__name__)
 
+
 def validate_translation_params(video_path, source_srt_file, from_lang, to_lang):
     """Validate translation parameters."""
     if not os.path.exists(source_srt_file):
@@ -25,6 +28,7 @@ def validate_translation_params(video_path, source_srt_file, from_lang, to_lang)
         raise ValueError("Source and target languages must be specified")
 
     return True
+
 
 def convert_language_codes(to_lang, forced=False, hi=False):
     """Convert and validate language codes."""
@@ -47,6 +51,7 @@ def convert_language_codes(to_lang, forced=False, hi=False):
 
     return lang_obj, orig_to_lang
 
+
 def create_process_result(message, video_path, orig_to_lang, forced, hi, dest_srt_file, media_type):
     """Create a ProcessSubtitlesResult object with common parameters."""
     if media_type == 'series':
@@ -65,6 +70,7 @@ def create_process_result(message, video_path, orig_to_lang, forced, hi, dest_sr
         reversed_subtitles_path=prr(dest_srt_file),
         hearing_impaired=hi
     )
+
 
 def add_translator_info(dest_srt_file, info):
     if settings.translator.translator_info:
@@ -105,6 +111,7 @@ def add_translator_info(dest_srt_file, info):
         with open(dest_srt_file, "w", encoding="utf-8") as f:
             f.write(srt.compose(subtitles))
 
+
 def get_description(media_type, radarr_id, sonarr_series_id):
     try:
         if media_type == 'movies':
@@ -136,11 +143,12 @@ def get_description(media_type, radarr_id, sonarr_series_id):
         logger.exception("Problem with getting media info")
         return ""
 
+
 def get_title(
         media_type: str,
-        radarr_id: int | None = None,
-        sonarr_series_id: int | None = None,
-        sonarr_episode_id: int | None = None
+        radarr_id: Union[int, None] = None,
+        sonarr_series_id: Union[int, None] = None,
+        sonarr_episode_id: Union[int, None] = None
 ) -> str:
     try:
         if media_type == "movies":
