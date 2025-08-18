@@ -282,6 +282,12 @@ class PlexPinCheck(Resource):
                 settings.plex.user_id = user_id_str
                 settings.plex.auth_method = 'oauth'
                 settings.general.use_plex = True
+                
+                # Clear any existing API key since OAuth is now active
+                if settings.plex.get('apikey'):
+                    settings.plex.apikey = ''
+                    settings.plex.apikey_encrypted = False
+                    logging.info("Cleared legacy API key after successful OAuth setup")
 
                 try:
                     write_config()
@@ -648,6 +654,13 @@ class PlexSelectServer(Resource):
         settings.plex.server_name = name
         settings.plex.server_url = connection_uri
         settings.plex.server_local = connection_local
+        
+        # Clear any existing API key since OAuth setup is now complete
+        if settings.plex.get('apikey'):
+            settings.plex.apikey = ''
+            settings.plex.apikey_encrypted = False
+            logging.info("Cleared legacy API key after OAuth server selection")
+            
         write_config()
 
         return {

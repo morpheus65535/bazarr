@@ -1130,21 +1130,36 @@ def migrate_apikey_to_oauth():
         settings.plex.server_url = selected_connection['uri']
         settings.plex.server_local = selected_connection.get('local', False)
         
-        # Keep legacy settings intact for fallback (don't clear them)
-        write_config()
-        
-        logging.info(f"Successfully migrated Plex configuration to OAuth for user '{username}'")
-        logging.info(f"Selected server: {selected_server['name']} ({selected_connection['uri']})")
-        
-        # Test the migration by attempting a connection
+        # Test the migration by attempting a connection before cleanup
         try:
             from bazarr.plex.operations import get_plex_server
             test_server = get_plex_server()
             test_server.account()  # Test connection
             logging.info("Migration validated - OAuth connection successful")
+            
+            # Only clear legacy credentials after successful validation
+            settings.plex.apikey = ''
+            settings.plex.apikey_encrypted = False
+            logging.info("Cleared legacy API key after successful OAuth migration")
+            
         except Exception as e:
             logging.warning(f"Migration validation failed: {e}")
-            # Don't rollback - the migration data is still valid
+            # Rollback OAuth settings and keep API key for fallback
+            settings.plex.auth_method = 'apikey'
+            settings.plex.token = ''
+            settings.plex.username = ''
+            settings.plex.email = ''
+            settings.plex.user_id = ''
+            settings.plex.server_machine_id = ''
+            settings.plex.server_name = ''
+            settings.plex.server_url = ''
+            settings.plex.server_local = False
+            logging.info("Migration rolled back due to validation failure")
+            
+        write_config()
+        
+        logging.info(f"Successfully migrated Plex configuration to OAuth for user '{username}'")
+        logging.info(f"Selected server: {selected_server['name']} ({selected_connection['uri']})")
             
     except Exception as e:
         logging.error(f"Unexpected error during Plex migration: {e}")
