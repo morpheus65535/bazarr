@@ -282,12 +282,6 @@ class PlexPinCheck(Resource):
                 settings.plex.user_id = user_id_str
                 settings.plex.auth_method = 'oauth'
                 settings.general.use_plex = True
-                
-                # Clear any existing API key since OAuth is now active
-                if settings.plex.get('apikey'):
-                    settings.plex.apikey = ''
-                    settings.plex.apikey_encrypted = False
-                    logging.info("Cleared legacy API key after successful OAuth setup")
 
                 try:
                     write_config()
@@ -654,13 +648,6 @@ class PlexSelectServer(Resource):
         settings.plex.server_name = name
         settings.plex.server_url = connection_uri
         settings.plex.server_local = connection_local
-        
-        # Clear any existing API key since OAuth setup is now complete
-        if settings.plex.get('apikey'):
-            settings.plex.apikey = ''
-            settings.plex.apikey_encrypted = False
-            logging.info("Cleared legacy API key after OAuth server selection")
-            
         write_config()
 
         return {
@@ -674,111 +661,3 @@ class PlexSelectServer(Resource):
                 }
             }
         }
-
-@api_ns_plex.route('plex/oauth/libraries')
-class PlexLibraries(Resource):
-    def get(self):
-        """Get available libraries from the selected Plex server"""
-        try:
-            # Get the current OAuth token
-            decrypted_token = get_decrypted_token()
-            if not decrypted_token:
-                current_app.logger.warning("No valid token available for library fetch")
-                return {'data': []}
-            
-            # Get the selected server URL
-            server_url = settings.plex.get('server_url')
-            if not server_url:
-                current_app.logger.warning("No Plex server selected")
-                return {'data': []}
-            
-            # Clean up the server URL
-            server_url = sanitize_server_url(server_url)
-            
-            headers = {
-                'X-Plex-Token': decrypted_token,
-                'Accept': 'application/json'
-            }
-            
-            # Call Plex API to get library sections
-            response = requests.get(
-                f"{server_url}/library/sections",
-                headers=headers,
-                timeout=10,
-                verify=False
-            )
-            
-            if response.status_code in (401, 403):
-                current_app.logger.warning(f"Plex authentication failed: {response.status_code}")
-                return {'data': []}
-            elif response.status_code != 200:
-                current_app.logger.error(f"Plex API error: {response.status_code}")
-                raise PlexConnectionError(f"Failed to get libraries: HTTP {response.status_code}")
-            
-            response.raise_for_status()
-            
-            # Parse the response
-            content_type = response.headers.get('content-type', '')
-            if 'application/json' in content_type:
-                sections_data = response.json()
-                sections = sections_data.get('MediaContainer', {}).get('Directory', [])
-            elif 'application/xml' in content_type or 'text/xml' in content_type:
-                root = ET.fromstring(response.text)
-                sections = []
-                for directory in root.findall('Directory'):
-                    sections.append({
-                        'key': directory.get('key'),
-                        'title': directory.get('title'),
-                        'type': directory.get('type'),
-                        'agent': directory.get('agent'),
-                        'scanner': directory.get('scanner'),
-                        'language': directory.get('language'),
-                        'uuid': directory.get('uuid'),
-                        'updatedAt': int(directory.get('updatedAt', 0)),
-                        'createdAt': int(directory.get('createdAt', 0))
-                    })
-            else:
-                raise PlexConnectionError(f"Unexpected response format: {content_type}")
-            
-            # Transform the data to match our frontend interface
-            libraries = []
-            for section in sections:
-                if isinstance(section, dict):
-                    # Get library count (this requires an additional API call per library)
-                    count = 0
-                    try:
-                        count_response = requests.get(
-                            f"{server_url}/library/sections/{section.get('key')}/all",
-                            headers={'X-Plex-Token': decrypted_token, 'Accept': 'application/json'},
-                            params={'X-Plex-Container-Start': '0', 'X-Plex-Container-Size': '0'},
-                            timeout=5,
-                            verify=False
-                        )
-                        if count_response.status_code == 200:
-                            count_data = count_response.json()
-                            count = count_data.get('MediaContainer', {}).get('totalSize', 0)
-                    except Exception as e:
-                        current_app.logger.debug(f"Failed to get library count for {section.get('title')}: {e}")
-                    
-                    libraries.append({
-                        'key': section.get('key', ''),
-                        'title': section.get('title', ''),
-                        'type': section.get('type', ''),
-                        'count': count,
-                        'agent': section.get('agent', ''),
-                        'scanner': section.get('scanner', ''),
-                        'language': section.get('language', ''),
-                        'uuid': section.get('uuid', ''),
-                        'updatedAt': section.get('updatedAt', 0),
-                        'createdAt': section.get('createdAt', 0)
-                    })
-            
-            current_app.logger.info(f"Successfully fetched {len(libraries)} libraries from Plex server")
-            return {'data': libraries}
-            
-        except requests.exceptions.RequestException as e:
-            current_app.logger.warning(f"Failed to connect to Plex server: {type(e).__name__}: {str(e)}")
-            return {'data': []}
-        except Exception as e:
-            current_app.logger.warning(f"Unexpected error getting Plex libraries: {type(e).__name__}: {str(e)}")
-            return {'data': []}
