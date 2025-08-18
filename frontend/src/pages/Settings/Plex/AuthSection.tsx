@@ -9,7 +9,7 @@ import {
 } from "@/apis/hooks/plex";
 import { QueryKeys } from "@/apis/queries/keys";
 import { PLEX_AUTH_CONFIG } from "@/constants/plex";
-import styles from "@/pages/Settings/Plex/PlexSettings.module.scss";
+import styles from "@/pages/Settings/Plex/AuthSection.module.scss";
 
 const AuthSection = () => {
   const {
@@ -24,9 +24,6 @@ const AuthSection = () => {
   const authWindowRef = useRef<Window | null>(null);
   const queryClient = useQueryClient();
 
-  // TODO: Add Maximum Attempts for Polling
-  // TODO: Handle Polling Errors
-  // TODO: Close Window
   const isPolling = !!pin?.pinId;
 
   const { data: pinData } = usePlexPinCheckQuery(

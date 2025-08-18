@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { Badge, Card, Group, Stack, Text } from "@mantine/core";
-import styles from "@/pages/Settings/Plex/PlexSettings.module.scss";
+import styles from "@/pages/Settings/Plex/ConnectionsCard.module.scss";
 
 interface ConnectionsCardProps {
   servers: Plex.Server[];

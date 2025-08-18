@@ -5,6 +5,9 @@ import os
 import ast
 import logging
 import re
+import secrets
+import threading
+import time
 
 from urllib.parse import quote_plus
 from utilities.binaries import BinaryNotFound, get_binary
@@ -969,7 +972,6 @@ def migrate_plex_config():
     existing_key = settings.plex.get('encryption_key')
     if not existing_key or existing_key.strip() == "":
         logging.info("Generating new encryption key for Plex token storage")
-        import secrets
         key = secrets.token_urlsafe(32)
         settings.plex.encryption_key = key
         write_config()
@@ -988,8 +990,6 @@ def initialize_plex():
     if settings.general.use_plex and settings.plex.get('auth_method') == 'oauth':
         try:
             from bazarr.api.plex.security import pin_cache
-            import threading
-            import time
             
             def cleanup_task():
                 while True:

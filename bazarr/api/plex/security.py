@@ -2,8 +2,11 @@
 
 import secrets
 import os
+import time
 from typing import Dict, Optional
+from threading import RLock
 from itsdangerous import URLSafeSerializer, BadSignature
+from itsdangerous.exc import BadPayload
 from datetime import datetime, timedelta, timezone
 
 from .exceptions import InvalidTokenError
@@ -11,16 +14,12 @@ from .exceptions import InvalidTokenError
 class TokenManager:
     
     def __init__(self, encryption_key: str):
-        from itsdangerous import URLSafeSerializer
-        from itsdangerous.exc import BadSignature, BadPayload
-        
         self.serializer = URLSafeSerializer(encryption_key)
     
     def encrypt(self, token: str) -> str:
         if not token:
             return None
         
-        import time
         salt = secrets.token_hex(16)
         timestamp = int(time.time())
         payload = {
@@ -64,7 +63,6 @@ def get_or_create_encryption_key(settings_obj, key_name: str) -> str:
 class PinCache:
     
     def __init__(self):
-        from threading import RLock
         self._cache = {}
         self._lock = RLock()
     

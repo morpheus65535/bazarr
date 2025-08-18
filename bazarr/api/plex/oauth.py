@@ -3,14 +3,18 @@
 import time
 import uuid
 import requests
+import xml.etree.ElementTree as ET
+import threading
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import request, current_app
-from flask_restx import Resource, reqparse
+from flask_restx import Resource, reqparse, abort
 
 from . import api_ns_plex
 from .exceptions import *
-from .security import TokenManager, sanitize_log_data, pin_cache
+from .security import TokenManager, sanitize_log_data, pin_cache, get_or_create_encryption_key, sanitize_server_url
 from app.config import settings, write_config
+from bazarr.plex.operations import encrypt_api_key
 
 @api_ns_plex.errorhandler(Exception)
 def handle_api_exception(error):
@@ -29,7 +33,6 @@ def handle_api_exception(error):
         'code': 'UNKNOWN_ERROR'
     }, 500
 def get_token_manager():
-    from .security import get_or_create_encryption_key
     # Check if encryption key exists before attempting to create one
     key_existed = bool(getattr(settings.plex, 'encryption_key', None))
     key = get_or_create_encryption_key(settings.plex, 'encryption_key')
@@ -69,7 +72,6 @@ def get_decrypted_token():
             return None
         
         if not settings.plex.get('apikey_encrypted', False):
-            from bazarr.plex.operations import encrypt_api_key
             if encrypt_api_key():
                 apikey = settings.plex.get('apikey')
             else:
@@ -130,7 +132,6 @@ def test_plex_connection(uri, token):
         return False, None
         
     try:
-        from .security import sanitize_server_url
         uri = sanitize_server_url(uri)
         
         headers = {
@@ -212,7 +213,6 @@ class PlexPin(Resource):
             raise PlexConnectionError(f"Failed to create PIN: {str(e)}")
 
     def get(self):
-        from flask_restx import abort
         abort(405, "Method not allowed. Use POST.")
 
 @api_ns_plex.route('plex/oauth/pin/<string:pin_id>/check')
@@ -370,7 +370,6 @@ class PlexServers(Resource):
             if 'application/json' in content_type:
                 resources_data = response.json()
             elif 'application/xml' in content_type or 'text/xml' in content_type:
-                import xml.etree.ElementTree as ET
                 root = ET.fromstring(response.text)
                 resources_data = []
                 for device in root.findall('Device'):
@@ -415,9 +414,6 @@ class PlexServers(Resource):
                     
                     # Test all connections in parallel using threads
                     if connection_candidates:
-                        from concurrent.futures import ThreadPoolExecutor, as_completed
-                        import threading
-                        
                         connections = []
                         def test_connection_wrapper(conn_data):
                             available, latency = test_plex_connection(conn_data['uri'], decrypted_token)
@@ -507,8 +503,6 @@ class PlexEncryptApiKey(Resource):
     @api_ns_plex.doc(parser=post_request_parser)
     def post(self):
         try:
-            from bazarr.plex.operations import encrypt_api_key
-            
             if encrypt_api_key():
                 return {'success': True, 'message': 'API key encrypted successfully'}
             else:
@@ -586,7 +580,6 @@ class PlexTestConnection(Resource):
             return {'success': False, 'error': str(e)}
 
     def get(self):
-        from flask_restx import abort
         abort(405, "Method not allowed. Use POST.")
 
 @api_ns_plex.route('plex/select-server')

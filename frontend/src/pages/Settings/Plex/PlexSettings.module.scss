@@ -1,7 +1,3 @@
-.authSection {
-  margin-bottom: 1.25rem; /* 20px */
-}
-
 .serverSection {
   margin-top: 1.25rem; /* 20px */
 }
@@ -13,28 +9,6 @@
 .expandButton {
   font-weight: 500;
   justify-content: flex-start;
-}
-
-.actionButton {
-  align-self: flex-start;
-}
-
-.connectionIndicator {
-  &.success {
-    color: var(--mantine-color-green-6);
-  }
-
-  &.error {
-    color: var(--mantine-color-red-6);
-  }
-}
-
-.serverConnectionCard {
-  background: var(--mantine-color-gray-0);
-
-  [data-mantine-color-scheme="dark"] & {
-    background: var(--mantine-color-dark-6);
-  }
 }
 
 .serverSelectGroup {

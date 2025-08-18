@@ -1,8 +1,9 @@
 # coding=utf-8
-from datetime import datetime
-from app.config import settings
-from plexapi.server import PlexServer
 import logging
+from datetime import datetime
+from app.config import settings, write_config
+from plexapi.server import PlexServer
+from bazarr.api.plex.security import TokenManager, get_or_create_encryption_key
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,6 @@ def get_plex_server() -> PlexServer:
         
         if auth_method == 'oauth':
             # OAuth authentication - use encrypted token and configured server URL
-            from bazarr.api.plex.security import TokenManager, get_or_create_encryption_key
             
             encrypted_token = settings.plex.get('token')
             if not encrypted_token:
@@ -56,7 +56,6 @@ def get_plex_server() -> PlexServer:
                 apikey = settings.plex.get('apikey')  # Get the encrypted version
             
             # Decrypt the API key
-            from bazarr.api.plex.security import TokenManager, get_or_create_encryption_key
             encryption_key = get_or_create_encryption_key(settings.plex, 'encryption_key')
             token_manager = TokenManager(encryption_key)
             
@@ -78,8 +77,6 @@ def encrypt_api_key():
     try:
         apikey = settings.plex.get('apikey')
         if apikey and not settings.plex.get('apikey_encrypted', False):
-            from bazarr.api.plex.security import TokenManager, get_or_create_encryption_key
-            from app.config import write_config
             
             encryption_key = get_or_create_encryption_key(settings.plex, 'encryption_key')
             token_manager = TokenManager(encryption_key)
