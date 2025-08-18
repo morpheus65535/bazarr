@@ -14,7 +14,6 @@ from . import api_ns_plex
 from .exceptions import *
 from .security import TokenManager, sanitize_log_data, pin_cache, get_or_create_encryption_key, sanitize_server_url
 from app.config import settings, write_config
-from plex.operations import encrypt_api_key
 
 @api_ns_plex.errorhandler(Exception)
 def handle_api_exception(error):
@@ -57,6 +56,36 @@ def decrypt_token(encrypted_token):
 
 def generate_client_id():
     return str(uuid.uuid4())
+
+def encrypt_api_key():
+    """Encrypt plain text API key automatically."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        apikey = settings.plex.get('apikey')
+        if apikey and not settings.plex.get('apikey_encrypted', False):
+            
+            encryption_key = get_or_create_encryption_key(settings.plex, 'encryption_key')
+            token_manager = TokenManager(encryption_key)
+            
+            # Encrypt the API key
+            encrypted_apikey = token_manager.encrypt(apikey)
+            
+            # Update settings
+            settings.plex.apikey = encrypted_apikey
+            settings.plex.apikey_encrypted = True
+            
+            # Save configuration
+            write_config()
+            
+            logger.info("Successfully encrypted Plex API key")
+            return True
+    except Exception as e:
+        logger.error(f"Failed to encrypt API key: {e}")
+        return False
+    
+    return False
 
 def get_decrypted_token():
     auth_method = settings.plex.get('auth_method', 'apikey')

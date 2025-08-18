@@ -3,7 +3,6 @@ import logging
 from datetime import datetime
 from app.config import settings, write_config
 from plexapi.server import PlexServer
-from api.plex.security import TokenManager, get_or_create_encryption_key
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +12,8 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 def get_plex_server() -> PlexServer:
     """Connect to the Plex server and return the server instance."""
+    from api.plex.security import TokenManager, get_or_create_encryption_key
+    
     try:
         auth_method = settings.plex.get('auth_method', 'apikey')
         
@@ -74,6 +75,8 @@ def get_plex_server() -> PlexServer:
 
 def encrypt_api_key():
     """Encrypt plain text API key automatically."""
+    from api.plex.security import TokenManager, get_or_create_encryption_key
+    
     try:
         apikey = settings.plex.get('apikey')
         if apikey and not settings.plex.get('apikey_encrypted', False):
