@@ -1366,6 +1366,42 @@ def migrate_apikey_to_oauth():
         # Keep existing configuration intact
 
 
+def cleanup_legacy_oauth_config():
+    """
+    Clean up legacy manual configuration fields when using OAuth.
+    These fields (ip, port, ssl) are not used with OAuth since server_url contains everything.
+    """
+    if settings.plex.get('auth_method') != 'oauth':
+        return
+        
+    # Check if any legacy values exist
+    has_legacy_ip = bool(settings.plex.get('ip', '').strip())
+    has_legacy_ssl = settings.plex.get('ssl', False) == True
+    has_legacy_port = settings.plex.get('port', 32400) != 32400
+    
+    # Only disable auto-migration if migration was actually successful
+    migration_successful = settings.plex.get('migration_successful', False)
+    auto_migration_enabled = not settings.plex.get('disable_auto_migration', False)
+    should_disable_auto_migration = migration_successful and auto_migration_enabled
+    
+    if has_legacy_ip or has_legacy_ssl or has_legacy_port or should_disable_auto_migration:
+        logging.info("Cleaning up OAuth configuration")
+        
+        # Clear legacy manual config fields (not needed with OAuth)
+        if has_legacy_ip or has_legacy_ssl or has_legacy_port:
+            settings.plex.ip = ''
+            settings.plex.port = 32400  # Reset to default
+            settings.plex.ssl = False   # Reset to default
+            logging.info("Cleared legacy manual config fields (OAuth uses server_url)")
+        
+        # Disable auto-migration only if it was previously successful
+        if should_disable_auto_migration:
+            settings.plex.disable_auto_migration = True
+            logging.info("Disabled auto-migration (previous migration was successful)")
+            
+        write_config()
+
+
 def initialize_plex():
     """
     Initialize Plex configuration on startup.
@@ -1373,6 +1409,9 @@ def initialize_plex():
     """
     # Run migration
     migrate_plex_config()
+    
+    # Clean up legacy fields for existing OAuth configurations
+    cleanup_legacy_oauth_config()
     
     # Start cache cleanup if OAuth is enabled
     if settings.general.use_plex and settings.plex.get('auth_method') == 'oauth':
