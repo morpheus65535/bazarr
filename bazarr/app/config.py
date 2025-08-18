@@ -1104,8 +1104,10 @@ def migrate_apikey_to_oauth():
         # Get user's servers with retry logic
         for attempt in range(max_retries):
             try:
-                servers_response = requests.get('https://plex.tv/pms/servers.xml', 
-                                              headers=headers, timeout=10)
+                servers_response = requests.get('https://plex.tv/pms/resources',
+                                              headers=headers, 
+                                              params={'includeHttps': '1', 'includeRelay': '1'},
+                                              timeout=10)
                 
                 if servers_response.status_code == 429:  # Rate limited
                     logging.warning(f"Rate limited getting servers, attempt {attempt + 1}/{max_retries}")
@@ -1118,38 +1120,53 @@ def migrate_apikey_to_oauth():
                         
                 servers_response.raise_for_status()
                 
-                # Parse XML response
-                import xml.etree.ElementTree as ET
-                root = ET.fromstring(servers_response.text)
+                # Parse response - could be JSON or XML
+                content_type = servers_response.headers.get('content-type', '')
                 servers = []
                 
-                for server_elem in root.findall('Server'):
-                    server = {
-                        'name': server_elem.get('name', ''),
-                        'machineIdentifier': server_elem.get('machineIdentifier', ''),
-                        'connections': []
-                    }
-                    
-                    # Get connections for this server with rate limiting protection
-                    try:
-                        connections_response = requests.get(
-                            f"https://plex.tv/api/servers/{server['machineIdentifier']}/connections",
-                            headers=headers,
-                            timeout=5  # Shorter timeout for connections
-                        )
-                        
-                        if connections_response.status_code == 200:
-                            connections_data = connections_response.json()
-                            for conn in connections_data.get('connections', []):
+                if 'application/json' in content_type:
+                    resources_data = servers_response.json()
+                    for device in resources_data:
+                        if isinstance(device, dict) and device.get('provides') == 'server' and device.get('owned'):
+                            server = {
+                                'name': device.get('name', ''),
+                                'machineIdentifier': device.get('clientIdentifier', ''),
+                                'connections': []
+                            }
+                            
+                            for conn in device.get('connections', []):
                                 server['connections'].append({
                                     'uri': conn.get('uri', ''),
                                     'local': conn.get('local', False)
                                 })
-                    except Exception:
-                        # Continue without connections data if this fails
-                        logging.debug(f"Could not get connections for server {server['name']}")
+                            
+                            servers.append(server)
+                
+                elif 'application/xml' in content_type or 'text/xml' in content_type:
+                    # Parse XML response
+                    import xml.etree.ElementTree as ET
+                    root = ET.fromstring(servers_response.text)
                     
-                    servers.append(server)
+                    for device in root.findall('Device'):
+                        if device.get('provides') == 'server' and device.get('owned') == '1':
+                            server = {
+                                'name': device.get('name', ''),
+                                'machineIdentifier': device.get('clientIdentifier', ''),
+                                'connections': []
+                            }
+                            
+                            # Get connections directly from the XML
+                            for conn in device.findall('Connection'):
+                                server['connections'].append({
+                                    'uri': conn.get('uri', ''),
+                                    'local': conn.get('local') == '1'
+                                })
+                            
+                            servers.append(server)
+                else:
+                    logging.error(f"Unexpected response format: {content_type}")
+                    return
+                
                 break
                 
             except requests.exceptions.Timeout:
