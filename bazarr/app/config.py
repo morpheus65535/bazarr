@@ -8,6 +8,7 @@ import re
 import secrets
 import threading
 import time
+from datetime import datetime
 import random
 import configparser
 import yaml
@@ -257,7 +258,7 @@ validators = [
     # Migration fields
     Validator('plex.migration_attempted', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.migration_successful', must_exist=True, default=False, is_type_of=bool),
-    Validator('plex.migration_timestamp', must_exist=True, default=0, is_type_of=(int, float)),
+    Validator('plex.migration_timestamp', must_exist=True, default='', is_type_of=(int, float, str)),
     Validator('plex.disable_auto_migration', must_exist=True, default=False, is_type_of=bool),
 
     # proxy section
@@ -998,8 +999,13 @@ def migrate_apikey_to_oauth():
     - Validates before committing changes
     - Implements graceful rollback on failure
     - Handles rate limiting and network issues
+    - Delays startup to avoid race conditions
     """
     try:
+        # Add startup delay to avoid race conditions with other Plex connections
+        logging.info("Starting Plex OAuth migration with 5-second delay to avoid conflicts...")
+        time.sleep(5)
+        
         auth_method = settings.plex.get('auth_method', 'apikey')
         api_key = settings.plex.get('apikey', '')
         
@@ -1026,7 +1032,7 @@ def migrate_apikey_to_oauth():
             'port': settings.plex.get('port', 32400),
             'ssl': settings.plex.get('ssl', False),
             'migration_attempted': True,
-            'migration_timestamp': time.time()
+            'migration_timestamp': datetime.now().strftime('%Y%m%d_%H%M%S') + '_backup'
         }
         
         # Mark that migration was attempted (prevents retry loops)
@@ -1287,15 +1293,25 @@ def migrate_apikey_to_oauth():
         settings.plex.server_url = oauth_config['server_url']
         settings.plex.server_local = oauth_config['server_local']
         
-        # Mark migration as successful
+        # Mark migration as successful and disable auto-migration
         settings.plex.migration_successful = True
-        settings.plex.migration_timestamp = time.time()
+        # Create human-readable timestamp: YYYYMMDD_HHMMSS_randomstring
+        datetime_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+        random_suffix = secrets.token_hex(4)  # 8 character random string
+        settings.plex.migration_timestamp = f"{datetime_str}_{random_suffix}"
+        settings.plex.disable_auto_migration = True
+        
+        # Clean up legacy manual configuration fields (no longer needed with OAuth)
+        settings.plex.ip = ''
+        settings.plex.port = 32400  # Reset to default
+        settings.plex.ssl = False   # Reset to default
         
         # Save configuration with OAuth settings
         write_config()
         
         logging.info(f"Successfully migrated Plex configuration to OAuth for user '{username}'")
         logging.info(f"Selected server: {selected_server['name']} ({selected_connection['uri']})")
+        logging.info("Legacy manual configuration fields cleared (ip, port, ssl)")
         
         # Final validation test
         try:
@@ -1321,7 +1337,7 @@ def migrate_apikey_to_oauth():
             settings.plex.port = backup_config['port']
             settings.plex.ssl = backup_config['ssl']
             
-            # Clear OAuth settings
+            # Clear OAuth settings and restore legacy manual config
             settings.plex.token = ''
             settings.plex.username = ''
             settings.plex.email = ''
@@ -1331,6 +1347,7 @@ def migrate_apikey_to_oauth():
             settings.plex.server_url = ''
             settings.plex.server_local = False
             settings.plex.migration_successful = False
+            settings.plex.disable_auto_migration = False  # Allow retry
             
             write_config()
             
