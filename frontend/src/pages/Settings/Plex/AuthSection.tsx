@@ -132,6 +132,10 @@ const AuthSection = () => {
               Connect your Plex account to enable secure, automated integration
               with Bazarr.
             </Text>
+            <Text size="xs" c="dimmed">
+              Advanced users: Manual configuration is available via config.yaml
+              if OAuth is not suitable.
+            </Text>
             {authError && (
               <Alert color="red" variant="light">
                 {authError.message || "Authentication failed"}
