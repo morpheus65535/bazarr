@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from app.config import settings, write_config
 from plexapi.server import PlexServer
-from bazarr.api.plex.security import TokenManager, get_or_create_encryption_key
+from api.plex.security import TokenManager, get_or_create_encryption_key
 
 logger = logging.getLogger(__name__)
 

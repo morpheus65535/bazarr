@@ -8,6 +8,8 @@ import re
 import secrets
 import threading
 import time
+import configparser
+import yaml
 
 from urllib.parse import quote_plus
 from utilities.binaries import BinaryNotFound, get_binary
@@ -449,8 +451,6 @@ validators = [
 
 
 def convert_ini_to_yaml(config_file):
-    import configparser
-    import yaml
     config_object = configparser.RawConfigParser()
     file = open(config_file, "r")
     config_object.read_file(file)
@@ -989,7 +989,7 @@ def initialize_plex():
     # Start cache cleanup if OAuth is enabled
     if settings.general.use_plex and settings.plex.get('auth_method') == 'oauth':
         try:
-            from bazarr.api.plex.security import pin_cache
+            from api.plex.security import pin_cache
             
             def cleanup_task():
                 while True:

@@ -21,7 +21,7 @@ import {
 } from "@/apis/hooks/plex";
 import { useFormActions } from "@/pages/Settings/utilities/FormValues";
 import ConnectionsCard from "./ConnectionsCard";
-import styles from "@/pages/Settings/Plex/PlexSettings.module.scss";
+import styles from "@/pages/Settings/Plex/ServerSection.module.scss";
 
 const ServerSection = () => {
   // Internal state management
