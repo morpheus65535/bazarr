@@ -254,6 +254,11 @@ validators = [
     Validator('plex.server_name', must_exist=True, default='', is_type_of=str),
     Validator('plex.server_url', must_exist=True, default='', is_type_of=str),
     Validator('plex.server_local', must_exist=True, default=False, is_type_of=bool),
+    # Migration fields
+    Validator('plex.migration_attempted', must_exist=True, default=False, is_type_of=bool),
+    Validator('plex.migration_successful', must_exist=True, default=False, is_type_of=bool),
+    Validator('plex.migration_timestamp', must_exist=True, default=0, is_type_of=(int, float)),
+    Validator('plex.disable_auto_migration', must_exist=True, default=False, is_type_of=bool),
 
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
