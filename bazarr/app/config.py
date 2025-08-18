@@ -8,6 +8,7 @@ import re
 import secrets
 import threading
 import time
+import random
 import configparser
 import yaml
 
@@ -986,6 +987,12 @@ def migrate_apikey_to_oauth():
     """
     Seamlessly migrate users from API key authentication to OAuth.
     This preserves their existing configuration while enabling OAuth features.
+    
+    Safety features:
+    - Creates backup before migration
+    - Validates before committing changes
+    - Implements graceful rollback on failure
+    - Handles rate limiting and network issues
     """
     try:
         auth_method = settings.plex.get('auth_method', 'apikey')
@@ -1000,7 +1007,34 @@ def migrate_apikey_to_oauth():
             logging.debug("Plex OAuth token already exists, skipping migration")
             return
             
+        # Check if migration is disabled (for emergency rollback)
+        if settings.plex.get('disable_auto_migration', False):
+            logging.info("Plex auto-migration disabled, skipping")
+            return
+            
+        # Create backup of current configuration
+        backup_config = {
+            'auth_method': auth_method,
+            'apikey': api_key,
+            'apikey_encrypted': settings.plex.get('apikey_encrypted', False),
+            'ip': settings.plex.get('ip', '127.0.0.1'),
+            'port': settings.plex.get('port', 32400),
+            'ssl': settings.plex.get('ssl', False),
+            'migration_attempted': True,
+            'migration_timestamp': time.time()
+        }
+        
+        # Mark that migration was attempted (prevents retry loops)
+        settings.plex.migration_attempted = True
+        write_config()
+            
         logging.info("Starting seamless migration from Plex API key to OAuth...")
+        
+        # Add random delay to prevent thundering herd (0-30 seconds)
+        import random
+        delay = random.uniform(0, 30)
+        logging.debug(f"Migration delay: {delay:.1f}s to prevent server overload")
+        time.sleep(delay)
         
         # Decrypt the API key
         from bazarr.api.plex.security import TokenManager, get_or_create_encryption_key
@@ -1017,64 +1051,113 @@ def migrate_apikey_to_oauth():
             logging.error(f"Failed to decrypt API key for migration: {e}")
             return
             
-        # Use API key to fetch user data from Plex
+        # Use API key to fetch user data from Plex with retry logic
         import requests
         headers = {
             'X-Plex-Token': decrypted_api_key,
             'Accept': 'application/json'
         }
         
-        # Get user account info
-        try:
-            user_response = requests.get('https://plex.tv/users/account', headers=headers, timeout=10)
-            user_response.raise_for_status()
-            user_data = user_response.json()
-            
-            username = user_data.get('username', '')
-            email = user_data.get('email', '')
-            user_id = str(user_data.get('id', ''))
-            
-        except Exception as e:
-            logging.error(f"Failed to fetch user data for migration: {e}")
-            return
-            
-        # Get user's servers
-        try:
-            servers_response = requests.get('https://plex.tv/pms/servers.xml', headers=headers, timeout=10)
-            servers_response.raise_for_status()
-            
-            # Parse XML response
-            import xml.etree.ElementTree as ET
-            root = ET.fromstring(servers_response.text)
-            servers = []
-            
-            for server_elem in root.findall('Server'):
-                server = {
-                    'name': server_elem.get('name', ''),
-                    'machineIdentifier': server_elem.get('machineIdentifier', ''),
-                    'connections': []
-                }
+        # Get user account info with retries
+        max_retries = 3
+        retry_delay = 5
+        
+        for attempt in range(max_retries):
+            try:
+                user_response = requests.get('https://plex.tv/users/account', 
+                                           headers=headers, timeout=10)
                 
-                # Get connections for this server
-                connections_response = requests.get(
-                    f"https://plex.tv/api/servers/{server['machineIdentifier']}/connections",
-                    headers=headers,
-                    timeout=10
-                )
+                if user_response.status_code == 429:  # Rate limited
+                    logging.warning(f"Rate limited by Plex API, attempt {attempt + 1}/{max_retries}")
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay * (attempt + 1))  # Exponential backoff
+                        continue
+                    else:
+                        logging.error("Migration failed due to rate limiting, will retry later")
+                        return
+                        
+                user_response.raise_for_status()
+                user_data = user_response.json()
                 
-                if connections_response.status_code == 200:
-                    connections_data = connections_response.json()
-                    for conn in connections_data.get('connections', []):
-                        server['connections'].append({
-                            'uri': conn.get('uri', ''),
-                            'local': conn.get('local', False)
-                        })
+                username = user_data.get('username', '')
+                email = user_data.get('email', '')
+                user_id = str(user_data.get('id', ''))
+                break
                 
-                servers.append(server)
+            except requests.exceptions.Timeout:
+                logging.warning(f"Timeout getting user data, attempt {attempt + 1}/{max_retries}")
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    logging.error("Migration failed due to timeouts, will retry later")
+                    return
+            except Exception as e:
+                logging.error(f"Failed to fetch user data for migration: {e}")
+                return
+            
+        # Get user's servers with retry logic
+        for attempt in range(max_retries):
+            try:
+                servers_response = requests.get('https://plex.tv/pms/servers.xml', 
+                                              headers=headers, timeout=10)
                 
-        except Exception as e:
-            logging.error(f"Failed to fetch servers for migration: {e}")
-            return
+                if servers_response.status_code == 429:  # Rate limited
+                    logging.warning(f"Rate limited getting servers, attempt {attempt + 1}/{max_retries}")
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay * (attempt + 1))
+                        continue
+                    else:
+                        logging.error("Migration failed due to rate limiting, will retry later")
+                        return
+                        
+                servers_response.raise_for_status()
+                
+                # Parse XML response
+                import xml.etree.ElementTree as ET
+                root = ET.fromstring(servers_response.text)
+                servers = []
+                
+                for server_elem in root.findall('Server'):
+                    server = {
+                        'name': server_elem.get('name', ''),
+                        'machineIdentifier': server_elem.get('machineIdentifier', ''),
+                        'connections': []
+                    }
+                    
+                    # Get connections for this server with rate limiting protection
+                    try:
+                        connections_response = requests.get(
+                            f"https://plex.tv/api/servers/{server['machineIdentifier']}/connections",
+                            headers=headers,
+                            timeout=5  # Shorter timeout for connections
+                        )
+                        
+                        if connections_response.status_code == 200:
+                            connections_data = connections_response.json()
+                            for conn in connections_data.get('connections', []):
+                                server['connections'].append({
+                                    'uri': conn.get('uri', ''),
+                                    'local': conn.get('local', False)
+                                })
+                    except Exception:
+                        # Continue without connections data if this fails
+                        logging.debug(f"Could not get connections for server {server['name']}")
+                    
+                    servers.append(server)
+                break
+                
+            except requests.exceptions.Timeout:
+                logging.warning(f"Timeout getting servers, attempt {attempt + 1}/{max_retries}")
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    logging.error("Migration failed due to timeouts, will retry later")
+                    return
+            except Exception as e:
+                logging.error(f"Failed to fetch servers for migration: {e}")
+                return
             
         # Find the server that matches current manual configuration
         current_ip = settings.plex.get('ip', '127.0.0.1')
@@ -1119,33 +1202,104 @@ def migrate_apikey_to_oauth():
         # Encrypt the API key as OAuth token (they're the same thing)
         encrypted_token = token_manager.encrypt(decrypted_api_key)
         
-        # Save OAuth configuration
-        settings.plex.auth_method = 'oauth'
-        settings.plex.token = encrypted_token
-        settings.plex.username = username
-        settings.plex.email = email
-        settings.plex.user_id = user_id
-        settings.plex.server_machine_id = selected_server['machineIdentifier']
-        settings.plex.server_name = selected_server['name']
-        settings.plex.server_url = selected_connection['uri']
-        settings.plex.server_local = selected_connection.get('local', False)
+        # Validate OAuth configuration BEFORE making any changes
+        oauth_config = {
+            'auth_method': 'oauth',
+            'token': encrypted_token,
+            'username': username,
+            'email': email,
+            'user_id': user_id,
+            'server_machine_id': selected_server['machineIdentifier'],
+            'server_name': selected_server['name'],
+            'server_url': selected_connection['uri'],
+            'server_local': selected_connection.get('local', False)
+        }
         
-        # Test the migration by attempting a connection before cleanup
+        # Test OAuth configuration before committing
+        logging.info("Testing OAuth configuration before applying changes...")
+        test_success = False
+        
         try:
+            # Temporarily apply OAuth settings in memory only
+            original_auth_method = settings.plex.auth_method
+            original_token = settings.plex.token
+            
+            settings.plex.auth_method = oauth_config['auth_method']
+            settings.plex.token = oauth_config['token']
+            settings.plex.server_machine_id = oauth_config['server_machine_id']
+            settings.plex.server_name = oauth_config['server_name']
+            settings.plex.server_url = oauth_config['server_url']
+            settings.plex.server_local = oauth_config['server_local']
+            
+            # Test connection
             from bazarr.plex.operations import get_plex_server
+            test_server = get_plex_server()
+            test_server.account()  # Test connection
+            test_success = True
+            
+            # Restore original values temporarily
+            settings.plex.auth_method = original_auth_method
+            settings.plex.token = original_token
+            
+        except Exception as e:
+            logging.error(f"OAuth pre-validation failed: {e}")
+            # Restore original values
+            settings.plex.auth_method = original_auth_method
+            settings.plex.token = original_token
+            return
+            
+        if not test_success:
+            logging.error("OAuth configuration validation failed, aborting migration")
+            return
+            
+        logging.info("OAuth configuration validated successfully, proceeding with migration")
+        
+        # Now safely apply the OAuth configuration
+        settings.plex.auth_method = oauth_config['auth_method']
+        settings.plex.token = oauth_config['token']
+        settings.plex.username = oauth_config['username']
+        settings.plex.email = oauth_config['email']
+        settings.plex.user_id = oauth_config['user_id']
+        settings.plex.server_machine_id = oauth_config['server_machine_id']
+        settings.plex.server_name = oauth_config['server_name']
+        settings.plex.server_url = oauth_config['server_url']
+        settings.plex.server_local = oauth_config['server_local']
+        
+        # Mark migration as successful
+        settings.plex.migration_successful = True
+        settings.plex.migration_timestamp = time.time()
+        
+        # Save configuration with OAuth settings
+        write_config()
+        
+        logging.info(f"Successfully migrated Plex configuration to OAuth for user '{username}'")
+        logging.info(f"Selected server: {selected_server['name']} ({selected_connection['uri']})")
+        
+        # Final validation test
+        try:
             test_server = get_plex_server()
             test_server.account()  # Test connection
             logging.info("Migration validated - OAuth connection successful")
             
-            # Only clear legacy credentials after successful validation
+            # Only now permanently remove API key
             settings.plex.apikey = ''
             settings.plex.apikey_encrypted = False
-            logging.info("Cleared legacy API key after successful OAuth migration")
+            write_config()
+            logging.info("Legacy API key permanently removed after successful OAuth migration")
             
         except Exception as e:
-            logging.warning(f"Migration validation failed: {e}")
-            # Rollback OAuth settings and keep API key for fallback
-            settings.plex.auth_method = 'apikey'
+            logging.error(f"Final OAuth validation failed: {e}")
+            
+            # Restore backup configuration
+            logging.info("Restoring backup configuration...")
+            settings.plex.auth_method = backup_config['auth_method']
+            settings.plex.apikey = backup_config['apikey']
+            settings.plex.apikey_encrypted = backup_config['apikey_encrypted']
+            settings.plex.ip = backup_config['ip']
+            settings.plex.port = backup_config['port']
+            settings.plex.ssl = backup_config['ssl']
+            
+            # Clear OAuth settings
             settings.plex.token = ''
             settings.plex.username = ''
             settings.plex.email = ''
@@ -1154,12 +1308,19 @@ def migrate_apikey_to_oauth():
             settings.plex.server_name = ''
             settings.plex.server_url = ''
             settings.plex.server_local = False
-            logging.info("Migration rolled back due to validation failure")
+            settings.plex.migration_successful = False
             
-        write_config()
-        
-        logging.info(f"Successfully migrated Plex configuration to OAuth for user '{username}'")
-        logging.info(f"Selected server: {selected_server['name']} ({selected_connection['uri']})")
+            write_config()
+            
+            # Test the rollback
+            try:
+                test_server = get_plex_server()
+                test_server.account()  # Test connection with legacy settings
+                logging.info("Rollback successful - legacy API key connection restored")
+                logging.error("OAuth migration failed but legacy configuration is working. Please configure OAuth manually through the GUI.")
+            except Exception as rollback_error:
+                logging.error(f"Rollback validation also failed: {rollback_error}")
+                logging.error("Both OAuth and legacy API key configurations failed. Please check your Plex settings.")
             
     except Exception as e:
         logging.error(f"Unexpected error during Plex migration: {e}")
