@@ -6,6 +6,7 @@ import {
   usePlexSelectedServerQuery,
 } from "@/apis/hooks/plex";
 import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
+import styles from "@/pages/Settings/Plex/LibrarySelector.module.scss";
 
 export type LibrarySelectorProps = BaseInput<string> & {
   label: string;
@@ -53,9 +54,11 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   // If not authenticated, show message to use OAuth
   if (!isAuthenticated) {
     return (
-      <Stack gap="xs">
-        <Text fw={500}>{label}</Text>
-        <Alert color="brand" variant="light">
+      <Stack gap="xs" className={styles.librarySelector}>
+        <Text fw={500} className={styles.labelText}>
+          {label}
+        </Text>
+        <Alert color="brand" variant="light" className={styles.alertMessage}>
           Enable Plex OAuth above to automatically discover your libraries.
         </Alert>
       </Stack>
@@ -65,14 +68,17 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   // If loading
   if (isLoading) {
     return (
-      <Stack gap="xs">
-        <Text fw={500}>{label}</Text>
+      <Stack gap="xs" className={styles.librarySelector}>
+        <Text fw={500} className={styles.labelText}>
+          {label}
+        </Text>
         <Select
           {...rest}
           label={label}
           placeholder="Loading libraries..."
           data={[]}
           disabled
+          className={styles.loadingField}
         />
       </Stack>
     );
@@ -81,9 +87,11 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   // If error loading libraries
   if (error) {
     return (
-      <Stack gap="xs">
-        <Text fw={500}>{label}</Text>
-        <Alert color="red" variant="light">
+      <Stack gap="xs" className={styles.librarySelector}>
+        <Text fw={500} className={styles.labelText}>
+          {label}
+        </Text>
+        <Alert color="red" variant="light" className={styles.alertMessage}>
           Failed to load libraries: {error.message}
         </Alert>
       </Stack>
@@ -93,9 +101,11 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   // If no libraries found of this type
   if (filteredLibraries.length === 0) {
     return (
-      <Stack gap="xs">
-        <Text fw={500}>{label}</Text>
-        <Alert color="gray" variant="light">
+      <Stack gap="xs" className={styles.librarySelector}>
+        <Text fw={500} className={styles.labelText}>
+          {label}
+        </Text>
+        <Alert color="gray" variant="light" className={styles.alertMessage}>
           No {libraryType} libraries found on your Plex server.
         </Alert>
       </Stack>
@@ -109,17 +119,20 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   }));
 
   return (
-    <Select
-      {...rest}
-      label={label}
-      placeholder={placeholder || `Select ${libraryType} library...`}
-      data={selectData}
-      searchable
-      clearable
-      description={description}
-      value={value || ""}
-      onChange={(newValue) => update(newValue)}
-    />
+    <div className={styles.librarySelector}>
+      <Select
+        {...rest}
+        label={label}
+        placeholder={placeholder || `Select ${libraryType} library...`}
+        data={selectData}
+        searchable
+        clearable
+        description={description}
+        value={value || ""}
+        onChange={(newValue) => update(newValue)}
+        className={styles.selectField}
+      />
+    </div>
   );
 };
 
