@@ -487,6 +487,99 @@ class PlexServers(Resource):
             return {'data': []}
 
 
+@api_ns_plex.route('plex/oauth/libraries')
+class PlexLibraries(Resource):
+    def get(self):
+        try:
+            decrypted_token = get_decrypted_token()
+            if not decrypted_token:
+                return {'data': []}
+
+            # Get the selected server URL
+            server_url = settings.plex.get('server_url')
+            if not server_url:
+                logging.warning("No Plex server selected")
+                return {'data': []}
+
+            headers = {
+                'X-Plex-Token': decrypted_token,
+                'Accept': 'application/json'
+            }
+
+            # Get libraries from the selected server
+            response = requests.get(
+                f"{server_url}/library/sections",
+                headers=headers,
+                timeout=10,
+                verify=False
+            )
+
+            if response.status_code in (401, 403):
+                logging.warning(f"Plex authentication failed: {response.status_code}")
+                return {'data': []}
+            elif response.status_code != 200:
+                logging.error(f"Plex API error: {response.status_code}")
+                raise PlexConnectionError(f"Failed to get libraries: HTTP {response.status_code}")
+
+            response.raise_for_status()
+            
+            # Parse the response - it could be JSON or XML depending on the server
+            content_type = response.headers.get('content-type', '')
+            if 'application/json' in content_type:
+                data = response.json()
+                if 'MediaContainer' in data and 'Directory' in data['MediaContainer']:
+                    sections = data['MediaContainer']['Directory']
+                else:
+                    sections = []
+            elif 'application/xml' in content_type or 'text/xml' in content_type:
+                import xml.etree.ElementTree as ET
+                root = ET.fromstring(response.text)
+                sections = []
+                for directory in root.findall('Directory'):
+                    sections.append({
+                        'key': directory.get('key'),
+                        'title': directory.get('title'),
+                        'type': directory.get('type'),
+                        'agent': directory.get('agent', ''),
+                        'scanner': directory.get('scanner', ''),
+                        'language': directory.get('language', ''),
+                        'uuid': directory.get('uuid', ''),
+                        'updatedAt': int(directory.get('updatedAt', 0)),
+                        'createdAt': int(directory.get('createdAt', 0)),
+                        'count': int(directory.get('count', 0))
+                    })
+            else:
+                raise PlexConnectionError(f"Unexpected response format: {content_type}")
+
+            # Filter and format libraries
+            libraries = []
+            for section in sections:
+                if isinstance(section, dict):
+                    # Only include movie and show libraries
+                    if section.get('type') in ['movie', 'show']:
+                        libraries.append({
+                            'key': str(section.get('key', '')),
+                            'title': section.get('title', ''),
+                            'type': section.get('type', ''),
+                            'count': int(section.get('count', 0)),
+                            'agent': section.get('agent', ''),
+                            'scanner': section.get('scanner', ''),
+                            'language': section.get('language', ''),
+                            'uuid': section.get('uuid', ''),
+                            'updatedAt': int(section.get('updatedAt', 0)),
+                            'createdAt': int(section.get('createdAt', 0))
+                        })
+
+            return {'data': libraries}
+
+        except requests.exceptions.RequestException as e:
+            logging.warning(f"Failed to connect to Plex server: {type(e).__name__}: {str(e)}")
+            return {'data': []}
+        except Exception as e:
+            logging.warning(f"Unexpected error getting Plex libraries: {type(e).__name__}: {str(e)}")
+            return {'data': []}
+
+
 @api_ns_plex.route('plex/oauth/logout')
 class PlexLogout(Resource):
     post_request_parser = reqparse.RequestParser()

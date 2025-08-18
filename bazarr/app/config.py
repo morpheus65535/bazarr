@@ -1064,7 +1064,7 @@ def migrate_apikey_to_oauth():
         
         for attempt in range(max_retries):
             try:
-                user_response = requests.get('https://plex.tv/users/account', 
+                user_response = requests.get('https://plex.tv/api/v2/user', 
                                            headers=headers, timeout=10)
                 
                 if user_response.status_code == 429:  # Rate limited
