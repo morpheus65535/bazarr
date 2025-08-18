@@ -680,7 +680,6 @@ class PlexLibraries(Resource):
                 return {'data': []}
             
             # Clean up the server URL
-            from .security import sanitize_server_url
             server_url = sanitize_server_url(server_url)
             
             headers = {
@@ -711,7 +710,6 @@ class PlexLibraries(Resource):
                 sections_data = response.json()
                 sections = sections_data.get('MediaContainer', {}).get('Directory', [])
             elif 'application/xml' in content_type or 'text/xml' in content_type:
-                import xml.etree.ElementTree as ET
                 root = ET.fromstring(response.text)
                 sections = []
                 for directory in root.findall('Directory'):

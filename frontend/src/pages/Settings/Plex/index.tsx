@@ -13,7 +13,7 @@ import {
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
 import LibrarySelector from "./LibrarySelector";
-import { PlexSettings } from "./PlexSettings";
+import PlexSettings from "./PlexSettings";
 
 const SettingsPlexView = () => {
   const [manualConfigOpen, { toggle: manualConfigToggle }] =
