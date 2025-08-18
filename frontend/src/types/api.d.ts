@@ -306,6 +306,19 @@ declare namespace Plex {
     device: string;
     bestConnection?: ServerConnection | null;
   }
+
+  interface Library {
+    key: string;
+    title: string;
+    type: string;
+    count: number;
+    agent: string;
+    scanner: string;
+    language: string;
+    uuid: string;
+    updatedAt: number;
+    createdAt: number;
+  }
 }
 
 interface SearchResultType {

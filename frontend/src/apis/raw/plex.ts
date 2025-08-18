@@ -51,6 +51,13 @@ class NewPlexApi extends BaseApi {
 
     return response.data;
   }
+
+  async libraries() {
+    const response =
+      await this.get<DataWrapper<Plex.Library[]>>(`/oauth/libraries`);
+
+    return response.data;
+  }
 }
 
 export default new NewPlexApi();

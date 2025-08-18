@@ -12,6 +12,7 @@ import {
   Text,
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
+import LibrarySelector from "./LibrarySelector";
 import { PlexSettings } from "./PlexSettings";
 
 const SettingsPlexView = () => {
@@ -95,10 +96,12 @@ const SettingsPlexView = () => {
 
         {/* Plex Library Configuration */}
         <Section header="Movie Library">
-          <Text
+          <LibrarySelector
             label="Library Name"
             settingKey="settings-plex-movie_library"
+            libraryType="movie"
             placeholder="Movies"
+            description="Select your movie library from Plex"
           />
           <Check
             label="Mark movies as recently added after downloading subtitles"
@@ -111,10 +114,12 @@ const SettingsPlexView = () => {
         </Section>
 
         <Section header="Series Library">
-          <Text
+          <LibrarySelector
             label="Library Name"
             settingKey="settings-plex-series_library"
+            libraryType="show"
             placeholder="TV Shows"
+            description="Select your TV show library from Plex"
           />
           <Check
             label="Mark episodes as recently added after downloading subtitles"

@@ -127,3 +127,26 @@ export const usePlexServerSelectionMutation = () => {
     },
   });
 };
+
+export const usePlexLibrariesQuery = <TData = Plex.Library[]>(
+  options?: Partial<
+    UseQueryOptions<
+      Plex.Library[],
+      Error,
+      TData,
+      (string | boolean | string | undefined)[]
+    >
+  > & { enabled?: boolean; serverId?: string },
+) => {
+  const enabled = options?.enabled ?? true;
+  const { serverId, ...queryOptions } = options || {};
+
+  return useQuery({
+    queryKey: [QueryKeys.Plex, "libraries", serverId || "default"],
+    queryFn: () => api.plex.libraries(),
+    enabled,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    ...queryOptions,
+  });
+};
