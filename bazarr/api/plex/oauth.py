@@ -493,6 +493,7 @@ class PlexLibraries(Resource):
         try:
             decrypted_token = get_decrypted_token()
             if not decrypted_token:
+                logging.warning("No decrypted token available for Plex library fetching")
                 return {'data': []}
 
             # Get the selected server URL
@@ -501,6 +502,8 @@ class PlexLibraries(Resource):
                 logging.warning("No Plex server selected")
                 return {'data': []}
 
+            logging.info(f"Fetching Plex libraries from server: {server_url}")
+            
             headers = {
                 'X-Plex-Token': decrypted_token,
                 'Accept': 'application/json'
@@ -525,8 +528,11 @@ class PlexLibraries(Resource):
             
             # Parse the response - it could be JSON or XML depending on the server
             content_type = response.headers.get('content-type', '')
+            logging.debug(f"Plex libraries response content-type: {content_type}")
+            
             if 'application/json' in content_type:
                 data = response.json()
+                logging.debug(f"Plex libraries JSON response: {data}")
                 if 'MediaContainer' in data and 'Directory' in data['MediaContainer']:
                     sections = data['MediaContainer']['Directory']
                 else:
@@ -540,36 +546,59 @@ class PlexLibraries(Resource):
                         'key': directory.get('key'),
                         'title': directory.get('title'),
                         'type': directory.get('type'),
+                        'count': int(directory.get('count', 0)),
                         'agent': directory.get('agent', ''),
                         'scanner': directory.get('scanner', ''),
                         'language': directory.get('language', ''),
                         'uuid': directory.get('uuid', ''),
                         'updatedAt': int(directory.get('updatedAt', 0)),
-                        'createdAt': int(directory.get('createdAt', 0)),
-                        'count': int(directory.get('count', 0))
+                        'createdAt': int(directory.get('createdAt', 0))
                     })
             else:
                 raise PlexConnectionError(f"Unexpected response format: {content_type}")
 
-            # Filter and format libraries
+            # Filter and format libraries for movie and show types only
             libraries = []
             for section in sections:
-                if isinstance(section, dict):
-                    # Only include movie and show libraries
-                    if section.get('type') in ['movie', 'show']:
-                        libraries.append({
-                            'key': str(section.get('key', '')),
-                            'title': section.get('title', ''),
-                            'type': section.get('type', ''),
-                            'count': int(section.get('count', 0)),
-                            'agent': section.get('agent', ''),
-                            'scanner': section.get('scanner', ''),
-                            'language': section.get('language', ''),
-                            'uuid': section.get('uuid', ''),
-                            'updatedAt': int(section.get('updatedAt', 0)),
-                            'createdAt': int(section.get('createdAt', 0))
-                        })
+                if isinstance(section, dict) and section.get('type') in ['movie', 'show']:
+                    # Get the actual count of items in this library section
+                    try:
+                        section_key = section.get('key')
+                        count_response = requests.get(
+                            f"{server_url}/library/sections/{section_key}/all",
+                            headers={'X-Plex-Token': decrypted_token, 'Accept': 'application/json'},
+                            timeout=5,
+                            verify=False
+                        )
+                        
+                        actual_count = 0
+                        if count_response.status_code == 200:
+                            count_data = count_response.json()
+                            if 'MediaContainer' in count_data:
+                                container = count_data['MediaContainer']
+                                # The 'size' field contains the number of items in the library
+                                actual_count = int(container.get('size', len(container.get('Metadata', []))))
+                        
+                        logging.info(f"Library '{section.get('title')}' has {actual_count} items")
+                        
+                    except Exception as e:
+                        logging.warning(f"Failed to get count for library {section.get('title')}: {e}")
+                        actual_count = 0
 
+                    libraries.append({
+                        'key': str(section.get('key', '')),
+                        'title': section.get('title', ''),
+                        'type': section.get('type', ''),
+                        'count': actual_count,
+                        'agent': section.get('agent', ''),
+                        'scanner': section.get('scanner', ''),
+                        'language': section.get('language', ''),
+                        'uuid': section.get('uuid', ''),
+                        'updatedAt': int(section.get('updatedAt', 0)),
+                        'createdAt': int(section.get('createdAt', 0))
+                    })
+
+            logging.debug(f"Filtered Plex libraries: {libraries}")
             return {'data': libraries}
 
         except requests.exceptions.RequestException as e:

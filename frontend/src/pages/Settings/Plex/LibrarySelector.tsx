@@ -1,9 +1,8 @@
-import { FunctionComponent } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { Alert, Select, Stack, Text } from "@mantine/core";
 import {
   usePlexAuthValidationQuery,
   usePlexLibrariesQuery,
-  usePlexSelectedServerQuery,
 } from "@/apis/hooks/plex";
 import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
 import styles from "@/pages/Settings/Plex/LibrarySelector.module.scss";
@@ -21,35 +20,29 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
 
   // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
-  const isAuthenticated = Boolean(
-    authData?.valid && authData?.auth_method === "oauth",
-  );
+  const isAuthenticated = useMemo(() => {
+    return Boolean(authData?.valid && authData?.auth_method === "oauth");
+  }, [authData?.valid, authData?.auth_method]);
 
-  // Get selected server data to ensure libraries are fetched for the right server
-  const { data: selectedServer } = usePlexSelectedServerQuery({
-    enabled: isAuthenticated,
-  });
-
-  // Fetch libraries if authenticated and server is selected
+  // Fetch libraries if authenticated
   const {
     data: libraries = [],
     isLoading,
     error,
   } = usePlexLibrariesQuery({
-    enabled: isAuthenticated && Boolean(selectedServer),
-    serverId: selectedServer?.machineIdentifier,
+    enabled: isAuthenticated,
   });
 
-  // Filter libraries by type
-  const filteredLibraries = libraries.filter((library) => {
-    if (libraryType === "movie") {
-      return library.type === "movie";
-    }
-    if (libraryType === "show") {
-      return library.type === "show";
-    }
-    return false;
-  });
+  // Filter libraries by type and prepare select data
+  const selectData = useMemo(() => {
+    const filtered = libraries.filter(
+      (library) => library.type === libraryType,
+    );
+    return filtered.map((library) => ({
+      value: library.title,
+      label: `${library.title} (${library.count} items)`,
+    }));
+  }, [libraries, libraryType]);
 
   // If not authenticated, show message to use OAuth
   if (!isAuthenticated) {
@@ -99,7 +92,7 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   }
 
   // If no libraries found of this type
-  if (filteredLibraries.length === 0) {
+  if (selectData.length === 0) {
     return (
       <Stack gap="xs" className={styles.librarySelector}>
         <Text fw={500} className={styles.labelText}>
@@ -112,12 +105,6 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     );
   }
 
-  // Prepare select data
-  const selectData = filteredLibraries.map((library) => ({
-    value: library.title,
-    label: `${library.title} (${library.count} items)`,
-  }));
-
   return (
     <div className={styles.librarySelector}>
       <Select
@@ -125,12 +112,15 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
         label={label}
         placeholder={placeholder || `Select ${libraryType} library...`}
         data={selectData}
-        searchable
-        clearable
         description={description}
         value={value || ""}
         onChange={(newValue) => update(newValue)}
         className={styles.selectField}
+        comboboxProps={{
+          withinPortal: false,
+          position: "bottom-start",
+          offset: 0,
+        }}
       />
     </div>
   );
