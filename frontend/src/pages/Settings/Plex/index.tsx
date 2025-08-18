@@ -1,4 +1,4 @@
-import { Box, Paper, Stack } from "@mantine/core";
+import { Box, Paper } from "@mantine/core";
 import {
   Check,
   CollapseBox,
