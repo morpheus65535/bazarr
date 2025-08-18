@@ -3,6 +3,7 @@
 import secrets
 import os
 import time
+import logging
 from typing import Dict, Optional
 from threading import RLock
 from itsdangerous import URLSafeSerializer, BadSignature
@@ -10,6 +11,9 @@ from itsdangerous.exc import BadPayload
 from datetime import datetime, timedelta, timezone
 
 from .exceptions import InvalidTokenError
+
+logger = logging.getLogger(__name__)
+
 
 class TokenManager:
     
@@ -100,6 +104,36 @@ class PinCache:
                 self._cache.pop(key, None)
 
 pin_cache = PinCache()
+
+
+def encrypt_api_key():
+    """Encrypt plain text API key automatically."""
+    from app.config import settings, write_config
+    
+    try:
+        apikey = settings.plex.get('apikey')
+        if apikey and not settings.plex.get('apikey_encrypted', False):
+            
+            encryption_key = get_or_create_encryption_key(settings.plex, 'encryption_key')
+            token_manager = TokenManager(encryption_key)
+            
+            # Encrypt the API key
+            encrypted_apikey = token_manager.encrypt(apikey)
+            
+            # Update settings
+            settings.plex.apikey = encrypted_apikey
+            settings.plex.apikey_encrypted = True
+            
+            # Save configuration
+            write_config()
+            
+            logger.info("Successfully encrypted Plex API key")
+            return True
+    except Exception as e:
+        logger.error(f"Failed to encrypt API key: {e}")
+        return False
+    
+    return False
 
 
 def sanitize_server_url(url: str) -> str:

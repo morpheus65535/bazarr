@@ -12,7 +12,7 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 def get_plex_server() -> PlexServer:
     """Connect to the Plex server and return the server instance."""
-    from api.plex.security import TokenManager, get_or_create_encryption_key
+    from api.plex.security import TokenManager, get_or_create_encryption_key, encrypt_api_key
     
     try:
         auth_method = settings.plex.get('auth_method', 'apikey')
@@ -71,36 +71,6 @@ def get_plex_server() -> PlexServer:
     except Exception as e:
         logger.error(f"Failed to connect to Plex server: {e}")
         raise
-
-
-def encrypt_api_key():
-    """Encrypt plain text API key automatically."""
-    from api.plex.security import TokenManager, get_or_create_encryption_key
-    
-    try:
-        apikey = settings.plex.get('apikey')
-        if apikey and not settings.plex.get('apikey_encrypted', False):
-            
-            encryption_key = get_or_create_encryption_key(settings.plex, 'encryption_key')
-            token_manager = TokenManager(encryption_key)
-            
-            # Encrypt the API key
-            encrypted_apikey = token_manager.encrypt(apikey)
-            
-            # Update settings
-            settings.plex.apikey = encrypted_apikey
-            settings.plex.apikey_encrypted = True
-            
-            # Save configuration
-            write_config()
-            
-            logger.info("Successfully encrypted Plex API key")
-            return True
-    except Exception as e:
-        logger.error(f"Failed to encrypt API key: {e}")
-        return False
-    
-    return False
 
 
 def update_added_date(video, added_date: str) -> None:
