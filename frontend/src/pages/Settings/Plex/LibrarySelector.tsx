@@ -114,12 +114,24 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
         data={selectData}
         description={description}
         value={value || ""}
-        onChange={(newValue) => update(newValue)}
+        onChange={(newValue) => {
+          // Prevent deselection - if user clicks on already selected option, keep current value
+          if (newValue !== null) {
+            update(newValue);
+          }
+        }}
+        allowDeselect={false}
         className={styles.selectField}
         comboboxProps={{
           withinPortal: false,
           position: "bottom-start",
           offset: 0,
+          middlewares: {
+            flip: false,
+            shift: false,
+            inline: false,
+          },
+          positionDependencies: [],
         }}
       />
     </div>
