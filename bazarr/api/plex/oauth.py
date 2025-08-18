@@ -9,8 +9,9 @@ from flask_restx import Resource
 
 from . import api_ns_plex
 from .exceptions import *
-from .security import TokenManager, sanitize_log_data, pin_cache
+from .security import TokenManager, sanitize_log_data, pin_cache, get_or_create_encryption_key
 from app.config import settings, write_config
+from plex.operations import encrypt_api_key
 
 @api_ns_plex.errorhandler(Exception)
 def handle_api_exception(error):

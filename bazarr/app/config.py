@@ -990,7 +990,7 @@ def initialize_plex():
     # Start cache cleanup if OAuth is enabled
     if settings.general.use_plex and settings.plex.get('auth_method') == 'oauth':
         try:
-            from bazarr.api.plex.security import pin_cache
+            from api.plex.security import pin_cache
             import threading
             import time
             
