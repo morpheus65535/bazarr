@@ -27,16 +27,13 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
 
   // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
-  const isAuthenticated = useMemo(() => {
-    const result = Boolean(
-      authData?.valid && authData?.auth_method === "oauth",
-    );
-    console.log(
-      `[LibrarySelector-${libraryType}] Authentication check:`,
-      result,
-    );
-    return result;
-  }, [authData?.valid, authData?.auth_method]);
+  const isAuthenticated = Boolean(
+    authData?.valid && authData?.auth_method === "oauth",
+  );
+  console.log(
+    `[LibrarySelector-${libraryType}] Authentication check:`,
+    isAuthenticated,
+  );
 
   // Fetch libraries if authenticated
   const {
@@ -60,21 +57,19 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   });
 
   // Filter libraries by type and prepare select data
-  const selectData = useMemo(() => {
-    console.log(
-      `[LibrarySelector-${libraryType}] Filtering libraries for type:`,
-      libraryType,
-    );
-    const filtered = libraries.filter(
-      (library) => library.type === libraryType,
-    );
-    const result = filtered.map((library) => ({
-      value: library.title,
-      label: `${library.title} (${library.count} items)`,
-    }));
-    console.log(`[LibrarySelector-${libraryType}] SelectData result:`, result);
-    return result;
-  }, [libraries, libraryType]);
+  console.log(
+    `[LibrarySelector-${libraryType}] Filtering libraries for type:`,
+    libraryType,
+  );
+  const filtered = libraries.filter((library) => library.type === libraryType);
+  const selectData = filtered.map((library) => ({
+    value: library.title,
+    label: `${library.title} (${library.count} items)`,
+  }));
+  console.log(
+    `[LibrarySelector-${libraryType}] SelectData result:`,
+    selectData,
+  );
 
   // If not authenticated, show message to use OAuth
   if (!isAuthenticated) {
