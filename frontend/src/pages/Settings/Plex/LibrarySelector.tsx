@@ -1,4 +1,5 @@
-import { FunctionComponent, useMemo } from "react";
+/* eslint-disable no-console */
+import { FunctionComponent } from "react";
 import { Alert, Select, Stack, Text } from "@mantine/core";
 import {
   usePlexAuthValidationQuery,
