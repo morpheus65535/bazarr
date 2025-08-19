@@ -1,10 +1,11 @@
 /* eslint-disable no-console */
 import { FunctionComponent } from "react";
 import { Alert, Select, Stack, Text } from "@mantine/core";
-import {
-  usePlexAuthValidationQuery,
-  usePlexLibrariesQuery,
-} from "@/apis/hooks/plex";
+// Temporarily disabled for debugging
+// import {
+//   usePlexAuthValidationQuery,
+//   usePlexLibrariesQuery,
+// } from "@/apis/hooks/plex";
 import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
 import styles from "@/pages/Settings/Plex/LibrarySelector.module.scss";
 
@@ -16,8 +17,11 @@ export type LibrarySelectorProps = BaseInput<string> & {
 };
 
 // Simple render tracking without forbidden hooks
-let renderCounts = { movie: 0, show: 0 };
-let lastProps: { movie: any; show: any } = { movie: null, show: null };
+const renderCounts: { movie: number; show: number } = { movie: 0, show: 0 };
+const lastProps: { movie: unknown; show: unknown } = {
+  movie: null,
+  show: null,
+};
 
 const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   const { libraryType, placeholder, description, label, ...baseProps } = props;
@@ -34,24 +38,28 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     `[LibrarySelector-${libraryType}] RENDER #${renderCounts[libraryType]} - value: "${value}" settingKey: ${baseProps.settingKey} propsChanged: ${propsChanged}`,
   );
 
-  // Check if user is authenticated with OAuth
-  const { data: authData } = usePlexAuthValidationQuery();
-  const isAuthenticated = Boolean(
-    authData?.valid && authData?.auth_method === "oauth",
-  );
+  // Check if user is authenticated with OAuth - TEMPORARILY DISABLED FOR DEBUGGING
+  // const { data: authData } = usePlexAuthValidationQuery();
+  // const isAuthenticated = Boolean(
+  //   authData?.valid && authData?.auth_method === "oauth",
+  // );
+  const isAuthenticated = false; // Hardcoded for debugging
   console.log(
     `[LibrarySelector-${libraryType}] Authentication check:`,
     isAuthenticated,
   );
 
-  // Fetch libraries if authenticated
-  const {
-    data: libraries = [],
-    isLoading,
-    error,
-  } = usePlexLibrariesQuery({
-    enabled: isAuthenticated,
-  });
+  // Fetch libraries if authenticated - TEMPORARILY DISABLED FOR DEBUGGING
+  // const {
+  //   data: libraries = [],
+  //   isLoading,
+  //   error,
+  // } = usePlexLibrariesQuery({
+  //   enabled: isAuthenticated,
+  // });
+  const libraries: unknown[] = []; // Hardcoded for debugging
+  const isLoading = false;
+  const error = null;
 
   console.log(`[LibrarySelector-${libraryType}] Libraries query result:`, {
     librariesCount: libraries.length,
@@ -65,11 +73,7 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     `[LibrarySelector-${libraryType}] Filtering libraries for type:`,
     libraryType,
   );
-  const filtered = libraries.filter((library) => library.type === libraryType);
-  const selectData = filtered.map((library) => ({
-    value: library.title,
-    label: `${library.title} (${library.count} items)`,
-  }));
+  const selectData: { value: string; label: string }[] = []; // Hardcoded empty for debugging
   console.log(
     `[LibrarySelector-${libraryType}] SelectData result:`,
     selectData,
@@ -116,7 +120,8 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
           {label}
         </Text>
         <Alert color="red" variant="light" className={styles.alertMessage}>
-          Failed to load libraries: {error.message}
+          Failed to load libraries:{" "}
+          {(error as Error)?.message || "Unknown error"}
         </Alert>
       </Stack>
     );
