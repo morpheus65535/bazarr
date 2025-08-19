@@ -37,6 +37,11 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   console.log(
     `[LibrarySelector-${libraryType}] RENDER #${renderCounts[libraryType]} - value: "${value}" settingKey: ${baseProps.settingKey} propsChanged: ${propsChanged}`,
   );
+  console.log(
+    `[LibrarySelector-${libraryType}] useBaseInput returns:`,
+    "update function:",
+    update.toString().slice(0, 80) + "...",
+  );
 
   // Check if user is authenticated with OAuth - TEMPORARILY DISABLED FOR DEBUGGING
   // const { data: authData } = usePlexAuthValidationQuery();
