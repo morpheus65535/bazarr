@@ -585,6 +585,15 @@ class PlexLibraries(Resource):
                         logging.warning(f"Failed to get count for library {section.get('title')}: {e}")
                         actual_count = 0
 
+                    # Extract library paths for UI display
+                    library_locations = []
+                    if 'Location' in section:
+                        locations = section['Location']
+                        if isinstance(locations, list):
+                            library_locations = [loc.get('path', '') for loc in locations if isinstance(loc, dict) and loc.get('path')]
+                        elif isinstance(locations, dict) and locations.get('path'):
+                            library_locations = [locations['path']]
+
                     libraries.append({
                         'key': str(section.get('key', '')),
                         'title': section.get('title', ''),
@@ -595,7 +604,8 @@ class PlexLibraries(Resource):
                         'language': section.get('language', ''),
                         'uuid': section.get('uuid', ''),
                         'updatedAt': int(section.get('updatedAt', 0)),
-                        'createdAt': int(section.get('createdAt', 0))
+                        'createdAt': int(section.get('createdAt', 0)),
+                        'locations': library_locations
                     })
 
             logging.debug(f"Filtered Plex libraries: {libraries}")

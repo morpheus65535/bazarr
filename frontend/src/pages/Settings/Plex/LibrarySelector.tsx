@@ -4,6 +4,7 @@ import {
   usePlexAuthValidationQuery,
   usePlexLibrariesQuery,
 } from "@/apis/hooks/plex";
+import { Text as SettingsText } from "@/pages/Settings/components";
 import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
 import styles from "@/pages/Settings/Plex/LibrarySelector.module.scss";
 
@@ -12,10 +13,18 @@ export type LibrarySelectorProps = BaseInput<string> & {
   libraryType: "movie" | "show";
   placeholder?: string;
   description?: string;
+  pathSettingKey?: string;
 };
 
 const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
-  const { libraryType, placeholder, description, label, ...baseProps } = props;
+  const {
+    libraryType,
+    placeholder,
+    description,
+    label,
+    pathSettingKey,
+    ...baseProps
+  } = props;
   const { value, update, rest } = useBaseInput(baseProps);
 
   // Check if user is authenticated with OAuth
@@ -33,14 +42,16 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     enabled: isAuthenticated,
   });
 
-  // Filter libraries by type and prepare select data
+  // Filter libraries by type and get selected library paths
   const filtered = libraries.filter((library) => library.type === libraryType);
+  const selectedLibrary = filtered.find((library) => library.title === value);
+  const selectedPaths = selectedLibrary?.locations || [];
+
   const selectData = filtered.map((library) => ({
     value: library.title,
     label: `${library.title} (${library.count} items)`,
   }));
 
-  // If not authenticated, show message to use OAuth
   if (!isAuthenticated) {
     return (
       <Stack gap="xs" className={styles.librarySelector}>
@@ -54,13 +65,9 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     );
   }
 
-  // If loading
   if (isLoading) {
     return (
       <Stack gap="xs" className={styles.librarySelector}>
-        <Text fw={500} className={styles.labelText}>
-          {label}
-        </Text>
         <Select
           {...rest}
           label={label}
@@ -73,13 +80,9 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     );
   }
 
-  // If error loading libraries
   if (error) {
     return (
       <Stack gap="xs" className={styles.librarySelector}>
-        <Text fw={500} className={styles.labelText}>
-          {label}
-        </Text>
         <Alert color="red" variant="light" className={styles.alertMessage}>
           Failed to load libraries:{" "}
           {(error as Error)?.message || "Unknown error"}
@@ -88,13 +91,9 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     );
   }
 
-  // If no libraries found of this type
   if (selectData.length === 0) {
     return (
       <Stack gap="xs" className={styles.librarySelector}>
-        <Text fw={500} className={styles.labelText}>
-          {label}
-        </Text>
         <Alert color="gray" variant="light" className={styles.alertMessage}>
           No {libraryType} libraries found on your Plex server.
         </Alert>
@@ -112,25 +111,24 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
         description={description}
         value={value || ""}
         onChange={(newValue) => {
-          // Prevent deselection - if user clicks on already selected option, keep current value
           if (newValue !== null) {
             update(newValue);
           }
         }}
         allowDeselect={false}
         className={styles.selectField}
-        comboboxProps={{
-          withinPortal: false,
-          position: "bottom-start",
-          offset: 0,
-          middlewares: {
-            flip: false,
-            shift: false,
-            inline: false,
-          },
-          positionDependencies: [],
-        }}
       />
+
+      {pathSettingKey && selectedPaths.length > 0 && (
+        <SettingsText
+          label="Local Library Path"
+          settingKey={pathSettingKey}
+          settingOptions={{
+            onLoaded: () => selectedPaths[0] || "",
+          }}
+          description="Local file system path where Bazarr can access your media files"
+        />
+      )}
     </div>
   );
 };

@@ -1309,11 +1309,6 @@ def migrate_apikey_to_oauth():
         # Save configuration with OAuth settings
         write_config()
         
-        # CRITICAL: Reload settings object from file to make OAuth token accessible
-        logging.info("Reloading configuration to activate OAuth token...")
-        settings.reload()
-        logging.info("Configuration reloaded - OAuth token now accessible in settings object")
-        
         logging.info(f"Successfully migrated Plex configuration to OAuth for user '{username}'")
         logging.info(f"Selected server: {selected_server['name']} ({selected_connection['uri']})")
         logging.info("Legacy manual configuration fields cleared (ip, port, ssl)")
@@ -1328,9 +1323,6 @@ def migrate_apikey_to_oauth():
             settings.plex.apikey = ''
             settings.plex.apikey_encrypted = False
             write_config()
-            
-            # Reload settings after API key cleanup
-            settings.reload()
             logging.info("Legacy API key permanently removed after successful OAuth migration")
             
         except Exception as e:
@@ -1358,9 +1350,6 @@ def migrate_apikey_to_oauth():
             settings.plex.disable_auto_migration = False  # Allow retry
             
             write_config()
-            
-            # Reload settings after rollback
-            settings.reload()
             
             # Test the rollback
             try:

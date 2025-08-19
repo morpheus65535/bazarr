@@ -318,6 +318,7 @@ declare namespace Plex {
     uuid: string;
     updatedAt: number;
     createdAt: number;
+    locations: string[];
   }
 }
 

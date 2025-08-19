@@ -18,3 +18,11 @@
   font-weight: 500;
   margin-bottom: 0.5rem; /* 8px */
 }
+
+.pathDescription {
+  font-size: 0.75rem; /* 12px */
+  color: var(--mantine-color-dimmed);
+  font-family: var(--mantine-font-family-monospace);
+  margin-top: 0.125rem; /* 2px */
+  word-break: break-all;
+}

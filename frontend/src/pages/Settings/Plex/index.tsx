@@ -31,6 +31,7 @@ const SettingsPlexView = () => {
             libraryType="movie"
             placeholder="Movies"
             description="Select your movie library from Plex"
+            pathSettingKey="settings-plex-movie_library_path"
           />
           <Check
             label="Mark movies as recently added after downloading subtitles"
@@ -49,6 +50,7 @@ const SettingsPlexView = () => {
             libraryType="show"
             placeholder="TV Shows"
             description="Select your TV show library from Plex"
+            pathSettingKey="settings-plex-series_library_path"
           />
           <Check
             label="Mark episodes as recently added after downloading subtitles"

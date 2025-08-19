@@ -3,7 +3,6 @@ import logging
 from datetime import datetime
 from app.config import settings, write_config
 from plexapi.server import PlexServer
-from utilities.plex_file_operations import initialize_plex_file_operations
 
 logger = logging.getLogger(__name__)
 
@@ -68,11 +67,6 @@ def get_plex_server() -> PlexServer:
                 raise ValueError("Invalid encrypted API key. Please reconfigure Plex authentication.")
             
             plex_server = PlexServer(baseurl, decrypted_apikey)
-        
-        # Initialize the advanced file operations system
-        # This eliminates the need for path mappings entirely
-        initialize_plex_file_operations(plex_server)
-        logger.info("Plex file operations initialized - path mappings eliminated!")
         
         return plex_server
             
