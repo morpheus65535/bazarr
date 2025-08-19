@@ -77,6 +77,10 @@ export function useSettingsMutation() {
       void client.invalidateQueries({
         queryKey: [QueryKeys.Badges],
       });
+
+      void client.invalidateQueries({
+        queryKey: [QueryKeys.Plex],
+      });
     },
   });
 }
