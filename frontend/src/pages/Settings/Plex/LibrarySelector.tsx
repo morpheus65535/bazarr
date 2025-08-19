@@ -22,8 +22,12 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   console.log(
     `[LibrarySelector-${libraryType}] Component render - value:`,
     value,
-    "props:",
-    { libraryType, label },
+    "settingKey:",
+    baseProps.settingKey,
+  );
+  console.log(
+    `[LibrarySelector-${libraryType}] Update function reference:`,
+    update.toString().slice(0, 50) + "...",
   );
 
   // Check if user is authenticated with OAuth
