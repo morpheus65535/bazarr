@@ -18,11 +18,25 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   const { libraryType, placeholder, description, label, ...baseProps } = props;
   const { value, update, rest } = useBaseInput(baseProps);
 
+  console.log(
+    `[LibrarySelector-${libraryType}] Component render - value:`,
+    value,
+    "props:",
+    { libraryType, label },
+  );
+
   // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = useMemo(() => {
-    return Boolean(authData?.valid && authData?.auth_method === "oauth");
-  }, [authData?.valid, authData?.auth_method]);
+    const result = Boolean(
+      authData?.valid && authData?.auth_method === "oauth",
+    );
+    console.log(
+      `[LibrarySelector-${libraryType}] Authentication check:`,
+      result,
+    );
+    return result;
+  }, [authData?.valid, authData?.auth_method, libraryType]);
 
   // Fetch libraries if authenticated
   const {
@@ -33,15 +47,28 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     enabled: isAuthenticated,
   });
 
+  console.log(`[LibrarySelector-${libraryType}] Libraries data:`, {
+    librariesCount: libraries.length,
+    isLoading,
+    hasError: !!error,
+    isAuthenticated,
+  });
+
   // Filter libraries by type and prepare select data
   const selectData = useMemo(() => {
+    console.log(
+      `[LibrarySelector-${libraryType}] Filtering libraries for type:`,
+      libraryType,
+    );
     const filtered = libraries.filter(
       (library) => library.type === libraryType,
     );
-    return filtered.map((library) => ({
+    const result = filtered.map((library) => ({
       value: library.title,
       label: `${library.title} (${library.count} items)`,
     }));
+    console.log(`[LibrarySelector-${libraryType}] SelectData result:`, result);
+    return result;
   }, [libraries, libraryType]);
 
   // If not authenticated, show message to use OAuth
@@ -115,9 +142,23 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
         description={description}
         value={value || ""}
         onChange={(newValue) => {
+          console.log(
+            `[LibrarySelector-${libraryType}] onChange called with:`,
+            newValue,
+            "current value:",
+            value,
+          );
           // Prevent deselection - if user clicks on already selected option, keep current value
           if (newValue !== null) {
+            console.log(
+              `[LibrarySelector-${libraryType}] Calling update with:`,
+              newValue,
+            );
             update(newValue);
+          } else {
+            console.log(
+              `[LibrarySelector-${libraryType}] Prevented null update`,
+            );
           }
         }}
         allowDeselect={false}
