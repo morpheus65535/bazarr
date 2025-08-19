@@ -20,14 +20,7 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   const { value, update, rest } = useBaseInput(baseProps);
 
   console.log(
-    `[LibrarySelector-${libraryType}] Component render - value:`,
-    value,
-    "settingKey:",
-    baseProps.settingKey,
-  );
-  console.log(
-    `[LibrarySelector-${libraryType}] Update function reference:`,
-    update.toString().slice(0, 50) + "...",
+    `[LibrarySelector-${libraryType}] RENDER START - value: "${value}" settingKey: ${baseProps.settingKey}`,
   );
 
   // Check if user is authenticated with OAuth
@@ -54,11 +47,6 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     isLoading,
     hasError: !!error,
     isAuthenticated,
-    libraries: libraries.map((lib) => ({
-      title: lib.title,
-      type: lib.type,
-      count: lib.count,
-    })),
   });
 
   // Filter libraries by type and prepare select data
