@@ -1,11 +1,10 @@
 /* eslint-disable no-console */
 import { FunctionComponent } from "react";
 import { Alert, Select, Stack, Text } from "@mantine/core";
-// Temporarily disabled for debugging
-// import {
-//   usePlexAuthValidationQuery,
-//   usePlexLibrariesQuery,
-// } from "@/apis/hooks/plex";
+import {
+  usePlexAuthValidationQuery,
+  usePlexLibrariesQuery,
+} from "@/apis/hooks/plex";
 import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
 import styles from "@/pages/Settings/Plex/LibrarySelector.module.scss";
 
@@ -19,6 +18,10 @@ export type LibrarySelectorProps = BaseInput<string> & {
 // Simple render tracking without forbidden hooks
 const renderCounts: { movie: number; show: number } = { movie: 0, show: 0 };
 const lastProps: { movie: unknown; show: unknown } = {
+  movie: null,
+  show: null,
+};
+const lastUpdateRefs: { movie: unknown; show: unknown } = {
   movie: null,
   show: null,
 };
@@ -37,35 +40,37 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   console.log(
     `[LibrarySelector-${libraryType}] RENDER #${renderCounts[libraryType]} - value: "${value}" settingKey: ${baseProps.settingKey} propsChanged: ${propsChanged}`,
   );
+
+  // Check if update function reference is changing
+  const updateRefChanged = lastUpdateRefs[libraryType] !== update;
+  lastUpdateRefs[libraryType] = update;
+
   console.log(
     `[LibrarySelector-${libraryType}] useBaseInput returns:`,
     "update function:",
     update.toString().slice(0, 80) + "...",
+    "updateRefChanged:",
+    updateRefChanged,
   );
 
-  // Check if user is authenticated with OAuth - TEMPORARILY DISABLED FOR DEBUGGING
-  // const { data: authData } = usePlexAuthValidationQuery();
-  // const isAuthenticated = Boolean(
-  //   authData?.valid && authData?.auth_method === "oauth",
-  // );
-  const isAuthenticated = false; // Hardcoded for debugging
+  // Check if user is authenticated with OAuth - RE-ENABLED FOR PRODUCTION
+  const { data: authData } = usePlexAuthValidationQuery();
+  const isAuthenticated = Boolean(
+    authData?.valid && authData?.auth_method === "oauth",
+  );
   console.log(
     `[LibrarySelector-${libraryType}] Authentication check:`,
     isAuthenticated,
   );
 
-  // Fetch libraries if authenticated - TEMPORARILY DISABLED FOR DEBUGGING
-  // const {
-  //   data: libraries = [],
-  //   isLoading,
-  //   error,
-  // } = usePlexLibrariesQuery({
-  //   enabled: isAuthenticated,
-  // });
-  const libraries: unknown[] = []; // Hardcoded for debugging
-  const isLoading = false;
-  const error = null;
-
+  // Fetch libraries if authenticated - RE-ENABLED FOR PRODUCTION
+  const {
+    data: libraries = [],
+    isLoading,
+    error,
+  } = usePlexLibrariesQuery({
+    enabled: isAuthenticated,
+  });
   console.log(`[LibrarySelector-${libraryType}] Libraries query result:`, {
     librariesCount: libraries.length,
     isLoading,
@@ -78,7 +83,11 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     `[LibrarySelector-${libraryType}] Filtering libraries for type:`,
     libraryType,
   );
-  const selectData: { value: string; label: string }[] = []; // Hardcoded empty for debugging
+  const filtered = libraries.filter((library) => library.type === libraryType);
+  const selectData = filtered.map((library) => ({
+    value: library.title,
+    label: `${library.title} (${library.count} items)`,
+  }));
   console.log(
     `[LibrarySelector-${libraryType}] SelectData result:`,
     selectData,
