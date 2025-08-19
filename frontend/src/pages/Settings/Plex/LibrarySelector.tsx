@@ -36,7 +36,7 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
       result,
     );
     return result;
-  }, [authData?.valid, authData?.auth_method, libraryType]);
+  }, [authData?.valid, authData?.auth_method]);
 
   // Fetch libraries if authenticated
   const {
@@ -47,11 +47,16 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     enabled: isAuthenticated,
   });
 
-  console.log(`[LibrarySelector-${libraryType}] Libraries data:`, {
+  console.log(`[LibrarySelector-${libraryType}] Libraries query result:`, {
     librariesCount: libraries.length,
     isLoading,
     hasError: !!error,
     isAuthenticated,
+    libraries: libraries.map((lib) => ({
+      title: lib.title,
+      type: lib.type,
+      count: lib.count,
+    })),
   });
 
   // Filter libraries by type and prepare select data
