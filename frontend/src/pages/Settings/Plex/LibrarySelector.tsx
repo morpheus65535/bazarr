@@ -15,12 +15,23 @@ export type LibrarySelectorProps = BaseInput<string> & {
   description?: string;
 };
 
+// Simple render tracking without forbidden hooks
+let renderCounts = { movie: 0, show: 0 };
+let lastProps: { movie: any; show: any } = { movie: null, show: null };
+
 const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   const { libraryType, placeholder, description, label, ...baseProps } = props;
   const { value, update, rest } = useBaseInput(baseProps);
 
+  // Track render count and prop changes
+  renderCounts[libraryType]++;
+  const currentProps = { value, ...baseProps };
+  const propsChanged =
+    JSON.stringify(lastProps[libraryType]) !== JSON.stringify(currentProps);
+  lastProps[libraryType] = currentProps;
+
   console.log(
-    `[LibrarySelector-${libraryType}] RENDER START - value: "${value}" settingKey: ${baseProps.settingKey}`,
+    `[LibrarySelector-${libraryType}] RENDER #${renderCounts[libraryType]} - value: "${value}" settingKey: ${baseProps.settingKey} propsChanged: ${propsChanged}`,
   );
 
   // Check if user is authenticated with OAuth
