@@ -17,24 +17,6 @@ from .security import (TokenManager, sanitize_log_data, pin_cache, get_or_create
 from app.config import settings, write_config
 
 
-@api_ns_plex.errorhandler(Exception)
-def handle_api_exception(error):
-    if hasattr(error, 'error_code') and hasattr(error, 'message'):
-        return {
-            'error': error.message,
-            'code': getattr(error, 'error_code', 'UNKNOWN_ERROR')
-        }, getattr(error, 'status_code', 500)
-    if isinstance(error, requests.exceptions.RequestException):
-        return {
-            'error': str(error),
-            'code': 'REQUEST_ERROR'
-        }, 502
-    return {
-        'error': str(error),
-        'code': 'UNKNOWN_ERROR'
-    }, 500
-
-
 def get_token_manager():
     # Check if encryption key exists before attempting to create one
     key_existed = bool(getattr(settings.plex, 'encryption_key', None))
@@ -57,8 +39,8 @@ def decrypt_token(encrypted_token):
     try:
         return get_token_manager().decrypt(encrypted_token)
     except Exception as e:
-        logging.error(f"Token decryption failed: {type(e).__name__}")
-        raise InvalidTokenError("Failed to decrypt token")
+        logging.error(f"Token decryption failed: {type(e).__name__}: {str(e)}")
+        raise InvalidTokenError("Failed to decrypt stored authentication token. The token may be corrupted or the encryption key may have changed. Please re-authenticate with Plex.")
 
 
 def generate_client_id():
@@ -89,7 +71,7 @@ def get_decrypted_token():
 
 def validate_plex_token(token):
     if not token:
-        raise InvalidTokenError("Empty token")
+        raise InvalidTokenError("No authentication token provided. Please authenticate with Plex first.")
 
     try:
         headers = {
@@ -102,17 +84,27 @@ def validate_plex_token(token):
             timeout=10
         )
         if response.status_code == 401:
-            raise InvalidTokenError("Token rejected by Plex")
+            raise InvalidTokenError("Plex server rejected the authentication token. Token may be invalid or expired.")
+        elif response.status_code == 403:
+            raise UnauthorizedError("Access forbidden. Your Plex account may not have sufficient permissions.")
+        elif response.status_code == 404:
+            raise PlexConnectionError("Plex user API endpoint not found. Please check your Plex server version.")
         response.raise_for_status()
         return response.json()
+    except requests.exceptions.ConnectionError as e:
+        logging.error(f"Connection to Plex.tv failed: {str(e)}")
+        raise PlexConnectionError("Unable to connect to Plex.tv servers. Please check your internet connection.")
+    except requests.exceptions.Timeout as e:
+        logging.error(f"Plex.tv request timed out: {str(e)}")
+        raise PlexConnectionError("Request to Plex.tv timed out. Please try again later.")
     except requests.exceptions.RequestException as e:
-        logging.error(f"Plex token validation failed: {type(e).__name__}")
-        raise PlexConnectionError(f"Failed to validate token: {str(e)}")
+        logging.error(f"Plex token validation failed: {type(e).__name__}: {str(e)}")
+        raise PlexConnectionError(f"Failed to validate token with Plex.tv: {str(e)}")
 
 
 def refresh_token(token):
     if not token:
-        raise InvalidTokenError("Empty token")
+        raise InvalidTokenError("No authentication token provided for refresh.")
 
     try:
         headers = {
@@ -127,14 +119,22 @@ def refresh_token(token):
         )
 
         if response.status_code == 401:
-            raise TokenExpiredError("Token expired")
+            raise TokenExpiredError("Plex authentication token has expired and cannot be refreshed.")
+        elif response.status_code == 403:
+            raise UnauthorizedError("Access forbidden during token refresh. Your Plex account may not have sufficient permissions.")
 
         response.raise_for_status()
         return token
 
+    except requests.exceptions.ConnectionError as e:
+        logging.error(f"Connection to Plex.tv failed during token refresh: {str(e)}")
+        raise PlexConnectionError("Unable to connect to Plex.tv servers for token refresh. Please check your internet connection.")
+    except requests.exceptions.Timeout as e:
+        logging.error(f"Plex.tv token refresh timed out: {str(e)}")
+        raise PlexConnectionError("Token refresh request to Plex.tv timed out. Please try again later.")
     except requests.exceptions.RequestException as e:
-        logging.error(f"Plex token refresh failed: {type(e).__name__}")
-        raise PlexConnectionError(f"Failed to refresh token: {str(e)}")
+        logging.error(f"Plex token refresh failed: {type(e).__name__}: {str(e)}")
+        raise PlexConnectionError(f"Failed to refresh token with Plex.tv: {str(e)}")
 
 
 def test_plex_connection(uri, token):
@@ -221,7 +221,10 @@ class PlexPin(Resource):
 
         except requests.exceptions.RequestException as e:
             logging.error(f"Failed to create PIN: {type(e).__name__}")
-            raise PlexConnectionError(f"Failed to create PIN: {str(e)}")
+            return {
+                'error': f"Failed to create PIN: {str(e)}",
+                'code': 'PLEX_CONNECTION_ERROR'
+            }, 503
 
     def get(self):
         abort(405, "Method not allowed. Use POST.")
@@ -303,7 +306,10 @@ class PlexPinCheck(Resource):
                     settings.plex.user_id = ""
                     settings.plex.auth_method = 'apikey'
 
-                    raise PlexConnectionError("Failed to save authentication settings")
+                    return {
+                        'error': 'Failed to save authentication settings',
+                        'code': 'CONFIG_SAVE_ERROR'
+                    }, 500
 
             return {
                 'data': {
@@ -314,7 +320,10 @@ class PlexPinCheck(Resource):
 
         except requests.exceptions.RequestException as e:
             logging.error(f"Failed to check PIN: {type(e).__name__}")
-            raise PlexConnectionError(f"Failed to check PIN: {str(e)}")
+            return {
+                'error': f"Failed to check PIN: {str(e)}",
+                'code': 'PLEX_CONNECTION_ERROR'
+            }, 503
 
 
 @api_ns_plex.route('plex/oauth/validate')
@@ -569,7 +578,10 @@ class PlexTestConnection(Resource):
 
         decrypted_token = get_decrypted_token()
         if not decrypted_token:
-            raise UnauthorizedError()
+            return {
+                'error': 'No authentication token available',
+                'code': 'UNAUTHORIZED'
+            }, 401
 
         try:
             headers = {
