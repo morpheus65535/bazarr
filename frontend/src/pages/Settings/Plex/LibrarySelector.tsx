@@ -4,7 +4,6 @@ import {
   usePlexAuthValidationQuery,
   usePlexLibrariesQuery,
 } from "@/apis/hooks/plex";
-import { Text as SettingsText } from "@/pages/Settings/components";
 import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
 import styles from "@/pages/Settings/Plex/LibrarySelector.module.scss";
 
@@ -13,7 +12,6 @@ export type LibrarySelectorProps = BaseInput<string> & {
   libraryType: "movie" | "show";
   placeholder?: string;
   description?: string;
-  pathSettingKey?: string;
 };
 
 const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
@@ -22,7 +20,6 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     placeholder,
     description,
     label,
-    pathSettingKey,
     ...baseProps
   } = props;
   const { value, update, rest } = useBaseInput(baseProps);
@@ -42,10 +39,8 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     enabled: isAuthenticated,
   });
 
-  // Filter libraries by type and get selected library paths
+  // Filter libraries by type
   const filtered = libraries.filter((library) => library.type === libraryType);
-  const selectedLibrary = filtered.find((library) => library.title === value);
-  const selectedPaths = selectedLibrary?.locations || [];
 
   const selectData = filtered.map((library) => ({
     value: library.title,
@@ -118,17 +113,6 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
         allowDeselect={false}
         className={styles.selectField}
       />
-
-      {pathSettingKey && selectedPaths.length > 0 && (
-        <SettingsText
-          label="Local Library Path"
-          settingKey={pathSettingKey}
-          settingOptions={{
-            onLoaded: () => selectedPaths[0] || "",
-          }}
-          description="Local file system path where Bazarr can access your media files"
-        />
-      )}
     </div>
   );
 };
