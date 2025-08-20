@@ -6,9 +6,6 @@ from plexapi.server import PlexServer
 
 logger = logging.getLogger(__name__)
 
-# Constants
-DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-
 
 def get_plex_server() -> PlexServer:
     """Connect to the Plex server and return the server instance."""
@@ -96,8 +93,7 @@ def plex_set_movie_added_date_now(movie_metadata) -> None:
         plex = get_plex_server()
         library = plex.library.section(settings.plex.movie_library)
         video = library.getGuid(guid=movie_metadata.imdbId)
-        current_date = datetime.now().strftime(DATETIME_FORMAT)
-        update_added_date(video, current_date)
+        update_added_date(video, datetime.now().isoformat())
     except Exception as e:
         logger.error(f"Error in plex_set_movie_added_date_now: {e}")
 
@@ -113,8 +109,7 @@ def plex_set_episode_added_date_now(episode_metadata) -> None:
         library = plex.library.section(settings.plex.series_library)
         show = library.getGuid(episode_metadata.imdbId)
         episode = show.episode(season=episode_metadata.season, episode=episode_metadata.episode)
-        current_date = datetime.now().strftime(DATETIME_FORMAT)
-        update_added_date(episode, current_date)
+        update_added_date(episode, datetime.now().isoformat())
     except Exception as e:
         logger.error(f"Error in plex_set_episode_added_date_now: {e}")
 

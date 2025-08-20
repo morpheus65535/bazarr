@@ -1032,7 +1032,7 @@ def migrate_apikey_to_oauth():
             'port': settings.plex.get('port', 32400),
             'ssl': settings.plex.get('ssl', False),
             'migration_attempted': True,
-            'migration_timestamp': datetime.now().strftime('%Y%m%d_%H%M%S') + '_backup'
+            'migration_timestamp': datetime.now().isoformat() + '_backup'
         }
         
         # Mark that migration was attempted (prevents retry loops)
@@ -1296,9 +1296,8 @@ def migrate_apikey_to_oauth():
         # Mark migration as successful and disable auto-migration
         settings.plex.migration_successful = True
         # Create human-readable timestamp: YYYYMMDD_HHMMSS_randomstring
-        datetime_str = datetime.now().strftime('%Y%m%d_%H%M%S')
         random_suffix = secrets.token_hex(4)  # 8 character random string
-        settings.plex.migration_timestamp = f"{datetime_str}_{random_suffix}"
+        settings.plex.migration_timestamp = f"{datetime.now().isoformat()}_{random_suffix}"
         settings.plex.disable_auto_migration = True
         
         # Clean up legacy manual configuration fields (no longer needed with OAuth)

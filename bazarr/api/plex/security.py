@@ -25,11 +25,10 @@ class TokenManager:
             return None
         
         salt = secrets.token_hex(16)
-        timestamp = int(time.time())
         payload = {
             'token': token,
             'salt': salt, 
-            'timestamp': timestamp
+            'timestamp': int(time.time())
         }
         return self.serializer.dumps(payload)
     

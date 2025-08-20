@@ -15,13 +15,7 @@ export type LibrarySelectorProps = BaseInput<string> & {
 };
 
 const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
-  const {
-    libraryType,
-    placeholder,
-    description,
-    label,
-    ...baseProps
-  } = props;
+  const { libraryType, placeholder, description, label, ...baseProps } = props;
   const { value, update, rest } = useBaseInput(baseProps);
 
   // Check if user is authenticated with OAuth
