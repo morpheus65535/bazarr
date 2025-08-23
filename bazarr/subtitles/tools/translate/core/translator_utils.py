@@ -56,15 +56,17 @@ def create_process_result(message, video_path, orig_to_lang, forced, hi, dest_sr
     """Create a ProcessSubtitlesResult object with common parameters."""
     if media_type == 'series':
         prr = path_mappings.path_replace_reverse
+        score = int((settings.translator.default_score / 100) * 360)
     else:
         prr = path_mappings.path_replace_reverse_movie
+        score = int((settings.translator.default_score / 100) * 120)
 
     return ProcessSubtitlesResult(
         message=message,
         reversed_path=prr(video_path),
         downloaded_language_code2=orig_to_lang,
         downloaded_provider=None,
-        score=settings.translator.default_score,
+        score=score,
         forced=forced,
         subtitle_id=None,
         reversed_subtitles_path=prr(dest_srt_file),
