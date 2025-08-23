@@ -156,7 +156,7 @@ const ServerSection = () => {
           // Single server - show simplified interface
           <Stack gap="md">
             <Group justify="space-between" align="center">
-              <Stack gap="xs" style={{ flex: 1 }}>
+              <Stack gap="xs" className={styles.flexContainer}>
                 <Group gap="xs">
                   <Text>
                     {servers[0].name} ({servers[0].platform} - v

@@ -144,3 +144,46 @@ export const usePlexLibrariesQuery = <TData = Plex.Library[]>(
     ...options,
   });
 };
+
+export const usePlexWebhookCreateMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => api.plex.createWebhook(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: [QueryKeys.Plex, "webhooks"],
+      });
+    },
+  });
+};
+
+export const usePlexWebhookListQuery = <TData = Plex.WebhookList>(
+  options?: Partial<
+    UseQueryOptions<Plex.WebhookList, Error, TData, (string | boolean)[]>
+  > & { enabled?: boolean },
+) => {
+  const enabled = options?.enabled ?? true;
+
+  return useQuery({
+    queryKey: [QueryKeys.Plex, "webhooks"],
+    queryFn: () => api.plex.listWebhooks(),
+    enabled,
+    staleTime: 1000 * 60 * 2, // Cache for 2 minutes
+    refetchOnWindowFocus: false,
+    ...options,
+  });
+};
+
+export const usePlexWebhookDeleteMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (webhookUrl: string) => api.plex.deleteWebhook(webhookUrl),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: [QueryKeys.Plex, "webhooks"],
+      });
+    },
+  });
+};

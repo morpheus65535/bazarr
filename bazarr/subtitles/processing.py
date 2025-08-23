@@ -11,7 +11,7 @@ from app.database import TableShows, TableEpisodes, TableMovies, database, selec
 from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
-from plex.operations import plex_set_movie_added_date_now, plex_update_library, plex_set_episode_added_date_now
+from plex.operations import plex_set_movie_added_date_now, plex_update_library, plex_set_episode_added_date_now, plex_refresh_item
 from app.event_handler import event_stream
 
 from .utils import _get_download_code3
@@ -145,7 +145,9 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                      payload=episode_metadata.sonarrEpisodeId)
         if settings.general.use_plex is True:
             if settings.plex.update_series_library is True:
-                plex_update_library(is_movie_library=False)
+                # Use specific item refresh instead of full library scan
+                plex_refresh_item(episode_metadata.imdbId, is_movie=False, 
+                                season=episode_metadata.season, episode=episode_metadata.episode)
             if settings.plex.set_episode_added is True:
                 plex_set_episode_added_date_now(episode_metadata)
 
@@ -158,7 +160,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             if settings.plex.set_movie_added is True:
                 plex_set_movie_added_date_now(movie_metadata)
             if settings.plex.update_movie_library is True:
-                plex_update_library(is_movie_library=True)
+                # Use specific item refresh instead of full library scan
+                plex_refresh_item(movie_metadata.imdbId, is_movie=True)
 
     event_tracker.track_subtitles(provider=downloaded_provider, action=action, language=downloaded_language)
 

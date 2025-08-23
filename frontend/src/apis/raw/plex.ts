@@ -58,6 +58,30 @@ class NewPlexApi extends BaseApi {
 
     return response.data;
   }
+
+  async createWebhook() {
+    const response =
+      await this.post<DataWrapper<Plex.WebhookResult>>("/webhook/create");
+
+    return response.data;
+  }
+
+  async listWebhooks() {
+    const response =
+      await this.get<DataWrapper<Plex.WebhookList>>("/webhook/list");
+
+    return response.data;
+  }
+
+  async deleteWebhook(webhookUrl: string) {
+    const response = await this.post<DataWrapper<Plex.WebhookResult>>(
+      "/webhook/delete",
+      // eslint-disable-next-line camelcase
+      { webhook_url: webhookUrl },
+    );
+
+    return response.data;
+  }
 }
 
 export default new NewPlexApi();

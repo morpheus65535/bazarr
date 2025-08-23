@@ -8,6 +8,7 @@ import {
 import { plexEnabledKey } from "@/pages/Settings/keys";
 import LibrarySelector from "./LibrarySelector";
 import PlexSettings from "./PlexSettings";
+import WebhookSelector from "./WebhookSelector";
 
 const SettingsPlexView = () => {
   return (
@@ -37,7 +38,7 @@ const SettingsPlexView = () => {
             settingKey="settings-plex-set_movie_added"
           />
           <Check
-            label="Update movie library after downloading subtitles"
+            label="Refresh movie metadata after downloading subtitles (recommended)"
             settingKey="settings-plex-update_movie_library"
           />
         </Section>
@@ -55,8 +56,15 @@ const SettingsPlexView = () => {
             settingKey="settings-plex-set_episode_added"
           />
           <Check
-            label="Update series library after downloading subtitles"
+            label="Refresh series metadata after downloading subtitles (recommended)"
             settingKey="settings-plex-update_series_library"
+          />
+        </Section>
+
+        <Section header="Automation">
+          <WebhookSelector
+            label="Webhooks"
+            description="Create a Bazarr webhook in Plex to automatically search for subtitles when content starts playing. Manage and remove existing webhooks for convenience."
           />
         </Section>
       </CollapseBox>

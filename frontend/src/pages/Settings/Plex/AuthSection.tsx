@@ -93,7 +93,7 @@ const AuthSection = () => {
     return (
       <Paper withBorder radius="md" p="lg" className={styles.authSection}>
         <Stack gap="md">
-          <Title order={4}>Plex OAuth (recommended)</Title>
+          <Title order={4}>Plex OAuth</Title>
           <Stack gap="sm">
             <Text size="lg" fw={600}>
               Complete Authentication
@@ -126,7 +126,7 @@ const AuthSection = () => {
     return (
       <Paper withBorder radius="md" p="lg" className={styles.authSection}>
         <Stack gap="md">
-          <Title order={4}>Plex OAuth (recommended)</Title>
+          <Title order={4}>Plex OAuth</Title>
           <Stack gap="sm">
             <Text size="sm">
               Connect your Plex account to enable secure, automated integration
@@ -160,8 +160,8 @@ const AuthSection = () => {
   return (
     <Paper withBorder radius="md" p="lg" className={styles.authSection}>
       <Stack gap="md">
-        <Title order={4}>Plex OAuth (recommended)</Title>
-        <Alert color="brand" variant="light">
+        <Title order={4}>Plex OAuth</Title>
+        <Alert color="brand" variant="light" className={styles.authAlert}>
           Connected as {authData?.username} ({authData?.email})
         </Alert>
         <Button

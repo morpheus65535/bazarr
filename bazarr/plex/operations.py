@@ -128,3 +128,36 @@ def plex_update_library(is_movie_library: bool) -> None:
         logger.info(f"Triggered update for library: {library_name}")
     except Exception as e:
         logger.error(f"Error in plex_update_library: {e}")
+
+
+def plex_refresh_item(imdb_id: str, is_movie: bool, season: int = None, episode: int = None) -> None:
+    """
+    Refresh a specific item in Plex instead of scanning the entire library.
+    This is much more efficient than a full library scan when subtitles are added.
+
+    :param imdb_id: IMDB ID of the content
+    :param is_movie: True for movie, False for TV episode
+    :param season: Season number for TV episodes
+    :param episode: Episode number for TV episodes
+    """
+    try:
+        plex = get_plex_server()
+        library_name = settings.plex.movie_library if is_movie else settings.plex.series_library
+        library = plex.library.section(library_name)
+        
+        if is_movie:
+            # Refresh specific movie
+            item = library.getGuid(f"imdb://{imdb_id}")
+            item.refresh()
+            logger.info(f"Refreshed movie: {item.title} (IMDB: {imdb_id})")
+        else:
+            # Refresh specific episode
+            show = library.getGuid(f"imdb://{imdb_id}")
+            episode_item = show.episode(season=season, episode=episode)
+            episode_item.refresh()
+            logger.info(f"Refreshed episode: {show.title} S{season:02d}E{episode:02d} (IMDB: {imdb_id})")
+            
+    except Exception as e:
+        logger.warning(f"Failed to refresh specific item (IMDB: {imdb_id}), falling back to library update: {e}")
+        # Fallback to full library update if specific refresh fails
+        plex_update_library(is_movie)

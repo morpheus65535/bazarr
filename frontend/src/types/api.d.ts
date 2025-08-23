@@ -319,6 +319,22 @@ declare namespace Plex {
     updatedAt: number;
     createdAt: number;
   }
+
+  interface WebhookResult {
+    success: boolean;
+    message: string;
+    webhook_url?: string;
+    total_webhooks?: number;
+  }
+
+  interface WebhookInfo {
+    url: string;
+  }
+
+  interface WebhookList {
+    webhooks: WebhookInfo[];
+    count: number;
+  }
 }
 
 interface SearchResultType {

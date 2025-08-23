@@ -12,15 +12,22 @@
 }
 
 .serverSelectGroup {
-  align-items: flex-end;
-  gap: var(--mantine-spacing-md);
+  margin-bottom: 1rem; /* 16px */
 }
 
 .serverSelectField {
-  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* 12px */
 }
 
 .refreshButton {
   min-width: 2.75rem;
   height: 2.25rem;
+}
+
+.flexContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* 12px */
 }
