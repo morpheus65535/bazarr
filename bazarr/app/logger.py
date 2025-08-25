@@ -173,6 +173,7 @@ def configure_logging(debug=False):
     logging.getLogger("guessit").setLevel(logging.WARNING)
     logging.getLogger("rebulk").setLevel(logging.WARNING)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
+    logging.getLogger("plexapi").setLevel(logging.ERROR)
 
 def empty_file(filename):
     # Open the log file in write mode to clear its contents

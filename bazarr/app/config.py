@@ -505,7 +505,7 @@ while failed_validator:
         if hasattr(current_validator_details, 'default') and current_validator_details.default is not empty:
             old_value = settings.get(current_validator_details.names[0], 'undefined')
             settings[current_validator_details.names[0]] = current_validator_details.default
-            logging.info(f"VALIDATOR RESET: {current_validator_details.names[0]} from '{old_value}' to '{current_validator_details.default}'")
+            logging.warning(f"VALIDATOR RESET: {current_validator_details.names[0]} from '{old_value}' to '{current_validator_details.default}'")
         else:
             logging.critical(f"Value for {current_validator_details.names[0]} doesn't pass validation and there's no "
                              f"default value. This issue must be reported to and fixed by the development team. "
@@ -979,11 +979,11 @@ def migrate_plex_config():
     # Generate encryption key if not exists or is empty
     existing_key = settings.plex.get('encryption_key')
     if not existing_key or existing_key.strip() == "":
-        logging.info("Generating new encryption key for Plex token storage")
+        logging.debug("Generating new encryption key for Plex token storage")
         key = secrets.token_urlsafe(32)
         settings.plex.encryption_key = key
         write_config()
-        logging.info("Plex encryption key generated")
+        logging.debug("Plex encryption key generated")
     
     # Check if user needs seamless migration from API key to OAuth
     migrate_apikey_to_oauth()

@@ -680,7 +680,7 @@ class PlexApiKey(Resource):
 
             write_config()
 
-            logging.info("API key saved and encrypted")
+            logging.debug("API key saved and encrypted")
             return {'success': True, 'message': 'API key saved securely'}
 
         except Exception as e:

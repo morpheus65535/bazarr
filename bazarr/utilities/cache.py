@@ -14,7 +14,7 @@ def cache_maintenance():
     main_cache_validity = 14  # days
     pack_cache_validity = 4  # days
 
-    logging.info("BAZARR Running cache maintenance")
+    logging.debug("BAZARR Running cache maintenance")
     now = datetime.datetime.now()
 
     def remove_expired(path, expiry):
