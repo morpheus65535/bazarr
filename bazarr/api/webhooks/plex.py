@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup as bso
 
 from app.database import TableEpisodes, TableShows, TableMovies, database, select
 from subtitles.mass_download import episode_download_subtitles, movies_download_subtitles
+from app.logger import logger
 
 from ..utils import authenticate
 
@@ -36,7 +37,7 @@ class WebHooksPlex(Resource):
         json_webhook = args.get('payload')
         parsed_json_webhook = json.loads(json_webhook)
         if 'Guid' not in parsed_json_webhook['Metadata']:
-            logging.debug('No GUID provided in Plex json payload. Probably a pre-roll video.')
+            logger.debug('No GUID provided in Plex json payload. Probably a pre-roll video.')
             return "No GUID found in JSON request body", 200
 
         event = parsed_json_webhook['event']
@@ -70,7 +71,7 @@ class WebHooksPlex(Resource):
                 show_metadata_dict = json.loads(script_tag_json)
                 series_imdb_id = show_metadata_dict['props']['pageProps']['aboveTheFoldData']['series']['series']['id']
             except Exception:
-                logging.debug('BAZARR is unable to get series IMDB id.')
+                logger.debug('BAZARR is unable to get series IMDB id.')
                 return 'IMDB series ID not found', 404
             else:
                 sonarrEpisodeId = database.execute(
@@ -88,7 +89,7 @@ class WebHooksPlex(Resource):
             try:
                 movie_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]
             except Exception:
-                logging.debug('BAZARR is unable to get movie IMDB id.')
+                logger.debug('BAZARR is unable to get movie IMDB id.')
                 return 'IMDB movie ID not found', 404
             else:
                 radarrId = database.execute(

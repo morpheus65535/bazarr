@@ -15,6 +15,7 @@ from .exceptions import *
 from .security import (TokenManager, sanitize_log_data, pin_cache, get_or_create_encryption_key, sanitize_server_url,
                        encrypt_api_key)
 from app.config import settings, write_config
+from app.logger import logger
 
 
 def get_token_manager():
@@ -39,7 +40,7 @@ def decrypt_token(encrypted_token):
     try:
         return get_token_manager().decrypt(encrypted_token)
     except Exception as e:
-        logging.error(f"Token decryption failed: {type(e).__name__}: {str(e)}")
+        logger.error(f"Token decryption failed: {type(e).__name__}: {str(e)}")
         raise InvalidTokenError("Failed to decrypt stored authentication token. The token may be corrupted or the encryption key may have changed. Please re-authenticate with Plex.")
 
 
@@ -92,13 +93,13 @@ def validate_plex_token(token):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.ConnectionError as e:
-        logging.error(f"Connection to Plex.tv failed: {str(e)}")
+        logger.error(f"Connection to Plex.tv failed: {str(e)}")
         raise PlexConnectionError("Unable to connect to Plex.tv servers. Please check your internet connection.")
     except requests.exceptions.Timeout as e:
-        logging.error(f"Plex.tv request timed out: {str(e)}")
+        logger.error(f"Plex.tv request timed out: {str(e)}")
         raise PlexConnectionError("Request to Plex.tv timed out. Please try again later.")
     except requests.exceptions.RequestException as e:
-        logging.error(f"Plex token validation failed: {type(e).__name__}: {str(e)}")
+        logger.error(f"Plex token validation failed: {type(e).__name__}: {str(e)}")
         raise PlexConnectionError(f"Failed to validate token with Plex.tv: {str(e)}")
 
 
@@ -127,13 +128,13 @@ def refresh_token(token):
         return token
 
     except requests.exceptions.ConnectionError as e:
-        logging.error(f"Connection to Plex.tv failed during token refresh: {str(e)}")
+        logger.error(f"Connection to Plex.tv failed during token refresh: {str(e)}")
         raise PlexConnectionError("Unable to connect to Plex.tv servers for token refresh. Please check your internet connection.")
     except requests.exceptions.Timeout as e:
-        logging.error(f"Plex.tv token refresh timed out: {str(e)}")
+        logger.error(f"Plex.tv token refresh timed out: {str(e)}")
         raise PlexConnectionError("Token refresh request to Plex.tv timed out. Please try again later.")
     except requests.exceptions.RequestException as e:
-        logging.error(f"Plex token refresh failed: {type(e).__name__}: {str(e)}")
+        logger.error(f"Plex token refresh failed: {type(e).__name__}: {str(e)}")
         raise PlexConnectionError(f"Failed to refresh token with Plex.tv: {str(e)}")
 
 
@@ -163,7 +164,7 @@ def test_plex_connection(uri, token):
         else:
             return False, None
     except Exception as e:
-        logging.debug(f"Plex connection test failed for {sanitize_log_data(uri)}: {type(e).__name__}")
+        logger.debug(f"Plex connection test failed for {sanitize_log_data(uri)}: {type(e).__name__}")
         return False, None
 
 
@@ -220,7 +221,7 @@ class PlexPin(Resource):
             }
 
         except requests.exceptions.RequestException as e:
-            logging.error(f"Failed to create PIN: {type(e).__name__}")
+            logger.error(f"Failed to create PIN: {type(e).__name__}")
             return {
                 'error': f"Failed to create PIN: {str(e)}",
                 'code': 'PLEX_CONNECTION_ERROR'
@@ -243,7 +244,7 @@ class PlexPinCheck(Resource):
             if state_param:
                 stored_state = cached_pin.get('state_token')
                 if not stored_state or not get_token_manager().validate_state_token(state_param, stored_state):
-                    logging.warning(f"CSRF state validation failed for PIN {pin_id}")
+                    logger.warning(f"CSRF state validation failed for PIN {pin_id}")
 
             headers = {
                 'Accept': 'application/json',
@@ -287,7 +288,7 @@ class PlexPinCheck(Resource):
                     write_config()
                     pin_cache.delete(pin_id)
 
-                    logging.info(
+                    logger.info(
                         f"OAuth authentication successful for user: {sanitize_log_data(user_data.get('username', ''))}")
 
                     return {
@@ -298,7 +299,7 @@ class PlexPinCheck(Resource):
                         }
                     }
                 except Exception as config_error:
-                    logging.error(f"Failed to save OAuth settings: {config_error}")
+                    logger.error(f"Failed to save OAuth settings: {config_error}")
 
                     settings.plex.token = ""
                     settings.plex.username = ""
@@ -319,7 +320,7 @@ class PlexPinCheck(Resource):
             }
 
         except requests.exceptions.RequestException as e:
-            logging.error(f"Failed to check PIN: {type(e).__name__}")
+            logger.error(f"Failed to check PIN: {type(e).__name__}")
             return {
                 'error': f"Failed to check PIN: {str(e)}",
                 'code': 'PLEX_CONNECTION_ERROR'
@@ -382,10 +383,10 @@ class PlexServers(Resource):
             )
 
             if response.status_code in (401, 403):
-                logging.warning(f"Plex authentication failed: {response.status_code}")
+                logger.warning(f"Plex authentication failed: {response.status_code}")
                 return {'data': []}
             elif response.status_code != 200:
-                logging.error(f"Plex API error: {response.status_code}")
+                logger.error(f"Plex API error: {response.status_code}")
                 raise PlexConnectionError(f"Failed to get servers: HTTP {response.status_code}")
 
             response.raise_for_status()
@@ -460,7 +461,7 @@ class PlexServers(Resource):
                                     if result:
                                         connections.append(result)
                                 except Exception as e:
-                                    logging.debug(f"Connection test failed: {e}")
+                                    logger.debug(f"Connection test failed: {e}")
 
                     if connections:
                         # Sort connections by latency to find the best one
@@ -480,10 +481,10 @@ class PlexServers(Resource):
             return {'data': servers}
 
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Failed to connect to Plex: {type(e).__name__}: {str(e)}")
+            logger.warning(f"Failed to connect to Plex: {type(e).__name__}: {str(e)}")
             return {'data': []}
         except Exception as e:
-            logging.warning(f"Unexpected error getting Plex servers: {type(e).__name__}: {str(e)}")
+            logger.warning(f"Unexpected error getting Plex servers: {type(e).__name__}: {str(e)}")
             return {'data': []}
 
 
@@ -493,16 +494,16 @@ class PlexLibraries(Resource):
         try:
             decrypted_token = get_decrypted_token()
             if not decrypted_token:
-                logging.warning("No decrypted token available for Plex library fetching")
+                logger.warning("No decrypted token available for Plex library fetching")
                 return {'data': []}
 
             # Get the selected server URL
             server_url = settings.plex.get('server_url')
             if not server_url:
-                logging.warning("No Plex server selected")
+                logger.warning("No Plex server selected")
                 return {'data': []}
 
-            logging.info(f"Fetching Plex libraries from server: {server_url}")
+            logger.info(f"Fetching Plex libraries from server: {server_url}")
             
             headers = {
                 'X-Plex-Token': decrypted_token,
@@ -518,21 +519,21 @@ class PlexLibraries(Resource):
             )
 
             if response.status_code in (401, 403):
-                logging.warning(f"Plex authentication failed: {response.status_code}")
+                logger.warning(f"Plex authentication failed: {response.status_code}")
                 return {'data': []}
             elif response.status_code != 200:
-                logging.error(f"Plex API error: {response.status_code}")
+                logger.error(f"Plex API error: {response.status_code}")
                 raise PlexConnectionError(f"Failed to get libraries: HTTP {response.status_code}")
 
             response.raise_for_status()
             
             # Parse the response - it could be JSON or XML depending on the server
             content_type = response.headers.get('content-type', '')
-            logging.debug(f"Plex libraries response content-type: {content_type}")
+            logger.debug(f"Plex libraries response content-type: {content_type}")
             
             if 'application/json' in content_type:
                 data = response.json()
-                logging.debug(f"Plex libraries JSON response: {data}")
+                logger.debug(f"Plex libraries JSON response: {data}")
                 if 'MediaContainer' in data and 'Directory' in data['MediaContainer']:
                     sections = data['MediaContainer']['Directory']
                 else:
@@ -579,10 +580,10 @@ class PlexLibraries(Resource):
                                 # The 'size' field contains the number of items in the library
                                 actual_count = int(container.get('size', len(container.get('Metadata', []))))
                         
-                        logging.info(f"Library '{section.get('title')}' has {actual_count} items")
+                        logger.info(f"Library '{section.get('title')}' has {actual_count} items")
                         
                     except Exception as e:
-                        logging.warning(f"Failed to get count for library {section.get('title')}: {e}")
+                        logger.warning(f"Failed to get count for library {section.get('title')}: {e}")
                         actual_count = 0
 
                     libraries.append({
@@ -598,14 +599,14 @@ class PlexLibraries(Resource):
                         'createdAt': int(section.get('createdAt', 0))
                     })
 
-            logging.debug(f"Filtered Plex libraries: {libraries}")
+            logger.debug(f"Filtered Plex libraries: {libraries}")
             return {'data': libraries}
 
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Failed to connect to Plex server: {type(e).__name__}: {str(e)}")
+            logger.warning(f"Failed to connect to Plex server: {type(e).__name__}: {str(e)}")
             return {'data': []}
         except Exception as e:
-            logging.warning(f"Unexpected error getting Plex libraries: {type(e).__name__}: {str(e)}")
+            logger.warning(f"Unexpected error getting Plex libraries: {type(e).__name__}: {str(e)}")
             return {'data': []}
 
 
@@ -637,7 +638,7 @@ class PlexLogout(Resource):
 
             return {'success': True}
         except Exception as e:
-            logging.error(f"Logout failed: {e}")
+            logger.error(f"Logout failed: {e}")
             return {'error': 'Failed to logout'}, 500
 
 
@@ -654,7 +655,7 @@ class PlexEncryptApiKey(Resource):
                 return {'success': False, 'message': 'No plain text API key found or already encrypted'}
 
         except Exception as e:
-            logging.error(f"API key encryption failed: {e}")
+            logger.error(f"API key encryption failed: {e}")
             return {'error': 'Failed to encrypt API key'}, 500
 
 
@@ -680,11 +681,11 @@ class PlexApiKey(Resource):
 
             write_config()
 
-            logging.debug("API key saved and encrypted")
+            logger.debug("API key saved and encrypted")
             return {'success': True, 'message': 'API key saved securely'}
 
         except Exception as e:
-            logging.error(f"Failed to save API key: {e}")
+            logger.error(f"Failed to save API key: {e}")
             return {'error': 'Failed to save API key'}, 500
 
 
@@ -809,19 +810,19 @@ class PlexWebhookCreate(Resource):
             # Get the API key for webhook authentication
             apikey = getattr(settings.auth, 'apikey', '')
             if not apikey:
-                logging.error("No API key configured - cannot create webhook")
+                logger.error("No API key configured - cannot create webhook")
                 return {'error': 'No API key configured. Set up API key in Settings > General first.'}, 400
             
             if configured_base_url:
                 webhook_url = f"{configured_base_url}/api/webhooks/plex?apikey={apikey}"
-                logging.info(f"Using configured base URL for webhook: {configured_base_url}/api/webhooks/plex")
+                logger.info(f"Using configured base URL for webhook: {configured_base_url}/api/webhooks/plex")
             else:
                 # Fall back to using the current request's host
                 scheme = 'https' if request.is_secure else 'http'
                 host = request.host
                 webhook_url = f"{scheme}://{host}/api/webhooks/plex?apikey={apikey}"
-                logging.info(f"Using request host for webhook (no base URL configured): {scheme}://{host}/api/webhooks/plex")
-                logging.info("Note: If Bazarr is behind a reverse proxy, configure Base URL in General Settings for better reliability")
+                logger.info(f"Using request host for webhook (no base URL configured): {scheme}://{host}/api/webhooks/plex")
+                logger.info("Note: If Bazarr is behind a reverse proxy, configure Base URL in General Settings for better reliability")
             
             # Get existing webhooks
             existing_webhooks = account.webhooks()
@@ -836,7 +837,7 @@ class PlexWebhookCreate(Resource):
                     elif isinstance(webhook, dict) and 'url' in webhook:
                         existing_urls.append(webhook['url'])
                 except Exception as e:
-                    logging.warning(f"Failed to process existing webhook {webhook}: {e}")
+                    logger.warning(f"Failed to process existing webhook {webhook}: {e}")
                     continue
             
             if webhook_url in existing_urls:
@@ -851,7 +852,7 @@ class PlexWebhookCreate(Resource):
             # Add the webhook
             updated_webhooks = account.addWebhook(webhook_url)
             
-            logging.info(f"Successfully created Plex webhook: {webhook_url}")
+            logger.info(f"Successfully created Plex webhook: {webhook_url}")
             
             return {
                 'data': {
@@ -863,7 +864,7 @@ class PlexWebhookCreate(Resource):
             }
 
         except Exception as e:
-            logging.error(f"Failed to create Plex webhook: {e}")
+            logger.error(f"Failed to create Plex webhook: {e}")
             return {'error': f'Failed to create webhook: {str(e)}'}, 500
 
 
@@ -891,12 +892,12 @@ class PlexWebhookList(Resource):
                     elif isinstance(webhook, dict) and 'url' in webhook:
                         webhook_url = webhook['url']
                     else:
-                        logging.warning(f"Unknown webhook type: {type(webhook)}, value: {webhook}")
+                        logger.warning(f"Unknown webhook type: {type(webhook)}, value: {webhook}")
                         continue
                     
                     webhook_list.append({'url': webhook_url})
                 except Exception as e:
-                    logging.warning(f"Failed to process webhook {webhook}: {e}")
+                    logger.warning(f"Failed to process webhook {webhook}: {e}")
                     continue
             
             return {
@@ -907,7 +908,7 @@ class PlexWebhookList(Resource):
             }
 
         except Exception as e:
-            logging.error(f"Failed to list Plex webhooks: {e}")
+            logger.error(f"Failed to list Plex webhooks: {e}")
             return {'error': f'Failed to list webhooks: {str(e)}'}, 500
 
 
@@ -922,7 +923,7 @@ class PlexWebhookDelete(Resource):
             args = self.post_request_parser.parse_args()
             webhook_url = args.get('webhook_url')
             
-            logging.info(f"Attempting to delete Plex webhook: {webhook_url}")
+            logger.info(f"Attempting to delete Plex webhook: {webhook_url}")
             
             decrypted_token = get_decrypted_token()
             if not decrypted_token:
@@ -933,12 +934,12 @@ class PlexWebhookDelete(Resource):
             
             # First, let's see what webhooks actually exist
             existing_webhooks = account.webhooks()
-            logging.info(f"Existing webhooks before deletion: {[str(w) for w in existing_webhooks]}")
+            logger.info(f"Existing webhooks before deletion: {[str(w) for w in existing_webhooks]}")
             
             # Delete the webhook
             account.deleteWebhook(webhook_url)
             
-            logging.info(f"Successfully deleted Plex webhook: {webhook_url}")
+            logger.info(f"Successfully deleted Plex webhook: {webhook_url}")
             
             return {
                 'data': {
@@ -948,7 +949,7 @@ class PlexWebhookDelete(Resource):
             }
 
         except Exception as e:
-            logging.error(f"Failed to delete Plex webhook: {e}")
+            logger.error(f"Failed to delete Plex webhook: {e}")
             return {'error': f'Failed to delete webhook: {str(e)}'}, 500
 
 

@@ -9,6 +9,7 @@ import secrets
 import threading
 import time
 from datetime import datetime
+
 import random
 import configparser
 import yaml
@@ -1003,24 +1004,32 @@ def migrate_apikey_to_oauth():
     """
     try:
         # Add startup delay to avoid race conditions with other Plex connections
-        logging.info("Starting Plex OAuth migration with 5-second delay to avoid conflicts...")
         time.sleep(5)
         
         auth_method = settings.plex.get('auth_method', 'apikey')
         api_key = settings.plex.get('apikey', '')
         
-        # Only migrate if currently using API key method and have a key
-        if auth_method != 'apikey' or not api_key:
+        # Only migrate if:
+        # 1. Currently using API key method
+        # 2. Has an API key configured (not empty/None)
+        # 3. Plex is actually enabled in general settings
+        if not settings.general.get('use_plex', False):
+            return
+            
+        if auth_method != 'apikey' or not api_key or api_key.strip() == '':
             return
             
         # Check if already migrated (has OAuth token)
         if settings.plex.get('token'):
-            logging.debug("Plex OAuth token already exists, skipping migration")
+            logging.debug("OAuth token already exists, skipping migration")
             return
+            
+        # We have determined a migration is needed, now log and proceed
+        logging.info("OAuth migration - user has API key configuration that needs upgrading")
             
         # Check if migration is disabled (for emergency rollback)
         if settings.plex.get('disable_auto_migration', False):
-            logging.info("Plex auto-migration disabled, skipping")
+            logging.info("auto-migration disabled, skipping")
             return
             
         # Create backup of current configuration
@@ -1039,7 +1048,7 @@ def migrate_apikey_to_oauth():
         settings.plex.migration_attempted = True
         write_config()
             
-        logging.info("Starting seamless migration from Plex API key to OAuth...")
+        logging.info("Starting Plex OAuth migration, converting API key to OAuth...")
         
         # Add random delay to prevent thundering herd (0-30 seconds)
         import random
@@ -1308,7 +1317,7 @@ def migrate_apikey_to_oauth():
         # Save configuration with OAuth settings
         write_config()
         
-        logging.info(f"Successfully migrated Plex configuration to OAuth for user '{username}'")
+        logging.info(f"Migrated Plex configuration to OAuth for user '{username}'")
         logging.info(f"Selected server: {selected_server['name']} ({selected_connection['uri']})")
         logging.info("Legacy manual configuration fields cleared (ip, port, ssl)")
         
@@ -1358,10 +1367,10 @@ def migrate_apikey_to_oauth():
                 logging.error("OAuth migration failed but legacy configuration is working. Please configure OAuth manually through the GUI.")
             except Exception as rollback_error:
                 logging.error(f"Rollback validation also failed: {rollback_error}")
-                logging.error("Both OAuth and legacy API key configurations failed. Please check your Plex settings.")
+                logging.error("CRITICAL: Manual intervention required. Please reset Plex settings.")
             
     except Exception as e:
-        logging.error(f"Unexpected error during Plex migration: {e}")
+        logging.error(f"Unexpected error during Plex OAuth migration: {e}")
         # Keep existing configuration intact
 
 
@@ -1427,8 +1436,8 @@ def initialize_plex():
             
             cleanup_thread = threading.Thread(target=cleanup_task, daemon=True)
             cleanup_thread.start()
-            logging.info("Plex cache cleanup started")
+            logging.info("Plex OAuth cache cleanup started")
         except ImportError:
-            logging.warning("Could not start Plex cache cleanup - module not found")
+            logging.warning("Plex OAuth cache cleanup - module not found")
     
-    logging.info("Plex configuration initialized")
+    logging.debug("Plex configuration initialized")
