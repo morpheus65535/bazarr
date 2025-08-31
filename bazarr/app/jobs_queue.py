@@ -30,17 +30,17 @@ class JobsQueue:
         if kwargs is None:
             kwargs = {}
 
-        self.current_job_id += 1
+        new_job_id = self.current_job_id + 1
         self.jobs_queue.append(
-            Job(job_id=self.current_job_id,
+            Job(job_id=new_job_id,
                 job_name=job_name,
                 module=module,
                 func=func,
                 args=args,
                 kwargs=kwargs,)
         )
-        logging.debug(f"Task {job_name} ({self.current_job_id}) added to queue")
-        event_stream(type='jobs')
+        logging.debug(f"Task {job_name} ({new_job_id}) added to queue")
+        event_stream(type='jobs', action='update', payload=new_job_id)
 
     def list_jobs_from_queue(self):
         return [vars(job) for job in self.jobs_queue]
@@ -54,7 +54,7 @@ class JobsQueue:
                     return False
                 else:
                     logging.debug(f"Task {job.job_name} ({job.job_id}) removed from queue")
-                    event_stream(type='jobs')
+                    event_stream(type='jobs', action='delete', payload=job.job_id)
                     return True
         return False
 
@@ -74,7 +74,7 @@ class JobsQueue:
                     try:
                         logging.debug(f"Running job {job.job_name} (id {job.job_id}): "
                                       f"{job.module}.{job.func}({job.args}, {job.kwargs})")
-                        event_stream(type='jobs')
+                        event_stream(type='jobs', action='update', payload=job.job_id)
                         func_to_call = getattr(importlib.import_module(job.module), job.func)
                         func_to_call(*job.args, **job.kwargs)
                     except Exception as e:
