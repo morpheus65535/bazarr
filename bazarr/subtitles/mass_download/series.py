@@ -110,13 +110,6 @@ def episode_download_subtitles(no, send_progress=False, providers_list=None):
         providers_list = get_providers()
 
     if providers_list:
-        if send_progress:
-            show_progress(id=f'episode_search_progress_{no}',
-                          header='Searching missing subtitles...',
-                          name=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d} - {episode.episodeTitle}',
-                          value=0,
-                          count=1)
-
         audio_language_list = get_audio_profile_languages(episode.audio_language)
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
@@ -130,29 +123,34 @@ def episode_download_subtitles(no, send_progress=False, providers_list=None):
                 forced_ = "True" if language.endswith(':forced') else "False"
                 languages.append((language.split(":")[0], hi_, forced_))
 
-        if not languages:
-            return
+        if languages:
+            if send_progress:
+                show_progress(id=f'episode_search_progress_{no}',
+                              header='Searching missing subtitles...',
+                              name=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d} - {episode.episodeTitle}',
+                              value=0,
+                              count=1)
 
-        for result in generate_subtitles(path_mappings.path_replace(episode.path),
-                                         languages,
-                                         audio_language,
-                                         str(episode.sceneName),
-                                         episode.title,
-                                         'series',
-                                         episode.profileId,
-                                         check_if_still_required=True):
-            if result:
-                if isinstance(result, tuple) and len(result):
-                    result = result[0]
-                store_subtitles(episode.path, path_mappings.path_replace(episode.path))
-                history_log(1, episode.sonarrSeriesId, episode.sonarrEpisodeId, result)
-                send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)
+            for result in generate_subtitles(path_mappings.path_replace(episode.path),
+                                             languages,
+                                             audio_language,
+                                             str(episode.sceneName),
+                                             episode.title,
+                                             'series',
+                                             episode.profileId,
+                                             check_if_still_required=True):
+                if result:
+                    if isinstance(result, tuple) and len(result):
+                        result = result[0]
+                    store_subtitles(episode.path, path_mappings.path_replace(episode.path))
+                    history_log(1, episode.sonarrSeriesId, episode.sonarrEpisodeId, result)
+                    send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)
 
-        if send_progress:
-            show_progress(id=f'episode_search_progress_{no}',
-                          header='Searching missing subtitles...',
-                          name=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d} - {episode.episodeTitle}',
-                          value=1,
-                          count=1)
+            if send_progress:
+                show_progress(id=f'episode_search_progress_{no}',
+                              header='Searching missing subtitles...',
+                              name=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d} - {episode.episodeTitle}',
+                              value=1,
+                              count=1)
     else:
         logging.info("BAZARR All providers are throttled")
