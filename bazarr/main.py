@@ -68,7 +68,7 @@ load_language_in_db()
 
 update_notifier()
 
-jobs_queue_thread = Thread(target=jobs_queue.consume_jobs_queue)
+jobs_queue_thread = Thread(target=jobs_queue.consume_jobs_pending_queue)
 jobs_queue_thread.daemon = True
 jobs_queue_thread.start()
 logging.info("Interactive jobs queue started and waiting for tasks")

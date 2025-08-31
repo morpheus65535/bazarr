@@ -26,7 +26,6 @@ from .config import settings
 from .scheduler import scheduler
 from .get_args import args
 
-
 sonarr_queue = deque()
 radarr_queue = deque()
 
@@ -268,7 +267,7 @@ def dispatcher(data):
                 else:
                     series_metadata = database.execute(
                         select(TableShows.title, TableShows.year)
-                        .where(TableShows.sonarrSeriesId == data['body']['resource']['seriesId']))\
+                        .where(TableShows.sonarrSeriesId == data['body']['resource']['seriesId'])) \
                         .first()
                     if series_metadata:
                         series_title = series_metadata.title
@@ -295,36 +294,37 @@ def dispatcher(data):
 
         if topic == 'series':
             logging.debug(f'Event received from Sonarr for series: {series_title} ({series_year})')
-            jobs_queue.feed_jobs_queue(f'Update series {series_title} ({series_year})',
-                                        'sonarr.sync.series',
-                                        'update_one_series',
-                                        [],
-                                        {'series_id': media_id, 'action': action})
+            jobs_queue.feed_jobs_pending_queue(f'Update series {series_title} ({series_year})',
+                                               'sonarr.sync.series',
+                                               'update_one_series',
+                                               [],
+                                               {'series_id': media_id, 'action': action})
             if episodesChanged:
                 # this will happen if a season's monitored status is changed.
-                jobs_queue.feed_jobs_queue(f'Sync episodes for series {series_title} ({series_year})',
-                                            'sonarr.sync.episodes',
-                                            'sync_episodes',
-                                            [],
-                                            {'series_id': media_id, 'send_event': True,
-                                             'defer_search': settings.sonarr.defer_search_signalr})
+                jobs_queue.feed_jobs_pending_queue(f'Sync episodes for series {series_title} ({series_year})',
+                                                   'sonarr.sync.episodes',
+                                                   'sync_episodes',
+                                                   [],
+                                                   {'series_id': media_id, 'send_event': True,
+                                                    'defer_search': settings.sonarr.defer_search_signalr})
         elif topic == 'episode':
             logging.debug(f'Event received from Sonarr for episode: {series_title} ({series_year}) - '
                           f'S{season_number:0>2}E{episode_number:0>2} - {episode_title}')
-            jobs_queue.feed_jobs_queue(f'Sync episode {series_title} ({series_year}) - S{season_number:0>2}E'
-                                        f'{episode_number:0>2} - {episode_title}',
-                                        'sonarr.sync.episodes',
-                                        'sync_one_episode',
-                                        [],
-                                        {'episode_id': media_id, 'defer_search': settings.sonarr.defer_search_signalr})
+            jobs_queue.feed_jobs_pending_queue(f'Sync episode {series_title} ({series_year}) - S{season_number:0>2}E'
+                                               f'{episode_number:0>2} - {episode_title}',
+                                               'sonarr.sync.episodes',
+                                               'sync_one_episode',
+                                               [],
+                                               {'episode_id': media_id,
+                                                'defer_search': settings.sonarr.defer_search_signalr})
         elif topic == 'movie':
             logging.debug(f'Event received from Radarr for movie: {movie_title} ({movie_year})')
-            jobs_queue.feed_jobs_queue(f'Update movie {movie_title} ({movie_year})',
-                                        'radarr.sync.movies',
-                                        'update_one_movie',
-                                        [],
-                                        {'movie_id': media_id, 'action': action,
-                                         'defer_search': settings.radarr.defer_search_signalr})
+            jobs_queue.feed_jobs_pending_queue(f'Update movie {movie_title} ({movie_year})',
+                                               'radarr.sync.movies',
+                                               'update_one_movie',
+                                               [],
+                                               {'movie_id': media_id, 'action': action,
+                                                'defer_search': settings.radarr.defer_search_signalr})
     except Exception as e:
         logging.debug(f'BAZARR an exception occurred while parsing SignalR feed: {repr(e)}')
     finally:
