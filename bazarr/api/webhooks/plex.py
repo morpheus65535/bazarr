@@ -28,10 +28,11 @@ class WebHooksPlex(Resource):
     @authenticate
     @api_ns_webhooks_plex.doc(parser=post_request_parser)
     @api_ns_webhooks_plex.response(200, 'Success')
-    @api_ns_webhooks_plex.response(204, 'Unhandled event')
-    @api_ns_webhooks_plex.response(400, 'No GUID found')
+    @api_ns_webhooks_plex.response(204, 'Unhandled event or no processable data')
+    @api_ns_webhooks_plex.response(400, 'Bad request - missing required data')
     @api_ns_webhooks_plex.response(401, 'Not Authenticated')
     @api_ns_webhooks_plex.response(404, 'IMDB series/movie ID not found')
+    @api_ns_webhooks_plex.response(500, 'Internal server error')
     def post(self):
         """Trigger subtitles search on play media event in Plex"""
         try:
@@ -39,14 +40,14 @@ class WebHooksPlex(Resource):
             json_webhook = args.get('payload')
             
             if not json_webhook:
-                logger.error('PLEX WEBHOOK: No payload received')
+                logger.debug('PLEX WEBHOOK: No payload received')
                 return "No payload found in request", 400
             
             parsed_json_webhook = json.loads(json_webhook)
             
             # Check if this is a valid Plex webhook (should have 'event' field)
             if 'event' not in parsed_json_webhook:
-                logger.error('PLEX WEBHOOK: Invalid payload - missing "event" field')
+                logger.debug('PLEX WEBHOOK: Invalid payload - missing "event" field')
                 return "Invalid webhook payload - missing event field", 400
             
             event = parsed_json_webhook['event']
@@ -57,20 +58,20 @@ class WebHooksPlex(Resource):
             
             # Check if Metadata key exists in the payload
             if 'Metadata' not in parsed_json_webhook:
-                logger.warning('PLEX WEBHOOK: No Metadata in payload for event "%s"', event)
-                return "No Metadata found in JSON request body", 200
+                logger.debug('PLEX WEBHOOK: No Metadata in payload for event "%s"', event)
+                return "No Metadata found in JSON request body", 400
                 
             if 'Guid' not in parsed_json_webhook['Metadata']:
                 logger.debug('PLEX WEBHOOK: No GUID in Metadata for event "%s". Probably a pre-roll video.', event)
-                return "No GUID found in JSON request body", 200
+                return "No GUID found in JSON request body", 204
                 
         except json.JSONDecodeError as e:
-            logger.error('PLEX WEBHOOK: Failed to parse JSON. Error: %s. Payload: %s', 
+            logger.debug('PLEX WEBHOOK: Failed to parse JSON. Error: %s. Payload: %s', 
                         str(e), sanitize_log_data(json_webhook) if json_webhook else 'None')
             return "Invalid JSON payload", 400
         except Exception as e:
             logger.error('PLEX WEBHOOK: Unexpected error: %s', str(e))
-            return "Internal error processing webhook", 500
+            return "Unexpected error processing webhook", 500
 
         media_type = parsed_json_webhook['Metadata']['type']
 
@@ -86,7 +87,7 @@ class WebHooksPlex(Resource):
             if len(splitted_id) == 2:
                 ids.append({splitted_id[0]: splitted_id[1]})
         if not ids:
-            return 'No GUID found', 400
+            return 'No GUID found', 204
 
         if media_type == 'episode':
             try:
