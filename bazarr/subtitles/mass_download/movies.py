@@ -77,30 +77,31 @@ def movies_download_subtitles(no):
             logging.info("BAZARR All providers are throttled")
             break
 
-    show_progress(id=f'movie_search_progress_{no}',
-                  header='Searching missing subtitles...',
-                  name=movie.title,
-                  value=0,
-                  count=count_movie)
+    if languages:
+        show_progress(id=f'movie_search_progress_{no}',
+                      header='Searching missing subtitles...',
+                      name=movie.title,
+                      value=0,
+                      count=count_movie)
 
-    for result in generate_subtitles(moviePath,
-                                     languages,
-                                     audio_language,
-                                     str(movie.sceneName),
-                                     movie.title,
-                                     'movie',
-                                     movie.profileId,
-                                     check_if_still_required=True):
+        for result in generate_subtitles(moviePath,
+                                         languages,
+                                         audio_language,
+                                         str(movie.sceneName),
+                                         movie.title,
+                                         'movie',
+                                         movie.profileId,
+                                         check_if_still_required=True):
 
-        if result:
-            if isinstance(result, tuple) and len(result):
-                result = result[0]
-            store_subtitles_movie(movie.path, moviePath)
-            history_log_movie(1, no, result)
-            send_notifications_movie(no, result.message)
+            if result:
+                if isinstance(result, tuple) and len(result):
+                    result = result[0]
+                store_subtitles_movie(movie.path, moviePath)
+                history_log_movie(1, no, result)
+                send_notifications_movie(no, result.message)
 
-    show_progress(id=f'movie_search_progress_{no}',
-                  header='Searching missing subtitles...',
-                  name=movie.title,
-                  value=count_movie,
-                  count=count_movie)
+        show_progress(id=f'movie_search_progress_{no}',
+                      header='Searching missing subtitles...',
+                      name=movie.title,
+                      value=count_movie,
+                      count=count_movie)

@@ -15,6 +15,7 @@ from .settings import api_ns_system_settings
 from .languages import api_ns_system_languages
 from .languages_profiles import api_ns_system_languages_profiles
 from .notifications import api_ns_system_notifications
+from .jobs import api_ns_system_jobs
 
 api_ns_list_system = [
     api_ns_system,
@@ -32,4 +33,5 @@ api_ns_list_system = [
     api_ns_system_settings,
     api_ns_system_status,
     api_ns_system_tasks,
+    api_ns_system_jobs,
 ]
