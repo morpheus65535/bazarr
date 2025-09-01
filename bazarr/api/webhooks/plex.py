@@ -16,34 +16,6 @@ from ..plex.security import sanitize_log_data
 from ..utils import authenticate
 
 
-def sanitize_webhook_payload(payload_dict):
-    """Sanitize potentially sensitive data in webhook payload for logging"""
-    if not isinstance(payload_dict, dict):
-        return payload_dict
-    
-    sanitized = payload_dict.copy()
-    
-    # Fields that might contain sensitive information
-    sensitive_fields = ['token', 'key', 'apikey', 'api_key', 'auth', 'password', 'secret']
-    
-    def sanitize_dict(d):
-        if not isinstance(d, dict):
-            return d
-        result = {}
-        for k, v in d.items():
-            if isinstance(v, dict):
-                result[k] = sanitize_dict(v)
-            elif isinstance(v, list):
-                result[k] = [sanitize_dict(item) if isinstance(item, dict) else item for item in v]
-            elif isinstance(v, str) and any(sensitive in k.lower() for sensitive in sensitive_fields):
-                result[k] = sanitize_log_data(v)
-            else:
-                result[k] = v
-        return result
-    
-    return sanitize_dict(sanitized)
-
-
 api_ns_webhooks_plex = Namespace('Webhooks Plex', description='Webhooks endpoint that can be configured in Plex to '
                                                               'trigger a subtitles search when playback start.')
 
@@ -78,7 +50,6 @@ class WebHooksPlex(Resource):
                 return "Invalid webhook payload - missing event field", 400
             
             event = parsed_json_webhook['event']
-            logger.debug('PLEX WEBHOOK: Processing event "%s"', event)
             
             if event not in ['media.play']:
                 logger.debug('PLEX WEBHOOK: Ignoring unhandled event "%s"', event)
@@ -86,8 +57,7 @@ class WebHooksPlex(Resource):
             
             # Check if Metadata key exists in the payload
             if 'Metadata' not in parsed_json_webhook:
-                logger.warning('PLEX WEBHOOK: No Metadata in payload for event "%s". Keys: %s', 
-                             event, list(parsed_json_webhook.keys()))
+                logger.warning('PLEX WEBHOOK: No Metadata in payload for event "%s"', event)
                 return "No Metadata found in JSON request body", 200
                 
             if 'Guid' not in parsed_json_webhook['Metadata']:
@@ -95,7 +65,8 @@ class WebHooksPlex(Resource):
                 return "No GUID found in JSON request body", 200
                 
         except json.JSONDecodeError as e:
-            logger.error('PLEX WEBHOOK: Failed to parse JSON. Error: %s', str(e))
+            logger.error('PLEX WEBHOOK: Failed to parse JSON. Error: %s. Payload: %s', 
+                        str(e), sanitize_log_data(json_webhook) if json_webhook else 'None')
             return "Invalid JSON payload", 400
         except Exception as e:
             logger.error('PLEX WEBHOOK: Unexpected error: %s', str(e))
