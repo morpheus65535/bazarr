@@ -503,7 +503,7 @@ class PlexLibraries(Resource):
                 logger.warning("No Plex server selected")
                 return {'data': []}
 
-            logger.info(f"Fetching Plex libraries from server: {server_url}")
+            logger.debug(f"Fetching Plex libraries from server: {sanitize_server_url(server_url)}")
             
             headers = {
                 'X-Plex-Token': decrypted_token,
@@ -580,7 +580,7 @@ class PlexLibraries(Resource):
                                 # The 'size' field contains the number of items in the library
                                 actual_count = int(container.get('size', len(container.get('Metadata', []))))
                         
-                        logger.info(f"Library '{section.get('title')}' has {actual_count} items")
+                        logger.debug(f"Library '{section.get('title')}' has {actual_count} items")
                         
                     except Exception as e:
                         logger.warning(f"Failed to get count for library {section.get('title')}: {e}")

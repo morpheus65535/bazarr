@@ -11,8 +11,37 @@ from bs4 import BeautifulSoup as bso
 from app.database import TableEpisodes, TableShows, TableMovies, database, select
 from subtitles.mass_download import episode_download_subtitles, movies_download_subtitles
 from app.logger import logger
+from ..plex.security import sanitize_log_data
 
 from ..utils import authenticate
+
+
+def sanitize_webhook_payload(payload_dict):
+    """Sanitize potentially sensitive data in webhook payload for logging"""
+    if not isinstance(payload_dict, dict):
+        return payload_dict
+    
+    sanitized = payload_dict.copy()
+    
+    # Fields that might contain sensitive information
+    sensitive_fields = ['token', 'key', 'apikey', 'api_key', 'auth', 'password', 'secret']
+    
+    def sanitize_dict(d):
+        if not isinstance(d, dict):
+            return d
+        result = {}
+        for k, v in d.items():
+            if isinstance(v, dict):
+                result[k] = sanitize_dict(v)
+            elif isinstance(v, list):
+                result[k] = [sanitize_dict(item) if isinstance(item, dict) else item for item in v]
+            elif isinstance(v, str) and any(sensitive in k.lower() for sensitive in sensitive_fields):
+                result[k] = sanitize_log_data(v)
+            else:
+                result[k] = v
+        return result
+    
+    return sanitize_dict(sanitized)
 
 
 api_ns_webhooks_plex = Namespace('Webhooks Plex', description='Webhooks endpoint that can be configured in Plex to '
@@ -33,16 +62,44 @@ class WebHooksPlex(Resource):
     @api_ns_webhooks_plex.response(404, 'IMDB series/movie ID not found')
     def post(self):
         """Trigger subtitles search on play media event in Plex"""
-        args = self.post_request_parser.parse_args()
-        json_webhook = args.get('payload')
-        parsed_json_webhook = json.loads(json_webhook)
-        if 'Guid' not in parsed_json_webhook['Metadata']:
-            logger.debug('No GUID provided in Plex json payload. Probably a pre-roll video.')
-            return "No GUID found in JSON request body", 200
-
-        event = parsed_json_webhook['event']
-        if event not in ['media.play']:
-            return 'Unhandled event', 204
+        try:
+            args = self.post_request_parser.parse_args()
+            json_webhook = args.get('payload')
+            
+            if not json_webhook:
+                logger.error('PLEX WEBHOOK: No payload received')
+                return "No payload found in request", 400
+            
+            parsed_json_webhook = json.loads(json_webhook)
+            
+            # Check if this is a valid Plex webhook (should have 'event' field)
+            if 'event' not in parsed_json_webhook:
+                logger.error('PLEX WEBHOOK: Invalid payload - missing "event" field')
+                return "Invalid webhook payload - missing event field", 400
+            
+            event = parsed_json_webhook['event']
+            logger.debug('PLEX WEBHOOK: Processing event "%s"', event)
+            
+            if event not in ['media.play']:
+                logger.debug('PLEX WEBHOOK: Ignoring unhandled event "%s"', event)
+                return 'Unhandled event', 204
+            
+            # Check if Metadata key exists in the payload
+            if 'Metadata' not in parsed_json_webhook:
+                logger.warning('PLEX WEBHOOK: No Metadata in payload for event "%s". Keys: %s', 
+                             event, list(parsed_json_webhook.keys()))
+                return "No Metadata found in JSON request body", 200
+                
+            if 'Guid' not in parsed_json_webhook['Metadata']:
+                logger.debug('PLEX WEBHOOK: No GUID in Metadata for event "%s". Probably a pre-roll video.', event)
+                return "No GUID found in JSON request body", 200
+                
+        except json.JSONDecodeError as e:
+            logger.error('PLEX WEBHOOK: Failed to parse JSON. Error: %s', str(e))
+            return "Invalid JSON payload", 400
+        except Exception as e:
+            logger.error('PLEX WEBHOOK: Unexpected error: %s', str(e))
+            return "Internal error processing webhook", 500
 
         media_type = parsed_json_webhook['Metadata']['type']
 
