@@ -1,6 +1,7 @@
 # coding=utf-8
 import logging
 from datetime import datetime
+import requests
 from app.config import settings, write_config
 from plexapi.server import PlexServer
 
@@ -10,6 +11,9 @@ logger = logging.getLogger(__name__)
 def get_plex_server() -> PlexServer:
     """Connect to the Plex server and return the server instance."""
     from api.plex.security import TokenManager, get_or_create_encryption_key, encrypt_api_key
+    
+    session = requests.Session()
+    session.verify = False
     
     try:
         auth_method = settings.plex.get('auth_method', 'apikey')
@@ -36,7 +40,7 @@ def get_plex_server() -> PlexServer:
             if not server_url:
                 raise ValueError("Server URL not configured. Please select a Plex server.")
             
-            plex_server = PlexServer(server_url, decrypted_token)
+            plex_server = PlexServer(server_url, decrypted_token, session=session)
             
         else:
             # Manual/API key authentication - always use encryption now
@@ -63,7 +67,7 @@ def get_plex_server() -> PlexServer:
                 logger.error(f"Failed to decrypt API key: {type(e).__name__}")
                 raise ValueError("Invalid encrypted API key. Please reconfigure Plex authentication.")
             
-            plex_server = PlexServer(baseurl, decrypted_apikey)
+            plex_server = PlexServer(baseurl, decrypted_apikey, session=session)
         
         return plex_server
             
