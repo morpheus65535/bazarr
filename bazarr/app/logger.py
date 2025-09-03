@@ -22,6 +22,7 @@ class FileHandlerFormatter(logging.Formatter):
     APIKEY_RE = re.compile(r'apikey(?:=|%3D)([a-zA-Z0-9]+)')
     IPv4_RE = re.compile(r'\b(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]'
                          r'[0-9]|[1-9]?[0-9])\b')
+    PLEX_URL_RE = re.compile(r'(?:https?://)?[0-9\-]+\.[a-f0-9]+\.plex\.direct(?::\d+)?')
 
     def formatException(self, exc_info):
         """
@@ -36,6 +37,39 @@ class FileHandlerFormatter(logging.Formatter):
     def formatIPv4(self, s):
         return re.sub(self.IPv4_RE, '***.***.***.***', s)
 
+    def formatPlexUrl(self, s):
+        def sanitize_plex_url(match):
+            url = match.group(0)
+            # Extract protocol and port for reconstruction
+            if '://' in url:
+                protocol = url.split('://')[0] + '://'
+                domain_part = url.split('://')[1]
+            else:
+                protocol = ''
+                domain_part = url
+            
+            # Extract port if present
+            if ':' in domain_part and domain_part.split(':')[-1].isdigit():
+                port = ':' + domain_part.split(':')[-1]
+                domain_part = domain_part.rsplit(':', 1)[0]
+            else:
+                port = ''
+            
+            # Extract the part before .plex.direct
+            if '.plex.direct' in domain_part:
+                plex_prefix = domain_part.replace('.plex.direct', '')
+                # Show first 4 and last 4 characters with asterisks in between
+                if len(plex_prefix) > 8:
+                    sanitized_domain = f"{plex_prefix[:4]}{'*' * 6}{plex_prefix[-4:]}.plex.direct"
+                else:
+                    sanitized_domain = f"***{plex_prefix[-4:]}.plex.direct" if len(plex_prefix) >= 4 else "***.plex.direct"
+            else:
+                sanitized_domain = domain_part
+            
+            return f"{protocol}{sanitized_domain}{port}"
+        
+        return re.sub(self.PLEX_URL_RE, sanitize_plex_url, s)
+
     def format(self, record):
         s = super(FileHandlerFormatter, self).format(record)
         if record.exc_text:
@@ -43,11 +77,12 @@ class FileHandlerFormatter(logging.Formatter):
 
         s = self.formatApikey(s)
         s = self.formatIPv4(s)
+        s = self.formatPlexUrl(s)
 
         return s
 
 
-class NoExceptionFormatter(logging.Formatter):
+class NoExceptionFormatter(FileHandlerFormatter):
     def format(self, record):
         record.exc_text = ''  # ensure formatException gets called
         return super(NoExceptionFormatter, self).format(record)
@@ -108,7 +143,7 @@ def configure_logging(debug=False):
 
     # Console logging
     ch = logging.StreamHandler()
-    cf = (debug and logging.Formatter or NoExceptionFormatter)(
+    cf = (debug and FileHandlerFormatter or NoExceptionFormatter)(
         '%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(module)s:%(lineno)d) - %(message)s')
     ch.setFormatter(cf)
 
