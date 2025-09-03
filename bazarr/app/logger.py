@@ -32,8 +32,7 @@ class FileHandlerFormatter(logging.Formatter):
         return repr(result)  # or format into one line however you want to
 
     def formatApikey(self, s):
-        s = re.sub(self.APIKEY_RE, 'apikey=(removed)', s)
-        return s
+        return re.sub(self.APIKEY_RE, 'apikey=(removed)', s)
 
     def formatIPv4(self, s):
         return re.sub(self.IPv4_RE, '***.***.***.***', s)

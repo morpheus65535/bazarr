@@ -23,7 +23,7 @@ class WebHooksPlex(Resource):
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('payload', type=str, required=True, help='Webhook payload')
 
-    @api_ns_webhooks_plex.doc(parser=post_request_parser)
+    @api_ns_webhooks_plex.doc(parser=post_request_parser, security=None)
     @api_ns_webhooks_plex.response(200, 'Success')
     @api_ns_webhooks_plex.response(204, 'Unhandled event or no processable data')
     @api_ns_webhooks_plex.response(400, 'Bad request - missing required data')
