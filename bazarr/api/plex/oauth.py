@@ -807,21 +807,17 @@ class PlexWebhookCreate(Resource):
             # Try to get base URL from settings first, then fall back to request host
             configured_base_url = getattr(settings.general, 'base_url', '').rstrip('/')
             
-            # Get the API key for webhook authentication
-            apikey = getattr(settings.auth, 'apikey', '')
-            if not apikey:
-                logger.error("No API key configured - cannot create webhook")
-                return {'error': 'No API key configured. Set up API key in Settings > General first.'}, 400
-            
+            # Construct webhook URL without authentication 
+            # This is safe because the webhook only triggers subtitle downloads
             if configured_base_url:
-                webhook_url = f"{configured_base_url}/api/webhooks/plex?apikey={apikey}"
-                logger.info(f"Using configured base URL for webhook: {configured_base_url}/api/webhooks/plex")
+                webhook_url = f"{configured_base_url}/api/webhooks/plex"
+                logger.info(f"Using configured base URL for webhook: {webhook_url}")
             else:
                 # Fall back to using the current request's host
                 scheme = 'https' if request.is_secure else 'http'
                 host = request.host
-                webhook_url = f"{scheme}://{host}/api/webhooks/plex?apikey={apikey}"
-                logger.info(f"Using request host for webhook (no base URL configured): {scheme}://{host}/api/webhooks/plex")
+                webhook_url = f"{scheme}://{host}/api/webhooks/plex"
+                logger.info(f"Using request host for webhook (no base URL configured): {webhook_url}")
                 logger.info("Note: If Bazarr is behind a reverse proxy, configure Base URL in General Settings for better reliability")
             
             # Get existing webhooks
@@ -923,7 +919,9 @@ class PlexWebhookDelete(Resource):
             args = self.post_request_parser.parse_args()
             webhook_url = args.get('webhook_url')
             
-            logger.info(f"Attempting to delete Plex webhook: {webhook_url}")
+            # Sanitize webhook URL for logging (in case it contains sensitive data)
+            safe_webhook_url = sanitize_log_data(webhook_url) if webhook_url else 'None'
+            logger.info(f"Attempting to delete Plex webhook: {safe_webhook_url}")
             
             decrypted_token = get_decrypted_token()
             if not decrypted_token:
@@ -932,14 +930,16 @@ class PlexWebhookDelete(Resource):
             from plexapi.myplex import MyPlexAccount
             account = MyPlexAccount(token=decrypted_token)
             
-            # First, let's see what webhooks actually exist
+            # First, let's see what webhooks actually exist  
             existing_webhooks = account.webhooks()
-            logger.info(f"Existing webhooks before deletion: {[str(w) for w in existing_webhooks]}")
+            # Sanitize webhook URLs in the list for logging
+            safe_webhook_list = [sanitize_log_data(str(w)) for w in existing_webhooks]
+            logger.info(f"Existing webhooks before deletion: {safe_webhook_list}")
             
             # Delete the webhook
             account.deleteWebhook(webhook_url)
             
-            logger.info(f"Successfully deleted Plex webhook: {webhook_url}")
+            logger.info(f"Successfully deleted Plex webhook: {safe_webhook_url}")
             
             return {
                 'data': {

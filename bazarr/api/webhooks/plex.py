@@ -13,8 +13,6 @@ from subtitles.mass_download import episode_download_subtitles, movies_download_
 from app.logger import logger
 from ..plex.security import sanitize_log_data
 
-from ..utils import authenticate
-
 
 api_ns_webhooks_plex = Namespace('Webhooks Plex', description='Webhooks endpoint that can be configured in Plex to '
                                                               'trigger a subtitles search when playback start.')
@@ -25,12 +23,10 @@ class WebHooksPlex(Resource):
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('payload', type=str, required=True, help='Webhook payload')
 
-    @authenticate
     @api_ns_webhooks_plex.doc(parser=post_request_parser)
     @api_ns_webhooks_plex.response(200, 'Success')
     @api_ns_webhooks_plex.response(204, 'Unhandled event or no processable data')
     @api_ns_webhooks_plex.response(400, 'Bad request - missing required data')
-    @api_ns_webhooks_plex.response(401, 'Not Authenticated')
     @api_ns_webhooks_plex.response(404, 'IMDB series/movie ID not found')
     @api_ns_webhooks_plex.response(500, 'Internal server error')
     def post(self):
