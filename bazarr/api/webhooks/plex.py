@@ -52,7 +52,7 @@ class WebHooksPlex(Resource):
             
             event = parsed_json_webhook['event']
             
-            if event not in ['media.play']:
+            if event not in ['media.play', 'playback.started']:
                 logger.debug('PLEX WEBHOOK: Ignoring unhandled event "%s"', event)
                 return 'Unhandled event', 204
             
