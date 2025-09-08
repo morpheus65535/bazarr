@@ -38,7 +38,7 @@ jobs:
           restore-keys: ${{ runner.os }}-modules-
 
       - name: Setup NodeJS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
 
