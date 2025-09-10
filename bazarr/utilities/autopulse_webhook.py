@@ -79,8 +79,8 @@ def test_autopulse_connection():
         if not host:
             return False, "Autopulse host not configured"
 
-        # Build Autopulse status URL
-        status_url = f"http://{host}:{port}/status"
+        # Build Autopulse stats URL
+        status_url = f"http://{host}:{port}/stats"
         
         # Setup authentication if provided
         auth = None

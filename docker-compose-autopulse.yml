@@ -13,6 +13,9 @@
 # 5. Optionally configure authentication by uncommenting USERNAME/PASSWORD
 # 6. Run: docker-compose -f docker-compose-autopulse.yml up -d
 #
+# Note: This setup uses SQLite for the database (persistent via Docker volume)
+# For production, you might want to use PostgreSQL - update DATABASE_URL accordingly
+#
 # Auto-Configuration:
 # If you have Bazarr running with Plex OAuth, you can automatically get comprehensive configuration:
 # - GET http://bazarr:6767/api/plex/autopulse/config (returns PLEX_URL, PLEX_TOKEN, libraries, and paths)
@@ -30,8 +33,6 @@
 # - GET http://localhost:2875/status (health check)
 # - GET http://localhost:2875/triggers/manual?path=/media/Movies/SomeMovie (manual trigger)
 
-version: '3.8'
-
 services:
   autopulse:
     image: ghcr.io/dan-online/autopulse:latest
@@ -43,6 +44,9 @@ services:
       - AUTOPULSE_PORT=2875
       - AUTOPULSE_HOST=0.0.0.0
       
+      # Database configuration (SQLite for simplicity)
+      - AUTOPULSE__APP__DATABASE_URL=sqlite:///app/data/autopulse.db
+      
       # Plex configuration - Use automatic configuration from Bazarr
       # Get these values by clicking "GET PLEX CONFIG" in Bazarr Plex settings
       # or by calling: curl -H "X-API-KEY: your-api-key" http://bazarr:6767/api/plex/autopulse/config
@@ -51,8 +55,8 @@ services:
       - PLEX_TOKEN=your-plex-token-here
       
       # Optional: Authentication (if you want to secure Autopulse)
-      # - AUTOPULSE_USERNAME=admin
-      # - AUTOPULSE_PASSWORD=your-password-here
+      # - AUTOPULSE__AUTH__USERNAME=admin
+      # - AUTOPULSE__AUTH__PASSWORD=your-password-here
       
       # Optional: Logging level
       - RUST_LOG=info
@@ -60,6 +64,8 @@ services:
     volumes:
       # Mount your media directory so Autopulse can match paths
       - /path/to/your/media:/media
+      # Persistent database storage
+      - autopulse_data:/app/data
       
     restart: unless-stopped
     
@@ -71,3 +77,7 @@ services:
 # networks:
 #   media-network:
 #     external: true
+
+volumes:
+  autopulse_data:
+    driver: local
