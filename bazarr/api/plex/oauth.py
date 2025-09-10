@@ -953,6 +953,60 @@ class PlexWebhookDelete(Resource):
             return {'error': f'Failed to delete webhook: {str(e)}'}, 500
 
 
+@api_ns_plex.route('plex/autopulse/config')
+class PlexAutopulseConfig(Resource):
+    def get(self):
+        """Get Plex configuration for Autopulse from current Bazarr OAuth settings"""
+        try:
+            auth_method = settings.plex.get('auth_method', 'apikey')
+            
+            if auth_method != 'oauth':
+                return {
+                    'error': 'OAuth authentication required',
+                    'message': 'Please authenticate with Plex using OAuth to get automatic configuration'
+                }, 400
+            
+            # Get server URL
+            server_url = settings.plex.get('server_url')
+            if not server_url:
+                return {
+                    'error': 'Server URL not configured',
+                    'message': 'Please select a Plex server in Bazarr settings'
+                }, 400
+            
+            # Get and decrypt token
+            encrypted_token = settings.plex.get('token')
+            if not encrypted_token:
+                return {
+                    'error': 'Token not found',
+                    'message': 'OAuth token not found. Please re-authenticate with Plex.'
+                }, 400
+            
+            try:
+                decrypted_token = decrypt_token(encrypted_token)
+            except Exception as e:
+                logger.error(f"Failed to decrypt token for Autopulse config: {e}")
+                return {
+                    'error': 'Token decryption failed',
+                    'message': 'Failed to decrypt OAuth token. Please re-authenticate with Plex.'
+                }, 500
+            
+            return {
+                'plex_url': server_url,
+                'plex_token': decrypted_token,
+                'server_name': settings.plex.get('server_name', 'Unknown'),
+                'username': settings.plex.get('username', ''),
+                'auth_method': 'oauth'
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get Autopulse config: {e}")
+            return {
+                'error': 'Configuration error',
+                'message': f'Failed to retrieve Plex configuration: {str(e)}'
+            }, 500
+
+
 @api_ns_plex.route('plex/autopulse/test')
 class PlexAutopulseTest(Resource):
     post_request_parser = reqparse.RequestParser()

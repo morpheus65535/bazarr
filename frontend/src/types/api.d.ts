@@ -340,6 +340,14 @@ declare namespace Plex {
     success: boolean;
     message: string;
   }
+
+  interface AutopulseConfig {
+    plex_url: string;
+    plex_token: string;
+    server_name: string;
+    username: string;
+    auth_method: string;
+  }
 }
 
 interface SearchResultType {
