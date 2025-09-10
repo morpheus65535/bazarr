@@ -956,7 +956,7 @@ class PlexWebhookDelete(Resource):
 @api_ns_plex.route('plex/autopulse/config')
 class PlexAutopulseConfig(Resource):
     def get(self):
-        """Get Plex configuration for Autopulse from current Bazarr OAuth settings"""
+        """Get comprehensive Plex configuration for Autopulse from current Bazarr OAuth settings"""
         try:
             auth_method = settings.plex.get('auth_method', 'apikey')
             
@@ -991,12 +991,92 @@ class PlexAutopulseConfig(Resource):
                     'message': 'Failed to decrypt OAuth token. Please re-authenticate with Plex.'
                 }, 500
             
+            # Get library information
+            libraries = []
+            try:
+                headers = {
+                    'X-Plex-Token': decrypted_token,
+                    'Accept': 'application/json'
+                }
+
+                # Get libraries from the selected server
+                response = requests.get(
+                    f"{server_url}/library/sections",
+                    headers=headers,
+                    timeout=10,
+                    verify=False
+                )
+
+                if response.status_code == 200:
+                    content_type = response.headers.get('content-type', '')
+                    if 'application/json' in content_type:
+                        data = response.json()
+                        if 'MediaContainer' in data and 'Directory' in data['MediaContainer']:
+                            sections = data['MediaContainer']['Directory']
+                            
+                            for section in sections:
+                                if section.get('type') in ['movie', 'show']:
+                                    # Get library locations for Autopulse path matching
+                                    locations = []
+                                    try:
+                                        location_response = requests.get(
+                                            f"{server_url}/library/sections/{section.get('key')}",
+                                            headers=headers,
+                                            timeout=5,
+                                            verify=False
+                                        )
+                                        if location_response.status_code == 200:
+                                            location_data = location_response.json()
+                                            if 'MediaContainer' in location_data and 'Directory' in location_data['MediaContainer']:
+                                                library_info = location_data['MediaContainer']['Directory'][0]
+                                                if 'Location' in library_info:
+                                                    for loc in library_info['Location']:
+                                                        locations.append(loc.get('path', ''))
+                                    except Exception as e:
+                                        logger.warning(f"Failed to get locations for library {section.get('title')}: {e}")
+                                    
+                                    libraries.append({
+                                        'key': section.get('key'),
+                                        'title': section.get('title'),
+                                        'type': section.get('type'),
+                                        'locations': locations
+                                    })
+                            
+            except Exception as e:
+                logger.warning(f"Failed to get library information: {e}")
+            
+            # Get configured libraries from Bazarr settings
+            configured_libraries = {
+                'movie': settings.plex.get('movie_library', ''),
+                'series': settings.plex.get('series_library', '')
+            }
+            
             return {
                 'plex_url': server_url,
                 'plex_token': decrypted_token,
                 'server_name': settings.plex.get('server_name', 'Unknown'),
                 'username': settings.plex.get('username', ''),
-                'auth_method': 'oauth'
+                'auth_method': 'oauth',
+                'libraries': libraries,
+                'configured_libraries': configured_libraries,
+                'autopulse_config': {
+                    'description': 'Use these values to configure Autopulse environment variables',
+                    'environment_variables': {
+                        'PLEX_URL': server_url,
+                        'PLEX_TOKEN': decrypted_token
+                    },
+                    'targets_config': {
+                        'description': 'Add this to your Autopulse config.yml targets section',
+                        'target_name': 'my_plex',
+                        'config': {
+                            'type': 'plex',
+                            'url': server_url,
+                            'token': decrypted_token,
+                            'refresh': True,
+                            'analyze': False
+                        }
+                    }
+                }
             }
             
         except Exception as e:

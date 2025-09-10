@@ -158,6 +158,58 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                   </Text>{" "}
                   {configData.server_name} ({configData.username})
                 </Text>
+
+                {configData.libraries.length > 0 && (
+                  <>
+                    <Text size="sm" fw={500} mt="xs">
+                      Plex Libraries:
+                    </Text>
+                    {configData.libraries.map((library) => (
+                      <Box key={library.key} ml="sm">
+                        <Text size="sm">
+                          <Text component="span" fw={500}>
+                            {library.title}
+                          </Text>{" "}
+                          ({library.type})
+                        </Text>
+                        {library.locations.length > 0 && (
+                          <Box ml="sm">
+                            {library.locations.map((location, idx) => (
+                              <Text key={idx} size="xs" c="dimmed">
+                                📁 {location}
+                              </Text>
+                            ))}
+                          </Box>
+                        )}
+                      </Box>
+                    ))}
+                  </>
+                )}
+
+                <Text size="sm" fw={500} mt="xs">
+                  Environment Variables:
+                </Text>
+                <Box ml="sm">
+                  <Text size="xs" c="dimmed">
+                    <Code>
+                      PLEX_URL=
+                      {
+                        configData.autopulse_config.environment_variables
+                          .PLEX_URL
+                      }
+                    </Code>
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    <Code>
+                      PLEX_TOKEN=
+                      {configData.autopulse_config.environment_variables.PLEX_TOKEN.substring(
+                        0,
+                        8,
+                      )}
+                      ...
+                    </Code>
+                  </Text>
+                </Box>
               </Stack>
             </Box>
           )}

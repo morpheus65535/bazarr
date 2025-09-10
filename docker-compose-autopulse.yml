@@ -9,13 +9,15 @@
 # 2. If Bazarr has OAuth authentication with Plex configured, run this to get your config:
 #    curl -H "X-API-KEY: your-bazarr-api-key" http://localhost:6767/api/plex/autopulse/config
 # 3. Replace PLEX_URL and PLEX_TOKEN with values from the above API call
-# 4. Optionally configure authentication by uncommenting USERNAME/PASSWORD
-# 5. Run: docker-compose -f docker-compose-autopulse.yml up -d
+# 4. The API response now includes library information and full configuration examples
+# 5. Optionally configure authentication by uncommenting USERNAME/PASSWORD
+# 6. Run: docker-compose -f docker-compose-autopulse.yml up -d
 #
 # Auto-Configuration:
-# If you have Bazarr running with Plex OAuth, you can automatically get the configuration:
-# - GET http://bazarr:6767/api/plex/autopulse/config (returns PLEX_URL and PLEX_TOKEN)
-# - This eliminates manual token and URL configuration
+# If you have Bazarr running with Plex OAuth, you can automatically get comprehensive configuration:
+# - GET http://bazarr:6767/api/plex/autopulse/config (returns PLEX_URL, PLEX_TOKEN, libraries, and paths)
+# - This provides everything needed: server URL, token, library information, and file paths
+# - No more manual token hunting or library path guessing!
 #
 # Testing with Bazarr:
 # - In Bazarr Plex settings, enable Autopulse integration
@@ -44,6 +46,7 @@ services:
       # Plex configuration - Use automatic configuration from Bazarr
       # Get these values by clicking "GET PLEX CONFIG" in Bazarr Plex settings
       # or by calling: curl -H "X-API-KEY: your-api-key" http://bazarr:6767/api/plex/autopulse/config
+      # The API response includes library paths, so you can match them to your volume mounts
       - PLEX_URL=http://your-plex-server:32400
       - PLEX_TOKEN=your-plex-token-here
       
