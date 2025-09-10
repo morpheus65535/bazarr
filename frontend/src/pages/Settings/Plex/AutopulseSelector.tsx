@@ -5,6 +5,7 @@ import {
   usePlexAuthValidationQuery,
   usePlexAutopulseTestMutation,
 } from "@/apis/hooks/plex";
+import { Check } from "@/pages/Settings/components";
 
 export type AutopulseSelectorProps = {
   label: string;
@@ -42,17 +43,9 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
         });
       }
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : error && typeof error === "object" && "response" in error
-            ? (error as { response?: { data?: { error?: string } } }).response
-                ?.data?.error
-            : "Failed to test Autopulse connection";
-
       notifications.show({
         title: "Error",
-        message: errorMessage || "Failed to test Autopulse connection",
+        message: "Failed to test Autopulse connection",
         color: "red",
       });
     }
@@ -71,6 +64,10 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
 
   return (
     <Stack gap="xs">
+      <Check
+        label="Use Autopulse for automatic Plex metadata refresh"
+        settingKey="settings-plex-use_autopulse"
+      />
       <Group justify="space-between" align="flex-end">
         <div>
           <Text fw={500}>{label}</Text>

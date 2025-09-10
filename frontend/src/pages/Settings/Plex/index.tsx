@@ -74,9 +74,9 @@ const SettingsPlexView = () => {
         </Section>
 
         <Section header="Autopulse Integration">
-          <Check
-            label="Use Autopulse for automatic Plex metadata refresh"
-            settingKey="settings-plex-use_autopulse"
+          <AutopulseSelector
+            label="Test Autopulse Connection"
+            description="Verify that Bazarr can connect to your Autopulse instance"
           />
           <Message>
             Automatically trigger Autopulse when subtitles are downloaded to
@@ -101,10 +101,6 @@ const SettingsPlexView = () => {
             <Password
               label="Password (optional)"
               settingKey="settings-plex-autopulse_password"
-            />
-            <AutopulseSelector
-              label="Test Autopulse Connection"
-              description="Verify that Bazarr can connect to your Autopulse instance"
             />
             <Message>
               How it works: When Bazarr downloads subtitles, it automatically
