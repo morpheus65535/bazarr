@@ -6,6 +6,7 @@ import {
   usePlexAutopulseTestMutation,
 } from "@/apis/hooks/plex";
 import { Check } from "@/pages/Settings/components";
+import { useSettingValue } from "@/pages/Settings/utilities/hooks";
 
 export type AutopulseSelectorProps = {
   label: string;
@@ -21,6 +22,12 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
     authData?.valid && authData?.auth_method === "oauth",
+  );
+
+  // Check if Autopulse is enabled
+  const autopulseEnabled = useSettingValue<boolean>(
+    "settings-plex-use_autopulse",
+    { original: false },
   );
 
   const testMutation = usePlexAutopulseTestMutation();
@@ -68,24 +75,25 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
         label="Use Autopulse for automatic Plex metadata refresh"
         settingKey="settings-plex-use_autopulse"
       />
-      <Group justify="space-between" align="flex-end">
-        <div>
-          <Text fw={500}>{label}</Text>
-          {description && (
-            <Text size="sm" c="dimmed">
-              {description}
-            </Text>
-          )}
-        </div>
-        <Button
-          onClick={handleTestConnection}
-          loading={testMutation.isPending}
-          size="sm"
-          variant="light"
-        >
-          TEST CONNECTION
-        </Button>
-      </Group>
+
+      {description && (
+        <Text size="sm" c="dimmed">
+          {description}
+        </Text>
+      )}
+
+      {autopulseEnabled && (
+        <Group gap="xs">
+          <Button
+            onClick={handleTestConnection}
+            loading={testMutation.isPending}
+            size="sm"
+            variant="light"
+          >
+            TEST CONNECTION
+          </Button>
+        </Group>
+      )}
     </Stack>
   );
 };
