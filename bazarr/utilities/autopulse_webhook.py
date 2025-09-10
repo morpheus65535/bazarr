@@ -12,7 +12,14 @@ def call_subtitle_webhook(subtitle_path, media_path, language, media_type):
     Call Autopulse after subtitle download to trigger Plex metadata refresh.
     Uses Autopulse's automatic /triggers/manual endpoint.
     """
+    # Check if Autopulse is enabled and OAuth is configured
     if not settings.plex.use_autopulse or not settings.plex.autopulse_host:
+        return
+        
+    # Validate that Plex OAuth is configured (required for Autopulse integration)
+    auth_method = settings.plex.get('auth_method', 'apikey')
+    if auth_method != 'oauth':
+        logging.warning("Autopulse integration requires Plex OAuth authentication. Skipping webhook call.")
         return
 
     try:
@@ -69,6 +76,11 @@ def test_autopulse_connection():
     Test connection to Autopulse server.
     Returns (success: bool, message: str)
     """
+    # Validate that Plex OAuth is configured (required for Autopulse integration)
+    auth_method = settings.plex.get('auth_method', 'apikey')
+    if auth_method != 'oauth':
+        return False, "Autopulse integration requires Plex OAuth authentication"
+        
     try:
         host = settings.plex.autopulse_host.strip()
         port = settings.plex.autopulse_port

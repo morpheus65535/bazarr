@@ -795,6 +795,18 @@ def save_settings(settings_items):
                 reset_providers = True
                 region.delete('titlovi_token')
 
+        # Validate Autopulse settings - require OAuth authentication
+        if key == 'settings-plex-use_autopulse' and value is True:
+            auth_method = settings.plex.get('auth_method', 'apikey')
+            if auth_method != 'oauth':
+                raise ValidationError("Autopulse integration requires Plex OAuth authentication. Please enable OAuth authentication first.")
+        
+        if key in ['settings-plex-autopulse_host', 'settings-plex-autopulse_port', 
+                   'settings-plex-autopulse_username', 'settings-plex-autopulse_password']:
+            auth_method = settings.plex.get('auth_method', 'apikey')
+            if auth_method != 'oauth':
+                raise ValidationError("Autopulse settings cannot be modified without Plex OAuth authentication.")
+
         if reset_providers:
             from .get_providers import reset_throttled_providers
             reset_throttled_providers(only_auth_or_conf_error=True)

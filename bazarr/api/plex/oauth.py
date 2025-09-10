@@ -960,26 +960,33 @@ class PlexAutopulseTest(Resource):
     @api_ns_plex.doc(parser=post_request_parser)
     def post(self):
         try:
+            # Validate OAuth authentication
+            auth_method = settings.plex.get('auth_method', 'apikey')
+            if auth_method != 'oauth':
+                return {
+                    'error': 'Autopulse integration requires Plex OAuth authentication. Please enable OAuth authentication first.'
+                }, 401
+                
             decrypted_token = get_decrypted_token()
             if not decrypted_token:
                 raise UnauthorizedError()
 
             from bazarr.utilities.autopulse_webhook import test_autopulse_connection
             
-            success = test_autopulse_connection()
+            success, message = test_autopulse_connection()
             
             if success:
                 return {
                     'data': {
                         'success': True,
-                        'message': 'Autopulse connection successful'
+                        'message': message
                     }
                 }
             else:
                 return {
                     'data': {
                         'success': False,
-                        'message': 'Failed to connect to Autopulse'
+                        'message': message
                     }
                 }, 400
 
