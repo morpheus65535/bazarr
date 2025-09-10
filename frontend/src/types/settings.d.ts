@@ -194,6 +194,10 @@ declare namespace Settings {
     series_library?: string;
     update_movie_library?: boolean;
     update_series_library?: boolean;
+    use_subtitle_webhook?: boolean;
+    subtitle_webhook_url?: string;
+    subtitle_webhook_username?: string;
+    subtitle_webhook_password?: string;
   }
 
   interface Anticaptcha {

@@ -256,6 +256,11 @@ validators = [
     Validator('plex.server_name', must_exist=True, default='', is_type_of=str),
     Validator('plex.server_url', must_exist=True, default='', is_type_of=str),
     Validator('plex.server_local', must_exist=True, default=False, is_type_of=bool),
+    # Webhook fields
+    Validator('plex.use_subtitle_webhook', must_exist=True, default=False, is_type_of=bool),
+    Validator('plex.subtitle_webhook_url', must_exist=True, default='', is_type_of=str),
+    Validator('plex.subtitle_webhook_username', must_exist=True, default='', is_type_of=str),
+    Validator('plex.subtitle_webhook_password', must_exist=True, default='', is_type_of=str),
     # Migration fields
     Validator('plex.migration_attempted', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.migration_successful', must_exist=True, default=False, is_type_of=bool),

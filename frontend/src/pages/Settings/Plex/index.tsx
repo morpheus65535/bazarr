@@ -3,7 +3,10 @@ import {
   Check,
   CollapseBox,
   Layout,
+  Message,
+  Password,
   Section,
+  Text,
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
 import LibrarySelector from "./LibrarySelector";
@@ -66,6 +69,47 @@ const SettingsPlexView = () => {
             label="Webhooks"
             description="Create a Bazarr webhook in Plex to automatically search for subtitles when content starts playing. Manage and remove existing webhooks for convenience."
           />
+        </Section>
+
+        <Section header="External Webhooks">
+          <Check
+            label="Call external webhook after subtitle download"
+            settingKey="settings-plex-use_subtitle_webhook"
+          />
+          <Message>
+            Send HTTP request to external service (like Autopulse) after
+            downloading subtitles to trigger Plex metadata refresh.
+          </Message>
+          <CollapseBox indent settingKey="settings-plex-use_subtitle_webhook">
+            <Text
+              label="Webhook URL"
+              settingKey="settings-plex-subtitle_webhook_url"
+              placeholder="http://autopulse:2875/triggers/bazarr-trigger"
+            />
+            <Text
+              label="Username (optional)"
+              settingKey="settings-plex-subtitle_webhook_username"
+              placeholder="admin"
+            />
+            <Password
+              label="Password (optional)"
+              settingKey="settings-plex-subtitle_webhook_password"
+            />
+            <Message>
+              <strong>Autopulse Example:</strong>
+              <br />
+              URL: http://autopulse:2875/triggers/bazarr-hd
+              <br />
+              Username: admin
+              <br />
+              Password: your-autopulse-password
+              <br />
+              <br />
+              The media file path will be automatically appended as a "path"
+              query parameter. See Bazarr documentation for complete Autopulse
+              setup instructions.
+            </Message>
+          </CollapseBox>
         </Section>
       </CollapseBox>
     </Layout>
