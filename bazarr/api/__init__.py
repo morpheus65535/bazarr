@@ -14,7 +14,6 @@ from .subtitles import api_ns_list_subtitles
 from .system import api_ns_list_system
 from .webhooks import api_ns_list_webhooks
 from .plex import api_ns_list_plex
-from .autopulse import api_ns_list_autopulse
 from .swaggerui import swaggerui_api_params
 
 api_ns_list = [
@@ -29,7 +28,6 @@ api_ns_list = [
     api_ns_list_system,
     api_ns_list_webhooks,
     api_ns_list_plex,
-    api_ns_list_autopulse,
 ]
 
 authorizations = {

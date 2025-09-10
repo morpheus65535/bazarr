@@ -964,7 +964,7 @@ class PlexAutopulseTest(Resource):
             if not decrypted_token:
                 raise UnauthorizedError()
 
-            from bazarr.utilities.webhook import test_autopulse_connection
+            from bazarr.utilities.autopulse_webhook import test_autopulse_connection
             
             success = test_autopulse_connection()
             

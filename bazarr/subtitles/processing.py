@@ -6,7 +6,7 @@ import logging
 from app.config import settings, sync_checker as _defaul_sync_checker
 from utilities.path_mappings import path_mappings
 from utilities.post_processing import pp_replace, set_chmod
-from utilities.webhook import call_subtitle_webhook
+from utilities.autopulse_webhook import call_subtitle_webhook
 from languages.get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
 from app.database import TableShows, TableEpisodes, TableMovies, database, select
 from utilities.analytics import event_tracker
