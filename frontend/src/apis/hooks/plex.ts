@@ -187,3 +187,9 @@ export const usePlexWebhookDeleteMutation = () => {
     },
   });
 };
+
+export const usePlexAutopulseTestMutation = () => {
+  return useMutation({
+    mutationFn: () => api.plex.testAutopulse(),
+  });
+};

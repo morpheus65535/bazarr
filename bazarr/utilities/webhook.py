@@ -9,25 +9,29 @@ from app.config import settings
 
 def call_subtitle_webhook(subtitle_path, media_path, language, media_type):
     """
-    Call configured webhook after subtitle download.
-    Designed for Autopulse and similar services that need to trigger Plex metadata refresh.
+    Call Autopulse after subtitle download to trigger Plex metadata refresh.
+    Uses Autopulse's automatic /triggers/manual endpoint.
     """
-    if not settings.plex.use_subtitle_webhook or not settings.plex.subtitle_webhook_url:
+    if not settings.plex.use_autopulse or not settings.plex.autopulse_host:
         return
 
     try:
-        url = settings.plex.subtitle_webhook_url.strip()
-        username = settings.plex.subtitle_webhook_username.strip()
-        password = settings.plex.subtitle_webhook_password.strip()
+        host = settings.plex.autopulse_host.strip()
+        port = settings.plex.autopulse_port
+        username = settings.plex.autopulse_username.strip()
+        password = settings.plex.autopulse_password.strip()
         
-        if not url:
+        if not host:
             return
 
-        # Prepare webhook payload with path parameter (common for Autopulse)
+        # Build Autopulse manual trigger URL
+        autopulse_url = f"http://{host}:{port}/triggers/manual"
+        
+        # Prepare query parameters for Autopulse
         params = {'path': media_path}
         
         # Build full URL with query parameters
-        webhook_url = f"{url}?{urlencode(params)}"
+        webhook_url = f"{autopulse_url}?{urlencode(params)}"
         
         # Setup authentication if provided
         auth = None
@@ -36,12 +40,11 @@ def call_subtitle_webhook(subtitle_path, media_path, language, media_type):
         
         headers = {
             'User-Agent': 'Bazarr',
-            'Content-Type': 'application/json'
         }
         
-        logging.debug(f"BAZARR calling subtitle webhook: {url} for path: {media_path}")
+        logging.debug(f"BAZARR calling Autopulse: {autopulse_url} for path: {media_path}")
         
-        # Make the webhook call
+        # Make the webhook call to Autopulse
         response = requests.get(
             webhook_url,
             auth=auth,
@@ -51,11 +54,59 @@ def call_subtitle_webhook(subtitle_path, media_path, language, media_type):
         )
         
         if response.status_code == 200:
-            logging.info(f"BAZARR webhook call successful for {media_path}")
+            logging.info(f"BAZARR Autopulse call successful for {media_path}")
         else:
-            logging.warning(f"BAZARR webhook call failed with status {response.status_code} for {media_path}")
+            logging.warning(f"BAZARR Autopulse call failed with status {response.status_code} for {media_path}")
             
     except requests.exceptions.RequestException as e:
-        logging.error(f"BAZARR webhook call failed for {media_path}: {str(e)}")
+        logging.error(f"BAZARR Autopulse call failed for {media_path}: {str(e)}")
     except Exception as e:
-        logging.error(f"BAZARR unexpected error calling webhook for {media_path}: {str(e)}")
+        logging.error(f"BAZARR unexpected error calling Autopulse for {media_path}: {str(e)}")
+
+
+def test_autopulse_connection():
+    """
+    Test connection to Autopulse server.
+    Returns (success: bool, message: str)
+    """
+    try:
+        host = settings.plex.autopulse_host.strip()
+        port = settings.plex.autopulse_port
+        username = settings.plex.autopulse_username.strip()
+        password = settings.plex.autopulse_password.strip()
+        
+        if not host:
+            return False, "Autopulse host not configured"
+
+        # Build Autopulse status URL
+        status_url = f"http://{host}:{port}/status"
+        
+        # Setup authentication if provided
+        auth = None
+        if username and password:
+            auth = (username, password)
+        
+        headers = {
+            'User-Agent': 'Bazarr',
+        }
+        
+        logging.debug(f"BAZARR testing Autopulse connection: {status_url}")
+        
+        # Test connection to Autopulse
+        response = requests.get(
+            status_url,
+            auth=auth,
+            headers=headers,
+            timeout=10,
+            verify=True
+        )
+        
+        if response.status_code == 200:
+            return True, "Autopulse connection successful"
+        else:
+            return False, f"Autopulse connection failed with status {response.status_code}"
+            
+    except requests.exceptions.RequestException as e:
+        return False, f"Autopulse connection failed: {str(e)}"
+    except Exception as e:
+        return False, f"Autopulse connection error: {str(e)}"

@@ -82,6 +82,13 @@ class NewPlexApi extends BaseApi {
 
     return response.data;
   }
+
+  async testAutopulse() {
+    const response =
+      await this.post<DataWrapper<Plex.AutopulseResult>>("/autopulse/test");
+
+    return response.data;
+  }
 }
 
 export default new NewPlexApi();

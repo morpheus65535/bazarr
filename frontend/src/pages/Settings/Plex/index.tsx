@@ -4,11 +4,13 @@ import {
   CollapseBox,
   Layout,
   Message,
+  Number,
   Password,
   Section,
   Text,
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
+import AutopulseSelector from "./AutopulseSelector";
 import LibrarySelector from "./LibrarySelector";
 import PlexSettings from "./PlexSettings";
 import WebhookSelector from "./WebhookSelector";
@@ -71,43 +73,45 @@ const SettingsPlexView = () => {
           />
         </Section>
 
-        <Section header="External Webhooks">
+        <Section header="Autopulse Integration">
           <Check
-            label="Call external webhook after subtitle download"
-            settingKey="settings-plex-use_subtitle_webhook"
+            label="Use Autopulse for automatic Plex metadata refresh"
+            settingKey="settings-plex-use_autopulse"
           />
           <Message>
-            Send HTTP request to external service (like Autopulse) after
-            downloading subtitles to trigger Plex metadata refresh.
+            Automatically trigger Autopulse when subtitles are downloaded to
+            refresh Plex metadata. Autopulse must be configured with a "manual"
+            trigger.
           </Message>
-          <CollapseBox indent settingKey="settings-plex-use_subtitle_webhook">
+          <CollapseBox indent settingKey="settings-plex-use_autopulse">
             <Text
-              label="Webhook URL"
-              settingKey="settings-plex-subtitle_webhook_url"
-              placeholder="http://autopulse:2875/triggers/bazarr-trigger"
+              label="Autopulse Host"
+              settingKey="settings-plex-autopulse_host"
+              placeholder="autopulse or 192.168.1.100"
+            />
+            <Number
+              label="Autopulse Port"
+              settingKey="settings-plex-autopulse_port"
             />
             <Text
               label="Username (optional)"
-              settingKey="settings-plex-subtitle_webhook_username"
+              settingKey="settings-plex-autopulse_username"
               placeholder="admin"
             />
             <Password
               label="Password (optional)"
-              settingKey="settings-plex-subtitle_webhook_password"
+              settingKey="settings-plex-autopulse_password"
+            />
+            <AutopulseSelector
+              label="Test Autopulse Connection"
+              description="Verify that Bazarr can connect to your Autopulse instance"
             />
             <Message>
-              <strong>Autopulse Example:</strong>
-              <br />
-              URL: http://autopulse:2875/triggers/bazarr-hd
-              <br />
-              Username: admin
-              <br />
-              Password: your-autopulse-password
-              <br />
-              <br />
-              The media file path will be automatically appended as a "path"
-              query parameter. See Bazarr documentation for complete Autopulse
-              setup instructions.
+              How it works: When Bazarr downloads subtitles, it automatically
+              calls Autopulse's manual trigger endpoint (GET
+              http://your-host:2875/triggers/manual?path=/media/path). Autopulse
+              will then trigger the appropriate Plex library refresh for that
+              path. No manual webhook configuration required!
             </Message>
           </CollapseBox>
         </Section>

@@ -335,6 +335,11 @@ declare namespace Plex {
     webhooks: WebhookInfo[];
     count: number;
   }
+
+  interface AutopulseResult {
+    success: boolean;
+    message: string;
+  }
 }
 
 interface SearchResultType {

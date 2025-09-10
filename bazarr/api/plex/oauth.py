@@ -953,3 +953,40 @@ class PlexWebhookDelete(Resource):
             return {'error': f'Failed to delete webhook: {str(e)}'}, 500
 
 
+@api_ns_plex.route('plex/autopulse/test')
+class PlexAutopulseTest(Resource):
+    post_request_parser = reqparse.RequestParser()
+
+    @api_ns_plex.doc(parser=post_request_parser)
+    def post(self):
+        try:
+            decrypted_token = get_decrypted_token()
+            if not decrypted_token:
+                raise UnauthorizedError()
+
+            from bazarr.utilities.webhook import test_autopulse_connection
+            
+            success = test_autopulse_connection()
+            
+            if success:
+                return {
+                    'data': {
+                        'success': True,
+                        'message': 'Autopulse connection successful'
+                    }
+                }
+            else:
+                return {
+                    'data': {
+                        'success': False,
+                        'message': 'Failed to connect to Autopulse'
+                    }
+                }, 400
+
+        except UnauthorizedError:
+            return {'error': 'Plex authentication required'}, 401
+        except Exception as e:
+            logger.error(f"Failed to test Autopulse connection: {e}")
+            return {'error': f'Failed to test Autopulse connection: {str(e)}'}, 500
+
+
