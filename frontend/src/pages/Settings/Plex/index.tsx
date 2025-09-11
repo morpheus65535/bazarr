@@ -1,4 +1,4 @@
-import { Box, Paper } from "@mantine/core";
+import { Alert, Box, Paper, Text as MantineText } from "@mantine/core";
 import {
   Check,
   CollapseBox,
@@ -74,20 +74,26 @@ const SettingsPlexView = () => {
         </Section>
 
         <Section header="Autopulse Integration">
-          <AutopulseSelector
-            label="Test Autopulse Connection"
-            description="Verify that Bazarr can connect to your Autopulse instance"
+          <Alert variant="light">
+            <strong>
+              Automatically trigger Autopulse when subtitles are downloaded to
+              refresh Plex metadata.
+            </strong>
+            <br />
+            <br />
+            <strong>No configuration is needed in Autopulse.</strong> Bazarr
+            uses Autopulse's built-in manual trigger endpoint automatically.
+            Simply provide the IP and port of your Autopulse instance below.
+          </Alert>
+          <Check
+            label="Use Autopulse for automatic Plex metadata refresh"
+            settingKey="settings-plex-use_autopulse"
           />
-          <Message>
-            Automatically trigger Autopulse when subtitles are downloaded to
-            refresh Plex metadata. Autopulse must be configured with a "manual"
-            trigger.
-          </Message>
           <CollapseBox indent settingKey="settings-plex-use_autopulse">
             <Text
               label="Autopulse Host"
               settingKey="settings-plex-autopulse_host"
-              placeholder="autopulse or 192.168.1.100"
+              placeholder="localhost or docker container name"
             />
             <Number
               label="Autopulse Port"
@@ -102,13 +108,32 @@ const SettingsPlexView = () => {
               label="Password (optional)"
               settingKey="settings-plex-autopulse_password"
             />
-            <Message>
-              How it works: When Bazarr downloads subtitles, it automatically
-              calls Autopulse's manual trigger endpoint (GET
-              http://your-host:2875/triggers/manual?path=/media/path). Autopulse
-              will then trigger the appropriate Plex library refresh for that
-              path. No manual webhook configuration required!
-            </Message>
+            <AutopulseSelector
+              label="Test Autopulse Connection"
+              description="Verify that Bazarr can connect to your Autopulse instance using the manual trigger endpoint."
+            />
+            <Alert variant="light" color="blue">
+              <MantineText size="sm" fw={500} mb="xs">
+                Minimal Docker Compose Setup:
+              </MantineText>
+              <MantineText
+                size="xs"
+                style={{ fontFamily: "monospace", whiteSpace: "pre-line" }}
+              >
+                {`services:
+  autopulse:
+    image: ghcr.io/dan-online/autopulse:latest
+    container_name: autopulse
+    restart: unless-stopped
+    ports:
+      - "2875:2875"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - AUTOPULSE__APP__DATABASE_URL=sqlite://data/autopulse.db
+`}
+              </MantineText>
+            </Alert>
           </CollapseBox>
         </Section>
       </CollapseBox>

@@ -1,83 +1,17 @@
-# Autopulse Docker Compose for Development/Testing
-# 
-# Autopulse is a Rust-based automation service that triggers Plex library refreshes
-# when media files are added or modified. It works by monitoring file system events
-# or responding to manual triggers via HTTP API.
-#
-# Setup Instructions:
-# 1. Update the media volume mount to match your actual media directory
-# 2. If Bazarr has OAuth authentication with Plex configured, run this to get your config:
-#    curl -H "X-API-KEY: your-bazarr-api-key" http://localhost:6767/api/plex/autopulse/config
-# 3. Replace PLEX_URL and PLEX_TOKEN with values from the above API call
-# 4. The API response now includes library information and full configuration examples
-# 5. Optionally configure authentication by uncommenting USERNAME/PASSWORD
-# 6. Run: docker-compose -f docker-compose-autopulse.yml up -d
-#
-# Note: This setup uses SQLite for the database (persistent via Docker volume)
-# For production, you might want to use PostgreSQL - update DATABASE_URL accordingly
-#
-# Auto-Configuration:
-# If you have Bazarr running with Plex OAuth, you can automatically get comprehensive configuration:
-# - GET http://bazarr:6767/api/plex/autopulse/config (returns PLEX_URL, PLEX_TOKEN, libraries, and paths)
-# - This provides everything needed: server URL, token, library information, and file paths
-# - No more manual token hunting or library path guessing!
-#
-# Testing with Bazarr:
-# - In Bazarr Plex settings, enable Autopulse integration
-# - Set Autopulse Host: autopulse (or container IP)
-# - Set Autopulse Port: 2875
-# - Add username/password if configured
-# - Test connection should work
-#
-# Manual API Testing:
-# - GET http://localhost:2875/status (health check)
-# - GET http://localhost:2875/triggers/manual?path=/media/Movies/SomeMovie (manual trigger)
-
 services:
   autopulse:
     image: ghcr.io/dan-online/autopulse:latest
     container_name: autopulse
+    restart: unless-stopped
     ports:
       - "2875:2875"
-    environment:
-      # Basic configuration
-      - AUTOPULSE_PORT=2875
-      - AUTOPULSE_HOST=0.0.0.0
-      
-      # Database configuration (SQLite for simplicity)
-      - AUTOPULSE__APP__DATABASE_URL=sqlite:///app/data/autopulse.db
-      
-      # Plex configuration - Use automatic configuration from Bazarr
-      # Get these values by clicking "GET PLEX CONFIG" in Bazarr Plex settings
-      # or by calling: curl -H "X-API-KEY: your-api-key" http://bazarr:6767/api/plex/autopulse/config
-      # The API response includes library paths, so you can match them to your volume mounts
-      - PLEX_URL=http://your-plex-server:32400
-      - PLEX_TOKEN=your-plex-token-here
-      
-      # Optional: Authentication (if you want to secure Autopulse)
-      # - AUTOPULSE__AUTH__USERNAME=admin
-      # - AUTOPULSE__AUTH__PASSWORD=your-password-here
-      
-      # Optional: Logging level
-      - RUST_LOG=info
-      
     volumes:
-      # Mount your media directory so Autopulse can match paths
-      - /path/to/your/media:/media
-      # Persistent database storage
-      - autopulse_data:/app/data
-      
-    restart: unless-stopped
-    
-    # Optional: Add to your existing network if you have one
-    # networks:
-    #   - media-network
+      - ./data:/app/data
+    environment:
+      - AUTOPULSE__APP__DATABASE_URL=sqlite://data/autopulse.db
+    networks:
+      - dev-setup_bazarr-network
 
-# Optional: Create a network for your media services
-# networks:
-#   media-network:
-#     external: true
-
-volumes:
-  autopulse_data:
-    driver: local
+networks:
+  dev-setup_bazarr-network:
+    external: true

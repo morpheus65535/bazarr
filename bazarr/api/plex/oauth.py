@@ -953,140 +953,6 @@ class PlexWebhookDelete(Resource):
             return {'error': f'Failed to delete webhook: {str(e)}'}, 500
 
 
-@api_ns_plex.route('plex/autopulse/config')
-class PlexAutopulseConfig(Resource):
-    def get(self):
-        """Get comprehensive Plex configuration for Autopulse from current Bazarr OAuth settings"""
-        try:
-            auth_method = settings.plex.get('auth_method', 'apikey')
-            
-            if auth_method != 'oauth':
-                return {
-                    'error': 'OAuth authentication required',
-                    'message': 'Please authenticate with Plex using OAuth to get automatic configuration'
-                }, 400
-            
-            # Get server URL
-            server_url = settings.plex.get('server_url')
-            if not server_url:
-                return {
-                    'error': 'Server URL not configured',
-                    'message': 'Please select a Plex server in Bazarr settings'
-                }, 400
-            
-            # Get and decrypt token
-            encrypted_token = settings.plex.get('token')
-            if not encrypted_token:
-                return {
-                    'error': 'Token not found',
-                    'message': 'OAuth token not found. Please re-authenticate with Plex.'
-                }, 400
-            
-            try:
-                decrypted_token = decrypt_token(encrypted_token)
-            except Exception as e:
-                logger.error(f"Failed to decrypt token for Autopulse config: {e}")
-                return {
-                    'error': 'Token decryption failed',
-                    'message': 'Failed to decrypt OAuth token. Please re-authenticate with Plex.'
-                }, 500
-            
-            # Get library information
-            libraries = []
-            try:
-                headers = {
-                    'X-Plex-Token': decrypted_token,
-                    'Accept': 'application/json'
-                }
-
-                # Get libraries from the selected server
-                response = requests.get(
-                    f"{server_url}/library/sections",
-                    headers=headers,
-                    timeout=10,
-                    verify=False
-                )
-
-                if response.status_code == 200:
-                    content_type = response.headers.get('content-type', '')
-                    if 'application/json' in content_type:
-                        data = response.json()
-                        if 'MediaContainer' in data and 'Directory' in data['MediaContainer']:
-                            sections = data['MediaContainer']['Directory']
-                            
-                            for section in sections:
-                                if section.get('type') in ['movie', 'show']:
-                                    # Get library locations for Autopulse path matching
-                                    locations = []
-                                    try:
-                                        location_response = requests.get(
-                                            f"{server_url}/library/sections/{section.get('key')}",
-                                            headers=headers,
-                                            timeout=5,
-                                            verify=False
-                                        )
-                                        if location_response.status_code == 200:
-                                            location_data = location_response.json()
-                                            if 'MediaContainer' in location_data and 'Directory' in location_data['MediaContainer']:
-                                                library_info = location_data['MediaContainer']['Directory'][0]
-                                                if 'Location' in library_info:
-                                                    for loc in library_info['Location']:
-                                                        locations.append(loc.get('path', ''))
-                                    except Exception as e:
-                                        logger.warning(f"Failed to get locations for library {section.get('title')}: {e}")
-                                    
-                                    libraries.append({
-                                        'key': section.get('key'),
-                                        'title': section.get('title'),
-                                        'type': section.get('type'),
-                                        'locations': locations
-                                    })
-                            
-            except Exception as e:
-                logger.warning(f"Failed to get library information: {e}")
-            
-            # Get configured libraries from Bazarr settings
-            configured_libraries = {
-                'movie': settings.plex.get('movie_library', ''),
-                'series': settings.plex.get('series_library', '')
-            }
-            
-            return {
-                'plex_url': server_url,
-                'plex_token': decrypted_token,
-                'server_name': settings.plex.get('server_name', 'Unknown'),
-                'username': settings.plex.get('username', ''),
-                'auth_method': 'oauth',
-                'libraries': libraries,
-                'configured_libraries': configured_libraries,
-                'autopulse_config': {
-                    'description': 'Use these values to configure Autopulse environment variables',
-                    'environment_variables': {
-                        'PLEX_URL': server_url,
-                        'PLEX_TOKEN': decrypted_token
-                    },
-                    'targets_config': {
-                        'description': 'Add this to your Autopulse config.yml targets section',
-                        'target_name': 'my_plex',
-                        'config': {
-                            'type': 'plex',
-                            'url': server_url,
-                            'token': decrypted_token,
-                            'refresh': True,
-                            'analyze': False
-                        }
-                    }
-                }
-            }
-            
-        except Exception as e:
-            logger.error(f"Failed to get Autopulse config: {e}")
-            return {
-                'error': 'Configuration error',
-                'message': f'Failed to retrieve Plex configuration: {str(e)}'
-            }, 500
-
-
 @api_ns_plex.route('plex/autopulse/test')
 class PlexAutopulseTest(Resource):
     post_request_parser = reqparse.RequestParser()
@@ -1098,7 +964,7 @@ class PlexAutopulseTest(Resource):
             if not decrypted_token:
                 raise UnauthorizedError()
 
-            from bazarr.utilities.autopulse_webhook import test_autopulse_connection
+            from utilities.autopulse_webhook import test_autopulse_connection
             
             success, message = test_autopulse_connection()
             
@@ -1122,5 +988,34 @@ class PlexAutopulseTest(Resource):
         except Exception as e:
             logger.error(f"Failed to test Autopulse connection: {e}")
             return {'error': f'Failed to test Autopulse connection: {str(e)}'}, 500
+
+
+@api_ns_plex.route('plex/autopulse/config')
+class PlexAutopulseConfig(Resource):
+    get_request_parser = reqparse.RequestParser()
+
+    @api_ns_plex.doc(parser=get_request_parser)
+    def get(self):
+        try:
+            decrypted_token = get_decrypted_token()
+            if not decrypted_token:
+                raise UnauthorizedError()
+
+            from utilities.autopulse_webhook import get_autopulse_config
+            
+            config = get_autopulse_config()
+            
+            if config:
+                return {
+                    'data': config
+                }
+            else:
+                return {'error': 'Failed to get Autopulse configuration'}, 400
+
+        except UnauthorizedError:
+            return {'error': 'Plex authentication required'}, 401
+        except Exception as e:
+            logger.error(f"Failed to get Autopulse config: {e}")
+            return {'error': f'Failed to get Autopulse config: {str(e)}'}, 500
 
 
