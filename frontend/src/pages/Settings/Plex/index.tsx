@@ -67,10 +67,10 @@ const SettingsPlexView = () => {
             label="Webhooks"
             description="Create a Bazarr webhook in Plex to automatically search for subtitles when content starts playing. Manage and remove existing webhooks for convenience."
           />
-        </Section>
-
-        <Section header="Autopulse Integration">
-          <AutopulseSelector />
+          <AutopulseSelector
+            label="Autopulse Configuration"
+            description="Generate a complete Autopulse configuration file with your Plex server details, OAuth credentials, and optimized settings."
+          />
         </Section>
       </CollapseBox>
     </Layout>

@@ -953,29 +953,6 @@ class PlexWebhookDelete(Resource):
             return {'error': f'Failed to delete webhook: {str(e)}'}, 500
 
 
-@api_ns_plex.route('plex/autopulse/test')
-class PlexAutopulseTest(Resource):
-    post_request_parser = reqparse.RequestParser()
-
-    @api_ns_plex.doc(parser=post_request_parser)
-    def post(self):
-        try:
-            from utilities.autopulse_webhook import test_autopulse_connection
-            
-            success, message = test_autopulse_connection()
-            
-            return {
-                'data': {
-                    'success': success,
-                    'message': message
-                }
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to test Autopulse connection: {e}")
-            return {'error': f'Failed to test Autopulse connection: {str(e)}'}, 500
-
-
 @api_ns_plex.route('plex/autopulse/config')
 class PlexAutopulseConfig(Resource):
     get_request_parser = reqparse.RequestParser()

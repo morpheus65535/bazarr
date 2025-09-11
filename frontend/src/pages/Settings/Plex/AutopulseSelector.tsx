@@ -6,7 +6,6 @@ import {
   Card,
   Code,
   Group,
-  List,
   Stack,
   Text,
   Tooltip,
@@ -18,17 +17,18 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   usePlexAuthValidationQuery,
   usePlexAutopulseConfigQuery,
-  usePlexAutopulseTestMutation,
 } from "@/apis/hooks/plex";
-import {
-  Check,
-  CollapseBox,
-  Number,
-  Password,
-  Text as SettingsText,
-} from "@/pages/Settings/components";
+import styles from "@/pages/Settings/Plex/WebhookSelector.module.scss";
 
-const AutopulseSelector: FunctionComponent = () => {
+export type AutopulseSelectorProps = {
+  label: string;
+  description?: string;
+};
+
+const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
+  props,
+) => {
+  const { label, description } = props;
   const clipboard = useClipboard();
 
   // Check if user is authenticated with OAuth
@@ -36,8 +36,6 @@ const AutopulseSelector: FunctionComponent = () => {
   const isAuthenticated = Boolean(
     authData?.valid && authData?.auth_method === "oauth",
   );
-
-  const testMutation = usePlexAutopulseTestMutation();
 
   const {
     data: configData,
@@ -47,39 +45,14 @@ const AutopulseSelector: FunctionComponent = () => {
     enabled: false,
   });
 
-  const handleTestConnection = async () => {
-    try {
-      const result = await testMutation.mutateAsync();
-      notifications.show({
-        title: result.data.success ? "Success" : "Error",
-        message: result.data.message,
-        color: result.data.success ? "green" : "red",
-      });
-    } catch (error) {
-      notifications.show({
-        title: "Error",
-        message: "Failed to test Autopulse connection",
-        color: "red",
-      });
-    }
-  };
-
   const handleGenerateAutopulseConfig = async () => {
     try {
-      const result = await refetchConfig();
-      if (result.data) {
-        notifications.show({
-          title: "Success",
-          message: `Generated Autopulse config for: ${result.data.server_name}`,
-          color: "green",
-        });
-      } else {
-        notifications.show({
-          title: "Error",
-          message: "Failed to generate Autopulse configuration",
-          color: "red",
-        });
-      }
+      await refetchConfig();
+      notifications.show({
+        title: "Success",
+        message: "Autopulse configuration generated successfully",
+        color: "green",
+      });
     } catch (error) {
       notifications.show({
         title: "Error",
@@ -91,113 +64,45 @@ const AutopulseSelector: FunctionComponent = () => {
 
   if (!isAuthenticated) {
     return (
-      <Stack gap="xs">
-        <Alert variant="light" color="gray">
-          Enable Plex OAuth above to use Autopulse integration.
+      <Stack gap="xs" className={styles.webhookSelector}>
+        <Text fw={500} className={styles.labelText}>
+          {label}
+        </Text>
+        <Alert color="brand" variant="light" className={styles.alertMessage}>
+          Enable Plex OAuth above to be able to generate a config for Autopulse.
         </Alert>
       </Stack>
     );
   }
 
   return (
-    <Stack gap="md">
-      <Check
-        label="Use Autopulse for automatic Plex metadata refresh"
-        settingKey="settings-plex-use_autopulse"
-      />
-
-      <Card withBorder p="md" radius="md">
-        <Text size="sm" fw={600} mb="xs">
-          How to Set Up Autopulse Integration:
+    <div className={styles.webhookSelector}>
+      <Stack gap="xs">
+        <Text fw={500} className={styles.labelText}>
+          {label}
         </Text>
-        <Text size="sm" c="dimmed" mb="md">
-          Complete setup flow for Autopulse with Plex OAuth:
-        </Text>
-        <List size="sm" spacing="xs" withPadding>
-          <List.Item>
-            Install and run Autopulse server (see Autopulse documentation)
-          </List.Item>
-          <List.Item>
-            Enable Autopulse integration below and set host/port
-          </List.Item>
-          <List.Item>
-            If your Autopulse server requires authentication, configure
-            credentials in the Auth section
-          </List.Item>
-          <List.Item>
-            Generate the complete Autopulse configuration (includes Plex OAuth)
-          </List.Item>
-          <List.Item>
-            Save the configuration as <Code>config.toml</Code> in your Autopulse
-            data directory
-          </List.Item>
-          <List.Item>Test the connection to ensure it's working</List.Item>
-        </List>
-        <Text size="sm" c="dimmed" mt="sm">
-          Bazarr will automatically generate a complete Autopulse configuration
-          with your Plex OAuth settings and intelligent path rewriting.
-        </Text>
-      </Card>
-
-      <CollapseBox indent settingKey="settings-plex-use_autopulse">
-        <SettingsText
-          label="Autopulse Host"
-          settingKey="settings-plex-autopulse_host"
-          placeholder="localhost or autopulse.example.com"
-        />
-        <Number
-          label="Autopulse Port"
-          settingKey="settings-plex-autopulse_port"
-        />
-
-        <CollapseBox settingKey="settings-plex-use_autopulse">
-          <Stack gap="xs">
-            <Text size="sm" fw={500}>
-              Autopulse Authentication
-            </Text>
-            <Text size="xs" c="dimmed">
-              Only needed if your existing Autopulse server requires
-              authentication. Leave empty if your Autopulse runs without auth.
-            </Text>
-            <SettingsText
-              label="Username"
-              settingKey="settings-plex-autopulse_username"
-              placeholder="Leave empty for no auth"
-            />
-            <Password
-              label="Password"
-              settingKey="settings-plex-autopulse_password"
-              placeholder="Leave empty for no auth"
-            />
-          </Stack>
-        </CollapseBox>
-
-        <Stack gap="xs" mt="md">
-          <Text fw={500}>Test Connection & Generate Configuration</Text>
-          <Group gap="sm">
-            <Button
-              onClick={handleTestConnection}
-              loading={testMutation.isPending}
-              size="sm"
-              variant="light"
-            >
-              Test Autopulse Connection
-            </Button>
-            <Button
-              onClick={handleGenerateAutopulseConfig}
-              loading={isFetchingConfig}
-              size="sm"
-              variant="light"
-            >
-              Generate Autopulse Config
-            </Button>
-          </Group>
-          <Text size="xs" c="dimmed">
-            Test verifies communication with your Autopulse server. Generate
-            creates a configuration for fresh Autopulse setup (without auth
-            section).
+        {description && (
+          <Text size="sm" c="dimmed">
+            {description}
           </Text>
-        </Stack>
+        )}
+        <Text size="sm" c="dimmed">
+          Generate a complete Autopulse configuration file with your Plex server
+          details, OAuth credentials, and optimized settings. Save as{" "}
+          <Code>bazarr-plex.toml</Code> (or any custom name) in your Autopulse
+          container data directory.
+        </Text>
+
+        <Group gap="xs">
+          <Button
+            onClick={handleGenerateAutopulseConfig}
+            loading={isFetchingConfig}
+            size="sm"
+            variant="light"
+          >
+            Generate Configuration
+          </Button>
+        </Group>
 
         {configData && (
           <Card withBorder p="md" radius="md" mt="md">
@@ -225,10 +130,6 @@ const AutopulseSelector: FunctionComponent = () => {
                 </ActionIcon>
               </Tooltip>
             </Group>
-            <Text size="xs" c="dimmed" mb="sm">
-              Save this as <Code>config.toml</Code> in your Autopulse container
-              data directory:
-            </Text>
             {configData.rewrite_detected && (
               <Alert variant="light" color="blue" mb="sm">
                 <Text size="xs">
@@ -247,8 +148,8 @@ const AutopulseSelector: FunctionComponent = () => {
             </Text>
           </Card>
         )}
-      </CollapseBox>
-    </Stack>
+      </Stack>
+    </div>
   );
 };
 
