@@ -102,6 +102,11 @@ validators = [
     Validator('general.postprocessing_threshold_movie', must_exist=True, default=70, is_type_of=int, gte=0,
               lte=100),
     Validator('general.use_postprocessing_threshold_movie', must_exist=True, default=False, is_type_of=bool),
+    # External webhook integration
+    Validator('general.use_external_webhook', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.external_webhook_url', must_exist=True, default='', is_type_of=str),
+    Validator('general.external_webhook_username', must_exist=True, default='', is_type_of=str),
+    Validator('general.external_webhook_password', must_exist=True, default='', is_type_of=str),
     Validator('general.use_sonarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_plex', must_exist=True, default=False, is_type_of=bool),

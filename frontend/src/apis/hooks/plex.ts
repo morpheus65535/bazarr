@@ -212,9 +212,3 @@ export const usePlexAutopulseConfigQuery = <TData = Plex.AutopulseConfig>(
     ...options,
   });
 };
-
-export const usePlexAutopulseScanMutation = () => {
-  return useMutation({
-    mutationFn: (scanType: string) => api.plex.triggerAutopulseScan(scanType),
-  });
-};
