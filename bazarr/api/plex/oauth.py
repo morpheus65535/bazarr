@@ -987,9 +987,9 @@ class PlexAutopulseConfig(Resource):
             if not decrypted_token:
                 raise UnauthorizedError()
 
-            from utilities.autopulse_webhook import get_plex_config_for_autopulse
+            from utilities.autopulse_webhook import generate_complete_autopulse_config
             
-            config = get_plex_config_for_autopulse()
+            config = generate_complete_autopulse_config()
             
             if config:
                 return {

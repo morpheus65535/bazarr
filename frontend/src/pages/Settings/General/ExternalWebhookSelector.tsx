@@ -185,9 +185,10 @@ const ExternalWebhookSelector: FunctionComponent = () => {
               <Text size="xs" c="dimmed">
                 Server: {plexConfigData.server_name || "Unknown"}
                 <br />
-                URL: {plexConfigData.plex_url || "Not configured"}
+                Path Rewrite Needed:{" "}
+                {plexConfigData.rewrite_detected ? "Yes" : "No"}
                 <br />
-                Auth: {plexConfigData.auth_method || "Unknown"}
+                Status: Configuration available for Autopulse
               </Text>
             </Card>
           )}
