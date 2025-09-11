@@ -115,17 +115,23 @@ def test_autopulse_connection():
 
 def get_autopulse_config():
     """
-    Get essential Plex configuration for Autopulse setup display.
-    Returns dict with basic config data or None if failed.
+    Get essential Plex configuration for Autopulse setup.
+    Returns dict with config data or None if failed.
     """
     try:
-        # Get basic Plex configuration from Bazarr's settings
+        # Get the current Plex configuration from Bazarr's settings
         server_url = settings.plex.get('server_url', '')
         server_name = settings.plex.get('server_name', '')
+        username = settings.plex.get('username', '')
         auth_method = settings.plex.get('auth_method', 'apikey')
         
-        # Check if we have an encryption key
-        if not getattr(settings.plex, 'encryption_key', None):
+        # Get configured library names from Bazarr settings
+        movie_library = settings.plex.get('movie_library', '')
+        series_library = settings.plex.get('series_library', '')
+        
+        # Get the decrypted token for Autopulse configuration
+        key_existed = bool(getattr(settings.plex, 'encryption_key', None))
+        if not key_existed:
             logging.warning("BAZARR no encryption key available for Autopulse config")
             return None
             
@@ -146,6 +152,7 @@ def get_autopulse_config():
             return None
         
         if not decrypted_token or not server_url:
+            logging.warning("BAZARR missing required Plex configuration for Autopulse")
             return None
         
         # Get basic libraries information
@@ -170,20 +177,31 @@ def get_autopulse_config():
                     for section in sections:
                         if section.get('type') in ['movie', 'show']:
                             libraries.append({
+                                'key': section.get('key', ''),
                                 'title': section.get('title', ''),
                                 'type': section.get('type', ''),
+                                'locations': [loc.get('path', '') for loc in section.get('Location', [])]
                             })
         except Exception as e:
             logging.warning(f"BAZARR could not fetch libraries for Autopulse config: {e}")
         
         # Return simplified configuration data
-        return {
+        config_data = {
             'plex_url': server_url,
+            'plex_token': decrypted_token,
             'server_name': server_name,
+            'username': username,
             'auth_method': auth_method,
             'libraries': libraries,
+            'configured_libraries': {
+                'movie': movie_library,
+                'series': series_library
+            }
         }
+        
+        logging.info(f"BAZARR generated Autopulse config for server: {server_name}")
+        return config_data
             
     except Exception as e:
-        logging.error(f"BAZARR unexpected error generating Autopulse config: {str(e)}")
+        logging.error(f"BAZARR error generating Autopulse config: {str(e)}")
         return None

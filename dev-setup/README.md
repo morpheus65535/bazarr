@@ -90,6 +90,9 @@ docker compose up
 # Start in background (detached)
 docker compose up -d
 
+# Start with optional Autopulse service for Plex integration testing
+docker compose --profile autopulse up -d
+
 # Rebuild after dependency changes
 docker compose up --build
 
@@ -182,6 +185,30 @@ docker rmi dev-setup-bazarr-backend dev-setup-bazarr-frontend
 # Rebuild from scratch
 docker compose up --build
 ```
+
+## Optional Services
+
+### 🔗 **Autopulse Integration**
+For testing Plex integration features, you can optionally enable the Autopulse service:
+
+```bash
+# Start with Autopulse for Plex metadata refresh testing
+docker compose --profile autopulse up -d
+
+# Access Autopulse web interface
+open http://localhost:2875
+```
+
+**Autopulse Configuration:**
+- URL: `http://localhost:2875` (or `http://autopulse:2875` from within containers)
+- Username: `admin`
+- Password: `bazarr-dev`
+
+**Usage with Bazarr:**
+1. Configure Plex settings in Bazarr (OAuth recommended)
+2. Enable "Use Autopulse for automatic Plex metadata refresh" in Plex settings
+3. Set Autopulse host to `autopulse` (container name) or `localhost`
+4. Set port to `2875` with the credentials above
 
 ## Development Tips
 

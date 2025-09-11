@@ -14,11 +14,7 @@ import {
   Text as SettingsText,
 } from "@/pages/Settings/components";
 
-export type AutopulseSelectorProps = {
-  // No props needed since this is now a complete section
-};
-
-const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = () => {
+const AutopulseSelector: FunctionComponent = () => {
   // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
@@ -40,24 +36,15 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = () => {
   const handleTestConnection = async () => {
     try {
       const result = await testMutation.mutateAsync();
-
       notifications.show({
         title: result.data.success ? "Success" : "Error",
         message: result.data.message,
         color: result.data.success ? "green" : "red",
       });
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : error && typeof error === "object" && "response" in error
-            ? (error as { response?: { data?: { error?: string } } }).response
-                ?.data?.error
-            : "Failed to test Autopulse connection";
-
+    } catch (error) {
       notifications.show({
         title: "Error",
-        message: errorMessage || "Failed to test Autopulse connection",
+        message: "Failed to test Autopulse connection",
         color: "red",
       });
     }
@@ -66,15 +53,20 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = () => {
   const handleGetPlexConfig = async () => {
     try {
       const result = await refetchConfig();
-
-      notifications.show({
-        title: result.data ? "Success" : "Error",
-        message: result.data
-          ? `Configuration loaded for: ${result.data.server_name || "Server"}`
-          : "Failed to get Plex configuration",
-        color: result.data ? "green" : "red",
-      });
-    } catch (error: unknown) {
+      if (result.data) {
+        notifications.show({
+          title: "Success",
+          message: `Found Plex config: ${result.data.server_name || "Server"}`,
+          color: "green",
+        });
+      } else {
+        notifications.show({
+          title: "Error",
+          message: "Failed to get Plex configuration",
+          color: "red",
+        });
+      }
+    } catch (error) {
       notifications.show({
         title: "Error",
         message: "Failed to get Plex configuration",
@@ -145,28 +137,31 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = () => {
         {configData && (
           <>
             <Alert variant="light" color="brand">
-              Plex Configuration:
+              Plex Configuration for Autopulse:
             </Alert>
             <Alert variant="filled" color="gray" p="md">
-              <Text
-                size="xs"
-                ff="monospace"
-                style={{ whiteSpace: "pre-wrap", lineHeight: 1.4 }}
-              >
+              <Text component="pre" size="xs" c="gray.0" lh={1.4}>
                 {`Server: ${configData.server_name || "Unknown"}
 URL: ${configData.plex_url || "Not configured"}
-Libraries: ${configData.libraries?.length || 0} found`}
+Auth Method: ${configData.auth_method || "Unknown"}
+Libraries: ${configData.libraries?.length || 0}
+Library Paths: ${
+                  configData.libraries && configData.libraries.length > 0
+                    ? configData.libraries
+                        .map((lib) => lib.locations.join(", "))
+                        .join("; ")
+                    : "None"
+                }`}
               </Text>
             </Alert>
           </>
         )}
 
         <Alert variant="light" color="brand">
-          Docker Compose Setup:
+          Docker Compose Example:
         </Alert>
-
         <Alert variant="filled" color="gray" p="md">
-          <Text size="xs" ff="monospace" style={{ whiteSpace: "pre-wrap" }}>
+          <Text component="pre" size="xs" c="gray.0" lh={1.4}>
             {`services:
   autopulse:
     image: ghcr.io/dan-online/autopulse:latest
@@ -177,7 +172,9 @@ Libraries: ${configData.libraries?.length || 0} found`}
     volumes:
       - ./data:/app/data
     environment:
-      - AUTOPULSE__APP__DATABASE_URL=sqlite://data/autopulse.db`}
+      - AUTOPULSE__APP__DATABASE_URL=sqlite://data/autopulse.db
+      - AUTOPULSE__AUTH__USERNAME=admin
+      - AUTOPULSE__AUTH__PASSWORD=password`}
           </Text>
         </Alert>
       </CollapseBox>

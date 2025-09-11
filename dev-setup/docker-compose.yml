@@ -72,6 +72,7 @@ services:
       retries: 30
       start_period: 60s
 
+  # Optional Autopulse service for automated Plex metadata refresh
   autopulse:
     image: ghcr.io/dan-online/autopulse:latest
     container_name: bazarr-autopulse
@@ -79,16 +80,20 @@ services:
     ports:
       - "2875:2875"
     volumes:
-      - ./data:/app/data
+      - ./data/autopulse:/app/data
     environment:
       - AUTOPULSE__APP__DATABASE_URL=sqlite://data/autopulse.db
       - AUTOPULSE__AUTH__USERNAME=admin
-      - AUTOPULSE__AUTH__PASSWORD=password
+      - AUTOPULSE__AUTH__PASSWORD=bazarr-dev
     networks:
       - bazarr-network
-    depends_on:
-      bazarr-backend:
-        condition: service_healthy
+    profiles:
+      - autopulse  # Use profile to make this service optional
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:2875/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   bazarr-network:
