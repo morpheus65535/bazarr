@@ -113,6 +113,123 @@ def test_autopulse_connection():
         return False, f"Autopulse connection error: {str(e)}"
 
 
+def trigger_autopulse_library_scan(scan_type):
+    """
+    Trigger Autopulse to scan library items.
+    Args:
+        scan_type: "recent" for recently added, "all" for all items
+    Returns:
+        (success: bool, message: str)
+    """
+    if not settings.plex.use_autopulse or not settings.plex.autopulse_host:
+        return False, "Autopulse not configured"
+    
+    try:
+        # Get Plex configuration
+        config = get_autopulse_config()
+        if not config:
+            return False, "Failed to get Plex configuration"
+        
+        # Get library sections and scan items
+        plex_url = config['plex_url']
+        plex_token = config['plex_token']
+        
+        headers = {'X-Plex-Token': plex_token, 'Accept': 'application/json'}
+        
+        # Get library sections
+        sections_response = requests.get(f"{plex_url}/library/sections", headers=headers, timeout=10, verify=False)
+        if sections_response.status_code != 200:
+            return False, "Failed to get Plex library sections"
+            
+        sections_data = sections_response.json()
+        sections = sections_data.get('MediaContainer', {}).get('Directory', [])
+        
+        scanned_count = 0
+        limit = 20 if scan_type == "recent" else 100  # Keep it reasonable
+        
+        for section in sections:
+            if section.get('type') not in ['movie', 'show']:
+                continue
+                
+            section_key = section.get('key', '')
+            
+            # Build query URL based on scan type
+            if scan_type == "recent":
+                query_url = f"{plex_url}/library/sections/{section_key}/recentlyAdded"
+            else:  # "all"
+                query_url = f"{plex_url}/library/sections/{section_key}/all"
+            
+            # Get items from this section
+            items_response = requests.get(f"{query_url}?X-Plex-Container-Size={limit}", headers=headers, timeout=30, verify=False)
+            
+            if items_response.status_code == 200:
+                items_data = items_response.json()
+                metadata_items = items_data.get('MediaContainer', {}).get('Metadata', [])
+                
+                for item in metadata_items:
+                    # Get file path from media parts
+                    media_list = item.get('Media', [])
+                    for media in media_list:
+                        parts = media.get('Part', [])
+                        for part in parts:
+                            file_path = part.get('file', '')
+                            if file_path:
+                                success, _ = trigger_autopulse_scan(file_path)
+                                if success:
+                                    scanned_count += 1
+                                    logging.debug(f"BAZARR Autopulse triggered for: {file_path}")
+        
+        if scanned_count > 0:
+            message = f"Successfully triggered Autopulse scan for {scanned_count} {scan_type} items"
+            logging.info(f"BAZARR {message}")
+            return True, message
+        else:
+            return False, f"No {scan_type} items found to scan"
+            
+    except Exception as e:
+        logging.error(f"BAZARR error triggering Autopulse library scan: {str(e)}")
+        return False, f"Failed to trigger Autopulse scan: {str(e)}"
+
+
+def trigger_autopulse_scan(media_path):
+    """
+    Simple wrapper to trigger Autopulse scan for a specific media path.
+    Uses the same logic as call_subtitle_webhook but without subtitle context.
+    """
+    if not settings.plex.use_autopulse or not settings.plex.autopulse_host:
+        return False, "Autopulse not configured"
+    
+    try:
+        host = settings.plex.autopulse_host.strip()
+        port = settings.plex.autopulse_port
+        username = settings.plex.autopulse_username.strip()
+        password = settings.plex.autopulse_password.strip()
+        
+        if not host or not media_path:
+            return False, "Missing required configuration"
+
+        # Use existing manual trigger endpoint
+        autopulse_url = f"http://{host}:{port}/triggers/manual"
+        params = {'path': media_path}
+        webhook_url = f"{autopulse_url}?{urlencode(params)}"
+        
+        auth = None
+        if username and password:
+            auth = (username, password)
+        
+        headers = {'User-Agent': 'Bazarr'}
+        
+        response = requests.get(webhook_url, auth=auth, headers=headers, timeout=10, verify=True)
+        
+        if response.status_code == 200:
+            return True, f"Autopulse scan triggered for: {media_path}"
+        else:
+            return False, f"Autopulse returned status {response.status_code}"
+            
+    except Exception as e:
+        return False, f"Failed to trigger scan: {str(e)}"
+
+
 def get_autopulse_config():
     """
     Get essential Plex configuration for Autopulse setup.

@@ -1,5 +1,6 @@
 import { FunctionComponent, useState } from "react";
 import {
+  ActionIcon,
   Alert,
   Button,
   Card,
@@ -9,16 +10,16 @@ import {
   List,
   Stack,
   Text,
-  ActionIcon,
   Tooltip,
 } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
+import { faCheck, faCopy } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCopy, faCheck } from "@fortawesome/free-solid-svg-icons";
 import {
   usePlexAuthValidationQuery,
   usePlexAutopulseConfigQuery,
+  usePlexAutopulseScanMutation,
   usePlexAutopulseTestMutation,
 } from "@/apis/hooks/plex";
 import {
@@ -40,6 +41,7 @@ const AutopulseSelector: FunctionComponent = () => {
   );
 
   const testMutation = usePlexAutopulseTestMutation();
+  const scanMutation = usePlexAutopulseScanMutation();
 
   const {
     data: configData,
@@ -115,6 +117,23 @@ const AutopulseSelector: FunctionComponent = () => {
       message: "Docker Compose configuration copied to clipboard",
       color: "green",
     });
+  };
+
+  const handleTriggerScan = async (scanType: "recent" | "all") => {
+    try {
+      const result = await scanMutation.mutateAsync(scanType);
+      notifications.show({
+        title: result.data.success ? "Success" : "Error",
+        message: result.data.message,
+        color: result.data.success ? "green" : "red",
+      });
+    } catch (error) {
+      notifications.show({
+        title: "Error",
+        message: "Failed to trigger Autopulse scan",
+        color: "red",
+      });
+    }
   };
 
   if (!isAuthenticated) {
@@ -239,6 +258,36 @@ const AutopulseSelector: FunctionComponent = () => {
             "View Plex Config" shows what Autopulse will receive from Bazarr's
             Plex OAuth. "Test Autopulse Connection" verifies communication with
             your Autopulse server.
+          </Text>
+        </Stack>
+
+        <Stack gap="xs" mt="md">
+          <Text fw={500}>Trigger Autopulse Scan</Text>
+          <Text size="xs" c="dimmed" mb="sm">
+            Manually trigger Autopulse to refresh items in your Plex libraries.
+          </Text>
+          <Group gap="sm">
+            <Button
+              onClick={() => handleTriggerScan("recent")}
+              loading={scanMutation.isPending}
+              size="sm"
+              variant="light"
+            >
+              SCAN RECENTLY ADDED
+            </Button>
+            <Button
+              onClick={() => handleTriggerScan("all")}
+              loading={scanMutation.isPending}
+              size="sm"
+              variant="filled"
+            >
+              SCAN ALL ITEMS
+            </Button>
+          </Group>
+          <Text size="xs" c="dimmed">
+            <strong>Recently Added:</strong> Scans items recently added to Plex.
+            <strong> All Items:</strong> Scans all items in your libraries (use
+            with caution on large libraries).
           </Text>
         </Stack>
 

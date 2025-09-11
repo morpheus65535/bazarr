@@ -1019,3 +1019,40 @@ class PlexAutopulseConfig(Resource):
             return {'error': f'Failed to get Autopulse config: {str(e)}'}, 500
 
 
+@api_ns_plex.route('plex/autopulse/scan')
+class PlexAutopulseScan(Resource):
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('scan_type', type=str, required=True,
+                                   help='Type of scan: recent or all')
+
+    @api_ns_plex.doc(parser=post_request_parser)
+    def post(self):
+        try:
+            decrypted_token = get_decrypted_token()
+            if not decrypted_token:
+                raise UnauthorizedError()
+
+            args = self.post_request_parser.parse_args()
+            scan_type = args.get('scan_type', '').strip()
+            
+            if scan_type not in ['recent', 'all']:
+                return {'error': 'scan_type must be "recent" or "all"'}, 400
+
+            from utilities.autopulse_webhook import trigger_autopulse_library_scan
+            
+            success, message = trigger_autopulse_library_scan(scan_type)
+            
+            return {
+                'data': {
+                    'success': success,
+                    'message': message
+                }
+            }
+
+        except UnauthorizedError:
+            return {'error': 'Plex authentication required'}, 401
+        except Exception as e:
+            logger.error(f"Failed to trigger Autopulse scan: {e}")
+            return {'error': f'Failed to trigger Autopulse scan: {str(e)}'}, 500
+
+
