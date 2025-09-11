@@ -126,6 +126,10 @@ def get_autopulse_config():
         email = settings.plex.get('email', '')
         auth_method = settings.plex.get('auth_method', 'apikey')
         
+        # Get configured library names from Bazarr settings
+        movie_library = settings.plex.get('movie_library', '')
+        series_library = settings.plex.get('series_library', '')
+        
         # Get the decrypted token for Autopulse configuration
         # Import only the token management functions to avoid blueprint issues
         key_existed = bool(getattr(settings.plex, 'encryption_key', None))
@@ -201,8 +205,8 @@ def get_autopulse_config():
             'auth_method': auth_method,
             'libraries': libraries,
             'configured_libraries': {
-                'movie': '',
-                'series': ''
+                'movie': movie_library,
+                'series': series_library
             },
             'autopulse_config': {
                 'description': 'Configuration for Autopulse Docker container',

@@ -2,21 +2,23 @@ import { FunctionComponent } from "react";
 import { Alert, Button, Group, Stack, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
+  Check,
+  CollapseBox,
+  Number,
+  Password,
+  Text as SettingsText,
+} from "@/pages/Settings/components";
+import {
   usePlexAuthValidationQuery,
   usePlexAutopulseTestMutation,
   usePlexAutopulseConfigQuery,
 } from "@/apis/hooks/plex";
 
 export type AutopulseSelectorProps = {
-  label: string;
-  description?: string;
+  // No props needed since this is now a complete section
 };
 
-const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
-  props,
-) => {
-  const { label, description } = props;
-
+const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = () => {
   // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
@@ -29,7 +31,11 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
     data: configData,
     refetch: refetchConfig,
     isFetching: isFetchingConfig,
-  } = usePlexAutopulseConfigQuery({ enabled: false });
+  } = usePlexAutopulseConfigQuery({
+    enabled: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
 
   const handleTestConnection = async () => {
     try {
@@ -99,8 +105,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
   if (!isAuthenticated) {
     return (
       <Stack gap="xs">
-        <Text fw={500}>{label}</Text>
-        <Alert variant="light">
+        <Alert variant="light" color="gray">
           Enable Plex OAuth above to use Autopulse integration.
         </Alert>
       </Stack>
@@ -108,49 +113,116 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
   }
 
   return (
-    <Stack gap="xs">
-      <Group justify="space-between" align="flex-end">
-        <div>
-          <Text fw={500}>{label}</Text>
-          {description && (
-            <Text size="sm" c="dimmed">
-              {description}
-            </Text>
-          )}
-        </div>
-        <Group gap="sm">
-          <Button
-            onClick={handleGetPlexConfig}
-            loading={isFetchingConfig}
-            size="sm"
-            variant="outline"
-          >
-            GET PLEX CONFIG
-          </Button>
-          <Button
-            onClick={handleTestConnection}
-            loading={testMutation.isPending}
-            size="sm"
-            variant="light"
-          >
-            TEST CONNECTION
-          </Button>
-        </Group>
-      </Group>
+    <Stack gap="md">
+      <Check
+        label="Use Autopulse for automatic Plex metadata refresh"
+        settingKey="settings-plex-use_autopulse"
+      />
 
-      {configData && (
-        <Alert variant="light" color="blue">
-          <Text size="sm" fw={500}>
-            Plex Configuration from Autopulse:
-          </Text>
-          <Text size="xs">Server: {configData.server_name || "Unknown"}</Text>
-          <Text size="xs">URL: {configData.plex_url || "Not configured"}</Text>
-          <Text size="xs">
-            Auth Method: {configData.auth_method || "Unknown"}
-          </Text>
-          <Text size="xs">Libraries: {configData.libraries?.length || 0}</Text>
+      <CollapseBox indent settingKey="settings-plex-use_autopulse">
+        <SettingsText
+          label="Autopulse Host"
+          settingKey="settings-plex-autopulse_host"
+          placeholder="localhost or docker container name"
+        />
+        <Number
+          label="Autopulse Port"
+          settingKey="settings-plex-autopulse_port"
+        />
+        <SettingsText
+          label="Username (optional)"
+          settingKey="settings-plex-autopulse_username"
+          placeholder="admin"
+        />
+        <Password
+          label="Password (optional)"
+          settingKey="settings-plex-autopulse_password"
+        />
+
+        <Group justify="space-between" align="flex-end" mt="md">
+          <Text fw={500}>Test Autopulse Connection</Text>
+          <Group gap="sm">
+            <Button
+              onClick={handleGetPlexConfig}
+              loading={isFetchingConfig}
+              size="sm"
+              variant="light"
+            >
+              GET PLEX CONFIG
+            </Button>
+            <Button
+              onClick={handleTestConnection}
+              loading={testMutation.isPending}
+              size="sm"
+              variant="light"
+            >
+              TEST CONNECTION
+            </Button>
+          </Group>
+        </Group>
+
+        {configData && (
+          <Alert variant="light" color="brand">
+            Plex Configuration for Autopulse:
+          </Alert>
+        )}
+
+        {configData && (
+          <Alert variant="filled" color="gray" p="md">
+            <Text
+              size="xs"
+              style={{
+                fontFamily: "monospace",
+                whiteSpace: "pre-wrap",
+                color: "var(--mantine-color-dark-0)",
+                lineHeight: 1.4,
+              }}
+            >
+              {`Server: ${configData.server_name || "Unknown"}
+URL: ${configData.plex_url || "Not configured"}
+Auth Method: ${configData.auth_method || "Unknown"}
+Libraries: ${configData.libraries?.length || 0}
+Library Paths: ${
+                configData.libraries && configData.libraries.length > 0
+                  ? configData.libraries
+                      .map((lib) => lib.locations.join(", "))
+                      .join("; ")
+                  : "None"
+              }`}
+            </Text>
+          </Alert>
+        )}
+
+        <Alert variant="light" color="brand">
+          Minimal Docker Compose Setup:
         </Alert>
-      )}
+
+        <Alert variant="filled" color="gray" p="md">
+          <Text
+            size="xs"
+            style={{
+              fontFamily: "monospace",
+              whiteSpace: "pre-wrap",
+              color: "var(--mantine-color-dark-0)",
+              lineHeight: 1.4,
+            }}
+          >
+            {`services:
+  autopulse:
+    image: ghcr.io/dan-online/autopulse:latest
+    container_name: autopulse
+    restart: unless-stopped
+    ports:
+      - "2875:2875"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - AUTOPULSE__APP__DATABASE_URL=sqlite://data/autopulse.db
+      - AUTOPULSE__AUTH__USERNAME=admin
+      - AUTOPULSE__AUTH__PASSWORD=password`}
+          </Text>
+        </Alert>
+      </CollapseBox>
     </Stack>
   );
 };
