@@ -102,6 +102,11 @@ validators = [
     Validator('general.postprocessing_threshold_movie', must_exist=True, default=70, is_type_of=int, gte=0,
               lte=100),
     Validator('general.use_postprocessing_threshold_movie', must_exist=True, default=False, is_type_of=bool),
+    # Autopulse integration
+    Validator('general.use_autopulse', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.autopulse_url', must_exist=True, default='', is_type_of=str),
+    Validator('general.autopulse_username', must_exist=True, default='', is_type_of=str),
+    Validator('general.autopulse_password', must_exist=True, default='', is_type_of=str),
     Validator('general.use_sonarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_plex', must_exist=True, default=False, is_type_of=bool),
@@ -256,12 +261,6 @@ validators = [
     Validator('plex.server_name', must_exist=True, default='', is_type_of=str),
     Validator('plex.server_url', must_exist=True, default='', is_type_of=str),
     Validator('plex.server_local', must_exist=True, default=False, is_type_of=bool),
-    # Autopulse integration for automated Plex metadata refresh
-    Validator('plex.use_autopulse', must_exist=True, default=False, is_type_of=bool),
-    Validator('plex.autopulse_host', must_exist=True, default='', is_type_of=str),
-    Validator('plex.autopulse_port', must_exist=True, default=2875, is_type_of=int),
-    Validator('plex.autopulse_username', must_exist=True, default='', is_type_of=str),
-    Validator('plex.autopulse_password', must_exist=True, default='', is_type_of=str),
     # Migration fields
     Validator('plex.migration_attempted', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.migration_successful', must_exist=True, default=False, is_type_of=bool),

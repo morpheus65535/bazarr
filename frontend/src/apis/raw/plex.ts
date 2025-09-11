@@ -96,18 +96,6 @@ class NewPlexApi extends BaseApi {
 
     return response.data;
   }
-
-  async triggerAutopulseScan(scanType: string) {
-    const response = await this.post<DataWrapper<Plex.AutopulseResult>>(
-      "/autopulse/scan",
-      {
-        // eslint-disable-next-line camelcase
-        scan_type: scanType,
-      },
-    );
-
-    return response.data;
-  }
 }
 
 export default new NewPlexApi();

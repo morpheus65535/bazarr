@@ -1,53 +1,45 @@
 # coding=utf-8
 
 import logging
+import os
 import requests
 from urllib.parse import urlencode
 
 from app.config import settings
 
 
-def call_subtitle_webhook(subtitle_path, media_path, language, media_type):
+def call_autopulse_webhook(subtitle_path, media_path, language, media_type):
     """
-    Call Autopulse after subtitle download to trigger Plex metadata refresh.
-    Uses Autopulse's automatic /triggers/manual endpoint.
+    Call external webhook after subtitle download.
+    Supports both generic webhooks and Autopulse auto-configuration.
     """
-    # Check if Autopulse is enabled
-    if not settings.plex.use_autopulse or not settings.plex.autopulse_host:
+    # Check if any external webhook is enabled
+    if not settings.general.use_autopulse:
         return
 
     try:
-        host = settings.plex.autopulse_host.strip()
-        port = settings.plex.autopulse_port
-        username = settings.plex.autopulse_username.strip()
-        password = settings.plex.autopulse_password.strip()
+        # Use parent directory instead of specific file for better grouping
+        parent_dir = os.path.dirname(media_path)
         
-        if not host:
+        # Get webhook configuration
+        webhook_url = _get_webhook_url()
+        auth = _get_webhook_auth()
+        
+        if not webhook_url:
+            logging.debug("BAZARR external webhook not configured, skipping")
             return
 
-        # Build Autopulse manual trigger URL
-        autopulse_url = f"http://{host}:{port}/triggers/manual"
+        # Prepare query parameters
+        params = {'path': parent_dir}
+        full_url = f"{webhook_url}?{urlencode(params)}"
         
-        # Prepare query parameters for Autopulse
-        params = {'path': media_path}
+        headers = {'User-Agent': 'Bazarr'}
         
-        # Build full URL with query parameters
-        webhook_url = f"{autopulse_url}?{urlencode(params)}"
+        logging.debug(f"BAZARR calling external webhook: {webhook_url} for path: {parent_dir}")
         
-        # Setup authentication if provided
-        auth = None
-        if username and password:
-            auth = (username, password)
-        
-        headers = {
-            'User-Agent': 'Bazarr',
-        }
-        
-        logging.debug(f"BAZARR calling Autopulse: {autopulse_url} for path: {media_path}")
-        
-        # Make the webhook call to Autopulse
+        # Make the webhook call
         response = requests.get(
-            webhook_url,
+            full_url,
             auth=auth,
             headers=headers,
             timeout=30,
@@ -55,47 +47,45 @@ def call_subtitle_webhook(subtitle_path, media_path, language, media_type):
         )
         
         if response.status_code == 200:
-            logging.info(f"BAZARR Autopulse call successful for {media_path}")
+            logging.info(f"BAZARR external webhook successful for {parent_dir}")
         else:
-            logging.warning(f"BAZARR Autopulse call failed with status {response.status_code} for {media_path}")
+            logging.warning(f"BAZARR external webhook failed with status {response.status_code} for {parent_dir}")
             
     except requests.exceptions.RequestException as e:
-        logging.error(f"BAZARR Autopulse call failed for {media_path}: {str(e)}")
+        logging.error(f"BAZARR external webhook failed for {media_path}: {str(e)}")
     except Exception as e:
-        logging.error(f"BAZARR unexpected error calling Autopulse for {media_path}: {str(e)}")
+        logging.error(f"BAZARR unexpected error calling external webhook for {media_path}: {str(e)}")
 
 
 def test_autopulse_connection():
     """
-    Test connection to Autopulse server.
+    Test connection to external webhook.
     Returns (success: bool, message: str)
     """
     try:
-        host = settings.plex.autopulse_host.strip()
-        port = settings.plex.autopulse_port
-        username = settings.plex.autopulse_username.strip()
-        password = settings.plex.autopulse_password.strip()
+        webhook_url = _get_webhook_url()
+        auth = _get_webhook_auth()
         
-        if not host:
-            return False, "Autopulse host not configured"
+        logging.debug(f"BAZARR webhook test - URL: {webhook_url}")
+        logging.debug(f"BAZARR webhook test - Auth: {auth is not None}")
+        
+        if not webhook_url:
+            logging.debug("BAZARR webhook test - No URL configured")
+            return False, "External webhook not configured"
 
-        # Build Autopulse stats URL
-        status_url = f"http://{host}:{port}/stats"
+        # Test with stats endpoint if it looks like Autopulse, otherwise test the main URL
+        test_url = webhook_url
+        if '/triggers/manual' in webhook_url:
+            # For Autopulse, test the stats endpoint instead
+            base_url = webhook_url.replace('/triggers/manual', '')
+            test_url = f"{base_url}/stats"
         
-        # Setup authentication if provided
-        auth = None
-        if username and password:
-            auth = (username, password)
+        headers = {'User-Agent': 'Bazarr'}
         
-        headers = {
-            'User-Agent': 'Bazarr',
-        }
+        logging.debug(f"BAZARR testing external webhook: {test_url}")
         
-        logging.debug(f"BAZARR testing Autopulse connection: {status_url}")
-        
-        # Test connection to Autopulse
         response = requests.get(
-            status_url,
+            test_url,
             auth=auth,
             headers=headers,
             timeout=10,
@@ -103,157 +93,38 @@ def test_autopulse_connection():
         )
         
         if response.status_code == 200:
-            return True, "Autopulse connection successful"
+            return True, "External webhook connection successful"
         else:
-            return False, f"Autopulse connection failed with status {response.status_code}"
+            return False, f"External webhook connection failed with status {response.status_code}"
             
     except requests.exceptions.RequestException as e:
-        return False, f"Autopulse connection failed: {str(e)}"
+        return False, f"External webhook connection failed: {str(e)}"
     except Exception as e:
-        return False, f"Autopulse connection error: {str(e)}"
+        return False, f"External webhook connection error: {str(e)}"
 
 
-def trigger_autopulse_library_scan(scan_type):
+def generate_complete_autopulse_config():
     """
-    Trigger Autopulse to scan library items.
-    Args:
-        scan_type: "recent" for recently added, "all" for all items
-    Returns:
-        (success: bool, message: str)
+    Generate complete Autopulse YAML configuration for copy-paste setup.
+    Returns YAML string with triggers, targets, and auth configured.
     """
-    if not settings.plex.use_autopulse or not settings.plex.autopulse_host:
-        return False, "Autopulse not configured"
-    
     try:
         # Get Plex configuration
-        config = get_autopulse_config()
-        if not config:
-            return False, "Failed to get Plex configuration"
-        
-        # Get library sections and scan items
-        plex_url = config['plex_url']
-        plex_token = config['plex_token']
-        
-        headers = {'X-Plex-Token': plex_token, 'Accept': 'application/json'}
-        
-        # Get library sections
-        sections_response = requests.get(f"{plex_url}/library/sections", headers=headers, timeout=10, verify=False)
-        if sections_response.status_code != 200:
-            return False, "Failed to get Plex library sections"
-            
-        sections_data = sections_response.json()
-        sections = sections_data.get('MediaContainer', {}).get('Directory', [])
-        
-        scanned_count = 0
-        limit = 20 if scan_type == "recent" else 100  # Keep it reasonable
-        
-        for section in sections:
-            if section.get('type') not in ['movie', 'show']:
-                continue
-                
-            section_key = section.get('key', '')
-            
-            # Build query URL based on scan type
-            if scan_type == "recent":
-                query_url = f"{plex_url}/library/sections/{section_key}/recentlyAdded"
-            else:  # "all"
-                query_url = f"{plex_url}/library/sections/{section_key}/all"
-            
-            # Get items from this section
-            items_response = requests.get(f"{query_url}?X-Plex-Container-Size={limit}", headers=headers, timeout=30, verify=False)
-            
-            if items_response.status_code == 200:
-                items_data = items_response.json()
-                metadata_items = items_data.get('MediaContainer', {}).get('Metadata', [])
-                
-                for item in metadata_items:
-                    # Get file path from media parts
-                    media_list = item.get('Media', [])
-                    for media in media_list:
-                        parts = media.get('Part', [])
-                        for part in parts:
-                            file_path = part.get('file', '')
-                            if file_path:
-                                success, _ = trigger_autopulse_scan(file_path)
-                                if success:
-                                    scanned_count += 1
-                                    logging.debug(f"BAZARR Autopulse triggered for: {file_path}")
-        
-        if scanned_count > 0:
-            message = f"Successfully triggered Autopulse scan for {scanned_count} {scan_type} items"
-            logging.info(f"BAZARR {message}")
-            return True, message
-        else:
-            return False, f"No {scan_type} items found to scan"
-            
-    except Exception as e:
-        logging.error(f"BAZARR error triggering Autopulse library scan: {str(e)}")
-        return False, f"Failed to trigger Autopulse scan: {str(e)}"
-
-
-def trigger_autopulse_scan(media_path):
-    """
-    Simple wrapper to trigger Autopulse scan for a specific media path.
-    Uses the same logic as call_subtitle_webhook but without subtitle context.
-    """
-    if not settings.plex.use_autopulse or not settings.plex.autopulse_host:
-        return False, "Autopulse not configured"
-    
-    try:
-        host = settings.plex.autopulse_host.strip()
-        port = settings.plex.autopulse_port
-        username = settings.plex.autopulse_username.strip()
-        password = settings.plex.autopulse_password.strip()
-        
-        if not host or not media_path:
-            return False, "Missing required configuration"
-
-        # Use existing manual trigger endpoint
-        autopulse_url = f"http://{host}:{port}/triggers/manual"
-        params = {'path': media_path}
-        webhook_url = f"{autopulse_url}?{urlencode(params)}"
-        
-        auth = None
-        if username and password:
-            auth = (username, password)
-        
-        headers = {'User-Agent': 'Bazarr'}
-        
-        response = requests.get(webhook_url, auth=auth, headers=headers, timeout=10, verify=True)
-        
-        if response.status_code == 200:
-            return True, f"Autopulse scan triggered for: {media_path}"
-        else:
-            return False, f"Autopulse returned status {response.status_code}"
-            
-    except Exception as e:
-        return False, f"Failed to trigger scan: {str(e)}"
-
-
-def get_autopulse_config():
-    """
-    Get essential Plex configuration for Autopulse setup.
-    Returns dict with config data or None if failed.
-    """
-    try:
-        # Get the current Plex configuration from Bazarr's settings
         server_url = settings.plex.get('server_url', '')
         server_name = settings.plex.get('server_name', '')
-        username = settings.plex.get('username', '')
         auth_method = settings.plex.get('auth_method', 'apikey')
         
-        # Get configured library names from Bazarr settings
-        movie_library = settings.plex.get('movie_library', '')
-        series_library = settings.plex.get('series_library', '')
-        
-        # Get the decrypted token for Autopulse configuration
+        # Only proceed if OAuth is configured
+        if auth_method != 'oauth':
+            return None
+            
+        # Get the decrypted token
         key_existed = bool(getattr(settings.plex, 'encryption_key', None))
         if not key_existed:
             logging.warning("BAZARR no encryption key available for Autopulse config")
             return None
             
-        # Get the encrypted token from settings
-        encrypted_token = settings.plex.get('token') if auth_method == 'oauth' else settings.plex.get('apikey')
+        encrypted_token = settings.plex.get('token')
         if not encrypted_token:
             logging.warning("BAZARR no encrypted token available for Autopulse config")
             return None
@@ -265,60 +136,123 @@ def get_autopulse_config():
             token_manager = TokenManager(key)
             decrypted_token = token_manager.decrypt(encrypted_token)
         except Exception as e:
-            logging.error(f"BAZARR token decryption failed for Autopulse config: {e}")
+            logging.error(f"BAZARR token decryption failed: {e}")
             return None
         
         if not decrypted_token or not server_url:
-            logging.warning("BAZARR missing required Plex configuration for Autopulse")
+            logging.warning("BAZARR missing required Plex configuration")
             return None
         
-        # Get basic libraries information
-        libraries = []
-        try:
-            headers = {
-                'X-Plex-Token': decrypted_token,
-                'Accept': 'application/json'
-            }
-            
-            response = requests.get(
-                f"{server_url}/library/sections",
-                headers=headers,
-                timeout=10,
-                verify=False
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                if 'MediaContainer' in data and 'Directory' in data['MediaContainer']:
-                    sections = data['MediaContainer']['Directory']
-                    for section in sections:
-                        if section.get('type') in ['movie', 'show']:
-                            libraries.append({
-                                'key': section.get('key', ''),
-                                'title': section.get('title', ''),
-                                'type': section.get('type', ''),
-                                'locations': [loc.get('path', '') for loc in section.get('Location', [])]
-                            })
-        except Exception as e:
-            logging.warning(f"BAZARR could not fetch libraries for Autopulse config: {e}")
+        # Detect path rewriting needs
+        rewrite_config = _detect_path_rewrite()
         
-        # Return simplified configuration data
-        config_data = {
-            'plex_url': server_url,
-            'plex_token': decrypted_token,
+        # Generate complete YAML configuration (without auth section)
+        # Auth fields in UI are for Bazarr->Autopulse communication only
+        yaml_config = f"""# Autopulse Configuration - Generated by Bazarr
+
+[app]
+database_url = "sqlite://data/autopulse.db"
+log_level = "info"
+
+[triggers.bazarr_manual]
+type = "manual"{rewrite_config['trigger_section']}
+
+[targets.bazarr_plex]
+type = "plex"
+url = "{server_url}"
+token = "{decrypted_token}"
+refresh = true  # Essential for subtitle detection
+analyze = false # Optional, can be slow{rewrite_config['target_section']}
+
+# Usage: Bazarr will call GET http://autopulse:2875/triggers/manual?path=/parent/directory
+"""
+        
+        logging.info(f"BAZARR generated complete Autopulse config for server: {server_name}")
+        return {
+            'config_yaml': yaml_config,
             'server_name': server_name,
-            'username': username,
-            'auth_method': auth_method,
-            'libraries': libraries,
-            'configured_libraries': {
-                'movie': movie_library,
-                'series': series_library
-            }
+            'rewrite_detected': rewrite_config['detected'],
+            'rewrite_suggestion': rewrite_config['suggestion']
         }
-        
-        logging.info(f"BAZARR generated Autopulse config for server: {server_name}")
-        return config_data
             
     except Exception as e:
         logging.error(f"BAZARR error generating Autopulse config: {str(e)}")
         return None
+
+
+def _detect_path_rewrite():
+    """Detect if path rewriting is needed between Bazarr and Plex."""
+    try:
+        # Get typical Bazarr paths
+        movie_path = settings.general.get('movie_path', '')
+        series_path = settings.general.get('series_path', '')
+        
+        # Get Plex library paths if available
+        plex_movie_path = settings.plex.get('movie_library', '')
+        plex_series_path = settings.plex.get('series_library', '')
+        
+        # Common path patterns that might need rewriting
+        common_rewrites = [
+            ('/mnt/media', '/media'),
+            ('/host/media', '/plex/media'),
+            ('/downloads', '/media'),
+            ('/data', '/media'),
+        ]
+        
+        detected = False
+        suggestion = ""
+        trigger_section = ""
+        target_section = ""
+        
+        # Simple detection: if movie/series paths contain common patterns
+        for bazarr_pattern, plex_pattern in common_rewrites:
+            if movie_path and bazarr_pattern in movie_path:
+                detected = True
+                suggestion = f"Detected path pattern '{bazarr_pattern}' in Bazarr settings. You may need rewriting."
+                trigger_section = f"""
+rewrite.from = "{bazarr_pattern}"
+rewrite.to = "{plex_pattern}" """
+                target_section = f"""
+rewrite.from = "{plex_pattern}"
+rewrite.to = "{bazarr_pattern}" """
+                break
+        
+        return {
+            'detected': detected,
+            'suggestion': suggestion,
+            'trigger_section': trigger_section,
+            'target_section': target_section
+        }
+        
+    except Exception as e:
+        logging.debug(f"BAZARR path rewrite detection failed: {e}")
+        return {
+            'detected': False,
+            'suggestion': "",
+            'trigger_section': "",
+            'target_section': ""
+        }
+
+
+def _get_webhook_url():
+    """Get the webhook URL from General webhook configuration only."""
+    # Check if using generic external webhook
+    if settings.general.use_autopulse:
+        webhook_url = settings.general.autopulse_url.strip()
+        if webhook_url:
+            return webhook_url
+    
+    return None
+
+
+def _get_webhook_auth():
+    """Get authentication for the General webhook only."""
+    # Check if using generic external webhook
+    if settings.general.use_autopulse:
+        username = settings.general.autopulse_username.strip()
+        password = settings.general.autopulse_password.strip()
+        
+        if username and password:
+            return (username, password)
+    
+    return None

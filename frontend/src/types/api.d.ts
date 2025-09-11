@@ -342,34 +342,10 @@ declare namespace Plex {
   }
 
   interface AutopulseConfig {
-    plex_url: string;
-    plex_token: string;
+    config_yaml: string;
     server_name: string;
-    username: string;
-    auth_method: string;
-    libraries: AutopulseLibrary[];
-    configured_libraries: {
-      movie: string;
-      series: string;
-    };
-    autopulse_config: {
-      description: string;
-      environment_variables: {
-        PLEX_URL: string;
-        PLEX_TOKEN: string;
-      };
-      targets_config: {
-        description: string;
-        target_name: string;
-        config: {
-          type: string;
-          url: string;
-          token: string;
-          refresh: boolean;
-          analyze: boolean;
-        };
-      };
-    };
+    rewrite_detected: boolean;
+    rewrite_suggestion: string;
   }
 
   interface AutopulseLibrary {
