@@ -14,7 +14,7 @@ def call_autopulse_webhook(subtitle_path, media_path, language, media_type):
     Supports both generic webhooks and Autopulse auto-configuration.
     """
     # Check if any external webhook is enabled
-    if not settings.general.use_external_webhook and not settings.plex.use_autopulse:
+    if not settings.general.use_autopulse and not settings.plex.use_autopulse:
         return
 
     try:
@@ -249,8 +249,8 @@ def _get_webhook_url():
             return f"http://{host}:{port}/triggers/manual"
     
     # Check if using generic external webhook
-    if settings.general.use_external_webhook:
-        webhook_url = settings.general.external_webhook_url.strip()
+    if settings.general.use_autopulse:
+        webhook_url = settings.general.autopulse_url.strip()
         if webhook_url:
             return webhook_url
     
@@ -268,9 +268,9 @@ def _get_webhook_auth():
             return (username, password)
     
     # Check if using generic external webhook
-    if settings.general.use_external_webhook:
-        username = settings.general.external_webhook_username.strip()
-        password = settings.general.external_webhook_password.strip()
+    if settings.general.use_autopulse:
+        username = settings.general.autopulse_username.strip()
+        password = settings.general.autopulse_password.strip()
         
         if username and password:
             return (username, password)

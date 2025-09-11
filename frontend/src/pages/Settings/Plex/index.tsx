@@ -1,4 +1,4 @@
-import { Box, Paper, Text } from "@mantine/core";
+import { Box, Paper } from "@mantine/core";
 import {
   Check,
   CollapseBox,
@@ -6,6 +6,7 @@ import {
   Section,
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
+import AutopulseSelector from "./AutopulseSelector";
 import LibrarySelector from "./LibrarySelector";
 import PlexSettings from "./PlexSettings";
 import WebhookSelector from "./WebhookSelector";
@@ -68,11 +69,8 @@ const SettingsPlexView = () => {
           />
         </Section>
 
-        <Section header="External Integrations">
-          <Text size="sm" c="dimmed">
-            External webhook integration (including Autopulse) has been moved to
-            General Settings → External Integrations.
-          </Text>
+        <Section header="Autopulse Integration">
+          <AutopulseSelector />
         </Section>
       </CollapseBox>
     </Layout>

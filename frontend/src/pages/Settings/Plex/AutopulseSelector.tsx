@@ -1,4 +1,5 @@
 import { FunctionComponent } from "react";
+import { Link } from "react-router";
 import {
   ActionIcon,
   Alert,
@@ -110,20 +111,32 @@ const AutopulseSelector: FunctionComponent = () => {
 
       <Card withBorder p="md" radius="md">
         <Text size="sm" fw={600} mb="xs">
-          How to Set Up Autopulse:
+          How to Set Up Autopulse Integration:
         </Text>
         <Text size="sm" c="dimmed" mb="md">
-          For Autopulse to work with Bazarr:
+          Complete setup flow for Autopulse with Plex OAuth:
         </Text>
         <List size="sm" spacing="xs" withPadding>
           <List.Item>
             Install and run Autopulse server (see Autopulse documentation)
           </List.Item>
           <List.Item>
-            Set the Autopulse host/port in the settings below
+            Enable external webhook in{" "}
+            <Text
+              component={Link}
+              to="/settings/general"
+              fw={500}
+              c="blue"
+              td="none"
+            >
+              General Settings → External Integrations
+            </Text>
           </List.Item>
           <List.Item>
-            Generate and copy the complete Autopulse configuration
+            Enable Autopulse integration below and set host/port
+          </List.Item>
+          <List.Item>
+            Generate the complete Autopulse configuration (includes Plex OAuth)
           </List.Item>
           <List.Item>
             Save the configuration as <Code>config.toml</Code> in your Autopulse
@@ -158,7 +171,7 @@ const AutopulseSelector: FunctionComponent = () => {
         />
 
         <Stack gap="xs" mt="md">
-          <Text fw={500}>Test Autopulse Integration</Text>
+          <Text fw={500}>Generate Configuration & Test Connection</Text>
           <Group gap="sm">
             <Button
               onClick={handleGenerateAutopulseConfig}
@@ -166,7 +179,7 @@ const AutopulseSelector: FunctionComponent = () => {
               size="sm"
               variant="light"
             >
-              GENERATE AUTOPULSE CONFIG
+              Generate Autopulse Config
             </Button>
             <Button
               onClick={handleTestConnection}
@@ -174,13 +187,12 @@ const AutopulseSelector: FunctionComponent = () => {
               size="sm"
               variant="light"
             >
-              TEST AUTOPULSE CONNECTION
+              Test Autopulse Connection
             </Button>
           </Group>
           <Text size="xs" c="dimmed">
-            "Generate Autopulse Config" creates a complete configuration file
-            for copy-paste setup. "Test Autopulse Connection" verifies
-            communication with your Autopulse server.
+            Generate creates a complete configuration with Plex OAuth settings.
+            Test verifies communication with your Autopulse server.
           </Text>
         </Stack>
 
