@@ -115,25 +115,17 @@ def test_autopulse_connection():
 
 def get_autopulse_config():
     """
-    Get Plex configuration from Bazarr's own OAuth data for Autopulse setup.
-    Returns dict with config data or None if failed.
+    Get essential Plex configuration for Autopulse setup display.
+    Returns dict with basic config data or None if failed.
     """
     try:
-        # Get the current Plex configuration from Bazarr's settings
+        # Get basic Plex configuration from Bazarr's settings
         server_url = settings.plex.get('server_url', '')
         server_name = settings.plex.get('server_name', '')
-        username = settings.plex.get('username', '')
-        email = settings.plex.get('email', '')
         auth_method = settings.plex.get('auth_method', 'apikey')
         
-        # Get configured library names from Bazarr settings
-        movie_library = settings.plex.get('movie_library', '')
-        series_library = settings.plex.get('series_library', '')
-        
-        # Get the decrypted token for Autopulse configuration
-        # Import only the token management functions to avoid blueprint issues
-        key_existed = bool(getattr(settings.plex, 'encryption_key', None))
-        if not key_existed:
+        # Check if we have an encryption key
+        if not getattr(settings.plex, 'encryption_key', None):
             logging.warning("BAZARR no encryption key available for Autopulse config")
             return None
             
@@ -143,7 +135,7 @@ def get_autopulse_config():
             logging.warning("BAZARR no encrypted token available for Autopulse config")
             return None
         
-        # Decrypt the token manually
+        # Decrypt the token
         try:
             from api.plex.security import get_or_create_encryption_key, TokenManager
             key = get_or_create_encryption_key(settings.plex, 'encryption_key')
@@ -153,20 +145,12 @@ def get_autopulse_config():
             logging.error(f"BAZARR token decryption failed for Autopulse config: {e}")
             return None
         
-        if not decrypted_token:
-            logging.warning("BAZARR no valid Plex token available for Autopulse config")
-            return None
-            
-        if not server_url:
-            logging.warning("BAZARR no Plex server URL configured for Autopulse config")
+        if not decrypted_token or not server_url:
             return None
         
-        logging.debug(f"BAZARR generating Autopulse config from existing Plex OAuth data")
-        
-        # Get libraries information if available
+        # Get basic libraries information
         libraries = []
         try:
-            # Try to get libraries from the selected server
             headers = {
                 'X-Plex-Token': decrypted_token,
                 'Accept': 'application/json'
@@ -186,52 +170,19 @@ def get_autopulse_config():
                     for section in sections:
                         if section.get('type') in ['movie', 'show']:
                             libraries.append({
-                                'key': section.get('key', ''),
                                 'title': section.get('title', ''),
                                 'type': section.get('type', ''),
-                                'locations': [loc.get('path', '') for loc in section.get('Location', [])]
                             })
         except Exception as e:
             logging.warning(f"BAZARR could not fetch libraries for Autopulse config: {e}")
-            libraries = []
         
-        # Return the configuration data that Autopulse would need
-        config_data = {
+        # Return simplified configuration data
+        return {
             'plex_url': server_url,
-            'plex_token': decrypted_token,
             'server_name': server_name,
-            'username': username,
-            'email': email,
             'auth_method': auth_method,
             'libraries': libraries,
-            'configured_libraries': {
-                'movie': movie_library,
-                'series': series_library
-            },
-            'autopulse_config': {
-                'description': 'Configuration for Autopulse Docker container',
-                'environment_variables': {
-                    'PLEX_URL': server_url,
-                    'PLEX_TOKEN': decrypted_token
-                },
-                'targets_config': {
-                    'description': 'Plex target configuration for autopulse-config.yml',
-                    'target_name': 'plex',
-                    'config': {
-                        'type': 'plex',
-                        'url': server_url,
-                        'token': decrypted_token,
-                        'refresh': True,
-                        'analyze': False
-                    }
-                }
-            },
-            'configuration_ready': True,
-            'message': 'Configuration retrieved from Bazarr Plex OAuth'
         }
-        
-        logging.info(f"BAZARR successfully generated Autopulse config for server: {server_name}")
-        return config_data
             
     except Exception as e:
         logging.error(f"BAZARR unexpected error generating Autopulse config: {str(e)}")

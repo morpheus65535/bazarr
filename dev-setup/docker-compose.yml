@@ -72,6 +72,24 @@ services:
       retries: 30
       start_period: 60s
 
+  autopulse:
+    image: ghcr.io/dan-online/autopulse:latest
+    container_name: bazarr-autopulse
+    restart: unless-stopped
+    ports:
+      - "2875:2875"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - AUTOPULSE__APP__DATABASE_URL=sqlite://data/autopulse.db
+      - AUTOPULSE__AUTH__USERNAME=admin
+      - AUTOPULSE__AUTH__PASSWORD=password
+    networks:
+      - bazarr-network
+    depends_on:
+      bazarr-backend:
+        condition: service_healthy
+
 networks:
   bazarr-network:
     driver: bridge

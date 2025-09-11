@@ -1,9 +1,8 @@
-import { Alert, Box, Paper } from "@mantine/core";
+import { Box, Paper } from "@mantine/core";
 import {
   Check,
   CollapseBox,
   Layout,
-  Message,
   Section,
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
