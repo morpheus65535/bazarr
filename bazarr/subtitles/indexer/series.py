@@ -17,7 +17,6 @@ from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream, show_progress, hide_progress
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
-from plex.operations import plex_refresh_item
 
 gc.enable()
 
@@ -141,33 +140,6 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
             if episode:
                 logging.debug(f"BAZARR storing those languages to DB: {actual_subtitles}")
                 list_missing_subtitles(epno=episode.sonarrEpisodeId)
-                
-                # If external subtitles were found during indexing, refresh Plex metadata
-                # This fixes the race condition where subtitles exist but Plex doesn't see them
-                # Only refresh if subtitles list has changed to avoid excessive IO
-                if actual_subtitles and settings.general.use_plex and settings.plex.update_series_library:
-                    # Get current stored subtitles to compare with new findings
-                    current_episode_data = database.execute(
-                        select(TableShows.imdbId, TableEpisodes.season, TableEpisodes.episode, TableEpisodes.subtitles)
-                        .select_from(TableEpisodes)
-                        .join(TableShows)
-                        .where(TableEpisodes.sonarrEpisodeId == episode.sonarrEpisodeId)
-                    ).first()
-                    
-                    if current_episode_data and current_episode_data.imdbId:
-                        # Parse existing subtitles from database
-                        try:
-                            existing_subtitles = ast.literal_eval(current_episode_data.subtitles) if current_episode_data.subtitles else []
-                        except (ValueError, SyntaxError):
-                            existing_subtitles = []
-                        
-                        # Only refresh Plex if subtitle list has changed (new subtitles detected)
-                        if actual_subtitles != existing_subtitles:
-                            logging.info(f"BAZARR detected subtitle changes for episode IMDB {current_episode_data.imdbId} S{current_episode_data.season:02d}E{current_episode_data.episode:02d}, triggering Plex refresh")
-                            plex_refresh_item(current_episode_data.imdbId, is_movie=False, 
-                                            season=current_episode_data.season, episode=current_episode_data.episode)
-                        else:
-                            logging.debug(f"BAZARR no subtitle changes detected for episode IMDB {current_episode_data.imdbId} S{current_episode_data.season:02d}E{current_episode_data.episode:02d}, skipping Plex refresh")
             else:
                 logging.debug(f"BAZARR haven't been able to update existing subtitles to DB: {actual_subtitles}")
     else:

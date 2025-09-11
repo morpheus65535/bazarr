@@ -17,7 +17,6 @@ from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream, show_progress, hide_progress
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
-from plex.operations import plex_refresh_item
 
 gc.enable()
 
@@ -142,30 +141,6 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
             if movie:
                 logging.debug(f"BAZARR storing those languages to DB: {actual_subtitles}")
                 list_missing_subtitles_movies(no=movie.radarrId)
-                
-                # If external subtitles were found during indexing, refresh Plex metadata
-                # This fixes the race condition where subtitles exist but Plex doesn't see them
-                # Only refresh if subtitles list has changed to avoid excessive IO
-                if actual_subtitles and settings.general.use_plex and settings.plex.update_movie_library:
-                    # Get current stored subtitles to compare with new findings
-                    current_movie_data = database.execute(
-                        select(TableMovies.imdbId, TableMovies.subtitles)
-                        .where(TableMovies.radarrId == movie.radarrId)
-                    ).first()
-                    
-                    if current_movie_data and current_movie_data.imdbId:
-                        # Parse existing subtitles from database
-                        try:
-                            existing_subtitles = ast.literal_eval(current_movie_data.subtitles) if current_movie_data.subtitles else []
-                        except (ValueError, SyntaxError):
-                            existing_subtitles = []
-                        
-                        # Only refresh Plex if subtitle list has changed (new subtitles detected)
-                        if actual_subtitles != existing_subtitles:
-                            logging.info(f"BAZARR detected subtitle changes for movie IMDB {current_movie_data.imdbId}, triggering Plex refresh")
-                            plex_refresh_item(current_movie_data.imdbId, is_movie=True)
-                        else:
-                            logging.debug(f"BAZARR no subtitle changes detected for movie IMDB {current_movie_data.imdbId}, skipping Plex refresh")
             else:
                 logging.debug(f"BAZARR haven't been able to update existing subtitles to DB: {actual_subtitles}")
     else:

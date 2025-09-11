@@ -1,6 +1,21 @@
-import { FunctionComponent } from "react";
-import { Alert, Button, Group, Stack, Text } from "@mantine/core";
+import { FunctionComponent, useState } from "react";
+import {
+  Alert,
+  Button,
+  Card,
+  Code,
+  Collapse,
+  Group,
+  List,
+  Stack,
+  Text,
+  ActionIcon,
+  Tooltip,
+} from "@mantine/core";
+import { useClipboard } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCopy, faCheck } from "@fortawesome/free-solid-svg-icons";
 import {
   usePlexAuthValidationQuery,
   usePlexAutopulseConfigQuery,
@@ -15,6 +30,9 @@ import {
 } from "@/pages/Settings/components";
 
 const AutopulseSelector: FunctionComponent = () => {
+  const [dockerExampleOpen, setDockerExampleOpen] = useState(false);
+  const clipboard = useClipboard();
+
   // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
@@ -75,6 +93,30 @@ const AutopulseSelector: FunctionComponent = () => {
     }
   };
 
+  // Docker Compose YAML content
+  const dockerComposeYaml = `services:
+  autopulse:
+    image: ghcr.io/dan-online/autopulse:latest
+    container_name: autopulse
+    restart: unless-stopped
+    ports:
+      - "2875:2875"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - AUTOPULSE__APP__DATABASE_URL=sqlite://data/autopulse.db
+      - AUTOPULSE__AUTH__USERNAME=admin
+      - AUTOPULSE__AUTH__PASSWORD=password`;
+
+  const handleCopyDockerCompose = () => {
+    clipboard.copy(dockerComposeYaml);
+    notifications.show({
+      title: "Copied!",
+      message: "Docker Compose configuration copied to clipboard",
+      color: "green",
+    });
+  };
+
   if (!isAuthenticated) {
     return (
       <Stack gap="xs">
@@ -91,6 +133,67 @@ const AutopulseSelector: FunctionComponent = () => {
         label="Use Autopulse for automatic Plex metadata refresh"
         settingKey="settings-plex-use_autopulse"
       />
+
+      <Card withBorder p="md" radius="md">
+        <Text size="sm" fw={600} mb="xs">
+          How to Set Up Autopulse:
+        </Text>
+        <Text size="sm" c="dimmed" mb="md">
+          For Autopulse to work with Bazarr, you need to:
+        </Text>
+        <List size="sm" spacing="xs" withPadding>
+          <List.Item>
+            Deploy Autopulse using Docker (see example below)
+          </List.Item>
+          <List.Item>
+            Set the Autopulse host/port in the settings below
+          </List.Item>
+          <List.Item>
+            Autopulse will automatically use your existing Plex OAuth
+            configuration from Bazarr
+          </List.Item>
+          <List.Item>Test the connection to ensure it's working</List.Item>
+        </List>
+        <Text size="sm" c="dimmed" mt="sm">
+          No manual Plex configuration needed in Autopulse - it's handled
+          automatically using Bazarr's existing settings.
+        </Text>
+      </Card>
+
+      <Card withBorder p="md" radius="md">
+        <Group justify="space-between" align="center" mb="xs">
+          <Text size="sm" fw={600}>
+            Docker Compose Example
+          </Text>
+          <Group gap="xs">
+            <Tooltip label="Copy to clipboard">
+              <ActionIcon
+                variant="subtle"
+                size="sm"
+                onClick={handleCopyDockerCompose}
+                disabled={!dockerExampleOpen}
+              >
+                <FontAwesomeIcon
+                  icon={clipboard.copied ? faCheck : faCopy}
+                  color={clipboard.copied ? "green" : undefined}
+                />
+              </ActionIcon>
+            </Tooltip>
+            <Button
+              variant="subtle"
+              size="xs"
+              onClick={() => setDockerExampleOpen(!dockerExampleOpen)}
+            >
+              {dockerExampleOpen ? "Hide" : "Show"}
+            </Button>
+          </Group>
+        </Group>
+        <Collapse in={dockerExampleOpen}>
+          <Code block mt="xs" style={{ position: "relative" }}>
+            {dockerComposeYaml}
+          </Code>
+        </Collapse>
+      </Card>
 
       <CollapseBox indent settingKey="settings-plex-use_autopulse">
         <SettingsText
@@ -112,8 +215,8 @@ const AutopulseSelector: FunctionComponent = () => {
           settingKey="settings-plex-autopulse_password"
         />
 
-        <Group justify="space-between" align="flex-end" mt="md">
-          <Text fw={500}>Test Autopulse Connection</Text>
+        <Stack gap="xs" mt="md">
+          <Text fw={500}>Test Autopulse Integration</Text>
           <Group gap="sm">
             <Button
               onClick={handleGetPlexConfig}
@@ -121,7 +224,7 @@ const AutopulseSelector: FunctionComponent = () => {
               size="sm"
               variant="light"
             >
-              GET PLEX CONFIG
+              VIEW PLEX CONFIG
             </Button>
             <Button
               onClick={handleTestConnection}
@@ -129,54 +232,40 @@ const AutopulseSelector: FunctionComponent = () => {
               size="sm"
               variant="light"
             >
-              TEST CONNECTION
+              TEST AUTOPULSE CONNECTION
             </Button>
           </Group>
-        </Group>
+          <Text size="xs" c="dimmed">
+            "View Plex Config" shows what Autopulse will receive from Bazarr's
+            Plex OAuth. "Test Autopulse Connection" verifies communication with
+            your Autopulse server.
+          </Text>
+        </Stack>
 
         {configData && (
-          <>
-            <Alert variant="light" color="brand">
-              Plex Configuration for Autopulse:
-            </Alert>
-            <Alert variant="filled" color="gray" p="md">
-              <Text component="pre" size="xs" c="gray.0" lh={1.4}>
-                {`Server: ${configData.server_name || "Unknown"}
+          <Card withBorder p="md" radius="md" mt="md">
+            <Text size="sm" fw={600} mb="xs">
+              Plex Configuration (Auto-detected from Bazarr):
+            </Text>
+            <Text size="xs" c="dimmed" mb="sm">
+              This is what Autopulse will automatically receive from Bazarr's
+              Plex OAuth:
+            </Text>
+            <Code block>
+              {`Server: ${configData.server_name || "Unknown"}
 URL: ${configData.plex_url || "Not configured"}
 Auth Method: ${configData.auth_method || "Unknown"}
 Libraries: ${configData.libraries?.length || 0}
 Library Paths: ${
-                  configData.libraries && configData.libraries.length > 0
-                    ? configData.libraries
-                        .map((lib) => lib.locations.join(", "))
-                        .join("; ")
-                    : "None"
-                }`}
-              </Text>
-            </Alert>
-          </>
+                configData.libraries && configData.libraries.length > 0
+                  ? configData.libraries
+                      .map((lib) => lib.locations.join(", "))
+                      .join("; ")
+                  : "None"
+              }`}
+            </Code>
+          </Card>
         )}
-
-        <Alert variant="light" color="brand">
-          Docker Compose Example:
-        </Alert>
-        <Alert variant="filled" color="gray" p="md">
-          <Text component="pre" size="xs" c="gray.0" lh={1.4}>
-            {`services:
-  autopulse:
-    image: ghcr.io/dan-online/autopulse:latest
-    container_name: autopulse
-    restart: unless-stopped
-    ports:
-      - "2875:2875"
-    volumes:
-      - ./data:/app/data
-    environment:
-      - AUTOPULSE__APP__DATABASE_URL=sqlite://data/autopulse.db
-      - AUTOPULSE__AUTH__USERNAME=admin
-      - AUTOPULSE__AUTH__PASSWORD=password`}
-          </Text>
-        </Alert>
       </CollapseBox>
     </Stack>
   );
