@@ -78,20 +78,15 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
   return (
     <div className={styles.webhookSelector}>
       <Stack gap="xs">
-        <Text fw={500} className={styles.labelText}>
-          {label}
-        </Text>
-        {description && (
-          <Text size="sm" c="dimmed">
-            {description}
+        <div>
+          <Text fw={500} size="sm" mb={2}>
+            {label}
           </Text>
-        )}
-        <Text size="sm" c="dimmed">
-          Generate a complete Autopulse configuration file with your Plex server
-          details, OAuth credentials, and optimized settings. Save as{" "}
-          <Code>bazarr-plex.toml</Code> (or any custom name) in your Autopulse
-          container data directory.
-        </Text>
+          <Text size="xs" c="dimmed">
+            {description ||
+              "Generate a complete Autopulse configuration file with your Plex server details, OAuth credentials, and optimized settings. Save as bazarr-plex.toml (or any custom name) in your Autopulse container data directory."}
+          </Text>
+        </div>
 
         <Group gap="xs">
           <Button
