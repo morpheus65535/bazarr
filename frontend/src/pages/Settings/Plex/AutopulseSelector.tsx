@@ -1,5 +1,4 @@
 import { FunctionComponent } from "react";
-import { Link } from "react-router";
 import {
   ActionIcon,
   Alert,
@@ -46,8 +45,6 @@ const AutopulseSelector: FunctionComponent = () => {
     isFetching: isFetchingConfig,
   } = usePlexAutopulseConfigQuery({
     enabled: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
   });
 
   const handleTestConnection = async () => {
@@ -121,19 +118,11 @@ const AutopulseSelector: FunctionComponent = () => {
             Install and run Autopulse server (see Autopulse documentation)
           </List.Item>
           <List.Item>
-            Enable external webhook in{" "}
-            <Text
-              component={Link}
-              to="/settings/general"
-              fw={500}
-              c="blue"
-              td="none"
-            >
-              General Settings → External Integrations
-            </Text>
+            Enable Autopulse integration below and set host/port
           </List.Item>
           <List.Item>
-            Enable Autopulse integration below and set host/port
+            If your Autopulse server requires authentication, configure
+            credentials in the Auth section
           </List.Item>
           <List.Item>
             Generate the complete Autopulse configuration (includes Plex OAuth)
@@ -160,27 +149,32 @@ const AutopulseSelector: FunctionComponent = () => {
           label="Autopulse Port"
           settingKey="settings-plex-autopulse_port"
         />
-        <SettingsText
-          label="Username (optional)"
-          settingKey="settings-plex-autopulse_username"
-          placeholder="admin"
-        />
-        <Password
-          label="Password (optional)"
-          settingKey="settings-plex-autopulse_password"
-        />
+
+        <CollapseBox settingKey="settings-plex-use_autopulse">
+          <Stack gap="xs">
+            <Text size="sm" fw={500}>
+              Autopulse Authentication
+            </Text>
+            <Text size="xs" c="dimmed">
+              Only needed if your existing Autopulse server requires
+              authentication. Leave empty if your Autopulse runs without auth.
+            </Text>
+            <SettingsText
+              label="Username"
+              settingKey="settings-plex-autopulse_username"
+              placeholder="Leave empty for no auth"
+            />
+            <Password
+              label="Password"
+              settingKey="settings-plex-autopulse_password"
+              placeholder="Leave empty for no auth"
+            />
+          </Stack>
+        </CollapseBox>
 
         <Stack gap="xs" mt="md">
-          <Text fw={500}>Generate Configuration & Test Connection</Text>
+          <Text fw={500}>Test Connection & Generate Configuration</Text>
           <Group gap="sm">
-            <Button
-              onClick={handleGenerateAutopulseConfig}
-              loading={isFetchingConfig}
-              size="sm"
-              variant="light"
-            >
-              Generate Autopulse Config
-            </Button>
             <Button
               onClick={handleTestConnection}
               loading={testMutation.isPending}
@@ -189,10 +183,19 @@ const AutopulseSelector: FunctionComponent = () => {
             >
               Test Autopulse Connection
             </Button>
+            <Button
+              onClick={handleGenerateAutopulseConfig}
+              loading={isFetchingConfig}
+              size="sm"
+              variant="light"
+            >
+              Generate Autopulse Config
+            </Button>
           </Group>
           <Text size="xs" c="dimmed">
-            Generate creates a complete configuration with Plex OAuth settings.
-            Test verifies communication with your Autopulse server.
+            Test verifies communication with your Autopulse server. Generate
+            creates a configuration for fresh Autopulse setup (without auth
+            section).
           </Text>
         </Stack>
 
