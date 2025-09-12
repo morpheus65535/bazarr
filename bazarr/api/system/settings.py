@@ -126,3 +126,29 @@ class SystemSettings(Resource):
         else:
             event_stream("settings")
             return '', 204
+
+
+@api_ns_system_settings.route('system/webhooks/test')
+class SystemWebhookTest(Resource):
+    @authenticate
+    def post(self):
+        """Test external webhook connection."""
+        try:
+            from utilities.autopulse_webhook import test_autopulse_connection
+            
+            success, message = test_autopulse_connection()
+            
+            return {
+                'data': {
+                    'success': success,
+                    'message': message
+                }
+            }
+            
+        except Exception as e:
+            return {
+                'data': {
+                    'success': False,
+                    'message': f'Failed to test webhook: {str(e)}'
+                }
+            }, 400

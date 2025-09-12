@@ -188,12 +188,6 @@ export const usePlexWebhookDeleteMutation = () => {
   });
 };
 
-export const usePlexAutopulseTestMutation = () => {
-  return useMutation({
-    mutationFn: () => api.plex.testAutopulse(),
-  });
-};
-
 export const usePlexAutopulseConfigQuery = <TData = Plex.AutopulseConfig>(
   options?: Partial<
     UseQueryOptions<Plex.AutopulseConfig, Error, TData, (string | boolean)[]>

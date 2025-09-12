@@ -865,7 +865,7 @@ class PlexWebhookCreate(Resource):
 
         except Exception as e:
             logger.error(f"Failed to create Plex webhook: {e}")
-            return {'error': f'Failed to create webhook: {str(e)}'}, 500
+            return {'error': f'Failed to create webhook: {str(e)}'}, 502
 
 
 @api_ns_plex.route('plex/webhook/list')
@@ -909,7 +909,7 @@ class PlexWebhookList(Resource):
 
         except Exception as e:
             logger.error(f"Failed to list Plex webhooks: {e}")
-            return {'error': f'Failed to list webhooks: {str(e)}'}, 500
+            return {'error': f'Failed to list webhooks: {str(e)}'}, 502
 
 
 @api_ns_plex.route('plex/webhook/delete')
@@ -950,10 +950,10 @@ class PlexWebhookDelete(Resource):
 
         except Exception as e:
             logger.error(f"Failed to delete Plex webhook: {e}")
-            return {'error': f'Failed to delete webhook: {str(e)}'}, 500
+            return {'error': f'Failed to delete webhook: {str(e)}'}, 502
 
 
-def generate_plex_autopulse_config():
+def generate_plex_autopulse_config(decrypted_token=None):
     """
     Generate complete Autopulse YAML configuration for Plex integration.
     Returns YAML string with triggers, targets, and auth configured for Plex.
@@ -968,26 +968,28 @@ def generate_plex_autopulse_config():
         if auth_method != 'oauth':
             return None
             
-        # Get the decrypted token
-        key_existed = bool(getattr(settings.plex, 'encryption_key', None))
-        if not key_existed:
-            logger.warning("BAZARR no encryption key available for Autopulse config")
-            return None
+        # Use provided token or decrypt it if not provided
+        if not decrypted_token:
+            # Get the decrypted token
+            key_existed = bool(getattr(settings.plex, 'encryption_key', None))
+            if not key_existed:
+                logger.warning("BAZARR no encryption key available for Autopulse config")
+                return None
+                
+            encrypted_token = settings.plex.get('token')
+            if not encrypted_token:
+                logger.warning("BAZARR no encrypted token available for Autopulse config")
+                return None
             
-        encrypted_token = settings.plex.get('token')
-        if not encrypted_token:
-            logger.warning("BAZARR no encrypted token available for Autopulse config")
-            return None
-        
-        # Decrypt the token
-        try:
-            from bazarr.api.plex.security import get_or_create_encryption_key, TokenManager
-            key = get_or_create_encryption_key(settings.plex, 'encryption_key')
-            token_manager = TokenManager(key)
-            decrypted_token = token_manager.decrypt(encrypted_token)
-        except Exception as e:
-            logger.error(f"BAZARR token decryption failed: {e}")
-            return None
+            # Decrypt the token
+            try:
+                from bazarr.api.plex.security import get_or_create_encryption_key, TokenManager
+                key = get_or_create_encryption_key(settings.plex, 'encryption_key')
+                token_manager = TokenManager(key)
+                decrypted_token = token_manager.decrypt(encrypted_token)
+            except Exception as e:
+                logger.error(f"BAZARR token decryption failed: {e}")
+                return None
         
         if not decrypted_token or not server_url:
             logger.warning("BAZARR missing required Plex configuration")
@@ -1095,7 +1097,7 @@ class PlexAutopulseConfig(Resource):
             if not decrypted_token:
                 raise UnauthorizedError()
 
-            config = generate_plex_autopulse_config()
+            config = generate_plex_autopulse_config(decrypted_token)
             
             if config:
                 return {

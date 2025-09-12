@@ -2,7 +2,7 @@ import { FunctionComponent } from "react";
 import { Link } from "react-router";
 import { Button, Code, Group, Stack, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { usePlexAutopulseTestMutation } from "@/apis/hooks/plex";
+import { useSystemWebhookTestMutation } from "@/apis/hooks/system";
 import {
   Check,
   CollapseBox,
@@ -11,7 +11,7 @@ import {
 } from "@/pages/Settings/components";
 
 const ExternalWebhookSelector: FunctionComponent = () => {
-  const testMutation = usePlexAutopulseTestMutation();
+  const testMutation = useSystemWebhookTestMutation();
 
   const handleTestConnection = async () => {
     try {

@@ -310,3 +310,9 @@ export function useSystem() {
     ],
   );
 }
+
+export function useSystemWebhookTestMutation() {
+  return useMutation({
+    mutationFn: () => api.system.testWebhook(),
+  });
+}

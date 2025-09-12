@@ -112,6 +112,14 @@ class SystemApi extends BaseApi {
     await this.patch("/notifications", { url });
   }
 
+  async testWebhook() {
+    const response =
+      await this.post<DataWrapper<{ success: boolean; message: string }>>(
+        "/webhooks/test",
+      );
+    return response.data;
+  }
+
   async search(query: string) {
     const response = await this.get<ItemSearchResult[]>("/searches", { query });
     return response;

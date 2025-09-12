@@ -4,6 +4,7 @@ import logging
 import os
 import requests
 from urllib.parse import urlencode
+from retry.api import retry
 
 from app.config import settings
 
@@ -37,14 +38,8 @@ def call_autopulse_webhook(subtitle_path, media_path, language, media_type):
         
         logging.debug(f"BAZARR calling external webhook: {webhook_url} for path: {parent_dir}")
         
-        # Make the webhook call
-        response = requests.get(
-            full_url,
-            auth=auth,
-            headers=headers,
-            timeout=30,
-            verify=True
-        )
+        # Make the webhook call with retry for network issues
+        response = _make_webhook_request(full_url, auth, headers)
         
         if response.status_code == 200:
             logging.info(f"BAZARR external webhook successful for {parent_dir}")
@@ -55,6 +50,18 @@ def call_autopulse_webhook(subtitle_path, media_path, language, media_type):
         logging.error(f"BAZARR external webhook failed for {media_path}: {str(e)}")
     except Exception as e:
         logging.error(f"BAZARR unexpected error calling external webhook for {media_path}: {str(e)}")
+
+
+@retry(exceptions=(requests.exceptions.RequestException,), tries=3, delay=1, backoff=2, jitter=(0, 1))
+def _make_webhook_request(url, auth, headers):
+    """Make webhook request with retry logic for network issues."""
+    return requests.get(
+        url,
+        auth=auth,
+        headers=headers,
+        timeout=30,
+        verify=True
+    )
 
 
 def test_autopulse_connection():
@@ -109,6 +116,10 @@ def _get_webhook_url():
     if settings.general.use_autopulse:
         webhook_url = settings.general.autopulse_url.strip()
         if webhook_url:
+            # Basic URL validation
+            if not webhook_url.startswith(('http://', 'https://')):
+                logging.warning(f"BAZARR invalid webhook URL format: {webhook_url} (must start with http:// or https://)")
+                return None
             return webhook_url
     
     return None
