@@ -134,9 +134,9 @@ class SystemWebhookTest(Resource):
     def post(self):
         """Test external webhook connection."""
         try:
-            from utilities.autopulse_webhook import test_autopulse_connection
+            from utilities.autopulse_webhook import test_external_webhook_connection
             
-            success, message = test_autopulse_connection()
+            success, message = test_external_webhook_connection()
             
             return {
                 'data': {

@@ -18,7 +18,6 @@ import {
   usePlexAuthValidationQuery,
   usePlexAutopulseConfigQuery,
 } from "@/apis/hooks/plex";
-import styles from "@/pages/Settings/Plex/WebhookSelector.module.scss";
 
 export type AutopulseSelectorProps = {
   label: string;
@@ -64,87 +63,75 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
 
   if (!isAuthenticated) {
     return (
-      <Stack gap="xs" className={styles.webhookSelector}>
-        <Text fw={500} className={styles.labelText}>
+      <Stack gap="xs">
+        <Text fw={500} size="sm">
           {label}
         </Text>
-        <Alert color="brand" variant="light" className={styles.alertMessage}>
-          Enable Plex OAuth above to be able to generate a config for Autopulse.
+        <Alert color="brand" variant="light">
+          Enable Plex OAuth above to generate an Autopulse configuration.
         </Alert>
       </Stack>
     );
   }
 
   return (
-    <div className={styles.webhookSelector}>
-      <Stack gap="xs">
-        <div>
-          <Text fw={500} size="sm" mb={2}>
-            {label}
-          </Text>
-          <Text size="xs" c="dimmed">
-            {description ||
-              "Generate a complete Autopulse configuration file with your Plex server details, OAuth credentials, and optimized settings. Save as bazarr-plex.toml (or any custom name) in your Autopulse container data directory."}
-          </Text>
-        </div>
+    <Stack gap="xs">
+      <div>
+        <Text fw={500} size="sm" mb={2}>
+          {label}
+        </Text>
+        <Text size="xs" c="dimmed">
+          {description ||
+            "Generate a complete Autopulse configuration file with your Plex server details, OAuth credentials, and optimized settings. Save as bazarr-plex.toml (or any custom name) in your Autopulse container data directory."}
+        </Text>
+      </div>
 
-        <Group gap="xs">
-          <Button
-            onClick={handleGenerateAutopulseConfig}
-            loading={isFetchingConfig}
-            size="sm"
-            variant="light"
-          >
-            Generate Configuration
-          </Button>
-        </Group>
+      <Group gap="xs">
+        <Button
+          onClick={handleGenerateAutopulseConfig}
+          loading={isFetchingConfig}
+          size="sm"
+          variant="light"
+        >
+          Generate Configuration
+        </Button>
+      </Group>
 
-        {configData && (
-          <Card withBorder p="md" radius="md" mt="md">
-            <Group justify="space-between" align="center" mb="xs">
-              <Text size="sm" fw={600}>
-                Complete Autopulse Configuration
-              </Text>
-              <Tooltip label="Copy configuration">
-                <ActionIcon
-                  variant="subtle"
-                  size="sm"
-                  onClick={() => {
-                    clipboard.copy(configData.config_yaml);
-                    notifications.show({
-                      title: "Copied!",
-                      message: "Autopulse configuration copied to clipboard",
-                      color: "green",
-                    });
-                  }}
-                >
-                  <FontAwesomeIcon
-                    icon={clipboard.copied ? faCheck : faCopy}
-                    color={clipboard.copied ? "green" : undefined}
-                  />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
-            {configData.rewrite_detected && (
-              <Alert variant="light" color="blue" mb="sm">
-                <Text size="xs">
-                  <strong>Path rewriting detected:</strong>{" "}
-                  {configData.rewrite_suggestion}
-                </Text>
-              </Alert>
-            )}
-            <Code block style={{ maxHeight: "300px", overflow: "auto" }}>
-              {configData.config_yaml}
-            </Code>
-            <Text size="xs" c="dimmed" mt="sm">
-              <strong>Server:</strong> {configData.server_name} |
-              <strong> Rewrite needed:</strong>{" "}
-              {configData.rewrite_detected ? "Yes" : "No"}
+      {configData && (
+        <Card withBorder p="md" radius="md" mt="md">
+          <Group justify="space-between" align="center" mb="xs">
+            <Text size="sm" fw={600}>
+              Complete Autopulse Configuration
             </Text>
-          </Card>
-        )}
-      </Stack>
-    </div>
+            <Tooltip label="Copy configuration">
+              <ActionIcon
+                variant="subtle"
+                size="sm"
+                onClick={() => {
+                  clipboard.copy(configData.config_yaml);
+                  notifications.show({
+                    title: "Copied!",
+                    message: "Autopulse configuration copied to clipboard",
+                    color: "green",
+                  });
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={clipboard.copied ? faCheck : faCopy}
+                  color={clipboard.copied ? "green" : undefined}
+                />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+          <Code block style={{ maxHeight: "300px", overflow: "auto" }}>
+            {configData.config_yaml}
+          </Code>
+          <Text size="xs" c="dimmed" mt="sm">
+            <strong>Server:</strong> {configData.server_name}
+          </Text>
+        </Card>
+      )}
+    </Stack>
   );
 };
 

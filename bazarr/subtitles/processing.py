@@ -6,7 +6,7 @@ import logging
 from app.config import settings, sync_checker as _defaul_sync_checker
 from utilities.path_mappings import path_mappings
 from utilities.post_processing import pp_replace, set_chmod
-from utilities.autopulse_webhook import call_autopulse_webhook
+from utilities.autopulse_webhook import call_external_webhook
 from languages.get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
 from app.database import TableShows, TableEpisodes, TableMovies, database, select
 from utilities.analytics import event_tracker
@@ -164,8 +164,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                 # Use specific item refresh instead of full library scan
                 plex_refresh_item(movie_metadata.imdbId, is_movie=True)
 
-    # Call Autopulse webhook after all processing is complete if enabled
-    call_autopulse_webhook(
+    # Call external webhook after all processing is complete if enabled
+    call_external_webhook(
         subtitle_path=downloaded_path,
         media_path=path,
         language=downloaded_language,

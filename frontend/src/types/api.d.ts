@@ -344,8 +344,6 @@ declare namespace Plex {
   interface AutopulseConfig {
     config_yaml: string;
     server_name: string;
-    rewrite_detected: boolean;
-    rewrite_suggestion: string;
   }
 
   interface AutopulseLibrary {

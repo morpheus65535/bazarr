@@ -43,15 +43,15 @@ const ExternalWebhookSelector: FunctionComponent = () => {
 
       <Check
         label="Enable external webhook after subtitle download"
-        settingKey="settings-general-use_autopulse"
+        settingKey="settings-general-use_external_webhook"
       />
 
-      <CollapseBox indent settingKey="settings-general-use_autopulse">
+      <CollapseBox indent settingKey="settings-general-use_external_webhook">
         <Stack gap="md">
           <Text fw={500}>Generic Webhook Configuration</Text>
           <SettingsText
             label="Webhook URL"
-            settingKey="settings-general-autopulse_url"
+            settingKey="settings-general-external_webhook_url"
             placeholder="http://localhost:2875/triggers/manual"
           />
           <Text size="xs" c="dimmed" mt="-xs" mb="sm">
@@ -66,12 +66,12 @@ const ExternalWebhookSelector: FunctionComponent = () => {
           </Text>
           <SettingsText
             label="Username (optional)"
-            settingKey="settings-general-autopulse_username"
+            settingKey="settings-general-external_webhook_username"
             placeholder="admin"
           />
           <Password
             label="Password (optional)"
-            settingKey="settings-general-autopulse_password"
+            settingKey="settings-general-external_webhook_password"
           />
 
           <Group gap="sm">
