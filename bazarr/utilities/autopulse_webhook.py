@@ -140,6 +140,21 @@ def _generate_config_from_template(template_data, server_url, decrypted_token, s
         config_with_values = base_config.replace('{url}', server_url)
         config_with_values = config_with_values.replace('{token}', decrypted_token)
         
+        # Get webhook authentication and replace auth placeholders
+        auth = _get_webhook_auth()
+        if auth:
+            username, password = auth
+            config_with_values = config_with_values.replace('{username}', username)
+            config_with_values = config_with_values.replace('{password}', password)
+        else:
+            # Replace with empty strings if no auth configured
+            config_with_values = config_with_values.replace('{username}', '')
+            config_with_values = config_with_values.replace('{password}', '')
+        
+        # Override Autopulse defaults with Bazarr-optimized values
+        config_with_values = config_with_values.replace('refresh = false', 'refresh = true')
+        config_with_values = config_with_values.replace('analyze = true', 'analyze = false')
+        
         # Detect path rewriting needs
         rewrite_config = _detect_path_rewrite()
         
