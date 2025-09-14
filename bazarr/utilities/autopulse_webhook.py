@@ -11,11 +11,15 @@ from app.config import settings
 
 def generate_autopulse_config(decrypted_token=None):
     """
-    Generate complete Autopulse YAML configuration for Plex integration.
-    Returns YAML string with triggers, targets, and auth configured for Plex.
+    Generate complete Autopulse configuration for Plex integration by requesting
+    a configuration template from Autopulse and adding Plex-specific details.
+    
+    This function uses the new Autopulse /api/config-template endpoint with the
+    'bazarr' trigger type for improved integration. The response contains a 
+    complete configuration with placeholders that are replaced with actual values.
     """
     try:
-        # Get Plex configuration
+        # Get Plex configuration - OAuth required for this feature
         server_url = settings.plex.get('server_url', '')
         server_name = settings.plex.get('server_name', '')
         auth_method = settings.plex.get('auth_method', 'apikey')
@@ -24,66 +28,152 @@ def generate_autopulse_config(decrypted_token=None):
         if auth_method != 'oauth':
             return None
             
-        # Use provided token or decrypt it if not provided
+        # Use provided token or get decrypted token from OAuth system
         if not decrypted_token:
-            # Get the decrypted token
-            key_existed = bool(getattr(settings.plex, 'encryption_key', None))
-            if not key_existed:
-                logging.warning("BAZARR no encryption key available for Autopulse config")
-                return None
-                
-            encrypted_token = settings.plex.get('token')
-            if not encrypted_token:
-                logging.warning("BAZARR no encrypted token available for Autopulse config")
-                return None
+            from bazarr.api.plex.oauth import get_decrypted_token
+            decrypted_token = get_decrypted_token()
             
-            # Decrypt the token
-            try:
-                from bazarr.api.plex.security import get_or_create_encryption_key, TokenManager
-                key = get_or_create_encryption_key(settings.plex, 'encryption_key')
-                token_manager = TokenManager(key)
-                decrypted_token = token_manager.decrypt(encrypted_token)
-            except Exception as e:
-                logging.error(f"BAZARR token decryption failed: {e}")
-                return None
-        
         if not decrypted_token or not server_url:
-            logging.warning("BAZARR missing required Plex configuration")
+            logging.warning("BAZARR missing required Plex OAuth configuration for Autopulse")
             return None
+        
+        # Get configuration template from Autopulse (required)
+        autopulse_template = _get_autopulse_template()
+        
+        if not autopulse_template:
+            logging.error("BAZARR Autopulse template API unavailable - please ensure Autopulse is running and supports the template API")
+            return None
+        
+        # Generate Plex-specific configuration using template
+        logging.info("BAZARR using dynamic Autopulse template for config generation")
+        return _generate_config_from_template(autopulse_template, server_url, decrypted_token, server_name)
+            
+    except Exception as e:
+        logging.error(f"BAZARR error generating Autopulse config: {str(e)}")
+        return None
+
+
+def _get_autopulse_template():
+    """
+    Request configuration template from Autopulse API.
+    Returns None if the API call fails or Autopulse is not available.
+    """
+    try:
+        # Get Autopulse URL from external webhook settings
+        autopulse_url = _get_autopulse_template_url()
+        if not autopulse_url:
+            logging.debug("BAZARR no Autopulse URL configured, skipping template request")
+            return None
+        
+        # Get authentication for Autopulse
+        auth = _get_webhook_auth()
+        
+        # Request configuration template using new API parameters
+        headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", 'Bazarr')}
+        params = {
+            'triggers': 'bazarr',  # Use the dedicated Bazarr trigger type
+            'targets': 'plex',     # Configure for Plex target
+            'database': 'sqlite'   # Default to SQLite database
+        }
+        
+        logging.debug(f"BAZARR requesting Autopulse template from: {autopulse_url}")
+        
+        response = _make_autopulse_request(
+            autopulse_url,
+            params=params,
+            auth=auth,
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            template_data = response.json()
+            logging.debug("BAZARR received Autopulse configuration template")
+            return template_data
+        else:
+            logging.warning(f"BAZARR Autopulse template API failed with status {response.status_code}")
+            return None
+            
+    except requests.exceptions.RequestException as e:
+        logging.debug(f"BAZARR Autopulse template API request failed: {str(e)}")
+        return None
+    except Exception as e:
+        logging.error(f"BAZARR unexpected error calling Autopulse template API: {str(e)}")
+        return None
+
+
+def _get_autopulse_template_url():
+    """Get the Autopulse template API URL."""
+    webhook_url = _get_webhook_url()
+    if not webhook_url:
+        return None
+    
+    # Convert webhook URL to template API URL
+    # From: http://autopulse:2875/triggers/bazarr
+    # To: http://autopulse:2875/api/config-template
+    try:
+        if '/triggers/' in webhook_url:
+            # Remove the trigger path and replace with API path
+            base_url = webhook_url.split('/triggers/')[0]
+            return f"{base_url}/api/config-template"
+        else:
+            # Assume base URL and append API path
+            base_url = webhook_url.rstrip('/')
+            return f"{base_url}/api/config-template"
+    except Exception:
+        return None
+
+
+def _generate_config_from_template(template_data, server_url, decrypted_token, server_name):
+    """
+    Generate configuration by replacing placeholders in the Autopulse template with Plex-specific details.
+    """
+    try:
+        # Get the base configuration from template response
+        base_config = template_data.get('config', '')
+        template_version = template_data.get('version', 'unknown')
+        
+        if not base_config:
+            logging.error("BAZARR Autopulse template response missing config field")
+            return None
+        
+        # Replace placeholders with actual values
+        config_with_values = base_config.replace('{url}', server_url)
+        config_with_values = config_with_values.replace('{token}', decrypted_token)
         
         # Detect path rewriting needs
         rewrite_config = _detect_path_rewrite()
         
-        # Generate YAML configuration with path rewriting if detected
-        yaml_config = f"""# Autopulse Configuration - Generated by Bazarr
+        # Add path rewriting to configuration if detected
+        if rewrite_config['detected']:
+            config_with_values = _inject_rewrite_config(config_with_values, rewrite_config)
+        
+        # Add header comment with metadata
+        rewrite_status = "Path rewriting: Enabled" if rewrite_config['detected'] else "Path rewriting: Not detected"
+        full_config = f"""# Autopulse Configuration - Generated using dynamic template
+# Server: {server_name}
+# Template version: {template_version}
+# Generated with Bazarr trigger type
+# {rewrite_status}
 
-[app]
-database_url = "sqlite://data/autopulse.db"
-log_level = "info"
+{config_with_values}
 
-[triggers.bazarr_manual]
-type = "manual"{rewrite_config['trigger_section']}
-
-[targets.bazarr_plex]
-type = "plex"
-url = "{server_url}"
-token = "{decrypted_token}"
-refresh = true  # Essential for subtitle detection
-analyze = false # Optional, can be slow{rewrite_config['target_section']}
-
-# Usage: Bazarr will call GET http://autopulse:2875/triggers/manual?path=/parent/directory
+# Usage: Bazarr calls GET http://autopulse:2875/triggers/bazarr?path=/parent/directory
 """
         
-        logging.info(f"BAZARR generated Autopulse config for server: {server_name}")
+        # Separate template info from rewrite suggestions
+        template_info = f"Configuration generated using Autopulse template v{template_version}"
+        path_suggestion = rewrite_config['suggestion'] if rewrite_config['suggestion'] else None
+        
         return {
-            'config_yaml': yaml_config,
+            'config_yaml': full_config,
             'server_name': server_name,
             'rewrite_detected': rewrite_config['detected'],
-            'rewrite_suggestion': rewrite_config['suggestion']
+            'rewrite_suggestion': path_suggestion,
+            'template_info': template_info
         }
-            
+        
     except Exception as e:
-        logging.error(f"BAZARR error generating Autopulse config: {str(e)}")
+        logging.error(f"BAZARR error generating config from template: {str(e)}")
         return None
 
 
@@ -112,7 +202,7 @@ def call_external_webhook(subtitle_path, media_path, language, media_type):
         params = {'path': parent_dir}
         full_url = f"{webhook_url}?{urlencode(params)}"
         
-        headers = {'User-Agent': 'Bazarr'}
+        headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", 'Bazarr')}
         
         logging.debug(f"BAZARR calling external webhook: {webhook_url} for path: {parent_dir}")
         
@@ -142,6 +232,19 @@ def _make_webhook_request(url, auth, headers):
     )
 
 
+@retry(exceptions=(requests.exceptions.RequestException,), tries=3, delay=1, backoff=2, jitter=(0, 1))
+def _make_autopulse_request(url, params=None, auth=None, headers=None):
+    """Make Autopulse API request with retry logic for network issues."""
+    return requests.get(
+        url,
+        params=params,
+        auth=auth,
+        headers=headers,
+        timeout=10,
+        verify=True
+    )
+
+
 def test_external_webhook_connection():
     """
     Test connection to external webhook.
@@ -160,12 +263,12 @@ def test_external_webhook_connection():
 
         # Test with stats endpoint if it looks like Autopulse, otherwise test the main URL
         test_url = webhook_url
-        if '/triggers/manual' in webhook_url:
+        if '/triggers/' in webhook_url:
             # For Autopulse, test the stats endpoint instead
-            base_url = webhook_url.replace('/triggers/manual', '')
+            base_url = webhook_url.split('/triggers/')[0]
             test_url = f"{base_url}/stats"
         
-        headers = {'User-Agent': 'Bazarr'}
+        headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", 'Bazarr')}
         
         logging.debug(f"BAZARR testing external webhook: {test_url}")
         
@@ -217,54 +320,169 @@ def _get_webhook_auth():
 def _detect_path_rewrite():
     """Detect if path rewriting is needed between Bazarr and Plex."""
     try:
-        # Get typical Bazarr paths
-        movie_path = settings.general.get('movie_path', '')
-        series_path = settings.general.get('series_path', '')
+        # Step 1: Try smart detection (compare actual Bazarr vs Plex paths)
+        smart_result = _detect_smart_path_differences()
+        if smart_result['detected']:
+            return smart_result
         
-        # Get Plex library paths if available
-        plex_movie_path = settings.plex.get('movie_library', '')
-        plex_series_path = settings.plex.get('series_library', '')
-        
-        # Common path patterns that might need rewriting
-        common_rewrites = [
-            ('/mnt/media', '/media'),
-            ('/host/media', '/plex/media'),
-            ('/downloads', '/media'),
-            ('/data', '/media'),
-            ('/bazarr', '/plex'),
-            ('/app/media', '/media'),
-        ]
-        
-        detected = False
-        suggestion = ""
-        trigger_section = ""
-        target_section = ""
-        
-        # Simple detection: if movie/series paths contain common patterns
-        for bazarr_pattern, plex_pattern in common_rewrites:
-            if movie_path and bazarr_pattern in movie_path:
-                detected = True
-                suggestion = f"Detected path pattern '{bazarr_pattern}' in Bazarr settings. Path rewriting configured automatically."
-                trigger_section = f"""
-rewrite.from = "{bazarr_pattern}"
-rewrite.to = "{plex_pattern}" """
-                target_section = f"""
-rewrite.from = "{plex_pattern}"
-rewrite.to = "{bazarr_pattern}" """
-                break
-        
-        return {
-            'detected': detected,
-            'suggestion': suggestion,
-            'trigger_section': trigger_section,
-            'target_section': target_section
-        }
+        # Step 2: Fall back to common pattern detection
+        pattern_result = _detect_common_patterns()
+        return pattern_result
         
     except Exception as e:
         logging.debug(f"BAZARR path rewrite detection failed: {e}")
+        return _empty_rewrite_config()
+
+
+def _detect_smart_path_differences():
+    """Compare actual Bazarr vs Plex paths to detect mount point differences."""
+    try:
+        # Get Bazarr paths
+        movie_path = settings.general.get('movie_path', '')
+        series_path = settings.general.get('series_path', '')
+        
+        # Get Plex library paths using shared utility
+        from bazarr.utilities.plex_utils import get_plex_libraries_with_paths
+        plex_paths = get_plex_libraries_with_paths()
+        plex_movie_paths = plex_paths['movie_paths']
+        plex_series_paths = plex_paths['series_paths']
+        
+        # Check movie paths first
+        if movie_path and plex_movie_paths:
+            result = _compare_path_sets(movie_path, plex_movie_paths, "movie")
+            if result['detected']:
+                return result
+        
+        # Check series paths
+        if series_path and plex_series_paths:
+            result = _compare_path_sets(series_path, plex_series_paths, "series")
+            if result['detected']:
+                return result
+        
+        return _empty_rewrite_config()
+        
+    except Exception as e:
+        logging.debug(f"BAZARR smart path detection failed: {e}")
+        return _empty_rewrite_config()
+
+
+def _compare_path_sets(bazarr_path, plex_paths, media_type):
+    """Compare a Bazarr path against Plex paths to detect differences."""
+    bazarr_normalized = os.path.normpath(bazarr_path.rstrip('/'))
+    
+    for plex_path in plex_paths:
+        plex_normalized = os.path.normpath(plex_path.rstrip('/'))
+        
+        # Skip if paths are identical
+        if bazarr_normalized == plex_normalized:
+            continue
+        
+        # Look for mount point differences
+        rewrite_result = _detect_mount_point_difference(bazarr_normalized, plex_normalized, media_type)
+        if rewrite_result['detected']:
+            return rewrite_result
+    
+    return _empty_rewrite_config()
+
+
+def _detect_mount_point_difference(bazarr_path, plex_path, media_type):
+    """Detect mount point differences between two paths."""
+    bazarr_parts = bazarr_path.split('/')
+    plex_parts = plex_path.split('/')
+    
+    # Check if Bazarr has extra prefix (e.g., /mnt/media vs /media)
+    if (len(bazarr_parts) > len(plex_parts) and 
+        bazarr_parts[-len(plex_parts):] == plex_parts[-len(plex_parts):]):
+        
+        bazarr_prefix = '/'.join(bazarr_parts[:-len(plex_parts)])
         return {
-            'detected': False,
-            'suggestion': "",
-            'trigger_section': "",
-            'target_section': ""
+            'detected': True,
+            'suggestion': f"Detected mount point difference in {media_type} paths: Bazarr uses '{bazarr_prefix}' prefix not used by Plex. Path rewriting configured automatically.",
+            'trigger_section': f'\nrewrite.from = "{bazarr_prefix}/"\nrewrite.to = "/"',
+            'target_section': f'\nrewrite.from = "/"\nrewrite.to = "{bazarr_prefix}/"'
         }
+    
+    # Check if Plex has extra prefix (e.g., /data/media vs /media)
+    elif (len(plex_parts) > len(bazarr_parts) and 
+          plex_parts[-len(bazarr_parts):] == bazarr_parts[-len(bazarr_parts):]):
+        
+        plex_prefix = '/'.join(plex_parts[:-len(bazarr_parts)])
+        return {
+            'detected': True,
+            'suggestion': f"Detected mount point difference in {media_type} paths: Plex uses '{plex_prefix}' prefix not used by Bazarr. Path rewriting configured automatically.",
+            'trigger_section': f'\nrewrite.from = "/"\nrewrite.to = "{plex_prefix}/"',
+            'target_section': f'\nrewrite.from = "{plex_prefix}/"\nrewrite.to = "/"'
+        }
+    
+    return _empty_rewrite_config()
+
+
+def _detect_common_patterns():
+    """Check for common Docker mount patterns when smart detection fails."""
+    movie_path = settings.general.get('movie_path', '')
+    series_path = settings.general.get('series_path', '')
+    
+    # Define common rewrite patterns
+    common_rewrites = [
+        ('/mnt', ''),
+        ('/data', ''),
+        ('/media', ''),
+    ]
+    
+    for bazarr_pattern, plex_pattern in common_rewrites:
+        if (movie_path and bazarr_pattern in movie_path) or (series_path and bazarr_pattern in series_path):
+            return {
+                'detected': True,
+                'suggestion': f"Detected path pattern '{bazarr_pattern}' in Bazarr settings. Path rewriting configured automatically.",
+                'trigger_section': f'\nrewrite.from = "{bazarr_pattern}"\nrewrite.to = "{plex_pattern}"',
+                'target_section': f'\nrewrite.from = "{plex_pattern}"\nrewrite.to = "{bazarr_pattern}"'
+            }
+    
+    return _empty_rewrite_config()
+
+
+def _empty_rewrite_config():
+    """Return empty rewrite configuration."""
+    return {
+        'detected': False,
+        'suggestion': "",
+        'trigger_section': "",
+        'target_section': ""
+    }
+
+
+def _inject_rewrite_config(config_text, rewrite_config):
+    """Inject rewrite configuration into appropriate TOML sections."""
+    lines = config_text.split('\n')
+    modified_lines = []
+    in_bazarr_trigger = False
+    in_plex_target = False
+    
+    for line in lines:
+        modified_lines.append(line)
+        
+        # Detect bazarr trigger section
+        if '[triggers.bazarr]' in line:
+            in_bazarr_trigger = True
+        elif line.startswith('[') and in_bazarr_trigger:
+            # Add rewrite config before closing the trigger section
+            if rewrite_config['trigger_section']:
+                modified_lines.extend(rewrite_config['trigger_section'].strip().split('\n'))
+            in_bazarr_trigger = False
+        
+        # Detect plex target section  
+        if '[targets.plex]' in line:
+            in_plex_target = True
+        elif line.startswith('[') and in_plex_target:
+            # Add rewrite config before closing the target section
+            if rewrite_config['target_section']:
+                modified_lines.extend(rewrite_config['target_section'].strip().split('\n'))
+            in_plex_target = False
+    
+    # Handle case where we're still in a section at the end of file
+    if in_bazarr_trigger and rewrite_config['trigger_section']:
+        modified_lines.extend(rewrite_config['trigger_section'].strip().split('\n'))
+    if in_plex_target and rewrite_config['target_section']:
+        modified_lines.extend(rewrite_config['target_section'].strip().split('\n'))
+    
+    return '\n'.join(modified_lines)

@@ -200,7 +200,6 @@ def configure_logging(debug=False):
         logging.getLogger("SignalRCoreClient").setLevel(logging.CRITICAL)
         logging.getLogger("websocket").setLevel(logging.CRITICAL)
         logging.getLogger("ga4mp.ga4mp").setLevel(logging.ERROR)
-        logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
 
     logging.getLogger("waitress").setLevel(logging.INFO)
     logging.getLogger("waitress").addFilter(UnwantedWaitressMessageFilter())

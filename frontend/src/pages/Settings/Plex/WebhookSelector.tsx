@@ -160,7 +160,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
               Add
             </Button>
           </Group>
-          <Alert color="gray" variant="light" className={styles.alertMessage}>
+          <Alert color="brand" variant="light" className={styles.alertMessage}>
             No webhooks found on your Plex server.
           </Alert>
         </Stack>

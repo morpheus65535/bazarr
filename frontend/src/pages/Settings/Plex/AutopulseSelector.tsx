@@ -2,6 +2,7 @@ import { FunctionComponent } from "react";
 import {
   ActionIcon,
   Alert,
+  Badge,
   Button,
   Card,
   Code,
@@ -18,10 +19,11 @@ import {
   usePlexAuthValidationQuery,
   usePlexAutopulseConfigQuery,
 } from "@/apis/hooks/plex";
+import styles from "@/pages/Settings/Plex/AutopulseSelector.module.scss";
 
 export type AutopulseSelectorProps = {
   label: string;
-  description?: string;
+  description?: React.ReactNode;
 };
 
 const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
@@ -55,7 +57,8 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
     } catch (error) {
       notifications.show({
         title: "Error",
-        message: "Failed to generate Autopulse configuration",
+        message:
+          "Failed to generate Autopulse configuration. Please ensure Autopulse is running and supports the template API.",
         color: "red",
       });
     }
@@ -63,11 +66,11 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
 
   if (!isAuthenticated) {
     return (
-      <Stack gap="xs">
-        <Text fw={500} size="sm">
+      <Stack gap="xs" className={styles.autopulseSelector}>
+        <Text fw={500} size="sm" className={styles.labelText}>
           {label}
         </Text>
-        <Alert color="brand" variant="light">
+        <Alert color="brand" variant="light" className={styles.alertMessage}>
           Enable Plex OAuth above to generate an Autopulse configuration.
         </Alert>
       </Stack>
@@ -75,14 +78,13 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
   }
 
   return (
-    <Stack gap="xs">
+    <Stack gap="xs" className={styles.autopulseSelector}>
       <div>
-        <Text fw={500} size="sm" mb={2}>
+        <Text fw={500} size="sm" mb={2} className={styles.labelText}>
           {label}
         </Text>
         <Text size="xs" c="dimmed">
-          {description ||
-            "Generate a complete Autopulse configuration file with your Plex server details, OAuth credentials, and optimized settings. Save as bazarr-plex.toml (or any custom name) in your Autopulse container data directory."}
+          {description}
         </Text>
       </div>
 
@@ -92,17 +94,32 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
           loading={isFetchingConfig}
           size="sm"
           variant="light"
+          className={styles.generateButton}
         >
           Generate Configuration
         </Button>
+
+        {configData && (
+          <Badge color="green" variant="light" size="sm">
+            Dynamic
+          </Badge>
+        )}
       </Group>
 
       {configData && (
-        <Card withBorder p="md" radius="md" mt="md">
+        <Card
+          withBorder
+          p="md"
+          radius="md"
+          mt="md"
+          className={styles.configCard}
+        >
           <Group justify="space-between" align="center" mb="xs">
-            <Text size="sm" fw={600}>
-              Complete Autopulse Configuration
-            </Text>
+            <Group gap="xs">
+              <Text size="sm" fw={600}>
+                Autopulse Configuration
+              </Text>
+            </Group>
             <Tooltip label="Copy configuration">
               <ActionIcon
                 variant="subtle"
@@ -123,12 +140,40 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
               </ActionIcon>
             </Tooltip>
           </Group>
-          <Code block style={{ maxHeight: "300px", overflow: "auto" }}>
+
+          <Code block className={styles.configCodeBlock}>
             {configData.config_yaml}
           </Code>
-          <Text size="xs" c="dimmed" mt="sm">
-            <strong>Server:</strong> {configData.server_name}
-          </Text>
+
+          <Stack gap="xs" mt="sm">
+            <Text size="xs" c="dimmed">
+              <Text component="span" fw={600}>
+                Server:
+              </Text>{" "}
+              {configData.server_name}
+            </Text>
+
+            {configData.rewrite_suggestion && (
+              <Alert
+                color={configData.rewrite_detected ? "yellow" : "brand"}
+                variant="light"
+                className={styles.alertMessage}
+              >
+                <Text size="xs">
+                  <Text component="span" fw={600}>
+                    Configuration Notes:
+                  </Text>{" "}
+                  {configData.rewrite_suggestion}
+                </Text>
+              </Alert>
+            )}
+
+            {configData.template_info && (
+              <Text size="xs" c="dimmed">
+                {configData.template_info}
+              </Text>
+            )}
+          </Stack>
         </Card>
       )}
     </Stack>

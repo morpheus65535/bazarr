@@ -16,6 +16,7 @@ from .security import (TokenManager, sanitize_log_data, pin_cache, get_or_create
                        encrypt_api_key)
 from app.config import settings, write_config
 from app.logger import logger
+from bazarr.utilities.plex_utils import _get_library_locations
 
 
 def get_token_manager():
@@ -596,7 +597,8 @@ class PlexLibraries(Resource):
                         'language': section.get('language', ''),
                         'uuid': section.get('uuid', ''),
                         'updatedAt': int(section.get('updatedAt', 0)),
-                        'createdAt': int(section.get('createdAt', 0))
+                        'createdAt': int(section.get('createdAt', 0)),
+                        'locations': _get_library_locations(server_url, section_key, decrypted_token)
                     })
 
             logger.debug(f"Filtered Plex libraries: {libraries}")

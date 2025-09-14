@@ -1,4 +1,5 @@
-import { Box, Paper } from "@mantine/core";
+import { Link } from "react-router";
+import { Box, Code, Paper, Text } from "@mantine/core";
 import {
   Check,
   CollapseBox,
@@ -69,7 +70,29 @@ const SettingsPlexView = () => {
           />
           <AutopulseSelector
             label="Autopulse Configuration"
-            description="Generate a complete Autopulse configuration file with your Plex server details, OAuth credentials, and optimized settings."
+            description={
+              <>
+                Generate a ready-to-use Autopulse configuration tailored to your
+                Plex server. Includes optimized settings, OAuth authentication,
+                and automatic path rewrite detection. Deploy as{" "}
+                <Code>config.toml</Code> to your Autopulse data directory for a
+                new setup, or copy specific sections to extend your existing
+                configuration.
+                <br />
+                <br />
+                To enable the webhook trigger, see the{" "}
+                <Text
+                  component={Link}
+                  to="/settings/general"
+                  fw={500}
+                  c="blue"
+                  td="none"
+                >
+                  Generic Webhook Configuration
+                </Text>
+                .
+              </>
+            }
           />
         </Section>
       </CollapseBox>
