@@ -18,7 +18,7 @@ def get_plex_libraries_with_paths():
             return {'movie_paths': [], 'series_paths': []}
             
         # Get decrypted token and server URL directly from OAuth system
-        from bazarr.api.plex.oauth import get_decrypted_token
+        from api.plex.oauth import get_decrypted_token
         decrypted_token = get_decrypted_token()
         server_url = settings.plex.get('server_url')
         

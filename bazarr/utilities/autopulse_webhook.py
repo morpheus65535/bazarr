@@ -30,7 +30,7 @@ def generate_autopulse_config(decrypted_token=None):
             
         # Use provided token or get decrypted token from OAuth system
         if not decrypted_token:
-            from bazarr.api.plex.oauth import get_decrypted_token
+            from api.plex.oauth import get_decrypted_token
             decrypted_token = get_decrypted_token()
             
         if not decrypted_token or not server_url:
@@ -342,7 +342,7 @@ def _detect_smart_path_differences():
         series_path = settings.general.get('series_path', '')
         
         # Get Plex library paths using shared utility
-        from bazarr.utilities.plex_utils import get_plex_libraries_with_paths
+        from utilities.plex_utils import get_plex_libraries_with_paths
         plex_paths = get_plex_libraries_with_paths()
         plex_movie_paths = plex_paths['movie_paths']
         plex_series_paths = plex_paths['series_paths']

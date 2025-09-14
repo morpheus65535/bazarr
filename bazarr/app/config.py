@@ -1062,7 +1062,7 @@ def migrate_apikey_to_oauth():
         time.sleep(delay)
         
         # Decrypt the API key
-        from bazarr.api.plex.security import TokenManager, get_or_create_encryption_key
+        from api.plex.security import TokenManager, get_or_create_encryption_key
         encryption_key = get_or_create_encryption_key(settings.plex, 'encryption_key')
         token_manager = TokenManager(encryption_key)
         
@@ -1274,7 +1274,7 @@ def migrate_apikey_to_oauth():
             settings.plex.server_local = oauth_config['server_local']
             
             # Test connection
-            from bazarr.plex.operations import get_plex_server
+            from plex.operations import get_plex_server
             test_server = get_plex_server()
             test_server.account()  # Test connection
             test_success = True
