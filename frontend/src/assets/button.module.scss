@@ -3,16 +3,18 @@
     @include mantine.dark {
       color: var(--mantine-color-dark-0);
       --mantine-color-brand-filled-hover: var(--mantine-color-brand-6);
-    }
 
-    &[data-variant="subtle"] {
-      @include mantine.light {
-        --mantine-color-dark-light-hover: var(--mantine-color-gray-2);
-      }
-
-      @include mantine.dark {
-        --mantine-color-dark-light-hover: var(--mantine-color-dark-4);
-      }
+      // `secondary` maps to the dark palette in dark mode, whose high shades
+      // are near-black. Mantine derives a color's dark-mode surfaces from
+      // `darken(color[9])`, so secondary buttons would render (and hover) as
+      // black. Pin them to mid-dark greys so they stay visible and clearly
+      // lighten on hover. `dark-4` hover stays a step above the toolbar
+      // background (`dark-5`) so the hover remains visible there too. Light
+      // mode already resolves secondary to grey, which is fine.
+      --mantine-color-secondary-light: var(--mantine-color-dark-6);
+      --mantine-color-secondary-light-hover: var(--mantine-color-dark-4);
+      --mantine-color-secondary-filled: var(--mantine-color-dark-6);
+      --mantine-color-secondary-filled-hover: var(--mantine-color-dark-4);
     }
 
     &[data-variant="danger"] {
