@@ -8,6 +8,7 @@ from subliminal.subtitle import SUBTITLE_EXTENSIONS
 from app.event_handler import event_stream
 from languages.get_languages import language_from_alpha2
 from utilities.path_mappings import path_mappings
+from utilities.autopulse_webhook import call_external_webhook
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.processing import ProcessSubtitlesResult
@@ -66,6 +67,15 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
             notify_sonarr(sonarr_series_id)
             event_stream(type='series', action='update', payload=sonarr_series_id)
             event_stream(type='episode-wanted', action='update', payload=sonarr_episode_id)
+            
+            # Call external webhook after all processing is complete
+            call_external_webhook(
+                subtitle_path=subtitles_path,
+                media_path=media_path,
+                language=language_log,
+                media_type=media_type
+            )
+            
             return True
     else:
         try:
@@ -79,4 +89,13 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
             store_subtitles_movie(prr(media_path), media_path)
             notify_radarr(radarr_id)
             event_stream(type='movie-wanted', action='update', payload=radarr_id)
+            
+            # Call external webhook after all processing is complete
+            call_external_webhook(
+                subtitle_path=subtitles_path,
+                media_path=media_path,
+                language=language_log,
+                media_type=media_type
+            )
+            
             return True
