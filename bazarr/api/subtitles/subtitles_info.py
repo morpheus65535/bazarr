@@ -53,7 +53,18 @@ class SubtitleNameInfo(Resource):
                     result['episode'] = guessit_result['episode']
 
             if 'season' in guessit_result:
-                result['season'] = guessit_result['season']
+                if isinstance(guessit_result['season'], list):
+                    # for multiple seasons file, choose the first season number
+                    if len(guessit_result['season']):
+                        # make sure that guessit returned a list of more than 0 items
+                        result['season'] = guessit_result['season'][0]
+                    else:
+                        result['season'] = 0
+                elif isinstance(guessit_result['season'], int):
+                    # if single season
+                    result['season'] = guessit_result['season']
+                else:
+                    result['season'] = 0
             else:
                 result['season'] = 0
 
