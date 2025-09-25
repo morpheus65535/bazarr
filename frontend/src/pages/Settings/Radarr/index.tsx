@@ -85,7 +85,7 @@ const SettingsRadarrView: FunctionComponent = () => {
             Search can be triggered using this command
             <Code>
               {`curl -H "Content-Type: application/json" -H "X-API-KEY: ###############################" -X POST 
-                -d '{ "eventType": "Download", "movieFile": [ { "id": "$radarr_moviefile_id" } ] }' 
+                -d '{ "eventType": "Download", "movieFile": { "id": "$radarr_moviefile_id" } }' 
                 http://localhost:6767/api/webhooks/radarr
               `}
             </Code>
