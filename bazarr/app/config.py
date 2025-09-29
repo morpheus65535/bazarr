@@ -452,6 +452,7 @@ validators = [
     Validator('postgresql.database', must_exist=True, default='', is_type_of=str),
     Validator('postgresql.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('postgresql.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('postgresql.url', must_exist=True, default='', is_type_of=str, cast=str),
 
     # anidb section
     Validator('anidb.api_client', must_exist=True, default='', is_type_of=str),

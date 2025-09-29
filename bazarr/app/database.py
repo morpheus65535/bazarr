@@ -37,23 +37,41 @@ migrations_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.dirn
 if postgresql:
     # insert is different between database types
     from sqlalchemy.dialects.postgresql import insert  # noqa E402
-    from sqlalchemy.engine import URL  # noqa E402
+    from sqlalchemy.engine import URL, make_url  # noqa E402
 
     postgres_database = os.getenv("POSTGRES_DATABASE", settings.postgresql.database)
     postgres_username = os.getenv("POSTGRES_USERNAME", settings.postgresql.username)
     postgres_password = os.getenv("POSTGRES_PASSWORD", settings.postgresql.password)
     postgres_host = os.getenv("POSTGRES_HOST", settings.postgresql.host)
     postgres_port = os.getenv("POSTGRES_PORT", settings.postgresql.port)
+    postgres_url = os.getenv("POSTGRES_URL", settings.postgresql.url)
 
-    logger.debug(f"Connecting to PostgreSQL database: {postgres_host}:{postgres_port}/{postgres_database}")
-    url = URL.create(
-        drivername="postgresql",
-        username=postgres_username,
-        password=postgres_password,
-        host=postgres_host,
-        port=postgres_port,
-        database=postgres_database
-    )
+    if postgres_url:
+        url = make_url(postgres_url)
+        backend_name = url.get_backend_name()
+        if backend_name != 'postgresql':
+            raise ValueError(f"Invalid Postgres URL, scheme must be 'postgresql', got {backend_name}")
+        
+        # Allow overriding individual components of the URL
+        url_overrides = {
+            'username': postgres_username if postgres_username else None,
+            'password': postgres_password if postgres_password else None,
+            'host': postgres_host if postgres_host else None,
+            'port': postgres_port if postgres_port else None,
+            'database': postgres_database if postgres_database else None,
+        }
+        url = url.set(**{k: v for k, v in url_overrides.items()})
+    else:
+        url = URL.create(
+            drivername="postgresql",
+            username=postgres_username,
+            password=postgres_password,
+            host=postgres_host,
+            port=postgres_port,
+            database=postgres_database
+        )
+    logger.debug(f"Connecting to PostgreSQL database: {url.render_as_string(hide_password=True)}")
+    
     engine = create_engine(url, poolclass=NullPool, isolation_level="AUTOCOMMIT")
 else:
     # insert is different between database types
