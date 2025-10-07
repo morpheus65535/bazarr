@@ -30,7 +30,7 @@ jobs:
           ref: development
 
       - name: Setup NodeJS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
 
@@ -43,7 +43,7 @@ jobs:
         working-directory: ${{ env.UI_DIRECTORY }}
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 

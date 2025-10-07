@@ -89,11 +89,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     message: "Requires AniDB Integration.",
   },
   {
-    key: "argenteam_dump",
-    name: "Argenteam Dump",
-    description: "Subtitles dump of the now extinct Argenteam",
-  },
-  {
     key: "avistaz",
     name: "AvistaZ",
     description:
@@ -578,13 +573,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         name: "User-Agent, e.g., Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0",
       },
     ],
-  },
-  {
-    key: "tusubtitulo",
-    name: "Tusubtitulo.com",
-    description:
-      "Provider requested to be removed from Bazarr, so it will always return no subtitles.\nCould potentially come back in the future with an upcoming premium account.",
-    // "LATAM Spanish / Spanish / English Subtitles Provider for TV Shows",
   },
   { key: "tvsubtitles", name: "TVSubtitles" },
   {

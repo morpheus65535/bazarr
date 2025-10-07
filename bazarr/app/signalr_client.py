@@ -298,7 +298,8 @@ def dispatcher(data):
                                                'sonarr.sync.series',
                                                'update_one_series',
                                                [],
-                                               {'series_id': media_id, 'action': action})
+                                               {'series_id': media_id, 'action': action,
+                                                'defer_search': settings.sonarr.defer_search_signalr})
             if episodesChanged:
                 # this will happen if a season's monitored status is changed.
                 jobs_queue.feed_jobs_pending_queue(f'Sync episodes for series {series_title} ({series_year})',

@@ -197,8 +197,7 @@ class JobsQueue:
                         self.jobs_running_queue.append(job)
                         logging.debug(f"Running job {job.job_name} (id {job.job_id}): "
                                       f"{job.module}.{job.func}({job.args}, {job.kwargs})")
-                        func_to_call = getattr(importlib.import_module(job.module), job.func)
-                        func_to_call(*job.args, **job.kwargs)
+                        getattr(importlib.import_module(job.module), job.func)(*job.args, **job.kwargs)
                     except Exception as e:
                         logging.exception(f"Exception raised while running function: {e}")
                         job.status = 'failed'
