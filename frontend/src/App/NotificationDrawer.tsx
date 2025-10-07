@@ -1,4 +1,4 @@
-import { FunctionComponent, memo, useEffect, useMemo, useState } from "react";
+import { FunctionComponent, memo, useEffect, useState } from "react";
 import {
   Badge,
   Button,
@@ -12,7 +12,6 @@ import {
 } from "@mantine/core";
 import { faCheck, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { uniqueId } from "lodash";
 import { NotificationItem, useNotifications } from "@/modules/task";
 
 interface NotificationDrawerProps {
@@ -61,7 +60,7 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
           <Stack>
             {notifications.map((notification) => (
               <NotificationCard
-                key={uniqueId(notification.id)}
+                key={notification.id || `notification-${notification.timestamp}`}
                 notification={notification}
               />
             ))}
@@ -81,7 +80,12 @@ const NotificationProgress = memo(
       if (match) {
         const current = parseInt(match[1], 10);
         const total = parseInt(match[2], 10);
-        setProgress((current / total) * 100);
+        // Prevent division by zero
+        if (total > 0) {
+          setProgress((current / total) * 100);
+        } else {
+          setProgress(0);
+        }
       } else {
         setProgress(0);
       }
@@ -135,29 +139,9 @@ const NotificationContent = memo(
 
 const NotificationCard = memo(
   ({ notification }: { notification: NotificationItem }) => {
-    const processedMessage = notification.loading
-      ? notification.message.replace(/\[\d+\/\d+]/, "")
-      : notification.message;
-
-    const content = useMemo(
-      () => ({
-        notification: {
-          ...notification,
-          message: processedMessage,
-        },
-      }),
-      [notification, processedMessage],
-    );
-
-    const notificationKey = useMemo(
-      () =>
-        notification.id ? uniqueId(notification.id) : uniqueId("notification-"),
-      [notification.id],
-    );
-
     return (
-      <Card key={notificationKey} withBorder shadow="sm" p="sm">
-        <NotificationContent notification={content.notification} />
+      <Card withBorder shadow="sm" p="sm">
+        <NotificationContent notification={notification} />
 
         {notification.loading && (
           <NotificationProgress

@@ -8,6 +8,8 @@ import { useLocalStorage } from "@mantine/hooks";
 import { setNotificationContextRef } from "./index";
 import { NotificationItem } from "./notification";
 
+const MAX_NOTIFICATIONS = 100;
+
 interface NotificationContextType {
   notifications: NotificationItem[];
   showNotification: (notification: NotificationItem) => void;
@@ -48,10 +50,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         title: String(notification.title),
         message: String(notification.message),
         id: notification.id ?? `notification-${Date.now()}`,
-        timestamp: new Date().getTime(),
+        timestamp: notification.timestamp ?? new Date().getTime(),
       };
 
-      setNotifications((prev) => [...prev, newNotification]);
+      setNotifications((prev) => {
+        const updated = [...prev, newNotification];
+        return updated.length > MAX_NOTIFICATIONS
+          ? updated.slice(-MAX_NOTIFICATIONS)
+          : updated;
+      });
     },
     [setNotifications],
   );
@@ -67,7 +74,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
               ...notification,
               title: String(notification.title),
               message: String(notification.message),
-              timestamp: new Date().getTime(),
+              timestamp: prev[existing].timestamp,
             };
             return updated;
           }
@@ -77,7 +84,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
               ...notification,
               title: String(notification.title),
               message: String(notification.message),
-              timestamp: new Date().getTime(),
+              timestamp: notification.timestamp ?? new Date().getTime(),
             },
           ];
         });
@@ -108,6 +115,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   }, [setNotifications]);
 
+  // Set context ref in useEffect with proper dependencies
   useEffect(() => {
     setNotificationContextRef(
       showNotification,
@@ -118,11 +126,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [showNotification, updateNotification, hideNotification, markAsRead]);
 
   const sortedNotifications = [...notifications].sort((a, b) => {
-    if (a.loading && !b.loading) {
-      return -1;
-    }
-
-    return 1;
+    if (a.loading && !b.loading) return -1;
+    if (!a.loading && b.loading) return 1;
+    return 0; // Equal elements preserve their order
   });
 
   const value = {

@@ -76,7 +76,7 @@ class TaskDispatcher {
               taskId,
               group,
               task.description,
-              index,
+              index + 1, // 1-based index for user-friendly display
               tasks.length,
             );
 
@@ -126,6 +126,13 @@ class TaskDispatcher {
       this.tasks[group] = [];
 
       this.taskNotificationIds[group] = `${group}-${Date.now()}`;
+
+      // Show initial notification immediately
+      const notifyStart = notification.progress.pending(
+        this.taskNotificationIds[group],
+        group,
+      );
+      showNotification(notifyStart);
     }
 
     this.tasks[group].push(task);
@@ -140,6 +147,12 @@ class TaskDispatcher {
       const notificationId = this.taskNotificationIds[item.header] || item.id;
 
       if (this.progress[notificationId] === undefined) {
+        // Show initial notification immediately
+        const notifyStart = notification.progress.pending(
+          notificationId,
+          item.header,
+        );
+        showNotification(notifyStart);
         this.progress[notificationId] = true;
         return;
       }
@@ -160,14 +173,12 @@ class TaskDispatcher {
         return;
       }
 
-      item.value += 1;
-
       updateNotification(
         notification.progress.update(
           notificationId,
           item.header,
           item.name,
-          item.value,
+          item.value + 1, // Backend sends 0-based, convert to 1-based for display
           item.count,
         ),
       );
