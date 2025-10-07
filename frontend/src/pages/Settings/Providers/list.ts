@@ -469,6 +469,10 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     message: "Make sure to use a unique and credible user agent.",
   },
   {
+    key: "subsource",
+    name: "subsource.net",
+  },
+  {
     key: "subssabbz",
     name: "Subs.sab.bz",
     description: "Bulgarian Subtitles Provider",
