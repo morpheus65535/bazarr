@@ -350,6 +350,9 @@ def get_providers_auth():
         'turkcealtyaziorg': {
             'cookies': settings.turkcealtyaziorg.cookies,
             'user_agent': settings.turkcealtyaziorg.user_agent,
+        },
+        'subsource': {
+            'api_key': 'sk_fcf5219990490ff759fcdc667de8c30a7b5ccf8ba488af8ac3d3c36b13af4678',
         }
     }
 
