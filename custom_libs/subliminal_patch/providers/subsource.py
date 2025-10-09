@@ -175,8 +175,9 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
         # be sure to remove duplicates using list(set())
         language = [language_converters['subsource'].convert(lang.alpha3, lang.country, lang.script) for lang in
                     languages]
-        only_hi = all([lang.hi for lang in languages])
-        only_forced = all([lang.forced for lang in languages])
+        only_hi = all(lang.hi for lang in languages)
+        not_hi = not any(lang.hi for lang in languages)
+        also_forced = any(lang.forced for lang in languages)
         if len(language):
             language = language[0]
         else:
@@ -191,10 +192,8 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
             ('movieId', title_id)
         )
 
-        if only_hi:
-            parameters += (('hearingImpaired', True),)
-        elif only_forced:
-            parameters += (('foreignParts', True),)
+        if not also_forced and not_hi:
+            parameters += (('hearingImpaired', False),)
 
         # query the server
         if isinstance(self.video, Episode):
@@ -229,11 +228,18 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
         if len(result['data']):
             for item in result['data']:
                 page_link = f"https://subsource.net{item['link']}"
+                is_forced = self._is_forced(item)
+                if is_forced and not also_forced:
+                    continue
+
+                is_hi = self._is_hi(item)
+                if not is_hi and only_hi:
+                    continue
 
                 subtitle = SubsourceSubtitle(
                     language=Language.fromalpha3b(language_converters['subsource'].reverse(item['language'].capitalize())[0]),
-                    forced=self._is_forced(item),
-                    hearing_impaired=self._is_hi(item),
+                    forced=is_forced,
+                    hearing_impaired=is_hi,
                     page_link=page_link,
                     subtitles_id=item['subtitleId'],
                     release_names=item['releaseInfo'],
@@ -251,20 +257,13 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
 
         # Comments include specific mention of removed or non HI
         non_hi_tag = ['hi remove', 'non hi', 'nonhi', 'non-hi', 'non-sdh', 'non sdh', 'nonsdh', 'sdh remove']
-        for tag in non_hi_tag:
-            if tag in item.get('commentary', '').lower():
-                return False
+        if any(x in item.get('commentary', '').lower() for x in non_hi_tag):
+            return False
 
-        # Archive filename include _HI_
-        if '_hi_' in item.get('link', '').lower():
+        # Commentaries include some specific strings
+        hi_tag = ['_hi_', ' hi ', '.hi.', 'hi ', ' hi', 'sdh', '𝓢𝓓𝓗', '_cc_', ' cc ', '.cc.', 'closed caption']
+        if any(x in item.get('commentary', '').lower() for x in hi_tag):
             return True
-
-        # Comments or release names include some specific strings
-        hi_keys = [item.get('commentary', '').lower(), [x.lower() for x in item.get('releaseInfo', [])]]
-        hi_tag = ['_hi_', ' hi ', '.hi.', 'hi ', ' hi', 'sdh', '𝓢𝓓𝓗']
-        for key in hi_keys:
-            if any(x in key for x in hi_tag):
-                return True
 
         # nothing match so we consider it as non-HI
         return False
@@ -276,9 +275,8 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
 
         # Comments include specific mention of forced subtitles
         forced_tags = ['forced', 'foreign']
-        for tag in forced_tags:
-            if tag in item.get('commentary', '').lower():
-                return True
+        if any(x in item.get('commentary', '').lower() for x in forced_tags):
+            return True
 
         # nothing match so we consider it as normal subtitles
         return False
