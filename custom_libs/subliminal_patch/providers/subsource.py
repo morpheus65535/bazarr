@@ -14,9 +14,8 @@ from subliminal.exceptions import ConfigurationError, AuthenticationError
 from subliminal_patch.exceptions import APIThrottled, ForbiddenError, TooManyRequests
 from .mixins import ProviderRetryMixin
 from subliminal_patch.subtitle import Subtitle
-from subliminal.subtitle import fix_line_ending
-from subliminal_patch.providers import Provider
-from subliminal_patch.providers import utils
+from subliminal_patch.providers import Provider, utils
+from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +31,8 @@ class SubsourceSubtitle(Subtitle):
     hash_verifiable = False
     hearing_impaired_verifiable = True
 
-    def __init__(self, language, forced, hearing_impaired, page_link, subtitles_id, release_names, uploader):
+    def __init__(self, language, forced, hearing_impaired, page_link, subtitles_id, release_names, uploader,
+                 episode=None, asked_for_episode=None):
         super().__init__(language)
         language = Language.rebuild(language, hi=hearing_impaired, forced=forced)
 
@@ -46,6 +46,8 @@ class SubsourceSubtitle(Subtitle):
         self.download_link = None
         self.uploader = uploader
         self.matches = None
+        self.episode = episode
+        self.asked_for_episode = asked_for_episode
 
     @property
     def id(self):
@@ -73,7 +75,7 @@ class SubsourceSubtitle(Subtitle):
         return matches
 
 
-class SubsourceProvider(ProviderRetryMixin, Provider):
+class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMixin):
     """Subsource Provider"""
     server_hostname = 'api.subsource.net'
 
@@ -192,9 +194,6 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
             ('movieId', title_id)
         )
 
-        if not also_forced and not_hi:
-            parameters += (('hearingImpaired', False),)
-
         # query the server
         if isinstance(self.video, Episode):
             parameters += (('seasonNumber', self.video.season), ('episodeNumber', self.video.episode))
@@ -236,6 +235,8 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
                 if not is_hi and only_hi:
                     continue
 
+                episode = video.episode if isinstance(video, Episode) else None
+
                 subtitle = SubsourceSubtitle(
                     language=Language.fromalpha3b(language_converters['subsource'].reverse(item['language'].capitalize())[0]),
                     forced=is_forced,
@@ -244,6 +245,8 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
                     subtitles_id=item['subtitleId'],
                     release_names=item['releaseInfo'],
                     uploader=self._get_uploader_name(item),
+                    episode=episode,
+                    asked_for_episode=episode,
                 )
                 subtitle.get_matches(self.video)
                 subtitles.append(subtitle)
@@ -324,11 +327,7 @@ class SubsourceProvider(ProviderRetryMixin, Provider):
             archive_stream = io.BytesIO(r.content)
             if is_zipfile(archive_stream):
                 archive = ZipFile(archive_stream)
-                for name in archive.namelist():
-                    # TODO when possible, deal with season pack / multiple files archive
-                    subtitle_content = archive.read(name)
-                    subtitle.content = fix_line_ending(subtitle_content)
-                    return
+                subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
             else:
                 logger.error(f'Could not unzip subtitle from {download_link}')
                 subtitle.content = None
