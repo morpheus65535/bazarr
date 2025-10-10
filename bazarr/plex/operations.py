@@ -6,7 +6,7 @@ from app.config import settings, write_config
 from plexapi.server import PlexServer
 
 logger = logging.getLogger(__name__)
-
+DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 def get_plex_server() -> PlexServer:
     """Connect to the Plex server and return the server instance."""
@@ -14,7 +14,7 @@ def get_plex_server() -> PlexServer:
     
     session = requests.Session()
     session.verify = False
-    
+
     try:
         auth_method = settings.plex.get('auth_method', 'apikey')
         
@@ -97,7 +97,7 @@ def plex_set_movie_added_date_now(movie_metadata) -> None:
         plex = get_plex_server()
         library = plex.library.section(settings.plex.movie_library)
         video = library.getGuid(guid=movie_metadata.imdbId)
-        update_added_date(video, datetime.now().isoformat())
+        update_added_date(video, datetime.now().strftime(DATETIME_FORMAT))
     except Exception as e:
         logger.error(f"Error in plex_set_movie_added_date_now: {e}")
 
@@ -113,7 +113,7 @@ def plex_set_episode_added_date_now(episode_metadata) -> None:
         library = plex.library.section(settings.plex.series_library)
         show = library.getGuid(episode_metadata.imdbId)
         episode = show.episode(season=episode_metadata.season, episode=episode_metadata.episode)
-        update_added_date(episode, datetime.now().isoformat())
+        update_added_date(episode, datetime.now().strftime(DATETIME_FORMAT))
     except Exception as e:
         logger.error(f"Error in plex_set_episode_added_date_now: {e}")
 
