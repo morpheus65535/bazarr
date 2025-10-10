@@ -1,0 +1,6 @@
+# Development data directory
+data/
+
+# Docker volumes and temporary files
+.env
+*.log

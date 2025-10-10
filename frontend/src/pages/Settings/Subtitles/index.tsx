@@ -523,6 +523,10 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         </CollapseBox>
       </Section>
       <Section header="Translating">
+        <Slider
+          label="Score for Translated Episode and Movie Subtitles"
+          settingKey="settings-translator-default_score"
+        ></Slider>
         <Selector
           label="Translator"
           clearable
@@ -545,6 +549,16 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           <Message>
             You can generate it here: https://aistudio.google.com/apikey
           </Message>
+        </CollapseBox>
+        <CollapseBox
+          settingKey="settings-translator-translator_type"
+          on={(val) => val === "lingarr"}
+        >
+          <Text
+            label="Lingarr endpoint"
+            settingKey="settings-translator-lingarr_url"
+          />
+          <Message>Base URL of Lingarr (e.g., http://localhost:9876)</Message>
         </CollapseBox>
         <Check
           label="Add translation info at the beginning"

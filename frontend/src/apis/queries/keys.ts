@@ -22,4 +22,5 @@ export enum QueryKeys {
   Wanted = "wanted",
   Range = "range",
   All = "all",
+  Plex = "plex",
 }

@@ -115,8 +115,7 @@ def movieParser(movie, action, tags_dict, language_profiles, movie_default_profi
             else:
                 if 'languages' in movie['movieFile'] and len(movie['movieFile']['languages']):
                     for item in movie['movieFile']['languages']:
-                        if isinstance(item, dict):
-                            if 'name' in item:
+                        if isinstance(item, dict) and 'name' in item:
                                 language = audio_language_from_name(item['name'])
                                 audio_language.append(language)
 

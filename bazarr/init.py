@@ -219,3 +219,7 @@ def init_binaries():
 init_db()
 init_binaries()
 path_mappings.update()
+
+# Initialize Plex OAuth configuration
+from app.config import initialize_plex
+initialize_plex()

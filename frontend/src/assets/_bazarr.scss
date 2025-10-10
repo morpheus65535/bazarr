@@ -75,6 +75,9 @@ $header-height: 64px;
       min-width: 10rem;
     }
   }
+  .mantine-Slider-root {
+    margin-bottom: var(--mantine-spacing-md);
+  }
 }
 
 :root {

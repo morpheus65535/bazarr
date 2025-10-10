@@ -1,0 +1,33 @@
+.serverSection {
+  margin-top: 1.25rem; /* 20px */
+}
+
+.collapsibleSection {
+  margin-top: 0.75rem; /* 12px */
+}
+
+.expandButton {
+  font-weight: 500;
+  justify-content: flex-start;
+}
+
+.serverSelectGroup {
+  margin-bottom: 1rem; /* 16px */
+}
+
+.serverSelectField {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* 12px */
+}
+
+.refreshButton {
+  min-width: 2.75rem;
+  height: 2.25rem;
+}
+
+.flexContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* 12px */
+}

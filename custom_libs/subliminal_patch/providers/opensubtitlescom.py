@@ -325,41 +325,34 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         langs = ','.join(langs_list)
         logger.debug(f'Searching for those languages: {langs}')
 
-        # query the server
+        # define the proper query parameters based on the video type
+        # query parameters must be alphabetically ordered to prevent redirect
         if isinstance(self.video, Episode):
-            res = self.retry(
-                lambda: self.checked(
-                    lambda: self.session.get(self.server_url() + 'subtitles',
-                                             params=(('ai_translated', 'exclude' if not self.include_ai_translated
-                                                     else 'include'),
-                                                     ('episode_number', self.video.episode),
-                                                     ('imdb_id', imdb_id if not title_id else None),
-                                                     ('languages', langs),
-                                                     ('moviehash', file_hash),
-                                                     ('parent_feature_id', title_id if title_id else None),
-                                                     ('season_number', self.video.season)),
-                                             timeout=30),
-                    validate_json=True,
-                    json_key_name='data'
-                ),
-                amount=retry_amount
-            )
+            params = [('episode_number', self.video.episode),
+                      ('imdb_id', imdb_id if not title_id else None),
+                      ('languages', langs),
+                      ('moviehash', file_hash),
+                      ('parent_feature_id', title_id if title_id else None),
+                      ('season_number', self.video.season)]
         else:
-            res = self.retry(
-                lambda: self.checked(
-                    lambda: self.session.get(self.server_url() + 'subtitles',
-                                             params=(('ai_translated', 'exclude' if not self.include_ai_translated
-                                                     else 'include'),
-                                                     ('id', title_id if title_id else None),
-                                                     ('imdb_id', imdb_id if not title_id else None),
-                                                     ('languages', langs),
-                                                     ('moviehash', file_hash)),
-                                             timeout=30),
-                    validate_json=True,
-                    json_key_name='data'
-                ),
-                amount=retry_amount
-            )
+            params = [('id', title_id if title_id else None),
+                      ('imdb_id', imdb_id if not title_id else None),
+                      ('languages', langs),
+                      ('moviehash', file_hash)]
+
+        # prepend the 'exclude' parameter to the list of query parameters if we don't want AI translated subtitles'
+        if not self.include_ai_translated:
+            params.insert(0, ('ai_translated', 'exclude'))
+
+        # query the server
+        res = self.retry(
+            lambda: self.checked(
+                lambda: self.session.get(self.server_url() + 'subtitles', params=params, timeout=30),
+                validate_json=True,
+                json_key_name='data'
+            ),
+            amount=retry_amount
+        )
 
         subtitles = []
 

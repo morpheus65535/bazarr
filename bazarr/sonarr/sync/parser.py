@@ -129,13 +129,13 @@ def episodeParser(episode):
                         if 'language' in episode['episodeFile'] and len(episode['episodeFile']['language']):
                             item = episode['episodeFile']['language']
                             if isinstance(item, dict):
-                                if 'name' in item:
+                                if isinstance(item, dict) and 'name' in item:
                                     audio_language.append(audio_language_from_name(item['name']))
                         elif 'languages' in episode['episodeFile'] and len(episode['episodeFile']['languages']):
                             items = episode['episodeFile']['languages']
                             if isinstance(items, list):
                                 for item in items:
-                                    if 'name' in item:
+                                    if isinstance(item, dict) and 'name' in item:
                                         audio_language.append(audio_language_from_name(item['name']))
                         else:
                             audio_language = database.execute(

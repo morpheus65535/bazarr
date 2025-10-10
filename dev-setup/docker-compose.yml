@@ -1,0 +1,81 @@
+services:
+  bazarr-backend:
+    build:
+      context: ..
+      dockerfile: dev-setup/Dockerfile.backend
+    container_name: bazarr-backend
+    ports:
+      - "6767:6767"  # Bazarr backend API
+    volumes:
+      # Mount source code for live editing
+      - ../bazarr.py:/app/bazarr/bin/bazarr.py:ro
+      - ../bazarr:/app/bazarr/bin/bazarr:ro
+      - ../custom_libs:/app/bazarr/bin/custom_libs:ro
+      - ../libs:/app/bazarr/bin/libs:ro
+      - ../migrations:/app/bazarr/bin/migrations:ro
+      
+      # Mount data directory for persistence
+      - ./data:/app/bazarr/data
+    environment:
+      - SZ_USER_AGENT=bazarr-dev
+      - BAZARR_VERSION=dev
+      - PYTHONPATH=/app/bazarr/bin/custom_libs:/app/bazarr/bin/libs:/app/bazarr/bin/bazarr:/app/bazarr/bin
+    restart: unless-stopped
+    networks:
+      - bazarr-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "6767"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  bazarr-frontend:
+    build:
+      context: ..
+      dockerfile: dev-setup/Dockerfile.frontend
+    container_name: bazarr-frontend
+    ports:
+      - "5173:5173"  # Vite frontend dev server
+    volumes:
+      # Mount frontend source code for live editing
+      - ../frontend/src:/app/src:ro
+      - ../frontend/public:/app/public:ro
+      - ../frontend/config:/app/config:ro
+      - ../frontend/vite.config.ts:/app/vite.config.ts:ro
+      - ../frontend/tsconfig.json:/app/tsconfig.json:ro
+      - ../frontend/package.json:/app/package.json:ro
+      - ../frontend/.env.development:/app/.env.development:ro
+      
+      # Ensure node_modules is not overwritten by volume mount
+      - /app/node_modules
+      
+      # Share data directory so frontend can read backend config
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=development
+      - VITE_PROXY_URL=http://bazarr-backend:6767
+      - VITE_BAZARR_CONFIG_FILE=/app/data/config/config.yaml
+      - VITE_CAN_UPDATE=true
+      - VITE_HAS_UPDATE=false
+      - VITE_REACT_QUERY_DEVTOOLS=true
+      - VITE_API_KEY=bazarr # Set the API key to match config
+    depends_on:
+      - bazarr-backend
+    restart: unless-stopped
+    networks:
+      - bazarr-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "bazarr-backend", "6767"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+
+networks:
+  bazarr-network:
+    driver: bridge
+
+volumes:
+  bazarr-dev-data:
+    driver: local

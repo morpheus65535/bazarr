@@ -58,31 +58,24 @@
 
 ## Building with Docker
 
-You can now build and run the frontend using Docker. Follow these steps:
+For Docker-based development, please use the comprehensive development environment provided in the `dev-setup` folder:
 
-### Benefits of Using Docker
+```bash
+cd ../dev-setup
+docker compose up --build
+```
 
-- **Consistency**: Ensures the app runs in the same environment across all systems.
-- **Isolation**: Avoids dependency conflicts with other projects on your machine.
-- **Ease of Deployment**: Simplifies the process of deploying the app to production.
+This will start both the backend and frontend in separate optimized containers with live reloading enabled.
 
-### Steps to Build and Run
+### Benefits of the dev-setup Docker Environment
 
-1. Build the Docker image with the Node.js version specified in `.nvmrc`:
+- **Full Stack**: Runs both backend and frontend with proper networking
+- **Live Reloading**: Changes to your code are immediately reflected
+- **Consistency**: Ensures the app runs in the same environment across all systems
+- **Isolation**: Avoids dependency conflicts with other projects on your machine
+- **Optimized**: Separate containers for backend (Python/Alpine) and frontend (Node.js)
 
-   ```
-   $ docker build --build-arg NODE_VERSION=$(cat .nvmrc 2>/dev/null || echo "20") -t your-image-name .
-   ```
-
-   - The `docker build --build-arg NODE_VERSION=$(cat .nvmrc 2>/dev/null || echo "20") -t your-image-name .` argument ensures the Docker image uses the Node.js version specified in the `.nvmrc` file.
-
-2. Run the Docker container:
-
-   ```
-   $ docker run -p 5173:5173 your-image-name
-   ```
-
-   - Add `.env.development.local` with the path to your environment file if needed.
+For more details, see the [dev-setup README](../dev-setup/README.md).
 
 3. Open the app in your browser at `http://localhost:5173`.
 

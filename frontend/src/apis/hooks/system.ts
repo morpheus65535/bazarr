@@ -77,6 +77,11 @@ export function useSettingsMutation() {
       void client.invalidateQueries({
         queryKey: [QueryKeys.Badges],
       });
+
+      // Invalidate Plex libraries when settings change (e.g., server configuration)
+      void client.invalidateQueries({
+        queryKey: [QueryKeys.Plex, "libraries"],
+      });
     },
   });
 }

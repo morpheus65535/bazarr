@@ -6,8 +6,16 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ROOT_DIRECTORY: .
+      UI_DIRECTORY: ./frontend
       SCRIPTS_DIRECTORY: .github/scripts
       FETCH_DEPTH: 15 # Should be enough
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12', '3.13' ]
+    name: Python ${{ matrix.python-version }} test
+
     steps:
       - name: Validate branch
         if: ${{ github.ref != 'refs/heads/development' }}
@@ -16,13 +24,13 @@ jobs:
           exit 1
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
           ref: development
 
       - name: Setup NodeJS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
 
@@ -34,10 +42,10 @@ jobs:
         run: npm run build
         working-directory: ${{ env.UI_DIRECTORY }}
 
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v5
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
         with:
-          python-version: "3.8"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install Python dependencies
         run: |

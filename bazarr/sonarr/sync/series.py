@@ -189,7 +189,7 @@ def update_series(send_event=True):
         logging.debug('BAZARR All series synced from Sonarr into database.')
 
 
-def update_one_series(series_id, action):
+def update_one_series(series_id, action, defer_search=False):
     logging.debug(f'BAZARR syncing this specific series from Sonarr: {series_id}')
 
     # Check if there's a row in database for this series ID
@@ -253,7 +253,7 @@ def update_one_series(series_id, action):
         except IntegrityError as e:
             logging.error(f"BAZARR cannot update series {series['path']} because of {e}")
         else:
-            sync_episodes(series_id=int(series_id), send_event=False)
+            sync_episodes(series_id=int(series_id), send_event=False, defer_search=defer_search)
             event_stream(type='series', action='update', payload=int(series_id))
             logging.debug(f'BAZARR updated this series into the database:{path_mappings.path_replace(series["path"])}')
 

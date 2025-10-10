@@ -39,6 +39,7 @@ from app.database import (System, database, update, migrate_db, create_db_revisi
                           fix_languages_profiles_with_duplicate_ids)  # noqa E402
 from app.notifier import update_notifier  # noqa E402
 from languages.get_languages import load_language_in_db  # noqa E402
+from app.jobs_queue import jobs_queue  # noqa E402
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
 from app.server import webserver, app  # noqa E402
 from app.announcements import get_announcements_to_file  # noqa E402
@@ -66,6 +67,11 @@ database.execute(
 load_language_in_db()
 
 update_notifier()
+
+jobs_queue_thread = Thread(target=jobs_queue.consume_jobs_pending_queue)
+jobs_queue_thread.daemon = True
+jobs_queue_thread.start()
+logging.info("Interactive jobs queue started and waiting for tasks")
 
 if not args.no_signalr:
     if settings.general.use_sonarr:

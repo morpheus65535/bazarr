@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class SubtitriIdSubtitle(Subtitle):
-    """subtitri.id.lv Subtitle."""
+    """subtitri.do.am Subtitle."""
     provider_name = 'subtitriid'
 
     def __init__(self, language, page_link, download_link, title, year, imdb_id):
@@ -92,11 +92,11 @@ class SubtitriIdSubtitle(Subtitle):
 
 
 class SubtitriIdProvider(Provider, ProviderSubtitleArchiveMixin):
-    """subtitri.id.lv Provider."""
+    """subtitri.do.am Provider."""
     subtitle_class = SubtitriIdSubtitle
     languages = {Language('lva', 'LV')} | {Language.fromalpha2(l) for l in ['lv']}
     video_types = (Movie,)
-    server_url = 'http://subtitri.id.lv'
+    server_url = 'https://subtitri.do.am'
     search_url =  server_url + '/search/'
 
     def __init__(self):
@@ -152,7 +152,7 @@ class SubtitriIdProvider(Provider, ProviderSubtitleArchiveMixin):
 
             # create/add the subitle
             subtitle = self.subtitle_class(Language.fromalpha2('lv'), page_link, download_link, title, year, imdb_id)
-            logger.debug('subtitri.id.lv: Found subtitle %r', subtitle)
+            logger.debug('subtitri.do.am: Found subtitle %r', subtitle)
             subtitles.append(subtitle)
 
         return subtitles
