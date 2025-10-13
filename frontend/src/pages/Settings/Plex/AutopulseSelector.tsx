@@ -11,9 +11,8 @@ import {
   Text,
   Tooltip,
 } from "@mantine/core";
-import { useClipboard } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { faCheck, faCopy } from "@fortawesome/free-solid-svg-icons";
+import { faCopy } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   usePlexAuthValidationQuery,
@@ -30,7 +29,6 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
   props,
 ) => {
   const { label, description } = props;
-  const clipboard = useClipboard();
 
   // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
@@ -44,7 +42,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
     isFetching: isFetchingConfig,
   } = usePlexAutopulseConfigQuery({
     enabled: false,
-    retry: false, // Disable retries to prevent multiple error notifications
+    retry: false,
   });
 
   const handleGenerateAutopulseConfig = async () => {
@@ -71,7 +69,6 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
         title: "Error",
         message: errorMessage,
         color: "red",
-        autoClose: 5000,
       });
     }
   };
@@ -149,7 +146,6 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                   }
                   
                   try {
-                    // Use the native Clipboard API with proper error handling
                     await navigator.clipboard.writeText(yamlContent);
                     notifications.show({
                       title: "Copied!",
@@ -157,31 +153,15 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                       color: "green",
                     });
                   } catch (error) {
-                    // Fallback to Mantine's clipboard hook
-                    clipboard.copy(yamlContent);
-                    // Show message based on clipboard.copied state after a brief delay
-                    setTimeout(() => {
-                      if (clipboard.copied) {
-                        notifications.show({
-                          title: "Copied!",
-                          message: "Autopulse configuration copied to clipboard",
-                          color: "green",
-                        });
-                      } else {
-                        notifications.show({
-                          title: "Copy Failed",
-                          message: "Failed to copy to clipboard. Please copy manually from the code block below.",
-                          color: "red",
-                        });
-                      }
-                    }, 100);
+                    notifications.show({
+                      title: "Copy Failed",
+                      message: "Failed to copy to clipboard. Please copy manually from the code block below.",
+                      color: "red",
+                    });
                   }
                 }}
               >
-                <FontAwesomeIcon
-                  icon={clipboard.copied ? faCheck : faCopy}
-                  color={clipboard.copied ? "green" : undefined}
-                />
+                <FontAwesomeIcon icon={faCopy} />
               </ActionIcon>
             </Tooltip>
           </Group>
