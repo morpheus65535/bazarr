@@ -284,7 +284,7 @@ def test_external_webhook_connection():
         
         if not webhook_url:
             logging.debug("BAZARR webhook test - No URL configured")
-            return False, "External webhook not configured. Did you forget to save your settings?"
+            return False, "External webhook not configured. Please enter a webhook URL and save your settings."
 
         # Test with stats endpoint if it looks like Autopulse, otherwise test the main URL
         test_url = webhook_url
@@ -308,14 +308,24 @@ def test_external_webhook_connection():
         if response.status_code == 200:
             return True, "External webhook connection successful"
         elif response.status_code == 401:
-            return False, "External webhook authentication failed (401). Did you forget to save your settings?"
+            return False, "External webhook authentication failed (401). Check your username and password."
         elif response.status_code == 400:
-            return False, "External webhook bad request (400). Check your URL and credentials. Did you forget to save your settings?"
+            return False, "External webhook bad request (400). Check your webhook URL and credentials."
         else:
-            return False, f"External webhook connection failed with status {response.status_code}. Did you forget to save your settings?"
+            return False, f"External webhook connection failed with status {response.status_code}. Check your webhook configuration."
             
+    except requests.exceptions.ConnectionError as e:
+        error_msg = str(e)
+        if 'Connection refused' in error_msg:
+            return False, "External webhook connection refused. If using 'localhost', try using the Docker container name instead."
+        elif 'Name or service not known' in error_msg or 'nodename nor servname provided' in error_msg or 'Name does not resolve' in error_msg or 'NameResolutionError' in error_msg:
+            return False, "External webhook hostname not found. Check your webhook URL for typos or incorrect container name."
+        else:
+            return False, f"External webhook connection error: {error_msg}"
+    except requests.exceptions.Timeout:
+        return False, "External webhook connection timed out. Check if the service is running and accessible."
     except requests.exceptions.RequestException as e:
-        return False, f"External webhook connection failed: {str(e)}. Did you forget to save your settings?"
+        return False, f"External webhook connection failed: {str(e)}"
     except Exception as e:
         return False, f"External webhook connection error: {str(e)}"
 

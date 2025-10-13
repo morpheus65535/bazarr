@@ -44,34 +44,34 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
     isFetching: isFetchingConfig,
   } = usePlexAutopulseConfigQuery({
     enabled: false,
+    retry: false, // Disable retries to prevent multiple error notifications
   });
 
   const handleGenerateAutopulseConfig = async () => {
-    try {
-      const result = await refetchConfig();
-      
-      // Check if the refetch was successful and data was returned
-      if (result.isSuccess && result.data) {
-        notifications.show({
-          title: "Success",
-          message: "Autopulse configuration generated successfully",
-          color: "green",
-        });
-      } else if (result.isError) {
-        // Handle specific error cases
-        notifications.show({
-          title: "Error",
-          message:
-            "Failed to generate Autopulse configuration. Please ensure Autopulse is running and supports the template API.",
-          color: "red",
-        });
-      }
-    } catch (error) {
+    const result = await refetchConfig();
+    
+    if (result.isSuccess && result.data) {
       notifications.show({
+        id: "autopulse-config",
+        title: "Success",
+        message: "Autopulse configuration generated successfully",
+        color: "green",
+      });
+    } else if (result.isError) {
+      const status = (result.error as { response?: { status?: number } })?.response?.status;
+      
+      const errorMessage = status === 401 
+        ? "Plex OAuth authentication required. Please configure OAuth authentication above."
+        : status === 400
+        ? "Unable to generate configuration. Please ensure the external webhook is configured and saved in Settings."
+        : "Failed to generate Autopulse configuration. Please ensure Autopulse is running and supports the template API.";
+      
+      notifications.show({
+        id: "autopulse-config",
         title: "Error",
-        message:
-          "Failed to generate Autopulse configuration. Please ensure Autopulse is running and supports the template API.",
+        message: errorMessage,
         color: "red",
+        autoClose: 5000,
       });
     }
   };
@@ -136,13 +136,46 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
               <ActionIcon
                 variant="subtle"
                 size="sm"
-                onClick={() => {
-                  clipboard.copy(configData.config_yaml);
-                  notifications.show({
-                    title: "Copied!",
-                    message: "Autopulse configuration copied to clipboard",
-                    color: "green",
-                  });
+                onClick={async () => {
+                  const yamlContent = configData?.config_yaml;
+                  
+                  if (!yamlContent) {
+                    notifications.show({
+                      title: "Error",
+                      message: "No configuration to copy",
+                      color: "red",
+                    });
+                    return;
+                  }
+                  
+                  try {
+                    // Use the native Clipboard API with proper error handling
+                    await navigator.clipboard.writeText(yamlContent);
+                    notifications.show({
+                      title: "Copied!",
+                      message: "Autopulse configuration copied to clipboard",
+                      color: "green",
+                    });
+                  } catch (error) {
+                    // Fallback to Mantine's clipboard hook
+                    clipboard.copy(yamlContent);
+                    // Show message based on clipboard.copied state after a brief delay
+                    setTimeout(() => {
+                      if (clipboard.copied) {
+                        notifications.show({
+                          title: "Copied!",
+                          message: "Autopulse configuration copied to clipboard",
+                          color: "green",
+                        });
+                      } else {
+                        notifications.show({
+                          title: "Copy Failed",
+                          message: "Failed to copy to clipboard. Please copy manually from the code block below.",
+                          color: "red",
+                        });
+                      }
+                    }, 100);
+                  }
                 }}
               >
                 <FontAwesomeIcon
