@@ -48,12 +48,24 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
 
   const handleGenerateAutopulseConfig = async () => {
     try {
-      await refetchConfig();
-      notifications.show({
-        title: "Success",
-        message: "Autopulse configuration generated successfully",
-        color: "green",
-      });
+      const result = await refetchConfig();
+      
+      // Check if the refetch was successful and data was returned
+      if (result.isSuccess && result.data) {
+        notifications.show({
+          title: "Success",
+          message: "Autopulse configuration generated successfully",
+          color: "green",
+        });
+      } else if (result.isError) {
+        // Handle specific error cases
+        notifications.show({
+          title: "Error",
+          message:
+            "Failed to generate Autopulse configuration. Please ensure Autopulse is running and supports the template API.",
+          color: "red",
+        });
+      }
     } catch (error) {
       notifications.show({
         title: "Error",
