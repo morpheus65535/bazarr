@@ -47,7 +47,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
 
   const handleGenerateAutopulseConfig = async () => {
     const result = await refetchConfig();
-    
+
     if (result.isSuccess && result.data) {
       notifications.show({
         id: "autopulse-config",
@@ -56,14 +56,16 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
         color: "green",
       });
     } else if (result.isError) {
-      const status = (result.error as { response?: { status?: number } })?.response?.status;
-      
-      const errorMessage = status === 401 
-        ? "Plex OAuth authentication required. Please configure OAuth authentication above."
-        : status === 400
-        ? "Unable to generate configuration. Please ensure the external webhook is configured and saved in Settings."
-        : "Failed to generate Autopulse configuration. Please ensure Autopulse is running and supports the template API.";
-      
+      const status = (result.error as { response?: { status?: number } })
+        ?.response?.status;
+
+      const errorMessage =
+        status === 401
+          ? "Plex OAuth authentication required. Please configure OAuth authentication above."
+          : status === 400
+            ? "Unable to generate configuration. Please ensure the external webhook is configured and saved in Settings."
+            : "Failed to generate Autopulse configuration. Please ensure Autopulse is running and supports the template API.";
+
       notifications.show({
         id: "autopulse-config",
         title: "Error",
@@ -135,7 +137,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                 size="sm"
                 onClick={async () => {
                   const yamlContent = configData?.config_yaml;
-                  
+
                   if (!yamlContent) {
                     notifications.show({
                       title: "Error",
@@ -144,7 +146,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                     });
                     return;
                   }
-                  
+
                   try {
                     await navigator.clipboard.writeText(yamlContent);
                     notifications.show({
@@ -155,7 +157,8 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                   } catch (error) {
                     notifications.show({
                       title: "Copy Failed",
-                      message: "Failed to copy to clipboard. Please copy manually from the code block below.",
+                      message:
+                        "Failed to copy to clipboard. Please copy manually from the code block below.",
                       color: "red",
                     });
                   }
