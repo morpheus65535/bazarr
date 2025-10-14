@@ -147,6 +147,16 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                     return;
                   }
 
+                  if (!window.isSecureContext) {
+                    notifications.show({
+                      title: "Cannot Copy",
+                      message:
+                        "Clipboard access requires HTTPS or localhost. Please access via HTTPS or copy manually from the code block below.",
+                      color: "yellow",
+                    });
+                    return;
+                  }
+
                   try {
                     await navigator.clipboard.writeText(yamlContent);
                     notifications.show({
