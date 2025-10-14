@@ -163,7 +163,7 @@ const AppHeader: FunctionComponent = () => {
           !jobsError &&
           (Array.isArray(jobs) ? (
             <>
-              {jobs.length > 0 &&
+              {jobs.length > 0 ? (
                 (() => {
                   const grouped = (jobs as Jobs[]).reduce<
                     Record<string, Jobs[]>
@@ -210,9 +210,9 @@ const AppHeader: FunctionComponent = () => {
                               ).getTime();
                               return timeB - timeA; // Latest first (descending order)
                             })
-                            .map((job) => (
+                            .map((job, index) => (
                               <Card
-                                key={job?.job_id}
+                                key={job?.job_id ?? `job-fallback-${index}`}
                                 withBorder
                                 radius="sm"
                                 padding="sm"
@@ -238,7 +238,7 @@ const AppHeader: FunctionComponent = () => {
                                   </Text>
                                   <Badge size="sm">
                                     <TimeAgo
-                                      date={job?.last_run_time}
+                                      date={job?.last_run_time || new Date()}
                                       minPeriod={5}
                                     />
                                   </Badge>
@@ -247,9 +247,11 @@ const AppHeader: FunctionComponent = () => {
                                   <>
                                     <Progress
                                       value={
-                                        (job.progress_value /
-                                          job.progress_max) *
-                                        100
+                                        job.progress_max > 0
+                                          ? (job.progress_value /
+                                              job.progress_max) *
+                                            100
+                                          : 0
                                       }
                                       size="sm"
                                       radius="sm"
@@ -275,7 +277,12 @@ const AppHeader: FunctionComponent = () => {
                         </Stack>
                       </Stack>
                     ));
-                })()}
+                })()
+              ) : (
+                <Text c="dimmed" ta="center" py="xl">
+                  No jobs to display
+                </Text>
+              )}
             </>
           ) : (
             <Card withBorder padding="md" radius="sm">

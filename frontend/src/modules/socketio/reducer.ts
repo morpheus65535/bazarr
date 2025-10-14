@@ -214,6 +214,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
       key: "jobs",
       update: (items) => {
         const keys = [QueryKeys.System, QueryKeys.Jobs];
+        const MAX_JOBS_IN_CACHE = 100;
 
         items.forEach((payload) => {
           // Payload is always a JSON string: {"job_id": <number>, "job_value": <number|null>, "job_message": <string>}
@@ -243,7 +244,13 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
                   ]
                 : [...current, updatedJob];
 
-            queryClient.setQueryData(keys, next);
+            // Prevent memory leak: keep only the most recent jobs
+            const trimmed =
+              next.length > MAX_JOBS_IN_CACHE
+                ? next.slice(-MAX_JOBS_IN_CACHE)
+                : next;
+
+            queryClient.setQueryData(keys, trimmed);
             LOG(
               "info",
               "Applied inline job_value and job_message to cache",
@@ -282,7 +289,13 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
                     ]
                   : [...current, incoming];
 
-              queryClient.setQueryData(keys, next);
+              // Prevent memory leak: keep only the most recent jobs
+              const trimmed =
+                next.length > MAX_JOBS_IN_CACHE
+                  ? next.slice(-MAX_JOBS_IN_CACHE)
+                  : next;
+
+              queryClient.setQueryData(keys, trimmed);
             })
             .catch((e: unknown) => {
               LOG("warning", "Failed to fetch job update", payload.job_id, e);
