@@ -151,7 +151,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                     notifications.show({
                       title: "Cannot Copy",
                       message:
-                        "Clipboard access requires HTTPS or localhost. Please access via HTTPS or copy manually from the code block below.",
+                        "Clipboard access requires a secure context (HTTPS or http://localhost). Please copy manually from the code block below.",
                       color: "yellow",
                     });
                     return;
