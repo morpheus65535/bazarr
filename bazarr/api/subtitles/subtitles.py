@@ -176,7 +176,7 @@ class Subtitles(Resource):
                 subtitles_filename = os.path.basename(subtitles_path)
 
                 for subtitle_entry in subtitles_list:
-                    if len(subtitle_entry) >= 2:
+                    if len(subtitle_entry) >= 2 and subtitle_entry[1] is not None:
                         db_subtitle_filename = os.path.basename(subtitle_entry[1])
                         if db_subtitle_filename == subtitles_filename:
                             from_language = subtitle_entry[0]
