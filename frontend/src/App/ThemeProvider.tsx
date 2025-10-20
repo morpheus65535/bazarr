@@ -4,8 +4,11 @@ import {
   Badge,
   Button,
   createTheme,
+  CSSVariablesResolver,
+  MantineColorsTuple,
   MantineProvider,
   Pagination,
+  virtualColor,
 } from "@mantine/core";
 import ThemeLoader from "@/App/ThemeLoader";
 import "@mantine/core/styles.layer.css";
@@ -17,21 +20,30 @@ import badgeClasses from "@/assets/badge.module.scss";
 import buttonClasses from "@/assets/button.module.scss";
 import paginationClasses from "@/assets/pagination.module.scss";
 
+// Build a 10-shade Mantine color tuple from the `color<Name>0..9` values
+// exported by _variables.module.scss.
+const buildColor = (prefix: string): MantineColorsTuple =>
+  Array.from(
+    { length: 10 },
+    (_, i) => styleVars[`${prefix}${i}`],
+  ) as unknown as MantineColorsTuple;
+
 const themeProvider = createTheme({
   fontFamily: "Roboto, open sans, Helvetica Neue, Helvetica, Arial, sans-serif",
   colors: {
-    brand: [
-      styleVars.colorBrand0,
-      styleVars.colorBrand1,
-      styleVars.colorBrand2,
-      styleVars.colorBrand3,
-      styleVars.colorBrand4,
-      styleVars.colorBrand5,
-      styleVars.colorBrand6,
-      styleVars.colorBrand7,
-      styleVars.colorBrand8,
-      styleVars.colorBrand9,
-    ],
+    brand: buildColor("colorBrand"),
+    // Semantic tokens — use these instead of raw palette names so intent is
+    // explicit and both color schemes stay consistent.
+    danger: buildColor("colorDanger"),
+    success: buildColor("colorSuccess"),
+    warning: buildColor("colorWarning"),
+    info: buildColor("colorInfo"),
+    // Neutral/secondary automatically swaps per color scheme.
+    secondary: virtualColor({
+      name: "secondary",
+      light: "gray",
+      dark: "dark",
+    }),
   },
   primaryColor: "brand",
   defaultRadius: "sm",
@@ -51,9 +63,23 @@ const themeProvider = createTheme({
   },
 });
 
+// Mantine's default light `dimmed` (gray-6) fails WCAG AA on white/near-white
+// backgrounds. Bump it a shade for readability; dark mode keeps the default.
+const resolveCssVariables: CSSVariablesResolver = () => ({
+  variables: {},
+  light: {
+    "--mantine-color-dimmed": "var(--mantine-color-gray-7)",
+  },
+  dark: {},
+});
+
 const ThemeProvider: FunctionComponent<PropsWithChildren> = ({ children }) => {
   return (
-    <MantineProvider theme={themeProvider} defaultColorScheme="auto">
+    <MantineProvider
+      theme={themeProvider}
+      defaultColorScheme="auto"
+      cssVariablesResolver={resolveCssVariables}
+    >
       <ThemeLoader />
       {children}
     </MantineProvider>
