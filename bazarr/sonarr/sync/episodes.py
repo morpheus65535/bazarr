@@ -242,7 +242,7 @@ def sync_one_episode(episode_id, defer_search=False):
         else:
             event_stream(type='episode', action='delete', payload=int(episode_id))
             logging.debug(
-                f'BAZARR deleted this episode from the database:{path_mappings.path_replace(existing_episode["path"])}')
+                f'BAZARR deleted this episode from the database:{path_mappings.path_replace(existing_episode.path)}')
         return
 
     # Update existing episodes in DB
