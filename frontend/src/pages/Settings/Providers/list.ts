@@ -89,6 +89,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     message: "Requires AniDB Integration.",
   },
   {
+    key: "animesubinfo",
+    name: "AnimeSub.info",
+    description: "Polish Anime Subtitles Provider",
+  },
+  {
     key: "avistaz",
     name: "AvistaZ",
     description:

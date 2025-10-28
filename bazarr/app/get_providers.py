@@ -359,7 +359,8 @@ def get_providers_auth():
         },
         'subsource': {
             'api_key': settings.subsource.apikey,
-        }
+        },
+        'animesubinfo': {}
     }
 
 
