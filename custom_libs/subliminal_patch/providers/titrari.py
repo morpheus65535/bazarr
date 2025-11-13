@@ -9,7 +9,7 @@ import re
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 from guessit import guessit
-from time import sleep
+from time import sleep, time
 
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
@@ -125,9 +125,13 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
     languages.update(set(Language.rebuild(lang, hi=True) for lang in languages))
     video_types = (Episode, Movie)
     api_url = 'https://www.titrari.ro/'
-    # query_advanced_search = 'cautarepreaavansata'
-    # query_advanced_search = "maicauta"
-    query_advanced_search = "cautamsavedem"
+
+    query_advanced_search = "numaicautamcaneiesepenas"  # fallback default
+    
+    # Cache for advanced search page parameter (24 hours)
+    _cached_page_param = None
+    _cache_timestamp = None
+    _cache_ttl = 86400  # 24 hours in seconds
 
     def __init__(self):
         self.session = None
@@ -136,11 +140,61 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         self.session = Session()
         # Hardcoding the UA to bypass the 30s throttle that titrari.ro uses for IP/UA pair
         self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, ' \
-                                             'like Gecko) Chrome/93.0.4535.2 Safari/537.36'
+                                             'like Gecko) Chrome/141.0.0.0 Safari/537.36'
         # self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     def terminate(self):
         self.session.close()
+
+    def _get_advanced_search_page_param(self):
+        """Get the advanced search page parameter from the website.
+        
+        Caches the value for 24 hours. Automatically refreshes if cache is expired.
+        """
+        current_time = time()
+        
+        # Check if cache is valid (exists and not expired)
+        if (self._cached_page_param is not None and 
+            self._cache_timestamp is not None and
+            current_time - self._cache_timestamp < self._cache_ttl):
+            logger.debug('Using cached advanced search page parameter: %s', self._cached_page_param)
+            return self._cached_page_param
+        
+        # Cache expired or doesn't exist, fetch from website
+        logger.debug('Fetching advanced search page parameter from website...')
+        try:
+            response = self.session.get(self.api_url, timeout=15)
+            response.raise_for_status()
+            
+            soup = ParserBeautifulSoup(response.content.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
+            
+            # Find the "Cautare Avansata" link (case-insensitive)
+            advanced_search_link = None
+            for link in soup.find_all('a', href=True):
+                link_text = link.text.lower()
+                if 'cautare avansata' in link_text or 'cautare avansată' in link_text:
+                    advanced_search_link = link.get('href')
+                    break
+            
+            if not advanced_search_link:
+                logger.warning('Could not find "Cautare Avansata" link on page, using fallback')
+                return self.query_advanced_search
+            
+            # Extract page parameter from href (e.g., "index.php?page=numaicautamcaneiesepenas")
+            match = re.search(r'[?&]page=([^&]+)', advanced_search_link)
+            if match:
+                page_param = match.group(1)
+                type(self)._cached_page_param = page_param
+                type(self)._cache_timestamp = current_time
+                logger.debug('Cached advanced search page parameter: %s', page_param)
+                return page_param
+            else:
+                logger.warning('Could not extract page parameter from link: %s, using fallback', advanced_search_link)
+                return self.query_advanced_search
+                
+        except Exception as e:
+            logger.error('Error fetching advanced search page parameter: %s, using fallback', str(e))
+            return self.query_advanced_search
 
     def query(self, language=None, title=None, imdb_id=None, video=None):
         subtitles = []
@@ -253,8 +307,10 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
     #  z9 = genre (All: all, Action: action etc.)
     # z11 = type (0: any, 1: movie, 2: series)
     def getQueryParams(self, imdb_id, title, language):
+        # Get cached page parameter (fetches from website if cache expired)
+        page_param = self._get_advanced_search_page_param()
         queryParams = {
-            'page': self.query_advanced_search,
+            'page': page_param,
             'z7': '',
             'z2': '',
             'z5': '',
