@@ -94,8 +94,8 @@ class JobsQueue:
     def __init__(self):
         self.jobs_pending_queue = deque()
         self.jobs_running_queue = deque(maxlen=1)
-        self.jobs_failed_queue = deque(maxlen=10)
-        self.jobs_completed_queue = deque(maxlen=10)
+        self.jobs_failed_queue = deque(maxlen=1000)
+        self.jobs_completed_queue = deque(maxlen=1000)
         self.current_job_id = 0
 
     def feed_jobs_pending_queue(self, job_name, module, func, args: list = None, kwargs: dict = None,
@@ -426,7 +426,10 @@ class JobsQueue:
                         self.jobs_completed_queue.append(job)
                     finally:
                         self.jobs_running_queue.remove(job)
-                        event_stream(type='jobs', action='update', payload={"job_id": job.job_id})
+                        try:
+                            event_stream(type='jobs', action='update', payload={"job_id": job.job_id})
+                        except Exception as e:
+                            logging.exception(f"Exception raised while sending event: {e}")
                         # progress_value being missing force an API call to update the whole job payload.
             else:
                 sleep(0.1)

@@ -274,6 +274,10 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
             .then((resp: LooseObject[] | undefined) => {
               const incomingJobs = isArray(resp) ? resp : [];
               if (isEmpty(incomingJobs)) {
+                const current =
+                  queryClient.getQueryData<LooseObject[]>(keys) || [];
+                const next = current.filter((j) => j.job_id !== payload.job_id);
+                queryClient.setQueryData(keys, next);
                 return;
               }
               const incoming = incomingJobs[0];
