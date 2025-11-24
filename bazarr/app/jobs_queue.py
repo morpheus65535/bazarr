@@ -326,14 +326,32 @@ class JobsQueue:
         :return: ID of the added job
         :rtype: int
         """
-        # Deadlock detection: warn if called from within a running job
+        # Deadlock prevention: if called from within a running job, try to reuse that job_id
         if len(self.jobs_running_queue) > 0:
             running_job = self.jobs_running_queue[0]
-            logging.warning(
-                f"Potential deadlock detected: add_job_from_function() called while job {running_job.job_id} "
-                f"({running_job.job_name}) is running. If the calling function is part of this job, "
-                f"it will deadlock. Consider passing job_id through the call chain instead."
-            )
+            
+            # Check if the caller has access to job_id parameter
+            caller_frame = inspect.currentframe().f_back
+            caller_locals = caller_frame.f_locals
+            
+            # If the caller has job_id in its local variables and it matches the running job,
+            # reuse it instead of creating a deadlock
+            if 'job_id' in caller_locals and caller_locals['job_id'] == running_job.job_id:
+                logging.debug(
+                    f"Reusing existing job_id {running_job.job_id} instead of creating new job "
+                    f"to avoid deadlock"
+                )
+                return running_job.job_id
+            else:
+                # Caller doesn't have the right job_id - this WILL deadlock
+                logging.error(
+                    f"DEADLOCK IMMINENT: add_job_from_function() called from within job {running_job.job_id} "
+                    f"({running_job.job_name}) but caller doesn't have job_id parameter. "
+                    f"This will cause a deadlock. Fix: add 'job_id=None' parameter to the calling function "
+                    f"and pass it through the call chain."
+                )
+                # We could raise an exception here, but that might break existing code
+                # Instead, log the error and continue - the deadlock will be obvious
         
         # Get the current frame
         current_frame = inspect.currentframe()
