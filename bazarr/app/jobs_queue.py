@@ -73,29 +73,34 @@ class JobsQueue:
     """
     Manages a queue of jobs, tracks their states, and processes them.
 
-    This class is designed to handle a queue of jobs, enabling submission, tracking,
-    and execution of tasks. Jobs are categorized into different queues (`pending`,
-    `running`, `failed`, and `completed`) based on their current status. It provides
-    methods to add, list, remove, and consume jobs in a controlled manner.
+    Jobs are categorized into different queues (pending, running, failed, completed)
+    based on their current status. This class provides methods to add, list, remove,
+    and consume jobs in a controlled manner.
+    
+    Note on concurrency: The running queue has maxlen=1, so only one job executes
+    at a time. This prevents race conditions with shared resources (database,
+    filesystem, APIs) but means jobs shouldn't spawn child jobs synchronously.
+    
+    To avoid deadlocks: Functions that run as jobs should accept a job_id parameter.
+    If job_id is provided, reuse it; if None, create a new job. This prevents a
+    parent job from waiting for a child job that can't start.
 
-    :ivar jobs_pending_queue: Queue containing jobs that are pending execution.
+    :ivar jobs_pending_queue: Jobs waiting to be executed
     :type jobs_pending_queue: deque
-    :ivar jobs_running_queue: Queue containing jobs that are currently being executed.
+    :ivar jobs_running_queue: Currently executing job (maxlen=1 for single-threaded execution)
     :type jobs_running_queue: deque
-    :ivar jobs_failed_queue: Queue containing jobs that failed during execution. It maintains a
-        maximum size of 10 entries.
+    :ivar jobs_failed_queue: Failed jobs (max 100 entries)
     :type jobs_failed_queue: deque
-    :ivar jobs_completed_queue: Queue containing jobs that were executed successfully. It maintains
-        a maximum size of 10 entries.
+    :ivar jobs_completed_queue: Successfully completed jobs (max 100 entries)
     :type jobs_completed_queue: deque
-    :ivar current_job_id: Identifier of the latest job, incremented with each new job added to the queue.
+    :ivar current_job_id: Auto-incremented ID for new jobs
     :type current_job_id: int
     """
     def __init__(self):
         self.jobs_pending_queue = deque()
         self.jobs_running_queue = deque(maxlen=1)
-        self.jobs_failed_queue = deque(maxlen=1000)
-        self.jobs_completed_queue = deque(maxlen=1000)
+        self.jobs_failed_queue = deque(maxlen=100)
+        self.jobs_completed_queue = deque(maxlen=100)
         self.current_job_id = 0
 
     def feed_jobs_pending_queue(self, job_name, module, func, args: list = None, kwargs: dict = None,
@@ -295,18 +300,41 @@ class JobsQueue:
 
     def add_job_from_function(self, job_name: str, is_progress: bool, progress_max: int = 0):
         """
-        Adds a job to the pending queue using the details of the calling function. The job is then executed, and the
-        method waits until the job is completed or has failed.
+        Adds a job to the pending queue and waits for it to complete.
+        
+        Warning: This method is synchronous and blocking. It can cause deadlocks if called
+        from within a running job, since only one job can run at a time. The spawned job
+        can't start because the parent job holds the execution slot, and the parent job
+        is waiting for the spawned job to complete.
+        
+        Best practice: Pass job_id through the call chain instead. Functions should accept
+        a job_id parameter - if provided, reuse it; if None, create a new job.
+        
+        Example:
+            def my_function(param1, job_id=None):
+                if not job_id:
+                    jobs_queue.add_job_from_function("My Job", is_progress=True)
+                    return
+                # ... actual work using job_id ...
 
-        :param job_name: Name of the job to be added.
+        :param job_name: Name of the job to be added
         :type job_name: str
-        :param is_progress: Flag indicating whether the progress of the job should be tracked.
+        :param is_progress: Whether to track job progress
         :type is_progress: bool
-        :param progress_max: Maximum progress value for the job, default is 0.
+        :param progress_max: Maximum progress value, default is 0
         :type progress_max: int
-        :return: ID of the added job.
-        :rtype: Any
+        :return: ID of the added job
+        :rtype: int
         """
+        # Deadlock detection: warn if called from within a running job
+        if len(self.jobs_running_queue) > 0:
+            running_job = self.jobs_running_queue[0]
+            logging.warning(
+                f"Potential deadlock detected: add_job_from_function() called while job {running_job.job_id} "
+                f"({running_job.job_name}) is running. If the calling function is part of this job, "
+                f"it will deadlock. Consider passing job_id through the call chain instead."
+            )
+        
         # Get the current frame
         current_frame = inspect.currentframe()
 
