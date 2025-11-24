@@ -64,7 +64,7 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
         providers_list = get_providers()
 
         if providers_list:
-            episode_download_subtitles(no=episode.sonarrEpisodeId, job_sub_function=True, providers_list=providers_list)
+            episode_download_subtitles(no=episode.sonarrEpisodeId, job_id=job_id, job_sub_function=True, providers_list=providers_list)
         else:
             jobs_queue.update_job_progress(job_id=job_id, progress_value=count_episodes_details)
             logging.info("BAZARR All providers are throttled")
