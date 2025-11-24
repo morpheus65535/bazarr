@@ -427,10 +427,16 @@ class JobsQueue:
                     finally:
                         self.jobs_running_queue.remove(job)
                         try:
-                            event_stream(type='jobs', action='update', payload={"job_id": job.job_id})
+                            # Send complete event payload with status and progress_value
+                            # progress_value being None forces frontend to fetch full job payload
+                            payload = {
+                                "job_id": job.job_id,
+                                "status": job.status,  # 'completed' or 'failed'
+                                "progress_value": None  # Trigger frontend API call to update the whole job payload
+                            }
+                            event_stream(type='jobs', action='update', payload=payload)
                         except Exception as e:
                             logging.exception(f"Exception raised while sending event: {e}")
-                        # progress_value being missing force an API call to update the whole job payload.
             else:
                 sleep(0.1)
 
