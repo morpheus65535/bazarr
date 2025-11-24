@@ -53,19 +53,14 @@ nor the 3.X asyncore; it is a version compatible with either 2.7 or 3.X.
 
 from errno import (
     EAGAIN,
-    EALREADY,
     EBADF,
     ECONNABORTED,
     ECONNRESET,
-    EINPROGRESS,
     EINTR,
-    EINVAL,
-    EISCONN,
     ENOTCONN,
     EPIPE,
     ESHUTDOWN,
     EWOULDBLOCK,
-    errorcode,
 )
 import logging
 import os
@@ -75,7 +70,7 @@ import sys
 import time
 import warnings
 
-from . import compat, utilities
+from . import utilities
 
 _DISCONNECTED = frozenset({ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE, EBADF})
 
@@ -297,22 +292,6 @@ class dispatcher:
             # get a socket from a blocking source.
             sock.setblocking(0)
             self.set_socket(sock, map)
-            self.connected = True
-            # The constructor no longer requires that the socket
-            # passed be connected.
-            try:
-                self.addr = sock.getpeername()
-            except OSError as err:
-                if err.args[0] in (ENOTCONN, EINVAL):
-                    # To handle the case where we got an unconnected
-                    # socket.
-                    self.connected = False
-                else:
-                    # The socket is broken in some unknown way, alert
-                    # the user and remove it from the map (to prevent
-                    # polling of broken sockets).
-                    self.del_channel(map)
-                    raise
         else:
             self.socket = None
 
@@ -394,23 +373,6 @@ class dispatcher:
         self.addr = addr
         return self.socket.bind(addr)
 
-    def connect(self, address):
-        self.connected = False
-        self.connecting = True
-        err = self.socket.connect_ex(address)
-        if (
-            err in (EINPROGRESS, EALREADY, EWOULDBLOCK)
-            or err == EINVAL
-            and os.name == "nt"
-        ):  # pragma: no cover
-            self.addr = address
-            return
-        if err in (0, EISCONN):
-            self.addr = address
-            self.handle_connect_event()
-        else:
-            raise OSError(err, errorcode[err])
-
     def accept(self):
         # XXX can return either an address pair or None
         try:
@@ -469,6 +431,8 @@ class dispatcher:
                 if why.args[0] not in (ENOTCONN, EBADF):
                     raise
 
+            self.socket = None
+
     # log and log_info may be overridden to provide more sophisticated
     # logging and warning methods. In general, log is for 'hit' logging
     # and 'log_info' is for informational, warning and error logging.
@@ -519,7 +483,11 @@ class dispatcher:
         # handle_expt_event() is called if there might be an error on the
         # socket, or if there is OOB data
         # check for the error condition first
-        err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+        err = (
+            self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+            if self.socket is not None
+            else 1
+        )
         if err != 0:
             # we can get here when select.select() says that there is an
             # exceptional condition on the socket
@@ -570,34 +538,6 @@ class dispatcher:
     def handle_close(self):
         self.log_info("unhandled close event", "warning")
         self.close()
-
-
-# ---------------------------------------------------------------------------
-# adds simple buffered output capability, useful for simple clients.
-# [for more sophisticated usage use asynchat.async_chat]
-# ---------------------------------------------------------------------------
-
-
-class dispatcher_with_send(dispatcher):
-    def __init__(self, sock=None, map=None):
-        dispatcher.__init__(self, sock, map)
-        self.out_buffer = b""
-
-    def initiate_send(self):
-        num_sent = 0
-        num_sent = dispatcher.send(self, self.out_buffer[:65536])
-        self.out_buffer = self.out_buffer[num_sent:]
-
-    handle_write = initiate_send
-
-    def writable(self):
-        return (not self.connected) or len(self.out_buffer)
-
-    def send(self, data):
-        if self.debug:  # pragma: no cover
-            self.log_info("sending %s" % repr(data))
-        self.out_buffer = self.out_buffer + data
-        self.initiate_send()
 
 
 def close_all(map=None, ignore_all=False):

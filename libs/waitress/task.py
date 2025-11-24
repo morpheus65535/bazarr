@@ -13,7 +13,6 @@
 ##############################################################################
 
 from collections import deque
-import socket
 import sys
 import threading
 import time
@@ -389,7 +388,7 @@ class WSGITask(Task):
 
             self.complete = True
 
-            if status.__class__ is not str:
+            if not isinstance(status, str):
                 raise AssertionError("status %s is not a string" % status)
             if "\n" in status or "\r" in status:
                 raise ValueError(
@@ -400,11 +399,11 @@ class WSGITask(Task):
 
             # Prepare the headers for output
             for k, v in headers:
-                if k.__class__ is not str:
+                if not isinstance(k, str):
                     raise AssertionError(
                         f"Header name {k!r} is not a string in {(k, v)!r}"
                     )
-                if v.__class__ is not str:
+                if not isinstance(v, str):
                     raise AssertionError(
                         f"Header value {v!r} is not a string in {(k, v)!r}"
                     )
@@ -437,7 +436,7 @@ class WSGITask(Task):
 
         can_close_app_iter = True
         try:
-            if app_iter.__class__ is ReadOnlyFileBasedBuffer:
+            if isinstance(app_iter, ReadOnlyFileBasedBuffer):
                 cl = self.content_length
                 size = app_iter.prepare(cl)
                 if size:
@@ -557,7 +556,6 @@ class WSGITask(Task):
         }
 
         for key, value in dict(request.headers).items():
-            value = value.strip()
             mykey = rename_headers.get(key, None)
             if mykey is None:
                 mykey = "HTTP_" + key
