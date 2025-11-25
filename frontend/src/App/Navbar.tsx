@@ -19,7 +19,6 @@ import {
   useComputedColorScheme,
   useMantineColorScheme,
 } from "@mantine/core";
-import { useHover } from "@mantine/hooks";
 import {
   faHeart,
   faMoon,
@@ -134,7 +133,7 @@ const AppNavbar: FunctionComponent = () => {
           <Group gap="xs">
             <Action
               label="Change Theme"
-              c={dark ? "yellow" : "indigo"}
+              c={dark ? "warning" : "info"}
               onClick={() => toggleColorScheme()}
               icon={dark ? faSun : faMoon}
             ></Action>
@@ -142,7 +141,7 @@ const AppNavbar: FunctionComponent = () => {
               href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
               target="_blank"
             >
-              <Action label="Donate" icon={faHeart} c="red"></Action>
+              <Action label="Donate" icon={faHeart} c="danger"></Action>
             </Anchor>
           </Group>
         </AppShell.Section>
@@ -249,8 +248,6 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
 }) => {
   const { show } = useNavbar();
 
-  const { ref, hovered } = useHover();
-
   const shouldHideBadge = useMemo(() => {
     if (typeof badge === "number") {
       return badge === 0;
@@ -287,7 +284,7 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
       return {
         // more noticeable background colors for "DOWN" status, still adapting to theme
         backgroundColor:
-          "light-dark(var(--mantine-color-red-6), var(--mantine-color-red-8))",
+          "light-dark(var(--mantine-color-danger-6), var(--mantine-color-danger-8))",
         color: "var(--mantine-color-white)",
       };
     }
@@ -305,16 +302,12 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
         }
       }}
       className={({ isActive }) =>
-        clsx(
-          clsx(styles.anchor, {
-            [styles.active]: isActive,
-            [styles.hover]: hovered,
-          }),
-        )
+        clsx(styles.anchor, {
+          [styles.active]: isActive,
+        })
       }
     >
       <Text
-        ref={ref}
         inline
         p="xs"
         size="sm"

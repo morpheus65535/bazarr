@@ -1,16 +1,11 @@
 .header {
   padding: var(--mantine-spacing-md);
 
+  // Dark, readable text in light mode; light text in dark mode.
+  color: light-dark(var(--mantine-color-gray-9), var(--mantine-color-dark-0));
+
   @include mantine.larger-than(mantine.$mantine-breakpoint-sm) {
     padding-left: 0;
-  }
-
-  @include mantine.light {
-    color: var(--mantine-color-gray-0);
-  }
-
-  @include mantine.dark {
-    color: var(--mantine-color-dark-0);
   }
 }
 

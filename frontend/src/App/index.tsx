@@ -13,6 +13,7 @@ import CriticalError from "@/pages/errors/CriticalError";
 import { RouterNames } from "@/Router/RouterNames";
 import { Environment } from "@/utilities";
 import AppHeader from "./Header";
+import styles from "./index.module.scss";
 import styleVars from "@/assets/_variables.module.scss";
 
 const App: FunctionComponent = () => {
@@ -66,7 +67,7 @@ const App: FunctionComponent = () => {
           >
             <AppHeader></AppHeader>
             <AppNavbar></AppNavbar>
-            <AppShell.Main>
+            <AppShell.Main className={styles.main}>
               <Outlet></Outlet>
             </AppShell.Main>
           </AppShell>
