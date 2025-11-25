@@ -194,8 +194,8 @@ declare namespace Settings {
     ssl?: boolean;
     set_movie_added?: boolean;
     set_episode_added?: boolean;
-    movie_library?: string;
-    series_library?: string;
+    movie_library?: string[];
+    series_library?: string[];
     update_movie_library?: boolean;
     update_series_library?: boolean;
     use_autopulse?: boolean;

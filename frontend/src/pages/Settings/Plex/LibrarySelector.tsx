@@ -1,5 +1,5 @@
 import { FunctionComponent } from "react";
-import { Alert, Select, Stack, Text } from "@mantine/core";
+import { Alert, MultiSelect, Stack, Text } from "@mantine/core";
 import {
   usePlexAuthValidationQuery,
   usePlexLibrariesQuery,
@@ -7,7 +7,7 @@ import {
 import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
 import styles from "@/pages/Settings/Plex/LibrarySelector.module.scss";
 
-export type LibrarySelectorProps = BaseInput<string> & {
+export type LibrarySelectorProps = BaseInput<string[]> & {
   label: string;
   libraryType: "movie" | "show";
   placeholder?: string;
@@ -57,7 +57,7 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   if (isLoading) {
     return (
       <Stack gap="xs" className={styles.librarySelector}>
-        <Select
+        <MultiSelect
           {...rest}
           label={label}
           placeholder="Loading libraries..."
@@ -92,19 +92,18 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
 
   return (
     <div className={styles.librarySelector}>
-      <Select
+      <MultiSelect
         {...rest}
         label={label}
-        placeholder={placeholder || `Select ${libraryType} library...`}
+        placeholder={placeholder || `Select ${libraryType} libraries...`}
         data={selectData}
         description={description}
-        value={value || ""}
+        value={value ? [...value] : []}
         onChange={(newValue) => {
-          if (newValue !== null) {
-            update(newValue);
-          }
+          update(newValue);
         }}
-        allowDeselect={false}
+        searchable
+        clearable
         className={styles.selectField}
       />
     </div>
