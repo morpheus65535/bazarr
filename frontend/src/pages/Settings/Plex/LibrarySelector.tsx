@@ -10,12 +10,11 @@ import styles from "@/pages/Settings/Plex/LibrarySelector.module.scss";
 export type LibrarySelectorProps = BaseInput<string[]> & {
   label: string;
   libraryType: "movie" | "show";
-  placeholder?: string;
   description?: string;
 };
 
 const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
-  const { libraryType, placeholder, description, label, ...baseProps } = props;
+  const { libraryType, description, label, ...baseProps } = props;
   const { value, update, rest } = useBaseInput(baseProps);
 
   // Check if user is authenticated with OAuth
@@ -95,7 +94,6 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
       <MultiSelect
         {...rest}
         label={label}
-        placeholder={placeholder || `Select ${libraryType} libraries...`}
         data={selectData}
         description={description}
         value={Array.isArray(value) ? value : value ? [value] : []}
