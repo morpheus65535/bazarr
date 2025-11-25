@@ -244,8 +244,8 @@ validators = [
     Validator('plex.port', must_exist=True, default=32400, is_type_of=int, gte=1, lte=65535),
     Validator('plex.ssl', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.apikey', must_exist=True, default='', is_type_of=str),
-    Validator('plex.movie_library', must_exist=True, default='', is_type_of=str),
-    Validator('plex.series_library', must_exist=True, default='', is_type_of=str),
+    Validator('plex.movie_library', must_exist=True, default=[], is_type_of=list),
+    Validator('plex.series_library', must_exist=True, default=[], is_type_of=list),
     Validator('plex.set_movie_added', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.set_episode_added', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.update_movie_library', must_exist=True, default=False, is_type_of=bool),
@@ -1423,13 +1423,56 @@ def cleanup_legacy_oauth_config():
         write_config()
 
 
+def migrate_plex_library_to_list():
+    """
+    Migrate old single-string Plex library settings to new list format.
+    This migration runs during app initialization to ensure backward compatibility.
+    
+    Converts:
+    - plex.movie_library: string -> list
+    - plex.series_library: string -> list
+    
+    Automatically saves configuration if changes are made.
+    """
+    changed = False
+    
+    # Migrate movie library
+    if isinstance(settings.plex.movie_library, str):
+        old_value = settings.plex.movie_library
+        if old_value:  # Only migrate if not empty
+            settings.plex.movie_library = [old_value]
+            logging.info(f"Migrated plex.movie_library from string to list: {old_value}")
+            changed = True
+        else:
+            settings.plex.movie_library = []
+            changed = True
+    
+    # Migrate series library
+    if isinstance(settings.plex.series_library, str):
+        old_value = settings.plex.series_library
+        if old_value:  # Only migrate if not empty
+            settings.plex.series_library = [old_value]
+            logging.info(f"Migrated plex.series_library from string to list: {old_value}")
+            changed = True
+        else:
+            settings.plex.series_library = []
+            changed = True
+    
+    if changed:
+        write_config()
+        logging.debug("Plex library migration completed successfully")
+
+
 def initialize_plex():
     """
     Initialize Plex configuration on startup.
     Call this from your main application initialization.
     """
-    # Run migration
+    # Run OAuth migration
     migrate_plex_config()
+    
+    # Run library multiselect migration
+    migrate_plex_library_to_list()
     
     # Clean up legacy fields for existing OAuth configurations
     cleanup_legacy_oauth_config()
