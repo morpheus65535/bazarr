@@ -98,7 +98,7 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
         placeholder={placeholder || `Select ${libraryType} libraries...`}
         data={selectData}
         description={description}
-        value={value ? [...value] : []}
+        value={Array.isArray(value) ? value : value ? [value] : []}
         onChange={(newValue) => {
           update(newValue);
         }}
