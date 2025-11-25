@@ -24,3 +24,7 @@ VERSION
 # Allow
 !*.dll
 
+
+# Plex multiselect development files
+PLEX_MULTISELECT_IMPLEMENTATION_PLAN.md
+tests/bazarr/plex/
