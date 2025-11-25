@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Alert, Button, Paper, Stack, Text, Title } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   usePlexAuthValidationQuery,
@@ -19,7 +20,7 @@ const AuthSection = () => {
     refetch: refetchAuth,
   } = usePlexAuthValidationQuery();
   const { mutateAsync: createPin } = usePlexPinMutation();
-  const { mutate: logout } = usePlexLogoutMutation();
+  const { mutate: logout, isPending: isLoggingOut } = usePlexLogoutMutation();
   const [pin, setPin] = useState<Plex.Pin | null>(null);
   const authWindowRef = useRef<Window | null>(null);
   const queryClient = useQueryClient();
@@ -71,8 +72,15 @@ const AuthSection = () => {
   };
 
   const handleLogout = () => {
-    logout();
-    // No additional cleanup needed - logout mutation handles invalidation
+    logout(undefined, {
+      onSuccess: () => {
+        notifications.show({
+          title: "Disconnected from Plex",
+          message: "All settings related to Plex were removed",
+          color: "green",
+        });
+      },
+    });
   };
 
   const handleCancelAuth = () => {
@@ -170,6 +178,8 @@ const AuthSection = () => {
           color="gray"
           size="sm"
           className={styles.actionButton}
+          loading={isLoggingOut}
+          disabled={isLoggingOut}
         >
           Disconnect from Plex
         </Button>

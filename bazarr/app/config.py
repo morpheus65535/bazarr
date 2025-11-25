@@ -560,7 +560,9 @@ array_keys = ['excluded_tags',
               'remove_profile_tags',
               'language_equals',
               'blacklisted_languages',
-              'blacklisted_providers']
+              'blacklisted_providers',
+              'movie_library',
+              'series_library']
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
