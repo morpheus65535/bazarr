@@ -344,9 +344,7 @@ class JobsQueue:
         # If so, raise an exception - jobs should not queue other jobs and wait for them
         current_thread = threading.current_thread()
         if hasattr(current_thread, 'name') and current_thread.name == 'jobs_queue_thread':
-            error_msg = (f"BAZARR deadlock prevented: add_job_from_function('{job_name}') was called from within "
-                        f"a running job. Jobs cannot queue other jobs and wait for them in a single-threaded queue. "
-                        f"The calling code should execute the work directly instead of using add_job_from_function().")
+            error_msg = f"Deadlock prevented: '{job_name}' called from within a running job"
             logging.error(error_msg)
             raise RuntimeError(error_msg)
 
