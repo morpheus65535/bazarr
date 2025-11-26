@@ -14,10 +14,19 @@ from app.jobs_queue import jobs_queue
 def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, forced, hi,
                              media_type, sonarr_series_id, sonarr_episode_id, radarr_id, job_id=None):
     if not job_id:
-        jobs_queue.add_job_from_function(f'Translating from {from_lang.upper()} to {to_lang.upper()} using '
-                                         f'{settings.translator.translator_type.replace("_", " ").title()}',
-                                         is_progress=True)
-        return
+        # Check if we're already inside a job - if so, just execute directly without queuing
+        import threading
+        current_thread = threading.current_thread()
+        if hasattr(current_thread, 'name') and current_thread.name == 'jobs_queue_thread':
+            # We're inside a job already - just continue execution instead of queuing
+            logging.debug('BAZARR translate_subtitles_file called from within a job, executing directly')
+            job_id = None  # Will skip job progress updates below
+        else:
+            # Not inside a job - queue it properly
+            jobs_queue.add_job_from_function(f'Translating from {from_lang.upper()} to {to_lang.upper()} using '
+                                             f'{settings.translator.translator_type.replace("_", " ").title()}',
+                                             is_progress=True)
+            return
 
     try:
         logging.debug(f'Translation request: video={video_path}, source={source_srt_file}, from={from_lang}, to={to_lang}')

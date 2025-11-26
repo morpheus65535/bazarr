@@ -37,7 +37,16 @@ from .post_processing import postprocessing
 def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, audio_language, job_id=None,
                            sonarrSeriesId=None, sonarrEpisodeId=None, radarrId=None):
     if not job_id:
-        return jobs_queue.add_job_from_function(f"Uploading {subtitle.filename}", is_progress=False)
+        # Check if we're already inside a job - if so, just execute directly without queuing
+        import threading
+        current_thread = threading.current_thread()
+        if hasattr(current_thread, 'name') and current_thread.name == 'jobs_queue_thread':
+            # We're inside a job already - just continue execution instead of queuing
+            logging.debug('BAZARR manual_upload_subtitle called from within a job, executing directly')
+            job_id = None  # Will skip job progress updates below
+        else:
+            # Not inside a job - queue it properly
+            return jobs_queue.add_job_from_function(f"Uploading {subtitle.filename}", is_progress=False)
 
     logging.debug(f'BAZARR Manually uploading subtitles: {subtitle.filename}')
 

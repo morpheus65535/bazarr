@@ -299,9 +299,8 @@ class JobsQueue:
         Adds a job to the pending queue using the details of the calling function. The job is then executed, and the
         method waits until the job is completed or has failed.
 
-        DEADLOCK PREVENTION: If this method is called from within a running job (detected by checking if we're
-        already in the jobs_queue thread), we execute the function directly instead of queuing it. This prevents
-        deadlock where a job queues another job and waits for it, but the queue is single-threaded.
+        DEADLOCK PREVENTION: If called from within a running job, this method will raise an exception to prevent
+        deadlock. Jobs should not queue other jobs and wait for them - they should execute work directly.
 
         :param job_name: Name of the job to be added.
         :type job_name: str
@@ -309,8 +308,9 @@ class JobsQueue:
         :type is_progress: bool
         :param progress_max: Maximum progress value for the job, default is 0.
         :type progress_max: int
-        :return: ID of the added job, or None if executed directly.
-        :rtype: int or None
+        :return: ID of the added job.
+        :rtype: int
+        :raises RuntimeError: If called from within a running job (deadlock prevention).
         """
         # Get the current frame
         current_frame = inspect.currentframe()
@@ -340,19 +340,15 @@ class JobsQueue:
         # Clean up the frame objects to prevent reference cycles
         del current_frame, caller_frame, caller_code, caller_signature, caller_locals, bound_arguments
 
-        # DEADLOCK PREVENTION: Check if we're being called from within a running job
-        # If so, execute directly instead of queuing to avoid deadlock
+        # DEADLOCK PREVENTION: Detect if we're being called from within a running job
+        # If so, raise an exception - jobs should not queue other jobs and wait for them
         current_thread = threading.current_thread()
         if hasattr(current_thread, 'name') and current_thread.name == 'jobs_queue_thread':
-            # We're inside the jobs queue thread - execute directly to prevent deadlock
-            logging.debug(f"BAZARR executing {job_name} directly (called from within a job, preventing deadlock)")
-            try:
-                func_to_call = getattr(importlib.import_module(parent_function_path), parent_function_name)
-                func_to_call(**arguments)
-                return None  # No job ID since we executed directly
-            except Exception as e:
-                logging.exception(f"BAZARR exception while executing {job_name} directly: {e}")
-                return None
+            error_msg = (f"BAZARR deadlock prevented: add_job_from_function('{job_name}') was called from within "
+                        f"a running job. Jobs cannot queue other jobs and wait for them in a single-threaded queue. "
+                        f"The calling code should execute the work directly instead of using add_job_from_function().")
+            logging.error(error_msg)
+            raise RuntimeError(error_msg)
 
         # Feed the job to the pending queue
         job_id = self.feed_jobs_pending_queue(job_name=job_name, module=parent_function_path, func=parent_function_name,

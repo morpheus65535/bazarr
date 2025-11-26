@@ -30,13 +30,23 @@ def sync_subtitles(video_path,
         return False
 
     if not job_id:
-        jobs_queue.add_job_from_function("Syncing Subtitle", is_progress=True)
-        return False
+        # Check if we're already inside a job - if so, just execute directly without queuing
+        import threading
+        current_thread = threading.current_thread()
+        if hasattr(current_thread, 'name') and current_thread.name == 'jobs_queue_thread':
+            # We're inside a job already - just continue execution instead of queuing
+            logging.debug('BAZARR sync_subtitles called from within a job, executing directly')
+            job_id = None  # Will skip job progress updates below
+        else:
+            # Not inside a job - queue it properly
+            jobs_queue.add_job_from_function("Syncing Subtitle", is_progress=True)
+            return False
 
-    if job_sub_function:
+    if job_sub_function and job_id:
         jobs_queue.update_job_progress_status(job_id=job_id, is_progress=True)
 
-    jobs_queue.update_job_progress(job_id=job_id, progress_message=f"Syncing {srt_path}")
+    if job_id:
+        jobs_queue.update_job_progress(job_id=job_id, progress_message=f"Syncing {srt_path}")
 
     if forced:
         logging.debug('BAZARR cannot sync forced subtitles. Skipping sync routine.')
@@ -65,10 +75,11 @@ def sync_subtitles(video_path,
                 'sonarr_series_id': sonarr_series_id,
                 'sonarr_episode_id': sonarr_episode_id,
                 'radarr_id': radarr_id,
-                'progress_callback': lambda x: jobs_queue.update_job_progress(job_id=x['job_id'],
-                                                                              progress_value=x['value'],
-                                                                              progress_max=x['count'],
-                                                                              progress_message=f"Syncing {srt_path}"),
+                'progress_callback': (lambda x: jobs_queue.update_job_progress(job_id=x['job_id'],
+                                                                                      progress_value=x['value'],
+                                                                                      progress_max=x['count'],
+                                                                                      progress_message=f"Syncing {srt_path}")
+                                      if x.get('job_id') else None),
                 'job_id': job_id,
                 'force_sync': force_sync,
             }
@@ -79,7 +90,8 @@ def sync_subtitles(video_path,
                                   f'subtitle file: {srt_path}')
                 return False
             else:
-                jobs_queue.update_job_progress(job_id=job_id, progress_value="max")
+                if job_id:
+                    jobs_queue.update_job_progress(job_id=job_id, progress_value="max")
                 return True
             finally:
                 del subsync
