@@ -390,7 +390,8 @@ class JobsQueue:
                 try:
                     job = self.jobs_pending_queue.popleft()
                 except IndexError:
-                    pass
+                    sleep(0.1)
+                    continue
                 except (KeyboardInterrupt, SystemExit):
                     break
                 except Exception as e:
@@ -425,7 +426,8 @@ class JobsQueue:
                         job.last_run_time = datetime.now()
                         self.jobs_completed_queue.append(job)
                     finally:
-                        self.jobs_running_queue.remove(job)
+                        if job in self.jobs_running_queue:
+                            self.jobs_running_queue.remove(job)
                         try:
                             # Send a complete event payload with status and progress_value
                             # progress_value being None forces frontend to fetch a full job payload

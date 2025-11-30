@@ -48,7 +48,11 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     forced_required = all([x.forced for x in language_set])
     _set_forced_providers(pool=pool, also_forced=also_forced, forced_required=forced_required)
 
-    video = get_video(force_unicode(path), title, sceneName, providers=providers, media_type=media_type)
+    try:
+        video = get_video(force_unicode(path), title, sceneName, providers=providers, media_type=media_type)
+    except ValueError as e:
+        logging.exception(f'BAZARR Unable to get video object for {path}: {e}')
+        return None
 
     if video:
         minimum_score = settings.general.minimum_score

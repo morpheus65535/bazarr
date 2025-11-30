@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import {
   faCaretDown,
+  faCloudDownloadAlt,
   faDownload,
   faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
@@ -82,6 +83,8 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       );
     },
   );
+
+  const [Downloaded, setDownloaded] = useState({ id: "", state: false });
 
   const columns = useMemo<ColumnDef<SearchResultType>[]>(
     () => [
@@ -184,15 +187,17 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         accessorKey: "subtitle",
         cell: ({ row }) => {
           const result = row.original;
+          const isDownloaded = Downloaded.id === row.id && Downloaded.state;
           return (
             <Action
               label="Download"
-              icon={faDownload}
-              c="brand"
+              icon={isDownloaded ? faCloudDownloadAlt : faDownload}
+              color={isDownloaded ? "brand" : "gray"}
               disabled={item === null}
               onClick={async () => {
                 if (!item) return;
 
+                setDownloaded({ id: row.id, state: true });
                 await download(item, result);
               }}
             ></Action>
@@ -200,7 +205,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         },
       },
     ],
-    [download, item, ReleaseInfoCell],
+    [download, item, ReleaseInfoCell, Downloaded],
   );
 
   const bSceneNameAvailable =

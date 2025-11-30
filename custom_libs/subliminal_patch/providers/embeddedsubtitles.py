@@ -45,7 +45,6 @@ class EmbeddedSubtitle(Subtitle):
         self.page_link = self.container.path
         self.release_info = _get_pretty_release_name(stream, container)
         self.media_type = media_type
-        self._og_format = stream.codec_name
 
         self._matches: set = matches
 

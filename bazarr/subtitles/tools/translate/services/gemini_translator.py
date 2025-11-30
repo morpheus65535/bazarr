@@ -288,7 +288,7 @@ class GeminiTranslatorService:
             # Accurately calculate and display progress
             self.current_progress = self.current_progress + chunk_size
 
-            jobs_queue.update_job_progress(job_id=self.job_id, progress_current=self.current_progress)
+            jobs_queue.update_job_progress(job_id=self.job_id, progress_value=self.current_progress)
 
             # Validate translated lines
             if len(translated_lines) != len(batch):
@@ -444,7 +444,7 @@ class GeminiTranslatorService:
                             raise e
 
                     # Check if we exited the loop due to an interrupt
-                    jobs_queue.update_job_progress(job_id=self.job_id, progress_current=total)
+                    jobs_queue.update_job_progress(job_id=self.job_id, progress_value=total)
                     if self.interrupt_flag:
                         # File will be automatically closed by the with statement
                         self._clear_progress()
