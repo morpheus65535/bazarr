@@ -445,7 +445,19 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Sous-Titres.eu",
     description: "Mostly French Subtitles Provider",
   },
-  { key: "subdivx", description: "LATAM Spanish / Spanish Subtitles Provider" },
+  {
+    key: "subdivx",
+    description: "LATAM Spanish / Spanish Subtitles Provider",
+    message:
+      "This provider uses a captcha to protect against abuse (Cloudflare Turnstile). A FlareSolverr instance is recommended to bypass this protections. https://github.com/FlareSolverr/FlareSolverr",
+    inputs: [
+      {
+        type: "text",
+        key: "flaresolverr_url",
+        name: "FlareSolverr URL (e.g., http://localhost:8191)",
+      },
+    ],
+  },
   {
     key: "subdl",
     inputs: [

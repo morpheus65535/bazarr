@@ -3,16 +3,15 @@ from __future__ import absolute_import
 
 from requests.exceptions import JSONDecodeError
 import logging
-import random
 import re
+import json
 
 from requests import Session
 from subliminal import ProviderError
 from subliminal.video import Episode, Movie
 from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.providers import Provider
-from subliminal_patch.providers.utils import (get_archive_from_bytes, get_subtitle_from_archive, update_matches,
-                                              USER_AGENTS)
+from subliminal_patch.providers.utils import (get_archive_from_bytes, get_subtitle_from_archive, update_matches)
 from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
 
@@ -93,9 +92,6 @@ class SubdivxSubtitle(Subtitle):
         return matches
 
 
-_IDUSER_COOKIE = "VkZaRk9WQlJQVDA12809"
-
-
 class SubdivxSubtitlesProvider(Provider):
     provider_name = "subdivx"
     hash_verifiable = False
@@ -105,12 +101,13 @@ class SubdivxSubtitlesProvider(Provider):
 
     multi_result_throttle = 2
 
-    def __init__(self):
+    def __init__(self, flaresolverr_url: str =''):
+        self.flaresolverr_url = flaresolverr_url.rstrip("/") if flaresolverr_url else ""
+        self.token = None
         self.session = Session()
 
     def initialize(self):
-        self.session.headers["User-Agent"] = random.choice(USER_AGENTS)
-        self.session.cookies.update({"iduser_cookie": _IDUSER_COOKIE})
+        self._bypass_cloudflare_turnstile()
 
     def terminate(self):
         self.session.close()
@@ -164,35 +161,87 @@ class SubdivxSubtitlesProvider(Provider):
 
     def _get_vs(self):
         #    t["buscar" + $("#vs").html().replace(".", "").replace("v", "")] = $("#buscar").val(),
-        res = self.session.get('https://subdivx.com/')
+        res = self.session.get("https://subdivx.com/")
         results = _VERSION_RESOLUTION.findall(res.text)
         if results is not None and len(results) == 0:
             return -1
         version = results[0]
-        version = version.replace('.','').replace('v','')
+        version = version.replace(".", "").replace("v", "")
         return version
 
-    def _query_results(self, query, video):
-        token_link = f"{_SERVER_URL}/inc/gt.php?gt=1"
+    def _bypass_cloudflare_turnstile(self):
+        """
+        Configures the session with the cookies and token obtained from FlareSolverr.
+        """
 
-        token_response = self.session.get(token_link, timeout=30)
+        if not self.flaresolverr_url:
+            raise ProviderError("FlareSolverr is not enabled or URL is not provided")
 
-        if token_response.status_code != 200:
-            raise ProviderError("Unable to obtain a token")
+        payload = {
+            "cmd": "request.get",
+            "url": f"{_SERVER_URL}/inc/gt.php?gt=1", # subdivx token endpoint
+            "maxTimeout": 60000
+        }
+
+        logger.info("Bypassing Cloudflare Turnstile")
+
+        # Call flaresolverr
+        try:
+            response = self.session.post(
+                f"{self.flaresolverr_url}/v1",
+                json=payload,
+                timeout=90
+            )
+            response.raise_for_status()
+        except Exception as e:
+            logger.error(f"FlareSolverr connection failed: {e}")
+            return
 
         try:
-            token_response_json = token_response.json()
+            data = response.json()
         except JSONDecodeError:
-            raise ProviderError("Unable to parse JSON response")
-        else:
-            if 'token' in token_response_json and token_response_json['token']:
-                token = token_response_json['token']
-            else:
-                raise ProviderError("Response doesn't include a token")
+            logger.error("FlareSolverr returned invalid JSON")
+            return
 
+        if data.get("status") != "ok" or not data.get("solution"):
+            logger.error(f"FlareSolverr failed: {data.get('message')}")
+            return
+
+        solution = data["solution"]
+        cookies = solution.get("cookies", [])
+        user_agent = solution.get("userAgent")
+        response_body = solution.get("response", "")
+
+        # Set Subdivx token
+        try:
+            token_json = response_body.split("<body>")[1].split("</body>")[0]
+            self.token = json.loads(token_json)["token"]
+        except Exception as e:
+            self.token = None
+            logger.error(f"Failed to extract token: {e}")
+
+        # User agents needs to match.
+        # It sets the cleared user agent from FlareSolverr for upcoming requests.
+        if user_agent:
+            self.session.headers.update({"User-Agent": user_agent})
+
+        # cf_clearance and sdx cookies needed
+        for cookie in cookies:
+            self.session.cookies.set(
+                name=cookie["name"],
+                value=cookie["value"],
+                domain=cookie.get("domain", "www.subdivx.com"),
+                path=cookie.get("path", "/"),
+                secure=cookie.get("secure", False),
+                expires=cookie.get("expiry"),
+            )
+
+        logger.info("Cloudflare Turnstile bypassed successfully!")
+
+    def _query_results(self, query, video):
         search_link = f"{_SERVER_URL}/inc/ajax.php"
         version = self._get_vs()
-        payload = {"tabla": "resultados", "filtros": "", f"buscar{version}": query, "token": token}
+        payload = {"tabla": "resultados", "filtros": "", f"buscar{version}": query, "token": self.token}
 
         logger.debug("Query: %s", query)
 
