@@ -186,7 +186,7 @@ validators = [
     # translating section
     Validator('translator.default_score', must_exist=True, default=50, is_type_of=int, gte=0),
     Validator('translator.gemini_key', must_exist=True, default='', is_type_of=str, cast=str),
-    Validator('translator.gemini_model', must_exist=True, default='gemini-2.0-flash', is_type_of=str, cast=str),
+    Validator('translator.gemini_model', must_exist=True, default='gemini-2.5-flash', is_type_of=str, cast=str),
     Validator('translator.translator_info', must_exist=True, default=True, is_type_of=bool),
     Validator('translator.translator_type', must_exist=True, default='google_translate', is_type_of=str, cast=str),
     Validator('translator.lingarr_url', must_exist=True, default='http://lingarr:9876', is_type_of=str),

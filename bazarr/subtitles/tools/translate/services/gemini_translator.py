@@ -68,7 +68,7 @@ class GeminiTranslatorService:
         self.output_file = None
         self.start_line = 1
         self.description = None
-        self.model_name = "gemini-2.0-flash"
+        self.model_name = "gemini-2.5-flash"
         self.batch_size = 100
         self.free_quota = True
         self.error_log = False
