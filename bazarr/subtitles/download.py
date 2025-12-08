@@ -26,7 +26,7 @@ from .processing import process_subtitle
 @update_pools
 def generate_subtitles(path, languages, audio_language, sceneName, title, media_type, profile_id,
                        forced_minimum_score=None, is_upgrade=False, check_if_still_required=False,
-                       previous_subtitles_to_delete=None):
+                       previous_subtitles_to_delete=None, job_id=None):
     if not languages:
         return None
 
@@ -43,12 +43,16 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     language_set = _get_language_obj(languages=languages)
     profile = get_profiles_list(profile_id=profile_id)
     original_format = profile['originalFormat']
-    hi_required = "force HI" if any([x.hi for x in language_set]) else False
+    hi_required = "force HI" if all([x.hi for x in language_set]) else "don't prefer"
     also_forced = any([x.forced for x in language_set])
     forced_required = all([x.forced for x in language_set])
     _set_forced_providers(pool=pool, also_forced=also_forced, forced_required=forced_required)
 
-    video = get_video(force_unicode(path), title, sceneName, providers=providers, media_type=media_type)
+    try:
+        video = get_video(force_unicode(path), title, sceneName, providers=providers, media_type=media_type)
+    except ValueError as e:
+        logging.exception(f'BAZARR Unable to get video object for {path}: {e}')
+        return None
 
     if video:
         minimum_score = settings.general.minimum_score
@@ -69,13 +73,17 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                   f"has been reached during this search.")
                     continue
                 else:
-                    downloaded_subtitles = download_best_subtitles(videos={video},
-                                                                   languages={language},
-                                                                   pool_instance=pool,
-                                                                   min_score=int(min_score),
-                                                                   hearing_impaired=hi_required,
-                                                                   compute_score=ComputeScore(get_scores()),
-                                                                   use_original_format=original_format in (1, "1", "True", True))
+                    try:
+                        downloaded_subtitles = download_best_subtitles(videos={video},
+                                                                       languages={language},
+                                                                       pool_instance=pool,
+                                                                       min_score=int(min_score),
+                                                                       hearing_impaired=hi_required,
+                                                                       compute_score=ComputeScore(get_scores()),
+                                                                       use_original_format=original_format in (1, "1", "True", True))
+                    except Exception as e:
+                        logging.exception(f'BAZARR Error downloading Subtitles for this file {path}: {repr(e)}')
+                        return None
 
                 if downloaded_subtitles:
                     for video, subtitles in downloaded_subtitles.items():
@@ -116,7 +124,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                 processed_subtitle = process_subtitle(subtitle=subtitle, media_type=media_type,
                                                                       audio_language=audio_language,
                                                                       is_upgrade=is_upgrade, is_manual=False,
-                                                                      path=path, max_score=max_score)
+                                                                      path=path, max_score=max_score, job_id=job_id)
                                 if not processed_subtitle:
                                     logging.debug(f"BAZARR unable to process this subtitles: {subtitle}")
                                     continue
@@ -142,10 +150,6 @@ def _get_language_obj(languages):
 
     for language in languages:
         lang, hi_item, forced_item = language
-        if hi_item == "True":
-            hi = "force HI"
-        else:
-            hi = "force non-HI"
 
         # Always use alpha2 in API Request
         lang = alpha3_from_alpha2(lang)
@@ -154,7 +158,7 @@ def _get_language_obj(languages):
 
         if forced_item == "True":
             lang_obj = Language.rebuild(lang_obj, forced=True)
-        if hi == "force HI":
+        if hi_item == "True":
             lang_obj = Language.rebuild(lang_obj, hi=True)
 
         language_set.add(lang_obj)

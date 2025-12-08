@@ -141,9 +141,9 @@ const SeriesEpisodesView: FunctionComponent = () => {
             <Toolbox.Button
               icon={faSync}
               disabled={!available || hasTask}
-              onClick={() => {
+              onClick={async () => {
                 if (series) {
-                  task.create(series.title, TaskGroup.Sync, action, {
+                  await action({
                     action: "sync",
                     seriesid: id,
                   });
@@ -168,9 +168,9 @@ const SeriesEpisodesView: FunctionComponent = () => {
             </Toolbox.Button>
             <Toolbox.Button
               icon={faSearch}
-              onClick={() => {
+              onClick={async () => {
                 if (series) {
-                  task.create(series.title, TaskGroup.SearchSubtitle, action, {
+                  await action({
                     action: "search-missing",
                     seriesid: id,
                   });

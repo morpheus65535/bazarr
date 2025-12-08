@@ -6,12 +6,9 @@ import { useSubtitleAction } from "@/apis/hooks";
 import { useSystemSettings } from "@/apis/hooks";
 import { Selector } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
-import { task } from "@/modules/task";
 import { useSelectorOptions } from "@/utilities";
 import FormUtils from "@/utilities/form";
 import { useEnabledLanguages } from "@/utilities/languages";
-
-const TaskName = "Translating Subtitles";
 
 const translations = {
   af: "afrikaans",
@@ -204,14 +201,15 @@ const TranslationForm: FunctionComponent<Props> = ({
     <form
       onSubmit={form.onSubmit(({ language }) => {
         if (language) {
-          selections.forEach((s) =>
-            task.create(s.path, TaskName, mutateAsync, {
-              action: "translate",
-              form: {
-                ...s,
-                language: language.code2,
-              },
-            }),
+          selections.forEach(
+            async (s) =>
+              await mutateAsync({
+                action: "translate",
+                form: {
+                  ...s,
+                  language: language.code2,
+                },
+              }),
           );
 
           onSubmit?.();

@@ -1,112 +1,100 @@
 import { FunctionComponent } from "react";
-import { Alert, Select, Stack, Text } from "@mantine/core";
+import { Alert, MultiSelect, Stack } from "@mantine/core";
 import {
   usePlexAuthValidationQuery,
   usePlexLibrariesQuery,
+  usePlexServersQuery,
 } from "@/apis/hooks/plex";
 import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
 import styles from "@/pages/Settings/Plex/LibrarySelector.module.scss";
 
-export type LibrarySelectorProps = BaseInput<string> & {
+export type LibrarySelectorProps = BaseInput<string[]> & {
   label: string;
   libraryType: "movie" | "show";
-  placeholder?: string;
   description?: string;
 };
 
 const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
-  const { libraryType, placeholder, description, label, ...baseProps } = props;
+  const { libraryType, description, label, ...baseProps } = props;
   const { value, update, rest } = useBaseInput(baseProps);
 
-  // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
     authData?.valid && authData?.auth_method === "oauth",
   );
 
-  // Fetch libraries if authenticated
+  const { data: servers = [] } = usePlexServersQuery();
+  const hasServers = servers.length > 0;
+
   const {
     data: libraries = [],
     isLoading,
     error,
   } = usePlexLibrariesQuery({
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && hasServers,
   });
 
-  // Filter libraries by type
   const filtered = libraries.filter((library) => library.type === libraryType);
+  const normalizedValue = Array.isArray(value) ? value : value ? [value] : [];
 
-  const selectData = filtered.map((library) => ({
-    value: library.title,
-    label: `${library.title} (${library.count} items)`,
-  }));
+  // Add stale libraries to dropdown data
+  const availableLibraries = filtered.map((lib) => lib.title);
+  const staleLibraries = normalizedValue.filter(
+    (name) => !availableLibraries.includes(name),
+  );
+
+  const selectData = [
+    ...filtered.map((library) => ({
+      value: library.title,
+      label: `${library.title} (${library.count} items)`,
+    })),
+    ...staleLibraries.map((name) => ({
+      value: name,
+      label: `${name} (unavailable)`,
+    })),
+  ];
 
   if (!isAuthenticated) {
     return (
-      <Stack gap="xs" className={styles.librarySelector}>
-        <Text fw={500} className={styles.labelText}>
-          {label}
-        </Text>
-        <Alert color="brand" variant="light" className={styles.alertMessage}>
-          Enable Plex OAuth above to automatically discover your libraries.
-        </Alert>
-      </Stack>
+      <Alert color="brand" variant="light" className={styles.alertMessage}>
+        Enable Plex OAuth above to automatically discover your libraries.
+      </Alert>
     );
   }
 
-  if (isLoading) {
+  if (!hasServers) {
     return (
-      <Stack gap="xs" className={styles.librarySelector}>
-        <Select
-          {...rest}
-          label={label}
-          placeholder="Loading libraries..."
-          data={[]}
-          disabled
-          className={styles.loadingField}
-        />
-      </Stack>
-    );
-  }
-
-  if (error) {
-    return (
-      <Stack gap="xs" className={styles.librarySelector}>
-        <Alert color="red" variant="light" className={styles.alertMessage}>
-          Failed to load libraries:{" "}
-          {(error as Error)?.message || "Unknown error"}
-        </Alert>
-      </Stack>
-    );
-  }
-
-  if (selectData.length === 0) {
-    return (
-      <Stack gap="xs" className={styles.librarySelector}>
-        <Alert color="gray" variant="light" className={styles.alertMessage}>
-          No {libraryType} libraries found on your Plex server.
-        </Alert>
-      </Stack>
+      <Alert color="brand" variant="light" className={styles.alertMessage}>
+        Waiting for server connections to be tested...
+      </Alert>
     );
   }
 
   return (
     <div className={styles.librarySelector}>
-      <Select
-        {...rest}
-        label={label}
-        placeholder={placeholder || `Select ${libraryType} library...`}
-        data={selectData}
-        description={description}
-        value={value || ""}
-        onChange={(newValue) => {
-          if (newValue !== null) {
-            update(newValue);
-          }
-        }}
-        allowDeselect={false}
-        className={styles.selectField}
-      />
+      <Stack gap="xs">
+        <MultiSelect
+          {...rest}
+          label={label}
+          description={description}
+          data={selectData}
+          value={normalizedValue}
+          onChange={update}
+          searchable
+          clearable
+          className={styles.selectField}
+        />
+        {error && (
+          <Alert color="red" variant="light" className={styles.alertMessage}>
+            Failed to load libraries from Plex. Saved selections shown above.
+          </Alert>
+        )}
+        {!error && !isLoading && selectData.length === 0 && (
+          <Alert color="gray" variant="light" className={styles.alertMessage}>
+            No {libraryType} libraries found on your Plex server.
+          </Alert>
+        )}
+      </Stack>
     </div>
   );
 };

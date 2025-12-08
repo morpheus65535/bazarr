@@ -5,6 +5,7 @@ from random import randint
 
 import pycountry
 from requests.cookies import RequestsCookieJar
+from subliminal.video import Episode
 from subliminal.exceptions import AuthenticationError, ProviderError
 from subliminal.providers import ParserBeautifulSoup
 from subliminal_patch.http import RetryingCFSession
@@ -369,7 +370,7 @@ class AvistazNetworkProviderBase(Provider):
         if subtitle.filename.endswith((".zip", ".rar")):
             archive = get_archive_from_bytes(response.content)
             subtitle.content = get_subtitle_from_archive(
-                archive, episode=subtitle.video.episode
+                archive, episode=subtitle.video.episode if isinstance(subtitle.video, Episode) else None,
             )
         else:
             subtitle.content = response.content

@@ -10,7 +10,8 @@ from subtitles.indexer.series import list_missing_subtitles
 from sonarr.rootfolder import check_sonarr_rootfolder
 from app.database import TableShows, TableLanguagesProfiles, database, insert, update, delete, select
 from utilities.path_mappings import path_mappings
-from app.event_handler import event_stream, show_progress, hide_progress
+from app.event_handler import event_stream
+from app.jobs_queue import jobs_queue
 
 from .episodes import sync_episodes
 from .parser import seriesParser
@@ -40,7 +41,11 @@ def get_series_monitored_table():
     return series_dict
 
 
-def update_series(send_event=True):
+def update_series(job_id=None):
+    if not job_id:
+        jobs_queue.add_job_from_function("Syncing series with Sonarr", is_progress=True)
+        return
+
     check_sonarr_rootfolder()
     apikey_sonarr = settings.sonarr.apikey
     if apikey_sonarr is None:
@@ -85,14 +90,9 @@ def update_series(send_event=True):
             skipped_count = 0
         trace(f"Starting sync for {series_count} shows")
 
-        for i, show in enumerate(series):
-            if send_event:
-                show_progress(id='series_progress',
-                              header='Syncing series...',
-                              name=show['title'],
-                              value=i,
-                              count=series_count)
-
+        jobs_queue.update_job_progress(job_id=job_id, progress_max=series_count)
+        for i, show in enumerate(series, start=1):
+            jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=show['title'])
             if sync_monitored:
                 try:
                     monitored_status_db = bool_map[series_monitored[show['id']]]
@@ -137,8 +137,7 @@ def update_series(send_event=True):
                         logging.error(f"BAZARR cannot update series {updated_series['path']} because of {e}")
                         continue
 
-                if send_event:
-                    event_stream(type='series', payload=show['id'])
+                event_stream(type='series', payload=show['id'])
             else:
                 added_series = seriesParser(show, action='insert', tags_dict=tagsDict,
                                             language_profiles=language_profiles,
@@ -157,10 +156,9 @@ def update_series(send_event=True):
                 else:
                     list_missing_subtitles(no=show['id'])
 
-                    if send_event:
-                        event_stream(type='series', action='update', payload=show['id'])
+                    event_stream(type='series', action='update', payload=show['id'])
 
-            sync_episodes(series_id=show['id'], send_event=send_event)
+            sync_episodes(series_id=show['id'])
 
         # Remove old series from DB
         removed_series = list(set(current_shows_db) - set(current_shows_sonarr))
@@ -173,23 +171,14 @@ def update_series(send_event=True):
             database.execute(
                 delete(TableShows)
                 .where(TableShows.sonarrSeriesId == series))
-
-            if send_event:
-                event_stream(type='series', action='delete', payload=series)
-
-        if send_event:
-            show_progress(id='series_progress',
-                          header='Syncing series...',
-                          name='',
-                          value=series_count,
-                          count=series_count)
+            event_stream(type='series', action='delete', payload=series)
 
         if sync_monitored:
             trace(f"skipped {skipped_count} unmonitored series out of {i}")
         logging.debug('BAZARR All series synced from Sonarr into database.')
 
 
-def update_one_series(series_id, action, defer_search=False):
+def update_one_series(series_id, action, **kwargs):
     logging.debug(f'BAZARR syncing this specific series from Sonarr: {series_id}')
 
     # Check if there's a row in database for this series ID
@@ -253,7 +242,7 @@ def update_one_series(series_id, action, defer_search=False):
         except IntegrityError as e:
             logging.error(f"BAZARR cannot update series {series['path']} because of {e}")
         else:
-            sync_episodes(series_id=int(series_id), send_event=False, defer_search=defer_search)
+            sync_episodes(series_id=int(series_id))
             event_stream(type='series', action='update', payload=int(series_id))
             logging.debug(f'BAZARR updated this series into the database:{path_mappings.path_replace(series["path"])}')
 

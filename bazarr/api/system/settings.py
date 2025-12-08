@@ -104,9 +104,9 @@ class SystemSettings(Resource):
             event_stream("languages")
 
             if settings.general.use_sonarr:
-                scheduler.add_job(list_missing_subtitles, kwargs={'send_event': True})
+                list_missing_subtitles()
             if settings.general.use_radarr:
-                scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': True})
+                list_missing_subtitles_movies()
 
         # Update Notification
         notifications = request.form.getlist('notifications-providers')
@@ -126,3 +126,29 @@ class SystemSettings(Resource):
         else:
             event_stream("settings")
             return '', 204
+
+
+@api_ns_system_settings.route('system/webhooks/test')
+class SystemWebhookTest(Resource):
+    @authenticate
+    def post(self):
+        """Test external webhook connection."""
+        try:
+            from utilities.autopulse_webhook import test_external_webhook_connection
+            
+            success, message = test_external_webhook_connection()
+            
+            return {
+                'data': {
+                    'success': success,
+                    'message': message
+                }
+            }
+            
+        except Exception as e:
+            return {
+                'data': {
+                    'success': False,
+                    'message': f'Failed to test webhook: {str(e)}'
+                }
+            }, 400

@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import {
   faCaretDown,
+  faCloudDownloadAlt,
   faDownload,
   faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
@@ -24,7 +25,6 @@ import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
 import PageTable from "@/components/tables/PageTable";
 import { withModal } from "@/modules/modals";
-import { task, TaskGroup } from "@/modules/task";
 import { GetItemId } from "@/utilities";
 
 type SupportType = Item.Movie | Item.Episode;
@@ -83,6 +83,8 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       );
     },
   );
+
+  const [Downloaded, setDownloaded] = useState({ id: "", state: false });
 
   const columns = useMemo<ColumnDef<SearchResultType>[]>(
     () => [
@@ -185,29 +187,25 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         accessorKey: "subtitle",
         cell: ({ row }) => {
           const result = row.original;
+          const isDownloaded = Downloaded.id === row.id && Downloaded.state;
           return (
             <Action
               label="Download"
-              icon={faDownload}
-              c="brand"
+              icon={isDownloaded ? faCloudDownloadAlt : faDownload}
+              color={isDownloaded ? "brand" : "gray"}
               disabled={item === null}
-              onClick={() => {
+              onClick={async () => {
                 if (!item) return;
 
-                task.create(
-                  item.title,
-                  TaskGroup.DownloadSubtitle,
-                  download,
-                  item,
-                  result,
-                );
+                setDownloaded({ id: row.id, state: true });
+                await download(item, result);
               }}
             ></Action>
           );
         },
       },
     ],
-    [download, item, ReleaseInfoCell],
+    [download, item, ReleaseInfoCell, Downloaded],
   );
 
   const bSceneNameAvailable =

@@ -13,13 +13,14 @@ from radarr.history import history_log_movie
 from app.notifier import send_notifications_movie
 from app.get_providers import get_providers
 from app.database import get_exclusion_clause, get_audio_profile_languages, TableMovies, database, update, select
-from app.event_handler import event_stream, show_progress, hide_progress
+from app.event_handler import event_stream
+from app.jobs_queue import jobs_queue
 
 from ..adaptive_searching import is_search_active, updateFailedAttempts
 from ..download import generate_subtitles
 
 
-def _wanted_movie(movie):
+def _wanted_movie(movie, job_id=None):
     audio_language_list = get_audio_profile_languages(movie.audio_language)
     if len(audio_language_list) > 0:
         audio_language = audio_language_list[0]['name']
@@ -51,7 +52,8 @@ def _wanted_movie(movie):
                                      movie.title,
                                      'movie',
                                      movie.profileId,
-                                     check_if_still_required=True):
+                                     check_if_still_required=True,
+                                     job_id=job_id):
 
         if result:
             if isinstance(result, tuple) and len(result):
@@ -62,7 +64,7 @@ def _wanted_movie(movie):
             send_notifications_movie(movie.radarrId, result.message)
 
 
-def wanted_download_subtitles_movie(radarr_id):
+def wanted_download_subtitles_movie(radarr_id, job_id=None):
     stmt = select(TableMovies.path,
                   TableMovies.missing_subtitles,
                   TableMovies.radarrId,
@@ -90,12 +92,16 @@ def wanted_download_subtitles_movie(radarr_id):
     providers_list = get_providers()
 
     if providers_list:
-        _wanted_movie(movie)
+        _wanted_movie(movie, job_id=job_id)
     else:
         logging.info("BAZARR All providers are throttled")
 
 
-def wanted_search_missing_subtitles_movies():
+def wanted_search_missing_subtitles_movies(job_id=None):
+    if not job_id:
+        jobs_queue.add_job_from_function("Searching for missing movies subtitles", is_progress=True)
+        return
+
     conditions = [(TableMovies.missing_subtitles.is_not(None)),
                   (TableMovies.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('movie')
@@ -108,24 +114,19 @@ def wanted_search_missing_subtitles_movies():
         .all()
 
     count_movies = len(movies)
-    for i, movie in enumerate(movies):
-        show_progress(id='wanted_movies_progress',
-                      header='Searching subtitles...',
-                      name=movie.title,
-                      value=i,
-                      count=count_movies)
+    jobs_queue.update_job_progress(job_id=job_id, progress_max=count_movies)
+
+    if count_movies == 0:
+        jobs_queue.update_job_progress(job_id=job_id, progress_value='max')
+
+    for i, movie in enumerate(movies, start=1):
+        jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=movie.title)
 
         providers = get_providers()
         if providers:
-            wanted_download_subtitles_movie(movie.radarrId)
+            wanted_download_subtitles_movie(movie.radarrId, job_id=job_id)
         else:
             logging.info("BAZARR All providers are throttled")
             break
-
-    show_progress(id='wanted_movies_progress',
-                  header='Searching subtitles...',
-                  name="",
-                  value=count_movies,
-                  count=count_movies)
 
     logging.info('BAZARR Finished searching for missing Movies Subtitles. Check History for more information.')

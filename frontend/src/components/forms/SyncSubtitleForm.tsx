@@ -15,11 +15,8 @@ import {
   Selector,
 } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
-import { task } from "@/modules/task";
 import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/Subtitles/options";
 import { fromPython, toPython } from "@/utilities";
-
-const TaskName = "Syncing Subtitle";
 
 function useReferencedSubtitles(
   mediaType: "episode" | "movie",
@@ -144,7 +141,7 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
   return (
     <form
       onSubmit={form.onSubmit((parameters) => {
-        selections.forEach((s) => {
+        selections.forEach(async (s) => {
           const form: FormType.ModifySubtitle = {
             ...s,
             reference: parameters.reference,
@@ -153,7 +150,7 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
             gss: toPython(parameters.gss),
           };
 
-          task.create(s.path, TaskName, mutateAsync, { action: "sync", form });
+          await mutateAsync({ action: "sync", form });
         });
 
         onSubmit?.();

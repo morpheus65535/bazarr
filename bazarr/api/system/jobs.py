@@ -15,6 +15,11 @@ class SystemJobs(Resource):
         'job_id': fields.Integer(),
         'job_name': fields.String(),
         'status': fields.String(),
+        'last_run_time': fields.String(),
+        'is_progress': fields.Boolean(),
+        'progress_value': fields.Integer(),
+        'progress_max': fields.Integer(),
+        'progress_message': fields.String(),
     })
 
     get_request_parser = reqparse.RequestParser()
@@ -47,7 +52,7 @@ class SystemJobs(Resource):
         args = self.delete_request_parser.parse_args()
         job_id = args.get('id')
         if job_id:
-            deleted = jobs_queue.remove_job_from_pending_queue(task_id=job_id)
+            deleted = jobs_queue.remove_job_from_pending_queue(job_id=job_id)
             if deleted:
                 return '', 204
         return 'Job ID not provided', 400

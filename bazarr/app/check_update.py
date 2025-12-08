@@ -13,6 +13,7 @@ from zipfile import ZipFile
 
 from .get_args import args
 from .config import settings
+from .jobs_queue import jobs_queue
 
 
 def deprecated_python_version():
@@ -20,7 +21,12 @@ def deprecated_python_version():
     return sys.version_info.major == 2 or (sys.version_info.major == 3 and sys.version_info.minor < 8)
 
 
-def check_releases():
+def check_releases(job_id=None, startup=False):
+    # startup is used to prevent trying to create a job before the jobs queue is initialized
+    if not startup and not job_id:
+        jobs_queue.add_job_from_function("Update Release Info", is_progress=False)
+        return
+
     releases = []
     url_releases = 'https://api.github.com/repos/morpheus65535/Bazarr/releases?per_page=100'
     try:
@@ -63,7 +69,7 @@ def check_if_new_update():
         return
     logging.debug(f'BAZARR updater is using {settings.general.branch} branch')
 
-    check_releases()
+    check_releases(startup=True)
 
     with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
         data = json.load(f)

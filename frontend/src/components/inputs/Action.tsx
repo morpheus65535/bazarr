@@ -2,6 +2,7 @@ import { forwardRef } from "react";
 import {
   ActionIcon,
   ActionIconProps,
+  Loader,
   Tooltip,
   TooltipProps,
 } from "@mantine/core";
@@ -16,14 +17,19 @@ export type ActionProps = MantineComp<ActionIconProps, "button"> & {
   label: string;
   tooltip?: Omit<TooltipProps, "label" | "children">;
   iconProps?: Omit<FontAwesomeIconProps, "icon">;
+  isLoading?: boolean;
 };
 
 const Action = forwardRef<HTMLButtonElement, ActionProps>(
-  ({ icon, iconProps, label, tooltip, ...props }, ref) => {
+  ({ icon, iconProps, label, tooltip, isLoading, size, ...props }, ref) => {
     return (
       <Tooltip openDelay={1500} {...tooltip} label={label}>
         <ActionIcon aria-label={label} {...props} ref={ref}>
-          <FontAwesomeIcon icon={icon} {...iconProps}></FontAwesomeIcon>
+          {isLoading ? (
+            <Loader size={size} />
+          ) : (
+            <FontAwesomeIcon icon={icon} {...iconProps}></FontAwesomeIcon>
+          )}
         </ActionIcon>
       </Tooltip>
     );

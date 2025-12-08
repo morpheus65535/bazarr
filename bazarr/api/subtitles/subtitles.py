@@ -15,7 +15,8 @@ from subtitles.tools.translate.main import translate_subtitles_file
 from subtitles.tools.mods import subtitles_apply_mods
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
-from app.config import settings, empty_values
+from subtitles.sync import sync_subtitles
+from app.config import settings, empty_values, get_array_from
 from app.event_handler import event_stream
 
 from ..utils import authenticate
@@ -121,7 +122,7 @@ class Subtitles(Resource):
 
         if media_type == 'episode':
             metadata = database.execute(
-                select(TableEpisodes.path, TableEpisodes.sonarrSeriesId)
+                select(TableEpisodes.path, TableEpisodes.sonarrSeriesId, TableEpisodes.subtitles)
                 .where(TableEpisodes.sonarrEpisodeId == id)) \
                 .first()
 
@@ -131,7 +132,7 @@ class Subtitles(Resource):
             video_path = path_mappings.path_replace(metadata.path)
         else:
             metadata = database.execute(
-                select(TableMovies.path)
+                select(TableMovies.path, TableMovies.subtitles)
                 .where(TableMovies.radarrId == id))\
                 .first()
 
@@ -141,49 +142,57 @@ class Subtitles(Resource):
             video_path = path_mappings.path_replace_movie(metadata.path)
 
         if action == 'sync':
-            sync_kwargs = {
-                'video_path': video_path,
-                'srt_path': subtitles_path,
-                'srt_lang': language,
-                'hi': hi,
-                'forced': forced,
-                'reference': args.get('reference') if args.get('reference') not in empty_values else video_path,
-                'max_offset_seconds': args.get('max_offset_seconds') if args.get('max_offset_seconds') not in
-                empty_values else str(settings.subsync.max_offset_seconds),
-                'no_fix_framerate': args.get('no_fix_framerate') == 'True',
-                'gss': args.get('gss') == 'True',
-            }
-
-            subsync = SubSyncer()
             try:
-                if media_type == 'episode':
-                    sync_kwargs['sonarr_series_id'] = metadata.sonarrSeriesId
-                    sync_kwargs['sonarr_episode_id'] = id
-                else:
-                    sync_kwargs['radarr_id'] = id
-                subsync.sync(**sync_kwargs)
+                sync_subtitles(video_path=video_path, srt_path=subtitles_path, srt_lang=language, hi=hi, forced=forced,
+                               percent_score=0,  # make sure to always sync when requested manually
+                               reference=args.get('reference') if args.get('reference') not in empty_values else
+                               video_path,
+                               max_offset_seconds=args.get('max_offset_seconds') if
+                               args.get('max_offset_seconds') not in empty_values else
+                               str(settings.subsync.max_offset_seconds),
+                               no_fix_framerate=args.get('no_fix_framerate') == 'True',
+                               gss=args.get('gss') == 'True',
+                               sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
+                               sonarr_episode_id=id if media_type == "episode" else None,
+                               radarr_id=id if media_type == "movie" else None,
+                               force_sync=True,
+                               )
             except OSError:
                 return 'Unable to edit subtitles file. Check logs.', 409
-            finally:
-                del subsync
-                gc.collect()
         elif action == 'translate':
-            from_language = subtitles_lang_from_filename(subtitles_path)
             dest_language = language
-            try:
-                translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
-                                         from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
-                                         media_type="series" if media_type == "episode" else "movies",
-                                         sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
-                                         sonarr_episode_id=id,
-                                         radarr_id=id)
-            except OSError:
-                return 'Unable to edit subtitles file. Check logs.', 409
+            from_language = None
+
+            if metadata.subtitles:
+                subtitles_list = get_array_from(metadata.subtitles)
+                subtitles_filename = os.path.basename(subtitles_path)
+
+                for subtitle_entry in subtitles_list:
+                    if len(subtitle_entry) >= 2 and subtitle_entry[1] is not None:
+                        db_subtitle_filename = os.path.basename(subtitle_entry[1])
+                        if db_subtitle_filename == subtitles_filename:
+                            from_language = subtitle_entry[0]
+                            break
+
+                if not from_language or not alpha3_from_alpha2(from_language):
+                    from_language = subtitles_lang_from_filename(subtitles_path)
+                if not from_language or not alpha3_from_alpha2(from_language):
+                    return 'Invalid source language code', 400
+
+                try:
+                    translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
+                                             from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
+                                             media_type="series" if media_type == "episode" else "movies",
+                                             sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
+                                             sonarr_episode_id=id,
+                                             radarr_id=id)
+                except OSError:
+                    return 'Unable to edit subtitles file. Check logs.', 409
         else:
             use_original_format = True if args.get('original_format') == 'true' else False
             try:
                 subtitles_apply_mods(language=language, subtitle_path=subtitles_path, mods=[action],
-                                     use_original_format=use_original_format, video_path=video_path)
+                                     video_path=video_path)
             except OSError:
                 return 'Unable to edit subtitles file. Check logs.', 409
 

@@ -1,3 +1,15 @@
+# Bazarr Development Environment
+#
+# To start the full development environment:
+#   docker-compose up -d
+#
+# To include Autopulse for webhook testing:
+#   docker-compose --profile autopulse up -d
+#
+# To test specific Autopulse PR (e.g., PR #344 for config template API):
+#   1. Edit the autopulse service args below to set AUTOPULSE_PR=344
+#   2. docker-compose --profile autopulse up -d --build autopulse
+#
 services:
   bazarr-backend:
     build:
@@ -71,6 +83,37 @@ services:
       timeout: 10s
       retries: 30
       start_period: 60s
+
+  # Autopulse service - configurable branch/PR
+  autopulse:
+    build:
+      context: ..
+      dockerfile: dev-setup/autopulse/Dockerfile
+      args:
+        # Use main branch by default, override with PR for testing
+        - AUTOPULSE_BRANCH=main
+        # Uncomment and set to test specific PRs:
+        # - AUTOPULSE_PR=344
+    container_name: bazarr-autopulse
+    restart: unless-stopped
+    ports:
+      - "2875:2875"
+    volumes:
+      - ./autopulse/config.yaml:/app/config.yaml:ro
+      - ./autopulse/data:/app/data
+    environment:
+      - AUTOPULSE__APP__DATABASE_URL=sqlite://data/autopulse.db
+      - RUST_LOG=info
+    networks:
+      - bazarr-network
+    profiles:
+      - autopulse  # Use profile to make this service optional
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2875/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 networks:
   bazarr-network:

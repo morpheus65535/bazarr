@@ -15,7 +15,7 @@ import re
 from requests import ConnectionError
 from subzero.language import Language
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
-    MustGetBlacklisted, SearchLimitReached, ProviderError
+    MustGetBlacklisted, SearchLimitReached, ProviderError, ForbiddenError
 from subliminal.providers.opensubtitles import DownloadLimitReached, PaymentRequired, Unauthorized
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable, AuthenticationError, ConfigurationError
 from subliminal import region as subliminal_cache_region
@@ -127,6 +127,12 @@ def provider_throttle_map():
             APIThrottled: (datetime.timedelta(hours=1), "1 hour"),
             TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
             ProviderError: (datetime.timedelta(minutes=10), "10 minutes"),
+        },
+        "subsource": {
+            APIThrottled: (datetime.timedelta(minutes=10), "10 minutes"),
+            AuthenticationError: (datetime.timedelta(hours=1), "1 hour"),
+            ForbiddenError: (datetime.timedelta(minutes=15), "15 minutes"),
+            TooManyRequests: (datetime.timedelta(hours=1), "1 hour"),
         },
     }
 
@@ -350,7 +356,11 @@ def get_providers_auth():
         'turkcealtyaziorg': {
             'cookies': settings.turkcealtyaziorg.cookies,
             'user_agent': settings.turkcealtyaziorg.user_agent,
-        }
+        },
+        'subsource': {
+            'api_key': settings.subsource.apikey,
+        },
+        'animesubinfo': {}
     }
 
 

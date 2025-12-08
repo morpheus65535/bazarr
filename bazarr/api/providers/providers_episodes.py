@@ -1,18 +1,17 @@
 # coding=utf-8
 
 import os
+import time
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id, database, select
+from app.database import TableEpisodes, TableShows, database, select
 from utilities.path_mappings import path_mappings
 from app.get_providers import get_providers
-from subtitles.manual import manual_search, manual_download_subtitle
-from sonarr.history import history_log
+from subtitles.manual import manual_search, episode_manually_download_specific_subtitle
 from app.config import settings
-from app.notifier import send_notifications
+from app.jobs_queue import jobs_queue
 from subtitles.indexer.series import store_subtitles, list_missing_subtitles
-from subtitles.processing import ProcessSubtitlesResult
 
 from ..utils import authenticate
 
@@ -107,53 +106,18 @@ class ProviderEpisodes(Resource):
     def post(self):
         """Manually download an episode subtitles"""
         args = self.post_request_parser.parse_args()
-        sonarrSeriesId = args.get('seriesid')
-        sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = database.execute(
-            select(
-                TableEpisodes.audio_language,
-                TableEpisodes.path,
-                TableEpisodes.sceneName,
-                TableShows.title)
-            .select_from(TableEpisodes)
-            .join(TableShows)
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
-            .first()
 
-        if not episodeInfo:
-            return 'Episode not found', 404
+        job_id = episode_manually_download_specific_subtitle(sonarr_series_id=args.get('seriesid'),
+                                                             sonarr_episode_id=args.get('episodeid'),
+                                                             hi=args.get('hi').capitalize(),
+                                                             forced=args.get('forced').capitalize(),
+                                                             use_original_format=args.get('original_format').capitalize(),
+                                                             selected_provider=args.get('provider'),
+                                                             subtitle=args.get('subtitle'),
+                                                             job_id=None)
 
-        title = episodeInfo.title
-        episodePath = path_mappings.path_replace(episodeInfo.path)
-        sceneName = episodeInfo.sceneName or "None"
+        # Wait for the job to complete or fail
+        while jobs_queue.get_job_status(job_id=job_id) in ['pending', 'running']:
+            time.sleep(1)
 
-        hi = args.get('hi').capitalize()
-        forced = args.get('forced').capitalize()
-        use_original_format = args.get('original_format').capitalize()
-        selected_provider = args.get('provider')
-        subtitle = args.get('subtitle')
-
-        audio_language_list = get_audio_profile_languages(episodeInfo.audio_language)
-        if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0]['name']
-        else:
-            audio_language = 'None'
-
-        try:
-            result = manual_download_subtitle(episodePath, audio_language, hi, forced, subtitle, selected_provider,
-                                              sceneName, title, 'series', use_original_format,
-                                              profile_id=get_profile_id(episode_id=sonarrEpisodeId))
-        except OSError:
-            return 'Unable to save subtitles file', 500
-        else:
-            if isinstance(result, tuple) and len(result):
-                result = result[0]
-            if isinstance(result, ProcessSubtitlesResult):
-                history_log(2, sonarrSeriesId, sonarrEpisodeId, result)
-                if not settings.general.dont_notify_manual_actions:
-                    send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
-                store_subtitles(result.path, episodePath)
-            elif isinstance(result, str):
-                return result, 500
-            else:
-                return '', 204
+        return jobs_queue.get_job_returned_value(job_id=job_id)

@@ -128,9 +128,9 @@ const MovieDetailView: FunctionComponent = () => {
             <Toolbox.Button
               icon={faSync}
               disabled={hasTask}
-              onClick={() => {
+              onClick={async () => {
                 if (movie) {
-                  task.create(movie.title, TaskGroup.Sync, action, {
+                  await action({
                     action: "sync",
                     radarrid: id,
                   });
@@ -157,9 +157,9 @@ const MovieDetailView: FunctionComponent = () => {
               icon={faSearch}
               disabled={!isNumber(movie?.profileId)}
               loading={hasTask}
-              onClick={() => {
+              onClick={async () => {
                 if (movie) {
-                  task.create(movie.title, TaskGroup.SearchSubtitle, action, {
+                  await action({
                     action: "search-missing",
                     radarrid: id,
                   });

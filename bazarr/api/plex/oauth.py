@@ -16,6 +16,7 @@ from .security import (TokenManager, sanitize_log_data, pin_cache, get_or_create
                        encrypt_api_key)
 from app.config import settings, write_config
 from app.logger import logger
+from utilities.plex_utils import _get_library_locations
 
 
 def get_token_manager():
@@ -596,7 +597,8 @@ class PlexLibraries(Resource):
                         'language': section.get('language', ''),
                         'uuid': section.get('uuid', ''),
                         'updatedAt': int(section.get('updatedAt', 0)),
-                        'createdAt': int(section.get('createdAt', 0))
+                        'createdAt': int(section.get('createdAt', 0)),
+                        'locations': _get_library_locations(server_url, section_key, decrypted_token)
                     })
 
             logger.debug(f"Filtered Plex libraries: {libraries}")
@@ -865,7 +867,7 @@ class PlexWebhookCreate(Resource):
 
         except Exception as e:
             logger.error(f"Failed to create Plex webhook: {e}")
-            return {'error': f'Failed to create webhook: {str(e)}'}, 500
+            return {'error': f'Failed to create webhook: {str(e)}'}, 502
 
 
 @api_ns_plex.route('plex/webhook/list')
@@ -909,7 +911,7 @@ class PlexWebhookList(Resource):
 
         except Exception as e:
             logger.error(f"Failed to list Plex webhooks: {e}")
-            return {'error': f'Failed to list webhooks: {str(e)}'}, 500
+            return {'error': f'Failed to list webhooks: {str(e)}'}, 502
 
 
 @api_ns_plex.route('plex/webhook/delete')
@@ -950,6 +952,35 @@ class PlexWebhookDelete(Resource):
 
         except Exception as e:
             logger.error(f"Failed to delete Plex webhook: {e}")
-            return {'error': f'Failed to delete webhook: {str(e)}'}, 500
+            return {'error': f'Failed to delete webhook: {str(e)}'}, 502
+
+
+@api_ns_plex.route('plex/autopulse/config')
+class PlexAutopulseConfig(Resource):
+    get_request_parser = reqparse.RequestParser()
+
+    @api_ns_plex.doc(parser=get_request_parser)
+    def get(self):
+        try:
+            decrypted_token = get_decrypted_token()
+            if not decrypted_token:
+                raise UnauthorizedError()
+
+            # Use config generator from utilities (handles OAuth and decryption internally)
+            from utilities.autopulse_webhook import generate_autopulse_config
+            config = generate_autopulse_config(decrypted_token)
+            
+            if config:
+                return {
+                    'data': config
+                }
+            else:
+                return {'error': 'Failed to get Plex configuration for Autopulse'}, 400
+
+        except UnauthorizedError:
+            return {'error': 'Plex authentication required'}, 401
+        except Exception as e:
+            logger.error(f"Failed to get Autopulse config: {e}")
+            return {'error': f'Failed to get Autopulse config: {str(e)}'}, 500
 
 

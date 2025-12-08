@@ -1,21 +1,20 @@
 # coding=utf-8
 
 import os
-import logging
+import time
 
 from flask_restx import Resource, Namespace, reqparse
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from werkzeug.datastructures import FileStorage
 
-from app.database import TableShows, TableEpisodes, get_audio_profile_languages, get_profile_id, database, select
+from app.database import TableShows, TableEpisodes, get_profile_id, database, select
 from utilities.path_mappings import path_mappings
 from subtitles.upload import manual_upload_subtitle
+from subtitles.mass_download.series import episode_download_specific_subtitles
 from subtitles.download import generate_subtitles
 from subtitles.tools.delete import delete_subtitles
-from sonarr.history import history_log
-from app.notifier import send_notifications
-from subtitles.indexer.series import store_subtitles
-from app.event_handler import event_stream, show_message
+from app.jobs_queue import jobs_queue
+from app.event_handler import event_stream
 from app.config import settings
 
 from ..utils import authenticate
@@ -42,64 +41,17 @@ class EpisodesSubtitles(Resource):
     def patch(self):
         """Download an episode subtitles"""
         args = self.patch_request_parser.parse_args()
-        sonarrSeriesId = args.get('seriesid')
-        sonarrEpisodeId = args.get('episodeid')
-        episodeInfo = database.execute(
-            select(TableEpisodes.path,
-                   TableEpisodes.sceneName,
-                   TableEpisodes.audio_language,
-                   TableShows.title)
-            .select_from(TableEpisodes)
-            .join(TableShows)
-            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
-            .first()
 
-        if not episodeInfo:
-            return 'Episode not found', 404
+        job_id = episode_download_specific_subtitles(sonarr_series_id=args.get('seriesid'),
+                                                     sonarr_episode_id=args.get('episodeid'),
+                                                     language=args.get('language'), hi=args.get('hi').capitalize(),
+                                                     forced=args.get('forced').capitalize(), job_id=None)
 
-        episodePath = path_mappings.path_replace(episodeInfo.path)
+        # Wait for the job to complete or fail
+        while jobs_queue.get_job_status(job_id=job_id) in ['pending', 'running']:
+            time.sleep(1)
 
-        if not os.path.exists(episodePath):
-            return 'Episode file not found. Path mapping issue?', 500
-
-        sceneName = episodeInfo.sceneName or "None"
-
-        title = episodeInfo.title
-
-        language = args.get('language')
-        hi = args.get('hi').capitalize()
-        forced = args.get('forced').capitalize()
-        if hi == 'True':
-            language_str = f'{language}:hi'
-        elif forced == 'True':
-            language_str = f'{language}:forced'
-        else:
-            language_str = language
-
-        audio_language_list = get_audio_profile_languages(episodeInfo.audio_language)
-        if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0]['name']
-        else:
-            audio_language = None
-
-        try:
-            result = list(generate_subtitles(episodePath, [(language, hi, forced)], audio_language, sceneName,
-                                             title, 'series', profile_id=get_profile_id(episode_id=sonarrEpisodeId)))
-            if isinstance(result, list) and len(result):
-                result = result[0]
-                if isinstance(result, tuple) and len(result):
-                    result = result[0]
-                history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
-                send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
-                store_subtitles(result.path, episodePath)
-            else:
-                event_stream(type='episode', payload=sonarrEpisodeId)
-                show_message(f'No {language_str.upper()} subtitles found')
-                return '', 204
-        except OSError:
-            return 'Unable to save subtitles file. Permission or path mapping issue?', 409
-        else:
-            return '', 204
+        return jobs_queue.get_job_returned_value(job_id=job_id)
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
@@ -120,6 +72,12 @@ class EpisodesSubtitles(Resource):
     def post(self):
         """Upload an episode subtitles"""
         args = self.post_request_parser.parse_args()
+
+        _, ext = os.path.splitext(args.get('file').filename)
+
+        if not isinstance(ext, str) or ext.lower() not in SUBTITLE_EXTENSIONS:
+            raise ValueError('A subtitle of an invalid format was uploaded.')
+
         sonarrSeriesId = args.get('seriesid')
         sonarrEpisodeId = args.get('episodeid')
         episodeInfo = database.execute(
@@ -136,46 +94,21 @@ class EpisodesSubtitles(Resource):
         if not os.path.exists(episodePath):
             return 'Episode file not found. Path mapping issue?', 500
 
-        audio_language = get_audio_profile_languages(episodeInfo.audio_language)
-        if len(audio_language) and isinstance(audio_language[0], dict):
-            audio_language = audio_language[0]
-        else:
-            audio_language = {'name': '', 'code2': '', 'code3': ''}
+        job_id = manual_upload_subtitle(path=episodePath,
+                                        language=args.get('language'),
+                                        forced=True if args.get('forced') == 'true' else False,
+                                        hi=True if args.get('hi') == 'true' else False,
+                                        media_type='series',
+                                        subtitle=args.get('file'),
+                                        audio_language=episodeInfo.audio_language,
+                                        sonarrSeriesId=sonarrSeriesId,
+                                        sonarrEpisodeId=sonarrEpisodeId)
 
-        language = args.get('language')
-        forced = True if args.get('forced') == 'true' else False
-        hi = True if args.get('hi') == 'true' else False
-        subFile = args.get('file')
+        # Wait for the job to complete or fail
+        while jobs_queue.get_job_status(job_id=job_id) in ['pending', 'running']:
+            time.sleep(1)
 
-        _, ext = os.path.splitext(subFile.filename)
-
-        if not isinstance(ext, str) or ext.lower() not in SUBTITLE_EXTENSIONS:
-            raise ValueError('A subtitle of an invalid format was uploaded.')
-
-        try:
-            result = manual_upload_subtitle(path=episodePath,
-                                            language=language,
-                                            forced=forced,
-                                            hi=hi,
-                                            media_type='series',
-                                            subtitle=subFile,
-                                            audio_language=audio_language)
-
-            if not result:
-                logging.debug(f"BAZARR unable to process subtitles for this episode: {episodePath}")
-            else:
-                if isinstance(result, tuple) and len(result):
-                    result = result[0]
-                provider = "manual"
-                score = 360
-                history_log(4, sonarrSeriesId, sonarrEpisodeId, result, fake_provider=provider, fake_score=score)
-                if not settings.general.dont_notify_manual_actions:
-                    send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
-                store_subtitles(result.path, episodePath)
-        except OSError:
-            return 'Unable to save subtitles file. Permission or path mapping issue?', 409
-        else:
-            return '', 204
+        return jobs_queue.get_job_returned_value(job_id=job_id)
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')

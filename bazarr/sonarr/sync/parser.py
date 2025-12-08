@@ -182,4 +182,5 @@ def episodeParser(episode):
                             'audio_codec': audioCodec,
                             'episode_file_id': episode['episodeFile']['id'],
                             'audio_language': str(audio_language),
-                            'file_size': episode['episodeFile']['size']}
+                            'file_size': episode['episodeFile']['size'],
+                            'absoluteEpisode': episode.get('absoluteEpisodeNumber')}

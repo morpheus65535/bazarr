@@ -17,7 +17,6 @@ import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import SimpleTable from "@/components/tables/SimpleTable";
 import { useModals, withModal } from "@/modules/modals";
-import { task, TaskGroup } from "@/modules/task";
 import { fromPython, isMovie, toPython } from "@/utilities";
 
 type SupportType = Item.Episode | Item.Movie;
@@ -184,7 +183,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
         <SubtitleToolsMenu
           selections={selections}
           onAction={(action) => {
-            selections.forEach((selection) => {
+            selections.forEach(async (selection) => {
               const actionPayload = {
                 form: {
                   language: selection.language,
@@ -208,19 +207,9 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
               const remove = selection.isMovie ? removeMovie : removeEpisode;
 
               if (action === "search") {
-                task.create(
-                  selection.name,
-                  TaskGroup.SearchSubtitle,
-                  download.mutateAsync,
-                  actionPayload,
-                );
+                await download.mutateAsync(actionPayload);
               } else if (action === "delete" && selection.path) {
-                task.create(
-                  selection.name,
-                  TaskGroup.DeleteSubtitle,
-                  remove.mutateAsync,
-                  actionPayload,
-                );
+                await remove.mutateAsync(actionPayload);
               }
             });
             modals.closeAll();

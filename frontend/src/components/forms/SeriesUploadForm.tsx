@@ -28,7 +28,6 @@ import { Action, Selector } from "@/components/inputs";
 import SimpleTable from "@/components/tables/SimpleTable";
 import TextPopover from "@/components/TextPopover";
 import { useModals, withModal } from "@/modules/modals";
-import { task, TaskGroup } from "@/modules/task";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import FormUtils from "@/utilities/form";
 import {
@@ -362,7 +361,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
       onSubmit={form.onSubmit(({ files }) => {
         const { sonarrSeriesId: seriesId } = series;
 
-        files.forEach((value) => {
+        files.forEach(async (value) => {
           const { file, hi, forced, language, episode } = value;
 
           if (language === null || episode === null) {
@@ -374,7 +373,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
           const { code2 } = language;
           const { sonarrEpisodeId: episodeId } = episode;
 
-          task.create(file.name, TaskGroup.UploadSubtitle, upload.mutateAsync, {
+          await upload.mutateAsync({
             seriesId,
             episodeId,
             form: {

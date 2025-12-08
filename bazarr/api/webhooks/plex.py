@@ -52,7 +52,7 @@ class WebHooksPlex(Resource):
             
             event = parsed_json_webhook['event']
             
-            if event not in ['media.play']:
+            if event not in ['media.play', 'playback.started']:
                 logger.debug('PLEX WEBHOOK: Ignoring unhandled event "%s"', event)
                 return 'Unhandled event', 204
             
@@ -113,7 +113,7 @@ class WebHooksPlex(Resource):
                     .first()
 
                 if sonarrEpisodeId:
-                    episode_download_subtitles(no=sonarrEpisodeId.sonarrEpisodeId, send_progress=True)
+                    episode_download_subtitles(no=sonarrEpisodeId.sonarrEpisodeId)
         else:
             try:
                 movie_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]

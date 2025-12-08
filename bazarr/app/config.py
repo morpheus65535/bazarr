@@ -102,6 +102,11 @@ validators = [
     Validator('general.postprocessing_threshold_movie', must_exist=True, default=70, is_type_of=int, gte=0,
               lte=100),
     Validator('general.use_postprocessing_threshold_movie', must_exist=True, default=False, is_type_of=bool),
+    # External webhook integration
+    Validator('general.use_external_webhook', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.external_webhook_url', must_exist=True, default='', is_type_of=str),
+    Validator('general.external_webhook_username', must_exist=True, default='', is_type_of=str),
+    Validator('general.external_webhook_password', must_exist=True, default='', is_type_of=str),
     Validator('general.use_sonarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_plex', must_exist=True, default=False, is_type_of=bool),
@@ -239,8 +244,8 @@ validators = [
     Validator('plex.port', must_exist=True, default=32400, is_type_of=int, gte=1, lte=65535),
     Validator('plex.ssl', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.apikey', must_exist=True, default='', is_type_of=str),
-    Validator('plex.movie_library', must_exist=True, default='', is_type_of=str),
-    Validator('plex.series_library', must_exist=True, default='', is_type_of=str),
+    Validator('plex.movie_library', must_exist=True, default=[], is_type_of=(str, list)),
+    Validator('plex.series_library', must_exist=True, default=[], is_type_of=(str, list)),
     Validator('plex.set_movie_added', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.set_episode_added', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.update_movie_library', must_exist=True, default=False, is_type_of=bool),
@@ -452,10 +457,14 @@ validators = [
     Validator('postgresql.database', must_exist=True, default='', is_type_of=str),
     Validator('postgresql.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('postgresql.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('postgresql.url', must_exist=True, default='', is_type_of=str, cast=str),
 
     # anidb section
     Validator('anidb.api_client', must_exist=True, default='', is_type_of=str),
     Validator('anidb.api_client_ver', must_exist=True, default=1, is_type_of=int),
+
+    # subsource section
+    Validator('subsource.apikey', must_exist=True, default='', is_type_of=str),
 ]
 
 
@@ -551,7 +560,9 @@ array_keys = ['excluded_tags',
               'remove_profile_tags',
               'language_equals',
               'blacklisted_languages',
-              'blacklisted_providers']
+              'blacklisted_providers',
+              'movie_library',
+              'series_library']
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
@@ -789,6 +800,10 @@ def save_settings(settings_items):
                 reset_providers = True
                 region.delete('titlovi_token')
 
+        if key == 'settings-subsource-apikey':
+            if key != settings.subsource.apikey:
+                reset_providers = True
+
         if reset_providers:
             from .get_providers import reset_throttled_providers
             reset_throttled_providers(only_auth_or_conf_error=True)
@@ -825,27 +840,27 @@ def save_settings(settings_items):
         from subtitles.indexer.series import list_missing_subtitles
         from subtitles.indexer.movies import list_missing_subtitles_movies
         if settings.general.use_sonarr:
-            scheduler.add_job(list_missing_subtitles, kwargs={'send_event': True})
+            list_missing_subtitles()
         if settings.general.use_radarr:
-            scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': True})
+            list_missing_subtitles_movies()
 
     if undefined_subtitles_track_default_changed:
         from .scheduler import scheduler
         from subtitles.indexer.series import series_full_scan_subtitles
         from subtitles.indexer.movies import movies_full_scan_subtitles
         if settings.general.use_sonarr:
-            scheduler.add_job(series_full_scan_subtitles, kwargs={'use_cache': True})
+            series_full_scan_subtitles(use_cache=True)
         if settings.general.use_radarr:
-            scheduler.add_job(movies_full_scan_subtitles, kwargs={'use_cache': True})
+            movies_full_scan_subtitles(use_cache=True)
 
     if audio_tracks_parsing_changed:
         from .scheduler import scheduler
         if settings.general.use_sonarr:
             from sonarr.sync.series import update_series
-            scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
+            update_series()
         if settings.general.use_radarr:
             from radarr.sync.movies import update_movies
-            scheduler.add_job(update_movies, kwargs={'send_event': True}, max_instances=1)
+            update_movies()
 
     if update_subzero:
         settings.general.subzero_mods = ','.join(subzero_mods)
@@ -1057,7 +1072,7 @@ def migrate_apikey_to_oauth():
         time.sleep(delay)
         
         # Decrypt the API key
-        from bazarr.api.plex.security import TokenManager, get_or_create_encryption_key
+        from api.plex.security import TokenManager, get_or_create_encryption_key
         encryption_key = get_or_create_encryption_key(settings.plex, 'encryption_key')
         token_manager = TokenManager(encryption_key)
         
@@ -1269,7 +1284,7 @@ def migrate_apikey_to_oauth():
             settings.plex.server_local = oauth_config['server_local']
             
             # Test connection
-            from bazarr.plex.operations import get_plex_server
+            from plex.operations import get_plex_server
             test_server = get_plex_server()
             test_server.account()  # Test connection
             test_success = True
@@ -1410,13 +1425,56 @@ def cleanup_legacy_oauth_config():
         write_config()
 
 
+def migrate_plex_library_to_list():
+    """
+    Migrate old single-string Plex library settings to new list format.
+    This migration runs during app initialization to ensure backward compatibility.
+    
+    Converts:
+    - plex.movie_library: string -> list
+    - plex.series_library: string -> list
+    
+    Automatically saves configuration if changes are made.
+    """
+    changed = False
+    
+    # Migrate movie library
+    if isinstance(settings.plex.movie_library, str):
+        old_value = settings.plex.movie_library
+        if old_value:  # Only migrate if not empty
+            settings.plex.movie_library = [old_value]
+            logging.info(f"Migrated plex.movie_library from string to list: {old_value}")
+            changed = True
+        else:
+            settings.plex.movie_library = []
+            changed = True
+    
+    # Migrate series library
+    if isinstance(settings.plex.series_library, str):
+        old_value = settings.plex.series_library
+        if old_value:  # Only migrate if not empty
+            settings.plex.series_library = [old_value]
+            logging.info(f"Migrated plex.series_library from string to list: {old_value}")
+            changed = True
+        else:
+            settings.plex.series_library = []
+            changed = True
+    
+    if changed:
+        write_config()
+        logging.debug("Plex library migration completed successfully")
+
+
 def initialize_plex():
     """
     Initialize Plex configuration on startup.
     Call this from your main application initialization.
     """
-    # Run migration
+    # Run OAuth migration
     migrate_plex_config()
+    
+    # Run library multiselect migration
+    migrate_plex_library_to_list()
     
     # Clean up legacy fields for existing OAuth configurations
     cleanup_legacy_oauth_config()

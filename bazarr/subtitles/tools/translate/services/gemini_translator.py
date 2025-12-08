@@ -18,19 +18,17 @@ from collections import Counter
 from typing import List
 from srt import Subtitle
 
-from retry.api import retry
 from app.config import settings
 from sonarr.history import history_log
 from radarr.history import history_log_movie
-from deep_translator import GoogleTranslator
 from utilities.path_mappings import path_mappings
 from subtitles.processing import ProcessSubtitlesResult
-from app.event_handler import show_progress, hide_progress, show_message
-from deep_translator.exceptions import TooManyRequests, RequestError, TranslationNotFound
+from app.jobs_queue import jobs_queue
 from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
-from ..core.translator_utils import add_translator_info, get_description, create_process_result
+from ..core.translator_utils import add_translator_info, get_description
 
 logger = logging.getLogger(__name__)
+
 
 class SubtitleObject(typing.TypedDict):
     """
@@ -77,8 +75,10 @@ class GeminiTranslatorService:
         self.interrupt_flag = False
         self.progress_file = None
         self.current_progress = 0
+        self.job_id = None
 
-    def translate(self):
+    def translate(self, job_id):
+        self.job_id = job_id
         subs = pysubs2.load(self.source_srt_file, encoding='utf-8')
         subs.remove_miscellaneous_events()
 
@@ -106,7 +106,7 @@ class GeminiTranslatorService:
                 self._translate_with_gemini()
                 add_translator_info(self.dest_srt_file, f"# Subtitles translated with {settings.translator.gemini_model} # ")
             except Exception as e:
-                show_message(f'Gemini translation error: {str(e)}')
+                jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Gemini translation error: {str(e)}')
 
         except Exception as e:
             logger.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
@@ -153,14 +153,16 @@ class GeminiTranslatorService:
 
                 # Verify the progress file matches our current input file
                 if input_file != self.input_file:
-                    show_message(f"Found progress file for different subtitle: {input_file}")
-                    show_message("Ignoring saved progress.")
+                    jobs_queue.update_job_progress(
+                        job_id=self.job_id,
+                        progress_message=f"Found progress file for different subtitle: {input_file}. Ignoring saved "
+                                         f"progress.")
                     return
 
                 if saved_line > 1 and self.start_line == 1:
                     os.remove(self.output_file)
         except Exception as e:
-            show_message(f"Error reading progress file: {e}")
+            jobs_queue.update_job_progress(job_id=self.job_id, progress_message=f"Error reading progress file: {e}")
 
     def _save_progress(self, line):
         """Save current progress to temporary file"""
@@ -171,7 +173,7 @@ class GeminiTranslatorService:
             with open(self.progress_file, "w") as f:
                 json.dump({"line": line, "input_file": self.input_file}, f)
         except Exception as e:
-            show_message(f"Failed to save progress: {e}")
+            jobs_queue.update_job_progress(job_id=self.job_id, progress_message=f"Failed to save progress: {e}")
 
     def _clear_progress(self):
         """Clear the progress file on successful completion"""
@@ -179,7 +181,7 @@ class GeminiTranslatorService:
             try:
                 os.remove(self.progress_file)
             except Exception as e:
-                show_message(f"Failed to remove progress file: {e}")
+                jobs_queue.update_job_progress(job_id=self.job_id, progress_message=f"Failed to remove progress file: {e}")
 
     def handle_interrupt(self, *args):
         """Handle interrupt signal by setting interrupt flag"""
@@ -286,11 +288,7 @@ class GeminiTranslatorService:
             # Accurately calculate and display progress
             self.current_progress = self.current_progress + chunk_size
 
-            show_progress(id=f'translate_progress_{self.output_file}',
-                          header=f'Translating subtitles with Gemini to {self.target_language}...',
-                          name='',
-                          value=self.current_progress,
-                          count=total)
+            jobs_queue.update_job_progress(job_id=self.job_id, progress_value=self.current_progress)
 
             # Validate translated lines
             if len(translated_lines) != len(batch):
@@ -306,7 +304,7 @@ class GeminiTranslatorService:
             if retry_num > 0:
                 return self._process_batch(batch, translated_subtitle, total, retry_num - 1)
             else:
-                show_message(f"Translation request failed: {e}")
+                jobs_queue.update_job_progress(job_id=self.job_id, progress_message=f"Translation request failed: {e}")
                 raise e
 
     @staticmethod
@@ -351,15 +349,15 @@ class GeminiTranslatorService:
 
     def _translate_with_gemini(self):
         if not self.current_api_key:
-            show_message("Please provide a valid Gemini API key.")
+            jobs_queue.update_job_progress(job_id=self.job_id, progress_message="Please provide a valid Gemini API key.")
             return
 
         if not self.target_language:
-            show_message("Please provide a target language.")
+            jobs_queue.update_job_progress(job_id=self.job_id, progress_message="Please provide a target language.")
             return
 
         if not self.input_file:
-            show_message("Please provide a subtitle file.")
+            jobs_queue.update_job_progress(job_id=self.job_id, progress_message="Please provide a subtitle file.")
             return
 
         self.token_limit = self._get_token_limit()
@@ -391,6 +389,9 @@ class GeminiTranslatorService:
                     # Save initial progress
                     self._save_progress(i)
 
+                    jobs_queue.update_job_progress(job_id=self.job_id, progress_max=total,
+                                                   progress_message=self.source_srt_file)
+
                     while (i < total or len(batch) > 0) and not self.interrupt_flag:
                         if i < total and len(batch) < self.batch_size:
                             batch.append(SubtitleObject(index=str(i), content=original_subtitle[i].content))
@@ -399,13 +400,16 @@ class GeminiTranslatorService:
 
                         try:
                             if not self._validate_token_size(json.dumps(batch, ensure_ascii=False)):
-                                show_message(
-                                    f"Token size ({int(self.token_count / 0.9)}) exceeds limit ({self.token_limit}) for {self.model_name}."
+                                jobs_queue.update_job_progress(
+                                    job_id=self.job_id,
+                                    progress_message=f"Token size ({int(self.token_count / 0.9)}) exceeds limit ("
+                                                     f"{self.token_limit}) for {self.model_name}."
                                 )
                                 user_prompt = "0"
                                 while not user_prompt.isdigit() or int(user_prompt) <= 0:
-                                    user_prompt = show_message(
-                                        f"Please enter a new batch size (current: {self.batch_size}): "
+                                    user_prompt = jobs_queue.update_job_progress(
+                                        job_id=self.job_id,
+                                        progress_message=f"Please enter a new batch size (current: {self.batch_size}): "
                                     )
                                     if user_prompt.isdigit() and int(user_prompt) > 0:
                                         new_batch_size = int(user_prompt)
@@ -415,9 +419,13 @@ class GeminiTranslatorService:
                                                 i -= 1
                                                 batch.pop()
                                         self.batch_size = new_batch_size
-                                        show_message(f"Batch size updated to {self.batch_size}.")
+                                        jobs_queue.update_job_progress(job_id=self.job_id,
+                                                                       progress_message=f"Batch size updated to "
+                                                                                        f"{self.batch_size}.")
                                     else:
-                                        show_message("Invalid input. Batch size must be a positive integer.")
+                                        jobs_queue.update_job_progress(job_id=self.job_id,
+                                                                       progress_message="Invalid input. Batch size must"
+                                                                                        " be a positive integer.")
                                 continue
 
                             start_time = time.time()
@@ -431,13 +439,12 @@ class GeminiTranslatorService:
                                 time.sleep(delay_time - (end_time - start_time))
 
                         except Exception as e:
-                            hide_progress(id=f'translate_progress_{self.output_file}')
                             self._clear_progress()
                             # File will be automatically closed by the with statement
                             raise e
 
                     # Check if we exited the loop due to an interrupt
-                    hide_progress(id=f'translate_progress_{self.output_file}')
+                    jobs_queue.update_job_progress(job_id=self.job_id, progress_value=total)
                     if self.interrupt_flag:
                         # File will be automatically closed by the with statement
                         self._clear_progress()
@@ -449,59 +456,8 @@ class GeminiTranslatorService:
                     self._clear_progress()
 
         except Exception as e:
-            hide_progress(id=f'translate_progress_{self.output_file}')
+            logger.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
+            jobs_queue.update_job_progress(job_id=self.job_id, progress_value=total,
+                                           progress_message=f'Gemini translation failed: {str(e)}')
             self._clear_progress()
             raise e
-
-    def translate(self):
-        subs = pysubs2.load(self.source_srt_file, encoding='utf-8')
-        subs.remove_miscellaneous_events()
-
-        try:
-            logger.debug(f'BAZARR is sending subtitle file to Gemini for translation')
-            logger.info(f"BAZARR is sending subtitle file to Gemini for translation " + self.source_srt_file)
-
-            # Set up Gemini translator parameters
-            self.gemini_api_key = settings.translator.gemini_key
-            self.current_api_key = self.gemini_api_key
-            self.target_language = language_from_alpha3(self.to_lang)
-            self.input_file = self.source_srt_file
-            self.output_file = self.dest_srt_file
-            self.model_name = settings.translator.gemini_model
-            self.description = get_description(self.media_type, self.radarr_id, self.sonarr_series_id)
-
-            # Adjust batch size for different models
-            if "2.5-flash" in self.model_name or "pro" in self.model_name:
-                self.batch_size = 300
-
-            # Initialize progress tracking file path
-            if self.input_file:
-                self.progress_file = os.path.join(os.path.dirname(self.input_file), f".{os.path.basename(self.input_file)}.progress")
-
-            # Check for saved progress
-            self._check_saved_progress()
-
-            try:
-                self._translate_with_gemini()
-                add_translator_info(self.dest_srt_file, f"# Subtitles translated with {settings.translator.gemini_model} # ")
-
-                message = f"{language_from_alpha2(self.from_lang)} subtitles translated to {language_from_alpha3(self.to_lang)}."
-                result = create_process_result(message, self.video_path, self.orig_to_lang, self.forced, self.hi, self.dest_srt_file, self.media_type)
-
-                if self.media_type == 'series':
-                    history_log(action=6, sonarr_series_id=self.sonarr_series_id, sonarr_episode_id=self.sonarr_episode_id, result=result)
-                else:
-                    history_log_movie(action=6, radarr_id=self.radarr_id, result=result)
-
-                return self.dest_srt_file
-
-            except Exception as e:
-                show_message(f'Gemini translation error: {str(e)}')
-                hide_progress(id=f'translate_progress_{self.dest_srt_file}')
-                return False
-
-        except Exception as e:
-            logger.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
-            show_message(f'Gemini translation failed: {str(e)}')
-            hide_progress(id=f'translate_progress_{self.dest_srt_file}')
-            return False

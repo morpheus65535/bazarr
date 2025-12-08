@@ -15,6 +15,7 @@ export enum QueryKeys {
   Actions = "actions",
   Announcements = "announcements",
   Tasks = "tasks",
+  Jobs = "jobs",
   Backups = "backups",
   Logs = "logs",
   Infos = "infos",

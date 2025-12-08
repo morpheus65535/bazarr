@@ -14,6 +14,7 @@ from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
 from subtitles.mass_download import episode_download_subtitles
 from app.event_handler import event_stream
 from sonarr.info import get_sonarr_info
+from app.jobs_queue import jobs_queue
 
 from .parser import episodeParser
 from .utils import get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
@@ -38,12 +39,17 @@ def get_episodes_monitored_table(series_id):
     return episode_dict
 
 
-def update_all_episodes():
-    series_full_scan_subtitles()
-    logging.info('BAZARR All existing episode subtitles indexed from disk.')
+def check_actual_file_size(original_episode_path):
+    try:
+        bazarr_file_size = \
+            os.path.getsize(path_mappings.path_replace(original_episode_path))
+    except OSError:
+        bazarr_file_size = 0
+
+    return bazarr_file_size > MINIMUM_VIDEO_SIZE
 
 
-def sync_episodes(series_id, send_event=True, defer_search=False):
+def sync_episodes(series_id, **kwargs):
     logging.debug(f'BAZARR Starting episodes sync from Sonarr for series ID {series_id}.')
     apikey_sonarr = settings.sonarr.apikey
 
@@ -85,45 +91,38 @@ def sync_episodes(series_id, send_event=True, defer_search=False):
             skipped_count = 0
 
         for episode in episodes:
-            if 'hasFile' in episode:
-                if episode['hasFile'] is True:
-                    if 'episodeFile' in episode:
-                        # monitored_status_db = get_episodes_monitored_status(episode['episodeFileId'])
-                        if sync_monitored:
-                            try:
-                                monitored_status_db = bool_map[episodes_monitored[episode['episodeFileId']]]
-                            except KeyError:
-                                monitored_status_db = None
+            if 'hasFile' in episode and episode['hasFile'] and 'episodeFile' in episode:
+                if sync_monitored:
+                    try:
+                        monitored_status_db = bool_map[episodes_monitored[episode['episodeFileId']]]
+                    except KeyError:
+                        monitored_status_db = None
 
-                            if monitored_status_db is None:
-                                # not in db, might need to add, if we have a file on disk
-                                pass
-                            elif monitored_status_db != episode['monitored']:
-                                # monitored status changed and we don't know about it until now
-                                trace(f"(Monitor Status Mismatch) {episode['title']}")
-                                # pass
-                            elif not episode['monitored']:
-                                # Add unmonitored episode in sonarr to current episode list, otherwise it will be deleted from db
-                                current_episodes_sonarr.append(episode['id'])
-                                skipped_count += 1
-                                continue
+                    if monitored_status_db is None:
+                        # not in db, might need to add, if we have a file on disk
+                        pass
+                    elif monitored_status_db != episode['monitored']:
+                        # monitored status changed and we don't know about it until now
+                        trace(f"(Monitor Status Mismatch) {episode['title']}")
+                        # pass
+                    elif not episode['monitored']:
+                        # Add unmonitored episode in sonarr to current episode list, otherwise it will be deleted from db
+                        current_episodes_sonarr.append(episode['id'])
+                        skipped_count += 1
+                        continue
 
-                        try:
-                            bazarr_file_size = \
-                                os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
-                        except OSError:
-                            bazarr_file_size = 0
-                        if episode['episodeFile']['size'] > MINIMUM_VIDEO_SIZE or bazarr_file_size > MINIMUM_VIDEO_SIZE:
-                            # Add episodes in sonarr to current episode list
-                            current_episodes_sonarr.append(episode['id'])
+                if (episode['episodeFile']['size'] > MINIMUM_VIDEO_SIZE or
+                        check_actual_file_size(episode['episodeFile']['path'])):
+                    # Add episodes in sonarr to current episode list
+                    current_episodes_sonarr.append(episode['id'])
 
-                            # Parse episode data
-                            if episode['id'] in current_episodes_id_db_list:
-                                parsed_episode = episodeParser(episode)
-                                if not any([parsed_episode.items() <= x for x in current_episodes_db_kv]):
-                                    episodes_to_update.append(parsed_episode)
-                            else:
-                                episodes_to_add.append(episodeParser(episode))
+                    # Parse episode data
+                    if episode['id'] in current_episodes_id_db_list:
+                        parsed_episode = episodeParser(episode)
+                        if not any([parsed_episode.items() <= x for x in current_episodes_db_kv]):
+                            episodes_to_update.append(parsed_episode)
+                    else:
+                        episodes_to_add.append(episodeParser(episode))
     else:
         return
 
@@ -143,8 +142,7 @@ def sync_episodes(series_id, send_event=True, defer_search=False):
             logging.error(f"BAZARR cannot delete episodes because of {e}")
         else:
             for removed_episode in episodes_to_delete:
-                if send_event:
-                    event_stream(type='episode', action='delete', payload=removed_episode)
+                event_stream(type='episode', action='delete', payload=removed_episode)
 
     # Insert new episodes in DB
     if len(episodes_to_add):
@@ -158,9 +156,7 @@ def sync_episodes(series_id, send_event=True, defer_search=False):
                 episodes_to_update.append(added_episode)
             else:
                 store_subtitles(added_episode['path'], path_mappings.path_replace(added_episode['path']))
-
-                if send_event:
-                    event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
+                event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
 
     # Update existing episodes in DB
     if len(episodes_to_update):
@@ -174,32 +170,12 @@ def sync_episodes(series_id, send_event=True, defer_search=False):
                 logging.error(f"BAZARR cannot update episodes because of {e}")
             else:
                 store_subtitles(updated_episode['path'], path_mappings.path_replace(updated_episode['path']))
-
-                if send_event:
-                    event_stream(type='episode', action='update', payload=updated_episode['sonarrEpisodeId'])
-
-    # Downloading missing subtitles
-    for episode in episodes_to_add + episodes_to_update:
-        episode_id = episode['sonarrEpisodeId']
-        if defer_search:
-            logging.debug(
-                f'BAZARR searching for missing subtitles is deferred until scheduled task execution for this episode: '
-                f'{path_mappings.path_replace(episode["path"])}')
-        else:
-            mapped_episode_path = path_mappings.path_replace(episode["path"])
-            if os.path.exists(mapped_episode_path):
-                logging.debug(f'BAZARR downloading missing subtitles for this episode: {mapped_episode_path}')
-                episode_download_subtitles(episode_id, send_progress=True)
-            else:
-                logging.debug(
-                    f'BAZARR cannot find this file yet (Sonarr may be slow to import episode between disks?). '
-                    f'Searching for missing subtitles is deferred until scheduled task execution for this episode'
-                    f': {mapped_episode_path}')
+                event_stream(type='episode', action='update', payload=updated_episode['sonarrEpisodeId'])
 
     logging.debug(f'BAZARR All episodes from series ID {series_id} synced from Sonarr into database.')
 
 
-def sync_one_episode(episode_id, defer_search=False):
+def sync_one_episode(episode_id, defer_search=False, **kwargs):
     logging.debug(f'BAZARR syncing this specific episode from Sonarr: {episode_id}')
     apikey_sonarr = settings.sonarr.apikey
 
@@ -242,7 +218,7 @@ def sync_one_episode(episode_id, defer_search=False):
         else:
             event_stream(type='episode', action='delete', payload=int(episode_id))
             logging.debug(
-                f'BAZARR deleted this episode from the database:{path_mappings.path_replace(existing_episode["path"])}')
+                f'BAZARR deleted this episode from the database:{path_mappings.path_replace(existing_episode.path)}')
         return
 
     # Update existing episodes in DB
@@ -285,7 +261,7 @@ def sync_one_episode(episode_id, defer_search=False):
         mapped_episode_path = path_mappings.path_replace(episode["path"])
         if os.path.exists(mapped_episode_path):
             logging.debug(f'BAZARR downloading missing subtitles for this episode: {mapped_episode_path}')
-            episode_download_subtitles(episode_id, send_progress=True)
+            episode_download_subtitles(no=episode_id, job_id=kwargs.get('job_id'), job_sub_function=True)
         else:
             logging.debug(f'BAZARR cannot find this file yet (Sonarr may be slow to import episode between disks?). '
                           f'Searching for missing subtitles is deferred until scheduled task execution for this episode'

@@ -14,13 +14,17 @@ cd bazarr/dev-setup
 
 ### 2. Run the setup script
 ```bash
-./test-setup.sh
+./setup-dev.sh
 ```
-This will create the necessary directories and a minimal config file with default credentials for development.
+This will create the necessary directories, config files, and setup both Bazarr and Autopulse for development.
 
 ### 3. Start development environment
 ```bash
+# Start Bazarr only
 docker compose up --build
+
+# Or start with Autopulse for Plex integration testing
+docker compose --profile autopulse up --build
 ```
 
 ### 4. Access applications
@@ -29,13 +33,14 @@ docker compose up --build
 This is the Bazarr web interface with live reloading. The frontend automatically communicates with the backend API (port 6767).
 
 **Default credentials:**
-- Username: `admin`
-- Password: `admin`
+- **Bazarr**: Username: `admin`, Password: `admin`
+- **Autopulse**: Username: `admin`, Password: `password`
+- API Key: `bazarr` (for API access)
 
 **Important**: 
 - Port 5173: Frontend development server with hot module replacement
 - Port 6767: Backend API server (not meant for direct browser access)
-- API Key: `bazarr` (for API access)
+- Port 2875: Autopulse service (when enabled with `--profile autopulse`)
 
 ## What This Provides
 
@@ -57,11 +62,13 @@ This is the Bazarr web interface with live reloading. The frontend automatically
 ../custom_libs    → /app/bazarr/bin/custom_libs  (Custom libraries)
 ../libs           → /app/bazarr/bin/libs         (Third-party libraries)
 ./data            → /app/bazarr/data             (Persistent data)
+./autopulse       → /app/data                    (Autopulse data - when enabled)
 ```
 
 ### 🌐 **Port Configuration**
-- **6767**: Bazarr backend API and web interface
 - **5173**: Vite development server with hot reloading
+- **6767**: Bazarr backend API and web interface
+- **2875**: Autopulse service (when enabled)
 
 ## Development Workflow
 
@@ -90,6 +97,9 @@ docker compose up
 # Start in background (detached)
 docker compose up -d
 
+# Start with optional Autopulse service for Plex integration testing
+docker compose --profile autopulse up -d
+
 # Rebuild after dependency changes
 docker compose up --build
 
@@ -109,6 +119,18 @@ docker compose down
 docker compose down -v
 ```
 
+### Autopulse Setup (Optional)
+
+To include Autopulse for testing Plex integration features:
+
+```bash
+# Setup development environment with Autopulse support
+./setup-dev.sh --autopulse
+
+# Start with Autopulse enabled
+docker compose --profile autopulse up --build
+```
+
 ## Environment Configuration
 
 The development environment includes these settings:
@@ -124,19 +146,27 @@ VITE_REACT_QUERY_DEVTOOLS=true
 
 ## Data Persistence
 
-Configuration and data are persisted in the `./data` directory:
+Configuration and data are persisted in local directories:
+
+**Bazarr:**
 - `./data/config/` - Bazarr configuration files
 - `./data/cache/` - Application cache
 - `./data/log/` - Application logs
+- `./data/db/` - Database files
+
+**Autopulse (when enabled):**
+- `./autopulse/config.yaml` - Autopulse configuration
+- `./autopulse/data/` - Autopulse database and data
 
 ## Troubleshooting
 
 ### Port Conflicts
-If ports 6767 or 5173 are already in use:
+If ports 5173, 6767, or 2875 are already in use:
 ```bash
 # Check what's using the ports
-lsof -i :6767
 lsof -i :5173
+lsof -i :6767
+lsof -i :2875
 
 # Either stop those services or modify ports in docker-compose.yml
 ```
@@ -144,7 +174,7 @@ lsof -i :5173
 ### Permission Issues
 ```bash
 # Fix data directory permissions
-sudo chown -R $USER:$USER ./data
+sudo chown -R $USER:$USER ./data ./autopulse
 ```
 
 ### Frontend Not Loading
@@ -157,15 +187,16 @@ sudo chown -R $USER:$USER ./data
 
 ### Authentication/Login Issues
 If you're prompted for a password:
-1. The default credentials are: **admin/admin**
-2. Check if `data/config/config.yaml` exists with proper auth settings
-3. If not, run `./test-setup.sh` to create the proper config
-4. Restart the containers: `docker compose restart`
-5. The API key is set to: **bazarr**
+1. The default credentials for Bazarr are: **admin/admin**
+2. The default credentials for Autopulse are: **admin/password**
+3. Check if `data/config/config.yaml` exists with proper auth settings
+4. If not, run `./setup-dev.sh` to create the proper config
+5. Restart the containers: `docker compose restart`
+6. The API key is set to: **bazarr**
 
 If you still have issues:
 - Delete the data directory: `rm -rf data/`
-- Run the setup script: `./test-setup.sh`
+- Run the setup script: `./setup-dev.sh`
 - Rebuild and start: `docker compose up --build`
 - Check if port 6767 is accessible: `curl http://localhost:6767`
 - Review Python error logs in the backend container output
@@ -179,9 +210,46 @@ docker compose down -v
 # Remove built images
 docker rmi dev-setup-bazarr-backend dev-setup-bazarr-frontend
 
+# Clean up data directories (optional - will lose all data)
+rm -rf data/ autopulse/
+
+# Recreate setup
+./setup-dev.sh
+
 # Rebuild from scratch
 docker compose up --build
 ```
+
+## Optional Services
+
+### 🔗 **Autopulse Integration**
+For testing Plex integration and webhook features, you can optionally enable the Autopulse service:
+
+```bash
+# Start with Autopulse for Plex metadata refresh testing
+docker compose --profile autopulse up --build
+
+# Access Autopulse web interface
+open http://localhost:2875
+```
+
+**Autopulse Features:**
+- **Dynamic Configuration Generation**: Bazarr can generate Autopulse configurations automatically using the template API
+- **Path Rewrite Detection**: Smart detection of mount point differences between Bazarr and Plex
+- **Webhook Testing**: Test subtitle download webhooks that trigger Plex metadata refreshes
+
+**Usage with Bazarr:**
+1. Configure Plex settings in Bazarr (OAuth authentication recommended)
+2. Navigate to the Plex settings page in Bazarr
+3. Use the "Generate Autopulse Configuration" feature to create an optimized config
+4. Save the generated configuration as `config.toml` in your Autopulse container
+5. Configure external webhooks to point to `http://autopulse:2875/triggers/bazarr`
+
+**Testing the Integration:**
+1. Set up a Plex server with OAuth in Bazarr
+2. Generate an Autopulse configuration in the Plex settings
+3. Enable external webhooks pointing to Autopulse
+4. Download subtitles and verify Autopulse receives webhook calls
 
 ## Development Tips
 
@@ -228,11 +296,12 @@ Host Machine
 │   ├── custom_libs/ → mounted in backend container
 │   └── libs/ → mounted in backend container
 └── dev-setup/ (all dev environment files in one place)
-    ├── data/ → persistent data
+    ├── data/ → persistent Bazarr data
+    ├── autopulse/ → persistent Autopulse data (when enabled)
     ├── Dockerfile.backend → Python/Alpine backend image
     ├── Dockerfile.frontend → Node.js frontend image (dev-optimized)
     ├── docker-compose.yml → Orchestration config
-    ├── test-setup.sh → Setup validation script
+    ├── setup-dev.sh → Development environment setup script
     └── README.md
 
 Backend Container (/app/bazarr/bin/)
@@ -246,6 +315,10 @@ Frontend Container (/app/)
 ├── public/ (static assets - mounted)
 ├── config/ (configuration - mounted)
 └── node_modules/ (npm packages - container only)
+
+Autopulse Container (/app/)
+├── config.yaml (configuration - mounted)
+└── data/ (persistent data - mounted)
 ```
 
 ## Next Steps

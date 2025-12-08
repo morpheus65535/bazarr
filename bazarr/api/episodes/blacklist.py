@@ -121,7 +121,7 @@ class EpisodesBlacklist(Resource):
                             subtitles_path=subtitles_path,
                             sonarr_series_id=sonarr_series_id,
                             sonarr_episode_id=sonarr_episode_id):
-            episode_download_subtitles(sonarr_episode_id)
+            episode_download_subtitles(no=sonarr_episode_id)
             event_stream(type='episode-history')
             return '', 200
         else:

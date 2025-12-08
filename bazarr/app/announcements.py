@@ -18,11 +18,12 @@ from app.config import settings
 from app.get_args import args
 from sonarr.info import get_sonarr_info
 from radarr.info import get_radarr_info
+from .jobs_queue import jobs_queue
 
 
 def upcoming_deprecated_python_version():
     # return True if Python version is deprecated
-    return sys.version_info.major == 2 or (sys.version_info.major == 3 and sys.version_info.minor < 9)
+    return sys.version_info.major == 2 or (sys.version_info.major == 3 and sys.version_info.minor < 10)
 
 
 # Announcements as receive by browser must be in the form of a list of dicts converted to JSON
@@ -48,10 +49,16 @@ def parse_announcement_dict(announcement_dict):
     return announcement_dict
 
 
-def get_announcements_to_file():
+def get_announcements_to_file(job_id=None, startup=False):
+    if not startup and not job_id:
+        jobs_queue.add_job_from_function("Update Announcements File", is_progress=False)
+        return
+
     try:
-        r = requests.get("https://raw.githubusercontent.com/morpheus65535/bazarr-binaries/master/announcements.json",
-                         timeout=10)
+        r = requests.get(
+            url="https://cdn.statically.io/gh/morpheus65535/bazarr-binaries/refs/heads/master/announcements.json",
+            timeout=30
+        )
     except requests.exceptions.HTTPError:
         logging.exception("Error trying to get announcements from Github. Http error.")
     except requests.exceptions.ConnectionError:
@@ -116,8 +123,8 @@ def get_local_announcements():
     # upcoming deprecated Python versions
     if upcoming_deprecated_python_version():
         announcements.append({
-            'text': 'Starting with Bazarr 1.6, support for Python 3.8 will get dropped. Upgrade your current version of'
-                    ' Python ASAP to get further updates.',
+            'text': 'Starting with Bazarr 1.6, support for Python 3.8 and 3.9 will get dropped. Upgrade your current '
+                    'version of Python ASAP to get further updates.',
             'link': 'https://wiki.bazarr.media/Troubleshooting/Windows_installer_reinstall/',
             'dismissible': False,
             'timestamp': 1744469706,

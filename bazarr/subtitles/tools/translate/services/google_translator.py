@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import logging
-import srt
 import pysubs2
 
 from retry.api import retry
@@ -13,11 +12,12 @@ from deep_translator import GoogleTranslator
 from concurrent.futures import ThreadPoolExecutor
 from utilities.path_mappings import path_mappings
 from subtitles.processing import ProcessSubtitlesResult
-from app.event_handler import show_progress, hide_progress, show_message
+from app.jobs_queue import jobs_queue
 from deep_translator.exceptions import TooManyRequests, RequestError, TranslationNotFound
 from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
 
 logger = logging.getLogger(__name__)
+
 
 class GoogleTranslatorService:
 
@@ -43,28 +43,28 @@ class GoogleTranslatorService:
             'zt': 'zh-TW',
         }
 
-    def translate(self):
+    def translate(self, job_id):
         try:
             subs = pysubs2.load(self.source_srt_file, encoding='utf-8')
             subs.remove_miscellaneous_events()
             lines_list = [x.plaintext for x in subs]
             lines_list_len = len(lines_list)
 
+            jobs_queue.update_job_progress(job_id=job_id, progress_max=lines_list_len,
+                                           progress_message=self.source_srt_file)
+
             translated_lines = []
             logger.debug(f'starting translation for {self.source_srt_file}')
+
             def translate_line(line_id, subtitle_line):
                 try:
-                    translated_text = self._translate_text(subtitle_line)
+                    translated_text = self._translate_text(subtitle_line, job_id)
                     translated_lines.append({'id': line_id, 'line': translated_text})
                 except TranslationNotFound:
                     logger.debug(f'Unable to translate line {subtitle_line}')
                     translated_lines.append({'id': line_id, 'line': subtitle_line})
                 finally:
-                    show_progress(id=f'translate_progress_{self.dest_srt_file}',
-                                  header=f'Translating subtitles lines to {language_from_alpha3(self.to_lang)} using Google Translate...',
-                                  name='',
-                                  value=len(translated_lines),
-                                  count=lines_list_len)
+                    jobs_queue.update_job_progress(job_id=job_id, progress_value=len(translated_lines))
 
             logger.debug(f'BAZARR is sending {lines_list_len} blocks to Google Translate')
             pool = ThreadPoolExecutor(max_workers=10)
@@ -82,12 +82,6 @@ class GoogleTranslatorService:
             for i, line in enumerate(translated_lines):
                 lines_list[line['id']] = line['line']
 
-            show_progress(id=f'translate_progress_{self.dest_srt_file}',
-                          header=f'Translating subtitles lines to {language_from_alpha3(self.to_lang)}...',
-                          name='',
-                          value=lines_list_len,
-                          count=lines_list_len)
-
             logger.debug(f'BAZARR saving translated subtitles to {self.dest_srt_file}')
             for i, line in enumerate(subs):
                 try:
@@ -98,7 +92,9 @@ class GoogleTranslatorService:
                         continue
                 except IndexError:
                     logger.error(f'BAZARR is unable to translate malformed subtitles: {self.source_srt_file}')
-                    show_message(f'Translation failed: Unable to translate malformed subtitles for {self.source_srt_file}')
+                    jobs_queue.update_job_progress(job_id=job_id,
+                                                   progress_message=f'Translation failed: Unable to translate '
+                                                                    f'malformed subtitles for {self.source_srt_file}')
                     return False
 
             try:
@@ -106,7 +102,9 @@ class GoogleTranslatorService:
                 add_translator_info(self.dest_srt_file, f"# Subtitles translated with Google Translate # ")
             except OSError:
                 logger.error(f'BAZARR is unable to save translated subtitles to {self.dest_srt_file}')
-                show_message(f'Translation failed: Unable to save translated subtitles to {self.dest_srt_file}')
+                jobs_queue.update_job_progress(job_id=job_id,
+                                               progress_message=f'Translation failed: Unable to save translated '
+                                                                f'subtitles to {self.dest_srt_file}')
                 raise OSError
 
             message = f"{language_from_alpha2(self.from_lang)} subtitles translated to {language_from_alpha3(self.to_lang)}."
@@ -121,12 +119,12 @@ class GoogleTranslatorService:
 
         except Exception as e:
             logger.error(f'BAZARR encountered an error during translation: {str(e)}')
-            show_message(f'Google translation failed: {str(e)}')
-            hide_progress(id=f'translate_progress_{self.dest_srt_file}')
+            jobs_queue.update_job_progress(job_id=job_id,
+                                           progress_message=f'Google translation failed: {str(e)}')
             return False
 
     @retry(exceptions=(TooManyRequests, RequestError), tries=6, delay=1, backoff=2, jitter=(0, 1))
-    def _translate_text(self, text):
+    def _translate_text(self, text, job_id):
         try:
             return GoogleTranslator(
                 source='auto',
@@ -134,9 +132,11 @@ class GoogleTranslatorService:
             ).translate(text=text)
         except (TooManyRequests, RequestError) as e:
             logger.error(f'Google Translate API error after retries: {str(e)}')
-            show_message(f'Google Translate API error: {str(e)}')
+            jobs_queue.update_job_progress(job_id=job_id,
+                                           progress_message=f'Google Translate API error: {str(e)}')
             raise
         except Exception as e:
             logger.error(f'Unexpected error in Google translation: {str(e)}')
-            show_message(f'Translation error: {str(e)}')
+            jobs_queue.update_job_progress(job_id=job_id,
+                                           progress_message=f'Translation error: {str(e)}')
             raise

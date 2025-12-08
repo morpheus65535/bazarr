@@ -13,6 +13,12 @@ describe("App", () => {
       }),
     );
 
+    server.use(
+      http.get("/api/system/jobs", () => {
+        return HttpResponse.json({});
+      }),
+    );
+
     customRender(<App />);
   });
 });

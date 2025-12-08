@@ -123,7 +123,8 @@ Js2Py==0.74
 pydantic<=1.10.14  # newer version require other compiled dependency
 pyjsparser==2.7.1
 pyparsing<=3.1.4  # newer version doesn't support Python 3.8 anymore
-python-anticaptcha==1.0.0
+# python-anticaptcha==1.0.0  # include PR to fix DeprecationWarning: pkg_resources is deprecated as an API.
+git+https://github.com/morpheus65535/python-anticaptcha.git
 retry==0.9.2
 six==1.17.0
 wcwidth==0.2.13
@@ -131,6 +132,7 @@ webencodings==0.5.1
 
 # Required-by: subzero
 backports.functools-lru-cache==2.0.0
+emoji==2.15.0
 fcache==0.6.0
 json_tricks==3.17.3
 tld==0.13

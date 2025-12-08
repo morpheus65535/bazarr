@@ -41,8 +41,8 @@ class SubsRoSubtitle(Subtitle):
         self.page_link = download_link
         self.imdb_id = imdb_id
         self.matches = None
-        self.is_episode = is_episode
-        self.episode_number = episode_number
+        self.asked_for_episode = is_episode
+        self.episode = episode_number
         self.year = year
         self.release_info = self.releases = release_info
         self.season = season

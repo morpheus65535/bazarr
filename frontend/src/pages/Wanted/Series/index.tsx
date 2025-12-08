@@ -10,7 +10,6 @@ import {
   useSeriesAction,
 } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
-import { task, TaskGroup } from "@/modules/task";
 import WantedView from "@/pages/views/WantedView";
 import { BuildKey } from "@/utilities";
 
@@ -65,21 +64,16 @@ const WantedSeriesView: FunctionComponent = () => {
                   leftSection={<FontAwesomeIcon icon={faSearch} />}
                   key={BuildKey(idx, item.code2)}
                   style={{ cursor: "pointer" }}
-                  onClick={() => {
-                    task.create(
-                      item.name,
-                      TaskGroup.SearchSubtitle,
-                      download.mutateAsync,
-                      {
-                        seriesId,
-                        episodeId,
-                        form: {
-                          language: item.code2,
-                          hi: item.hi,
-                          forced: item.forced,
-                        },
+                  onClick={async () => {
+                    await download.mutateAsync({
+                      seriesId,
+                      episodeId,
+                      form: {
+                        language: item.code2,
+                        hi: item.hi,
+                        forced: item.forced,
                       },
-                    );
+                    });
                   }}
                 >
                   <Language.Text value={item}></Language.Text>

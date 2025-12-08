@@ -82,6 +82,10 @@ declare namespace Settings {
     utf8_encode: boolean;
     wanted_search_frequency: number;
     wanted_search_frequency_movie: number;
+    use_external_webhook?: boolean;
+    external_webhook_url?: string;
+    external_webhook_username?: string;
+    external_webhook_password?: string;
   }
 
   interface Log {
@@ -190,10 +194,15 @@ declare namespace Settings {
     ssl?: boolean;
     set_movie_added?: boolean;
     set_episode_added?: boolean;
-    movie_library?: string;
-    series_library?: string;
+    movie_library?: string[];
+    series_library?: string[];
     update_movie_library?: boolean;
     update_series_library?: boolean;
+    use_autopulse?: boolean;
+    autopulse_host?: string;
+    autopulse_port?: number;
+    autopulse_username?: string;
+    autopulse_password?: string;
   }
 
   interface Anticaptcha {

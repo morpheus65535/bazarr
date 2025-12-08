@@ -11,6 +11,7 @@ from glob import glob
 
 from app.get_args import args
 from app.config import settings
+from app.jobs_queue import jobs_queue
 from utilities.central import restart_bazarr
 
 
@@ -45,7 +46,11 @@ def get_backup_files(fullpath=True):
         } for x in file_list]
 
 
-def backup_to_zip():
+def backup_to_zip(job_id=None):
+    if not job_id:
+        jobs_queue.add_job_from_function("Backup Database and Configuration File", is_progress=False)
+        return
+
     now = datetime.now()
     database_backup_file = None
     now_string = now.strftime("%Y.%m.%d_%H.%M.%S")

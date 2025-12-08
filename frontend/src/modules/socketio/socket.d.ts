@@ -23,7 +23,7 @@ declare namespace SocketIO {
     | "settings"
     | "languages";
 
-  type SpecialEventType = "message" | "progress";
+  type SpecialEventType = "message" | "progress" | "jobs";
 
   type ActionType = "update" | "delete";
 
@@ -55,6 +55,7 @@ declare namespace SocketIO {
   type Reducer =
     | ReducerGroup<NumEventType, number>
     | ReducerGroup<NullEventType, undefined>
+    | ReducerGroup<"jobs", CustomEvent.Jobs, string>
     | ReducerGroup<"message", string>
     | ReducerGroup<"progress", CustomEvent.Progress, string>;
 
@@ -66,5 +67,6 @@ declare namespace SocketIO {
 
   namespace CustomEvent {
     type Progress = Site.Progress;
+    type Jobs = Manager.Jobs;
   }
 }

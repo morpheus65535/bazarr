@@ -93,7 +93,9 @@ export const usePlexLogoutMutation = () => {
   return useMutation({
     mutationFn: () => api.plex.logout(),
     onSuccess: () => {
-      void queryClient.invalidateQueries({
+      // Remove all Plex queries from cache to prevent any refetch attempts after logout
+      // This is intentional - on logout we want to completely clear Plex state
+      queryClient.removeQueries({
         queryKey: [QueryKeys.Plex],
       });
 
@@ -141,6 +143,8 @@ export const usePlexLibrariesQuery = <TData = Plex.Library[]>(
     enabled,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     refetchOnWindowFocus: false, // Don't refetch on window focus
+    retry: 3, // Retry failed requests 3 times
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff: 1s, 2s, 4s, max 30s
     ...options,
   });
 };
@@ -185,5 +189,24 @@ export const usePlexWebhookDeleteMutation = () => {
         queryKey: [QueryKeys.Plex, "webhooks"],
       });
     },
+  });
+};
+
+export const usePlexAutopulseConfigQuery = <TData = Plex.AutopulseConfig>(
+  options?: Partial<
+    UseQueryOptions<Plex.AutopulseConfig, Error, TData, (string | boolean)[]>
+  > & { enabled?: boolean },
+) => {
+  const enabled = options?.enabled ?? true;
+
+  return useQuery({
+    queryKey: [QueryKeys.Plex, "autopulse", "config"],
+    queryFn: () => api.plex.getAutopulseConfig(),
+    enabled,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    refetchOnWindowFocus: false,
+    throwOnError: false,
+    retry: 1,
+    ...options,
   });
 };

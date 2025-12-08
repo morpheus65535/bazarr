@@ -15,13 +15,14 @@ from app.notifier import send_notifications
 from app.get_providers import get_providers
 from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, database, \
     update, select
-from app.event_handler import event_stream, show_progress, hide_progress
+from app.event_handler import event_stream
+from app.jobs_queue import jobs_queue
 
 from ..adaptive_searching import is_search_active, updateFailedAttempts
 from ..download import generate_subtitles
 
 
-def _wanted_episode(episode):
+def _wanted_episode(episode, job_id=None):
     audio_language_list = get_audio_profile_languages(episode.audio_language)
     if len(audio_language_list) > 0:
         audio_language = audio_language_list[0]['name']
@@ -53,7 +54,8 @@ def _wanted_episode(episode):
                                      episode.title,
                                      'series',
                                      episode.profileId,
-                                     check_if_still_required=True):
+                                     check_if_still_required=True,
+                                     job_id=job_id):
         if result:
             if isinstance(result, tuple) and len(result):
                 result = result[0]
@@ -64,7 +66,7 @@ def _wanted_episode(episode):
             send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)
 
 
-def wanted_download_subtitles(sonarr_episode_id):
+def wanted_download_subtitles(sonarr_episode_id, job_id=None):
     stmt = select(TableEpisodes.path,
                   TableEpisodes.missing_subtitles,
                   TableEpisodes.sonarrEpisodeId,
@@ -95,12 +97,16 @@ def wanted_download_subtitles(sonarr_episode_id):
     providers_list = get_providers()
 
     if providers_list:
-        _wanted_episode(episode_details)
+        _wanted_episode(episode_details, job_id=job_id)
     else:
         logging.info("BAZARR All providers are throttled")
 
 
-def wanted_search_missing_subtitles_series():
+def wanted_search_missing_subtitles_series(job_id=None):
+    if not job_id:
+        jobs_queue.add_job_from_function("Searching for missing series subtitles", is_progress=True)
+        return
+
     conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
                   (TableEpisodes.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('series')
@@ -120,24 +126,21 @@ def wanted_search_missing_subtitles_series():
         .all()
 
     count_episodes = len(episodes)
-    for i, episode in enumerate(episodes):
-        show_progress(id='wanted_episodes_progress',
-                      header='Searching subtitles...',
-                      name=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d} - {episode.episodeTitle}',
-                      value=i,
-                      count=count_episodes)
+    jobs_queue.update_job_progress(job_id=job_id, progress_max=count_episodes)
+
+    if count_episodes == 0:
+        jobs_queue.update_job_progress(job_id=job_id, progress_value='max')
+
+    for i, episode in enumerate(episodes, start=1):
+        jobs_queue.update_job_progress(job_id=job_id, progress_value=i,
+                                       progress_message=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d}'
+                                                        f' - {episode.episodeTitle}')
 
         providers = get_providers()
         if providers:
-            wanted_download_subtitles(episode.sonarrEpisodeId)
+            wanted_download_subtitles(episode.sonarrEpisodeId, job_id=job_id)
         else:
             logging.info("BAZARR All providers are throttled")
             break
-
-    show_progress(id='wanted_episodes_progress',
-                  header='Searching subtitles...',
-                  name='',
-                  value=count_episodes,
-                  count=count_episodes)
 
     logging.info('BAZARR Finished searching for missing Series Subtitles. Check History for more information.')

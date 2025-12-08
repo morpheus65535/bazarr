@@ -8,9 +8,17 @@ from .core.translator_utils import validate_translation_params, convert_language
 from .services.translator_factory import TranslatorFactory
 from languages.get_languages import alpha3_from_alpha2
 from app.config import settings
+from app.jobs_queue import jobs_queue
+
 
 def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, forced, hi,
-                             media_type, sonarr_series_id, sonarr_episode_id, radarr_id):
+                             media_type, sonarr_series_id, sonarr_episode_id, radarr_id, job_id=None):
+    if not job_id:
+        jobs_queue.add_job_from_function(f'Translating from {from_lang.upper()} to {to_lang.upper()} using '
+                                         f'{settings.translator.translator_type.replace("_", " ").title()}',
+                                         is_progress=True)
+        return
+
     try:
         logging.debug(f'Translation request: video={video_path}, source={source_srt_file}, from={from_lang}, to={to_lang}')
 
@@ -48,7 +56,7 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
         )
 
         logging.debug(f'Created translator instance: {translator.__class__.__name__}')
-        result = translator.translate()
+        result = translator.translate(job_id=job_id)
         logging.debug(f'BAZARR saved translated subtitles to {dest_srt_file}')
         return result
 

@@ -29,7 +29,7 @@ if bazarr_version != '':
 # Check for new update and install latest
 if args.no_update or not settings.general.auto_update:
     # user have explicitly requested that we do not update or is using some kind of package/docker that prevent it
-    check_releases()
+    check_releases(startup=True)
 else:
     # we want to update to the latest version before loading too much stuff. This should prevent deadlock when
     # there's missing embedded packages after a commit
@@ -56,7 +56,7 @@ else:
 
 configure_proxy_func()
 
-get_announcements_to_file()
+get_announcements_to_file(startup=True)
 
 # Reset the updated once Bazarr have been restarted after an update
 database.execute(

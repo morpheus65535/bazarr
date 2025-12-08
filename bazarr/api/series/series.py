@@ -180,7 +180,7 @@ class Series(Resource):
                 .values(profileId=profileId)
                 .where(TableShows.sonarrSeriesId == seriesId))
 
-            list_missing_subtitles(no=seriesId, send_event=False)
+            list_missing_subtitles(no=seriesId)
 
             event_stream(type='series', payload=seriesId)
 

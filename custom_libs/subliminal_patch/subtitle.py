@@ -13,9 +13,6 @@ import pysrt
 import pysubs2
 from bs4 import UnicodeDammit
 from copy import deepcopy
-from pysubs2 import SSAStyle
-from pysubs2.formats.subrip import parse_tags, MAX_REPRESENTABLE_TIME
-from pysubs2.time import ms_to_times
 from subzero.modification import SubtitleModifications
 from subzero.language import Language
 from subliminal import Subtitle as Subtitle_
@@ -154,9 +151,11 @@ class Subtitle(Subtitle_):
         self.set_encoding("utf-8")
 
         # normalize line endings
-        self.content = self.content.replace(b"\r\n", b"\n").replace(b'\r', b'\n')
+        if self.format == "srt":
+            self.content = self.content.replace(b"\r\n", b"\n").replace(b'\r', b'\n')
 
-    def _check_bom(self, data):
+    @staticmethod
+    def _check_bom(data):
         return [encoding for bom, encoding in BOMS if data.startswith(bom)]
 
     def guess_encoding(self):
@@ -328,82 +327,16 @@ class Subtitle(Subtitle_):
                                 self.plex_media_fps)
                 subs = pysubs2.SSAFile.from_string(text, fps=sub_fps)
 
-            unicontent = self.pysubs2_to_unicode(subs)
-            self.content = unicontent.encode(self.get_encoding())
+            if not self.use_original_format:
+                self.content = subs.to_string(format_="srt").encode(encoding=self.get_encoding())
+            else:
+                self.content = subs.to_string(format_=self.format)
         except:
             logger.exception("Couldn't convert subtitle %s to .srt format: %s", self, traceback.format_exc())
             return False
 
         self._is_valid = True
         return True
-
-    @classmethod
-    def pysubs2_to_unicode(cls, sub, format="srt"):
-        """
-        this is a modified version of pysubs2.SubripFormat.to_file with special handling for drawing tags in ASS
-        :param sub:
-        :param format:
-        :return:
-        """
-        def ms_to_timestamp(ms, mssep=","):
-            """Convert ms to 'HH:MM:SS,mmm'"""
-            # XXX throw on overflow/underflow?
-            if ms < 0: ms = 0
-            if ms > MAX_REPRESENTABLE_TIME: ms = MAX_REPRESENTABLE_TIME
-            h, m, s, ms = ms_to_times(ms)
-            return "%02d:%02d:%02d%s%03d" % (h, m, s, mssep, ms)
-
-        def prepare_text(text, style):
-            body = []
-            for fragment, sty in parse_tags(text, style, sub.styles):
-                fragment = fragment.replace(r"\h", u" ")
-                fragment = fragment.replace(r"\n", u"\n")
-                fragment = fragment.replace(r"\N", u"\n")
-                if sty.drawing:
-                    return None
-
-                if format == "srt":
-                    if sty.italic:
-                        fragment = u"<i>%s</i>" % fragment
-                    if sty.underline:
-                        fragment = u"<u>%s</u>" % fragment
-                    if sty.strikeout:
-                        fragment = u"<s>%s</s>" % fragment
-                elif format == "vtt":
-                    if sty.bold:
-                        fragment = u"<b>%s</b>" % fragment
-                    if sty.italic:
-                        fragment = u"<i>%s</i>" % fragment
-                    if sty.underline:
-                        fragment = u"<u>%s</u>" % fragment
-
-                body.append(fragment)
-
-            return re.sub(u"\n+", u"\n", u"".join(body).strip())
-
-        visible_lines = (line for line in sub if not line.is_comment)
-
-        out = []
-        mssep = ","
-
-        if format == "vtt":
-            out.append("WEBVTT\n\n")
-            mssep = "."
-
-        for i, line in enumerate(visible_lines, 1):
-            start = ms_to_timestamp(line.start, mssep=mssep)
-            end = ms_to_timestamp(line.end, mssep=mssep)
-
-            text = prepare_text(line.text, sub.styles.get(line.style, SSAStyle.DEFAULT_STYLE))
-
-            if text is None:
-                continue
-
-            out.append(u"%d\n" % i)
-            out.append(u"%s --> %s\n" % (start, end))
-            out.append(u"%s%s" % (text, "\n\n"))
-
-        return u"".join(out)
 
     def get_modified_content(self, format="srt", debug=False):
         """
@@ -419,8 +352,8 @@ class Subtitle(Subtitle_):
             submods.modify(*self.mods)
             self.mods = submods.mods_used
 
-            content = fix_text(self.pysubs2_to_unicode(submods.f, format=format), **ftfy_defaults)\
-                .encode(encoding=self.get_encoding())
+            content = fix_text(submods.f.to_string(format_=format),
+                               **ftfy_defaults).encode(encoding=self.get_encoding())
             submods.f = None
             del submods
             return content
@@ -441,6 +374,7 @@ MERGED_FORMATS = {
 
 MERGED_FORMATS_REV = dict((v.lower(), k.lower()) for k in MERGED_FORMATS for v in MERGED_FORMATS[k])
 
+
 def _has_match(video, guess, key) -> bool:
     value = getattr(video, key)
     guess_value = guess.get(key)
@@ -457,7 +391,6 @@ def _has_match(video, guess, key) -> bool:
     logger.debug("%s matched? %s (%s -> %s)", key, matched, value, guess_value)
 
     return matched
-
 
 
 def guess_matches(video, guess, partial=False):

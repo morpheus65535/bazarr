@@ -20,8 +20,9 @@ import logging
 
 from app.announcements import get_announcements_to_file
 from sonarr.sync.series import update_series
-from sonarr.sync.episodes import update_all_episodes
-from radarr.sync.movies import update_movies, update_all_movies
+from radarr.sync.movies import update_movies
+from subtitles.indexer.movies import movies_full_scan_subtitles
+from subtitles.indexer.series import series_full_scan_subtitles
 from subtitles.wanted import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies
 from subtitles.upgrade import upgrade_subtitles
 from utilities.cache import cache_maintenance
@@ -111,11 +112,6 @@ class Scheduler:
         self.__automatic_backup()
         if args.no_tasks:
             self.__no_task()
-
-    def add_job(self, job, name=None, max_instances=1, coalesce=True, args=None, kwargs=None):
-        self.aps_scheduler.add_job(
-            job, 'date', run_date=datetime.now(), name=name, id=name, max_instances=max_instances,
-            coalesce=coalesce, args=args, kwargs=kwargs)
 
     def execute_job_now(self, taskid):
         self.aps_scheduler.modify_job(taskid, next_run_time=datetime.now())
@@ -240,38 +236,39 @@ class Scheduler:
             full_update = settings.sonarr.full_update
             if full_update == "Daily":
                 self.aps_scheduler.add_job(
-                    update_all_episodes, 'cron', hour=settings.sonarr.full_update_hour, max_instances=1,
-                    coalesce=True, misfire_grace_time=15, id='update_all_episodes',
+                    series_full_scan_subtitles, 'cron', hour=settings.sonarr.full_update_hour, max_instances=1,
+                    coalesce=True, misfire_grace_time=15, id='series_full_scan_subtitles',
                     name='Index All Episode Subtitles from Disk', replace_existing=True)
             elif full_update == "Weekly":
                 self.aps_scheduler.add_job(
-                    update_all_episodes, 'cron', day_of_week=settings.sonarr.full_update_day,
+                    series_full_scan_subtitles, 'cron', day_of_week=settings.sonarr.full_update_day,
                     hour=settings.sonarr.full_update_hour, max_instances=1, coalesce=True, misfire_grace_time=15,
-                    id='update_all_episodes', name='Index All Episode Subtitles from Disk', replace_existing=True)
+                    id='series_full_scan_subtitles', name='Index All Episode Subtitles from Disk',
+                    replace_existing=True)
             elif full_update == "Manually":
                 self.aps_scheduler.add_job(
-                    update_all_episodes, 'cron', year=in_a_century(), max_instances=1, coalesce=True,
-                    misfire_grace_time=15, id='update_all_episodes', name='Index All Episode Subtitles from Disk',
-                    replace_existing=True)
+                    series_full_scan_subtitles, 'cron', year=in_a_century(), max_instances=1, coalesce=True,
+                    misfire_grace_time=15, id='series_full_scan_subtitles',
+                    name='Index All Episode Subtitles from Disk', replace_existing=True)
 
     def __radarr_full_update_task(self):
         if settings.general.use_radarr:
             full_update = settings.radarr.full_update
             if full_update == "Daily":
                 self.aps_scheduler.add_job(
-                    update_all_movies, 'cron', hour=settings.radarr.full_update_hour, max_instances=1,
+                    movies_full_scan_subtitles, 'cron', hour=settings.radarr.full_update_hour, max_instances=1,
                     coalesce=True, misfire_grace_time=15,
-                    id='update_all_movies', name='Index All Movie Subtitles from Disk', replace_existing=True)
+                    id='movies_full_scan_subtitles', name='Index All Movie Subtitles from Disk', replace_existing=True)
             elif full_update == "Weekly":
                 self.aps_scheduler.add_job(
-                    update_all_movies,
+                    movies_full_scan_subtitles,
                     'cron', day_of_week=settings.radarr.full_update_day, hour=settings.radarr.full_update_hour,
-                    max_instances=1, coalesce=True, misfire_grace_time=15, id='update_all_movies',
+                    max_instances=1, coalesce=True, misfire_grace_time=15, id='movies_full_scan_subtitles',
                     name='Index All Movie Subtitles from Disk', replace_existing=True)
             elif full_update == "Manually":
                 self.aps_scheduler.add_job(
-                    update_all_movies, 'cron', year=in_a_century(), max_instances=1, coalesce=True,
-                    misfire_grace_time=15, id='update_all_movies', name='Index All Movie Subtitles from Disk',
+                    movies_full_scan_subtitles, 'cron', year=in_a_century(), max_instances=1, coalesce=True,
+                    misfire_grace_time=15, id='movies_full_scan_subtitles', name='Index All Movie Subtitles from Disk',
                     replace_existing=True)
 
     def __update_bazarr_task(self):
@@ -337,12 +334,3 @@ class Scheduler:
 
 
 scheduler = Scheduler()
-
-# Force the execution of the sync process with Sonarr and Radarr after migration to v0.9.1
-if 'BAZARR_AUDIO_PROFILES_MIGRATION' in os.environ:
-    if settings.general.use_sonarr:
-        scheduler.aps_scheduler.modify_job('update_series', next_run_time=datetime.now())
-        scheduler.aps_scheduler.modify_job('sync_episodes', next_run_time=datetime.now())
-    if settings.general.use_radarr:
-        scheduler.aps_scheduler.modify_job('update_movies', next_run_time=datetime.now())
-    del os.environ['BAZARR_AUDIO_PROFILES_MIGRATION']

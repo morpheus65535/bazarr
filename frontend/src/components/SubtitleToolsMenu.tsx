@@ -5,6 +5,7 @@ import {
   faCode,
   faDeaf,
   faExchangeAlt,
+  faFaceGrinStars,
   faFilm,
   faImage,
   faLanguage,
@@ -54,6 +55,11 @@ export function useTools() {
         key: "remove_tags",
         icon: faCode,
         name: "Remove Style Tags",
+      },
+      {
+        key: "emoji",
+        icon: faFaceGrinStars,
+        name: "Remove Emoji",
       },
       {
         key: "OCR_fixes",

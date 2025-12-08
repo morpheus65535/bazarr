@@ -24,7 +24,6 @@ import { Action, Selector } from "@/components/inputs";
 import SimpleTable from "@/components/tables/SimpleTable";
 import TextPopover from "@/components/TextPopover";
 import { useModals, withModal } from "@/modules/modals";
-import { task, TaskGroup } from "@/modules/task";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import FormUtils from "@/utilities/form";
 import {
@@ -303,12 +302,12 @@ const MovieUploadForm: FunctionComponent<Props> = ({
       onSubmit={form.onSubmit(({ files }) => {
         const { radarrId } = movie;
 
-        files.forEach(({ file, language, hi, forced }) => {
+        files.forEach(async ({ file, language, hi, forced }) => {
           if (language === null) {
             throw new Error("Language is not selected");
           }
 
-          task.create(file.name, TaskGroup.UploadSubtitle, upload.mutateAsync, {
+          await upload.mutateAsync({
             radarrId,
             form: { file, language: language.code2, hi, forced },
           });

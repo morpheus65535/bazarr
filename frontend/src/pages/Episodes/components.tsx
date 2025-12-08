@@ -3,7 +3,6 @@ import { Badge, MantineColor, Tooltip } from "@mantine/core";
 import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
-import { task, TaskGroup } from "@/modules/task";
 import { toPython } from "@/utilities";
 
 interface Props {
@@ -70,38 +69,28 @@ export const Subtitle: FunctionComponent<Props> = ({
         onClose: () => setOpen(false),
       }}
       selections={selections}
-      onAction={(action) => {
+      onAction={async (action) => {
         if (action === "search") {
-          task.create(
-            subtitle.name,
-            TaskGroup.SearchSubtitle,
-            download.mutateAsync,
-            {
-              seriesId,
-              episodeId,
-              form: {
-                language: subtitle.code2,
-                hi: subtitle.hi,
-                forced: subtitle.forced,
-              },
+          await download.mutateAsync({
+            seriesId,
+            episodeId,
+            form: {
+              language: subtitle.code2,
+              hi: subtitle.hi,
+              forced: subtitle.forced,
             },
-          );
+          });
         } else if (action === "delete" && subtitle.path) {
-          task.create(
-            subtitle.name,
-            TaskGroup.DeleteSubtitle,
-            remove.mutateAsync,
-            {
-              seriesId,
-              episodeId,
-              form: {
-                language: subtitle.code2,
-                hi: subtitle.hi,
-                forced: subtitle.forced,
-                path: subtitle.path,
-              },
+          await remove.mutateAsync({
+            seriesId,
+            episodeId,
+            form: {
+              language: subtitle.code2,
+              hi: subtitle.hi,
+              forced: subtitle.forced,
+              path: subtitle.path,
             },
-          );
+          });
         }
       }}
     >

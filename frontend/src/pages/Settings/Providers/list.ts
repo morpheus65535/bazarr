@@ -89,6 +89,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     message: "Requires AniDB Integration.",
   },
   {
+    key: "animesubinfo",
+    name: "AnimeSub.info",
+    description: "Polish Anime Subtitles Provider",
+  },
+  {
     key: "avistaz",
     name: "AvistaZ",
     description:
@@ -467,6 +472,19 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
     message: "Make sure to use a unique and credible user agent.",
+  },
+  {
+    key: "subsource",
+    name: "subsource.net",
+    message:
+      "API key is  required. You can create your own API key on your Subsource profile page.",
+    inputs: [
+      {
+        type: "password",
+        key: "apikey",
+        name: "API key",
+      },
+    ],
   },
   {
     key: "subssabbz",

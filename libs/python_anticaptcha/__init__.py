@@ -1,5 +1,9 @@
 from .base import AnticaptchaClient
-from pkg_resources import get_distribution, DistributionNotFound
+try:
+    from importlib.metadata import version, PackageNotFoundError
+except ImportError:
+    # Python < 3.8 fallback
+    from importlib_metadata import version, PackageNotFoundError
 from .tasks import (
     NoCaptchaTaskProxylessTask,
     RecaptchaV2TaskProxyless,
@@ -23,7 +27,7 @@ from .exceptions import AnticaptchaException
 AnticatpchaException = AnticaptchaException
 
 try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
+    __version__ = version(__name__)
+except PackageNotFoundError:
     # package is not installed
     pass

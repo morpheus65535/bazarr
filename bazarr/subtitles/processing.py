@@ -6,6 +6,7 @@ import logging
 from app.config import settings, sync_checker as _defaul_sync_checker
 from utilities.path_mappings import path_mappings
 from utilities.post_processing import pp_replace, set_chmod
+from utilities.autopulse_webhook import call_external_webhook
 from languages.get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
 from app.database import TableShows, TableEpisodes, TableMovies, database, select
 from utilities.analytics import event_tracker
@@ -39,7 +40,8 @@ class ProcessSubtitlesResult:
             self.language_code = downloaded_language_code2
 
 
-def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_upgrade=False, is_manual=False):
+def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_upgrade=False, is_manual=False,
+                     job_id=None):
     use_postprocessing = settings.general.use_postprocessing
     postprocessing_cmd = settings.general.postprocessing_cmd
 
@@ -95,7 +97,9 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                            srt_lang=downloaded_language_code2,
                            percent_score=percent_score,
                            sonarr_series_id=episode_metadata.sonarrSeriesId,
-                           sonarr_episode_id=episode_metadata.sonarrEpisodeId)
+                           sonarr_episode_id=episode_metadata.sonarrEpisodeId,
+                           job_id=job_id,
+                           job_sub_function=True)
     else:
         movie_metadata = database.execute(
             select(TableMovies.radarrId, TableMovies.imdbId)
@@ -113,7 +117,9 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                            hi=subtitle.language.hi,
                            srt_lang=downloaded_language_code2,
                            percent_score=percent_score,
-                           radarr_id=movie_metadata.radarrId)
+                           radarr_id=movie_metadata.radarrId,
+                           job_id=job_id,
+                           job_sub_function=True)
 
     if use_postprocessing is True:
         command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
@@ -162,6 +168,14 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             if settings.plex.update_movie_library is True:
                 # Use specific item refresh instead of full library scan
                 plex_refresh_item(movie_metadata.imdbId, is_movie=True)
+
+    # Call external webhook after all processing is complete if enabled
+    call_external_webhook(
+        subtitle_path=downloaded_path,
+        media_path=path,
+        language=downloaded_language,
+        media_type=media_type
+    )
 
     event_tracker.track_subtitles(provider=downloaded_provider, action=action, language=downloaded_language)
 

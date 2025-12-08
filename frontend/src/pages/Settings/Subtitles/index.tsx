@@ -325,6 +325,12 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           color etc.
         </Message>
         <Check
+          label="Remove Emoji"
+          settingOptions={{ onLoaded: SubzeroModification("emoji") }}
+          settingKey="subzero-emoji"
+        ></Check>
+        <Message>Removes emoji characters from subtitles.</Message>
+        <Check
           label="OCR Fixes"
           settingOptions={{ onLoaded: SubzeroModification("OCR_fixes") }}
           settingKey="subzero-OCR_fixes"

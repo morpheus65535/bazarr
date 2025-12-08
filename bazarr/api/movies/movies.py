@@ -148,7 +148,7 @@ class Movies(Resource):
                 .values(profileId=profileId)
                 .where(TableMovies.radarrId == radarrId))
 
-            list_missing_subtitles_movies(no=radarrId, send_event=False)
+            list_missing_subtitles_movies(no=radarrId)
 
             event_stream(type='movie', payload=radarrId)
             event_stream(type='movie-wanted', payload=radarrId)

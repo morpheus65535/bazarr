@@ -9,7 +9,6 @@ import { Action } from "@/components";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import SimpleTable from "@/components/tables/SimpleTable";
-import { task, TaskGroup } from "@/modules/task";
 import { filterSubtitleBy, toPython } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 
@@ -68,20 +67,16 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           label="Search Subtitle"
           icon={faSearch}
           disabled={disabled}
-          onClick={() => {
-            task.create(
-              movie.title,
-              TaskGroup.SearchSubtitle,
-              download.mutateAsync,
-              {
-                radarrId,
-                form: {
-                  language: code2,
-                  forced,
-                  hi,
-                },
+          loading={download.isPending}
+          onClick={async () => {
+            await download.mutateAsync({
+              radarrId,
+              form: {
+                language: code2,
+                forced,
+                hi,
               },
-            );
+            });
           }}
         ></Action>
       );
@@ -90,22 +85,17 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
     return (
       <SubtitleToolsMenu
         selections={selections}
-        onAction={(action) => {
+        onAction={async (action) => {
           if (action === "delete" && path) {
-            task.create(
-              movie.title,
-              TaskGroup.DeleteSubtitle,
-              remove.mutateAsync,
-              {
-                radarrId,
-                form: {
-                  language: code2,
-                  forced,
-                  hi,
-                  path,
-                },
+            await remove.mutateAsync({
+              radarrId,
+              form: {
+                language: code2,
+                forced,
+                hi,
+                path,
               },
-            );
+            });
           } else if (action === "search") {
             throw new Error("This shouldn't happen, please report the bug");
           }

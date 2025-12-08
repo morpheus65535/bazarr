@@ -157,10 +157,10 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
               loading={createMutation.isPending}
               size="sm"
             >
-              ADD
+              Add
             </Button>
           </Group>
-          <Alert color="gray" variant="light" className={styles.alertMessage}>
+          <Alert color="brand" variant="light" className={styles.alertMessage}>
             No webhooks found on your Plex server.
           </Alert>
         </Stack>
@@ -192,7 +192,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
               loading={createMutation.isPending}
               size="sm"
             >
-              ADD
+              Add
             </Button>
           )}
 
@@ -204,7 +204,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
               variant="light"
               color="brand"
             >
-              REMOVE
+              Remove
             </Button>
           )}
         </Group>

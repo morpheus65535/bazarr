@@ -2,30 +2,27 @@
 
 import logging
 import pysubs2
-import srt
 import requests
 
 from retry.api import retry
-from subliminal_patch.core import get_subtitle_path
-from subzero.language import Language
-from deep_translator.exceptions import TooManyRequests, RequestError, TranslationNotFound
+from deep_translator.exceptions import TooManyRequests, RequestError
 
 from app.config import settings
 from app.database import TableShows, TableEpisodes, TableMovies, database, select
+from app.jobs_queue import jobs_queue
 from languages.custom_lang import CustomLanguage
 from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
 from radarr.history import history_log_movie
 from sonarr.history import history_log
 from subtitles.processing import ProcessSubtitlesResult
-from app.event_handler import show_progress, hide_progress, show_message
 from utilities.path_mappings import path_mappings
 
 from ..core.translator_utils import add_translator_info, create_process_result, get_title
 
 logger = logging.getLogger(__name__)
 
-class LingarrTranslatorService:
 
+class LingarrTranslatorService:
     def __init__(self, source_srt_file, dest_srt_file, lang_obj, to_lang, from_lang, media_type,
                  video_path, orig_to_lang, forced, hi, sonarr_series_id, sonarr_episode_id,
                  radarr_id):
@@ -43,13 +40,14 @@ class LingarrTranslatorService:
         self.sonarr_episode_id = sonarr_episode_id
         self.radarr_id = radarr_id
         self.language_code_convert_dict = {
-            'he': 'iw',
             'zh': 'zh-CN',
             'zt': 'zh-TW',
         }
 
-    def translate(self):
+    def translate(self, job_id=None):
         try:
+            jobs_queue.update_job_progress(job_id=job_id, progress_max=1, progress_message=self.source_srt_file)
+
             subs = pysubs2.load(self.source_srt_file, encoding='utf-8')
             lines_list = [x.plaintext for x in subs]
             lines_list_len = len(lines_list)
@@ -59,11 +57,12 @@ class LingarrTranslatorService:
                 return self.dest_srt_file
 
             logger.debug(f'Starting translation for {self.source_srt_file}')
-            translated_lines = self._translate_content(lines_list)
+            translated_lines = self._translate_content(lines_list, job_id=job_id)
 
             if translated_lines is None:
                 logger.error(f'Translation failed for {self.source_srt_file}')
-                show_message(f'Translation failed for {self.source_srt_file}')
+                jobs_queue.update_job_progress(job_id=job_id,
+                                               progress_message=f'Translation failed for {self.source_srt_file}')
                 return False
 
             logger.debug(f'BAZARR saving Lingarr translated subtitles to {self.dest_srt_file}')
@@ -81,11 +80,15 @@ class LingarrTranslatorService:
                 add_translator_info(self.dest_srt_file, f"# Subtitles translated with Lingarr # ")
             except OSError:
                 logger.error(f'BAZARR is unable to save translated subtitles to {self.dest_srt_file}')
-                show_message(f'Translation failed: Unable to save translated subtitles to {self.dest_srt_file}')
+                jobs_queue.update_job_progress(job_id=job_id,
+                                               progress_message=f'Translation failed: Unable to save translated '
+                                                                f'subtitles to {self.dest_srt_file}')
                 raise OSError
 
-            message = f"{language_from_alpha2(self.from_lang)} subtitles translated to {language_from_alpha3(self.to_lang)} using Lingarr."
-            result = create_process_result(message, self.video_path, self.orig_to_lang, self.forced, self.hi, self.dest_srt_file, self.media_type)
+            message = (f"{language_from_alpha2(self.from_lang)} subtitles translated to "
+                       f"{language_from_alpha3(self.to_lang)} using Lingarr.")
+            result = create_process_result(message, self.video_path, self.orig_to_lang, self.forced, self.hi,
+                                           self.dest_srt_file, self.media_type)
 
             if self.media_type == 'series':
                 history_log(action=6,
@@ -97,16 +100,18 @@ class LingarrTranslatorService:
                                   radarr_id=self.radarr_id,
                                   result=result)
 
+            jobs_queue.update_job_progress(job_id=job_id, progress_value='max')
+
             return self.dest_srt_file
 
         except Exception as e:
             logger.error(f'BAZARR encountered an error during Lingarr translation: {str(e)}')
-            show_message(f'Lingarr translation failed: {str(e)}')
-            hide_progress(id=f'translate_progress_{self.dest_srt_file}')
+            jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Lingarr translation failed: {str(e)}')
             return False
 
-    @retry(exceptions=(TooManyRequests, RequestError, requests.exceptions.RequestException), tries=3, delay=1, backoff=2, jitter=(0, 1))
-    def _translate_content(self, lines_list):
+    @retry(exceptions=(TooManyRequests, RequestError, requests.exceptions.RequestException), tries=3, delay=1,
+           backoff=2, jitter=(0, 1))
+    def _translate_content(self, lines_list, job_id):
         try:
             source_lang = self.language_code_convert_dict.get(self.from_lang, self.from_lang)
             target_lang = self.language_code_convert_dict.get(self.orig_to_lang, self.orig_to_lang)
@@ -181,9 +186,9 @@ class LingarrTranslatorService:
             raise
         except (TooManyRequests, RequestError) as e:
             logger.error(f'Lingarr API error after retries: {str(e)}')
-            show_message(f'Lingarr API error: {str(e)}')
+            jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Lingarr API error: {str(e)}')
             raise
         except Exception as e:
             logger.error(f'Unexpected error in Lingarr translation: {str(e)}')
-            show_message(f'Translation error: {str(e)}')
+            jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Translation error: {str(e)}')
             raise

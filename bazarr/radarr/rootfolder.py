@@ -78,13 +78,20 @@ def check_radarr_rootfolder():
                 .values(accessible=0, error='This Radarr root directory does not seem to be accessible by Bazarr. '
                                             'Please check path mapping or if directory/drive is online.')
                 .where(TableMoviesRootfolder.id == item.id))
-        elif not os.access(path_mappings.path_replace_movie(root_path), os.W_OK):
-            database.execute(
-                update(TableMoviesRootfolder)
-                .values(accessible=0, error='Bazarr cannot write to this directory')
-                .where(TableMoviesRootfolder.id == item.id))
         else:
-            database.execute(
-                update(TableMoviesRootfolder)
-                .values(accessible=1, error='')
-                .where(TableMoviesRootfolder.id == item.id))
+            # Test actual write instead of os.access (which fails on NFS)
+            try:
+                test_file = os.path.join(path_mappings.path_replace_movie(root_path), '.bazarr_write_test')
+                with open(test_file, 'w') as f:
+                    f.write('test')
+                os.remove(test_file)
+            except Exception as e:
+                database.execute(
+                    update(TableMoviesRootfolder)
+                    .values(accessible=0, error=f"There's an issue with this Radarr root directory: {repr(e)}")
+                    .where(TableMoviesRootfolder.id == item.id))
+            else:
+                database.execute(
+                    update(TableMoviesRootfolder)
+                    .values(accessible=1, error='')
+                    .where(TableMoviesRootfolder.id == item.id))

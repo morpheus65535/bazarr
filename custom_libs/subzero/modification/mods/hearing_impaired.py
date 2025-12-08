@@ -3,10 +3,14 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 import re
 
+from subzero.language import Language
 from subzero.modification.mods import SubtitleTextModification, empty_line_post_processors, TAG
 from subzero.modification.exc import EmptyEntryError
 from subzero.modification.processors.re_processor import NReProcessor
 from subzero.modification import registry
+
+
+JAPANESE = Language("jpn")
 
 
 class FullBracketEntryProcessor(NReProcessor):
@@ -94,6 +98,12 @@ class HearingImpaired(SubtitleTextModification):
         # all caps at start before new sentence
         NReProcessor(re.compile(r'(?u)^(?=[A-ZÀ-Ž]{4,})[A-ZÀ-Ž-_\s]+\s([A-ZÀ-Ž][a-zà-ž].+)'), r"\1",
                      name="HI_starting_upper_then_sentence", supported=lambda p: not p.mostly_uppercase),
+
+        # remove japanese parentheses
+        NReProcessor(re.compile(r'(?u)（.+）'), "",
+                     name="JP_parentheses",
+                     # https://en.wikipedia.org/wiki/Japanese_punctuation#Parentheses
+                     supported=lambda p: p.language == JAPANESE),
     ]
 
     post_processors = empty_line_post_processors

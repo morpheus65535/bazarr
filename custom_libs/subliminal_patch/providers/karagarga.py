@@ -104,8 +104,8 @@ class KaragargaProvider(Provider):
             "auth_key": "880ea6a14ea49e853634fbdc5015a024",
             #
             "referer": "https://forum.karagarga.in/",
-            "ips_username": self._username,
-            "ips_password": self._password,
+            "ips_username": self._f_username,
+            "ips_password": self._f_password,
             "rememberMe": "1",
             "anonymous": "1",
         }

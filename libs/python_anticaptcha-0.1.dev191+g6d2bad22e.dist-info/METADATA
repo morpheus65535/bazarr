@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: python-anticaptcha
-Version: 1.0.0
+Version: 0.1.dev191+g6d2bad22e
 Summary: Client library for solve captchas with Anticaptcha.com support.
 Home-page: https://github.com/ad-m/python-anticaptcha
 Author: Adam Dobrawy

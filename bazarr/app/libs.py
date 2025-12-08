@@ -20,6 +20,8 @@ def clean_libs():
 def set_libs():
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), '../custom_libs/'))
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), '../libs/'))
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), '../'))
+    # added this last one so Bazarr's modules can be imported by jobs in jobs_queue
 
 
 clean_libs()

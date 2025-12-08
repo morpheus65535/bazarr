@@ -32,7 +32,8 @@ def refine_from_db(path, video):
                    TableEpisodes.path,
                    TableShows.imdbId,
                    TableEpisodes.sonarrSeriesId,
-                   TableEpisodes.sonarrEpisodeId)
+                   TableEpisodes.sonarrEpisodeId,
+                   TableEpisodes.absoluteEpisode)
             .select_from(TableEpisodes)
             .join(TableShows)
             .where((TableEpisodes.path == path_mappings.path_replace_reverse(path)))) \
@@ -42,6 +43,7 @@ def refine_from_db(path, video):
             video.series = _TITLE_RE.sub('', data.seriesTitle)
             video.season = int(data.season)
             video.episode = int(data.episode)
+            video.absolute_episode = int(data.absoluteEpisode) if data.absoluteEpisode else None
             video.title = data.episodeTitle
 
             # Only refine year as a fallback

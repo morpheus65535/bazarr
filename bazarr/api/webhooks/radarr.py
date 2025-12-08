@@ -86,19 +86,17 @@ class WebHooksRadarr(Resource):
         # so we update the movie first if we can.
         radarr_id = args.get("movie", {}).get("id")
 
-        q = (
-            select(TableMovies.radarrId, TableMovies.path)
-            .where(TableMovies.movie_file_id == movie_file_id)
-            .first()
+        q = select(TableMovies.radarrId, TableMovies.path).where(
+            TableMovies.movie_file_id == movie_file_id
         )
 
-        movie = database.execute(q)
+        movie = database.execute(q).first()
         if not movie and radarr_id:
             logging.debug(
                 f"No movie matching file ID {movie_file_id} found in the database. Attempting to sync from Radarr."
             )
             update_one_movie(radarr_id, "updated")
-            movie = database.execute(q)
+            movie = database.execute(q).first()
         if not movie:
             message = f"No movie matching file ID {movie_file_id} found in the database. Nothing to do."
             logging.debug(message)
