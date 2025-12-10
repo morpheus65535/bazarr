@@ -9,6 +9,7 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import request
 from flask_restx import Resource, reqparse, abort
+from plexapi.exceptions import BadRequest
 
 from . import api_ns_plex
 from .exceptions import *
@@ -903,6 +904,23 @@ class PlexWebhookCreate(Resource):
                     'total_webhooks': len(updated_webhooks)
                 }
             }
+
+        except BadRequest as e:
+            error_msg = str(e)
+            logger.error(f"Plex API rejected webhook creation: {error_msg}")
+            
+            # Parse common Plex error scenarios
+            if '422' in error_msg:
+                if '1998' in error_msg or 'validation' in error_msg.lower():
+                    return {
+                        'error': 'Plex rejected the webhook. This usually means:\n'
+                                 '1. Plex Pass subscription is required but not active\n'
+                                 '2. The webhook URL is not publicly accessible\n'
+                                 '3. Maximum webhook limit reached (check plex.tv/webhooks)\n'
+                                 f'Technical details: {error_msg}'
+                    }, 422
+            
+            return {'error': f'Plex API error: {error_msg}'}, 502
 
         except Exception as e:
             logger.error(f"Failed to create Plex webhook: {e}")
