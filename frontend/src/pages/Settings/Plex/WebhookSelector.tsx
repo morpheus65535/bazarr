@@ -42,6 +42,10 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
     w.url.includes("/api/webhooks/plex"),
   );
 
+  // Check subscription status for webhooks feature
+  const subscription = webhooks?.subscription;
+  const hasWebhooksFeature = subscription?.has_webhooks_feature ?? true;
+
   // Create select data with Bazarr webhook first if it exists
   const selectData =
     webhooks?.webhooks
@@ -141,6 +145,22 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
     return (
       <div className={styles.webhookSelector}>
         <Stack gap="xs">
+          {!hasWebhooksFeature && (
+            <Alert
+              color="yellow"
+              variant="light"
+              className={styles.alertMessage}
+            >
+              Webhooks require a Plex Pass subscription.{" "}
+              <a
+                href="https://www.plex.tv/plans/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Learn more
+              </a>
+            </Alert>
+          )}
           <Group justify="space-between" align="flex-end">
             <div>
               <Text fw={500} className={styles.labelText}>
@@ -156,6 +176,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
               onClick={handleCreateWebhook}
               loading={createMutation.isPending}
               size="sm"
+              disabled={!hasWebhooksFeature}
             >
               Add
             </Button>
@@ -171,6 +192,18 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
   return (
     <div className={styles.webhookSelector}>
       <Stack gap="xs">
+        {!hasWebhooksFeature && (
+          <Alert color="yellow" variant="light" className={styles.alertMessage}>
+            Webhooks require a Plex Pass subscription.{" "}
+            <a
+              href="https://www.plex.tv/plans/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Learn more
+            </a>
+          </Alert>
+        )}
         <Select
           label={label}
           placeholder="Select webhook..."
@@ -191,6 +224,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
               onClick={handleCreateWebhook}
               loading={createMutation.isPending}
               size="sm"
+              disabled={!hasWebhooksFeature}
             >
               Add
             </Button>

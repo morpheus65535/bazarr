@@ -7,7 +7,6 @@ import xml.etree.ElementTree as ET
 import logging
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from urllib.parse import urlparse
 from flask import request
 from flask_restx import Resource, reqparse, abort
 from plexapi.exceptions import BadRequest
@@ -78,11 +77,11 @@ def check_plex_pass_feature(account, feature_name):
     Check if a Plex account has access to a specific Plex Pass feature.
     
     This helper function can be reused across the codebase to check for
-    any Plex Pass feature (webhooks, sync, companions_sonos, etc.)
+    any Plex Pass feature (webhooks, sync, hardware_transcoding, etc.)
     
     Args:
         account: MyPlexAccount instance
-        feature_name: The feature to check (e.g., 'webhooks', 'companions_sonos', 'sync')
+        feature_name: The feature to check (e.g., 'webhooks', 'sync')
     
     Returns:
         tuple: (has_feature: bool, error_message: str or None)
@@ -93,7 +92,7 @@ def check_plex_pass_feature(account, feature_name):
     if not account.subscriptionActive:
         return False, (
             f'Plex Pass subscription required. The "{feature_name}" feature requires Plex Pass. '
-            'Please subscribe at https://plex.tv/plex-pass'
+            'Please subscribe at https://www.plex.tv/plans/'
         )
     
     # Check if specific feature is in the subscription features list
@@ -104,29 +103,6 @@ def check_plex_pass_feature(account, feature_name):
         )
     
     return True, None
-
-
-def validate_webhook_url(url):
-    """
-    Validate webhook URL and return warnings if any issues detected.
-    
-    This function checks for common issues that may prevent Plex from
-    successfully delivering webhooks to the specified URL.
-    
-    Args:
-        url: The webhook URL to validate
-    
-    Returns:
-        list: List of warning messages (empty if no issues detected)
-    """
-    warnings = []
-    parsed = urlparse(url)
-    
-    # Check for HTTPS
-    if parsed.scheme != 'https':
-        warnings.append("Webhook URL is not using HTTPS. Plex may require secure connections.")
-    
-    return warnings
 
 
 def validate_plex_token(token):
@@ -889,12 +865,6 @@ class PlexWebhookCreate(Resource):
                 webhook_url = f"{scheme}://{host}/api/webhooks/plex?apikey={apikey}"
                 logger.info(f"Using request host for webhook (no base URL configured): {scheme}://{host}/api/webhooks/plex")
                 logger.info("Note: If Bazarr is behind a reverse proxy, configure Base URL in General Settings for better reliability")
-            
-            # Validate webhook URL and log warnings for potential issues
-            url_warnings = validate_webhook_url(webhook_url)
-            if url_warnings:
-                for warning in url_warnings:
-                    logger.warning(f"Webhook URL warning: {warning}")
             
             # Get existing webhooks
             existing_webhooks = account.webhooks()
