@@ -992,7 +992,12 @@ class PlexWebhookList(Resource):
             return {
                 'data': {
                     'webhooks': webhook_list,
-                    'count': len(webhook_list)
+                    'count': len(webhook_list),
+                    'subscription': {
+                        'active': account.subscriptionActive,
+                        'has_webhooks_feature': 'webhooks' in account.subscriptionFeatures,
+                        'plan': getattr(account, 'subscriptionPlan', None)
+                    }
                 }
             }
 
