@@ -71,6 +71,39 @@ def get_decrypted_token():
         return decrypt_token(apikey)
 
 
+def check_plex_pass_feature(account, feature_name):
+    """
+    Check if a Plex account has access to a specific Plex Pass feature.
+    
+    This helper function can be reused across the codebase to check for
+    any Plex Pass feature (webhooks, sync, companions_sonos, etc.)
+    
+    Args:
+        account: MyPlexAccount instance
+        feature_name: The feature to check (e.g., 'webhooks', 'companions_sonos', 'sync')
+    
+    Returns:
+        tuple: (has_feature: bool, error_message: str or None)
+               - (True, None) if feature is available
+               - (False, error_message) if feature is not available
+    """
+    # Check if subscription is active first
+    if not account.subscriptionActive:
+        return False, (
+            f'Plex Pass subscription required. The "{feature_name}" feature requires Plex Pass. '
+            'Please subscribe at https://plex.tv/plex-pass'
+        )
+    
+    # Check if specific feature is in the subscription features list
+    if feature_name not in account.subscriptionFeatures:
+        return False, (
+            f'The "{feature_name}" feature is not available for your Plex account. '
+            'This may require a different Plex Pass tier or the feature may be disabled.'
+        )
+    
+    return True, None
+
+
 def validate_plex_token(token):
     if not token:
         raise InvalidTokenError("No authentication token provided. Please authenticate with Plex first.")
@@ -804,6 +837,12 @@ class PlexWebhookCreate(Resource):
             
             # Create account instance with OAuth token
             account = MyPlexAccount(token=decrypted_token)
+            
+            # Check if user has Plex Pass with webhooks feature
+            has_webhooks, error_msg = check_plex_pass_feature(account, 'webhooks')
+            if not has_webhooks:
+                logger.warning(f"Plex Pass check failed for webhooks: {error_msg}")
+                return {'error': error_msg}, 403
             
             # Build webhook URL for this Bazarr instance
             # Try to get base URL from settings first, then fall back to request host
