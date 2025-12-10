@@ -341,7 +341,7 @@ declare namespace Plex {
   interface WebhookList {
     webhooks: WebhookInfo[];
     count: number;
-    subscription?: PlexPassSubscription;
+    plexPassSubscription?: PlexPassSubscription;
   }
 
   interface AutopulseResult {

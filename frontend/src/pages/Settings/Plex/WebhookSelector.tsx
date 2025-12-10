@@ -42,9 +42,9 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
     w.url.includes("/api/webhooks/plex"),
   );
 
-  // Check subscription status for webhooks feature
-  const subscription = webhooks?.subscription;
-  const hasWebhooksFeature = subscription?.has_webhooks_feature ?? true;
+  // Check Plex Pass subscription status for webhooks feature
+  const plexPassSubscription = webhooks?.plexPassSubscription;
+  const hasWebhooksFeature = plexPassSubscription?.has_webhooks_feature ?? true;
 
   // Create select data with Bazarr webhook first if it exists
   const selectData =
