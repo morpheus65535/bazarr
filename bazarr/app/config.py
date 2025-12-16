@@ -197,6 +197,7 @@ validators = [
     Validator('translator.translator_info', must_exist=True, default=True, is_type_of=bool),
     Validator('translator.translator_type', must_exist=True, default='google_translate', is_type_of=str, cast=str),
     Validator('translator.lingarr_url', must_exist=True, default='http://lingarr:9876', is_type_of=str),
+    Validator('translator.lingarr_token', must_exist=True, default='', is_type_of=str, cast=str),
 
     # sonarr section
     Validator('sonarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),

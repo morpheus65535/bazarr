@@ -565,6 +565,14 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             settingKey="settings-translator-lingarr_url"
           />
           <Message>Base URL of Lingarr (e.g., http://localhost:9876)</Message>
+          <Text
+            label="Lingarr API Key (optional)"
+            settingKey="settings-translator-lingarr_token"
+          />
+          <Message>
+            Optional API key for authentication. Leave empty if your Lingarr
+            instance doesn't require authentication.
+          </Message>
         </CollapseBox>
         <Check
           label="Add translation info at the beginning"

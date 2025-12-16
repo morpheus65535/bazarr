@@ -148,10 +148,14 @@ class LingarrTranslatorService:
 
             logger.debug(f'BAZARR is sending {len(lines_payload)} lines to Lingarr with full media context')
 
+            headers = {"Content-Type": "application/json"}
+            if settings.translator.lingarr_token:
+                headers["X-Api-Key"] = settings.translator.lingarr_token
+
             response = requests.post(
                 f"{settings.translator.lingarr_url}/api/translate/content",
                 json=payload,
-                headers={"Content-Type": "application/json"},
+                headers=headers,
                 timeout=1800
             )
 
@@ -167,6 +171,8 @@ class LingarrTranslatorService:
                 else:
                     logger.error(f'Unexpected response format from Lingarr API: {translated_batch}')
                     return None
+            elif response.status_code == 401:
+                raise RequestError("Authentication failed: Invalid or missing API key")
             elif response.status_code == 429:
                 raise TooManyRequests("Rate limit exceeded")
             elif response.status_code >= 500:

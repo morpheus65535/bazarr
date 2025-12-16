@@ -184,6 +184,7 @@ declare namespace Settings {
     gemini_key: string;
     gemini_model: string;
     lingarr_url: string;
+    lingarr_token: string;
     translator_info: boolean;
     translator_type: string;
   }
