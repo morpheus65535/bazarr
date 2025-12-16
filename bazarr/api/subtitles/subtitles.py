@@ -171,7 +171,8 @@ class Subtitles(Resource):
                     if len(subtitle_entry) >= 2 and subtitle_entry[1] is not None:
                         db_subtitle_filename = os.path.basename(subtitle_entry[1])
                         if db_subtitle_filename == subtitles_filename:
-                            from_language = subtitle_entry[0]
+                            # Remove any suffix (e.g., :hi, :forced) from language code
+                            from_language = subtitle_entry[0].split(':')[0]
                             break
 
                 if not from_language or not alpha3_from_alpha2(from_language):
