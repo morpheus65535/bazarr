@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 import logging
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import quote_plus
 from flask import request
 from flask_restx import Resource, reqparse, abort
 from plexapi.exceptions import BadRequest
@@ -855,15 +856,19 @@ class PlexWebhookCreate(Resource):
                 logger.error("No API key configured - cannot create webhook")
                 return {'error': 'No API key configured. Set up API key in Settings > General first.'}, 400
             
+            # Get instance name for webhook identification
+            instance_name = settings.general.get('instance_name', 'Bazarr')
+            instance_param = quote_plus(instance_name)
+            
             if configured_base_url:
-                webhook_url = f"{configured_base_url}/api/webhooks/plex?apikey={apikey}"
-                logger.info(f"Using configured base URL for webhook: {configured_base_url}/api/webhooks/plex")
+                webhook_url = f"{configured_base_url}/api/webhooks/plex?apikey={apikey}&instance={instance_param}"
+                logger.info(f"Using configured base URL for webhook: {configured_base_url}/api/webhooks/plex (instance: {instance_name})")
             else:
                 # Fall back to using the current request's host
                 scheme = 'https' if request.is_secure else 'http'
                 host = request.host
-                webhook_url = f"{scheme}://{host}/api/webhooks/plex?apikey={apikey}"
-                logger.info(f"Using request host for webhook (no base URL configured): {scheme}://{host}/api/webhooks/plex")
+                webhook_url = f"{scheme}://{host}/api/webhooks/plex?apikey={apikey}&instance={instance_param}"
+                logger.info(f"Using request host for webhook (no base URL configured): {scheme}://{host}/api/webhooks/plex (instance: {instance_name})")
                 logger.info("Note: If Bazarr is behind a reverse proxy, configure Base URL in General Settings for better reliability")
             
             # Get existing webhooks
