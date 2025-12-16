@@ -51,6 +51,21 @@ def generate_client_id():
     return str(uuid.uuid4())
 
 
+def get_or_create_client_identifier():
+    """Get existing client identifier or create and persist a new one.
+    
+    This ensures each Bazarr instance has a persistent, unique identifier
+    that survives restarts and is used consistently in all Plex API calls.
+    """
+    client_id = settings.plex.get('client_identifier', '')
+    if not client_id:
+        client_id = str(uuid.uuid4())
+        settings.plex.client_identifier = client_id
+        write_config()
+        logger.info(f"Generated new persistent Plex client identifier: {client_id[:8]}...")
+    return client_id
+
+
 def get_decrypted_token():
     auth_method = settings.plex.get('auth_method', 'apikey')
 
@@ -212,8 +227,15 @@ class PlexPin(Resource):
     @api_ns_plex.doc(parser=post_request_parser)
     def post(self):
         try:
+            import os
             args = self.post_request_parser.parse_args()
-            client_id = args.get('clientId') if args.get('clientId') else generate_client_id()
+            
+            # Use persistent client identifier for consistent device identity
+            client_id = get_or_create_client_identifier()
+            
+            # Get instance name and version for device identification in Plex
+            instance_name = settings.general.get('instance_name', 'Bazarr')
+            bazarr_version = os.environ.get('BAZARR_VERSION', 'unknown')
 
             state_token = get_token_manager().generate_state_token()
 
@@ -221,12 +243,12 @@ class PlexPin(Resource):
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
                 'X-Plex-Product': 'Bazarr',
-                'X-Plex-Version': '1.0',
+                'X-Plex-Version': bazarr_version,
                 'X-Plex-Client-Identifier': client_id,
                 'X-Plex-Platform': 'Web',
                 'X-Plex-Platform-Version': '1.0',
                 'X-Plex-Device': 'Bazarr',
-                'X-Plex-Device-Name': 'Bazarr Web'
+                'X-Plex-Device-Name': instance_name
             }
 
             response = requests.post(
@@ -246,13 +268,16 @@ class PlexPin(Resource):
                 'created_at': datetime.now().isoformat()
             })
 
+            # Include instance name in auth URL for Plex device display
+            instance_name_encoded = quote_plus(instance_name)
+
             return {
                 'data': {
                     'pinId': pin_data['id'],
                     'code': pin_data['code'],
                     'clientId': client_id,
                     'state': state_token,
-                    'authUrl': f"https://app.plex.tv/auth#?clientID={client_id}&code={pin_data['code']}&context[device][product]=Bazarr"
+                    'authUrl': f"https://app.plex.tv/auth#?clientID={client_id}&code={pin_data['code']}&context[device][product]=Bazarr&context[device][deviceName]={instance_name_encoded}"
                 }
             }
 

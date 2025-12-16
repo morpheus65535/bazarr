@@ -268,6 +268,8 @@ validators = [
     Validator('plex.migration_successful', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.migration_timestamp', must_exist=True, default='', is_type_of=(int, float, str)),
     Validator('plex.disable_auto_migration', must_exist=True, default=False, is_type_of=bool),
+    # Unique instance identification
+    Validator('plex.client_identifier', must_exist=True, default='', is_type_of=str),
 
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
