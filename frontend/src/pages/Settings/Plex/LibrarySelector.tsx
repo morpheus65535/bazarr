@@ -11,12 +11,20 @@ import styles from "@/pages/Settings/Plex/LibrarySelector.module.scss";
 export type LibrarySelectorProps = BaseInput<string[]> & {
   label: string;
   libraryType: "movie" | "show";
+  settingKeyIds?: string;
   description?: string;
 };
 
 const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
-  const { libraryType, description, label, ...baseProps } = props;
+  const { libraryType, description, label, settingKeyIds, ...baseProps } =
+    props;
   const { value, update, rest } = useBaseInput(baseProps);
+
+  // Hook for storing library IDs alongside names
+  const idsInput = useBaseInput({
+    settingKey: settingKeyIds || "",
+    // Provide a default value getter that returns empty array
+  });
 
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
@@ -54,6 +62,19 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     })),
   ];
 
+  // Handle selection change - update both names and IDs
+  const handleChange = (selectedTitles: string[]) => {
+    update(selectedTitles); // Update library names (e.g., ["4K Movies", "Movies"])
+
+    // Also update the IDs array if settingKeyIds is provided
+    if (settingKeyIds) {
+      const selectedIds = filtered
+        .filter((lib) => selectedTitles.includes(lib.title))
+        .map((lib) => lib.key);
+      idsInput.update(selectedIds); // Update library IDs (e.g., ["1", "3"])
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <Alert color="brand" variant="light" className={styles.alertMessage}>
@@ -79,7 +100,7 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
           description={description}
           data={selectData}
           value={normalizedValue}
-          onChange={update}
+          onChange={handleChange}
           searchable
           clearable
           className={styles.selectField}

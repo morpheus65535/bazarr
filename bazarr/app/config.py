@@ -248,6 +248,8 @@ validators = [
     Validator('plex.apikey', must_exist=True, default='', is_type_of=str),
     Validator('plex.movie_library', must_exist=True, default=[], is_type_of=(str, list)),
     Validator('plex.series_library', must_exist=True, default=[], is_type_of=(str, list)),
+    Validator('plex.movie_library_ids', must_exist=True, default=[], is_type_of=list),
+    Validator('plex.series_library_ids', must_exist=True, default=[], is_type_of=list),
     Validator('plex.set_movie_added', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.set_episode_added', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.update_movie_library', must_exist=True, default=False, is_type_of=bool),
@@ -268,6 +270,7 @@ validators = [
     Validator('plex.migration_successful', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.migration_timestamp', must_exist=True, default='', is_type_of=(int, float, str)),
     Validator('plex.disable_auto_migration', must_exist=True, default=False, is_type_of=bool),
+    Validator('plex.client_identifier', must_exist=True, default='', is_type_of=str),
 
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
@@ -564,7 +567,9 @@ array_keys = ['excluded_tags',
               'blacklisted_languages',
               'blacklisted_providers',
               'movie_library',
-              'series_library']
+              'series_library',
+              'movie_library_ids',
+              'series_library_ids']
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 

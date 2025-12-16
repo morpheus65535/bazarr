@@ -31,6 +31,7 @@ const SettingsPlexView = () => {
           <LibrarySelector
             label="Library Name"
             settingKey="settings-plex-movie_library"
+            settingKeyIds="settings-plex-movie_library_ids"
             libraryType="movie"
             description="Select your movie library from Plex"
           />
@@ -48,6 +49,7 @@ const SettingsPlexView = () => {
           <LibrarySelector
             label="Library Name"
             settingKey="settings-plex-series_library"
+            settingKeyIds="settings-plex-series_library_ids"
             libraryType="show"
             description="Select your TV show library from Plex"
           />

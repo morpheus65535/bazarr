@@ -7,6 +7,7 @@ import {
   usePlexWebhookDeleteMutation,
   usePlexWebhookListQuery,
 } from "@/apis/hooks/plex";
+import { useInstanceName } from "@/apis/hooks/site";
 import styles from "@/pages/Settings/Plex/WebhookSelector.module.scss";
 
 export type WebhookSelectorProps = {
@@ -17,6 +18,9 @@ export type WebhookSelectorProps = {
 const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
   const { label, description } = props;
   const [selectedWebhookUrl, setSelectedWebhookUrl] = useState<string>("");
+
+  // Get this instance's name for webhook matching
+  const instanceName = useInstanceName();
 
   // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
@@ -37,10 +41,13 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
   const createMutation = usePlexWebhookCreateMutation();
   const deleteMutation = usePlexWebhookDeleteMutation();
 
-  // Find the Bazarr webhook
-  const bazarrWebhook = webhooks?.webhooks?.find((w) =>
-    w.url.includes("/api/webhooks/plex"),
-  );
+  // Find the Bazarr webhook for THIS instance (check instance= parameter)
+  const bazarrWebhook = webhooks?.webhooks?.find((w) => {
+    if (!w.url.includes("/api/webhooks/plex")) return false;
+    // Check if the webhook belongs to this instance
+    const encodedInstanceName = encodeURIComponent(instanceName || "Bazarr");
+    return w.url.includes(`instance=${encodedInstanceName}`);
+  });
 
   // Check Plex Pass subscription status for webhooks feature
   const plexPassSubscription = webhooks?.plexPassSubscription;

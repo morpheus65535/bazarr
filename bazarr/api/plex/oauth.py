@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import os
 import time
 import uuid
 import requests
@@ -7,8 +8,10 @@ import xml.etree.ElementTree as ET
 import logging
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import quote_plus
 from flask import request
 from flask_restx import Resource, reqparse, abort
+import plexapi
 from plexapi.exceptions import BadRequest
 
 from . import api_ns_plex
@@ -18,6 +21,21 @@ from .security import (TokenManager, sanitize_log_data, pin_cache, get_or_create
 from app.config import settings, write_config
 from app.logger import logger
 from utilities.plex_utils import _get_library_locations
+
+def _update_plexapi_headers():
+    """Update plexapi headers to show Bazarr identity in Plex.
+    
+    Sets product name, version, instance name, and client ID for consistent
+    device identification across all Plex API calls via plexapi library.
+    """
+    bazarr_version = os.environ.get('BAZARR_VERSION', 'unknown')
+    instance_name = settings.general.get('instance_name', 'Bazarr')
+    client_id = get_or_create_client_identifier()
+    
+    plexapi.BASE_HEADERS['X-Plex-Product'] = 'Bazarr'
+    plexapi.BASE_HEADERS['X-Plex-Version'] = bazarr_version
+    plexapi.BASE_HEADERS['X-Plex-Device-Name'] = instance_name
+    plexapi.BASE_HEADERS['X-Plex-Client-Identifier'] = client_id
 
 
 def get_token_manager():
@@ -48,6 +66,21 @@ def decrypt_token(encrypted_token):
 
 def generate_client_id():
     return str(uuid.uuid4())
+
+
+def get_or_create_client_identifier():
+    """Get existing client identifier or create and persist a new one.
+    
+    This ensures each Bazarr instance has a persistent, unique identifier
+    that survives restarts and is used consistently in all Plex API calls.
+    """
+    client_id = settings.plex.get('client_identifier', '')
+    if not client_id:
+        client_id = str(uuid.uuid4())
+        settings.plex.client_identifier = client_id
+        write_config()
+        logger.info(f"Generated new persistent Plex client identifier: {client_id[:8]}...")
+    return client_id
 
 
 def get_decrypted_token():
@@ -212,7 +245,13 @@ class PlexPin(Resource):
     def post(self):
         try:
             args = self.post_request_parser.parse_args()
-            client_id = args.get('clientId') if args.get('clientId') else generate_client_id()
+            
+            # Use persistent client identifier for consistent device identity
+            client_id = get_or_create_client_identifier()
+            
+            # Get instance name and version for device identification in Plex
+            instance_name = settings.general.get('instance_name', 'Bazarr')
+            bazarr_version = os.environ.get('BAZARR_VERSION', 'unknown')
 
             state_token = get_token_manager().generate_state_token()
 
@@ -220,12 +259,12 @@ class PlexPin(Resource):
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
                 'X-Plex-Product': 'Bazarr',
-                'X-Plex-Version': '1.0',
+                'X-Plex-Version': bazarr_version,
                 'X-Plex-Client-Identifier': client_id,
                 'X-Plex-Platform': 'Web',
                 'X-Plex-Platform-Version': '1.0',
                 'X-Plex-Device': 'Bazarr',
-                'X-Plex-Device-Name': 'Bazarr Web'
+                'X-Plex-Device-Name': instance_name
             }
 
             response = requests.post(
@@ -245,13 +284,16 @@ class PlexPin(Resource):
                 'created_at': datetime.now().isoformat()
             })
 
+            # Include instance name in auth URL for Plex device display
+            instance_name_encoded = quote_plus(instance_name)
+
             return {
                 'data': {
                     'pinId': pin_data['id'],
                     'code': pin_data['code'],
                     'clientId': client_id,
                     'state': state_token,
-                    'authUrl': f"https://app.plex.tv/auth#?clientID={client_id}&code={pin_data['code']}&context[device][product]=Bazarr"
+                    'authUrl': f"https://app.plex.tv/auth#?clientID={client_id}&code={pin_data['code']}&context[device][product]=Bazarr&context[device][deviceName]={instance_name_encoded}"
                 }
             }
 
@@ -833,6 +875,9 @@ class PlexWebhookCreate(Resource):
             if not decrypted_token:
                 raise UnauthorizedError()
 
+            # Update plexapi device name before using the library
+            _update_plexapi_headers()
+            
             # Import MyPlexAccount here to avoid circular imports
             from plexapi.myplex import MyPlexAccount
             
@@ -855,15 +900,19 @@ class PlexWebhookCreate(Resource):
                 logger.error("No API key configured - cannot create webhook")
                 return {'error': 'No API key configured. Set up API key in Settings > General first.'}, 400
             
+            # Get instance name for webhook identification
+            instance_name = settings.general.get('instance_name', 'Bazarr')
+            instance_param = quote_plus(instance_name)
+            
             if configured_base_url:
-                webhook_url = f"{configured_base_url}/api/webhooks/plex?apikey={apikey}"
-                logger.info(f"Using configured base URL for webhook: {configured_base_url}/api/webhooks/plex")
+                webhook_url = f"{configured_base_url}/api/webhooks/plex?apikey={apikey}&instance={instance_param}"
+                logger.info(f"Using configured base URL for webhook: {configured_base_url}/api/webhooks/plex (instance: {instance_name})")
             else:
                 # Fall back to using the current request's host
                 scheme = 'https' if request.is_secure else 'http'
                 host = request.host
-                webhook_url = f"{scheme}://{host}/api/webhooks/plex?apikey={apikey}"
-                logger.info(f"Using request host for webhook (no base URL configured): {scheme}://{host}/api/webhooks/plex")
+                webhook_url = f"{scheme}://{host}/api/webhooks/plex?apikey={apikey}&instance={instance_param}"
+                logger.info(f"Using request host for webhook (no base URL configured): {scheme}://{host}/api/webhooks/plex (instance: {instance_name})")
                 logger.info("Note: If Bazarr is behind a reverse proxy, configure Base URL in General Settings for better reliability")
             
             # Get existing webhooks
@@ -935,6 +984,9 @@ class PlexWebhookList(Resource):
             if not decrypted_token:
                 raise UnauthorizedError()
 
+            # Update plexapi device name before using the library
+            _update_plexapi_headers()
+            
             from plexapi.myplex import MyPlexAccount
             account = MyPlexAccount(token=decrypted_token)
             
@@ -993,6 +1045,9 @@ class PlexWebhookDelete(Resource):
             if not decrypted_token:
                 raise UnauthorizedError()
 
+            # Update plexapi device name before using the library
+            _update_plexapi_headers()
+            
             from plexapi.myplex import MyPlexAccount
             account = MyPlexAccount(token=decrypted_token)
             
@@ -1044,5 +1099,3 @@ class PlexAutopulseConfig(Resource):
         except Exception as e:
             logger.error(f"Failed to get Autopulse config: {e}")
             return {'error': f'Failed to get Autopulse config: {str(e)}'}, 500
-
-

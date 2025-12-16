@@ -4,15 +4,20 @@ import os
 
 from threading import Thread
 
-bazarr_version = 'unknown'
+# Check if BAZARR_VERSION is already set in environment (e.g., for dev setups)
+if "BAZARR_VERSION" in os.environ:
+    bazarr_version = os.environ["BAZARR_VERSION"]
+else:
+    bazarr_version = 'unknown'
 
-version_file = os.path.join(os.path.dirname(__file__), '..', 'VERSION')
-if os.path.isfile(version_file):
-    with open(version_file, 'r') as f:
-        bazarr_version = f.readline()
-        bazarr_version = bazarr_version.rstrip('\n')
+    version_file = os.path.join(os.path.dirname(__file__), '..', 'VERSION')
+    if os.path.isfile(version_file):
+        with open(version_file, 'r') as f:
+            bazarr_version = f.readline()
+            bazarr_version = bazarr_version.rstrip('\n')
 
-os.environ["BAZARR_VERSION"] = bazarr_version.lstrip('v')
+    bazarr_version = bazarr_version.lstrip('v')
+    os.environ["BAZARR_VERSION"] = bazarr_version
 
 import app.libs  # noqa W0611
 
