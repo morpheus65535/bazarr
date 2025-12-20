@@ -179,12 +179,41 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
 
         # deserialize results
         results_dict = results.json()['data']
+        def get_alternative_titles(video):
+            titles = set()
+            if isinstance(video, Episode):
+                if video.series:
+                    titles.add(video.series)
+                for alt in video.alternative_series or []:
+                    titles.add(alt)
+            else:
+                if video.title:
+                    titles.add(video.title)
+            return {t.lower() for t in titles if t}
 
+
+        alternative_titles = get_alternative_titles(self.video)
+        logger.debug(f"alternative titles: {alternative_titles}")
+        
         # loop over results
         for result in results_dict:
-            if 'title' in result and 'releaseYear' in result:
-                if title.lower() == result['title'].lower() and \
-                        (not self.video.year or self.video.year == int(result['releaseYear'])):
+            if 'title' not in result or 'releaseYear' not in result:
+                continue
+            
+            sub_titles = {result['title'].lower()}
+            logger.debug(f"Subsource titles: {sub_titles}")
+
+            if result.get('alternateTitle'):
+                sub_titles.add(result['alternateTitle'].lower())
+            matched = False
+            for alternative_title in alternative_titles:
+                for sub in sub_titles:
+                    if alternative_title in sub:
+                        matched = True
+                if matched:
+                    break
+            if matched:
+                if not self.video.year or self.video.year == int(result['releaseYear']):
                     title_id = result['movieId']
                     break
             else:
