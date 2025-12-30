@@ -1,9 +1,21 @@
 .group {
+  // Gentle top-to-bottom fade so the toolbar has soft depth instead of a flat
+  // grey band, finished with a hairline divider against the content below.
   @include mantine.light {
-    background-color: var(--mantine-color-gray-3);
+    background: linear-gradient(
+      180deg,
+      var(--mantine-color-white) 0%,
+      var(--mantine-color-gray-1) 100%
+    );
+    border-bottom: 1px solid var(--mantine-color-gray-3);
   }
 
   @include mantine.dark {
-    background-color: var(--mantine-color-dark-5);
+    background: linear-gradient(
+      180deg,
+      var(--mantine-color-dark-5) 0%,
+      var(--mantine-color-dark-6) 100%
+    );
+    border-bottom: 1px solid var(--mantine-color-dark-4);
   }
 }

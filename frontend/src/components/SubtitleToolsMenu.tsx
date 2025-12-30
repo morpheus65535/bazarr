@@ -30,6 +30,7 @@ import { ModalComponent } from "@/modules/modals/WithModal";
 import { task } from "@/modules/task";
 import { SyncSubtitleModal } from "./forms/SyncSubtitleForm";
 import { TwoPointFitModal } from "./forms/TwoPointFit";
+import styles from "./SubtitleToolsMenu.module.scss";
 
 export interface ToolOptions {
   key: string;
@@ -216,7 +217,8 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
         {showDelete && (
           <Menu.Item
             disabled={onAction === undefined}
-            color="red"
+            color="danger"
+            className={styles.deleteItem}
             leftSection={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
             onClick={() => {
               modals.openConfirmModal({
@@ -237,7 +239,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
                   onAction?.("delete");
                 },
                 labels: { confirm: "Delete", cancel: "Cancel" },
-                confirmProps: { color: "red" },
+                confirmProps: { color: "danger" },
               });
             }}
           >
