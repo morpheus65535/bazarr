@@ -42,6 +42,7 @@ class LingarrTranslatorService:
         self.language_code_convert_dict = {
             'zh': 'zh-CN',
             'zt': 'zh-TW',
+            'pb': 'pt-BR',
         }
 
     def translate(self, job_id=None):
