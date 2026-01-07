@@ -34,12 +34,16 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
   const { data: servers = [] } = usePlexServersQuery();
   const hasServers = servers.length > 0;
 
+  // Check if a server has been selected (required for library fetching)
+  const selectedServer = servers.find((server) => server.bestConnection);
+  const hasSelectedServer = Boolean(selectedServer);
+
   const {
     data: libraries = [],
     isLoading,
     error,
   } = usePlexLibrariesQuery({
-    enabled: isAuthenticated && hasServers,
+    enabled: isAuthenticated && hasServers && hasSelectedServer,
   });
 
   const filtered = libraries.filter((library) => library.type === libraryType);
@@ -105,7 +109,12 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
           clearable
           className={styles.selectField}
         />
-        {error && (
+        {isLoading && (
+          <Alert color="brand" variant="light" className={styles.alertMessage}>
+            Fetching libraries... This might take a moment.
+          </Alert>
+        )}
+        {error && !isLoading && (
           <Alert color="red" variant="light" className={styles.alertMessage}>
             Failed to load libraries from Plex. Saved selections shown above.
           </Alert>

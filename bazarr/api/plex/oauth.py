@@ -505,6 +505,7 @@ class PlexServers(Resource):
                     # Collect all connections for parallel testing
                     connection_candidates = []
                     connections = []
+                    all_device_connection_uris = []  # Store ALL URIs before testing
                     for conn in device.get('connections', []):
                         connection_data = {
                             'uri': conn['uri'],
@@ -514,6 +515,7 @@ class PlexServers(Resource):
                             'local': conn.get('local', False)
                         }
                         connection_candidates.append(connection_data)
+                        all_device_connection_uris.append(conn['uri'])  # Store ALL URIs
 
                     # Test all connections in parallel using threads
                     if connection_candidates:
@@ -545,7 +547,7 @@ class PlexServers(Resource):
                         connections.sort(key=lambda x: x.get('latency', float('inf')))
                         bestConnection = connections[0] if connections else None
 
-                        servers.append({
+                        server_data = {
                             'name': device['name'],
                             'machineIdentifier': device['clientIdentifier'],
                             'connections': connections,
@@ -553,7 +555,20 @@ class PlexServers(Resource):
                             'version': device.get('productVersion'),
                             'platform': device.get('platform'),
                             'device': device.get('device')
-                        })
+                        }
+                        servers.append(server_data)
+
+                        # Update stored connections if this is the currently selected server
+                        selected_machine_id = settings.plex.get('server_machine_id')
+                        if selected_machine_id and device['clientIdentifier'] == selected_machine_id:
+                            # Store ALL connection URIs (not just the working ones) for round-robin fallback
+                            settings.plex.server_connections = all_device_connection_uris
+                            # Update best connection if it changed
+                            if bestConnection:
+                                settings.plex.server_url = bestConnection['uri']
+                                settings.plex.server_local = bestConnection.get('local', False)
+                            write_config()
+                            logger.info(f"Auto-updated connections for server {device['name']}: {len(all_device_connection_uris)} total, {len(connections)} available")
 
             return {'data': servers}
 
@@ -574,66 +589,96 @@ class PlexLibraries(Resource):
                 logger.warning("No decrypted token available for Plex library fetching")
                 return {'data': []}
 
-            # Get the selected server URL
-            server_url = settings.plex.get('server_url')
-            if not server_url:
-                logger.warning("No Plex server selected")
+            # Get all stored server connections for round-robin fallback
+            primary_url = settings.plex.get('server_url')
+            all_connections = settings.plex.get('server_connections', [])
+            
+            # Build connection list: primary URL first, then others as fallback
+            server_connections = []
+            if primary_url:
+                server_connections.append(primary_url)
+                # Add other connections as fallback (skip duplicates)
+                server_connections.extend([url for url in all_connections if url != primary_url])
+            elif all_connections:
+                server_connections = all_connections
+            else:
+                logger.warning("No Plex server connections available")
                 return {'data': []}
 
-            logger.debug(f"Fetching Plex libraries from server: {sanitize_server_url(server_url)}")
+            logger.info(f"Fetching Plex libraries for server: {settings.plex.get('server_name', 'Unknown')}")
             
             headers = {
                 'X-Plex-Token': decrypted_token,
                 'Accept': 'application/json'
             }
 
-            # Get libraries from the selected server
-            response = requests.get(
-                f"{server_url}/library/sections",
-                headers=headers,
-                timeout=10,
-                verify=False
-            )
+            # Try each connection in order until one succeeds (round-robin)
+            sections = []
+            successful_server_url = None
+            
+            for idx, server_url in enumerate(server_connections, 1):
+                try:
+                    logger.info(f"Attempting to fetch libraries from connection {idx}/{len(server_connections)}: {sanitize_server_url(server_url)}")
+                    
+                    # Get libraries from this server URL
+                    lib_response = requests.get(
+                        f"{server_url}/library/sections",
+                        headers=headers,
+                        timeout=10,
+                        verify=False
+                    )
 
-            if response.status_code in (401, 403):
-                logger.warning(f"Plex authentication failed: {response.status_code}")
+                    if lib_response.status_code in (401, 403):
+                        logger.warning(f"Connection {idx}: Authentication failed ({lib_response.status_code})")
+                        continue
+                    elif lib_response.status_code != 200:
+                        logger.warning(f"Connection {idx}: HTTP {lib_response.status_code}")
+                        continue
+
+                    # Parse the response
+                    lib_content_type = lib_response.headers.get('content-type', '')
+                    
+                    if 'application/json' in lib_content_type:
+                        data = lib_response.json()
+                        if 'MediaContainer' in data and 'Directory' in data['MediaContainer']:
+                            sections = data['MediaContainer']['Directory']
+                    elif 'application/xml' in lib_content_type or 'text/xml' in lib_content_type:
+                        import xml.etree.ElementTree as ET
+                        root = ET.fromstring(lib_response.text)
+                        sections = []
+                        for directory in root.findall('Directory'):
+                            sections.append({
+                                'key': directory.get('key'),
+                                'title': directory.get('title'),
+                                'type': directory.get('type'),
+                                'count': int(directory.get('count', 0)),
+                                'agent': directory.get('agent', ''),
+                                'scanner': directory.get('scanner', ''),
+                                'language': directory.get('language', ''),
+                                'uuid': directory.get('uuid', ''),
+                                'updatedAt': int(directory.get('updatedAt', 0)),
+                                'createdAt': int(directory.get('createdAt', 0))
+                            })
+                    
+                    # If we got sections, this connection worked
+                    if sections:
+                        successful_server_url = server_url
+                        logger.info(f"Successfully fetched libraries from connection {idx}/{len(server_connections)}")
+                        break
+                    else:
+                        logger.debug(f"Connection {idx}: No sections returned")
+                        
+                except requests.exceptions.RequestException as e:
+                    logger.warning(f"Connection {idx} failed: {type(e).__name__}: {str(e)}")
+                    continue
+                except Exception as e:
+                    logger.warning(f"Connection {idx} error: {type(e).__name__}: {str(e)}")
+                    continue
+
+            # If no connection succeeded, return empty
+            if not successful_server_url or not sections:
+                logger.warning(f"Failed to fetch libraries from all {len(server_connections)} connection(s)")
                 return {'data': []}
-            elif response.status_code != 200:
-                logger.error(f"Plex API error: {response.status_code}")
-                raise PlexConnectionError(f"Failed to get libraries: HTTP {response.status_code}")
-
-            response.raise_for_status()
-            
-            # Parse the response - it could be JSON or XML depending on the server
-            content_type = response.headers.get('content-type', '')
-            logger.debug(f"Plex libraries response content-type: {content_type}")
-            
-            if 'application/json' in content_type:
-                data = response.json()
-                logger.debug(f"Plex libraries JSON response: {data}")
-                if 'MediaContainer' in data and 'Directory' in data['MediaContainer']:
-                    sections = data['MediaContainer']['Directory']
-                else:
-                    sections = []
-            elif 'application/xml' in content_type or 'text/xml' in content_type:
-                import xml.etree.ElementTree as ET
-                root = ET.fromstring(response.text)
-                sections = []
-                for directory in root.findall('Directory'):
-                    sections.append({
-                        'key': directory.get('key'),
-                        'title': directory.get('title'),
-                        'type': directory.get('type'),
-                        'count': int(directory.get('count', 0)),
-                        'agent': directory.get('agent', ''),
-                        'scanner': directory.get('scanner', ''),
-                        'language': directory.get('language', ''),
-                        'uuid': directory.get('uuid', ''),
-                        'updatedAt': int(directory.get('updatedAt', 0)),
-                        'createdAt': int(directory.get('createdAt', 0))
-                    })
-            else:
-                raise PlexConnectionError(f"Unexpected response format: {content_type}")
 
             # Filter and format libraries for movie and show types only
             libraries = []
@@ -643,7 +688,7 @@ class PlexLibraries(Resource):
                     try:
                         section_key = section.get('key')
                         count_response = requests.get(
-                            f"{server_url}/library/sections/{section_key}/all",
+                            f"{successful_server_url}/library/sections/{section_key}/all",
                             headers={'X-Plex-Token': decrypted_token, 'Accept': 'application/json'},
                             timeout=5,
                             verify=False
@@ -674,10 +719,10 @@ class PlexLibraries(Resource):
                         'uuid': section.get('uuid', ''),
                         'updatedAt': int(section.get('updatedAt', 0)),
                         'createdAt': int(section.get('createdAt', 0)),
-                        'locations': _get_library_locations(server_url, section_key, decrypted_token)
+                        'locations': _get_library_locations(successful_server_url, section_key, decrypted_token)
                     })
 
-            logger.debug(f"Filtered Plex libraries: {libraries}")
+            logger.info(f"Successfully retrieved {len(libraries)} movie/show libraries from Plex")
             return {'data': libraries}
 
         except requests.exceptions.RequestException as e:
@@ -836,6 +881,7 @@ class PlexSelectServer(Resource):
     post_request_parser.add_argument('name', type=str, required=True, help='Server name')
     post_request_parser.add_argument('uri', type=str, required=True, help='Connection URI')
     post_request_parser.add_argument('local', type=str, required=False, default='false', help='Is local connection')
+    post_request_parser.add_argument('connections', type=list, location='json', required=False, help='All available connection URIs')
 
     @api_ns_plex.doc(parser=post_request_parser)
     def post(self):
@@ -844,11 +890,14 @@ class PlexSelectServer(Resource):
         name = args.get('name')
         connection_uri = args.get('uri')
         connection_local = args.get('local', 'false').lower() == 'true'
+        connections = args.get('connections', [])
 
         settings.plex.server_machine_id = machine_identifier
         settings.plex.server_name = name
         settings.plex.server_url = connection_uri
         settings.plex.server_local = connection_local
+        # Store all connection URIs for round-robin fallback
+        settings.plex.server_connections = connections if connections else [connection_uri]
         write_config()
 
         return {

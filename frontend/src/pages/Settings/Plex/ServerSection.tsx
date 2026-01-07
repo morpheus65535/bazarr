@@ -72,6 +72,9 @@ const ServerSection = () => {
         name: server.name,
         uri: server.bestConnection.uri,
         local: server.bestConnection.local,
+        connections: server.connections?.map((conn) => conn.uri) || [
+          server.bestConnection.uri,
+        ],
       });
       setIsSaved(true);
       // Save to Bazarr settings

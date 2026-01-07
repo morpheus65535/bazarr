@@ -115,16 +115,21 @@ export const usePlexServerSelectionMutation = () => {
       name: string;
       uri: string;
       local: boolean;
+      connections?: string[];
     }) =>
       api.plex.selectServer({
         machineIdentifier: params.machineIdentifier,
         name: params.name,
         uri: params.uri,
         local: params.local,
+        connections: params.connections,
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: [QueryKeys.Plex, "selectedServer"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: [QueryKeys.Plex, "libraries"],
       });
     },
   });

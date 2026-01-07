@@ -91,5 +91,6 @@ declare namespace FormType {
     name: string;
     uri: string;
     local: boolean;
+    connections?: string[];
   }
 }

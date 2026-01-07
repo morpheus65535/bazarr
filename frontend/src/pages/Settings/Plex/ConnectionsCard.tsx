@@ -20,7 +20,7 @@ const ConnectionsCard: FC<ConnectionsCardProps> = ({
   return (
     <Card withBorder p="md" radius="md" className={styles.serverConnectionCard}>
       <Text size="sm" fw={600} mb="xs">
-        Available Connections:
+        Verified Connections:
       </Text>
       <Stack gap="xs">
         {server.connections.map((conn: Plex.ServerConnection, idx: number) => (
