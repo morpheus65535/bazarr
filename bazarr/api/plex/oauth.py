@@ -568,7 +568,7 @@ class PlexServers(Resource):
                                 settings.plex.server_url = bestConnection['uri']
                                 settings.plex.server_local = bestConnection.get('local', False)
                             write_config()
-                            logger.info(f"Auto-updated connections for server {device['name']}: {len(all_device_connection_uris)} total, {len(connections)} available")
+                            logger.debug(f"Auto-updated connections for server {device['name']}: {len(all_device_connection_uris)} total, {len(connections)} available")
 
             return {'data': servers}
 
@@ -605,7 +605,7 @@ class PlexLibraries(Resource):
                 logger.warning("No Plex server connections available")
                 return {'data': []}
 
-            logger.info(f"Fetching Plex libraries for server: {settings.plex.get('server_name', 'Unknown')}")
+            logger.debug(f"Fetching Plex libraries for server: {settings.plex.get('server_name', 'Unknown')}")
             
             headers = {
                 'X-Plex-Token': decrypted_token,
@@ -618,7 +618,7 @@ class PlexLibraries(Resource):
             
             for idx, server_url in enumerate(server_connections, 1):
                 try:
-                    logger.info(f"Attempting to fetch libraries from connection {idx}/{len(server_connections)}: {sanitize_server_url(server_url)}")
+                    logger.debug(f"Attempting to fetch libraries from connection {idx}/{len(server_connections)}: {sanitize_server_url(server_url)}")
                     
                     # Get libraries from this server URL
                     lib_response = requests.get(
@@ -663,7 +663,7 @@ class PlexLibraries(Resource):
                     # If we got sections, this connection worked
                     if sections:
                         successful_server_url = server_url
-                        logger.info(f"Successfully fetched libraries from connection {idx}/{len(server_connections)}")
+                        logger.debug(f"Successfully fetched libraries from connection {idx}/{len(server_connections)}")
                         break
                     else:
                         logger.debug(f"Connection {idx}: No sections returned")
