@@ -79,19 +79,29 @@ def check_sonarr_rootfolder():
                                             'Please check path mapping or if directory/drive is online.')
                 .where(TableShowsRootfolder.id == item.id))
         else:
-            # Test actual write instead of os.access (which fails on NFS)
-            try:
-                test_file = os.path.join(path_mappings.path_replace(root_path), '.bazarr_write_test')
-                with open(test_file, 'w') as f:
-                    f.write('test')
-                os.remove(test_file)
-            except Exception as e:
-                database.execute(
-                    update(TableShowsRootfolder)
-                    .values(accessible=0, error=f"There's an issue with this Sonarr root directory: {repr(e)}")
-                    .where(TableShowsRootfolder.id == item.id))
-            else:
+            # Try os.access() first (fast, no disk I/O)
+            # Fall back to write test only if os.access() fails (e.g., NFS mounts)
+            mapped_path = path_mappings.path_replace(root_path)
+            if os.access(mapped_path, os.W_OK):
+                # Path is writable according to os.access()
                 database.execute(
                     update(TableShowsRootfolder)
                     .values(accessible=1, error='')
                     .where(TableShowsRootfolder.id == item.id))
+            else:
+                # os.access() failed, try actual write test (needed for NFS)
+                try:
+                    test_file = os.path.join(mapped_path, '.bazarr_write_test')
+                    with open(test_file, 'w') as f:
+                        f.write('test')
+                    os.remove(test_file)
+                except Exception as e:
+                    database.execute(
+                        update(TableShowsRootfolder)
+                        .values(accessible=0, error=f"There's an issue with this Sonarr root directory: {repr(e)}")
+                        .where(TableShowsRootfolder.id == item.id))
+                else:
+                    database.execute(
+                        update(TableShowsRootfolder)
+                        .values(accessible=1, error='')
+                        .where(TableShowsRootfolder.id == item.id))
