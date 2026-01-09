@@ -629,10 +629,10 @@ class PlexLibraries(Resource):
                     )
 
                     if lib_response.status_code in (401, 403):
-                        logger.warning(f"Connection {idx}: Authentication failed ({lib_response.status_code})")
+                        logger.debug(f"Connection {idx}: Authentication failed ({lib_response.status_code})")
                         continue
                     elif lib_response.status_code != 200:
-                        logger.warning(f"Connection {idx}: HTTP {lib_response.status_code}")
+                        logger.debug(f"Connection {idx}: HTTP {lib_response.status_code}")
                         continue
 
                     # Parse the response
@@ -669,10 +669,10 @@ class PlexLibraries(Resource):
                         logger.debug(f"Connection {idx}: No sections returned")
                         
                 except requests.exceptions.RequestException as e:
-                    logger.warning(f"Connection {idx} failed: {type(e).__name__}: {str(e)}")
+                    logger.debug(f"Connection {idx} failed: {type(e).__name__}: {str(e)}")
                     continue
                 except Exception as e:
-                    logger.warning(f"Connection {idx} error: {type(e).__name__}: {str(e)}")
+                    logger.debug(f"Connection {idx} error: {type(e).__name__}: {str(e)}")
                     continue
 
             # If no connection succeeded, return empty
@@ -722,7 +722,7 @@ class PlexLibraries(Resource):
                         'locations': _get_library_locations(successful_server_url, section_key, decrypted_token)
                     })
 
-            logger.info(f"Successfully retrieved {len(libraries)} movie/show libraries from Plex")
+            logger.debug(f"Successfully retrieved {len(libraries)} movie/show libraries from Plex")
             return {'data': libraries}
 
         except requests.exceptions.RequestException as e:
