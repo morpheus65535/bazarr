@@ -559,9 +559,14 @@ class JobsQueue:
         method handles job status updates, execution tracking, and proper queuing through consuming,
         running, failing, or completing jobs. Jobs are executed in parallel using a thread pool.
 
-        Only jobs in the short-running queue count against the parallel_jobs limit. Known long-running
-        jobs (matching LONG_RUNNING_JOB_PATTERNS) go directly to the long queue. Jobs that exceed the
-        threshold are automatically demoted to the long-running queue by the monitor thread.
+        Two separate limits apply:
+        - Short queue: limited by parallel_jobs (for regular/unknown jobs)
+        - Long queue: limited by parallel_jobs / 2 (minimum 1, for known long-running jobs)
+
+        Known long-running jobs (matching LONG_RUNNING_JOB_PATTERNS) are routed to the long queue.
+        Jobs that exceed the threshold are demoted from short to long queue by the monitor thread,
+        which can temporarily exceed the limit since those jobs are already running.
+        Short jobs are never blocked by long jobs since they have separate limits.
 
         Errors during job execution are logged appropriately, and the queue management ensures that jobs
         are completely handled before removal from the running queue. The method supports interruption
@@ -572,28 +577,29 @@ class JobsQueue:
         while True:
             # Read setting each iteration to allow dynamic changes without restart
             max_parallel = settings.general.parallel_jobs
+            # Long jobs limited to half of parallel_jobs (minimum 1)
+            max_parallel_long = max(1, max_parallel // 2)
             short_has_room = len(self.jobs_running_queue_short) < max_parallel
+            long_has_room = len(self.jobs_running_queue_long) < max_parallel_long
             
-            # Check if we can start a new job:
-            # - If short queue has room, we can start any job
-            # - If short queue is full, we can only start known long jobs (they don't use short slots)
-            can_start_job = False
-            if self.jobs_pending_queue:
-                if short_has_room:
-                    # Room in short queue - can start any job
-                    can_start_job = True
-                else:
-                    # Short queue full - check if next pending job is a known long job
-                    # Peek at next job without removing it
-                    next_job = self.jobs_pending_queue[0]
-                    if is_known_long_running_job(next_job.job_name):
-                        can_start_job = True
+            # Find a job that can start - scan pending queue to skip blocked jobs
+            # This allows short jobs to start even if a long job is waiting for room
+            job_to_start = None
+            job_index = None
+            for i, pending_job in enumerate(self.jobs_pending_queue):
+                is_long = is_known_long_running_job(pending_job.job_name)
+                if (is_long and long_has_room) or (not is_long and short_has_room):
+                    job_to_start = pending_job
+                    job_index = i
+                    break
             
-            if can_start_job:
+            if job_to_start is not None:
                 try:
-                    job = self.jobs_pending_queue.popleft()
+                    # Remove job from its position in the queue
+                    del self.jobs_pending_queue[job_index]
+                    job = job_to_start
                 except IndexError:
-                    sleep(0.1)
+                    sleep(1)
                     continue
                 except (KeyboardInterrupt, SystemExit):
                     break
@@ -627,7 +633,7 @@ class JobsQueue:
                     # Submit job to thread pool for parallel execution
                     self._jobs_executor.submit(self._execute_job, job)
             else:
-                sleep(0.1)
+                sleep(1)
 
 
 jobs_queue = JobsQueue()
