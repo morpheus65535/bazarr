@@ -41,6 +41,17 @@ const cases: RenderTestCase[] = [
   {
     name: "scheduler page",
     ui: SettingsSchedulerView,
+    setupEach: () => {
+      server.use(
+        http.get("/api/system/status", () => {
+          return HttpResponse.json({
+            data: {
+              cpu_cores: 4,
+            },
+          });
+        }),
+      );
+    },
   },
   // TODO: Test Sonarr Page
   {
