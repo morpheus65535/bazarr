@@ -5,6 +5,7 @@ import importlib
 import inspect
 import os
 import time
+import threading
 
 from time import sleep
 from datetime import datetime
@@ -14,6 +15,33 @@ from concurrent.futures import ThreadPoolExecutor
 
 from app.event_handler import event_stream
 from app.config import settings
+
+# Default threshold in seconds for demoting a job from short to long running queue
+# Can be overridden via settings.general.long_job_threshold (in minutes)
+DEFAULT_LONG_JOB_THRESHOLD_SECONDS = 300  # 5 minutes
+
+# Known long-running job patterns - these go directly to the long queue
+# Add patterns here as we identify more long-running job types
+LONG_RUNNING_JOB_PATTERNS = [
+    "Sync with",                    # Sync with Sonarr/Radarr
+    "Index All",                    # Full subtitle scans
+    "Search for Missing",           # Wanted subtitle searches
+    "Upgrade Previously",           # Upgrade subtitles task
+    "Downloading missing subtitles", # Mass download for series/movies
+]
+
+
+def get_long_job_threshold_seconds():
+    """Get the long job threshold in seconds from settings (or default)."""
+    threshold_minutes = settings.general.long_job_threshold
+    if threshold_minutes <= 0:
+        return float('inf')  # Disabled - never demote
+    return threshold_minutes * 60
+
+
+def is_known_long_running_job(job_name: str) -> bool:
+    """Check if a job is known to be long-running based on its name pattern."""
+    return any(job_name.startswith(pattern) for pattern in LONG_RUNNING_JOB_PATTERNS)
 
 bazarr_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -72,6 +100,7 @@ class Job:
         self.progress_max = progress_max
         self.progress_message = ""
         self.job_returned_value = job_returned_value
+        self.start_time = None  # Set when job starts running, used for long-job demotion
 
 
 class JobsQueue:
@@ -98,12 +127,63 @@ class JobsQueue:
     """
     def __init__(self):
         self.jobs_pending_queue = deque()
-        self.jobs_running_queue = deque()
+        # Short-running jobs queue - jobs that have been running < LONG_JOB_THRESHOLD_SECONDS
+        # These count against the parallel_jobs limit
+        self.jobs_running_queue_short = deque()
+        # Long-running jobs queue - jobs that have exceeded the threshold
+        # These are already running and don't block new jobs from starting
+        self.jobs_running_queue_long = deque()
         self.jobs_failed_queue = deque(maxlen=100)
         self.jobs_completed_queue = deque(maxlen=100)
         self.current_job_id = 0
         # Max workers based on CPU cores; actual parallelism controlled by settings.general.parallel_jobs
         self._jobs_executor = ThreadPoolExecutor(max_workers=os.cpu_count() or 2)
+        # Lock for thread-safe queue operations
+        self._queue_lock = threading.Lock()
+        # Start monitor thread for demoting long-running jobs
+        self._start_monitor_thread()
+
+    @property
+    def jobs_running_queue(self):
+        """Combined view of all running jobs (short + long) for backwards compatibility."""
+        return list(self.jobs_running_queue_short) + list(self.jobs_running_queue_long)
+
+    def _start_monitor_thread(self):
+        """Start the background thread that monitors running jobs and demotes long-running ones."""
+        monitor_thread = threading.Thread(target=self._monitor_running_jobs, daemon=True)
+        monitor_thread.start()
+
+    def _monitor_running_jobs(self):
+        """Background thread that checks running jobs and demotes those exceeding the threshold."""
+        while True:
+            try:
+                self._demote_long_running_jobs()
+            except Exception as e:
+                logging.exception(f"Error in job monitor thread: {e}")
+            sleep(10)  # Check every 10 seconds
+
+    def _demote_long_running_jobs(self):
+        """Move jobs that have been running longer than the threshold to the long-running queue."""
+        current_time = time.time()
+        jobs_to_demote = []
+        threshold = get_long_job_threshold_seconds()
+
+        with self._queue_lock:
+            for job in list(self.jobs_running_queue_short):
+                if job.start_time and (current_time - job.start_time) > threshold:
+                    jobs_to_demote.append(job)
+
+            for job in jobs_to_demote:
+                try:
+                    self.jobs_running_queue_short.remove(job)
+                    self.jobs_running_queue_long.append(job)
+                    elapsed = int(current_time - job.start_time)
+                    # Log as WARNING - this job should probably be added to LONG_RUNNING_JOB_PATTERNS
+                    logging.warning(f"Job '{job.job_name}' ({job.job_id}) exceeded {threshold}s threshold "
+                                    f"(ran for {elapsed}s) and was demoted to long-running queue. "
+                                    f"Consider adding this job pattern to LONG_RUNNING_JOB_PATTERNS.")
+                except ValueError:
+                    pass  # Job was already removed
 
     def feed_jobs_pending_queue(self, job_name, module, func, args: list = None, kwargs: dict = None,
                                 is_progress=False, is_signalr=False, progress_max: int = 0,):
@@ -173,12 +253,18 @@ class JobsQueue:
             If no matches are found, an empty list is returned.
         :rtype: list[dict]
         """
-        queues = self.jobs_pending_queue + self.jobs_running_queue + self.jobs_failed_queue + self.jobs_completed_queue
+        # Combine all queues including both running queues
+        all_running = list(self.jobs_running_queue_short) + list(self.jobs_running_queue_long)
+        queues = list(self.jobs_pending_queue) + all_running + list(self.jobs_failed_queue) + list(self.jobs_completed_queue)
         if status:
-            try:
-                queues = self.__dict__[f'jobs_{status}_queue']
-            except KeyError:
-                return []
+            if status == 'running':
+                # Return combined running jobs for status filter
+                queues = all_running
+            else:
+                try:
+                    queues = self.__dict__[f'jobs_{status}_queue']
+                except KeyError:
+                    return []
 
         if job_id:
             return [vars(job) for job in queues if job.job_id == job_id]
@@ -212,7 +298,8 @@ class JobsQueue:
         :return: A boolean indicating whether the job name was successfully updated (True) or the job 
                  was not found in any of the queues (False).
         """
-        queues = self.jobs_pending_queue + self.jobs_running_queue + self.jobs_failed_queue + self.jobs_completed_queue
+        all_running = list(self.jobs_running_queue_short) + list(self.jobs_running_queue_long)
+        queues = list(self.jobs_pending_queue) + all_running + list(self.jobs_failed_queue) + list(self.jobs_completed_queue)
         
         for job in queues:
             if job.job_id == job_id:
@@ -260,7 +347,9 @@ class JobsQueue:
         :return: Returns True if the job's progress was successfully updated, otherwise False.
         :rtype: bool
         """
-        for job in self.jobs_running_queue:
+        # Check both running queues (short and long)
+        all_running = list(self.jobs_running_queue_short) + list(self.jobs_running_queue_long)
+        for job in all_running:
             if job.job_id == job_id:
                 payload = self._build_progress_payload(job, progress_value, progress_max, progress_message)
                 event_stream(type='jobs', action='update', payload=payload)
@@ -316,7 +405,9 @@ class JobsQueue:
         :return: Returns True if the job's progress status was successfully updated, otherwise False.
         :rtype: bool
         """
-        for job in self.jobs_running_queue:
+        # Check both running queues (short and long)
+        all_running = list(self.jobs_running_queue_short) + list(self.jobs_running_queue_long)
+        for job in all_running:
             if job.job_id == job_id:
                 job.is_progress = is_progress
                 event_stream(type='jobs', action='update', payload={"job_id": job.job_id})
@@ -443,8 +534,12 @@ class JobsQueue:
             job.last_run_time = datetime.now()
             self.jobs_completed_queue.append(job)
         finally:
-            if job in self.jobs_running_queue:
-                self.jobs_running_queue.remove(job)
+            # Remove job from whichever running queue it's in
+            with self._queue_lock:
+                if job in self.jobs_running_queue_short:
+                    self.jobs_running_queue_short.remove(job)
+                elif job in self.jobs_running_queue_long:
+                    self.jobs_running_queue_long.remove(job)
             try:
                 # Send a complete event payload with status and progress_value
                 # progress_value being None forces frontend to fetch a full job payload
@@ -463,6 +558,10 @@ class JobsQueue:
         method handles job status updates, execution tracking, and proper queuing through consuming,
         running, failing, or completing jobs. Jobs are executed in parallel using a thread pool.
 
+        Only jobs in the short-running queue count against the parallel_jobs limit. Known long-running
+        jobs (matching LONG_RUNNING_JOB_PATTERNS) go directly to the long queue. Jobs that exceed the
+        threshold are automatically demoted to the long-running queue by the monitor thread.
+
         Errors during job execution are logged appropriately, and the queue management ensures that jobs
         are completely handled before removal from the running queue. The method supports interruption
         via keyboard signals and ensures system stability during unexpected exceptions.
@@ -472,8 +571,24 @@ class JobsQueue:
         while True:
             # Read setting each iteration to allow dynamic changes without restart
             max_parallel = settings.general.parallel_jobs
-            # Check if there's room for more parallel jobs and pending jobs exist
-            if len(self.jobs_running_queue) < max_parallel and self.jobs_pending_queue:
+            short_has_room = len(self.jobs_running_queue_short) < max_parallel
+            
+            # Check if we can start a new job:
+            # - If short queue has room, we can start any job
+            # - If short queue is full, we can only start known long jobs (they don't use short slots)
+            can_start_job = False
+            if self.jobs_pending_queue:
+                if short_has_room:
+                    # Room in short queue - can start any job
+                    can_start_job = True
+                else:
+                    # Short queue full - check if next pending job is a known long job
+                    # Peek at next job without removing it
+                    next_job = self.jobs_pending_queue[0]
+                    if is_known_long_running_job(next_job.job_name):
+                        can_start_job = True
+            
+            if can_start_job:
                 try:
                     job = self.jobs_pending_queue.popleft()
                 except IndexError:
@@ -486,9 +601,19 @@ class JobsQueue:
                 else:
                     job.status = 'running'
                     job.last_run_time = datetime.now()
+                    job.start_time = time.time()  # Track when job started for demotion logic
                     if 'job_id' not in job.kwargs or not job.kwargs['job_id']:
                         job.kwargs['job_id'] = job.job_id
-                    self.jobs_running_queue.append(job)
+                    
+                    # Route to appropriate queue based on known job patterns
+                    is_long_job = is_known_long_running_job(job.job_name)
+                    with self._queue_lock:
+                        if is_long_job:
+                            self.jobs_running_queue_long.append(job)
+                            logging.debug(f"Job '{job.job_name}' ({job.job_id}) routed directly to "
+                                          f"long-running queue (known long job)")
+                        else:
+                            self.jobs_running_queue_short.append(job)
 
                     # sending event to update the status of progress jobs
                     payload = {"job_id": job.job_id, "status": job.status}

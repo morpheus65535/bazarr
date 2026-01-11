@@ -50,6 +50,17 @@ const SettingsSchedulerView: FunctionComponent = () => {
           Number of tasks that can run simultaneously. Limited to your CPU core
           count ({maxParallelJobs}).
         </Message>
+        <Number
+          label="Long Job Threshold (minutes)"
+          min={0}
+          max={60}
+          settingKey="settings-general-long_job_threshold"
+        ></Number>
+        <Message>
+          Jobs running longer than this threshold are moved to a separate queue
+          and no longer count against the parallel jobs limit. Set to 0 to
+          disable.
+        </Message>
       </Section>
       <Section header="Sonarr/Radarr Sync">
         <Selector
