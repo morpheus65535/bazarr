@@ -559,14 +559,14 @@ class JobsQueue:
         method handles job status updates, execution tracking, and proper queuing through consuming,
         running, failing, or completing jobs. Jobs are executed in parallel using a thread pool.
 
-        Two separate limits apply:
-        - Short queue: limited by parallel_jobs (for regular/unknown jobs)
-        - Long queue: limited by parallel_jobs / 2 (minimum 1, for known long-running jobs)
+        Limits:
+        - Total running jobs: limited by parallel_jobs (shared limit)
+        - Long queue: additionally limited to parallel_jobs / 2 to reserve slots for short jobs
+        - Short queue: only checks its own count, not total (short jobs are never blocked by long)
 
         Known long-running jobs (matching LONG_RUNNING_JOB_PATTERNS) are routed to the long queue.
-        Jobs that exceed the threshold are demoted from short to long queue by the monitor thread,
-        which can temporarily exceed the limit since those jobs are already running.
-        Short jobs are never blocked by long jobs since they have separate limits.
+        Jobs that exceed the threshold are demoted from short to long queue by the monitor thread.
+        Demoted jobs can temporarily exceed the total limit since they're already running.
 
         Errors during job execution are logged appropriately, and the queue management ensures that jobs
         are completely handled before removal from the running queue. The method supports interruption
@@ -577,10 +577,14 @@ class JobsQueue:
         while True:
             # Read setting each iteration to allow dynamic changes without restart
             max_parallel = settings.general.parallel_jobs
-            # Long jobs limited to half of parallel_jobs (minimum 1)
+            # Long jobs limited to half of parallel_jobs (minimum 1) to reserve slots for short jobs
             max_parallel_long = max(1, max_parallel // 2)
+            total_running = len(self.jobs_running_queue_short) + len(self.jobs_running_queue_long)
+            
+            # Short jobs: only check short queue count (never blocked by long jobs)
             short_has_room = len(self.jobs_running_queue_short) < max_parallel
-            long_has_room = len(self.jobs_running_queue_long) < max_parallel_long
+            # Long jobs: check both their limit AND total limit (respect overall capacity)
+            long_has_room = len(self.jobs_running_queue_long) < max_parallel_long and total_running < max_parallel
             
             # Find a job that can start - scan pending queue to skip blocked jobs
             # This allows short jobs to start even if a long job is waiting for room
