@@ -10,8 +10,10 @@ from time import sleep
 from datetime import datetime
 from collections import deque
 from typing import Union
+from concurrent.futures import ThreadPoolExecutor
 
 from app.event_handler import event_stream
+from app.config import settings
 
 bazarr_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -96,10 +98,12 @@ class JobsQueue:
     """
     def __init__(self):
         self.jobs_pending_queue = deque()
-        self.jobs_running_queue = deque(maxlen=1)
-        self.jobs_failed_queue = deque(maxlen=10)
-        self.jobs_completed_queue = deque(maxlen=10)
+        self.jobs_running_queue = deque()
+        self.jobs_failed_queue = deque(maxlen=100)
+        self.jobs_completed_queue = deque(maxlen=100)
         self.current_job_id = 0
+        # Max workers based on CPU cores; actual parallelism controlled by settings.general.parallel_jobs
+        self._jobs_executor = ThreadPoolExecutor(max_workers=os.cpu_count() or 2)
 
     def feed_jobs_pending_queue(self, job_name, module, func, args: list = None, kwargs: dict = None,
                                 is_progress=False, is_signalr=False, progress_max: int = 0,):
@@ -417,11 +421,47 @@ class JobsQueue:
             return True
         return False
 
+    def _execute_job(self, job):
+        """
+        Execute a single job and handle its completion or failure.
+
+        :param job: The job to execute.
+        :type job: Job
+        """
+        try:
+            logging.debug(f"Running job {job.job_name} (id {job.job_id}): "
+                          f"{job.module}.{job.func}({job.args}, {job.kwargs})")
+            job.job_returned_value = (getattr(importlib.import_module(job.module), job.func)
+                                      (*job.args, **job.kwargs))
+        except Exception as e:
+            logging.exception(f"Exception raised while running function: {e}")
+            job.status = 'failed'
+            job.last_run_time = datetime.now()
+            self.jobs_failed_queue.append(job)
+        else:
+            job.status = 'completed'
+            job.last_run_time = datetime.now()
+            self.jobs_completed_queue.append(job)
+        finally:
+            if job in self.jobs_running_queue:
+                self.jobs_running_queue.remove(job)
+            try:
+                # Send a complete event payload with status and progress_value
+                # progress_value being None forces frontend to fetch a full job payload
+                payload = {
+                    "job_id": job.job_id,
+                    "status": job.status,  # 'completed' or 'failed'
+                    "progress_value": None  # Trigger frontend API call to update the whole job payload
+                }
+                event_stream(type='jobs', action='update', payload=payload)
+            except Exception as e:
+                logging.exception(f"Exception raised while sending event: {e}")
+
     def consume_jobs_pending_queue(self):
         """
         Consume and execute jobs from the jobs pending queue until the queue is empty or interrupted. This
         method handles job status updates, execution tracking, and proper queuing through consuming,
-        running, failing, or completing jobs.
+        running, failing, or completing jobs. Jobs are executed in parallel using a thread pool.
 
         Errors during job execution are logged appropriately, and the queue management ensures that jobs
         are completely handled before removal from the running queue. The method supports interruption
@@ -430,7 +470,10 @@ class JobsQueue:
         :raises SystemExit: If a termination request (via SystemExit) occurs, the method halts execution.
         """
         while True:
-            if not self.jobs_running_queue and self.jobs_pending_queue:
+            # Read setting each iteration to allow dynamic changes without restart
+            max_parallel = settings.general.parallel_jobs
+            # Check if there's room for more parallel jobs and pending jobs exist
+            if len(self.jobs_running_queue) < max_parallel and self.jobs_pending_queue:
                 try:
                     job = self.jobs_pending_queue.popleft()
                 except IndexError:
@@ -441,48 +484,22 @@ class JobsQueue:
                 except Exception as e:
                     logging.exception(f"Exception raised while running job: {e}")
                 else:
-                    try:
-                        job.status = 'running'
-                        job.last_run_time = datetime.now()
-                        if 'job_id' not in job.kwargs or not job.kwargs['job_id']:
-                            job.kwargs['job_id'] = job.job_id
-                        self.jobs_running_queue.append(job)
+                    job.status = 'running'
+                    job.last_run_time = datetime.now()
+                    if 'job_id' not in job.kwargs or not job.kwargs['job_id']:
+                        job.kwargs['job_id'] = job.job_id
+                    self.jobs_running_queue.append(job)
 
-                        # sending event to update the status of progress jobs
-                        payload = {"job_id": job.job_id, "status": job.status}
-                        if job.is_progress:
-                            payload["progress_value"] = None
-                            payload["progress_max"] = job.progress_max
-                            payload["progress_message"] = job.progress_message
-                        event_stream(type='jobs', action='update', payload=payload)
+                    # sending event to update the status of progress jobs
+                    payload = {"job_id": job.job_id, "status": job.status}
+                    if job.is_progress:
+                        payload["progress_value"] = None
+                        payload["progress_max"] = job.progress_max
+                        payload["progress_message"] = job.progress_message
+                    event_stream(type='jobs', action='update', payload=payload)
 
-                        logging.debug(f"Running job {job.job_name} (id {job.job_id}): "
-                                      f"{job.module}.{job.func}({job.args}, {job.kwargs})")
-                        job.job_returned_value = (getattr(importlib.import_module(job.module), job.func)
-                                                  (*job.args, **job.kwargs))
-                    except Exception as e:
-                        logging.exception(f"Exception raised while running function: {e}")
-                        job.status = 'failed'
-                        job.last_run_time = datetime.now()
-                        self.jobs_failed_queue.append(job)
-                    else:
-                        job.status = 'completed'
-                        job.last_run_time = datetime.now()
-                        self.jobs_completed_queue.append(job)
-                    finally:
-                        if job in self.jobs_running_queue:
-                            self.jobs_running_queue.remove(job)
-                        try:
-                            # Send a complete event payload with status and progress_value
-                            # progress_value being None forces frontend to fetch a full job payload
-                            payload = {
-                                "job_id": job.job_id,
-                                "status": job.status,  # 'completed' or 'failed'
-                                "progress_value": None  # Trigger frontend API call to update the whole job payload
-                            }
-                            event_stream(type='jobs', action='update', payload=payload)
-                        except Exception as e:
-                            logging.exception(f"Exception raised while sending event: {e}")
+                    # Submit job to thread pool for parallel execution
+                    self._jobs_executor.submit(self._execute_job, job)
             else:
                 sleep(0.1)
 

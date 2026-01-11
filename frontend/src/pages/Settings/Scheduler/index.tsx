@@ -1,10 +1,12 @@
 import { FunctionComponent, useMemo } from "react";
+import { useSystemStatus } from "@/apis/hooks";
 import { SelectorOption } from "@/components";
 import {
   Check,
   CollapseBox,
   Layout,
   Message,
+  Number,
   Section,
   Selector,
 } from "@/pages/Settings/components";
@@ -18,6 +20,8 @@ import {
 } from "./options";
 
 const SettingsSchedulerView: FunctionComponent = () => {
+  const { data: status } = useSystemStatus();
+
   const timeOptions = useMemo(() => {
     return Array(24)
       .fill(null)
@@ -27,8 +31,26 @@ const SettingsSchedulerView: FunctionComponent = () => {
       }));
   }, []);
 
+  // Max parallel jobs is limited by CPU cores
+  const maxParallelJobs = useMemo(() => {
+    const cpuCores = status?.cpu_cores ?? 2;
+    return Math.max(cpuCores, 1);
+  }, [status?.cpu_cores]);
+
   return (
     <Layout name="Scheduler">
+      <Section header="Jobs Manager Execution">
+        <Number
+          label="Parallel Jobs"
+          min={1}
+          max={maxParallelJobs}
+          settingKey="settings-general-parallel_jobs"
+        ></Number>
+        <Message>
+          Number of tasks that can run simultaneously. Limited to your CPU core
+          count ({maxParallelJobs}).
+        </Message>
+      </Section>
       <Section header="Sonarr/Radarr Sync">
         <Selector
           label="Sync with Sonarr"
