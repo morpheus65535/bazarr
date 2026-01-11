@@ -587,7 +587,8 @@ class JobsQueue:
             job_to_start = None
             job_index = None
             for i, pending_job in enumerate(self.jobs_pending_queue):
-                is_long = is_known_long_running_job(pending_job.job_name)
+                # SignalR jobs always go to short queue (single item syncs should be fast)
+                is_long = is_known_long_running_job(pending_job.job_name) and not pending_job.is_signalr
                 if (is_long and long_has_room) or (not is_long and short_has_room):
                     job_to_start = pending_job
                     job_index = i
@@ -613,7 +614,8 @@ class JobsQueue:
                         job.kwargs['job_id'] = job.job_id
                     
                     # Route to appropriate queue based on known job patterns
-                    is_long_job = is_known_long_running_job(job.job_name)
+                    # SignalR jobs always go to short queue (single item syncs should be fast)
+                    is_long_job = is_known_long_running_job(job.job_name) and not job.is_signalr
                     with self._queue_lock:
                         if is_long_job:
                             self.jobs_running_queue_long.append(job)
