@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { http } from "msw";
 import { HttpResponse } from "msw";
 import server from "@/tests/mocks/node";
