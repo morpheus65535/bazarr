@@ -18,7 +18,7 @@ from app.config import settings
 
 # Default threshold in seconds for demoting a job from short to long running queue
 # Can be overridden via settings.general.long_job_threshold (in minutes)
-DEFAULT_LONG_JOB_THRESHOLD_SECONDS = 300  # 5 minutes
+DEFAULT_LONG_JOB_THRESHOLD_SECONDS = 900  # 15 minutes
 
 # Known long-running job patterns - these go directly to the long queue
 # Add patterns here as we identify more long-running job types

@@ -182,7 +182,7 @@ validators = [
     Validator('general.parallel_jobs', must_exist=True, default=get_default_parallel_jobs(),
               is_type_of=int, condition=validate_parallel_jobs),
     # Threshold in minutes for demoting jobs from short to long running queue (0 = disabled)
-    Validator('general.long_job_threshold', must_exist=True, default=5, is_type_of=int, gte=0, lte=60),
+    Validator('general.long_job_threshold', must_exist=True, default=15, is_type_of=int, gte=0, lte=60),
 
     # log section
     Validator('log.include_filter', must_exist=True, default='', is_type_of=str, cast=str),
