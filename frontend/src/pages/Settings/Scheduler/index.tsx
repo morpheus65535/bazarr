@@ -47,8 +47,8 @@ const SettingsSchedulerView: FunctionComponent = () => {
           settingKey="settings-general-parallel_jobs"
         ></Number>
         <Message>
-          Maximum concurrent tasks. Long-running jobs are limited to half this
-          value to reserve slots for quick tasks. Limited to your CPU core count
+          Maximum concurrent jobs. Long-running jobs are limited to half this
+          value to reserve slots for short jobs. Limited to your CPU core count
           ({maxParallelJobs}).
         </Message>
         <Number
