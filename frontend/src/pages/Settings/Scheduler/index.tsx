@@ -31,8 +31,8 @@ const SettingsSchedulerView: FunctionComponent = () => {
       }));
   }, []);
 
-  // Max parallel jobs is limited by CPU cores
-  const maxParallelJobs = useMemo(() => {
+  // Max concurrent jobs is limited by CPU cores
+  const maxConcurrentJobs = useMemo(() => {
     const cpuCores = status?.cpu_cores ?? 2;
     return Math.max(cpuCores, 1);
   }, [status?.cpu_cores]);
@@ -41,15 +41,15 @@ const SettingsSchedulerView: FunctionComponent = () => {
     <Layout name="Scheduler">
       <Section header="Jobs Manager Execution">
         <Number
-          label="Parallel Jobs"
+          label="Concurrent Jobs"
           min={1}
-          max={maxParallelJobs}
-          settingKey="settings-general-parallel_jobs"
+          max={maxConcurrentJobs}
+          settingKey="settings-general-concurrent_jobs"
         ></Number>
         <Message>
           Maximum concurrent jobs. Long-running jobs are limited to half this
           value to reserve slots for short jobs. Limited to your CPU core count
-          ({maxParallelJobs}).
+          ({maxConcurrentJobs}).
         </Message>
         <Number
           label="Long Job Threshold (minutes)"

@@ -58,19 +58,19 @@ ONE_HUNDRED_YEARS_IN_MINUTES = 52560000
 ONE_HUNDRED_YEARS_IN_HOURS = 876000
 
 
-def get_default_parallel_jobs():
-    """Calculate default parallel jobs based on CPU cores (half of cores, minimum 1)."""
+def get_default_concurrent_jobs():
+    """Calculate default concurrent jobs based on CPU cores (half of cores, minimum 1)."""
     cpu_count = os.cpu_count() or 2
     return max(cpu_count // 2, 1)
 
 
-def validate_parallel_jobs(value):
-    """Validate parallel_jobs is between 1 and CPU count."""
+def validate_concurrent_jobs(value):
+    """Validate concurrent_jobs is between 1 and CPU count."""
     cpu_count = os.cpu_count() or 2
     if not isinstance(value, int) or value < 1:
-        raise ValidationError(f"Parallel Jobs must be at least 1, but got {value}")
+        raise ValidationError(f"Concurrent Jobs must be at least 1, but got {value}")
     if value > cpu_count:
-        raise ValidationError(f"Parallel Jobs cannot exceed your CPU core count ({cpu_count}), but got {value}")
+        raise ValidationError(f"Concurrent Jobs cannot exceed your CPU core count ({cpu_count}), but got {value}")
     return True
 
 
@@ -179,8 +179,8 @@ validators = [
     Validator('general.parse_embedded_audio_track', must_exist=True, default=False, is_type_of=bool),
     Validator('general.skip_hashing', must_exist=True, default=False, is_type_of=bool),
     Validator('general.language_equals', must_exist=True, default=[], is_type_of=list),
-    Validator('general.parallel_jobs', must_exist=True, default=get_default_parallel_jobs(),
-              is_type_of=int, condition=validate_parallel_jobs),
+    Validator('general.concurrent_jobs', must_exist=True, default=get_default_concurrent_jobs(),
+              is_type_of=int, condition=validate_concurrent_jobs),
     # Threshold in minutes for demoting jobs from short to long running queue (0 = disabled)
     Validator('general.long_job_threshold', must_exist=True, default=15, is_type_of=int, gte=0, lte=60),
 

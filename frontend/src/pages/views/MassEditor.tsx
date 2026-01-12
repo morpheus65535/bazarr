@@ -62,7 +62,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
   /**
    * Submit the form that contains the series id and the respective profile id set in chunks to prevent payloads too
    * large when we have a high amount of series or movies being applied the profile. The chunks are executed in order
-   * since there are no much benefit on executing in parallel, also parallelism could result in high load on the server
+   * since there are no much benefit on executing concurrently, also concurrency could result in high load on the server
    * side if not throttled properly.
    */
   const save = useCallback(() => {

@@ -129,7 +129,7 @@ class JobsQueue:
     def __init__(self):
         self.jobs_pending_queue = deque()
         # Short-running jobs queue - jobs that have been running < LONG_JOB_THRESHOLD_SECONDS
-        # These count against the parallel_jobs limit
+        # These count against the concurrent_jobs limit
         self.jobs_running_queue_short = deque()
         # Long-running jobs queue - jobs that have exceeded the threshold
         # These are already running and don't block new jobs from starting
@@ -137,7 +137,7 @@ class JobsQueue:
         self.jobs_failed_queue = deque(maxlen=100)
         self.jobs_completed_queue = deque(maxlen=100)
         self.current_job_id = 0
-        # Max workers based on CPU cores; actual parallelism controlled by settings.general.parallel_jobs
+        # Max workers based on CPU cores; actual concurrency controlled by settings.general.concurrent_jobs
         self._jobs_executor = ThreadPoolExecutor(max_workers=os.cpu_count() or 2)
         # Lock for thread-safe queue operations
         self._queue_lock = threading.Lock()
@@ -557,11 +557,11 @@ class JobsQueue:
         """
         Consume and execute jobs from the jobs pending queue until the queue is empty or interrupted. This
         method handles job status updates, execution tracking, and proper queuing through consuming,
-        running, failing, or completing jobs. Jobs are executed in parallel using a thread pool.
+        running, failing, or completing jobs. Jobs are executed concurrently using a thread pool.
 
         Limits:
-        - Total running jobs: limited by parallel_jobs (shared limit)
-        - Long queue: additionally limited to parallel_jobs / 2 to reserve slots for short jobs
+        - Total running jobs: limited by concurrent_jobs (shared limit)
+        - Long queue: additionally limited to concurrent_jobs / 2 to reserve slots for short jobs
         - Short queue: only checks its own count, not total (short jobs are never blocked by long)
 
         Known long-running jobs (matching LONG_RUNNING_JOB_PATTERNS) are routed to the long queue.
@@ -576,15 +576,15 @@ class JobsQueue:
         """
         while True:
             # Read setting each iteration to allow dynamic changes without restart
-            max_parallel = settings.general.parallel_jobs
-            # Long jobs limited to half of parallel_jobs (minimum 1) to reserve slots for short jobs
-            max_parallel_long = max(1, max_parallel // 2)
+            max_concurrent = settings.general.concurrent_jobs
+            # Long jobs limited to half of concurrent_jobs (minimum 1) to reserve slots for short jobs
+            max_concurrent_long = max(1, max_concurrent // 2)
             total_running = len(self.jobs_running_queue_short) + len(self.jobs_running_queue_long)
             
             # Short jobs: only check short queue count (never blocked by long jobs)
-            short_has_room = len(self.jobs_running_queue_short) < max_parallel
+            short_has_room = len(self.jobs_running_queue_short) < max_concurrent
             # Long jobs: check both their limit AND total limit (respect overall capacity)
-            long_has_room = len(self.jobs_running_queue_long) < max_parallel_long and total_running < max_parallel
+            long_has_room = len(self.jobs_running_queue_long) < max_concurrent_long and total_running < max_concurrent
             
             # Find a job that can start - scan pending queue to skip blocked jobs
             # This allows short jobs to start even if a long job is waiting for room
@@ -636,7 +636,7 @@ class JobsQueue:
                         payload["progress_message"] = job.progress_message
                     event_stream(type='jobs', action='update', payload=payload)
 
-                    # Submit job to thread pool for parallel execution
+                    # Submit job to thread pool for concurrent execution
                     self._jobs_executor.submit(self._execute_job, job)
             else:
                 sleep(1)
