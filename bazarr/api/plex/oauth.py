@@ -586,7 +586,7 @@ class PlexLibraries(Resource):
         try:
             decrypted_token = get_decrypted_token()
             if not decrypted_token:
-                logger.warning("No decrypted token available for Plex library fetching")
+                logger.debug("No decrypted token available for Plex library fetching")
                 return {'data': []}
 
             # Get all stored server connections for round-robin fallback
@@ -602,7 +602,7 @@ class PlexLibraries(Resource):
             elif all_connections:
                 server_connections = all_connections
             else:
-                logger.warning("No Plex server connections available")
+                logger.debug("No Plex server connections available")
                 return {'data': []}
 
             logger.debug(f"Fetching Plex libraries for server: {settings.plex.get('server_name', 'Unknown')}")
