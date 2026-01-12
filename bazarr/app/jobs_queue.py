@@ -28,7 +28,7 @@ LONG_RUNNING_JOB_PATTERNS = [
     "Search for Missing",           # Wanted subtitle searches
     "Upgrade Previously",           # Upgrade subtitles task
     "Downloading missing subtitles", # Mass download for series/movies
-    "Subtitles synchronization",    # ffsubsync to audio track
+    # "Subtitles synchronization",  # ffsubsync to audio track
 ]
 
 
