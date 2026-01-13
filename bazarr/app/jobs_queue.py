@@ -605,9 +605,10 @@ class JobsQueue:
             
             # Find a job that can start - scan pending queue to skip blocked jobs
             # This allows short jobs to start even if a long job is waiting for room
+            # Use list() snapshot to avoid "deque mutated during iteration" error
             job_to_start = None
             job_index = None
-            for i, pending_job in enumerate(self.jobs_pending_queue):
+            for i, pending_job in enumerate(list(self.jobs_pending_queue)):
                 # SignalR jobs always go to short queue (single item syncs should be fast)
                 is_long = is_known_long_running_job(pending_job.job_name) and not pending_job.is_signalr
                 if (is_long and long_has_room) or (not is_long and short_has_room):
