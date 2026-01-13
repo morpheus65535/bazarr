@@ -137,8 +137,8 @@ class JobsQueue:
         self.jobs_failed_queue = deque(maxlen=100)
         self.jobs_completed_queue = deque(maxlen=100)
         self.current_job_id = 0
-        # Max workers based on CPU cores; actual concurrency controlled by settings.general.concurrent_jobs
-        self._jobs_executor = ThreadPoolExecutor(max_workers=os.cpu_count() or 2)
+        # Max workers based on CPU cores * 2; actual concurrency controlled by settings.general.concurrent_jobs
+        self._jobs_executor = ThreadPoolExecutor(max_workers=(os.cpu_count() or 2) * 2)
         # Lock for thread-safe queue operations
         self._queue_lock = threading.Lock()
         # Start monitor thread for demoting long-running jobs
@@ -174,8 +174,8 @@ class JobsQueue:
         jobs_to_demote = []
         threshold = get_long_job_threshold_seconds()
         
-        # Hard cap based on actual CPU cores - the real system constraint
-        hard_cap = os.cpu_count() or 2
+        # Hard cap based on actual CPU cores * 2 - allows more concurrency while still bounded
+        hard_cap = (os.cpu_count() or 2) * 2
 
         with self._queue_lock:
             total_running = len(self.jobs_running_queue_short) + len(self.jobs_running_queue_long)
