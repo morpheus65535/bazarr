@@ -164,15 +164,31 @@ class JobsQueue:
             sleep(10)  # Check every 10 seconds
 
     def _demote_long_running_jobs(self):
-        """Move jobs that have been running longer than the threshold to the long-running queue."""
+        """Move jobs that have been running longer than the threshold to the long-running queue.
+        
+        Demotion is conditional: only demotes if total running jobs is below the hard cap
+        (CPU count). This prevents unbounded growth while keeping the short queue
+        responsive for new work.
+        """
         current_time = time.time()
         jobs_to_demote = []
         threshold = get_long_job_threshold_seconds()
+        
+        # Hard cap based on actual CPU cores - the real system constraint
+        hard_cap = os.cpu_count() or 2
 
         with self._queue_lock:
+            total_running = len(self.jobs_running_queue_short) + len(self.jobs_running_queue_long)
+            
             for job in list(self.jobs_running_queue_short):
                 if job.start_time and (current_time - job.start_time) > threshold:
-                    jobs_to_demote.append(job)
+                    # Only demote if we haven't hit the hard cap
+                    if total_running < hard_cap:
+                        jobs_to_demote.append(job)
+                    else:
+                        elapsed = int(current_time - job.start_time)
+                        logging.debug(f"Job '{job.job_name}' ({job.job_id}) exceeded threshold "
+                                      f"(ran for {elapsed}s) but demotion skipped - at hard cap ({total_running}/{hard_cap})")
 
             for job in jobs_to_demote:
                 try:
