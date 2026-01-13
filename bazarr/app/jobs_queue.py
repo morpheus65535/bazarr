@@ -10,6 +10,7 @@ import threading
 from time import sleep
 from datetime import datetime
 from collections import deque
+from itertools import count
 from typing import Union
 from concurrent.futures import ThreadPoolExecutor
 
@@ -123,8 +124,8 @@ class JobsQueue:
     :ivar jobs_completed_queue: Queue containing jobs that were executed successfully. It maintains
         a maximum size of 10 entries.
     :type jobs_completed_queue: deque
-    :ivar current_job_id: Identifier of the latest job, incremented with each new job added to the queue.
-    :type current_job_id: int
+    :ivar job_id_counter: Thread-safe counter for generating unique job IDs.
+    :type job_id_counter: itertools.count
     """
     def __init__(self):
         self.jobs_pending_queue = deque()
@@ -136,7 +137,7 @@ class JobsQueue:
         self.jobs_running_queue_long = deque()
         self.jobs_failed_queue = deque(maxlen=100)
         self.jobs_completed_queue = deque(maxlen=100)
-        self.current_job_id = 0
+        self.job_id_counter = count(1)  # Thread-safe counter starting at 1
         # Max workers based on CPU cores * 2; actual concurrency controlled by settings.general.concurrent_jobs
         self._jobs_executor = ThreadPoolExecutor(max_workers=(os.cpu_count() or 2) * 2)
         # Lock for thread-safe queue operations
@@ -234,7 +235,7 @@ class JobsQueue:
         if kwargs is None:
             kwargs = {}
 
-        new_job_id = self.current_job_id = self.current_job_id + 1
+        new_job_id = next(self.job_id_counter)
         self.jobs_pending_queue.append(
             Job(job_id=new_job_id,
                 job_name=job_name,

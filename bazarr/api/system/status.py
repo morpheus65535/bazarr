@@ -62,6 +62,6 @@ class SystemStatus(Resource):
         system_status.update({'bazarr_config_directory': args.config_dir})
         system_status.update({'start_time': startTime})
         system_status.update({'timezone': timezone})
-        system_status.update({'cpu_cores': os.cpu_count() or 1})
+        system_status.update({'cpu_cores': os.cpu_count() or 2})
 
         return {'data': system_status}
