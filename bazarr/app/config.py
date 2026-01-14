@@ -59,18 +59,19 @@ ONE_HUNDRED_YEARS_IN_HOURS = 876000
 
 
 def get_default_concurrent_jobs():
-    """Calculate default concurrent jobs based on CPU cores (half of cores, minimum 1)."""
+    """Get default max_concurrent_total: half of CPU cores (minimum 2)."""
     cpu_count = os.cpu_count() or 2
-    return max(cpu_count // 2, 1)
+    return max(cpu_count // 2, 2)
 
 
 def validate_concurrent_jobs(value):
-    """Validate concurrent_jobs is between 1 and CPU count."""
+    """Validate concurrent_jobs (max_concurrent_total) is between 2 and CPU count."""
     cpu_count = os.cpu_count() or 2
-    if not isinstance(value, int) or value < 1:
-        raise ValidationError(f"Concurrent Jobs must be at least 1, but got {value}")
-    if value > cpu_count:
-        raise ValidationError(f"Concurrent Jobs cannot exceed your CPU core count ({cpu_count}), but got {value}")
+    max_allowed = max(cpu_count, 2)
+    if not isinstance(value, int) or value < 2:
+        raise ValidationError(f"Max Concurrent Jobs must be at least 2, but got {value}")
+    if value > max_allowed:
+        raise ValidationError(f"Max Concurrent Jobs cannot exceed CPU count ({max_allowed}), but got {value}")
     return True
 
 

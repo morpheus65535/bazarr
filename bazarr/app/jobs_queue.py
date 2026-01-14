@@ -161,35 +161,23 @@ class JobsQueue:
             try:
                 self._demote_long_running_jobs()
             except Exception as e:
-                logging.exception(f"Error in job monitor thread: {e}")
+                logging.exception(f"BAZARR error in job monitor thread: {e}")
             sleep(10)  # Check every 10 seconds
 
     def _demote_long_running_jobs(self):
         """Move jobs that have been running longer than the threshold to the long-running queue.
-        
-        Demotion is conditional: only demotes if total running jobs is below the hard cap
-        (CPU count). This prevents unbounded growth while keeping the short queue
-        responsive for new work.
+
+        Demotion always succeeds because it's a move, not an add - the job is already running
+        and counted in concurrent jobs. Moving it frees a short slot for new work.
         """
         current_time = time.time()
         jobs_to_demote = []
         threshold = get_long_job_threshold_seconds()
-        
-        # Hard cap based on actual CPU cores * 2 - allows more concurrency while still bounded
-        hard_cap = (os.cpu_count() or 2) * 2
 
         with self._queue_lock:
-            total_running = len(self.jobs_running_queue_short) + len(self.jobs_running_queue_long)
-            
             for job in list(self.jobs_running_queue_short):
                 if job.start_time and (current_time - job.start_time) > threshold:
-                    # Only demote if we haven't hit the hard cap
-                    if total_running < hard_cap:
-                        jobs_to_demote.append(job)
-                    else:
-                        elapsed = int(current_time - job.start_time)
-                        logging.debug(f"Job '{job.job_name}' ({job.job_id}) exceeded threshold "
-                                      f"(ran for {elapsed}s) but demotion skipped - at hard cap ({total_running}/{hard_cap})")
+                    jobs_to_demote.append(job)
 
             for job in jobs_to_demote:
                 try:
@@ -197,7 +185,7 @@ class JobsQueue:
                     self.jobs_running_queue_long.append(job)
                     elapsed = int(current_time - job.start_time)
                     # Log as WARNING - this job should probably be added to LONG_RUNNING_JOB_PATTERNS
-                    logging.warning(f"Job '{job.job_name}' ({job.job_id}) exceeded {threshold}s threshold "
+                    logging.warning(f"BAZARR job '{job.job_name}' ({job.job_id}) exceeded {threshold}s threshold "
                                     f"(ran for {elapsed}s) and was demoted to long-running queue. "
                                     f"Consider adding this job pattern to LONG_RUNNING_JOB_PATTERNS.")
                 except ValueError:
@@ -247,7 +235,7 @@ class JobsQueue:
                 is_signalr=is_signalr,
                 progress_max=progress_max,)
         )
-        logging.debug(f"Task {job_name} ({new_job_id}) added to queue")
+        logging.debug(f"BAZARR task {job_name} ({new_job_id}) added to queue")
         event_stream(type='jobs', action='update', payload={"job_id": new_job_id, "progress_value": None,
                                                             "status": "pending"})
 
@@ -507,7 +495,7 @@ class JobsQueue:
                 except ValueError:
                     return False
                 else:
-                    logging.debug(f"Task {job.job_name} ({job.job_id}) removed from queue")
+                    logging.debug(f"BAZARR task {job.job_name} ({job.job_id}) removed from queue")
                     event_stream(type='jobs', action='delete', payload={"job_id": job.job_id})
                     return True
         return False
@@ -525,7 +513,7 @@ class JobsQueue:
         :rtype: bool
         """
         if queue_name in ['pending', 'failed', 'completed']:
-            logging.debug(f"Emptying jobs queue for {queue_name} jobs")
+            logging.debug(f"BAZARR emptying jobs queue for {queue_name} jobs")
             getattr(self, f'jobs_{queue_name}_queue').clear()
             return True
         return False
@@ -538,12 +526,12 @@ class JobsQueue:
         :type job: Job
         """
         try:
-            logging.debug(f"Running job {job.job_name} (id {job.job_id}): "
+            logging.debug(f"BAZARR running job {job.job_name} (id {job.job_id}): "
                           f"{job.module}.{job.func}({job.args}, {job.kwargs})")
             job.job_returned_value = (getattr(importlib.import_module(job.module), job.func)
                                       (*job.args, **job.kwargs))
         except Exception as e:
-            logging.exception(f"Exception raised while running function: {e}")
+            logging.exception(f"BAZARR exception raised while running function: {e}")
             job.status = 'failed'
             job.last_run_time = datetime.now()
             self.jobs_failed_queue.append(job)
@@ -568,7 +556,7 @@ class JobsQueue:
                 }
                 event_stream(type='jobs', action='update', payload=payload)
             except Exception as e:
-                logging.exception(f"Exception raised while sending event: {e}")
+                logging.exception(f"BAZARR exception raised while sending event: {e}")
 
     def consume_jobs_pending_queue(self):
         """
@@ -576,14 +564,16 @@ class JobsQueue:
         method handles job status updates, execution tracking, and proper queuing through consuming,
         running, failing, or completing jobs. Jobs are executed concurrently using a thread pool.
 
-        Limits:
-        - Total running jobs: limited by concurrent_jobs (shared limit)
-        - Long queue: additionally limited to concurrent_jobs / 2 to reserve slots for short jobs
-        - Short queue: only checks its own count, not total (short jobs are never blocked by long)
+        Limits (derived from concurrent_jobs setting):
+        - Total: concurrent_jobs setting (range: 2 to CPU count, default: CPU / 2, minimum 2)
+        - Short: Total / 2 (minimum 1)
+        - Long: Short / 2 (minimum 1)
+        - Demotion room: Total - Short - Long (can be 0 if both queues are at capacity)
+        - New jobs only start if their queue has room AND total running < Total
 
-        Known long-running jobs (matching LONG_RUNNING_JOB_PATTERNS) are routed to the long queue.
-        Jobs that exceed the threshold are demoted from short to long queue by the monitor thread.
-        Demoted jobs can temporarily exceed the total limit since they're already running.
+        Known long-running jobs (matching LONG_RUNNING_JOB_PATTERNS) are routed directly to the long queue.
+        Jobs exceeding the long_job_threshold are demoted from short to long queue by the monitor thread.
+        Demotion always succeeds (it's a move, not an add) and frees a short slot for new work.
 
         Errors during job execution are logged appropriately, and the queue management ensures that jobs
         are completely handled before removal from the running queue. The method supports interruption
@@ -593,16 +583,19 @@ class JobsQueue:
         """
         while True:
             # Read setting each iteration to allow dynamic changes without restart
-            max_concurrent = settings.general.concurrent_jobs
-            # Long jobs limited to half of concurrent_jobs (minimum 1) to reserve slots for short jobs
-            max_concurrent_long = max(1, max_concurrent // 2)
+            # All limits derived from concurrent_jobs setting
+            max_concurrent_total = max(2, settings.general.concurrent_jobs)
+            max_concurrent_short = max(1, max_concurrent_total // 2)
+            max_concurrent_long = max(1, max_concurrent_short // 2)
+
             total_running = len(self.jobs_running_queue_short) + len(self.jobs_running_queue_long)
-            
-            # Short jobs: only check short queue count (never blocked by long jobs)
-            short_has_room = len(self.jobs_running_queue_short) < max_concurrent
-            # Long jobs: check both their limit AND total limit (respect overall capacity)
-            long_has_room = len(self.jobs_running_queue_long) < max_concurrent_long and total_running < max_concurrent
-            
+            at_total_cap = total_running >= max_concurrent_total
+
+            # Short jobs: check short queue AND total cap
+            can_start_short = len(self.jobs_running_queue_short) < max_concurrent_short and not at_total_cap
+            # Long jobs: check long queue AND total cap
+            can_start_long = len(self.jobs_running_queue_long) < max_concurrent_long and not at_total_cap
+
             # Find a job that can start - scan pending queue to skip blocked jobs
             # This allows short jobs to start even if a long job is waiting for room
             # Use list() snapshot to avoid "deque mutated during iteration" error
@@ -611,7 +604,7 @@ class JobsQueue:
             for i, pending_job in enumerate(list(self.jobs_pending_queue)):
                 # SignalR jobs always go to short queue (single item syncs should be fast)
                 is_long = is_known_long_running_job(pending_job.job_name) and not pending_job.is_signalr
-                if (is_long and long_has_room) or (not is_long and short_has_room):
+                if (is_long and can_start_long) or (not is_long and can_start_short):
                     job_to_start = pending_job
                     job_index = i
                     break
@@ -627,7 +620,7 @@ class JobsQueue:
                 except (KeyboardInterrupt, SystemExit):
                     break
                 except Exception as e:
-                    logging.exception(f"Exception raised while running job: {e}")
+                    logging.exception(f"BAZARR exception raised while running job: {e}")
                 else:
                     job.status = 'running'
                     job.last_run_time = datetime.now()
@@ -641,7 +634,7 @@ class JobsQueue:
                     with self._queue_lock:
                         if is_long_job:
                             self.jobs_running_queue_long.append(job)
-                            logging.debug(f"Job '{job.job_name}' ({job.job_id}) routed directly to "
+                            logging.debug(f"BAZARR job '{job.job_name}' ({job.job_id}) routed directly to "
                                           f"long-running queue (known long job)")
                         else:
                             self.jobs_running_queue_short.append(job)

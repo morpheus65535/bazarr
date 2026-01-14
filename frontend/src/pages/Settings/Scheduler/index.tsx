@@ -31,25 +31,63 @@ const SettingsSchedulerView: FunctionComponent = () => {
       }));
   }, []);
 
-  // Max concurrent jobs is limited by CPU cores
-  const maxConcurrentJobs = useMemo(() => {
+  // Calculate job limits based on CPU cores and user setting
+  const jobLimits = useMemo(() => {
     const cpuCores = status?.cpu_cores ?? 2;
-    return Math.max(cpuCores, 1);
+    const maxCpu = Math.max(cpuCores, 2);
+    const defaultTotal = Math.max(Math.floor(cpuCores / 2), 2);
+
+    // Helper to calculate limits for any total value
+    const calcLimits = (total: number) => {
+      const short = Math.max(Math.floor(total / 2), 1);
+      const long = Math.max(Math.floor(short / 2), 1);
+      const room = Math.max(total - short - long, 0);
+      return { short, long, room };
+    };
+
+    return {
+      cpuCount: maxCpu,
+      defaultTotal,
+      calcLimits,
+    };
   }, [status?.cpu_cores]);
 
   return (
     <Layout name="Scheduler">
       <Section header="Jobs Manager Execution">
         <Number
-          label="Concurrent Jobs"
-          min={1}
-          max={maxConcurrentJobs}
+          label="Max Concurrent Jobs"
+          min={2}
+          max={jobLimits.cpuCount}
           settingKey="settings-general-concurrent_jobs"
         ></Number>
         <Message>
-          Maximum concurrent jobs. Long-running jobs are limited to half this
-          value to reserve slots for short jobs. Limited to your CPU core count
-          ({maxConcurrentJobs}).
+          {(() => {
+            const total = jobLimits.defaultTotal;
+            const { short, long, room } = jobLimits.calcLimits(total);
+            return (
+              <>
+                Range: 2 to {jobLimits.cpuCount} (CPU count). Default: {total}{" "}
+                (CPU / 2).
+                <br />
+                <strong>Short:</strong> Concurrent / 2 (min 1) = {short}.
+                <br />
+                <strong>Long:</strong> Short / 2 (min 1) = {long}.
+                <br />
+                <strong>Demotion room:</strong> Concurrent − Short − Long ={" "}
+                {room}.
+                {room === 0 && (
+                  <>
+                    <br />
+                    <em>
+                      With 0 room, demotion frees a short slot but no new job
+                      starts until concurrent running jobs decreases.
+                    </em>
+                  </>
+                )}
+              </>
+            );
+          })()}
         </Message>
         <Number
           label="Long Job Threshold (minutes)"
@@ -58,9 +96,8 @@ const SettingsSchedulerView: FunctionComponent = () => {
           settingKey="settings-general-long_job_threshold"
         ></Number>
         <Message>
-          Jobs running longer than this threshold are moved to a separate queue,
-          freeing a slot for new jobs while the long job continues running. Set
-          to 0 to disable.
+          Jobs exceeding this threshold are demoted to the long queue, freeing a
+          short job slot. Set to 0 to disable.
         </Message>
       </Section>
       <Section header="Sonarr/Radarr Sync">
