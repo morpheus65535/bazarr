@@ -29,6 +29,7 @@ LONG_RUNNING_JOB_PATTERNS = [
     "Search for Missing",           # Wanted subtitle searches
     "Upgrade Previously",           # Upgrade subtitles task
     "Downloading missing subtitles", # Mass download for series/movies
+    "[WhisperAI]",                  # WhisperAI transcription (slow due to audio processing)
     # "Subtitles synchronization",  # ffsubsync to audio track
 ]
 
