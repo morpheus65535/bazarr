@@ -34,20 +34,18 @@ const JobLimitsMessage: FunctionComponent<{
 
   return (
     <Message>
-      Range: 2 min - {cpuCount} max
+      How many subtitle tasks can run at the same time (2 - {cpuCount}).
       <br />
-      Short: {short}
       <br />
-      Long: {long}
+      Short: {short} (quick tasks like subtitle downloads)
       <br />
-      Demotion room: {room}
+      Long: {long} (slow tasks like Whisper transcription)
+      <br />
+      Demotion room: {room} (frees short slots when tasks run too long)
       {room === 0 && (
         <>
           <br />
-          <em>
-            With 0 room, demotion frees a short slot but no new job starts until
-            concurrent running jobs decreases.
-          </em>
+          <em>No room for demotion. Increase concurrent jobs to allow it.</em>
         </>
       )}
     </Message>
