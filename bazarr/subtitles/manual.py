@@ -244,8 +244,12 @@ def episode_manually_download_specific_subtitle(sonarr_series_id, sonarr_episode
 
     title = episodeInfo.title
     # Include provider marker for WhisperAI so jobs_queue can classify it as long-running
-    provider_marker = "[WhisperAI] " if selected_provider == 'whisperai' else ""
-    jobs_queue.update_job_name(job_id=job_id, new_job_name=f"{provider_marker}Manually downloading Subtitles for {title} - "
+    # WhisperAI transcribes audio rather than downloading existing subtitles
+    if selected_provider == 'whisperai':
+        job_action = "[WhisperAI] Transcribing"
+    else:
+        job_action = "Manually downloading"
+    jobs_queue.update_job_name(job_id=job_id, new_job_name=f"{job_action} Subtitles for {title} - "
                                                            f"S{episodeInfo.season:02d}E{episodeInfo.episode:02d} - "
                                                            f"{episodeInfo.episodeTitle}")
     episodePath = path_mappings.path_replace(episodeInfo.path)
@@ -275,8 +279,11 @@ def episode_manually_download_specific_subtitle(sonarr_series_id, sonarr_episode
             store_subtitles(result.path, episodePath)
             return '', 204
     finally:
-        provider_marker = "[WhisperAI] " if selected_provider == 'whisperai' else ""
-        jobs_queue.update_job_name(job_id=job_id, new_job_name=f"{provider_marker}Manually downloaded Subtitles for {title} - "
+        if selected_provider == 'whisperai':
+            job_action = "[WhisperAI] Transcribed"
+        else:
+            job_action = "Manually downloaded"
+        jobs_queue.update_job_name(job_id=job_id, new_job_name=f"{job_action} Subtitles for {title} - "
                                                                f"S{episodeInfo.season:02d}E{episodeInfo.episode:02d} - "
                                                                f"{episodeInfo.episodeTitle}")
 
@@ -300,9 +307,12 @@ def movie_manually_download_specific_subtitle(radarr_id, hi, forced, use_origina
 
     title = movieInfo.title
     # Include provider marker for WhisperAI so jobs_queue can classify it as long-running
-    provider_marker = "[WhisperAI] " if selected_provider == 'whisperai' else ""
-    jobs_queue.update_job_name(job_id=job_id, new_job_name=f"{provider_marker}Manually downloading Subtitles for {title} "
-                                                           f"({movieInfo.year})")
+    # WhisperAI transcribes audio rather than downloading existing subtitles
+    if selected_provider == 'whisperai':
+        job_action = "[WhisperAI] Transcribing"
+    else:
+        job_action = "Manually downloading"
+    jobs_queue.update_job_name(job_id=job_id, new_job_name=f"{job_action} Subtitles for {title} ({movieInfo.year})")
     moviePath = path_mappings.path_replace_movie(movieInfo.path)
     sceneName = movieInfo.sceneName or "None"
 
@@ -330,9 +340,11 @@ def movie_manually_download_specific_subtitle(radarr_id, hi, forced, use_origina
             store_subtitles_movie(result.path, moviePath)
             return '', 204
     finally:
-        provider_marker = "[WhisperAI] " if selected_provider == 'whisperai' else ""
-        jobs_queue.update_job_name(job_id=job_id, new_job_name=f"{provider_marker}Manually downloaded Subtitles for {title} "
-                                                               f"({movieInfo.year})")
+        if selected_provider == 'whisperai':
+            job_action = "[WhisperAI] Transcribed"
+        else:
+            job_action = "Manually downloaded"
+        jobs_queue.update_job_name(job_id=job_id, new_job_name=f"{job_action} Subtitles for {title} ({movieInfo.year})")
 
 
 def _get_language_obj(profile_id):
