@@ -10,6 +10,7 @@ import {
   Section,
   Selector,
 } from "@/pages/Settings/components";
+import { useSettingValue } from "@/pages/Settings/utilities/hooks";
 import {
   backupOptions,
   dayOptions,
@@ -18,6 +19,40 @@ import {
   seriesSyncOptions,
   upgradeOptions,
 } from "./options";
+
+// Child component that can use the settings context (must be inside Layout)
+const JobLimitsMessage: FunctionComponent<{
+  cpuCount: number;
+  defaultTotal: number;
+  calcLimits: (total: number) => { short: number; long: number; room: number };
+}> = ({ cpuCount, defaultTotal, calcLimits }) => {
+  const concurrentJobsSetting = useSettingValue<number>(
+    "settings-general-concurrent_jobs",
+  );
+  const total = concurrentJobsSetting ?? defaultTotal;
+  const { short, long, room } = calcLimits(total);
+
+  return (
+    <Message>
+      Range: 2 to {cpuCount} (CPU count). Default: {defaultTotal} (CPU / 2).
+      <br />
+      <strong>Short:</strong> Concurrent / 2 (min 1) = {short}.
+      <br />
+      <strong>Long:</strong> Short / 2 (min 1) = {long}.
+      <br />
+      <strong>Demotion room:</strong> Concurrent − Short − Long = {room}.
+      {room === 0 && (
+        <>
+          <br />
+          <em>
+            With 0 room, demotion frees a short slot but no new job starts until
+            concurrent running jobs decreases.
+          </em>
+        </>
+      )}
+    </Message>
+  );
+};
 
 const SettingsSchedulerView: FunctionComponent = () => {
   const { data: status } = useSystemStatus();
@@ -61,34 +96,11 @@ const SettingsSchedulerView: FunctionComponent = () => {
           max={jobLimits.cpuCount}
           settingKey="settings-general-concurrent_jobs"
         ></Number>
-        <Message>
-          {(() => {
-            const total = jobLimits.defaultTotal;
-            const { short, long, room } = jobLimits.calcLimits(total);
-            return (
-              <>
-                Range: 2 to {jobLimits.cpuCount} (CPU count). Default: {total}{" "}
-                (CPU / 2).
-                <br />
-                <strong>Short:</strong> Concurrent / 2 (min 1) = {short}.
-                <br />
-                <strong>Long:</strong> Short / 2 (min 1) = {long}.
-                <br />
-                <strong>Demotion room:</strong> Concurrent − Short − Long ={" "}
-                {room}.
-                {room === 0 && (
-                  <>
-                    <br />
-                    <em>
-                      With 0 room, demotion frees a short slot but no new job
-                      starts until concurrent running jobs decreases.
-                    </em>
-                  </>
-                )}
-              </>
-            );
-          })()}
-        </Message>
+        <JobLimitsMessage
+          cpuCount={jobLimits.cpuCount}
+          defaultTotal={jobLimits.defaultTotal}
+          calcLimits={jobLimits.calcLimits}
+        />
         <Number
           label="Long Job Threshold (minutes)"
           min={0}
