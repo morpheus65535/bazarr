@@ -29,21 +29,29 @@ export type NumberProps = BaseInput<number> & NumberInputProps;
 
 export const Number: FunctionComponent<NumberProps> = (props) => {
   const { value, update, rest } = useBaseInput(props);
+  const { min, max } = props;
 
   return (
     <NumberInput
       {...rest}
+      clampBehavior="strict"
       value={value ?? 0}
       onChange={(val) => {
         if (val === "") {
           val = 0;
         }
 
-        if (typeof val === "string") {
-          return update(+val);
+        let numVal = typeof val === "string" ? +val : val;
+
+        // Clamp to min/max range
+        if (min !== undefined && numVal < min) {
+          numVal = min;
+        }
+        if (max !== undefined && numVal > max) {
+          numVal = max;
         }
 
-        update(val);
+        update(numVal);
       }}
     ></NumberInput>
   );

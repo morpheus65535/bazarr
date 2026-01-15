@@ -34,13 +34,13 @@ const JobLimitsMessage: FunctionComponent<{
 
   return (
     <Message>
-      Range: 2 to {cpuCount} (CPU count). Default: {defaultTotal} (CPU / 2).
+      Range: 2 min - {cpuCount} max
       <br />
-      <strong>Short:</strong> Concurrent / 2 (min 1) = {short}.
+      Short: {short}
       <br />
-      <strong>Long:</strong> Short / 2 (min 1) = {long}.
+      Long: {long}
       <br />
-      <strong>Demotion room:</strong> Concurrent − Short − Long = {room}.
+      Demotion room: {room}
       {room === 0 && (
         <>
           <br />
