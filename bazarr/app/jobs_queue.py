@@ -601,22 +601,20 @@ class JobsQueue:
             # This allows short jobs to start even if a long job is waiting for room
             # Use list() snapshot to avoid "deque mutated during iteration" error
             job_to_start = None
-            job_index = None
-            for i, pending_job in enumerate(list(self.jobs_pending_queue)):
+            for pending_job in list(self.jobs_pending_queue):
                 # SignalR jobs always go to short queue (single item syncs should be fast)
                 is_long = is_known_long_running_job(pending_job.job_name) and not pending_job.is_signalr
                 if (is_long and can_start_long) or (not is_long and can_start_short):
                     job_to_start = pending_job
-                    job_index = i
                     break
-            
+
             if job_to_start is not None:
                 try:
-                    # Remove job from its position in the queue
-                    del self.jobs_pending_queue[job_index]
+                    # Remove job by identity (not index) - safe if queue was modified
+                    self.jobs_pending_queue.remove(job_to_start)
                     job = job_to_start
-                except IndexError:
-                    sleep(1)
+                except ValueError:
+                    # Job was already removed (e.g., cancelled), retry
                     continue
                 except (KeyboardInterrupt, SystemExit):
                     break
