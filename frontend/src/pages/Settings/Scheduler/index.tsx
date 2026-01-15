@@ -22,10 +22,9 @@ import {
 
 // Child component that can use the settings context (must be inside Layout)
 const JobLimitsMessage: FunctionComponent<{
-  cpuCount: number;
   defaultTotal: number;
   calcLimits: (total: number) => { short: number; long: number; room: number };
-}> = ({ cpuCount, defaultTotal, calcLimits }) => {
+}> = ({ defaultTotal, calcLimits }) => {
   const concurrentJobsSetting = useSettingValue<number>(
     "settings-general-concurrent_jobs",
   );
@@ -35,7 +34,7 @@ const JobLimitsMessage: FunctionComponent<{
   return (
     <Message>
       How many subtitle tasks can run at the same time (capped by actual CPU
-      count).
+      count). Minimum: 2
       <br />
       <br />
       Short: {short} (quick tasks like subtitle downloads)
@@ -46,7 +45,7 @@ const JobLimitsMessage: FunctionComponent<{
       {room === 0 && (
         <>
           <br />
-          <em>No room for demotion. Increase concurrent jobs to allow it.</em>
+          No room for demotion. Increase concurrent jobs to allow it.
         </>
       )}
     </Message>
@@ -96,7 +95,6 @@ const SettingsSchedulerView: FunctionComponent = () => {
           settingKey="settings-general-concurrent_jobs"
         ></Number>
         <JobLimitsMessage
-          cpuCount={jobLimits.cpuCount}
           defaultTotal={jobLimits.defaultTotal}
           calcLimits={jobLimits.calcLimits}
         />
