@@ -33,21 +33,33 @@ const JobLimitsMessage: FunctionComponent<{
 
   return (
     <Message>
-      How many subtitle tasks can run at the same time (capped by actual CPU
-      count). Minimum: 2
+      Max concurrent jobs is the total number of subtitle tasks that can run at
+      once (capped by CPU cores). Minimum: 2
       <br />
       <br />
-      Short: {short} (quick tasks like subtitle downloads)
+      Short: {short} (quick tasks like subtitle downloads/search)
       <br />
       Long: {long} (slow tasks like Whisper transcription)
       <br />
-      Demotion room: {room} (frees short slots when tasks run too long)
+      Demotion room: {room} (extra headroom so a short task that runs too long
+      can move to the long queue without blocking short tasks)
       {room === 0 && (
         <>
           <br />
           No room for demotion. Increase concurrent jobs to allow it.
         </>
       )}
+      <br />
+      <br />
+      Examples:
+      <br />
+      Total 2 → Short 1, Long 1, Demotion 0
+      <br />
+      Total 3 → Short 1, Long 1, Demotion 1
+      <br />
+      Total 4 → Short 2, Long 1, Demotion 1
+      <br />
+      Total 8 → Short 4, Long 2, Demotion 2
     </Message>
   );
 };
