@@ -34,7 +34,8 @@ const JobLimitsMessage: FunctionComponent<{
 
   return (
     <Message>
-      How many subtitle tasks can run at the same time (2 - {cpuCount}).
+      How many subtitle tasks can run at the same time (capped by actual CPU
+      count).
       <br />
       <br />
       Short: {short} (quick tasks like subtitle downloads)
