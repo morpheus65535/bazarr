@@ -78,34 +78,3 @@ class SystemJobs(Resource):
             if deleted:
                 return '', 204
         return 'Job ID not provided', 400
-
-    post_request_parser = reqparse.RequestParser()
-    post_request_parser.add_argument('job_name', type=str, required=True, help='Name for the test job')
-    post_request_parser.add_argument('duration', type=int, required=True, help='Duration in seconds')
-    post_request_parser.add_argument('job_type', type=str, required=False, default='short',
-                                     choices=['short', 'long'],
-                                     help='Job type: "short" for regular, "long" for known long-running pattern')
-
-    @authenticate
-    @api_ns_system_jobs.doc(parser=post_request_parser)
-    @api_ns_system_jobs.response(201, 'Job created')
-    @api_ns_system_jobs.response(401, 'Not Authenticated')
-    def post(self):
-        """Create a test job for stress testing the queue system"""
-        args = self.post_request_parser.parse_args()
-        job_name = args.get('job_name')
-        duration = args.get('duration')
-        job_type = args.get('job_type', 'short')
-
-        # Use known long-running pattern if job_type is 'long'
-        if job_type == 'long':
-            # Prefix with known long pattern to route to long queue
-            job_name = f"Sync with Sonarr - {job_name}"
-
-        job_id = jobs_queue.feed_jobs_pending_queue(
-            job_name=job_name,
-            module='app.test_jobs',
-            func='test_job_function',
-            kwargs={'duration_seconds': duration, 'job_name': job_name}
-        )
-        return {'job_id': job_id, 'job_name': job_name, 'duration': duration, 'job_type': job_type}, 201
