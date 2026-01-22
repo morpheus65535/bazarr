@@ -24,13 +24,12 @@ DEFAULT_LONG_JOB_THRESHOLD_SECONDS = 900  # 15 minutes
 # Known long-running job patterns - these go directly to the long queue
 # Add patterns here as we identify more long-running job types
 LONG_RUNNING_JOB_PATTERNS = [
-    "Sync with",                    # Sync with Sonarr/Radarr
-    "Index All",                    # Full subtitle scans
-    "Search for Missing",           # Wanted subtitle searches
-    "Upgrade Previously",           # Upgrade subtitles task
+    "Sync with",                     # Sync with Sonarr/Radarr
+    "Index All",                     # Full subtitle scans
+    "Search for Missing",            # Wanted subtitle searches
+    "Upgrade Previously",            # Upgrade subtitles task
     "Downloading missing subtitles", # Mass download for series/movies
-    "[WhisperAI]",                  # WhisperAI transcription (slow due to audio processing)
-    # "Subtitles synchronization",  # ffsubsync to audio track
+    "[WhisperAI]",                   # WhisperAI transcription (slow due to audio processing)
 ]
 
 
@@ -260,8 +259,7 @@ class JobsQueue:
             If no matches are found, an empty list is returned.
         :rtype: list[dict]
         """
-        # Combine all queues including both running queues
-        all_running = list(self.jobs_running_queue_short) + list(self.jobs_running_queue_long)
+        all_running = self.jobs_running_queue
         queues = list(self.jobs_pending_queue) + all_running + list(self.jobs_failed_queue) + list(self.jobs_completed_queue)
         if status:
             if status == 'running':
@@ -305,7 +303,7 @@ class JobsQueue:
         :return: A boolean indicating whether the job name was successfully updated (True) or the job 
                  was not found in any of the queues (False).
         """
-        all_running = list(self.jobs_running_queue_short) + list(self.jobs_running_queue_long)
+        all_running = self.jobs_running_queue
         queues = list(self.jobs_pending_queue) + all_running + list(self.jobs_failed_queue) + list(self.jobs_completed_queue)
         
         for job in queues:
@@ -354,9 +352,7 @@ class JobsQueue:
         :return: Returns True if the job's progress was successfully updated, otherwise False.
         :rtype: bool
         """
-        # Check both running queues (short and long)
-        all_running = list(self.jobs_running_queue_short) + list(self.jobs_running_queue_long)
-        for job in all_running:
+        for job in self.jobs_running_queue:
             if job.job_id == job_id:
                 payload = self._build_progress_payload(job, progress_value, progress_max, progress_message)
                 event_stream(type='jobs', action='update', payload=payload)
@@ -412,9 +408,7 @@ class JobsQueue:
         :return: Returns True if the job's progress status was successfully updated, otherwise False.
         :rtype: bool
         """
-        # Check both running queues (short and long)
-        all_running = list(self.jobs_running_queue_short) + list(self.jobs_running_queue_long)
-        for job in all_running:
+        for job in self.jobs_running_queue:
             if job.job_id == job_id:
                 job.is_progress = is_progress
                 event_stream(type='jobs', action='update', payload={"job_id": job.job_id})
@@ -601,11 +595,13 @@ class JobsQueue:
             # This allows short jobs to start even if a long job is waiting for room
             # Use list() snapshot to avoid "deque mutated during iteration" error
             job_to_start = None
+            is_long_job = False  # Track job type for later routing
             for pending_job in list(self.jobs_pending_queue):
                 # SignalR jobs always go to short queue (single item syncs should be fast)
                 is_long = is_known_long_running_job(pending_job.job_name) and not pending_job.is_signalr
                 if (is_long and can_start_long) or (not is_long and can_start_short):
                     job_to_start = pending_job
+                    is_long_job = is_long  # Store the computed value
                     break
 
             if job_to_start is not None:
@@ -627,9 +623,7 @@ class JobsQueue:
                     if 'job_id' not in job.kwargs or not job.kwargs['job_id']:
                         job.kwargs['job_id'] = job.job_id
                     
-                    # Route to appropriate queue based on known job patterns
-                    # SignalR jobs always go to short queue (single item syncs should be fast)
-                    is_long_job = is_known_long_running_job(job.job_name) and not job.is_signalr
+                    # Route to appropriate queue based on known job patterns (is_long_job computed above)
                     with self._queue_lock:
                         if is_long_job:
                             self.jobs_running_queue_long.append(job)
