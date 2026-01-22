@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import json
+import os
 
 from flask import request, jsonify
 from flask_restx import Resource, Namespace
@@ -37,6 +38,9 @@ class SystemSettings(Resource):
                    TableSettingsNotifier.url)
             .order_by(TableSettingsNotifier.name))
             .all()]
+
+        # to populate the dropdown to configure the jobs manager
+        data['general']['concurrent_jobs_options'] = list(range(1, os.cpu_count() - 1))
 
         return jsonify(data)
 

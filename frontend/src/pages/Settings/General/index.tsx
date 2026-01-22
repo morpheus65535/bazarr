@@ -20,6 +20,7 @@ import {
   Selector,
   Text,
 } from "@/pages/Settings/components";
+import { useSettings } from "@/pages/Settings/utilities/SettingsProvider";
 import { Environment, toggleState } from "@/utilities";
 import ExternalWebhookSelector from "./ExternalWebhookSelector";
 import { branchOptions, proxyOptions, securityOptions } from "./options";
@@ -35,6 +36,7 @@ const generateApiKey = () => {
 };
 
 const SettingsGeneralView: FunctionComponent = () => {
+  const settings = useSettings();
   const [copied, setCopy] = useState(false);
 
   const clipboard = useClipboard();
@@ -131,6 +133,29 @@ const SettingsGeneralView: FunctionComponent = () => {
         <Message>
           Allow third parties to make requests towards your Bazarr installation.
           Requires a restart of Bazarr when changed
+        </Message>
+      </Section>
+      <Section header="Jobs Manager">
+        <Selector
+          label="Concurrent Jobs"
+          options={
+            settings?.general.concurrent_jobs_options.map((opt) => ({
+              label: `${opt.toString()} ${opt === 1 ? "job" : "jobs"}`,
+              value: opt,
+            })) ?? [{ label: "1 job", value: 1 }]
+          }
+          settingKey="settings-general-concurrent_jobs"
+        />
+        <Message>
+          Number of concurrent jobs allowed in the jobs manager.
+          <br />
+          This is useful to adjust the number of jobs that can be executed
+          simultaneously. Exceeding jobs will be kept in pending queue until a
+          slot becomes available.
+          <br />
+          Too much concurrent jobs can cause performance issues and affect
+          system responsiveness. Setting too low can cause jobs to be queued for
+          too long.
         </Message>
       </Section>
       <Section header="External Integrations">

@@ -21,4 +21,5 @@ export interface BazarrServer {
   apiKey?: string;
   canUpdate: boolean;
   hasUpdate: boolean;
+  cpuCores: number;
 }

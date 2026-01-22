@@ -39,6 +39,8 @@ declare namespace Settings {
     branch: string;
     chmod?: string;
     chmod_enabled: boolean;
+    concurrent_jobs: number;
+    concurrent_jobs_options: number[];
     days_to_upgrade_subs: number;
     debug: boolean;
     dont_notify_manual_actions: boolean;
