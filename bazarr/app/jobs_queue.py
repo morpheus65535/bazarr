@@ -421,15 +421,13 @@ class JobsQueue:
 
     def consume_jobs_pending_queue(self):
         """
-        Consume and execute jobs from the jobs pending queue until the queue is empty or interrupted. This
-        method handles job status updates, execution tracking, and proper queuing through consuming,
-        running, failing, or completing jobs.
+        Continuously consumes jobs from the pending jobs queue and processes them by starting a new thread
+        for each job, subject to the limit of concurrent jobs allowed in the running queue.
 
-        Errors during job execution are logged appropriately, and the queue management ensures that jobs
-        are completely handled before removal from the running queue. The method supports interruption
-        via keyboard signals and ensures system stability during unexpected exceptions.
+        The function will terminate in response to a KeyboardInterrupt or SystemExit exception.
 
-        :raises SystemExit: If a termination request (via SystemExit) occurs, the method halts execution.
+        :raises KeyboardInterrupt: If the execution is interrupted manually.
+        :raises SystemExit: If the execution is interrupted by a system exit event.
         """
         while True:
             if len(self.jobs_running_queue) < settings.general.concurrent_jobs and self.jobs_pending_queue:
@@ -442,7 +440,23 @@ class JobsQueue:
             else:
                 sleep(0.1)
 
-    def run_job(self, job_id=None):
+    def run_job(self, job_id=None) -> bool:
+        """
+        Runs a job specified by its job_id or the next job from the jobs_pending_queue if no job_id is
+        provided. Updates the job's status and handles event notifications accordingly.
+
+        The function retrieves the job based on the provided job_id, or dequeues the next pending job
+        from the jobs_pending_queue. If no pending job exists or an exception occurs during processing,
+        the function handles these cases appropriately, ensuring logging and state updates. The job is
+        executed using specified module, function, arguments, and keyword arguments, and its returned
+        value is stored. Job status is updated to 'completed' or 'failed' based on the execution outcome.
+
+        :param job_id: The ID of the job to be run. If not provided, the next job in the
+            jobs_pending_queue will be dequeued and executed.
+        :type job_id: str, optional
+        :return: Whether the job execution was successful.
+        :rtype: bool
+        """
         job = None
         try:
             if job_id:
@@ -450,6 +464,7 @@ class JobsQueue:
                     if pending_job.job_id == job_id:
                         job = pending_job
                 if not job:
+                    sleep(0.1)
                     return False
             else:
                 job = self.jobs_pending_queue.popleft()
@@ -458,8 +473,11 @@ class JobsQueue:
             return False
         except Exception as e:
             logging.exception(f"Exception raised while running job: {e}")
+            sleep(0.1)
+            return False
         else:
             if not job:
+                sleep(0.1)
                 return False
             try:
                 job.status = 'running'
@@ -485,10 +503,14 @@ class JobsQueue:
                 job.status = 'failed'
                 job.last_run_time = datetime.now()
                 self.jobs_failed_queue.append(job)
+                sleep(0.1)
+                return False
             else:
                 job.status = 'completed'
                 job.last_run_time = datetime.now()
                 self.jobs_completed_queue.append(job)
+                sleep(0.1)
+                return True
             finally:
                 if job in self.jobs_running_queue:
                     self.jobs_running_queue.remove(job)
