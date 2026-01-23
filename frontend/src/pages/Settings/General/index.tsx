@@ -6,6 +6,8 @@ import {
   faClipboard,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
+import { range } from "lodash";
+import { useSystemStatus } from "@/apis/hooks";
 import {
   Action,
   Check,
@@ -20,7 +22,6 @@ import {
   Selector,
   Text,
 } from "@/pages/Settings/components";
-import { useSettings } from "@/pages/Settings/utilities/SettingsProvider";
 import { Environment, toggleState } from "@/utilities";
 import ExternalWebhookSelector from "./ExternalWebhookSelector";
 import { branchOptions, proxyOptions, securityOptions } from "./options";
@@ -36,7 +37,7 @@ const generateApiKey = () => {
 };
 
 const SettingsGeneralView: FunctionComponent = () => {
-  const settings = useSettings();
+  const { data: status } = useSystemStatus();
   const [copied, setCopy] = useState(false);
 
   const clipboard = useClipboard();
@@ -138,12 +139,10 @@ const SettingsGeneralView: FunctionComponent = () => {
       <Section header="Jobs Manager">
         <Selector
           label="Concurrent Jobs"
-          options={
-            settings?.general.concurrent_jobs_options.map((opt) => ({
-              label: `${opt.toString()} ${opt === 1 ? "job" : "jobs"}`,
-              value: opt,
-            })) ?? [{ label: "1 job", value: 1 }]
-          }
+          options={range(1, status?.cpu_cores ?? 2).map((opt) => ({
+            label: `${opt.toString()} ${opt === 1 ? "job" : "jobs"}`,
+            value: opt,
+          }))}
           settingKey="settings-general-concurrent_jobs"
         />
         <Message>

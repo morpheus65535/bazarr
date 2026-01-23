@@ -41,6 +41,7 @@ declare namespace System {
     sonarr_version: string;
     start_time: number;
     timezone: string;
+    cpu_cores: number;
   }
 
   interface Backups {

@@ -39,9 +39,6 @@ class SystemSettings(Resource):
             .order_by(TableSettingsNotifier.name))
             .all()]
 
-        # to populate the dropdown to configure the jobs manager
-        data['general']['concurrent_jobs_options'] = list(range(1, os.cpu_count() - 1))
-
         return jsonify(data)
 
     @authenticate
