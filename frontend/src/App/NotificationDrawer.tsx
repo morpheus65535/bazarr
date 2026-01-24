@@ -18,7 +18,10 @@ import {
   faChevronDown,
   faChevronUp,
   faEllipsis,
+  faPlay,
   faTowerBroadcast,
+  faTurnDown,
+  faTurnUp,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -58,6 +61,17 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
   const { mutate: clearQueue } = useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Jobs, "clear"],
     mutationFn: (queueName: string) => api.system.clearJobs(queueName),
+    onSuccess: () => {
+      void client.invalidateQueries({
+        queryKey: [QueryKeys.System, QueryKeys.Jobs],
+      });
+    },
+  });
+
+  const { mutate: actionOnJobs } = useMutation({
+    mutationKey: [QueryKeys.System, QueryKeys.Jobs, "action"],
+    mutationFn: (param: { id: number; action: string }) =>
+      api.system.actionOnJobs(param.id, param.action),
     onSuccess: () => {
       void client.invalidateQueries({
         queryKey: [QueryKeys.System, QueryKeys.Jobs],
@@ -178,18 +192,23 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
                       <Collapse in={!collapsedSections[status]}>
                         <Stack>
                           {grouped[status as string]
+                            .slice()
                             .sort((a, b) => {
-                              const timeA = new Date(
-                                a?.last_run_time || 0,
-                              ).getTime();
-                              const timeB = new Date(
-                                b?.last_run_time || 0,
-                              ).getTime();
-                              return timeB - timeA; // Latest first (descending order)
+                              if (status === "pending") {
+                                return 0; // Keep original order for pending jobs
+                              }
+                              // Sort by last_run_time descending (newest first)
+                              const aTime = a?.last_run_time
+                                ? new Date(a.last_run_time).getTime()
+                                : 0;
+                              const bTime = b?.last_run_time
+                                ? new Date(b.last_run_time).getTime()
+                                : 0;
+                              return bTime - aTime;
                             })
-                            .map((job, index) => (
+                            .map((job) => (
                               <Card
-                                key={job?.job_id ?? `job-fallback-${index}`}
+                                key={`job-id-${job?.job_id}`}
                                 withBorder
                                 radius="md"
                                 padding="xs"
@@ -289,6 +308,56 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
                                             </Menu.Target>
                                             <Menu.Dropdown>
                                               <Menu.Item
+                                                leftSection={
+                                                  <FontAwesomeIcon
+                                                    icon={faTurnUp}
+                                                  />
+                                                }
+                                                onClick={() =>
+                                                  job?.job_id &&
+                                                  actionOnJobs({
+                                                    id: job.job_id,
+                                                    action: "move_top",
+                                                  })
+                                                }
+                                              >
+                                                Move to top
+                                              </Menu.Item>
+                                              <Menu.Item
+                                                leftSection={
+                                                  <FontAwesomeIcon
+                                                    icon={faTurnDown}
+                                                  />
+                                                }
+                                                onClick={() =>
+                                                  job?.job_id &&
+                                                  actionOnJobs({
+                                                    id: job.job_id,
+                                                    action: "move_bottom",
+                                                  })
+                                                }
+                                              >
+                                                Move to bottom
+                                              </Menu.Item>
+                                              <Menu.Divider />
+                                              <Menu.Item
+                                                leftSection={
+                                                  <FontAwesomeIcon
+                                                    icon={faPlay}
+                                                  />
+                                                }
+                                                onClick={() =>
+                                                  job?.job_id &&
+                                                  actionOnJobs({
+                                                    id: job.job_id,
+                                                    action: "force_start",
+                                                  })
+                                                }
+                                              >
+                                                Force Start
+                                              </Menu.Item>
+                                              <Menu.Divider />
+                                              <Menu.Item
                                                 color="red"
                                                 leftSection={
                                                   <FontAwesomeIcon
@@ -307,7 +376,7 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
                                           </Menu>
                                         ) : (
                                           <TimeAgo
-                                            key={job?.job_id}
+                                            key={`job-timestamp-${job?.job_id}`}
                                             date={
                                               job?.last_run_time || new Date()
                                             }

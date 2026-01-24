@@ -163,8 +163,8 @@ validators = [
     Validator('general.parse_embedded_audio_track', must_exist=True, default=False, is_type_of=bool),
     Validator('general.skip_hashing', must_exist=True, default=False, is_type_of=bool),
     Validator('general.language_equals', must_exist=True, default=[], is_type_of=list),
-    Validator('general.concurrent_jobs', must_exist=True, default=2 if os.cpu_count() > 1 else 1, is_type_of=int,
-              is_in=list(range(1, os.cpu_count() - 1))),
+    Validator('general.concurrent_jobs', must_exist=True, default=4 if os.cpu_count() >= 4 else os.cpu_count(),
+              is_type_of=int, is_in=list(range(1, os.cpu_count() - 1))),
 
     # log section
     Validator('log.include_filter', must_exist=True, default='', is_type_of=str, cast=str),

@@ -6,7 +6,7 @@ from app.jobs_queue import jobs_queue
 
 from ..utils import authenticate
 
-api_ns_system_jobs = Namespace('System Jobs', description='List or delete jobs from the queue')
+api_ns_system_jobs = Namespace('System Jobs', description='List, force start, move or delete jobs from the queue')
 
 
 @api_ns_system_jobs.route('system/jobs')
@@ -39,6 +39,28 @@ class SystemJobs(Resource):
         status = args.get('status')
         return marshal(jobs_queue.list_jobs_from_queue(job_id=job_id, status=status), self.get_response_model,
                        envelope='data')
+
+    post_request_parser = reqparse.RequestParser()
+    post_request_parser.add_argument('id', type=int, required=True, help='Job ID act onto')
+    post_request_parser.add_argument('action', type=str, required=True,
+                                     help='Action to perform from ["force_start", "move_top", "move_bottom"]')
+
+    @authenticate
+    @api_ns_system_jobs.doc(parser=post_request_parser)
+    @api_ns_system_jobs.response(204, 'Success')
+    @api_ns_system_jobs.response(401, 'Not Authenticated')
+    def post(self):
+        """Force start, move to top or move to bottom of the queue a specific job"""
+        args = self.post_request_parser.parse_args()
+        job_id = args.get('id')
+        action = args.get('action')
+        if action == "force_start":
+            jobs_queue.force_start_pending_job(job_id=job_id)
+        elif action == "move_top":
+            jobs_queue.move_job_in_pending_queue(job_id=job_id, move_destination="top")
+        elif action == "move_bottom":
+            jobs_queue.move_job_in_pending_queue(job_id=job_id, move_destination="bottom")
+        return '', 204
 
     patch_request_parser = reqparse.RequestParser()
     patch_request_parser.add_argument('queueName', type=str, required=True, help='Jobs queue name to empty',
