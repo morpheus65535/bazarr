@@ -139,7 +139,7 @@ const SettingsGeneralView: FunctionComponent = () => {
       <Section header="Jobs Manager">
         <Selector
           label="Concurrent Jobs"
-          options={range(1, status?.cpu_cores ?? 2).map((opt) => ({
+          options={range(1, status?.cpu_cores ?? 4).map((opt) => ({
             label: `${opt.toString()} ${opt === 1 ? "job" : "jobs"}`,
             value: opt,
           }))}

@@ -30,6 +30,11 @@ const cases: RenderTestCase[] = [
           });
         }),
       );
+      server.use(
+        http.get("/api/system/status", () => {
+          return HttpResponse.json({});
+        }),
+      );
     },
   },
   // TODO: Test Notifications Page
