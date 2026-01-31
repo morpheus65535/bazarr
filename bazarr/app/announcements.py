@@ -79,7 +79,7 @@ def get_announcements_to_file(job_id=None, startup=False):
 
 def get_online_announcements():
     try:
-        with open(os.path.join(args.config_dir, 'config', 'announcements.json'), 'r') as f:
+        with open(os.path.join(args.config_dir, 'config', 'announcements.json'), 'r', encoding='utf-8') as f:
             data = json.load(f)
     except (OSError, json.JSONDecodeError):
         return []
